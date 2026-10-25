@@ -424,33 +424,102 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Both masters picked while the opening chain still runs: the comparison waits for the
-    /// chain, as the smoothing does, instead of loading two more 24 MP masters beside it (the
-    /// "sequential, not parallel" rule of MainViewModel). Released, it computes as usual.
+    /// Both masters picked while another heavy run holds the gate (the opening chain, say): the
+    /// comparison waits for it, as the smoothing does, instead of loading two more 24 MP masters
+    /// beside it (the "sequential, not parallel" rule of MainViewModel, ADR 0061). Released, it
+    /// computes as usual and lets the gate go.
     /// </summary>
     [Fact]
     public async Task R082_APickDuringTheOpeningChainWaitsForIt()
     {
         using var f = new SessionFixture()
             .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
-        var chain = new TaskCompletionSource();
-        bool waited = false;
+        var gate = new HeavyRunGate();
+        IDisposable chain = await gate.EnterAsync(CancellationToken.None);
         var vm = new RatioTabViewModel();
-        vm.Attach(f.Session, CancellationToken.None, () => { waited = true; return chain.Task; });
+        vm.Attach(f.Session, CancellationToken.None, gate);
 
         vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
         vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
         Task run = vm.Pending;
 
         Assert.NotSame(run, await Task.WhenAny(run, Task.Delay(1000)));
-        Assert.True(waited);
         Assert.False(vm.HasResult);
 
-        chain.SetResult();
+        chain.Dispose();
         await run;
 
         Assert.True(vm.HasResult);
         Assert.Contains("pp_flat_stacked_B.fit", vm.Report);
+        Assert.False(gate.IsHeld);
+    }
+
+    /// <summary>
+    /// A pair superseded while it still waits for the gate leaves the queue without computing:
+    /// only the latest pair runs when the gate opens, and the screen shows it alone.
+    /// </summary>
+    [Fact]
+    public async Task R082_APickSupersededWhileWaitingLeavesTheQueue()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit", "pp_flat_stacked_C.fit");
+        var gate = new HeavyRunGate();
+        IDisposable chain = await gate.EnterAsync(CancellationToken.None);
+        var vm = new RatioTabViewModel();
+        vm.Attach(f.Session, CancellationToken.None, gate);
+
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));   // waits: A+B
+        Task first = vm.Pending;
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_C.fit"));    // over it: C+B
+        Task second = vm.Pending;
+        await first;                                                            // left the queue
+        Assert.False(second.IsCompleted);
+
+        chain.Dispose();
+        await second;
+
+        Assert.True(vm.HasResult);
+        Assert.Contains("pp_flat_stacked_C.fit", vm.Report);
+        Assert.DoesNotContain("pp_flat_stacked_A.fit", vm.Report);
+        Assert.False(gate.IsHeld);
+    }
+
+    /// <summary>
+    /// While the pair waits for the opening chain (up to two minutes on a long series) the
+    /// waiting screen says that, not that it compares: nothing is compared yet. Once the chain
+    /// ends, the comparison's own message takes over. With no chain running, the comparison's
+    /// message is the first one shown.
+    /// </summary>
+    [Fact]
+    public async Task R082_WhileAPickWaitsForTheChainTheWaitingScreenSaysSo()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var gate = new HeavyRunGate();
+        IDisposable chain = await gate.EnterAsync(CancellationToken.None);
+        var vm = new RatioTabViewModel();
+        vm.Attach(f.Session, CancellationToken.None, gate);
+        var messages = new List<string>();
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.BusyMessage)) messages.Add(vm.BusyMessage); };
+
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+
+        Assert.True(vm.IsBusy);
+        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.BusyMessage);
+
+        chain.Dispose();
+        await vm.Pending;
+
+        Assert.Equal(SessionMessages.RatioComparing(), messages.Last());
+        Assert.True(vm.HasResult);
+
+        var idle = Attached(f);
+        idle.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        idle.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+        Assert.Equal(SessionMessages.RatioComparing(), idle.BusyMessage);
+        await idle.Pending;
     }
 
     [Fact]

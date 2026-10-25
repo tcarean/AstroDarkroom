@@ -20,10 +20,12 @@
 // Two decisions about behaviour deserve an explanation:
 //
 // SEQUENTIAL, NOT PARALLEL. Structure and the end-to-end test both start when a folder is
-// opened, but one after the other. A 24 MP frame reaches hundreds of MB in the analysis (see
-// docs/design/known-issues.md, point 7), and the series also holds a loaded frame beside it; two
-// chains at once could go past a gigabyte on an ordinary machine. The time gained would not be
-// worth the risk.
+// opened, but one after the other, and no run a click starts computes beside them or beside
+// another click's run: every heavy run takes the one HeavyRunGate (ADR 0061). Measured on
+// 2026-10-25 on the 24 MP masters (docs/design/known-issues.md, point 7): one run alone peaks at
+// 0.7-1.25 GB of working set, two at once at 1.3-2.2 GB. The time gained would not be worth
+// the risk. The chain holds the gate once, from the structure run to the end of the series, so a
+// click made during it waits for the whole chain, as it did before the gate.
 //
 // NEW FOLDER = CANCELLATION. When another folder is chosen while something runs, the old work is
 // cancelled and the tabs empty, instead of leaving results from the previous folder beside the
@@ -51,9 +53,9 @@ namespace FlatCheck.Wpf
         readonly Func<SirilInstall> _locate;
         readonly Func<bool> _sirilGuiRunning;
 
-        /// <summary>The chain started on opening (structure, then series), so the tabs that run
-        /// on a click can wait for it.</summary>
-        Task _chain = Task.CompletedTask;
+        /// <summary>The one gate every heavy run takes: the opening chain once, each click-run
+        /// around its computation (ADR 0061).</summary>
+        readonly HeavyRunGate _gate;
 
         /// <summary>The application's view-model, every question answered by the real
         /// machine.</summary>
@@ -81,13 +83,16 @@ namespace FlatCheck.Wpf
         /// the system clock.</param>
         /// <param name="splitTempRootFor">The Split tab's temp root for a given time; null for the
         /// default one.</param>
+        /// <param name="gate">The heavy-run gate; null for a new one. A test hands in a gate it
+        /// holds, to see the runs wait.</param>
         internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning, Func<string, bool> confirm = null,
                                Func<ProfileSources> locateProfiles = null, Func<string, LoadedFrame> loadInfo = null,
                                Func<string, string, SirilRunner> runScript = null, Func<DateTime> clock = null,
-                               Func<DateTime, string> splitTempRootFor = null)
+                               Func<DateTime, string> splitTempRootFor = null, HeavyRunGate gate = null)
         {
             _locate = locate ?? SirilInstall.Locate;
             _sirilGuiRunning = sirilGuiRunning ?? SirilInstall.IsGuiRunning;
+            _gate = gate ?? new HeavyRunGate();
 
             // The profile catalog, one for the Structure tab (the vignetting comparison) and for
             // the Sintetic tab; the metadata reader, one as well, so the tests can put a made-up
@@ -129,14 +134,6 @@ namespace FlatCheck.Wpf
         public SmoothTabViewModel Smooth { get; }
         public SyntheticTabViewModel Synthetic { get; }
         public SplitTabViewModel Split { get; }
-
-        /// <summary>
-        /// Completes when the chain started on opening has ended. Ratio, Netezire, Sintetic and
-        /// Split run from a click, so they could overlap the structure run if the user pressed
-        /// during it; they wait first - the "sequential, not parallel" rule above.
-        /// </summary>
-        /// <returns>The chain's task; already complete when nothing runs.</returns>
-        internal Task WhenIdleAsync() => _chain;
 
         /// <summary>
         /// The "run the script from here" block on the problem screen. It always exists, so the
@@ -215,26 +212,25 @@ namespace FlatCheck.Wpf
             CancellationToken ct = _cts.Token;
 
             // The tabs that wait for a choice are prepared at once: their lists are read from the
-            // folder, not from a computation, so they have no reason to wait. Ratio's comparison,
-            // when the user picks two masters during the chain, waits for it.
-            Ratio.Attach(session, ct, WhenIdleAsync);
-            Exposure.Attach(session, ct);
+            // folder, not from a computation, so they have no reason to wait. Every run a click
+            // starts in them takes the gate, so it waits for the chain below, and for each other.
+            Ratio.Attach(session, ct, _gate);
+            Exposure.Attach(session, ct, _gate);
             // A list too, also without a computation: the 24 MP master is not loaded twice on
             // opening - Structure is already reading it, below.
-            HistEq.Attach(session, ct);
+            HistEq.Attach(session, ct, _gate);
             // The smoothing does not compute on opening either: it writes a file, and a file is
             // not produced because a folder was opened. It waits for a click.
-            Smooth.Attach(session, ct, WhenIdleAsync);
-            Synthetic.Attach(session, ct, WhenIdleAsync);
+            Smooth.Attach(session, ct, _gate);
+            Synthetic.Attach(session, ct, _gate);
             // Nor does Split: it copies and runs Siril N times, so only on the button, and after
             // the chain.
-            Split.Attach(session, ct, WhenIdleAsync);
+            Split.Attach(session, ct, _gate);
 
             IsRunning = true;
-            _chain = RunChainAsync(session, ct);
             try
             {
-                await _chain.ConfigureAwait(true);
+                await RunChainAsync(session, ct).ConfigureAwait(true);
             }
             finally
             {
@@ -243,20 +239,31 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>The opening chain, one after the other: Structure, then the end-to-end
-        /// series; the series does not start once the folder's token is cancelled.</summary>
+        /// series, holding the heavy-run gate throughout; the series does not start once the
+        /// folder's token is cancelled.</summary>
         /// <param name="session">The folder just opened.</param>
         /// <param name="ct">The folder's token, cancelled by another folder or by closing the
         /// window.</param>
         /// <returns>A task that completes when the chain ended.</returns>
         async Task RunChainAsync(SirilSession session, CancellationToken ct)
         {
-            await Structure.RunAsync(session, ct).ConfigureAwait(true);
-            if (ct.IsCancellationRequested) return;
+            // The gate, once for both runs. A run of the previous folder may still hold it: its
+            // computation does not stop mid-way, so the new chain waits for it rather than loading
+            // beside it. Another folder chosen during that wait cancels it, and that is no fault.
+            IDisposable lease;
+            try { lease = await _gate.EnterAsync(ct).ConfigureAwait(true); }
+            catch (OperationCanceledException) { return; }
 
-            await Light.RunAsync(session, ct).ConfigureAwait(true);
+            using (lease)
+            {
+                await Structure.RunAsync(session, ct).ConfigureAwait(true);
+                if (ct.IsCancellationRequested) return;
+
+                await Light.RunAsync(session, ct).ConfigureAwait(true);
+            }
 
             // No Ratio here: it proposes nothing (R-082) and computes when the user has chosen two
-            // masters; a pick made during this chain waits for its end (WhenIdleAsync).
+            // masters; a pick made during this chain waits for the gate.
         }
 
         /// <summary>Called when the window closes, so no threads are left working for

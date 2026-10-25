@@ -307,6 +307,45 @@ public class HistEqTabTests
         Assert.Contains("flat.fit", vm.Report);
     }
 
+    /// <summary>
+    /// A pick made while another heavy run holds the gate - the opening chain reading the very
+    /// master this list offers first - waits for it instead of loading the 24 MP file beside
+    /// it (R-081, ADR 0061); the waiting screen says so. A second pick while the first still
+    /// waits supersedes it: the first leaves the queue without computing, and when the gate
+    /// opens only the latest reaches the screen.
+    /// </summary>
+    [Fact]
+    public async Task R085_APickDuringAHeavyRunWaitsForTheGateAndASecondPickSupersedesIt()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
+        var gate = new HeavyRunGate();
+        IDisposable chain = await gate.EnterAsync(CancellationToken.None);
+        var vm = new HistEqTabViewModel();
+        vm.Attach(f.Session, CancellationToken.None, gate);
+
+        vm.Selected = vm.Files[0];          // the master: waits
+        Task first = vm.Pending;
+        Assert.NotSame(first, await Task.WhenAny(first, Task.Delay(1000)));
+        Assert.True(vm.IsBusy);
+        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.BusyMessage);
+
+        vm.Selected = vm.Files[1];          // over it: the frame
+        Task second = vm.Pending;
+        await first;                        // left the queue
+        Assert.False(second.IsCompleted);
+        Assert.False(vm.HasResult);
+
+        chain.Dispose();
+        await second;
+
+        Assert.True(vm.HasResult);
+        Assert.False(vm.IsBusy);
+        Assert.Equal("", vm.MasterNote);
+        Assert.Contains("flat.fit", vm.Report);
+        Assert.False(gate.IsHeld);
+    }
+
     // ------------------------------------------------------------------ fisier scris de alt tab
 
     /// <summary>

@@ -64,6 +64,7 @@ namespace FlatCheck.Wpf
     {
         SirilSession _session;
         CancellationToken _parent;
+        HeavyRunGate _gate;
         CancellationTokenSource _runCts;
 
         HistEqFileRow _selected;
@@ -131,10 +132,13 @@ namespace FlatCheck.Wpf
         /// <param name="session">The folder just opened.</param>
         /// <param name="ct">The folder's token, to which every run's own token is
         /// linked.</param>
-        internal void Attach(SirilSession session, CancellationToken ct)
+        /// <param name="gate">The window's heavy-run gate, taken around an equalisation; null
+        /// runs at once.</param>
+        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate = null)
         {
             _session = session;
             _parent = ct;
+            _gate = gate;
 
             FillFiles();
 
@@ -207,8 +211,8 @@ namespace FlatCheck.Wpf
             Pending = RecomputeAsync();
         }
 
-        /// <summary>Equalises the chosen file, guarded, superseding any run still going, and
-        /// shows the result and the console's report.</summary>
+        /// <summary>Equalises the chosen file, guarded, after the heavy-run gate, superseding any
+        /// run still going, and shows the result and the console's report.</summary>
         /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal Task RecomputeAsync()
         {
@@ -223,9 +227,16 @@ namespace FlatCheck.Wpf
             var cts = CancellationTokenSource.CreateLinkedTokenSource(_parent);
             _runCts = cts;
             CancellationToken ct = cts.Token;
+            HeavyRunGate gate = _gate;
 
             return RunGuardedAsync($"Egalizez histograma pe {row.Name}...", async () =>
             {
+                // The master in the list is the 24 MP file the opening chain reads: a pick waits
+                // for the gate instead of loading it beside the chain, and the waiting screen says
+                // so. A pick superseded while it waits leaves the queue here, cancelled (ADR 0061).
+                using IDisposable lease = await EnterGateAsync(gate, ct).ConfigureAwait(true);
+                ct.ThrowIfCancellationRequested();
+
                 var text = new StringWriter();
                 var outcome = await Task.Run(() =>
                 {
@@ -305,6 +316,7 @@ namespace FlatCheck.Wpf
             // without a session, FileWritten has nothing to rebuild: a closed folder does not
             // fill up again because the smoothing wrote into it
             _session = null;
+            _gate = null;
             _last = null;
             _cache.Clear();
             Image = null;

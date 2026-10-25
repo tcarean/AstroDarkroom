@@ -26,6 +26,7 @@
 // modest - the sky fades continuously and is full of faint stars, so the master's SNR comes from
 // the number of frames, not from pushing a frame to 55 %.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -42,6 +43,7 @@ namespace FlatCheck.Wpf
     {
         SirilSession _session;
         CancellationToken _ct;
+        HeavyRunGate _gate;
 
         string _selected;
         bool _sky;
@@ -164,10 +166,13 @@ namespace FlatCheck.Wpf
         /// is none; it computes nothing until a file is chosen.</summary>
         /// <param name="session">The folder just opened.</param>
         /// <param name="ct">The folder's token, which every run observes.</param>
-        internal void Attach(SirilSession session, CancellationToken ct)
+        /// <param name="gate">The window's heavy-run gate, taken around a measurement; null runs
+        /// at once.</param>
+        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate = null)
         {
             _session = session;
             _ct = ct;
+            _gate = gate;
 
             Files.Clear();
             foreach (string p in session.RawFlats()) Files.Add(p);
@@ -189,8 +194,8 @@ namespace FlatCheck.Wpf
             _ = RecomputeAsync();
         }
 
-        /// <summary>Measures the chosen file's exposure, guarded, with the preview decoded, and
-        /// shows the result and the console's report.</summary>
+        /// <summary>Measures the chosen file's exposure, guarded, after the heavy-run gate, with
+        /// the preview decoded, and shows the result and the console's report.</summary>
         /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal Task RecomputeAsync()
         {
@@ -198,8 +203,16 @@ namespace FlatCheck.Wpf
             bool sky = Sky;
             if (string.IsNullOrEmpty(path)) return Task.CompletedTask;
 
+            HeavyRunGate gate = _gate;
+            CancellationToken ct = _ct;
+
             return RunGuardedAsync($"Masor expunerea pe {Path.GetFileName(path)}...", async () =>
             {
+                // A 24 MP raw and its preview do not decode beside another heavy run: the pick
+                // waits for the gate, and the waiting screen says so meanwhile (ADR 0061).
+                using IDisposable lease = await EnterGateAsync(gate, ct).ConfigureAwait(true);
+                ct.ThrowIfCancellationRequested();
+
                 var text = new StringWriter();
                 var outcome = await Task.Run(() =>
                 {
@@ -207,7 +220,7 @@ namespace FlatCheck.Wpf
                     // withPreview: only the window shows the preview, so only it decodes it. The
                     // console and the other modes do not pay for it.
                     return ExposureRun.Execute(path, null, null, sky, text, withPreview: true);
-                }, _ct).ConfigureAwait(true);
+                }, ct).ConfigureAwait(true);
 
                 Report = text.ToString();
                 Populate(outcome.Result);
@@ -367,6 +380,7 @@ namespace FlatCheck.Wpf
         {
             base.Reset();
             _session = null;
+            _gate = null;
             Files.Clear();
             _selected = null;
             Raise(nameof(Selected));

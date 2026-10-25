@@ -82,7 +82,7 @@ namespace FlatCheck.Wpf
     {
         SirilSession _session;
         CancellationToken _ct;
-        Func<Task> _waitIdle;
+        HeavyRunGate _gate;
         readonly Func<string, bool> _confirm;
         readonly ProfileCatalog _catalog;
         /// <summary>A file's metadata without pixels; in the tests, a made-up frame in place of a
@@ -396,13 +396,13 @@ namespace FlatCheck.Wpf
         /// starts the prefill in the background; it writes nothing.</summary>
         /// <param name="session">The folder just opened.</param>
         /// <param name="ct">The folder's token.</param>
-        /// <param name="waitIdle">Awaits the opening chain before a write or a comparison; null
-        /// runs at once.</param>
-        internal void Attach(SirilSession session, CancellationToken ct, Func<Task> waitIdle = null)
+        /// <param name="gate">The window's heavy-run gate, taken around a write or a comparison;
+        /// null runs at once.</param>
+        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate = null)
         {
             _session = session;
             _ct = ct;
-            _waitIdle = waitIdle;
+            _gate = gate;
             Source = session.FlatMasterPath ?? "";
             Target = session.SyntheticMasterPath ?? "";
             CanRun = session.FlatMasterPath != null;
@@ -575,7 +575,7 @@ namespace FlatCheck.Wpf
             await RunGuardedAsync("Scriu flatul sintetic...", async () =>
             {
                 RaiseCommands();
-                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                using IDisposable lease = await EnterGateAsync(_gate, ct).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
                 ProfileSources sources = await EnsureProfilesAsync().ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
@@ -651,7 +651,7 @@ namespace FlatCheck.Wpf
             await RunGuardedAsync("Compar masterul cu flatul sintetic...", async () =>
             {
                 RaiseCommands();
-                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                using IDisposable lease = await EnterGateAsync(_gate, ct).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
                 var text = new StringWriter();
                 if (reportSoFar != null) text.Write(reportSoFar);
@@ -731,7 +731,7 @@ namespace FlatCheck.Wpf
         {
             base.Reset();
             _session = null;
-            _waitIdle = null;
+            _gate = null;
             Source = "";
             Target = "";
             CanRun = false;

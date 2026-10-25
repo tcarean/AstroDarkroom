@@ -206,10 +206,15 @@ a library extraction and not a copy is ADR 0011.
     `PreviewChannelNote` / `ScreenGap` (the raw-vs-screen table and its explanation) and
     `VerdictWord` / `Advice` / `ChannelsSummary` / `ChannelOrderNote` / `HistogramCaption`
     (the Expo tab's verdict card and caption; `Advice` is the console's `VerdictLines`, the
-    one verdict tree, laid out as a head line and a paragraph), `LightReport.FieldText` /
+    one verdict tree, laid out as a head line and a paragraph, and on a file that is not a
+    raw flat the console's `NotRawReasons` and typical cause, each reason one paragraph, with
+    only the way out the window's; `ChannelsSummary` takes its figure from the same
+    `ChannelMedianPct` as the console's channel rows), `LightReport.FieldText` /
     `FieldWarning` / `TooWideText` and `LightSeriesReport.CorrelationValue` / `ReasonsText`
-    (the End to end tab's field line, refusal and reasons: the console's lines joined, the
-    Ratio tab named where the console names `--ratio`), and
+    (the End to end tab's field line, refusal and reasons: `FieldText` is the console's
+    `FieldValue` unpadded, the other lines joined into paragraphs, the Ratio tab named where
+    the console names `--ratio`, and the focal-length-only note said without the console's
+    `--fov` way out), and
     `StructureReport.CornerShares` / `VignetteNote` / `CentroidNote` (the notes under the
     Structure and Ratio rows, through the console's ratios) - all window-only, like `MapScaleLabel`,
     and for the same reason. `StructureReport` also owns the profile block: `ProfileRows`,
@@ -313,7 +318,9 @@ a library extraction and not a copy is ADR 0011.
     until the Structure tab needed the same list; `MainViewModel` builds it and hands it
     to both, and a `Func<string, LoadedFrame>` beside it lets the tests put a fabricated
     raw in place of a file in `flats/`.
-  - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error) -
+  - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error, and
+    `EnterGateAsync`, the waiting text around the gate), `HeavyRunGate` (the one gate every
+    heavy run takes, ADR 0061; `MainViewModel` owns it) -
     `SyntheticTabViewModel` being the seventh, with `LensRow` (a public row over an internal
     `LensChoice`) and `SyntheticGuideViewModel` (the sources panel, collapsed by default) -
     plus `ScriptChoiceViewModel` (a Siril script chosen from Siril's list: default, blocker,

@@ -123,8 +123,24 @@ ADRs do not spell out:
 nothing, starts empty and documents itself before it can be used, the `pp_flat*.fit` trap at
 both layers (the candidate list, then the file dialogs), `RatioPattern` and why its text
 properties are instance properties. It is not in the opening chain; a pair picked while the
-chain still runs waits for it through the same `WhenIdleAsync` seam as Netezire, Sintetic and
-Split (R-082), so its two masters never load beside the structure run's.
+chain still runs, or while another tab computes, waits for the one `HeavyRunGate` every heavy
+run takes (ADR 0061, R-082), so its two masters never load beside anyone else's.
+
+**One gate for every heavy run.** `MainViewModel` owns the `HeavyRunGate` and hands it to
+every tab's `Attach`; `RunChainAsync` holds it from the structure run to the end of the series
+(one lease, so a click during the chain waits for the whole chain), and each click-run takes it
+around its computation through `TabViewModel.EnterGateAsync`, in a `using`: Ratio, Expo,
+Histogram, Netezire (run and proposal), Sintetic (write and comparison). The Split, which has
+no overlay, waits for the gate before its copies start and holds it only around its analysis
+of the part masters, not through the Siril runs. The gate wait takes the run's own token, so a
+run superseded or cancelled while queued leaves the queue without computing; the chain's wait,
+cancelled by another folder, returns quietly. While another run holds the gate, the waiting
+screen's first line is `SessionMessages.WaitingForOpeningChain()`, not the run's own message,
+which would claim work that has not begun: `EnterGateAsync` swaps the line in when the gate is
+held at entry and puts the run's message back once in, and only for the latest run (the
+generation counter of `RunGuardedAsync`), so a superseded run waiting beside the new one does
+not write over its message; the Split puts the same text in its phase line. A tab attached
+without a gate (the tests) runs at once.
 
 **The Histogram tab lists the flat master first, then the smoothed master when it exists,
 then `flats/`, and lets a click interrupt a click.** The list and its order, the master not
@@ -134,7 +150,7 @@ preselected and not run at open, the smoothed master as a third kind of row (chi
 
 - The master is there for one question - did what the individual frames show average out? -
   and it is not run at folder open because the Structure run is reading that same 24 MP file
-  at that moment. The smoothed one is there for the other question - what did the smoothing
+  at that moment; a click on it during the chain waits for the gate (R-085). The smoothed one is there for the other question - what did the smoothing
   take out, what did it leave - and has its own note under the picture
   (`HistEqReport.SmoothedVersusMaster`, which also says why a smoothed flat looks *noisier*
   under a rank-based transform).
@@ -153,7 +169,7 @@ preselected and not run at open, the smoothed master as a third kind of row (chi
   bitmap made on the UI thread straight from the full-resolution raster (`RasterBitmaps`), with
   no PNG in between, and cached per chip.
 
-**The Netezire tab runs on a button and never on open**, awaits the structure run, writes
+**The Netezire tab runs on a button and never on open**, waits for the gate, writes
 after the numbers are on screen, asks about an existing file, and its output never becomes the
 session's master: ADR 0036, with ADR 0033 for why the smoothed stack still matches
 `RatioPattern`. Mechanics the ADR does not spell out:

@@ -50,7 +50,7 @@ namespace FlatCheck.Wpf
     {
         SirilSession _session;
         CancellationToken _ct;
-        Func<Task> _waitIdle;
+        HeavyRunGate _gate;
         readonly Func<string, bool> _confirm;
 
         string _source = "";
@@ -138,7 +138,7 @@ namespace FlatCheck.Wpf
             {
                 Run.RaiseCanExecuteChanged();
                 Advise.RaiseCanExecuteChanged();
-                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                using IDisposable lease = await EnterGateAsync(_gate, ct).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
 
                 var text = new StringWriter();
@@ -283,13 +283,13 @@ namespace FlatCheck.Wpf
         /// it computes nothing.</summary>
         /// <param name="session">The folder just opened.</param>
         /// <param name="ct">The folder's token.</param>
-        /// <param name="waitIdle">Awaits the opening chain before a run; null runs at
+        /// <param name="gate">The window's heavy-run gate, taken around a run; null runs at
         /// once.</param>
-        internal void Attach(SirilSession session, CancellationToken ct, Func<Task> waitIdle = null)
+        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate = null)
         {
             _session = session;
             _ct = ct;
-            _waitIdle = waitIdle;
+            _gate = gate;
             Source = session.FlatMasterPath ?? "";
             Target = session.SmoothedMasterPath ?? "";
             CanRun = session.FlatMasterPath != null;
@@ -312,7 +312,7 @@ namespace FlatCheck.Wpf
             await RunGuardedAsync("Netezesc masterul de flat...", async () =>
             {
                 Run.RaiseCanExecuteChanged();
-                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                using IDisposable lease = await EnterGateAsync(_gate, ct).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
 
                 var text = new StringWriter();
@@ -421,7 +421,7 @@ namespace FlatCheck.Wpf
         {
             base.Reset();
             _session = null;
-            _waitIdle = null;
+            _gate = null;
             Source = "";
             Target = "";
             CanRun = false;

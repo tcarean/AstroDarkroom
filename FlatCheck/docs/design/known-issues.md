@@ -44,9 +44,12 @@ correctness bugs that used to live here were fixed in phase 8.
    `StructureAnalyzer` - they fed the Python profile panel, which this port dropped.
 7. **Memory is still heavy**, though phase 8 halved the worst of it: `Percentile` now
    has a `double[]` overload, so taking the full-resolution median no longer copies
-   twice. Measured peak was ~330 MB on a 3000x2000 frame before that change; a 24 MP
-   D3300 frame still runs into the high hundreds of MB. Runtime is fine
-   (1.3 s structure / 0.6 s expo / 0.5 s light on 3000x2000).
+   twice. Measured peak was ~330 MB on a 3000x2000 frame before that change. On the 24 MP
+   D3300 masters, measured 2026-10-25 as peak working set of one test host process (ADR 0061
+   holds the table): 809 MB structure, 729 MB histeq, 1079 MB a six-frame light series,
+   1113 MB ratio, 1135 MB smooth, 1249 MB expo with the preview decoded; two runs at once add
+   up (1.3-2.2 GB), which is why the window lets one heavy run compute at a time. Runtime is
+   fine (1.3 s structure / 0.6 s expo / 0.5 s light on 3000x2000; 1-5 s per run on 24 MP).
 8. **A raw whose only preview is full-size costs a decode of it.** ADR 0024 holds the figures
    (~9 MB and ~0.5 s with `TargetSize` on a 6000x4000 preview, because the time is spent in
    entropy decoding whatever the target) and the copy of the chosen preview's bytes that every

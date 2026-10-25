@@ -102,7 +102,7 @@ public class SplitTabTests
     {
         var vm = new SplitTabViewModel(() => FakeInstall(ws, cli, scriptText), gui ?? (() => false), runner,
                                        clock: () => When, tempRootFor: _ => Path.Combine(ws.Dir, "temp"));
-        vm.Attach(f.Session, CancellationToken.None, () => Task.CompletedTask);
+        vm.Attach(f.Session, CancellationToken.None, new HeavyRunGate());
         return vm;
     }
 

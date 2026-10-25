@@ -134,7 +134,7 @@ namespace FlatCheck.Wpf
 
         SirilSession _session;
         CancellationToken _ct;
-        Func<Task> _waitIdle;
+        HeavyRunGate _gate;
         CancellationTokenSource _run;
 
         int _frameCount;
@@ -316,17 +316,32 @@ namespace FlatCheck.Wpf
 
         // ------------------------------------------------------------------ the attaching
 
+        /// <summary>Enters the window's heavy-run gate with the phase line saying so while another
+        /// run holds it: the tab has no busy overlay, so the phase line says what the overlay
+        /// would.</summary>
+        /// <param name="gate">The window's gate; null means there is none.</param>
+        /// <param name="ct">The run's token; a cancellation while queued throws
+        /// <see cref="OperationCanceledException"/>.</param>
+        /// <returns>The lease to dispose when the heavy work is over, or null without a
+        /// gate.</returns>
+        async Task<IDisposable> EnterGateForPhaseAsync(HeavyRunGate gate, CancellationToken ct)
+        {
+            if (gate == null) return null;
+            if (gate.IsHeld) Phase = SessionMessages.WaitingForOpeningChain();
+            return await gate.EnterAsync(ct).ConfigureAwait(true);
+        }
+
         /// <summary>Counts the session's frames, reads the master's sensor size and attaches the
         /// script choice, which refreshes the tab once; it starts nothing.</summary>
         /// <param name="session">The folder just opened.</param>
         /// <param name="ct">The folder's token, to which the run's own token is linked.</param>
-        /// <param name="waitIdle">Awaits the opening chain before a run; null runs at
-        /// once.</param>
-        internal void Attach(SirilSession session, CancellationToken ct, Func<Task> waitIdle)
+        /// <param name="gate">The window's heavy-run gate: waited for before the copies start
+        /// and held around the analysis of the part masters; null runs at once.</param>
+        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate)
         {
             _session = session;
             _ct = ct;
-            _waitIdle = waitIdle;
+            _gate = gate;
             HasResult = false;
             ClearError();
             FrameCount = session.FlatFrames().Count;
@@ -415,7 +430,7 @@ namespace FlatCheck.Wpf
             }
             string script = Script.SelectedPath;
             string scriptName = Script.SelectedName;
-            Func<Task> waitIdle = _waitIdle;
+            HeavyRunGate gate = _gate;
 
             _run = CancellationTokenSource.CreateLinkedTokenSource(_ct);
             CancellationToken ct = _run.Token;
@@ -434,7 +449,11 @@ namespace FlatCheck.Wpf
 
             try
             {
-                if (waitIdle != null) await waitIdle().ConfigureAwait(true);
+                // Nothing heavy runs when the copies start (the opening chain, say), as before
+                // the gate; the gate is not held through the Siril runs, which are other
+                // processes, so the other tabs stay usable meanwhile. The analysis below takes it
+                // again, around the part masters (ADR 0061).
+                (await EnterGateForPhaseAsync(gate, ct).ConfigureAwait(true))?.Dispose();
                 ct.ThrowIfCancellationRequested();
 
                 var masters = new List<string>(parts);
@@ -477,6 +496,7 @@ namespace FlatCheck.Wpf
                     Progress = (double)(done + 2) / totalSteps;
                 }
 
+                using IDisposable lease = await EnterGateForPhaseAsync(gate, ct).ConfigureAwait(true);
                 Phase = SessionMessages.SplitPhaseAnalyse(parts);
                 StructureQuery query = null;
                 string rawPath = session.ReferenceRawPath;

@@ -28,6 +28,24 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The window's Expo and End to end tabs share more of their sentences with the console (the
+  review of 2026-10-25 after the documentation backfill's area 4): the "not a raw flat"
+  reasons on the Expo card are now the console's lines, each one paragraph (`--expo are
+  nevoie de...`, where the card used to say `Modul are nevoie de...`), only the way out
+  staying the window's; the End to end field line is the console's value unpadded (`30.0
+  grade  (WCS)`, `nedeterminat (FOCALLEN=20mm, fara marimea pixelului)`, `necunoscut
+  (headerul nu da nici focala, nici scara)`), and a refusal judged from the focal length
+  alone now says, as the console does, that the decision assumed the largest plausible
+  sensor (R-083). The console texts are unchanged.
+- The window lets one heavy run compute at a time, whatever is clicked (ADR 0061, R-081): the
+  analyses started by opening a folder and every run a click starts (Ratio, Expo, Histogram,
+  Netezire, Sintetic, the Split's analysis) take one gate, so a Histogram or Expo pick during
+  the opening chain waits for it as a Ratio pair already did, two clicks wait for each other,
+  and a new folder waits for a run of the old one still computing. Measured 2026-10-25 on the
+  24 MP masters: 0.7-1.25 GB of peak working set per run alone, 1.3-2.2 GB for two at once.
+- While a run waits its turn, the waiting screen says so (`Astept sa se termine analizele
+  pornite la deschiderea folderului...`) instead of naming work that has not begun; the run's
+  own message takes over once it starts (R-082, R-084, R-085).
 - The FITS reader checks the file's magic: a file that does not begin with the `SIMPLE` card
   fails with `FITS: fisierul nu incepe cu SIMPLE.` in both reads, the full load and the
   metadata-only one (`ImageLoader.LoadInfo`), and a header cut before `END` fails in both with

@@ -37,6 +37,7 @@
 // fields, chosen on purpose.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
@@ -142,6 +143,45 @@ namespace FlatCheck.Wpf
             {
                 if (gen == _generation) EndBusy();
             }
+        }
+
+        /// <summary>
+        /// Enters the window's heavy-run gate before a run a click started (ADR 0061), with the
+        /// waiting screen saying so: while another run holds the gate, the first line reads
+        /// <see cref="SessionMessages.WaitingForOpeningChain"/> instead of the run's own message,
+        /// which would claim work that has not begun; the run's message comes back once it is
+        /// in. A free gate, or no gate at all, shows nothing. Of two runs waiting together, only
+        /// the latest one puts its message back (the generation of <see cref="RunGuardedAsync"/>),
+        /// so a superseded run does not write over the new one's.
+        /// </summary>
+        /// <param name="gate">The window's gate; null means there is none and the run starts at
+        /// once.</param>
+        /// <param name="ct">The run's token; a cancellation while queued throws
+        /// <see cref="OperationCanceledException"/>, which <see cref="RunGuardedAsync"/>
+        /// takes as a cancelled run.</param>
+        /// <returns>The lease on the gate, to dispose when the heavy work is over; a no-op one
+        /// without a gate.</returns>
+        private protected async Task<IDisposable> EnterGateAsync(HeavyRunGate gate, CancellationToken ct)
+        {
+            if (gate == null) return NoLease.Instance;
+            if (!gate.IsHeld) return await gate.EnterAsync(ct).ConfigureAwait(true);
+
+            int gen = _generation;
+            string message = BusyMessage;
+            BusyMessage = SessionMessages.WaitingForOpeningChain();
+            IDisposable lease = await gate.EnterAsync(ct).ConfigureAwait(true);
+            if (gen == _generation) BusyMessage = message;
+            return lease;
+        }
+
+        /// <summary>What <see cref="EnterGateAsync"/> hands back without a gate: nothing to
+        /// release.</summary>
+        sealed class NoLease : IDisposable
+        {
+            internal static readonly NoLease Instance = new();
+
+            /// <inheritdoc/>
+            public void Dispose() { }
         }
 
         /// <summary>
