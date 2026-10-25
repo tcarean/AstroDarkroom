@@ -19,7 +19,7 @@
 //
 // "Because" is not optional. A recommendation without a figure and without a threshold cannot
 // be checked, and this tool exists precisely so that it can be checked. The window shows it as
-// small text under the recommendation; the console as "fiindca:".
+// small text under the recommendation; the console as "because:" ("fiindca:" in Romanian).
 
 using System;
 
@@ -27,7 +27,8 @@ namespace AstroPhotoAnalyzer
 {
     /// <summary>
     /// How serious a recommendation is. Monotone: Ok &lt; Attention &lt; Problem (printed "OK",
-    /// "ATENTIE", "PROBLEMA"). A section's verdict and the overall verdict are the maximum.
+    /// "CAUTION", "PROBLEM", in Romanian "OK", "ATENTIE", "PROBLEMA"). A section's verdict and
+    /// the overall verdict are the maximum.
     /// </summary>
     internal enum Verdict { Ok = 0, Attention = 1, Problem = 2 }
 
@@ -62,15 +63,15 @@ namespace AstroPhotoAnalyzer
         /// <summary>A recommendation with its evidence.</summary>
         /// <param name="topic">The report's section it belongs to.</param>
         /// <param name="verdict">How serious it is.</param>
-        /// <param name="text">One sentence, Romanian: what to do.</param>
+        /// <param name="text">One sentence, in the interface language: what to do.</param>
         /// <param name="because">
-        /// The metric and the threshold, Romanian; never null, empty or blank: the constructor
-        /// throws an <see cref="ArgumentException"/> for one.
+        /// The metric and the threshold, in the interface language; never null, empty or blank:
+        /// the constructor throws an <see cref="ArgumentException"/> for one.
         /// </param>
         internal Recommendation(Topic topic, Verdict verdict, string text, string because)
         {
             if (string.IsNullOrWhiteSpace(because))
-                throw new ArgumentException("o recomandare fara 'fiindca' nu e o recomandare");
+                throw new ArgumentException(Tr.Pick("a recommendation without a 'because' is not a recommendation", "o recomandare fara 'fiindca' nu e o recomandare"));
             Topic = topic; Verdict = verdict; Text = text; Because = because;
         }
     }
@@ -80,26 +81,29 @@ namespace AstroPhotoAnalyzer
     {
         /// <summary>A verdict as the report prints it.</summary>
         /// <param name="v">The verdict; a value outside the enum throws.</param>
-        /// <returns>"OK", "ATENTIE" or "PROBLEMA".</returns>
+        /// <returns>"OK", "CAUTION" or "PROBLEM" ("OK", "ATENTIE" or "PROBLEMA").</returns>
         internal static string Label(Verdict v) => v switch
         {
             Verdict.Ok => "OK",
-            Verdict.Attention => "ATENTIE",
-            Verdict.Problem => "PROBLEMA",
+            Verdict.Attention => Tr.Pick("CAUTION", "ATENTIE"),
+            Verdict.Problem => Tr.Pick("PROBLEM", "PROBLEMA"),
             _ => throw new ArgumentOutOfRangeException(nameof(v)),
         };
 
         /// <summary>A section's title, as the report numbers it and the window shows it.</summary>
         /// <param name="t">The section; a value outside the enum throws.</param>
-        /// <returns>The Romanian title, for example "Formatul de trimis".</returns>
+        /// <returns>
+        /// The title in the interface language, for example "The format to send" ("Formatul de
+        /// trimis").
+        /// </returns>
         internal static string Title(Topic t) => t switch
         {
-            Topic.Format => "Formatul de trimis",
-            Topic.Background => "Fundalul si hartia",
-            Topic.Colour => "Culoarea fundalului si gradientele",
-            Topic.Size => "Marimea printului",
-            Topic.Denoise => "Denoise pentru versiunea de print",
-            Topic.Warnings => "Avertismente",
+            Topic.Format => Tr.Pick("The format to send", "Formatul de trimis"),
+            Topic.Background => Tr.Pick("The background and the paper", "Fundalul si hartia"),
+            Topic.Colour => Tr.Pick("The background colour and the gradients", "Culoarea fundalului si gradientele"),
+            Topic.Size => Tr.Pick("The size of the print", "Marimea printului"),
+            Topic.Denoise => Tr.Pick("Denoise for the print version", "Denoise pentru versiunea de print"),
+            Topic.Warnings => Tr.Pick("Warnings", "Avertismente"),
             _ => throw new ArgumentOutOfRangeException(nameof(t)),
         };
     }

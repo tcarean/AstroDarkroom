@@ -1,0 +1,103 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+File: <TEMP>\mono.png
+  PNG 8-bit mono, 300 x 300 (0.1 MP), Deflate, 0.0 MB, no ICC profile
+  Medium: baryta (Dmax 2.4, paper black L* 3.6). Viewing distance: 1.5 x the diagonal.
+
+VERDICT: CAUTION
+
+1. The format to send  [OK]
+   - Send an 8-bit LZW TIFF (0.0 MB). The source is already 8-bit; there is nothing to convert.
+     because: the source has 8 bits per sample
+   - If the lab accepts only JPEG: q100, 4:4:4 (0.0 MB).
+     because: mean error 0.08, max 1.0 levels; 0.0 % of the samples with an error > 2, at a mean level of 0
+
+2. The background and the paper  [OK]
+   - The background is print-safe as it is; you can go down to 0.15 (the dust at L* 15.1, the sky at L* 15.2).
+     because: the dust (the darkest 1 % of the sky patches (no dust patch); no WCS) at L* 26.8; paper black L* 3.6 at Dmax 2.4; the sky (the median of the sky patches (classes relative to the modelled sky)) at L* 27.0; the background level 0.251; the dust reaches paper black from Dmax 1.3; the visibility threshold L* 15, under it 0.0 % of the pixels
+
+3. The background colour and the gradients  [OK]
+   - A mono image: there is no cast to measure.
+     because: a single plane
+
+4. The size of the print  [CAUTION]
+   ! Without stars the real resolution is not measured; only the pixel grid is judged: without a given distance the convention of 180 dpi applies (the grid invisible from ~0.5 m, when you step closer), and not even the smallest width of the list (50 x 50 cm, 15 dpi) reaches the threshold. It is a limit of the file, not of the detail - a soft nebula may need much less - so no size is recommended. Give the viewing distance, so that the threshold is the physical one, not the convention.
+     because: 16 stars measured (minimum 20); at 50 cm the pixel pitch is 1.67 mm, invisible from 5.75 m; threshold 180 dpi (convention: a pitch of 0.14 mm, invisible from 0.49 m)
+
+5. Denoise for the print version  [OK]
+   - The residual noise is exactly where it should be for print.
+     because: median sigma 1.05 LSB on 123 smooth tiles (10 % 1.03, minimum 1.02); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.15 the noise shrinks by ~0.82 x (the slope of the curve at the background), to ~0.86 LSB
+
+6. Warnings  [CAUTION]
+   ! No ICC profile: the lab will assume sRGB. Export with the sRGB profile embedded, so that nobody assumes anything.
+     because: no profile in the file; the tool measured assuming sRGB
+
+Appendix A. Tones
+  channel means (0..255): 63.9
+  under level 32: 0.0 %   under 64: 39.6 %
+  reference channel percentiles (0..255): p0.1=61.0  p1.0=61.0  p50.0=64.0  p90.0=65.0  p99.0=66.0  p99.9=106.5  p100.0=141.0
+  median L* 27.1; under paper black (L* 3.6): 0.0 %; under L* 15: 0.0 %; over L* 50: 0.1 %
+
+Appendix B. Background simulation (from level 0.251; a gamma curve on every channel)
+  target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
+  0.05                 2.167       3.5      3.5      81.5 %     99.9 %        0.0 %
+  0.06                 2.035       4.3      4.4       0.0 %     99.8 %        0.0 %   sky under L* 15
+  0.07                 1.924       5.3      5.3       0.0 %     99.8 %        0.0 %   sky under L* 15
+  0.08                 1.827       6.3      6.4       0.0 %     99.8 %        0.0 %   sky under L* 15
+  0.09                 1.742       7.5      7.6       0.0 %     99.8 %        0.0 %   sky under L* 15
+  0.10                 1.666       8.8      8.9       0.0 %     99.7 %        0.0 %   sky under L* 15
+  0.11                 1.597      10.1     10.2       0.0 %     99.6 %        0.0 %   sky under L* 15
+  0.12                 1.534      11.4     11.5       0.0 %     99.6 %        0.0 %   sky under L* 15
+  0.13                 1.476      12.6     12.7       0.0 %     99.5 %        0.0 %   sky under L* 15
+  0.14                 1.422      13.8     14.0       0.0 %     99.1 %        0.0 %   sky under L* 15
+  0.15 *               1.372      15.1     15.2       0.0 %     40.0 %        0.0 %   print-safe
+  0.16                 1.326      16.3     16.4       0.0 %      0.1 %        0.0 %   print-safe
+  0.17                 1.282      17.5     17.6       0.0 %      0.0 %        0.0 %   print-safe
+  0.18                 1.240      18.7     18.8       0.0 %      0.0 %        0.0 %   print-safe
+  0.19                 1.201      19.8     20.0       0.0 %      0.0 %        0.0 %   print-safe
+  0.20                 1.164      21.0     21.1       0.0 %      0.0 %        0.0 %   print-safe
+  0.251 as is          1.000      26.8     27.0       0.0 %      0.0 %        0.1 %   print-safe
+  * = recommended: the lowest print-safe target - the dust on paper black and the sky at L* 15 or above
+  dust = the darkest 1 % of the sky patches (no dust patch) (no WCS); sky = the median of the sky patches (classes relative to the modelled sky); pure black = 32 px patches under paper black (L* 3.6 at Dmax 2.4)
+  classes: dust 0.0 %, sky 81.5 %, nebula 9.9 % (over the modelled sky by 0.3 L*, 4 sigma of the sky), bright nebula 7.4 % (over 0.5 L*, the Otsu threshold), peaks 1.2 %
+  the exact target of the dust on black: 0.051 at Dmax 2.4 (0.062 at Dmax 2.3, <= 0.05 at Dmax 2.5); the dust reaches paper black from Dmax 1.3; the sky reaches the visibility threshold L* 15 at 0.149
+
+Appendix C. Export
+  TIFF 8-bit LZW: 0.0 MB
+  JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level
+  q100           0.0 MB       0.084       1.0   1.00    1.00     0.0 %             0
+  q95            0.0 MB       0.680       4.0   2.00    3.00     0.8 %            65
+  q90            0.0 MB       0.765       7.0   3.00    4.00     1.5 %            66
+  plateau: no clean sky tiles (0)
+
+Appendix D. Resolution and size
+  stars: 16 measured - too few for a FWHM
+  regions: centre 3.09 px (6); upper-left corner n/a (1); upper-right corner n/a (1); lower-left corner n/a (0); lower-right corner n/a (0)
+  sizes for 300 x 300 px:
+   width cm     height   dpi   star mm    point from       dist. used   outer frame cm
+      50          50.0    15       n/a         n/a m           1.06 m   70 x 70
+      60          60.0    13       n/a         n/a m           1.27 m   80 x 80
+      70          70.0    11       n/a         n/a m           1.48 m   90 x 90
+      80          80.0    10       n/a         n/a m           1.70 m   100 x 100
+      90          90.0     8       n/a         n/a m           1.91 m   110 x 110
+     100         100.0     8       n/a         n/a m           2.12 m   120 x 120
+  no recommended row: without stars the detail is not measured, only the pixel grid (threshold 180 dpi) - a limit of the file, not of the image
+
+Appendix E. Background colour
+  the background, one channel (0..255): 63.0
+  upper-left corner  64.0                   delta +1.0
+  upper-right corner 64.0                   delta +1.0
+  lower-left corner  64.0                   delta +1.0
+  lower-right corner 64.0                   delta +1.0
+  top edge           64.0                   delta +1.0
+  bottom edge        64.0                   delta +1.0
+  left edge          64.0                   delta +1.0
+  right edge         64.0                   delta +1.0
+
+Appendix F. Parameters
+  medium baryta, Dmax 2.4; widths 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, frame 3 cm
+  distance natural; target ratio native; target background none (grid 0.05..0.20); WCS none; seed 0
+
+--- stderr ---
+--- exit 2

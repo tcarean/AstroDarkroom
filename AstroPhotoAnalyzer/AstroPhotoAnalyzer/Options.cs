@@ -105,11 +105,15 @@ namespace AstroPhotoAnalyzer
         /// <param name="args">The arguments, without the program's name; not null.</param>
         /// <returns>
         /// Help set when there are no arguments or -h or --help is among them; otherwise Error
-        /// set to the first problem, a Romanian sentence without the "EROARE: " prefix; otherwise
+        /// set to the first problem, a sentence in the interface language without the "ERROR: "
+        /// prefix; otherwise
         /// the image and the values of the flags given.
         /// </returns>
         internal static Options Parse(string[] args)
         {
+            // --lang is AnalyzerCli's, read before this parse so that its messages are already in
+            // the language chosen (R-150); here it is as if it were not typed.
+            args = UiLanguageArgs.Strip(args);
             var o = new Options();
             if (args.Length == 0 || args.Contains("-h") || args.Contains("--help"))
             {
@@ -127,10 +131,10 @@ namespace AstroPhotoAnalyzer
                 if (ValueFlags.Contains(a))
                 {
                     if (i + 1 >= args.Length)
-                        return o.Fail($"lipseste valoarea pentru {a}");
+                        return o.Fail(Tr.Pick($"the value for {a} is missing", $"lipseste valoarea pentru {a}"));
                     string v = args[i + 1];
                     if (BoolFlags.Contains(v) || ValueFlags.Contains(v))
-                        return o.Fail($"{a} asteapta o valoare, dar a primit flagul {v}");
+                        return o.Fail(Tr.Pick($"{a} expects a value, but got the flag {v}", $"{a} asteapta o valoare, dar a primit flagul {v}"));
                     i++;
 
                     switch (a)
@@ -138,76 +142,77 @@ namespace AstroPhotoAnalyzer
                         case "--medium":
                             string m = v.ToLowerInvariant();
                             if (Array.IndexOf(Media, m) < 0)
-                                return o.Fail($"--medium asteapta {string.Join(", ", Media)}; a primit '{v}'");
+                                return o.Fail(Tr.Pick($"--medium expects {string.Join(", ", Media)}; got '{v}'", $"--medium asteapta {string.Join(", ", Media)}; a primit '{v}'"));
                             o.Medium = m; break;
                         case "--dmax":
                             if (!TryNum(v, out var dmax) || dmax <= 0 || dmax > Thresholds.DmaxMax)
-                                return o.Fail($"--dmax asteapta un numar intre 0 si {Fmt.F0(Thresholds.DmaxMax)}, a primit '{v}'");
+                                return o.Fail(Tr.Pick($"--dmax expects a number between 0 and {Fmt.F0(Thresholds.DmaxMax)}, got '{v}'", $"--dmax asteapta un numar intre 0 si {Fmt.F0(Thresholds.DmaxMax)}, a primit '{v}'"));
                             o.Dmax = dmax; break;
                         case "--distance":
                             if (!TryNum(v, out var dist) || dist <= 0)
-                                return o.Fail($"--distance asteapta metri, un numar pozitiv, a primit '{v}'");
+                                return o.Fail(Tr.Pick($"--distance expects metres, a positive number, got '{v}'", $"--distance asteapta metri, un numar pozitiv, a primit '{v}'"));
                             o.Distance = dist; break;
                         case "--sizes":
                             var sizes = new List<double>();
                             foreach (string s in v.Split(',', StringSplitOptions.RemoveEmptyEntries))
                             {
                                 if (!TryNum(s.Trim(), out var cm) || cm <= 0)
-                                    return o.Fail($"--sizes asteapta latimi in cm separate prin virgula, a primit '{v}'");
+                                    return o.Fail(Tr.Pick($"--sizes expects widths in cm separated by commas, got '{v}'", $"--sizes asteapta latimi in cm separate prin virgula, a primit '{v}'"));
                                 sizes.Add(cm);
                             }
-                            if (sizes.Count == 0) return o.Fail("--sizes asteapta cel putin o latime");
+                            if (sizes.Count == 0) return o.Fail(Tr.Pick("--sizes expects at least one width", "--sizes asteapta cel putin o latime"));
                             o.Sizes = sizes.ToArray(); break;
                         case "--aspect":
                             if (!TryAspect(v, out var asp))
-                                return o.Fail($"--aspect asteapta latime:inaltime (ex. 50:35), a primit '{v}'");
+                                return o.Fail(Tr.Pick($"--aspect expects width:height (e.g. 50:35), got '{v}'", $"--aspect asteapta latime:inaltime (ex. 50:35), a primit '{v}'"));
                             o.Aspect = asp; break;
                         case "--target-bg":
                             // The range and the rounding are the core's to judge, with the same
                             // message as the window's (R-023).
                             if (!TryNum(v, out var bg))
-                                return o.Fail($"--target-bg asteapta un numar strict intre 0 si 1, a primit '{v}'");
+                                return o.Fail(Tr.Pick($"--target-bg expects a number strictly between 0 and 1, got '{v}'", $"--target-bg asteapta un numar strict intre 0 si 1, a primit '{v}'"));
                             string bgError = Parameters.TargetBackgroundError(bg);
                             if (bgError != null) return o.Fail("--target-bg: " + bgError);
                             o.TargetBg = bg; break;
                         case "--passepartout":
                             if (!TryNum(v, out var pp) || pp < 0)
-                                return o.Fail($"--passepartout asteapta cm, un numar >= 0, a primit '{v}'");
+                                return o.Fail(Tr.Pick($"--passepartout expects cm, a number >= 0, got '{v}'", $"--passepartout asteapta cm, un numar >= 0, a primit '{v}'"));
                             o.PassepartoutCm = pp; break;
                         case "--frame":
                             if (!TryNum(v, out var fr) || fr < 0)
-                                return o.Fail($"--frame asteapta cm, un numar >= 0, a primit '{v}'");
+                                return o.Fail(Tr.Pick($"--frame expects cm, a number >= 0, got '{v}'", $"--frame asteapta cm, un numar >= 0, a primit '{v}'"));
                             o.FrameCm = fr; break;
                         case "--wcs":
-                            if (v.Length == 0) return o.Fail("--wcs asteapta calea unui FITS plate-solved");
+                            if (v.Length == 0) return o.Fail(Tr.Pick("--wcs expects the path of a plate-solved FITS", "--wcs asteapta calea unui FITS plate-solved"));
                             o.Wcs = v; break;
                         case "--icc":
-                            if (v.Length == 0) return o.Fail("--icc asteapta calea unui profil ICC de imprimanta");
+                            if (v.Length == 0) return o.Fail(Tr.Pick("--icc expects the path of a printer ICC profile", "--icc asteapta calea unui profil ICC de imprimanta"));
                             o.Icc = v; break;
                         case "-o":
                         case "--out":
-                            if (v.Length == 0) return o.Fail("-o asteapta calea fisierului de raport");
+                            if (v.Length == 0) return o.Fail(Tr.Pick("-o expects the path of the report file", "-o asteapta calea fisierului de raport"));
                             o.Out = v; break;
                     }
                     continue;
                 }
 
                 if (a.StartsWith("-"))
-                    return o.Fail($"optiune necunoscuta: {a}");
+                    return o.Fail(Tr.Pick($"unknown option: {a}", $"optiune necunoscuta: {a}"));
 
                 positional.Add(a);
             }
 
-            if (positional.Count == 0) return o.Fail("lipseste fisierul de analizat");
-            if (positional.Count > 1) return o.Fail("un singur fisier de analizat; a primit " + positional.Count);
-            if (o.Icc != null && o.Dmax.HasValue) return o.Fail("--icc si --dmax dau amandoua Dmax-ul hartiei; alege unul");
+            if (positional.Count == 0) return o.Fail(Tr.Pick("the file to analyse is missing", "lipseste fisierul de analizat"));
+            if (positional.Count > 1) return o.Fail(Tr.Pick("only one file to analyse; got ", "un singur fisier de analizat; a primit ") + positional.Count);
+            if (o.Icc != null && o.Dmax.HasValue) return o.Fail(Tr.Pick("--icc and --dmax both give the paper's Dmax; choose one", "--icc si --dmax dau amandoua Dmax-ul hartiei; alege unul"));
             o.Image = positional[0];
             return o;
         }
 
         /// <summary>Records the problem in <see cref="Error"/>.</summary>
         /// <param name="message">
-        /// The problem, a Romanian sentence without the "EROARE: " prefix AnalyzerCli adds.
+        /// The problem, a sentence in the interface language without the "ERROR: " prefix
+        /// AnalyzerCli adds.
         /// </param>
         /// <returns>This instance, for Parse to return.</returns>
         Options Fail(string message)

@@ -71,7 +71,7 @@ namespace AstroPhotoAnalyzer
         static IReadOnlyList<DarkNebula> LoadEmbedded()
         {
             using Stream s = typeof(DarkNebulaCatalogue).Assembly.GetManifestResourceStream(ResourceName)
-                ?? throw new InvalidOperationException("resursa " + ResourceName + " lipseste din nucleu");
+                ?? throw new InvalidOperationException(Tr.Pick("the resource " + ResourceName + " is missing from the core", "resursa " + ResourceName + " lipseste din nucleu"));
             using var r = new StreamReader(s);
             return Load(r);
         }
@@ -93,7 +93,7 @@ namespace AstroPhotoAnalyzer
             {
                 if (line.Length == 0 || line[0] == '#') continue;
                 string[] f = line.Split('\t');
-                if (f.Length < 5) throw new FormatException("rand de catalog cu mai putin de 5 coloane: " + line);
+                if (f.Length < 5) throw new FormatException(Tr.Pick("a catalogue row with fewer than 5 columns: ", "rand de catalog cu mai putin de 5 coloane: ") + line);
                 int ldn = int.Parse(f[0], CultureInfo.InvariantCulture);
                 double ra1950 = ParseRa(f[1]), dec1950 = ParseDec(f[2]);
                 double area = double.Parse(f[3], CultureInfo.InvariantCulture);

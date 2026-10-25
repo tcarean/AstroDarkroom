@@ -38,18 +38,18 @@ namespace AstroPhotoAnalyzer.Wpf
                 .ToList();
         }
 
-        public string Title => "Despre AstroPhotoAnalyzer";
+        public string Title => Tr.Pick("About AstroPhotoAnalyzer", "Despre AstroPhotoAnalyzer");
         public string Banner => VersionInfo.Banner;
         public string Copyright => VersionInfo.Copyright;
-        public string Tagline => "Masoara o astrofoto finita si spune cum sa fie trimisa la print.";
-        public string LicenceHeading => "LICENTA";
+        public string Tagline => Tr.Pick("Measures a finished astrophoto and says how to send it to print.", "Masoara o astrofoto finita si spune cum sa fie trimisa la print.");
+        public string LicenceHeading => Tr.Pick("LICENCE", "LICENTA");
 
         /// <summary>The GPLv3 section 5(d) notice, in a single paragraph.</summary>
         public string Warranty => string.Join(" ", RunReport.WarrantyLines);
         public string LicenseUrl => RunReport.LicenseUrl;
-        public string LicenseLinkLabel => "Textul complet al GPLv3";
-        public string ThirdPartyHeading => "COMPONENTE TERTE";
-        public string ThirdPartyLead => "Codul scris de altii pe care il leaga unealta, cu licenta fiecaruia.";
+        public string LicenseLinkLabel => Tr.Pick("The full text of the GPLv3", "Textul complet al GPLv3");
+        public string ThirdPartyHeading => Tr.Pick("THIRD-PARTY COMPONENTS", "COMPONENTE TERTE");
+        public string ThirdPartyLead => Tr.Pick("The code written by others that the tool links, each with its licence.", "Codul scris de altii pe care il leaga unealta, cu licenta fiecaruia.");
         public IReadOnlyList<ComponentRow> Components { get; }
     }
 }

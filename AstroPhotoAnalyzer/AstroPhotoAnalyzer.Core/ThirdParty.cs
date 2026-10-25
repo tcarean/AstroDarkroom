@@ -39,7 +39,7 @@ namespace AstroPhotoAnalyzer
     /// <param name="Name">
     /// The component's name, which a heading of THIRD-PARTY-NOTICES.md contains.
     /// </param>
-    /// <param name="Role">What it does in this tool, Romanian, as "Despre" shows it.</param>
+    /// <param name="Role">What it does in this tool, in the interface language, as "Despre" shows it.</param>
     /// <param name="Licence">The licence it is taken under, as "Despre" shows it.</param>
     /// <param name="Copyright">
     /// Its copyright line, or for data its authors and distributors.
@@ -68,27 +68,35 @@ namespace AstroPhotoAnalyzer
     /// </summary>
     internal static class ThirdParty
     {
-        internal static readonly IReadOnlyList<ThirdPartyComponent> Components = new[]
+        // A property, so that the roles and the licences are in the interface language in use
+        // when they are shown (ADR 0048).
+        internal static IReadOnlyList<ThirdPartyComponent> Components => new[]
         {
             new ThirdPartyComponent(
                 Name: "SixLabors.ImageSharp",
-                Role: "citirea TIFF/PNG/JPEG si encodarea JPEG pentru tabelul de compresie",
-                Licence: "Six Labors Split License 1.0 (termenii Apache 2.0 pentru software open source)",
+                Role: Tr.Pick("reading TIFF/PNG/JPEG and encoding the JPEGs of the compression table",
+                             "citirea TIFF/PNG/JPEG si encodarea JPEG pentru tabelul de compresie"),
+                Licence: Tr.Pick("Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software)",
+                                "Six Labors Split License 1.0 (termenii Apache 2.0 pentru software open source)"),
                 Copyright: "Copyright (c) Six Labors",
                 Url: "https://github.com/SixLabors/ImageSharp",
                 Packages: new[] { "SixLabors.ImageSharp" }),
             new ThirdPartyComponent(
                 Name: "Wacton.Unicolour",
-                Role: "evaluarea tabelelor unui profil ICC de imprimanta, din care se citeste Dmax-ul hartiei",
+                Role: Tr.Pick("evaluating the tables of a printer ICC profile, from which the paper's Dmax is read",
+                             "evaluarea tabelelor unui profil ICC de imprimanta, din care se citeste Dmax-ul hartiei"),
                 Licence: "MIT",
                 Copyright: "Copyright (c) 2022-2026 William Acton",
                 Url: "https://github.com/waacton/Unicolour",
                 Packages: new[] { "Wacton.Unicolour" }),
             new ThirdPartyComponent(
                 Name: "Lynds' Catalogue of Dark Nebulae",
-                Role: "catalogul norilor de praf (LDN, 1962), dupa care se recunosc norii dintr-un FITS plate-solved",
-                Licence: "date publicate (Lynds 1962, ApJS 7, 1), versiunea ADC/NASA din 1979 distribuita de CDS/VizieR ca VII/7A; citarea sursei e singura conditie",
-                Copyright: "Lynds B.T., 1962; versiunea citibila: NASA/ADC, 1979; distribuita de CDS, Strasbourg",
+                Role: Tr.Pick("the catalogue of dust clouds (LDN, 1962), by which the clouds of a plate-solved FITS are recognized",
+                             "catalogul norilor de praf (LDN, 1962), dupa care se recunosc norii dintr-un FITS plate-solved"),
+                Licence: Tr.Pick("published data (Lynds 1962, ApJS 7, 1), the ADC/NASA version of 1979 distributed by CDS/VizieR as VII/7A; citing the source is the only condition",
+                                "date publicate (Lynds 1962, ApJS 7, 1), versiunea ADC/NASA din 1979 distribuita de CDS/VizieR ca VII/7A; citarea sursei e singura conditie"),
+                Copyright: Tr.Pick("Lynds B.T., 1962; machine-readable version: NASA/ADC, 1979; distributed by CDS, Strasbourg",
+                                  "Lynds B.T., 1962; versiunea citibila: NASA/ADC, 1979; distribuita de CDS, Strasbourg"),
                 Url: "https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/7A",
                 Packages: System.Array.Empty<string>(),
                 Resources: new[] { DarkNebulaCatalogue.ResourceName }),

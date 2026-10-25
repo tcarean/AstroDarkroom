@@ -42,7 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Border Grid.Column="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,1,0" Padding="16">
       <DockPanel>
         <StackPanel DockPanel.Dock="Top">
-          <TextBlock Style="{StaticResource Heading}" Text="STRATURI" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='LAYERS', Ro='STRATURI'}" />
           <ItemsControl ItemsSource="{Binding Layers}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>
@@ -56,14 +56,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </ItemsControl.ItemTemplate>
           </ItemsControl>
           <CheckBox IsChecked="{Binding ShowClouds}" IsEnabled="{Binding HasWcs}" Foreground="{StaticResource TextBr}" Margin="0,0,0,8"
-                    Content="norii catalogati: cercuri si etichete (eticheta pe cei mai intunecati)" />
+                    Content="{local:T En='the catalogued clouds: circles and labels (labels on the darkest)', Ro='norii catalogati: cercuri si etichete (eticheta pe cei mai intunecati)'}" />
           <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Text="{Binding Definition}" />
           <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource BadBr}" Text="{Binding NoWcsWarning}"
                      Visibility="{Binding NoWcsWarning, Converter={StaticResource NotNullToVis}}" />
-          <TextBlock Style="{StaticResource Heading}" Text="NORI CATALOGATI" Margin="0,16,0,0" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='CATALOGUED CLOUDS', Ro='NORI CATALOGATI'}" Margin="0,16,0,0" />
           <StackPanel Orientation="Horizontal" Margin="0,4,0,6" IsEnabled="{Binding ShowClouds}">
-            <Button Content="Toti" Command="{Binding SelectAllClouds}" Padding="8,1" FontSize="11" />
-            <Button Content="Niciunul" Command="{Binding DeselectAllClouds}" Padding="8,1" FontSize="11" Margin="8,0,0,0" />
+            <Button Content="{local:T En='All', Ro='Toti'}" Command="{Binding SelectAllClouds}" Padding="8,1" FontSize="11" />
+            <Button Content="{local:T En='None', Ro='Niciunul'}" Command="{Binding DeselectAllClouds}" Padding="8,1" FontSize="11" Margin="8,0,0,0" />
           </StackPanel>
         </StackPanel>
         <ScrollViewer VerticalScrollBarVisibility="Auto" IsEnabled="{Binding ShowClouds}">

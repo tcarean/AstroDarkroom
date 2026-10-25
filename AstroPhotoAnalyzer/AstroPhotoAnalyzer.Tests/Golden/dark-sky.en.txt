@@ -1,0 +1,111 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+File: <TEMP>\cer-intunecat.tif
+  TIFF 16-bit RGB, 512 x 512 (0.3 MP), uncompressed, 1.5 MB, ICC profile: sRGB test
+  Medium: baryta (Dmax 2.0, paper black L* 9.0). Viewing distance: 1.5 m.
+
+VERDICT: PROBLEM
+
+1. The format to send  [CAUTION]
+   - Send an 8-bit LZW TIFF (0.2 MB). The 16 -> 8 bit conversion is pure rounding, not a loss.
+     because: mean rounding error 0.26, max 0.50 levels (half a level is the most possible)
+   - If the lab accepts only JPEG: q100, 4:4:4 (0.1 MB).
+     because: mean error 0.58, max 3.5 levels; 0.4 % of the samples with an error > 2, at a mean level of 28 (in the dark sky, where JPEG does worst)
+   ! Banding risk at 8 bits: send 16-bit if the lab accepts it, or add dither at the export.
+     because: a plateau of 2.2 px = 2.13 mm at 26 dpi, over 1.0 mm
+
+2. The background and the paper  [PROBLEM]
+   !! The sky is under paper black: the sky and the dust would print as the SAME black. Re-stretch from linear to a background of 0.16 (simulated: the dust at L* 11.7, the sky at L* 15.9; exactly on black at 0.135).
+     because: the dust (the 25 % percentile of the dust patches (0.5 L* below the modelled sky (4 sigma of the sky); 5.5 % of the frame); no WCS) at L* 4.8; paper black L* 9.0 at Dmax 2.0; the sky (the median of the sky patches (classes relative to the modelled sky)) at L* 7.2; the background level 0.089; the dust reaches paper black from Dmax 2.28; as it is, no paper makes the image print-safe: the sky is under L* 15, and the remedy is lifting the background at the stretch; the visibility threshold L* 15, under it 83.9 % of the pixels
+
+3. The background colour and the gradients  [CAUTION]
+   ! A green cast on the background: neutralize it (SCNR / BackgroundNeutralization) before printing - with a raised background it will show.
+     because: background R 20.0 G 22.0 B 20.0; G - (R+B)/2 = +2.0, R - B = 0.0 levels (threshold 1.0)
+   ! Lower-right corner: warm (horizon glow / light pollution). Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.
+     because: against the background: R +10.4, G +0.4, B -7.6 levels (threshold 3.0); the channels move differently
+
+4. The size of the print  [CAUTION]
+   ! From 1.5 m the stars are discs at every size of the list; the smallest (50 x 35 cm) minimizes the effect. Try smaller widths, or a longer distance if the viewer really stands further away.
+     because: median FWHM 3.06 px (Q1 3.05, Q3 3.08, 64 stars) = real detail ~167 px across the width; at 50 cm a star is 2.99 mm and a point from 10.31 m; the given distance 1.5 m
+   ! The target ratio needs a crop: it cuts 77 px on each side of the height (30.1 %); choose the framing yourself, not the lab.
+     because: native 1.000, target 1.429; 512 x 358 px remain
+
+5. Denoise for the print version  [CAUTION]
+   ! Denoise is set too strong for print: the noise no longer dithers the quantization. For the print version, a lower setting keeps the texture and the faint stars.
+     because: median sigma 0.30 LSB on 38 smooth tiles (10 % 0.30, minimum 0.29); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.16 the noise grows by ~1.36 x (the slope of the curve at the background), to ~0.41 LSB; under 0.5 LSB, 100.0 % of the tiles
+
+6. Warnings  [CAUTION]
+   ! Keep the 16-bit master: any later edit (a reframing, a retouch, another print) starts from it, not from the print file.
+     because: after a shadow-lift (gamma 1.9), from 8 bits 24 shadow levels are missing (52 used), from 16 0 (75 used); threshold 20
+
+Appendix A. Tones
+  channel means (0..255): 29.1 / 30.8 / 28.6
+  under level 32: 80.6 %   under 64: 92.3 %
+  reference channel percentiles (0..255): p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
+  median L* 7.4; under paper black (L* 9.0): 72.4 %; under L* 15: 83.9 %; over L* 50: 0.4 %
+
+Appendix B. Background simulation (from level 0.089; a gamma curve on every channel)
+  target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
+  0.05                 1.240       2.3      3.4      84.8 %     90.1 %        0.0 %
+  0.06                 1.165       2.8      4.2      81.6 %     88.6 %        0.0 %
+  0.07                 1.101       3.4      5.1      80.9 %     87.2 %        0.0 %
+  0.08                 1.046       4.1      6.1      76.2 %     85.5 %        0.1 %
+  0.089 as is          1.000       4.8      7.2      70.7 %     83.9 %        0.4 %
+  0.09                 0.997       4.8      7.3      69.5 %     83.8 %        0.5 %
+  0.10                 0.953       5.6      8.5      50.8 %     82.0 %        0.9 %
+  0.11                 0.914       6.5      9.8       5.1 %     80.0 %        1.2 %
+  0.12                 0.878       7.5     11.0       2.7 %     77.6 %        1.6 %
+  0.13                 0.845       8.5     12.3       2.3 %     74.3 %        2.0 %
+  0.14                 0.814       9.6     13.5       1.2 %     69.5 %        2.3 %   sky under L* 15
+  0.15                 0.785      10.6     14.7       0.8 %     53.3 %        2.7 %   sky under L* 15
+  0.16 *               0.759      11.7     15.9       0.8 %      5.4 %        3.1 %   print-safe
+  0.17                 0.733      12.7     17.1       0.0 %      3.6 %        3.5 %   print-safe
+  0.18                 0.710      13.8     18.3       0.0 %      2.6 %        3.9 %   print-safe
+  0.19                 0.687      14.8     19.5       0.0 %      2.0 %        4.3 %   print-safe
+  0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
+  * = recommended: the lowest print-safe target - the dust on paper black and the sky at L* 15 or above
+  dust = the 25 % percentile of the dust patches (0.5 L* below the modelled sky (4 sigma of the sky); 5.5 % of the frame) (no WCS); sky = the median of the sky patches (classes relative to the modelled sky); pure black = 32 px patches under paper black (L* 9.0 at Dmax 2.0)
+  classes: dust 5.5 %, sky 47.3 %, nebula 35.9 % (over the modelled sky by 0.5 L*, 4 sigma of the sky), bright nebula 10.9 % (over 14.0 L*, the Otsu threshold), peaks 0.4 %
+  the exact target of the dust on black: 0.135 at Dmax 2.0 (0.154 at Dmax 1.9, 0.117 at Dmax 2.1); the dust reaches paper black from Dmax 2.28; as it is, no paper makes the image print-safe: the sky is under L* 15, and the remedy is lifting the background at the stretch; the sky reaches the visibility threshold L* 15 at 0.152
+
+Appendix C. Export
+  TIFF 8-bit LZW: 0.2 MB
+  JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level
+  q100           0.1 MB       0.579       3.5   1.76    2.34     0.4 %            28
+  q95            0.0 MB       0.575       4.7   1.85    2.57     0.5 %            30
+  q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
+  16 -> 8 rounding: mean 0.262, max 0.498, p99.9 0.498 levels
+  shadow-lift stress (gamma 1.9), levels 8..120: from 16 bits 75 used / 0 missing; from 8 bits 52 used / 24 missing
+  plateau on the quantized sky: 2.2 px over 120 tiles
+
+Appendix D. Resolution and size
+  stars: 64 measured; median FWHM 3.06 px, Q1 3.05, Q3 3.08; real detail ~167 px across the width
+  regions: centre 3.11 px (9); upper-left corner n/a (4); upper-right corner n/a (2); lower-left corner n/a (2); lower-right corner n/a (1)
+  sizes for 512 x 358 px (after the crop):
+   width cm     height   dpi   star mm    point from       dist. used   outer frame cm
+      50 *        35.0    26      2.99       10.31 m           1.50 m   70 x 55
+      60          42.0    22      3.59       12.37 m           1.50 m   80 x 62
+      70          48.9    19      4.19       14.44 m           1.50 m   90 x 69
+      80          55.9    16      4.78       16.50 m           1.50 m   100 x 76
+      90          62.9    14      5.38       18.56 m           1.50 m   110 x 83
+     100          69.9    13      5.98       20.62 m           1.50 m   120 x 90
+  * = recommended
+
+Appendix E. Background colour
+  background colour, R / G / B (0..255): 20.0 / 22.0 / 20.0; G - (R+B)/2 = +2.0; R - B = 0.0
+  upper-left corner  20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
+  upper-right corner 20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
+  lower-left corner  20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
+  lower-right corner 30.4 / 22.4 / 12.4     delta +10.4 / +0.4 / -7.6  !
+  top edge           19.9 / 21.9 / 19.9     delta -0.1 / -0.1 / -0.2
+  bottom edge        20.5 / 22.5 / 20.5     delta +0.5 / +0.5 / +0.5
+  left edge          20.6 / 22.6 / 20.6     delta +0.6 / +0.5 / +0.5
+  right edge         20.6 / 22.6 / 20.6     delta +0.6 / +0.5 / +0.5
+
+Appendix F. Parameters
+  medium baryta, Dmax 2.0 (explicit); widths 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, frame 3 cm
+  distance 1.5 m; target ratio 1.429; target background none (grid 0.05..0.20); WCS none; seed 0
+
+--- stderr ---
+--- exit 3

@@ -55,16 +55,26 @@ namespace AstroPhotoAnalyzer
         /// cannot say two different things about the same licence.
         ///
         /// The lines are broken at ~70 columns for the console; the window joins them with a
-        /// space and wraps them itself.
+        /// space and wraps them itself. A property, so that the lines are in the interface
+        /// language in use when they are shown (ADR 0048).
         /// </summary>
-        internal static readonly string[] WarrantyLines =
-        {
-            "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
-            "vandabilitate sau potrivire pentru un scop anume. E software liber:",
-            "il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea",
-            "ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,",
-            "sau la <" + LicenseUrl + ">.",
-        };
+        internal static string[] WarrantyLines => Tr.Current == UiLanguage.English
+            ? new[]
+            {
+                "This program comes with ABSOLUTELY NO WARRANTY, not even the implied",
+                "warranty of merchantability or fitness for a particular purpose. It is",
+                "free software: you can redistribute it and modify it under the terms",
+                "of the GPLv3 (or, at your option, any later version). The full text is",
+                "in the LICENSE file, or at <" + LicenseUrl + ">.",
+            }
+            : new[]
+            {
+                "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
+                "vandabilitate sau potrivire pentru un scop anume. E software liber:",
+                "il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea",
+                "ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,",
+                "sau la <" + LicenseUrl + ">.",
+            };
 
         /// <summary>
         /// Where the licence's full text is, for whoever does not have the LICENSE file at hand.

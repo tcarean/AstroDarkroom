@@ -55,7 +55,7 @@ namespace AstroPhotoAnalyzer
         /// </returns>
         internal static double PercentileSorted(float[] sorted, double p)
         {
-            if (sorted.Length == 0) throw new ArgumentException("percentila pe un vector gol");
+            if (sorted.Length == 0) throw new ArgumentException(Tr.Pick("a percentile of an empty vector", "percentila pe un vector gol"));
             if (sorted.Length == 1) return sorted[0];
             var (lo, hi, frac) = Ranks(sorted.Length, p);
             return Between(sorted[lo], sorted[hi], frac);
@@ -128,7 +128,7 @@ namespace AstroPhotoAnalyzer
         /// </returns>
         internal static double[] Percentiles(float[] values, double[] ps)
         {
-            if (values.Length == 0) throw new ArgumentException("percentila pe un vector gol");
+            if (values.Length == 0) throw new ArgumentException(Tr.Pick("a percentile of an empty vector", "percentila pe un vector gol"));
             var o = new double[ps.Length];
             int n = values.Length;
             if (n == 1)

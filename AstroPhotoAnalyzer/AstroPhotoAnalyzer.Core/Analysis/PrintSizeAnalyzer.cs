@@ -155,7 +155,7 @@ namespace AstroPhotoAnalyzer
     /// The distance from which the grid vanishes, the pitch / the acuity, in metres.
     /// </param>
     /// <param name="Meaning">
-    /// What the row is, in Romanian as the window shows it ("poster", "de pe canapea").
+    /// What the row is, in the interface language as the window shows it ("poster", "de pe canapea").
     /// </param>
     internal sealed record DpiLadderRow(double Dpi, double PitchMm, double DistanceM, string Meaning);
 
@@ -261,14 +261,14 @@ namespace AstroPhotoAnalyzer
         {
             var rows = new List<DpiLadderRow>
             {
-                At(Thresholds.ReferenceDpi, "citit, tinut in mana - de aici mitul"),
-                At(240, "nativul multor imprimante"),
-                At(Thresholds.FallbackMinDpi, "lungimea bratului, cand te apropii - conventia fara stele"),
+                At(Thresholds.ReferenceDpi, Tr.Pick("reading, held in the hand - where the myth comes from", "citit, tinut in mana - de aici mitul")),
+                At(240, Tr.Pick("native to many printers", "nativul multor imprimante")),
+                At(Thresholds.FallbackMinDpi, Tr.Pick("arm's length, when you step closer - the convention without stars", "lungimea bratului, cand te apropii - conventia fara stele")),
                 At(100, "poster"),
-                At(60, "de pe canapea"),
+                At(60, Tr.Pick("from the sofa", "de pe canapea")),
             };
             if (viewingDistanceM.HasValue)
-                rows.Add(At(25.4 / (Thresholds.AcuityMmAt1m * viewingDistanceM.Value), "distanta data"));
+                rows.Add(At(25.4 / (Thresholds.AcuityMmAt1m * viewingDistanceM.Value), Tr.Pick("the given distance", "distanta data")));
             return rows;
 
             static DpiLadderRow At(double dpi, string meaning)

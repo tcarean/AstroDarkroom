@@ -26,8 +26,8 @@ using System.Windows.Media;
 namespace AstroPhotoAnalyzer.Wpf
 {
     /// <summary>
-    /// The colour of a verdict, from its label: green for "OK", amber for "ATENTIE", red for
-    /// "PROBLEMA", neutral grey for anything else.
+    /// The colour of a verdict, from its label: green for "OK", amber for "CAUTION" ("ATENTIE"),
+    /// red for "PROBLEM" ("PROBLEMA"), neutral grey for anything else.
     /// </summary>
     internal static class VerdictPalette
     {

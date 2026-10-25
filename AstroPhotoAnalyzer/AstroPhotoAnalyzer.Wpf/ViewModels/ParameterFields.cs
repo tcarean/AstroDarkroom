@@ -124,7 +124,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// (Parameters.Validate: NaN and infinity, the rule between parameters).
         /// </summary>
         /// <param name="error">
-        /// The message for the user, in Romanian; null when the parameters are returned.
+        /// The message for the user, in the interface language; null when the parameters are returned.
         /// </param>
         /// <returns>
         /// The parameters, an empty field left to the core's default, except the widths, which
@@ -147,12 +147,12 @@ namespace AstroPhotoAnalyzer.Wpf
                     DmaxProfile = fromProfile ? _dmaxProfile : null,
                     DmaxProfileNote = fromProfile ? _dmaxProfileNote : null,
                     DmaxProfilePath = fromProfile ? _dmaxProfilePath : null,
-                    ViewingDistanceM = OptionalNumber(Distance, "distanta", 0, 100),
+                    ViewingDistanceM = OptionalNumber(Distance, Tr.Pick("distance", "distanta"), 0, 100),
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),
                     TargetBackground = TargetBgOf(TargetBg),
-                    PassepartoutCm = OptionalNumber(Passepartout, "passepartout-ul", 0, 100, allowZero: true) ?? D.PassepartoutCm,
-                    FrameCm = OptionalNumber(Frame, "rama", 0, 100, allowZero: true) ?? D.FrameCm,
+                    PassepartoutCm = OptionalNumber(Passepartout, Tr.Pick("passepartout", "passepartout-ul"), 0, 100, allowZero: true) ?? D.PassepartoutCm,
+                    FrameCm = OptionalNumber(Frame, Tr.Pick("frame", "rama"), 0, 100, allowZero: true) ?? D.FrameCm,
                     WcsPath = string.IsNullOrWhiteSpace(WcsPath) ? null : WcsPath.Trim(),
                 };
                 // The rules between parameters are the core's; here only the message is shown.
@@ -179,7 +179,7 @@ namespace AstroPhotoAnalyzer.Wpf
         static double? TargetBgOf(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
-            double v = ParseNumber(text, "fundalul-tinta");
+            double v = ParseNumber(text, Tr.Pick("target background", "fundalul-tinta"));
             string error = Parameters.TargetBackgroundError(v);
             if (error != null) throw new FormatException(error);
             return v;
@@ -195,7 +195,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </summary>
         /// <param name="text">The field's text, trimmed here; not null.</param>
         /// <param name="what">
-        /// The field's name for the message, in Romanian ("Dmax", "distanta").
+        /// The field's name for the message, in the interface language ("Dmax", "distance").
         /// </param>
         /// <returns>
         /// The number; a text that does not parse throws FormatException with the message.
@@ -203,7 +203,7 @@ namespace AstroPhotoAnalyzer.Wpf
         static double ParseNumber(string text, string what)
         {
             if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
-                throw new FormatException($"{what}: '{text}' nu e un numar (foloseste punctul ca separator zecimal)");
+                throw new FormatException(Tr.Pick($"{what}: '{text}' is not a number (use the point as the decimal separator)", $"{what}: '{text}' nu e un numar (foloseste punctul ca separator zecimal)"));
             return v;
         }
 
@@ -213,7 +213,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// Parameters.Validate refuses it (R-024).
         /// </summary>
         /// <param name="text">The field's text; null or blank gives null.</param>
-        /// <param name="what">The field's name for the message, in Romanian.</param>
+        /// <param name="what">The field's name for the message, in the interface language.</param>
         /// <param name="lo">
         /// The lower bound; excluded, or included with <paramref name="allowZero"/>.
         /// </param>
@@ -227,7 +227,7 @@ namespace AstroPhotoAnalyzer.Wpf
             if (string.IsNullOrWhiteSpace(text)) return null;
             double v = ParseNumber(text, what);
             bool tooLow = allowZero ? v < lo : v <= lo;
-            if (tooLow || v > hi) throw new FormatException($"{what}: {text} e in afara intervalului {(allowZero ? "[" : "(")}{Fmt.F1(lo)}, {Fmt.F1(hi)}]");
+            if (tooLow || v > hi) throw new FormatException(Tr.Pick($"{what}: {text} is outside the interval {(allowZero ? "[" : "(")}{Fmt.F1(lo)}, {Fmt.F1(hi)}]", $"{what}: {text} e in afara intervalului {(allowZero ? "[" : "(")}{Fmt.F1(lo)}, {Fmt.F1(hi)}]"));
             return v;
         }
 
@@ -236,7 +236,20 @@ namespace AstroPhotoAnalyzer.Wpf
         /// separated by an empty line: a TextBlock honours '\n', and a single block of 900
         /// characters cannot be read. A test asks at least two paragraphs of each.
         /// </summary>
-        public string DistanceHelp =>
+        public string DistanceHelp => Tr.Pick(
+            "From how many metres the print will be seen. The size test: the star (FWHM x the pixel pitch on paper) "
+            + "must be a point from this distance - the eye resolves ~0.29 mm at 1 m. With a given distance "
+            + "(a hallway, an office, a sofa) the sizes separate and the table recommends a row."
+            + "\n\n"
+            + "Without stars, the distance gives the threshold of the pixel grid, 25.4 / (0.29 x d) dpi, instead of the convention of 180."
+            + "\n\n"
+            + "Empty = 1.5 x the diagonal of each size, the natural distance from which a picture is seen; then "
+            + "\"point from\" and the distance both grow with the width, the verdict is the same on every row and no "
+            + "size is recommended - the wall chooses it."
+            + "\n\n"
+            + "1.5 comes from the print and framing rule \"1-2 x the diagonal\": 1 x is the distance with the perspective "
+            + "of the lens (a normal focal length = the frame's diagonal), 2 x is gallery practice; at 1.5 x the picture "
+            + "subtends ~37 degrees and is taken in whole without moving the head.",
             "De la cati metri se va privi printul. Testul de marime: steaua (FWHM x pasul pixelului pe hartie) "
             + "trebuie sa fie punct de la distanta asta - ochiul desface ~0.29 mm la 1 m. Cu o distanta data "
             + "(hol, birou, canapea) marimile se despart si tabelul recomanda un rand."
@@ -249,17 +262,35 @@ namespace AstroPhotoAnalyzer.Wpf
             + "\n\n"
             + "1.5 vine din regula de print si inramare \"1-2 x diagonala\": 1 x e distanta cu perspectiva "
             + "obiectivului (focala normala = diagonala cadrului), 2 x e practica de galerie; la 1.5 x tabloul "
-            + "subintinde ~37 de grade si se cuprinde intreg fara sa misti capul.";
+            + "subintinde ~37 de grade si se cuprinde intreg fara sa misti capul.");
 
-        public string AspectHelp =>
+        public string AspectHelp => Tr.Pick(
+            "The width:height ratio of the print, e.g. 50:35 or 50x35. Empty = the image's native ratio, no crop - "
+            + "that is how it goes to a fine-art lab, which prints to the centimetre, any size; a ready-made frame "
+            + "does not constrain it either, the passepartout absorbs the difference."
+            + "\n\n"
+            + "Fill it in only for a lab with fixed "
+            + "formats (20x30, 35x50, 50x70...): the ratio says how much is cut and on which side, so that you choose the framing, not they.",
             "Raportul latime:inaltime al printului, ex. 50:35 sau 50x35. Gol = raportul nativ al imaginii, fara decupaj - "
             + "asa se trimite la un laborator fine-art, care printeaza la centimetru, orice dimensiune; rama gata facuta "
             + "nu constrange nici ea, passepartout-ul absoarbe diferenta."
             + "\n\n"
             + "Completeaza-l doar pentru un laborator cu formate "
-            + "fixe (20x30, 35x50, 50x70...): raportul spune cat se taie si pe ce latura, ca sa alegi tu cadrul, nu ei.";
+            + "fixe (20x30, 35x50, 50x70...): raportul spune cat se taie si pe ce latura, ca sa alegi tu cadrul, nu ei.");
 
-        public string TargetBgHelp =>
+        public string TargetBgHelp => Tr.Pick(
+            $"One more level for the simulation to try, strictly between 0 and 1 and rounded to {Parameters.TargetBackgroundDecimals} decimals, besides its grid "
+            + $"{Fmt.Level(D.SimulationTargets.Min())}..{Fmt.Level(D.SimulationTargets.Max())}: its row appears in the table marked "
+            + "\"(given)\" and is the one the print tile of Preview shows. Empty = the grid only, and Preview takes the recommended row."
+            + "\n\n"
+            + "The background level = the median of the green channel over the whole image (the sky dominates the frame). The simulation applies "
+            + "gamma = ln(target) / ln(background) on every channel and re-measures the dust and the sky. It is a simulation, not Siril's stretch, "
+            + "but the background ends up in the same place."
+            + "\n\n"
+            + $"On screen a sky at {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} looks good; "
+            + "on paper everything under its black prints as the same black, and a print wants the sky at "
+            + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}. The report's recommendation is the minimum level "
+            + $"at which the dust still stays over paper black and the sky at L* {Fmt.F0(Thresholds.LowSeparationLstar)} or above; this field does not change it.",
             $"Un nivel in plus pe care sa-l incerce simularea, strict intre 0 si 1 si rotunjit la {Parameters.TargetBackgroundDecimals} zecimale, pe langa grila ei "
             + $"{Fmt.Level(D.SimulationTargets.Min())}..{Fmt.Level(D.SimulationTargets.Max())}: randul lui apare in tabel marcat "
             + "\"(dat)\" si e cel pe care il arata dala de print din Preview. Gol = doar grila, si Preview-ul ia randul recomandat."
@@ -271,9 +302,18 @@ namespace AstroPhotoAnalyzer.Wpf
             + $"Pe ecran un cer la {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} arata bine; "
             + "pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru, si un print vrea cerul la "
             + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}. Recomandarea din raport e nivelul minim "
-            + $"la care praful mai ramane deasupra negrului hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste; campul asta nu o schimba.";
+            + $"la care praful mai ramane deasupra negrului hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste; campul asta nu o schimba.");
 
-        public string WcsHelp =>
+        public string WcsHelp => Tr.Pick(
+            "The path of a plate-solved FITS (Siril: Image Information > Plate solving, or a solved stack) with the same "
+            + "width and height as the analysed image. Its header says where on the sky each pixel is, and with the Lynds catalogue "
+            + "the tool recognizes the dust clouds of the frame by name: the dust and the sky are measured on them, not on a fraction of the frame."
+            + "\n\n"
+            + "A TIFF or PNG exported from Siril does not carry the WCS; the stack it came from has it, and this is how it is lent. "
+            + "Empty = the WCS of the analysed file, if it is a plate-solved FITS; otherwise the dust and the sky are measured without the catalogue, "
+            + "and the Tones tab says so in red."
+            + "\n\n"
+            + "The size must be identical: a crop or a resize between the stack and the export moves the clouds.",
             "Calea unui FITS plate-solved (Siril: Image Information > Plate solving, sau un stack rezolvat) cu aceeasi "
             + "latime si inaltime ca imaginea analizata. Antetul lui spune unde pe cer e fiecare pixel, si cu catalogul Lynds "
             + "unealta recunoaste norii de praf din cadru pe nume: praful si cerul se masoara pe ei, nu pe o fractie din cadru."
@@ -282,19 +322,27 @@ namespace AstroPhotoAnalyzer.Wpf
             + "Gol = WCS-ul fisierului analizat, daca e un FITS plate-solved; altfel praful si cerul se masoara fara catalog, "
             + "si tabul Tonuri o spune cu rosu."
             + "\n\n"
-            + "Marimea trebuie sa fie identica: un decupaj sau o redimensionare intre stack si export muta norii.";
+            + "Marimea trebuie sa fie identica: un decupaj sau o redimensionare intre stack si export muta norii.");
 
-        public string PassepartoutHelp =>
+        public string PassepartoutHelp => Tr.Pick(
+            "The width of the board between the image and the frame, on each side. The framers' rule: "
+            + "10-15 % of the image's width and at least twice the frame's width - under that the frame crowds the image."
+            + "\n\n"
+            + "0 = no passepartout. Galleries make the bottom side ~1 cm wider.",
             "Latimea benzii de carton dintre imagine si rama, pe fiecare latura. Regula inramatorilor: "
             + "10-15 % din latimea imaginii si cel putin dublul latimii ramei - sub asta rama strange imaginea."
             + "\n\n"
-            + "0 = fara passepartout. Galeriile fac latura de jos cu ~1 cm mai lata.";
+            + "0 = fara passepartout. Galeriile fac latura de jos cu ~1 cm mai lata.");
 
-        public string FrameHelp =>
+        public string FrameHelp => Tr.Pick(
+            "The width of the frame's moulding seen from the front, on each side. For a print of 60-80 cm: 3-4 cm, "
+            + "matt black; a wider frame needs a matching passepartout (at least twice its width)."
+            + "\n\n"
+            + "It enters only the outer size of the picture.",
             "Latimea profilului ramei vazuta din fata, pe fiecare latura. Pentru un print de 60-80 cm: 3-4 cm, "
             + "neagra mata; o rama mai lata cere un passepartout pe masura (cel putin dublul ei)."
             + "\n\n"
-            + "Intra doar in marimea exterioara a tabloului.";
+            + "Intra doar in marimea exterioara a tabloului.");
 
         /// <summary>
         /// The candidate widths from their field: numbers separated by commas, semicolons or
@@ -309,10 +357,10 @@ namespace AstroPhotoAnalyzer.Wpf
             foreach (string s in (text ?? "").Split(new[] { ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 if (!double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out double v) || v <= 0)
-                    throw new FormatException($"latimile: '{s}' nu e o latime in cm");
+                    throw new FormatException(Tr.Pick($"widths: '{s}' is not a width in cm", $"latimile: '{s}' nu e o latime in cm"));
                 list.Add(v);
             }
-            if (list.Count == 0) throw new FormatException("latimile: scrie cel putin o latime, in cm, separate prin virgula");
+            if (list.Count == 0) throw new FormatException(Tr.Pick("widths: write at least one width, in cm, separated by commas", "latimile: scrie cel putin o latime, in cm, separate prin virgula"));
             return list.ToArray();
         }
 
@@ -333,7 +381,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 && double.TryParse(parts[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double h)
                 && double.IsFinite(w) && double.IsFinite(h) && w > 0 && h > 0)
                 return w / h;
-            throw new FormatException($"raportul: '{text}' nu e latime:inaltime (ex. 50:35)");
+            throw new FormatException(Tr.Pick($"ratio: '{text}' is not width:height (e.g. 50:35)", $"raportul: '{text}' nu e latime:inaltime (ex. 50:35)"));
         }
     }
 }

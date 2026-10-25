@@ -6,6 +6,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Added
+
+- The interface speaks English as well as Romanian, in the console and in the window: every
+  text, the report, `--help` and the errors included, is chosen by `--lang en|ro` (also
+  `--lang=ro`), **English when it is not given**; an unknown value is an error in the console
+  (exit 1) and a message in the window, which then opens in English. The figures and the exit
+  codes are the same in both languages; the Romanian texts are unchanged, with `--lang ro`
+  (R-150 to R-154; ADR 0048).
+
 ### Fixed
 
 - The paper-black line of the Tonuri histogram stood half a bin (about 5 px) left of its value:

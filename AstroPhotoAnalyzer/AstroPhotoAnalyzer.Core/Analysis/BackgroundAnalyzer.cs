@@ -179,14 +179,14 @@ namespace AstroPhotoAnalyzer
             int ch = (int)(s.H * Thresholds.EdgeRegionHeightFraction), cw = (int)(s.W * Thresholds.EdgeRegionWidthFraction);
             var defs = new (string Name, int X0, int Y0, int W, int H)[]
             {
-                ("colt stanga-sus",    0,         0,         cw,           ch),
-                ("colt dreapta-sus",   s.W - cw,  0,         cw,           ch),
-                ("colt stanga-jos",    0,         s.H - ch,  cw,           ch),
-                ("colt dreapta-jos",   s.W - cw,  s.H - ch,  cw,           ch),
-                ("latura de sus",      cw,        0,         s.W - 2 * cw, ch),
-                ("latura de jos",      cw,        s.H - ch,  s.W - 2 * cw, ch),
-                ("latura stanga",      0,         ch,        cw,           s.H - 2 * ch),
-                ("latura dreapta",     s.W - cw,  ch,        cw,           s.H - 2 * ch),
+                (Tr.Pick("upper-left corner", "colt stanga-sus"), 0, 0,         cw,           ch),
+                (Tr.Pick("upper-right corner", "colt dreapta-sus"), s.W - cw, 0,         cw,           ch),
+                (Tr.Pick("lower-left corner", "colt stanga-jos"), 0, s.H - ch,  cw,           ch),
+                (Tr.Pick("lower-right corner", "colt dreapta-jos"), s.W - cw, s.H - ch,  cw,           ch),
+                (Tr.Pick("top edge", "latura de sus"), cw, 0,         s.W - 2 * cw, ch),
+                (Tr.Pick("bottom edge", "latura de jos"), cw, s.H - ch,  s.W - 2 * cw, ch),
+                (Tr.Pick("left edge", "latura stanga"), 0, ch,        cw,           s.H - 2 * ch),
+                (Tr.Pick("right edge", "latura dreapta"), s.W - cw, ch,        cw,           s.H - 2 * ch),
             };
 
             var list = new List<EdgeRegion>();

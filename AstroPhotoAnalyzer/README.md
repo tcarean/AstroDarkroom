@@ -21,6 +21,15 @@ funcționează și de ce, în `docs/design/` și `docs/decisions/`.
 AstroPhotoAnalyzer.Wpf.exe "E:\Astro\poza.tif"     # optional: imaginea
 ```
 
+```bash
+AstroPhotoAnalyzer.Wpf.exe --lang ro "E:\Astro\poza.tif"
+```
+
+Interfața e în engleză dacă nu se dă `--lang`; `--lang ro` (sau `--lang=ro`) o pune în română,
+`--lang en` în engleză, oriunde între argumente. Aceeași regulă la consolă. O valoare
+necunoscută e spusă într-un mesaj, și fereastra pornește în engleză. Cifrele sunt aceleași în
+ambele limbi; se schimbă doar cuvintele.
+
 Stânga: parametrii (mediu, Dmax, distanță, lățimi, raport de aspect, fundal-țintă,
 passepartout, ramă, WCS din FITS) și „Analizează"; câmpul Dmax arată valoarea cu care se
 analizează: alegerea unui mediu o scrie pe a lui (baryta 2.4, canvas 1.5, acrilic 2.2), iar tu
@@ -159,11 +168,16 @@ Opțiuni: `--medium baryta|canvas|acrilic` (Dmax 2.4, 1.5, 2.2), `--dmax` (Dmax-
 strict între 0 și 1, rotunjit la 3 zecimale),
 `--passepartout`, `--frame`, `--wcs` (FITS-ul plate-solved de aceeași mărime al cărui WCS se
 folosește pentru nori), `--icc` (profilul ICC al hârtiei pe imprimanta ei: Dmax-ul se citește
-din el, în locul celui al mediului; nu merge împreună cu `--dmax`), `-o`. `--help` le explică.
-Coduri de ieșire: 0 ok, 1 eroare, 2 atenție, 3 problemă.
+din el, în locul celui al mediului; nu merge împreună cu `--dmax`), `--lang en|ro` (limba
+textelor, engleza dacă lipsește; o valoare necunoscută e o eroare), `-o`. `--help` le explică.
+Coduri de ieșire: 0 ok, 1 eroare, 2 atenție, 3 problemă — aceleași în ambele limbi.
+
+```bash
+AstroPhotoAnalyzer poza.tif --lang ro
+```
 
 Raportul începe cu deciziile — format, fundal, culoare, mărime, denoise, avertismente —
-fiecare cu un rând `fiindca:` cu cifra și pragul, apoi anexele cu tabelele. O imagine
+fiecare cu un rând `fiindca:` (`because:` în engleză) cu cifra și pragul, apoi anexele cu tabelele. O imagine
 liniară (nestretch-uită) e refuzată cu mesaj, nu măsurată greșit.
 
 ## Compilare

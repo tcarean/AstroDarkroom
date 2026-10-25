@@ -24,7 +24,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <Window x:Class="AstroPhotoAnalyzer.Wpf.IccPickerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Dmax din profilul ICC"
+        xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf"
+        Title="{local:T En='Dmax from the ICC profile', Ro='Dmax din profilul ICC'}"
         Icon="/AstroPhotoAnalyzer.Wpf;component/Icon/AstroPhotoAnalyzer.ico"
         Width="720" Height="520" MinWidth="520" MinHeight="360"
         ShowInTaskbar="False" WindowStartupLocation="CenterOwner"
@@ -80,13 +81,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
-        <TextBlock Style="{StaticResource Muted}" Margin="10,8" Text="Niciun profil de imprimanta instalat"
+        <TextBlock Style="{StaticResource Muted}" Margin="10,8" Text="{local:T En='No printer profile installed', Ro='Niciun profil de imprimanta instalat'}"
                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}" />
       </Grid>
     </Border>
 
     <TextBlock Grid.Row="2" Style="{StaticResource Faint}" Margin="0,8,0,0" TextTrimming="CharacterEllipsis">
-      <Run Text="Profilele de imprimanta din" />
+      <Run Text="{local:T En='Printer profiles in', Ro='Profilele de imprimanta din'}" />
       <Run Text="{Binding Folder, Mode=OneWay}" />
     </TextBlock>
 
@@ -97,9 +98,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="Auto" />
       </Grid.ColumnDefinitions>
-      <Button Grid.Column="0" Content="Alege fisier..." Click="ChooseFile" />
-      <Button Grid.Column="2" Content="Foloseste" Click="Use" IsDefault="True" IsEnabled="{Binding CanUse}" />
-      <Button Grid.Column="3" Content="Renunta" IsCancel="True" Margin="10,0,0,0" />
+      <Button Grid.Column="0" Content="{local:T En='Choose file...', Ro='Alege fisier...'}" Click="ChooseFile" />
+      <Button Grid.Column="2" Content="{local:T En='Use', Ro='Foloseste'}" Click="Use" IsDefault="True" IsEnabled="{Binding CanUse}" />
+      <Button Grid.Column="3" Content="{local:T En='Cancel', Ro='Renunta'}" IsCancel="True" Margin="10,0,0,0" />
     </Grid>
   </Grid>
 </Window>

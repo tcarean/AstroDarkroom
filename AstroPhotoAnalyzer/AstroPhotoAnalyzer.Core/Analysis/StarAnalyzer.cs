@@ -286,11 +286,11 @@ namespace AstroPhotoAnalyzer
             int mw = (int)(W * Thresholds.CenterFraction), mh = (int)(H * Thresholds.CenterFraction);
             var defs = new (string Name, int X0, int Y0, int W, int H)[]
             {
-                ("centru",            (W - mw) / 2, (H - mh) / 2, mw, mh),
-                ("colt stanga-sus",   0,            0,            cw, ch),
-                ("colt dreapta-sus",  W - cw,       0,            cw, ch),
-                ("colt stanga-jos",   0,            H - ch,       cw, ch),
-                ("colt dreapta-jos",  W - cw,       H - ch,       cw, ch),
+                (Tr.Pick("centre", "centru"), (W - mw) / 2, (H - mh) / 2, mw, mh),
+                (Tr.Pick("upper-left corner", "colt stanga-sus"), 0, 0,            cw, ch),
+                (Tr.Pick("upper-right corner", "colt dreapta-sus"), W - cw, 0,            cw, ch),
+                (Tr.Pick("lower-left corner", "colt stanga-jos"), 0, H - ch,       cw, ch),
+                (Tr.Pick("lower-right corner", "colt dreapta-jos"), W - cw, H - ch,       cw, ch),
             };
             var list = new List<StarRegion>();
             foreach (var d in defs)

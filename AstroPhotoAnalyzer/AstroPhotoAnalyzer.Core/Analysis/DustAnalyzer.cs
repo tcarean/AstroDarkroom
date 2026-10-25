@@ -277,8 +277,19 @@ namespace AstroPhotoAnalyzer
         /// <summary>The side of a patch in samples of the tonal subsample.</summary>
         internal const int PatchSamples = Thresholds.DustPatchPx / Thresholds.TonalStride;
 
-        static readonly string[] BandNames = { "praf", "cer", "banda", "nori luminosi", "varfuri" };
-        static readonly string[] SkyNames = { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" };
+        // Properties, not fields: a name is picked in the interface language when it is shown
+        // (ADR 0048).
+        static string[] BandNames => new[]
+        {
+            Tr.Pick("dust", "praf"), Tr.Pick("sky", "cer"), Tr.Pick("band", "banda"),
+            Tr.Pick("bright clouds", "nori luminosi"), Tr.Pick("peaks", "varfuri"),
+        };
+
+        static string[] SkyNames => new[]
+        {
+            Tr.Pick("dust", "praf"), Tr.Pick("sky", "cer"), Tr.Pick("nebula", "nebuloasa"),
+            Tr.Pick("bright nebula", "nebuloasa stralucitoare"), Tr.Pick("peaks", "varfuri"),
+        };
 
         /// <summary>
         /// The names of the five classes, in the order "praf", "cer", "banda" / "nebuloasa",
@@ -333,7 +344,7 @@ namespace AstroPhotoAnalyzer
                 Classes = new PatchClass[cols * rows],
                 Clouds = Array.Empty<DustCloud>(),
             };
-            if (asIsPatchLstars.Length != cols * rows) throw new ArgumentException("L*-urile dalelor nu sunt pe grila hartii");
+            if (asIsPatchLstars.Length != cols * rows) throw new ArgumentException(Tr.Pick("the patches' L* values are not on the map's grid", "L*-urile dalelor nu sunt pe grila hartii"));
             if (wcs == null)
             {
                 ClassifyBySky(map, asIsPatchLstars, SkyReason.NoWcs);

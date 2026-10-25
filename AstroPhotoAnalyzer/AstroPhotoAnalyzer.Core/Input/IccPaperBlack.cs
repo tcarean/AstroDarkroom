@@ -105,7 +105,7 @@ namespace AstroPhotoAnalyzer
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
-                return new IccBlack { Path = path, Description = System.IO.Path.GetFileName(path), Problem = "fisierul nu se poate citi: " + e.Message };
+                return new IccBlack { Path = path, Description = System.IO.Path.GetFileName(path), Problem = Tr.Pick("the file cannot be read: ", "fisierul nu se poate citi: ") + e.Message };
             }
             return Read(bytes, path);
         }
@@ -126,11 +126,11 @@ namespace AstroPhotoAnalyzer
         {
             string file = System.IO.Path.GetFileName(path);
             var result = new IccBlack { Path = path, Description = IccProfileInfo.Describe(bytes) ?? file };
-            if (!IsProfile(bytes)) return result with { Problem = "nu e un profil ICC" };
+            if (!IsProfile(bytes)) return result with { Problem = Tr.Pick("not an ICC profile", "nu e un profil ICC") };
 
             string deviceClass = Signature(bytes, 12), space = Signature(bytes, 16);
             if (deviceClass != "prtr")
-                return result with { Problem = $"nu e un profil de imprimanta (clasa '{Printable(deviceClass)}'); negrul hartiei e in profilul hartiei pe imprimanta ei" };
+                return result with { Problem = Tr.Pick($"not a printer profile (class '{Printable(deviceClass)}'); the paper black is in the profile of the paper on its printer", $"nu e un profil de imprimanta (clasa '{Printable(deviceClass)}'); negrul hartiei e in profilul hartiei pe imprimanta ei") };
 
             // The device's black: no light on RGB, every ink on CMYK.
             double[] black;
@@ -140,32 +140,32 @@ namespace AstroPhotoAnalyzer
                 case "RGB ": black = new double[3]; break;
                 case "CMYK":
                     black = new[] { 1.0, 1.0, 1.0, 1.0 };
-                    note = "profil CMYK: negrul e cu toate cernelurile la maximum; o imprimanta reala pune mai putina cerneala, deci Dmax-ul ei e ceva mai mic";
+                    note = Tr.Pick("a CMYK profile: the black is every ink at its maximum; a real printer lays down less ink, so its Dmax is somewhat lower", "profil CMYK: negrul e cu toate cernelurile la maximum; o imprimanta reala pune mai putina cerneala, deci Dmax-ul ei e ceva mai mic");
                     break;
                 default:
-                    return result with { Problem = $"profil de imprimanta '{Printable(space)}': se citesc doar profilele RGB si CMYK" };
+                    return result with { Problem = Tr.Pick($"a '{Printable(space)}' printer profile: only RGB and CMYK profiles are read", $"profil de imprimanta '{Printable(space)}': se citesc doar profilele RGB si CMYK") };
             }
 
             try
             {
                 var icc = new IccConfiguration(new Profile(bytes, file), Intent.RelativeColorimetric, file);
-                if (!string.IsNullOrEmpty(icc.Error)) return result with { Problem = "profilul nu se poate citi: " + icc.Error };
+                if (!string.IsNullOrEmpty(icc.Error)) return result with { Problem = Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ") + icc.Error };
                 var colour = new Unicolour(new Configuration(xyzConfig: XyzConfiguration.D50, iccConfig: icc), new Channels(black));
                 double y = colour.Xyz.Y;
                 // The package swallows a damaged table and returns some Y; a black that is not
                 // between 0 and the white, or a Dmax that --dmax would refuse, is its sign.
                 if (double.IsNaN(y) || y <= 0 || y >= 1)
-                    return result with { Problem = "tabela colorimetrica a profilului nu da un negru intre 0 si albul hartiei; profilul e probabil stricat" };
+                    return result with { Problem = Tr.Pick("the profile's colorimetric table gives no black between 0 and the paper white; the profile is probably damaged", "tabela colorimetrica a profilului nu da un negru intre 0 si albul hartiei; profilul e probabil stricat") };
                 double dmax = Math.Round(-Math.Log10(y), 2);
                 if (dmax <= 0 || dmax > Thresholds.DmaxMax)
-                    return result with { Problem = $"profilul da Dmax {Fmt.Dmax(dmax)}, in afara intervalului (0, {Fmt.F0(Thresholds.DmaxMax)}]; profilul e probabil stricat" };
+                    return result with { Problem = Tr.Pick($"the profile gives Dmax {Fmt.Dmax(dmax)}, outside the interval (0, {Fmt.F0(Thresholds.DmaxMax)}]; the profile is probably damaged", $"profilul da Dmax {Fmt.Dmax(dmax)}, in afara intervalului (0, {Fmt.F0(Thresholds.DmaxMax)}]; profilul e probabil stricat") };
                 return result with { BlackLstar = ColorMath.LstarOfY(y), Dmax = dmax, Note = note };
             }
             catch (Exception e)
             {
                 // The package throws ArgumentException, with the cause inside, on a damaged
                 // profile.
-                return result with { Problem = "profilul nu se poate citi: " + (e.InnerException ?? e).Message };
+                return result with { Problem = Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ") + (e.InnerException ?? e).Message };
             }
         }
 
@@ -212,9 +212,9 @@ namespace AstroPhotoAnalyzer
         /// fata de albul hartiei)", or why it could not be read.
         /// </summary>
         /// <param name="b">The profile as read.</param>
-        /// <returns>The sentence, in Romanian, as the user sees it.</returns>
+        /// <returns>The sentence, in the interface language, as the user sees it.</returns>
         internal static string Describe(IccBlack b)
-            => b.Readable ? $"Dmax {Fmt.Dmax(b.Dmax)} (negrul la L* {Fmt.F1(b.BlackLstar)} fata de albul hartiei)" : b.Problem;
+            => b.Readable ? Tr.Pick($"Dmax {Fmt.Dmax(b.Dmax)} (the black at L* {Fmt.F1(b.BlackLstar)} against the paper white)", $"Dmax {Fmt.Dmax(b.Dmax)} (negrul la L* {Fmt.F1(b.BlackLstar)} fata de albul hartiei)") : b.Problem;
 
         /// <summary>
         /// Whether the bytes hold a profile's header: 132 bytes at least, 'acsp' at 36.

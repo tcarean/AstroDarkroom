@@ -24,10 +24,9 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
 - Format: `dotnet format AstroPhotoAnalyzer.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project AstroPhotoAnalyzer -- <image> [--medium baryta|canvas|acrilic]
   [--dmax n] [--distance m] [--sizes cm,cm,...] [--aspect w:h] [--target-bg 0..1]
-  [--passepartout cm] [--frame cm] [--wcs file.fit] [--icc profile.icc] [-o file]`; flags before
-  or after the image
-  (R-003).
-  Window: `dotnet run --project AstroPhotoAnalyzer.Wpf -- <image>`
+  [--passepartout cm] [--frame cm] [--wcs file.fit] [--icc profile.icc] [--lang en|ro] [-o file]`;
+  flags before or after the image (R-003); English without `--lang` (R-151).
+  Window: `dotnet run --project AstroPhotoAnalyzer.Wpf -- [--lang ro] <image>`
 - Golden console texts, after an intended output change (the rule "Golden files"):
   `APA_UPDATE_GOLDEN=1 dotnet test AstroPhotoAnalyzer.sln`
 - Window renders as PNGs without running it:
@@ -49,8 +48,9 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
 - `AstroPhotoAnalyzer.Core/` - everything that computes and everything that formats. No
   Console, no UI, no entry point: a compile boundary. `Input/` reads (readers, `Raster`, colour
   maths, statistics), `Analysis/` decides numbers (one class per measurement family), `Report/`
-  decides words (Romanian) and the recommendations, `Runs/` chains them; both applications call
-  `Runs/AnalysisRun.Execute`, and the window alone, on request, `Runs/CurveRun.cs` (the
+  decides words (English and Romanian, `Language.cs`) and the recommendations, `Runs/` chains
+  them; both applications call `Runs/AnalysisRun.Execute`, and the window alone, on request,
+  `Runs/CurveRun.cs` (the
   suggested curves and the saved FITS, ADR 0032), nothing else. `Thresholds.cs`, `Parameters.cs`.
 - `AstroPhotoAnalyzer/` - the console: `Program.cs`, `Options.cs`, `AnalyzerCli.cs`. Nothing else.
 - `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, seven
@@ -94,14 +94,16 @@ or varies a kit rule names it.
   plate-solved FITS `starless_rbf0.5_stretch0.17.fit` (ADR 0025); a claim about a measurement
   on a real image comes with the pasted output, and the synthetic scenes of `Scenes.cs` are no
   substitute for it.
-- **Languages** (varies the kit's rule "Languages", ADR 0005, ADR 0047). English in everything
-  the model reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, and
-  every comment in every file, a comment added to any file included: C# (`//`, `///`), XAML,
-  csproj and props (`<!-- -->`), Python and configuration (`#`). Romanian only in what the user
-  sees (CLI text, `--help`, window labels and texts, the report, `README.md`,
-  `THIRD-PARTY-NOTICES.md`): without diacritics in code and messages, with diacritics in
-  Markdown for people. Output quoted inside a comment or a test stays as the user sees it.
-  Never leave a file in two languages.
+- **Languages** (varies the kit's rule "Languages", ADR 0005, ADR 0047, ADR 0048). English in
+  everything the model reads or writes about the process: docs, tests, scripts, commits,
+  CHANGELOG, and every comment in every file, a comment added to any file included: C# (`//`,
+  `///`), XAML, csproj and props (`<!-- -->`), Python and configuration (`#`). What the user
+  sees (CLI text, `--help`, window labels and texts, the report) is in two languages, chosen by
+  `--lang en|ro`, English by default: every such text is a pair written where it is used,
+  `Tr.Pick(english, romanian)` in C# and `{local:T En='...', Ro='...'}` in XAML, the two changed
+  together, the Romanian without diacritics (`docs/design/language.md`). `README.md` and
+  `THIRD-PARTY-NOTICES.md` stay Romanian, with diacritics. Output quoted inside a comment or a
+  test stays as the user sees it. Never leave a file in two languages, the pairs apart.
 - **Computed only in the core.** Nothing is computed outside `AstroPhotoAnalyzer.Core`: a new
   number, threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`,
   never in a view-model or the console (ADR 0007).

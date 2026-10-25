@@ -106,7 +106,7 @@ namespace AstroPhotoAnalyzer
             while (true)
             {
                 var hdr = ReadHeader(fs, block);
-                if (hdr == null) throw new Exception("FITS: niciun HDU cu imagine gasit.");
+                if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
                 int naxis = HInt(hdr, "NAXIS", 0);
                 int n1 = HInt(hdr, "NAXIS1", 0), n2 = HInt(hdr, "NAXIS2", 0);
                 if (naxis >= 2 && n1 > 0 && n2 > 0) return (hdr, n1, n2, IsBottomUp(hdr));
@@ -114,7 +114,7 @@ namespace AstroPhotoAnalyzer
                 long npix = naxis == 0 ? 0 : 1;
                 for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
                 long dataBytes = npix * (Math.Abs(HInt(hdr, "BITPIX", 0)) / 8);
-                if (!SkipExact(fs, (dataBytes + 2879) / 2880 * 2880)) throw new Exception("FITS: fisier trunchiat.");
+                if (!SkipExact(fs, (dataBytes + 2879) / 2880 * 2880)) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             }
         }
 
@@ -141,7 +141,7 @@ namespace AstroPhotoAnalyzer
             while (true)
             {
                 var hdr = ReadHeader(s, block);
-                if (hdr == null) throw new Exception("FITS: niciun HDU cu imagine gasit.");
+                if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
 
                 int bitpix = HInt(hdr, "BITPIX", 0);
                 int naxis = HInt(hdr, "NAXIS", 0);
@@ -153,7 +153,7 @@ namespace AstroPhotoAnalyzer
                 long npix = naxis == 0 ? 0 : 1;
                 for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
                 int bytesPer = Math.Abs(bitpix) / 8;
-                if (bytesPer == 0 && naxis > 0) throw new Exception("BITPIX neacceptat: " + bitpix);
+                if (bytesPer == 0 && naxis > 0) throw new Exception(Tr.Pick("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
                 long dataBytes = npix * bytesPer;
                 long dataBlocks = (dataBytes + 2879) / 2880 * 2880;
 
@@ -163,8 +163,8 @@ namespace AstroPhotoAnalyzer
 
                 if (naxis >= 2 && n1 > 0 && n2 > 0)
                 {
-                    if (naxis > 3) throw new Exception($"FITS cu {naxis} axe; se accepta imagini 2D sau cu 3 planuri.");
-                    if (n3 != 1 && n3 != 3) throw new Exception($"FITS cu {n3} planuri; se accepta 1 sau 3.");
+                    if (naxis > 3) throw new Exception(Tr.Pick($"a FITS with {naxis} axes; 2D images or images with 3 planes are accepted.", $"FITS cu {naxis} axe; se accepta imagini 2D sau cu 3 planuri."));
+                    if (n3 != 1 && n3 != 3) throw new Exception(Tr.Pick($"a FITS with {n3} planes; 1 or 3 are accepted.", $"FITS cu {n3} planuri; se accepta 1 sau 3."));
 
                     double bzero = HDbl(hdr, "BZERO", 0.0);
                     double bscale = HDbl(hdr, "BSCALE", 1.0);
@@ -175,15 +175,15 @@ namespace AstroPhotoAnalyzer
 
                     string note = null;
                     if (clipped > 0)
-                        note = $"{clipped} valori in afara [0, 1] au fost taiate la citire";
+                        note = Tr.Pick($"{clipped} values outside [0, 1] were clipped on reading", $"{clipped} valori in afara [0, 1] au fost taiate la citire");
                     if (bottomUp)
-                        note = (note == null ? "" : note + "; ") + "randurile au fost rasturnate dupa ROWORDER = BOTTOM-UP";
+                        note = (note == null ? "" : note + "; ") + Tr.Pick("the rows were flipped after ROWORDER = BOTTOM-UP", "randurile au fost rasturnate dupa ROWORDER = BOTTOM-UP");
 
                     return (raster, hdr, bitpix, n3, note);
                 }
 
                 // An HDU without a usable image: skip its data blocks and go on.
-                if (!SkipExact(s, dataBlocks)) throw new Exception("FITS: fisier trunchiat.");
+                if (!SkipExact(s, dataBlocks)) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             }
         }
 
@@ -208,7 +208,7 @@ namespace AstroPhotoAnalyzer
                 if (!ReadExact(s, block, block.Length))
                 {
                     if (!any) return null;
-                    throw new Exception("FITS: header incomplet.");
+                    throw new Exception(Tr.Pick("FITS: incomplete header.", "FITS: header incomplet."));
                 }
                 any = true;
                 for (int c = 0; c < 36; c++)
@@ -273,7 +273,7 @@ namespace AstroPhotoAnalyzer
             while (i < total)
             {
                 int want = (int)Math.Min(chunkSamples, total - i);
-                if (!ReadExact(s, buf, want * bytesPer)) throw new Exception("FITS: date trunchiate.");
+                if (!ReadExact(s, buf, want * bytesPer)) throw new Exception(Tr.Pick("FITS: truncated data.", "FITS: date trunchiate."));
                 for (int k = 0; k < want; k++, i++)
                 {
                     double v = (bzero + bscale * ReadSample(buf, k * bytesPer, bitpix)) / scale;
@@ -314,7 +314,7 @@ namespace AstroPhotoAnalyzer
                 case 32: return BinaryPrimitives.ReadInt32BigEndian(new ReadOnlySpan<byte>(b, p, 4));
                 case -32: return BinaryPrimitives.ReadSingleBigEndian(new ReadOnlySpan<byte>(b, p, 4));
                 case -64: return BinaryPrimitives.ReadDoubleBigEndian(new ReadOnlySpan<byte>(b, p, 8));
-                default: throw new Exception("BITPIX neacceptat: " + bitpix);
+                default: throw new Exception(Tr.Pick("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
             }
         }
 

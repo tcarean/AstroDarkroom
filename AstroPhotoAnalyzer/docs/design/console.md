@@ -54,7 +54,7 @@ row when the Dmax in use is that medium's, and otherwise adds and marks an expli
 when another medium has that Dmax (R-042). A Dmax read from
 an ICC profile (`input.md`, "The Dmax of a printer profile") arrives as `DmaxOverride` with
 `DmaxProfile`, the profile's name: in the console through `Parameters.WithDmaxFromProfile`,
-called by `AnalyzerCli.Run` before `Validate` (a problem is `EROARE: --icc: <reason>`, exit 1);
+called by `AnalyzerCli.Run` before `Validate` (a problem is `ERROR: --icc: <reason>`, exit 1);
 in the window through `ParameterFields.UseProfile`, which writes the Dmax into the field and
 remembers the name with the text it wrote, so that `TryBuild` passes the name only while the
 field still shows that text. `ReportWriter.DmaxOrigin` turns the three cases into Anexa F's
@@ -100,23 +100,25 @@ rule, said in red in the Tonuri tab), and that the size must be identical.
 ```
 AstroPhotoAnalyzer <image> [--medium baryta|canvas|acrilic] [--dmax n | --icc profile.icc] [--wcs file.fit] [--distance m]
                    [--sizes cm,cm,...] [--aspect w:h] [--target-bg 0..1]
-                   [--passepartout cm] [--frame cm] [-o|--out file] [-h|--help]
+                   [--passepartout cm] [--frame cm] [--lang en|ro] [-o|--out file] [-h|--help]
 ```
 
 Flags may come before or after the image. `Options.Parse` never throws; a bad value is
-an `Error` printed as `EROARE: ...`. Every run prints the banner and copyright on lines
+an `Error` printed as `ERROR: ...` (`EROARE: ...` with `--lang ro`). Every run prints the banner and copyright on lines
 1-2, including `--help` and failures; `--help` ends with the GPLv3 warranty lines.
 
 Exit codes: **0** no recommendation above Ok, **1** error (bad argument, invalid
 parameter combination, missing file, a folder, unreadable format, refused linear image,
 cannot write `-o`), **2** at least one Attention, **3** at least one Problem. `-o` writes `WriteFull` through
 `ReportWriter.SaveFull` (whole or not at all, `recommendations-and-report.md`) and prints
-`    -> raport salvat: <file>`.
+`    -> report saved: <file>` (`    -> raport salvat: <file>` with `--lang ro`). `--lang` and its
+value are read first and stripped before the options are parsed (`language.md`).
 
 ## Golden scenes
 
 - **Golden scenes are synthetic and deterministic** (`Scenes.cs`): a dark sky with every
   defect the reference image had (low background, green cast, warm horizon corner,
   over-denoised, a nebula and a dust lane for continuous tones), a clean sky, a mono
-  8-bit PNG, a linear FITS. Version banner and temp path are scrubbed. Re-approve with
+  8-bit PNG, a linear FITS. Version banner and temp path are scrubbed. Each case is written
+  twice, `name.txt` with `--lang ro` and `name.en.txt` in English (`CheckBoth`). Re-approve with
   `APA_UPDATE_GOLDEN=1 dotnet test AstroPhotoAnalyzer.sln` and read the diff.

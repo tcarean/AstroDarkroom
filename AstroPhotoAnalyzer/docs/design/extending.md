@@ -24,6 +24,12 @@ view-models, no core types), each row with a `Description`; **update its rows in
 `../requirements.md` and the notes `measurements.md`, `thresholds.md`,
 `recommendations-and-report.md` and `window.md`**.
 
+**Any text the user sees** is a pair from its first line: `Tr.Pick(english, romanian)` in C#,
+`{local:T En='...', Ro='...'}` in XAML, the Romanian without diacritics, the two written and
+changed together; never a `const` or `static readonly` text, and never a comparison on a text
+(`language.md`, ADR 0048). The English goldens and `WindowEnglishTests` catch a text left
+Romanian.
+
 **An explanatory text in the window** (a row's `Description`, a table's `GuideParagraph`s, a
 preview tile's `Check`, a parameter field's `*Help` in `ParameterFields`): written in the
 view-model, explanation rather than diagnosis, every number interpolated from `Thresholds`,

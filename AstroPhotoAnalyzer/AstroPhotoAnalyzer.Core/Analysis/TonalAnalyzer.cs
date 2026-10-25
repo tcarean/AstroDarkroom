@@ -85,7 +85,7 @@ namespace AstroPhotoAnalyzer
     /// The 8-bit level of a grey (R = G = B) with that L*, 0..255, not rounded.
     /// </param>
     /// <param name="Meaning">
-    /// What the mark is, in Romanian as the window shows it ("negrul hartiei: baryta (Dmax
+    /// What the mark is, in the interface language as the window shows it ("negrul hartiei: baryta (Dmax
     /// 2.4)", "separare slaba").
     /// </param>
     /// <param name="Chosen">
@@ -126,19 +126,19 @@ namespace AstroPhotoAnalyzer
             {
                 double dmax = Parameters.DmaxOf(m);
                 bool chosen = m == p.Medium && !p.DmaxIsExplicit;
-                rows.Add(FromLstar(ColorMath.PaperBlackLstar(dmax), $"negrul hartiei: {Parameters.NameOf(m)} (Dmax {Fmt.Dmax(dmax)})", chosen));
+                rows.Add(FromLstar(ColorMath.PaperBlackLstar(dmax), Tr.Pick($"paper black: {Parameters.NameOf(m)} (Dmax {Fmt.Dmax(dmax)})", $"negrul hartiei: {Parameters.NameOf(m)} (Dmax {Fmt.Dmax(dmax)})"), chosen));
             }
             if (p.DmaxIsExplicit)
-                rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), $"negrul hartiei: Dmax {(p.DmaxProfile != null ? "din profilul ICC" : "explicit")} {Fmt.Dmax(p.Dmax)}", true));
-            rows.Add(FromLevel(Thresholds.DarkLevelA, $"pragul \"sub nivelul {Thresholds.DarkLevelA}\""));
-            rows.Add(FromLevel(Thresholds.DarkLevelB, $"pragul \"sub nivelul {Thresholds.DarkLevelB}\""));
-            rows.Add(FromLstar(Thresholds.LowSeparationLstar, "separare slaba"));
-            rows.Add(FromLstar(Thresholds.HighlightLstar, "lumini"));
+                rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), Tr.Pick($"paper black: {(p.DmaxProfile != null ? "ICC profile" : "explicit")} Dmax {Fmt.Dmax(p.Dmax)}", $"negrul hartiei: Dmax {(p.DmaxProfile != null ? "din profilul ICC" : "explicit")} {Fmt.Dmax(p.Dmax)}"), true));
+            rows.Add(FromLevel(Thresholds.DarkLevelA, Tr.Pick($"the threshold \"under level {Thresholds.DarkLevelA}\"", $"pragul \"sub nivelul {Thresholds.DarkLevelA}\"")));
+            rows.Add(FromLevel(Thresholds.DarkLevelB, Tr.Pick($"the threshold \"under level {Thresholds.DarkLevelB}\"", $"pragul \"sub nivelul {Thresholds.DarkLevelB}\"")));
+            rows.Add(FromLstar(Thresholds.LowSeparationLstar, Tr.Pick("weak separation", "separare slaba")));
+            rows.Add(FromLstar(Thresholds.HighlightLstar, Tr.Pick("highlights", "lumini")));
             SimulationRow primary = s?.Primary;
             if (primary != null && !primary.AsIs)
-                rows.Add(FromLevel(primary.Target * 255, primary.Explicit ? $"fundalul-tinta dat {Fmt.Level(primary.Target)}" : $"fundalul recomandat {Fmt.Level(primary.Target)}"));
+                rows.Add(FromLevel(primary.Target * 255, primary.Explicit ? Tr.Pick($"the target background given {Fmt.Level(primary.Target)}", $"fundalul-tinta dat {Fmt.Level(primary.Target)}") : Tr.Pick($"the recommended background {Fmt.Level(primary.Target)}", $"fundalul recomandat {Fmt.Level(primary.Target)}")));
             else if (primary == null && p.TargetBackground.HasValue)
-                rows.Add(FromLevel(p.TargetBackground.Value * 255, $"fundalul-tinta dat {Fmt.Level(p.TargetBackground.Value)}"));
+                rows.Add(FromLevel(p.TargetBackground.Value * 255, Tr.Pick($"the target background given {Fmt.Level(p.TargetBackground.Value)}", $"fundalul-tinta dat {Fmt.Level(p.TargetBackground.Value)}")));
             return rows.OrderBy(r => r.Lstar).ToList();
 
             static LstarLadderRow FromLstar(double l, string meaning, bool chosen = false)

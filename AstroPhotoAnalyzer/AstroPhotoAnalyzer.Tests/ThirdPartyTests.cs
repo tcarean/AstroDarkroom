@@ -155,7 +155,7 @@ public class ThirdPartyTests
     public void R004_HelpPrintsTheSharedWarrantyLines()
     {
         var sw = new StringWriter();
-        AnalyzerCli.Run(new[] { "--help" }, sw, sw);
+        AnalyzerCli.Run(new[] { "--help", "--lang", "ro" }, sw, sw);
         string[] lines = sw.ToString().Replace("\r\n", "\n").Split('\n');
 
         foreach (string l in RunReport.WarrantyLines)

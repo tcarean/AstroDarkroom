@@ -154,7 +154,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 layers.Add(new ClassLayer
                 {
                     Name = name,
-                    Legend = $"{name}: {Fmt.Pct(pct)} din dale" + LegendOf(cls, s),
+                    Legend = Tr.Pick($"{name}: {Fmt.Pct(pct)} of the patches", $"{name}: {Fmt.Pct(pct)} din dale") + LegendOf(cls, s),
                     Layer = RasterBitmaps.Overlay(w, h, (x, y) => ClassAt(x, y) == cls, colour),
                     Swatch = new SolidColorBrush(Color.FromRgb(colour.R, colour.G, colour.B)),
                 });
@@ -167,7 +167,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 return new CloudLayer
                 {
                     Name = c.Name,
-                    Caption = $"{c.Name}  L* {Fmt.F1(c.Lstar)}  tinta {ReportWriter.TargetText(c.ExactTarget)}  ({Fmt.Int(c.Patches)} dale)",
+                    Caption = Tr.Pick($"{c.Name}  L* {Fmt.F1(c.Lstar)}  target {ReportWriter.TargetText(c.ExactTarget)}  ({Fmt.Int(c.Patches)} patches)", $"{c.Name}  L* {Fmt.F1(c.Lstar)}  tinta {ReportWriter.TargetText(c.ExactTarget)}  ({Fmt.Int(c.Patches)} dale)"),
                     CentreX = cloud.CentreX / stride,
                     CentreY = cloud.CentreY / stride,
                     Radius = cloud.RadiusPx / stride,
@@ -178,7 +178,7 @@ namespace AstroPhotoAnalyzer.Wpf
             bool hasWcs = img.Source?.Wcs != null;
             return new MapViewModel
             {
-                Title = $"Harta praf / cer - {System.IO.Path.GetFileName(r.Path)}",
+                Title = Tr.Pick($"Dust / sky map - {System.IO.Path.GetFileName(r.Path)}", $"Harta praf / cer - {System.IO.Path.GetFileName(r.Path)}"),
                 Image = image,
                 Width = w,
                 Height = h,
@@ -205,25 +205,25 @@ namespace AstroPhotoAnalyzer.Wpf
             DustMap map = s.Map;
             bool band = map.Method == DustMethod.Band;
             string dustVerdict = map.DustSource == DustSource.DustClass
-                ? $"; L*-ul prafului = percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a lor, {Fmt.F1(asIs.LstarDust)}"
-                : $"; L*-ul prafului e cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al cerului, {Fmt.F1(asIs.LstarDust)}"
-                  + (map.FractionOf(PatchClass.Dust) == 0 ? " (nicio dala de praf)" : $" (clasa praf decide doar de la {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale si cand e mai intunecata)");
+                ? Tr.Pick($"; the dust's L* = their {Fmt.F0(Thresholds.DustClassFraction * 100)} % percentile, {Fmt.F1(asIs.LstarDust)}", $"; L*-ul prafului = percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a lor, {Fmt.F1(asIs.LstarDust)}")
+                : Tr.Pick($"; the dust's L* is the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of the sky, {Fmt.F1(asIs.LstarDust)}", $"; L*-ul prafului e cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al cerului, {Fmt.F1(asIs.LstarDust)}")
+                  + (map.FractionOf(PatchClass.Dust) == 0 ? Tr.Pick(" (no dust patch)", " (nicio dala de praf)") : Tr.Pick($" (the dust class decides only from {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % of the patches and when it is darker)", $" (clasa praf decide doar de la {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale si cand e mai intunecata)"));
             return cls switch
             {
                 PatchClass.Dust => " - " + s.DustClassDefinition + dustVerdict,
                 PatchClass.Sky => (band
-                    ? $" - in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade), fara praf"
-                    : $" - la cel mult {Fmt.F1(map.NoiseThreshold)} L* de cerul modelat, in sus sau in jos")
-                    + (map.SkyClassEmpty ? $"; nicio dala: L*-ul cerului = mediana tuturor dalelor, {Fmt.F1(asIs.LstarSky)}" : $"; L*-ul cerului = mediana lor, {Fmt.F1(asIs.LstarSky)}"),
+                    ? Tr.Pick($" - outside the band (|b| over {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} degrees), without dust", $" - in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade), fara praf")
+                    : Tr.Pick($" - at most {Fmt.F1(map.NoiseThreshold)} L* from the modelled sky, up or down", $" - la cel mult {Fmt.F1(map.NoiseThreshold)} L* de cerul modelat, in sus sau in jos"))
+                    + (map.SkyClassEmpty ? Tr.Pick($"; no patch: the sky's L* = the median of all the patches, {Fmt.F1(asIs.LstarSky)}", $"; nicio dala: L*-ul cerului = mediana tuturor dalelor, {Fmt.F1(asIs.LstarSky)}") : Tr.Pick($"; the sky's L* = their median, {Fmt.F1(asIs.LstarSky)}", $"; L*-ul cerului = mediana lor, {Fmt.F1(asIs.LstarSky)}")),
                 PatchClass.Band => band
-                    ? $" - |b| sub {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade, nici praf, nici nor luminos; sau peste cerul modelat cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* in afara ei"
-                    : $" - peste cerul modelat cu {Fmt.F1(map.NoiseThreshold)} L* ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului, sigma {Fmt.F2(map.SkySigma)} L*)",
+                    ? Tr.Pick($" - |b| under {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} degrees, neither dust nor bright cloud; or over the modelled sky by {Fmt.F0(Thresholds.BrightCloudLstar)} L* outside it", $" - |b| sub {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade, nici praf, nici nor luminos; sau peste cerul modelat cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* in afara ei")
+                    : Tr.Pick($" - over the modelled sky by {Fmt.F1(map.NoiseThreshold)} L* ({Fmt.F0(Thresholds.SkyNoiseK)} sigma of the sky, sigma {Fmt.F2(map.SkySigma)} L*)", $" - peste cerul modelat cu {Fmt.F1(map.NoiseThreshold)} L* ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului, sigma {Fmt.F2(map.SkySigma)} L*)"),
                 PatchClass.BrightCloud => band
-                    ? $" - in banda, cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste nivelul ei local"
+                    ? Tr.Pick($" - in the band, {Fmt.F0(Thresholds.BrightCloudLstar)} L* over its local level", $" - in banda, cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste nivelul ei local")
                     : double.IsPositiveInfinity(map.BrightThreshold)
-                        ? " - nicio dala: coada de nebuloasa nu se imparte in doua"
-                        : $" - peste cerul modelat cu {Fmt.F1(map.BrightThreshold)} L*, pragul Otsu al nebuloasei",
-                PatchClass.Peak => $" - cele mai luminoase {Fmt.F1(Thresholds.PeakFraction * 100)} % din dale",
+                        ? Tr.Pick(" - no patch: the nebula's tail does not split in two", " - nicio dala: coada de nebuloasa nu se imparte in doua")
+                        : Tr.Pick($" - over the modelled sky by {Fmt.F1(map.BrightThreshold)} L*, the nebula's Otsu threshold", $" - peste cerul modelat cu {Fmt.F1(map.BrightThreshold)} L*, pragul Otsu al nebuloasei"),
+                PatchClass.Peak => Tr.Pick($" - the brightest {Fmt.F1(Thresholds.PeakFraction * 100)} % of the patches", $" - cele mai luminoase {Fmt.F1(Thresholds.PeakFraction * 100)} % din dale"),
                 _ => "",
             };
         }

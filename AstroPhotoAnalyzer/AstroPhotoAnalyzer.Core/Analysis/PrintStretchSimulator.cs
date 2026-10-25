@@ -251,8 +251,10 @@ namespace AstroPhotoAnalyzer
         /// same sentence in the map's legend.
         /// </summary>
         internal string DustClassDefinition => Map.Method == DustMethod.Band
-            ? $"cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii sau sub cerul modelat"
-            : $"cu {Fmt.F1(Map.NoiseThreshold)} L* sub cerul modelat ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)";
+            ? Tr.Pick($"{Fmt.F0(Thresholds.DustDepthLstar)} L* below the band's local level or below the modelled sky",
+                      $"cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii sau sub cerul modelat")
+            : Tr.Pick($"{Fmt.F1(Map.NoiseThreshold)} L* below the modelled sky ({Fmt.F0(Thresholds.SkyNoiseK)} sigma of the sky)",
+                      $"cu {Fmt.F1(Map.NoiseThreshold)} L* sub cerul modelat ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)");
 
         /// <summary>
         /// What the dust is, by what gave its L* (ADR 0033): "percentila 25 % a dalelor de praf
@@ -266,15 +268,20 @@ namespace AstroPhotoAnalyzer
             {
                 string dustPct = Fmt.Pct(100.0 * DustPatchCount / PatchCount);
                 if (Map.DustSource == DustSource.DustClass)
-                    return $"percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf ({DustClassDefinition}; {dustPct} din cadru)";
+                    return Tr.Pick($"the {Fmt.F0(Thresholds.DustClassFraction * 100)} % percentile of the dust patches ({DustClassDefinition}; {dustPct} of the frame)",
+                                   $"percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf ({DustClassDefinition}; {dustPct} din cadru)");
                 string why = DustPatchCount == 0
-                    ? "nicio dala de praf"
+                    ? Tr.Pick("no dust patch", "nicio dala de praf")
                     : DustPatchCount < Thresholds.DustClassMinFraction * PatchCount
-                        ? $"dalele de praf, {dustPct} din cadru, sunt sub {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % si nu decid"
-                        : $"mai intunecat decat percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf, {dustPct} din cadru";
+                        ? Tr.Pick($"the dust patches, {dustPct} of the frame, are under {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % and do not decide",
+                                  $"dalele de praf, {dustPct} din cadru, sunt sub {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % si nu decid")
+                        : Tr.Pick($"darker than the {Fmt.F0(Thresholds.DustClassFraction * 100)} % percentile of the dust patches, {dustPct} of the frame",
+                                  $"mai intunecat decat percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf, {dustPct} din cadru");
                 return Map.SkyClassEmpty
-                    ? $"cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al tuturor dalelor (nicio dala de cer; {why})"
-                    : $"cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al dalelor de cer ({why})";
+                    ? Tr.Pick($"the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of all the patches (no sky patch; {why})",
+                              $"cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al tuturor dalelor (nicio dala de cer; {why})")
+                    : Tr.Pick($"the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of the sky patches ({why})",
+                              $"cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al dalelor de cer ({why})");
             }
         }
 
@@ -284,10 +291,11 @@ namespace AstroPhotoAnalyzer
         /// (nicio dala de cer)".
         /// </summary>
         internal string SkyDescription => Map.SkyClassEmpty
-            ? "mediana tuturor dalelor (nicio dala de cer)"
+            ? Tr.Pick("the median of all the patches (no sky patch)", "mediana tuturor dalelor (nicio dala de cer)")
             : Map.Method == DustMethod.Band
-                ? $"mediana dalelor de cer, in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade)"
-                : "mediana dalelor de cer (clase relative la cerul modelat)";
+                ? Tr.Pick($"the median of the sky patches, outside the band (|b| over {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} degrees)",
+                          $"mediana dalelor de cer, in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade)")
+                : Tr.Pick("the median of the sky patches (classes relative to the modelled sky)", "mediana dalelor de cer (clase relative la cerul modelat)");
 
         /// <summary>
         /// Why the band classes were not made: "fara WCS", "fara banda galactica in cadru",
@@ -296,10 +304,11 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal string MethodNote => Map.SkyReason switch
         {
-            SkyReason.NoWcs => "fara WCS",
-            SkyReason.NoBand => "fara banda galactica in cadru",
-            SkyReason.AllBand => "cadrul e in intregime in banda",
-            SkyReason.NarrowField => $"camp prea ingust pentru banda: {Fmt.F1(Map.LatitudeSpanDeg)} grade de latitudine galactica, sub {Fmt.F0(Thresholds.BandMinLatitudeSpanDeg)}",
+            SkyReason.NoWcs => Tr.Pick("no WCS", "fara WCS"),
+            SkyReason.NoBand => Tr.Pick("no galactic band in the frame", "fara banda galactica in cadru"),
+            SkyReason.AllBand => Tr.Pick("the frame lies entirely in the band", "cadrul e in intregime in banda"),
+            SkyReason.NarrowField => Tr.Pick($"a field too narrow for the band: {Fmt.F1(Map.LatitudeSpanDeg)} degrees of galactic latitude, under {Fmt.F0(Thresholds.BandMinLatitudeSpanDeg)}",
+                                             $"camp prea ingust pentru banda: {Fmt.F1(Map.LatitudeSpanDeg)} grade de latitudine galactica, sub {Fmt.F0(Thresholds.BandMinLatitudeSpanDeg)}"),
             _ => null,
         };
 
@@ -317,8 +326,11 @@ namespace AstroPhotoAnalyzer
                 string nebula = Of(2, PatchClass.Band), bright = Of(3, PatchClass.BrightCloud);
                 if (Map.Method == DustMethod.Sky)
                 {
-                    nebula += $" (peste cerul modelat cu {Fmt.F1(Map.NoiseThreshold)} L*, {Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)";
-                    bright += double.IsPositiveInfinity(Map.BrightThreshold) ? " (nicio dala peste pragul Otsu)" : $" (peste {Fmt.F1(Map.BrightThreshold)} L*, pragul Otsu)";
+                    nebula += Tr.Pick($" (over the modelled sky by {Fmt.F1(Map.NoiseThreshold)} L*, {Fmt.F0(Thresholds.SkyNoiseK)} sigma of the sky)",
+                                      $" (peste cerul modelat cu {Fmt.F1(Map.NoiseThreshold)} L*, {Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)");
+                    bright += double.IsPositiveInfinity(Map.BrightThreshold)
+                        ? Tr.Pick(" (no patch over the Otsu threshold)", " (nicio dala peste pragul Otsu)")
+                        : Tr.Pick($" (over {Fmt.F1(Map.BrightThreshold)} L*, the Otsu threshold)", $" (peste {Fmt.F1(Map.BrightThreshold)} L*, pragul Otsu)");
                 }
                 return $"{Of(0, PatchClass.Dust)}, {Of(1, PatchClass.Sky)}, {nebula}, {bright}, {Of(4, PatchClass.Peak)}";
             }

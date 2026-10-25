@@ -27,6 +27,10 @@ namespace AstroPhotoAnalyzer.Tests;
 ///
 /// Two things that change without the report changing are scrubbed: the version banner (a
 /// bump must not fail every golden test) and the run's temporary folder.
+///
+/// Every case runs in both languages (ADR 0048): Golden/name.txt holds the Romanian text,
+/// --lang ro, the same as before the English interface; Golden/name.en.txt the English one, the
+/// default.
 /// </summary>
 public class GoldenOutputTests
 {
@@ -37,15 +41,21 @@ public class GoldenOutputTests
 
     static bool Update => Environment.GetEnvironmentVariable("APA_UPDATE_GOLDEN") == "1";
 
-    static string RunCli(TempWorkspace ws, params string[] args)
+    static string RunCli(TempWorkspace ws, string lang, params string[] args)
     {
         var o = new StringWriter(); var e = new StringWriter();
-        int code = AnalyzerCli.Run(args, o, e);
+        int code = AnalyzerCli.Run([.. args, "--lang", lang], o, e);
         string text = o + "--- stderr ---\n" + e + "--- exit " + code + "\n";
         text = text.Replace("\r\n", "\n");
         text = text.Replace(ws.Dir, "<TEMP>");
         text = Regex.Replace(text, "^" + Regex.Escape(VersionInfo.Banner) + "$", "AstroPhotoAnalyzer <VERSIUNE>", RegexOptions.Multiline);
         return text;
+    }
+
+    static void CheckBoth(string name, TempWorkspace ws, params string[] args)
+    {
+        Check(name, RunCli(ws, "ro", args));
+        Check(name + ".en", RunCli(ws, "en", args));
     }
 
     static void Check(string name, string actual)
@@ -66,7 +76,7 @@ public class GoldenOutputTests
     public void R004_Help()
     {
         using var ws = new TempWorkspace();
-        Check("help", RunCli(ws, "--help"));
+        CheckBoth("help", ws, "--help");
     }
 
     [Fact]
@@ -77,7 +87,7 @@ public class GoldenOutputTests
         string tif = ws.WriteFile("cer-intunecat.tif", TiffTestData.Build16Rgb(r.W, r.H,
             (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V2("sRGB test")));
 
-        Check("dark-sky", RunCli(ws, tif, "--aspect", "50:35", "--distance", "1.5", "--dmax", "2.0"));
+        CheckBoth("dark-sky", ws, tif, "--aspect", "50:35", "--distance", "1.5", "--dmax", "2.0");
     }
 
     [Fact]
@@ -88,7 +98,7 @@ public class GoldenOutputTests
         string tif = ws.WriteFile("cer-curat.tif", TiffTestData.Build16Rgb(r.W, r.H,
             (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V4("sRGB IEC61966-2.1")));
 
-        Check("clean-sky-canvas", RunCli(ws, tif, "--medium", "canvas", "--sizes", "40,60,80"));
+        CheckBoth("clean-sky-canvas", ws, tif, "--medium", "canvas", "--sizes", "40,60,80");
     }
 
     [Fact]
@@ -97,7 +107,7 @@ public class GoldenOutputTests
         using var ws = new TempWorkspace();
         string png = ImageFiles.SavePng8Gray(Scenes.MonoSky(), ws.PathTo("mono.png"));
 
-        Check("mono-png8", RunCli(ws, png));
+        CheckBoth("mono-png8", ws, png);
     }
 
     /// <summary>
@@ -118,7 +128,7 @@ public class GoldenOutputTests
         };
         string fits = ws.WriteFile("cer-intunecat-wcs.fit", FitsTestData.Build(r.W, r.H, 3, (x, y, p) => r.At(p, y, x), bitpix: -32, extraCards: cards));
 
-        Check("dark-sky-wcs", RunCli(ws, fits, "--target-bg", "0.135", "--dmax", "2.0"));
+        CheckBoth("dark-sky-wcs", ws, fits, "--target-bg", "0.135", "--dmax", "2.0");
     }
 
     [Fact]
@@ -127,14 +137,14 @@ public class GoldenOutputTests
         using var ws = new TempWorkspace();
         string fits = ws.WriteFile("liniar.fit", FitsTestData.Build(64, 64, 3, (x, y, p) => 0.004, bitpix: -32));
 
-        Check("linear-fits", RunCli(ws, fits));
+        CheckBoth("linear-fits", ws, fits);
     }
 
     [Fact]
     public void R003_MissingFileAndBadOption()
     {
         using var ws = new TempWorkspace();
-        Check("missing-file", RunCli(ws, ws.PathTo("nu-exista.tif")));
-        Check("bad-option", RunCli(ws, "x.tif", "--dmax", "nouă"));
+        CheckBoth("missing-file", ws, ws.PathTo("nu-exista.tif"));
+        CheckBoth("bad-option", ws, "x.tif", "--dmax", "nouă");
     }
 }

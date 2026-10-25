@@ -1,0 +1,102 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+File: <TEMP>\cer-curat.tif
+  TIFF 16-bit RGB, 512 x 512 (0.3 MP), uncompressed, 1.5 MB, ICC profile: sRGB IEC61966-2.1
+  Medium: canvas (Dmax 1.5, paper black L* 20.7). Viewing distance: 1.5 x the diagonal.
+
+VERDICT: CAUTION
+
+1. The format to send  [OK]
+   - Send an 8-bit LZW TIFF (0.3 MB). The 16 -> 8 bit conversion is pure rounding, not a loss.
+     because: mean rounding error 0.25, max 0.50 levels (half a level is the most possible)
+   - If the lab accepts only JPEG: q100, 4:4:4 (0.2 MB).
+     because: mean error 0.61, max 3.5 levels; 1.8 % of the samples with an error > 2, at a mean level of 64 (in the dark sky, where JPEG does worst)
+
+2. The background and the paper  [OK]
+   - The background is print-safe as it is; you can go down to 0.20 (the dust at L* 21.2, the sky at L* 21.2).
+     because: the dust (the darkest 1 % of the sky patches (no dust patch); no WCS) at L* 26.9; paper black L* 20.7 at Dmax 1.5; the sky (the median of the sky patches (classes relative to the modelled sky)) at L* 27.0; the background level 0.25; the dust reaches paper black from Dmax 1.3; the visibility threshold L* 15, under it 0.0 % of the pixels
+
+3. The background colour and the gradients  [OK]
+   - The background is neutral.
+     because: background R 63.0 G 63.0 B 63.0; G - (R+B)/2 = 0.0, R - B = 0.0 levels
+
+4. The size of the print  [CAUTION]
+   ! From the natural distance the stars are slight discs at every size - the image is soft for its resolution; the smallest (40 x 40 cm) minimizes the effect. Give the viewing distance, so that it is judged on that.
+     because: median FWHM 3.05 px (Q1 3.03, Q3 3.07, 64 stars) = real detail ~168 px across the width; at 40 cm a star is 2.38 mm and a point from 8.21 m, against the natural distance 0.85 m (1.5 x the diagonal) (tolerance 15 %); the ratio is the same at every size
+
+5. Denoise for the print version  [OK]
+   - The residual noise is exactly where it should be for print.
+     because: median sigma 1.00 LSB on 37 smooth tiles (10 % 0.99, minimum 0.97); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.20 the noise shrinks by ~0.93 x (the slope of the curve at the background), to ~0.93 LSB
+
+6. Warnings  [OK]
+   (nothing to report)
+
+Appendix A. Tones
+  channel means (0..255): 63.9 / 63.9 / 63.9
+  under level 32: 0.0 %   under 64: 39.7 %
+  reference channel percentiles (0..255): p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
+  median L* 27.0; under paper black (L* 20.7): 0.0 %; under L* 15: 0.0 %; over L* 50: 0.1 %
+
+Appendix B. Background simulation (from level 0.25; a gamma curve on every channel)
+  target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
+  0.05                 2.161       3.5      3.6     100.0 %     99.8 %        0.0 %
+  0.06                 2.030       4.4      4.4     100.0 %     99.8 %        0.0 %
+  0.07                 1.918       5.4      5.4     100.0 %     99.8 %        0.0 %
+  0.08                 1.822       6.5      6.5     100.0 %     99.8 %        0.0 %
+  0.09                 1.737       7.7      7.7     100.0 %     99.7 %        0.0 %
+  0.10                 1.661       9.0      9.0     100.0 %     99.6 %        0.0 %
+  0.11                 1.592      10.2     10.3     100.0 %     99.5 %        0.0 %
+  0.12                 1.530      11.5     11.6     100.0 %     99.5 %        0.0 %
+  0.13                 1.472      12.7     12.8     100.0 %     99.4 %        0.0 %
+  0.14                 1.418      14.0     14.1     100.0 %     99.0 %        0.0 %
+  0.15                 1.369      15.2     15.3     100.0 %     17.0 %        0.0 %
+  0.16                 1.322      16.4     16.5     100.0 %      0.0 %        0.0 %
+  0.17                 1.278      17.6     17.7     100.0 %      0.0 %        0.0 %
+  0.18                 1.237      18.8     18.9     100.0 %      0.0 %        0.0 %
+  0.19                 1.198      20.0     20.1      92.2 %      0.0 %        0.0 %
+  0.20 *               1.161      21.2     21.2       0.0 %      0.0 %        0.0 %   print-safe
+  0.25 as is           1.000      26.9     27.0       0.0 %      0.0 %        0.1 %   print-safe
+  * = recommended: the lowest print-safe target - the dust on paper black and the sky at L* 15 or above
+  dust = the darkest 1 % of the sky patches (no dust patch) (no WCS); sky = the median of the sky patches (classes relative to the modelled sky); pure black = 32 px patches under paper black (L* 20.7 at Dmax 1.5)
+  classes: dust 0.0 %, sky 75.0 %, nebula 17.2 % (over the modelled sky by 0.2 L*, 4 sigma of the sky), bright nebula 7.4 % (over 0.5 L*, the Otsu threshold), peaks 0.4 %
+  the exact target of the dust on black: 0.196 at Dmax 1.5 (0.221 at Dmax 1.4, 0.173 at Dmax 1.6); the dust reaches paper black from Dmax 1.3; the sky reaches the visibility threshold L* 15 at 0.148
+
+Appendix C. Export
+  TIFF 8-bit LZW: 0.3 MB
+  JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level
+  q100           0.2 MB       0.611       3.5   2.24    2.49     1.8 %            64
+  q95            0.0 MB       0.844       5.9   2.76    3.61     6.1 %            64
+  q90            0.0 MB       0.847       8.1   2.78    3.81     6.1 %            64
+  16 -> 8 rounding: mean 0.250, max 0.498, p99.9 0.498 levels
+  shadow-lift stress (gamma 1.9), levels 8..120: from 16 bits 1 used / 0 missing; from 8 bits 1 used / 0 missing
+  plateau: no clean sky tiles (0)
+
+Appendix D. Resolution and size
+  stars: 64 measured; median FWHM 3.05 px, Q1 3.03, Q3 3.07; real detail ~168 px across the width
+  regions: centre 3.07 px (9); upper-left corner n/a (4); upper-right corner n/a (2); lower-left corner n/a (2); lower-right corner n/a (1)
+  sizes for 512 x 512 px:
+   width cm     height   dpi   star mm    point from       dist. used   outer frame cm
+      40          40.0    33      2.38        8.21 m           0.85 m   60 x 60
+      60          60.0    22      3.57       12.32 m           1.27 m   80 x 80
+      80          80.0    16      4.76       16.42 m           1.70 m   100 x 100
+  no recommended row: "point from" and "dist. used" both grow with the width, so their ratio (9.68) is the same on every row
+    and the test does not tell the sizes apart - the wall chooses; give a viewing distance to tell them apart
+
+Appendix E. Background colour
+  background colour, R / G / B (0..255): 63.0 / 63.0 / 63.0; G - (R+B)/2 = 0.0; R - B = 0.0
+  upper-left corner  63.7 / 63.8 / 63.7     delta +0.7 / +0.7 / +0.6
+  upper-right corner 63.8 / 63.8 / 63.7     delta +0.8 / +0.7 / +0.7
+  lower-left corner  63.7 / 63.7 / 63.7     delta +0.7 / +0.7 / +0.7
+  lower-right corner 63.7 / 63.8 / 63.8     delta +0.7 / +0.8 / +0.8
+  top edge           63.8 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.8
+  bottom edge        63.7 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.7
+  left edge          63.8 / 63.8 / 63.8     delta +0.8 / +0.7 / +0.8
+  right edge         63.8 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.7
+
+Appendix F. Parameters
+  medium canvas, Dmax 1.5; widths 40, 60, 80 cm; passepartout 7 cm, frame 3 cm
+  distance natural; target ratio native; target background none (grid 0.05..0.20); WCS none; seed 0
+
+--- stderr ---
+--- exit 2

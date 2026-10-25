@@ -48,8 +48,9 @@ Recommendations.Build             -> IReadOnlyList<Recommendation>   (needs ever
 ReportWriter.WriteBody            -> AnalysisResult.ReportBody
 ```
 
-Progress stages reported through `IProgress<string>`, in order: `citire`, `fisier`, `praf` (after `tonuri`),
-`tonuri`, `zgomot`, `fundal`, `stele`, `cuantizare`, `JPEG`, `raport`. No percentage:
+Progress stages reported through `IProgress<string>`, in order, in the interface language: `reading`, `file`,
+`tones`, `dust`, `noise`, `background`, `stars`, `quantization`, `JPEG`, `report` (in Romanian `citire`, `fisier`,
+`tonuri`, `praf`, `zgomot`, `fundal`, `stele`, `cuantizare`, `JPEG`, `raport`). No percentage:
 JPEG is about half the wall time and the rest is uneven.
 
 `AnalysisResult` holds every result record, the parameters, the path, the raster (kept

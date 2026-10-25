@@ -106,7 +106,7 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="path">The ICC profile's file, as the user gave it.</param>
         /// <param name="error">
-        /// Set to the reason, a Romanian sentence for the user, when the profile cannot be used;
+        /// Set to the reason, a sentence for the user in the interface language, when the profile cannot be used;
         /// null when it can.
         /// </param>
         /// <returns>
@@ -177,13 +177,14 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="given">The level as typed, before rounding; any double accepted.</param>
         /// <returns>
-        /// The Romanian sentence, which quotes the value given; null when the value is good.
+        /// The sentence, in the interface language, which quotes the value given; null when the value is good.
         /// </returns>
         internal static string TargetBackgroundError(double given)
         {
             double v = RoundTargetBackground(given);
             if (double.IsNaN(v) || double.IsInfinity(v) || v <= 0 || v >= 1)
-                return $"fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {Quote(given)}";
+                return Tr.Pick($"the target background must be a number strictly between 0 and 1 (it is rounded to {TargetBackgroundDecimals} decimals); got {Quote(given)}",
+                               $"fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {Quote(given)}");
             return null;
         }
 
@@ -197,9 +198,9 @@ namespace AstroPhotoAnalyzer
         /// "NaN, care nu e un numar", "infinit", "minus infinit", or the number as text.
         /// </returns>
         static string Quote(double given)
-            => double.IsNaN(given) ? "NaN, care nu e un numar"
-             : double.IsPositiveInfinity(given) ? "infinit"
-             : double.IsNegativeInfinity(given) ? "minus infinit"
+            => double.IsNaN(given) ? Tr.Pick("NaN, which is not a number", "NaN, care nu e un numar")
+             : double.IsPositiveInfinity(given) ? Tr.Pick("infinity", "infinit")
+             : double.IsNegativeInfinity(given) ? Tr.Pick("minus infinity", "minus infinit")
              : given.ToString("0.#########", System.Globalization.CultureInfo.InvariantCulture);
 
         /// <summary>
@@ -208,22 +209,22 @@ namespace AstroPhotoAnalyzer
         /// (every comparison with it is false). One message per parameter, the core's, so that
         /// the console and the window refuse the same values in the same words (R-024, ADR 0045).
         /// </summary>
-        /// <param name="what">The parameter's name for the user, in Romanian ("Dmax", "rama").</param>
+        /// <param name="what">The parameter's name for the user, in the interface language ("Dmax", "the frame").</param>
         /// <param name="value">The value given; null (not given) is never refused.</param>
-        /// <returns>The Romanian sentence, quoting the value; null when it is finite or null.</returns>
+        /// <returns>The sentence, in the interface language, quoting the value; null when it is finite or null.</returns>
         static string FiniteError(string what, double? value)
-            => value.HasValue && !double.IsFinite(value.Value) ? $"{what} trebuie sa fie un numar; a primit {Quote(value.Value)}" : null;
+            => value.HasValue && !double.IsFinite(value.Value) ? Tr.Pick($"{what} must be a number; got {Quote(value.Value)}", $"{what} trebuie sa fie un numar; a primit {Quote(value.Value)}") : null;
 
         /// <summary>
         /// <see cref="FiniteError"/> for a parameter that must also be positive: the aspect
         /// ratio, which the parsers build from two sides, so that "1:Infinity" arrives as 0 and
         /// "Infinity:Infinity" as NaN, past their checks on the sides.
         /// </summary>
-        /// <param name="what">The parameter's name for the user, in Romanian.</param>
+        /// <param name="what">The parameter's name for the user, in the interface language.</param>
         /// <param name="value">The value given; null (not given) is never refused.</param>
-        /// <returns>The Romanian sentence, quoting the value; null when it is finite and positive, or null.</returns>
+        /// <returns>The sentence, in the interface language, quoting the value; null when it is finite and positive, or null.</returns>
         static string PositiveError(string what, double? value)
-            => value.HasValue && !(double.IsFinite(value.Value) && value.Value > 0) ? $"{what} trebuie sa fie un numar pozitiv; a primit {Quote(value.Value)}" : null;
+            => value.HasValue && !(double.IsFinite(value.Value) && value.Value > 0) ? Tr.Pick($"{what} must be a positive number; got {Quote(value.Value)}", $"{what} trebuie sa fie un numar pozitiv; a primit {Quote(value.Value)}") : null;
 
         /// <summary>
         /// The simulation's grid: 0.05 .. 0.20 in steps of 0.01, the levels a night sky is
@@ -270,7 +271,7 @@ namespace AstroPhotoAnalyzer
         /// it, so as to refuse the same things with the same words.
         /// </summary>
         /// <returns>
-        /// The first rule broken, as a Romanian sentence for the user; null when none is.
+        /// The first rule broken, as a sentence for the user in the interface language; null when none is.
         /// </returns>
         internal string Validate()
         {
@@ -280,17 +281,20 @@ namespace AstroPhotoAnalyzer
                 if (bg != null) return bg;
             }
             string notANumber = FiniteError("Dmax", DmaxOverride)
-                ?? FiniteError("distanta de privire", ViewingDistanceM)
-                ?? (CandidateWidthsCm ?? Array.Empty<double>()).Select(w => FiniteError("latimea de print", w)).FirstOrDefault(e => e != null)
-                ?? PositiveError("raportul de aspect", TargetAspect)
-                ?? FiniteError("passepartout-ul", PassepartoutCm)
-                ?? FiniteError("rama", FrameCm);
+                ?? FiniteError(Tr.Pick("the viewing distance", "distanta de privire"), ViewingDistanceM)
+                ?? (CandidateWidthsCm ?? Array.Empty<double>()).Select(w => FiniteError(Tr.Pick("the print width", "latimea de print"), w)).FirstOrDefault(e => e != null)
+                ?? PositiveError(Tr.Pick("the aspect ratio", "raportul de aspect"), TargetAspect)
+                ?? FiniteError(Tr.Pick("the passepartout", "passepartout-ul"), PassepartoutCm)
+                ?? FiniteError(Tr.Pick("the frame", "rama"), FrameCm);
             if (notANumber != null) return notANumber;
             double minPassepartout = Thresholds.PassepartoutMinFrameRatio * FrameCm;
             if (PassepartoutCm > 0 && PassepartoutCm < minPassepartout)
-                return $"passepartout-ul ({Fmt.F1(PassepartoutCm)} cm) e sub dublul latimii ramei ({Fmt.F1(FrameCm)} cm): "
-                     + $"sub {Fmt.F0(Thresholds.PassepartoutMinFrameRatio)} x rama, rama strange imaginea. "
-                     + $"Mareste passepartout-ul la cel putin {Fmt.F1(minPassepartout)} cm, ia o rama mai ingusta, sau pune 0 pentru fara passepartout.";
+                return Tr.Pick($"the passepartout ({Fmt.F1(PassepartoutCm)} cm) is under twice the width of the frame ({Fmt.F1(FrameCm)} cm): "
+                               + $"under {Fmt.F0(Thresholds.PassepartoutMinFrameRatio)} x the frame, the frame crowds the image. "
+                               + $"Widen the passepartout to at least {Fmt.F1(minPassepartout)} cm, take a narrower frame, or set 0 for no passepartout.",
+                               $"passepartout-ul ({Fmt.F1(PassepartoutCm)} cm) e sub dublul latimii ramei ({Fmt.F1(FrameCm)} cm): "
+                               + $"sub {Fmt.F0(Thresholds.PassepartoutMinFrameRatio)} x rama, rama strange imaginea. "
+                               + $"Mareste passepartout-ul la cel putin {Fmt.F1(minPassepartout)} cm, ia o rama mai ingusta, sau pune 0 pentru fara passepartout.");
             return null;
         }
 
@@ -326,7 +330,7 @@ namespace AstroPhotoAnalyzer
             "baryta" => PrintMedium.Baryta,
             "canvas" => PrintMedium.Canvas,
             "acrilic" => PrintMedium.Acrylic,
-            _ => throw new ArgumentException("mediu necunoscut: " + name),
+            _ => throw new ArgumentException(Tr.Pick("unknown medium: ", "mediu necunoscut: ") + name),
         };
 
         /// <summary>

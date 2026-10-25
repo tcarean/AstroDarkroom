@@ -116,7 +116,8 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   posterised sky) the threshold is 0 and the class is the sign of the residual. The map keeps
   `SkySigma`, `NoiseThreshold` and `BrightThreshold` for the legend and Anexa B; `BandLevel` is
   null. The five `PatchClass` values are one enum on both paths and `ClassNames(Method)` gives
-  their Romanian names (`banda` / `nori luminosi` or `nebuloasa` / `nebuloasa stralucitoare`).
+  their names in the interface language (`band` / `bright clouds` or `nebula` / `bright nebula`;
+  in Romanian `banda` / `nori luminosi` or `nebuloasa` / `nebuloasa stralucitoare`).
 - `Measure(patchLstars, map, paperBlack)` gives the `DustStats` of a (lifted) subsample on one
   path for both: `LstarSky` is the median of the sky patches (of all patches when the class is
   empty); `LstarDust` is the darkest extended area, the lower of the `DustClassFraction` (25 %)

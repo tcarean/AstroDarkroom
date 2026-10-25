@@ -144,7 +144,7 @@ namespace AstroPhotoAnalyzer.Wpf
             double shadow = CurveAdvisor.ShadowChartLimit(c);
             return new CurveWindowViewModel
             {
-                Title = $"Curba {s.Name} - {imageName}",
+                Title = Tr.Pick($"Curve {s.Name} - {imageName}", $"Curba {s.Name} - {imageName}"),
                 Caption = CurveTexts.CurveCaption(colour),
                 PointsNote = CurveTexts.PointsNote(method, colour),
                 Rows = rows,

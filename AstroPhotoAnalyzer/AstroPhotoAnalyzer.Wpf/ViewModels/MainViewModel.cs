@@ -45,7 +45,7 @@ namespace AstroPhotoAnalyzer.Wpf
         AnalysisResult _result;
 
         // The words the console prints after -o ("-> raport salvat: <file>"), without the arrow.
-        const string SavedPrefix = "raport salvat: ";
+        static string SavedPrefix => Tr.Pick("report saved: ", "raport salvat: ");
 
         /// <summary>Makes the parameter fields and the tabs, all empty.</summary>
         public MainViewModel()
@@ -122,9 +122,15 @@ namespace AstroPhotoAnalyzer.Wpf
 
         public bool CanSave => HasResult && !IsBusy;
 
-        /// <summary>Raport.txt beside the image - the default name in the save dialog.</summary>
+        /// <summary>
+        /// Report.txt (Raport.txt in Romanian) beside the image - the default name in the save
+        /// dialog.
+        /// </summary>
         public string DefaultReportPath
-            => HasPath ? System.IO.Path.Combine(System.IO.Path.GetDirectoryName(_path) ?? "", "Raport.txt") : "Raport.txt";
+            => HasPath ? System.IO.Path.Combine(System.IO.Path.GetDirectoryName(_path) ?? "", ReportFileName) : ReportFileName;
+
+        /// <summary>The report's default file name, in the interface language.</summary>
+        static string ReportFileName => Tr.Pick("Report.txt", "Raport.txt");
 
         /// <summary>
         /// Chooses the image and starts the analysis: without it the window has nothing to show.
@@ -159,7 +165,7 @@ namespace AstroPhotoAnalyzer.Wpf
             HasResult = false;
             ClearTabs();
             IsBusy = true;
-            BusyMessage = "citire";
+            BusyMessage = Tr.Pick("reading", "citire");
             var progress = new Progress<string>(stage => BusyMessage = stage);
             string path = Path;
             try

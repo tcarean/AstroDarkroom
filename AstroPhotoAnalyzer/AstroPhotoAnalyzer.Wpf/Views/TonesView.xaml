@@ -41,14 +41,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="TONURI" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='TONES', Ro='TONURI'}" />
           <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" />
         </StackPanel>
       </Border>
 
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="SIMULAREA FUNDALULUI (curba gamma pe toate canalele)" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='BACKGROUND SIMULATION (gamma curve on all channels)', Ro='SIMULAREA FUNDALULUI (curba gamma pe toate canalele)'}" />
           <!-- The same mono text as in Anexa B; on each row with a target, the button that
                opens the row's preview (R-131). The header and the note have no button. -->
           <ItemsControl ItemsSource="{Binding SimulationRows}">
@@ -71,26 +71,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding Definition}" />
           <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource BadBr}" Text="{Binding NoWcsWarning}"
                      Visibility="{Binding NoWcsWarning, Converter={StaticResource NotNullToVis}}" />
-          <Button Content="Harta praf / cer" Command="{Binding OpenMap}" HorizontalAlignment="Left" Margin="0,10,0,0"
-                  ToolTip="Imaginea intreaga cu dalele de praf si de cer vopsite si norii catalogati pe nume" />
+          <Button Content="{local:T En='Dust / sky map', Ro='Harta praf / cer'}" Command="{Binding OpenMap}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                  ToolTip="{local:T En='The whole image with the dust and sky patches painted and the catalogued clouds by name', Ro='Imaginea intreaga cu dalele de praf si de cer vopsite si norii catalogati pe nume'}" />
           <ItemsControl ItemsSource="{Binding CloudRows}" ItemTemplate="{StaticResource MonoRowTemplate}" Margin="0,12,0,0" />
         </StackPanel>
       </Border>
 
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="NIVEL SI L*: REPERELE TABULUI" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='LEVEL AND L*: THE LANDMARKS OF THE TAB', Ro='NIVEL SI L*: REPERELE TABULUI'}" />
           <ItemsControl ItemsSource="{Binding LadderRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
-          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0">
-            Nivelul e cel al unui gri (R = G = B) cu acelasi L*: ce cauti pe histograma din Siril cand tragi de curba.
-            Pe culoare acelasi nivel da alt L* dupa nuanta - un fundal albastru are L* mai mic decat sugereaza nivelurile lui.
-          </TextBlock>
+          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
+                     Text="{local:T En='The level is that of a grey (R = G = B) with the same L*: what you look for on the Siril histogram when you pull the curve. On a colour the same level gives a different L* by its hue - a blue background has a lower L* than its levels suggest.', Ro='Nivelul e cel al unui gri (R = G = B) cu acelasi L*: ce cauti pe histograma din Siril cand tragi de curba. Pe culoare acelasi nivel da alt L* dupa nuanta - un fundal albastru are L* mai mic decat sugereaza nivelurile lui.'}" />
         </StackPanel>
       </Border>
 
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="CUM SE CITESTE TABUL" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='HOW TO READ THE TAB', Ro='CUM SE CITESTE TABUL'}" />
           <ItemsControl ItemsSource="{Binding Guide}" ItemTemplate="{StaticResource GuideParagraphTemplate}" />
         </StackPanel>
       </Border>

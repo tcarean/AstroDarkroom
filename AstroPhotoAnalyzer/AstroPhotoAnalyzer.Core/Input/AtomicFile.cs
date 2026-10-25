@@ -67,8 +67,10 @@ namespace AstroPhotoAnalyzer
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                 {
                     throw new IOException(
-                        $"nu se poate crea un fisier in folderul {Path.GetDirectoryName(full)}, langa {Path.GetFileName(full)} "
-                        + $"(fisierul se scrie intreg intr-un fisier temporar, mutat peste nume la sfarsit): {e.Message}", e);
+                        Tr.Pick($"a file cannot be created in the folder {Path.GetDirectoryName(full)}, beside {Path.GetFileName(full)} "
+                                + $"(the file is written whole to a temporary file, moved over the name at the end): {e.Message}",
+                                $"nu se poate crea un fisier in folderul {Path.GetDirectoryName(full)}, langa {Path.GetFileName(full)} "
+                                + $"(fisierul se scrie intreg intr-un fisier temporar, mutat peste nume la sfarsit): {e.Message}"), e);
                 }
                 using (o) write(o);
                 File.Move(temp, full, overwrite: true);

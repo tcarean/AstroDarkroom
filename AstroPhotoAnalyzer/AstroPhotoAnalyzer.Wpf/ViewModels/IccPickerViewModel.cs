@@ -124,8 +124,11 @@ namespace AstroPhotoAnalyzer.Wpf
 
         // Explanation, not diagnosis (ADR 0020): what is read and why the printer matters.
         public string Explanation =>
+            Tr.Pick("The Dmax is read from the profile's colorimetric table: the printer's black against the paper white. "
+            + "Choose the profile of your paper on the printer that will print it - the print shop usually gives it; "
+            + "the same paper on another printer has another black.",
             "Dmax-ul se citeste din tabela colorimetrica a profilului: negrul imprimantei fata de albul hartiei. "
             + "Alege profilul hartiei tale pe imprimanta care o va tipari - de obicei il da atelierul; "
-            + "aceeasi hartie pe alta imprimanta are alt negru.";
+            + "aceeasi hartie pe alta imprimanta are alt negru.");
     }
 }

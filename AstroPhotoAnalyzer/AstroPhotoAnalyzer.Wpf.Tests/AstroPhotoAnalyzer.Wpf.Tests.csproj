@@ -46,6 +46,7 @@
     <Compile Include="..\AstroPhotoAnalyzer.Tests\TiffTestData.cs" Link="Shared\TiffTestData.cs" />
     <Compile Include="..\AstroPhotoAnalyzer.Tests\IccTestData.cs" Link="Shared\IccTestData.cs" />
     <Compile Include="..\AstroPhotoAnalyzer.Tests\IccPrinterTestData.cs" Link="Shared\IccPrinterTestData.cs" />
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\RomanianWords.cs" Link="Shared\RomanianWords.cs" />
   </ItemGroup>
 
 </Project>

@@ -40,7 +40,7 @@ namespace AstroPhotoAnalyzer
     internal sealed class RefusedImageException : Exception
     {
         /// <summary>A refusal with the message the user sees.</summary>
-        /// <param name="message">The reason and what to do, Romanian.</param>
+        /// <param name="message">The reason and what to do, in the interface language.</param>
         internal RefusedImageException(string message) : base(message) { }
     }
 
@@ -99,12 +99,13 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <param name="p">The parameters.</param>
         /// <param name="progress">
-        /// Told the name of each stage as it starts ("citire" first); null for none.
+        /// Told the name of each stage as it starts, in the interface language ("reading" first,
+        /// "citire" in Romanian); null for none.
         /// </param>
         /// <returns>The analysis, with <see cref="AnalysisResult.FullPath"/> set.</returns>
         internal static AnalysisResult Execute(string path, Parameters p, IProgress<string> progress = null)
         {
-            progress?.Report("citire");
+            progress?.Report(Tr.Pick("reading", "citire"));
             Raster r = ImageLoader.Load(path);
             if (p.WcsPath != null) r.Source = r.Source with { Wcs = BorrowWcs(p.WcsPath, r) };
             AnalysisResult res = Execute(r, path, p, progress);
@@ -116,7 +117,7 @@ namespace AstroPhotoAnalyzer
         /// The WCS of another FITS, for a raster of the same geometry (R-027). A PNG or TIFF
         /// exported from Siril is in the displayed orientation, that is the BOTTOM-UP FITS flipped,
         /// so the WCS's flip follows the ROWORDER of the borrowed FITS, not the analysed file.
-        /// Throws, with a Romanian message that starts with "--wcs:", when the file is missing,
+        /// Throws, with a message in the interface language that starts with "--wcs:", when the file is missing,
         /// cannot be read, has another size or holds no TAN WCS.
         /// </summary>
         /// <param name="wcsPath">The FITS whose header holds the WCS.</param>
@@ -124,14 +125,17 @@ namespace AstroPhotoAnalyzer
         /// <returns>The WCS, never null.</returns>
         internal static Wcs BorrowWcs(string wcsPath, Raster r)
         {
-            if (!File.Exists(wcsPath)) throw new Exception("--wcs: fisierul nu exista: " + wcsPath);
+            if (!File.Exists(wcsPath)) throw new Exception("--wcs: " + Tr.Pick("the file does not exist: ", "fisierul nu exista: ") + wcsPath);
             IReadOnlyDictionary<string, string> hdr; int w, h; bool bottomUp;
             try { (hdr, w, h, bottomUp) = FitsReader.ReadImageHeader(wcsPath); }
             catch (Exception e) { throw new Exception("--wcs: " + e.Message); }
             if (w != r.W || h != r.H)
-                throw new Exception($"--wcs: FITS-ul are {Fmt.Dim(w, h)} px, imaginea {Fmt.Dim(r.W, r.H)}: WCS-ul se imprumuta doar intre imagini de aceeasi marime.");
+                throw new Exception(Tr.Pick($"--wcs: the FITS is {Fmt.Dim(w, h)} px, the image {Fmt.Dim(r.W, r.H)}: a WCS is lent only between images of the same size.",
+                                            $"--wcs: FITS-ul are {Fmt.Dim(w, h)} px, imaginea {Fmt.Dim(r.W, r.H)}: WCS-ul se imprumuta doar intre imagini de aceeasi marime."));
             Wcs wcs = Wcs.TryFrom(hdr, w, h, bottomUp);
-            if (wcs == null) throw new Exception("--wcs: FITS-ul n-are WCS (CTYPE RA---TAN / DEC--TAN cu CRPIX, CRVAL si CD, PC + CDELT sau CDELT + CROTA2): " + wcsPath);
+            if (wcs == null)
+                throw new Exception(Tr.Pick("--wcs: the FITS has no WCS (CTYPE RA---TAN / DEC--TAN with CRPIX, CRVAL and CD, PC + CDELT or CDELT + CROTA2): ",
+                                            "--wcs: FITS-ul n-are WCS (CTYPE RA---TAN / DEC--TAN cu CRPIX, CRVAL si CD, PC + CDELT sau CDELT + CROTA2): ") + wcsPath);
             return wcs;
         }
 
@@ -147,46 +151,50 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <param name="p">The parameters.</param>
         /// <param name="progress">
-        /// Told the name of each stage as it starts: "fisier", "tonuri", "praf", "zgomot",
-        /// "fundal", "stele", "cuantizare", "JPEG", "raport"; null for none.
+        /// Told the name of each stage as it starts, in the interface language: "file", "tones",
+        /// "dust", "noise", "background", "stars", "quantization", "JPEG", "report" (Romanian
+        /// "fisier", "tonuri", "praf", "zgomot", "fundal", "stele", "cuantizare", "JPEG",
+        /// "raport"); null for none.
         /// </param>
         /// <returns>The analysis; its <see cref="AnalysisResult.FullPath"/> stays null.</returns>
         internal static AnalysisResult Execute(Raster r, string path, Parameters p, IProgress<string> progress = null)
         {
             if (RasterOps.LooksLinear(r, out double median))
-                throw new RefusedImageException(
+                throw new RefusedImageException(Tr.Pick(
+                    $"the image looks LINEAR (median {Fmt.F4(median)}, under {Fmt.F2(Thresholds.LinearMedianMax)}): the tool measures only finished, stretched images. "
+                    + "Stretch it in Siril and analyse the result.",
                     $"imaginea pare LINIARA (mediana {Fmt.F4(median)}, sub {Fmt.F2(Thresholds.LinearMedianMax)}): unealta masoara doar imagini finite, stretch-uite. "
-                    + "Stretch-uieste in Siril si analizeaza rezultatul.");
+                    + "Stretch-uieste in Siril si analizeaza rezultatul."));
 
             var res = new AnalysisResult { Path = path, Parameters = p, Raster = r };
 
-            progress?.Report("fisier");
+            progress?.Report(Tr.Pick("file", "fisier"));
             res.File = FileFacts.Of(r);
             res.BitDepth = BitDepthAnalyzer.Analyze(r);
             res.Crop = CropAnalyzer.Analyze(r.W, r.H, p.TargetAspect);
 
-            progress?.Report("tonuri");
+            progress?.Report(Tr.Pick("tones", "tonuri"));
             res.Tonal = TonalAnalyzer.Analyze(r, p);
-            progress?.Report("praf");
+            progress?.Report(Tr.Pick("dust", "praf"));
             res.Simulation = PrintStretchSimulator.Simulate(r, res.Tonal, p);
 
-            progress?.Report("zgomot");
+            progress?.Report(Tr.Pick("noise", "zgomot"));
             res.Noise = NoiseAnalyzer.Analyze(r, p);
 
-            progress?.Report("fundal");
+            progress?.Report(Tr.Pick("background", "fundal"));
             res.Background = BackgroundAnalyzer.Analyze(r);
 
-            progress?.Report("stele");
+            progress?.Report(Tr.Pick("stars", "stele"));
             res.Stars = StarAnalyzer.Analyze(r);
             res.Size = PrintSizeAnalyzer.Analyze(res.Crop.W, res.Crop.H, res.Stars.FwhmMedian, p);
 
-            progress?.Report("cuantizare");
+            progress?.Report(Tr.Pick("quantization", "cuantizare"));
             res.Quantization = QuantizationAnalyzer.Analyze(r);
 
             progress?.Report("JPEG");
             res.Jpeg = JpegAnalyzer.Analyze(r);
 
-            progress?.Report("raport");
+            progress?.Report(Tr.Pick("report", "raport"));
             res.Recommendations = Recommendations.Build(res);
             var sw = new StringWriter();
             ReportWriter.WriteBody(res, sw);
