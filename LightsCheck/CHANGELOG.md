@@ -11,6 +11,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - `--pixel NaN` and `--pixel Infinity` were accepted by the console, `Infinity` by the window.
   Both now refuse anything that is not a finite number greater than 0, with the same message as
   before, by one check in the core (`SeriesOptions.PixelSizeIsValid`; R-004, R-029).
+- In the window, a star cut-out decode that failed after another frame had been selected wrote
+  its `EROARE` note under the newer frame; a stale decode now writes nothing, success or
+  failure alike (R-031).
 
 ### Internal
 

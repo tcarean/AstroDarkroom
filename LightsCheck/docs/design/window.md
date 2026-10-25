@@ -68,7 +68,8 @@ and the `StarShape`; `SeriesReport.CropCaption` writes the caption (the words st
 window, shown 5x with nearest-neighbour scaling so the pixels stay square. Whatever the
 decoder throws becomes the note of that frame, caught by the same net `SeriesRun` casts per
 frame. `CropsPending` is the decode in flight; a selection made while it runs wins
-(`LoadCropsAsync` checks the selected row before publishing).
+(`LoadCropsAsync` checks the selected row before publishing the cut-outs and before publishing
+an error alike: a stale decode that fails writes nothing).
 
 ## Drawing (`Charts.cs`)
 

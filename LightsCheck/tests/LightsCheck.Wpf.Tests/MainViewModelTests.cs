@@ -300,6 +300,35 @@ public class MainViewModelTests
         Assert.NotEmpty(vm.Crops);
     }
 
+    /// <summary>
+    /// A decode that fails after another frame was selected must not write its error over the
+    /// newer frame's note (R-031): the error path of LoadCropsAsync checks the selection as the
+    /// success path does. The failing decode's continuation is held back by a queued context, so
+    /// it runs only after the newer selection, as a slow decode's would on the window's dispatcher.
+    /// </summary>
+    [Fact]
+    public async Task R031_AStaleDecodeThatFailsDoesNotOverwriteTheNewerFramesNote()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        FrameTableRow row = SeriesReport.FrameRows(vm.Result!)[0];
+        // The same measured frame twice: once with a path no reader can open, once without a
+        // path, which gets its note at once with no decode.
+        FrameRowVm failing = new(row, Path.Combine(f.LightsDir, "lipseste.fit"));
+        FrameRowVm unmeasured = new(row, null);
+
+        using QueuedContext ctx = new();
+        vm.SelectedFrame = failing;
+        Task stale = vm.CropsPending;
+        vm.SelectedFrame = unmeasured;
+        Assert.Equal(WindowTexts.NoCrops, vm.CropsNote);
+        ctx.RunUntil(stale);
+
+        Assert.Equal(WindowTexts.NoCrops, vm.CropsNote);
+        Assert.Same(unmeasured, vm.SelectedFrame);
+    }
+
     /// <summary>The export writes the console's three files into the chosen folder and nothing into lights/.</summary>
     [Fact]
     public async Task R032_ExportWritesTheThreeFilesIntoTheChosenFolderOnly()

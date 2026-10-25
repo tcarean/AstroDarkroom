@@ -541,7 +541,8 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Decodes the selected frame again on a pool thread and publishes its star cut-outs, unless
     /// another frame was selected meanwhile; a frame without a path, without a measurement or
-    /// without a cut-out gets the note instead, and a decoder error becomes the note.
+    /// without a cut-out gets the note instead, and a decoder error becomes the note, again
+    /// only while the frame is still the one selected.
     /// </summary>
     /// <param name="row">The frame selected; null for no selection, which clears the note.</param>
     private async Task LoadCropsAsync(FrameRowVm? row)
@@ -576,8 +577,12 @@ public sealed class MainViewModel : ObservableObject
         catch (Exception e) when (e is not OperationCanceledException)
         {
             // The same net as SeriesRun casts per frame: whatever the decoder throws is this
-            // frame's error, shown in its place, never an unobserved task exception.
-            CropsNote = "EROARE: " + e.Message;
+            // frame's error, shown in its place, never an unobserved task exception; in its
+            // place only while this frame is still the one selected (R-031).
+            if (ReferenceEquals(_selectedFrame, row))
+            {
+                CropsNote = "EROARE: " + e.Message;
+            }
         }
     }
 
