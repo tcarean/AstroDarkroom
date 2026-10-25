@@ -28,6 +28,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The window's Expo and End to end tabs share more of their sentences with the console (the
+  review of 2026-10-25 after the documentation backfill's area 4): the "not a raw flat"
+  reasons on the Expo card are now the console's lines, each one paragraph (`--expo are
+  nevoie de...`, where the card used to say `Modul are nevoie de...`), only the way out
+  staying the window's; the End to end field line is the console's value unpadded (`30.0
+  grade  (WCS)`, `nedeterminat (FOCALLEN=20mm, fara marimea pixelului)`, `necunoscut
+  (headerul nu da nici focala, nici scara)`), and a refusal judged from the focal length
+  alone now says, as the console does, that the decision assumed the largest plausible
+  sensor (R-083). The console texts are unchanged.
 - The FITS reader checks the file's magic: a file that does not begin with the `SIMPLE` card
   fails with `FITS: fisierul nu incepe cu SIMPLE.` in both reads, the full load and the
   metadata-only one (`ImageLoader.LoadInfo`), and a header cut before `END` fails in both with

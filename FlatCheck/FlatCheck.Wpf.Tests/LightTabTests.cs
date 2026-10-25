@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using FlatCheck.Tests;
+
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
@@ -137,6 +139,25 @@ public class LightTabTests
         Assert.Contains("degenerare geometrica", vm.Reasons);
         Assert.Contains("Ratio", vm.Reasons);
         Assert.NotEmpty(vm.Field);
+    }
+
+    /// <summary>
+    /// A series whose header gives the focal length and no pixel size - a DSLR through Siril -
+    /// is judged on the full-frame assumption, and the refusal says so, as the console does; the
+    /// console's --fov way out is left off, the window has no control for it.
+    /// </summary>
+    [Fact]
+    public async Task R083_ARefusalJudgedOnTheFocalLengthAloneSaysSo()
+    {
+        using var f = new SessionFixture().WithFlatMaster()
+                                          .WithLightSeries(6, FitsTestData.OpticsCards(20));
+
+        var vm = await Run(f);
+
+        Assert.True(vm.Refused);
+        Assert.Equal("nedeterminat (FOCALLEN=20mm, fara marimea pixelului)", vm.Field);
+        Assert.Contains("Decizia s-a luat doar pe focala", vm.Reasons);
+        Assert.DoesNotContain("--fov", vm.Reasons);
     }
 
     /// <summary>Verdictul de refuz se coloreaza neutru, nu rosu.</summary>

@@ -61,12 +61,8 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void WriteSuitability(SuitabilityResult s, TextWriter w)
         {
-            if (!double.IsNaN(s.FovDeg))
-                w.WriteLine($"    camp diagonal           : {s.FovDeg,5:F1} grade  ({s.Source})");
-            else if (!double.IsNaN(s.FocalMm))
-                w.WriteLine($"    camp acoperit           : nedeterminat ({s.Source})");
-            else
-                w.WriteLine("    camp acoperit           : necunoscut (headerul nu da nici focala, nici scara)");
+            string label = double.IsNaN(s.FovDeg) ? "camp acoperit" : "camp diagonal";
+            w.WriteLine($"    {label,-24}: {FieldValue(s, 5)}");
 
             if (s.Level == FovLevel.Marginal)
             {
@@ -97,11 +93,48 @@ namespace FlatCheck
             w.WriteLine("    " + NotALimitation);
             w.WriteLine("\n    Pentru un setup cu camp larg, testul care raspunde e rotatia la 180 de");
             w.WriteLine("    grade (--ratio): valideaza flat-ul fara sa implice cerul deloc.");
-            if (double.IsNaN(s.FovDeg) && !double.IsNaN(s.FocalMm))
+            if (JudgedOnTheFocalLengthAlone(s))
             {
-                w.WriteLine("\n    Decizia s-a luat doar pe focala, presupunand cel mai mare senzor");
-                w.WriteLine("    plauzibil. Daca al tau e mai mic, da campul real cu --fov <grade>.");
+                w.WriteLine("\n    " + FocalOnlyLines[0]);
+                w.WriteLine("    " + FocalOnlyLines[1] + " " + FovAdvice);
             }
+        }
+
+        /// <summary>Whether the field was judged from the focal length alone, on the largest
+        /// plausible sensor (<see cref="LightSuitability.Check"/>'s fourth layer): no field, a
+        /// focal length.</summary>
+        /// <param name="s">The suitability check's answer.</param>
+        /// <returns>True when the field is NaN and the focal length is not.</returns>
+        static bool JudgedOnTheFocalLengthAlone(SuitabilityResult s)
+            => double.IsNaN(s.FovDeg) && !double.IsNaN(s.FocalMm);
+
+        /// <summary>The note of a refusal judged on the focal length alone, in both applications,
+        /// as the console's two lines: the window joins them into one sentence.</summary>
+        static readonly string[] FocalOnlyLines =
+        {
+            "Decizia s-a luat doar pe focala, presupunand cel mai mare senzor",
+            "plauzibil.",
+        };
+
+        /// <summary>The way out the console adds to that note; the window has no control for
+        /// it, so it does not say it.</summary>
+        const string FovAdvice = "Daca al tau e mai mic, da campul real cu --fov <grade>.";
+
+        /// <summary>
+        /// The value of the field line, the one three-way choice both applications print: the
+        /// diagonal in degrees with its source when the field is known, "nedeterminat" with the
+        /// source when only the focal length is (the field depends on the sensor, so no figure is
+        /// invented), and "necunoscut" with the reason when the header says neither.
+        /// </summary>
+        /// <param name="s">The suitability check's answer; not null.</param>
+        /// <param name="width">The minimum width of the degrees figure, padded with spaces on the
+        /// left: 5 for the console's column, 0 for the window.</param>
+        /// <returns>The value, without the label.</returns>
+        static string FieldValue(SuitabilityResult s, int width)
+        {
+            if (!double.IsNaN(s.FovDeg)) return $"{s.FovDeg.ToString("F1").PadLeft(width)} grade  ({s.Source})";
+            if (!double.IsNaN(s.FocalMm)) return $"nedeterminat ({s.Source})";
+            return "necunoscut (headerul nu da nici focala, nici scara)";
         }
 
         /// <summary>The warning of a field at the limit, in the console's lines: the console
@@ -201,18 +234,13 @@ namespace FlatCheck
         // window's layout: no column padding, paragraphs instead of indented lines, and the
         // Ratio tab named where the console names --ratio.
 
-        /// <summary>The field covered, for the window's card.</summary>
+        /// <summary>The field covered, for the window's card: the console's value
+        /// (<see cref="FieldValue"/>), unpadded.</summary>
         /// <param name="s">The suitability check's answer, or null.</param>
         /// <returns>The diagonal in degrees with its source, "nedeterminat" with the source when
-        /// only the focal length is known, a sentence when nothing is known, or "" for
-        /// null.</returns>
-        internal static string FieldText(SuitabilityResult s)
-        {
-            if (s == null) return "";
-            if (!double.IsNaN(s.FovDeg)) return $"{s.FovDeg:F1} grade diagonala  ({s.Source})";
-            if (!double.IsNaN(s.FocalMm)) return $"nedeterminat  ({s.Source})";
-            return "necunoscut - headerul nu da nici focala, nici scara";
-        }
+        /// only the focal length is known, "necunoscut" with the reason when nothing is known,
+        /// or "" for null.</returns>
+        internal static string FieldText(SuitabilityResult s) => s == null ? "" : FieldValue(s, 0);
 
         /// <summary>The warning under the window's field line: a marginal field's caution, or
         /// the note that the field could not be checked.</summary>
@@ -233,12 +261,17 @@ namespace FlatCheck
         }
 
         /// <summary>Why the test does not apply on a field wider than
-        /// <see cref="Th.LightFovMax"/>, for the window: the geometric degeneracy and the Ratio
-        /// tab as the test that answers.</summary>
-        /// <returns>Three paragraphs separated by blank lines.</returns>
-        internal static string TooWideText()
+        /// <see cref="Th.LightFovMax"/>, for the window: the geometric degeneracy, the Ratio
+        /// tab as the test that answers and, when the field was judged from the focal length
+        /// alone, the console's note that the decision assumed the largest plausible sensor -
+        /// without its <c>--fov</c> way out, which the window has no control for.</summary>
+        /// <param name="s">The suitability check's answer, of level TooWide.</param>
+        /// <returns>Three paragraphs separated by blank lines, a fourth on the focal length
+        /// alone.</returns>
+        internal static string TooWideText(SuitabilityResult s)
             => string.Join(" ", DegeneracyLines()) + "\n\n" + NotALimitation + "\n\n"
              + "Pe un setup cu camp larg, testul care raspunde e cel din tabul Ratio: "
-             + "rotatia la 180 de grade valideaza flat-ul fara sa implice cerul deloc.";
+             + "rotatia la 180 de grade valideaza flat-ul fara sa implice cerul deloc."
+             + (JudgedOnTheFocalLengthAlone(s) ? "\n\n" + string.Join(" ", FocalOnlyLines) : "");
     }
 }

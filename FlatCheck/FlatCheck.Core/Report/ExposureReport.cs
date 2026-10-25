@@ -69,7 +69,7 @@ namespace FlatCheck
                 for (int i = 0; i < 4; i++)
                 {
                     string mk = i == r.BrightestChannel ? "  <- cel mai luminos" : "";
-                    w.WriteLine($"        {ChannelColumn(r, i)}: {(r.ChannelMedians[i] - r.Black) / r.Range * 100,5:F1}%{mk}");
+                    w.WriteLine($"        {ChannelColumn(r, i)}: {ChannelMedianPct(r, i),5:F1}%{mk}");
                 }
             }
             else
@@ -105,24 +105,55 @@ namespace FlatCheck
         {
             w.WriteLine();
             w.WriteLine("    !! FISIERUL NU PARE UN FLAT BRUT !!");
-            if (r.LevelTooLow)
-            {
-                w.WriteLine($"    Nivelul e ~{r.CentreMedianPct:F1}% (langa zero/negativ) -> flat-dark deja scazut,");
-                w.WriteLine("    sau imagine normalizata. --expo are nevoie de nivelul ADU original.");
-            }
-            if (r.LooksDebayered)
-            {
-                w.WriteLine($"    Cele 4 canale CFA sunt quasi-identice (spread {r.CfaSpread:F3}) -> fisierul");
-                w.WriteLine("    e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.");
-            }
+            foreach (string[] reason in NotRawReasons(r))
+                foreach (string line in reason) w.WriteLine("    " + line);
             w.WriteLine();
-            w.WriteLine("    Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).");
+            w.WriteLine("    " + NotRawTypicalCause);
             w.WriteLine("    SOLUTII:");
             w.WriteLine("      - ruleaza direct pe NEF (flatcheck citeste brutul exact):");
             w.WriteLine("          flatcheck flat.NEF --expo");
             w.WriteLine("      - SAU produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),");
             w.WriteLine("        care pastreaza mozaicul CFA nedebayerizat.");
         }
+
+        /// <summary>
+        /// The sanity gate's reasons, in the console's lines, one entry per reason that fired:
+        /// the level near zero (a flat-dark already subtracted, or a normalised image) and the
+        /// four CFA channels being alike (a debayered file). The console indents the lines; the
+        /// window (<see cref="NotRawAdvice"/>) joins each reason into one paragraph. Shared so the
+        /// two cannot drift, as <see cref="VerdictLines"/> does for the verdict.
+        /// </summary>
+        /// <param name="r">The result, whose sanity gate failed.</param>
+        /// <returns>Zero to two reasons, each as its console lines.</returns>
+        static List<string[]> NotRawReasons(ExposureResult r)
+        {
+            var reasons = new List<string[]>();
+            if (r.LevelTooLow)
+                reasons.Add(new[]
+                {
+                    $"Nivelul e ~{r.CentreMedianPct:F1}% (langa zero/negativ) -> flat-dark deja scazut,",
+                    "sau imagine normalizata. --expo are nevoie de nivelul ADU original.",
+                });
+            if (r.LooksDebayered)
+                reasons.Add(new[]
+                {
+                    $"Cele 4 canale CFA sunt quasi-identice (spread {r.CfaSpread:F3}) -> fisierul",
+                    "e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.",
+                });
+            return reasons;
+        }
+
+        /// <summary>The usual way a flat stops being raw, said in both applications: it was
+        /// opened in Siril and saved, which debayers.</summary>
+        const string NotRawTypicalCause = "Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).";
+
+        /// <summary>A channel's global median as a percentage of the useful range (black to
+        /// white), the figure of the console's per-channel rows and of the window's
+        /// <see cref="ChannelsSummary"/>.</summary>
+        /// <param name="r">The result.</param>
+        /// <param name="i">The Bayer position, 0..3.</param>
+        /// <returns>The percentage; 0 at black, 100 at white.</returns>
+        static double ChannelMedianPct(ExposureResult r, int i) => (r.ChannelMedians[i] - r.Black) / r.Range * 100;
 
         /// <summary>
         /// The verdict and what to do next, in the console's words: the one decision tree both
@@ -442,24 +473,19 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The sanity gate, for the window. The typical cause is "I opened the NEF in Siril and
-        /// pressed Save", which debayers - so exactly that is said, not only that the file is not
-        /// good.
+        /// The sanity gate, for the window: the console's reasons (<see cref="NotRawReasons"/>),
+        /// each as one paragraph, and its typical cause - "I opened the NEF in Siril and pressed
+        /// Save", which debayers, said exactly so and not only that the file is not good. Only
+        /// the way out is the window's: the application in place of the console command.
         /// </summary>
         /// <param name="r">The result, with the gate's two reasons.</param>
         /// <returns>The explanation, in paragraphs.</returns>
         static string NotRawAdvice(ExposureResult r)
         {
-            string why = "";
-            if (r.LevelTooLow)
-                why += $"Nivelul e ~{r.CentreMedianPct:F1} % (langa zero) - flat-dark deja scazut, sau "
-                     + "imagine normalizata. Modul are nevoie de nivelul ADU original.\n\n";
-            if (r.LooksDebayered)
-                why += $"Cele 4 canale CFA sunt quasi-identice (spread {r.CfaSpread:F3}) - fisierul e "
-                     + "DEBAYERIZAT. Modul are nevoie de mozaicul Bayer intact.\n\n";
+            string why = string.Concat(NotRawReasons(r).Select(lines => string.Join(" ", lines) + "\n\n"));
 
             return "FISIERUL NU PARE UN FLAT BRUT\n\n" + why
-                 + "Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).\n\n"
+                 + NotRawTypicalCause + "\n\n"
                  + "Solutii: ruleaza direct pe NEF - aplicatia citeste brutul exact - sau produ un "
                  + "FITS brut cu tab-ul Conversion din Siril (NU Open + Save), care pastreaza "
                  + "mozaicul CFA nedebayerizat.";
@@ -476,11 +502,8 @@ namespace FlatCheck
 
             var parts = new string[4];
             for (int i = 0; i < 4; i++)
-            {
-                double pct = (r.ChannelMedians[i] - r.Black) / r.Range * 100;
-                parts[i] = $"{r.ChannelLabel(i),-8} {pct:F1} %"
+                parts[i] = $"{r.ChannelLabel(i),-8} {ChannelMedianPct(r, i):F1} %"
                          + (i == r.BrightestChannel ? "  (cel mai luminos)" : "");
-            }
             return string.Join("\n", parts);
         }
 

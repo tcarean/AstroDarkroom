@@ -36,7 +36,7 @@ public class ExposureReportTests
                                     null, pattern == null ? null : CfaPattern.Parse(pattern, "BAYERPAT"));
 
     /// <summary>Saturates pixels inside the exact window the analyzer reads (see ExposureAnalyzerTests).</summary>
-    static ExposureResult Clipped()
+    static ExposureResult Clipped(bool sky = false)
     {
         var img = TestImages.FlatCfa(N, N, Sat * 0.55);
         int half = N / 2, lo = (int)(half * 0.4), hi = (int)(half * 0.6);
@@ -44,7 +44,7 @@ public class ExposureReportTests
         for (int y = lo; y < hi && done < 5; y++)
             for (int x = lo; x < hi && done < 5; x++, done++)
                 img.Set(y * 2, x * 2 + 1, Sat);
-        return ExposureAnalyzer.Analyze(img, Sat, null, false);
+        return ExposureAnalyzer.Analyze(img, Sat, null, sky);
     }
 
     static ExposureResult Vignetted()
@@ -75,29 +75,72 @@ public class ExposureReportTests
 
     /// <summary>
     /// The window's advice is the console's verdict block: the head the console prints after
-    /// "VERDICT:", then the same lines as one paragraph - one decision tree for both.
+    /// "VERDICT:", then the same lines as one paragraph - one decision tree for both. The six
+    /// levels cover every band of both ladders; the two clipping cases, the branch that adds a
+    /// line (panel) or changes the head (sky).
     /// </summary>
     [Theory]
-    [InlineData(20, false)]
-    [InlineData(57, false)]
-    [InlineData(75, false)]
-    [InlineData(10, true)]
-    [InlineData(30, true)]
-    [InlineData(55, true)]
-    public void TheWindowsAdviceIsTheConsolesVerdictBlock(double level, bool sky)
+    [InlineData(20, false, false)]
+    [InlineData(57, false, false)]
+    [InlineData(75, false, false)]
+    [InlineData(10, true, false)]
+    [InlineData(30, true, false)]
+    [InlineData(55, true, false)]
+    [InlineData(0, false, true)]
+    [InlineData(0, true, true)]
+    public void TheWindowsAdviceIsTheConsolesVerdictBlock(double level, bool sky, bool clipped)
     {
-        ExposureResult r = AtLevel(level, sky);
+        ExposureResult r = clipped ? Clipped(sky) : AtLevel(level, sky);
         var w = new StringWriter();
         ExposureReport.Write(r, "flat.NEF", w);
         string console = w.ToString();
         string[] advice = ExposureReport.Advice(r).Split('\n');
 
+        if (clipped)
+        {
+            Assert.Equal(ExposureVerdict.TooHigh, r.Verdict);
+            Assert.Contains("CLIPPING in centru", console);
+        }
         string head = console.Split('\n').First(l => l.Contains("VERDICT: ")).Trim();
         Assert.Equal(head.Substring("VERDICT: ".Length), advice[0], StringComparer.OrdinalIgnoreCase);
         int after = console.IndexOf(head, StringComparison.Ordinal) + head.Length;
         string rest = string.Join(" ", console.Substring(after)
             .Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0));
         Assert.Equal(rest, advice.Length > 1 ? advice[1] : "");
+    }
+
+    /// <summary>
+    /// On a file that is not a raw flat the window's advice carries the console's reasons - the
+    /// same lines, each as one paragraph - and its typical cause; only the way out differs: the
+    /// console names the command, the window the application. The console text stays the one
+    /// the goldens pin.
+    /// </summary>
+    [Fact]
+    public void TheWindowsNotRawAdviceCarriesTheConsolesReasons()
+    {
+        var r = ExposureAnalyzer.Analyze(
+            TestImages.From(N, N, FitsTestData.Radial(N, N, center: 30000)), null, null, false);
+        Assert.False(r.IsRaw);
+        var w = new StringWriter();
+        ExposureReport.Write(r, "flat.fit", w);
+        string console = w.ToString();
+        string advice = ExposureReport.Advice(r);
+
+        Assert.Contains("!! FISIERUL NU PARE UN FLAT BRUT !!", console);
+        Assert.StartsWith("FISIERUL NU PARE UN FLAT BRUT\n\n", advice);
+
+        // every console line between the heading and SOLUTII is in the advice, as a paragraph's part
+        string[] lines = console.Split('\n').Select(l => l.Trim()).ToArray();
+        int from = Array.FindIndex(lines, l => l.StartsWith("!! FISIERUL")) + 1;
+        int to = Array.FindIndex(lines, l => l == "SOLUTII:");
+        var reasons = lines.Skip(from).Take(to - from).Where(l => l.Length > 0).ToList();
+        Assert.NotEmpty(reasons);
+        Assert.All(reasons, l => Assert.Contains(l, advice));
+        Assert.Contains("Cauza tipica: ai deschis NEF-ul in Siril", advice);
+
+        Assert.Contains("flatcheck flat.NEF --expo", console);
+        Assert.DoesNotContain("flatcheck flat.NEF", advice);
+        Assert.Contains("aplicatia citeste brutul exact", advice);
     }
 
     /// <summary>The channel lines, the colour-order note and the screen gap of the window.</summary>

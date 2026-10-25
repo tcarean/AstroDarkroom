@@ -244,7 +244,7 @@ namespace FlatCheck.Wpf
                 Refused = true;
                 Verdict = Stats.NotApplicable;
                 Diagnosis = "";
-                Reasons = LightReport.TooWideText();
+                Reasons = LightReport.TooWideText(outcome.Suitability);
                 MeanRadial = Spread = Sem = Correlation = "";
                 Map = null;
                 MapLegend = "";

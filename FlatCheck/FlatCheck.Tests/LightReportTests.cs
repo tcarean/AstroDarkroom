@@ -145,16 +145,71 @@ public class LightReportTests
         var marginal = new SuitabilityResult { Level = FovLevel.Marginal, FovDeg = 30.0, Source = "WCS" };
         var ok = new SuitabilityResult { Level = FovLevel.Ok, FovDeg = 12.0, Source = "WCS" };
 
-        Assert.Equal("30.0 grade diagonala  (WCS)", LightReport.FieldText(marginal));
+        Assert.Equal("30.0 grade  (WCS)", LightReport.FieldText(marginal));
         Assert.Contains($"peste {Th.LightFovOk:F0} grade", LightReport.FieldWarning(marginal));
         Assert.Equal("", LightReport.FieldWarning(ok));
         Assert.Contains("necunoscut inseamna neverificat", LightReport.FieldWarning(Unknown));
 
-        string refusal = LightReport.TooWideText();
+        string refusal = LightReport.TooWideText(new SuitabilityResult { Level = FovLevel.TooWide, FovDeg = 70.4, Source = "WCS" });
         Assert.Contains($"Peste {Th.LightFovMax:F0} de grade", refusal);
         Assert.Contains("tabul Ratio", refusal);
         Assert.DoesNotContain("--ratio", refusal);
     }
 
+    /// <summary>
+    /// The window's field line is the console's value, unpadded, in each of the three cases the
+    /// console distinguishes: the field known, only the focal length known, nothing known.
+    /// </summary>
+    [Fact]
+    public void TheWindowsFieldTextIsTheConsolesValueUnpadded()
+    {
+        var known = new SuitabilityResult { Level = FovLevel.Ok, FovDeg = 8.0, Source = "WCS" };
+        var w = new StringWriter();
+        LightReport.WriteSuitability(known, w);
+        Assert.Contains("camp diagonal           :   8.0 grade  (WCS)", w.ToString());
+        Assert.Equal("8.0 grade  (WCS)", LightReport.FieldText(known));
+
+        w = new StringWriter();
+        LightReport.WriteSuitability(FocalOnly, w);
+        Assert.Contains("camp acoperit           : nedeterminat (FOCALLEN=20mm, fara marimea pixelului)", w.ToString());
+        Assert.Equal("nedeterminat (FOCALLEN=20mm, fara marimea pixelului)", LightReport.FieldText(FocalOnly));
+
+        Assert.Equal("necunoscut (headerul nu da nici focala, nici scara)", LightReport.FieldText(Unknown));
+        Assert.Equal("", LightReport.FieldText(null));
+    }
+
+    /// <summary>
+    /// A refusal judged from the focal length alone says so in both applications - the decision
+    /// assumed the largest plausible sensor - and only the console adds the --fov way out, which
+    /// the window has no control for. With the field known, neither says it.
+    /// </summary>
+    [Fact]
+    public void ARefusalOnTheFocalLengthAloneSaysSoInBothApplications()
+    {
+        var w = new StringWriter();
+        LightReport.WriteTooWide(FocalOnly, "light.fit", w);
+        Assert.Contains("Decizia s-a luat doar pe focala, presupunand cel mai mare senzor", w.ToString());
+        Assert.Contains("--fov <grade>", w.ToString());
+
+        string window = LightReport.TooWideText(FocalOnly);
+        Assert.Contains("Decizia s-a luat doar pe focala, presupunand cel mai mare senzor plauzibil.", window);
+        Assert.DoesNotContain("--fov", window);
+
+        var known = new SuitabilityResult { Level = FovLevel.TooWide, FovDeg = 70.4, Source = "WCS" };
+        Assert.DoesNotContain("doar pe focala", LightReport.TooWideText(known));
+        w = new StringWriter();
+        LightReport.WriteTooWide(known, "light.fit", w);
+        Assert.DoesNotContain("doar pe focala", w.ToString());
+    }
+
     static SuitabilityResult Unknown => new() { Level = FovLevel.Unknown };
+
+    /// <summary>What LightSuitability answers on a DSLR light through Siril: FOCALLEN, no
+    /// pixel size, judged on the full-frame assumption.</summary>
+    static SuitabilityResult FocalOnly => new()
+    {
+        Level = FovLevel.TooWide,
+        FocalMm = 20,
+        Source = "FOCALLEN=20mm, fara marimea pixelului",
+    };
 }
