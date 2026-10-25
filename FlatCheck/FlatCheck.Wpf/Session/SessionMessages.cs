@@ -315,7 +315,7 @@ namespace FlatCheck.Wpf
         {
             (T("HOW MUCH - the figures decide, not the map",
                "CAT DE MULT - decid cifrele, nu harta"),
-             T("\"Residual (radial model)\" is the very measure of how much of the frame a purely radial "
+             T("\"Residual after the radial model\" is the very measure of how much of the frame a purely radial "
              + "function does not explain, on the scale below. Under 2 % it does not matter what "
              + "shape it has. Between 2 and 10 % background extraction removes what is left, whatever "
              + "the shape. The usability verdict NEVER depends on what you see "
@@ -1077,7 +1077,7 @@ namespace FlatCheck.Wpf
         internal static string SirilGuiRunning() =>
             T("Siril is open. If its working folder is this very folder, two processes "
             + "would write into the same process/ at the same time and the files would be damaged. "
-            + "Close it, or make sure it works in another folder, before you press Run.",
+            + "Close it, or make sure it works in another folder, before you press Run in Siril.",
               "Siril e deschis. Daca are ca folder de lucru chiar folderul asta, doua procese "
             + "ar scrie in acelasi process/ in acelasi timp si fisierele s-ar strica. "
             + "Inchide-l, sau asigura-te ca lucreaza in alt folder, inainte sa apesi Ruleaza.");

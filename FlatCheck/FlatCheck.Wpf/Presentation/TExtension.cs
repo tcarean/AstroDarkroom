@@ -17,19 +17,26 @@
 
 // TExtension.cs - the XAML side of Ui.T: a fixed label written in both languages where it
 // stands, {l:T En='Structure', Ro='Structura'}, so the XAML keeps its text in its context
-// (ADR 0062). The language is chosen once, before the first view loads (App's constructor), so
-// picking the wording when the view loads is enough; nothing switches language at run time.
+// (ADR 0062). Nothing switches language at run time, but the wording is picked when the element
+// is made, not when the XAML is parsed: a template or a style in a resource dictionary is parsed
+// once, possibly before the language is set (the theme, in the tests, loads before a test
+// switches to English), and a string returned there would stay in that first language. So on a
+// dependency property, or in a Setter, the extension returns a one-time binding, which each
+// instance of the template resolves when it is made; on a plain property (a Binding's
+// TargetNullValue) it returns the string at once.
 
 using System;
+using System.Windows;
+using System.Windows.Data;
 using System.Windows.Markup;
 
 namespace FlatCheck.Wpf
 {
     /// <summary>
     /// <c>{l:T En='...', Ro='...'}</c>: the wording of the run's language (<see cref="Ui.T"/>),
-    /// picked when the element loads.
+    /// picked when the element that shows it is made.
     /// </summary>
-    [MarkupExtensionReturnType(typeof(string))]
+    [MarkupExtensionReturnType(typeof(object))]
     public sealed class TExtension : MarkupExtension
     {
         /// <summary>The English wording; ASCII.</summary>
@@ -38,9 +45,29 @@ namespace FlatCheck.Wpf
         /// <summary>The Romanian wording; ASCII, without diacritics.</summary>
         public string Ro { get; set; }
 
-        /// <summary>Picks the wording of the current language.</summary>
-        /// <param name="serviceProvider">The XAML parser's services; not used.</param>
-        /// <returns><see cref="Ro"/> in Romanian, <see cref="En"/> otherwise.</returns>
-        public override object ProvideValue(IServiceProvider serviceProvider) => Ui.T(En, Ro);
+        /// <summary>
+        /// A one-time binding to the pair on a dependency property or a Setter's value, so the
+        /// wording is picked when the element is made; the wording itself anywhere else.
+        /// </summary>
+        /// <param name="serviceProvider">The XAML parser's services, for the target.</param>
+        /// <returns>The binding's value for the target, or the wording.</returns>
+        public override object ProvideValue(IServiceProvider serviceProvider)
+        {
+            var target = serviceProvider?.GetService(typeof(IProvideValueTarget)) as IProvideValueTarget;
+            bool bindable = target?.TargetProperty is DependencyProperty || target?.TargetObject is Setter;
+            if (!bindable) return Ui.T(En, Ro);
+
+            var binding = new Binding(nameof(Pair.Value)) { Source = new Pair(En, Ro), Mode = BindingMode.OneTime };
+            return binding.ProvideValue(serviceProvider);
+        }
+
+        /// <summary>The two wordings, read by the binding when it resolves.</summary>
+        /// <param name="En">The English wording.</param>
+        /// <param name="Ro">The Romanian wording.</param>
+        public sealed record Pair(string En, string Ro)
+        {
+            /// <summary>The wording of the language current when the binding resolves.</summary>
+            public string Value => Ui.T(En, Ro);
+        }
     }
 }

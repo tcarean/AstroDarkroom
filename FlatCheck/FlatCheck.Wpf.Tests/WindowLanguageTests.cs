@@ -79,7 +79,9 @@ public class WindowLanguageTests
     static readonly Regex Romanian = new(
         @"\b(si|sau|nu|din|cu|pe|de|la|fara|mai|este|stopuri|cadre|cadrul|harta|obiectiv|obiectivul|"
         + @"netezit|netezire|sintetic|fisier|fisierul|folderul|alege|masterul|eroare|lipseste|scara|"
-        + @"colt|centru|reziduu|vignetare|expunere|structura|teste|atentie|verdictul|praf)\b",
+        + @"colt|centru|reziduu|vignetare|expunere|structura|teste|atentie|verdictul|praf|ales|niciunul|"
+        + @"despre|inchide|opreste|potrivit|ruleaza|parti|tabul|cerut|preumplut|nimic|pentru|aparat|"
+        + @"canal|canalul|mediana|scrie|salvat|salveaza|netezeste|propune|ramas|scos|inainte|dupa)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>
@@ -152,6 +154,102 @@ public class WindowLanguageTests
         {
             Ui.Default = saved;
         }
+    }
+
+    /// <summary>
+    /// The states the test above leaves empty, filled, in English: an exposure result with its
+    /// histograms and guide, an equalised master with its guide and views, a smoothing result
+    /// with its scale proposal, a split table, an error card, and the About window.
+    /// </summary>
+    [Fact]
+    public void R101_EnglishResultsGuidesAndCardsShowNoRomanianWord()
+    {
+        UiLanguage saved = Ui.Default;
+        Ui.Default = UiLanguage.English;
+        try
+        {
+            using var f = new SessionFixture()
+                .WithFlatMaster()
+                .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+            SplitResult split = SplitRun.Analyze(f.Session.FlatMasterPath,
+                new[] { f.MasterPath("pp_flat_stacked_A.fit"), f.MasterPath("pp_flat_stacked_B.fit") },
+                null, new DateTime(2026, 9, 28, 10, 31, 0), 10);
+            var texts = new List<string>();
+
+            _sta.Invoke(() =>
+            {
+                var mosaic = FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.WithBayerMosaic(
+                    FlatCheck.Tests.FitsTestData.Radial(128, 128, center: 34000)));
+
+                var exposure = new ExposureTabViewModel();
+                exposure.Populate(ExposureAnalyzer.Analyze(mosaic, 65535, null, false, null, CfaPattern.Parse("RGGB", "BAYERPAT")));
+                exposure.HistogramGuide.IsExpanded = true;
+
+                var histeq = new HistEqTabViewModel();
+                histeq.Populate(HistEqAnalyzer.Analyze(mosaic, CfaPattern.Parse("RGGB", "BAYERPAT")), HistEqKind.Smoothed);
+                histeq.Guide.IsExpanded = true;
+
+                var smooth = new SmoothTabViewModel(_ => true);
+                smooth.Attach(f.Session, CancellationToken.None);
+                smooth.Populate(SmoothAnalyzer.Analyze(
+                    FlatCheck.Tests.TestImages.From(256, 256, FlatCheck.Tests.FitsTestData.Radial(256, 256)), 12));
+                smooth.PopulateAdvice(SmoothScaleAdvisor.Decide(0.69, SmoothScaleAdvisor.Ladder.Select(px => new SmoothScaleTrial
+                {
+                    ScalePx = px,
+                    TextureAfterPct = 0.02,
+                    TextureGone = true,
+                    RemovedPtpPct = 3,
+                }).ToList()));
+
+                var splitVm = new SplitTabViewModel();
+                splitVm.Populate(split);
+
+                var ratio = new RatioTabViewModel();
+                ratio.Choose(isA: true, path: @"C:\somewhere\picture.jpg");
+
+                foreach (var (name, view) in new (string, FrameworkElement)[]
+                {
+                    ("en-exposure-result", new ExposureView { DataContext = exposure }),
+                    ("en-histogram-result", new HistEqView { DataContext = histeq }),
+                    ("en-smoothing-result", new SmoothView { DataContext = smooth }),
+                    ("en-split-result", new SplitView { DataContext = splitVm }),
+                    ("en-ratio-error", new RatioView { DataContext = ratio }),
+                    ("en-about", new AboutWindow()),
+                })
+                {
+                    Render(view, name);
+                    Collect(view, texts);
+                }
+
+                Assert.True(exposure.HasResult && histeq.HasResult && smooth.HasResult && splitVm.HasResult);
+                Assert.True(ratio.HasError);
+            });
+
+            Assert.Contains("Mosaic", texts);
+            var romanian = texts.Where(t => Romanian.IsMatch(WithoutPaths(t))).Distinct().ToList();
+            Assert.True(romanian.Count == 0, "Romanian on an English screen:\n" + string.Join("\n---\n", romanian));
+        }
+        finally
+        {
+            Ui.Default = saved;
+        }
+    }
+
+    /// <summary>
+    /// Files with the former Romanian names are not the smoothed or the synthetic master any
+    /// more (R-101, the owner's decision): beside the master only the English names count.
+    /// </summary>
+    [Fact]
+    public void R101_FilesWithTheFormerRomanianNamesAreNotRecognised()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string dir = Path.GetDirectoryName(f.Session.FlatMasterPath)!;
+        File.WriteAllText(Path.Combine(dir, "pp_flat_stacked_netezit.fit"), "x");
+        File.WriteAllText(Path.Combine(dir, "pp_flat_stacked_sintetic.fit"), "x");
+
+        Assert.Equal(Path.Combine(dir, "pp_flat_stacked_smoothed.fit"), SirilSession.SmoothedPathBeside(f.Session.FlatMasterPath));
+        Assert.Equal(Path.Combine(dir, "pp_flat_stacked_synthetic.fit"), SirilSession.SyntheticPathBeside(f.Session.FlatMasterPath));
+        Assert.DoesNotContain(f.Session.HistEqCandidates(), c => c.Path.Contains("_netezit"));
     }
 
     /// <summary>The same screen in Romanian still speaks Romanian: the check above is not

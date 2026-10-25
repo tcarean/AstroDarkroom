@@ -184,3 +184,13 @@ ThirdParty and the split-mosaic labels becomes a pair:
   test files. The `NETEZIT` chip stays asserted: the tests run in Romanian.
 - **Not re-validated:** stage 2 touched no numeric code (`Metrics.cs`, `Stats.cs`, `Analysis/`,
   `Report/`); stage 1's `/validate` (40/40) stands.
+- **Review follow-up (subagent review of fad6a17):** no code defect; the README's tab table and
+  the CHANGELOG's Split entry still named `Rezultat split.txt`, now `Split result.txt`; the
+  English window test was widened (more Romanian words, and results, guides, an error card
+  and the About window rendered in English); a test pins that `_netezit` / `_sintetic` files
+  are not recognised; two English wordings aligned with the labels they quote.
+- **Found by the widened test:** the theme's two `{l:T}` texts (in templates of `Dark.xaml`)
+  were picked once, when the dictionary loaded, so a theme loaded before the language was set
+  kept that language. In the application the language is set first; in the tests it is not.
+  `TExtension` now returns a one-time binding on dependency properties and setters, so the
+  wording is picked when each element is made.

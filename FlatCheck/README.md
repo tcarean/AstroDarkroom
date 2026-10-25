@@ -1085,7 +1085,7 @@ călătoresc garantat cu programul.
 | **Histogram** | modul 5 pe masterul sesiunii, pe flat-ul netezit de lângă el (când există) sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
 | **Netezire** | modul 6 pe masterul sesiunii; scrie `pp_flat_stacked_smoothed.fit` lângă el | la buton, niciodată singur — scrie un fișier |
 | **Sintetic** | modul 7: alege obiectivul din profilele Adobe de pe disc și din baza lensfun de lângă program, scrie `pp_flat_stacked_synthetic.fit` lângă master și îl compară cu masterul (`--against`) | la buton; doar preumplerea rulează singură |
-| **Split** | împarte flat-urile în 2 sau 4 grupuri, rulează scriptul Siril pe fiecare într-o sesiune temporară și pune masterele grupurilor lângă masterul întreg: cele cinci teste, vignetarea față de profil, hărțile una lângă alta; scrie `Rezultat split.txt` și `flatcheck-split.png` în folderul sesiunii | la buton, niciodată singur — copiază gigaocteți și rulează Siril de N ori |
+| **Split** | împarte flat-urile în 2 sau 4 grupuri, rulează scriptul Siril pe fiecare într-o sesiune temporară și pune masterele grupurilor lângă masterul întreg: cele cinci teste, vignetarea față de profil, hărțile una lângă alta; scrie `Split result.txt` și `flatcheck-split.png` în folderul sesiunii | la buton, niciodată singur — copiază gigaocteți și rulează Siril de N ori |
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
 fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,

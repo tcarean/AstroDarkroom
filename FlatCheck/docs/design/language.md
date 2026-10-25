@@ -30,8 +30,14 @@ on in English. `App.FolderFromArgs` looks for the session folder among the argum
 ## The window
 
 A fixed label in XAML is `{l:T En='...', Ro='...'}` (`TExtension`, `xmlns:l` the
-`FlatCheck.Wpf` namespace), picked when the element loads; an apostrophe in a wording is
-escaped `\'`. The language never changes while the window runs, so nothing re-reads it. A
+`FlatCheck.Wpf` namespace); an apostrophe in a wording is escaped `\'`. The wording is picked
+when the element is made, not when the XAML is parsed: on a dependency property or in a
+`Setter` the extension returns a one-time binding to a `TExtension.Pair`, which each instance of
+a template resolves when it is created. A template in the theme is parsed once, when the
+dictionary loads; in the tests that happens in Romanian before a test switches to English, and a
+string returned there stayed Romanian on the English screens. On a plain property (a binding's
+`TargetNullValue`) it returns the string at once. The language never changes while the window
+runs, so nothing re-reads it. A
 text built in code is a `T(...)` pair, in `SessionMessages` or where the view-model builds it.
 A verdict pill binds its colour to the key (`VerdictToBrush`) and its text to the word
 (`VerdictToWord`); `VerdictChip` does the same for the rows' chips and the scale tables. Three

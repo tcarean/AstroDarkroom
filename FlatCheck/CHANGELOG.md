@@ -26,7 +26,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   column, the worse of shape and depth against that reference. Before the run the tab shows
   a disk estimate (copies exact, Siril's `process/` from a measured bytes-per-pixel model,
   free space on the temp drive).
-  Saves `Rezultat split.txt` and `flatcheck-split.png` (the residual maps side by side on one
+  Saves `Split result.txt` and `flatcheck-split.png` (the residual maps side by side on one
   scale, labelled with a built-in bitmap font, version and date in the title) in the session
   root; the original session is only read. Version 2.3.0 at the owner's request.
 
@@ -40,7 +40,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The second maps the console writes have English names in both languages (R-103): `--ratio`
   writes `<name>-world.png` (was `-lume`), `--smooth` writes `<name>-after.png` (was `-dupa`).
 - The files the window writes have English names in both languages (R-101): `Test result.txt`
-  (was `Rezultat testare.txt`), `Split result.txt`, `pp_flat_stacked_smoothed.fit` (was
+  (was `Rezultat testare.txt`), `Split result.txt` (was `Rezultat split.txt`),
+  `pp_flat_stacked_smoothed.fit` (was
   `_netezit`), `pp_flat_stacked_synthetic.fit` (was `_sintetic`), the split's `part-<i>`
   folders. Files with the old names are no longer recognised: rename them to keep them.
 - The window's Expo and End to end tabs share more of their sentences with the console (the
