@@ -17,11 +17,18 @@
 
 namespace DarksCheck.Core;
 
-/// <summary>What a check concluded; the report turns it into a word (OK, ATENTIE, NEMASURAT).</summary>
+/// <summary>
+/// What a check concluded; the report turns it into a word (OK, ATENTIE, NEMASURAT).
+/// </summary>
 internal enum Verdict
 {
+    /// <summary>The check passed.</summary>
     Ok,
+
+    /// <summary>The check found something to look at.</summary>
     Warning,
+
+    /// <summary>The check could not be made: a figure was missing.</summary>
     Unmeasured,
 }
 
@@ -30,16 +37,36 @@ internal enum Verdict
 /// readable frames, how many frames carry them, and whether every readable frame does
 /// (exposures within <see cref="Th.ExposureTolerance"/> of each other count as one).
 /// </summary>
+/// <param name="ExposureSeconds">The most frequent exact exposure of the dominant setting, in
+/// seconds; null when no readable frame says it.</param>
+/// <param name="Iso">The dominant setting's ISO; null when no readable frame says it.</param>
+/// <param name="Frames">How many readable frames carry the dominant setting.</param>
+/// <param name="Readable">How many frames of the group were read without an error.</param>
+/// <param name="Uniform">True when every readable frame carries the dominant setting (also when
+/// none is readable).</param>
 internal sealed record GroupSettings(double? ExposureSeconds, double? Iso, int Frames, int Readable, bool Uniform);
 
 /// <summary>
 /// The settings of the three groups and the two verdicts of check 1 (R-007): do the darks
 /// match the lights in exposure and ISO, and is the bias a bias.
 /// </summary>
+/// <param name="Darks">The darks' settings; null for an empty group.</param>
+/// <param name="Biases">The biases' settings; null for an empty group.</param>
+/// <param name="Lights">The lights' settings; null for an empty group.</param>
+/// <param name="DarksVsLights">Ok when the exposures match within the tolerance and the ISOs are
+/// equal; Unmeasured when either is unknown on either side.</param>
+/// <param name="Bias">Ok when the biases' exposure is at most
+/// <see cref="Th.BiasMaxExposureSeconds"/>; Unmeasured without one.</param>
 internal sealed record MatchAnalysis(GroupSettings? Darks, GroupSettings? Biases, GroupSettings? Lights, Verdict DarksVsLights, Verdict Bias);
 
+/// <summary>Check 1's settings: compares the darks, biases and lights of a session.</summary>
 internal static class MatchAnalyzer
 {
+    /// <summary>The settings of the three groups and check 1's two verdicts.</summary>
+    /// <param name="darks">The darks' metadata; not null, may be empty.</param>
+    /// <param name="biases">The biases' metadata; not null, may be empty.</param>
+    /// <param name="lights">The lights' metadata; not null, may be empty.</param>
+    /// <returns>The settings and the verdicts.</returns>
     internal static MatchAnalysis Analyze(IReadOnlyList<FrameInfo> darks, IReadOnlyList<FrameInfo> biases, IReadOnlyList<FrameInfo> lights)
     {
         GroupSettings? d = Settings(darks);
@@ -63,10 +90,21 @@ internal static class MatchAnalyzer
         return new MatchAnalysis(d, b, l, darksVsLights, bias);
     }
 
-    /// <summary>Two exposures that differ by less than the tolerance, relative to the longer one.</summary>
+    /// <summary>
+    /// Two exposures that differ by less than the tolerance, relative to the longer one.
+    /// </summary>
+    /// <param name="a">One exposure, in seconds.</param>
+    /// <param name="b">The other exposure, in seconds.</param>
+    /// <returns>True when |a - b| is at most <see cref="Th.ExposureTolerance"/> times the longer
+    /// one (the bound included).</returns>
     internal static bool SameExposure(double a, double b) => Math.Abs(a - b) <= Th.ExposureTolerance * Math.Max(a, b);
 
-    /// <summary>Null for an empty group; the dominant (exposure, ISO) of the readable frames otherwise, null fields when none carries them.</summary>
+    /// <summary>
+    /// Null for an empty group; the dominant (exposure, ISO) of the readable frames otherwise, null
+    /// fields when none carries them.
+    /// </summary>
+    /// <param name="frames">The group's metadata; not null.</param>
+    /// <returns>The group's settings, or null for an empty group.</returns>
     internal static GroupSettings? Settings(IReadOnlyList<FrameInfo> frames)
     {
         ArgumentNullException.ThrowIfNull(frames);
@@ -102,7 +140,13 @@ internal static class MatchAnalyzer
         return new GroupSettings(best.ModeExposure, best.Iso, best.Count, readable.Count, best.Count == readable.Count);
     }
 
-    /// <summary>The frames of one (exposure within the tolerance, ISO) setting, with the count of each exact exposure.</summary>
+    /// <summary>
+    /// The frames of one (exposure within the tolerance, ISO) setting, with the count of each exact
+    /// exposure.
+    /// </summary>
+    /// <param name="exposure">The exposure of the frame that opened the cluster, in seconds;
+    /// null when it has none.</param>
+    /// <param name="iso">The cluster's ISO; null when unknown.</param>
     private sealed class Cluster(double? exposure, double? iso)
     {
         private readonly Dictionary<double, int> _exact = [];
@@ -111,7 +155,10 @@ internal static class MatchAnalyzer
         internal double? Iso { get; } = iso;
         internal int Count { get; private set; }
 
-        /// <summary>One more frame of the cluster; a frame without an exposure counts but names nothing.</summary>
+        /// <summary>
+        /// One more frame of the cluster; a frame without an exposure counts but names nothing.
+        /// </summary>
+        /// <param name="exact">The frame's exact exposure, in seconds; null when unknown.</param>
         internal void Add(double? exact)
         {
             Count++;
@@ -121,7 +168,10 @@ internal static class MatchAnalyzer
             }
         }
 
-        /// <summary>The most frequent exact exposure of the cluster; the first seen wins a tie (Dictionary keeps insertion order).</summary>
+        /// <summary>
+        /// The most frequent exact exposure of the cluster; the first seen wins a tie (Dictionary
+        /// keeps insertion order).
+        /// </summary>
         internal double? ModeExposure => _exact.Count == 0 ? null : _exact.MaxBy(kv => kv.Value).Key;
     }
 }

@@ -20,16 +20,27 @@ using System.Text.RegularExpressions;
 
 namespace DarksCheck.Core;
 
-/// <summary>How a set of lights (or darks) matches a dark master, from their amplitude ratio (R-062).</summary>
+/// <summary>
+/// How a set of lights (or darks) matches a dark master, from their amplitude ratio (R-062).
+/// </summary>
 internal enum MatchVerdict
 {
-    /// <summary>Within <see cref="Th.MatchDirectLow"/> .. <see cref="Th.MatchDirectHigh"/>: subtract the dark as it is.</summary>
+    /// <summary>
+    /// Within <see cref="Th.MatchDirectLow"/> .. <see cref="Th.MatchDirectHigh"/>: subtract the
+    /// dark as it is.
+    /// </summary>
     Direct,
 
-    /// <summary>Within <see cref="Th.MatchOptLow"/> .. <see cref="Th.MatchOptHigh"/>: subtract with -opt, which scales it.</summary>
+    /// <summary>
+    /// Within <see cref="Th.MatchOptLow"/> .. <see cref="Th.MatchOptHigh"/>: subtract with -opt,
+    /// which scales it.
+    /// </summary>
     WithOpt,
 
-    /// <summary>Down to <see cref="Th.MatchCosmeticLow"/>: the master is much warmer, good for the hot-pixel positions only (-cc=dark).</summary>
+    /// <summary>
+    /// Down to <see cref="Th.MatchCosmeticLow"/>: the master is much warmer, good for the hot-pixel
+    /// positions only (-cc=dark).
+    /// </summary>
     CosmeticOnly,
 
     /// <summary>Too far either way.</summary>
@@ -45,13 +56,31 @@ internal enum MatchVerdict
 /// <see cref="Th.IndexRankHighPerMpx"/> per megapixel by descending excess; the ranks used,
 /// the band's size and the pixels ranked.
 /// </summary>
+/// <param name="Index">The index, in ADU equivalent; NaN when every pixel is
+/// saturated.</param>
+/// <param name="RankLow">The band's first rank (0-based, by descending excess).</param>
+/// <param name="RankHigh">The rank after the band's last.</param>
+/// <param name="BandPixels">The band's size, <paramref name="RankHigh"/> -
+/// <paramref name="RankLow"/>; 0 when nothing was ranked.</param>
+/// <param name="Ranked">How many unsaturated pixels were ranked.</param>
 internal sealed record IndexFigures(double Index, int RankLow, int RankHigh, int BandPixels, int Ranked)
 {
     /// <summary>The token of the label: `idx25`.</summary>
     internal string Tag => double.IsNaN(Index) ? "idx-" : "idx" + Math.Round(Index, MidpointRounding.AwayFromZero).ToString("0", CultureInfo.InvariantCulture);
 }
 
-/// <summary>The amplitude ratio of one set over a reference master on the pixels they share (R-062, R-063): the median and quartiles, the temperature offset by the doubling rule, the verdict.</summary>
+/// <summary>
+/// The amplitude ratio of one set over a reference master on the pixels they share (R-062, R-063):
+/// the median and quartiles, the temperature offset by the doubling rule, the verdict.
+/// </summary>
+/// <param name="Pixels">How many shared pixels the ratio is read on (1 for a chained
+/// ratio).</param>
+/// <param name="Ratio">The median ratio; NaN when unmeasured.</param>
+/// <param name="Q25">The 25th percentile of the ratios.</param>
+/// <param name="Q75">The 75th percentile of the ratios.</param>
+/// <param name="DeltaCelsius">The temperature offset, in degrees Celsius; NaN for a ratio that
+/// is not positive.</param>
+/// <param name="Verdict">The verdict of the median ratio.</param>
 internal sealed record MatchFigures(int Pixels, double Ratio, double Q25, double Q75, double DeltaCelsius, MatchVerdict Verdict)
 {
     internal static readonly MatchFigures None = new(0, double.NaN, double.NaN, double.NaN, double.NaN, MatchVerdict.Unmeasured);
@@ -65,6 +94,16 @@ internal sealed record MatchFigures(int Pixels, double Ratio, double Q25, double
 /// </summary>
 internal static partial class IndexAnalyzer
 {
+    /// <summary>The index of a median master.</summary>
+    /// <param name="median">The median master, row-major, in raw ADU with the black; not
+    /// null.</param>
+    /// <param name="black">The black level, in raw ADU.</param>
+    /// <param name="white">The white level, in raw ADU; a pixel at the white minus 1 or above is
+    /// left out.</param>
+    /// <param name="norm">The normalisation factor from raw ADU to ADU equivalent.</param>
+    /// <param name="w">The mosaic's width, for the megapixels.</param>
+    /// <param name="h">The mosaic's height, for the megapixels.</param>
+    /// <returns>The index and its ranks.</returns>
     internal static IndexFigures RankIndex(IReadOnlyList<float> median, double black, double white, double norm, int w, int h)
     {
         ArgumentNullException.ThrowIfNull(median);
@@ -105,6 +144,18 @@ internal static partial class IndexAnalyzer
     /// the weak pixels of a warm master grow faster than the strong ones); both masters the
     /// same size.
     /// </summary>
+    /// <param name="own">The set's master (or the lights' accumulated levels), row-major, in raw
+    /// ADU with the black; not null.</param>
+    /// <param name="ownBlack">Its black level, in raw ADU.</param>
+    /// <param name="ownWhite">Its white level, in raw ADU.</param>
+    /// <param name="ownNorm">Its normalisation factor.</param>
+    /// <param name="reference">The reference master, row-major, as many values; not null.</param>
+    /// <param name="refBlack">Its black level, in raw ADU.</param>
+    /// <param name="refWhite">Its white level, in raw ADU.</param>
+    /// <param name="refNorm">Its normalisation factor.</param>
+    /// <returns>One ratio per shared pixel, in mosaic order; empty when none is shared.</returns>
+    /// <exception cref="InvalidOperationException">The two have a different number of
+    /// pixels.</exception>
     internal static float[] SharedRatios(IReadOnlyList<float> own, double ownBlack, double ownWhite, double ownNorm, IReadOnlyList<float> reference, double refBlack, double refWhite, double refNorm)
     {
         ArgumentNullException.ThrowIfNull(own);
@@ -129,7 +180,13 @@ internal static partial class IndexAnalyzer
         return [.. ratios];
     }
 
-    /// <summary>The median and quartiles of the ratios, the temperature offset `D x log2(ratio)` with the settings' D (the default when null) and the verdict.</summary>
+    /// <summary>
+    /// The median and quartiles of the ratios, the temperature offset `D x log2(ratio)` with the
+    /// settings' D (the default when null) and the verdict.
+    /// </summary>
+    /// <param name="ratios">The per-pixel ratios; not null.</param>
+    /// <param name="normalisation">The settings; null for the defaults.</param>
+    /// <returns>The figures, or <see cref="MatchFigures.None"/> for no ratio.</returns>
     internal static MatchFigures Match(float[] ratios, Normalisation? normalisation = null)
     {
         ArgumentNullException.ThrowIfNull(ratios);
@@ -143,7 +200,13 @@ internal static partial class IndexAnalyzer
         return new MatchFigures(ratios.Length, median, Planes.Percentile(ratios, 25), Planes.Percentile(ratios, 75), dT, Judge(median));
     }
 
-    /// <summary>The lights' equivalent index: the darks' index times the lights-over-dark ratio (R-064); NaN when either is not measured.</summary>
+    /// <summary>
+    /// The lights' equivalent index: the darks' index times the lights-over-dark ratio (R-064); NaN
+    /// when either is not measured.
+    /// </summary>
+    /// <param name="index">The darks' index; not null.</param>
+    /// <param name="lightsOverDark">The lights over the darks' master; not null.</param>
+    /// <returns>The equivalent index, in ADU equivalent, or NaN.</returns>
     internal static double EquivalentIndex(IndexFigures index, MatchFigures lightsOverDark)
     {
         ArgumentNullException.ThrowIfNull(index);
@@ -151,7 +214,14 @@ internal static partial class IndexAnalyzer
         return lightsOverDark.Verdict == MatchVerdict.Unmeasured ? double.NaN : index.Index * lightsOverDark.Ratio;
     }
 
-    /// <summary>Two ratios chained through a common master, (a / m) x (m / b) = a / b, judged as one (R-064); <see cref="MatchFigures.None"/> when either is not measured.</summary>
+    /// <summary>
+    /// Two ratios chained through a common master, (a / m) x (m / b) = a / b, judged as one
+    /// (R-064); <see cref="MatchFigures.None"/> when either is not measured.
+    /// </summary>
+    /// <param name="aOverM">The first set over the common master; not null.</param>
+    /// <param name="mOverB">The common master over the second; not null.</param>
+    /// <param name="normalisation">The settings; null for the defaults.</param>
+    /// <returns>The chained ratio's figures, read on one value.</returns>
     internal static MatchFigures Chain(MatchFigures aOverM, MatchFigures mOverB, Normalisation? normalisation = null)
     {
         ArgumentNullException.ThrowIfNull(aOverM);
@@ -161,7 +231,12 @@ internal static partial class IndexAnalyzer
             : Match([(float)(aOverM.Ratio * mOverB.Ratio)], normalisation);
     }
 
-    /// <summary>The verdict of a ratio: NaN is unmeasured; a ratio at or under 0 is a measurement, the set shows none of the master's hot pixels, and is unmatched.</summary>
+    /// <summary>
+    /// The verdict of a ratio: NaN is unmeasured; a ratio at or under 0 is a measurement, the set
+    /// shows none of the master's hot pixels, and is unmatched.
+    /// </summary>
+    /// <param name="ratio">The median ratio.</param>
+    /// <returns>The verdict.</returns>
     internal static MatchVerdict Judge(double ratio)
     {
         if (double.IsNaN(ratio))
@@ -194,6 +269,9 @@ internal static partial class IndexAnalyzer
     /// already ends in an earlier label's suffix (`-idx` and digits, the owner having renamed
     /// the folder on it) loses that suffix first, so the label stays one suffix long (ADR 0013).
     /// </summary>
+    /// <param name="session">The session or library; not null.</param>
+    /// <param name="index">The darks' index; not null.</param>
+    /// <returns>The label, such as `Smida-idx25`.</returns>
     internal static string Label(SessionFolder session, IndexFigures index)
     {
         ArgumentNullException.ThrowIfNull(session);
@@ -214,12 +292,16 @@ internal static partial class IndexAnalyzer
     /// unmeasured tag), whatever its case; a name with none, with `-idx` not at the end, or that
     /// is nothing but the tag (nothing would remain in front of the new one) is kept as it is.
     /// </summary>
+    /// <param name="name">The folder name; not null.</param>
+    /// <returns>The name without the tag.</returns>
     internal static string WithoutLabelSuffix(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
         return LabelSuffix().Replace(name, string.Empty);
     }
 
+    /// <summary>The trailing tag of an earlier label, after at least one character.</summary>
+    /// <returns>The source-generated expression.</returns>
     [GeneratedRegex("(?<=.)-idx(?:[0-9]+|-)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex LabelSuffix();
 }
@@ -231,6 +313,27 @@ internal static partial class IndexAnalyzer
 /// hot-pixel sets overlap at <see cref="Th.PartnerOverlapAdu"/>; its frames that failed to
 /// decode or had other settings (not the skipped ones) are counted with the first error.
 /// </summary>
+/// <param name="Folder">The partner's folder.</param>
+/// <param name="Frames">How many darks it holds.</param>
+/// <param name="Used">How many decoded.</param>
+/// <param name="Norm">Its normalisation factor.</param>
+/// <param name="Iso">The first decoded dark's ISO; null when unknown.</param>
+/// <param name="ExposureSeconds">The first decoded dark's exposure, in seconds; null when
+/// unknown.</param>
+/// <param name="Index">Its master's index.</param>
+/// <param name="Label">Its label.</param>
+/// <param name="OwnOverPartner">The session's darks over the partner's master.</param>
+/// <param name="LightsOverPartner">The session's lights over the partner's master, through the
+/// darks.</param>
+/// <param name="Failed">How many of its darks failed (not the skipped ones).</param>
+/// <param name="FirstError">"file: error" of the first that failed; null when none
+/// did.</param>
+/// <param name="OwnHot50">The session master's pixels above
+/// <see cref="Th.PartnerOverlapAdu"/>.</param>
+/// <param name="OwnHot50InPartner50">Of those, the ones also above it in the partner's.</param>
+/// <param name="PartnerHot50">The partner master's pixels above it.</param>
+/// <param name="PartnerHot50InOwn20">Of those, the ones above <see cref="Th.HotAdu"/> in the
+/// session's.</param>
 internal sealed record PartnerAnalysis(
     string Folder,
     int Frames,

@@ -26,18 +26,36 @@ namespace DarksCheck.Core;
 /// light and does not average out. The reference an offset in the master is read against:
 /// the offset stays whole in the stack, the noise falls to these.
 /// </summary>
+/// <param name="SkyAdu">The median of the lights' sky medians on the reference plane, in raw
+/// ADU above black.</param>
+/// <param name="SkySigmaAdu">The median of the lights' sky sigmas on the reference plane, in raw
+/// ADU.</param>
+/// <param name="Lights">How many lights gave both figures, at least 1.</param>
+/// <param name="MasterNoiseAdu">The dark master's per-pixel noise, in raw ADU; 0 when
+/// unmeasured.</param>
 internal sealed record StackNoise(double SkyAdu, double SkySigmaAdu, int Lights, double MasterNoiseAdu)
 {
     /// <summary>The lights' share of the mean stack's per-pixel noise, sigma / sqrt(N).</summary>
     internal double LightsShareAdu => SkySigmaAdu / Math.Sqrt(Lights);
 
-    /// <summary>The per-pixel noise of the mean of the calibrated lights: the lights' share and the master's noise in quadrature.</summary>
+    /// <summary>
+    /// The per-pixel noise of the mean of the calibrated lights: the lights' share and the master's
+    /// noise in quadrature.
+    /// </summary>
     internal double MeanStackAdu => Math.Sqrt(LightsShareAdu * LightsShareAdu + MasterNoiseAdu * MasterNoiseAdu);
 
     /// <summary>The per-pixel noise of the median of the calibrated lights.</summary>
     internal double MedianStackAdu => Math.Sqrt(Math.Pow(Th.MedianNoiseFactor * LightsShareAdu, 2) + MasterNoiseAdu * MasterNoiseAdu);
 
-    /// <summary>The figures of a session's lights on the reference plane, with the dark master's noise (0 when unmeasured); null without lights or without a decoded one.</summary>
+    /// <summary>
+    /// The figures of a session's lights on the reference plane, with the dark master's noise (0
+    /// when unmeasured); null without lights or without a decoded one.
+    /// </summary>
+    /// <param name="lights">The lights' analysis; null when the session has no lights.</param>
+    /// <param name="referencePlane">The CFA position (0..3) the figures are read on.</param>
+    /// <param name="masterNoiseAdu">The dark master's per-pixel noise in raw ADU; NaN counts as
+    /// 0.</param>
+    /// <returns>The stack's figures, or null.</returns>
     internal static StackNoise? Of(LightsAnalysis? lights, int referencePlane, double masterNoiseAdu)
     {
         if (lights is null)

@@ -17,10 +17,42 @@
 
 namespace DarksCheck.Core;
 
-/// <summary>One light (R-050): the sky and its sigma per plane, the detector's sigma (of the local excess) per plane, the hot-pixel candidates and the isolated ones, its amplitude at the dark's hot pixels relative to the master, or why it has no figures.</summary>
+/// <summary>
+/// One light (R-050): the sky and its sigma per plane, the detector's sigma (of the local excess)
+/// per plane, the hot-pixel candidates and the isolated ones, its amplitude at the dark's hot
+/// pixels relative to the master, or why it has no figures.
+/// </summary>
+/// <param name="Info">The light's metadata.</param>
+/// <param name="Error">Why it has no figures, in Romanian; null when it decoded.</param>
+/// <param name="Skipped">True when the frame cap left it out.</param>
+/// <param name="AssumedSettings">True when the light does not say its ISO or its exposure and
+/// was read at the darks' settings.</param>
+/// <param name="SkyMedian">Per CFA position, the median of the plane (every 4th row and
+/// column) minus the light's black, in raw ADU; empty without figures.</param>
+/// <param name="SkySigma">Per CFA position, the clipped sigma of that subsample, in raw ADU;
+/// empty without figures.</param>
+/// <param name="LocalSigma">Per CFA position, the clipped sigma of the local excess, in raw
+/// ADU; empty without figures.</param>
+/// <param name="Candidates">The pixels above <see cref="Th.LightHotSigmas"/>, under
+/// saturation.</param>
+/// <param name="IsolatedHot">Those with no neighbour at <see cref="Th.LightIsolationSigmas"/>
+/// or above.</param>
+/// <param name="AmpRatioMedian">The median, over the dark's amplitude pixels, of the light's
+/// local excess over the master's excess, both normalised; NaN without figures or without such
+/// pixels.</param>
+/// <param name="AmpRatioQ25">The 25th percentile of those ratios; NaN likewise.</param>
+/// <param name="AmpRatioQ75">The 75th percentile of those ratios; NaN likewise.</param>
 internal sealed record LightFigures(FrameInfo Info, string? Error, bool Skipped, bool AssumedSettings, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75);
 
-/// <summary>At one level of the dark master: how many pixels the master has above it, and how many of those are persistent in the lights (R-051); the persistent count itself is <see cref="LightsAnalysis.Persistent"/>.</summary>
+/// <summary>
+/// At one level of the dark master: how many pixels the master has above it, and how many of those
+/// are persistent in the lights (R-051); the persistent count itself is
+/// <see cref="LightsAnalysis.Persistent"/>.
+/// </summary>
+/// <param name="LevelAdu">The level, in ADU equivalent (one of
+/// <see cref="Th.OverlapLevelsAdu"/>).</param>
+/// <param name="DarkCount">The master's pixels above it.</param>
+/// <param name="Both">Of those, the persistent ones.</param>
 internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 
 /// <summary>
@@ -29,6 +61,25 @@ internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 /// the amplitude ratio of the lights over the master per light and over the night, and the
 /// verdict (R-050 to R-052).
 /// </summary>
+/// <param name="Used">How many lights decoded, at least 1.</param>
+/// <param name="AssumedSettings">How many were read at the darks' settings.</param>
+/// <param name="Frames">Every light, in file order.</param>
+/// <param name="PersistentThreshold">The lights a pixel must be isolated-hot in to be
+/// persistent: ceil(<see cref="Th.PersistentFraction"/> x used).</param>
+/// <param name="Persistent">How many pixels are persistent.</param>
+/// <param name="HotCountHistogram">Entry c: how many pixels are isolated-hot in exactly c
+/// lights; used + 1 entries.</param>
+/// <param name="Overlap">The overlap at each of <see cref="Th.OverlapLevelsAdu"/>.</param>
+/// <param name="Missed">The persistent pixels the master has at or under the hot
+/// threshold.</param>
+/// <param name="MissedDarkExcessMedian">The median of their level in the master, in ADU
+/// equivalent; NaN when none.</param>
+/// <param name="AmpPixels">How many amplitude pixels of the master the ratios are read
+/// on.</param>
+/// <param name="LightsOverDark">The lights' ratios over the master, one per light, as a
+/// match.</param>
+/// <param name="RatioFirst">The first measured light's ratio; NaN when none.</param>
+/// <param name="RatioLast">The last measured light's ratio; NaN when none.</param>
 internal sealed record LightsAnalysis(
     int Used,
     int AssumedSettings,
@@ -54,6 +105,15 @@ internal sealed record LightsAnalysis(
 /// </summary>
 internal static class LightsAnalyzer
 {
+    /// <summary>Reads the lights one by one against the dark master.</summary>
+    /// <param name="paths">The lights' files, in order; not null.</param>
+    /// <param name="darks">The darks' figures, with the median master; not null.</param>
+    /// <param name="threads">How many lights are decoded at once; below 1 counts as 1.</param>
+    /// <param name="maxFrames">The frame cap: above it every k-th light is read.</param>
+    /// <param name="progress">Told (done, total) after each light; null for none.</param>
+    /// <param name="cancel">Stops the reading; the cancellation is thrown.</param>
+    /// <returns>Check 9's figures.</returns>
+    /// <exception cref="InvalidOperationException">No light decoded.</exception>
     internal static LightsAnalysis Analyze(IReadOnlyList<string> paths, DarkSeriesAnalysis darks, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(paths);
@@ -102,8 +162,9 @@ internal static class LightsAnalyzer
                 else
                 {
                     double lightBlack = double.IsNaN(black) ? darks.Black : black;
-                    // a light that does not say its ISO or exposure is taken at the darks' settings, the
-                    // usual case and the one check 1 verifies, and the light is marked
+                    // a light that does not say its ISO or exposure is taken at the darks'
+                    // settings, the usual case and the one check 1 verifies, and the light is
+                    // marked
                     bool assumed = frame.Info.Iso is not double || frame.Info.ExposureSeconds is not double;
                     double normL = assumed ? darks.Norm : darks.Normalisation.NormOf(frame.Info);
                     (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
@@ -182,13 +243,31 @@ internal static class LightsAnalyzer
             ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian);
     }
 
+    /// <summary>": file: error; file: error" for the first three lights that failed (not the
+    /// skipped ones).</summary>
+    /// <param name="frames">The lights' figures.</param>
+    /// <returns>The errors, with a leading ": ", or an empty string.</returns>
     private static string FirstErrors(LightFigures[] frames)
     {
         string[] errors = frames.Where(f => f.Error is not null && !f.Skipped).Take(3).Select(f => f.Info.FileName + ": " + f.Error).ToArray();
         return errors.Length == 0 ? "" : ": " + string.Join("; ", errors);
     }
 
-    /// <summary>One light: the local excess per plane, its sigma, the candidates and the isolated hot pixels, the sky, the amplitude at the dark's hot pixels.</summary>
+    /// <summary>
+    /// One light: the local excess per plane, its sigma, the candidates and the isolated hot
+    /// pixels, the sky, the amplitude at the dark's hot pixels.
+    /// </summary>
+    /// <param name="frame">The decoded light; its mosaic not null.</param>
+    /// <param name="w">The mosaic's width.</param>
+    /// <param name="h">The mosaic's height.</param>
+    /// <param name="black">The light's black level, in raw ADU.</param>
+    /// <param name="white">The light's white level, in raw ADU.</param>
+    /// <param name="normL">The light's normalisation factor.</param>
+    /// <param name="assumed">True when the light was read at the darks' settings.</param>
+    /// <param name="darkExcess">The dark master minus its black, row-major, in raw ADU.</param>
+    /// <param name="normD">The darks' normalisation factor.</param>
+    /// <param name="ampIdx">The mosaic indices of the dark's amplitude pixels.</param>
+    /// <returns>The light's figures and the mosaic indices of its isolated hot pixels.</returns>
     private static (LightFigures Figures, List<int> Isolated) Measure(StackFrame frame, int w, int h, double black, double white, double normL, bool assumed, float[] darkExcess, double normD, List<int> ampIdx)
     {
         ushort[] px = frame.Pixels!;
@@ -284,6 +363,11 @@ internal static class LightsAnalyzer
     }
 
     /// <summary>Every k-th row and column of a plane, as the prototype's `e[::4, ::4]`.</summary>
+    /// <param name="plane">The plane, row-major.</param>
+    /// <param name="pw">The plane's width.</param>
+    /// <param name="ph">The plane's height.</param>
+    /// <param name="k">The step, at least 1.</param>
+    /// <returns>The subsample, row-major.</returns>
     private static float[] Subsample(float[] plane, int pw, int ph, int k)
     {
         int sw = (pw + k - 1) / k, sh = (ph + k - 1) / k;
@@ -299,7 +383,14 @@ internal static class LightsAnalyzer
         return s;
     }
 
-    /// <summary>Each pixel minus the median of its eight same-colour neighbours (the mean of the two middle values), the border repeated (the prototype's `mode='edge'`).</summary>
+    /// <summary>
+    /// Each pixel minus the median of its eight same-colour neighbours (the mean of the two middle
+    /// values), the border repeated (the prototype's `mode='edge'`).
+    /// </summary>
+    /// <param name="plane">The plane, row-major; not null.</param>
+    /// <param name="pw">The plane's width.</param>
+    /// <param name="ph">The plane's height.</param>
+    /// <returns>The local excess, row-major, in the plane's unit.</returns>
     internal static float[] LocalExcess(float[] plane, int pw, int ph)
     {
         ArgumentNullException.ThrowIfNull(plane);
@@ -327,6 +418,8 @@ internal static class LightsAnalyzer
         return e;
     }
 
+    /// <summary>Sorts a short span in ascending order, in place.</summary>
+    /// <param name="a">The values.</param>
     private static void InsertionSort(Span<float> a)
     {
         for (int i = 1; i < a.Length; i++)
