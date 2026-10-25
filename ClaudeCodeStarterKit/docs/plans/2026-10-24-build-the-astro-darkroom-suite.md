@@ -500,3 +500,38 @@ started from its net8 build; the lock files of all three changed only their fram
   repository; `release.json`'s collision is a check of its own beside `merge-publish.ps1`;
   the components' git calls run twice per release; no test drives `release.ps1`'s exit-2
   branch.
+
+### Session B (2026-10-25, branch `claude/Start-AstroDarkroom-from-the-kit`)
+
+Part 5 done: `AstroDarkroom` in four commits on one branch (5.1 the project from the kit, 5.2
+the core and its tests, 5.3 the window, the icon and the design note, 5.4 the release and ADR
+0002), the gate green at each, 26 tests. Deviations:
+
+- **The suite ships the windows only.** The plan's first measured publish stopped at its second
+  entry, DarksCheck's console: `Microsoft.VisualBasic.dll`, `System.Drawing.dll` and
+  `WindowsBase.dll` exist in the base runtime a plain `net8.0` console ships and in the
+  desktop runtime a WPF window ships, with different bytes (WindowsBase: a 16 KB facade
+  against the 2.2 MB assembly). None of the plan's candidates (`LICENSE`, notices, `lensfun/`)
+  collided; the five windows merged byte for byte. Measured with the four consoles under a
+  `console/` subfolder: no collision, 636 files, 241.9 MB, zip 100.5 MB, 84 MB of it a second
+  base runtime. Asked, the owner did not want the consoles in this release; `kit.json` lists
+  the six window projects, `SuiteApp` has no console field, `SuiteTests` refuses an `Exe`
+  entry, and the consoles stay in the components' own releases (AstroDarkroom ADR 0002, with
+  the three measurements pasted).
+- **The measurement of 5.4:** 356 files, 159.0 MB, zip 65.4 MB, 55 s, every component clean;
+  `release.json` says `unreleased: true` for all five, since every CHANGELOG has `[Unreleased]`
+  content. The launcher was driven from that folder through UI Automation: five rows enabled
+  with their exe as tooltip, each "Deschide" started its app from the suite folder, "Despre"
+  showed the version, the licence, the date and the five versions, and with `FlatCheck.Wpf.exe`
+  renamed away its row was disabled with `Lipseste FlatCheck.Wpf.exe`. UI Automation's root
+  listing does not show the owned "Despre" dialog; a Win32 window enumeration does.
+- **Dates:** the project started on 2026-10-25, not 2026-10-24 as 5.1 wrote.
+- **The window** has the palette of LightsCheck's dark theme reduced to two windows' needs,
+  no dark title bar (an unsafe interop call for nothing else), and a message box when a start
+  fails after the row was built. Not a view-model project: rows are a record the XAML binds.
+- **R-005** (the licence notice) was written in 5.1, before R-001..R-004, since the copied
+  `LicenseHeaderTests` needed a requirement from the first commit; the requirement tests use a
+  small `TempWorkspace` (a temp folder of empty files named like the executables).
+- **The kit's ADR 0036 was deleted from the copy too** (the plan listed 0001-0035, written
+  before it existed); `scripts/sync.ps1` had to run once after `rename.ps1`, which rewrote
+  `STARTER` inside `check-testdata.ps1` and `mutate.ps1`.

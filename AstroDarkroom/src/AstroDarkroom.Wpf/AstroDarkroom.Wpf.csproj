@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The launcher's window, AstroDarkroom.exe: one row per app of the catalogue and the
+       "Despre" window. A thin adapter over AstroDarkroom.Core, which decides what is shown and
+       what is started; this project binds and calls Process.Start (ADR 0001). net8.0-windows +
+       UseWPF makes it Windows-only. Not named ".App": the repository's root .gitignore ignores
+       "*.app". -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>AstroDarkroom.Wpf</RootNamespace>
+    <AssemblyName>AstroDarkroom</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- The executable's icon (Explorer, the taskbar); the windows take the same file through
+         the <Resource> below and Icon= in their XAML. Drawn per size by Icon/make_icon.py. -->
+    <ApplicationIcon>..\..\Icon\astrodarkroom.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AstroDarkroom.Core\AstroDarkroom.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="..\..\Icon\astrodarkroom.ico" Link="Icon\astrodarkroom.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- GPLv3 wants a copy of the licence to travel with every copy of the program, and
+         "Despre" says it is in LICENSE beside the executable, so it has to be there: in the
+         build output and in whatever is published from it. The components publish the same
+         text under the same name, so the suite's merge sees equal bytes, not a collision. -->
+    <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

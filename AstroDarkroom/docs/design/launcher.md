@@ -1,0 +1,80 @@
+# The launcher
+
+**Covers:** `src/AstroDarkroom.Core/SuiteApp.cs`, `src/AstroDarkroom.Core/AppCatalogue.cs`,
+`src/AstroDarkroom.Core/SuiteFolder.cs`, `src/AstroDarkroom.Core/Launcher.cs`,
+`src/AstroDarkroom.Core/ReleaseManifest.cs`, `src/AstroDarkroom.Core/LicenseInfo.cs`,
+`src/AstroDarkroom.Core/Version.cs`, `src/AstroDarkroom.Wpf/App.xaml.cs`,
+`src/AstroDarkroom.Wpf/AppRow.cs`, `src/AstroDarkroom.Wpf/MainWindow.xaml.cs`,
+`src/AstroDarkroom.Wpf/AboutWindow.xaml.cs` and `Icon/make_icon.py`.
+
+The launcher is two layers: a core that answers three questions about a folder (which apps
+exist, which of them are there, how to start one) and reads one file (`release.json`), and a
+window that asks those questions once at start-up and shows the answers. The requirements are
+R-001 to R-004 in `docs/requirements.md`; the choice of a compiled-in catalogue over a scan of
+the folder is ADR 0002, the split with no test project for the window is ADR 0001.
+
+## The core
+
+- `SuiteApp` is one app: its folder name in the repository (also its name in `release.json`),
+  its Romanian title and description and its window exe. The suite ships windows only, so
+  there is no console field (ADR 0002). `AppCatalogue.Apps` is the fixed list of five, in
+  workflow order (darks, flats, lights, the processed pair, the print). The exe names are the
+  components' `AssemblyName` plus `.exe`; `SuiteTests` reads the components' project files to
+  keep them so, reads `kit.json` to keep the list equal to the set of components the release
+  bundles, and refuses an entry whose project is a console.
+- `SuiteFolder` is one base directory. `Locate(app)` combines it with the window exe and asks
+  `File.Exists`; the result, `AppLocation`, carries the path either way, so a row can say what
+  file it would start, and the Romanian reason `Lipseste <exe>` when it is not there.
+  `ManifestPath` is `release.json` in the same folder.
+- `Launcher.Plan(app, folder)` turns an available location into a `LaunchPlan`: the exe's full
+  path and the base directory as working directory, so a component finds its own files (the
+  shared desktop runtime, `lensfun/`, `LICENSE`) where it expects them. An unavailable app throws
+  `InvalidOperationException` with the reason; the core never calls `Process.Start`.
+- `ReleaseManifest.TryRead(path)` parses the file `scripts/release.ps1` writes
+  (`name`, `version`, `date`, `commit`, `components[]` with `name`, `version`, `commit`,
+  `unreleased`, `clean`) with `System.Text.Json` and no model binding: every key is read with
+  `TryGetProperty` and a type check, a string key that is wrong reads as `""`, a boolean one
+  as `false`, a component that is not an object is skipped. Only three things make it return
+  null: no file, no JSON object, no `components` array. `ReleaseInfo.Find(name)` is the lookup
+  the rows use, by `SuiteApp.Folder`.
+- `VersionInfo` reads `<Version>` and `<Copyright>` back from the assembly attributes MSBuild
+  writes from `Directory.Build.props`; `Banner` is `"Astro Darkroom " + Value`. `LicenseInfo`
+  holds the Romanian warranty paragraph and the licence URL for "Despre".
+
+## The window
+
+- `App.OnStartup` makes one `SuiteFolder` from `AppContext.BaseDirectory`, the folder the
+  executable runs from, and opens `MainWindow` on it. Nothing else is read from the command
+  line. `App.LargestIconFrame` picks the widest frame of the `.ico` for the two logos, since
+  the first frame of an icon is not reliably the largest.
+- `MainWindow` reads `release.json` once, then builds one `AppRow` per catalogue app: the app,
+  its `AppLocation`, its `ComponentInfo` or null. The row's properties are the strings the XAML
+  binds (`VersionHint` is `versiunea X` or `versiune necunoscuta`, `UnreleasedHint` is
+  `modificari nelansate` or empty, `ButtonHint` is the exe or the reason) and `IsAvailable`,
+  which enables the button. The button's tooltip is
+  shown on a disabled button too (`ToolTipService.ShowOnDisabled`), since the reason is the
+  one thing a disabled row must tell. The window does not watch the folder: a file that
+  appears or goes away is seen at the next start, or at the click, where a missing file
+  becomes a message box instead of a crash.
+- `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `UseShellExecute` and the
+  plan's working directory, disposing the returned handle at once (the started app is not
+  affected). The bottom line shows the base directory without its trailing separator. `Win32Exception` (Windows refused the start) and
+  `InvalidOperationException` (the file went away) end in a message box with the row's title.
+- `AboutWindow` takes the `ReleaseInfo` the main window read: banner, copyright, the warranty,
+  the release date, and the component list from `release.json` without the launcher's own
+  entry (`Name` equal to the release's `name`), each as a `ComponentLine` with `?` for an
+  unknown version and the unreleased note. Without a file, or with one that names no
+  component, the list is the catalogue with `?` and the line says the versions are unknown.
+  Enter and Esc close it (`IsDefault` and `IsCancel` on one button).
+- The palette and the button, tooltip and card styles are in `App.xaml`, the same colours as
+  LightsCheck's dark theme reduced to what two windows need. No dark title bar: that needs an
+  unsafe interop call the launcher has no other use for.
+
+## The icon
+
+`Icon/make_icon.py` draws `astrodarkroom.ico` at eight sizes on a 110-unit grid with 8x
+supersampling: a red-brown rounded square (the safelight) and a white star with a halo, a core
+and, from 32 px up, four spikes; at 24 px and below the spikes would fall under a pixel, so the
+core is drawn larger instead. The `.ico` is committed; the script runs only when the drawing
+changes. The csproj uses the file as `ApplicationIcon` and as a `Resource`, which the windows'
+`Icon=` and `App.IconSource` name.

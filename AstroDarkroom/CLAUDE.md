@@ -1,0 +1,98 @@
+# AstroDarkroom
+
+Astro Darkroom is the launcher and the release of the five astrophotography tools of the `photo`
+repository: DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare and AstroPhotoAnalyzer. The
+launcher is a small WPF window that lists the five, says which is in the suite folder beside it
+and starts the one the user picks; it computes nothing of its own. Its `<Version>` is the
+suite's version and its `/release` publishes the five components' windows and the launcher into
+one flat self-contained folder, zipped for Bitbucket Downloads; the consoles stay in the
+components' own releases (ADR 0002). It is for the owner and the few people who receive the
+zip; it is not a sixth analysis tool and never changes a component.
+
+## Commands
+
+- Gate (what pre-commit, pre-merge-commit and the Claude commit hook run):
+  `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`
+- Fast loop, no tests: `... scripts/verify.ps1 -SkipTests`
+- Build: `dotnet build AstroDarkroom.sln -c Release --nologo`
+- Test: `dotnet test AstroDarkroom.sln -c Release --nologo`
+- One test: `dotnet test AstroDarkroom.sln --filter "FullyQualifiedName~R001"`
+- Format: `dotnet format AstroDarkroom.sln` (check only: `--verify-no-changes`)
+- Window: `dotnet run --project src/AstroDarkroom.Wpf` (from the build folder every app is
+  "missing"; the launcher is meant to run from a suite folder, `artifacts/<version>/`)
+- Test data hashes after an intentional fixture change: `scripts/check-testdata.ps1 -Update`
+- Design notes a branch touched (the index and Covers paths are a gate step):
+  `scripts/check-design.ps1 -Since main`
+- Mutation score of Core (minutes, not in the gate): `scripts/mutate.ps1 [-Mutate "**/File.cs"]`
+- Release of the suite (verify, version, CHANGELOG, the five windows and the launcher
+  published into `artifacts/<version>/`, `release.json`, the zip and its `.sha256` in
+  `artifacts/`; no commit, no tag): `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`; the publish
+  alone again, from any branch: `-PublishOnly`
+- Take the kit's shared folders and settings keys after a change there: `scripts/sync.ps1`
+  (`-Check` only compares)
+
+## Layout
+
+- `src/AstroDarkroom.Core/` - the catalogue of the apps, where each is in the suite folder,
+  the plan of a start, the reading of `release.json`, the version and the licence texts. No
+  Console, no UI, no entry point: a compile boundary.
+- `src/AstroDarkroom.Wpf/` - the window, `AstroDarkroom.exe`: one row per app with its button,
+  and the "Despre" window. A thin adapter over the core (ADR 0001); it has no test project.
+- `tests/AstroDarkroom.Tests/` - the requirement tests (`R###_...`), the suite checks
+  (`SuiteTests`: the catalogue against `kit.json`, the components' frameworks and packages),
+  repo rules (`RepoInvariantTests`, `LicenseHeaderTests`, `VersionTests`). `tests/testdata/`
+  holds only the manifest.
+- `Icon/` - the one icon of the launcher, drawn per size by `make_icon.py`.
+- `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs.
+  `docs/validation.md` + `.json` - no measured figures: the launcher computes nothing.
+  `docs/design/` - the design notes, read on demand. `docs/plans/` - approved plans; the plan
+  of the whole suite is the kit's `docs/plans/2026-10-24-build-the-astro-darkroom-suite.md`.
+  `README.md` - the user documentation, Romanian.
+- `kit.json` - what the kit's scripts, skills and agent need to know about AstroDarkroom,
+  the suite's publish list included. `docs/skills.md` - AstroDarkroom's additions to the kit's
+  skills. `scripts/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` and the process
+  keys of `.claude/settings.json` are the kit's, the same here (the kit's ADRs 0017, 0018 and
+  0028).
+- The process rules are the kit's, in `.claude/rules/kit/process.md`; AstroDarkroom's own are
+  in this file. The reasons behind the process are in `GHID.md` in the kit folder
+  `ClaudeCodeStarterKit` beside this project in the `photo` repository (for people, not loaded).
+
+## Rules
+
+The process rules every project made from the kit follows are in `.claude/rules/kit/process.md`,
+loaded with this file (the kit's ADR 0028). These are AstroDarkroom's own; one that extends or
+varies a kit rule names it.
+
+- **Core has no UI.** `AstroDarkroom.Core` never references Console, WPF, file dialogs or
+  anything with a UI; it plans a start, the window executes it.
+- **The catalogue and kit.json agree.** Every app in `AppCatalogue` is a component of
+  `release.publish` in `kit.json` (one entry whose `project` starts with `../`, its window
+  project) and every component is in the catalogue, under the exe name its project file
+  gives; `SuiteTests` checks it, and refuses a console entry (ADR 0002). A new app in the
+  suite is one entry, one catalogue line and that test run.
+- **Romanian without diacritics in what the user sees, English everywhere else** (varies the
+  kit's rule "Languages", ADR 0003). The window's labels, the catalogue's titles and
+  descriptions and `README.md` are Romanian, written without diacritics; code, comments, tests,
+  docs, commits and the CHANGELOG are English. Never leave a file in two languages.
+- **Same .NET and same packages across the suite.** Every component targets .NET 8 and a
+  package two components share resolves to one version; `SuiteTests` reads the components'
+  lock files. A component that drifts is fixed in that component, never worked around here.
+
+## Workflow
+
+The kit's workflow in `.claude/rules/kit/process.md` applies. AstroDarkroom adds:
+
+- A release is tagged `astrodarkroom-vX.Y.Z`; it is the suite's release, cut from `main` with
+  every component's folder clean. The components' own `/release` entries are unchanged.
+- The main checkout of the kit's rule "Worktrees" is the shared checkout `E:\Photografie\Code`.
+
+## Read before touching
+
+`docs/design/README.md` maps every area to its note. Read `docs/design/launcher.md` before
+editing the core or the window.
+
+## Style
+
+- `.editorconfig` and the analyzers enforce style at build time; do not restate style here.
+- Nullable enabled, warnings are errors, `AnalysisLevel` latest-recommended. Fix, do not
+  suppress, unless the suppression carries a comment with the reason.
