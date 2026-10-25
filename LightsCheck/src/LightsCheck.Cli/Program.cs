@@ -97,7 +97,7 @@ internal static class Program
 
         if (o.Error is not null)
         {
-            stderr.WriteLine("EROARE: " + o.Error);
+            stderr.WriteLine(RunReport.Error(o.Error));
             return 1;
         }
 
@@ -136,7 +136,7 @@ internal static class Program
         }
         catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
         {
-            stderr.WriteLine("EROARE: " + e.Message);
+            stderr.WriteLine(RunReport.Error(e.Message));
             return 1;
         }
     }

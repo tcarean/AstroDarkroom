@@ -149,17 +149,14 @@ namespace LightsCheck.Core
         /// <summary>
         /// The reader's own error for a file libraw refuses: InvalidDataException, the type a
         /// corrupt FITS gives, so the console, the inventory and the window handle it as one
-        /// more unreadable frame (R-007, ADR 0019); libraw's words stay inside, in brackets,
-        /// less the path when they repeat it ("Failed opening file: ..." names the file).
+        /// more unreadable frame (R-007, ADR 0019). The message is Romanian and names the file;
+        /// libraw's own words ("Failed opening file: ...") stay in the inner exception (ADR 0020).
         /// </summary>
         /// <param name="path">The file libraw refused.</param>
         /// <param name="inner">libraw's exception, kept as the inner one.</param>
-        /// <returns>The exception to throw, naming the file once.</returns>
+        /// <returns>The exception to throw, naming the file.</returns>
         static InvalidDataException Unreadable(string path, LibRawException inner)
-        {
-            string detail = inner.Message.Replace(path, "", StringComparison.Ordinal).Trim().TrimEnd(':').Trim();
-            return new InvalidDataException($"{path}: libraw nu poate citi fisierul ({detail})", inner);
-        }
+            => new InvalidDataException($"{path}: libraw nu poate citi fisierul", inner);
 
         /// <summary>
         /// Opens the file in libraw. Here and not in Load or LoadInfo, so that those two keep no

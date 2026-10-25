@@ -42,6 +42,14 @@ internal static class RunReport
     /// GPLv3 §5(d): a program that shows legal notices shows the warranty disclaimer too; here, in
     /// --help.
     /// </summary>
+    /// <summary>
+    /// The one line both applications print or show for an error that stops a run: the prefix
+    /// `EROARE: ` and the message as the core worded it (ADR 0020).
+    /// </summary>
+    /// <param name="message">The error's message, Romanian, as thrown or as parsed.</param>
+    /// <returns>`EROARE: ` followed by the message.</returns>
+    internal static string Error(string message) => "EROARE: " + message;
+
     internal static readonly string[] WarrantyLines =
     [
         "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",

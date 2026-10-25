@@ -59,9 +59,11 @@ bug and propagates.
 The window's own words, the only Romanian the window writes, are `WindowTexts`: the empty and
 problem cards, the wait line (`Busy`, `BusyRegistering`), the dialog titles, the status after
 an export, the cut-out notes, the step chart's guide labels (`MoveGuide`, `WalkingNoiseGuide`,
-given the core's formatted figure), the map's grid note (`GridNote`) and the `Error` prefix.
-The class words on the elongation guides are `SeriesReport.ClassWord` and the session card's
-`scara` label is `SeriesReport.ScaleLabel`, so a verdict word changes in `Report/` alone.
+given the core's formatted figure) and the map's grid note (`GridNote`). The class words on
+the elongation guides are `SeriesReport.ClassWord`, the session card's `scara` label is
+`SeriesReport.ScaleLabel`, and the `EROARE: ` line of an export error or a failed cut-out decode
+is `RunReport.Error`, the console's own, so a verdict word or the prefix changes in `Report/`
+alone (ADR 0020).
 
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
 console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`.

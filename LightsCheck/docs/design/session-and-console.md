@@ -99,7 +99,8 @@ under a lock, because a `Progress<T>` would post to the thread pool and could pr
 the report; stdout stays the report alone, which is what the goldens compare. Exit codes:
 0 for help and for a clean run; 1 for a parse error, for any `IOException`,
 `InvalidDataException`, `InvalidOperationException`, `ArgumentException` or
-`UnauthorizedAccessException` the runs throw (printed as `EROARE: <message>` on stderr), and
+`UnauthorizedAccessException` the runs throw (printed as `RunReport.Error(message)`,
+`EROARE: <message>`, on stderr, the same line the window shows), and
 for an inventory or a series in which a frame could not be read, the report having been
 printed in full. Any other exception is a bug and crashes. `WriteUsage` is the `--help`
 text; the golden `help.txt` holds it.

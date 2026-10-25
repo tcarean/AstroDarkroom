@@ -119,8 +119,8 @@ public sealed record CropVm(string Caption, BitmapSource Image);
 /// <summary>
 /// The window's state (R-029 to R-032): the folder, the inputs, the run with its progress and
 /// cancellation, and the result shaped for the tabs. Every figure and every sentence comes from
-/// the core, the verdict words and the `scara` label included; the view-model arranges them, and
-/// its few words of its own (the guide lines' labels, the `EROARE: ` before an error) are
+/// the core, the verdict words, the `scara` label and the `EROARE: ` line included; the
+/// view-model arranges them, and its few words of its own (the guide lines' labels) are
 /// <see cref="WindowTexts"/>'.
 /// </summary>
 public sealed class MainViewModel : ObservableObject
@@ -452,7 +452,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
         {
-            Status = WindowTexts.Error(e.Message);
+            Status = RunReport.Error(e.Message);
         }
     }
 
@@ -599,7 +599,7 @@ public sealed class MainViewModel : ObservableObject
             // place only while this frame is still the one selected (R-031).
             if (ReferenceEquals(_selectedFrame, row))
             {
-                CropsNote = WindowTexts.Error(e.Message);
+                CropsNote = RunReport.Error(e.Message);
             }
         }
     }
