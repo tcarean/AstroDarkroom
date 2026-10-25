@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.IO;
+using ImageVisualCompare.Core;
 using Microsoft.Win32;
 
 namespace ImageVisualCompare.Wpf.Services;
@@ -45,19 +46,10 @@ public sealed record ImagePairSelection(string BeforePath, string AfterPath);
 /// </summary>
 public sealed class FileDialogService : IFileDialogService
 {
-    // TIFF comes free with the WIC codec set and Siril exports it, so there is no reason to
-    // turn those files away. FITS is what Siril works in; the project's own reader opens it.
-    private const string Filter =
-        "Images (*.png;*.tif;*.tiff;*.fit;*.fits;*.fts)|*.png;*.tif;*.tiff;*.fit;*.fits;*.fts|" +
-        "PNG (*.png)|*.png|" +
-        "TIFF (*.tif;*.tiff)|*.tif;*.tiff|" +
-        "FITS (*.fit;*.fits;*.fts)|*.fit;*.fits;*.fts|" +
-        "All files (*.*)|*.*";
-
     /// <inheritdoc/>
     public ImagePairSelection? PickImagePair(string? initialDirectory = null)
     {
-        string? before = Pick("Select image A  —  shown left of the divider", initialDirectory);
+        string? before = Pick(UiText.Current.SelectImageA, initialDirectory);
         if (before is null)
         {
             return null;
@@ -65,7 +57,7 @@ public sealed class FileDialogService : IFileDialogService
 
         // The second image almost always sits beside the first, so start there rather than
         // making the user navigate the same path twice.
-        string? after = Pick("Select image B  —  shown right of the divider", Path.GetDirectoryName(before));
+        string? after = Pick(UiText.Current.SelectImageB, Path.GetDirectoryName(before));
         if (after is null)
         {
             return null;
@@ -85,7 +77,10 @@ public sealed class FileDialogService : IFileDialogService
         var dialog = new OpenFileDialog
         {
             Title = title,
-            Filter = Filter,
+            // TIFF comes free with the WIC codec set and Siril exports it, so there is no reason
+            // to turn those files away. FITS is what Siril works in; the project's own reader
+            // opens it.
+            Filter = UiText.Current.FileFilter,
             CheckFileExists = true,
             Multiselect = false,
         };

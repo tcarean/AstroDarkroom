@@ -24,6 +24,7 @@
 // It is bumped BY HAND, per feature or fix.
 
 using System.Reflection;
+using ImageVisualCompare.Core;
 
 namespace ImageVisualCompare.Wpf;
 
@@ -51,19 +52,15 @@ internal static class VersionInfo
     /// GPLv3 section 5(d): a program with an interactive interface must also show the absence
     /// of warranty, not just the copyright. It does not fit in the status bar, so it lives
     /// here, one click away, and points on to the full text. It is a property, and not content
-    /// crammed into the button's handler, so that tests can check it without opening a window.
+    /// crammed into the button's handler, so that tests can check it without opening a window;
+    /// it is worded each time it is read, in the interface's language (<see cref="UiText.AboutNotice"/>).
     /// </summary>
-    internal static string About { get; } = string.Join(
+    internal static string About => string.Join(
         Environment.NewLine,
         Banner,
         Copyright,
         string.Empty,
-        "This program comes with ABSOLUTELY NO WARRANTY.",
-        "This is free software, and you are welcome to redistribute it under the terms",
-        "of the GNU General Public License, version 3 or later.",
-        string.Empty,
-        "The full licence text is in the LICENSE file next to this program, and at",
-        "https://www.gnu.org/licenses/gpl-3.0.html");
+        UiText.Current.AboutNotice);
 
     /// <summary>Reads the copyright notice that MSBuild wrote into the assembly.</summary>
     /// <returns>

@@ -168,7 +168,7 @@ public sealed class ImagePairLoader(IImageLoader loader)
         catch (Exception ex) when (IsExpectedLoadFailure(ex))
         {
             return ImagePairLoadResult.Failure(
-                $"Could not read {Path.GetFileName(currentPath)}.{Environment.NewLine}{ex.Message}");
+                $"{UiText.Current.CouldNotRead(Path.GetFileName(currentPath))}{Environment.NewLine}{ex.Message}");
         }
     }
 

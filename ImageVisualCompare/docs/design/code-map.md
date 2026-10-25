@@ -31,6 +31,9 @@
   - `ImagePairValidator.cs` — `PadPlan`: the canvas the pair is compared on, which is the
     larger extent on each axis, plus whether that meant padding and the question to put to
     the user if it did.
+  - `UiText.cs`, `UiLanguage.cs` — every text the application shows, English and Romanian side
+    by side, and the table in use (`UiText.Current`). See `language.md`, ADR 0038.
+  - `StartupArguments.cs` — the command line: `--lang` and the candidates for the pair.
   - `PointD.cs`, `Geometry.cs` — `PointD`, `SizeD`, `RectD` and `AspectFit`, declared here
     so Core needs no `WindowsBase` reference. See ADR 0009.
   - `RenderPlan.cs` — `RenderPlanner.For(viewport, deviceScale)` turns viewport state into
@@ -82,7 +85,9 @@
   - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout.
   - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
     `Confirm` to ask yes or no.
-  - `App.xaml.cs` — command line pair, handed over once via `TakeStartupSelection`.
+  - `App.xaml.cs` — the interface language, set from `--lang` before the first window; the
+    command line pair, handed over once via `TakeStartupSelection`, and a `--lang` not
+    understood, via `TakeUnknownLanguage`.
   - `Theme.xaml` — the dark palette and every control style.
   - `Assets/ImageVisualCompare.ico` and `Assets/make-icon.ps1` — the application's icon and the
     script that draws it; the csproj's `ApplicationIcon` embeds the file. See `shell.md`.

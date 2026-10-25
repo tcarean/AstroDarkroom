@@ -17,8 +17,9 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
 - Test: `dotnet test ImageVisualCompare.sln -c Release --nologo --filter "Category!=Validation"`
 - One test: `dotnet test ImageVisualCompare.sln --filter "FullyQualifiedName~R020"`
 - Format: `dotnet format ImageVisualCompare.sln` (check only: `--verify-no-changes`)
-- Run: `dotnet run --project src/ImageVisualCompare.Wpf -- [A.png B.png]`; without the two
-  paths the file dialogs ask (R-001, R-002)
+- Run: `dotnet run --project src/ImageVisualCompare.Wpf -- [--lang=ro] [A.png B.png]`; without
+  the two paths the file dialogs ask (R-001, R-002), without `--lang` the interface is English
+  (R-100)
 - Figures on the real pair (seconds per case, not in the gate): `/validate`, or
   `dotnet test ImageVisualCompare.sln -c Release --filter "Category=Validation"`; the files are
   git-ignored copies in `tests/testdata/large/` (ADR 0005)
@@ -39,7 +40,9 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
   (`FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs`), a float TIFF's samples shown as a
   FITS's (`FloatSamples.cs`), and the layout
   records the controls assign without arithmetic of their own (`RenderPlan.cs`,
-  `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `Geometry.cs`, `PointD.cs`).
+  `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `Geometry.cs`, `PointD.cs`),
+  and every text the application shows, in English and Romanian, with the command line that
+  chooses between them (`UiText.cs`, `StartupArguments.cs`).
   All of it unit tested.
 - `src/ImageVisualCompare.Wpf/` - `net8.0-windows`, the application: `Imaging/` (the decoder
   seam, WIC and the FITS loader behind it, the pair loader, memory housekeeping), `Controls/` (the comparison
@@ -100,6 +103,11 @@ or varies a kit rule names it.
 - **Formats are reported, not branched on.** Everything is Bgra32 after the load, and nothing
   after it reads the format; the status bar says what the file was (ADR 0022). The one branch
   is in `WicImageLoader`: float samples go to `FloatSamples`, not to WIC's conversion (ADR 0035).
+- **Two interface languages** (varies the kit's rule "Languages"). Every text the application
+  shows is a member of `UiText` in Core, its English and Romanian wordings side by side, never a
+  literal where it is shown; `--lang` chooses the table once at start-up, English by default.
+  Romanian is allowed in those Romanian wordings, in the tests that assert them, and where a
+  comment or a document quotes them; nowhere else. No `CultureInfo` is set, so numbers read the same in both (ADR 0038).
 - **Never set `InvariantGlobalization`.** WPF's font cache dies on it during text layout, and no
   unit test can catch it (ADR 0017).
 - **No `MessageBox`; every `Window` calls `DarkTitleBar.Apply` in its constructor.** The
@@ -138,6 +146,7 @@ edit:
 - Anything in `Imaging/`, or a package: `docs/design/imaging.md` and ADR 0008, ADR 0014 to
   ADR 0016 (probe first, decode sequentially, release through the finaliser pass).
 - `Directory.Build.props`, a new `Window`: `docs/design/shell.md` and ADR 0017, ADR 0018.
+- A text on screen, `App.xaml.cs`, the command line: `docs/design/language.md` and ADR 0038.
 - `Version.cs`, `LicenseHeaderTests`: `docs/design/versioning-and-licence.md`, ADR 0023, ADR
   0024.
 - A file you have not opened before: `docs/design/code-map.md`.

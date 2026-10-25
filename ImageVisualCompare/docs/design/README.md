@@ -28,6 +28,7 @@ stop.
 | The decoder seam and why WIC, how a FITS file is read, the memory a pair costs and how it is given back, padding a mismatched pair | `imaging.md` | anything in `Imaging/`, the `Fits*.cs` files of Core, `ImagePairValidator.cs`, a new package; ADR 0008, ADR 0014 to ADR 0016 and ADR 0029 first |
 | The culture trap and the dark chrome: no `InvariantGlobalization`, no `MessageBox`, the DWM caption, the icon | `shell.md` | `Directory.Build.props`, a new `Window`, `Theme.xaml`, `Assets/`; ADR 0017, ADR 0018 and ADR 0030 first |
 | The version and the licence: one source for each, what `VersionTests` and `LicenseHeaderTests` pin | `versioning-and-licence.md` | `Version.cs`, `Directory.Build.props`, `VersionTests`, `LicenseHeaderTests`, the `LICENSE` item of the Wpf csproj; ADR 0004, ADR 0023, ADR 0024 and ADR 0027 first |
+| The interface language: `--lang`, the table of every text in English and Romanian, what is not translated, the Romanian tests | `language.md` | any text the application shows, `App.xaml.cs`, `UiText.cs`, `StartupArguments.cs`; ADR 0038 first |
 | What is tested, how the fixtures are made, what is not tested and why the application has to be launched | `testing.md` | a new fixture, any change to the WPF layer; ADR 0026 first |
 
 The decisions themselves, with the alternatives rejected, are in `../decisions/`. The behaviour,

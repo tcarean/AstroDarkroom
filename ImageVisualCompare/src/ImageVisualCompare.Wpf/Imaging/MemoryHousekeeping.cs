@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Diagnostics;
+using ImageVisualCompare.Core;
 
 namespace ImageVisualCompare.Wpf.Imaging;
 
@@ -27,9 +28,12 @@ namespace ImageVisualCompare.Wpf.Imaging;
 public readonly record struct MemorySnapshot(long ManagedBytes, long PrivateBytes)
 {
     /// <summary>Words the snapshot for the status bar.</summary>
-    /// <returns>"managed N MB, process N MB", in whole megabytes.</returns>
+    /// <returns>
+    /// "managed N MB, process N MB", in whole megabytes, in the interface's language
+    /// (<see cref="UiText.Memory"/>).
+    /// </returns>
     public string Describe() =>
-        $"managed {Megabytes(ManagedBytes)}, process {Megabytes(PrivateBytes)}";
+        UiText.Current.Memory(Megabytes(ManagedBytes), Megabytes(PrivateBytes));
 
     /// <summary>Words a byte count in whole megabytes.</summary>
     /// <param name="bytes">The count, in bytes.</param>

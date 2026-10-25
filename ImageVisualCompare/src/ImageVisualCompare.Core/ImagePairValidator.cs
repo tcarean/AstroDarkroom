@@ -92,24 +92,16 @@ public static class ImagePairValidator
     /// <param name="plan">
     /// The canvas the pair would be padded to: its dimensions are quoted.
     /// </param>
-    /// <returns>The question, in short lines, ending with "Continue?".</returns>
+    /// <returns>
+    /// The question in the interface's language (<see cref="UiText.PadQuestion"/>), in short
+    /// lines, ending with "Continue?".
+    /// </returns>
     public static string DescribeMismatch(ImageInfo before, ImageInfo after, PadPlan plan)
     {
         ArgumentNullException.ThrowIfNull(before);
         ArgumentNullException.ThrowIfNull(after);
 
-        return string.Join(
-            Environment.NewLine,
-            "The two images have different dimensions.",
-            $"A: {before.FileName} — {before.Dimensions}",
-            $"B: {after.FileName} — {after.Dimensions}",
-            string.Empty,
-            // Broken into short lines on purpose. The dialog wraps anything longer, and a
-            // resolution split across two lines is exactly the part being read.
-            $"Both can be padded with black to {plan.Dimensions},",
-            "anchored top-left, and compared on that canvas.",
-            "The image files themselves are not modified.",
-            string.Empty,
-            "Continue?");
+        return UiText.Current.PadQuestion(
+            before.FileName, before.Dimensions, after.FileName, after.Dimensions, plan.Dimensions);
     }
 }

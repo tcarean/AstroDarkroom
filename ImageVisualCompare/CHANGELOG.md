@@ -8,6 +8,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The interface is in English or in Romanian, chosen on the command line with `--lang=ro` (or
+  `--lang ro`); without it the interface is English, and a language it does not have is said in
+  a message before the interface comes up in English. Numbers read the same in both
+  (R-100 to R-102, ADR 0038).
 - FITS files (`.fit`, `.fits`, `.fts`) open as image A or B, next to or against a PNG or a
   TIFF: 8, 16 and 32-bit integers, 32 and 64-bit floats, one plane (gray) or three (RGB). The
   values are shown as stored, with no stretch, at the level the same value has in a 16-bit
