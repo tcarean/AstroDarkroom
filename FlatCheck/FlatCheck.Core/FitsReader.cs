@@ -81,7 +81,8 @@ namespace FlatCheck
             string m = held.ToString(CultureInfo.InvariantCulture);
             return T(
                 "FITS: data cut short: the header announces " + n + " bytes of pixels, the file holds only " + m + ".",
-                "FITS: date trunchiate: headerul anunta " + n + " de octeti de pixeli, fisierul are doar " + m + ".");
+                // a label form, so the Romanian numeral needs no "de" agreement for any count
+                "FITS: date trunchiate: octeti de pixeli anuntati de header: " + n + ", in fisier doar " + m + ".");
         }
 
         /// <summary>
@@ -114,7 +115,9 @@ namespace FlatCheck
         /// exactly what the full load refuses too: a file that does not begin with the SIMPLE
         /// card (empty, shorter than a keyword, or with something else in the first card) and a
         /// header cut before END. An empty header would be an answer, not an error, and every
-        /// caller would have to recognise it by the number of cards (ADR 0057).
+        /// caller would have to recognise it by the number of cards (ADR 0057). It does not
+        /// check the data area: a file whose pixels are cut short (R-009) has an intact, usable
+        /// header, so this read answers it and only the full load refuses it.
         /// </summary>
         /// <param name="path">The FITS file to read.</param>
         /// <returns>The keywords and their values, string quotes and comments removed.</returns>
@@ -160,9 +163,9 @@ namespace FlatCheck
         /// Reads the whole file: the first HDU with a 2D image, its planes averaged, the header
         /// as a dictionary and as raw cards, the CFA order from BAYERPAT, and the focal length
         /// and camera. The ADU scale stays null: a FITS does not carry it. Throws
-        /// InvalidDataException on a file that is not a FITS or whose header is cut, and an
-        /// Exception when no HDU holds a 2D image or BITPIX is not one of the five (as
-        /// <see cref="LoadFull"/>).
+        /// InvalidDataException on a file that is not a FITS, whose header is cut or whose data
+        /// area is shorter than the header declares (R-009), and an Exception when no HDU holds
+        /// a 2D image or BITPIX is not one of the five (as <see cref="LoadFull"/>).
         /// </summary>
         /// <param name="path">The FITS file to read.</param>
         /// <returns>The frame, its image filled.</returns>
@@ -273,8 +276,10 @@ namespace FlatCheck
         /// (without END), its number of planes and its BITPIX. The raw cards are what FitsWriter
         /// copies into a file written back; the dictionary cannot be the source, because it
         /// loses the comments and cuts the strings at the first '/'. Throws
-        /// InvalidDataException on a file that is not a FITS or whose header is cut, and an
-        /// Exception when no HDU holds a 2D image or BITPIX is not one of the five.
+        /// InvalidDataException on a file that is not a FITS, whose header is cut or whose data
+        /// area is shorter than the header declares (R-009, checked for every HDU before a
+        /// sample is read), and an Exception when no HDU holds a 2D image or BITPIX is not one
+        /// of the five.
         /// </summary>
         /// <param name="raw">The whole file's bytes.</param>
         /// <returns>

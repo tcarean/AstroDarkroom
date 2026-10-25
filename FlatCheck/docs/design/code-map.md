@@ -45,7 +45,9 @@ a library extraction and not a copy is ADR 0011.
     a sample is read, `LoadFull` checks that the file holds the data area the header declares
     (`NAXISn` product times `|BITPIX| / 8`) and refuses a shorter one with the two byte counts
     ("data cut short"); the check runs for every HDU, the skipped ones too, and counts the data
-    alone, so a last HDU without its padding to 2880 bytes is read (R-009).
+    alone, so a last HDU without its padding to 2880 bytes is read (R-009). `LoadHeader` does
+    not check the data area, so this is the one refusal the two reads do not share: the header
+    of such a file is intact and the Sintetic tab can still use it.
   - `FitsWriter.cs` - the hand-rolled FITS writer, with one consumer: `--smooth`. One primary
     2-D HDU, `BITPIX -32` or `16` (with `BZERO 32768`), the input's raw cards copied minus the
     structural ones it rewrites, `HISTORY` at the end. Writes into a `Stream` for the same

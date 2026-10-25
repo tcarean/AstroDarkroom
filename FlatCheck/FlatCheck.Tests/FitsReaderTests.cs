@@ -182,7 +182,8 @@ public class FitsReaderTests
         byte[] fits = FitsTestData.BuildFits(64, 64, (x, y) => 100);
         byte[] truncated = fits.Take(FitsTestData.BlockSize + 100).ToArray();
 
-        Assert.ThrowsAny<Exception>(() => Load(truncated));
+        // the R-009 refusal, not the IndexOutOfRangeException the sample loop used to throw
+        Assert.Throws<InvalidDataException>(() => Load(truncated));
     }
 
     /// <summary>
@@ -217,6 +218,23 @@ public class FitsReaderTests
 
         Assert.Equal(4, img.W);
         Assert.Equal(100, img.At(3, 3), 6);
+    }
+
+    /// <summary>
+    /// R-009: the check runs for every HDU, the skipped ones too. A 1-D HDU of 100 16-bit
+    /// samples (200 bytes) cut after 100 bytes is refused with the two counts, not skipped
+    /// into "no HDU with a 2D image".
+    /// </summary>
+    [Fact]
+    public void R009_LoadRefusesACutHduWithoutA2DImage()
+    {
+        byte[] fits = FitsTestData.BuildFitsNaxis1(100);
+        byte[] cut = fits.Take(FitsTestData.BlockSize + 100).ToArray();
+
+        var ex = Assert.Throws<InvalidDataException>(() => Load(cut));
+
+        Assert.Contains("200", ex.Message);
+        Assert.EndsWith(" 100.", ex.Message);
     }
 
     /// <summary>
