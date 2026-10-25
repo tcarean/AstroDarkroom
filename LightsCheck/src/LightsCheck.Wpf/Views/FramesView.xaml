@@ -103,21 +103,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="100" />
             <ColumnDefinition Width="280" />
           </Grid.ColumnDefinitions>
-          <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="nr" />
-          <TextBlock Grid.Column="1" Style="{StaticResource Head}" Text="fisier" />
-          <TextBlock Grid.Column="2" Style="{StaticResource Head}" Text="ora" />
-          <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="clasa" />
-          <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="alung." ToolTip="alungirea mediana a stelelor (1 = rotund)" />
-          <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="FWHM" ToolTip="latimea mediana a stelelor, px" />
-          <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="stele" />
-          <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="fond" ToolTip="fondul de cer pe verde, ADU peste black" />
-          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="pauza" ToolTip="secunde de la sfarsitul cadrului anterior" />
-          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="pas" ToolTip="deplasarea fata de cadrul anterior, px" />
-          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{Binding DxHeader}" ToolTip="pozitia fata de cadrul 1, px, pe axa imaginii si a monturii" />
-          <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding DyHeader}" ToolTip="pozitia fata de cadrul 1, px, pe axa imaginii si a monturii" />
-          <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="dithering" ToolTip="miscarea monturii la dithering: pe ce axa, cati pixeli, in ce sens pe cer si sageata SynScan (tastele implicite: stanga = est, dreapta = vest, sus = nord, jos = sud)" />
-          <TextBlock Grid.Column="13" Style="{StaticResource Head}" Text="acelasi loc" ToolTip="al catelea cadru consecutiv in acelasi loc (10 px), din cate, de la care cadru; sirurile astea fac walking noise" />
-          <TextBlock Grid.Column="14" Style="{StaticResource Head}" Text="motive" />
+          <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="{local:T En='no', Ro='nr'}" />
+          <TextBlock Grid.Column="1" Style="{StaticResource Head}" Text="{local:T En='file', Ro='fisier'}" />
+          <TextBlock Grid.Column="2" Style="{StaticResource Head}" Text="{local:T En='time', Ro='ora'}" />
+          <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="{local:T En='class', Ro='clasa'}" />
+          <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="{local:T En='elong.', Ro='alung.'}" ToolTip="{local:T En='the median elongation of the stars (1 = round)', Ro='alungirea mediana a stelelor (1 = rotund)'}" />
+          <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="FWHM" ToolTip="{local:T En='the median width of the stars, px', Ro='latimea mediana a stelelor, px'}" />
+          <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="{local:T En='stars', Ro='stele'}" />
+          <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="{local:T En='bg', Ro='fond'}" ToolTip="{local:T En='the sky background on green, ADU above black', Ro='fondul de cer pe verde, ADU peste black'}" />
+          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="{local:T En='pause', Ro='pauza'}" ToolTip="{local:T En='seconds since the end of the previous frame', Ro='secunde de la sfarsitul cadrului anterior'}" />
+          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="{local:T En='step', Ro='pas'}" ToolTip="{local:T En='the shift from the previous frame, px', Ro='deplasarea fata de cadrul anterior, px'}" />
+          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{Binding DxHeader}" ToolTip="{local:T En='the position relative to frame 1, px, on the image axis and the mount axis', Ro='pozitia fata de cadrul 1, px, pe axa imaginii si a monturii'}" />
+          <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding DyHeader}" ToolTip="{local:T En='the position relative to frame 1, px, on the image axis and the mount axis', Ro='pozitia fata de cadrul 1, px, pe axa imaginii si a monturii'}" />
+          <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="dithering" ToolTip="{local:T En='the mount move of the dither: on which axis, how many pixels, which way on the sky and the SynScan arrow (the EAST and NORTH selectors in the top bar say which arrow is which)', Ro='miscarea monturii la dithering: pe ce axa, cati pixeli, in ce sens pe cer si sageata SynScan (selectoarele EST si NORD din bara de sus spun care sageata e care)'}" />
+          <TextBlock Grid.Column="13" Style="{StaticResource Head}" Text="{local:T En='same spot', Ro='acelasi loc'}" ToolTip="{local:T En='which consecutive frame in the same spot (10 px) it is, out of how many, from which frame; these runs make walking noise', Ro='al catelea cadru consecutiv in acelasi loc (10 px), din cate, de la care cadru; sirurile astea fac walking noise'}" />
+          <TextBlock Grid.Column="14" Style="{StaticResource Head}" Text="{local:T En='reasons', Ro='motive'}" />
         </Grid>
         <ListBox Grid.Row="1" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame, Mode=TwoWay}"
                  ItemTemplate="{StaticResource FrameRow}" Background="Transparent" BorderThickness="0"
@@ -155,9 +155,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Border Grid.Column="1" Style="{StaticResource Card}" Margin="14,0,0,0">
       <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="DECUPAJE DE STELE" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='STAR CUT-OUTS', Ro='DECUPAJE DE STELE'}" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0" TextWrapping="Wrap"
-                     Text="Alege un cadru din lista: cele mai luminoase stele masurate, din centru si din cele patru colturi, pe canalul verde, fiecare intinsa pe propria scara." />
+                     Text="{local:T En='Choose a frame in the list: the brightest stars measured, from the centre and the four corners, on the green channel, each stretched on its own scale.', Ro='Alege un cadru din lista: cele mai luminoase stele masurate, din centru si din cele patru colturi, pe canalul verde, fiecare intinsa pe propria scara.'}" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding CropsNote}"
                      Visibility="{Binding CropsNote, Converter={StaticResource NotNullToVis}}" />
           <ItemsControl ItemsSource="{Binding Crops}" Margin="0,10,0,0">

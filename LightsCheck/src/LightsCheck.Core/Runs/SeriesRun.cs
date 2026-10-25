@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static LightsCheck.Core.Ui;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -208,7 +210,7 @@ internal static class SeriesRun
         // The pixel scale: the file's pixel size when it says it, else the option's.
         double? filePixel = infos.Select(f => f.PixelSizeUm).FirstOrDefault(p => p is not null);
         double pixel = filePixel ?? options.PixelSizeUm;
-        string pixelSource = filePixel is not null ? "din fisier (XPIXSZ)" : "introdus";
+        string pixelSource = filePixel is not null ? T("from the file (XPIXSZ)", "din fisier (XPIXSZ)") : T("entered", "introdus");
         double? focal = infos.Select(f => f.FocalMm).FirstOrDefault(f => f is not null);
         double? scale = focal is double fm && fm > 0 ? 206.265 * pixel / fm : null;
 

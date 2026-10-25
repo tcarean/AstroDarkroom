@@ -17,14 +17,16 @@
 
 using System.Globalization;
 using LightsCheck.Core;
+using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Cli;
 
 /// <summary>
 /// The console's arguments: one folder, the mode (the whole series by default,
 /// <c>--inventory</c>, <c>--frame N</c>), <c>--out DIR</c>, <c>--threads N</c>,
-/// <c>--pixel UM</c>, <c>--est stanga|dreapta</c>, <c>--nord sus|jos</c>, or --help. Anything else
-/// is an error naming the argument (R-004).
+/// <c>--pixel UM</c>, <c>--est stanga|dreapta</c> or <c>--east left|right</c>, <c>--nord sus|jos</c>
+/// or <c>--north up|down</c> (R-064), or --help. Anything else is an error naming the argument
+/// (R-004). <c>--lang</c> never reaches it: the console takes it out first (R-060).
 /// </summary>
 internal sealed class Options
 {
@@ -41,7 +43,8 @@ internal sealed class Options
     /// <summary>
     /// Reads the command line. No argument, <c>-h</c> or <c>--help</c> sets
     /// <see cref="Help"/>; the first wrong argument stops the reading and sets
-    /// <see cref="Error"/> to a Romanian message naming it. Never throws for a bad argument.
+    /// <see cref="Error"/> to a message naming it, in the current language. Never throws for a
+    /// bad argument.
     /// </summary>
     /// <param name="args">The command line, without the program's name; not null.</param>
     /// <returns>
@@ -73,11 +76,11 @@ internal sealed class Options
                 continue;
             }
 
-            if (a is "--frame" or "--threads" or "--pixel" or "--out" or "--est" or "--nord")
+            if (a is "--frame" or "--threads" or "--pixel" or "--out" or "--est" or "--east" or "--nord" or "--north")
             {
                 if (i + 1 >= args.Length)
                 {
-                    o.Error = $"{a} cere o valoare";
+                    o.Error = T($"{a} expects a value", $"{a} cere o valoare");
                     return o;
                 }
 
@@ -87,7 +90,7 @@ internal sealed class Options
                     case "--frame":
                         if (!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) || n < 1)
                         {
-                            o.Error = "--frame cere numarul cadrului (1 = primul din lights\\)";
+                            o.Error = T("--frame expects the number of the frame (1 = the first in lights\\)", "--frame cere numarul cadrului (1 = primul din lights\\)");
                             return o;
                         }
 
@@ -96,7 +99,7 @@ internal sealed class Options
                     case "--threads":
                         if (!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int t) || t < 1)
                         {
-                            o.Error = "--threads cere un numar de fire, cel putin 1";
+                            o.Error = T("--threads expects a number of threads, at least 1", "--threads cere un numar de fire, cel putin 1");
                             return o;
                         }
 
@@ -105,34 +108,36 @@ internal sealed class Options
                     case "--pixel":
                         if (!double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) || !SeriesOptions.PixelSizeIsValid(p))
                         {
-                            o.Error = "--pixel cere marimea pixelului in microni, de exemplu 3.92";
+                            o.Error = T("--pixel expects the pixel size in microns, for example 3.92", "--pixel cere marimea pixelului in microni, de exemplu 3.92");
                             return o;
                         }
 
                         o.PixelSizeUm = p;
                         break;
-                    case "--est":
-                        if (v is not ("stanga" or "dreapta"))
+                    // Either name takes either language's words (R-064): a script written for
+                    // one language keeps working in the other.
+                    case "--est" or "--east":
+                        if (v is not ("stanga" or "dreapta" or "left" or "right"))
                         {
-                            o.Error = "--est cere stanga sau dreapta: sageata SynScan care muta montura spre est";
+                            o.Error = T($"{a} expects left or right: the SynScan arrow that moves the mount east", $"{a} cere stanga sau dreapta: sageata SynScan care muta montura spre est");
                             return o;
                         }
 
-                        o.Arrows = o.Arrows with { East = v == "stanga" ? Arrow.Left : Arrow.Right };
+                        o.Arrows = o.Arrows with { East = v is "stanga" or "left" ? Arrow.Left : Arrow.Right };
                         break;
-                    case "--nord":
-                        if (v is not ("sus" or "jos"))
+                    case "--nord" or "--north":
+                        if (v is not ("sus" or "jos" or "up" or "down"))
                         {
-                            o.Error = "--nord cere sus sau jos: sageata SynScan care muta montura spre nord";
+                            o.Error = T($"{a} expects up or down: the SynScan arrow that moves the mount north", $"{a} cere sus sau jos: sageata SynScan care muta montura spre nord");
                             return o;
                         }
 
-                        o.Arrows = o.Arrows with { North = v == "sus" ? Arrow.Up : Arrow.Down };
+                        o.Arrows = o.Arrows with { North = v is "sus" or "up" ? Arrow.Up : Arrow.Down };
                         break;
                     default:
                         if (string.IsNullOrWhiteSpace(v))
                         {
-                            o.Error = "--out cere un folder";
+                            o.Error = T("--out expects a folder", "--out cere un folder");
                             return o;
                         }
 
@@ -145,19 +150,19 @@ internal sealed class Options
 
             if (a.StartsWith('-'))
             {
-                o.Error = $"optiune necunoscuta: {a}";
+                o.Error = T($"unknown option: {a}", $"optiune necunoscuta: {a}");
                 return o;
             }
 
             if (string.IsNullOrWhiteSpace(a))
             {
-                o.Error = "folderul sesiunii e gol; da calea folderului";
+                o.Error = T("the session folder is blank; give the path of the folder", "folderul sesiunii e gol; da calea folderului");
                 return o;
             }
 
             if (o.Folder is not null)
             {
-                o.Error = $"un singur folder se poate da; al doilea a fost {a}";
+                o.Error = T($"only one folder can be given; the second was {a}", $"un singur folder se poate da; al doilea a fost {a}");
                 return o;
             }
 
@@ -166,11 +171,11 @@ internal sealed class Options
 
         if (o.Folder is null)
         {
-            o.Error = "lipseste folderul sesiunii";
+            o.Error = T("the session folder is missing", "lipseste folderul sesiunii");
         }
         else if (o.Inventory && o.Frame is not null)
         {
-            o.Error = "--inventory si --frame nu merg impreuna";
+            o.Error = T("--inventory and --frame do not go together", "--inventory si --frame nu merg impreuna");
         }
 
         return o;

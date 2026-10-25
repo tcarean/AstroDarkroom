@@ -17,19 +17,21 @@
 
 using System.Globalization;
 using System.Text;
+using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Core;
 
 /// <summary>
 /// The files a series run writes on request (R-028): the report as the console prints it,
 /// a CSV with every figure per frame, and the plain list of the file names to leave out of
-/// the stack. Never inside lights/ or biases/ (ADR 0002): the caller names the folder.
+/// the stack. Never inside lights/ or biases/ (ADR 0002): the caller names the folder. The names
+/// are English in both languages; the contents follow the run's language (ADR 0022).
 /// </summary>
 internal static class SeriesOutputs
 {
-    internal const string ReportName = "lightscheck-raport.txt";
-    internal const string CsvName = "lightscheck-cadre.csv";
-    internal const string RejectedName = "lightscheck-respinse.txt";
+    internal const string ReportName = "lightscheck-report.txt";
+    internal const string CsvName = "lightscheck-frames.csv";
+    internal const string RejectedName = "lightscheck-rejected.txt";
 
     /// <summary>
     /// Writes the three files into <paramref name="dir"/>, UTF-8 without a BOM, replacing any
@@ -156,12 +158,12 @@ internal static class SeriesOutputs
     /// The `trail_on` cell: the axis word without the preposition, empty when unknown (R-033).
     /// </summary>
     /// <param name="on">The axis the trail of the frame follows.</param>
-    /// <returns>"RA", "DEC", "oblic", or "" for an unknown axis.</returns>
+    /// <returns>"RA", "DEC", "oblique" ("oblic" in Romanian), or "" for an unknown axis.</returns>
     private static string TrailWord(TrailAxis on) => on switch
     {
         TrailAxis.Ra => "RA",
         TrailAxis.Dec => "DEC",
-        TrailAxis.Oblique => "oblic",
+        TrailAxis.Oblique => T("oblique", "oblic"),
         _ => "",
     };
 }

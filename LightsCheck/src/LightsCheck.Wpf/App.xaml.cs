@@ -17,6 +17,7 @@
 
 using System.Globalization;
 using System.Windows;
+using LightsCheck.Core;
 
 namespace LightsCheck.Wpf;
 
@@ -26,12 +27,43 @@ namespace LightsCheck.Wpf;
 /// </summary>
 public partial class App : Application
 {
+    // The command line without --lang, and the --lang value not understood (null when none),
+    // read in the constructor.
+    private readonly string[] _args;
+    private readonly string? _badLanguage;
+
+    /// <summary>
+    /// Reads the language from the command line before anything else (R-060, R-063): App.xaml's
+    /// resources (the theme) and the first view load after this, and both carry texts.
+    /// </summary>
+    public App()
+    {
+        (_args, _badLanguage) = ApplyCommandLine(Environment.GetCommandLineArgs().Skip(1).ToArray());
+    }
+
+    /// <summary>
+    /// Takes <c>--lang</c> out of the command line and sets <see cref="Ui.Default"/> to the
+    /// language it names, English when it names none or a value not understood (R-061).
+    /// </summary>
+    /// <param name="args">The command line without the program's name; not null.</param>
+    /// <returns>
+    /// The other arguments, in their order, and the <c>--lang</c> value not understood (an
+    /// empty string for a <c>--lang</c> with none), null when there is no such value.
+    /// </returns>
+    internal static (string[] Args, string? BadValue) ApplyCommandLine(string[] args)
+    {
+        LanguageArgument lang = LanguageArgument.Extract(args);
+        Ui.Default = lang.Language ?? Ui.StartupDefault;
+        return (lang.Rest, lang.BadValue);
+    }
+
     /// <summary>
     /// Runs at start: pins the number culture to the invariant one before any window exists, then
     /// shows the main window and starts it on the first command-line argument that is an existing
-    /// folder, or on the folder dialog when there is none.
+    /// folder, or on the folder dialog when there is none; a <c>--lang</c> value not understood
+    /// is said in a message once the window is up.
     /// </summary>
-    /// <param name="e">The start arguments; <c>e.Args</c> is the command line.</param>
+    /// <param name="e">The start arguments; not read, the constructor read the command line.</param>
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -40,7 +72,12 @@ public partial class App : Application
         MainWindow window = new();
         MainWindow = window;
         window.Show();
-        window.Start(FolderFromArgs(e.Args));
+        if (_badLanguage is not null)
+        {
+            MessageBox.Show(window, LanguageArgument.BadValueMessage(_badLanguage), WindowTexts.AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        window.Start(FolderFromArgs(_args));
     }
 
     /// <summary>
@@ -57,7 +94,10 @@ public partial class App : Application
     }
 
     /// <summary>The first argument that is an existing folder; anything else is ignored.</summary>
-    /// <param name="args">The command-line arguments; null is allowed and gives null.</param>
+    /// <param name="args">
+    /// The command-line arguments without <c>--lang</c> (<see cref="ApplyCommandLine"/>), so a
+    /// language value is never taken for the folder; null is allowed and gives null.
+    /// </param>
     /// <returns>
     /// The first argument, as given, that is not blank and names an existing folder; null when
     /// none does.

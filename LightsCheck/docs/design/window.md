@@ -56,12 +56,14 @@ bug and propagates.
   `SeriesReport.AxisLabels`, and each step point carries the table row's `StepTip` as its
   `Tip`; the frames table shows the row's `Move` as the `dithering` column;
 
-The window's own words, the only Romanian the window writes, are `WindowTexts`: the empty and
+The window's sentences built in code are `WindowTexts`, each a pair of English and Romanian; its
+fixed labels are `{local:T}` pairs in the XAML (`language.md`, which also covers the start-up's
+`--lang`). `WindowTexts` holds the empty and
 problem cards, the wait line (`Busy`, `BusyRegistering`), the dialog titles, the status after
 an export, the cut-out notes, the step chart's guide labels (`MoveGuide`, `WalkingNoiseGuide`,
 given the core's formatted figure) and the map's grid note (`GridNote`). The class words on
 the elongation guides are `SeriesReport.ClassWord`, the session card's `scara` label is
-`SeriesReport.ScaleLabel`, and the `EROARE: ` line of an export error or a failed cut-out decode
+`SeriesReport.ScaleLabel`, and the `ERROR: ` / `EROARE: ` line of an export error or a failed cut-out decode
 is `RunReport.Error`, the console's own, so a verdict word or the prefix changes in `Report/`
 alone (ADR 0020).
 

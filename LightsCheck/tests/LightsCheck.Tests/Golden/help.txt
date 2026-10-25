@@ -1,7 +1,7 @@
 lightscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
-Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--est stanga|dreapta] [--nord sus|jos]
+Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--est stanga|dreapta] [--nord sus|jos] [--lang ro|en]
           lightscheck <folder sesiune> --inventory
           lightscheck <folder sesiune> --frame N
 
@@ -12,13 +12,14 @@ Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [-
   Fara optiuni: masoara toate cadrele si tipareste raportul: focus, expunere si
                 zgomot, roua, cadre miscate, drift, dithering, lista de respins.
   --out DIR     scrie in DIR raportul, un CSV cu toate cifrele si lista de respins
-                (lightscheck-raport.txt, lightscheck-cadre.csv, lightscheck-respinse.txt).
+                (lightscheck-report.txt, lightscheck-frames.csv, lightscheck-rejected.txt).
   --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).
   --pixel UM    marimea pixelului in microni, cand fisierele n-o spun (implicit 3.92, Nikon D3300).
   --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit dreapta); cealalta e vest.
   --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.
   --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.
   --frame N     masoara un singur cadru (1 = primul din lights\).
+  --lang ro|en  limba textelor: ro (romana) sau en (engleza, implicit).
   -h, --help    acest text
 
 Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.

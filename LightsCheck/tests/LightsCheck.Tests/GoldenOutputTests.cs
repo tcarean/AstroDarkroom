@@ -23,6 +23,7 @@ namespace LightsCheck.Tests;
 /// diff line by line (the kit's rule "No test edited to pass"). The version line and the
 /// session path are scrubbed, since they differ per build and per machine.
 /// </summary>
+[Collection("golden")]
 public class GoldenOutputTests
 {
     private static string GoldenDir => Path.Combine(TestData.FindRepoRoot(), "tests", "LightsCheck.Tests", "Golden");
@@ -76,7 +77,7 @@ public class GoldenOutputTests
         Compare("help.txt", Scrub(stdout, "") + "--- stderr ---\n" + stderr + "--- exit " + code + " ---\n");
     }
 
-    private static string Scrub(string text, string root)
+    internal static string Scrub(string text, string root)
     {
         string[] lines = text.Split('\n');
         if (lines.Length > 0 && lines[0].StartsWith("lightscheck ", StringComparison.Ordinal))
@@ -88,7 +89,7 @@ public class GoldenOutputTests
         return root.Length == 0 ? joined : joined.Replace(root, "<sesiune>", StringComparison.Ordinal);
     }
 
-    private static void Compare(string name, string actual)
+    internal static void Compare(string name, string actual)
     {
         string path = Path.Combine(GoldenDir, name);
         if (Environment.GetEnvironmentVariable("LIGHTSCHECK_UPDATE_GOLDEN") == "1")

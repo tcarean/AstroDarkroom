@@ -392,9 +392,9 @@ public class MainViewModelTests
         vm.Export(outDir);
 
         Assert.StartsWith("Scris:", vm.Status, StringComparison.Ordinal);
-        Assert.Equal(vm.Report, File.ReadAllText(Path.Combine(outDir, "lightscheck-raport.txt")));
-        Assert.True(File.Exists(Path.Combine(outDir, "lightscheck-cadre.csv")));
-        Assert.Equal(vm.Rejected.Select(r => r.File), File.ReadAllLines(Path.Combine(outDir, "lightscheck-respinse.txt")));
+        Assert.Equal(vm.Report, File.ReadAllText(Path.Combine(outDir, "lightscheck-report.txt")));
+        Assert.True(File.Exists(Path.Combine(outDir, "lightscheck-frames.csv")));
+        Assert.Equal(vm.Rejected.Select(r => r.File), File.ReadAllLines(Path.Combine(outDir, "lightscheck-rejected.txt")));
         Assert.Equal(lightsBefore, Directory.GetFiles(f.LightsDir));
     }
 
@@ -584,7 +584,7 @@ public class MainViewModelTests
 
             // The exported files follow the selection too: frame 5's arrow in the CSV.
             again.Export(ws.Dir);
-            string[] csv = File.ReadAllLines(Path.Combine(ws.Dir, "lightscheck-cadre.csv"));
+            string[] csv = File.ReadAllLines(Path.Combine(ws.Dir, "lightscheck-frames.csv"));
             int col = Array.IndexOf(csv[0].Split(','), "move_arrows");
             Assert.Equal("→", csv[5].Split(',')[col].Trim('"'));   // the cell is quoted, like every text cell of the CSV
             Assert.Equal("{\"east\":\"←\",\"north\":\"↓\"}", File.ReadAllText(file));   // the symbols themselves, as the README says

@@ -1,0 +1,84 @@
+lightscheck <versiune>
+Copyright (C) 2026 Tudor Carean
+
+=== SESSION: <sesiune> ===
+    lights             : lights\ (8 frames .fit)
+    biases             : biases\ (2 frames .fit)
+    darks              : (missing)
+    camera             : NIKON D3300
+    lens               : 135 mm (as shot)
+    exposure           : 120.0 s at ISO 1600 (all frames)
+    interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:52:37 (17 min); integration 16 min from 8 frames (91 % of the interval)
+    scale              : 5.99 "/px; pixel 3.92 um (from the file (XPIXSZ)); reference frame 1
+
+  SUMMARY
+    focus              : GOOD - median FWHM 3.25 px = 19.4" on the good frames, 3.25 / 3.25 px (-0 %) at the start / end: it held the whole session
+    exposure           : GOOD - G background 2000 -> 2000 ADU; weakest channel B: shot/read 10.0, penalty 5 %
+    dew                : NO - FWHM -0 %, halo +0.001
+    trailed frames     : 2 bad, 0 marginal, 6 good (of 8); image axis Y = RA, X = DEC (the direction of the trails (assumed: the tracking is on RA))
+    dithering          : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px: drift 0.50 px per exposure, frames 1-2, 2 frames within 10 px; 3 moves over 8 frames, 4 distinct positions within 10 px, 0 isolated, 0 moves on both axes
+    polar alignment    : error of at least 5.7', costs at least 0.50 px over one exposure (without a plate solve the declination for the upper bound is not known)
+    leave out of stack : 2 frames (the list under REJECTED); 6 stay = 12 min
+
+  FOCUS
+    median FWHM (good frames): 3.25 px = 19.4"
+    first / last 3 good frames: 3.25 / 3.25 px (-0 %) -> the focus held
+    centre / middle / edge: 3.25 / 3.25 / 3.24 px (medians over the good frames)
+    verdict            : GOOD - median FWHM 3.25 px = 19.4" on the good frames, 3.25 / 3.25 px (-0 %) at the start / end: it held the whole session
+
+  EXPOSURE AND NOISE
+    sky background (ADU above black, good frames, first -> last): 2000 -> 2000 on green (+0 %)
+    read noise         : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (from the pair of biases)
+    frame   1          : R: sky 399, shot/read 10.1, penalty 4.8 %  G1: sky 2002, shot/read 10.1, penalty 4.8 %  G2: sky 2001, shot/read 10.2, penalty 4.8 %  B: sky 2300, shot/read 10.0, penalty 4.9 %
+    frame   5          : R: sky 401, shot/read 10.2, penalty 4.8 %  G1: sky 2000, shot/read 10.1, penalty 4.8 %  G2: sky 2000, shot/read 10.2, penalty 4.8 %  B: sky 2300, shot/read 10.1, penalty 4.8 %
+    frame   8          : R: sky 401, shot/read 10.1, penalty 4.8 %  G1: sky 2002, shot/read 10.2, penalty 4.8 %  G2: sky 2001, shot/read 10.2, penalty 4.8 %  B: sky 2300, shot/read 10.2, penalty 4.8 %
+    scale              : shot/read above 10 = the sky swamps the read noise (penalty under 5 %); below = the channel is read-noise limited, longer subs would help
+
+  DEW
+    halo first / last  : 0.001 / 0.001; stars detected 40 -> 40 (+0 %); FWHM 3.25 / 3.25 px (-0 %)
+    verdict            : NO - FWHM -0 %, halo +0.001
+
+  TRAILED FRAMES
+    bad (elongation >= 1.60): 3, 6
+    marginal (1.35 .. 1.60): none
+    trail direction    : -90 degrees from the horizontal on the bad frames = on RA; image axis Y = RA, X = DEC (the direction of the trails (assumed: the tracking is on RA))
+
+  DRIFT AND ROTATION
+    drift between consecutive undithered frames: X +0.25 px/min, Y +0.03 px/min (4 pairs without a pause) = +1.5 / +0.2 "/min
+    drift over one exposure: 0.50 px = 3.0" over 120 s, along DEC; walking-noise streaks of up to 0.5 px (frames 1-2, 2 frames within 10 px)
+    field rotation     : -0.0 arcmin in total, -0.1 arcmin/h; in the corner, over one exposure: 0.00 px
+    polar alignment    : error of at least 5.7' (the DEC drift of 1.5"/min; without a plate solve the declination for the upper bound is not known); drift from the alignment at least 0.50 px over an exposure of 120 s
+    RA drift           : 0.2"/min (without a plate solve it is not known how much of it comes from the alignment)
+
+  DITHERING
+    pauses > 5 s       : 3; moves >= 5 px: 3; pauses without a move: 0; moves without a pause: 0; frames registered: 8 of 8
+    how often          : every 2 frames: 2 times
+    longest stretch between two moves: frames 1-2 (2 frames from one move to the next, 4 min)
+    how far            : median 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
+    direction          : X only: 2; Y only: 1; both: 0; sign X: +2 / -0; sign Y: +0 / -1; image axis Y = RA, X = DEC (the direction of the trails (assumed: the tracking is on RA))
+    coverage           : nearest other frame median 0.6 px; under 3 px: 8, under 5: 8, under 10: 8; isolated (>= 10 px from any): 0
+    distinct positions : 4 within 5 px, 4 within 10 px; span X 40 px, Y 16 px
+    runs within 5 px   : none
+    runs within 10 px  : none
+    scale              : 1 px = 5.99"; a move of 5 px (the threshold) takes 30" on the sky, one of 10 px 60"
+    pattern in the stack: 25.0 % of one frame's pattern stays in the mean (ideally 12.5 % with 8 frames; pairs of frames under 1.5 px: 4)
+    fixed pattern      : sigma 0.0 ADU on R (0 % of one frame's noise), 0.0 on G1 (0 %), 0.0 on G2 (0 %), 0.8 on B (2 %); 0 hot pixels / Mpx above 10 sigma (median of 8 frames, not registered, 480 x 480 px from the centre); no darks in the session: the pattern stays in the frames
+    verdict            : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px: drift 0.50 px per exposure, frames 1-2, 2 frames within 10 px; 3 moves over 8 frames, 4 distinct positions within 10 px, 0 isolated, 0 moves on both axes
+
+  REJECTED (2 bad frames; the marginal ones stay, your choice)
+      3  DSC_0003.fit          elongation 1.76 (threshold 1.60), trail on RA (-90 degrees)
+      6  DSC_0006.fit          elongation 1.76 (threshold 1.60), trail on RA (-90 degrees)
+
+  FRAME BY FRAME
+     no  file                  time      class     elong   FWHM   stars     bg  pause   step      dX      dY  dithering                                   same spot       reasons
+      1  DSC_0001.fit          20:35:03  good       1.01   3.25      40   2000      -      -     0.0     0.0  -                                           -               
+      2  DSC_0002.fit          20:37:04  good       1.01   3.25      40   2000    1 s    0.5     0.5     0.2  -                                           -               
+      3  DSC_0003.fit          20:39:34  BAD        1.76   4.59      40   2000   30 s   11.5    12.0    -0.0  DEC 12 px                                   -               elongation 1.76 (threshold 1.60), trail on RA (-90 degrees)
+      4  DSC_0004.fit          20:41:35  good       1.01   3.26      40   2000    1 s    0.6    12.5     0.3  -                                           -               
+      5  DSC_0005.fit          20:44:05  good       1.01   3.25      40   2000   30 s   15.3    12.0   -15.0  RA 15 px                                    -               
+      6  DSC_0006.fit          20:46:06  BAD        1.76   4.60      40   2001    1 s    0.5    12.5   -15.0  -                                           -               elongation 1.76 (threshold 1.60), trail on RA (-90 degrees)
+      7  DSC_0007.fit          20:48:36  good       1.01   3.24      40   2001   30 s   27.5    40.0   -15.0  DEC 27 px                                   -               
+      8  DSC_0008.fit          20:50:37  good       1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               
+--- stderr ---
+(progress, left out)
+--- exit 0 ---

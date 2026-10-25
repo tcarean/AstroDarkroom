@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static LightsCheck.Core.Ui;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -82,12 +84,12 @@ internal static class StarCrops
         double cx = w / 2.0, cy = h / 2.0;
         List<(string, StarShape?)> picks =
         [
-            ("centru", Pick(s => Math.Abs(s.Y - cy) < h / 5.0 && Math.Abs(s.X - cx) < w / 5.0)),
-            ("centru, a doua", byFlux.Where(s => Math.Abs(s.Y - cy) < h / 5.0 && Math.Abs(s.X - cx) < w / 5.0).Skip(1).FirstOrDefault()),
-            ("stanga sus", Pick(s => s.Y < h / 4.0 && s.X < w / 4.0)),
-            ("dreapta sus", Pick(s => s.Y < h / 4.0 && s.X > 3 * w / 4.0)),
-            ("stanga jos", Pick(s => s.Y > 3 * h / 4.0 && s.X < w / 4.0)),
-            ("dreapta jos", Pick(s => s.Y > 3 * h / 4.0 && s.X > 3 * w / 4.0)),
+            (T("centre", "centru"), Pick(s => Math.Abs(s.Y - cy) < h / 5.0 && Math.Abs(s.X - cx) < w / 5.0)),
+            (T("centre, second", "centru, a doua"), byFlux.Where(s => Math.Abs(s.Y - cy) < h / 5.0 && Math.Abs(s.X - cx) < w / 5.0).Skip(1).FirstOrDefault()),
+            (T("top left", "stanga sus"), Pick(s => s.Y < h / 4.0 && s.X < w / 4.0)),
+            (T("top right", "dreapta sus"), Pick(s => s.Y < h / 4.0 && s.X > 3 * w / 4.0)),
+            (T("bottom left", "stanga jos"), Pick(s => s.Y > 3 * h / 4.0 && s.X < w / 4.0)),
+            (T("bottom right", "dreapta jos"), Pick(s => s.Y > 3 * h / 4.0 && s.X > 3 * w / 4.0)),
         ];
 
         List<StarCrop> crops = [];

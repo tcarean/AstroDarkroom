@@ -1,0 +1,23 @@
+lightscheck <versiune>
+Copyright (C) 2026 Tudor Carean
+
+=== SESSION: <sesiune> ===
+    lights             : lights\ (6 frames .fit)
+    biases             : biases\ (3 frames .fit)
+    darks              : (missing)
+    camera             : NIKON D3300
+    lens               : 135 mm (as shot)
+    exposure           : 120.2 s at ISO 1600 (all frames)
+    interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:46:27 (11 min); integration 10 min from 5 frames (88 % of the interval)
+    WARNING            : 1 frame could not be read (see the table)
+
+  FRAMES
+     no  file                  time      exposure    ISO    f/    focal   pause
+      1  DSC_0001.fit          20:35:03     120.2   1600     -   135 mm       -
+      2  DSC_0002.fit          20:37:24     120.2   1600     -   135 mm    21 s
+      3  DSC_0003.fit          20:39:45     120.2   1600     -   135 mm    21 s
+      4  DSC_0004.fit          20:42:06     120.2   1600     -   135 mm    21 s
+      5  DSC_0005.fit          20:44:27     120.2   1600     -   135 mm    21 s
+      6  DSC_0006.fit          error: not a FITS file (it does not begin with SIMPLE)
+--- stderr ---
+--- exit 1 ---

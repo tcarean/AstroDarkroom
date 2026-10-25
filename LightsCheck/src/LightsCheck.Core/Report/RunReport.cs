@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Core;
 
@@ -39,25 +40,34 @@ internal static class RunReport
     internal const string LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html";
 
     /// <summary>
-    /// GPLv3 §5(d): a program that shows legal notices shows the warranty disclaimer too; here, in
-    /// --help.
-    /// </summary>
-    /// <summary>
     /// The one line both applications print or show for an error that stops a run: the prefix
-    /// `EROARE: ` and the message as the core worded it (ADR 0020).
+    /// `ERROR: ` (`EROARE: ` in Romanian) and the message as the core worded it (ADR 0020).
     /// </summary>
-    /// <param name="message">The error's message, Romanian, as thrown or as parsed.</param>
-    /// <returns>`EROARE: ` followed by the message.</returns>
-    internal static string Error(string message) => "EROARE: " + message;
+    /// <param name="message">The error's message, in the run's language, as thrown or as parsed.</param>
+    /// <returns>The prefix followed by the message.</returns>
+    internal static string Error(string message) => T("ERROR: ", "EROARE: ") + message;
 
-    internal static readonly string[] WarrantyLines =
-    [
-        "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
-        "vandabilitate sau potrivire pentru un scop anume. E software liber:",
-        "il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea",
-        "ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,",
-        "sau la <" + LicenseUrl + ">.",
-    ];
+    /// <summary>
+    /// GPLv3 §5(d): a program that shows legal notices shows the warranty disclaimer too; here, in
+    /// --help. A property, so it is worded in the language of the moment it is read.
+    /// </summary>
+    internal static IReadOnlyList<string> WarrantyLines => IsRomanian
+        ?
+        [
+            "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
+            "vandabilitate sau potrivire pentru un scop anume. E software liber:",
+            "il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea",
+            "ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,",
+            "sau la <" + LicenseUrl + ">.",
+        ]
+        :
+        [
+            "This program comes with ABSOLUTELY NO WARRANTY, not even the implied",
+            "warranty of merchantability or fitness for a particular purpose. It is",
+            "free software: you can redistribute and modify it under the terms of",
+            "the GPLv3 (or, at your option, any later version). The full text is in",
+            "the LICENSE file, or at <" + LicenseUrl + ">.",
+        ];
 
     /// <summary>A number with the invariant culture and a fixed number of decimals.</summary>
     /// <param name="v">The number.</param>

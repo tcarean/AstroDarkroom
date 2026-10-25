@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static LightsCheck.Core.Ui;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -107,7 +109,7 @@ internal sealed record FrameInfo(
             // (as a rule, a file that is not a FITS) is a frame nothing can be said about.
             if (FitsReader.IsFitsPath(path) && f.Header.Count == 0)
             {
-                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, "nu e un fisier FITS (nu incepe cu SIMPLE)");
+                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
             }
 
             return From(index, path, f);

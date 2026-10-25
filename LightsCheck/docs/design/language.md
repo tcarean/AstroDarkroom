@@ -1,0 +1,126 @@
+# The interface language
+
+**Covers:** `src/LightsCheck.Core/Language/Ui.cs`, `src/LightsCheck.Core/Language/LanguageArgument.cs`, `src/LightsCheck.Wpf/Presentation/TExtension.cs`, `src/LightsCheck.Wpf/Presentation/VerdictPalette.cs`, `src/LightsCheck.Wpf/App.xaml.cs`, `tests/LightsCheck.Tests/RomanianByDefault.cs`, `tests/LightsCheck.Tests/LanguageTests.cs`, `tests/LightsCheck.Tests/EnglishGoldenOutputTests.cs`, `tests/LightsCheck.Wpf.Tests/WindowLanguageTests.cs`.
+
+The behaviour is R-060 to R-064, the reasons ADR 0022 (the design is FlatCheck's, its ADR
+0062). This note is how the code does it.
+
+## How the language is chosen
+
+`Program.Run` writes the banner, then hands the whole command line to
+`LanguageArgument.Extract`, which takes every `--lang <code>` and `--lang=<code>` out (the last
+one counting; the spaced form takes the next argument whatever it is) and returns the language,
+the value it did not understand (`BadValue`, an empty string for a `--lang` with nothing after
+it) and the other arguments in their order. A bad value ends the run there, with
+`ERROR: ` + `LanguageArgument.BadValueMessage` on stderr and exit 1, in English whatever the
+default. Otherwise the rest runs in `RunIn`, inside `Ui.Use(language)` when a `--lang` was given
+and in `Ui.Default` when none was. `Options.Parse` never sees `--lang`, so `lightscheck --lang ro`
+is an empty command line and prints the usage, in Romanian.
+
+`Ui.Current` is the language of the innermost open `Ui.Use` scope on the current flow, held in
+an `AsyncLocal` (the series run's `Parallel` work inherits it), else `Ui.Default`. `Ui.Default`
+is `Ui.StartupDefault`, English, until a start-up sets it: the window in `App`'s constructor,
+the test assemblies to Romanian in `RomanianByDefault`'s module initializer (linked into the
+window's test project too). `App.ApplyCommandLine` reads `Environment.GetCommandLineArgs()`
+before App.xaml's resources and the first view load, since both carry texts, sets `Ui.Default`
+to the language named or to English, and keeps the other arguments and the bad value;
+`OnStartup` shows the bad value's message in a box once the main window is up and looks for the
+session folder (`FolderFromArgs`) among the other arguments only, so a `--lang` value is never
+the folder.
+
+## How a text is written
+
+`Ui.T(english, romanian)` returns one of the two; files call it as `T(...)` through
+`using static LightsCheck.Core.Ui;`. An interpolated text is written twice with the same holes
+and the same format strings; where a sentence holds many figures, they are formatted once into
+locals and both wordings use the locals, so the two cannot differ in a number. Three shapes:
+
+- a literal or a sentence: `T("...", "...")` where it was;
+- a text aligned by hand across many lines: written whole per language, chosen by
+  `Ui.IsRomanian` (the usage, `WriteUsageEnglish` / `WriteUsageRomanian`); a table header is
+  built in English with the same `{x,n}` widths as its rows, the Romanian literal kept as it was;
+- a list once built in a `static readonly` field (`RunReport.WarrantyLines`,
+  `ThirdParty.Components`, `SeriesReport.RejectedExplanation`, `SeriesReport.DitherExplanation`),
+  or a `const` that held a text (`SeriesReport.ScaleLabel`): now a property, built in the language
+  of the moment it is read. A `const` that is a key or a file name stays a `const`.
+
+A label that another text quotes (the `drift over one exposure`, `pattern in the stack` and
+`fixed pattern` rows the Dithering explanation names; the DITHERING rows that are also table
+titles) is a private property of `SeriesReport`, used in both places. The session card of the
+window splits the header lines on `"    "` and `" : "`, so the English labels keep that shape.
+
+A few texts are made when the run is, not when the report is printed: the RA axis's source
+(`SeriesAnalyzer`), the pixel size's source (`SeriesRun`), the ADU scale's source (`FrameRun`),
+the star cut-outs' position words (`StarCrops`) and every error message (the readers,
+`SessionFolder`, `FrameInfo`). They are worded in the language current on the flow that makes
+them, which is the run's; a result reported in the other language keeps them in the language it
+was analysed in. Neither application does that (the language is fixed for the process), only a
+test that builds both languages' rows from one result.
+
+## The window
+
+A fixed label in XAML is `{local:T En='...', Ro='...'}`; an apostrophe or a double quote inside
+a wording is escaped with a backslash (`\'`, `\&quot;`). On a dependency property or in a
+`Setter` the extension returns a one-time binding to a `TExtension.Pair`, so the wording is
+picked when each element is made, not when the XAML is parsed: a template in the theme is
+parsed once, when the dictionary loads, which in the tests happens before a test switches to
+English. On a plain property it returns the string at once. The language never changes while
+the window runs, so nothing re-reads it. A text built in code is a `T(...)` pair in
+`WindowTexts`.
+
+The chips are coloured by their word: `VerdictPalette.Severity` lists each severity's words in
+both languages (exact words, then starts: `FARA` / `NO ` and `OK` good, `LA LIMITA` / `MARGINAL`,
+`POSIBIL` / `POSSIBLE`, `ATENTIE` / `WARNING` attention, `SLAB` / `BAD`, `INSUFICIENT` /
+`INSUFFICIENT`, `EROARE` / `ERROR` bad, the undetermined ones neutral, `NOT MEASURED` tested
+before `NO `).
+
+## Glossary
+
+The English follows Siril's and the usual astrophotography vocabulary, British in spelling
+(`centre`, `colour`, `analysed`); a term is translated the same way everywhere.
+
+| Romanian | English |
+| --- | --- |
+| cadru / cadre | frame / frames |
+| light, bias, dark, flat, stack, dithering, walking noise, FWHM, halo | the same |
+| alungire | elongation |
+| dara (stea) / dare de walking noise | trail / walking-noise streaks |
+| roua | dew |
+| fond (de cer) | (sky) background |
+| zgomot de citire / shot/citire / penalizare | read noise / shot/read / penalty |
+| miscare / pas | move / step |
+| acoperire / pozitii distincte / intindere | coverage / distinct positions / span |
+| grup (de cadre consecutive) / acelasi loc | run / same spot |
+| izolate | isolated |
+| aliniere polara / rotatie de camp | polar alignment / field rotation |
+| pattern fix / pixeli calzi | fixed pattern / hot pixels |
+| inregistrat | registered |
+| scara | scale |
+| decupaje | cut-outs |
+| respinse / de scos din stiva | rejected / leave out of stack |
+| REZUMAT, EXPUNERE SI ZGOMOT, ROUA, CADRE MISCATE, DRIFT SI ROTATIE | SUMMARY, EXPOSURE AND NOISE, DEW, TRAILED FRAMES, DRIFT AND ROTATION |
+| bun / la limita / SLAB / necitit (clasa) | good / marginal / BAD / unread |
+| BUN(A), LA LIMITA, NU, DA, POSIBIL, ATENTIE | GOOD, MARGINAL, NO, YES, POSSIBLE, WARNING |
+| NEDETERMINAT, NEMASURAT, INSUFICIENT, FARA walking noise | UNDETERMINED, NOT MEASURED, INSUFFICIENT, NO walking noise |
+| EROARE | ERROR |
+| E / V (sensul pe RA) | E / W |
+| stanga / dreapta / sus / jos (sageti) | left / right / up / down |
+
+## Tests
+
+The Romanian goldens and every test written before run in Romanian through the module
+initializer and need no `--lang`. `EnglishGoldenOutputTests` runs the five golden scenarios with
+`--lang en`, pins each as `Golden/en_<name>.txt` (scrubbed as the Romanian ones, the progress
+line replaced by `(progress, left out)`), runs it again with `--lang ro` and asserts the same exit
+code and the same numbers (every digit run, sorted, compared as a multiset), and scans the
+English output for Romanian words; it also checks that `--lang ro` prints two Romanian goldens
+unchanged. A new golden scenario is added to `EnglishGoldenOutputTests.Scenarios` too. `LanguageTests`
+pins the parsing, the usage and a parse error in each language, a core error in English, the
+English error of a bad value, the arrow options' English forms, and the default: it starts the
+real `lightscheck.exe` beside the tests, whose `Ui.Default` no test touched, and expects
+`Usage:`. `WindowLanguageTests` pins `App.ApplyCommandLine` with `FolderFromArgs`, renders every
+tab with a real result, the problem card, the empty window and the About window in English and
+collects every text of the visual tree plus the charts' own labels, none of which may hold a
+Romanian word; checks that the same window in Romanian shows `Rezumat`; and checks that every
+verdict and class word the core writes for a result colours the same in both languages. With
+`LIGHTSCHECK_DUMP_SCREENS` it saves the English screens as `en-*.png`.

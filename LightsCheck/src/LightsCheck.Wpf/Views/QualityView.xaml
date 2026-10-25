@@ -27,8 +27,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <StackPanel>
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="FWHM MEDIAN (px)" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="Focusul si seeing-ul; un cadru miscat creste si el, fiindca dara e mai lata." />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='MEDIAN FWHM (px)', Ro='FWHM MEDIAN (px)'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="{local:T En='The focus and the seeing; a trailed frame rises too, since the trail is wider.', Ro='Focusul si seeing-ul; un cadru miscat creste si el, fiindca dara e mai lata.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding FwhmPoints}" />
           </Border>
@@ -36,8 +36,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="ALUNGIREA MEDIANA" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="1 = stele rotunde; peste liniile punctate cadrul e la limita, apoi slab." />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='MEDIAN ELONGATION', Ro='ALUNGIREA MEDIANA'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="{local:T En='1 = round stars; above the dotted lines the frame is marginal, then bad.', Ro='1 = stele rotunde; peste liniile punctate cadrul e la limita, apoi slab.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding ElongationPoints}" Guides="{Binding ElongationGuides}" Minimum="1" />
           </Border>
@@ -45,8 +45,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="STELE DETECTATE" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="Scad cu norii, cu ceata si cu roua; scad putin si cand fondul creste." />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='STARS DETECTED', Ro='STELE DETECTATE'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="{local:T En='They fall with clouds, haze and dew; they fall a little when the background rises too.', Ro='Scad cu norii, cu ceata si cu roua; scad putin si cand fondul creste.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding StarPoints}" />
           </Border>
@@ -54,8 +54,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="FOND DE CER PE VERDE (ADU peste black)" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="Campul care coboara, luna, poluarea luminoasa; un salt pe un singur cadru e o lumina de moment sau o expunere diferita." />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='SKY BACKGROUND ON GREEN (ADU above black)', Ro='FOND DE CER PE VERDE (ADU peste black)'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="{local:T En='The field sinking lower, the moon, light pollution; a jump on a single frame is a passing light or a different exposure.', Ro='Campul care coboara, luna, poluarea luminoasa; un salt pe un singur cadru e o lumina de moment sau o expunere diferita.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding BackgroundPoints}" />
           </Border>

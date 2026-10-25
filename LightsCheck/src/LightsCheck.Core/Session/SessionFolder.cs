@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static LightsCheck.Core.Ui;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -88,7 +90,7 @@ internal sealed class SessionFolder
         string root = Path.GetFullPath(path);
         if (!Directory.Exists(root))
         {
-            throw new DirectoryNotFoundException($"nu gasesc folderul {root}");
+            throw new DirectoryNotFoundException(T($"cannot find the folder {root}", $"nu gasesc folderul {root}"));
         }
 
         string lightsDir = Path.Combine(root, LightsName);
@@ -101,7 +103,7 @@ internal sealed class SessionFolder
         if (lights.Count == 0)
         {
             throw new InvalidOperationException(
-                $"niciun cadru in {lightsDir} (raw: " + string.Join(", ", RawReader.RawExtensions)
+                T($"no frame in {lightsDir} (raw: ", $"niciun cadru in {lightsDir} (raw: ") + string.Join(", ", RawReader.RawExtensions)
                 + "; FITS: .fit, .fits, .fts)");
         }
 

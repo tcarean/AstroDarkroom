@@ -36,6 +36,7 @@
 using System.Runtime.InteropServices;
 using Sdcb.LibRaw;
 using Sdcb.LibRaw.Natives;
+using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Core
 {
@@ -84,7 +85,7 @@ namespace LightsCheck.Core
         public LoadedFrame Load(string path)
         {
             if (!File.Exists(path))
-                throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
+                throw new FileNotFoundException(T($"cannot find the file {path}", $"nu gasesc fisierul {path}"), path);
 
             try
             {
@@ -107,7 +108,7 @@ namespace LightsCheck.Core
         public LoadedFrame LoadInfo(string path)
         {
             if (!File.Exists(path))
-                throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
+                throw new FileNotFoundException(T($"cannot find the file {path}", $"nu gasesc fisierul {path}"), path);
 
             try
             {
@@ -138,25 +139,30 @@ namespace LightsCheck.Core
         /// to publish so that they are not.
         /// </summary>
         /// <param name="inner">The loader's own exception, kept as the inner one.</param>
-        /// <returns>An InvalidOperationException with a Romanian message for the user.</returns>
+        /// <returns>An InvalidOperationException with a message for the user.</returns>
         static InvalidOperationException Missing(Exception inner)
-            => new InvalidOperationException(
+            => new InvalidOperationException(T(
+                "cannot load libraw, so camera raw files cannot be read. The native "
+              + "DLLs (raw_r.dll and its neighbours) must sit beside lightscheck.exe. FITS "
+              + "frames work without them; for raw, publish with IncludeNativeLibrariesForSelfExtract "
+              + "or copy the whole folder, not only the executable. (",
                 "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "
               + "native (raw_r.dll si vecinii) trebuie sa stea langa lightscheck.exe. Cadrele "
               + "FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
-              + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")", inner);
+              + "sau copiaza tot folderul, nu doar executabilul. (") + inner.Message + ")", inner);
 
         /// <summary>
         /// The reader's own error for a file libraw refuses: InvalidDataException, the type a
         /// corrupt FITS gives, so the console, the inventory and the window handle it as one
-        /// more unreadable frame (R-007, ADR 0019). The message is Romanian and names the file;
-        /// libraw's own words ("Failed opening file: ...") stay in the inner exception (ADR 0020).
+        /// more unreadable frame (R-007, ADR 0019). The message is in the run's language and names
+        /// the file; libraw's own words ("Failed opening file: ...") stay in the inner exception
+        /// (ADR 0020).
         /// </summary>
         /// <param name="path">The file libraw refused.</param>
         /// <param name="inner">libraw's exception, kept as the inner one.</param>
         /// <returns>The exception to throw, naming the file.</returns>
         static InvalidDataException Unreadable(string path, LibRawException inner)
-            => new InvalidDataException($"{path}: libraw nu poate citi fisierul", inner);
+            => new InvalidDataException(T($"{path}: libraw cannot read the file", $"{path}: libraw nu poate citi fisierul"), inner);
 
         /// <summary>
         /// Opens the file in libraw. Here and not in Load or LoadInfo, so that those two keep no
@@ -189,13 +195,15 @@ namespace LightsCheck.Core
 
             // Foveon and some formats produce colour planes, not a 16-bit mosaic: refused.
             if (src == IntPtr.Zero)
-                throw new InvalidOperationException(
+                throw new InvalidOperationException(T(
+                    $"{path}: libraw did not produce a 16-bit Bayer mosaic for this file "
+                  + "(a non-Bayer sensor or a format not covered).",
                     $"{path}: libraw n-a produs un mozaic Bayer pe 16 biti pentru fisierul asta "
-                  + "(senzor non-Bayer sau format neacoperit).");
+                  + "(senzor non-Bayer sau format neacoperit)."));
 
             int h = s.Height, w = s.Width;
             if (h <= 0 || w <= 0)
-                throw new InvalidOperationException($"{path}: dimensiuni raw invalide ({w}x{h}).");
+                throw new InvalidOperationException(T($"{path}: invalid raw dimensions ({w}x{h}).", $"{path}: dimensiuni raw invalide ({w}x{h})."));
 
             // The colour order, evaluated at the origin of the VISIBLE area, the same margins
             // the copy below skips. Locals only, never fields (see the note at the top).
@@ -227,8 +235,9 @@ namespace LightsCheck.Core
             double black = Stats.Percentile(blacks, 50);
 
             if (!(white > black))
-                throw new InvalidOperationException(
-                    $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0}).");
+                throw new InvalidOperationException(T(
+                    $"{path}: libraw gives an impossible scale (white {white:F0} <= black {black:F0}).",
+                    $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0})."));
 
             var f = new LoadedFrame
             {

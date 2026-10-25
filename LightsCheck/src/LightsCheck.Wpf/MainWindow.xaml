@@ -60,10 +60,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
 
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-          <TextBlock Style="{StaticResource Faint}" Text="FOLDER SESIUNE SIRIL" />
+          <TextBlock Style="{StaticResource Faint}" Text="{local:T En='SIRIL SESSION FOLDER', Ro='FOLDER SESIUNE SIRIL'}" />
           <TextBlock Margin="0,3,0,0" TextTrimming="CharacterEllipsis" Text="{Binding Folder}"
                      Visibility="{Binding HasFolder, Converter={StaticResource BoolToVis}}" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0" Text="(niciunul ales)"
+          <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0" Text="{local:T En='(none chosen)', Ro='(niciunul ales)'}"
                      Visibility="{Binding HasFolder, Converter={StaticResource NotBoolToVis}}" />
         </StackPanel>
 
@@ -71,31 +71,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0"
                     IsEnabled="{Binding IsIdle}">
           <StackPanel Margin="0,0,12,0">
-            <TextBlock Style="{StaticResource Faint}" Text="PIXEL (um)" ToolTip="Marimea pixelului senzorului, folosita cand fisierele n-o spun; 3.92 la Nikon D3300" />
+            <TextBlock Style="{StaticResource Faint}" Text="PIXEL (um)" ToolTip="{local:T En='The size of the sensor pixel, used when the files do not say it; 3.92 on the Nikon D3300', Ro='Marimea pixelului senzorului, folosita cand fisierele n-o spun; 3.92 la Nikon D3300'}" />
             <TextBox Style="{StaticResource Field}" Width="64" Margin="0,3,0,0" Text="{Binding PixelText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
           <StackPanel>
-            <TextBlock Style="{StaticResource Faint}" Text="FIRE" ToolTip="Cate cadre se masoara in paralel; gol = jumatate din nuclee" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='THREADS', Ro='FIRE'}" ToolTip="{local:T En='How many frames are measured in parallel; empty = half the cores', Ro='Cate cadre se masoara in paralel; gol = jumatate din nuclee'}" />
             <TextBox Style="{StaticResource Field}" Width="48" Margin="0,3,0,0" Text="{Binding ThreadsText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
           <StackPanel Margin="12,0,0,0">
-            <TextBlock Style="{StaticResource Faint}" Text="EST" ToolTip="Sageata SynScan care muta montura spre est; cealalta e vest. Tinuta minte intre porniri." />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='EAST', Ro='EST'}" ToolTip="{local:T En='The SynScan arrow that moves the mount east; the other is west. Remembered between starts.', Ro='Sageata SynScan care muta montura spre est; cealalta e vest. Tinuta minte intre porniri.'}" />
             <ComboBox Width="52" Margin="0,3,0,0" ItemsSource="{Binding EastChoices}" SelectedItem="{Binding EastArrow}" />
           </StackPanel>
           <StackPanel Margin="12,0,0,0">
-            <TextBlock Style="{StaticResource Faint}" Text="NORD" ToolTip="Sageata SynScan care muta montura spre nord; cealalta e sud. Tinuta minte intre porniri." />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='NORTH', Ro='NORD'}" ToolTip="{local:T En='The SynScan arrow that moves the mount north; the other is south. Remembered between starts.', Ro='Sageata SynScan care muta montura spre nord; cealalta e sud. Tinuta minte intre porniri.'}" />
             <ComboBox Width="52" Margin="0,3,0,0" ItemsSource="{Binding NorthChoices}" SelectedItem="{Binding NorthArrow}" />
           </StackPanel>
         </StackPanel>
 
         <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-          <Button Content="Alege folder..." Click="ChooseFolder" IsEnabled="{Binding IsIdle}" />
-          <Button Content="Opreste" Click="Stop" Margin="10,0,0,0"
+          <Button Content="{local:T En='Choose folder...', Ro='Alege folder...'}" Click="ChooseFolder" IsEnabled="{Binding IsIdle}" />
+          <Button Content="{local:T En='Stop', Ro='Opreste'}" Click="Stop" Margin="10,0,0,0"
                   Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
-          <Button Content="Scrie fisierele..." Click="ExportFiles" Margin="10,0,0,0"
-                  ToolTip="Raportul, CSV-ul cu toate cifrele si lista de respins, intr-un folder la alegere"
+          <Button Content="{local:T En='Write the files...', Ro='Scrie fisierele...'}" Click="ExportFiles" Margin="10,0,0,0"
+                  ToolTip="{local:T En='The report, the CSV with every figure and the reject list, into a folder of your choice', Ro='Raportul, CSV-ul cu toate cifrele si lista de respins, intr-un folder la alegere'}"
                   IsEnabled="{Binding HasResult}" />
-          <Button Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)" Margin="10,0,0,0" />
+          <Button Content="{local:T En='About', Ro='Despre'}" Command="Help" ToolTip="{local:T En='Version, licence, components (F1)', Ro='Versiune, licenta, componente (F1)'}" Margin="10,0,0,0" />
         </StackPanel>
       </Grid>
     </Border>
@@ -127,7 +127,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel.Style>
         <TextBlock Text="{Binding EmptyTitle}" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" />
         <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextAlignment="Center" Text="{Binding EmptyLead}" />
-        <Button Content="Alege folder..." Margin="0,22,0,0" HorizontalAlignment="Center" Click="ChooseFolder" />
+        <Button Content="{local:T En='Choose folder...', Ro='Alege folder...'}" Margin="0,22,0,0" HorizontalAlignment="Center" Click="ChooseFolder" />
       </StackPanel>
 
       <!-- a folder that cannot be analysed -->
@@ -137,7 +137,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel>
           <TextBlock Text="{Binding ProblemTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#F0857E" TextWrapping="Wrap" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding ProblemText}" />
-          <Button Content="Alege alt folder..." Margin="0,20,0,0" HorizontalAlignment="Left" Click="ChooseFolder" />
+          <Button Content="{local:T En='Choose another folder...', Ro='Alege alt folder...'}" Margin="0,20,0,0" HorizontalAlignment="Left" Click="ChooseFolder" />
         </StackPanel>
       </Border>
 
@@ -153,22 +153,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </Style.Triggers>
           </Style>
         </TabControl.Style>
-        <TabItem Header="Rezumat">
+        <TabItem Header="{local:T En='Summary', Ro='Rezumat'}">
           <local:SummaryView />
         </TabItem>
-        <TabItem Header="Cadre">
+        <TabItem Header="{local:T En='Frames', Ro='Cadre'}">
           <local:FramesView />
         </TabItem>
         <TabItem Header="Dithering">
           <local:DitherView />
         </TabItem>
-        <TabItem Header="Calitate">
+        <TabItem Header="{local:T En='Quality', Ro='Calitate'}">
           <local:QualityView />
         </TabItem>
-        <TabItem Header="Respinse">
+        <TabItem Header="{local:T En='Rejected', Ro='Respinse'}">
           <local:RejectedView />
         </TabItem>
-        <TabItem Header="Raport">
+        <TabItem Header="{local:T En='Report', Ro='Raport'}">
           <Border Style="{StaticResource Card}" Margin="20" Padding="0">
             <TextBox Text="{Binding Report, Mode=OneWay}" IsReadOnly="True"
                      FontFamily="{StaticResource MonoFont}" FontSize="12"
@@ -185,7 +185,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Text="{Binding BusyMessage}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"
                      HorizontalAlignment="Center" TextAlignment="Center" />
           <ProgressBar Width="320" Margin="0,18,0,0" Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}" />
-          <Button Content="Opreste" Click="Stop" Margin="0,18,0,0" HorizontalAlignment="Center" />
+          <Button Content="{local:T En='Stop', Ro='Opreste'}" Click="Stop" Margin="0,18,0,0" HorizontalAlignment="Center" />
         </StackPanel>
       </Border>
     </Grid>
