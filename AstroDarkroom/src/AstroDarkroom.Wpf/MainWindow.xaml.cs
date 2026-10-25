@@ -42,6 +42,7 @@ public partial class MainWindow : Window
     public MainWindow(SuiteFolder folder)
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         _folder = folder;
         _release = ReleaseManifest.TryRead(folder.ManifestPath);
         Logo.Source = App.LargestIconFrame();
