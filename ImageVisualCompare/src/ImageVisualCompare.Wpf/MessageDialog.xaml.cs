@@ -17,6 +17,7 @@
 
 using System.Windows;
 using System.Windows.Input;
+using ImageVisualCompare.Core;
 using ImageVisualCompare.Wpf.Interop;
 
 namespace ImageVisualCompare.Wpf;
@@ -50,7 +51,7 @@ public partial class MessageDialog : Window
     public static void Show(Window owner, string title, string message)
     {
         MessageDialog dialog = Create(owner, title, message);
-        dialog.PrimaryButton.Content = "OK";
+        dialog.PrimaryButton.Content = UiText.Current.Ok;
         dialog.ShowDialog();
     }
 
@@ -62,8 +63,8 @@ public partial class MessageDialog : Window
     public static bool Confirm(Window owner, string title, string message)
     {
         MessageDialog dialog = Create(owner, title, message);
-        dialog.PrimaryButton.Content = "Yes";
-        dialog.SecondaryButton.Content = "No";
+        dialog.PrimaryButton.Content = UiText.Current.Yes;
+        dialog.SecondaryButton.Content = UiText.Current.No;
         dialog.SecondaryButton.Visibility = Visibility.Visible;
 
         return dialog.ShowDialog() == true;

@@ -2,7 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:ImageVisualCompare.Wpf.Controls"
-        Title="Image Visual Compare"
         WindowState="Maximized"
         Height="820"
         Width="1320"
@@ -29,7 +28,7 @@
                            TextTrimming="CharacterEllipsis" />
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="Navigation" Style="{StaticResource ToolLabel}" />
+                    <TextBlock x:Name="NavigationLabel" Style="{StaticResource ToolLabel}" />
                     <Button x:Name="ZoomOutButton" Style="{StaticResource ToolButton}" Content="−" />
                     <TextBlock x:Name="ZoomLabel"
                                Style="{StaticResource ToolLabel}"
@@ -38,10 +37,10 @@
                                Margin="6,0"
                                TextAlignment="Center" />
                     <Button x:Name="ZoomInButton" Style="{StaticResource ToolButton}" Content="+" />
-                    <Button x:Name="FitButton" Style="{StaticResource ToolButton}" Content="Fit" Margin="12,0,3,0" />
+                    <Button x:Name="FitButton" Style="{StaticResource ToolButton}" Margin="12,0,3,0" />
                     <Button x:Name="ActualSizeButton" Style="{StaticResource ToolButton}" Content="100%" />
-                    <Button x:Name="OpenButton" Style="{StaticResource ToolButton}" Content="Open…" Margin="12,0,3,0" />
-                    <Button x:Name="AboutButton" Style="{StaticResource ToolButton}" Content="About" />
+                    <Button x:Name="OpenButton" Style="{StaticResource ToolButton}" Margin="12,0,3,0" />
+                    <Button x:Name="AboutButton" Style="{StaticResource ToolButton}" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -73,9 +72,9 @@
                 <!-- Last child, so it takes whatever width is left over and trims with an
                      ellipsis instead of being cut off mid-word. Of everything on this bar
                      the hint is the one item that loses nothing by being shortened. -->
-                <TextBlock Style="{StaticResource StatusText}"
-                           TextTrimming="CharacterEllipsis"
-                           Text="wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open" />
+                <TextBlock x:Name="HintText"
+                           Style="{StaticResource StatusText}"
+                           TextTrimming="CharacterEllipsis" />
             </DockPanel>
         </Border>
 

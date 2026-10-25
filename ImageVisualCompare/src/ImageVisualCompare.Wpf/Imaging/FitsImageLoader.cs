@@ -92,12 +92,12 @@ public sealed class FitsImageLoader : IImageLoader
 
     /// <summary>
     /// Creates the bitmap the rows are written into, through <see cref="Bitmaps.Create"/>: an
-    /// image too large for one is the too-large message with the FITS prefix.
+    /// image too large for one is the FITS reader's too-large message.
     /// </summary>
     /// <param name="layout">The image whose size the bitmap takes.</param>
     /// <returns>An empty Bgra32 bitmap of the image's size, at 96 dpi.</returns>
     private static WriteableBitmap CreateBitmap(FitsImageLayout layout) =>
-        Bitmaps.Create(layout.Width, layout.Height, "FITS: ");
+        Bitmaps.Create(layout.Width, layout.Height, fits: true);
 
     /// <summary>
     /// Writes every row into the bitmap, in the order of the file, each where it belongs in the

@@ -146,7 +146,7 @@ public static class FitsHeader
 
             if (IsTrue(cards, "ZIMAGE"))
             {
-                throw new NotSupportedException("FITS: a tile-compressed image is not read.");
+                throw new NotSupportedException(UiText.Current.FitsTileCompressed);
             }
 
             long axes = Count(cards, "NAXIS", 0);
@@ -248,20 +248,19 @@ public static class FitsHeader
     {
         if (axes > 3)
         {
-            throw new NotSupportedException(
-                $"FITS: an image with {axes} axes is not read; 2, or 3 with 1 or 3 planes, are.");
+            throw new NotSupportedException(UiText.Current.FitsAxes(axes));
         }
 
         long planes = axes == 3 ? Count(cards, "NAXIS3", 1) : 1;
         if (planes is not (1 or 3))
         {
-            throw new NotSupportedException($"FITS: an image with {planes} planes is not read; 1 or 3 are.");
+            throw new NotSupportedException(UiText.Current.FitsPlanes(planes));
         }
 
         long bitPix = Count(cards, "BITPIX", 0, signed: true);
         if (bitPix is not (8 or 16 or 32 or -32 or -64))
         {
-            throw new NotSupportedException($"FITS: BITPIX {bitPix} is not read.");
+            throw new NotSupportedException(UiText.Current.FitsBitPix(bitPix));
         }
 
         // A row of samples and a row of Bgra32 are each one array, so a width past this cannot
@@ -294,7 +293,7 @@ public static class FitsHeader
 
         if (layout.DataOffset + layout.DataBytes > stream.Length)
         {
-            throw new EndOfStreamException("FITS: the file ends before the image data does.");
+            throw new EndOfStreamException(UiText.Current.FitsDataEndsEarly);
         }
 
         return layout;
@@ -302,11 +301,11 @@ public static class FitsHeader
 
     /// <summary>Makes the refusal for a file in which no unit holds an image.</summary>
     /// <returns>The exception to throw; its message is what the user reads.</returns>
-    private static NotSupportedException NoImage() => new("FITS: no image found in the file.");
+    private static NotSupportedException NoImage() => new(UiText.Current.FitsNoImage);
 
     /// <summary>Makes the refusal for a header that cannot be trusted.</summary>
     /// <returns>The exception to throw; its message is what the user reads.</returns>
-    private static NotSupportedException InvalidHeader() => new("FITS: the header is not valid.");
+    private static NotSupportedException InvalidHeader() => new(UiText.Current.FitsInvalidHeader);
 
     /// <summary>Makes the refusal for an image too large to decode.</summary>
     /// <param name="width">The image's width, as its header gives it.</param>
@@ -315,7 +314,7 @@ public static class FitsHeader
     /// The exception to throw; its message, naming the size, is what the user reads.
     /// </returns>
     private static NotSupportedException TooLarge(long width, long height) =>
-        new($"FITS: an image of {width} × {height} is too large to show.");
+        new(UiText.Current.FitsImageTooLarge(width, height));
 
     /// <summary>Reads one header, a block at a time, up to its END card.</summary>
     /// <param name="stream">At the start of a header; left after the header's last block.</param>
@@ -352,7 +351,7 @@ public static class FitsHeader
 
             if (read < BlockSize)
             {
-                throw new EndOfStreamException("FITS: the header ends before its END card.");
+                throw new EndOfStreamException(UiText.Current.FitsHeaderEndsEarly);
             }
 
             first = false;

@@ -59,7 +59,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
             stream.Position = layout.DataOffset + (plane * layout.PlaneBytes) + ((long)fileRow * _row.Length);
             if (stream.ReadAtLeast(_row, _row.Length, throwOnEndOfStream: false) < _row.Length)
             {
-                throw new EndOfStreamException("FITS: the file ends before the image data does.");
+                throw new EndOfStreamException(UiText.Current.FitsDataEndsEarly);
             }
 
             // Red, green, blue in the file; blue, green, red in the bitmap.

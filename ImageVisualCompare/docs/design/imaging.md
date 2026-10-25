@@ -37,8 +37,9 @@ throws for a damaged file (0xC00D36BE from Windows' WebP, HEIC and AVIF codecs),
 `FileFormatException` with the codec's message. `Realise`, the `CachedBitmap` that sets the
 converted pixels aside, turns WIC's `OverflowException` for an image too large for it into the
 too-large message the FITS reader gives too. The bitmap the two loaders write rows into, and the
-too-large refusal, are `Bitmaps.Create` and `Bitmaps.TooLarge`, shared: the FITS reader passes
-the prefix `FITS: `, the WIC loader none.
+too-large refusal, are `Bitmaps.Create` and `Bitmaps.TooLarge`, shared: the FITS reader asks for its own
+wording, which starts `FITS: `, the WIC loader for the general one, both from `UiText` in the
+interface's language (`language.md`).
 
 ## FITS, the format WIC does not read
 

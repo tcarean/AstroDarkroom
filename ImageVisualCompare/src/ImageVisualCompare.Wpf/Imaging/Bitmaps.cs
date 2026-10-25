@@ -17,6 +17,7 @@
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using ImageVisualCompare.Core;
 
 namespace ImageVisualCompare.Wpf.Imaging;
 
@@ -34,13 +35,13 @@ internal static class Bitmaps
     /// </summary>
     /// <param name="width">The image's width in pixels, above 0.</param>
     /// <param name="height">The image's height in pixels, above 0.</param>
-    /// <param name="prefix">
-    /// What the message starts with, such as "FITS: ", so that the reader knows which reader
-    /// refused; empty for none.
+    /// <param name="fits">
+    /// True when the FITS reader asks, so that the message starts with "FITS: " and the user
+    /// knows which reader refused.
     /// </param>
     /// <returns>The bitmap, not yet frozen.</returns>
     /// <exception cref="NotSupportedException">The image is too large for a bitmap.</exception>
-    public static WriteableBitmap Create(int width, int height, string prefix)
+    public static WriteableBitmap Create(int width, int height, bool fits)
     {
         try
         {
@@ -48,16 +49,19 @@ internal static class Bitmaps
         }
         catch (Exception ex) when (ex is OverflowException or ArgumentException)
         {
-            throw TooLarge(width, height, prefix, ex);
+            throw TooLarge(width, height, fits, ex);
         }
     }
 
     /// <summary>Makes the refusal for an image too large for WIC or WPF to hold.</summary>
     /// <param name="width">The image's width in pixels, as its header gives it.</param>
     /// <param name="height">The image's height in pixels, as its header gives it.</param>
-    /// <param name="prefix">What the message starts with, such as "FITS: "; empty for none.</param>
+    /// <param name="fits">True for the FITS reader's wording, which starts with "FITS: ".</param>
     /// <param name="ex">The exception WIC or WPF threw.</param>
-    /// <returns>The exception to throw; its message, naming the size, is what the user reads.</returns>
-    public static NotSupportedException TooLarge(int width, int height, string prefix, Exception ex) =>
-        new($"{prefix}{(prefix.Length == 0 ? "An" : "an")} image of {width} × {height} is too large to show.", ex);
+    /// <returns>
+    /// The exception to throw; its message, naming the size in the interface's language, is
+    /// what the user reads.
+    /// </returns>
+    public static NotSupportedException TooLarge(int width, int height, bool fits, Exception ex) =>
+        new(fits ? UiText.Current.FitsImageTooLarge(width, height) : UiText.Current.ImageTooLarge(width, height), ex);
 }

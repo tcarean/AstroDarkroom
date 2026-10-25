@@ -50,8 +50,12 @@ fails the test. `MainWindowTests` builds the main window there with dialogs that
 asking and a loader whose decode never ends, and clicks Open twice while the body still holds
 the dispatcher. `MinimapViewTests` lays the minimap out with `Measure`, `Arrange` and
 `UpdateLayout` at the size it gives itself, then checks a click on the thumbnail's corner and
-the rectangle at the far edge against the thumbnail inside the border. `MessageDialog`,
-`DarkTitleBar`, `FileDialogService` and `MemoryHousekeeping` have no test. `Win32Resources`
+the rectangle at the far edge against the thumbnail inside the border. `UiTextTests` builds the
+main window in Romanian there and reads its toolbar and hint; it and the other Romanian tests run
+alone, in a collection with parallelisation off (`language.md`). `MessageDialog`, `DarkTitleBar`,
+`FileDialogService` and `MemoryHousekeeping.ReleaseImageBuffers` have no test, nor has the main
+window's message about an unknown `--lang` (a modal dialog, checked by launching); the start-up
+that sets the language and keeps that value, `App.ApplyCommandLine`, has one. `Win32Resources`
 reads one resource of a type out of a built file, loaded as data, for `AppIconTests` (the icon
 group) and `AppManifestTests` (the manifest).
 

@@ -67,24 +67,15 @@ public sealed record ImageInfo(
     public string Dimensions => $"{PixelWidth} × {PixelHeight}";
 
     /// <summary>
-    /// The source format in words, for example "16-bit RGB", or "32-bit float RGB (0..65535)"
-    /// for a FITS whose floats were not in 0 to 1.
+    /// The source format in words, in the interface's language (<see cref="UiText.Format"/>), for
+    /// example "16-bit RGB", or "32-bit float RGB (0..65535)" for a FITS whose floats were not in
+    /// 0 to 1.
     /// </summary>
     public string FormatDescription
     {
         get
         {
-            string depth = IsFloat ? $"{BitsPerChannel}-bit float" : $"{BitsPerChannel}-bit";
-            string format = Channels switch
-            {
-                ColorChannels.Gray => $"{depth} gray",
-                ColorChannels.GrayAlpha => $"{depth} gray + alpha",
-                ColorChannels.Rgb => $"{depth} RGB",
-                ColorChannels.Rgba => $"{depth} RGBA",
-                ColorChannels.Indexed => $"{depth} indexed",
-                _ => depth,
-            };
-
+            string format = UiText.Current.Format(BitsPerChannel, IsFloat, Channels);
             return ValueRange is null ? format : $"{format} ({ValueRange})";
         }
     }

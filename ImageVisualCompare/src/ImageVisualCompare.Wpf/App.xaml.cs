@@ -17,13 +17,15 @@
 
 using System.IO;
 using System.Windows;
+using ImageVisualCompare.Core;
 using ImageVisualCompare.Wpf.Services;
 
 namespace ImageVisualCompare.Wpf;
 
 /// <summary>
-/// The application. It keeps a pair named on the command line for the main window, which opens
-/// it in place of the dialogs.
+/// The application. It chooses the interface language from the command line before the first
+/// window, and keeps a pair named there, and a <c>--lang</c> it did not understand, for the main
+/// window, which opens the pair in place of the dialogs and reports the language.
 /// </summary>
 public partial class App : Application
 {
@@ -32,6 +34,12 @@ public partial class App : Application
     /// without walking through both dialogs. Null unless two existing files were given.
     /// </summary>
     private static ImagePairSelection? _startupSelection;
+
+    /// <summary>
+    /// The value of a <c>--lang</c> that named no language this program has, empty when it had
+    /// none, for the main window to report (R-102); null when there is nothing to report.
+    /// </summary>
+    private static string? _unknownLanguage;
 
     /// <summary>Hands over the command line pair, once. Later opens go through the dialogs.</summary>
     /// <returns>
@@ -45,20 +53,53 @@ public partial class App : Application
         return selection;
     }
 
+    /// <summary>Hands over a <c>--lang</c> that was not understood, once.</summary>
+    /// <returns>
+    /// The value given, empty when <c>--lang</c> had none, the first time; null after that, and
+    /// when the language was understood or not given.
+    /// </returns>
+    public static string? TakeUnknownLanguage()
+    {
+        string? value = _unknownLanguage;
+        _unknownLanguage = null;
+        return value;
+    }
+
     /// <summary>
-    /// Keeps the first two arguments as the pair to open when both are existing files; anything
-    /// else leaves the choice to the dialogs.
+    /// Reads the command line before the first window: <see cref="ApplyCommandLine"/>.
     /// </summary>
-    /// <param name="e">The startup event; its arguments are image A's path, then image B's.</param>
+    /// <param name="e">
+    /// The startup event; its arguments are image A's path, then image B's, with a
+    /// <c>--lang</c> anywhere among them.
+    /// </param>
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
+        // Before the first window, so that everything it writes is in the language chosen.
+        ApplyCommandLine(e.Args);
+    }
+
+    /// <summary>
+    /// Sets the interface language from <c>--lang</c> (R-100), keeps a value it did not
+    /// understand for the main window to report (R-102), and keeps the first two of the other
+    /// arguments as the pair to open when both are existing files; anything else leaves the
+    /// choice to the dialogs. Separate from <see cref="OnStartup"/> so a test can run it
+    /// without an application.
+    /// </summary>
+    /// <param name="args">The command line's arguments, as the process received them.</param>
+    internal static void ApplyCommandLine(IReadOnlyList<string> args)
+    {
+        StartupArguments arguments = StartupArguments.Parse(args);
+        UiText.Current = UiText.For(arguments.Language);
+        _unknownLanguage = arguments.UnknownLanguage;
+
         // Anything less than two existing files falls through to the dialogs rather than
         // failing: a mistyped path is not worth refusing to start over.
-        if (e.Args.Length >= 2 && File.Exists(e.Args[0]) && File.Exists(e.Args[1]))
+        IReadOnlyList<string> paths = arguments.Paths;
+        if (paths.Count >= 2 && File.Exists(paths[0]) && File.Exists(paths[1]))
         {
-            _startupSelection = new ImagePairSelection(e.Args[0], e.Args[1]);
+            _startupSelection = new ImagePairSelection(paths[0], paths[1]);
         }
     }
 }

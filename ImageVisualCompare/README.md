@@ -97,6 +97,24 @@ căi nu există, pornește normal și întreabă prin dialoguri.
 
 Fereastra pornește maximizată, ca zoom-ul „fit" să fie calculat de la început pe tot ecranul.
 
+### Limba interfeței
+
+Interfața e în engleză sau în română. Limba o alegi din linia de comandă, cu `--lang`:
+
+```bash
+ImageVisualCompare.Wpf.exe --lang=ro "A.png" "B.png"
+```
+
+Merge și `--lang ro`, cu spațiu, și poate sta oriunde printre argumente; nu contează literele
+mari sau mici. Fără `--lang`, interfața e în engleză. Dacă limba nu e una pe care aplicația o
+are (`--lang=de`) sau lipsește (`--lang=`), primești întâi un mesaj, apoi interfața pornește în
+engleză.
+
+Se traduc toate textele: butoanele, titlurile, bara de stare, mesajele și întrebările. Numerele
+arată la fel în ambele limbi (`5938 × 3888`, `152%`, `560 MB`), iar mesajele care vin de la
+Windows, cum e motivul pentru care un codec n-a putut citi un fișier, sunt în limba sistemului.
+În tabelele de mai jos, numele din paranteză e cel din interfața în română.
+
 ## Controale
 
 | acțiune | cum |
@@ -107,10 +125,10 @@ Fereastra pornește maximizată, ca zoom-ul „fit" să fie calculat de la înce
 | zoom | rotița, ancorat în cursor (și `Ctrl` + rotița, la fel) |
 | scroll orizontal | `Shift` + rotița |
 | zoom pe trepte | `+` / `−`, sau butoanele din toolbar |
-| încadrează tot | `Ctrl+0`, sau butonul `Fit` |
+| încadrează tot | `Ctrl+0`, sau butonul `Fit` (`Încadrează`) |
 | mărime reală | `Ctrl+1`, sau butonul `100%` |
 | sari în altă zonă | click sau drag în minimap-ul din stânga-jos |
-| deschide altă pereche | `Ctrl+O`, sau butonul `Open…` (nu în timpul unei încărcări) |
+| deschide altă pereche | `Ctrl+O`, sau butonul `Open…` (`Deschide…`; nu în timpul unei încărcări) |
 
 Scurtăturile de tastatură merg când suprafața de comparație are focus; îl primește singură
 după încărcare, și îl recapătă la orice click pe imagine. Pasul săgeților e în pixeli
@@ -146,8 +164,12 @@ Când perechea a avut nevoie de padding, prima parte devine `600 × 400 padded �
 B 400 × 400`: dimensiunea pânzei singură ar fi o jumătate de adevăr, fiindcă niciuna dintre
 imagini nu are dimensiunea aceea.
 
-În dreapta barei de stare stau permanent versiunea și copyright-ul. Butonul `About` din
-toolbar arată nota completă de licență.
+În interfața în română, aceeași bară arată `A RGB pe 16 biți` (sau `gri float pe 32 de biți`,
+`RGB float pe 32 de biți (0..65535)`), `memorie .NET 2 MB, proces 560 MB`, iar la padding
+`pânză 600 × 400 · A 600 × 300 · B 400 × 400`.
+
+În dreapta barei de stare stau permanent versiunea și copyright-ul. Butonul `About` (`Despre`)
+din toolbar arată nota completă de licență.
 
 ## Memorie
 

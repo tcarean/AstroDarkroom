@@ -64,6 +64,15 @@ public partial class MainWindow : Window
 
         DarkTitleBar.Apply(this);
 
+        // The words are the table's, in the language chosen at start-up (ADR 0038); the XAML
+        // holds none of its own. The symbols, "−", "+" and "100%", are the same in both.
+        UiText text = UiText.Current;
+        NavigationLabel.Text = text.Navigation;
+        FitButton.Content = text.Fit;
+        OpenButton.Content = text.Open;
+        AboutButton.Content = text.About;
+        HintText.Text = text.Hint;
+
         Compare.ViewChanged += (_, _) => UpdateZoomReadout();
         Compare.CursorContentPointChanged += (_, point) => UpdatePixelReadout(point);
 
@@ -73,7 +82,7 @@ public partial class MainWindow : Window
         ActualSizeButton.Click += (_, _) => Compare.ZoomToActualSize();
         OpenButton.Click += async (_, _) => await OpenPairAsync();
         AboutButton.Click += (_, _) =>
-            MessageDialog.Show(this, "About " + VersionInfo.Banner, VersionInfo.About);
+            MessageDialog.Show(this, UiText.Current.AboutTitle(VersionInfo.Banner), VersionInfo.About);
 
         Title = VersionInfo.Banner;
         StatusLegal.Text = $"{VersionInfo.Banner} · {VersionInfo.Copyright}";
@@ -83,8 +92,25 @@ public partial class MainWindow : Window
         // and reports less than the process is really using.
         _memoryTimer.Tick += (_, _) => StatusMemory.Text = MemoryHousekeeping.Snapshot().Describe();
 
-        Loaded += async (_, _) => await OpenPairAsync();
+        Loaded += async (_, _) =>
+        {
+            ReportUnknownLanguage();
+            await OpenPairAsync();
+        };
         PreviewKeyDown += OnPreviewKeyDown;
+    }
+
+    /// <summary>
+    /// Says, before anything is asked, that the <c>--lang</c> of the command line named no
+    /// language this program has, and that the interface is English (R-102); does nothing when
+    /// there is nothing to say.
+    /// </summary>
+    private void ReportUnknownLanguage()
+    {
+        if (App.TakeUnknownLanguage() is { } value)
+        {
+            MessageDialog.Show(this, UiText.UnknownLanguageTitle, UiText.UnknownLanguage(value));
+        }
     }
 
     /// <summary>
@@ -155,7 +181,7 @@ public partial class MainWindow : Window
                 // so would only make the user dismiss their own decision.
                 if (!result.WasDeclined)
                 {
-                    MessageDialog.Show(this, "Cannot compare these files", result.Error!);
+                    MessageDialog.Show(this, UiText.Current.CannotCompareTitle, result.Error!);
                 }
             }
         }
@@ -175,12 +201,12 @@ public partial class MainWindow : Window
     {
         LoadingOverlay.Visibility = Visibility.Visible;
         LoadingBar.Value = 0;
-        LoadingText.Text = "Opening…";
+        LoadingText.Text = UiText.Current.Opening;
 
         var progress = new Progress<ImageLoadProgress>(p =>
         {
             LoadingBar.Value = p.Fraction;
-            LoadingText.Text = p.FileName is null ? "Almost there…" : $"Decoding {p.FileName}…";
+            LoadingText.Text = p.FileName is null ? UiText.Current.AlmostThere : UiText.Current.Decoding(p.FileName);
         });
 
         try
@@ -211,7 +237,7 @@ public partial class MainWindow : Window
 
         try
         {
-            return MessageDialog.Confirm(this, "Images have different sizes", request.Message);
+            return MessageDialog.Confirm(this, UiText.Current.DifferentSizesTitle, request.Message);
         }
         finally
         {
@@ -245,7 +271,7 @@ public partial class MainWindow : Window
         // When the pair had to be padded, the canvas size alone would be a half-truth: neither
         // image is that size. Both originals are named instead.
         string dimensions = pair.Pad.RequiresPadding
-            ? $"{pair.Pad.Dimensions} padded  ·  A {pair.Before.Info.Dimensions}  ·  B {pair.After.Info.Dimensions}"
+            ? $"{UiText.Current.PaddedCanvas(pair.Pad.Dimensions)}  ·  A {pair.Before.Info.Dimensions}  ·  B {pair.After.Info.Dimensions}"
             : pair.Before.Info.Dimensions;
 
         StatusPair.Text =

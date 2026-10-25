@@ -55,7 +55,9 @@ Four things follow, and all four are pinned by tests:
   lives behind a button rather than in the status bar on purpose: five lines of legal text
   across the bottom of a comparison window would crowd out the pixel readout. The text is
   `VersionInfo.About`, a property rather than a string built inside the click handler, so
-  `VersionTests` can assert its content without opening a window.
+  `VersionTests` can assert its content without opening a window. It is worded each time it
+  is read: the notice after the banner and the copyright is `UiText.AboutNotice`, English or
+  Romanian (`language.md`); the licence stays the English `LICENSE` file.
 - **One source of truth for the copyright string**: `<Copyright>` in the app csproj
   (`Directory.Build.props` since 2026-10-02, ADR 0004), read
   back through `AssemblyCopyrightAttribute` by `VersionInfo.Copyright`. The literal in

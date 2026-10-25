@@ -162,7 +162,7 @@ public sealed class WicImageLoader : IImageLoader
             : PixelFormats.Rgb128Float;
         var floats = new FormatConvertedBitmap(frame, target, null, 0);
 
-        WriteableBitmap bitmap = Bitmaps.Create(info.PixelWidth, info.PixelHeight, string.Empty);
+        WriteableBitmap bitmap = Bitmaps.Create(info.PixelWidth, info.PixelHeight, fits: false);
         long above = Decode(floats, gray, bitmap, FitsScale.FullScale(-32), cancellationToken);
 
         // As for a float FITS: whether the samples count in 0 to 1 or in 0 to 65535 is known only
@@ -236,13 +236,13 @@ public sealed class WicImageLoader : IImageLoader
 
     /// <summary>
     /// Makes the refusal for an image too large for WIC to hold, through
-    /// <see cref="Bitmaps.TooLarge"/>, with no prefix.
+    /// <see cref="Bitmaps.TooLarge"/>, in the general wording.
     /// </summary>
     /// <param name="info">What the file is; its size is named in the message.</param>
     /// <param name="ex">The exception WIC threw.</param>
     /// <returns>The exception to throw; its message is what the user reads.</returns>
     private static NotSupportedException TooLarge(ImageInfo info, Exception ex) =>
-        Bitmaps.TooLarge(info.PixelWidth, info.PixelHeight, string.Empty, ex);
+        Bitmaps.TooLarge(info.PixelWidth, info.PixelHeight, fits: false, ex);
 
     /// <summary>
     /// Makes the refusal for a file a codec rejected with an error of its own, in a type the pair
