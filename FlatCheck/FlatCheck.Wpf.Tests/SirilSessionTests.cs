@@ -20,15 +20,15 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Deducerea structurii de foldere. E singura parte a aplicatiei WPF care are reguli
-/// adevarate - restul e asezare - deci e si partea care merita cele mai multe teste.
+/// Deducing the folder structure. It is the only part of the WPF application that has real
+/// rules - the rest is layout - so it is also the part that deserves the most tests.
 /// </summary>
 public class SirilSessionTests
 {
     /// <summary>
-    /// Un folder de sesiune ca cel produs de scripturile Siril. Masterul se scrie in
-    /// <paramref name="masterIn"/>: "process" (scripturile din depozit) sau "masters"
-    /// (scripturile din instalarea 1.4).
+    /// A session folder like the one the Siril scripts produce. The master is written in
+    /// <paramref name="masterIn"/>: "process" (the scripts from the repository) or "masters"
+    /// (the scripts from the 1.4 installation).
     /// </summary>
     static SirilSession Session(TempWorkspace ws, bool process = true, bool master = true,
                                 bool flats = true, string masterIn = "process")
@@ -47,7 +47,7 @@ public class SirilSessionTests
         return path;
     }
 
-    // ------------------------------------------------------------------ validare
+    // ------------------------------------------------------------------ validation
 
     [Fact]
     public void ACompleteSessionFolderPasses()
@@ -64,8 +64,8 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// Fara process/ nu s-a rulat niciun script. E alta greseala decat "am rulat, dar
-    /// masterul nu s-a produs", si de asta e alt cod.
+    /// Without process/ no script was run. It is a different mistake from "I ran it, but the
+    /// master was not produced", and that is why it is a different code.
     /// </summary>
     [Fact]
     public void AFolderWithoutProcessIsDistinctFromOneWithoutTheMaster()
@@ -77,7 +77,8 @@ public class SirilSessionTests
         Assert.Equal(SessionProblem.NoFlatMaster, Session(b, master: false).Check());
     }
 
-    /// <summary>Cerinta 4: intrarea modului 1 se ia prin conventie, nu se cauta dupa continut.</summary>
+    /// <summary>Requirement 4: mode 1's input is taken by convention, not searched for by
+    /// content.</summary>
     [Fact]
     public void TheFlatMasterIsTakenByConventionFromProcess()
     {
@@ -88,11 +89,12 @@ public class SirilSessionTests
         Assert.False(s.FindFlatMaster().Ambiguous);
     }
 
-    // ------------------------------------------------------------- masters/ sau process/
+    // ------------------------------------------------------------- masters/ or process/
 
     /// <summary>
-    /// A doua conventie: OSC_Preprocessing.ssf din Siril 1.4 scrie masterul in masters/,
-    /// nu in process/. Sesiunea Smida din arhiva e asa, si aplicatia o refuza inainte.
+    /// The second convention: Siril 1.4's OSC_Preprocessing.ssf writes the master in
+    /// masters/, not in process/. The Smida session in the archive is like that, and the
+    /// application used to refuse it.
     /// </summary>
     [Fact]
     public void AMasterInMastersIsFoundAndPassesTheCheck()
@@ -106,8 +108,9 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// Singurul lucru cerut e masterul. Un folder cu masters/ si fara process/ - cadrele
-    /// sterse ca sa faca loc - ruleaza structura; seria de lights e pur si simplu goala.
+    /// The only thing required is the master. A folder with masters/ and without process/ -
+    /// the frames deleted to make room - runs the structure; the lights series is simply
+    /// empty.
     /// </summary>
     [Fact]
     public void R080_ProcessIsNotRequiredWhenTheMasterIsInMasters()
@@ -120,8 +123,8 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// In ambele locuri inseamna doua rulari de preprocesare. Se ia cel mai NOU - ce a
-    /// produs ultima - si celalalt se numeste, ca tabul sa poata avertiza.
+    /// In both places means two preprocessing runs. The NEWER one is taken - what the last
+    /// one produced - and the other is named, so that the tab can warn.
     /// </summary>
     [Fact]
     public void R080_WithAMasterInBothPlacesTheNewerWinsAndTheOtherIsNamed()
@@ -143,7 +146,7 @@ public class SirilSessionTests
         Assert.Equal(inProcess, newerInProcess.Path);
         Assert.Equal(inMasters, newerInProcess.Other);
 
-        // si tabul de histograma pune in fata acelasi master pe care il masoara Structura
+        // and the histogram tab puts first the same master that Structura measures
         Assert.Equal(inProcess, s.HistEqCandidates()[0].Path);
     }
 
@@ -162,7 +165,7 @@ public class SirilSessionTests
         Assert.Contains("process", SessionMessages.Explain(s, SessionProblem.NoFlatMaster));
     }
 
-    /// <summary>"Nu s-a rulat nimic" inseamna ca lipsesc amandoua folderele, nu doar process/.</summary>
+    /// <summary>"Nothing was run" means both folders are missing, not only process/.</summary>
     [Fact]
     public void NoProcessDirMeansNeitherFolderExists()
     {
@@ -174,7 +177,7 @@ public class SirilSessionTests
         Assert.Equal(SessionProblem.NoFlatMaster, Session(b, process: false, master: false).Check());
     }
 
-    /// <summary>Cerinta 5: raportul se salveaza in folderul dat, nu in process/.</summary>
+    /// <summary>Requirement 5: the report is saved in the given folder, not in process/.</summary>
     [Fact]
     public void TheReportGoesInTheChosenFolderNotInProcess()
     {
@@ -185,7 +188,7 @@ public class SirilSessionTests
         Assert.Equal(Path.Combine(ws.Dir, "flatcheck.png"), s.ResidualPngPath);
     }
 
-    // ------------------------------------------------------------------ seria de lights
+    // ------------------------------------------------------------------ the lights series
 
     [Fact]
     public void TheLightSeriesUsesTheSameDefaultPatternAsTheConsole()
@@ -201,9 +204,9 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// Cadrele registrate sunt excluse fiindca tiparul e ancorat la inceput. Nu e un
-    /// detaliu: registrarea transforma geometric cadrul, deci muta eroarea de flat fata
-    /// de centrul in jurul caruia se fiteaza modelul radial.
+    /// The registered frames are excluded because the pattern is anchored at the start. It
+    /// is not a detail: registration transforms the frame geometrically, so it moves the
+    /// flat error relative to the centre around which the radial model is fitted.
     /// </summary>
     [Fact]
     public void R083_RegisteredFramesAreExcludedFromTheSeries()
@@ -218,7 +221,9 @@ public class SirilSessionTests
                      s.LightSeries().Select(Path.GetFileName).ToArray());
     }
 
-    /// <summary>Potrivirea e in proces, deci ".fit" nu inghite ".fits" ca in Win32.</summary>
+    /// <summary>
+    /// The matching is in-process, so ".fit" does not swallow ".fits" as in Win32.
+    /// </summary>
     [Fact]
     public void TheSeriesDoesNotSwallowLongerExtensions()
     {
@@ -240,17 +245,18 @@ public class SirilSessionTests
         Assert.Empty(s.LightSeries());
     }
 
-    // ------------------------------------------------------- ce e un master de flat
+    // ------------------------------------------------------- what a flat master is
 
     /// <summary>
-    /// Masterul general al unei sesiuni E un master de flat, deci e o intrare valida - si
-    /// in fluxul normal chiar E intrarea: cele doua orientari sunt doua sedinte, deci doua
-    /// foldere, si din fiecare se ia pp_flat_stacked.fit.
+    /// A session's overall master IS a flat master, so it is a valid input - and in the
+    /// normal flow it really IS the input: the two orientations are two sittings, so two
+    /// folders, and pp_flat_stacked.fit is taken from each.
     ///
-    /// A existat o excludere a lui, pana la rescrierea tabului. Nu era o regula de domeniu:
-    /// era o reparatie de PRESELECTIE dintr-o vreme in care tabul isi umplea singur o lista
-    /// din process/ si, sortarea fiind ordinala, "pp_flat_stacked.fit" cadea dupa
-    /// "pp_flat_A/B.fit" si ateriza pe preselectia setului B. Fara lista, motivul a disparut.
+    /// There was an exclusion of it, until the tab was rewritten. It was not a domain rule:
+    /// it was a PRESELECTION fix from a time when the tab filled a list by itself from
+    /// process/ and, the sort being ordinal, "pp_flat_stacked.fit" fell after
+    /// "pp_flat_A/B.fit" and landed on set B's preselection. Without the list, the reason
+    /// went away.
     /// </summary>
     [Fact]
     public void TheOverallFlatMasterIsAValidInput()
@@ -261,7 +267,7 @@ public class SirilSessionTests
         Assert.True(SirilSession.IsFlatMasterName(s.FlatMasterPath));
     }
 
-    /// <summary>Potrivirea tiparului e insensibila la litere mari.</summary>
+    /// <summary>The pattern matching is case-insensitive.</summary>
     [Fact]
     public void TheNameCheckIgnoresCase()
     {
@@ -273,18 +279,18 @@ public class SirilSessionTests
     [InlineData("pp_flat_stacked.fit", true)]
     [InlineData("pp_flat_stacked_A.fit", true)]
     [InlineData(@"C:\altundeva\pp_flat_stacked_B.fit", true)]
-    [InlineData("flat_stacked.fit", false)]      // necalibrat: fara prefixul pp_
+    [InlineData("flat_stacked.fit", false)]      // uncalibrated: without the pp_ prefix
     [InlineData("pp_light_00001.fit", false)]
-    [InlineData("pp_flat_stacked.fits", false)]  // extensie diferita
+    [InlineData("pp_flat_stacked.fits", false)]  // a different extension
     [InlineData("pp_flat_stacked.tif", false)]
     public void AFileIsAFlatMasterOnlyIfItsNameSaysSo(string path, bool expected)
         => Assert.Equal(expected, SirilSession.IsFlatMasterName(path));
 
     /// <summary>
-    /// Cadrele calibrate individuale stau in acelasi process/, cu acelasi prefix, si
-    /// arata la fel - dar nu sunt mastere. Tiparul a fost "pp_flat*.fit" si le prindea,
-    /// deci dialogul din tabul Ratio le si propunea. O pereche de cadre individuale da un
-    /// rezultat sigur si fals: zgomotul unui cadru e de acelasi ordin cu semnalul cautat.
+    /// The individual calibrated frames sit in the same process/, with the same prefix, and
+    /// look the same - but they are not masters. The pattern was "pp_flat*.fit" and caught
+    /// them, so the Ratio tab's dialog even offered them. A pair of individual frames gives a
+    /// confident and false result: a frame's noise is of the same order as the signal sought.
     /// </summary>
     [Theory]
     [InlineData("pp_flat_00001.fit")]
@@ -300,11 +306,11 @@ public class SirilSessionTests
         Assert.False(SirilSession.IsFlatMasterName(""));
     }
 
-    // ------------------------------------------------------------------ flat-uri brute
+    // ------------------------------------------------------------------ raw flats
 
     /// <summary>
-    /// Doar raw de aparat. Un FITS din flats/ poate fi orice - inclusiv unul deja
-    /// debayerizat, pe care modul l-ar respinge oricum - deci nu se propune.
+    /// Camera raws only. A FITS in flats/ can be anything - including one already
+    /// debayered, which the mode would refuse anyway - so it is not offered.
     /// </summary>
     [Fact]
     public void OnlyCameraRawFilesAreOfferedForTheExposureCheck()
@@ -320,8 +326,8 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// Extensiile vin din RawReader, nu dintr-o lista scrisa in aplicatia WPF. Testul
-    /// pinuieste exact asta: daca cititorul invata un aparat nou, lista il arata.
+    /// The extensions come from RawReader, not from a list written in the WPF application.
+    /// The test pins exactly that: if the reader learns a new camera, the list shows it.
     /// </summary>
     [Fact]
     public void TheOfferedExtensionsAreTheOnesTheReaderAccepts()
@@ -355,9 +361,10 @@ public class SirilSessionTests
                      s.RawFlats().Select(Path.GetFileName).ToArray());
     }
 
-    // ------------------------------------------------------------------ tabul de histograma
+    // ------------------------------------------------------------------ the histogram tab
 
-    /// <summary>Pentru egalizare un FITS convertit e la fel de bun ca raw-ul; restul nu.</summary>
+    /// <summary>For the equalisation a converted FITS is as good as the raw; the rest are
+    /// not.</summary>
     [Fact]
     public void FlatFramesListRawAndFitsAndNothingElse_InOrdinalOrder()
     {
@@ -412,8 +419,8 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// Doar masterul prin conventie: o a doua stiva in process/ e treaba tabului Ratio,
-    /// si aici ar aparea ca "inca un master", ceea ce nu e.
+    /// Only the master by convention: a second stack in process/ is the Ratio tab's
+    /// business, and here it would appear as "one more master", which it is not.
     /// </summary>
     [Fact]
     public void AnotherStackInProcessIsNotACandidate()
@@ -429,8 +436,8 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// Flat-ul netezit scris de tabul Netezire sta langa master si se listeaza dupa el,
-    /// ca al treilea fel de rand - nu master, nu cadru.
+    /// The smoothed flat written by the Netezire tab sits beside the master and is listed
+    /// after it, as a third kind of row - not master, not frame.
     /// </summary>
     [Fact]
     public void R085_ASmoothedMasterIsListedRightAfterTheMaster()
@@ -450,8 +457,9 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// Cu mastere in ambele locuri, netezitul de langa cel VECHI e netezirea altui master
-    /// decat cel de pe ecran, si nu apare. Doar calea exacta de langa cel ales.
+    /// With masters in both places, the smoothed file beside the OLDER one is the smoothing
+    /// of a master other than the one on the screen, and it does not appear. Only the exact
+    /// path beside the chosen one.
     /// </summary>
     [Fact]
     public void R085_ASmoothedFileBesideTheOlderMasterIsNotListed()
@@ -470,12 +478,13 @@ public class SirilSessionTests
         Assert.Single(c);
         Assert.Equal(HistEqKind.Master, c[0].Kind);
 
-        // ...si apare de indata ce e langa cel ales
+        // ...and it appears as soon as it is beside the chosen one
         File.Copy(inMasters, s.SmoothedMasterPath);
         Assert.Equal(new[] { HistEqKind.Master, HistEqKind.Smoothed }, s.HistEqCandidates().Select(x => x.Kind));
     }
 
-    /// <summary>Fara master nu exista "langa master": un _netezit ratacit nu se listeaza si nu arunca.</summary>
+    /// <summary>Without a master there is no "beside the master": a stray _netezit is not listed
+    /// and does not throw.</summary>
     [Fact]
     public void WithoutAMasterASmoothedFileIsNotListed()
     {

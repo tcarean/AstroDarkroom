@@ -18,10 +18,10 @@
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Starea comuna a taburilor, pe un tab de proba. Ce s-a adaugat pentru tabul de
-/// histograma - rularile depasite - se verifica aici, fiindca e a bazei, nu a lui:
-/// o rulare peste care a pornit alta nu mai atinge nici rezultatul, nici eroarea,
-/// nici ecranul de asteptare.
+/// The tabs' common state, on a sample tab. What was added for the histogram tab -
+/// the superseded runs - is checked here, because it belongs to the base, not to it:
+/// a run over which another has started touches neither the result, nor the error,
+/// nor the waiting screen.
 /// </summary>
 public class TabViewModelTests
 {
@@ -114,9 +114,9 @@ public class TabViewModelTests
     }
 
     /// <summary>
-    /// A porneste si se blocheaza; B porneste peste ea si termina; A termina pe urma,
-    /// cu eroare. Ecranul e al lui B: rezultat, fara eroare, fara ecran de asteptare -
-    /// iar A n-a stins nimic si n-a aratat nimic.
+    /// A starts and blocks; B starts over it and finishes; A finishes afterwards,
+    /// with an error. The screen is B's: a result, no error, no waiting screen -
+    /// and A switched nothing off and showed nothing.
     /// </summary>
     [Fact]
     public async Task ASupersededRunDoesNotTouchTheScreenWhenItFinishes()
@@ -141,11 +141,13 @@ public class TabViewModelTests
         Assert.False(tab.HasError);
         Assert.False(tab.IsBusy);
         Assert.Equal("nou", tab.Report);
-        // ocupat o data (A), ramas ocupat la B (nicio schimbare), liber o singura data (B)
+        // busy once (A), still busy at B (no change), free a single time (B)
         Assert.Equal(new[] { true, false }, busyChanges);
     }
 
-    /// <summary>Si invers: A depasita se anuleaza; tot nu goleste rezultatul lui B.</summary>
+    /// <summary>
+    /// And the reverse: a superseded A is cancelled; it still does not clear B's result.
+    /// </summary>
     [Fact]
     public async Task ASupersededRunThatIsCancelledDoesNotClearTheNewResult()
     {

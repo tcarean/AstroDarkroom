@@ -21,10 +21,11 @@ using System.Text.RegularExpressions;
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Versiunea se incrementeaza manual. Sursa de adevar e <c>&lt;Version&gt;</c> din
-/// Directory.Build.props - <see cref="VersionInfo"/> o citeste din assembly, nu o hardcodeaza.
-/// Testele astea verifica plumbing-ul, si ca banner-ul chiar apare pe prima linie a fiecarei
-/// rulari. (Prototipul flatcheck.py e inghetat la 2.2.0 si nu se mai sincronizeaza; ADR 0047.)
+/// The version is incremented by hand. The source of truth is <c>&lt;Version&gt;</c> in
+/// Directory.Build.props - <see cref="VersionInfo"/> reads it from the assembly, it does
+/// not hard-code it. These tests check the plumbing, and that the banner really appears on
+/// the first line of every run. (The prototype flatcheck.py is frozen at 2.2.0 and is no
+/// longer kept in step; ADR 0047.)
 /// </summary>
 public class VersionTests
 {
@@ -41,10 +42,11 @@ public class VersionTests
     }
 
     /// <summary>
-    /// Sursa de adevar, de cand solutia are trei assembly-uri, e Directory.Build.props -
-    /// nu csproj-ul vreunui proiect anume. Verifica plumbing-ul props -> assembly ->
-    /// VersionInfo: daca cineva scoate &lt;Version&gt; de acolo, sau il muta inapoi intr-un
-    /// csproj (unde ar tine doar pentru un proiect), aici se vede.
+    /// The source of truth, since the solution has three assemblies, is
+    /// Directory.Build.props - not the csproj of any one project. Checks the plumbing
+    /// props -> assembly -> VersionInfo: if someone removes &lt;Version&gt; from there, or
+    /// moves it back into a csproj (where it would hold for one project only), it shows
+    /// here.
     /// </summary>
     [Fact]
     public void R097_TheVersionComesFromDirectoryBuildProps()
@@ -56,10 +58,9 @@ public class VersionTests
     }
 
     /// <summary>
-    /// Toate cele trei assembly-uri poarta aceeasi versiune. VersionInfo o citeste din
-    /// Core, deci un &lt;Version&gt; ramas intr-un csproj ar trece neobservat de testul de
-    /// mai sus si ar da un exe cu alta versiune in proprietatile fisierului decat cea
-    /// tiparita de el insusi.
+    /// All three assemblies carry the same version. VersionInfo reads it from Core, so a
+    /// &lt;Version&gt; left in a csproj would pass unnoticed by the test above and would give
+    /// an exe with another version in the file's properties than the one it prints itself.
     /// </summary>
     [Theory]
     [InlineData("FlatCheck")]
@@ -76,7 +77,7 @@ public class VersionTests
         Assert.DoesNotContain("<Copyright>", csproj);
     }
 
-    /// <summary>Nu trebuie sa ramana "1.0.1.0" sau "1.0.1+abc123" din assembly.</summary>
+    /// <summary>"1.0.1.0" or "1.0.1+abc123" from the assembly must not remain.</summary>
     [Fact]
     public void TheVersionIsNotTheFourPartOrSourceTaggedForm()
     {
@@ -85,8 +86,9 @@ public class VersionTests
     }
 
     /// <summary>
-    /// Copyright-ul vine din &lt;Copyright&gt; din csproj, la fel cum versiunea vine din
-    /// &lt;Version&gt;. Daca cineva il scoate, ramane fallback-ul din cod - si aici se vede.
+    /// The copyright comes from &lt;Copyright&gt; in the csproj, just as the version comes
+    /// from &lt;Version&gt;. If someone removes it, the fallback in the code remains - and it
+    /// shows here.
     /// </summary>
     [Fact]
     public void TheCopyrightComesFromDirectoryBuildProps()
@@ -97,7 +99,7 @@ public class VersionTests
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Copyright);
     }
 
-    // ------------------------------------------------------------ banner-ul
+    // ------------------------------------------------------------ the banner
 
     [Fact]
     public void TheBannerIsTheNameAndTheVersion()
@@ -137,8 +139,8 @@ public class VersionTests
     }
 
     /// <summary>
-    /// GPLv3 vrea ca notita de copyright sa se vada la fiecare rulare, deci sta pe linia
-    /// a doua peste tot unde sta si banner-ul pe prima - inclusiv la --help si la erori.
+    /// GPLv3 wants the copyright notice visible at every run, so it sits on the second line
+    /// everywhere the banner sits on the first - including at --help and on errors.
     /// </summary>
     [Fact]
     public void R001_EveryModePrintsTheCopyrightOnTheSecondLine()
@@ -171,9 +173,9 @@ public class VersionTests
     }
 
     /// <summary>
-    /// GPLv3 sectiunea 5(d): un program care afiseaza notite legale trebuie sa afiseze si
-    /// lipsa garantiei. Nu se poate pune sub banner - ar ingrosa fiecare raport - deci sta
-    /// in --help, si de acolo trimite la textul complet.
+    /// GPLv3 section 5(d): a program that shows legal notices must also show the absence
+    /// of warranty. It cannot go under the banner - it would thicken every report - so it
+    /// sits in --help, and from there it points to the full text.
     /// </summary>
     [Fact]
     public void R005_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
@@ -193,7 +195,7 @@ public class VersionTests
         Assert.Equal(VersionInfo.Banner, FirstLine());
     }
 
-    /// <summary>Si o rulare care esueaza spune ce versiune a esuat.</summary>
+    /// <summary>A run that fails also says which version failed.</summary>
     [Fact]
     public void AFailedRunStillPrintsTheBanner()
     {
@@ -203,7 +205,8 @@ public class VersionTests
         Assert.Equal(VersionInfo.Banner, FirstLine("--optiune-inventata"));
     }
 
-    /// <summary>Banner-ul nu se dubleaza in --help, unde era tiparit si de WriteUsage.</summary>
+    /// <summary>The banner is not doubled in --help, where WriteUsage printed it
+    /// too.</summary>
     [Fact]
     public void TheBannerIsPrintedExactlyOnce()
     {
@@ -214,7 +217,7 @@ public class VersionTests
         Assert.Equal(1, count);
     }
 
-    /// <summary>--version a disparut: acum e doar un argument necunoscut.</summary>
+    /// <summary>--version is gone: it is now just an unknown argument.</summary>
     [Fact]
     public void TheVersionFlagIsGone()
     {

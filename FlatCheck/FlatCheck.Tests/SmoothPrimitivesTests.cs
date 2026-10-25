@@ -63,7 +63,8 @@ public class SmoothPrimitivesTests
         for (int y = 0; y < 4; y++)
             for (int x = 0; x < 6; x++)
                 Assert.Equal(img.At(y, x), back.At(y, x), 9);
-        // last row (y = 4, even parity) copies row 2 (the same parity, nearest); last column likewise
+        // last row (y = 4, even parity) copies row 2 (the same parity, nearest); last column
+        // likewise
         Assert.Equal(img.At(2, 0), back.At(4, 0), 9);
         Assert.Equal(img.At(0, 4), back.At(0, 6), 9);
         Assert.Equal(img.At(2, 4), back.At(4, 6), 9);
@@ -97,7 +98,9 @@ public class SmoothPrimitivesTests
         Assert.Equal(8, t.At(0, 1), 9);
     }
 
-    /// <summary>The grid must reach the last pixel: a 4017-row sensor has 27 tile rows of 150, not 26.</summary>
+    /// <summary>
+    /// The grid must reach the last pixel: a 4017-row sensor has 27 tile rows of 150, not 26.
+    /// </summary>
     [Fact]
     public void TileMedians_CoverEveryPixel()
     {

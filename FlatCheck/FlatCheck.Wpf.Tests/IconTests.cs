@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// IconTests.cs - icoana ajunge acolo unde trebuie, la ambele aplicatii.
+// IconTests.cs - the icon gets where it should, in both applications.
 //
-// Icoana e legata in trei locuri: <ApplicationIcon> in cele doua csproj-uri (exe-ul, deci
-// Explorer si fixarea in taskbar) si Icon= in MainWindow.xaml (bara de titlu si taskbar-ul
-// ferestrei deschise). Toate trei compileaza si cu o cale gresita catre o resursa, iar
-// fara Icon= fereastra arata totusi icoana corecta cand e pornita din exe-ul ei - deci o
-// legatura rupta s-ar vedea abia sub "dotnet FlatCheck.Wpf.dll". De aici testele.
+// The icon is wired in three places: <ApplicationIcon> in the two csproj files (the exe, so
+// Explorer and pinning to the taskbar) and Icon= in MainWindow.xaml (the title bar and the
+// open window's taskbar entry). All three compile even with a wrong path to a resource, and
+// without Icon= the window still shows the right icon when started from its exe - so a
+// broken link would show only under "dotnet FlatCheck.Wpf.dll". Hence the tests.
 
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -40,8 +40,8 @@ public class IconTests
         => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
 
     /// <summary>
-    /// Dimensiunile desenate separat de Icon/make_icon.py. 20 si 40 sunt cele din bara de
-    /// titlu la 125% si 250% DPI; daca lipsesc, Windows scaleaza alta si iese neclar.
+    /// The sizes Icon/make_icon.py draws separately. 20 and 40 are the title bar's at 125%
+    /// and 250% DPI; if they are missing, Windows scales another one and it comes out blurred.
     /// </summary>
     static readonly int[] Sizes = { 16, 20, 24, 32, 40, 48, 64, 256 };
 
@@ -56,8 +56,8 @@ public class IconTests
         });
 
     /// <summary>
-    /// Consola si fereastra poarta acelasi fisier, nu doua copii care sa se desparta la
-    /// prima modificare a desenului.
+    /// The console and the window carry the same file, not two copies that would drift apart
+    /// at the first change to the drawing.
     /// </summary>
     [Theory]
     [InlineData("FlatCheck")]

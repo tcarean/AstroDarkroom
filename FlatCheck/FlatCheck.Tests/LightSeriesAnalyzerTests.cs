@@ -18,21 +18,21 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Combinarea unei serii de rezultate --light intr-un singur verdict.
+/// Combining a series of --light results into a single verdict.
 ///
-/// Ideea pe care o apara fisierul asta: media pe serie estimeaza eroarea de flat DOAR
-/// daca termenul radial al cerului se mediaza la zero, si asta nu e garantat. Deci se
-/// verifica, prin trei conditii, iar daca vreuna pica raspunsul e NEDETERMINAT in loc de
-/// un numar care arata increzator. Testele de mai jos fixeaza fiecare conditie separat si
-/// - la fel de important - fixeaza faptul ca o serie curata chiar primeste un verdict, ca
-/// garda sa nu devina un refuz permanent.
+/// The idea this file defends: the mean over the series estimates the flat's error ONLY
+/// if the sky's radial term averages to zero, and that is not guaranteed. So it is
+/// checked, through three conditions, and if any fails the answer is NEDETERMINAT
+/// instead of a number that looks confident. The tests below pin each condition
+/// separately and - just as important - pin that a clean series really gets a verdict,
+/// so that the guard does not become a permanent refusal.
 ///
-/// Datele din <see cref="RealSessionSweep"/> sunt cifrele reale ale sesiunii
-/// 2026-08-12-Smida, care a motivat tot modul.
+/// The data in <see cref="RealSessionSweep"/> are the real figures of the session
+/// 2026-08-12-Smida, which motivated the whole mode.
 /// </summary>
 public class LightSeriesAnalyzerTests
 {
-    /// <summary>Un rezultat --light cu doar cifrele care conteaza la combinare.</summary>
+    /// <summary>A --light result with only the figures that matter to the combination.</summary>
     static (string, LightResult) Frame(string name, double rad, double plane) =>
         (name, new LightResult
         {
@@ -44,13 +44,14 @@ public class LightSeriesAnalyzerTests
             Verdict = Stats.Verdict(Math.Abs(rad), Th.LightRadOk, Th.LightRadBad),
         });
 
-    /// <summary>n cadre asezate simetric in jurul mediei, cu gradientul de cer constant.</summary>
+    /// <summary>n frames placed symmetrically around the mean, with a constant sky
+    /// gradient.</summary>
     static List<(string, LightResult)> Steady(int n, double mean, double jitter = 0.0)
         => Enumerable.Range(0, n)
             .Select(i => Frame($"f{i:00}.fit", mean + (i % 2 == 0 ? jitter : -jitter), 10.0))
             .ToList();
 
-    // ------------------------------------------------------------ statistica
+    // ------------------------------------------------------------ statistics
 
     [Fact]
     public void TheMeanMinAndMaxComeFromTheRadialComponents()
@@ -67,11 +68,12 @@ public class LightSeriesAnalyzerTests
         Assert.Equal(5, r.Count);
     }
 
-    /// <summary>Deviatia standard e de esantion (ddof = 1), ca numpy.std(ddof=1).</summary>
+    /// <summary>The standard deviation is the sample one (ddof = 1), like
+    /// numpy.std(ddof=1).</summary>
     [Fact]
     public void TheStandardDeviationUsesTheSampleDivisor()
     {
-        // 0,2,4,6,8: media 4, suma patratelor abaterilor 40, /(5-1) = 10 -> sqrt(10)
+        // 0,2,4,6,8: mean 4, sum of squared deviations 40, /(5-1) = 10 -> sqrt(10)
         var r = LightSeriesAnalyzer.Combine(new List<(string, LightResult)>
         {
             Frame("a", 0, 10), Frame("b", 2, 10), Frame("c", 4, 10),
@@ -93,9 +95,10 @@ public class LightSeriesAnalyzerTests
     }
 
     /// <summary>
-    /// Pe o serie constanta intrebarea "se misca impreuna?" nu are raspuns, nu are
-    /// raspunsul "nu". De asta e NaN, si de asta testul de corelatie e sarit cu totul in
-    /// cazul ala (vezi <see cref="AConstantSkyGradientSkipsTheCorrelationTest"/>).
+    /// On a constant series the question "do they move together?" has no answer; it does
+    /// not have the answer "no". That is why it is NaN, and why the correlation test is
+    /// skipped altogether in that case (see
+    /// <see cref="AConstantSkyGradientSkipsTheCorrelationTest"/>).
     /// </summary>
     [Fact]
     public void PearsonIsNaNWhenEitherSeriesIsConstant()
@@ -104,7 +107,7 @@ public class LightSeriesAnalyzerTests
             new double[] { 1, 1, 1 }, new double[] { 1, 2, 3 })));
     }
 
-    // ------------------------------------------------------ verdict concludent
+    // ------------------------------------------------------ conclusive verdict
 
     [Fact]
     public void ATightSeriesGetsARealVerdict()
@@ -117,8 +120,8 @@ public class LightSeriesAnalyzerTests
     }
 
     /// <summary>
-    /// O serie stransa in jurul unei erori mari primeste tot un verdict - unul prost.
-    /// Garda separa "nu stiu" de "e rau", nu le confunda.
+    /// A series tight around a large error still gets a verdict - a bad one. The guard
+    /// separates "I do not know" from "it is bad", it does not confuse them.
     /// </summary>
     [Fact]
     public void ATightSeriesAroundALargeErrorReportsTheProblem()
@@ -137,7 +140,7 @@ public class LightSeriesAnalyzerTests
         Assert.Equal("SUSPECT", r.Verdict);
     }
 
-    // ------------------------------------------------------ verdict nedeterminat
+    // ------------------------------------------------------ inconclusive verdict
 
     [Fact]
     public void R032_TooFewFramesIsNotEnoughToAverage()
@@ -157,8 +160,8 @@ public class LightSeriesAnalyzerTests
     }
 
     /// <summary>
-    /// Imprastiere mare cu gradientul de cer constant: corelatia nu se aplica, dar
-    /// eroarea mediei singura ajunge ca sa opreasca verdictul.
+    /// Large scatter with a constant sky gradient: the correlation does not apply, but the
+    /// error of the mean alone is enough to stop the verdict.
     /// </summary>
     [Fact]
     public void AWideSpreadAloneMakesTheMeanUnreadable()
@@ -171,16 +174,17 @@ public class LightSeriesAnalyzerTests
     }
 
     /// <summary>
-    /// Cazul care da toata valoarea modului: media e practic zero si ar trece pragul de
-    /// OK, dar cifra urmareste gradientul de cer. Flat-ul e acelasi pe toate cadrele prin
-    /// constructie, deci ce se misca e cerul - si verdictul refuza sa se pronunte.
+    /// The case that gives the mode all its value: the mean is practically zero and would
+    /// pass the OK threshold, but the figure follows the sky gradient. The flat is the same
+    /// on all frames by construction, so what moves is the sky - and the verdict refuses to
+    /// pronounce.
     /// </summary>
     [Fact]
     public void AMeanNearZeroIsStillRefusedWhenItTracksTheSky()
     {
         var r = LightSeriesAnalyzer.Combine(RealSessionSweep());
 
-        Assert.Equal(0.23, r.MeanRad, 2);              // ar fi trecut drept OK
+        Assert.Equal(0.23, r.MeanRad, 2);              // would have passed as OK
         Assert.Equal(3.16, r.Sem, 2);
         Assert.Equal(-0.94, r.SkyCorr, 2);
         Assert.Equal(LightSeriesAnalyzer.Undetermined, r.Verdict);
@@ -189,13 +193,14 @@ public class LightSeriesAnalyzerTests
     }
 
     /// <summary>
-    /// Corelatia se calculeaza mereu, dar se JUDECA doar cand gradientul chiar variaza.
-    /// Pe o sesiune curata unde sta constant, corelatia e zgomot si ar respinge date bune.
+    /// The correlation is always computed, but it is JUDGED only when the gradient really
+    /// varies. On a clean session where it stays constant, the correlation is noise and
+    /// would reject good data.
     /// </summary>
     [Fact]
     public void AConstantSkyGradientSkipsTheCorrelationTest()
     {
-        // corelatie perfecta pe un interval de gradient minuscul: se ignora
+        // perfect correlation over a minute gradient interval: ignored
         var frames = Enumerable.Range(0, 10)
             .Select(i => Frame($"f{i}.fit", 0.5 + i * 0.01, 10.0 + i * 0.01)).ToList();
 
@@ -219,13 +224,13 @@ public class LightSeriesAnalyzerTests
         Assert.Equal(LightSeriesAnalyzer.Undetermined, r.Verdict);
     }
 
-    // ------------------------------------------------------------ degenerari
+    // ------------------------------------------------------------ degenerate cases
 
     /// <summary>
-    /// Un singur cadru nu are imprastiere de calculat, deci sem iese NaN. NaN trebuie sa
-    /// cada pe partea proasta - comparatiile sunt scrise ca !(x &lt; prag) tocmai pentru
-    /// asta. Daca ar fi scrise ca (x &gt;= prag), NaN ar trece TACUT si un singur cadru ar
-    /// primi un verdict pe care nu-l poate sustine.
+    /// A single frame has no scatter to compute, so sem comes out NaN. NaN must fall on the
+    /// bad side - the comparisons are written as !(x &lt; threshold) precisely for that. If
+    /// they were written as (x &gt;= threshold), NaN would pass SILENTLY and a single frame
+    /// would get a verdict it cannot support.
     /// </summary>
     [Fact]
     public void ASingleFrameCannotProduceAVerdict()
@@ -245,8 +250,8 @@ public class LightSeriesAnalyzerTests
     }
 
     /// <summary>
-    /// Harta medie n-are sens pe cadre de dimensiuni diferite; e mai bine sa se opreasca
-    /// aici decat sa produca o harta amestecata din care nu se poate citi nimic.
+    /// A mean map makes no sense over frames of different sizes; better to stop here than
+    /// to produce a mixed map from which nothing can be read.
     /// </summary>
     [Fact]
     public void FramesOfDifferentSizesAreRefusedWithAnExplanation()
@@ -275,14 +280,14 @@ public class LightSeriesAnalyzerTests
 
         var r = LightSeriesAnalyzer.Combine(frames);
 
-        // fiecare harta e constanta la 1 + rad/100, deci media e 1 + 0.04
+        // each map is constant at 1 + rad/100, so the mean is 1 + 0.04
         Assert.All(r.RadialMap.D, v => Assert.Equal(1.04, v, 9));
     }
 
     /// <summary>
-    /// Cifrele reale ale sesiunii 2026-08-12-Smida: 32 de cadre, 81 de minute, Calea
-    /// Lactee la 20 mm. Componenta radiala baleiaza neted de la +3.13 prin -19.20 pana la
-    /// +35.73 in timp ce gradientul de cer scade de la 88 la 49.
+    /// The real figures of the session 2026-08-12-Smida: 32 frames, 81 minutes, the Milky
+    /// Way at 20 mm. The radial component sweeps smoothly from +3.13 through -19.20 to
+    /// +35.73 while the sky gradient falls from 88 to 49.
     /// </summary>
     static List<(string, LightResult)> RealSessionSweep()
     {

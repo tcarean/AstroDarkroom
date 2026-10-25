@@ -43,7 +43,9 @@ public class PreviewLevelsTests
         }
     }
 
-    /// <summary>Same fraction as the raw side, on both axes, so the two windows are comparable.</summary>
+    /// <summary>
+    /// Same fraction as the raw side, on both axes, so the two windows are comparable.
+    /// </summary>
     [Fact]
     public void TheCentreWindowIsTheSameFractionAsTheRawSide()
     {
@@ -132,7 +134,9 @@ public class PreviewLevelsTests
         Assert.Null(r.Preview);
     }
 
-    /// <summary>Through the run, with the flag: the preview arrives; without it, nothing is decoded.</summary>
+    /// <summary>
+    /// Through the run, with the flag: the preview arrives; without it, nothing is decoded.
+    /// </summary>
     [Fact]
     public void TheRunDecodesOnlyWhenAsked()
     {

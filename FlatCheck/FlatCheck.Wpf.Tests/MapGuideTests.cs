@@ -18,10 +18,10 @@
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Ghidul hartii. Nu se poate testa daca un text e bine scris, dar se poate testa ca
-/// spune lucrurile fara care nu ajuta la nimic: ce inseamna albul, si care sunt formele
-/// pe care le explica. Fara astea ghidul ar putea fi golit intr-o reformulare si nimic
-/// nu ar cadea.
+/// The map guide. Whether a text is well written cannot be tested, but it can be tested that
+/// it says the things without which it helps with nothing: what white means, and which shapes
+/// it explains. Without these the guide could be emptied in a rewording and nothing would
+/// fail.
 /// </summary>
 public class MapGuideTests
 {
@@ -45,8 +45,8 @@ public class MapGuideTests
     }
 
     /// <summary>
-    /// Ce spune intro-ul, si de ce conteaza: albul e 1.0, iar tot ce a ramas pe harta NU
-    /// poate fi vignetare. Cine nu stie asta citeste harta pe dos.
+    /// What the intro says, and why it matters: white is 1.0, and everything left on the map
+    /// CANNOT be vignetting. Whoever does not know this reads the map backwards.
     /// </summary>
     [Fact]
     public void TheIntroSaysWhatWhiteMeansAndWhatWasRemoved()
@@ -59,9 +59,9 @@ public class MapGuideTests
     }
 
     /// <summary>
-    /// Si avertismentul despre scara automata: pe ea culorile umplu mereu tot intervalul,
-    /// deci intensitatea NU e o masura. Asta e chiar confuzia din care a pornit
-    /// comutatorul de scara.
+    /// And the warning about the automatic scale: on it the colours always fill the whole
+    /// range, so the intensity is NOT a measure. That is exactly the confusion the scale switch
+    /// started from.
     /// </summary>
     [Fact]
     public void TheIntroWarnsThatColourIntensityDependsOnTheScale()
@@ -73,8 +73,8 @@ public class MapGuideTests
     }
 
     /// <summary>
-    /// Fara diacritice, ca tot restul textului scos de unealta - raportul de consola si
-    /// fisierul salvat nu au niciuna, si fereastra nu trebuie sa arate ca alt program.
+    /// Without diacritics, like all the rest of the text the tool puts out - the console report
+    /// and the saved file have none, and the window must not look like another program.
     /// </summary>
     [Fact]
     public void TheGuideUsesNoDiacritics()
@@ -85,7 +85,7 @@ public class MapGuideTests
         Assert.All(all, c => Assert.True(c < 128, $"caracter non-ASCII: '{c}'"));
     }
 
-    /// <summary>ViewModel-ul doar transporta textul, nu-l rescrie.</summary>
+    /// <summary>The view-model only carries the text, it does not rewrite it.</summary>
     [Fact]
     public void TheViewModelCarriesTheSameTextAsTheSource()
     {
@@ -98,10 +98,10 @@ public class MapGuideTests
     }
 
     /// <summary>
-    /// Randul despre inele NU mai trebuie sa spuna ca inelele inseamna un obstacol rotund
-    /// descentrat. Aia era citirea unui artefact al modelului radial, corectat de atunci -
-    /// iar cineva care citea harta pleca sa caute un obiect care nu existase niciodata.
-    /// Testul exista ca sa nu se intoarca formularea veche din istoria git.
+    /// The row about rings must NO longer say that rings mean an off-centre round obstacle.
+    /// That was the reading of an artefact of the radial model, corrected since - and someone
+    /// reading the map went looking for an object that had never existed.
+    /// The test exists so that the old wording does not come back from the git history.
     /// </summary>
     [Fact]
     public void TheRingRowDoesNotClaimARingMeansADecentredObstruction()
@@ -109,15 +109,15 @@ public class MapGuideTests
         var rings = SessionMessages.MapGuideShapes().Single(s => s.Shape.Contains("cercuri"));
 
         Assert.DoesNotContain("descentrat", rings.Shape);
-        Assert.Contains("NU poate", rings.Meaning);       // un inel centrat pe senzor
-        Assert.Contains("artefact", rings.Meaning);       // si de ce se vedeau inainte
+        Assert.Contains("NU poate", rings.Meaning);       // a ring centred on the sensor
+        Assert.Contains("artefact", rings.Meaning);       // and why they showed before
     }
 
     /// <summary>
-    /// Randul despre pata centrala trebuie sa spuna ca modul structura e orb la ea, nu
-    /// doar testul prin rotatie: masurat, o pata de 10% exact in centru lasa harta goala
-    /// si toate cifrele sub 0.1%, fiindca modelul radial o absoarbe intreaga. Inainte,
-    /// randul descria o forma care nu poate aparea pe harta.
+    /// The row about the central spot must say that the structure mode is blind to it, not
+    /// only the rotation test: measured, a 10% spot exactly at the centre leaves the map empty
+    /// and every figure under 0.1%, because the radial model absorbs it whole. Before, the row
+    /// described a shape that cannot appear on the map.
     /// </summary>
     [Fact]
     public void TheCentralBlobRowSaysTheStructureModeCannotSeeIt()
@@ -126,12 +126,12 @@ public class MapGuideTests
 
         Assert.Contains("NU poate aparea", blob.Meaning);
         Assert.Contains("absoarbe", blob.Meaning);
-        Assert.Contains("vignetare", blob.Meaning);     // singura urma pe care o lasa
+        Assert.Contains("vignetare", blob.Meaning);     // the only trace it leaves
     }
 
     /// <summary>
-    /// "CE FEL" trimite la cifrele care despart un gradient de ceva compact, si numeste
-    /// intrebarea pe care o pune atentionarea de praf: sesiune sau biblioteca.
+    /// "CE FEL" points to the figures that tell a gradient from something compact, and names
+    /// the question the dust warning asks: session or library.
     /// </summary>
     [Fact]
     public void TheWhatKindRowPointsAtTheSpotFiguresAndTheDustQuestion()
@@ -143,12 +143,12 @@ public class MapGuideTests
         Assert.Contains("biblioteca", row.Meaning);
     }
 
-    // ------------------------------------------------- cum citesc tabul
+    // ------------------------------------------------- how to read the tab
 
     /// <summary>
-    /// Cele doua jumatati ale citirii. Textul trebuie sa spuna explicit care decide -
-    /// altfel cifrele din stanga si harta din dreapta arata ca doua vederi ale aceluiasi
-    /// lucru, si asta e chiar confuzia pe care panoul o rezolva.
+    /// The two halves of the reading. The text must say explicitly which one decides -
+    /// otherwise the figures on the left and the map on the right look like two views of the
+    /// same thing, and that is exactly the confusion the panel resolves.
     /// </summary>
     [Fact]
     public void TheHowToReadNoteSeparatesHowMuchFromWhatKind()
@@ -159,7 +159,7 @@ public class MapGuideTests
         Assert.Contains("CAT DE MULT", rows[0].Shape);
         Assert.Contains("CE FEL", rows[1].Shape);
         Assert.Contains("cifrele", rows[0].Shape);
-        Assert.Contains("NU depinde", rows[0].Meaning);   // verdictul nu depinde de harta
+        Assert.Contains("NU depinde", rows[0].Meaning);   // the verdict does not depend on the map
     }
 
     [Fact]

@@ -41,7 +41,9 @@ public class SplitTabTests
         return new SirilInstall(cli ? cliPath : null, new[] { script }, Path.Combine(ws.Dir, "config.ini"));
     }
 
-    /// <summary>Every input frame is one MiB of nothing, so the copied figure of the estimate can be pinned.</summary>
+    /// <summary>
+    /// Every input frame is one MiB of nothing, so the copied figure of the estimate can be pinned.
+    /// </summary>
     static readonly byte[] OneMiB = new byte[1 << 20];
 
     static SessionFixture Session(int flats, int biases = 3, int lights = 3, bool readme = true)
@@ -139,7 +141,10 @@ public class SplitTabTests
         Assert.Contains("28 MB copiate", vm.EstimateLine);       // 4 x (3 + 2) + 8: the biases and lights four times, the flats once
     }
 
-    /// <summary>process/ and masters/ are what Siril writes; a script that enters one never gets the original's copied.</summary>
+    /// <summary>
+    /// process/ and masters/ are what Siril writes; a script that enters one never gets the
+    /// original's copied.
+    /// </summary>
     [Fact]
     public async Task R092_TheSessionsOutputFoldersAreNeverCopied()
     {
@@ -359,7 +364,10 @@ public class SplitTabTests
         Assert.True(vm.ProgressKnown);
     }
 
-    /// <summary>A script that enters darks/ (the stock OSC_Preprocessing.ssf) gets darks/ copied whole, like biases/.</summary>
+    /// <summary>
+    /// A script that enters darks/ (the stock OSC_Preprocessing.ssf) gets darks/ copied whole, like
+    /// biases/.
+    /// </summary>
     [Fact]
     public async Task R092_TheFoldersTheScriptEntersAreCopiedWhole_DarksIncluded()
     {
@@ -378,7 +386,10 @@ public class SplitTabTests
         Assert.All(seen, s => Assert.Equal(3, s.Biases.Length));
     }
 
-    /// <summary>A required folder the original lacks blocks the button, as on the problem card - not a failure on part 1.</summary>
+    /// <summary>
+    /// A required folder the original lacks blocks the button, as on the problem card - not a
+    /// failure on part 1.
+    /// </summary>
     [Fact]
     public void R091_ARequiredFolderMissingFromTheSessionBlocksTheButton()
     {
@@ -391,7 +402,9 @@ public class SplitTabTests
         Assert.Contains("darks/", vm.Blocker);
     }
 
-    /// <summary>A raw copied from a card is often read-only; the copy must still be deletable at the end.</summary>
+    /// <summary>
+    /// A raw copied from a card is often read-only; the copy must still be deletable at the end.
+    /// </summary>
     [Fact]
     public async Task R092_ReadOnlySourcesDoNotKeepTheTempFolder()
     {
@@ -416,7 +429,10 @@ public class SplitTabTests
         }
     }
 
-    /// <summary>flats/ can change between opening the folder and pressing the button: the count is re-read then.</summary>
+    /// <summary>
+    /// flats/ can change between opening the folder and pressing the button: the count is re-read
+    /// then.
+    /// </summary>
     [Fact]
     public async Task R092_FramesAddedAfterOpeningAreCountedWhenTheButtonIsPressed()
     {
@@ -437,7 +453,9 @@ public class SplitTabTests
         Assert.False(vm.HasError);
     }
 
-    /// <summary>Choosing another folder mid-split kills Siril and deletes the temp folder, like Opreste.</summary>
+    /// <summary>
+    /// Choosing another folder mid-split kills Siril and deletes the temp folder, like Opreste.
+    /// </summary>
     [Fact]
     public async Task R092_OpeningAnotherFolderMidSplitStopsItAndDeletesTheTemp()
     {

@@ -22,7 +22,7 @@ using System.Windows.Media.Imaging;
 
 namespace FlatCheck.Wpf.Tests;
 
-/// <summary>Un raster de octeti devine bitmap fara nicio conversie de valori.</summary>
+/// <summary>A byte raster becomes a bitmap without any conversion of values.</summary>
 public class RasterBitmapsTests
 {
     [Fact]
@@ -56,15 +56,15 @@ public class RasterBitmapsTests
 }
 
 /// <summary>
-/// Culorile si convertoarele. Marunte, dar culoarea unui verdict e primul lucru pe care
-/// il vede omul, si o greseala aici arata verde un flat de refacut.
+/// The colours and the converters. Small things, but a verdict's colour is the first thing
+/// the user sees, and a mistake here shows green a flat that must be redone.
 /// </summary>
 public class VerdictPaletteTests
 {
     /// <summary>
-    /// Culoarea se DEDUCE din Stats.Severity. Testul e scris pe ordonare, nu pe valori
-    /// RGB: daca maine paleta se schimba, testul trebuie sa treaca in continuare, dar
-    /// daca ordinea se rastoarna trebuie sa pice.
+    /// The colour is DEDUCED from Stats.Severity. The test is written on the ordering, not on
+    /// RGB values: if the palette changes tomorrow, the test must still pass, but if the order
+    /// is overturned it must fail.
     /// </summary>
     [Theory]
     [InlineData("PERFECT", "OK")]
@@ -90,9 +90,9 @@ public class VerdictPaletteTests
         => Assert.Equal(VerdictPalette.For("REFA"), VerdictPalette.For("PROBLEMA"));
 
     /// <summary>
-    /// "Nu stiu" nu e "e prost". In Stats amandoua stau la severitate care iese din zero
-    /// fiindca acolo conteaza doar codul de iesire; vizual insa trebuie sa se deosebeasca,
-    /// altfel o serie neconcludenta arata ca un flat stricat.
+    /// "I do not know" is not "it is bad". In Stats both sit at a severity that exits non-zero,
+    /// because there only the exit code matters; visually however they must differ,
+    /// otherwise an inconclusive series looks like a broken flat.
     /// </summary>
     [Fact]
     public void InconclusiveVerdictsAreNeutralNotRed()
@@ -104,7 +104,9 @@ public class VerdictPaletteTests
         Assert.NotEqual(VerdictPalette.For("ACCEPTABIL"), VerdictPalette.For(Stats.NotApplicable));
     }
 
-    /// <summary>Un verdict necunoscut e tratat ca cel mai rau - aceeasi regula ca in nucleu.</summary>
+    /// <summary>
+    /// An unknown verdict is treated as the worst - the same rule as in the core.
+    /// </summary>
     [Fact]
     public void AnUnknownVerdictGetsTheWorstColour()
     {
@@ -128,8 +130,8 @@ public class ConverterTests
         => c.Convert(v, typeof(object), null!, CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// Harta ajunge pe ecran din memorie, fara fisier temporar. Testul foloseste un PNG
-    /// produs chiar de encoderul uneltei, deci verifica si ca cei doi se inteleg.
+    /// The map reaches the screen from memory, without a temporary file. The test uses a PNG
+    /// produced by the tool's own encoder, so it also checks that the two understand each other.
     /// </summary>
     [Fact]
     public void PngBytesBecomeAnImageOfTheRightSize()
@@ -171,8 +173,8 @@ public class ConverterTests
     }
 
     /// <summary>
-    /// Sirul gol conteaza ca "nimic": ViewModel-urile golesc campurile punand "", nu null,
-    /// iar un panou care ar ramane vizibil cu text gol ar lasa un spatiu inexplicabil.
+    /// The empty string counts as "nothing": the view-models clear the fields by setting "",
+    /// not null, and a panel that stayed visible with empty text would leave an unexplained gap.
     /// </summary>
     [Fact]
     public void AnEmptyStringCountsAsNothingToShow()
@@ -184,12 +186,12 @@ public class ConverterTests
         Assert.Equal(Visibility.Visible, Run(c, "ceva"));
     }
 
-    // ---------------------------------------------------------------- culorile canalelor
+    // ---------------------------------------------------------------- the channels' colours
 
     /// <summary>
-    /// Culorile canalelor sunt un al doilea sistem de culoare pe acelasi ecran, deci
-    /// merita spus in test si ce NU sunt: nu trec prin Stats.Severity si nu inseamna o
-    /// judecata. Un canal rosu nu e "mai rau" decat unul verde.
+    /// The channels' colours are a second colour system on the same screen, so it is worth
+    /// saying in the test what they are NOT: they do not go through Stats.Severity and do not
+    /// mean a judgement. A red channel is not "worse" than a green one.
     /// </summary>
     [Fact]
     public void TheThreeChannelColoursAreDistinct()
@@ -200,8 +202,8 @@ public class ConverterTests
     }
 
     /// <summary>
-    /// Cand fisierul n-a spus ordinea, orice canal primeste aceeasi culoare neutra: patru
-    /// curbe colorate R/G/G/B pe un mozaic necunoscut ar arata exact ca o masuratoare.
+    /// When the file did not give the order, every channel gets the same neutral colour: four
+    /// curves coloured R/G/G/B on an unknown mosaic would look exactly like a measurement.
     /// </summary>
     [Theory]
     [InlineData('\0')]
@@ -210,7 +212,7 @@ public class ConverterTests
     public void AnUnknownColourIsNeutral(char c)
         => Assert.Equal(ChannelPalette.Unknown, ChannelPalette.For(c));
 
-    /// <summary>Se leaga din mai multe fire, deci trebuie sa fie inghetate.</summary>
+    /// <summary>Bound from several threads, so they must be frozen.</summary>
     [Fact]
     public void TheChannelBrushesAreFrozen()
     {

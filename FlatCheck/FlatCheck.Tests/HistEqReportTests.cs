@@ -78,8 +78,8 @@ public class HistEqReportTests
     }
 
     /// <summary>
-    /// Cele doua note de ecran, master si netezit, nu se confunda; a netezitului spune
-    /// ce a plecat si de ce netezitul pare mai zgomotos, nu mai curat.
+    /// The two screen notes, master and smoothed, are not confused; the smoothed one says
+    /// what left and why the smoothed flat looks noisier, not cleaner.
     /// </summary>
     [Fact]
     public void TheSmoothedNoteSaysWhatWasRemovedAndWhyItLooksNoisier()

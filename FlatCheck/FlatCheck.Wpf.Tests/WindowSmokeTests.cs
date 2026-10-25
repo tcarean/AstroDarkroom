@@ -15,21 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// WindowSmokeTests.cs - fereastra chiar se incarca si chiar se deseneaza.
+// WindowSmokeTests.cs - the window really loads and really renders.
 //
-// DE CE EXISTA. Restul testelor verifica ViewModel-uri, care sunt C# obisnuit. XAML-ul nu
-// se verifica la fel: o resursa cu nume gresit, un convertor lipsa sau o legare catre o
-// proprietate care nu exista trec de compilator si se vad abia la rulare - iar unele, la
-// INCARCARE, adica de fiecare data.
+// WHY IT EXISTS. The other tests check view-models, which are ordinary C#. The XAML is not
+// checked that way: a resource with a wrong name, a missing converter or a binding to a
+// property that does not exist get past the compiler and show only at run time - and some,
+// at LOADING, that is, every time.
 //
-// Testul a fost scris dupa ce fereastra a crapat la pornire, mereu, cu "Cannot find
-// non-neutral culture related to 'en-us'": proiectul mostenise <InvariantGlobalization>
-// de la aplicatia de consola, unde e corect, iar WPF nu poate lega nimic fara date de
-// cultura. Compilarea trecea, toate cele o suta de teste treceau, si aplicatia nu pornea.
-// Acum ar pica aici.
+// The test was written after the window crashed at start, always, with "Cannot find
+// non-neutral culture related to 'en-us'": the project had inherited <InvariantGlobalization>
+// from the console application, where it is right, and WPF cannot bind anything without
+// culture data. The build passed, all hundred tests passed, and the application did not
+// start. Now it would fail here.
 //
-// Ce se verifica: fereastra se construieste, se aseaza, se deseneaza intr-un bitmap, si
-// nu produce nicio eroare de legare pe drum. Ce nu se verifica: cum arata.
+// What is checked: the window is built, laid out, rendered into a bitmap, and produces no
+// binding error on the way. What is not checked: how it looks.
 
 using FlatCheck.Tests;
 using System.Diagnostics;
@@ -48,8 +48,8 @@ public class WindowSmokeTests
     public WindowSmokeTests(StaFixture sta) => _sta = sta;
 
     /// <summary>
-    /// Prinde erorile de legare, care altfel se scurg tacut in fereastra de Output a
-    /// depanatorului si nu se vad niciodata dintr-un test.
+    /// Catches the binding errors, which otherwise drain silently into the debugger's Output
+    /// window and are never seen from a test.
     /// </summary>
     sealed class BindingErrors : IDisposable
     {
@@ -77,12 +77,12 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Deseneaza un element intr-un bitmap - forteaza tot lantul de sabloane.
+    /// Renders an element into a bitmap - it forces the whole chain of templates.
     ///
-    /// Cu FLATCHECK_DUMP_SCREENS=&lt;folder&gt; salveaza si un PNG. Nu e o comparatie cu o
-    /// referinta si nici nu trebuie sa devina una: cum arata o fereastra e treaba
-    /// ochiului. E doar cum te uiti la ea fara sa pornesti aplicatia - de exemplu cand
-    /// sesiunea Windows e blocata si o captura de ecran ar prinde ecranul de blocare.
+    /// With FLATCHECK_DUMP_SCREENS=&lt;folder&gt; it also saves a PNG. It is not a comparison
+    /// with a reference and must not become one: how a window looks is the eye's business.
+    /// It is only how you look at it without starting the application - for example when the
+    /// Windows session is locked and a screenshot would catch the lock screen.
     /// </summary>
     static void Render(FrameworkElement el, int w = 1360, int h = 800, string? name = null)
     {
@@ -109,9 +109,9 @@ public class WindowSmokeTests
         enc.Save(fs);
     }
 
-    // ------------------------------------------------------------------ testele
+    // ------------------------------------------------------------------ the tests
 
-    /// <summary>Cazul care a crapat: fereastra nici nu ajungea sa se afiseze.</summary>
+    /// <summary>The case that crashed: the window did not even get to show.</summary>
     [Fact]
     public void TheMainWindowLoadsAndRenders()
         => _sta.Invoke(() =>
@@ -122,9 +122,9 @@ public class WindowSmokeTests
         });
 
     /// <summary>
-    /// Fereastra "Despre": XAML nou, un sablon nou in tema, o resursa de icoana citita
-    /// prin decodor si link-uri legate la proprietati - toate lucruri care compileaza cu
-    /// numele gresit si cad abia la afisare.
+    /// The "Despre" window: new XAML, a new template in the theme, an icon resource read
+    /// through the decoder and links bound to properties - all things that compile with the
+    /// wrong name and fail only when shown.
     /// </summary>
     [Fact]
     public void TheAboutWindowLoadsAndRenders()
@@ -133,27 +133,27 @@ public class WindowSmokeTests
             using var errors = new BindingErrors();
             var about = new AboutWindow();
 
-            // Se deseneaza CONTINUTUL, nu fereastra: un Window neafisat se randeaza
-            // transparent (asa iese si "fereastra" de mai jos), iar panoul radacina
-            // mosteneste DataContext-ul si trece prin aceleasi legari.
+            // The CONTENT is rendered, not the window: a Window not shown renders
+            // transparent (that is how "fereastra" below comes out too), and the root panel
+            // inherits the DataContext and goes through the same bindings.
             Render((FrameworkElement)about.Content, 600, 720, "despre");
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
 
-            // icoana e cadrul mare, nu cel de 16 px scalat
+            // the icon is the large frame, not the 16 px one scaled
             var logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);
             Assert.Equal(256, logo.PixelWidth);
         });
 
     /// <summary>
-    /// Cele patru taburi, cu rezultate reale in ele. Un tab gol s-ar desena si cu jumatate
-    /// din sabloane gresite - abia cu date se ating toate legarile.
+    /// The four tabs, with real results in them. An empty tab would render even with half
+    /// of its templates wrong - only with data are all the bindings reached.
     /// </summary>
     [Fact]
     public async Task EveryTabRendersWithRealResultsAndNoBindingErrors()
     {
         using var f = new SessionFixture()
             .WithFlatMaster()
-            .WithSmoothedMaster()      // randul NETEZIT si linia mutata sub el, in lista de histograma
+            .WithSmoothedMaster()      // the NETEZIT row and the line moved under it, in the histogram list
             .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit")
             .WithLightSeries(6)
             .WithRawFlats("DSC_0101.NEF", "DSC_0102.NEF");
@@ -166,11 +166,12 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
 
-            // Tabul Ratio porneste gol - randat asa, fiindca aia e starea pe care o vede
-            // omul cand deschide fereastra, si are propriile legari (documentatia).
+            // The Ratio tab starts empty - rendered that way, because that is the state the
+            // user sees when opening the window, and it has its own bindings (the
+            // documentation).
             Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio-gol");
 
-            // ...si abia apoi cu rezultat, dupa cele doua alegeri explicite.
+            // ...and only then with a result, after the two explicit choices.
             vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
             vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
             await vm.Ratio.RecomputeAsync();
@@ -181,18 +182,18 @@ public class WindowSmokeTests
             Render(new LightView { DataContext = vm.Light }, name: "tab-end-to-end");
             Render(new ExposureView { DataContext = vm.Exposure }, name: "tab-expunere");
             Render(new HistEqView { DataContext = vm.HistEq }, name: "tab-histeq-gol");
-            // Netezirea porneste goala, cu ghidul deschis si butonul activ - starea pe
-            // care o vede omul; rezultatul ei se randeaza in testul dedicat.
+            // Netezire starts empty, with the guide open and the button enabled - the state
+            // the user sees; its result is rendered in the dedicated test.
             Render(new SmoothView { DataContext = vm.Smooth }, name: "tab-netezire-gol");
             await vm.Synthetic.Pending;
             Render(new SyntheticView { DataContext = vm.Synthetic }, name: "tab-sintetic-gol");
-            // Split porneste gol, cu cadrele numarate, chipurile si scriptul - starea de la
-            // deschidere; rezultatul lui se randeaza in testul dedicat.
+            // Split starts empty, with the frames counted, the chips and the script - the
+            // state at opening; its result is rendered in the dedicated test.
             Render(new SplitView { DataContext = vm.Split }, name: "tab-split-gol");
 
-            // Ghidul hartii, desfasurat. Pliat, legarile lui din interiorul cardului nu
-            // sunt niciodata evaluate - si tocmai o legare care cade abia la afisare e
-            // ce exista suita asta sa prinda.
+            // The map guide, expanded. Collapsed, its bindings inside the card are never
+            // evaluated - and a binding that fails only when shown is exactly what this
+            // suite exists to catch.
             vm.Structure.MapGuide.IsExpanded = true;
             vm.Structure.HowToRead.IsExpanded = true;
             vm.Ratio.MapGuide.IsExpanded = true;
@@ -202,20 +203,20 @@ public class WindowSmokeTests
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
 
-        // si chiar au avut ce desena
+        // and they really had something to render
         Assert.True(vm.Structure.HasResult);
         Assert.True(vm.Light.HasResult);
         Assert.True(vm.Ratio.HasResult);
         Assert.Equal(2, vm.Exposure.Files.Count);
-        Assert.Equal(4, vm.HistEq.Files.Count);    // master, netezit, doua cadre
+        Assert.Equal(4, vm.HistEq.Files.Count);    // master, smoothed, two frames
         Assert.True(vm.Smooth.CanRun);
         Assert.False(vm.Smooth.HasResult);
     }
 
     /// <summary>
-    /// Tabul Split cu un rezultat: antetul cu numar variabil de coloane, celulele cu pastile,
-    /// hartile una langa alta. Rezultatul vine prin Populate, din SplitRun pe mastere
-    /// generate, fara Siril.
+    /// The Split tab with a result: the header with a variable number of columns, the cells
+    /// with pills, the maps side by side. The result comes through Populate, from SplitRun on
+    /// generated masters, without Siril.
     /// </summary>
     [Fact]
     public void TheSplitTabRendersTheTableAndTheMaps()
@@ -240,9 +241,9 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Tabul de structura cu comparatia vignetarii fata de profilele obiectivului - randurile
-    /// pe profil, pastilele, detaliul verdictului - si in starea in care nu s-a putut compara.
-    /// Rezultatul vine prin Populate, pe surse de profile facute de mana.
+    /// The structure tab with the vignetting comparison against the lens profiles - the rows
+    /// per profile, the pills, the verdict's detail - and in the state where it could not
+    /// compare. The result comes through Populate, on hand-made profile sources.
     /// </summary>
     [Fact]
     public void TheStructureTabRendersTheProfileComparisonAndTheGap()
@@ -284,9 +285,9 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Tabul de netezire CU rezultat - ambele harti, atentionarea, cele doua baterii -
-    /// si in starea de refuz (cub de culoare). Rezultatul vine prin Populate, fara
-    /// fisier scris, ca la tabul de histograma.
+    /// The smoothing tab WITH a result - both maps, the warning, the two batteries - and in
+    /// the refused state (a colour cube). The result comes through Populate, without a file
+    /// written, as on the histogram tab.
     /// </summary>
     [Fact]
     public async Task TheSmoothTabRendersAResultAndARefusal()
@@ -310,7 +311,7 @@ public class WindowSmokeTests
             vm.Guide.IsExpanded = false;
             Render(new SmoothView { DataContext = vm }, name: "tab-netezire-dupa");
 
-            // propunerea de scara, cu tabelul treptelor
+            // the scale proposal, with the table of steps
             vm.PopulateAdvice(SmoothScaleAdvisor.Decide(0.69, SmoothScaleAdvisor.Ladder.Select(s => new SmoothScaleTrial
             {
                 ScalePx = s,
@@ -328,7 +329,7 @@ public class WindowSmokeTests
 
         Assert.True(result.RemovedFlagged);
 
-        // refuzul, prin rularea reala pe un cub
+        // the refusal, through the real run on a cube
         using var g = new SessionFixture().WithProcess();
         File.WriteAllBytes(Path.Combine(g.ProcessDir, SirilSession.FlatMasterName),
             FitsTestData.BuildFitsCube(32, 32, 3, (x, y, p) => 1000 + p));
@@ -346,9 +347,9 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Tabul de histograma CU rezultat: chipurile de vedere, poza, nota de master, ghidul
-    /// desfasurat, apoi o vedere pe canal si un rezultat mono (fara chipuri). Rezultatul
-    /// vine direct din analizor, ca la previzualizarea de pe tabul de expunere.
+    /// The histogram tab WITH a result: the view chips, the picture, the master note, the
+    /// guide expanded, then a per-channel view and a mono result (without chips). The result
+    /// comes straight from the analyzer, as for the preview on the exposure tab.
     /// </summary>
     /// <summary>
     /// The synthetic tab with a written flat and a comparison, from hand-made profiles and an
@@ -394,8 +395,8 @@ public class WindowSmokeTests
     public void TheHistEqTabRendersAResult()
         => _sta.Invoke(() =>
         {
-            // Un mozaic pe un camp radial, nu FlatCfa: acela e constant pe canal si se
-            // egalizeaza intr-un alb uniform, ceea ce e corect si nu se vede nimic din el.
+            // A mosaic on a radial field, not FlatCfa: that one is constant per channel and
+            // equalises into a uniform white, which is right and shows nothing of it.
             var cfa = HistEqAnalyzer.Analyze(
                 FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.WithBayerMosaic(
                     FlatCheck.Tests.FitsTestData.Radial(128, 128, center: 34000))),
@@ -412,14 +413,14 @@ public class WindowSmokeTests
             vm.View.Options.First(o => o.Label == "G1").IsSelected = true;
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-canal");
 
-            // zoom-ul: 100 % si un factor mare, cu controlul de deplasare in joc
+            // the zoom: 100 % and a large factor, with the panning control in play
             vm.Zoom.Actual.Execute(null);
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-100");
             vm.Zoom.Manual(3);
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-zoom");
             Assert.Equal(3, vm.Zoom.EffectiveZoom, 9);
 
-            // mono, si ca netezit: nota de sub poza e a treia, cea a netezitului
+            // mono, and as smoothed: the note under the picture is the third, the smoothed flat's
             var mono = HistEqAnalyzer.Analyze(
                 FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128)), null);
             vm.Populate(mono, HistEqKind.Smoothed);
@@ -429,15 +430,15 @@ public class WindowSmokeTests
             Assert.True(vm.HasResult);
             Assert.False(vm.View.IsVisible);
             Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
-            // fisier nou: inapoi la potrivit, si controlul a scris factorul efectiv sub 1
+            // a new file: back to fit, and the control wrote the effective factor below 1
             Assert.True(vm.Zoom.IsFit);
             Assert.InRange(vm.Zoom.EffectiveZoom, 0.01, 1.0);
         });
 
     /// <summary>
-    /// Ecranul de problema are propriile legari, si e chiar ecranul pe care il vede cineva
-    /// care deschide aplicatia pe un folder unde n-a rulat inca scriptul din Siril - adica
-    /// primul ecran al primei utilizari gresite.
+    /// The problem screen has its own bindings, and it is the very screen someone sees who
+    /// opens the application on a folder where the Siril script has not run yet - that is,
+    /// the first screen of the first wrong use.
     /// </summary>
     [Fact]
     public async Task TheProblemScreenRenders()
@@ -458,9 +459,9 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Ecranul de problema cu blocul de rulare in toate starile lui: se poate apasa (cu
-    /// avertismentul ca Siril e deschis), blocat de un folder lipsa, blocat fara Siril.
-    /// Instalarea e falsa, ca desenul sa nu depinda de masina.
+    /// The problem screen with the run block in all its states: it can be pressed (with the
+    /// warning that Siril is open), blocked by a missing folder, blocked without Siril. The
+    /// installation is fake, so that the render does not depend on the machine.
     /// </summary>
     [Fact]
     public async Task TheProblemScreenRendersTheRunBlock()
@@ -485,7 +486,7 @@ public class WindowSmokeTests
             await vm.OpenAsync(f.Root);
 
             using var errors = new BindingErrors();
-            // continutul, nu fereastra: un Window neafisat se randeaza transparent
+            // the content, not the window: a Window not shown renders transparent
             Render((FrameworkElement)new MainWindow { DataContext = vm }.Content, 1360, 820, "problema-blocat");
 
             Directory.CreateDirectory(Path.Combine(f.Root, "lights"));
@@ -501,8 +502,9 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Fereastra de rulare: in timpul rularii (bara, comanda curenta, log), apoi reusita,
-    /// apoi esuata. Liniile sunt cele inregistrate de la siril-cli, printr-un runner fals.
+    /// The run window: during the run (the bar, the current command, the log), then
+    /// succeeded, then failed. The lines are the ones recorded from siril-cli, through a fake
+    /// runner.
     /// </summary>
     [Fact]
     public async Task TheRunWindowRendersRunningAndFinished()
@@ -549,8 +551,8 @@ public class WindowSmokeTests
         });
 
     /// <summary>
-    /// Refuzul gardei de camp: alt drum prin sabloane - fara harta, fara panoul de cifre,
-    /// cu pastila neutra - deci merita desenat separat.
+    /// The field guard's refusal: another path through the templates - no map, no figures
+    /// panel, with the neutral pill - so it deserves its own render.
     /// </summary>
     [Fact]
     public async Task TheRefusedEndToEndTabRenders()
@@ -574,11 +576,12 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Tabul de expunere CU rezultat: alt drum prin sabloane decat cel gol - panoul de
-    /// niveluri, lista canalelor CFA, verdictul, si cele patru desene de histograma.
+    /// The exposure tab WITH a result: another path through the templates than the empty one
+    /// - the levels panel, the list of CFA channels, the verdict, and the four histogram
+    /// drawings.
     ///
-    /// Ghidul se randeaza si desfasurat, din acelasi motiv ca la ghidul hartii: pliat,
-    /// legarile lui din interiorul cardului nu sunt niciodata evaluate.
+    /// The guide is rendered expanded too, for the same reason as the map guide: collapsed,
+    /// its bindings inside the card are never evaluated.
     /// </summary>
     [Fact]
     public async Task TheExposureTabRendersAResult()
@@ -607,10 +610,10 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Tabul cu previzualizarea aparatului: comutatorul aprins, vederea pe previzualizare
-    /// (randuri fara benzi), tabelul raw / ecran si nota de sub el. Alt drum prin sabloane
-    /// decat cel cu comutatorul stins, pe care il acopera celelalte doua teste de mai sus.
-    /// Previzualizarea e un JPEG facut in test, deci nu e nevoie de niciun raw.
+    /// The tab with the camera's preview: the switch on, the view on the preview (rows
+    /// without bands), the raw / screen table and the note under it. Another path through
+    /// the templates than the one with the switch off, which the other two tests above
+    /// cover. The preview is a JPEG made in the test, so no raw is needed.
     /// </summary>
     [Fact]
     public void TheExposureTabRendersThePreviewView()
@@ -639,8 +642,8 @@ public class WindowSmokeTests
         });
 
     /// <summary>
-    /// Un cadru fara mozaic ia alt drum: un singur rand de histograma, fara culoare si
-    /// fara pozitie, plus explicatia in locul verdictului.
+    /// A frame without a mosaic takes another path: a single histogram row, without colour
+    /// and without position, plus the explanation in place of the verdict.
     /// </summary>
     [Fact]
     public async Task TheExposureTabRendersAMonoResult()
@@ -667,12 +670,12 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Tabul de expunere inainte de orice alegere: are lista, dar niciun rezultat. E
-    /// starea in care il gaseste omul cand comuta pe el, deci trebuie sa se desene.
+    /// The exposure tab before any choice: it has the list, but no result. It is the state
+    /// the user finds it in when switching to it, so it must render.
     ///
-    /// Acopera si desenul de histograma cu TOATE proprietatile pe valoarea implicita -
-    /// curbe null, praguri NaN - fiindca elementul exista in sablon inainte sa existe
-    /// vreo cifra. E singurul test care trece pe drumul ala.
+    /// It also covers the histogram drawing with ALL its properties at their default value -
+    /// null curves, NaN thresholds - because the element exists in the template before any
+    /// figure exists. It is the only test that goes down that path.
     /// </summary>
     [Fact]
     public async Task TheExposureTabRendersBeforeAnythingIsPicked()

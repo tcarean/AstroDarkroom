@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SirilRunTests.cs - fereastra de rulare, cu un siril-cli fals care livreaza linii
-// inregistrate, si - doar cand Siril e instalat - cu cel adevarat pe un script de proba.
+// SirilRunTests.cs - the run window, with a fake siril-cli that delivers recorded lines,
+// and - only when Siril is installed - with the real one on a sample script.
 
 using FlatCheck.Tests;
 
@@ -28,7 +28,7 @@ public class SirilRunViewModelTests
 
     static SirilRunViewModel Vm() => new(@"C:\sesiune", @"C:\scripturi\proba.ssf", Script);
 
-    /// <summary>Un runner care livreaza liniile date si iese cu codul dat.</summary>
+    /// <summary>A runner that delivers the given lines and exits with the given code.</summary>
     static SirilRunner Fake(int exitCode, params string[] lines) => (onLine, ct) =>
     {
         foreach (string l in lines) onLine(l);
@@ -36,8 +36,8 @@ public class SirilRunViewModelTests
     };
 
     /// <summary>
-    /// Log-ul primeste doar liniile "log:", fara prefix; progresul devine bara, nu text;
-    /// comanda curenta e cea din script, intreaga, numarata din total.
+    /// The log gets only the "log:" lines, without the prefix; the progress becomes the bar, not
+    /// text; the current command is the one from the script, whole, counted out of the total.
     /// </summary>
     [Fact]
     public async Task LogLinesAreShown_ProgressBecomesABar_AndTheStepIsReadFromTheScript()
@@ -69,7 +69,7 @@ public class SirilRunViewModelTests
         Assert.Equal(SessionMessages.RunSucceeded(), vm.Outcome);
     }
 
-    /// <summary>Codul 1 e un esec, si verdictul spune la ce comanda s-a oprit.</summary>
+    /// <summary>Code 1 is a failure, and the verdict says at which command it stopped.</summary>
     [Fact]
     public async Task ANonZeroExitCodeIsAFailureNamingTheStep()
     {
@@ -83,7 +83,8 @@ public class SirilRunViewModelTests
         Assert.False(vm.ProgressKnown);
     }
 
-    /// <summary>Siril tipareste doar verbul; dincolo de lista scriptului se arata verbul, nu se cade.</summary>
+    /// <summary>Siril prints only the verb; beyond the script's list the verb is shown, nothing
+    /// fails.</summary>
     [Fact]
     public async Task MoreCommandsThanTheScriptHasFallBackToTheVerb()
     {
@@ -151,19 +152,19 @@ public class SirilRunViewModelTests
 }
 
 /// <summary>
-/// Lansarea insasi, cu un siril-cli fals: un .cmd care spune ce argumente a primit si
-/// copiaza fisierul de setari primit cu -i, ca testul sa vada ce ar fi citit Siril. Merge pe
-/// orice Windows, fara Siril, si nu scrie nimic in config-ul omului.
+/// The launch itself, with a fake siril-cli: a .cmd that says which arguments it got and
+/// copies the settings file it got with -i, so the test sees what Siril would have read. It
+/// works on any Windows, without Siril, and writes nothing in the user's config.
 /// </summary>
 public class SirilScriptRunTests
 {
     static string PrivateRoot => Path.Combine(Path.GetTempPath(), "FlatCheck");
 
     /// <summary>
-    /// siril-cli fals. Primeste -d folder -s script -i setari: al cincilea argument spune daca
-    /// a venit un fisier de setari, al saselea care; copia lui ajunge in folderul -d, seen.ini.
-    /// Liniile din <paramref name="then"/> ruleaza dupa aceea (fisierul e scris fara BOM, cu
-    /// CRLF - altfel cmd citeste gresit prima linie).
+    /// Fake siril-cli. It gets -d folder -s script -i settings: the fifth argument says whether a
+    /// settings file came, the sixth which one; its copy lands in the -d folder, seen.ini. The
+    /// lines in <paramref name="then"/> run after that (the file is written without a BOM, with
+    /// CRLF - otherwise cmd misreads the first line).
     /// </summary>
     static string FakeCli(TempWorkspace ws, string then = "")
     {
@@ -179,7 +180,8 @@ public class SirilScriptRunTests
 
     static string[] Copies(TempWorkspace ws) => Directory.GetDirectories(ws.Dir, "siril-*");
 
-    /// <summary>Ruleaza runner-ul si strange liniile: vin de pe doua fire, stdout si stderr.</summary>
+    /// <summary>Runs the runner and gathers the lines: they come from two threads, stdout and
+    /// stderr.</summary>
     static async Task<(int Code, List<string> Lines)> Run(SirilRunner runner, CancellationToken ct = default)
     {
         var lines = new List<string>();
@@ -195,9 +197,9 @@ public class SirilScriptRunTests
     static byte[] Bytes(string? path) => path != null && File.Exists(path) ? File.ReadAllBytes(path) : Array.Empty<byte>();
 
     /// <summary>
-    /// Rularea din fereastra (cardul de problema, fiecare parte a Split-ului): siril-cli primeste
-    /// cu -i o copie a config-ului lui Siril intr-un folder al ei, iar folderul dispare dupa
-    /// rulare. Fara -i, siril-cli rescrie config-ul omului la sfarsitul fiecarui script.
+    /// The run from the window (the problem card, each part of the Split): siril-cli gets with
+    /// -i a copy of Siril's config in a folder of its own, and the folder disappears after the
+    /// run. Without -i, siril-cli rewrites the user's config at the end of every script.
     /// </summary>
     [Fact]
     public async Task R094_EveryRunGetsAPrivateCopyOfSirilsSettings_PassedWithI_AndGoneAfterTheRun()
@@ -216,17 +218,18 @@ public class SirilScriptRunTests
         Assert.False(user != null && string.Equals(Path.GetFullPath(user), Path.GetFullPath(config), StringComparison.OrdinalIgnoreCase),
                      "siril-cli a primit chiar config-ul omului");
 
-        // octetii config-ului, cititi inainte sau dupa: o salvare a lui Siril intre timp nu e o greseala a copiei
+        // the config's bytes, read before or after: a save by Siril meanwhile is not a fault of the
+        // copy
         byte[] seen = File.ReadAllBytes(ws.PathTo("seen.ini"));
         Assert.True(seen.SequenceEqual(before) || seen.SequenceEqual(Bytes(user)), "copia nu are octetii config-ului lui Siril");
         Assert.False(Directory.Exists(Path.GetDirectoryName(config)), "folderul copiei a ramas: " + config);
     }
 
     /// <summary>
-    /// Copia are exact octetii config-ului dat; fara config e goala - valorile implicite ale lui
-    /// Siril, ca atunci cand Siril nu are niciun config. Siril-ul fals face apoi ce face cel
-    /// adevarat la sfarsit: isi rescrie copia (un wd nou) si lasa un .XXXXXX langa ea. Nimic
-    /// din asta nu se intoarce in config, si folderul pleaca cu tot cu ce a lasat Siril.
+    /// The copy has exactly the bytes of the given config; without a config it is empty - Siril's
+    /// defaults, as when Siril has no config at all. The fake Siril then does what the real one
+    /// does at the end: rewrites its copy (a new wd) and leaves a .XXXXXX beside it. None of
+    /// that goes back into the config, and the folder leaves with whatever Siril left.
     /// </summary>
     [Fact]
     public async Task R094_TheCopyCarriesTheSettingsBytes_AndIsEmptyWhenThereAreNone()
@@ -252,8 +255,8 @@ public class SirilScriptRunTests
     }
 
     /// <summary>
-    /// Opreste in mijlocul rularii: siril-cli e omorat, anularea se raporteaza ca anulare, si
-    /// copia pleaca si ea - doar dupa ce procesul a iesit, cat timp ruleaza e la locul ei.
+    /// Stops mid-run: siril-cli is killed, the cancellation is reported as a cancellation, and
+    /// the copy leaves too - only after the process has exited; while it runs it is in place.
     /// </summary>
     [Fact]
     public async Task R094_ARunStoppedMidwayLeavesNoCopyBehind()
@@ -275,9 +278,9 @@ public class SirilScriptRunTests
     }
 
     /// <summary>
-    /// Un config care exista dar nu se poate citi (aici tinut deschis exclusiv) opreste
-    /// rularea inainte de pornire, cu fisierul numit pe ecran: Siril nu lucreaza pe ascuns cu
-    /// valorile implicite, si nu ramane nicio copie.
+    /// A config that exists but cannot be read (here held open exclusively) stops the run
+    /// before it starts, with the file named on screen: Siril does not quietly work with the
+    /// defaults, and no copy remains.
     /// </summary>
     [Fact]
     public async Task R094_UnreadableSettingsStopTheRunBeforeSirilStarts_AndTheMessageNamesTheFile()
@@ -299,26 +302,26 @@ public class SirilScriptRunTests
 }
 
 /// <summary>
-/// Cu siril-cli adevarat, cand e instalat. Fara Siril testele astea trec fara sa
-/// verifice nimic - xunit 2 nu are sarire dinamica - deci un esec aici inseamna o
-/// masina cu Siril pe care rularea chiar nu merge, nu una fara Siril.
-/// Fiecare rulare primeste o copie goala a setarilor (valorile implicite) in workspace-ul
-/// testului, nu una a config-ului omului, ca testele sa nu depinda de setarile lui. Inainte
-/// de copie, siril-cli rescria config-ul omului la fiecare rulare, si asa si-a pierdut omul
-/// odata toate setarile lui Siril (ADR 0055).
+/// With the real siril-cli, when it is installed. Without Siril these tests pass without
+/// checking anything - xunit 2 has no dynamic skip - so a failure here means a machine
+/// with Siril on which the run really does not work, not one without Siril.
+/// Every run gets an empty copy of the settings (the defaults) in the test's workspace,
+/// not one of the user's config, so the tests do not depend on the user's settings. Before
+/// the copy, siril-cli rewrote the user's config at every run, and that is how the user
+/// once lost all of Siril's settings (ADR 0055).
 /// </summary>
 public class SirilCliIntegrationTests
 {
-    // FindCli, nu Locate: Locate citeste si config-ul omului, fara niciun rost aici
+    // FindCli, not Locate: Locate also reads the user's config, to no purpose here
     static string? Cli => SirilInstall.FindCli();
 
     static SirilRunner Run(string cli, string folder, string script, TempWorkspace ws)
         => SirilScriptRun.For(cli, folder, script, null, ws.Dir);
 
     /// <summary>
-    /// siril-cli a lucrat pe copie: o spune in log, cu calea ei, si copia nu mai e acolo. Pe
-    /// config-ul omului ar fi scris folderul sesiunii ca wd - un guid, deci nu apare altfel -
-    /// iar fara config l-ar fi creat.
+    /// siril-cli worked on the copy: it says so in the log, with its path, and the copy is no
+    /// longer there. On the user's config it would have written the session folder as wd - a
+    /// guid, so it does not appear otherwise - and without a config it would have created it.
     /// </summary>
     static void AssertItRanOnTheCopy(SirilRunViewModel vm, TempWorkspace ws, string sessionRoot, string? userConfig)
     {
@@ -351,7 +354,8 @@ public class SirilCliIntegrationTests
         AssertItRanOnTheCopy(vm, ws, f.Root, user);
     }
 
-    /// <summary>Siril isi salveaza setarile si cand scriptul cade, deci si aici trebuie sa fie pe copie.</summary>
+    /// <summary>Siril saves its settings also when the script fails, so here too it must be on the
+    /// copy.</summary>
     [Fact]
     public async Task AScriptThatStopsGivesExitOneAndNamesTheCommand()
     {
@@ -373,7 +377,8 @@ public class SirilCliIntegrationTests
         AssertItRanOnTheCopy(vm, ws, f.Root, user);
     }
 
-    /// <summary>Instalarea de pe masina asta, daca exista, arata a instalare: bin/siril-cli.exe si scripturi .ssf.</summary>
+    /// <summary>The install on this machine, if there is one, looks like an install:
+    /// bin/siril-cli.exe and .ssf scripts.</summary>
     [Fact]
     public void WhatLocateFindsIsConsistent()
     {

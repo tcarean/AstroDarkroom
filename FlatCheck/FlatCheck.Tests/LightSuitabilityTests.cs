@@ -18,17 +18,19 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Garda care decide daca --light are ce masura pe cadrul dat.
+/// The guard that decides whether --light has something to measure on the given frame.
 ///
-/// Ce se verifica aici nu e o preferinta de praguri, ci ordinea straturilor si ce se
-/// intampla cand un strat nu stie. Straturile sunt, in ordinea increderii: --fov declarat
-/// de om, scara masurata de un plate solve, marimea pixelului plus focala, si in fine
-/// focala singura. Ultimul e cazul unui DSLR trecut prin Siril, care nu scrie XPIXSZ.
+/// What is checked here is not a preference of thresholds, but the order of the layers
+/// and what happens when a layer does not know. The layers are, in order of trust:
+/// --fov declared by the user, the scale measured by a plate solve, the pixel size plus
+/// the focal length, and finally the focal length alone. The last is the case of a DSLR
+/// passed through Siril, which does not write XPIXSZ.
 ///
-/// Cea mai importanta asertiune din fisier e <see cref="AnEmptyHeaderRunsInsteadOfRefusing"/>:
-/// necunoscut inseamna neverificat, nu suspect. Daca ar refuza, orice FITS cu header
-/// minimal - inclusiv toate fixturile sintetice ale acestei suite - ar deveni de
-/// neanalizat, si garda ar fi mai daunatoare decat problema pe care o rezolva.
+/// The most important assertion in the file is
+/// <see cref="AnEmptyHeaderRunsInsteadOfRefusing"/>: unknown means unchecked, not
+/// suspect. If it refused, any FITS with a minimal header - including all the synthetic
+/// fixtures of this suite - would become unanalysable, and the guard would do more harm
+/// than the problem it solves.
 /// </summary>
 public class LightSuitabilityTests
 {
@@ -39,12 +41,12 @@ public class LightSuitabilityTests
         return h;
     }
 
-    // ------------------------------------------------------------ --fov declarat
+    // ------------------------------------------------------------ --fov declared
 
     [Fact]
     public void AnExplicitFovBeatsEverythingElseInTheHeader()
     {
-        // headerul ar zice "prea larg" pe focala; --fov spune adevarul si castiga
+        // the header would say "too wide" by the focal length; --fov tells the truth and wins
         var s = LightSuitability.Check(Header(("FOCALLEN", "20")), fovOverride: 12.0);
 
         Assert.Equal(FovLevel.Ok, s.Level);
@@ -55,8 +57,8 @@ public class LightSuitabilityTests
     [Fact]
     public void AnExplicitFovCanAlsoRefuse()
     {
-        // --fov da unealtei adevarul, nu ii cere sa-l ignore: un camp larg declarat
-        // manual e refuzat la fel ca unul dedus.
+        // --fov gives the tool the truth, it does not ask it to ignore it: a wide field declared
+        // by hand is refused just like a deduced one.
         var s = LightSuitability.Check(Header(("FOCALLEN", "600")), fovOverride: 70.0);
 
         Assert.Equal(FovLevel.TooWide, s.Level);
@@ -68,7 +70,7 @@ public class LightSuitabilityTests
     [Fact]
     public void APlateSolveScaleGivesTheFieldDirectly()
     {
-        // 6016 x 4016 la 0.001 grade/px -> diagonala 7234 px -> ~7.2 grade
+        // 6016 x 4016 at 0.001 degrees/px -> diagonal 7234 px -> ~7.2 degrees
         var s = LightSuitability.Check(Header(("CDELT1", "0.001")), null);
 
         Assert.Equal("WCS", s.Source);
@@ -85,7 +87,9 @@ public class LightSuitabilityTests
         Assert.Equal(7.23, s.FovDeg, 1);
     }
 
-    /// <summary>Scara masurata bate focala: e o masuratoare, cealalta o deductie.</summary>
+    /// <summary>
+    /// The measured scale beats the focal length: one is a measurement, the other a deduction.
+    /// </summary>
     [Fact]
     public void TheWcsScaleWinsOverTheFocalLength()
     {
@@ -95,12 +99,12 @@ public class LightSuitabilityTests
         Assert.Equal(FovLevel.Ok, s.Level);
     }
 
-    // ------------------------------------------------------ pixel + focala
+    // ------------------------------------------------------ pixel + focal length
 
     /// <summary>
-    /// Cazul exact al setului care a motivat garda, dar cu marimea pixelului completata:
-    /// D3300 (6016 x 4016 pixeli de 3.92 um -> senzor 23.6 x 15.7 mm) la 20 mm da 70.7
-    /// grade diagonala. Asta e cifra reala, nu presupunerea conservatoare.
+    /// The exact case of the set that motivated the guard, but with the pixel size filled
+    /// in: D3300 (6016 x 4016 pixels of 3.92 um -> sensor 23.6 x 15.7 mm) at 20 mm gives
+    /// 70.7 degrees diagonal. That is the real figure, not the conservative assumption.
     /// </summary>
     [Fact]
     public void PixelSizeAndFocalLengthGiveTheRealField()
@@ -113,7 +117,8 @@ public class LightSuitabilityTests
         Assert.Contains("XPIXSZ", s.Source);
     }
 
-    /// <summary>Acelasi senzor la 135 mm: 12 grade, adica exact unde testul merge.</summary>
+    /// <summary>The same sensor at 135 mm: 12 degrees, that is exactly where the test
+    /// works.</summary>
     [Fact]
     public void TheSameSensorAtALongFocalLengthIsFine()
     {
@@ -125,7 +130,8 @@ public class LightSuitabilityTests
         Assert.True(s.CanRun);
     }
 
-    /// <summary>Binning-ul face pixelii efectivi mai mari, deci senzorul la fel de mare.</summary>
+    /// <summary>Binning makes the effective pixels larger, so the sensor just as
+    /// large.</summary>
     [Fact]
     public void BinningIsFoldedIntoTheSensorSize()
     {
@@ -134,22 +140,23 @@ public class LightSuitabilityTests
         var bin2 = LightSuitability.Check(
             Header(("FOCALLEN", "500"), ("XPIXSZ", "3.92"), ("XBINNING", "2"), ("YBINNING", "2")), null);
 
-        // campul intra prin tangenta, deci un senzor de doua ori mai mare dubleaza
-        // tan(fov/2), nu fov-ul insusi
+        // the field enters through the tangent, so a sensor twice as large doubles
+        // tan(fov/2), not the fov itself
         static double HalfTan(double deg) => Math.Tan(deg / 2 * Math.PI / 180);
         Assert.Equal(2 * HalfTan(bin1.FovDeg), HalfTan(bin2.FovDeg), 6);
     }
 
-    // ------------------------------------------------------------ focala singura
+    // ------------------------------------------------------------ focal length alone
 
     /// <summary>
-    /// Fara marimea pixelului campul nu se poate calcula - depinde de senzor - deci NU se
-    /// raporteaza o cifra care ar fi inventata. Se raporteaza focala si atat.
+    /// Without the pixel size the field cannot be computed - it depends on the sensor - so
+    /// NO figure that would be invented is reported. The focal length is reported, and
+    /// that is all.
     /// </summary>
     [Theory]
-    // Nivelul e trecut ca nume, nu ca FovLevel: enum-ul e internal, iar o metoda de test
-    // publica nu poate avea un parametru mai putin accesibil decat ea. nameof pastreaza
-    // totusi legatura cu enum-ul, deci o redenumire nu trece tacut.
+    // The level is passed as a name, not as FovLevel: the enum is internal, and a public
+    // test method cannot have a parameter less accessible than itself. nameof still keeps
+    // the link to the enum, so a rename does not pass silently.
     [InlineData(20, nameof(FovLevel.TooWide))]
     [InlineData(59.9, nameof(FovLevel.TooWide))]
     [InlineData(60, nameof(FovLevel.Marginal))]
@@ -161,12 +168,13 @@ public class LightSuitabilityTests
         var s = LightSuitability.Check(Header(("FOCALLEN", focal.ToString("0.###"))), null);
 
         Assert.Equal(expected, s.Level.ToString());
-        Assert.True(double.IsNaN(s.FovDeg));      // nicio cifra de camp inventata
+        Assert.True(double.IsNaN(s.FovDeg));      // no invented field figure
         Assert.Equal(focal, s.FocalMm, 3);
         Assert.Contains("fara marimea pixelului", s.Source);
     }
 
-    /// <summary>Focala se scrie fara zecimale inutile: "20mm", nu "20.0mm".</summary>
+    /// <summary>The focal length is written without useless decimals: "20mm", not
+    /// "20.0mm".</summary>
     [Fact]
     public void AWholeFocalLengthIsWrittenWithoutADecimalPoint()
     {
@@ -175,11 +183,11 @@ public class LightSuitabilityTests
         Assert.Contains("FOCALLEN=20mm", s.Source);
     }
 
-    // ------------------------------------------------------------ necunoscut
+    // ------------------------------------------------------------ unknown
 
     /// <summary>
-    /// Headerul nu spune nimic util -> se RULEAZA, cu o nota. Vezi comentariul clasei:
-    /// daca ar refuza aici, garda ar bloca orice FITS cu header minimal.
+    /// The header says nothing useful -> it RUNS, with a note. See the class comment: if it
+    /// refused here, the guard would block any FITS with a minimal header.
     /// </summary>
     [Fact]
     public void AnEmptyHeaderRunsInsteadOfRefusing()
@@ -198,7 +206,7 @@ public class LightSuitabilityTests
         Assert.True(LightSuitability.Check(null, null).CanRun);
     }
 
-    /// <summary>Fara dimensiuni nu se poate calcula nici scara, nici campul.</summary>
+    /// <summary>Without dimensions neither the scale nor the field can be computed.</summary>
     [Fact]
     public void MissingAxisLengthsFallBackToUnknown()
     {
@@ -207,7 +215,8 @@ public class LightSuitabilityTests
         Assert.Equal(FovLevel.Unknown, LightSuitability.Check(h, null).Level);
     }
 
-    /// <summary>O focala absurda (0 sau negativa) nu e o focala; nu se ghiceste din ea.</summary>
+    /// <summary>An absurd focal length (0 or negative) is not a focal length; nothing is
+    /// guessed from it.</summary>
     [Theory]
     [InlineData("0")]
     [InlineData("-50")]
@@ -216,11 +225,11 @@ public class LightSuitabilityTests
         Assert.Equal(FovLevel.Unknown, LightSuitability.Check(Header(("FOCALLEN", focal)), null).Level);
     }
 
-    // ------------------------------------------------------------ pragurile
+    // ------------------------------------------------------------ the thresholds
 
     /// <summary>
-    /// Granitele sunt stricte in sus, ca peste tot in unealta: valoarea de pe prag cade in
-    /// banda mai buna, iar cea de deasupra in cea mai proasta.
+    /// The boundaries are strict upwards, as everywhere in the tool: the value on the
+    /// threshold falls in the better band, and the one above it in the worse one.
     /// </summary>
     [Theory]
     [InlineData(19.99, nameof(FovLevel.Ok))]
@@ -232,7 +241,7 @@ public class LightSuitabilityTests
         Assert.Equal(expected, LightSuitability.Check(Header(), fovOverride: fov).Level.ToString());
     }
 
-    /// <summary>Doar TooWide opreste rularea; Marginal si Unknown continua.</summary>
+    /// <summary>Only TooWide stops the run; Marginal and Unknown go on.</summary>
     [Theory]
     [InlineData(nameof(FovLevel.Ok), true)]
     [InlineData(nameof(FovLevel.Marginal), true)]

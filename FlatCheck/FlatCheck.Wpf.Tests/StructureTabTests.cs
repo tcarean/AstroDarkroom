@@ -20,9 +20,10 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Tabul de structura. Cel mai important test din fisier e cel care compara raportul
-/// salvat cu iesirea consolei, caracter cu caracter: exact aia e cerinta, iar daca
-/// fereastra ar incepe sa-si compuna singura textul, s-ar rupe tacut.
+/// The structure tab. The most important test in the file is the one that compares the
+/// saved report with the console's output, character for character: that is exactly the
+/// requirement, and if the window started composing the text by itself, it would break
+/// silently.
 /// </summary>
 public class StructureTabTests
 {
@@ -33,7 +34,8 @@ public class StructureTabTests
         return vm;
     }
 
-    /// <summary>Masterul din masters/ (Siril 1.4) se analizeaza la fel, si sursa spune de unde a venit.</summary>
+    /// <summary>The master in masters/ (Siril 1.4) is analysed the same way, and the source
+    /// says where it came from.</summary>
     [Fact]
     public async Task ItAnalysesAMasterKeptInMasters()
     {
@@ -47,8 +49,9 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Doua mastere in folder: se masoara cel mai nou si se spune, cu ambele cai, fiindca
-    /// pot veni din doua seturi de flat-uri diferite si omul trebuie sa stie pe care il vede.
+    /// Two masters in the folder: the newer is measured and that is said, with both paths,
+    /// because they can come from two different sets of flats and the user must know which
+    /// one they see.
     /// </summary>
     [Fact]
     public async Task WithTwoMastersTheNewerIsAnalysedAndAWarningNamesBoth()
@@ -85,9 +88,9 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// CERINTA 5, literal: fisierul salvat trebuie sa contina EXACT iesirea consolei.
-    /// Se compara cu textul produs de acelasi strat pe care il foloseste flatcheck.exe -
-    /// deci daca cineva ar reformata ceva doar pentru fereastra, testul cade.
+    /// REQUIREMENT 5, literally: the saved file must hold EXACTLY the console's output. It
+    /// is compared with the text produced by the same layer flatcheck.exe uses - so if
+    /// someone reformatted something for the window only, the test fails.
     /// </summary>
     [Fact]
     public async Task TheSavedReportIsCharacterForCharacterTheConsoleOutput()
@@ -108,7 +111,8 @@ public class StructureTabTests
         Assert.Equal(expected.ToString(), vm.Report);
     }
 
-    /// <summary>Antetul e primul lucru din fisier: un raport lipit spune singur ce l-a produs.</summary>
+    /// <summary>The header is the first thing in the file: a pasted report says by itself
+    /// what produced it.</summary>
     [Fact]
     public async Task TheSavedReportStartsWithTheVersionAndCopyright()
     {
@@ -136,13 +140,15 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Pe chipul "auto", ce se vede pe ecran si ce se salveaza pe disc sunt aceiasi octeti.
+    /// On the "auto" chip, what is seen on the screen and what is saved on disk are the same
+    /// bytes.
     ///
-    /// Testul cerea asta NECONDITIONAT pana la comutatorul de scara, si atunci era corect:
-    /// fereastra afisa mereu encodarea automata. Acum implicitul e +/-10 %, deci pe ecran
-    /// e alta encodare a ACELUIASI reziduu - o alegere de privit, nu o a doua masuratoare.
-    /// Fisierul ramane pe auto (vezi TheSavedMapStaysOnTheAutoScale), deci garantia se
-    /// pastreaza exact acolo unde mai are sens: cand omul cere chiar scara fisierului.
+    /// The test asked for this UNCONDITIONALLY until the scale switch, and then it was
+    /// right: the window always showed the automatic encoding. Now the default is +/-10 %,
+    /// so the screen shows another encoding of the SAME residual - a viewing choice, not a
+    /// second measurement. The file stays on auto (see TheSavedMapStaysOnTheAutoScale), so
+    /// the guarantee is kept exactly where it still makes sense: when the user asks for the
+    /// file's own scale.
     /// </summary>
     [Fact]
     public async Task OnTheAutoScaleTheDisplayedMapIsTheSameFileThatWasSaved()
@@ -155,10 +161,10 @@ public class StructureTabTests
         Assert.Equal(File.ReadAllBytes(f.Session.ResidualPngPath), vm.Map);
     }
 
-    // ------------------------------------------------------------------ randurile
+    // ------------------------------------------------------------------ the rows
 
     /// <summary>
-    /// Cele cinci teste apar toate, in ordinea din consola, si fiecare cu verdictul lui.
+    /// The five tests all appear, in the console's order, and each with its own verdict.
     /// </summary>
     [Fact]
     public async Task TheFiveDeviationTestsAreShownWithTheirOwnVerdicts()
@@ -177,9 +183,9 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Pe un master float scris de Siril (valorile impartite la 65535) eticheta de
-    /// niveluri spunea "median 0 ADU / max 0 ADU", ca si cum fisierul ar fi gol.
-    /// Formatarea vine acum din nucleu si e cea din raport.
+    /// On a float master written by Siril (the values divided by 65535) the levels label
+    /// said "median 0 ADU / max 0 ADU", as if the file were empty. The formatting now comes
+    /// from the core and is the report's.
     /// </summary>
     [Fact]
     public async Task OnAFloatMasterTheLevelsAreNotRoundedToZero()
@@ -195,15 +201,15 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Atentionarea de praf: apare cand exista o pata compacta, cu textul din nucleu, si
-    /// lipseste pe un master curat. Nu e verdict - verdictul ramane cel al testelor.
+    /// The dust warning: it appears when there is a compact spot, with the core's text, and
+    /// is absent on a clean master. It is not a verdict - the verdict stays the tests'.
     /// </summary>
     [Fact]
     public async Task ADustShadowShowsTheLocalSpotWarningFromTheCore()
     {
-        // fixture-ul scrie 128x128 -> raster de 64x64, dale fine de 2 px: o umbra de
-        // 8 px raza pe senzor e 4 px pe raster, cat sa umple o dala fara sa umple si
-        // vecinatatea de 7x7 din care se scade mediana
+        // the fixture writes 128x128 -> a 64x64 raster, fine tiles of 2 px: a shadow of
+        // 8 px radius on the sensor is 4 px on the raster, enough to fill a tile without
+        // also filling the 7x7 neighbourhood whose median is subtracted
         const int S = 128;
         var radial = FitsTestData.Radial(S, S);
         Func<int, int, double> dust = (x, y) =>
@@ -217,7 +223,7 @@ public class StructureTabTests
 
         Assert.StartsWith("ATENTIE", vm.LocalSpotWarning);
         Assert.Contains("biblioteca", vm.LocalSpotWarning);
-        Assert.Contains(vm.LocalSpotWarning.Split('\n')[0], vm.Report);   // acelasi text ca in raport
+        Assert.Contains(vm.LocalSpotWarning.Split('\n')[0], vm.Report);   // the same text as in the report
     }
 
     [Fact]
@@ -231,10 +237,10 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Fiecare rand de test isi spune ce masoara. Asimetria azimutala si inclinarea au
-    /// stat cu o cifra, un verdict si nicio descriere, fiindca notele se scriau inline
-    /// aici si nimeni nu numara cate lipsesc. Acum vin toate din nucleu, iar testul asta
-    /// cade daca mai apare un rand fara nota.
+    /// Every test row says what it measures. The azimuthal asymmetry and the tilt stood with
+    /// a figure, a verdict and no description, because the notes were written inline here
+    /// and nobody counted how many were missing. Now they all come from the core, and this
+    /// test fails if a row without a note appears again.
     /// </summary>
     [Fact]
     public async Task EveryTestRowCarriesItsOwnDescription()
@@ -246,7 +252,9 @@ public class StructureTabTests
         Assert.All(vm.Tests, t => Assert.True(t.HasNote, "rand fara descriere: " + t.Label));
     }
 
-    /// <summary>Descrierile vin din nucleu, nu sunt rescrise in fereastra.</summary>
+    /// <summary>
+    /// The descriptions come from the core, they are not rewritten in the window.
+    /// </summary>
     [Fact]
     public async Task TheDescriptionsAreTheOnesTheCoreDefines()
     {
@@ -258,12 +266,12 @@ public class StructureTabTests
         Assert.Equal(StructureReport.TestNote(nameof(StructureResult.ResidualPtpPct)), vm.Tests[2].Note);
         Assert.Equal(StructureReport.TestNote(nameof(StructureResult.TiltPct)), vm.Tests[3].Note);
         Assert.Equal(StructureReport.TestNote(nameof(StructureResult.MaxTilePct)), vm.Tests[4].Note);
-        // coltul isi adauga cele patru procente pe un al doilea rand
+        // the corner adds its four percentages on a second line
         Assert.StartsWith(StructureReport.TestNote(nameof(StructureResult.CornerSpreadPct)), vm.Tests[0].Note);
         Assert.Contains("stanga-sus", vm.Tests[0].Note);
     }
 
-    /// <summary>Reziduul e cel care conteaza cel mai mult, si se vede ca atare.</summary>
+    /// <summary>The residual is what matters most, and it shows as such.</summary>
     [Fact]
     public async Task OnlyTheResidualRowIsMarkedAsTheKeyOne()
     {
@@ -276,9 +284,9 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Randurile informative NU poarta verdict. Offsetul centrului de iluminare a fost
-    /// un test pana in 1.2.0 si nu mai e - nu e scale-invariant, iar peste un prag nici
-    /// macar monoton - deci o pastila colorata langa el ar reintroduce exact greseala.
+    /// The informative rows carry NO verdict. The illumination centre's offset was a test
+    /// until 1.2.0 and is no longer - it is not scale-invariant, and above a threshold not
+    /// even monotonic - so a coloured pill beside it would bring back exactly the mistake.
     /// </summary>
     [Fact]
     public async Task TheInformativeRowsCarryNoVerdict()
@@ -295,8 +303,8 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Scara vine din StructureReport.Scale(), deci din aceleasi praguri ca raportul, si
-    /// banda in care a cazut verdictul e marcata.
+    /// The scale comes from StructureReport.Scale(), so from the same thresholds as the
+    /// report, and the band the verdict fell in is marked.
     /// </summary>
     [Fact]
     public async Task TheScaleHasFourBandsAndMarksTheCurrentOne()
@@ -309,15 +317,15 @@ public class StructureTabTests
         Assert.Equal(new[] { "PERFECT", "BUN", "ACCEPTABIL", "REFA" },
                      vm.Scale.Select(s => s.Band).ToArray());
 
-        // Titlul din XAML numara TESTELE, nu benzile, si a ramas "PATRU" o versiune
-        // intreaga dupa ce testele au ajuns cinci - vazut abia intr-o randare.
+        // The XAML's title counts the TESTS, not the bands, and it stayed "PATRU" for a
+        // whole version after the tests had become five - seen only in a render.
         Assert.Equal(5, vm.Tests.Count);
 
         var current = Assert.Single(vm.Scale.Where(s => s.IsCurrent));
         Assert.Equal(vm.Verdict, current.Band);
     }
 
-    /// <summary>Sfatul vine din nucleu, nu e rescris in fereastra.</summary>
+    /// <summary>The advice comes from the core, it is not rewritten in the window.</summary>
     [Fact]
     public async Task TheAdviceIsTheOneTheReportWouldPrint()
     {
@@ -328,10 +336,10 @@ public class StructureTabTests
         Assert.Equal(StructureReport.Advice(vm.Verdict), vm.Advice);
     }
 
-    // ------------------------------------------------------------------ esecuri
+    // ------------------------------------------------------------------ failures
 
     /// <summary>
-    /// Un fisier care nu e FITS: analiza pica, dar tabul ramane intreg si spune de ce.
+    /// A file that is not FITS: the analysis fails, but the tab stays whole and says why.
     /// </summary>
     [Fact]
     public async Task ACorruptMasterBecomesAnExplanationNotACrash()
@@ -358,7 +366,8 @@ public class StructureTabTests
         Assert.False((await Run(bad)).IsBusy);
     }
 
-    /// <summary>Golirea sterge tot, ca sa nu ramana cifre din folderul precedent.</summary>
+    /// <summary>The reset clears everything, so that no figures from the previous folder
+    /// remain.</summary>
     [Fact]
     public async Task ResetClearsEverything()
     {
@@ -379,7 +388,7 @@ public class StructureTabTests
         Assert.Empty(vm.SavedTo);
     }
 
-    // ------------------------------------------ vignetarea fata de profilul obiectivului
+    // ------------------------------------------ the vignetting against the lens profile
 
     static LoadedFrame RawFrame() => new LoadedFrame
     {
@@ -393,7 +402,9 @@ public class StructureTabTests
         LensMaxAperture = 2.8,
     };
 
-    /// <summary>The tab with hand-made profile sources and a fabricated raw in place of the file in flats/.</summary>
+    /// <summary>
+    /// The tab with hand-made profile sources and a fabricated raw in place of the file in flats/.
+    /// </summary>
     static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithProfiles(SessionFixture f, TempWorkspace ws, bool tokinaOnTwoFormats = false)
     {
         var sources = LensProfileTestData.Sources(ws, tokinaOnTwoFormats);
@@ -468,7 +479,10 @@ public class StructureTabTests
         Assert.Contains("calibrat pe", vm.Report);
     }
 
-    /// <summary>The fixture master is deeper than the model: shape PERFECT, depth worse, and the depth carries the verdict and the advice.</summary>
+    /// <summary>
+    /// The fixture master is deeper than the model: shape PERFECT, depth worse, and the depth
+    /// carries the verdict and the advice.
+    /// </summary>
     [Fact]
     public async Task WhenTheDepthIsWorseThanTheShapeItCarriesTheVerdictAndTheAdvice()
     {
@@ -522,14 +536,14 @@ public class StructureTabTests
         Assert.Empty(vm.VerdictDetail);
     }
 
-    // -------------------------------------------------------- scara hartii
+    // -------------------------------------------------------- the map scale
 
     static MapScaleOption Cap(StructureTabViewModel vm, double? capPct)
         => vm.MapScale.Options.Single(o => o.Label == RunReport.MapScaleLabel(capPct));
 
     /// <summary>
-    /// Implicit e banda in care se asteapta sa traiasca un flat normal, nu "auto": doua
-    /// sesiuni trebuie sa se poata compara dintr-o privire, fara sa apesi nimic.
+    /// The default is the band a normal flat is expected to live in, not "auto": two
+    /// sessions must be comparable at a glance, without pressing anything.
     /// </summary>
     [Fact]
     public async Task TheDefaultScaleIsTheUsableBand()
@@ -543,9 +557,9 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Fisierul de pe disc NU urmeaza chipul bifat. Consola scrie encodarea automata, si
-    /// cele doua aplicatii trebuie sa scrie acelasi fisier pentru acelasi master -
-    /// chipurile sunt un ajutor de privit, nu o setare de iesire.
+    /// The file on disk does NOT follow the ticked chip. The console writes the automatic
+    /// encoding, and the two applications must write the same file for the same master -
+    /// the chips are a viewing aid, not an output setting.
     /// </summary>
     [Fact]
     public async Task TheSavedMapStaysOnTheAutoScale()
@@ -554,7 +568,7 @@ public class StructureTabTests
         var session = f.Session;
 
         var vm = await Run(f);
-        Cap(vm, Th.ResidPerfect).IsSelected = true;      // si dupa ce s-a schimbat scara
+        Cap(vm, Th.ResidPerfect).IsSelected = true;      // even after the scale was changed
 
         var expected = PngWriter.EncodeResidualMap(
             StructureAnalyzer.Analyze(ImageLoader.LoadImage(session.FlatMasterPath)).Residual);
@@ -580,8 +594,9 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Pe "auto" legenda spune capetele CHIAR calculate - tocmai ele nu se puteau vedea
-    /// pe ecran inainte, iar ele fac ca rosu plin sa insemne altceva de la o imagine la alta.
+    /// On "auto" the legend gives the ends ACTUALLY computed - precisely those could not be
+    /// seen on the screen before, and they make full red mean something else from one image
+    /// to another.
     /// </summary>
     [Fact]
     public async Task TheLegendOnAutoShowsTheRealRange()
@@ -597,8 +612,8 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Alegerea de scara e o preferinta de privit, nu un rezultat: trece peste schimbarea
-    /// folderului. Harta si rasterul, nu.
+    /// The scale choice is a viewing preference, not a result: it survives the change of
+    /// folder. The map and the raster do not.
     /// </summary>
     [Fact]
     public async Task TheSelectionSurvivesResetButTheMapDoesNot()
@@ -614,7 +629,9 @@ public class StructureTabTests
         Assert.Empty(vm.MapLegend);
     }
 
-    /// <summary>Encodarea e determinista, si a doua bifare o ia din cache.</summary>
+    /// <summary>
+    /// The encoding is deterministic, and the second tick takes it from the cache.
+    /// </summary>
     [Fact]
     public async Task ReselectingAScaleReturnsTheSameBytes()
     {
@@ -628,7 +645,8 @@ public class StructureTabTests
         Assert.Equal(first, vm.Map);
     }
 
-    /// <summary>Un singur chip bifat, si asta se vede in ViewModel, nu doar in grupul de butoane.</summary>
+    /// <summary>A single chip ticked, and that shows in the view-model, not only in the group
+    /// of buttons.</summary>
     [Fact]
     public async Task ExactlyOneScaleIsSelectedAtATime()
     {
@@ -641,12 +659,12 @@ public class StructureTabTests
         Assert.Equal("auto", vm.MapScale.Selected.Label);
     }
 
-    // -------------------------------------------------------- ghidul hartii
+    // -------------------------------------------------------- the map guide
 
     /// <summary>
-    /// Ghidul e documentatie, nu rezultat: exista si inainte de orice rulare, si nu se
-    /// schimba dupa. Daca ar depinde de un rezultat, ar fi un diagnostic - si tocmai asta
-    /// nu e, fiindca unealta nu clasifica forma hartii.
+    /// The guide is documentation, not a result: it exists before any run too, and does not
+    /// change after. If it depended on a result, it would be a diagnosis - and that is
+    /// exactly what it is not, because the tool does not classify the map's shape.
     /// </summary>
     [Fact]
     public async Task TheGuideIsAvailableBeforeAndAfterARun()
@@ -664,7 +682,8 @@ public class StructureTabTests
         Assert.NotEmpty(vm.MapGuide.Shapes);
     }
 
-    /// <summary>Pliat implicit, si starea trece peste schimbarea folderului ca si scara.</summary>
+    /// <summary>Collapsed by default, and the state survives the change of folder like the
+    /// scale.</summary>
     [Fact]
     public async Task TheGuideStartsCollapsedAndKeepsItsStateAcrossReset()
     {

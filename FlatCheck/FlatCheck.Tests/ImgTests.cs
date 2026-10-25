@@ -205,7 +205,7 @@ public class ImgTests
         return worst;
     }
 
-    /// <summary>Media a doua valori simetrice, pe cel mai mic caz posibil.</summary>
+    /// <summary>The mean of two symmetric values, on the smallest possible case.</summary>
     [Fact]
     public void Symmetrise_AveragesEachPixelWithItsOpposite()
     {

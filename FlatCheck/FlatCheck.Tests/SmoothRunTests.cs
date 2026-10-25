@@ -75,7 +75,9 @@ public class SmoothRunTests
         Assert.Equal((run.Result.Width, run.Result.Height), (secondary.Width, secondary.Height));
     }
 
-    /// <summary>The written file re-loads to the analyzer's raster, and carries the input's cards.</summary>
+    /// <summary>
+    /// The written file re-loads to the analyzer's raster, and carries the input's cards.
+    /// </summary>
     [Fact]
     public void TheWrittenFitsReloadsToTheSmoothedRaster_WithTheInputHeader()
     {
@@ -94,7 +96,9 @@ public class SmoothRunTests
         Assert.Contains(cards, c => c.StartsWith("HISTORY ") && c.Contains("--smooth"));
     }
 
-    /// <summary>Same type in, same type out: a 16-bit master stays 16-bit, a float one float.</summary>
+    /// <summary>
+    /// Same type in, same type out: a 16-bit master stays 16-bit, a float one float.
+    /// </summary>
     [Theory]
     [InlineData(16, 16)]
     [InlineData(-32, -32)]
@@ -173,7 +177,9 @@ public class SmoothRunTests
         Assert.Contains("3 planuri", outcome.Refusal);
     }
 
-    /// <summary>A raw carries no FITS cards; the run refuses before reading a pixel's worth of analysis.</summary>
+    /// <summary>
+    /// A raw carries no FITS cards; the run refuses before reading a pixel's worth of analysis.
+    /// </summary>
     [Fact]
     public void R060_ARawIsRefused_WithTheRawMessage()
     {

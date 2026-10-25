@@ -129,7 +129,9 @@ public class PngWriterTests
             PngWriter.Crc32(Encoding.ASCII.GetBytes("123456789"), Array.Empty<byte>()));
     }
 
-    /// <summary>An empty IEND chunk has a fixed, well-known CRC in every PNG ever written.</summary>
+    /// <summary>
+    /// An empty IEND chunk has a fixed, well-known CRC in every PNG ever written.
+    /// </summary>
     [Fact]
     public void TheEmptyIendCrcIsTheWellKnownConstant()
     {

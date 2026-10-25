@@ -136,7 +136,8 @@ public class SmoothScaleAdvisorTests
     {
         var a = SmoothScaleAdvisor.Advise(Observed(Truth(), Cells(), Noise()), FixtureLadder);
 
-        // nothing on the trial is an Img: the advice is figures only (reflection keeps the check honest)
+        // nothing on the trial is an Img: the advice is figures only (reflection keeps the check
+        // honest)
         Assert.DoesNotContain(typeof(SmoothScaleTrial).GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public),
             f => f.FieldType == typeof(Img));
         Assert.Equal(3, a.Trials.Count);
@@ -172,7 +173,9 @@ public class SmoothScaleAdvisorTests
         Assert.True(double.IsNaN(a.ScalePx));
     }
 
-    /// <summary>NaN in a guard figure counts as lost: the conservative side, as everywhere in the tool.</summary>
+    /// <summary>
+    /// NaN in a guard figure counts as lost: the conservative side, as everywhere in the tool.
+    /// </summary>
     [Fact]
     public void ANaNGuardCountsAsStructureLost()
     {

@@ -43,9 +43,10 @@ public class SplitRunTests
     };
 
     /// <summary>
-    /// The whole at k = 0.45 and two parts either side of it, with the fixture profiles on two formats and a
-    /// fabricated raw: the whole's nearest is the full-frame lensfun entry (0.905 stops), the deeper part's own
-    /// nearest is the Adobe one (1.248), so the reference rule has something to pin.
+    /// The whole at k = 0.45 and two parts either side of it, with the fixture profiles on two
+    /// formats and a fabricated raw: the whole's nearest is the full-frame lensfun entry (0.905
+    /// stops), the deeper part's own nearest is the Adobe one (1.248), so the reference rule has
+    /// something to pin.
     /// </summary>
     static (string Whole, string[] Parts, StructureQuery? Query) Fixture(TempWorkspace ws, bool withRaw = true)
     {
@@ -71,8 +72,9 @@ public class SplitRunTests
         Assert.Equal(new[] { "partea 1 din 2", "partea 2 din 2", "intreg" }, r.Columns.Select(c => c.Label));
         Assert.Equal(4, SplitReport.Headers(r).Count);
 
-        // the reference is the whole's nearest profile, and every column is measured against that same one -
-        // which only means something when a part's own nearest is a different profile (ADR 0054's measurement)
+        // the reference is the whole's nearest profile, and every column is measured against that
+        // same one - which only means something when a part's own nearest is a different profile
+        // (ADR 0054's measurement)
         Assert.Same(r.Whole.Outcome.Profiles.Nearest.Profile, r.ReferenceProfile);
         Assert.Contains(r.Parts, p => !ReferenceEquals(p.Outcome.Profiles.Nearest.Profile, r.ReferenceProfile));
         Assert.All(r.Columns, c => Assert.Equal(r.ReferenceProfile.File, c.Reference.Profile.File));
@@ -88,7 +90,8 @@ public class SplitRunTests
         SplitResult r = SplitRun.Execute(whole, parts, query, When, 10, new StringWriter()).Result;
         var rows = SplitReport.Rows(r);
 
-        // five tests, the depth, one row per profile of the whole's comparison (as on the Structure tab), the verdict
+        // five tests, the depth, one row per profile of the whole's comparison (as on the Structure
+        // tab), the verdict
         Assert.True(r.Profiles.Count >= 2, "the fixture must offer more than one profile");
         Assert.Equal(6 + r.Profiles.Count + 1, rows.Count);
         Assert.Equal(StructureReport.TestKeys, rows.Take(5).Select(x => x.Key));
@@ -121,8 +124,9 @@ public class SplitRunTests
         Assert.Equal("Verdict", verdict.Key);
         Assert.Equal(r.Columns.Select(c => c.Verdict), verdict.Cells.Take(3).Select(c => c.Verdict));
 
-        // the column verdict is the worse of shape and the depth AGAINST THE REFERENCE - the row above it -
-        // not the run's own verdict, whose depth is against the column's own nearest profile
+        // the column verdict is the worse of shape and the depth AGAINST THE REFERENCE - the row
+        // above it - not the run's own verdict, whose depth is against the column's own nearest
+        // profile
         foreach (SplitColumn c in r.Columns)
         {
             string worse = Stats.Severity(c.Reference.Verdict) > Stats.Severity(c.Outcome.Structure.Verdict)
@@ -227,8 +231,9 @@ public class SplitRunTests
     }
 
     /// <summary>
-    /// The disk estimate shown before a split: the copies exact, Siril's process/ from a bytes-per-pixel
-    /// model measured on 2026-09-28 (a 30-bias, 10-flat, 2-light quarter of a 24.2 Mpx session wrote 4148 MiB).
+    /// The disk estimate shown before a split: the copies exact, Siril's process/ from a
+    /// bytes-per-pixel model measured on 2026-09-28 (a 30-bias, 10-flat, 2-light quarter of a 24.2
+    /// Mpx session wrote 4148 MiB).
     /// </summary>
     [Fact]
     public void R091_SplitCost_EstimatesSirilsProcessFolderWithinTenPercentOfTheMeasuredQuarter()

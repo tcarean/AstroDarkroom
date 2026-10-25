@@ -240,7 +240,10 @@ public class LensProfileReaderTests
         Assert.Equal(-0.1581, atFf.Model.Coefficients[0], 9);
     }
 
-    /// <summary>An Adobe stub carries no calibration: the body is in the mount already, the SFF only in the file.</summary>
+    /// <summary>
+    /// An Adobe stub carries no calibration: the body is in the mount already, the SFF only in the
+    /// file.
+    /// </summary>
     [Fact]
     public void AnAdobeLensHasNoCalibrationLabel_SoItsWhereIsTheMount()
     {
@@ -521,7 +524,9 @@ public class SyntheticFlatTests
         Assert.True(r.HalfDiagonalStops < r.CornerStops);
     }
 
-    /// <summary>A synthetic flat is radial by construction, so the structure battery must call it perfect.</summary>
+    /// <summary>
+    /// A synthetic flat is radial by construction, so the structure battery must call it perfect.
+    /// </summary>
     [Fact]
     public void TheFlatIsPerfectlyRadialForTheStructureAnalyzer()
     {
@@ -576,8 +581,9 @@ public class SyntheticFlatTests
     }
 
     /// <summary>
-    /// The depth verdict is the residual scale on 2^|stops| - 1, the error the wrong flat
-    /// leaves in the corner of a calibrated light. The figures are the Tokina masters' (docs/design/lens-profiles.md).
+    /// The depth verdict is the residual scale on 2^|stops| - 1, the error the wrong flat leaves in
+    /// the corner of a calibrated light. The figures are the Tokina masters'
+    /// (docs/design/lens-profiles.md).
     /// </summary>
     [Theory]
     [InlineData(0.00, 0.0, "PERFECT")]
@@ -707,7 +713,8 @@ public class SyntheticRunTests
         Assert.Contains("--crop", refused.Refusal);
         Assert.False(refused.RefusedChoice);
 
-        // the same unknown camera with an Adobe profile: not refused, the profile's SFF stands in, and the report says so
+        // the same unknown camera with an Adobe profile: not refused, the profile's SFF stands in,
+        // and the report says so
         var adobeReq = new SyntheticRequest { LensText = "Tokina AT-X 11-20mm F2.8 PRO DX", Source = ProfileSource.Adobe };
         var sw = new StringWriter();
         var adobe = SyntheticRun.Execute(other, adobeReq, sources, null, 2.8, null, sw);
@@ -716,7 +723,8 @@ public class SyntheticRunTests
         Assert.Contains("necunoscut", adobeReq.CropSource);
         Assert.Contains("crop aparat        : necunoscut", sw.ToString());
         Assert.Contains("SFF 1.5", sw.ToString());
-        // with the camera known, the crop is used and reported, and at 1.523 vs SFF 1.5 no format warning
+        // with the camera known, the crop is used and reported, and at 1.523 vs SFF 1.5 no format
+        // warning
         var known = new SyntheticRequest { LensText = "Tokina AT-X 11-20mm F2.8 PRO DX", Source = ProfileSource.Adobe };
         var sw2 = new StringWriter();
         var run2 = SyntheticRun.Execute(reference, known, sources, null, 2.8, null, sw2);
@@ -732,7 +740,8 @@ public class SyntheticRunTests
         Assert.False(ff.Refused);
         Assert.Contains("format             : profil calibrat pe APS-C (crop 1.5); senzorul tau full frame (1): alt format", sw3.ToString());
         // ...and the corner sits 1.5x beyond the calibration sensor's: a sixth-order polynomial
-        // extrapolated that far is meaningless (it goes negative on this fixture), and the report says so
+        // extrapolated that far is meaningless (it goes negative on this fixture), and the report
+        // says so
         Assert.InRange(ff.Result.Extrapolation, 1.45, 1.55);
         Assert.Contains("extrapolare MARE", sw3.ToString());
         Assert.InRange(run2.Result.Extrapolation, 0.97, 1.0);            // the D3300 sits just inside the DX calibration corner
@@ -757,7 +766,9 @@ public class SyntheticRunTests
         Assert.Equal(label ?? SensorFormats.Unusual, SensorFormats.LabelOf(crop));
     }
 
-    /// <summary>The one sentence both applications say about a profile beside the user's sensor.</summary>
+    /// <summary>
+    /// The one sentence both applications say about a profile beside the user's sensor.
+    /// </summary>
     [Fact]
     public void FormatMatch_SaysTheCalibrationFormat_YoursAndWhatFollows()
     {
@@ -807,7 +818,8 @@ public class SyntheticRunTests
         Assert.Equal(ProfileSource.Lensfun, candidates[1].Source);
         Assert.Contains("11-20", candidates[1].Name);
 
-        // both sit on the Nikon mount, so the console lists them and asks for --source; with it, one is chosen
+        // both sit on the Nikon mount, so the console lists them and asks for --source; with it,
+        // one is chosen
         string both = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, tokina);
         Assert.Contains("2 obiective", both);
         var req = new SyntheticRequest { Source = ProfileSource.Adobe };
@@ -816,13 +828,15 @@ public class SyntheticRunTests
         Assert.Equal(ProfileSource.Adobe, req.Lens.Source);
         Assert.Equal("ID-ul Nikon 139 din raw (11-20 mm f/2.8)", SyntheticReport.RawLensLabel(tokina));
 
-        // the same ID from a lens whose range every name contradicts: nothing is chosen, --lens is asked for
+        // the same ID from a lens whose range every name contradicts: nothing is chosen, --lens is
+        // asked for
         var nikkor = new LoadedFrame { Camera = "NIKON D3300", NikonLensId = 139, LensMinFocalMm = 18, LensMaxFocalMm = 200, LensMaxAperture = 3.5 };
         Assert.Empty(LensIdentification.CandidatesFromRaw(sources.Catalog, nikkor));
         string refusal = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, nikkor);
         Assert.Contains("--lens", refusal);
 
-        // no camera: both Adobe mounts and the lensfun entry survive, and the refusal names what the raw said
+        // no camera: both Adobe mounts and the lensfun entry survive, and the refusal names what
+        // the raw said
         var unknownCamera = new LoadedFrame { NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8 };
         string ambiguous = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, unknownCamera);
         Assert.Contains("ID-ul Nikon 139 din raw (11-20 mm f/2.8)", ambiguous);

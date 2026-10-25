@@ -158,7 +158,8 @@ public class FitsWriterTests
 
         var keys = cards.Select(c => c.Substring(0, 8).Trim()).Where(k => k != "COMMENT" && k != "HISTORY" && k != "").ToList();
         Assert.Equal(keys.Count, keys.Distinct().Count());
-        // the input's own structural cards (SIMPLE, BITPIX, NAXIS*, BZERO, BSCALE) were not copied on top
+        // the input's own structural cards (SIMPLE, BITPIX, NAXIS*, BZERO, BSCALE) were not copied
+        // on top
         Assert.Single(keys, k => k == "SIMPLE");
         Assert.Single(keys, k => k == "BITPIX");
     }

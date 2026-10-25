@@ -47,7 +47,9 @@ public class VignettingComparisonTests
         LensMaxAperture = 2.8,
     };
 
-    /// <summary>The Adobe profile of the fixture, built as a flat at the fixture size, raised to a power.</summary>
+    /// <summary>
+    /// The Adobe profile of the fixture, built as a flat at the fixture size, raised to a power.
+    /// </summary>
     static Img ModelFlat(ProfileSources sources, double power = 1.0, double crop = 1.523)
     {
         LensChoice adobe = sources.Catalog.Lenses.First(l => l.Source == ProfileSource.Adobe && l.Mount == "NIKON CORPORATION");
@@ -219,7 +221,8 @@ public class VignettingComparisonTests
         Assert.False(c.Compared);
         Assert.Equal(ComparisonGap.NoFStop, c.Gap);
 
-        // and with the f-stop given, the same lenses compare - all three of them, including the Canon file
+        // and with the f-stop given, the same lenses compare - all three of them, including the
+        // Canon file
         shot = LensIdentification.Identify(Master(), null, sources, fstop: 2.8);
         c = VignettingComparer.Analyze(r, shot, sources.Catalog, lenses);
         Assert.True(c.Compared);

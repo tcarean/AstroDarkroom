@@ -27,7 +27,7 @@ public class StructureReportTests
     static StructureResult Result(Func<int, int, double> scene, int w = 512, int h = 512)
         => StructureAnalyzer.Analyze(TestImages.From(w, h, scene));
 
-    // ---------------------------------------------------------------- niveluri
+    // ---------------------------------------------------------------- levels
 
     /// <summary>
     /// Siril writes the master as float divided by 65535, so the median is ~0.014. With
@@ -69,7 +69,7 @@ public class StructureReportTests
         Assert.Contains("median / max ADU   : " + StructureReport.Levels(r), w.ToString());
     }
 
-    // ---------------------------------------------------------------- sfatul
+    // ---------------------------------------------------------------- the advice
 
     /// <summary>
     /// The figures are an upper bound: a camera-fixed part (an axis off the sensor
@@ -88,7 +88,7 @@ public class StructureReportTests
             "--ratio should come before the instruction to reshoot");
     }
 
-    // ---------------------------------------------------------------- pete locale
+    // ---------------------------------------------------------------- local spots
 
     [Fact]
     public void TheLocalSpotWarningIsNullWhenNothingIsFlagged()
@@ -211,7 +211,9 @@ public class StructureReportTests
         Assert.True(vignetted.CentroidValid);
     }
 
-    /// <summary>The console prints the whole note under the row, indented like its neighbours.</summary>
+    /// <summary>
+    /// The console prints the whole note under the row, indented like its neighbours.
+    /// </summary>
     [Fact]
     public void TheReportPrintsTheNoteUnderTheRow()
     {
@@ -224,7 +226,9 @@ public class StructureReportTests
             Assert.Contains("        " + line, text);
     }
 
-    /// <summary>The report prints the warning under the informative rows, indented like them.</summary>
+    /// <summary>
+    /// The report prints the warning under the informative rows, indented like them.
+    /// </summary>
     [Fact]
     public void TheReportPrintsTheWarningWhenFlagged()
     {
@@ -243,7 +247,7 @@ public class StructureReportTests
         Assert.Contains("pete locale (praf etc.) : -", w.ToString());
     }
 
-    // ---------------------------------------------------------------- notele testelor
+    // ---------------------------------------------------------------- the tests' notes
 
     /// <summary>
     /// Every one of the five tests explains itself. Two of them - the azimuthal
@@ -310,7 +314,7 @@ public class StructureReportTests
         Assert.All(StructureReport.TestNote(metric)!, c => Assert.True(c < 128, $"non-ASCII: '{c}'"));
     }
 
-    // ---------------------------------------------------------------- scara
+    // ---------------------------------------------------------------- the scale
 
     [Fact]
     public void TheScaleHeadingCountsFiveTests()
@@ -324,7 +328,7 @@ public class StructureReportTests
         Assert.Contains("Pata maxima", StructureReport.WhyResidualMatters());
     }
 
-    // ---------------------------------------------------------------- vignetarea fata de profil
+    // -------------------------------------------------------------- vignetting against the profile
 
     static LoadedFrame MasterFrame() => new LoadedFrame
     {
@@ -345,7 +349,10 @@ public class StructureReportTests
         LensMaxAperture = 2.8,
     };
 
-    /// <summary>The fixture master (k = 0.45, 0.86 stops) against the fixture profiles, through the run's own Compare.</summary>
+    /// <summary>
+    /// The fixture master (k = 0.45, 0.86 stops) against the fixture profiles, through the run's
+    /// own Compare.
+    /// </summary>
     static StructureOutcome Compared(TempWorkspace ws, bool withRaw = true, string? lensText = null, double? fstop = null)
     {
         var sources = LensProfileTestData.Sources(ws);

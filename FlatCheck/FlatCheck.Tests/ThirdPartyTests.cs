@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ThirdPartyTests.cs - lista componentelor terte nu poate ramane in urma csproj-ului.
+// ThirdPartyTests.cs - the list of third-party components cannot fall behind the csproj.
 //
-// Lista din ThirdParty.Components e ce arata fereastra "Despre", si LGPL-2.1 sectiunea 6
-// cere ca notita LibRaw sa apara acolo unde programul isi arata propriul copyright. Un
-// pachet adaugat in csproj fara o intrare aici ar fi un pachet livrat si neafisat; un
-// pachet scos din csproj cu intrarea ramasa ar afisa o licenta pe care n-o mai folosim.
-// Testele leaga cele doua in ambele sensuri, si fiecare intrare de fisierul de notite.
+// The list in ThirdParty.Components is what the "Despre" window shows, and LGPL-2.1
+// section 6 asks that the LibRaw notice appear where the program shows its own
+// copyright. A package added to the csproj without an entry here would be a package
+// shipped and not shown; a package removed from the csproj with its entry left would
+// show a license we no longer use. The tests tie the two together both ways, and each
+// entry to the notices file.
 
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -33,7 +34,7 @@ public class ThirdPartyTests
     static string RepoDir([CallerFilePath] string thisFile = "")
         => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
 
-    /// <summary>Pachetele NuGet pe care le leaga nucleul, citite din csproj-ul lui.</summary>
+    /// <summary>The NuGet packages the core links, read from its csproj.</summary>
     static string[] CorePackages()
     {
         string csproj = File.ReadAllText(Path.Combine(RepoDir(), "FlatCheck.Core", "FlatCheck.Core.csproj"));
@@ -43,9 +44,9 @@ public class ThirdPartyTests
     }
 
     /// <summary>
-    /// Fiecare pachet din csproj e revendicat de exact o componenta, si fiecare pachet
-    /// revendicat exista in csproj. Acesta e testul care pica la urmatoarea dependinta
-    /// adaugata fara intrare - inainte sa ajunga pe ecran fara notita.
+    /// Every package in the csproj is claimed by exactly one component, and every claimed
+    /// package exists in the csproj. This is the test that fails at the next dependency
+    /// added without an entry - before it reaches the screen without a notice.
     /// </summary>
     [Fact]
     public void R095_EveryPackageTheCoreLinksIsListed()
@@ -65,9 +66,9 @@ public class ThirdPartyTests
     }
 
     /// <summary>
-    /// Motivele de compatibilitate cu GPLv3 stau in THIRD-PARTY-NOTICES.md, deci fiecare
-    /// componenta afisata trebuie sa aiba un heading acolo. Se cauta numele in headinguri,
-    /// nu oriunde in text - "LibRaw" apare si in paragraful despre Sdcb.LibRaw.
+    /// The GPLv3 compatibility reasons live in THIRD-PARTY-NOTICES.md, so every component
+    /// shown must have a heading there. The name is looked for in the headings, not
+    /// anywhere in the text - "LibRaw" also appears in the paragraph about Sdcb.LibRaw.
     /// </summary>
     [Fact]
     public void R095_EveryComponentHasAnEntryInTheNoticesFile()
@@ -82,7 +83,8 @@ public class ThirdPartyTests
                 $"THIRD-PARTY-NOTICES.md nu are un heading pentru {c.Name}");
     }
 
-    /// <summary>Ce arata ecranul nu poate fi gol: nume, rol, licenta, copyright, si un link https.</summary>
+    /// <summary>What the screen shows cannot be empty: name, role, license, copyright, and
+    /// an https link.</summary>
     [Fact]
     public void EveryComponentNamesItsLicenceAndUrl()
     {
@@ -95,17 +97,17 @@ public class ThirdPartyTests
             Assert.False(string.IsNullOrWhiteSpace(c.Licence));
             Assert.False(string.IsNullOrWhiteSpace(c.Copyright));
             Assert.StartsWith("https://", c.Url);
-            // O componenta de cod vine printr-un pachet; una de date (lensfun) vine ca fisiere
-            // si nu revendica niciun pachet - dar e singura care are voie sa nu revendice.
+            // A code component comes through a package; a data one (lensfun) comes as files and
+            // claims no package - but it is the only one allowed not to claim one.
             if (!c.IsData) Assert.NotEmpty(c.Packages);
         }
         Assert.Single(ThirdParty.Components, c => c.IsData);
     }
 
     /// <summary>
-    /// CC BY-SA cere atribuirea: baza lensfun e livrata ca fisiere langa exe, deci notita
-    /// ei trebuie sa apara in lista pe care programul o afiseaza, cu licenta si sursa, iar
-    /// folderul din repo trebuie sa poarte licenta si versiunea copiei.
+    /// CC BY-SA asks for attribution: the lensfun database ships as files beside the exe,
+    /// so its notice must appear in the list the program shows, with the license and the
+    /// source, and the folder in the repo must carry the license and the copy's version.
     /// </summary>
     [Fact]
     public void TheLensfunDatabaseIsAttributedAndItsFolderCarriesLicenceAndVersion()
@@ -124,9 +126,9 @@ public class ThirdPartyTests
     }
 
     /// <summary>
-    /// LGPL-2.1 sectiunea 6 e motivul pentru care lista se afiseaza: notita LibRaw
-    /// trebuie sa apara printre notitele de copyright ale programului, si sa se stie sub
-    /// care dintre cele doua licente s-a luat.
+    /// LGPL-2.1 section 6 is the reason the list is shown: the LibRaw notice must appear
+    /// among the program's copyright notices, and it must be known under which of the two
+    /// licenses it was taken.
     /// </summary>
     [Fact]
     public void LibRawIsTakenUnderTheLgplAndCarriesItsCopyright()
@@ -138,8 +140,8 @@ public class ThirdPartyTests
     }
 
     /// <summary>
-    /// --help tipareste notita de garantie din RunReport, linie cu linie. Golden/help.txt
-    /// pastreaza textul; testul asta spune direct ce s-a rupt daca cineva desface bucla.
+    /// --help prints the warranty notice from RunReport, line by line. Golden/help.txt
+    /// keeps the text; this test says directly what broke if someone undoes the loop.
     /// </summary>
     [Fact]
     public void HelpPrintsTheSharedWarrantyLines()

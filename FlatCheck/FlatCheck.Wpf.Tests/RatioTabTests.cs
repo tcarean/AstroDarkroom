@@ -17,14 +17,14 @@
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Tabul de atribuire prin rotatie 180.
+/// The attribution tab, by 180-degree rotation.
 ///
-/// Tabul NU mai cauta in folder, si de-aia nu mai exista teste de lista aici. Modul cere
-/// doua MASTERE, cate unul pentru fiecare orientare, iar cele doua orientari sunt doua
-/// sedinte, deci doua foldere de sesiune. Ce putea propune un singur folder erau cadrele
-/// individuale, din care iese un rezultat sigur si fals - zgomotul unui cadru e de
-/// acelasi ordin cu semnalul cautat. Deci se cer explicit doua fisiere, si ce se
-/// verifica aici e validarea alegerii si atribuirea rezultata.
+/// The tab NO longer searches the folder, and that is why there are no list tests here any
+/// more. The mode needs two MASTERS, one for each orientation, and the two orientations are
+/// two sittings, so two session folders. What a single folder could offer were the
+/// individual frames, from which a confident and false result comes out - a frame's noise
+/// is of the same order as the signal sought. So two files are asked for explicitly, and
+/// what is checked here is the validation of the choice and the resulting attribution.
 /// </summary>
 public class RatioTabTests
 {
@@ -35,11 +35,11 @@ public class RatioTabTests
         return vm;
     }
 
-    // ------------------------------------------------------------------ pornire
+    // ------------------------------------------------------------------ start
 
     /// <summary>
-    /// Dialogul pentru setul A porneste din folderul masterului sesiunii deschise - acolo
-    /// sunt stivele, oriunde le-ar fi pus scriptul - si din process/ cand nu e master.
+    /// The dialog for set A starts in the folder of the open session's master - the stacks
+    /// are there, wherever the script put them - and in process/ when there is no master.
     /// </summary>
     [Fact]
     public void TheDialogStartsWhereTheSessionKeepsItsMaster()
@@ -54,8 +54,8 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Tabul porneste gol: nu propune nimic, fiindca un folder de sesiune nu poate sti
-    /// care sunt cele doua orientari. In schimb explica ce ii trebuie, inainte de orice.
+    /// The tab starts empty: it offers nothing, because a session folder cannot know which
+    /// the two orientations are. Instead it explains what it needs, before anything else.
     /// </summary>
     [Fact]
     public void TheTabStartsEmptyAndExplainsWhatItNeeds()
@@ -75,9 +75,9 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Documentatia trebuie sa spuna si ce NU poate testul: ca partea fixa pe aparat
-    /// poate fi optica (inofensiva) sau ceva pe obiectiv (nu). Fara asta, un verdict bun
-    /// pe un master contaminat citeste ca o garantie.
+    /// The documentation must also say what the test CANNOT tell: that the camera-fixed part
+    /// can be optical (harmless) or something on the lens (not). Without that, a good verdict
+    /// on a contaminated master reads as a guarantee.
     /// </summary>
     [Fact]
     public void TheDocumentationStatesWhatTheTestCannotTell()
@@ -89,12 +89,12 @@ public class RatioTabTests
         Assert.Contains("obiectiv", vm.Documentation);
     }
 
-    // ------------------------------------------------------------------ validare
+    // ------------------------------------------------------------------ validation
 
     /// <summary>
-    /// Un fisier care nu incepe cu "pp_flat" nu se refuza scurt - se explica ce sunt
-    /// fisierele astea in iesirea Siril si de ce testul cere unul, inclusiv de ce un flat
-    /// NECALIBRAT nu merge.
+    /// A file that does not start with "pp_flat" is not refused curtly - it explains what
+    /// these files are in Siril's output and why the test needs one, including why an
+    /// UNCALIBRATED flat does not do.
     /// </summary>
     [Fact]
     public void ChoosingSomethingElseExplainsWhatAFlatMasterIs()
@@ -113,10 +113,10 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Cadrul calibrat individual e capcana reala a tabului: sta in acelasi process/, are
-    /// acelasi prefix si arata la fel ca masterul. Pana la corectarea tiparului dialogul
-    /// il si propunea, iar perechea iesea cu un verdict sigur si fals. Refuzul spune
-    /// explicit de ce, altfel arata ca un moft.
+    /// The individual calibrated frame is the tab's real trap: it sits in the same process/,
+    /// has the same prefix and looks the same as the master. Until the pattern was fixed the
+    /// dialog even offered it, and the pair came out with a confident and false verdict. The
+    /// refusal says why explicitly, otherwise it looks like a whim.
     /// </summary>
     [Fact]
     public void ChoosingAnIndividualCalibratedFlatIsRefusedAndExplained()
@@ -148,8 +148,8 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Cazul NORMAL, nu exceptia: cele doua mastere vin din doua foldere de sesiune
-    /// diferite, cate unul pentru fiecare orientare.
+    /// The NORMAL case, not the exception: the two masters come from two different session
+    /// folders, one for each orientation.
     /// </summary>
     [Fact]
     public void AFlatMasterFromAnotherSessionIsAccepted()
@@ -164,8 +164,8 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Masterul general al unei sesiuni e exact ce cere modul, nu ceva de refuzat: in
-    /// fluxul normal, ambele fisiere sunt "pp_flat_stacked.fit", din doua foldere.
+    /// A session's overall master is exactly what the mode needs, not something to refuse:
+    /// in the normal flow, both files are "pp_flat_stacked.fit", from two folders.
     /// </summary>
     [Fact]
     public void TheOverallMasterOfAnotherSessionIsAccepted()
@@ -182,9 +182,9 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Acelasi fisier in ambele sloturi da o componenta externa de exact zero - care nu
-    /// inseamna "setup curat", inseamna "nu s-a masurat nimic". Prins la ALEGERE, ca sa
-    /// nu se piarda selectia buna de dinainte.
+    /// The same file in both slots gives an external component of exactly zero - which does
+    /// not mean "clean setup", it means "nothing was measured". Caught at the CHOICE, so that
+    /// the good selection from before is not lost.
     /// </summary>
     [Fact]
     public void TheSameFileInBothSlotsIsRefusedAtChoiceTime()
@@ -201,7 +201,7 @@ public class RatioTabTests
         Assert.Null(vm.FileB);
     }
 
-    // ------------------------------------------------------------------ atribuire
+    // ------------------------------------------------------------------ attribution
 
     [Fact]
     public async Task ItAttributesTheStructureOfTheCombinedMaster()
@@ -216,17 +216,17 @@ public class RatioTabTests
 
         Assert.True(vm.HasResult);
         Assert.NotEmpty(vm.Verdict);
-        Assert.Equal(2, vm.WorldRows.Count);    // componenta fixa in lume, cu bara de eroare
-        Assert.Equal(5, vm.Tests.Count);    // bateria de structura pe (A+B)/2
+        Assert.Equal(2, vm.WorldRows.Count);    // the world-fixed component, with its error bar
+        Assert.Equal(5, vm.Tests.Count);    // the structure battery on (A+B)/2
         Assert.All(vm.Tests, t => Assert.NotEmpty(t.Value));
         Assert.All(vm.Tests, t => Assert.True(t.HasVerdict));
-        Assert.NotEmpty(vm.ProvenanceA);    // cate cadre si de cand
+        Assert.NotEmpty(vm.ProvenanceA);    // how many frames and from when
         Assert.NotNull(vm.Map);
     }
 
     /// <summary>
-    /// Fiecare rand isi spune ce masoara, ca in tabul 1. Aici lipseau toate cinci, fiindca
-    /// randurile erau blocuri de Grid scrise de mana in XAML, fara loc pentru o descriere.
+    /// Every row says what it measures, as in tab 1. Here all five were missing, because the
+    /// rows were Grid blocks written by hand in XAML, with no room for a description.
     /// </summary>
     [Fact]
     public async Task EveryTestRowCarriesItsOwnDescription()
@@ -242,9 +242,10 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Cele doua randuri ale componentei fixe in lume. Primul are cifra cu bara de eroare
-    /// si eticheta informativa drept pastila; al doilea, doar cifra. Amandoua cu descrierea
-    /// din nucleu - al doilea nu avea niciun cuvant, primul nu spunea ce e pastila.
+    /// The two rows of the world-fixed component. The first has the figure with its error
+    /// bar and the informative label as its pill; the second, only the figure. Both with the
+    /// core's description - the second had no word at all, the first did not say what the
+    /// pill is.
     /// </summary>
     [Fact]
     public async Task TheWorldRowsCarryTheirDescriptionsAndOnlyTheFirstHasAChip()
@@ -267,9 +268,9 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Regula pentru tot ecranul, nu pentru un card: orice rand cu o cifra pe el are si
-    /// un rand de text sub ea. Asta e testul care ar fi prins de la inceput ca doua
-    /// randuri din Ratio n-aveau nimic.
+    /// The rule for the whole screen, not for one card: every row with a figure on it also
+    /// has a line of text under it. This is the test that would have caught from the start
+    /// that two rows in Ratio had nothing.
     /// </summary>
     [Fact]
     public async Task EveryRowOnTheScreenCarriesADescription()
@@ -288,10 +289,11 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Si marimile informative, ca in consola: raportul --ratio tipareste tot WriteBody,
-    /// inclusiv vignetarea, centrul de iluminare si petele locale ale masterului combinat.
-    /// Fara verdict, fiindca nu sunt teste; si fara linia de niveluri ADU, pe care nici
-    /// consola n-o tipareste in --ratio, fiindca masterul combinat e normalizat la 1.
+    /// The informative quantities too, as in the console: the --ratio report prints all of
+    /// WriteBody, including the combined master's vignetting, illumination centre and local
+    /// spots. Without a verdict, because they are not tests; and without the ADU levels line,
+    /// which the console does not print in --ratio either, because the combined master is
+    /// normalised to 1.
     /// </summary>
     [Fact]
     public async Task TheInformativeRowsAreShownWithoutVerdict()
@@ -310,14 +312,14 @@ public class RatioTabTests
         Assert.Contains(vm.Informative, r => r.Label.Contains("offset"));
         Assert.Contains(vm.Informative, r => r.Label.Contains("pete locale"));
         Assert.DoesNotContain(vm.Informative, r => r.Label.Contains("ADU"));
-        Assert.Empty(vm.LocalSpotWarning);       // camp radial curat: nimic de atentionat
+        Assert.Empty(vm.LocalSpotWarning);       // a clean radial field: nothing to warn about
     }
 
     /// <summary>
-    /// Cele doua taburi arata ACEEASI baterie - Ratio o ruleaza pe masterul combinat, dar
-    /// analizorul e acelasi - deci etichetele, ordinea si descrierile trebuie sa fie
-    /// identice. Erau doua compuneri separate, si au divergat: al cincilea test a trebuit
-    /// adaugat de doua ori, iar descrierile au ajuns doar intr-un tab.
+    /// The two tabs show the SAME battery - Ratio runs it on the combined master, but the
+    /// analyzer is the same - so the labels, the order and the descriptions must be
+    /// identical. They were two separate compositions, and they diverged: the fifth test had
+    /// to be added twice, and the descriptions reached only one tab.
     /// </summary>
     [Fact]
     public async Task TheRowsAreTheSameOnesTheStructureTabShows()
@@ -339,8 +341,8 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Verdictul tabului e verdictul de STRUCTURA al masterului combinat, pe aceeasi
-    /// scara ca tabul 1 - deci si sfatul trebuie sa fie acelasi text, nu unul rescris.
+    /// The tab's verdict is the combined master's STRUCTURE verdict, on the same scale as
+    /// tab 1 - so the advice too must be the same text, not a rewritten one.
     /// </summary>
     [Fact]
     public async Task TheAdviceComesFromTheSharedResidualScale()
@@ -357,8 +359,8 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Doua harti, fiindca modul desparte masterul in doua componente. Comutatorul
-    /// schimba ce se vede, si cele doua chiar sunt diferite.
+    /// Two maps, because the mode splits the master into two components. The toggle changes
+    /// what is seen, and the two really are different.
     /// </summary>
     [Fact]
     public async Task BothMapsAreAvailableAndTheToggleSwitchesThem()
@@ -378,7 +380,7 @@ public class RatioTabTests
         Assert.NotEqual(sensor, vm.Map);
     }
 
-    /// <summary>Alegerea celui de-al doilea fisier declanseaza singura calculul.</summary>
+    /// <summary>Choosing the second file triggers the computation by itself.</summary>
     [Fact]
     public async Task ChoosingTheSecondFileComputes()
     {
@@ -396,10 +398,10 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// O realegere in timpul calculului nu asteapta si nu concureaza: o depaseste. Pe
-    /// ecran ramane perechea aleasa ultima, oricare din cele doua rulari termina prima.
-    /// Inainte, cele doua continuari scriau in acelasi cache de pe doua fire si testul
-    /// de mai sus pica din cand in cand.
+    /// A new choice during the computation neither waits nor competes: it supersedes it. The
+    /// pair chosen last stays on the screen, whichever of the two runs ends first. Before,
+    /// the two continuations wrote into the same cache from two threads and the test above
+    /// failed now and then.
     /// </summary>
     [Fact]
     public async Task ASecondPickSupersedesTheFirst()
@@ -409,9 +411,9 @@ public class RatioTabTests
         var vm = Attached(f);
 
         vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
-        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));   // porneste A+B
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));   // starts A+B
         Task first = vm.Pending;
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_C.fit"));    // peste ea: C+B
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_C.fit"));    // over it: C+B
         Task second = vm.Pending;
         await Task.WhenAll(first, second);
 
@@ -551,7 +553,7 @@ public class RatioTabTests
         Assert.Empty(vm.MapLegend);
     }
 
-    // -------------------------------------------------------- scara hartii
+    // -------------------------------------------------------- the map scale
 
     static async Task<RatioTabViewModel> Computed(SessionFixture f)
     {
@@ -566,7 +568,8 @@ public class RatioTabTests
         => vm.MapScale.Options.Single(o => o.Label == RunReport.MapScaleLabel(capPct));
 
     /// <summary>
-    /// Modul are doua harti, si scara se aplica celei afisate - oricare din cele doua e.
+    /// The mode has two maps, and the scale applies to the one shown - whichever of the two
+    /// it is.
     /// </summary>
     [Fact]
     public async Task TheScaleAppliesToBothMaps()
@@ -591,8 +594,9 @@ public class RatioTabTests
     }
 
     /// <summary>
-    /// Pe scara automata cele doua componente au intervale diferite, deci legenda trebuie
-    /// sa urmeze harta afisata - altfel ar descrie alta imagine decat cea de pe ecran.
+    /// On the automatic scale the two components have different ranges, so the legend must
+    /// follow the map shown - otherwise it would describe an image other than the one on
+    /// the screen.
     /// </summary>
     [Fact]
     public async Task TheLegendFollowsTheDisplayedMap()
@@ -609,7 +613,7 @@ public class RatioTabTests
         Assert.NotEqual(sensor, vm.MapLegend);
     }
 
-    /// <summary>Acelasi ghid ca la structura, si tot pliat implicit.</summary>
+    /// <summary>The same guide as on the structure tab, and also collapsed by default.</summary>
     [Fact]
     public void TheGuideIsThereBeforeAnythingIsChosen()
     {

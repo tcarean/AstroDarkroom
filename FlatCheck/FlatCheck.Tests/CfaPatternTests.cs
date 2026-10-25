@@ -65,7 +65,9 @@ public class CfaPatternTests
     public void TheCropOriginShiftsTheMosaicPhase(int row, int col, string expected)
         => Assert.Equal(expected, CfaPattern.FromLibRaw(0x94949494u, "RGBG", row, col).Letters);
 
-    /// <summary>Masks that mean "not a 2x2 Bayer mosaic" are refused, not decoded into nonsense.</summary>
+    /// <summary>
+    /// Masks that mean "not a 2x2 Bayer mosaic" are refused, not decoded into nonsense.
+    /// </summary>
     [Theory]
     [InlineData(0u)]    // no CFA at all: mono, Foveon
     [InlineData(1u)]    // Leaf Catchlight

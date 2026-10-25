@@ -20,9 +20,9 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Tabul "Netezire". Ce se verifica: ca nu ruleaza singur, ca butonul scrie fisierul
-/// acolo unde spune sesiunea si ca intreaba inainte sa suprascrie, ca cifrele sunt
-/// cele ale nucleului, si ca un refuz (cub de culoare) ajunge pe ecran ca explicatie.
+/// The "Netezire" tab. What is checked: that it does not run by itself, that the button
+/// writes the file where the session says and asks before overwriting, that the figures
+/// are the core's, and that a refusal (colour cube) reaches the screen as an explanation.
 /// </summary>
 public class SmoothTabTests
 {
@@ -63,7 +63,7 @@ public class SmoothTabTests
         Assert.True(vm.HasResult);
         Assert.False(vm.HasError);
         Assert.Equal(vm.Target, vm.SavedTo);
-        Assert.Equal(new[] { vm.Target }, saved);      // o data, cu calea
+        Assert.Equal(new[] { vm.Target }, saved);      // once, with the path
         Assert.True(File.Exists(vm.Target));
         Assert.Equal("", vm.SaveError);
         Assert.Equal(SmoothAnalyzer.DefaultScalePx, vm.LastScalePx);
@@ -88,8 +88,8 @@ public class SmoothTabTests
     }
 
     /// <summary>
-    /// Fisierul netezit NU devine masterul sesiunii: numele lui nu e printre candidati,
-    /// deci tabul Structura masoara in continuare masterul fotografiat.
+    /// The smoothed file does NOT become the session's master: its name is not among the
+    /// candidates, so the Structura tab still measures the photographed master.
     /// </summary>
     [Fact]
     public async Task TheSmoothedFileDoesNotBecomeTheSessionMaster()
@@ -217,7 +217,8 @@ public class SmoothTabTests
 
     // ---------------------------------------------------------------- the scale proposal
 
-    /// <summary>Master fara textura: propunerea spune "nimic de netezit", nu scrie nimic si lasa chipul.</summary>
+    /// <summary>A master without texture: the proposal says "nothing to smooth", writes nothing
+    /// and leaves the chip.</summary>
     [Fact]
     public async Task ProposingOnACleanMasterSaysNothingToSmooth_AndLeavesTheChip()
     {
@@ -239,8 +240,8 @@ public class SmoothTabTests
     }
 
     /// <summary>
-    /// Master cu textura: cele trei trepte, o propunere, si chipul propus bifat - fara
-    /// fisier scris; netezirea ramane a butonului ei.
+    /// A master with texture: the three steps, a proposal, and the proposed chip ticked - with
+    /// no file written; the smoothing stays its button's.
     /// </summary>
     [Fact]
     public async Task ProposingOnATexturedMasterSelectsTheChip_AndWritesNoFile()
@@ -285,7 +286,8 @@ public class SmoothTabTests
         Assert.False(vm.Advise.CanExecute(null));
     }
 
-    /// <summary>Butonul asteapta lantul de la deschidere: apasat in timpul structurii, nu se suprapune peste ea.</summary>
+    /// <summary>The button waits for the opening chain: pressed during the structure, it does not
+    /// overlap it.</summary>
     [Fact]
     public async Task TheButtonWaitsForTheOpeningChain()
     {
@@ -302,7 +304,7 @@ public class SmoothTabTests
         Assert.True(File.Exists(vm.Smooth.Target));
     }
 
-    /// <summary>Folder nou = tabul se goleste, ca toate celelalte.</summary>
+    /// <summary>New folder = the tab empties, like all the others.</summary>
     [Fact]
     public async Task ChangingTheFolderResetsTheTab()
     {

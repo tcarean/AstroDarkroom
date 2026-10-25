@@ -171,7 +171,10 @@ public class SyntheticTabTests
         }
     }
 
-    /// <summary>Choosing a lens says at once what it was calibrated on and whether that is the user's sensor.</summary>
+    /// <summary>
+    /// Choosing a lens says at once what it was calibrated on and whether that is the user's
+    /// sensor.
+    /// </summary>
     [Fact]
     public async Task ChoosingALensSaysWhetherItsProfileFitsTheSensor()
     {
