@@ -17,16 +17,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- HowToReadPanel - ce decid cifrele si ce decide ochiul.
+<!-- HowToReadPanel - what the figures decide and what the eye decides.
 
-     Sta sub verdict, in coloana cifrelor, fiindca despre ele vorbeste in primul rand:
-     cifrele spun CAT DE MULT si dau verdictul, harta spune CE FEL si nu voteaza. Din
-     asezarea ecranului despartirea nu se vede - cele doua coloane arata ca doua vederi
-     ale aceluiasi lucru.
+     It sits under the verdict, in the figures' column, because it speaks about them first:
+     the figures say HOW MUCH and give the verdict, the map says WHAT KIND and does not vote.
+     From the screen's layout the split does not show - the two columns look like two views
+     of the same thing.
 
-     Pliat implicit: verdictul trebuie sa ramana primul lucru vizibil in tab. Starea sta
-     in ViewModel (HowToRead.IsExpanded), nu intr-un ElementName local, ca s-o poata
-     deschide un test - vezi nota din MapGuidePanel. -->
+     Folded by default: the verdict must stay the first thing visible in the tab. The state
+     sits in the view-model (HowToRead.IsExpanded), not in a local ElementName, so that a
+     test can open it - see the note in MapGuidePanel. -->
 
 <UserControl x:Class="FlatCheck.Wpf.HowToReadPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

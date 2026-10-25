@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HowToReadPanel.xaml.cs - doar legatura cu XAML-ul; textul e in SessionMessages.
+// HowToReadPanel.xaml.cs - only the link to the XAML; the text is in SessionMessages.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The folded note under the Structura verdict on what the figures decide and what the eye
+    /// decides, bound to the tab's <c>HowToRead</c>.
+    /// </summary>
     public partial class HowToReadPanel : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public HowToReadPanel() => InitializeComponent();
     }
 }

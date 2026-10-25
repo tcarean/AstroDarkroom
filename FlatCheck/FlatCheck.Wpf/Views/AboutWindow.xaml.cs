@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AboutWindow.xaml.cs - fereastra "Despre".
+// AboutWindow.xaml.cs - the "Despre" window.
 //
-// Exista fiindca GPLv3 sectiunea 5(d) cere ca un program interactiv sa-si arate notita de
-// copyright, lipsa garantiei si trimiterea la licenta - consola le da la --help, fereastra
-// n-avea unde - si fiindca LGPL-ul LibRaw cere notita bibliotecii langa a noastra. Tot
-// textul vine prin AboutViewModel; aici raman doar cele doua lucruri de fereastra: bara
-// de titlu intunecata si deschiderea link-urilor in browser.
+// It exists because GPLv3 section 5(d) asks an interactive program to show its copyright
+// notice, the absence of warranty and the pointer to the licence - the console gives them
+// at --help, the window had nowhere to - and because LibRaw's LGPL asks for the library's
+// notice beside ours. All the text comes through AboutViewModel; here remain only the two
+// window things: the dark title bar and opening the links in the browser.
 
 using System.Diagnostics;
 using System.Windows;
@@ -29,8 +29,14 @@ using System.Windows.Navigation;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The modal "Despre" window: the icon, the version, the copyright, the GPLv3 notice and the
+    /// third-party components, all bound to <see cref="AboutViewModel"/>.
+    /// </summary>
     public partial class AboutWindow : Window
     {
+        /// <summary>Builds the window over a new <see cref="AboutViewModel"/>, with the
+        /// largest icon and the dark title bar.</summary>
         public AboutWindow()
         {
             InitializeComponent();
@@ -41,10 +47,13 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Deschide link-ul in browserul sistemului. UseShellExecute e obligatoriu pe
-        /// .NET Core - fara el Process.Start incearca sa execute URL-ul ca pe un program.
-        /// Un sistem fara browser asociat arunca; nu e un motiv sa cada fereastra.
+        /// Opens the link in the system's browser. UseShellExecute is mandatory on
+        /// .NET Core - without it Process.Start tries to execute the URL as a program.
+        /// A system without an associated browser throws; that is no reason for the window
+        /// to fall.
         /// </summary>
+        /// <param name="sender">The hyperlink.</param>
+        /// <param name="e">The navigation; marked handled.</param>
         void OpenLink(object sender, RequestNavigateEventArgs e)
         {
             e.Handled = true;
@@ -60,6 +69,9 @@ namespace FlatCheck.Wpf
             }
         }
 
+        /// <summary>The "Inchide" button's handler: closes the window.</summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">The click.</param>
         void Close(object sender, RoutedEventArgs e) => Close();
     }
 }

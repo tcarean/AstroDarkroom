@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightView.xaml.cs - doar legatura cu XAML-ul; comportamentul e in ViewModel.
+// LightView.xaml.cs - only the link to the XAML; the behaviour is in the view-model.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The End to end tab: the summary of a light series corrected by the master and its
+    /// frames, bound to <see cref="LightTabViewModel"/>.
+    /// </summary>
     public partial class LightView : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public LightView() => InitializeComponent();
     }
 }

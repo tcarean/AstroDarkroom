@@ -17,13 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- SirilRunWindow - log-ul unei rulari de script Siril, live.
+<!-- SirilRunWindow - the log of a Siril script run, live.
 
-     Modala peste fereastra principala: cat ruleaza Siril in process/ n-are sens sa se
-     poata alege alt folder sau porni o analiza pe acelasi. Se deschide deja pornita -
-     scriptul a fost ales pe cardul de problema - si arata trei lucruri: comanda curenta
-     cu bara ei de progres, liniile de log ca in panoul Siril, si la sfarsit verdictul
-     rularii. Inchiderea in timpul rularii opreste Siril, dupa confirmare. -->
+     Modal over the main window: while Siril runs in process/ there is no sense in being able
+     to choose another folder or start an analysis on the same one. It opens already started
+     - the script was chosen on the problem card - and shows three things: the current
+     command with its progress bar, the log lines as in Siril's panel, and at the end the
+     run's verdict. Closing during the run stops Siril, after a confirmation. -->
 
 <Window x:Class="FlatCheck.Wpf.SirilRunWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -46,7 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <!-- ============================================================ antet -->
+    <!-- ============================================================ header -->
     <StackPanel Grid.Row="0">
       <TextBlock Text="{Binding ScriptName}" FontSize="15" FontWeight="SemiBold" />
       <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding ScriptPath}"
@@ -60,7 +60,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                Text="{Binding Warning}"
                Visibility="{Binding HasWarning, Converter={StaticResource BoolToVis}}" />
 
-    <!-- ============================================================ progres -->
+    <!-- ============================================================ progress -->
     <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="12,10">
       <StackPanel>
         <Grid>
@@ -86,7 +86,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                      Text="{Binding ProgressLabel}" />
         </Grid>
 
-        <!-- nedefinita intre operatiile cu progres; definita cand Siril raporteaza procente -->
+        <!-- indeterminate between the operations with progress; determinate when Siril reports
+             percentages -->
         <ProgressBar Margin="0,8,0,0" IsIndeterminate="True">
           <ProgressBar.Style>
             <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
@@ -112,7 +113,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <TextBox x:Name="LogBox" Grid.Row="3" Margin="0,12,0,0" Style="{StaticResource LogBox}"
              Text="{Binding Log, Mode=OneWay}" TextChanged="ScrollToEnd" />
 
-    <!-- ============================================================ verdictul rularii -->
+    <!-- ============================================================ the run's verdict -->
     <TextBlock Grid.Row="4" Margin="0,12,0,0" TextWrapping="Wrap" Text="{Binding Outcome}">
       <TextBlock.Style>
         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
@@ -131,7 +132,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </TextBlock.Style>
     </TextBlock>
 
-    <!-- ============================================================ butoane -->
+    <!-- ============================================================ buttons -->
     <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
       <Button Content="Opreste" MinWidth="96" Click="CancelRun"
               Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />

@@ -17,17 +17,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- SplitView - tabul Split (ADR 0054).
+<!-- SplitView - the Split tab (ADR 0054).
 
-     Sus, alegerea: in cate parti, ce script, si butonul. Nimic nu ruleaza singur - se
-     copiaza gigaocteti si se ruleaza Siril de N ori. In timpul rularii, in locul
-     ecranului de asteptare al celorlalte taburi, un card cu faza, bara pe tot fluxul,
-     log-ul lui Siril si Opreste. Dupa, tabelul cu o coloana pe parte, intregul si
-     profilul de referinta, si sub el hartile una langa alta pe scara aleasa.
+     At the top, the choice: into how many parts, which script, and the button. Nothing runs
+     by itself - gigabytes are copied and Siril is run N times. During the run, instead of the
+     other tabs' waiting screen, a card with the phase, a bar over the whole flow, Siril's
+     log and Opreste. After it, the table with one column per part, the whole and the
+     reference profile, and under it the maps side by side on the chosen scale.
 
-     Tabelul are un numar variabil de coloane, deci nu e un Grid cu coloane fixe: un
-     ItemsControl de randuri, fiecare rand un ItemsControl orizontal de celule de latime
-     fixa, cu antetul facut la fel. -->
+     The table has a variable number of columns, so it is not a Grid with fixed columns: an
+     ItemsControl of rows, each row a horizontal ItemsControl of fixed-width cells, with the
+     header made the same way. -->
 
 <UserControl x:Class="FlatCheck.Wpf.SplitView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -35,14 +35,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              xmlns:local="clr-namespace:FlatCheck.Wpf">
 
   <UserControl.Resources>
-    <!-- o celula: valoarea si, pe acelasi rand, pastila verdictului; latime fixa, ca
-         celulele unui rand sa cada sub antetele lor -->
+    <!-- a cell: the value and, on the same line, the verdict's pill; a fixed width, so that
+         the cells of a row fall under their headers -->
     <DataTemplate x:Key="SplitCellTemplate">
       <StackPanel Orientation="Horizontal" Width="230" Margin="0,0,6,0" VerticalAlignment="Center">
         <TextBlock Style="{StaticResource Number}" Text="{Binding Value}"
                    TextAlignment="Left" HorizontalAlignment="Left"
                    TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-        <!-- pastila imediat dupa valoare, la un spatiu, nu la marginea celulei -->
+        <!-- the pill right after the value, one space away, not at the cell's edge -->
         <ContentControl Margin="5,0,0,0" VerticalAlignment="Center"
                         Content="{Binding Verdict}"
                         ContentTemplate="{StaticResource VerdictChip}"
@@ -110,7 +110,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
       <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding Intro}" />
 
-      <!-- ================================================== alegerea -->
+      <!-- ================================================== choice -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0" IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}">
         <StackPanel>
           <TextBlock Text="{Binding FramesLine}" />
@@ -158,7 +158,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </Border>
 
-      <!-- ================================================== rularea -->
+      <!-- ================================================== run -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0"
               Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">
         <StackPanel>
@@ -195,7 +195,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                  Text="{Binding TempNote}"
                  Visibility="{Binding TempNote, Converter={StaticResource NotNullToVis}}" />
 
-      <!-- ================================================== rezultatul -->
+      <!-- ================================================== result -->
       <StackPanel Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
 
         <TextBlock Style="{StaticResource Muted}" Margin="2,12,0,0" TextWrapping="Wrap"
@@ -211,8 +211,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,0,0,8">
               <Run Text="profil de referinta: " /><Run Text="{Binding ReferenceLine, Mode=OneWay}" />
             </TextBlock>
-            <!-- doar orizontal; rotita merge mai departe la pagina, altfel tabelul o inghite
-                 si pagina nu se mai deruleaza cu mausul peste el -->
+            <!-- horizontal only; the wheel goes on to the page, otherwise the table swallows it
+                 and the page no longer scrolls with the mouse over it -->
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
                           PreviewMouseWheel="ForwardWheel">
               <StackPanel>

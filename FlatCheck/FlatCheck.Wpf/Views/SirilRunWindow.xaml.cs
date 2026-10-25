@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SirilRunWindow.xaml.cs - fereastra de rulare a unui script Siril.
+// SirilRunWindow.xaml.cs - the window that runs a Siril script.
 //
-// Tot ce e stare sta in SirilRunViewModel. Aici raman lucrurile care chiar au nevoie de
-// o fereastra: pornirea la incarcare, derularea log-ului la coada, confirmarea la
-// inchidere in timpul rularii, si bara de titlu intunecata.
+// Everything that is state sits in SirilRunViewModel. Here remain the things that really
+// need a window: the start on loading, scrolling the log to its end, the confirmation on
+// closing during the run, and the dark title bar.
 
 using System.ComponentModel;
 using System.Windows;
@@ -27,11 +27,21 @@ using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The modal window that runs one Siril script: the current command and its progress, the
+    /// log, and the run's verdict at the end, bound to <see cref="SirilRunViewModel"/>.
+    /// </summary>
     public partial class SirilRunWindow : Window
     {
         readonly SirilRunViewModel _vm;
         readonly SirilRunner _runner;
 
+        /// <summary>
+        /// Builds the window over the run's view-model; the run starts once the window has
+        /// loaded.
+        /// </summary>
+        /// <param name="vm">The run's state: the script, the commands and the log.</param>
+        /// <param name="runner">What starts siril-cli; a fake one in the tests.</param>
         internal SirilRunWindow(SirilRunViewModel vm, SirilRunner runner)
         {
             InitializeComponent();
@@ -45,10 +55,12 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Inchiderea in timpul rularii inseamna oprirea lui Siril la mijloc, deci se
-        /// intreaba. "Nu" lasa fereastra deschisa; "Da" omoara procesul si inchide -
-        /// verdictul de anulare ajunge in ViewModel, pe care nu-l mai vede nimeni.
+        /// Closing during the run means stopping Siril in the middle, so it asks. "Nu"
+        /// leaves the window open; "Da" kills the process and closes - the cancellation
+        /// verdict reaches the view-model, which nobody sees any more.
         /// </summary>
+        /// <param name="sender">The window.</param>
+        /// <param name="e">The close; cancelled when the user answers "Nu".</param>
         void OnClosing(object sender, CancelEventArgs e)
         {
             if (!_vm.IsRunning) return;
@@ -62,11 +74,19 @@ namespace FlatCheck.Wpf
             _vm.Cancel();
         }
 
+        /// <summary>The stop button's handler: cancels the run.</summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">The click.</param>
         void CancelRun(object sender, RoutedEventArgs e) => _vm.Cancel();
 
+        /// <summary>The close button's handler, once the run has ended.</summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">The click.</param>
         void CloseWindow(object sender, RoutedEventArgs e) => Close();
 
-        /// <summary>Log-ul urmareste ultima linie, ca panoul din Siril.</summary>
+        /// <summary>The log follows the last line, like Siril's panel.</summary>
+        /// <param name="sender">The log's text box.</param>
+        /// <param name="e">The change.</param>
         void ScrollToEnd(object sender, TextChangedEventArgs e) => ((TextBox)sender).ScrollToEnd();
     }
 }

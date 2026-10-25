@@ -17,13 +17,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ReportPanel - raportul brut, exact cum l-ar fi scris consola.
+<!-- ReportPanel - the raw report, exactly as the console would have written it.
 
-     Pliat implicit: panourile de deasupra spun acelasi lucru mai bine asezat. Exista
-     fiindca e textul care se lipeste pe un forum sau intr-un mesaj, si fiindca e exact
-     continutul fisierului salvat pe disc - nu o a doua redactare a lui.
+     Folded by default: the panels above say the same thing better laid out. It exists
+     because it is the text pasted on a forum or in a message, and because it is exactly the
+     content of the file saved on disk - not a second wording of it.
 
-     TextBox si nu TextBlock, ca sa se poata selecta si copia. IsReadOnly, evident. -->
+     A TextBox and not a TextBlock, so that it can be selected and copied. IsReadOnly,
+     obviously. -->
 
 <UserControl x:Class="FlatCheck.Wpf.ReportPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

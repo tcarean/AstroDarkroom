@@ -21,17 +21,27 @@ using System.Windows.Input;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The Split tab (ADR 0054): the choice of parts and script, the run with Siril's log, then
+    /// the table of parts and their maps, bound to <see cref="SplitTabViewModel"/>.
+    /// </summary>
     public partial class SplitView : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public SplitView() => InitializeComponent();
 
+        /// <summary>Keeps Siril's log on its last line as it grows.</summary>
+        /// <param name="sender">The log's text box.</param>
+        /// <param name="e">The change.</param>
         void ScrollToEnd(object sender, TextChangedEventArgs e) => ((TextBox)sender).ScrollToEnd();
 
         /// <summary>
-        /// ScrollViewer-ul orizontal al tabelului prinde rotita chiar daca n-are ce derula pe
-        /// verticala, si pagina ramane pe loc cu mausul peste tabel. Rotita se trimite mai
-        /// departe, parintelui, ca eveniment nou.
+        /// The table's horizontal ScrollViewer catches the wheel even when it has nothing to
+        /// scroll vertically, and the page stays put with the mouse over the table. The wheel
+        /// is passed on to the parent, as a new event.
         /// </summary>
+        /// <param name="sender">The table's horizontal scroll viewer.</param>
+        /// <param name="e">The wheel; marked handled once passed on.</param>
         void ForwardWheel(object sender, MouseWheelEventArgs e)
         {
             if (e.Handled) return;

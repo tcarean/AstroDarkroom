@@ -19,8 +19,14 @@ using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The Netezire tab: the guide, the scale and the button that writes the smoothed master;
+    /// after the run, what was removed and the structure tests before and after, bound to
+    /// <see cref="SmoothTabViewModel"/>.
+    /// </summary>
     public partial class SmoothView : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public SmoothView() => InitializeComponent();
     }
 }

@@ -17,12 +17,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- StructureView - tabul 1.
+<!-- StructureView - tab 1.
 
-     Doua coloane: cifrele la stanga, harta reziduala la dreapta. Harta merita jumatate
-     de ecran fiindca raspunde la o intrebare pe care cifrele nu o pot pune - ce FORMA
-     are problema. Un gradient orizontal, unul diagonal si o pata intr-un colt pot da
-     acelasi procent si au cauze complet diferite. -->
+     Two columns: the figures on the left, the residual map on the right. The map deserves
+     half the screen because it answers a question the figures cannot ask - what SHAPE the
+     problem has. A horizontal gradient, a diagonal one and a spot in a corner can give the
+     same percentage and have completely different causes. -->
 
 <UserControl x:Class="FlatCheck.Wpf.StructureView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -30,13 +30,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              xmlns:local="clr-namespace:FlatCheck.Wpf">
 
   <UserControl.Resources>
-    <!-- Un rand din tabelul "vignetarea fata de profilul obiectivului": sursa, obiectivul si
-         montura pe primul rand; profilul folosit, adancimea lui, diferenta fata de master si
-         pastila pe al doilea; nota (formatul de calibrare fata de senzor) pe al treilea, DOAR
-         in coloana numelui, pe cate randuri ii trebuie - intinsa sub cifre arata ca o
-         continuare a lor, si utilizatorul a spus ca "arata dubios". Randul care da
-         verdictul e ingrosat, ca reziduul in tabelul testelor. Local, nu in Dark.xaml:
-         singurul lui consumator e tabul asta. -->
+    <!-- A row of the table "vignetarea fata de profilul obiectivului": the source, the lens and
+         the mount on the first line; the profile used, its depth, the difference from the master
+         and the pill on the second; the note (the calibration format against the sensor) on the
+         third, ONLY in the name column, on as many lines as it needs - stretched under the
+         figures it looks like a continuation of them, and the user said it "arata dubios". The
+         row that gives the verdict is bold, like the residual in the tests table. Local, not in
+         Dark.xaml: its only consumer is this tab. -->
     <DataTemplate x:Key="LensProfileRowTemplate">
       <Grid Margin="0,0,0,12">
         <Grid.ColumnDefinitions>
@@ -106,20 +106,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ColumnDefinition Width="2*" MinWidth="280" />
       </Grid.ColumnDefinitions>
 
-      <!-- ========================================================== cifrele -->
+      <!-- ========================================================== figures -->
       <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="20,18,10,18">
         <StackPanel>
 
           <TextBlock Style="{StaticResource Faint}" Text="{Binding Source}"
                      TextTrimming="CharacterEllipsis" />
-          <!-- doua mastere in folder (masters/ si process/): se spune care s-a luat -->
+          <!-- two masters in the folder (masters/ and process/): it says which one was taken -->
           <TextBlock Margin="0,6,0,0" Foreground="#F0C674" TextWrapping="Wrap" FontSize="12"
                      Text="{Binding SourceWarning}"
                      Visibility="{Binding HasSourceWarning, Converter={StaticResource BoolToVis}}" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" Text="{Binding Size}" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,1,0,0" Text="{Binding Levels}" />
 
-          <!-- verdictul, sus si mare: e singurul lucru pentru care se deschide tabul -->
+          <!-- the verdict, at the top and large: it is the only thing the tab is opened for -->
           <Border Style="{StaticResource Card}" Margin="0,16,0,0">
             <StackPanel>
               <StackPanel Orientation="Horizontal">
@@ -131,14 +131,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                              FontSize="16" FontWeight="Bold" />
                 </Border>
               </StackPanel>
-              <!-- forma si adancimea, cand s-a comparat cu profilul: spune care din cele doua
-                   a dat verdictul, fiindca pastila singura nu poate -->
+              <!-- the shape and the depth, when compared with the profile: it says which of the two
+                   gave the verdict, because the pill alone cannot -->
               <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap"
                          Text="{Binding VerdictDetail}"
                          Visibility="{Binding VerdictDetail, Converter={StaticResource NotNullToVis}}" />
               <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding Advice}" />
-              <!-- Atentionarea pentru o pata compacta. Galben, nu rosu, si nu in pastila
-                   de verdict: nu spune ca flat-ul e prost, intreaba la ce il folosesti. -->
+              <!-- The warning for a compact spot. Yellow, not red, and not in the verdict pill: it
+                   does not say the flat is bad, it asks what you use it for. -->
               <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="0,12,0,0"
                          TextWrapping="Wrap" Text="{Binding LocalSpotWarning}"
                          Visibility="{Binding LocalSpotWarning, Converter={StaticResource NotNullToVis}}" />
@@ -153,9 +153,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                           ItemTemplate="{StaticResource MetricRowTemplate}" />
           </Border>
 
-          <!-- Al saselea test, de alt fel: adancimea vignetarii fata de profilele publicate
-               ale obiectivului, pe scara in stopuri. Cele cinci de mai sus sunt oarbe la un
-               exces radial; asta e singurul loc unde se vede. Titlul vine din nucleu. -->
+          <!-- The sixth test, of another kind: the depth of the vignetting against the lens's
+               published profiles, on the scale in stops. The five above are blind to a radial
+               excess; this is the only place where it shows. The title comes from the core. -->
           <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="{Binding ProfilesHeading}" />
           <Border Style="{StaticResource Card}">
             <StackPanel>
@@ -175,9 +175,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                               ItemTemplate="{StaticResource LensProfileRowTemplate}" />
                 <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"
                            Text="{Binding ProfileSummary}" />
-                <!-- Scara adancimii: aceleasi patru benzi ca scara de reziduu de mai jos, in
-                     stopuri, cu banda verdictului marcata - si propozitia care spune ca e
-                     aceeasi scara, tradusa, nu un prag nou. -->
+                <!-- The depth scale: the same four bands as the residual scale below, in stops,
+                     with the verdict's band marked - and the sentence that says it is the same
+                     scale, translated, not a new threshold. -->
                 <TextBlock Style="{StaticResource Faint}" Margin="0,12,0,4" Text="SCARA ADANCIMII (in stopuri)" />
                 <ItemsControl ItemsSource="{Binding ProfileScale}"
                               ItemTemplate="{StaticResource ScaleRowTemplate}" />
@@ -207,7 +207,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                           ItemTemplate="{StaticResource MetricRowTemplate}" />
           </Border>
 
-          <!-- unde a ajuns raportul pe disc, si ce s-a intamplat daca n-a ajuns -->
+          <!-- where the report went on disk, and what happened if it did not get there -->
           <TextBlock Style="{StaticResource Faint}" Margin="2,18,0,0"
                      Visibility="{Binding SavedTo, Converter={StaticResource NotNullToVis}}">
             <Run Text="Raport salvat:" />
@@ -222,7 +222,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </ScrollViewer>
 
-      <!-- ========================================================== harta -->
+      <!-- ========================================================== map -->
       <Grid Grid.Column="1" Margin="10,18,20,18">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
@@ -234,9 +234,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="HARTA REZIDUALA" />
 
-        <!-- Scara culorilor. GroupName trebuie sa difere de cel din tabul Ratio: WPF
-             grupeaza RadioButton dupa nume in toata fereastra, deci un nume comun ar
-             face chipurile de aici sa debifeze chipurile de acolo. -->
+        <!-- The colour scale. The GroupName must differ from the one in the Ratio tab: WPF
+             groups RadioButtons by name in the whole window, so a shared name would make the
+             chips here uncheck the chips there. -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
           <TextBlock Style="{StaticResource Faint}" Text="scara:" Margin="0,0,10,0"
                      VerticalAlignment="Center" />

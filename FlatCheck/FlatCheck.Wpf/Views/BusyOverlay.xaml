@@ -17,13 +17,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- BusyOverlay - ecranul de asteptare al unui tab.
+<!-- BusyOverlay - the waiting screen of a tab.
 
-     Nu are proprietati proprii: se leaga la DataContext-ul mostenit, care in orice tab e
-     un TabViewModel. Asa acelasi control merge in toate patru fara nicio parametrizare.
+     It has no properties of its own: it binds to the inherited DataContext, which in any tab
+     is a TabViewModel. That way the same control works in all four without any
+     parametrisation.
 
-     Acopera tot tabul, cu un fundal aproape opac, ca sa nu se poata apasa pe controale
-     in timp ce se calculeaza - alternativa ar fi fost sa dezactivez fiecare buton pe rand. -->
+     It covers the whole tab, with an almost opaque background, so that the controls cannot be
+     pressed while it computes - the alternative would have been to disable every button in
+     turn. -->
 
 <UserControl x:Class="FlatCheck.Wpf.BusyOverlay"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -43,9 +45,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                  TextAlignment="Center"
                  Visibility="{Binding BusyDetail, Converter={StaticResource NotNullToVis}}" />
 
-      <!-- Bara e determinata doar pe serie, unde se stie cate cadre sunt. Pentru o
-           singura analiza nu se poate sti cat mai dureaza, deci merge nedefinit in loc
-           sa minta cu un procent inventat. -->
+      <!-- The bar is determinate only on a series, where the number of frames is known. For a
+           single analysis there is no knowing how long it will take, so it runs indeterminate
+           instead of lying with an invented percentage. -->
       <ProgressBar Width="280" Margin="0,18,0,0" IsIndeterminate="True"
                    Visibility="{Binding ProgressKnown, Converter={StaticResource NotBoolToVis}}" />
 

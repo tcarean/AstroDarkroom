@@ -17,11 +17,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ZoomableImage - o poza intr-un viewport, cu zoom si deplasare.
+<!-- ZoomableImage - a picture in a viewport, with zoom and panning.
 
-     LayoutTransform, nu RenderTransform: asa intinderea derulabila urmeaza zoom-ul si
-     barele apar exact cand poza nu mai incape. Image cu Stretch=None, ca un pixel de
-     bitmap sa fie un pixel de ecran la factor 1. Tot comportamentul e in code-behind. -->
+     LayoutTransform, not RenderTransform: that way the scrollable extent follows the zoom and
+     the bars appear exactly when the picture no longer fits. Image with Stretch=None, so that
+     a bitmap pixel is a screen pixel at factor 1. All the behaviour is in the code-behind. -->
 
 <UserControl x:Class="FlatCheck.Wpf.ZoomableImage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

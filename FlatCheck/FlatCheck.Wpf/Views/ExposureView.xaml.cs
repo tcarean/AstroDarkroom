@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ExposureView.xaml.cs - doar legatura cu XAML-ul; comportamentul e in ViewModel.
+// ExposureView.xaml.cs - only the link to the XAML; the behaviour is in the view-model.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The Expunere tab: the raw flats on the left, the exposure result of the chosen one on
+    /// the right, bound to <see cref="ExposureTabViewModel"/>.
+    /// </summary>
     public partial class ExposureView : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public ExposureView() => InitializeComponent();
     }
 }

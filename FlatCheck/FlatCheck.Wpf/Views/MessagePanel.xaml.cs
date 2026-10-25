@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MessagePanel.xaml.cs - doar legatura cu XAML-ul; comportamentul e in ViewModel.
+// MessagePanel.xaml.cs - only the link to the XAML; the behaviour is in the view-model.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The explanation shown instead of a tab's results when it cannot compute: what is missing
+    /// and what to do, bound to the inherited <see cref="TabViewModel"/>.
+    /// </summary>
     public partial class MessagePanel : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public MessagePanel() => InitializeComponent();
     }
 }

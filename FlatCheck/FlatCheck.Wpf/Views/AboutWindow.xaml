@@ -17,12 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- AboutWindow - icoana, versiunea, copyright-ul, notita GPLv3 si componentele terte.
+<!-- AboutWindow - the icon, the version, the copyright, the GPLv3 notice and the third-party
+     components.
 
-     Modala, centrata pe fereastra parinte, fara buton de maximizare: nu e un ecran de
-     lucru, e o notita de citit si de inchis. Esc o inchide prin IsCancel. Nicio cifra si
-     nicio propozitie nu e scrisa aici - totul vine prin AboutViewModel, ca textul sa fie
-     acelasi cu ce tipareste consola in ajutorul ei. -->
+     Modal, centred on the parent window, without a maximise button: it is not a work screen,
+     it is a notice to read and close. Esc closes it through IsCancel. No figure and no
+     sentence is written here - everything comes through AboutViewModel, so that the text is
+     the same as what the console prints in its help. -->
 
 <Window x:Class="FlatCheck.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -38,7 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
   <StackPanel Margin="24,20,24,20">
 
-    <!-- ============================================================ antet -->
+    <!-- ============================================================ header -->
     <Grid>
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto" />
@@ -57,7 +58,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </StackPanel>
     </Grid>
 
-    <!-- ============================================================ licenta -->
+    <!-- ============================================================ licence -->
     <Border Style="{StaticResource Card}" Margin="0,18,0,0">
       <StackPanel>
         <TextBlock Style="{StaticResource Heading}" Text="{Binding LicenceHeading}" />
@@ -70,7 +71,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </StackPanel>
     </Border>
 
-    <!-- ============================================================ componente terte -->
+    <!-- ============================================================ third-party components -->
     <Border Style="{StaticResource Card}" Margin="0,12,0,0">
       <StackPanel>
         <TextBlock Style="{StaticResource Heading}" Text="{Binding ThirdPartyHeading}" />
@@ -80,7 +81,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </StackPanel>
     </Border>
 
-    <!-- ============================================================ inchidere -->
+    <!-- ============================================================ closing -->
     <Button Content="Inchide" IsCancel="True" IsDefault="True" Click="Close"
             HorizontalAlignment="Right" Margin="0,16,0,0" MinWidth="96" />
   </StackPanel>

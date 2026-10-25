@@ -17,16 +17,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- HistogramGuidePanel - cum se citesc histogramele pe canal.
+<!-- HistogramGuidePanel - how to read the per-channel histograms.
 
-     Al treilea ghid pliat al aplicatiei, cu aceeasi forma ca MapGuidePanel si
-     HowToReadPanel: acelasi stil de disclosure, acelasi sablon de rand, textul in
-     SessionMessages. Pliat implicit, ca verdictul si cifrele sa ramana primele.
+     The application's third folded guide, with the same shape as MapGuidePanel and
+     HowToReadPanel: the same disclosure style, the same row template, the text in
+     SessionMessages. Folded by default, so that the verdict and the figures stay first.
 
-     Starea sta in ViewModel (HistogramGuide.IsExpanded), nu intr-un ElementName local,
-     ca s-o poata deschide un test - legarile din interiorul unui card pliat nu sunt
-     niciodata evaluate, si tocmai o legare care cade la afisare e ce cauta
-     WindowSmokeTests. -->
+     The state sits in the view-model (HistogramGuide.IsExpanded), not in a local
+     ElementName, so that a test can open it - the bindings inside a folded card are never
+     evaluated, and a binding that fails on display is exactly what WindowSmokeTests looks
+     for. -->
 
 <UserControl x:Class="FlatCheck.Wpf.HistogramGuidePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
