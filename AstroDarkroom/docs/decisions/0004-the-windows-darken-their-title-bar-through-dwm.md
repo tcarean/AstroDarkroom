@@ -14,10 +14,8 @@ title bar to follow the dark theme too, as it does in the five tools the launche
 
 ## Decision
 
-Both windows call `DarkTitleBar.Apply` on `SourceInitialized`; `DarkTitleBar` is a copy of
-LightsCheck's, a `LibraryImport` of `DwmSetWindowAttribute` with
-`DWMWA_USE_IMMERSIVE_DARK_MODE` (20, then 19 for the Windows 10 builds before 20H1), and the
-window project allows unsafe blocks for that one generated call.
+Both windows ask the window manager for a dark title bar through a copy of LightsCheck's
+`DarkTitleBar`, and the window project allows unsafe blocks for its one interop call.
 
 ## Alternatives rejected
 
@@ -31,7 +29,6 @@ window project allows unsafe blocks for that one generated call.
 
 ## Consequences
 
-`AllowUnsafeBlocks` is on in `AstroDarkroom.Wpf` only, for the source-generated marshalling;
-`AstroDarkroom.Core` stays safe. A Windows without either attribute, or without DWM, keeps the
-light bar and the launcher still starts. Message boxes are the system's and keep its bar.
+`AllowUnsafeBlocks` is on in `AstroDarkroom.Wpf` only; `AstroDarkroom.Core` stays safe. The
+copy is maintained apart from the tools' copies: a fix in one reaches the others only by hand.
 Nothing tests it: the window has no test project (ADR 0001); it is checked by eye.
