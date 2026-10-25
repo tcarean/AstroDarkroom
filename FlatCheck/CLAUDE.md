@@ -92,11 +92,8 @@ a kit rule names it.
 - **Languages** (varies the kit's rule "Languages", ADR 0006, ADR 0060). English in everything
   the model reads or writes about the process: docs, tests of invariants, scripts, commits,
   CHANGELOG. Romanian in everything the user sees: CLI text, `--help`, window labels,
-  `README.md`. Every comment is English, in C#, XAML, csproj and the tests; a comment written now
-  is English whatever the file around it. Until the documentation backfill
-  (`docs/plans/2026-10-24-document-every-type-and-method-and-translate-the-comments.md`) reaches
-  its area, a file may still hold Romanian comments beside English ones; its area translates
-  them all. The exception ends with the backfill's fifth area.
+  `README.md`. Every comment is English, in C#, XAML, csproj and the tests; Romanian output
+  quoted in a comment stays as the user sees it.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in
   a view-model or the console.

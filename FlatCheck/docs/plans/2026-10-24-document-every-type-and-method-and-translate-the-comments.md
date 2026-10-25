@@ -398,6 +398,64 @@ Each area adds its own section at its wrap-up.
     cases, 300 figures, all 300 identical to the recorded value; the gate `== OK`, 964 + 333
     tests.
 
+### Area 5, the views, the XAML, the tests and the project files (2026-10-25, `claude/Document-the-views-and-translate-tests`)
+
+- **No documentation-file error and no code change**: the 18 code-behind files built clean
+  under the gate at the first try; every commit is comments and comment layout only.
+- **The tests were translated by three subagents in parallel** (disjoint file lists: the two
+  halves of `FlatCheck.Wpf.Tests/` and all of `FlatCheck.Tests/`), each running the checks
+  below on its files; their diff was read back line by line before the commit. They also
+  re-wrapped English comment lines that ran past 100 columns (119 on `main` in the tests).
+- **XAML counted:** the plan's 162 comments are 21 GPL headers (unchanged), 101 comments and
+  40 section dividers in 20 files (`App.xaml` holds only its header).
+- **Comments corrected, in a commit of their own** (translated as they stood first):
+  1. `MainWindow.xaml`: "the five tabs" (three times) - there are eight.
+  2. `BusyOverlay.xaml`: "works in all four" - seven tabs use it, all but Split.
+  3. `HistEqView.xaml`: the master is from `masters/` or `process/`, not `process/` only.
+  4. `Theme/Dark.xaml`, `LogBox`: "the only TextBox in the application" - the Split tab's log
+     uses it too, and the raw report and the Sintetic fields are TextBoxes of their own.
+  5. `ReportPanel.xaml`: the report is the content of the file saved on disk only on the
+     Structura and Split tabs (`Rezultat testare.txt`, the split's result file).
+  6. `FlatCheck.Core.csproj`: "the three consumers" - four `InternalsVisibleTo` (the console,
+     the window, the two test projects); "the five result records" - no longer five.
+  7. `FlatCheck.Wpf.Tests.csproj`: "What is NOT tested: the XAML" - `WindowSmokeTests` renders
+     it and fails on a broken binding.
+  8. `WindowSmokeTests`: "The four tabs, with real results" - eight tabs and the window, three
+     with results; and the histogram test's summary sat above the synthetic test's, moved.
+  9. "Cerinta 3/4/5/8", the window's first brief (0982260), in `MainViewModelTests`,
+     `SirilSessionTests`, `StructureTabTests`, `ExposureTabTests`: now R-081, R-080 with
+     R-088, R-081 with R-090, R-084, R-043, as areas 3 and 4 mapped them; the "Cerinta 5" of
+     `TheReportGoesInTheChosenFolderNotInProcess` now names no requirement (see below).
+  10. `VersionTests`: the copyright is in `Directory.Build.props`, not "the csproj" (area 1's
+      item 2, the test's own code reads `BuildProps()`).
+  11. `LightReportTests`, `StatsTests`: flatcheck.py "is the oracle" - it was, until it froze
+      at 2.2.0 (ADR 0047).
+- **Found and reported** (a requirement; the owner's call, not changed): R-081 says the report
+  and the map are saved "beside the master"; `SirilSession.ResultTextPath` and
+  `ResidualPngPath` put them in the session folder (`Root`), which
+  `TheReportGoesInTheChosenFolderNotInProcess` pins, and the master may sit in `masters/` or
+  `process/`. Left as they stand: `SeriesDiscoveryTests` and `ParityFixtures` still speak of
+  "both implementations" and the crosscheck, true of the frozen prototype.
+- **The rule's exception closed:** `CLAUDE.md` "Languages" no longer allows a file in two
+  languages; ADR 0060 already said the fifth area removes it, so it is not edited.
+- **Measured on 2026-10-25:**
+  - The counter: on `main` 18 types and 41 methods to touch, all in `Views/`; on the branch
+    0 and 0 in the whole code (tests stay exempt from tags).
+  - `tokens`: all 122 code files and 79 test files identical to `main`'s code, 78 with changed
+    comments or layout after the first two commits.
+  - `facts`: no number, ID or identifier of the old comments missing, except "ViewModel"
+    becoming "view-model" in 15 files, as in areas 3 and 4.
+  - `romanian`: tests 0 of 3,952 comment lines; code 8 lines, every one quoted output or the
+    English "care" (the same as areas 1-4 left). XAML and csproj read line by line: only
+    quoted UI words remain ("Despre", "Restaurare", "Toate fisierele", "Opreste", NETEZIT,
+    INAPLICABIL, tab names).
+  - `width`: no comment line over 100 columns in the code and the tests; XAML and csproj
+    comments checked by script, none; every added line ASCII.
+  - `check-design.ps1 -Since main`: eight notes cover the files; none describes a corrected
+    claim, and none repeats one.
+  - Goldens: none changed. `/validate`: not run, as assumption 7 says (no formula file).
+  - The gate: `== OK` at each commit, 969 + 348 tests (`main`'s counts).
+
 ## Glossary: one English word per Romanian term, in every area
 
 | Romanian | English | Where, and the identifiers that fix it |

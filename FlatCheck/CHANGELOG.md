@@ -90,10 +90,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   muted and no publish ships the files (ADR 0059). The 34 errors it found on `main` are fixed.
 - Every comment is English from now on, tests, XAML and project files included (ADR 0060); the
   documentation backfill translates the Romanian ones in five areas while it writes the XML
-  comments the kit's ADR 0035 asks for on every type and method. Areas 1 to 4 done: the core's
-  root files, `Metrics.cs`, `Thresholds.cs`, `LensProfiles/`, `Analysis/`, `Report/`, `Runs/`,
-  the console, and the window's `Session/`, `Interop/`, `Mvvm/`, `Presentation/`, `App`,
-  `MainWindow` and `ViewModels/`.
+  comments the kit's ADR 0035 asks for on every type and method. All five areas done: every
+  type and method of the core, the console and the window is documented, and every comment of
+  the five projects, tests, XAML and project files included, is English; the rule's temporary
+  exception for files in two languages is gone from `CLAUDE.md`.
 - The window no longer words or computes anything of its own: the Expo tab's verdict, advice,
   channel lines and caption, the End to end tab's field line, refusal and reasons, and the
   notes under the structure rows moved to `Report/` (`ExposureReport`, `LightReport`,
