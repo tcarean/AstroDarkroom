@@ -16,19 +16,19 @@ the folder is ADR 0002, the split with no test project for the window is ADR 000
 ## The core
 
 - `SuiteApp` is one app: its folder name in the repository (also its name in `release.json`),
-  its Romanian title and description, its window exe and its optional console exe.
-  `AppCatalogue.Apps` is the fixed list of five, in workflow order (darks, flats, lights, the
-  processed pair, the print). The exe names are the components' `AssemblyName` plus `.exe`;
-  `SuiteTests` reads the components' project files to keep them so, and reads `kit.json` to
-  keep the list equal to the set of components the release bundles.
+  its Romanian title and description and its window exe. The suite ships windows only, so
+  there is no console field (ADR 0002). `AppCatalogue.Apps` is the fixed list of five, in
+  workflow order (darks, flats, lights, the processed pair, the print). The exe names are the
+  components' `AssemblyName` plus `.exe`; `SuiteTests` reads the components' project files to
+  keep them so, reads `kit.json` to keep the list equal to the set of components the release
+  bundles, and refuses an entry whose project is a console.
 - `SuiteFolder` is one base directory. `Locate(app)` combines it with the window exe and asks
   `File.Exists`; the result, `AppLocation`, carries the path either way, so a row can say what
-  file it would start, and the Romanian reason `Lipseste <exe>` when it is not there. Only the
-  window exe decides availability: the launcher starts windows, and ImageVisualCompare has no
-  console at all. `ManifestPath` is `release.json` in the same folder.
+  file it would start, and the Romanian reason `Lipseste <exe>` when it is not there.
+  `ManifestPath` is `release.json` in the same folder.
 - `Launcher.Plan(app, folder)` turns an available location into a `LaunchPlan`: the exe's full
   path and the base directory as working directory, so a component finds its own files (the
-  shared runtime, `lensfun/`, `LICENSE`) where it expects them. An unavailable app throws
+  shared desktop runtime, `lensfun/`, `LICENSE`) where it expects them. An unavailable app throws
   `InvalidOperationException` with the reason; the core never calls `Process.Start`.
 - `ReleaseManifest.TryRead(path)` parses the file `scripts/release.ps1` writes
   (`name`, `version`, `date`, `commit`, `components[]` with `name`, `version`, `commit`,
@@ -50,8 +50,8 @@ the folder is ADR 0002, the split with no test project for the window is ADR 000
 - `MainWindow` reads `release.json` once, then builds one `AppRow` per catalogue app: the app,
   its `AppLocation`, its `ComponentInfo` or null. The row's properties are the strings the XAML
   binds (`VersionHint` is `versiunea X` or `versiune necunoscuta`, `UnreleasedHint` is
-  `modificari nelansate` or empty, `ConsoleHint` is `consola: <exe>` or empty, `ButtonHint` is
-  the exe or the reason) and `IsAvailable`, which enables the button. The button's tooltip is
+  `modificari nelansate` or empty, `ButtonHint` is the exe or the reason) and `IsAvailable`,
+  which enables the button. The button's tooltip is
   shown on a disabled button too (`ToolTipService.ShowOnDisabled`), since the reason is the
   one thing a disabled row must tell. The window does not watch the folder: a file that
   appears or goes away is seen at the next start, or at the click, where a missing file

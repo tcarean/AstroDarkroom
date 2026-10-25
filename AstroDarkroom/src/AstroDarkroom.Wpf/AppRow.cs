@@ -41,9 +41,6 @@ public sealed record AppRow(SuiteApp App, AppLocation Location, ComponentInfo? C
     /// <summary>The tooltip of the button: why the app cannot start, or the file it starts.</summary>
     public string ButtonHint => Location.IsAvailable ? App.WindowExe : Location.Reason ?? "";
 
-    /// <summary>The console beside the window ("consola: darkscheck.exe"), or "" for an app without one.</summary>
-    public string ConsoleHint => App.ConsoleExe is null ? "" : "consola: " + App.ConsoleExe;
-
     /// <summary>The component's version from release.json ("versiunea 2.3.0"), or that it is unknown.</summary>
     public string VersionHint => Component is { Version.Length: > 0 } c ? "versiunea " + c.Version : "versiune necunoscuta";
 

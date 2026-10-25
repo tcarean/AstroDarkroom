@@ -29,30 +29,21 @@ public class LauncherTests
     {
         SuiteApp[] expected =
         [
-            new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau ale unei biblioteci", "DarksCheck.Wpf.exe", "darkscheck.exe"),
-            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv", "FlatCheck.Wpf.exe", "flatcheck.exe"),
-            new("LightsCheck", "LightsCheck", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift", "LightsCheck.Wpf.exe", "lightscheck.exe"),
-            new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale aceleiasi procesari, pixel cu pixel", "ImageVisualCompare.Wpf.exe", null),
-            new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Verifica o imagine finala inainte de print", "AstroPhotoAnalyzer.Wpf.exe", "AstroPhotoAnalyzer.exe"),
+            new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau ale unei biblioteci", "DarksCheck.Wpf.exe"),
+            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv", "FlatCheck.Wpf.exe"),
+            new("LightsCheck", "LightsCheck", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift", "LightsCheck.Wpf.exe"),
+            new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale aceleiasi procesari, pixel cu pixel", "ImageVisualCompare.Wpf.exe"),
+            new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Verifica o imagine finala inainte de print", "AstroPhotoAnalyzer.Wpf.exe"),
         ];
         Assert.Equal(expected, AppCatalogue.Apps);
     }
 
     [Fact]
-    public void R001_EveryApp_NamesAWindowExeAndSaysWhetherItHasAConsole()
+    public void R001_EveryApp_NamesAWindowExe_AndFoldersAreDistinct()
     {
-        foreach (SuiteApp app in AppCatalogue.Apps)
-        {
-            Assert.EndsWith(".exe", app.WindowExe, StringComparison.Ordinal);
-            Assert.Equal(app.ConsoleExe is not null, app.HasConsole);
-            if (app.ConsoleExe is not null)
-            {
-                Assert.EndsWith(".exe", app.ConsoleExe, StringComparison.Ordinal);
-            }
-        }
-
-        Assert.Equal(4, AppCatalogue.Apps.Count(a => a.HasConsole));
-        Assert.False(App("ImageVisualCompare").HasConsole);
+        Assert.All(AppCatalogue.Apps, a => Assert.EndsWith(".Wpf.exe", a.WindowExe, StringComparison.Ordinal));
+        Assert.Equal(AppCatalogue.Apps.Count, AppCatalogue.Apps.Select(a => a.Folder).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(AppCatalogue.Apps.Count, AppCatalogue.Apps.Select(a => a.WindowExe).Distinct(StringComparer.Ordinal).Count());
     }
 
     [Fact]
@@ -73,7 +64,7 @@ public class LauncherTests
     {
         using TempWorkspace ws = new();
         ws.Touch("DarksCheck.Wpf.exe");
-        ws.Touch("flatcheck.exe");   // the console alone does not make FlatCheck available
+        ws.Touch("flatcheck.exe");   // a console of FlatCheck's own release does not make FlatCheck available
         SuiteFolder folder = new(ws.Root);
 
         AppLocation missing = folder.Locate(App("FlatCheck"));

@@ -4,9 +4,10 @@ Astro Darkroom is the launcher and the release of the five astrophotography tool
 repository: DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare and AstroPhotoAnalyzer. The
 launcher is a small WPF window that lists the five, says which is in the suite folder beside it
 and starts the one the user picks; it computes nothing of its own. Its `<Version>` is the
-suite's version and its `/release` publishes the five components and the launcher into one flat
-self-contained folder, zipped for Bitbucket Downloads. It is for the owner and the few people
-who receive the zip; it is not a sixth analysis tool and never changes a component.
+suite's version and its `/release` publishes the five components' windows and the launcher into
+one flat self-contained folder, zipped for Bitbucket Downloads; the consoles stay in the
+components' own releases (ADR 0002). It is for the owner and the few people who receive the
+zip; it is not a sixth analysis tool and never changes a component.
 
 ## Commands
 
@@ -23,7 +24,7 @@ who receive the zip; it is not a sixth analysis tool and never changes a compone
 - Design notes a branch touched (the index and Covers paths are a gate step):
   `scripts/check-design.ps1 -Since main`
 - Mutation score of Core (minutes, not in the gate): `scripts/mutate.ps1 [-Mutate "**/File.cs"]`
-- Release of the suite (verify, version, CHANGELOG, the five components and the launcher
+- Release of the suite (verify, version, CHANGELOG, the five windows and the launcher
   published into `artifacts/<version>/`, `release.json`, the zip and its `.sha256` in
   `artifacts/`; no commit, no tag): `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`; the publish
   alone again, from any branch: `-PublishOnly`
@@ -65,9 +66,10 @@ varies a kit rule names it.
 - **Core has no UI.** `AstroDarkroom.Core` never references Console, WPF, file dialogs or
   anything with a UI; it plans a start, the window executes it.
 - **The catalogue and kit.json agree.** Every app in `AppCatalogue` is a component of
-  `release.publish` in `kit.json` (an entry whose `project` starts with `../`) and every
-  component is in the catalogue, under the exe names its project files give; `SuiteTests`
-  checks it. A new app in the suite is one entry, one catalogue line and that test run.
+  `release.publish` in `kit.json` (one entry whose `project` starts with `../`, its window
+  project) and every component is in the catalogue, under the exe name its project file
+  gives; `SuiteTests` checks it, and refuses a console entry (ADR 0002). A new app in the
+  suite is one entry, one catalogue line and that test run.
 - **Romanian without diacritics in what the user sees, English everywhere else** (varies the
   kit's rule "Languages", ADR 0003). The window's labels, the catalogue's titles and
   descriptions and `README.md` are Romanian, written without diacritics; code, comments, tests,

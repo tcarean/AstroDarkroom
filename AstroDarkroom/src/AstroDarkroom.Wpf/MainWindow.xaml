@@ -78,8 +78,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                   <TextBlock Style="{StaticResource Faint}" Text="{Binding VersionHint}" />
                   <TextBlock Style="{StaticResource Faint}" Margin="10,0,0,0" Foreground="{StaticResource WarnBr}"
                              Text="{Binding UnreleasedHint}" />
-                  <TextBlock Style="{StaticResource Faint}" Margin="10,0,0,0" FontFamily="{StaticResource MonoFont}"
-                             Text="{Binding ConsoleHint}" />
                 </StackPanel>
               </StackPanel>
               <!-- ShowOnDisabled: the reason an app cannot start is the one thing a disabled

@@ -32,8 +32,8 @@ namespace AstroDarkroom.Tests;
 /// </summary>
 public partial class SuiteTests
 {
-    /// <summary>One release.publish entry that publishes from a sibling project.</summary>
-    private sealed record ComponentEntry(string Component, string ProjectFile);
+    /// <summary>One release.publish entry that publishes from a sibling project, with its output subfolder ("" is the root).</summary>
+    private sealed record ComponentEntry(string Component, string ProjectFile, string Output);
 
     private static string Root => TestData.FindRepoRoot();
 
@@ -50,7 +50,8 @@ public partial class SuiteTests
             if (project.StartsWith("../", StringComparison.Ordinal))
             {
                 string[] parts = project.Split('/');
-                entries.Add(new ComponentEntry(parts[1], Path.GetFullPath(Path.Combine(Root, project))));
+                string output = entry.TryGetProperty("output", out JsonElement o) && o.ValueKind == JsonValueKind.String ? o.GetString()! : "";
+                entries.Add(new ComponentEntry(parts[1], Path.GetFullPath(Path.Combine(Root, project)), output));
             }
         }
 
@@ -69,12 +70,13 @@ public partial class SuiteTests
     }
 
     /// <summary>
-    /// The window exe is the WinExe project's AssemblyName plus ".exe", the console exe the Exe
-    /// project's; a component with no Exe entry has no console. AssemblyName defaults to the
-    /// project file name.
+    /// Each component has one entry, a WinExe project published at the root, and the catalogue's
+    /// window exe is that project's AssemblyName plus ".exe" (AssemblyName defaults to the
+    /// project file name). A console entry (OutputType Exe) is refused: a console's base runtime
+    /// collides with the windows' desktop runtime in the flat folder (ADR 0002).
     /// </summary>
     [Fact]
-    public void EveryExeName_IsWhatTheComponentsProjectFileBuilds()
+    public void EveryWindowExe_IsWhatTheComponentsProjectFileBuilds_AndNoConsoleIsBundled()
     {
         List<ComponentEntry> entries = ComponentEntries();
         if (!SiblingsPresent(entries))
@@ -84,33 +86,15 @@ public partial class SuiteTests
 
         foreach (SuiteApp app in AppCatalogue.Apps)
         {
-            string? window = null;
-            string? console = null;
-            foreach (ComponentEntry entry in entries.Where(e => e.Component == app.Folder))
-            {
-                string csproj = File.ReadAllText(entry.ProjectFile);
-                Match output = OutputType().Match(csproj);
-                Assert.True(output.Success, $"{entry.ProjectFile} has no <OutputType>");
-                Match name = AssemblyName().Match(csproj);
-                string exe = (name.Success ? name.Groups[1].Value : Path.GetFileNameWithoutExtension(entry.ProjectFile)) + ".exe";
-                switch (output.Groups[1].Value)
-                {
-                    case "WinExe":
-                        Assert.Null(window);
-                        window = exe;
-                        break;
-                    case "Exe":
-                        Assert.Null(console);
-                        console = exe;
-                        break;
-                    default:
-                        Assert.Fail($"{entry.ProjectFile}: unexpected OutputType {output.Groups[1].Value}");
-                        break;
-                }
-            }
-
-            Assert.Equal(window, app.WindowExe);
-            Assert.Equal(console, app.ConsoleExe);
+            ComponentEntry entry = Assert.Single(entries, e => e.Component == app.Folder);
+            Assert.Equal("", entry.Output);
+            string csproj = File.ReadAllText(entry.ProjectFile);
+            Match output = OutputType().Match(csproj);
+            Assert.True(output.Success, $"{entry.ProjectFile} has no <OutputType>");
+            Assert.True(output.Groups[1].Value == "WinExe", $"{entry.ProjectFile}: OutputType {output.Groups[1].Value}; the suite bundles windows only");
+            Match name = AssemblyName().Match(csproj);
+            string exe = (name.Success ? name.Groups[1].Value : Path.GetFileNameWithoutExtension(entry.ProjectFile)) + ".exe";
+            Assert.Equal(exe, app.WindowExe);
         }
     }
 

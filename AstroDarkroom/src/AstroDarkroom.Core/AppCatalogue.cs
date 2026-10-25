@@ -29,10 +29,10 @@ public static class AppCatalogue
     /// <summary>The apps, in workflow order.</summary>
     public static IReadOnlyList<SuiteApp> Apps { get; } =
     [
-        new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau ale unei biblioteci", "DarksCheck.Wpf.exe", "darkscheck.exe"),
-        new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv", "FlatCheck.Wpf.exe", "flatcheck.exe"),
-        new("LightsCheck", "LightsCheck", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift", "LightsCheck.Wpf.exe", "lightscheck.exe"),
-        new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale aceleiasi procesari, pixel cu pixel", "ImageVisualCompare.Wpf.exe", null),
-        new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Verifica o imagine finala inainte de print", "AstroPhotoAnalyzer.Wpf.exe", "AstroPhotoAnalyzer.exe"),
+        new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau ale unei biblioteci", "DarksCheck.Wpf.exe"),
+        new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv", "FlatCheck.Wpf.exe"),
+        new("LightsCheck", "LightsCheck", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift", "LightsCheck.Wpf.exe"),
+        new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale aceleiasi procesari, pixel cu pixel", "ImageVisualCompare.Wpf.exe"),
+        new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Verifica o imagine finala inainte de print", "AstroPhotoAnalyzer.Wpf.exe"),
     ];
 }
