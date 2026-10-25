@@ -17,12 +17,22 @@
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
 
-// Stats.cs - primitive numerice pure: percentile, interpolare, solver, verdicte.
+// Stats.cs - pure numeric primitives: percentile, interpolation, solver, verdicts.
 
 namespace DarksCheck.Core
 {
+    /// <summary>
+    /// The numeric primitives the analyzers share: percentiles as numpy computes them, linear
+    /// interpolation and a small linear solver.
+    /// </summary>
     internal static class Stats
     {
+        /// <summary>
+        /// The <paramref name="p"/>-th percentile of a list, as <see cref="OfSorted"/> computes it.
+        /// </summary>
+        /// <param name="data">The values; not modified.</param>
+        /// <param name="p">The percentile, 0..100.</param>
+        /// <returns>The percentile; 0 for an empty list.</returns>
         internal static double Percentile(List<double> data, double p)
         {
             var s = data.ToArray();
@@ -30,8 +40,13 @@ namespace DarksCheck.Core
             return OfSorted(s, p);
         }
 
-        /// Supraincarcare pe array: evita copia in plus a unui .ToList() la apelant.
-        /// Pe un raster full-res de 24 MP asta inseamna ~190 MB mai putin per apel.
+        /// <summary>
+        /// The overload on an array: it avoids the extra copy of a .ToList() at the caller.
+        /// On a 24 MP full-res raster that means ~190 MB less per call.
+        /// </summary>
+        /// <param name="data">The values; not modified (a sorted copy is made).</param>
+        /// <param name="p">The percentile, 0..100.</param>
+        /// <returns>The percentile; 0 for an empty array.</returns>
         internal static double Percentile(double[] data, double p)
         {
             var s = (double[])data.Clone();
@@ -39,8 +54,12 @@ namespace DarksCheck.Core
             return OfSorted(s, p);
         }
 
-        /// Pentru cine are nevoie de mai multe percentile din acelasi set: sorteaza o
-        /// singura data si cheama asta de mai multe ori.
+        /// <summary>
+        /// For whoever needs several percentiles of the same set: sort once, then call
+        /// <see cref="OfSorted"/> several times.
+        /// </summary>
+        /// <param name="data">The values; not modified.</param>
+        /// <returns>A sorted copy of <paramref name="data"/>.</returns>
         internal static double[] Sorted(double[] data)
         {
             var s = (double[])data.Clone();
@@ -48,17 +67,31 @@ namespace DarksCheck.Core
             return s;
         }
 
+        /// <summary>
+        /// The <paramref name="p"/>-th percentile of values already sorted ascending, by linear
+        /// interpolation between the two neighbouring order statistics, like numpy's default.
+        /// </summary>
+        /// <param name="s">The values, sorted ascending.</param>
+        /// <param name="p">The percentile, 0..100.</param>
+        /// <returns>The percentile; 0 for an empty array, where numpy would throw.</returns>
         internal static double OfSorted(double[] s, double p)
         {
-            if (s.Length == 0) return 0;      // numpy ar arunca; divergenta deliberata
+            if (s.Length == 0) return 0;      // numpy would throw; a deliberate divergence
             if (s.Length == 1) return s[0];
             double idx = p / 100.0 * (s.Length - 1);
             int lo = (int)Math.Floor(idx), hi = (int)Math.Ceiling(idx);
             double frac = idx - lo;
-            return s[lo] * (1 - frac) + s[hi] * frac; // interpolare liniara, ca numpy
+            return s[lo] * (1 - frac) + s[hi] * frac; // linear interpolation, like numpy
         }
 
-
+        /// <summary>
+        /// Linear interpolation of <paramref name="x"/> in a table, held at the end values
+        /// outside it (like np.interp).
+        /// </summary>
+        /// <param name="x">The abscissa to look up.</param>
+        /// <param name="xs">The table's abscissas, ascending.</param>
+        /// <param name="ys">The table's values, as many as <paramref name="xs"/>.</param>
+        /// <returns>The interpolated value; 0 for an empty table.</returns>
         internal static double Interp(double x, double[] xs, double[] ys)
         {
             if (xs.Length == 0) return 0;
@@ -70,7 +103,13 @@ namespace DarksCheck.Core
             return ys[lo] + t * (ys[hi] - ys[lo]);
         }
 
-        // Gauss cu pivotare partiala; intoarce null daca singular.
+        /// <summary>
+        /// Solves <c>A x = b</c> by Gauss with partial pivoting; null if singular.
+        /// </summary>
+        /// <param name="A">The n x n matrix; not modified.</param>
+        /// <param name="b">The right-hand side, n values; not modified.</param>
+        /// <param name="n">The size of the system.</param>
+        /// <returns>The solution, n values; null when a pivot is below 1e-15 (singular).</returns>
         internal static double[] Solve(double[,] A, double[] b, int n)
         {
             var M = new double[n, n + 1];

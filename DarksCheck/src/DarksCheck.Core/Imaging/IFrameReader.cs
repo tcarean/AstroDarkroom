@@ -17,33 +17,46 @@
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
 
-// IFrameReader.cs - contractul pe care il implementeaza fiecare format de intrare.
+// IFrameReader.cs - the contract every input format implements.
 //
-// Implementarile sunt singurele care stiu un format anume. ImageLoader alege intre ele
-// prin contractul asta si nu cunoaste niciuna pe nume, deci un format nou se adauga fara
-// sa se atinga dispecerul - si, mai important, fara ca vreo diferenta de comportament
-// intre formate sa se poata strecura in el.
+// The implementations are the only ones that know a given format. ImageLoader names them once,
+// in its list of readers, and chooses between them only through this contract, so a new format
+// is added with one entry in that list and no change to the dispatch - and, more importantly,
+// without any difference in behaviour between formats being able to slip into it.
 
 namespace DarksCheck.Core
 {
+    /// <summary>
+    /// One input format: claims its files by extension, then reads a frame with or without its
+    /// pixels.
+    /// </summary>
     internal interface IFrameReader
     {
         /// <summary>
-        /// Revendica fisierul? Decizia e pe EXTENSIE, nu pe continut. Daca s-ar adulmeca
-        /// octetii, un raw pe care libraw nu-l stie ar putea cadea tacut pe cititorul
-        /// FITS si ar iesi de acolo ca zgomot, in loc de eroare.
+        /// Does this reader claim the file? The decision is on the EXTENSION, not on the
+        /// content. If the bytes were sniffed, a raw that libraw does not know could fall
+        /// silently onto the FITS reader and come out of it as noise, instead of an error.
         /// </summary>
+        /// <param name="path">The file's path; only its extension is looked at.</param>
+        /// <returns>True when this reader is the one for the file.</returns>
         bool Handles(string path);
 
+        /// <summary>
+        /// Reads the frame: its pixels and what the file says about it.
+        /// </summary>
+        /// <param name="path">A file this reader claims (<see cref="Handles"/>).</param>
+        /// <returns>The frame, with <see cref="LoadedFrame.Image"/> filled.</returns>
         LoadedFrame Load(string path);
 
         /// <summary>
-        /// Acelasi cadru, dar FARA pixeli: <see cref="LoadedFrame.Image"/> ramane null si
-        /// se completeaza doar ce spune fisierul despre el - headerul, focala, diafragma,
-        /// aparatul, obiectivul. Exista fiindca identificarea obiectivului si preumplerea
-        /// tabului Sintetic au nevoie de metadate, si o decodare de 24 MP pentru o
-        /// diafragma e o risipa care obliga la asteptari dupa lantul de deschidere.
+        /// The same frame, but WITHOUT pixels: <see cref="LoadedFrame.Image"/> stays null and
+        /// only what the file says about it is filled in - the header, the focal length, the
+        /// aperture, the camera, the lens. It exists because identifying the lens and prefilling
+        /// the Synthetic tab need metadata, and a 24 MP decode for an aperture is a waste that
+        /// makes the opening chain wait.
         /// </summary>
+        /// <param name="path">A file this reader claims (<see cref="Handles"/>).</param>
+        /// <returns>The frame's metadata, its image null.</returns>
         LoadedFrame LoadInfo(string path);
     }
 }

@@ -271,11 +271,11 @@ public class FitsReaderTests
         throw new InvalidOperationException("card not found: " + key);
     }
 
-    // ---------------------------------------------------------------- headerul
+    // ---------------------------------------------------------------- the header
 
     /// <summary>
-    /// Headerul era pana acum parsat si aruncat. --light are nevoie de el ca sa afle
-    /// focala si scara, deci sa poata refuza un cadru pe care testul nu se aplica.
+    /// The header was until now parsed and thrown away. --light needs it to find the focal
+    /// length and the scale, so that it can refuse a frame the test does not apply to.
     /// </summary>
     [Fact]
     public void LoadWithHeader_ReturnsTheCardsOfTheHduThatHeldTheImage()
@@ -292,7 +292,7 @@ public class FitsReaderTests
         Assert.Equal(32, FitsReader.HInt(hdr, "NAXIS1", 0));
     }
 
-    /// <summary>Un header minimal nu e o eroare - doar nu are cheile optionale.</summary>
+    /// <summary>A minimal header is not an error - it just lacks the optional keys.</summary>
     [Fact]
     public void LoadWithHeader_OnAMinimalHeader_SimplyLacksTheOpticalKeys()
     {
@@ -303,7 +303,7 @@ public class FitsReaderTests
         Assert.Equal(0, FitsReader.HDbl(hdr, "FOCALLEN", 0));
     }
 
-    /// <summary>Load ramane exact ce era: acelasi raster, headerul doar ignorat.</summary>
+    /// <summary>Load stays exactly what it was: the same raster, the header just ignored.</summary>
     [Fact]
     public void Load_StillReturnsTheSameRasterAsLoadWithHeader()
     {

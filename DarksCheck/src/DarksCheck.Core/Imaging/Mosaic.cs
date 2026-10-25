@@ -17,40 +17,53 @@
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
 
-// Mosaic.cs - regula comuna a mozaicului CFA: care pixel e in care pozitie Bayer, cand
-// un cadru "arata a CFA", si cum se numeste o pozitie.
+// Mosaic.cs - the shared rule of the CFA mosaic: which pixel is in which Bayer position, when a
+// frame "looks CFA", and what a position is called.
 //
-// A stat inline in ExposureAnalyzer pana la modul de egalizare de histograma, care avea
-// nevoie de exact aceleasi trei lucruri. Doua copii ale lui "(y & 1) * 2 + (x & 1)" si
-// ale lui "1.15" ar fi divergat la prima ajustare, si divergenta s-ar fi vazut abia cand
-// un canal se numea R intr-un tab si G in altul, pe acelasi fisier.
+// It sat inline in ExposureAnalyzer until the histogram equalisation mode, which needed exactly
+// the same three things. Two copies of "(y & 1) * 2 + (x & 1)" and of "1.15" would have diverged
+// at the first adjustment, and the divergence would have shown only when a channel was called R
+// in one tab and G in another, on the same file.
 //
-// ExposureAnalyzer NU foloseste Split: el umple histogramele in aceeasi trecere in care
-// citeste pixelii, iar o a doua copie a datelor ar costa memorie degeaba. Foloseste
-// PositionOf, LooksCfa si Label - regula, nu bufferele.
+// ExposureAnalyzer does NOT use Split: it fills the histograms in the same pass in which it reads
+// the pixels, and a second copy of the data would cost memory for nothing. It uses PositionOf,
+// LooksCfa and Label - the rule, not the buffers.
 
 namespace DarksCheck.Core
 {
+    /// <summary>
+    /// The 2x2 Bayer mosaic's rule: a pixel's position, the four positions as rasters and back,
+    /// and their names.
+    /// </summary>
     internal static class Mosaic
     {
-        /// <summary>Pozitia Bayer a pixelului (y, x): 0..3, in ordinea (y&amp;1)*2 + (x&amp;1).</summary>
+        /// <summary>
+        /// The Bayer position of the pixel (y, x): 0..3, in the order (y&amp;1)*2 + (x&amp;1).
+        /// </summary>
+        /// <param name="y">Row, 0 at the top.</param>
+        /// <param name="x">Column, 0 at the left.</param>
+        /// <returns>0 for [0,0], 1 for [0,1], 2 for [1,0], 3 for [1,1].</returns>
         internal static int PositionOf(int y, int x) => (y & 1) * 2 + (x & 1);
 
         /// <summary>
-        /// Pragul de la care cele patru mediane spun "mozaic intact". Sub el, canalele
-        /// sunt prea apropiate ca sa fie filtre de culoare diferite: fisierul e mono sau
-        /// debayerizat. Empiric, ca toate pragurile; un raw sub lumina foarte neutra poate
-        /// cadea sub el, si atunci se trateaza ca mono - ceea ce e o alegere sigura.
+        /// The threshold from which the four medians say "mosaic intact". Below it, the channels
+        /// are too close to be different colour filters: the file is mono or debayered.
+        /// Empirical, like all the thresholds; a raw under very neutral light can fall below it,
+        /// and is then treated as mono - which is a safe choice.
         /// </summary>
         internal const double CfaSpreadMin = 1.15;
 
-        /// <summary><paramref name="spread"/> = max/min peste cele patru mediane de pozitie.</summary>
+        /// <summary>Whether four position medians are those of an intact mosaic.</summary>
+        /// <param name="spread">max/min over the four position medians.</param>
+        /// <returns>True above <see cref="CfaSpreadMin"/>.</returns>
         internal static bool LooksCfa(double spread) => spread > CfaSpreadMin;
 
         /// <summary>
-        /// Cele patru pozitii ca patru rastere de H/2 x W/2 (impartire intreaga: un rand sau
-        /// o coloana in plus se pierde, ca la BlockMean). Indexul din vector e pozitia.
+        /// The four positions as four rasters of H/2 x W/2 (integer division: an extra row or
+        /// column is lost, as in BlockMean). The index in the array is the position.
         /// </summary>
+        /// <param name="a">The mosaic raster.</param>
+        /// <returns>Four rasters, indexed by <see cref="PositionOf"/>.</returns>
         internal static Img[] Split(Img a)
         {
             int h = a.H / 2, w = a.W / 2;
@@ -68,11 +81,14 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// O singura pozitie, ca raster de H/2 x W/2 - aceeasi decupare ca <see cref="Split"/>,
-        /// dar pentru un singur <paramref name="p"/>. Exista pentru modul de netezire, care
-        /// lucreaza pozitiile pe rand si n-are de ce sa tina toate patru copiile deodata:
-        /// pe un cadru de 24 MP asta e 190 MB in plus, degeaba.
+        /// A single position, as a raster of H/2 x W/2 - the same cut as <see cref="Split"/>, but
+        /// for a single <paramref name="p"/>. It exists for the smoothing mode, which works the
+        /// positions one at a time and has no reason to hold all four copies at once: on a 24 MP
+        /// frame that is 190 MB more, for nothing.
         /// </summary>
+        /// <param name="a">The mosaic raster.</param>
+        /// <param name="p">The position, 0..3, as <see cref="PositionOf"/> numbers it.</param>
+        /// <returns>The position's raster.</returns>
         internal static Img Extract(Img a, int p)
         {
             int h = a.H / 2, w = a.W / 2;
@@ -85,14 +101,18 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Inversul lui <see cref="Split"/>: cele patru pozitii, reimpletite intr-un raster
-        /// de marimea ORIGINALA <paramref name="h"/> x <paramref name="w"/>.
+        /// The inverse of <see cref="Split"/>: the four positions, woven back into a raster of
+        /// the ORIGINAL size <paramref name="h"/> x <paramref name="w"/>.
         ///
-        /// Split arunca un rand sau o coloana impara de la capat; aici linia lipsa se umple
-        /// copiind cea mai apropiata linie para, ca iesirea sa aiba mereu forma intrarii si
-        /// ultimul rand al unui cadru de 4017 sa nu fie zero - un flat cu o linie de zerouri
-        /// ar imparti lights-urile la zero pe acea linie.
+        /// Split drops an odd row or column at the end; here the missing line is filled by
+        /// copying the nearest even line, so that the output always has the input's shape and
+        /// the last row of a 4017 frame is not zero - a flat with a line of zeros would divide
+        /// the lights by zero on that line.
         /// </summary>
+        /// <param name="positions">The four position rasters, each (h/2) x (w/2).</param>
+        /// <param name="h">The height of the woven raster, in pixels.</param>
+        /// <param name="w">The width of the woven raster, in pixels.</param>
+        /// <returns>The mosaic raster of h x w.</returns>
         internal static Img Merge(Img[] positions, int h, int w)
         {
             var o = new Img(h, w);
@@ -103,9 +123,9 @@ namespace DarksCheck.Core
                 for (int x = 0; x < w; x++)
                 {
                     int sx = Math.Min(x / 2, pw - 1);
-                    // pe linia impara de la capat, randul y (sau coloana x) cade in afara
-                    // pozitiilor: se ia pozitia cu ACEEASI paritate - deci aceeasi culoare
-                    // pe un CFA - de pe ultima linie para, prin sy/sx prinse mai sus
+                    // on the odd line at the end, row y (or column x) falls outside the
+                    // positions: the position with the SAME parity is taken - so the same colour
+                    // on a CFA - from the last even line, through sy/sx clamped above
                     int p = PositionOf(y, x);
                     o.Set(y, x, positions[p].At(sy, sx));
                 }
@@ -114,12 +134,21 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Numele pozitiei <paramref name="i"/>: culoarea cand fisierul a spus ordinea,
-        /// pozitia cand nu. Nu se ghiceste - ordinea difera de la aparat la aparat.
+        /// The name of position <paramref name="i"/>: the colour when the file gave the order,
+        /// the position when it did not. It is not guessed - the order differs from camera to
+        /// camera.
         /// </summary>
+        /// <param name="cfa">The file's colour order; null when unknown.</param>
+        /// <param name="i">The position, 0..3.</param>
+        /// <returns>"R", "G1", "G2", "B", or "CFA[row,col]" when the order is unknown.</returns>
         internal static string Label(CfaPattern cfa, int i) => cfa?.Name(i) ?? $"CFA[{i / 2},{i % 2}]";
 
-        /// <summary>'R', 'G' sau 'B' pentru pozitia <paramref name="i"/>; '\0' cand nu se stie.</summary>
+        /// <summary>
+        /// 'R', 'G' or 'B' for position <paramref name="i"/>; '\0' when not known.
+        /// </summary>
+        /// <param name="cfa">The file's colour order; null when unknown.</param>
+        /// <param name="i">The position, 0..3.</param>
+        /// <returns>The colour letter, or '\0'.</returns>
         internal static char ColourOf(CfaPattern cfa, int i) => cfa?.Colours[i] ?? '\0';
     }
 }

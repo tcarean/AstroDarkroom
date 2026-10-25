@@ -17,36 +17,44 @@
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
 
-// FitsReader.cs - reader FITS propriu (fara dependinte).
-// Header din carduri de 80 octeti in blocuri de 2880, apoi date binare big-endian.
+// FitsReader.cs - our own FITS reader (no dependencies).
+// Header of 80-byte cards in 2880-byte blocks, then big-endian binary data.
 
 using System.Globalization;
 using System.Text;
 
 namespace DarksCheck.Core
 {
+    /// <summary>
+    /// Reads a FITS file: the first HDU with a 2D image, its planes averaged into one raster,
+    /// the header's cards as a dictionary and as they stand, and the CFA order from BAYERPAT.
+    /// </summary>
     internal sealed class FitsReader : IFrameReader
     {
         /// <summary>
-        /// Revendica doar extensiile FITS. Fisierele pe care nu le revendica NIMENI ajung
-        /// tot aici, dar decizia aia e a lui ImageLoader si e scrisa acolo - nu se ascunde
-        /// intr-un "Handles care intoarce mereu true".
+        /// Claims only the FITS extensions. The files NO ONE claims still end up here, but that
+        /// decision is ImageLoader's and is written there - it does not hide in a "Handles that
+        /// always returns true".
         /// </summary>
+        /// <param name="path">The file's path; only its extension is looked at.</param>
+        /// <returns>True for .fit, .fits or .fts, any case.</returns>
         public bool Handles(string path) => IsFitsPath(path);
 
         static readonly string[] Extensions = { ".fit", ".fits", ".fts" };
 
         /// <summary>
-        /// Extensiile FITS, expuse din acelasi motiv ca RawReader.RawExtensions: aplicatia
-        /// WPF listeaza dupa ele cadrele din flats/ pentru tabul de histograma, si o a doua
-        /// lista ar fi divergat de asta.
+        /// The FITS extensions, exposed for the same reason as RawReader.RawExtensions: the WPF
+        /// application lists the frames of flats/ by them for the histogram tab, and a second
+        /// list would have diverged from this one.
         /// </summary>
         internal static IReadOnlyList<string> FitsExtensions => Extensions;
 
         /// <summary>
-        /// Doar extensia, ca la raw. E o regula de LISTARE, nu de dispecerat: ce nu
-        /// revendica nimeni ajunge tot aici, prin decizia lui ImageLoader.
+        /// The extension only, as for raws. It is a LISTING rule, not a dispatch rule: what no
+        /// one claims still ends up here, by ImageLoader's decision.
         /// </summary>
+        /// <param name="path">The file's path; null or empty allowed.</param>
+        /// <returns>True when the extension is a FITS one.</returns>
         internal static bool IsFitsPath(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
@@ -55,10 +63,15 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Doar headerul HDU-ului primar, fara pixeli: blocurile de 2880 pana la END. Pentru
-        /// cine vrea FOCALLEN sau INSTRUME dintr-un master de 96 MB fara sa-l citeasca (tabul
-        /// Sintetic, la deschiderea sesiunii). Dictionar gol daca fisierul nu incepe cu SIMPLE.
+        /// Only the header of the primary HDU, without pixels: the 2880 blocks up to END. For
+        /// whoever wants FOCALLEN or INSTRUME from a 96 MB master without reading it (the
+        /// Synthetic tab, when the session opens). It checks no SIMPLE card and throws nothing
+        /// for the content: a file that ends before END gives the keywords read so far, and a
+        /// file that is not a FITS gives whatever 80-byte pieces happen to read as cards,
+        /// usually none. (FlatCheck's ADR 0057 makes the source refuse both; this copy is older.)
         /// </summary>
+        /// <param name="path">The FITS file to read.</param>
+        /// <returns>The keywords and their values, string quotes and comments removed.</returns>
         internal static IReadOnlyDictionary<string, string> LoadHeader(string path)
         {
             var hdr = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -95,22 +108,30 @@ namespace DarksCheck.Core
             return hdr;
         }
 
+        /// <summary>
+        /// Reads the whole file: the first HDU with a 2D image, its planes averaged, the header
+        /// as a dictionary and as raw cards, the CFA order from BAYERPAT, and what
+        /// <see cref="FillShootingInfo"/> reads. The ADU scale stays null: a FITS does not carry
+        /// it. Throws InvalidDataException as <see cref="LoadFull"/> does.
+        /// </summary>
+        /// <param name="path">The FITS file to read.</param>
+        /// <returns>The frame, its image filled.</returns>
         public LoadedFrame Load(string path)
         {
             var (img, hdr, cards, planes, bitpix) = LoadFull(File.ReadAllBytes(path));
 
-            // Ordinea culorilor, daca fisierul o poarta. Siril scrie BAYERPAT pe un cadru
-            // trecut prin tab-ul Conversion, si NU o scrie pe unul debayerizat - ceea ce e
-            // exact corect: acolo nu mai exista mozaic de numit. Offset-urile intra prin
-            // Shift, fiindca un decupaj impar fata de senzor muta faza mozaicului. Iar
-            // ROWORDER intra prin ForRowOrder: Siril scrie randurile de jos in sus, noi le
-            // citim in ordinea fisierului, si pe o inaltime para asta muta faza cu un rand.
+            // The colour order, if the file carries it. Siril writes BAYERPAT on a frame passed
+            // through the Conversion tab, and does NOT write it on a debayered one - which is
+            // exactly right: there is no mosaic left to name there. The offsets come in through
+            // Shift, because an odd crop relative to the sensor shifts the mosaic's phase. And
+            // ROWORDER comes in through ForRowOrder: Siril writes the rows bottom up, we read them
+            // in the file's order, and on an even height that shifts the phase by one row.
             CfaPattern cfa = CfaPattern.Parse(HStr(hdr, "BAYERPAT", ""), "BAYERPAT")
                 ?.Shift(HInt(hdr, "YBAYROFF", 0), HInt(hdr, "XBAYROFF", 0))
                 ?.ForRowOrder(HStr(hdr, "ROWORDER", ""), img.H);
 
-            // Scala null, nu una inventata: un FITS chiar nu poarta nivelurile ADU, iar
-            // ExposureAnalyzer trebuie sa cada pe AutoWhite, nu sa creada un numar fals.
+            // A null scale, not an invented one: a FITS really does not carry the ADU levels,
+            // and ExposureAnalyzer has to fall back on AutoWhite, not believe a false number.
             var f = new LoadedFrame
             {
                 Image = img,
@@ -126,11 +147,13 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Doar ce spune headerul: focala, aparatul, planurile, BITPIX, ordinea CFA. Fara
-        /// pixeli si fara cardurile brute (LoadHeader nu le pastreaza; cine scrie un fisier
-        /// inapoi incarca oricum tot). Un fisier care nu incepe cu SIMPLE da un header gol,
-        /// nu o eroare - la fel ca LoadHeader.
+        /// Only what the header says: focal length, camera, planes, BITPIX, CFA order. No pixels
+        /// and no raw cards (LoadHeader does not keep them; whoever writes a file back loads
+        /// everything anyway). A file that is not a FITS gives what LoadHeader gives for it,
+        /// usually no keywords, not an error.
         /// </summary>
+        /// <param name="path">The FITS file to read.</param>
+        /// <returns>The frame's metadata, its image null.</returns>
         public LoadedFrame LoadInfo(string path)
         {
             IReadOnlyDictionary<string, string> hdr = LoadHeader(path);
@@ -151,13 +174,18 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Ce stie un header FITS despre fotografiere: FOCALLEN si INSTRUME, plus - fata de
-        /// FlatCheck, de unde e copiat fisierul - EXPTIME, ISOSPEED, DATE-OBS si XPIXSZ, pe
-        /// care Siril le scrie pe un light convertit din raw. Niciun f-numar - Siril nu-l
-        /// scrie - si niciun obiectiv. Un singur loc pentru Load si LoadInfo, ca cele doua
-        /// sa nu citeasca headerul diferit. DATE-OBS e in UTC la Siril, pe cand libraw da
-        /// ora de pe aparat: cele doua nu se amesteca intr-o sesiune, deci nu se convertesc.
+        /// What a FITS header knows about the shot: FOCALLEN and INSTRUME, plus - unlike
+        /// FlatCheck, where the file is copied from - EXPTIME, ISOSPEED, DATE-OBS and XPIXSZ,
+        /// which Siril writes on a light converted from a raw. No f-number - Siril does not
+        /// write it - and no lens. One place for Load and LoadInfo, so that the two cannot read
+        /// the header differently. DATE-OBS is in UTC in Siril, whereas libraw gives the
+        /// camera's clock: the two do not mix within a session, so they are not converted.
         /// </summary>
+        /// <param name="f">
+        /// The frame to fill: its FocalMm, Camera, ExposureSeconds, Iso, PixelSizeUm and
+        /// Timestamp are set, each null when the card is missing, not positive or not a date.
+        /// </param>
+        /// <param name="hdr">The header's keywords.</param>
         static void FillShootingInfo(LoadedFrame f, IReadOnlyDictionary<string, string> hdr)
         {
             double focal = HDbl(hdr, "FOCALLEN", 0.0);
@@ -177,22 +205,30 @@ namespace DarksCheck.Core
                 ? t : null;
         }
 
-        // ========================================================= I/O FITS
-        // FITS: header din carduri de 80 octeti, in blocuri de 2880. Apoi datele binare,
-        // big-endian. BITPIX: 16=short, 32=int, -32=float, -64=double. Valoarea fizica =
-        // BZERO + BSCALE * valoare_stocata. Ia primul HDU cu date (NAXIS>=2).
+        // ========================================================= FITS I/O
+        // FITS: a header of 80-byte cards, in 2880-byte blocks. Then the binary data,
+        // big-endian. BITPIX: 16=short, 32=int, -32=float, -64=double. Physical value =
+        // BZERO + BSCALE * stored_value. Takes the first HDU with data (NAXIS>=2).
+        /// <summary>
+        /// The image of a FITS already in memory, as <see cref="LoadFull"/> reads it.
+        /// </summary>
+        /// <param name="raw">The whole file's bytes.</param>
+        /// <returns>The image, its planes averaged.</returns>
         internal static Img Load(byte[] raw) => LoadWithHeader(raw).Image;
 
         /// <summary>
-        /// Ca <see cref="Load(byte[])"/>, dar intoarce si cardurile HDU-ului din care a
-        /// venit imaginea. Headerul era pana acum parsat si aruncat; <c>--light</c> are
-        /// nevoie de el ca sa afle focala si scara, deci sa poata refuza un cadru cu camp
-        /// prea larg pentru test (vezi LightSuitability).
+        /// Like <see cref="Load(byte[])"/>, but also returns the cards of the HDU the image came
+        /// from. The header used to be parsed and thrown away; <c>--light</c> needs it to find
+        /// the focal length and the scale, so that it can refuse a frame with too wide a field
+        /// for the test (see LightSuitability).
         ///
-        /// Se pastreaza limitarea cunoscuta de parsare - valoarea se taie la primul '/',
-        /// ceea ce ar strica o valoare string care contine slash. Cheile citite de aici
-        /// sunt toate numerice, deci nu le atinge.
+        /// The known parsing limitation is kept - the value is cut at the first '/', which
+        /// would break a string value that contains a slash. The keys read from here are numeric,
+        /// or strings that hold no slash (BAYERPAT, ROWORDER, INSTRUME, DATE-OBS), so it does not
+        /// touch them.
         /// </summary>
+        /// <param name="raw">The whole file's bytes.</param>
+        /// <returns>The image and the keywords of its HDU.</returns>
         internal static (Img Image, IReadOnlyDictionary<string, string> Header) LoadWithHeader(byte[] raw)
         {
             var (img, hdr, _, _, _) = LoadFull(raw);
@@ -200,11 +236,19 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Ca <see cref="LoadWithHeader"/>, plus cardurile brute ale HDU-ului din care a
-        /// venit imaginea (fara END), numarul de planuri si BITPIX-ul lui. Cardurile
-        /// brute sunt ce copiaza FitsWriter intr-un fisier scris inapoi; dictionarul nu
-        /// poate fi sursa, fiindca pierde comentariile si taie sirurile la primul '/'.
+        /// Like <see cref="LoadWithHeader"/>, plus the raw cards of the HDU the image came from
+        /// (without END), its number of planes and its BITPIX. The raw cards are what FitsWriter
+        /// copies into a file written back; the dictionary cannot be the source, because it
+        /// loses the comments and cuts the strings at the first '/'. It checks no SIMPLE card.
+        /// Throws InvalidDataException when a header runs past the end of the file (what a file
+        /// that is not a FITS usually does), when no HDU holds a 2D image (an empty file
+        /// included), and when BITPIX is not one of the five.
         /// </summary>
+        /// <param name="raw">The whole file's bytes.</param>
+        /// <returns>
+        /// The image (planes averaged, values BZERO + BSCALE * stored), the keywords, the raw
+        /// cards, NAXIS3 (1 for a 2D image) and BITPIX.
+        /// </returns>
         internal static (Img Image, IReadOnlyDictionary<string, string> Header, IReadOnlyList<string> Cards, int Planes, int Bitpix)
             LoadFull(byte[] raw)
         {
@@ -222,7 +266,7 @@ namespace DarksCheck.Core
                     {
                         string card = System.Text.Encoding.ASCII.GetString(raw, pos + c * 80, 80);
                         string key = card.Length >= 8 ? card.Substring(0, 8).Trim() : "";
-                        if (key == "END") { end = true; break; }   // nimic dupa END nu mai conteaza
+                        if (key == "END") { end = true; break; }   // nothing after END matters any more
                         cards.Add(card);
                         if (card.Length > 10 && card[8] == '=')
                         {
@@ -239,7 +283,7 @@ namespace DarksCheck.Core
                 int naxis = HInt(hdr, "NAXIS", 0);
                 if (naxis < 2)
                 {
-                    // HDU fara imagine (ex: primary gol) - sar peste datele lui (0) si continui
+                    // an HDU without an image (e.g. an empty primary) - skip its data (0) and go on
                     if (naxis == 0) continue;
                 }
                 int n1 = HInt(hdr, "NAXIS1", 0);
@@ -248,9 +292,9 @@ namespace DarksCheck.Core
                 double bzero = HDbl(hdr, "BZERO", 0.0);
                 double bscale = HDbl(hdr, "BSCALE", 1.0);
 
-                // Produsul TUTUROR axelor. Inainte era n1*n2*max(1,n3), care pentru un HDU
-                // 1-D dadea 0 -> pos nu avansa, iar zona de date era parsata ca header,
-                // esuand cu "header incomplet" in loc de "niciun HDU cu imagine 2D".
+                // The product of ALL the axes. It used to be n1*n2*max(1,n3), which for a 1-D
+                // HDU gave 0 -> pos did not advance, and the data area was parsed as a header,
+                // failing with "header incomplet" instead of "niciun HDU cu imagine 2D".
                 long npix = 1;
                 for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
                 int bytesPer = Math.Abs(bitpix) / 8;
@@ -267,7 +311,7 @@ namespace DarksCheck.Core
                         vals[i] = bzero + bscale * v;
                         p += bytesPer;
                     }
-                    // color (n3 planuri, Siril = plane-sequential) -> media pe planuri
+                    // colour (n3 planes, Siril = plane-sequential) -> the mean over the planes
                     var img = new Img(n2, n1);
                     if (n3 <= 1)
                         Array.Copy(vals, img.D, n1 * n2);
@@ -283,12 +327,18 @@ namespace DarksCheck.Core
                     }
                     return (img, hdr, cards, n3, bitpix);
                 }
-                // HDU fara imagine 2D utila: sar peste blocurile lui de date si continui
+                // an HDU without a usable 2D image: skip its data blocks and go on
                 pos += (int)dataBlocks;
             }
             throw new InvalidDataException("FITS: niciun HDU cu imagine 2D gasit.");
         }
 
+        /// <summary>One big-endian sample, as stored (before BZERO and BSCALE).</summary>
+        /// <param name="b">The file's bytes.</param>
+        /// <param name="p">The sample's first byte.</param>
+        /// <param name="bitpix">8, 16, 32, -32 or -64; anything else throws
+        /// InvalidDataException.</param>
+        /// <returns>The stored value.</returns>
         internal static double ReadSample(byte[] b, int p, int bitpix)
         {
             switch (bitpix)
@@ -311,16 +361,30 @@ namespace DarksCheck.Core
             }
         }
 
+        /// <summary>A header value as an integer.</summary>
+        /// <param name="h">The header's keywords.</param>
+        /// <param name="k">The keyword.</param>
+        /// <param name="def">What to return when the keyword is missing or not an integer.</param>
+        /// <returns>The value, or <paramref name="def"/>.</returns>
         internal static int HInt(IReadOnlyDictionary<string, string> h, string k, int def)
             => h.TryGetValue(k, out var v) && int.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
+        /// <summary>A header value as a number, read with the invariant culture.</summary>
+        /// <param name="h">The header's keywords.</param>
+        /// <param name="k">The keyword.</param>
+        /// <param name="def">What to return when the keyword is missing or not a number.</param>
+        /// <returns>The value, or <paramref name="def"/>.</returns>
         internal static double HDbl(IReadOnlyDictionary<string, string> h, string k, double def)
             => h.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
 
         /// <summary>
-        /// Valoarea bruta a unui card, fara ghilimelele din jurul sirurilor FITS.
-        /// Folosita pentru DATE-OBS in modul de atribuire, unde data nu se interpreteaza,
-        /// doar se arata omului.
+        /// The raw value of a card, without the quotes around FITS strings. Used for BAYERPAT and
+        /// ROWORDER here, for INSTRUME, and for DATE-OBS in the attribution mode, where the date
+        /// is not interpreted, only shown to the person.
         /// </summary>
+        /// <param name="h">The header's keywords.</param>
+        /// <param name="k">The keyword.</param>
+        /// <param name="def">What to return when the keyword is missing; null allowed.</param>
+        /// <returns>The value, trimmed and unquoted, or <paramref name="def"/>.</returns>
         internal static string HStr(IReadOnlyDictionary<string, string> h, string k, string def)
             => h.TryGetValue(k, out var v) ? v.Trim().Trim('\'').Trim() : def;
     }
