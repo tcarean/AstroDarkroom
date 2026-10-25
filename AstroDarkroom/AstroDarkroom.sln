@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstroDarkroom.Core", "src\A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstroDarkroom.Tests", "tests\AstroDarkroom.Tests\AstroDarkroom.Tests.csproj", "{77B1068B-A9FA-4C14-A366-C86559C23841}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstroDarkroom.Wpf", "src\AstroDarkroom.Wpf\AstroDarkroom.Wpf.csproj", "{4E36D81C-B737-4879-A31F-F975D12ED3EA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,18 @@ Global
 		{77B1068B-A9FA-4C14-A366-C86559C23841}.Release|x64.Build.0 = Release|Any CPU
 		{77B1068B-A9FA-4C14-A366-C86559C23841}.Release|x86.ActiveCfg = Release|Any CPU
 		{77B1068B-A9FA-4C14-A366-C86559C23841}.Release|x86.Build.0 = Release|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Debug|x64.Build.0 = Debug|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Debug|x86.Build.0 = Debug|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Release|x64.ActiveCfg = Release|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Release|x64.Build.0 = Release|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Release|x86.ActiveCfg = Release|Any CPU
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +64,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{69560883-3426-4851-ACB7-BFC5F7DD491D} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{77B1068B-A9FA-4C14-A366-C86559C23841} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{4E36D81C-B737-4879-A31F-F975D12ED3EA} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

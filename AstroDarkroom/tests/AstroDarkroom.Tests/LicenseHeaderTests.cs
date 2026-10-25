@@ -128,8 +128,11 @@ public class LicenseHeaderTests
     {
         List<string?> names = SourceFiles().Select(Path.GetFileName).ToList();
         Assert.Contains("Version.cs", names);             // src/AstroDarkroom.Core
+        Assert.Contains("MainWindow.xaml", names);        // src/AstroDarkroom.Wpf, XAML
+        Assert.Contains("MainWindow.xaml.cs", names);     // src/AstroDarkroom.Wpf, code-behind
         Assert.Contains("LicenseHeaderTests.cs", names);  // tests/AstroDarkroom.Tests
-        Assert.True(names.Count > 3, "too few files scanned: " + names.Count);
+        Assert.Contains("make_icon.py", names);           // Icon
+        Assert.True(names.Count > 15, "too few files scanned: " + names.Count);
     }
 
     [Fact]
