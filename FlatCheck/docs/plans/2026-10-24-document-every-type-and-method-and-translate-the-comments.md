@@ -303,7 +303,9 @@ Each area adds its own section at its wrap-up.
      overlaps runs on a quick re-choice.
   2. `MainViewModel.cs`, header and `ProblemTitle`: "six tabs", "four empty panels" - eight.
   3. `MainViewModel.RunChainAsync`: "the Ratio tab usually has two preselected masters" - it
-     proposes nothing (R-082) and `ResetTabs` drops its files, so the call finds none.
+     proposes nothing (R-082) and `ResetTabs` drops its files. (The correction first said "so
+     the call finds none"; false when the user picks both files during the chain, as the
+     review found - see the review section below.)
   4. `MapScaleViewModel.cs`, header: "used by two tabs, Structure and Ratio" - five: Structure,
      Ratio, Netezire, Sintetic, Split.
   5. `StructureRows.cs`, header: "for both tabs" - Netezire shows the five tests too, before
@@ -326,8 +328,8 @@ Each area adds its own section at its wrap-up.
   `code-map.md` (`MapScaleViewModel` is on five tabs).
 - **Found and reported** (code, or a requirement; the owner's call, fixed below):
   - `StructureTabViewModel.Pct` has no caller.
-  - `MainViewModel.RunChainAsync`'s `Ratio.RecomputeAsync()` always finds no files at that
-    point (item 3), so it only clears a result already cleared.
+  - `MainViewModel.RunChainAsync`'s `Ratio.RecomputeAsync()` seemed to find no files at that
+    point (item 3); the review showed it does when the user picks during the chain.
   - R-084 says the Expo tab lists "the raws and FITS of `flats/`"; `SirilSession.RawFlats`
     lists raws only, and its comment and the tab's say why (exact white and black).
   - The window words and computes a few things the rule "Computed only in the core" puts in
@@ -367,6 +369,34 @@ Each area adds its own section at its wrap-up.
   - Measured: every console golden, the 43 parity goldens included, unchanged; `/validate`,
     40 cases on the real masters, 300 figures, all 300 identical to the recorded value; the
     gate `== OK`, 954 + 332 tests.
+- **A high-effort `/code-review`** of the branch found 9; the owner said to fix all nine
+  ("Fix all nine review findings, including giving the Ratio tab the waitIdle seam"):
+  1. The removed chain call was the only thing that recomputed a Ratio pick made during the
+     chain after it; the pick itself ran beside Structure and the series. Test first:
+     `R082_APickDuringTheOpeningChainWaitsForIt` failed (the run completed with the chain still
+     open), then passed once `RatioTabViewModel.Attach` took `waitIdle` and `RecomputeAsync`
+     awaited it, as Netezire, Sintetic and Split do. R-082 says so.
+  2. The claim "never had files at that point" corrected in the CHANGELOG, this plan and
+     `MainViewModel`'s comments.
+  3. `ExposureReport.VerdictLines` is the one verdict tree: the console prints its head after
+     "VERDICT:" and its lines indented, the window the head and the lines as one paragraph.
+     The window's advice now reads in the console's words; the not-a-raw advice stays the
+     window's own (its way out is the application, not `flatcheck flat.NEF --expo`).
+  4. `LightReport.MarginalLines` / `DegeneracyLines` and `LightSeriesReport.ReasonLines` /
+     `SameFlatLines` hold the lines both applications print; the window joins them. The
+     console's "nu pot verifica ... vezi --fov" and the window's unknown-field note stay
+     separate, being different advice.
+  5. `StructureReport.CornerSharePct` / `CornerOverCentrePct` compute the two ratios once.
+  6. `TabViewModel`'s header: Split uses the progress properties too.
+  7. The headers of `LightReport.cs`, `LightSeriesReport.cs` and `StructureReport.cs` name
+     their window pieces.
+  8. `Th.ExpoClipWhite`'s comment moved above it, within 100 columns.
+  9. Core tests for the moved functions: the window's advice equals the console's verdict
+     block on six levels, the channel lines, the order note, the gap, the preview note, the
+     reasons and the correlation, the centroid note.
+  - Measured: the console goldens and the 43 parity goldens unchanged; `/validate`, 40
+    cases, 300 figures, all 300 identical to the recorded value; the gate `== OK`, 964 + 333
+    tests.
 
 ## Glossary: one English word per Romanian term, in every area
 

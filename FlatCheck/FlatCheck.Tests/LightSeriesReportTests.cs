@@ -183,4 +183,22 @@ public class LightSeriesReportTests
 
         Assert.Contains($"<- peste pragul de {Th.LightSeriesSemMax:F2}", text);
     }
+
+    /// <summary>
+    /// The window's reasons are the console's, joined into paragraphs and capitalised, and close
+    /// on the Ratio tab where the console names --ratio; its correlation figure is the
+    /// console's "nu se aplica" when the sky gradient does not vary.
+    /// </summary>
+    [Fact]
+    public void TheWindowsReasonsAndCorrelationAreTheConsolesWords()
+    {
+        LightSeriesResult r = LightSeriesAnalyzer.Combine(Steady(10, mean: 0.0, jitter: 30.0));
+        string reasons = LightSeriesReport.ReasonsText(r);
+
+        Assert.StartsWith($"Eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK ({Th.LightRadOk:F2}), ", reasons);
+        Assert.Contains("Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din fiecare.", reasons);
+        Assert.Contains("tabul Ratio", reasons);
+        Assert.DoesNotContain("--ratio", reasons);
+        Assert.StartsWith("nu se aplica (gradientul variaza doar", LightSeriesReport.CorrelationValue(r));
+    }
 }

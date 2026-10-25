@@ -15,7 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightSeriesReport.cs - LightSeriesResult -> the console's text. Formatting only.
+// LightSeriesReport.cs - LightSeriesResult -> the console's text, and the End to end tab's
+// correlation and reasons in the same words. Formatting only.
 //
 // Three entry points instead of one: a series of 32 frames takes about two minutes, and sitting
 // with an empty console all that time is bad manners for a command-line tool. So
@@ -79,8 +80,7 @@ namespace FlatCheck
                 w.WriteLine($"    corelatie cu grad. de cer : {r.SkyCorr,7:F2}"
                           + (Failed(r, "corelatie") ? $"          <- peste pragul de {Th.LightSeriesSkyCorr:F2}" : ""));
             else
-                w.WriteLine($"    corelatie cu grad. de cer : nu se aplica (gradientul variaza doar "
-                          + $"{r.SkySpan:F1} puncte)");
+                w.WriteLine("    corelatie cu grad. de cer : " + CorrelationValue(r));
 
             w.WriteLine($"\n    VERDICT: {r.Verdict}");
 
@@ -95,8 +95,8 @@ namespace FlatCheck
             w.WriteLine("    Media NU se poate citi ca eroare de flat:");
             foreach (string reason in r.Reasons) WriteReason(r, reason, w);
 
-            w.WriteLine("\n    Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din");
-            w.WriteLine("    fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat.");
+            w.WriteLine();
+            foreach (string line in SameFlatLines) w.WriteLine("    " + line);
             w.WriteLine("    Pe date ca astea raspunsul il da testul de rotatie 180 (--ratio), care");
             w.WriteLine("    valideaza flat-ul fara sa implice cerul deloc. Vezi README, sectiunea");
             w.WriteLine("    despre cand se poate folosi --light.");
@@ -109,23 +109,41 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         static void WriteReason(LightSeriesResult r, string reason, TextWriter w)
         {
-            switch (reason)
-            {
-                case "sem":
-                    w.WriteLine($"      - eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK ({Th.LightRadOk:F2}),");
-                    w.WriteLine("        deci seria nu rezolva flat-ul la precizia la care se pronunta");
-                    w.WriteLine("        pragurile. Un verdict aici ar fi o parere, nu o masuratoare.");
-                    break;
-                case "corelatie":
-                    w.WriteLine($"      - componenta radiala urmareste gradientul de cer (r = {r.SkyCorr:F2}");
-                    w.WriteLine($"        pe un interval de {r.SkySpan:F0} puncte de gradient), semn ca ce se");
-                    w.WriteLine("        masoara e cerul.");
-                    break;
-                default:
-                    w.WriteLine($"      - {reason}.");
-                    break;
-            }
+            string[] lines = ReasonLines(r, reason);
+            w.WriteLine("      - " + lines[0]);
+            foreach (string line in lines.Skip(1)) w.WriteLine("        " + line);
         }
+
+        /// <summary>One reason the verdict is undetermined, in the console's lines: the console
+        /// writes them as an indented bullet, the window joins them into one paragraph.</summary>
+        /// <param name="r">The combined series.</param>
+        /// <param name="reason">A key of <see cref="LightSeriesResult.Reasons"/>: "sem",
+        /// "corelatie", or a text written as it is.</param>
+        /// <returns>The reason's lines, the first starting in lower case.</returns>
+        static string[] ReasonLines(LightSeriesResult r, string reason) => reason switch
+        {
+            "sem" => new[]
+            {
+                $"eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK ({Th.LightRadOk:F2}),",
+                "deci seria nu rezolva flat-ul la precizia la care se pronunta",
+                "pragurile. Un verdict aici ar fi o parere, nu o masuratoare.",
+            },
+            "corelatie" => new[]
+            {
+                $"componenta radiala urmareste gradientul de cer (r = {r.SkyCorr:F2}",
+                $"pe un interval de {r.SkySpan:F0} puncte de gradient), semn ca ce se",
+                "masoara e cerul.",
+            },
+            _ => new[] { reason + "." },
+        };
+
+        /// <summary>Why everything that moves during a series is sky, in both applications; the
+        /// console then points at --ratio, the window at the Ratio tab.</summary>
+        static readonly string[] SameFlatLines =
+        {
+            "Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din",
+            "fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat.",
+        };
 
         /// <summary>Whether a condition failed.</summary>
         /// <param name="r">The combined series.</param>
@@ -171,22 +189,12 @@ namespace FlatCheck
 
             foreach (string reason in r.Reasons)
             {
-                if (reason == "sem")
-                    parts.Add($"Eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK "
-                            + $"({Th.LightRadOk:F2}), deci seria nu rezolva flat-ul la precizia la "
-                            + "care se pronunta pragurile. Un verdict aici ar fi o parere, nu o "
-                            + "masuratoare.");
-                else if (reason == "corelatie")
-                    parts.Add($"Componenta radiala urmareste gradientul de cer (r = {r.SkyCorr:F2} "
-                            + $"pe un interval de {r.SkySpan:F0} puncte), semn ca ce se masoara e cerul.");
-                else
-                    parts.Add(char.ToUpperInvariant(reason[0]) + reason.Substring(1) + ".");
+                string text = string.Join(" ", ReasonLines(r, reason));
+                parts.Add(char.ToUpperInvariant(text[0]) + text.Substring(1));
             }
 
-            parts.Add("Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din "
-                    + "fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat. Pe date ca "
-                    + "astea raspunsul il da tabul Ratio, care valideaza flat-ul fara sa implice "
-                    + "cerul deloc.");
+            parts.Add(string.Join(" ", SameFlatLines) + " Pe date ca astea raspunsul il da tabul "
+                    + "Ratio, care valideaza flat-ul fara sa implice cerul deloc.");
 
             return string.Join("\n\n", parts);
         }

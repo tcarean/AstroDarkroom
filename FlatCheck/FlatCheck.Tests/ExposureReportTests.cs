@@ -66,11 +66,62 @@ public class ExposureReportTests
         ExposureResult skyHigh = AtLevel(55, sky: true);
 
         Assert.Equal("PROBLEMA", ExposureReport.VerdictWord(low));
-        Assert.Contains($"Sub ~{Th.ExpoTooLow:F0} % in centru", ExposureReport.Advice(low));
+        Assert.Contains($"Sub ~{Th.ExpoTooLow:F0}% in centru", ExposureReport.Advice(low));
         Assert.Equal("ACCEPTABIL", ExposureReport.VerdictWord(skyHigh));
-        Assert.Contains($"Sub {Th.ExpoSkyTooHigh:F0} % e ok", ExposureReport.Advice(skyHigh));
+        Assert.Contains($"Sub {Th.ExpoSkyTooHigh:F0}% e ok", ExposureReport.Advice(skyHigh));
         Assert.Contains($"peste {Th.ExpoClipWhite * 100:F0} % din white", ExposureReport.HistogramCaption(false));
         Assert.DoesNotContain("din white", ExposureReport.HistogramCaption(true));
+    }
+
+    /// <summary>
+    /// The window's advice is the console's verdict block: the head the console prints after
+    /// "VERDICT:", then the same lines as one paragraph - one decision tree for both.
+    /// </summary>
+    [Theory]
+    [InlineData(20, false)]
+    [InlineData(57, false)]
+    [InlineData(75, false)]
+    [InlineData(10, true)]
+    [InlineData(30, true)]
+    [InlineData(55, true)]
+    public void TheWindowsAdviceIsTheConsolesVerdictBlock(double level, bool sky)
+    {
+        ExposureResult r = AtLevel(level, sky);
+        var w = new StringWriter();
+        ExposureReport.Write(r, "flat.NEF", w);
+        string console = w.ToString();
+        string[] advice = ExposureReport.Advice(r).Split('\n');
+
+        string head = console.Split('\n').First(l => l.Contains("VERDICT: ")).Trim();
+        Assert.Equal(head.Substring("VERDICT: ".Length), advice[0], StringComparer.OrdinalIgnoreCase);
+        int after = console.IndexOf(head, StringComparison.Ordinal) + head.Length;
+        string rest = string.Join(" ", console.Substring(after)
+            .Split('\n').Select(l => l.Trim()).Where(l => l.Length > 0));
+        Assert.Equal(rest, advice.Length > 1 ? advice[1] : "");
+    }
+
+    /// <summary>The channel lines, the colour-order note and the screen gap of the window.</summary>
+    [Fact]
+    public void TheWindowsChannelLinesOrderNoteAndGap()
+    {
+        ExposureResult known = AtLevel(55, pattern: "RGGB");
+        string[] lines = ExposureReport.ChannelsSummary(known).Split('\n');
+
+        Assert.Equal(4, lines.Length);
+        Assert.Single(lines, l => l.EndsWith("(cel mai luminos)"));
+        Assert.Contains("citita din fisier", ExposureReport.ChannelOrderNote(known));
+        Assert.StartsWith("Nu stiu care pozitie CFA", ExposureReport.ChannelOrderNote(AtLevel(55)));
+        Assert.Equal("+52 puncte", ExposureReport.ScreenGap(29.0, 81.2));
+        Assert.Equal("-10 puncte", ExposureReport.ScreenGap(50.0, 40.0));
+    }
+
+    /// <summary>A preview channel gets a note only above Th.ExpoClip, and only that note.</summary>
+    [Fact]
+    public void APreviewChannelIsNotedOnlyWhenItClips()
+    {
+        Assert.Equal("", ExposureReport.PreviewChannelNote(new ChannelLevels { ClipPct = Th.ExpoClip }));
+        Assert.Equal("pixeli la 255: 1.50 % din cadru",
+                     ExposureReport.PreviewChannelNote(new ChannelLevels { ClipPct = 1.5 }));
     }
 
     // ---------------------------------------------------------------- the band label

@@ -122,7 +122,9 @@ ADRs do not spell out:
 **The Ratio tab is the one exception to "one folder in".** ADR 0033 holds why it proposes
 nothing, starts empty and documents itself before it can be used, the `pp_flat*.fit` trap at
 both layers (the candidate list, then the file dialogs), `RatioPattern` and why its text
-properties are instance properties.
+properties are instance properties. It is not in the opening chain; a pair picked while the
+chain still runs waits for it through the same `WhenIdleAsync` seam as Netezire, Sintetic and
+Split (R-082), so its two masters never load beside the structure run's.
 
 **The Histogram tab lists the flat master first, then the smoothed master when it exists,
 then `flats/`, and lets a click interrupt a click.** The list and its order, the master not

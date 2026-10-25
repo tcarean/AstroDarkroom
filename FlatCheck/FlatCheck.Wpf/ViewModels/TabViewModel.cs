@@ -20,8 +20,8 @@
 // They all do the same thing: show a waiting screen, compute on another thread, then show either
 // results or an explanation. That state - busy / result / error - lives here, once, so the eight
 // do not end up with eight ways of failing. The Split tab is the one exception to the waiting
-// screen: it keeps its own running state, so its log stays visible, and uses only the result and
-// error part.
+// screen: it keeps its own running state, so its log stays visible, and uses the result, the
+// error and the progress (Progress, ProgressKnown, for its own bar), not RunGuardedAsync.
 //
 // SUPERSEDED RUNS. The histogram tab leaves its list clickable while it computes, so a second
 // run can start over the first. RunGuardedAsync numbers its runs and lets only the latest one

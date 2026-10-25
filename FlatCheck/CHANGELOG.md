@@ -79,12 +79,17 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The window no longer words or computes anything of its own: the Expo tab's verdict, advice,
   channel lines and caption, the End to end tab's field line, refusal and reasons, and the
   notes under the structure rows moved to `Report/` (`ExposureReport`, `LightReport`,
-  `LightSeriesReport`, `StructureReport`). The exposure texts of both applications quote
-  `Th.ExpoTooLow`, `Th.ExpoSkyTooHigh` and the new `Th.ExpoClipWhite` (98 % of white, which the
-  analyzer reads too) instead of literals. Every output is unchanged: the goldens, and the 300
-  figures of `/validate`. The dead `StructureTabViewModel.Pct` and the opening chain's call
-  into the Ratio tab, which never had files at that point, are gone; R-084 now says the Expo
-  tab lists camera raws only, as the code and its test always did.
+  `LightSeriesReport`, `StructureReport`), where the window's sentences are the console's
+  lines joined: one decision tree for the exposure verdict, one set of lines for the light
+  field, refusal and reasons. The Expo tab's advice and the End to end tab's warning and reasons
+  now read in the console's words (for example "PREA JOS" then "Creste expunerea cu ~1.5
+  stopuri. Sub ~30% in centru ..."); the console output is unchanged, the goldens and the 300
+  figures of `/validate` with it. The exposure texts quote `Th.ExpoTooLow`, `Th.ExpoSkyTooHigh`
+  and the new `Th.ExpoClipWhite` (98 % of white, which the analyzer reads too) instead of
+  literals. The dead `StructureTabViewModel.Pct` is gone, and so is the opening chain's call
+  into the Ratio tab: a pick made during the chain now waits for it instead (R-082), as the
+  smoothing does, rather than loading two more masters beside it. R-084 now says the Expo tab
+  lists camera raws only, as the code and its test always did.
 - NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
   each one is judged in `docs/design/dependencies.md` (ADR 0058): the five published against
   ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0010 rejects, and none

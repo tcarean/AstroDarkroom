@@ -51,8 +51,8 @@ namespace FlatCheck.Wpf
         readonly Func<SirilInstall> _locate;
         readonly Func<bool> _sirilGuiRunning;
 
-        /// <summary>The chain started on opening (structure, then series), so the smoothing tab
-        /// can wait for it.</summary>
+        /// <summary>The chain started on opening (structure, then series), so the tabs that run
+        /// on a click can wait for it.</summary>
         Task _chain = Task.CompletedTask;
 
         /// <summary>The application's view-model, every question answered by the real
@@ -131,9 +131,9 @@ namespace FlatCheck.Wpf
         public SplitTabViewModel Split { get; }
 
         /// <summary>
-        /// Completes when the chain started on opening has ended. The smoothing tab runs from a
-        /// click, so it could overlap the structure run if the user pressed during it; it waits
-        /// first - the "sequential, not parallel" rule above.
+        /// Completes when the chain started on opening has ended. Ratio, Netezire, Sintetic and
+        /// Split run from a click, so they could overlap the structure run if the user pressed
+        /// during it; they wait first - the "sequential, not parallel" rule above.
         /// </summary>
         /// <returns>The chain's task; already complete when nothing runs.</returns>
         internal Task WhenIdleAsync() => _chain;
@@ -215,8 +215,9 @@ namespace FlatCheck.Wpf
             CancellationToken ct = _cts.Token;
 
             // The tabs that wait for a choice are prepared at once: their lists are read from the
-            // folder, not from a computation, so they have no reason to wait.
-            Ratio.Attach(session, ct);
+            // folder, not from a computation, so they have no reason to wait. Ratio's comparison,
+            // when the user picks two masters during the chain, waits for it.
+            Ratio.Attach(session, ct, WhenIdleAsync);
             Exposure.Attach(session, ct);
             // A list too, also without a computation: the 24 MP master is not loaded twice on
             // opening - Structure is already reading it, below.
@@ -254,8 +255,8 @@ namespace FlatCheck.Wpf
 
             await Light.RunAsync(session, ct).ConfigureAwait(true);
 
-            // No Ratio here: it proposes nothing (R-082), so it computes when the user has chosen
-            // two masters, by hand.
+            // No Ratio here: it proposes nothing (R-082) and computes when the user has chosen two
+            // masters; a pick made during this chain waits for its end (WhenIdleAsync).
         }
 
         /// <summary>Called when the window closes, so no threads are left working for

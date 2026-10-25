@@ -89,8 +89,10 @@ namespace FlatCheck
 
             w.WriteLine();
 
-            if (r.IsSky) WriteSky(r, w);
-            else WritePanel(r, w);
+            if (r.IsSky) w.WriteLine("    [mod --sky: praguri pt flats pe cer, nu pe panou]");
+            var (head, lines) = VerdictLines(r);
+            w.WriteLine("    VERDICT: " + head);
+            foreach (string line in lines) w.WriteLine("    " + line);
         }
 
         /// <summary>
@@ -122,71 +124,65 @@ namespace FlatCheck
             w.WriteLine("        care pastreaza mozaicul CFA nedebayerizat.");
         }
 
-        /// <summary>The verdict and its advice on the sky scale (<c>--sky</c>).</summary>
-        /// <param name="r">The result of a sky flat.</param>
-        /// <param name="w">Where to write.</param>
-        static void WriteSky(ExposureResult r, TextWriter w)
-        {
-            bool clipping = r.CentreClipPct > Th.ExpoClip;
-            ExposureBands b = r.Bands;
-            w.WriteLine("    [mod --sky: praguri pt flats pe cer, nu pe panou]");
-            switch (r.Verdict)
-            {
-                case ExposureVerdict.TooHigh:
-                    w.WriteLine("    VERDICT: PREA SUS" + (clipping ? " (CLIPPING in centru!)" : " (risc stele in cadru)"));
-                    w.WriteLine("    Scade expunerea.");
-                    break;
-                case ExposureVerdict.TooLow:
-                    w.WriteLine("    VERDICT: PREA JOS pentru sky flat");
-                    w.WriteLine($"    Creste cu ~{Math.Log2(b.Target / r.CentreMedianPct):F1} stopuri (dar repede, cerul se stinge).");
-                    break;
-                case ExposureVerdict.Ok:
-                    w.WriteLine($"    VERDICT: OK pentru sky flat  (centru {b.Lo:F0}-{b.Hi:F0}%)");
-                    w.WriteLine("    La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,");
-                    w.WriteLine("    nu din a urca expunerea (ai risca stele). NU forta mai sus.");
-                    break;
-                default:
-                    w.WriteLine("    VERDICT: cam sus, dar acceptabil");
-                    w.WriteLine($"    Sub {Th.ExpoSkyTooHigh:F0}% e ok; peste, risti stele. Nu urca mai mult.");
-                    break;
-            }
-        }
-
-        /// <summary>The verdict and its correction in stops on the panel scale.</summary>
-        /// <param name="r">The result of a panel flat.</param>
-        /// <param name="w">Where to write.</param>
-        static void WritePanel(ExposureResult r, TextWriter w)
+        /// <summary>
+        /// The verdict and what to do next, in the console's words: the one decision tree both
+        /// applications print. The console writes the head after "VERDICT:" and each line
+        /// indented; the window (<see cref="Advice"/>) puts the head on a line and the rest in one
+        /// paragraph. The correction is in stops toward the bands' target, so it comes from the
+        /// scale the verdict was given on.
+        /// </summary>
+        /// <param name="r">The result of a raw flat.</param>
+        /// <returns>The verdict's head and the lines that follow it (none on a panel
+        /// OK).</returns>
+        static (string Head, string[] Lines) VerdictLines(ExposureResult r)
         {
             bool clipping = r.CentreClipPct > Th.ExpoClip;
             ExposureBands b = r.Bands;
             double cen = r.CentreMedianPct;
+
+            if (r.IsSky)
+                return r.Verdict switch
+                {
+                    ExposureVerdict.TooHigh =>
+                        ("PREA SUS" + (clipping ? " (CLIPPING in centru!)" : " (risc stele in cadru)"),
+                         new[] { "Scade expunerea." }),
+                    ExposureVerdict.TooLow =>
+                        ("PREA JOS pentru sky flat",
+                         new[] { $"Creste cu ~{Math.Log2(b.Target / cen):F1} stopuri (dar repede, cerul se stinge)." }),
+                    ExposureVerdict.Ok =>
+                        ($"OK pentru sky flat  (centru {b.Lo:F0}-{b.Hi:F0}%)",
+                         new[]
+                         {
+                             "La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,",
+                             "nu din a urca expunerea (ai risca stele). NU forta mai sus.",
+                         }),
+                    _ =>
+                        ("cam sus, dar acceptabil",
+                         new[] { $"Sub {Th.ExpoSkyTooHigh:F0}% e ok; peste, risti stele. Nu urca mai mult." }),
+                };
+
             switch (r.Verdict)
             {
                 case ExposureVerdict.TooHigh:
                     {
                         double stops = cen > 0 ? Math.Log2(b.Target / cen) : -1;
-                        w.WriteLine("    VERDICT: PREA SUS" + (clipping ? " (CLIPPING in centru!)" : ""));
-                        w.WriteLine($"    Scade expunerea cu ~{-stops:F1} stopuri.");
+                        var lines = new List<string> { $"Scade expunerea cu ~{-stops:F1} stopuri." };
                         if (clipping)
-                            w.WriteLine("    Centrul clipeaza -> pierzi info de vignetare exact unde semnalul e maxim.");
-                        break;
+                            lines.Add("Centrul clipeaza -> pierzi info de vignetare exact unde semnalul e maxim.");
+                        return ("PREA SUS" + (clipping ? " (CLIPPING in centru!)" : ""), lines.ToArray());
                     }
                 case ExposureVerdict.TooLow:
-                    w.WriteLine("    VERDICT: PREA JOS");
-                    w.WriteLine($"    Creste expunerea cu ~{Math.Log2(b.Target / cen):F1} stopuri.");
-                    w.WriteLine($"    Sub ~{Th.ExpoTooLow:F0}% in centru masterul iese zgomotos (zgomot fixed-pattern).");
-                    break;
+                    return ("PREA JOS", new[]
+                    {
+                        $"Creste expunerea cu ~{Math.Log2(b.Target / cen):F1} stopuri.",
+                        $"Sub ~{Th.ExpoTooLow:F0}% in centru masterul iese zgomotos (zgomot fixed-pattern).",
+                    });
                 case ExposureVerdict.AcceptableLow:
-                    w.WriteLine("    VERDICT: ACCEPTABIL, dar cam jos");
-                    w.WriteLine($"    Ai putea creste cu ~{Math.Log2(b.Target / cen):F1} stopuri.");
-                    break;
+                    return ("ACCEPTABIL, dar cam jos", new[] { $"Ai putea creste cu ~{Math.Log2(b.Target / cen):F1} stopuri." });
                 case ExposureVerdict.Ok:
-                    w.WriteLine($"    VERDICT: OK  (centrul in tinta {b.Lo:F0}-{b.Hi:F0}%)");
-                    break;
+                    return ($"OK  (centrul in tinta {b.Lo:F0}-{b.Hi:F0}%)", Array.Empty<string>());
                 default:
-                    w.WriteLine("    VERDICT: ACCEPTABIL, dar cam sus");
-                    w.WriteLine($"    Ai putea scadea cu ~{-Math.Log2(b.Target / cen):F1} stopuri.");
-                    break;
+                    return ("ACCEPTABIL, dar cam sus", new[] { $"Ai putea scadea cu ~{-Math.Log2(b.Target / cen):F1} stopuri." });
             }
         }
 
@@ -429,9 +425,10 @@ namespace FlatCheck
         };
 
         /// <summary>
-        /// What to do next, for the window's verdict card: the correction in stops toward the
-        /// bands' target, with the sky flat's own wording on the sky scale; the sanity gate's
-        /// explanation for a file that is not a raw flat.
+        /// What to do next, for the window's verdict card: the console's verdict and correction
+        /// (<see cref="VerdictLines"/>), the head on its own line and the rest as one paragraph;
+        /// for a file that is not a raw flat, the sanity gate's explanation in the window's
+        /// words, whose way out is the application's, not a console command.
         /// </summary>
         /// <param name="r">The result.</param>
         /// <returns>The advice, on one or more lines.</returns>
@@ -439,46 +436,9 @@ namespace FlatCheck
         {
             if (!r.IsRaw) return NotRawAdvice(r);
 
-            double cen = r.CentreMedianPct;
-            bool clipping = r.CentreClipPct > Th.ExpoClip;
-            // The target comes from the bands the verdict was given on, it is not re-chosen here.
-            ExposureBands b = r.Bands;
-            double stops = cen > 0 ? Math.Log2(b.Target / cen) : double.NaN;
-
-            if (r.IsSky)
-                return r.Verdict switch
-                {
-                    ExposureVerdict.TooHigh =>
-                        "PREA SUS" + (clipping ? " - CLIPPING in centru!" : " - risc de stele in cadru.")
-                        + "\nScade expunerea.",
-                    ExposureVerdict.TooLow =>
-                        $"PREA JOS pentru sky flat.\nCreste cu ~{stops:F1} stopuri, dar repede - cerul se stinge.",
-                    ExposureVerdict.Ok =>
-                        $"OK pentru sky flat (centru {b.Lo:F0}-{b.Hi:F0} %).\n"
-                      + "La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre, nu "
-                      + "din a urca expunerea - ai risca stele. NU forta mai sus.",
-                    _ =>
-                        $"Cam sus, dar acceptabil.\nSub {Th.ExpoSkyTooHigh:F0} % e ok; peste, risti stele. Nu urca mai mult.",
-                };
-
-            return r.Verdict switch
-            {
-                ExposureVerdict.TooHigh =>
-                    "PREA SUS" + (clipping ? " - CLIPPING in centru!" : ".")
-                    + $"\nScade expunerea cu ~{-stops:F1} stopuri."
-                    + (clipping
-                        ? "\nCentrul clipeaza, deci pierzi informatia de vignetare exact unde semnalul e maxim."
-                        : ""),
-                ExposureVerdict.TooLow =>
-                    $"PREA JOS.\nCreste expunerea cu ~{stops:F1} stopuri.\n"
-                  + $"Sub ~{Th.ExpoTooLow:F0} % in centru masterul iese zgomotos (zgomot fixed-pattern).",
-                ExposureVerdict.AcceptableLow =>
-                    $"Acceptabil, dar cam jos.\nAi putea creste cu ~{stops:F1} stopuri.",
-                ExposureVerdict.Ok =>
-                    $"OK - centrul e in tinta {b.Lo:F0}-{b.Hi:F0} %.",
-                _ =>
-                    $"Acceptabil, dar cam sus.\nAi putea scadea cu ~{-stops:F1} stopuri.",
-            };
+            var (head, lines) = VerdictLines(r);
+            head = char.ToUpperInvariant(head[0]) + head.Substring(1);
+            return lines.Length == 0 ? head : head + "\n" + string.Join(" ", lines);
         }
 
         /// <summary>

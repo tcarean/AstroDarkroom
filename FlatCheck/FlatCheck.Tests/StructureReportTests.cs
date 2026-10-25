@@ -190,6 +190,27 @@ public class StructureReportTests
         Assert.StartsWith("coltul e 100 % din centru", StructureReport.VignetteNote(r));
     }
 
+    /// <summary>
+    /// The illumination-centre note names the vertex against the sensor's centre when the fit
+    /// found one inside the frame, and says why not otherwise.
+    /// </summary>
+    [Fact]
+    public void TheWindowsCentroidNoteNamesTheVertexOrWhyThereIsNone()
+    {
+        StructureResult vignetted = Result((x, y) => 1000 - 0.002 * ((x - 256.0) * (x - 256.0) + (y - 256.0) * (y - 256.0)));
+        StructureResult flat = Result((_, _) => 1000);
+
+        foreach (StructureResult r in new[] { vignetted, flat })
+        {
+            string note = StructureReport.CentroidNote(r);
+            if (r.CentroidValid)
+                Assert.StartsWith($"varf ({r.FitCx:F0}, {r.FitCy:F0}) vs centru senzor", note);
+            else
+                Assert.Equal("varf in afara cadrului sau fit degenerat", note);
+        }
+        Assert.True(vignetted.CentroidValid);
+    }
+
     /// <summary>The console prints the whole note under the row, indented like its neighbours.</summary>
     [Fact]
     public void TheReportPrintsTheNoteUnderTheRow()

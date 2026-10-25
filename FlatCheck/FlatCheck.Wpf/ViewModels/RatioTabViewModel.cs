@@ -39,6 +39,7 @@
 // touching anything. The analysis already started in RatioRun still goes to the end - it gets no
 // token - but its result no longer reaches anything.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -54,6 +55,7 @@ namespace FlatCheck.Wpf
         SirilSession _session;
         CancellationToken _ct;
         CancellationTokenSource _runCts;
+        Func<Task> _waitIdle;
 
         string _fileA;
         string _fileB;
@@ -209,10 +211,13 @@ namespace FlatCheck.Wpf
         /// dialogs.</param>
         /// <param name="ct">The folder's token, to which every run's own token is
         /// linked.</param>
-        internal void Attach(SirilSession session, CancellationToken ct)
+        /// <param name="waitIdle">Awaits the opening chain before a comparison; null runs at
+        /// once.</param>
+        internal void Attach(SirilSession session, CancellationToken ct, Func<Task> waitIdle = null)
         {
             _session = session;
             _ct = ct;
+            _waitIdle = waitIdle;
             HasResult = false;
             ClearError();
         }
@@ -267,8 +272,9 @@ namespace FlatCheck.Wpf
         /// start.</summary>
         internal Task Pending { get; private set; } = Task.CompletedTask;
 
-        /// <summary>Compares the two chosen masters, guarded, superseding any run still going;
-        /// without both files it only clears the result.</summary>
+        /// <summary>Compares the two chosen masters, guarded, after the opening chain,
+        /// superseding any run still going; without both files it only clears the
+        /// result.</summary>
         /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal Task RecomputeAsync()
         {
@@ -279,6 +285,7 @@ namespace FlatCheck.Wpf
             }
 
             string a = FileA, b = FileB;
+            Func<Task> waitIdle = _waitIdle;
 
             // The run from before, if it still goes, is superseded: its token is cancelled, and
             // its lambda stops at the first check after the await, without writing anything.
@@ -291,6 +298,11 @@ namespace FlatCheck.Wpf
 
             return RunGuardedAsync("Compar cele doua mastere de flat...", async () =>
             {
+                // Two more 24 MP masters do not load beside the opening chain's: a pick made
+                // while Structure or the series still runs waits for them, as the smoothing does.
+                if (waitIdle != null) await waitIdle().ConfigureAwait(true);
+                ct.ThrowIfCancellationRequested();
+
                 var text = new StringWriter();
                 var outcome = await Task.Run(() =>
                 {
@@ -365,6 +377,7 @@ namespace FlatCheck.Wpf
 
             base.Reset();
             _session = null;
+            _waitIdle = null;
             FileA = null;
             FileB = null;
             WorldRows = System.Array.Empty<MetricRow>();
