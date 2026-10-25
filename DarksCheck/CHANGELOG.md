@@ -123,6 +123,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   card offers `Alege partener...`; `--inventory` lists such a folder with `darks: (lipsa)`.
   V-007 runs the Veil lights of 2026-10-06 against the 2026-10-10 library.
 
+### Fixed
+
+- A FITS frame whose data is shorter than its header says (a copy cut mid-transfer) was
+  listed with `Index was outside the bounds of the array.`; the reader now refuses it with
+  `FITS: date trunchiate: ...` and both byte counts. Taken from FlatCheck's fix (R-012,
+  ADR 0020).
+
 ### Internal
 
 - Every type and method of the code carries an XML documentation comment (the kit's ADR 0035),

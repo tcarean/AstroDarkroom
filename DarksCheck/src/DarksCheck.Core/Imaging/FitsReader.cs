@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
-// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
+// The code is the copy's, with FlatCheck's cut-data check of 469da9b (ADR 0020); the comments
+// are DarksCheck's own (ADR 0019).
 
 // FitsReader.cs - our own FITS reader (no dependencies).
 // Header of 80-byte cards in 2880-byte blocks, then big-endian binary data.
@@ -240,7 +241,8 @@ namespace DarksCheck.Core
         /// (for a FITS's white level); nothing here writes a FITS back. It checks no SIMPLE card.
         /// Throws InvalidDataException when a header runs past the end of the file (what a file
         /// that is not a FITS usually does), when no HDU holds a 2D image (an empty file
-        /// included), and when BITPIX is not one of the five.
+        /// included), when BITPIX is not one of the five, and when the data area is shorter
+        /// than the header declares (checked for every HDU before a sample is read).
         /// </summary>
         /// <param name="raw">The whole file's bytes.</param>
         /// <returns>
@@ -299,6 +301,13 @@ namespace DarksCheck.Core
                 long dataBytes = npix * bytesPer;
                 long dataBlocks = (dataBytes + 2879) / 2880 * 2880;
 
+                // A file cut mid-transfer: the header promises more pixels than the file holds.
+                // Checked for every HDU, before a sample is read, so ReadSample never indexes
+                // past the end (it used to throw IndexOutOfRangeException). The data alone
+                // counts, not the padding to 2880 bytes, which a last HDU may lack.
+                if (pos + dataBytes > raw.Length)
+                    throw new InvalidDataException(DataCut(dataBytes, raw.Length - pos));
+
                 if (n1 > 0 && n2 > 0)
                 {
                     var vals = new double[npix];
@@ -329,6 +338,22 @@ namespace DarksCheck.Core
                 pos += (int)dataBlocks;
             }
             throw new InvalidDataException("FITS: niciun HDU cu imagine 2D gasit.");
+        }
+
+        /// <summary>
+        /// The refusal of a data area shorter than its header declares, a copy cut
+        /// mid-transfer (FlatCheck's R-009). Both counts are in the message so the reader of the
+        /// error sees how much is missing.
+        /// </summary>
+        /// <param name="announced">The bytes of pixels the header's NAXISn and BITPIX promise.</param>
+        /// <param name="held">The bytes the file holds after that header, fewer than announced.</param>
+        /// <returns>The message, Romanian.</returns>
+        static string DataCut(long announced, long held)
+        {
+            string n = announced.ToString(CultureInfo.InvariantCulture);
+            string m = held.ToString(CultureInfo.InvariantCulture);
+            // a label form, so the Romanian numeral needs no "de" agreement for any count
+            return "FITS: date trunchiate: octeti de pixeli anuntati de header: " + n + ", in fisier doar " + m + ".";
         }
 
         /// <summary>One big-endian sample, as stored (before BZERO and BSCALE).</summary>
