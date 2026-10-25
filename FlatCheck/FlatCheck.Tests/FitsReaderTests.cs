@@ -186,6 +186,40 @@ public class FitsReaderTests
     }
 
     /// <summary>
+    /// R-009: a valid header for a 4 x 4 16-bit image (32 bytes of pixels) followed by only 8
+    /// data bytes is refused with InvalidDataException naming both counts, before any sample
+    /// is read; it used to be an IndexOutOfRangeException out of the sample loop.
+    /// </summary>
+    [Fact]
+    public void R009_LoadRefusesAFitsWhoseDataIsCut()
+    {
+        byte[] fits = FitsTestData.BuildFits(4, 4, (x, y) => 100, bitpix: 16);
+        byte[] cut = fits.Take(FitsTestData.BlockSize + 8).ToArray();
+
+        var ex = Assert.Throws<InvalidDataException>(() => Load(cut));
+
+        Assert.StartsWith("FITS:", ex.Message);
+        Assert.Contains("32", ex.Message);
+        Assert.EndsWith(" 8.", ex.Message);
+    }
+
+    /// <summary>
+    /// R-009: the check counts the data alone, so a last HDU with every pixel but without its
+    /// padding to 2880 bytes still loads.
+    /// </summary>
+    [Fact]
+    public void R009_LoadReadsAFitsWhoseLastPaddingIsMissing()
+    {
+        byte[] fits = FitsTestData.BuildFits(4, 4, (x, y) => 100, bitpix: 16);
+        byte[] unpadded = fits.Take(FitsTestData.BlockSize + 32).ToArray();
+
+        var img = Load(unpadded);
+
+        Assert.Equal(4, img.W);
+        Assert.Equal(100, img.At(3, 3), 6);
+    }
+
+    /// <summary>
     /// Phase 8. npix is now the product of all NAXISn, so a 1-D HDU advances past its
     /// data instead of leaving pos parked and re-parsing the data as a header. Before,
     /// this failed with the misleading "header incomplet".

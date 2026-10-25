@@ -72,6 +72,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A FITS whose data area is shorter than its header declares (a copy cut mid-transfer) is
+  refused with `FITS: data cut short: the header announces <n> bytes of pixels, the file holds
+  only <m>.` and exit 1, instead of an `IndexOutOfRangeException` out of the reader's sample
+  loop (R-009). A file missing only its last padding block still loads.
 - The window no longer fails to open when Siril's settings folder (`%LOCALAPPDATA%\siril`) or
   an uninstall entry in the registry cannot be read: the Siril lookup treats it as not found,
   as it already did for a missing folder; one unreadable uninstall entry no longer hides the

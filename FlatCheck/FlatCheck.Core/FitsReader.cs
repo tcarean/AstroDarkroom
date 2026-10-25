@@ -68,6 +68,23 @@ namespace FlatCheck
         static string HeaderIncomplete => T("FITS: incomplete header.", "FITS: header incomplet.");
 
         /// <summary>
+        /// The refusal of a data area shorter than its header declares, a copy cut
+        /// mid-transfer (R-009). Both counts are in the message so the reader of the error sees
+        /// how much is missing.
+        /// </summary>
+        /// <param name="announced">The bytes of pixels the header's NAXISn and BITPIX promise.</param>
+        /// <param name="held">The bytes the file holds after that header, fewer than announced.</param>
+        /// <returns>The message, in the current language.</returns>
+        static string DataCut(long announced, long held)
+        {
+            string n = announced.ToString(CultureInfo.InvariantCulture);
+            string m = held.ToString(CultureInfo.InvariantCulture);
+            return T(
+                "FITS: data cut short: the header announces " + n + " bytes of pixels, the file holds only " + m + ".",
+                "FITS: date trunchiate: headerul anunta " + n + " de octeti de pixeli, fisierul are doar " + m + ".");
+        }
+
+        /// <summary>
         /// A card's keyword: the first 8 bytes, without blanks. One definition for Load and
         /// LoadHeader, so that the two cannot read a card differently.
         /// </summary>
@@ -315,6 +332,13 @@ namespace FlatCheck
                 int bytesPer = Math.Abs(bitpix) / 8;
                 long dataBytes = npix * bytesPer;
                 long dataBlocks = (dataBytes + 2879) / 2880 * 2880;
+
+                // A file cut mid-transfer: the header promises more pixels than the file holds.
+                // Checked for every HDU, before a sample is read, so ReadSample never indexes
+                // past the end (it used to throw IndexOutOfRangeException). The data alone
+                // counts, not the padding to 2880 bytes, which a last HDU may lack.
+                if (pos + dataBytes > raw.Length)
+                    throw new InvalidDataException(DataCut(dataBytes, raw.Length - pos));
 
                 if (n1 > 0 && n2 > 0)
                 {
