@@ -156,7 +156,7 @@ namespace AstroPhotoAnalyzer
             {
                 long start = s.Position;
                 Dictionary<string, string> hdr = FitsReader.ReadHeader(s, block);
-                if (hdr == null) throw new Exception("FITS: niciun HDU cu imagine gasit.");
+                if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
                 long headerEnd = s.Position;
 
                 int bitpix = FitsReader.HInt(hdr, "BITPIX", 0);
@@ -174,7 +174,7 @@ namespace AstroPhotoAnalyzer
                     continue;
                 }
                 if (n1 != r.W || n2 != r.H || n3 != r.Planes.Length)
-                    throw new Exception("FITS-ul sursa nu mai are geometria imaginii analizate: " + sourceFits);
+                    throw new Exception(Tr.Pick("the source FITS no longer has the geometry of the image analysed: ", "FITS-ul sursa nu mai are geometria imaginii analizate: ") + sourceFits);
 
                 // The header: every card up to END, then HISTORY, then END.
                 var raw = new byte[headerEnd - start];
@@ -212,7 +212,7 @@ namespace AstroPhotoAnalyzer
             while (got < buf.Length)
             {
                 int n = s.Read(buf, got, buf.Length - got);
-                if (n <= 0) throw new Exception("FITS: fisier trunchiat.");
+                if (n <= 0) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
                 got += n;
             }
         }
@@ -227,14 +227,14 @@ namespace AstroPhotoAnalyzer
         /// <param name="to">The byte after the last, an offset in the source.</param>
         static void Copy(Stream s, Stream o, long from, long to)
         {
-            if (to > s.Length) throw new Exception("FITS: fisier trunchiat.");
+            if (to > s.Length) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             s.Position = from;
             var buf = new byte[1 << 16];
             long left = to - from;
             while (left > 0)
             {
                 int n = s.Read(buf, 0, (int)Math.Min(buf.Length, left));
-                if (n <= 0) throw new Exception("FITS: fisier trunchiat.");
+                if (n <= 0) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
                 o.Write(buf, 0, n);
                 left -= n;
             }
@@ -256,7 +256,7 @@ namespace AstroPhotoAnalyzer
         {
             int bytesPer = Math.Abs(bitpix) / 8;
             if (bscale == 0 || (bitpix != 8 && bitpix != 16 && bitpix != 32 && bitpix != -32 && bitpix != -64))
-                throw new Exception("BITPIX sau BSCALE neacceptat la scriere: " + bitpix + ", " + bscale.ToString(CultureInfo.InvariantCulture));
+                throw new Exception(Tr.Pick("BITPIX or BSCALE not supported for writing: ", "BITPIX sau BSCALE neacceptat la scriere: ") + bitpix + ", " + bscale.ToString(CultureInfo.InvariantCulture));
             double scale = bitpix switch { 8 => 255.0, 16 => 65535.0, 32 => 4294967295.0, _ => 1.0 };
             var row = new byte[r.W * bytesPer];
             long written = 0, outside = 0;

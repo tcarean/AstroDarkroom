@@ -106,7 +106,7 @@ namespace AstroPhotoAnalyzer
             {
                 byte[] bytes = File.ReadAllBytes(path);
                 var icc = new IccConfiguration(new Profile(bytes, path), Intent.RelativeColorimetric, path);
-                if (!string.IsNullOrEmpty(icc.Error)) return new GamutTable { Problem = "profilul nu se poate citi: " + icc.Error };
+                if (!string.IsNullOrEmpty(icc.Error)) return new GamutTable { Problem = Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ") + icc.Error };
                 var config = new Configuration(xyzConfig: XyzConfiguration.D50, iccConfig: icc);
                 var t = new GamutTable { N = n, Da = new float[n * n * n], Db = new float[n * n * n] };
                 for (int r = 0; r < n; r++)
@@ -118,13 +118,13 @@ namespace AstroPhotoAnalyzer
                             t.Da[i] = (float)da;
                             t.Db[i] = (float)db;
                         }
-                foreach (float v in t.Da) if (float.IsNaN(v)) return new GamutTable { Problem = "profilul nu are tabela spre imprimanta (B2A)" };
+                foreach (float v in t.Da) if (float.IsNaN(v)) return new GamutTable { Problem = Tr.Pick("the profile has no table towards the printer (B2A)", "profilul nu are tabela spre imprimanta (B2A)") };
                 t.Exact = (r, g, b) => RoundTrip(config, r, g, b);
                 return t;
             }
             catch (Exception e)
             {
-                return new GamutTable { Problem = "profilul nu se poate citi: " + e.Message };
+                return new GamutTable { Problem = Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ") + e.Message };
             }
         }
 

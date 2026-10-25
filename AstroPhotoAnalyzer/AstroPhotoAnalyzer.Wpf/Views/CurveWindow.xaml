@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top" Grid.IsSharedSizeScope="True">
       <StackPanel>
-        <TextBlock Style="{StaticResource Heading}" Text="PUNCTELE CURBEI" />
+        <TextBlock Style="{StaticResource Heading}" Text="{local:T En='CURVE POINTS', Ro='PUNCTELE CURBEI'}" />
         <Grid Margin="0,0,0,4">
           <Grid.ColumnDefinitions>
             <ColumnDefinition SharedSizeGroup="CurveLabel" />
@@ -56,11 +56,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition SharedSizeGroup="CurveBefore" />
             <ColumnDefinition SharedSizeGroup="CurveAfter" />
           </Grid.ColumnDefinitions>
-          <TextBlock Grid.Column="0" Style="{StaticResource Faint}" Text="punct" Margin="0,0,18,0" />
-          <TextBlock Grid.Column="1" Style="{StaticResource Faint}" Text="intrare (x)" Margin="0,0,18,0" />
-          <TextBlock Grid.Column="2" Style="{StaticResource Faint}" Text="iesire (y)" Margin="0,0,18,0" />
-          <TextBlock Grid.Column="3" Style="{StaticResource Faint}" Text="L* inainte" Margin="0,0,18,0" />
-          <TextBlock Grid.Column="4" Style="{StaticResource Faint}" Text="L* dupa" />
+          <TextBlock Grid.Column="0" Style="{StaticResource Faint}" Text="{local:T En='point', Ro='punct'}" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="1" Style="{StaticResource Faint}" Text="{local:T En='input (x)', Ro='intrare (x)'}" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="2" Style="{StaticResource Faint}" Text="{local:T En='output (y)', Ro='iesire (y)'}" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="3" Style="{StaticResource Faint}" Text="{local:T En='L* before', Ro='L* inainte'}" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="4" Style="{StaticResource Faint}" Text="{local:T En='L* after', Ro='L* dupa'}" />
         </Grid>
         <ItemsControl ItemsSource="{Binding Rows}">
           <ItemsControl.ItemTemplate>
@@ -89,7 +89,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}" Margin="12,0,0,0">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Heading}" Text="CURBA INTREAGA (intrare - iesire; diagonala = fara schimbare)" />
+        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Heading}" Text="{local:T En='WHOLE CURVE (input - output; diagonal = no change)', Ro='CURBA INTREAGA (intrare - iesire; diagonala = fara schimbare)'}" />
         <local:CurveCanvas Points="{Binding Chart}" ControlPoints="{Binding ControlPoints}" Markers="{Binding Markers}" XMax="1"
                            Stroke="{StaticResource AccentBr}" GridBrush="{StaticResource BorderBr}" TextBrush="{StaticResource MutedBr}" />
       </DockPanel>

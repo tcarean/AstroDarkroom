@@ -49,13 +49,15 @@ AstroPhotoAnalyzer.Core/
   Runs/AnalysisRun.cs                  the chain, AnalysisResult, RefusedImageException
   Runs/CurveRun.cs                     the second run, on request: CurveSet, CurveExport
   Parameters.cs, Thresholds.cs, ThirdParty.cs, Version.cs
+  Language.cs                          the interface language: Tr.Pick, the --lang parser (ADR 0048)
 
 AstroPhotoAnalyzer/                    Program.cs, Options.cs, AnalyzerCli.cs
 
 AstroPhotoAnalyzer.Wpf/
   App.xaml(.cs), MainWindow.xaml(.cs), Theme/Dark.xaml
   Interop/DarkTitleBar.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
-  Presentation/AppIcon.cs, BarsCanvas.cs, CurveCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs
+  Presentation/AppIcon.cs, BarsCanvas.cs, CurveCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs,
+               TExtension.cs (a XAML text in both languages)
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),
@@ -64,6 +66,8 @@ AstroPhotoAnalyzer.Wpf/
         ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs),
         MapWindow.xaml, PreviewWindow.xaml, CurveWindow.xaml, OverlayWindows.xaml.cs, IccPickerWindow.xaml(.cs)
 
-AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt; testdata/ (manifest, large/)
-AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests, IccPickerTests
+AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt and *.en.txt; testdata/ (manifest, large/);
+                                       RunsInRomanian, LanguageTests, RomanianWords (language.md)
+AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests, IccPickerTests,
+                                       RunsInRomanian, AppLanguageTests, WindowEnglishTests
 ```

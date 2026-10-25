@@ -75,7 +75,10 @@ namespace AstroPhotoAnalyzer.Wpf
             Raster img = p.Image;
             int w = img.W, h = img.H;
             PreviewClass[] c = p.Classes;
-            string target = row.AsIs ? $"asa cum e ({Fmt.Level(row.Target)})" : $"fundal {Fmt.Level(row.Target)}" + (row.Explicit ? " (dat)" : "") + (row.Recommended ? ", recomandat" : "");
+            string target = row.AsIs
+                ? Tr.Pick($"as is ({Fmt.Level(row.Target)})", $"asa cum e ({Fmt.Level(row.Target)})")
+                : Tr.Pick($"background {Fmt.Level(row.Target)}", $"fundal {Fmt.Level(row.Target)}")
+                  + (row.Explicit ? Tr.Pick(" (given)", " (dat)") : "") + (row.Recommended ? Tr.Pick(", recommended", ", recomandat") : "");
             return new PreviewWindowViewModel
             {
                 Title = $"Preview {target} - {System.IO.Path.GetFileName(r.Path)}",
@@ -84,10 +87,13 @@ namespace AstroPhotoAnalyzer.Wpf
                 Height = h,
                 BlackLayer = RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == PreviewClass.UnderPaperBlack, BlackColour),
                 LowLayer = RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == PreviewClass.UnderLowSeparation, LowColour),
-                Caption = $"{target}: gamma {Fmt.F3(row.Gamma)}; praful la L* {Fmt.F1(row.LstarDust)}, cerul la L* {Fmt.F1(row.LstarSky)}; "
-                    + $"negrul hartiei L* {Fmt.F1(p.PaperBlackLstar)} la Dmax {Fmt.Dmax(r.Parameters.Dmax)}" + ReportWriter.RowMark(row).Replace("   ", "; "),
-                BlackLegend = $"sub negrul hartiei (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} din pixeli - se tiparesc cu acelasi negru",
-                LowLegend = $"sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, peste negru: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} din pixeli - hartia le separa, ochiul abia",
+                Caption = Tr.Pick($"{target}: gamma {Fmt.F3(row.Gamma)}; the dust at L* {Fmt.F1(row.LstarDust)}, the sky at L* {Fmt.F1(row.LstarSky)}; "
+                        + $"paper black L* {Fmt.F1(p.PaperBlackLstar)} at Dmax {Fmt.Dmax(r.Parameters.Dmax)}",
+                        $"{target}: gamma {Fmt.F3(row.Gamma)}; praful la L* {Fmt.F1(row.LstarDust)}, cerul la L* {Fmt.F1(row.LstarSky)}; "
+                        + $"negrul hartiei L* {Fmt.F1(p.PaperBlackLstar)} la Dmax {Fmt.Dmax(r.Parameters.Dmax)}")
+                    + ReportWriter.RowMark(row).Replace("   ", "; "),
+                BlackLegend = Tr.Pick($"under paper black (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} of the pixels - they print as the same black", $"sub negrul hartiei (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} din pixeli - se tiparesc cu acelasi negru"),
+                LowLegend = Tr.Pick($"under L* {Fmt.F0(Thresholds.LowSeparationLstar)}, over black: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} of the pixels - the paper separates them, the eye barely", $"sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, peste negru: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} din pixeli - hartia le separa, ochiul abia"),
             };
         }
     }

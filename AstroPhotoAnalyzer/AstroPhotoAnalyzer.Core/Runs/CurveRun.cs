@@ -103,7 +103,7 @@ namespace AstroPhotoAnalyzer
             DustMap map = sim.Map;
             double black = sim.PaperBlackLstar;
 
-            progress?.Report("ancore");
+            progress?.Report(Tr.Pick("anchors", "ancore"));
             Raster sub = RasterOps.Subsample(r, Thresholds.TonalStride);
             IReadOnlyList<string> labels = map.ClassNames;
             double[] before = CurveAdvisor.ClassLevels(sub, map, black);
@@ -194,7 +194,7 @@ namespace AstroPhotoAnalyzer
         ///
         /// The image must still be where it was at the analysis: without it a FITS would lose
         /// its header silently, so the save is refused. Every refusal and write error throws,
-        /// with the Romanian message of <see cref="CurveTexts"/> where the refusal is the tool's.
+        /// with the message of <see cref="CurveTexts"/> where the refusal is the tool's.
         /// </summary>
         /// <param name="a">
         /// The analysis whose raster is saved; its FullPath names the input, and null there (a

@@ -90,8 +90,9 @@ Every number with decimals goes through `Fmt` with `CultureInfo.InvariantCulture
 `Int` and `Dim`, or are interpolated as they are (some counts, thresholds in levels or pixels,
 the seed), which relies on both applications running in the invariant culture. This is what
 makes the window's saved file byte-identical to the console's output on any Windows culture
-(`CultureTests`). Text is Romanian without diacritics. The format is pinned by the golden
-tests: change it on purpose, re-approve, read the diff.
+(`CultureTests`). Every text is a pair, English and Romanian without diacritics, picked by the
+interface language (`language.md`); the numbers are the same in both. The format is pinned by
+the golden tests, in both languages: change it on purpose, re-approve, read the diff.
 
 ### The Curbe tab's sentences (`Report/CurveTexts.cs`, ADR 0032)
 

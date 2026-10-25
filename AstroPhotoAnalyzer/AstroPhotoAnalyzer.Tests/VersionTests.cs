@@ -103,7 +103,7 @@ public class VersionTests
     static string[] Lines(params string[] args)
     {
         var stdout = new StringWriter();
-        AnalyzerCli.Run(args, stdout, new StringWriter());
+        AnalyzerCli.Run([.. args, "--lang", "ro"], stdout, new StringWriter());   // these tests assert the Romanian texts (ADR 0048)
         return stdout.ToString().Replace("\r\n", "\n").Split('\n');
     }
 

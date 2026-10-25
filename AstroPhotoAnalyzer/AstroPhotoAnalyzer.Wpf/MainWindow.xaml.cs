@@ -100,8 +100,8 @@ namespace AstroPhotoAnalyzer.Wpf
             string patterns = string.Join(";", ImageLoader.Extensions.Select(x => "*" + x));
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Alege imaginea finita",
-                Filter = $"Imagini ({patterns})|{patterns}|Toate fisierele|*.*",
+                Title = Tr.Pick("Choose the finished image", "Alege imaginea finita"),
+                Filter = Tr.Pick($"Images ({patterns})|{patterns}|All files|*.*", $"Imagini ({patterns})|{patterns}|Toate fisierele|*.*"),
                 Multiselect = false,
             };
             if (dlg.ShowDialog(this) == true) _ = _vm.OpenAsync(dlg.FileName);
@@ -136,7 +136,7 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             var dlg = new Microsoft.Win32.SaveFileDialog
             {
-                Title = "Salveaza imaginea cu curba aplicata",
+                Title = Tr.Pick("Save the image with the curve applied", "Salveaza imaginea cu curba aplicata"),
                 FileName = proposedName,
                 InitialDirectory = _vm.Curves.InputFolder,
                 Filter = "FITS|*.fit",
@@ -157,7 +157,7 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             var dlg = new Microsoft.Win32.SaveFileDialog
             {
-                Title = "Salveaza raportul",
+                Title = Tr.Pick("Save the report", "Salveaza raportul"),
                 FileName = System.IO.Path.GetFileName(_vm.DefaultReportPath),
                 InitialDirectory = System.IO.Path.GetDirectoryName(_vm.DefaultReportPath),
                 Filter = "Text|*.txt",

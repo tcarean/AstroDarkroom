@@ -1,0 +1,5 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+--- stderr ---
+ERROR: the image looks LINEAR (median 0.0040, under 0.02): the tool measures only finished, stretched images. Stretch it in Siril and analyse the result.
+--- exit 1

@@ -57,7 +57,7 @@ namespace AstroPhotoAnalyzer
         internal Raster(int h, int w, int planes)
         {
             if (planes != 1 && planes != 3)
-                throw new System.ArgumentException("un raster are 1 sau 3 planuri, nu " + planes);
+                throw new System.ArgumentException(Tr.Pick("a raster has 1 or 3 planes, not ", "un raster are 1 sau 3 planuri, nu ") + planes);
             H = h; W = w;
             Planes = new float[planes][];
             for (int p = 0; p < planes; p++) Planes[p] = new float[h * w];

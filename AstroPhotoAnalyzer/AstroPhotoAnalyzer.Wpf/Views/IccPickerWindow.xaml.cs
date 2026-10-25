@@ -51,8 +51,8 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
-                Title = "Alege profilul ICC al hartiei pe imprimanta ei",
-                Filter = "Profile ICC (*.icc;*.icm)|*.icc;*.icm|Toate fisierele|*.*",
+                Title = Tr.Pick("Choose the ICC profile of the paper on its printer", "Alege profilul ICC al hartiei pe imprimanta ei"),
+                Filter = Tr.Pick("ICC profiles (*.icc;*.icm)|*.icc;*.icm|All files|*.*", "Profile ICC (*.icc;*.icm)|*.icc;*.icm|Toate fisierele|*.*"),
                 Multiselect = false,
             };
             if (dlg.ShowDialog(this) == true) Vm.AddFile(dlg.FileName);

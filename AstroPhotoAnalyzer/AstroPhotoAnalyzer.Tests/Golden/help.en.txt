@@ -1,0 +1,33 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+Measures a finished astro image (a stretched TIFF, PNG or FITS) and says
+how to send it to print: format, background, colour, size, denoise.
+
+Usage:
+  AstroPhotoAnalyzer <image> [options]
+
+Options:
+  --medium <baryta|canvas|acrilic>   the print medium; gives the paper's Dmax (default baryta)
+  --dmax <n>                          an explicit Dmax, instead of the medium's (e.g. 2.0)
+  --icc <profile.icc>                 the ICC profile of the paper on its printer; gives the Dmax, instead of the medium
+  --distance <m>                      the viewing distance, in metres (default 1.5 x the diagonal)
+  --sizes <cm,cm,...>                 the candidate print widths (default 50,60,70,80,90,100)
+  --aspect <w:h>                      the target aspect ratio, e.g. 50:35 (default the native one)
+  --target-bg <0..1>                  one more target in the print simulation, besides the 0.05..0.20 grid (strictly between 0 and 1, 3 decimals)
+  --passepartout <cm>                 the width of the passepartout (default 7; at least twice the frame, 0 = none)
+  --frame <cm>                        the width of the frame (default 3)
+  --wcs <file.fit>                    a plate-solved FITS of the same size, whose WCS is used for the dust clouds
+  --lang <en|ro>                      the interface language: en English, ro Romanian (default en)
+  -o, --out <file>                    also writes the report to a file, besides stdout
+  -h, --help                          this text
+
+Exit codes: 0 ok, 1 error, 2 caution, 3 problem.
+
+This program comes with ABSOLUTELY NO WARRANTY, not even the implied
+warranty of merchantability or fitness for a particular purpose. It is
+free software: you can redistribute it and modify it under the terms
+of the GPLv3 (or, at your option, any later version). The full text is
+in the LICENSE file, or at <https://www.gnu.org/licenses/gpl-3.0.html>.
+--- stderr ---
+--- exit 0

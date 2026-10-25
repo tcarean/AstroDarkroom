@@ -437,7 +437,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <StackPanel Grid.Column="1">
         <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
         <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" TextWrapping="Wrap">
-          <Run Text="fiindca: " FontWeight="SemiBold" />
+          <Run Text="{local:T En='because: ', Ro='fiindca: '}" FontWeight="SemiBold" />
           <Run Text="{Binding Because, Mode=OneWay}" />
         </TextBlock>
       </StackPanel>

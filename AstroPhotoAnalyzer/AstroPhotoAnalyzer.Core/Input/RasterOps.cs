@@ -77,7 +77,7 @@ namespace AstroPhotoAnalyzer
         internal static Raster Crop(Raster r, int x0, int y0, int w, int h)
         {
             if (x0 < 0 || y0 < 0 || x0 + w > r.W || y0 + h > r.H || w <= 0 || h <= 0)
-                throw new ArgumentException($"decupaj in afara rasterului: {w}x{h} la ({x0},{y0}) din {r.W}x{r.H}");
+                throw new ArgumentException(Tr.Pick($"a crop outside the raster: {w}x{h} at ({x0},{y0}) of {r.W}x{r.H}", $"decupaj in afara rasterului: {w}x{h} la ({x0},{y0}) din {r.W}x{r.H}"));
             var o = new Raster(h, w, r.Planes.Length) { Source = r.Source };
             for (int p = 0; p < r.Planes.Length; p++)
                 for (int y = 0; y < h; y++)
@@ -157,7 +157,7 @@ namespace AstroPhotoAnalyzer
         internal static double GammaFor(double from, double to)
         {
             if (from <= 0 || from >= 1 || to <= 0 || to >= 1)
-                throw new ArgumentException("fundalul si tinta trebuie sa fie in (0, 1)");
+                throw new ArgumentException(Tr.Pick("the background and the target must be in (0, 1)", "fundalul si tinta trebuie sa fie in (0, 1)"));
             return Math.Log(to) / Math.Log(from);
         }
 

@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <Window x:Class="AstroPhotoAnalyzer.Wpf.PreviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf"
         Title="{Binding Title}"
         Icon="/AstroPhotoAnalyzer.Wpf;component/Icon/AstroPhotoAnalyzer.ico"
         WindowState="Maximized" MinWidth="800" MinHeight="500"
@@ -48,7 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </CheckBox>
         </StackPanel>
         <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
-                   Text="Curba gamma pe o copie redusa, nu stretch-ul lui Siril; pe ecran pare plata, hartia o aduce inapoi. Pixelii sunt presupusi sRGB." />
+                   Text="{local:T En='A gamma curve on a reduced copy, not the stretch in Siril; on screen it looks flat, the paper brings it back. The pixels are assumed to be sRGB.', Ro='Curba gamma pe o copie redusa, nu stretch-ul lui Siril; pe ecran pare plata, hartia o aduce inapoi. Pixelii sunt presupusi sRGB.'}" />
       </StackPanel>
     </Border>
 

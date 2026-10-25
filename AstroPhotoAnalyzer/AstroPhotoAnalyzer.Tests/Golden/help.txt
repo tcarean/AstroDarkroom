@@ -18,6 +18,7 @@ Optiuni:
   --passepartout <cm>                 latimea passepartout-ului (implicit 7; cel putin dublul ramei, 0 = fara)
   --frame <cm>                        latimea ramei (implicit 3)
   --wcs <fisier.fit>                  FITS plate-solved de aceeasi marime, al carui WCS se foloseste pentru norii de praf
+  --lang <en|ro>                      limba interfetei: en engleza, ro romana (implicit en)
   -o, --out <fisier>                  scrie raportul si in fisier, pe langa stdout
   -h, --help                          acest text
 

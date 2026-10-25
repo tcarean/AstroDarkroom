@@ -116,15 +116,15 @@ namespace AstroPhotoAnalyzer
         /// <returns>The inputs and the outputs, one array each, in the points' order.</returns>
         static (double[] X, double[] Y) Validate(IReadOnlyList<CurvePoint> points)
         {
-            if (points == null || points.Count < 2) throw new ArgumentException("o curba are cel putin doua puncte");
+            if (points == null || points.Count < 2) throw new ArgumentException(Tr.Pick("a curve has at least two points", "o curba are cel putin doua puncte"));
             int n = points.Count;
-            if (points[0].X != 0 || points[0].Y != 0) throw new ArgumentException("curba trebuie sa inceapa in (0, 0)");
-            if (points[n - 1].X != 1 || points[n - 1].Y != 1) throw new ArgumentException("curba trebuie sa se termine in (1, 1)");
+            if (points[0].X != 0 || points[0].Y != 0) throw new ArgumentException(Tr.Pick("the curve must start at (0, 0)", "curba trebuie sa inceapa in (0, 0)"));
+            if (points[n - 1].X != 1 || points[n - 1].Y != 1) throw new ArgumentException(Tr.Pick("the curve must end at (1, 1)", "curba trebuie sa se termine in (1, 1)"));
             for (int i = 0; i < n; i++)
             {
                 if (double.IsNaN(points[i].X) || double.IsNaN(points[i].Y) || points[i].Y < 0 || points[i].Y > 1)
-                    throw new ArgumentException("punct de control in afara 0..1");
-                if (i > 0 && !(points[i].X > points[i - 1].X)) throw new ArgumentException("x-urile punctelor de control trebuie sa creasca strict");
+                    throw new ArgumentException(Tr.Pick("a control point outside 0..1", "punct de control in afara 0..1"));
+                if (i > 0 && !(points[i].X > points[i - 1].X)) throw new ArgumentException(Tr.Pick("the x of the control points must increase strictly", "x-urile punctelor de control trebuie sa creasca strict"));
             }
             return (points.Select(p => p.X).ToArray(), points.Select(p => p.Y).ToArray());
         }

@@ -43,11 +43,18 @@ namespace AstroPhotoAnalyzer
         internal int H { get; init; }
 
         /// <summary>
-        /// "latime" or "inaltime": the axis that is cut. Null when no crop is needed: a crop is
-        /// needed only when the target removes at least one pixel (ADR 0043; until the review of
-        /// 2026-10-23 a ratio 1e-6 off the native one was a crop of 0 px).
+        /// The axis that is cut, as the report names it: "the width" or "the height" ("latime" or
+        /// "inaltime" in Romanian). Null when no crop is needed: a crop is needed only when the
+        /// target removes at least one pixel (ADR 0043; until the review of 2026-10-23 a ratio
+        /// 1e-6 off the native one was a crop of 0 px).
         /// </summary>
         internal string Axis { get; init; }
+
+        /// <summary>
+        /// True when the crop cuts the width, false when it cuts the height or none is needed:
+        /// what the code asks, apart from <see cref="Axis"/>, the label.
+        /// </summary>
+        internal bool CutsWidth { get; init; }
 
         /// <summary>
         /// The pixels cut on the first side of the axis (the left, or the top), and on the second
@@ -100,7 +107,8 @@ namespace AstroPhotoAnalyzer
                     Y0 = 0,
                     W = newW,
                     H = h,
-                    Axis = "latime",
+                    Axis = Tr.Pick("the width", "latime"),
+                    CutsWidth = true,
                     CutStartPx = cut,
                     CutEndPx = w - newW - cut,
                     CutPct = 100.0 * (w - newW) / w,
@@ -120,7 +128,7 @@ namespace AstroPhotoAnalyzer
                     Y0 = cut,
                     W = w,
                     H = newH,
-                    Axis = "inaltime",
+                    Axis = Tr.Pick("the height", "inaltime"),
                     CutStartPx = cut,
                     CutEndPx = h - newH - cut,
                     CutPct = 100.0 * (h - newH) / h,

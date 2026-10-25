@@ -84,7 +84,7 @@ namespace AstroPhotoAnalyzer
             // the table with NaN or infinity and come out of the simulation as NaN targets, with
             // no error at the source.
             if (!(gamma > 0) || double.IsInfinity(gamma))
-                throw new ArgumentException("gamma trebuie sa fie un numar pozitiv finit");
+                throw new ArgumentException(Tr.Pick("gamma must be a finite positive number", "gamma trebuie sa fie un numar pozitiv finit"));
             Gamma = gamma;
             double[] pow = RasterOps.PowerLut(gamma);
             _lin = new double[pow.Length];

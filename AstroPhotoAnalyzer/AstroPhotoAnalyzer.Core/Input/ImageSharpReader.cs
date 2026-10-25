@@ -73,8 +73,8 @@ namespace AstroPhotoAnalyzer
         {
             ImageInfo info;
             try { info = Image.Identify(path); }
-            catch (UnknownImageFormatException e) { throw new Exception("fisierul nu e o imagine cunoscuta: " + e.Message); }
-            catch (InvalidImageContentException e) { throw new Exception("imagine stricata: " + e.Message); }
+            catch (UnknownImageFormatException e) { throw new Exception(Tr.Pick("the file is not an image format the tool knows: ", "fisierul nu e o imagine cunoscuta: ") + e.Message); }
+            catch (InvalidImageContentException e) { throw new Exception(Tr.Pick("damaged image: ", "imagine stricata: ") + e.Message); }
 
             var facts = Facts(info);
             var raster = facts.Color ? LoadColor(path, out byte[] icc) : LoadMono(path, out icc);
@@ -136,7 +136,7 @@ namespace AstroPhotoAnalyzer
                 };
                 f.Color = png.ColorType != PngColorType.Grayscale && png.ColorType != PngColorType.GrayscaleWithAlpha;
                 f.Compression = "Deflate";
-                if (png.ColorType == PngColorType.Palette) f.Note = "PNG cu paleta: culorile sunt indexate, nu masurate direct";
+                if (png.ColorType == PngColorType.Palette) f.Note = Tr.Pick("a palette PNG: the colours are indexed, not measured directly", "PNG cu paleta: culorile sunt indexate, nu masurate direct");
             }
             else if (f.Format == "TIFF")
             {
@@ -150,32 +150,32 @@ namespace AstroPhotoAnalyzer
                            && tf.PhotometricInterpretation != TiffPhotometricInterpretation.WhiteIsZero;
                     f.Compression = tf.Compression switch
                     {
-                        TiffCompression.None => "necomprimat",
+                        TiffCompression.None => Tr.Pick("uncompressed", "necomprimat"),
                         TiffCompression.Lzw => "LZW",
                         TiffCompression.Deflate => "Deflate",
                         TiffCompression.OldDeflate => "Deflate",
                         TiffCompression.PackBits => "PackBits",
                         TiffCompression.Jpeg => "JPEG",
-                        null => "necomprimat",
+                        null => Tr.Pick("uncompressed", "necomprimat"),
                         _ => tf.Compression.ToString(),
                     };
                     if (tf.PhotometricInterpretation == TiffPhotometricInterpretation.PaletteColor)
-                        f.Note = "TIFF cu paleta: culorile sunt indexate, nu masurate direct";
+                        f.Note = Tr.Pick("a palette TIFF: the colours are indexed, not measured directly", "TIFF cu paleta: culorile sunt indexate, nu masurate direct");
                     if (info.FrameMetadataCollection.Count > 1)
-                        f.Note = $"TIFF cu {info.FrameMetadataCollection.Count} pagini; s-a citit prima";
+                        f.Note = Tr.Pick($"a TIFF with {info.FrameMetadataCollection.Count} pages; the first was read", $"TIFF cu {info.FrameMetadataCollection.Count} pagini; s-a citit prima");
                 }
                 if (f.Bits != 8 && f.Bits != 16)
-                    f.Note = $"TIFF cu {f.Bits} biti pe esantion, citit prin conversia ImageSharp";
+                    f.Note = Tr.Pick($"a TIFF with {f.Bits} bits per sample, read through ImageSharp's conversion", $"TIFF cu {f.Bits} biti pe esantion, citit prin conversia ImageSharp");
             }
             else if (f.Format == "JPEG")
             {
                 f.Bits = 8;
                 f.Color = info.PixelType.BitsPerPixel > 8;
-                f.Compression = "JPEG (cu pierderi)";
+                f.Compression = Tr.Pick("JPEG (lossy)", "JPEG (cu pierderi)");
             }
             else
             {
-                f.Note = "format neasteptat dupa extensie: " + name;
+                f.Note = Tr.Pick("a format the extension did not suggest: ", "format neasteptat dupa extensie: ") + name;
             }
             return f;
         }

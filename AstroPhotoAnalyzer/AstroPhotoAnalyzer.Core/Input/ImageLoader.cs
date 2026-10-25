@@ -56,11 +56,11 @@ namespace AstroPhotoAnalyzer
         /// <returns>The raster, 0..1, with its <see cref="SourceInfo"/>.</returns>
         internal static Raster Load(string path)
         {
-            if (!File.Exists(path)) throw new FileNotFoundException("fisierul nu exista: " + path, path);
+            if (!File.Exists(path)) throw new FileNotFoundException(Tr.Pick("the file does not exist: ", "fisierul nu exista: ") + path, path);
 
             IFrameReader reader = Readers.FirstOrDefault(r => r.Handles(path));
             if (reader == null)
-                throw new Exception($"format neacceptat: '{Path.GetExtension(path)}'. Se accepta {string.Join(", ", Extensions)}.");
+                throw new Exception(Tr.Pick($"unsupported format: '{Path.GetExtension(path)}'. Accepted: {string.Join(", ", Extensions)}.", $"format neacceptat: '{Path.GetExtension(path)}'. Se accepta {string.Join(", ", Extensions)}."));
 
             return reader.Load(path);
         }

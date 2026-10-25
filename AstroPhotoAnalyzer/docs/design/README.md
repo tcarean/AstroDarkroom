@@ -28,6 +28,7 @@ run in a task's worktree, lists the notes a branch touched.
 | The recommendation rules per topic, the layout of the report, the number formatting | `recommendations-and-report.md` | anything in `Report/`, the wording of a recommendation, the golden files |
 | The parameters (defaults, flags, fields, the rule between them, the help texts), the console, the golden scenes | `console.md` | `Parameters.cs`, `Options.cs`, `AnalyzerCli.cs`, `ParameterFields.cs`, `GoldenOutputTests` |
 | The window: layout, `MainViewModel`, the seven tabs, presentation, culture; what the explanation and naming passes taught | `window.md` | anything in `AstroPhotoAnalyzer.Wpf/`; ADR 0013 and ADR 0020 first |
+| The interface language: `Tr.Pick`, the `T` markup extension, who sets the language, the aligned tables, the tests kept in Romanian and the English guard | `language.md` | any text the user sees, `Language.cs`, `TExtension.cs`; ADR 0048 first |
 | The checklist per kind of change: a measurement, a window text, a recommendation, a parameter, a medium, an input format, a tab, a dependency | `extending.md` | before any of those changes |
 | The package, where it is touched, the behaviours of 3.1.11 the code depends on, the rule as first written | `dependencies.md` | `Directory.Packages.props`, the core's csproj, `ThirdParty.cs`; ADR 0009 first |
 | The kinds of test, the shared fixtures, the window's harness | `testing.md` | a new fixture or scene, `StaFixture`, `WindowSmokeTests` |

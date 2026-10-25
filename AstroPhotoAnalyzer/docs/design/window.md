@@ -24,7 +24,7 @@ shown.
 
 **`MainViewModel`**: `Path`, `HasPath`, `IsBusy`/`IsIdle`, `CanRun`, `BusyMessage`
 (the progress stage), `Error`/`HasError`, `HasResult`, `CanSave`, `DefaultReportPath`
-(`Raport.txt` beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
+(`Report.txt`, `Raport.txt` in Romanian, beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
 and runs; `RunAsync()` validates the fields (`ParameterFields.TryBuild`), clears the
 tabs, runs `AnalysisRun.Execute` via `Task.Run`, populates the tabs, or sets `Error`
 (`Describe` joins inner messages, no stack); `SaveReport(file)` writes `WriteFull` through
@@ -76,6 +76,11 @@ frame of the .ico for "Despre").
 **Culture**: `App.ForceInvariantNumbers` pins `DefaultThreadCurrentCulture` and
 `CurrentCulture` to invariant at startup; `InvariantGlobalization` must **not** be set on
 the WPF project (XAML fails to load without culture data).
+
+**Language**: `App.OnStartup` sets the interface language from `--lang` before the first
+window; every XAML text is `{local:T En=..., Ro=...}` and every view-model text a
+`Tr.Pick(english, romanian)` pair, the window's file argument never `--lang` or its value
+(`language.md`, ADR 0048).
 
 **The Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0032). Unlike
 the other tabs it is empty after an analysis: `Populate` only keeps the result, and

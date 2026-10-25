@@ -89,7 +89,7 @@ public class WcsBorrowTests
         string small = ws.WriteFile("mic.fit", WcsFits(64, 64));
 
         var o = new StringWriter(); var e = new StringWriter();
-        int code = AnalyzerCli.Run(new[] { png, "--wcs", small }, o, e);
+        int code = AnalyzerCli.Run(new[] { png, "--wcs", small, "--lang", "ro" }, o, e);
 
         Assert.Equal(1, code);
         Assert.Contains("EROARE: --wcs:", e.ToString());
@@ -104,7 +104,7 @@ public class WcsBorrowTests
         string fits = ws.WriteFile("stack.fit", WcsFits(512, 512));
 
         var o = new StringWriter(); var e = new StringWriter();
-        AnalyzerCli.Run(new[] { tif, "--wcs", fits }, o, e);
+        AnalyzerCli.Run(new[] { tif, "--wcs", fits, "--lang", "ro" }, o, e);
 
         Assert.Contains("LDN 42 (B78)", o.ToString());
         Assert.Contains("cadrul e in intregime in banda", o.ToString());   // a 1.3 degree field on the Pipe: no sky outside the band

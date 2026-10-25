@@ -22,7 +22,7 @@ public class CliTests
     static (int Code, string Out, string Err) Run(params string[] args)
     {
         var o = new StringWriter(); var e = new StringWriter();
-        int code = AnalyzerCli.Run(args, o, e);
+        int code = AnalyzerCli.Run([.. args, "--lang", "ro"], o, e);   // these tests assert the Romanian texts (ADR 0048)
         return (code, o.ToString(), e.ToString());
     }
 

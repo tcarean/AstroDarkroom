@@ -134,7 +134,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public object ConvertBack(object value, Type t, object p, CultureInfo c) => throw new NotSupportedException();
     }
 
-    /// <summary>The colour of a verdict, from its label ("OK", "ATENTIE", "PROBLEMA").</summary>
+    /// <summary>The colour of a verdict, from its label in the interface language ("OK", "CAUTION", "PROBLEM").</summary>
     internal sealed class VerdictToBrushConverter : IValueConverter
     {
         /// <summary>Converts a verdict label to its brush.</summary>

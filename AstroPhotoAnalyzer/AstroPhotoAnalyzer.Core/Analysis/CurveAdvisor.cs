@@ -156,8 +156,8 @@ namespace AstroPhotoAnalyzer
     /// </summary>
     internal static class CurveAdvisor
     {
-        internal static readonly string[] Names = { "Blanda", "Medie", "Puternica" };
-        internal const string MaximaName = "Maxima";
+        internal static string[] Names => new[] { Tr.Pick("Gentle", "Blanda"), Tr.Pick("Moderate", "Medie"), Tr.Pick("Strong", "Puternica") };
+        internal static string MaximaName => Tr.Pick("Maximum", "Maxima");
 
         /// <summary>The grey level of an L*: the anchor of a class.</summary>
         /// <param name="lstar">The class's L*, 0..100; NaN for an empty upper class.</param>
@@ -241,7 +241,7 @@ namespace AstroPhotoAnalyzer
         /// <param name="a">The anchors.</param>
         /// <param name="labels">The five class names of the map's path, for the sentence.</param>
         /// <returns>
-        /// The reason, in Romanian, from CurveTexts; null when curves can be suggested.
+        /// The reason, in the interface language, from CurveTexts; null when curves can be suggested.
         /// </returns>
         internal static string Problem(CurveAnchors a, IReadOnlyList<string> labels)
         {
