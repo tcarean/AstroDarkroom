@@ -108,7 +108,7 @@ namespace FlatCheck.Wpf
         internal const string RatioPattern = "pp_flat_stacked*.fit";
 
         /// <summary>The structure report, saved beside the session's data.</summary>
-        internal const string ResultFileName = "Rezultat testare.txt";
+        internal const string ResultFileName = "Test result.txt";
 
         internal string Root { get; }
 
@@ -173,7 +173,7 @@ namespace FlatCheck.Wpf
         /// for. It does match <see cref="RatioPattern"/>, though, which is right: a smoothed
         /// stack is still a stack.
         /// </summary>
-        internal const string SmoothedSuffix = "_netezit";
+        internal const string SmoothedSuffix = "_smoothed";
 
         /// <summary>Where the smoothing tab writes, or null when there is no master.</summary>
         internal string SmoothedMasterPath
@@ -198,7 +198,7 @@ namespace FlatCheck.Wpf
         /// the master, for the same reasons as the smoothed one - it does not become the
         /// session's master, but it matches RatioPattern and what --against expects.
         /// </summary>
-        internal const string SyntheticSuffix = "_sintetic";
+        internal const string SyntheticSuffix = "_synthetic";
 
         /// <summary>Where the Sintetic tab writes, or null when there is no master.</summary>
         internal string SyntheticMasterPath
@@ -228,7 +228,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>The Split tab's report and mosaic, in the session's root, beside the
         /// structure's (ADR 0054).</summary>
-        internal const string SplitResultFileName = "Rezultat split.txt";
+        internal const string SplitResultFileName = "Split result.txt";
         internal string SplitResultTextPath => Path.Combine(Root, SplitResultFileName);
         internal string SplitPngPath => Path.Combine(Root, "flatcheck-split.png");
 

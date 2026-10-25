@@ -44,6 +44,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -596,7 +597,7 @@ namespace FlatCheck.Wpf
             {
                 Label = row.Label,
                 // on the verdict row the value IS the verdict: only the pill, not the word twice
-                Cells = row.Cells.Select(c => new SplitTableCell { Value = c.Verdict != null && c.Value == c.Verdict ? "" : c.Value, Verdict = c.Verdict }).ToList(),
+                Cells = row.Cells.Select(c => new SplitTableCell { Value = c.Verdict != null && c.Value == VerdictWords.Of(c.Verdict) ? "" : c.Value, Verdict = c.Verdict }).ToList(),
                 Note = row.Note,
                 IsKey = row.IsKey,
                 IsReference = row.IsReference,
@@ -648,7 +649,7 @@ namespace FlatCheck.Wpf
             }
             catch (Exception e)
             {
-                SaveError = "Nu am putut salva raportul:\n" + Describe(e);
+                SaveError = T("Could not save the report:\n", "Nu am putut salva raportul:\n") + Describe(e);
             }
         }
 

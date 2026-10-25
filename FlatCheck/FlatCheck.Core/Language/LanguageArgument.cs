@@ -15,10 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LanguageArgument.cs - the --lang option, read before anything else on the command line: the
-// console needs the language before it can word a usage or a parse error. The window will read
-// it the same way, before it builds its first view, in its own stage (R-101); until then it is
-// Romanian only.
+// LanguageArgument.cs - the --lang option, read before anything else on the command line, by
+// both applications: the console needs the language before it can word a usage or a parse
+// error, the window before it loads its resources and its first view (App's constructor).
 
 using System;
 using System.Collections.Generic;

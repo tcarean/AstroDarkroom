@@ -766,7 +766,7 @@ unconditionally, and the same holds for `RatioRun`, `ExposureRun`, `LightRun`, `
 `HistEqRun`, `SmoothRun`, `SyntheticRun` and `AgainstRun`. The runs that can refuse (`LightRun`,
 `LightSeriesRun`, `SmoothRun`, `SyntheticRun`) write the refusal text into the same writer. No
 flag suppresses it, and nothing returns the text as a string (why the writer is the caller's is
-ADR 0011). The window saves what its `StringWriter` got back as "Rezultat testare.txt", the same
+ADR 0011). The window saves what its `StringWriter` got back as "Test result.txt", the same
 text by construction; and **a caller who wants the figures and no text passes
 `TextWriter.Null`**, which is exactly what `ValidationTests` does for the structure, profile,
 smooth and against cases. Verified against the code on 2026-09-25: this is true today for all

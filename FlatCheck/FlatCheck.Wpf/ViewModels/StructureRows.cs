@@ -32,6 +32,7 @@
 // core, so they are the same if tomorrow the console asks for them too.
 
 using System.Collections.Generic;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -52,7 +53,7 @@ namespace FlatCheck.Wpf
         {
             new MetricRow
             {
-                Label = "imprastiere 4 colturi",
+                Label = T("spread of the 4 corners", "imprastiere 4 colturi"),
                 Value = Pct(r.CornerSpreadPct),
                 Verdict = r.CornerVerdict,
                 // the only row with figures of its own under it: the four corners, through the
@@ -61,14 +62,14 @@ namespace FlatCheck.Wpf
             },
             new MetricRow
             {
-                Label = "asimetrie azimutala max",
+                Label = T("max azimuthal asymmetry", "asimetrie azimutala max"),
                 Value = Pct(r.AzimuthalMaxPct),
                 Verdict = r.AzimuthalVerdict,
                 Note = Note(nameof(r.AzimuthalMaxPct)),
             },
             new MetricRow
             {
-                Label = "reziduu dupa model radial",
+                Label = T("residual after the radial model", "reziduu dupa model radial"),
                 Value = Pct(r.ResidualPtpPct),
                 Verdict = r.ResidualVerdict,
                 IsKey = true,
@@ -76,14 +77,14 @@ namespace FlatCheck.Wpf
             },
             new MetricRow
             {
-                Label = "inclinare (gradient)",
+                Label = T("tilt (gradient)", "inclinare (gradient)"),
                 Value = Pct(r.TiltPct),
                 Verdict = r.TiltVerdict,
                 Note = Note(nameof(r.TiltPct)),
             },
             new MetricRow
             {
-                Label = "pata maxima (o dala)",
+                Label = T("worst spot (one tile)", "pata maxima (o dala)"),
                 Value = Pct(r.MaxTilePct),
                 Verdict = r.MaxTileVerdict,
                 Note = Note(nameof(r.MaxTilePct)),
@@ -106,19 +107,19 @@ namespace FlatCheck.Wpf
         {
             new MetricRow
             {
-                Label = "vignetare centru -> colt",
-                Value = $"{r.VignetteStops:F2} stopuri",
+                Label = T("vignetting centre -> corner", "vignetare centru -> colt"),
+                Value = T($"{r.VignetteStops:F2} stops", $"{r.VignetteStops:F2} stopuri"),
                 Note = StructureReport.VignetteNote(r),
             },
             new MetricRow
             {
-                Label = "offset centru iluminare",
-                Value = r.CentroidValid ? Pct(r.CentroidOffsetPct) : "nedeterminat",
+                Label = T("illumination centre offset", "offset centru iluminare"),
+                Value = r.CentroidValid ? Pct(r.CentroidOffsetPct) : T("undetermined", "nedeterminat"),
                 Note = StructureReport.CentroidNote(r),
             },
             new MetricRow
             {
-                Label = "pete locale (praf etc.)",
+                Label = T("local spots (dust etc.)", "pete locale (praf etc.)"),
                 Value = StructureReport.LocalSpotValue(r),
                 // The explanation comes from the core, so it is the same as the one in the saved
                 // report - the threshold included, which is read from Th and not written here.

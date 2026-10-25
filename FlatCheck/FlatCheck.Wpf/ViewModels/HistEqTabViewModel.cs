@@ -55,6 +55,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -146,7 +147,7 @@ namespace FlatCheck.Wpf
             Raise(nameof(Selected));
 
             if (Files.Count == 0)
-                Fail("Nimic de egalizat", SessionMessages.NoFlatFrames(session));
+                Fail(T("Nothing to equalise", "Nimic de egalizat"), SessionMessages.NoFlatFrames(session));
             else
                 ClearError();
         }
@@ -229,7 +230,7 @@ namespace FlatCheck.Wpf
             CancellationToken ct = cts.Token;
             HeavyRunGate gate = _gate;
 
-            return RunGuardedAsync($"Egalizez histograma pe {row.Name}...", async () =>
+            return RunGuardedAsync(T($"Equalising the histogram of {row.Name}...", $"Egalizez histograma pe {row.Name}..."), async () =>
             {
                 // The master in the list is the 24 MP file the opening chain reads: a pick waits
                 // for the gate instead of loading it beside the chain, and the waiting screen says
@@ -302,7 +303,7 @@ namespace FlatCheck.Wpf
             }
 
             Image = bitmap;
-            Caption = HistEqReport.ViewCaption(r, option.Label);
+            Caption = HistEqReport.ViewCaption(r, option.Key);
         }
 
         /// <inheritdoc/>

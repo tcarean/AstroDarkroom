@@ -39,6 +39,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -137,7 +138,7 @@ namespace FlatCheck.Wpf
             {
                 if (gen != _generation) return;
                 HasResult = false;
-                Fail("Analiza a esuat", Describe(e));
+                Fail(T("The analysis failed", "Analiza a esuat"), Describe(e));
             }
             finally
             {

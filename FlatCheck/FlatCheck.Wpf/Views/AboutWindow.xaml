@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <Window x:Class="FlatCheck.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:FlatCheck.Wpf"
         Title="{Binding Title}"
         Icon="/FlatCheck.Wpf;component/Icon/flatcheck.ico"
         Width="600" SizeToContent="Height"
@@ -82,7 +83,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Border>
 
     <!-- ============================================================ closing -->
-    <Button Content="Inchide" IsCancel="True" IsDefault="True" Click="Close"
+    <Button Content="{l:T En='Close', Ro='Inchide'}" IsCancel="True" IsDefault="True" Click="Close"
             HorizontalAlignment="Right" Margin="0,16,0,0" MinWidth="96" />
   </StackPanel>
 </Window>

@@ -29,6 +29,7 @@
 
 using System;
 using System.Windows.Input;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -79,7 +80,7 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>"potrivit (13 %)" or "125 %".</summary>
-        public string Label => IsFit ? $"potrivit ({EffectiveZoom * 100:0} %)" : $"{Zoom * 100:0} %";
+        public string Label => IsFit ? T($"fit ({EffectiveZoom * 100:0} %)", $"potrivit ({EffectiveZoom * 100:0} %)") : $"{Zoom * 100:0} %";
 
         public ICommand ZoomIn { get; }
         public ICommand ZoomOut { get; }

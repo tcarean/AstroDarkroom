@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:FlatCheck.Wpf"
                     xmlns:local="clr-namespace:FlatCheck.Wpf">
 
   <!-- The converters sit HERE, not in App.xaml, so that the templates below can see them: a
@@ -38,6 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <local:InverseBoolConverter x:Key="Not" />
   <local:NotNullToVisibilityConverter x:Key="NotNullToVis" />
   <local:VerdictToBrushConverter x:Key="VerdictToBrush" />
+  <local:VerdictToWordConverter x:Key="VerdictToWord" />
 
   <!-- ============================================================ palette -->
 
@@ -336,7 +338,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                               Content="{TemplateBinding SelectionBoxItem}"
                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
             <TextBlock x:Name="ph" Margin="10,0,26,0" VerticalAlignment="Center"
-                       Foreground="{StaticResource FaintBr}" Text="(nimic selectat)"
+                       Foreground="{StaticResource FaintBr}" Text="{l:T En='(nothing selected)', Ro='(nimic selectat)'}"
                        Visibility="Collapsed" IsHitTestVisible="False" />
             <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
                    AllowsTransparency="True" PopupAnimation="Slide" Focusable="False">
@@ -519,7 +521,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <DataTemplate x:Key="VerdictChip">
     <Border Background="{Binding Converter={StaticResource VerdictToBrush}}"
             CornerRadius="3" Padding="7,2" VerticalAlignment="Center">
-      <TextBlock Text="{Binding}" Foreground="#16161A" FontSize="11" FontWeight="SemiBold" />
+      <TextBlock Text="{Binding Converter={StaticResource VerdictToWord}}" Foreground="#16161A" FontSize="11" FontWeight="SemiBold" />
     </Border>
   </DataTemplate>
 
@@ -676,7 +678,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                    Visibility="{Binding HasPosition, Converter={StaticResource BoolToVis}}" />
         <TextBlock Style="{StaticResource Number}" HorizontalAlignment="Left"
                    Margin="0,5,0,0" FontWeight="SemiBold" Text="{Binding Centre}" />
-        <TextBlock Style="{StaticResource Faint}" Text="centru 20 %" />
+        <TextBlock Style="{StaticResource Faint}" Text="{l:T En='centre 20 %', Ro='centru 20 %'}" />
         <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" Text="{Binding Median}" />
         <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" Text="{Binding Note}"
                    Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />

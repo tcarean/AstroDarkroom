@@ -37,6 +37,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -160,7 +161,7 @@ namespace FlatCheck.Wpf
         /// time.</returns>
         internal async Task RunAsync(SirilRunner runner)
         {
-            if (_started) throw new InvalidOperationException("rularea a pornit deja");
+            if (_started) throw new InvalidOperationException(T("the run has started already", "rularea a pornit deja"));
             _started = true;
             _ui = UiDispatcher();
             _cts = new CancellationTokenSource();

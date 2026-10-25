@@ -23,6 +23,7 @@
 // is not.
 
 using System.Windows.Media;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -197,7 +198,7 @@ namespace FlatCheck.Wpf
         public string Tag => Kind switch
         {
             HistEqKind.Master => "MASTER",
-            HistEqKind.Smoothed => "NETEZIT",
+            HistEqKind.Smoothed => T("SMOOTHED", "NETEZIT"),
             _ => "",
         };
 

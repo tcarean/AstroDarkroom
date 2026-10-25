@@ -26,6 +26,7 @@
 // it.
 
 using System.Windows;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -139,7 +140,7 @@ namespace FlatCheck.Wpf
         {
             var dlg = new Microsoft.Win32.OpenFolderDialog
             {
-                Title = "Alege folderul de lucru al sesiunii Siril",
+                Title = T("Choose the working folder of the Siril session", "Alege folderul de lucru al sesiunii Siril"),
                 Multiselect = false,
             };
 

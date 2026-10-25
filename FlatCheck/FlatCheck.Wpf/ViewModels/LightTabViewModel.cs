@@ -39,6 +39,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -120,18 +121,19 @@ namespace FlatCheck.Wpf
         /// <param name="ct">The folder's token; checked between frames.</param>
         /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal Task RunAsync(SirilSession session, CancellationToken ct)
-            => RunGuardedAsync("Rulez testul end-to-end pe seria de lights...", async () =>
+            => RunGuardedAsync(T("Running the end-to-end test on the series of lights...", "Rulez testul end-to-end pe seria de lights..."), async () =>
             {
                 // The list is asked for BEFORE the run, so "no frame" is a state of the interface
                 // with an explanation, not an exception caught in the middle of a computation.
                 var files = session.LightSeries();
                 if (files.Count == 0)
                 {
-                    Fail("Nu am pe ce rula testul end-to-end", SessionMessages.NoLightSeries(session));
+                    Fail(T("Nothing to run the end-to-end test on", "Nu am pe ce rula testul end-to-end"), SessionMessages.NoLightSeries(session));
                     return;
                 }
 
-                Source = $"{session.ProcessDir}   ({files.Count} cadre, tipar {SeriesFinder.DefaultPattern})";
+                Source = T($"{session.ProcessDir}   ({files.Count} frames, pattern {SeriesFinder.DefaultPattern})",
+                           $"{session.ProcessDir}   ({files.Count} cadre, tipar {SeriesFinder.DefaultPattern})");
 
                 _ui = UiDispatcher();
                 OnUi(Frames.Clear);
@@ -177,7 +179,7 @@ namespace FlatCheck.Wpf
             {
                 Frames.Add(row);
                 Progress = (index + 1) / (double)total;
-                BusyDetail = $"cadrul {index + 1} din {total}: {name}";
+                BusyDetail = T($"frame {index + 1} of {total}: {name}", $"cadrul {index + 1} din {total}: {name}");
             }
 
             OnUi(Apply);
@@ -256,7 +258,7 @@ namespace FlatCheck.Wpf
 
             MeanRadial = LightReport.Signed(r.MeanRad) + " %";
             Spread = $"{LightReport.Signed(r.MinRad)} .. {LightReport.Signed(r.MaxRad)} %";
-            Sem = $"{r.Sem:F2} puncte";
+            Sem = T($"{r.Sem:F2} points", $"{r.Sem:F2} puncte");
             Correlation = LightSeriesReport.CorrelationValue(r);
 
             Verdict = r.Verdict;

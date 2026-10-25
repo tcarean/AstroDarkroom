@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -78,8 +79,8 @@ namespace FlatCheck.Wpf
         public HistogramSourceViewModel()
         {
             // The labels name what each one IS, not the file format.
-            Raw = new HistogramSourceOption(this, false, "Date brute (ce masoara unealta)");
-            Preview = new HistogramSourceOption(this, true, "Ce a aratat aparatul pe ecran");
+            Raw = new HistogramSourceOption(this, false, T("Raw data (what the tool measures)", "Date brute (ce masoara unealta)"));
+            Preview = new HistogramSourceOption(this, true, T("What the camera showed on its screen", "Ce a aratat aparatul pe ecran"));
             Options = new[] { Raw, Preview };
 
             _selected = Raw;

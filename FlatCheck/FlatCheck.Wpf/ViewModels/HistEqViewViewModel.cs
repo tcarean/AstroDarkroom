@@ -26,6 +26,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -45,16 +46,23 @@ namespace FlatCheck.Wpf
         /// <param name="kind">What the view shows.</param>
         /// <param name="index">The channel's index for <see cref="HistEqViewKind.Channel"/>; 0
         /// otherwise.</param>
-        /// <param name="label">The chip's text.</param>
-        internal HistEqViewOption(HistEqViewViewModel owner, HistEqViewKind kind, int index, string label)
+        /// <param name="label">The chip's text, in the run's language.</param>
+        /// <param name="key">The view's key for <see cref="HistEqReport.ViewCaption"/>, the same in
+        /// both languages; null when it is the label itself (a channel's, "RGB", "mono").</param>
+        internal HistEqViewOption(HistEqViewViewModel owner, HistEqViewKind kind, int index, string label, string key = null)
         {
             _owner = owner;
             Kind = kind;
             Index = index;
             Label = label;
+            Key = key ?? label;
         }
 
         public string Label { get; }
+
+        /// <summary>The view's key, the same in both languages: "Mozaic", "RGB", "mono" or a
+        /// channel's label.</summary>
+        internal string Key { get; }
 
         internal HistEqViewKind Kind { get; }
 
@@ -118,7 +126,7 @@ namespace FlatCheck.Wpf
                 // The mosaic first, so the default: it is the view that matches Siril on a raw
                 // opened undebayered, that is the one the user has read patterns from so far.
                 // The composite is richer, but it is not the familiar one.
-                list.Add(new HistEqViewOption(this, HistEqViewKind.Mosaic, 0, "Mozaic"));
+                list.Add(new HistEqViewOption(this, HistEqViewKind.Mosaic, 0, T("Mosaic", "Mozaic"), "Mozaic"));
                 list.Add(new HistEqViewOption(this, HistEqViewKind.Composite, 0, "RGB"));
                 for (int i = 0; i < r.Channels.Length; i++)
                     list.Add(new HistEqViewOption(this, HistEqViewKind.Channel, i, r.Channels[i].Label));
@@ -128,8 +136,8 @@ namespace FlatCheck.Wpf
                 list.Add(new HistEqViewOption(this, HistEqViewKind.Composite, 0, "mono"));
             }
 
-            string keep = _selected?.Label;
-            HistEqViewOption pick = list.FirstOrDefault(o => o.Label == keep) ?? list[0];
+            string keep = _selected?.Key;
+            HistEqViewOption pick = list.FirstOrDefault(o => o.Key == keep) ?? list[0];
 
             Options = list;
             _selected = pick;

@@ -64,7 +64,7 @@ public class SyntheticTabTests
             Assert.True(vm.CanRun);
             Assert.False(vm.HasResult);
             Assert.False(vm.Guide.IsExpanded);                       // documentation, collapsed
-            Assert.Equal(Path.Combine(f.ProcessDir, "pp_flat_stacked_sintetic.fit"), vm.Target);
+            Assert.Equal(Path.Combine(f.ProcessDir, "pp_flat_stacked_synthetic.fit"), vm.Target);
             Assert.False(vm.CanCompare);                             // nothing written yet
             Assert.Equal("20", vm.FocalText);
             Assert.Equal("1.523", vm.CropText);                      // Nikon D3300 from the lensfun cameras
