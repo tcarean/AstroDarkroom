@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StructureReport.cs - StructureResult -> the console's text. Formatting only.
+// StructureReport.cs - StructureResult -> the console's text, and the pieces the window shows
+// beside it (advice, notes, the profile card, the corner shares). Formatting only.
 
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace FlatCheck
 {
@@ -124,7 +126,7 @@ namespace FlatCheck
             w.WriteLine("\n  TESTE");
             w.WriteLine($"    imprastiere 4 colturi   : {r.CornerSpreadPct,5:F2} %   [{r.CornerVerdict}]");
             foreach (var kv in r.Corners)
-                w.WriteLine($"        {kv.Key,-14}: {kv.Value / r.CornerMean * 100,6:F2} % din media colturilor");
+                w.WriteLine($"        {kv.Key,-14}: {CornerSharePct(r, kv.Value),6:F2} % din media colturilor");
             w.WriteLine($"    asimetrie azimutala max : {r.AzimuthalMaxPct,5:F2} %   [{r.AzimuthalVerdict}]");
             w.WriteLine($"    reziduu dupa model rad. : {r.ResidualPtpPct,5:F2} %   [{r.ResidualVerdict}]  <- CEL MAI IMPORTANT");
             w.WriteLine($"    inclinare (gradient)    : {r.TiltPct,5:F2} %   [{r.TiltVerdict}]");
@@ -435,7 +437,7 @@ namespace FlatCheck
         static void WriteInformative(StructureResult r, TextWriter w)
         {
             w.WriteLine("\n  INFORMATIV (nu sunt teste)");
-            w.WriteLine($"    vignetare centru->colt  : {r.VignetteStops:F2} stopuri (colt = {r.CornerMean / r.CentreMedian * 100:F0}% din centru)");
+            w.WriteLine($"    vignetare centru->colt  : {r.VignetteStops:F2} stopuri (colt = {CornerOverCentrePct(r):F0}% din centru)");
             if (r.CentroidValid)
             {
                 w.WriteLine($"    offset centru iluminare : {r.CentroidOffsetPct,5:F2} %");
@@ -555,6 +557,47 @@ namespace FlatCheck
              + "Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,\n"
              + "condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).\n"
              + $"Peste {Th.LocalSpotWarn:F0} % urmeaza o atentionare; sub atat cifra e doar informativa.";
+
+        /// <summary>A corner's level as a percentage of the four corners' mean - the ratio of the
+        /// corner rows, in the console and in the window.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <param name="corner">The corner's level, in the raster's units.</param>
+        /// <returns>The percentage; 100 for a corner at the mean.</returns>
+        static double CornerSharePct(StructureResult r, double corner) => corner / r.CornerMean * 100;
+
+        /// <summary>The corners' mean as a percentage of the centre's median - the "colt = N %
+        /// din centru" of the vignetting row, in the console and in the window.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>The percentage; 100 without vignetting.</returns>
+        static double CornerOverCentrePct(StructureResult r) => r.CornerMean / r.CentreMedian * 100;
+
+        /// <summary>The four corners, each as a percentage of their mean, on one line - the
+        /// window's version of the corner rows Write prints under the corner spread.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>Each corner's name and percentage with one decimal, separated by three
+        /// spaces.</returns>
+        internal static string CornerShares(StructureResult r)
+            => string.Join("   ", r.Corners.Select(
+                c => $"{c.Key} {CornerSharePct(r, c.Value):F1} %"));
+
+        /// <summary>The note under the window's vignetting row: the corner as a percentage of
+        /// the centre, as WriteInformative prints it, and why it is not an error.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>One line.</returns>
+        internal static string VignetteNote(StructureResult r)
+            => $"coltul e {CornerOverCentrePct(r):F0} % din centru; "
+             + "e o proprietate a obiectivului, nu o eroare";
+
+        /// <summary>The note under the window's illumination-centre row: the fitted vertex
+        /// against the sensor's centre and why the figure is not scale-invariant, or why there is
+        /// no vertex.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>One line.</returns>
+        internal static string CentroidNote(StructureResult r)
+            => r.CentroidValid
+                ? $"varf ({r.FitCx:F0}, {r.FitCy:F0}) vs centru senzor ({r.SensorCx:F0}, {r.SensorCy:F0}); "
+                  + "raport gradient/curbura, deci NU e scale-invariant - amplitudinea o da inclinarea"
+                : "varf in afara cadrului sau fit degenerat";
 
         /// <summary>
         /// The warning for a compact spot, or null when there is none. It is not a verdict,

@@ -15,35 +15,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StructureTabViewModel.cs - tabul 1.
+// StructureTabViewModel.cs - tab 1.
 //
-// Ruleaza StructureRun pe process/pp_flat_stacked.fit si arata acelasi lucru pe care il
-// scrie consola, doar asezat altfel. Cifrele NU se recalculeaza aici: fiecare rand ia o
-// valoare din StructureResult si o formateaza. Singurul lucru care se compune aici sunt
-// procentele de colt, si alea prin acelasi raport ca in raport.
+// It runs StructureRun on the session's pp_flat_stacked.fit, in masters/ or process/
+// (SirilSession.FindFlatMaster), and shows the same thing the console writes, only laid out
+// differently. The figures are NOT recomputed here: each row takes a value from StructureResult
+// and formats it; the corner percentages and the notes under the rows come from StructureReport
+// too.
 //
-// Pe langa afisare, tabul are o obligatie de disc: salveaza raportul in folderul
-// sesiunii, ca fisier text, IDENTIC cu ce ar fi scris consola - antet de versiune,
-// copyright, raport, linia hartii. De aia StructureRun primeste un StringWriter si nu
-// isi compune nimeni textul de mana.
+// Besides the display, the tab has a duty to the disk: it saves the report in the session folder,
+// as a text file, IDENTICAL to what the console would have written - version header, copyright,
+// report, the map's line. That is why StructureRun receives a StringWriter and nobody composes
+// its text by hand.
 //
-// HARTA SE REENCODEAZA LA SCHIMBAREA SCARII, deci tabul tine rasterul rezidual, nu doar
-// octetii PNG primiti de la rulare. Rasterul e la rezolutia de analiza (~1500x1000
-// double, vreo 12 MB), si e deja in StructureResult - deci nu se incarca si nu se
-// recalculeaza nimic pentru o schimbare de scara. Alternativa - patru PNG-uri encodate
-// din nucleu la fiecare rulare - ar fi fost ~7 MB si trei encodari pe care poate nu le
-// priveste nimeni.
+// THE MAP IS RE-ENCODED ON A CHANGE OF SCALE, so the tab keeps the residual raster, not only the
+// PNG bytes received from the run. The raster is at the analysis resolution (~1500x1000 doubles,
+// some 12 MB), and it is already in StructureResult - so nothing is loaded or recomputed for a
+// change of scale. The alternative - four PNGs encoded by the core on every run - would have been
+// ~7 MB and three encodings nobody may look at.
 //
-// FISIERUL SALVAT RAMANE PE SCARA AUTOMATA, oricare chip e bifat. Consola scrie auto, si
-// cele doua aplicatii trebuie sa scrie acelasi fisier pentru acelasi master; chipurile
-// sunt un ajutor de privit, nu o setare de iesire.
+// THE SAVED FILE STAYS ON THE AUTOMATIC SCALE, whichever chip is ticked. The console writes auto,
+// and the two applications must write the same file for the same master; the chips are an aid to
+// looking, not an output setting.
 //
-// VIGNETAREA FATA DE PROFILUL OBIECTIVULUI se compara in aceeasi rulare, cand exista un
-// raw in flats/ (SirilSession.ReferenceRawPath): rularea e atunci exact "flatcheck master
-// --raw <acel raw>", cu catalogul comun al ferestrei, deci raportul salvat ramane cel al
-// consolei si verdictul apare o singura data, gata combinat - nu PERFECT pe cinci teste
-// si REFA doua secunde mai tarziu. Fara raw rularea e cea simpla, identica cu "flatcheck
-// master", iar cardul spune de ce nu s-a putut compara (textul nucleului, nu al tabului).
+// THE VIGNETTING AGAINST THE LENS PROFILE is compared in the same run, when there is a raw in
+// flats/ (SirilSession.ReferenceRawPath): the run is then exactly "flatcheck master --raw <that
+// raw>", with the window's shared catalog, so the saved report stays the console's and the
+// verdict appears once, already combined - not PERFECT on five tests and REFA two seconds later.
+// Without a raw the run is the plain one, identical to "flatcheck master", and the card says why
+// it could not compare (the core's text, not the tab's).
 
 using System;
 using System.Collections.Generic;
@@ -55,6 +55,9 @@ using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The Structure tab: the session master's five tests, verdict, informative rows,
+    /// residual map and, with a raw in flats/, the comparison with the lens profiles; it saves the
+    /// console's report and map beside the session.</summary>
     public sealed class StructureTabViewModel : TabViewModel
     {
         string _source = "";
@@ -74,19 +77,29 @@ namespace FlatCheck.Wpf
         byte[] _map;
         string _mapLegend = "";
 
-        /// <summary>Rasterul din care se deseneaza harta, tinut ca s-o poata reencoda pe alta scara.</summary>
+        /// <summary>The raster the map is drawn from, kept so it can be re-encoded on another
+        /// scale.</summary>
         Img _residual;
 
-        /// <summary>Encodarile deja facute, ca sa nu se reencodeze la fiecare click inainte si inapoi.</summary>
+        /// <summary>The encodings already made, so nothing is re-encoded on every click back and
+        /// forth.</summary>
         readonly Dictionary<MapScaleOption, byte[]> _mapCache = new();
 
-        /// <summary>Catalogul comun de profile, sau null (teste): atunci nu se compara si cardul explica.</summary>
+        /// <summary>The shared profile catalog, or null (tests): then nothing is compared and the
+        /// card explains.</summary>
         readonly ProfileCatalog _catalog;
-        /// <summary>Metadatele unui fisier fara pixeli; in teste, un cadru fabricat in locul unui raw.</summary>
+        /// <summary>A file's metadata without pixels; in the tests, a made-up frame in place of a
+        /// raw.</summary>
         readonly Func<string, LoadedFrame> _loadInfo;
 
+        /// <summary>A tab without a catalog, so it never compares with the profiles.</summary>
         public StructureTabViewModel() : this(null, null) { }
 
+        /// <summary>A tab that compares with the profiles when it has a catalog.</summary>
+        /// <param name="catalog">The window's shared profile catalog; null turns the comparison
+        /// off.</param>
+        /// <param name="loadInfo">Reads a file's header and metadata without its pixels; null for
+        /// <c>ImageLoader.LoadInfo</c>.</param>
         internal StructureTabViewModel(ProfileCatalog catalog, Func<string, LoadedFrame> loadInfo)
         {
             _catalog = catalog;
@@ -94,12 +107,12 @@ namespace FlatCheck.Wpf
             MapScale.Changed += RefreshMap;
         }
 
-        /// <summary>Fisierul analizat, ca sa se vada pe ce s-a lucrat.</summary>
+        /// <summary>The file analysed, so it shows what was worked on.</summary>
         public string Source { get => _source; private set => Set(ref _source, value); }
 
         /// <summary>
-        /// Avertismentul ca folderul are DOUA mastere (masters/ si process/) si s-a luat
-        /// cel mai nou. Gol in cazul obisnuit. Vezi SirilSession.FindFlatMaster.
+        /// The warning that the folder has TWO masters (masters/ and process/) and the newest was
+        /// taken. Empty in the usual case. See SirilSession.FindFlatMaster.
         /// </summary>
         public string SourceWarning
         {
@@ -116,25 +129,27 @@ namespace FlatCheck.Wpf
         public string Advice { get => _advice; private set => Set(ref _advice, value); }
 
         /// <summary>
-        /// Atentionarea pentru o pata compacta (praf, condens, scurgere mica), sau gol.
-        /// Sta sub verdict fara sa-l coloreze: nu e un verdict, e o intrebare pusa
-        /// omului - flat de sesiune sau de biblioteca? Textul vine din
-        /// StructureReport.LocalSpotWarning, ca sa fie cel din raportul salvat.
+        /// The warning for a compact spot (dust, condensation, a small leak), or empty. It sits
+        /// under the verdict without colouring it: it is not a verdict, it is a question put to
+        /// the user - a session flat or a library one? The text comes from
+        /// StructureReport.LocalSpotWarning, so it is the one in the saved report.
         /// </summary>
         public string LocalSpotWarning { get => _localSpotWarning; private set => Set(ref _localSpotWarning, value); }
 
         /// <summary>
-        /// Cele doua parti ale verdictului - forma (cele cinci teste) si adancimea (fata de
-        /// profil) - cand s-a comparat; gol altfel. Textul e cel de sub VERDICT din consola.
+        /// The verdict's two parts - the shape (the five tests) and the depth (against the
+        /// profile) - when it compared; empty otherwise. The text is the one under VERDICT in the
+        /// console.
         /// </summary>
         public string VerdictDetail { get => _verdictDetail; private set => Set(ref _verdictDetail, value); }
 
-        // ----------------------------------------- vignetarea fata de profilul obiectivului
+        // ----------------------------------------- the vignetting against the lens profile
 
-        /// <summary>Titlul cardului, din nucleu, ca sa fie cel din raport.</summary>
+        /// <summary>The card's heading, from the core, so it is the report's.</summary>
         public string ProfilesHeading => StructureReport.ProfilesHeading;
 
-        /// <summary>Un rand pe profil; gol cand nu s-a comparat. Lista se inlocuieste, nu se umple.</summary>
+        /// <summary>One row per profile; empty when nothing was compared. The list is replaced,
+        /// not filled.</summary>
         public IReadOnlyList<LensProfileRow> ProfileRows
         {
             get => _profileRows;
@@ -143,49 +158,56 @@ namespace FlatCheck.Wpf
 
         public bool HasProfileRows => _profileRows.Count > 0;
 
-        /// <summary>"1.26 stopuri (colt = 42 % din centru)" - adancimea masterului, cea din randul informativ.</summary>
+        /// <summary>"1.26 stopuri (colt = 42 % din centru)" - the master's depth, the one in the
+        /// informative row.</summary>
         public string ProfileMaster { get => _profileMaster; private set => Set(ref _profileMaster, value); }
 
-        /// <summary>Al cui e verdictul si cat difera profilele intre ele.</summary>
+        /// <summary>Whose the verdict is and how much the profiles differ among
+        /// themselves.</summary>
         public string ProfileSummary { get => _profileSummary; private set => Set(ref _profileSummary, value); }
 
-        /// <summary>Scara adancimii in stopuri - aceleasi patru benzi ca scara de reziduu, cu banda verdictului marcata.</summary>
+        /// <summary>The depth scale in stops - the same four bands as the residual scale, with the
+        /// verdict's band marked.</summary>
         public IReadOnlyList<ScaleRow> ProfileScale { get => _profileScale; private set => Set(ref _profileScale, value); }
 
-        /// <summary>De unde vine scara de mai sus: scara celor cinci teste tradusa in stopuri, nu un prag nou.</summary>
+        /// <summary>Where the scale above comes from: the five tests' scale translated into stops,
+        /// not a new threshold.</summary>
         public string ProfileScaleNote { get => _profileScaleNote; private set => Set(ref _profileScaleNote, value); }
 
-        /// <summary>Ce poate si ce nu poate spune comparatia.</summary>
+        /// <summary>What the comparison can and cannot say.</summary>
         public string ProfileNote { get => _profileNote; private set => Set(ref _profileNote, value); }
 
-        /// <summary>De ce nu s-a putut compara, cand nu s-a putut; gol altfel.</summary>
+        /// <summary>Why it could not compare, when it could not; empty otherwise.</summary>
         public string ProfileGap { get => _profileGap; private set => Set(ref _profileGap, value); }
 
-        /// <summary>Constant, dar tinut ca proprietate ca sa se poata lega din XAML.</summary>
+        /// <summary>Constant, but kept as a property so it can be bound from XAML.</summary>
         public string WhyResidual { get => _whyResidual; private set => Set(ref _whyResidual, value); }
 
-        /// <summary>Harta reziduala ca octeti PNG - se afiseaza fara sa atinga discul.</summary>
+        /// <summary>The residual map as PNG bytes - shown without touching the disk.</summary>
         public byte[] Map { get => _map; private set => Set(ref _map, value); }
 
-        /// <summary>Comutatorul de scara al hartii. Nu atinge nicio cifra, doar culorile.</summary>
+        /// <summary>The map's scale switch. It touches no figure, only the colours.</summary>
         public MapScaleViewModel MapScale { get; } = new();
 
-        /// <summary>Ce inseamna capetele culorilor pe scara chiar afisata.</summary>
+        /// <summary>What the ends of the colours mean on the scale actually shown.</summary>
         public string MapLegend { get => _mapLegend; private set => Set(ref _mapLegend, value); }
 
-        /// <summary>Ghidul de citire al hartii. Documentatie, nu diagnostic - vezi MapGuideViewModel.</summary>
+        /// <summary>The map's reading guide. Documentation, not a diagnosis - see
+        /// MapGuideViewModel.</summary>
         public MapGuideViewModel MapGuide { get; } = new();
 
-        /// <summary>Ce decid cifrele si ce decide ochiul. Sta sub verdict, in coloana cifrelor.</summary>
+        /// <summary>What the figures decide and what the eye decides. It sits under the verdict,
+        /// in the figures' column.</summary>
         public HowToReadViewModel HowToRead { get; } = new();
 
-        /// <summary>Unde s-a salvat raportul, sau gol daca inca nu s-a salvat.</summary>
+        /// <summary>Where the report was saved, or empty if it was not saved yet.</summary>
         public string SavedTo { get => _savedTo; private set => Set(ref _savedTo, value); }
 
         /// <summary>
-        /// Salvarea poate esua din motive care nu au legatura cu analiza (folder read-only,
-        /// fisier deschis in alt program). Se raporteaza separat, ca sa nu para ca a picat
-        /// masuratoarea cand de fapt cifrele sunt bune si doar fisierul n-a putut fi scris.
+        /// The save can fail for reasons unrelated to the analysis (a read-only folder, a file
+        /// open in another program). It is reported apart, so it does not look as if the
+        /// measurement failed when in fact the figures are good and only the file could not be
+        /// written.
         /// </summary>
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
@@ -194,9 +216,13 @@ namespace FlatCheck.Wpf
         public ObservableCollection<ScaleRow> Scale { get; } = new();
 
         /// <summary>
-        /// Ruleaza modul si salveaza raportul. Sesiunea da si fisierul de intrare, si
-        /// locul de iesire - tabul nu alege singur nicio cale.
+        /// Runs the mode and saves the report. The session gives both the input file and the
+        /// output place - the tab chooses no path by itself.
         /// </summary>
+        /// <param name="session">The open session folder; its master is analysed and its raw in
+        /// flats/, if any, names the lens.</param>
+        /// <param name="ct">The folder's token.</param>
+        /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal Task RunAsync(SirilSession session, CancellationToken ct)
         {
             string rawPath = session.ReferenceRawPath;
@@ -209,8 +235,9 @@ namespace FlatCheck.Wpf
                 SourceWarning = master.Ambiguous ? SessionMessages.TwoFlatMasters(master) : "";
                 var text = new StringWriter();
 
-                // Cu un raw langa master, rularea e cea a consolei cu --raw: catalogul comun,
-                // raw-ul din flats/, comparatia in acelasi raport. Fara, rularea simpla.
+                // With a raw beside the master, the run is the console's with --raw: the shared
+                // catalog, the raw from flats/, the comparison in the same report. Without one,
+                // the plain run.
                 StructureQuery query = null;
                 if (compares)
                 {
@@ -225,8 +252,8 @@ namespace FlatCheck.Wpf
                     var run = StructureRun.Execute(path, text, query);
                     RunReport.WriteMapSaved(session.ResidualPngPath, text);
                     ct.ThrowIfCancellationRequested();
-                    // Fara comparatie, motivul pentru card: acelasi nucleu spune de ce, pe
-                    // metadatele masterului (doar headerul) si fara catalog.
+                    // Without a comparison, the reason for the card: the same core says why, on
+                    // the master's metadata (the header only) and without a catalog.
                     StructureOutcome why = run.Result.Profiles != null ? null
                         : StructureRun.Compare(run.Result.Structure, _loadInfo(path), new StructureQuery { RawPath = rawPath, LoadInfo = _loadInfo });
                     return (run, why);
@@ -236,9 +263,9 @@ namespace FlatCheck.Wpf
                 Report = text.ToString();
                 Populate(outcome.Result, gap);
 
-                // Rasterul, apoi harta pe scara aleasa. Octetii primiti de la rulare sunt
-                // cei pe scara automata: se pun direct in cache, ca sa nu se reencodeze
-                // aceeasi imagine cand chipul e chiar "auto".
+                // The raster, then the map on the chosen scale. The bytes received from the run
+                // are those on the automatic scale: they go straight into the cache, so the same
+                // image is not re-encoded when the chip is "auto" itself.
                 _residual = outcome.Result.Structure.Residual;
                 _mapCache.Clear();
                 _mapCache[MapScale.Options[0]] = outcome.Png;
@@ -246,20 +273,20 @@ namespace FlatCheck.Wpf
 
                 HasResult = true;
 
-                // Pe disc merge mereu encodarea automata, oricare chip e bifat. Vezi nota
-                // de sus: consola scrie asta, si fisierul trebuie sa fie acelasi.
+                // The automatic encoding always goes to disk, whichever chip is ticked. See the
+                // note at the top: the console writes that, and the file must be the same.
                 Save(session, outcome.Png);
             });
         }
 
         /// <summary>
-        /// Reface harta pentru scara curenta.
+        /// Rebuilds the map for the current scale.
         ///
-        /// Se encodeaza pe firul de interfata, si asta a fost masurat, nu presupus: pe
-        /// masterele reale de 24 MP (raster de analiza 1504x1004) un plafon costa 90-255 ms,
-        /// o singura data, fiindca pe urma vine din cache. Mutarea pe Task.Run ar fi cerut
-        /// un contor de generatii ca sa nu ajunga un rezultat vechi peste unul nou - mai
-        /// multa complexitate decat intarzierea pe care o scoate.
+        /// It is encoded on the UI thread, and that was measured, not assumed: on the real 24 MP
+        /// masters (analysis raster 1504x1004) a cap costs 90-255 ms, once, because afterwards it
+        /// comes from the cache. Moving it to Task.Run would have needed a generation counter so
+        /// an old result does not land over a new one - more complexity than the delay it
+        /// removes.
         /// </summary>
         void RefreshMap()
         {
@@ -276,20 +303,25 @@ namespace FlatCheck.Wpf
             MapLegend = RunReport.MapLegend(range);
         }
 
-        /// <param name="o">Rularea, cu sau fara comparatie.</param>
-        /// <param name="gap">Fara comparatie in rulare: o comparatie care spune de ce nu s-a putut; altfel null.</param>
+        /// <summary>Shows a run's outcome: the structure rows, the combined verdict and its two
+        /// parts, and the profile card or the reason it is empty. Sets
+        /// <see cref="TabViewModel.HasResult"/>; the map and the report are the caller's.</summary>
+        /// <param name="o">The run, with or without a comparison.</param>
+        /// <param name="gap">Without a comparison in the run: a comparison that says why it could
+        /// not; null otherwise.</param>
         internal void Populate(StructureOutcome o, StructureOutcome gap = null)
         {
             Populate(o.Structure);
-            // Internal si cu HasResult, ca testul de randare sa poata arata tabul dintr-un
-            // rezultat, fara sesiune - ca la tabul de netezire.
+            // Internal and with HasResult, so the rendering test can show the tab from a result,
+            // without a session - as on the smoothing tab.
             HasResult = true;
 
-            // Verdictul rularii - cel mai rau dintre forma si adancime - si sfatul ei, care e
-            // al adancimii cand ea l-a inrautatit. Textele sunt cele din raport.
+            // The run's verdict - the worse of shape and depth - and its advice, which is the
+            // depth's when the depth made it worse. The texts are the report's.
             Verdict = o.Verdict;
             Advice = StructureReport.Advice(o);
-            // Pe trei randuri, cu etichetele fara umplutura consolei: partile vin din raport.
+            // On three lines, with the labels without the console's padding: the parts come from
+            // the report.
             VerdictDetail = o.Compared
                 ? $"forma: {StructureReport.ShapeDetail(o)}\nadancimea: {StructureReport.DepthDetail(o)}\n{StructureReport.WorseOfBoth}"
                 : "";
@@ -332,23 +364,27 @@ namespace FlatCheck.Wpf
             }
         }
 
+        /// <summary>Shows the five tests' side: size, levels, the test and informative rows, the
+        /// spot warning, the residual scale with the verdict's band marked, the verdict and its
+        /// advice.</summary>
+        /// <param name="r">The structure result.</param>
         void Populate(StructureResult r)
         {
             Size = $"{r.Width} x {r.Height} px  (dupa 2x2 + downsample)";
-            // Formatarea vine din nucleu: pe un master float scris de Siril, "F0" dadea
-            // "0 / 0", iar fereastra si consola trebuie sa spuna acelasi lucru.
+            // The formatting comes from the core: on a float master written by Siril, "F0" gave
+            // "0 / 0", and the window and the console must say the same thing.
             Levels = $"median / max ADU  {StructureReport.Levels(r)}";
 
-            // Cele cinci randuri se construiesc in StructureRows, de unde le ia si tabul
-            // Ratio: e aceeasi baterie, si doua compuneri ale ei au divergat deja o data.
+            // The five rows are built in StructureRows, where the Ratio tab takes them from too:
+            // it is the same battery, and two compositions of it have already diverged once.
             Tests.Clear();
             foreach (var row in StructureRows.Tests(r)) Tests.Add(row);
 
-            // Si randurile informative vin din StructureRows, tot pentru amandoua taburile.
+            // The informative rows come from StructureRows too, also for both tabs.
             Informative.Clear();
             foreach (var row in StructureRows.Informative(r)) Informative.Add(row);
 
-            // Atentionarea, nu un verdict: textul si pragul vin din nucleu.
+            // The warning, not a verdict: the text and the threshold come from the core.
             LocalSpotWarning = StructureReport.LocalSpotWarning(r) ?? "";
 
             Scale.Clear();
@@ -365,13 +401,12 @@ namespace FlatCheck.Wpf
             Advice = StructureReport.Advice(r.Verdict);
         }
 
-        /// <summary>Formatarea unei cifre, comuna cu randurile de test.</summary>
-        static string Pct(double v) => StructureRows.Pct(v);
-
         /// <summary>
-        /// Raportul si harta, in folderul sesiunii. Esecul de scriere nu anuleaza
-        /// rezultatul - cifrele sunt deja calculate si afisate.
+        /// The report and the map, in the session folder. A write failure does not cancel the
+        /// result - the figures are already computed and shown.
         /// </summary>
+        /// <param name="session">The session folder; its result and map paths are written.</param>
+        /// <param name="png">The map on the automatic scale.</param>
         void Save(SirilSession session, byte[] png)
         {
             SavedTo = "";
@@ -388,6 +423,7 @@ namespace FlatCheck.Wpf
             }
         }
 
+        /// <inheritdoc/>
         internal override void Reset()
         {
             base.Reset();
@@ -406,8 +442,8 @@ namespace FlatCheck.Wpf
             SaveError = "";
             Map = null;
             MapLegend = "";
-            // Rasterul si encodarile pleaca; alegerea de scara NU - e o preferinta de
-            // privit, nu un rezultat, deci trebuie sa treaca peste schimbarea folderului.
+            // The raster and the encodings go; the choice of scale does NOT - it is a viewing
+            // preference, not a result, so it must survive the change of folder.
             _residual = null;
             _mapCache.Clear();
             Tests.Clear();

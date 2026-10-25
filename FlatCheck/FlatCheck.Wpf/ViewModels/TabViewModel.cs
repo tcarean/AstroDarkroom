@@ -15,29 +15,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// TabViewModel.cs - ce au in comun cele sase taburi.
+// TabViewModel.cs - what the eight tabs have in common.
 //
-// Toate fac acelasi lucru: arata un ecran de asteptare, calculeaza pe alt fir, apoi ori
-// arata rezultate, ori arata o explicatie. Starea aia - ocupat / rezultat / eroare - e
-// aici, o singura data, ca cele sase sa nu ajunga cu sase feluri de a esua.
+// They all do the same thing: show a waiting screen, compute on another thread, then show either
+// results or an explanation. That state - busy / result / error - lives here, once, so the eight
+// do not end up with eight ways of failing. The Split tab is the one exception to the waiting
+// screen: it keeps its own running state, so its log stays visible, and uses the result, the
+// error and the progress (Progress, ProgressKnown, for its own bar), not RunGuardedAsync.
 //
-// RULARI DEPASITE. Tabul de histograma lasa lista apasabila cat timp calculeaza, deci
-// o a doua rulare poate porni peste prima. RunGuardedAsync isi numara rularile si lasa
-// doar pe ultima sa incheie starea: o rulare depasita nu stinge ecranul de asteptare
-// (il are cea noua), nu arata eroare si nu goleste rezultatul. Pentru celelalte taburi,
-// care nu suprapun niciodata rulari, verificarea e mereu adevarata si nu schimba nimic.
+// SUPERSEDED RUNS. The histogram tab leaves its list clickable while it computes, so a second
+// run can start over the first. RunGuardedAsync numbers its runs and lets only the latest one
+// close the state: a superseded run does not turn off the waiting screen (the new one owns it),
+// shows no error and does not clear the result. The Ratio tab overlaps the same way on a quick
+// re-choice. For the other tabs, which never overlap runs, the check is always true and changes
+// nothing.
 //
-// DE CE SUNT PUBLICE clasele astea, cand tot restul aplicatiei e internal: legarea WPF
-// citeste prin reflexie proprietati publice. Consecinta e utila, nu doar birocratica -
-// un ViewModel public NU poate expune un tip din nucleu, care e internal, deci
-// compilatorul insusi impiedica scurgerea unui StructureResult in XAML. Ce se vede pe
-// ecran trece obligatoriu prin campuri simple, alese anume.
+// WHY these classes ARE PUBLIC, when the rest of the application is internal: the WPF binding
+// reads public properties through reflection. The consequence is useful, not only bureaucratic -
+// a public view-model CANNOT expose a core type, which is internal, so the compiler itself stops
+// a StructureResult from leaking into XAML. What shows on screen has to pass through plain
+// fields, chosen on purpose.
 
 using System;
 using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The base of every tab's view-model: the busy, result and error state, the
+    /// report text, and the guarded run that moves between them.</summary>
     public abstract class TabViewModel : ObservableObject
     {
         bool _busy;
@@ -51,7 +56,7 @@ namespace FlatCheck.Wpf
         string _report = "";
         int _generation;
 
-        /// <summary>Cat timp e true, tabul isi arata ecranul de asteptare.</summary>
+        /// <summary>While true, the tab shows its waiting screen.</summary>
         public bool IsBusy
         {
             get => _busy;
@@ -62,15 +67,16 @@ namespace FlatCheck.Wpf
 
         public string BusyMessage { get => _busyMessage; private set => Set(ref _busyMessage, value); }
 
-        /// <summary>A doua linie a ecranului de asteptare: ce cadru, al catelea din cate.</summary>
+        /// <summary>The waiting screen's second line: which frame, the how-manieth of how
+        /// many.</summary>
         public string BusyDetail { get => _busyDetail; protected set => Set(ref _busyDetail, value); }
 
-        /// <summary>0..1. Are sens doar cand <see cref="ProgressKnown"/> e true.</summary>
+        /// <summary>0..1. Meaningful only when <see cref="ProgressKnown"/> is true.</summary>
         public double Progress { get => _progress; protected set => Set(ref _progress, value); }
 
         /// <summary>
-        /// false pentru o singura analiza - nu se poate sti cat mai dureaza, deci bara
-        /// merge nedefinit. true doar pe serie, unde se stie cate cadre sunt.
+        /// False for a single analysis - there is no knowing how long it still takes, so the bar
+        /// runs indeterminate. True only on a series, where the number of frames is known.
         /// </summary>
         public bool ProgressKnown { get => _progressKnown; protected set => Set(ref _progressKnown, value); }
 
@@ -84,31 +90,36 @@ namespace FlatCheck.Wpf
 
         public bool HasError => !string.IsNullOrEmpty(_errorText);
 
-        /// <summary>true cand tabul chiar are cifre de aratat.</summary>
+        /// <summary>True when the tab really has figures to show.</summary>
         public bool HasResult { get => _hasResult; protected set => Set(ref _hasResult, value); }
 
         /// <summary>
-        /// Raportul complet, exact cum l-ar fi scris consola. Se arata intr-un panou
-        /// pliabil si e ce se salveaza pe disc - nu se reformateaza nicaieri.
+        /// The whole report, exactly as the console would have written it. Shown in a collapsible
+        /// panel and what is saved to disk - reformatted nowhere.
         /// </summary>
         public string Report { get => _report; protected set => Set(ref _report, value); }
 
         /// <summary>
-        /// Ruleaza munca pe alt fir, cu ecran de asteptare, si transforma orice esec
-        /// intr-o eroare afisabila.
+        /// Runs the work on another thread, behind the waiting screen, and turns any failure
+        /// into an error the tab can show.
         ///
-        /// Rezultatul e ASTEPTAT, nu abandonat: dupa await executia se intoarce pe firul
-        /// de interfata (in aplicatie; in teste nu exista context, deci pe thread pool),
-        /// asa ca ce urmeaza poate atinge linistit proprietatile legate de XAML.
+        /// The result is AWAITED, not abandoned: after the await, execution comes back to the UI
+        /// thread (in the application; in the tests there is no context, so on the thread pool),
+        /// so what follows may safely touch the properties bound in XAML.
         ///
-        /// Anularea nu e o eroare - inseamna ca omul a schimbat folderul sau a inchis
-        /// fereastra, si atunci tabul ramane pur si simplu gol.
+        /// A cancellation is not an error - it means the user changed the folder or closed the
+        /// window, and then the tab simply stays empty.
         ///
-        /// O rulare DEPASITA - a pornit alta peste ea - nu mai atinge nimic dupa ce se
-        /// termina: nici rezultatul, nici eroarea, nici ecranul de asteptare, care sunt
-        /// toate ale celei noi. Munca ei se opreste singura la verificarea jetonului din
-        /// lambda; aici se garanteaza doar ca terminarea ei e tacuta.
+        /// A SUPERSEDED run - another one started over it - touches nothing once it ends: neither
+        /// the result, nor the error, nor the waiting screen, which all belong to the new one.
+        /// Its work stops by itself at the token check in the lambda; here it is only guaranteed
+        /// that its ending is silent.
         /// </summary>
+        /// <param name="busyMessage">The waiting screen's first line, Romanian, as the user
+        /// reads it.</param>
+        /// <param name="work">The run itself; it observes its own cancellation token.</param>
+        /// <returns>A task that completes when the run ended, whatever the outcome; it never
+        /// faults.</returns>
         protected async Task RunGuardedAsync(string busyMessage, Func<Task> work)
         {
             int gen = ++_generation;
@@ -134,10 +145,13 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Mesajul unei exceptii, cu cauza daca exista. Nu se arata stiva: pe un fisier
-        /// FITS stricat mesajul cititorului spune deja ce nu s-a putut citi, iar o stiva
-        /// de zece cadre pe ecran nu ajuta pe nimeni sa refaca flat-urile.
+        /// An exception's message, with its causes if there are any. No stack trace is shown: on
+        /// a broken FITS file the reader's message already says what could not be read, and a
+        /// ten-frame stack on screen helps nobody redo the flats.
         /// </summary>
+        /// <param name="e">The exception; not null.</param>
+        /// <returns>The message, then each inner exception's message not already contained in
+        /// it, separated by a blank line.</returns>
         internal static string Describe(Exception e)
         {
             string m = e.Message;
@@ -147,6 +161,9 @@ namespace FlatCheck.Wpf
             return m;
         }
 
+        /// <summary>Clears the error and shows the waiting screen, indeterminate, with an empty
+        /// second line.</summary>
+        /// <param name="message">The waiting screen's first line.</param>
         protected void BeginBusy(string message)
         {
             ClearError();
@@ -157,6 +174,7 @@ namespace FlatCheck.Wpf
             IsBusy = true;
         }
 
+        /// <summary>Hides the waiting screen and clears its second line.</summary>
         protected void EndBusy()
         {
             IsBusy = false;
@@ -164,10 +182,12 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Arata o explicatie in locul rezultatelor. Titlu + text, fiindca a doua parte e
-        /// mereu lunga: cerintele cer sa se explice CE e fisierul lipsa si CE sa faca omul,
-        /// nu doar ca lipseste.
+        /// Shows an explanation in place of the results. Title + text, because the second part is
+        /// always long: the requirements ask to explain WHAT the missing file is and WHAT the user
+        /// should do, not only that it is missing.
         /// </summary>
+        /// <param name="title">The explanation's heading.</param>
+        /// <param name="text">The explanation itself.</param>
         protected void Fail(string title, string text)
         {
             HasResult = false;
@@ -175,13 +195,15 @@ namespace FlatCheck.Wpf
             ErrorText = text;
         }
 
+        /// <summary>Removes the explanation, if one is shown.</summary>
         protected void ClearError()
         {
             ErrorTitle = null;
             ErrorText = null;
         }
 
-        /// <summary>Pentru cand tabul se goleste: alt folder ales, sau folder invalid.</summary>
+        /// <summary>For when the tab empties: another folder chosen, or an invalid
+        /// one.</summary>
         internal virtual void Reset()
         {
             ClearError();

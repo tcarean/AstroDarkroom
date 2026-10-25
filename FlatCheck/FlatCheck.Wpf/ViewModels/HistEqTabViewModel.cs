@@ -15,37 +15,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HistEqTabViewModel.cs - tabul "Histogram": un cadru vazut prin egalizare de histograma.
+// HistEqTabViewModel.cs - the "Histogram" tab: one frame seen through histogram equalisation.
 //
-// Lista are masterul pe prima pozitie, flat-ul netezit de langa el cand exista, si apoi
-// cadrele din flats/, raw sau FITS. Masterul e acolo pentru o singura intrebare - s-au
-// mediat imperfectiunile de pe cadrele individuale? - si nu se preselecteaza si nu ruleaza
-// singur la deschidere: e un FITS float de 24 MP, iar tabul Structura il citeste deja
-// atunci (regula "secvential, nu paralel" din MainViewModel). Netezitul e acolo pentru
-// cealalta intrebare - ce a scos netezirea si ce a lasat - si e un al treilea fel de rand,
-// nu al doilea master: chip NETEZIT, IsMaster fals.
+// The list has the master in first position, the smoothed flat beside it when it exists, and then
+// the frames from flats/, raw or FITS. The master is there for a single question - did the
+// imperfections of the individual frames average out? - and it is not preselected and does not run
+// by itself on opening: it is a 24 MP float FITS, and the Structure tab is already reading it at
+// that moment (the "sequential, not parallel" rule in MainViewModel). The smoothed one is there for
+// the other question - what did the smoothing take out and what did it leave - and it is a third
+// kind of row, not a second master: chip NETEZIT, IsMaster false.
 //
-// LISTA SE REFACE CAND NETEZIREA SCRIE. Tabul Netezire poate produce fisierul in timpul
-// sesiunii; MainViewModel leaga evenimentul lui la FileWritten, care reciteste lista din
-// sesiune - o singura definitie a listei, HistEqCandidates - si pastreaza alegerea, fara
-// sa porneasca nimic. Cu o exceptie: daca fisierul rescris e chiar cel ales, se
-// recalculeaza, altfel poza de pe ecran ar fi a unor octeti care nu mai exista pe disc.
+// THE LIST IS REBUILT WHEN THE SMOOTHING WRITES. The Netezire tab can produce the file during the
+// session; MainViewModel wires its event to FileWritten, which re-reads the list from the session -
+// a single definition of the list, HistEqCandidates - and keeps the choice, without starting
+// anything. With one exception: if the file rewritten is the very one chosen, it recomputes,
+// otherwise the picture on screen would be of bytes no longer on disk.
 //
-// LOADER-UL ACOPERA POZA, NU TABUL. Lista ramane apasabila cat timp se calculeaza, si
-// un click pe alt fisier ANULEAZA rularea curenta si porneste alta. Ca o rulare depasita
-// sa nu atinga ecranul, contorul de generatii din TabViewModel.RunGuardedAsync lasa doar
-// ultima rulare sa incheie starea de ocupat, iar lambda de aici verifica jetonul propriu
-// dupa await inainte sa scrie ceva.
+// THE LOADER COVERS THE PICTURE, NOT THE TAB. The list stays clickable while it computes, and a
+// click on another file CANCELS the current run and starts another. So a superseded run does not
+// touch the screen, the generation counter in TabViewModel.RunGuardedAsync lets only the latest run
+// close the busy state, and the lambda here checks its own token after the await before writing
+// anything.
 //
-// POZA NU TRECE PRIN PNG. Vederea aleasa se face bitmap direct din rasterul la rezolutie
-// intreaga (RasterBitmaps), fara encodare: la 100 % un pixel de pe ecran e un pixel de
-// senzor, si pe mozaic se vede tabla de sah ca in Siril. PNG-ul ramane al consolei.
-// Prima varianta encoda PNG-uri din rasterele micsorate (150-380 ms si 0.85-3.6 MB pe
-// vedere, masurat), si zoom-ul ar fi marit medii de blocuri. Bitmap-urile se tin in cache
-// pe chip, inghetate; costul e memoria rasterului, nimic altceva.
+// THE PICTURE DOES NOT GO THROUGH PNG. The chosen view becomes a bitmap directly from the
+// full-resolution raster (RasterBitmaps), without encoding: at 100 % a screen pixel is a sensor
+// pixel, and on the mosaic the checkerboard shows as in Siril. The PNG stays the console's. The
+// first version encoded PNGs from the reduced rasters (150-380 ms and 0.85-3.6 MB per view,
+// measured), and the zoom would have magnified block averages. The bitmaps are cached per chip,
+// frozen; the cost is the raster's memory, nothing else.
 //
-// Zoom-ul se reseteaza la FISIER nou, nu la schimbarea vederii: a te uita la acelasi loc
-// pe G1 dupa Mozaic e exact rostul chipurilor.
+// The zoom is reset on a new FILE, not on a change of view: looking at the same place on G1 after
+// Mozaic is exactly the point of the chips.
 
 using System;
 using System.Collections.Generic;
@@ -58,6 +58,8 @@ using System.Windows.Media;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The Histogram tab: the master, the smoothed master and the frames of flats/ in a
+    /// list, and the chosen one shown histogram-equalised, per view, at full resolution.</summary>
     public sealed class HistEqTabViewModel : TabViewModel
     {
         SirilSession _session;
@@ -71,17 +73,20 @@ namespace FlatCheck.Wpf
         string _channels = "";
         string _masterNote = "";
 
-        /// <summary>Ultimul rezultat, ca vederile sa se poata comuta fara sa se reciteasca fisierul.</summary>
+        /// <summary>The last result, so the views can be switched without re-reading the
+        /// file.</summary>
         HistEqResult _last;
 
         readonly Dictionary<HistEqViewOption, ImageSource> _cache = new();
 
+        /// <summary>An empty tab, listening to its view switch.</summary>
         public HistEqTabViewModel()
         {
             View.Changed += RefreshImage;
         }
 
-        /// <summary>Masterul intai, netezitul cand exista, apoi cadrele din flats/.</summary>
+        /// <summary>The master first, the smoothed one when it exists, then the frames from
+        /// flats/.</summary>
         public ObservableCollection<HistEqFileRow> Files { get; } = new();
 
         public HistEqFileRow Selected
@@ -90,36 +95,42 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _selected, value)) Recompute(); }
         }
 
-        /// <summary>Bitmap-ul vederii alese, la rezolutie intreaga, sau null.</summary>
+        /// <summary>The chosen view's bitmap, at full resolution, or null.</summary>
         public ImageSource Image { get => _image; private set => Set(ref _image, value); }
 
-        /// <summary>Comutatorul de vederi: mozaicul, RGB, pozitiile.</summary>
+        /// <summary>The view switch: the mosaic, RGB, the positions.</summary>
         public HistEqViewViewModel View { get; } = new();
 
-        /// <summary>Potrivit sau un factor; controlul din XAML il citeste si il scrie.</summary>
+        /// <summary>Fitted or a factor; the control in the XAML reads and writes it.</summary>
         public ImageZoomViewModel Zoom { get; } = new();
 
-        /// <summary>Ghidul de citire. Documentatie, nu diagnostic.</summary>
+        /// <summary>The reading guide. Documentation, not a diagnosis.</summary>
         public HistEqGuideViewModel Guide { get; } = new();
 
-        /// <summary>Ce e vederea de pe ecran si la ce marime.</summary>
+        /// <summary>What the view on screen is and at what size.</summary>
         public string Caption { get => _caption; private set => Set(ref _caption, value); }
 
-        /// <summary>Ce NU se poate citi din poza. Proprietate de instanta: {Binding} nu vede una statica.</summary>
+        /// <summary>What CANNOT be read from the picture. An instance property: {Binding} does
+        /// not see a static one.</summary>
         public string Caveat => HistEqReport.Caveat();
 
-        /// <summary>Marimea si felul cadrului, din raport.</summary>
+        /// <summary>The frame's size and kind, from the report.</summary>
         public string Frame { get => _frame; private set => Set(ref _frame, value); }
 
-        /// <summary>Tabelul canalelor, din raport, un rand pe linie.</summary>
+        /// <summary>The channels' table, from the report, one row per line.</summary>
         public string Channels { get => _channels; private set => Set(ref _channels, value); }
 
-        /// <summary>Ce inseamna sa te uiti la master; gol cand e ales un cadru.</summary>
+        /// <summary>What looking at the master means; empty when a frame is chosen.</summary>
         public string MasterNote { get => _masterNote; private set => Set(ref _masterNote, value); }
 
-        /// <summary>Ultima rulare pornita, ca un test sa poata astepta una pe care n-a pornit-o el.</summary>
+        /// <summary>The last run started, so a test can await one it did not start.</summary>
         internal Task Pending { get; private set; } = Task.CompletedTask;
 
+        /// <summary>Fills the list from the session, nothing chosen, and explains when it is
+        /// empty; it computes nothing until a click.</summary>
+        /// <param name="session">The folder just opened.</param>
+        /// <param name="ct">The folder's token, to which every run's own token is
+        /// linked.</param>
         internal void Attach(SirilSession session, CancellationToken ct)
         {
             _session = session;
@@ -136,7 +147,8 @@ namespace FlatCheck.Wpf
                 ClearError();
         }
 
-        /// <summary>Lista, din sesiune: masterul, netezitul cand exista, cadrele.</summary>
+        /// <summary>The list, from the session: the master, the smoothed one when it exists, the
+        /// frames.</summary>
         void FillFiles()
         {
             Files.Clear();
@@ -152,7 +164,7 @@ namespace FlatCheck.Wpf
                 {
                     Path = c.Path,
                     Name = Path.GetFileName(c.Path),
-                    // folderul real al fisierului: masterul poate fi in masters/ sau process/
+                    // the file's real folder: the master can be in masters/ or process/
                     Where = Path.GetFileName(Path.GetDirectoryName(c.Path)) + "/",
                     Kind = c.Kind,
                     ClosesGroup = i == lastOfGroup,
@@ -161,10 +173,11 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Alt tab a scris un fisier. Daca e flat-ul netezit al sesiunii curente, lista se
-        /// reface si alegerea se pastreaza (dupa cale); daca fisierul ales e chiar cel
-        /// rescris, se recalculeaza. Orice alta cale, sau lipsa sesiunii, nu face nimic.
+        /// Another tab wrote a file. If it is the current session's smoothed flat, the list is
+        /// rebuilt and the choice kept (by path); if the chosen file is the very one rewritten, it
+        /// recomputes. Any other path, or no session, does nothing.
         /// </summary>
+        /// <param name="path">The full path of the file written.</param>
         internal void FileWritten(string path)
         {
             if (_session == null || path == null) return;
@@ -172,11 +185,11 @@ namespace FlatCheck.Wpf
 
             string selectedPath = Selected?.Path;
 
-            // Cu un ListBox legat in doua sensuri, Files.Clear() impinge null in setter-ul
-            // lui Selected chiar acum; Recompute() se opreste la Selected == null fara sa
-            // atinga _runCts, deci o rulare in curs nu e anulata si Populate-ul ei ajunge pe
-            // ecran ca pana acum. Alegerea se pune apoi direct in camp, nu prin setter, ca
-            // sa nu porneasca o rulare pe un fisier care nu s-a schimbat.
+            // With a ListBox bound both ways, Files.Clear() pushes null into Selected's setter
+            // right now; Recompute() stops at Selected == null without touching _runCts, so a run
+            // in progress is not cancelled and its Populate reaches the screen as before. The
+            // choice is then put straight into the field, not through the setter, so no run starts
+            // on a file that has not changed.
             FillFiles();
             _selected = selectedPath == null ? null
                 : Files.FirstOrDefault(r => string.Equals(r.Path, selectedPath, StringComparison.OrdinalIgnoreCase));
@@ -186,19 +199,24 @@ namespace FlatCheck.Wpf
                 Recompute();
         }
 
+        /// <summary>Starts a run on the chosen file and keeps it in <see cref="Pending"/>;
+        /// nothing without a session or a choice.</summary>
         void Recompute()
         {
             if (_session == null || Selected == null) return;
             Pending = RecomputeAsync();
         }
 
+        /// <summary>Equalises the chosen file, guarded, superseding any run still going, and
+        /// shows the result and the console's report.</summary>
+        /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal Task RecomputeAsync()
         {
             HistEqFileRow row = Selected;
             if (row == null) return Task.CompletedTask;
 
-            // Rularea de dinainte, daca mai merge, e depasita: jetonul ei se anuleaza, iar
-            // lambda ei se opreste la prima verificare de dupa await, fara sa scrie nimic.
+            // The run from before, if it still goes, is superseded: its token is cancelled, and
+            // its lambda stops at the first check after the await, without writing anything.
             CancellationTokenSource old = _runCts;
             old?.Cancel();
             old?.Dispose();
@@ -217,8 +235,8 @@ namespace FlatCheck.Wpf
                     return run;
                 }, ct).ConfigureAwait(true);
 
-                // Inapoi pe firul de interfata: daca intre timp s-a ales alt fisier, jetonul
-                // asta e anulat si rezultatul nu mai are ce cauta pe ecran.
+                // Back on the UI thread: if another file was chosen meanwhile, this token is
+                // cancelled and the result has no business on screen any more.
                 ct.ThrowIfCancellationRequested();
 
                 Report = text.ToString();
@@ -227,9 +245,12 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Internal, nu private, ca testele de randare sa poata aduce un rezultat construit
-        /// direct cu HistEqAnalyzer, fara fisier. Fisier nou = zoom la potrivit.
+        /// Internal, not private, so the rendering tests can bring a result built directly with
+        /// HistEqAnalyzer, without a file. A new file = zoom back to fitted.
         /// </summary>
+        /// <param name="r">The analyzer's result; kept for a later change of view.</param>
+        /// <param name="kind">What the file is: a master and a smoothed master get their note
+        /// under the picture, a frame none.</param>
         internal void Populate(HistEqResult r, HistEqKind kind = HistEqKind.Frame)
         {
             _last = r;
@@ -250,6 +271,8 @@ namespace FlatCheck.Wpf
             HasResult = true;
         }
 
+        /// <summary>Shows the chosen view's bitmap, made from the kept result on first use and
+        /// cached per chip, with its caption; nothing before a result.</summary>
         void RefreshImage()
         {
             HistEqResult r = _last;
@@ -271,6 +294,7 @@ namespace FlatCheck.Wpf
             Caption = HistEqReport.ViewCaption(r, option.Label);
         }
 
+        /// <inheritdoc/>
         internal override void Reset()
         {
             CancellationTokenSource cts = _runCts;
@@ -278,8 +302,8 @@ namespace FlatCheck.Wpf
             try { cts?.Cancel(); } catch (ObjectDisposedException) { }
             cts?.Dispose();
 
-            // fara sesiune, FileWritten nu mai are ce reface: un folder inchis nu se
-            // umple la loc fiindca Netezirea a scris in el
+            // without a session, FileWritten has nothing to rebuild: a closed folder does not
+            // fill up again because the smoothing wrote into it
             _session = null;
             _last = null;
             _cache.Clear();

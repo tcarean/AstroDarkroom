@@ -15,23 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ImageZoomViewModel.cs - starea de zoom a unei poze: potrivit in fereastra, sau un factor.
+// ImageZoomViewModel.cs - the zoom state of a picture: fitted to the window, or a factor.
 //
-// Acelasi tipar ca MapScaleViewModel: nu decide nimic, tine o alegere. Ce e al lui e
-// STAREA - potrivit sau manual, si factorul - ca un test s-o poata conduce si tabul s-o
-// poata reseta la fisier nou. Deplasarea cu mouse-ul, rotita si calculul lui "potrivit"
-// din marimea ferestrei sunt ale controlului ZoomableImage: sunt interactiune, nu
-// decizie, si au nevoie de dimensiuni pe care numai controlul le stie.
+// The same pattern as MapScaleViewModel: it decides nothing, it holds a choice. What is its own
+// is the STATE - fitted or manual, and the factor - so a test can drive it and the tab can reset
+// it on a new file. Panning with the mouse, the wheel and the computation of "fitted" from the
+// window's size belong to the ZoomableImage control: they are interaction, not decision, and need
+// sizes only the control knows.
 //
-// EffectiveZoom e scris de control (legare TwoWay): pe "potrivit" e factorul pe care l-a
-// calculat el, altfel e chiar Zoom. Sta aici ca eticheta sa poata spune "potrivit (13 %)",
-// si ca o marire pornita din "potrivit" sa fie un pas, nu un salt la 100 %.
+// EffectiveZoom is written by the control (a TwoWay binding): on "fitted" it is the factor the
+// control computed, otherwise it is Zoom itself. It lives here so the label can say
+// "potrivit (13 %)", and so a zoom-in started from "fitted" is a step, not a jump to 100 %.
 
 using System;
 using System.Windows.Input;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>A picture's zoom: fitted to its frame, or a manual factor between
+    /// <see cref="Min"/> and <see cref="Max"/>, with the four commands of its toolbar.</summary>
     public sealed class ImageZoomViewModel : ObservableObject
     {
         internal const double Min = 0.1, Max = 8.0, Step = 1.25;
@@ -40,6 +42,7 @@ namespace FlatCheck.Wpf
         double _zoom = 1.0;
         double _effective = 1.0;
 
+        /// <summary>Starts fitted, with the manual factor at 100 %.</summary>
         public ImageZoomViewModel()
         {
             ZoomIn = new RelayCommand(() => Manual(EffectiveZoom * Step));
@@ -48,14 +51,15 @@ namespace FlatCheck.Wpf
             Actual = new RelayCommand(() => Manual(1.0));
         }
 
-        /// <summary>true: controlul calculeaza factorul ca poza sa incapa intreaga.</summary>
+        /// <summary>True: the control computes the factor so the whole picture fits.</summary>
         public bool IsFit
         {
             get => _fit;
             set { if (Set(ref _fit, value)) Raise(nameof(Label)); }
         }
 
-        /// <summary>Factorul manual, 1 = 100 %; conteaza cand IsFit e false. Taiat la [Min, Max].</summary>
+        /// <summary>The manual factor, 1 = 100 %; it counts when IsFit is false. Clamped to
+        /// [Min, Max].</summary>
         public double Zoom
         {
             get => _zoom;
@@ -66,14 +70,15 @@ namespace FlatCheck.Wpf
             }
         }
 
-        /// <summary>Ce e chiar pe ecran. Il scrie controlul; pe manual e egal cu Zoom.</summary>
+        /// <summary>What is really on screen. The control writes it; on manual it equals
+        /// Zoom.</summary>
         public double EffectiveZoom
         {
             get => _effective;
             set { if (Set(ref _effective, value)) Raise(nameof(Label)); }
         }
 
-        /// <summary>"potrivit (13 %)" sau "125 %".</summary>
+        /// <summary>"potrivit (13 %)" or "125 %".</summary>
         public string Label => IsFit ? $"potrivit ({EffectiveZoom * 100:0} %)" : $"{Zoom * 100:0} %";
 
         public ICommand ZoomIn { get; }
@@ -82,16 +87,18 @@ namespace FlatCheck.Wpf
         public ICommand Actual { get; }
 
         /// <summary>
-        /// Trece pe manual la factorul dat. Intai factorul, apoi iesirea din "potrivit":
-        /// asa controlul aplica o singura data valoarea noua, nu intai pe cea veche.
+        /// Switches to manual at the given factor. The factor first, then leaving "fitted": that
+        /// way the control applies the new value once, not the old one first.
         /// </summary>
+        /// <param name="zoom">The factor, 1 = 100 %; clamped to [Min, Max].</param>
         internal void Manual(double zoom)
         {
             Zoom = zoom;
             IsFit = false;
         }
 
-        /// <summary>Inapoi la potrivit; tabul o cheama la fisier nou, NU la schimbarea vederii.</summary>
+        /// <summary>Back to fitted; the tab calls it on a new file, NOT on a change of
+        /// view.</summary>
         internal void Reset()
         {
             Zoom = 1.0;

@@ -15,22 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Tabul Sintetic: un flat scris din profilul de vignetare al obiectivului, si comparatia
-// masterului fotografiat cu el. Pe modelul tabului Netezire: nimic nu ruleaza singur,
-// butonul scrie un fisier langa master dupa intrebarea de suprascriere, fisierul nu devine
-// masterul sesiunii.
+// The Sintetic tab: a flat written from the lens's vignetting profile, and the comparison of the
+// photographed master with it. On the model of the Netezire tab: nothing runs by itself, the
+// button writes a file beside the master after the overwrite question, the file does not become
+// the session's master.
 //
-// Ce decide tabul: nimic. Lista de obiective vine din ProfileLocator (Adobe de pe masina,
-// lensfun/ de langa exe), alegerea profilului si cifrele din SyntheticRun, comparatia din
-// AgainstRun. Ce face in plus fata de consola e PREUMPLEREA: focala si aparatul din
-// headerul masterului (doar headerul, fara cei 96 MB), diafragma si ID-ul de obiectiv
-// Nikon dintr-un raw din flats/, cand exista - si obiectivul ales din lista dupa acel ID.
-// Regula e a nucleului (LensIdentification), aceeasi pe care o aplica tabul Structura si
-// consola; aici se citesc doar metadatele (ImageLoader.LoadInfo, niciun pixel) si se pun
-// valorile in campuri. Toate campurile raman editabile; ce e scris de om bate ce s-a citit.
+// What the tab decides: nothing. The lens list comes from ProfileLocator (Adobe from the machine,
+// lensfun/ from beside the exe), the choice of profile and the figures from SyntheticRun, the
+// comparison from AgainstRun. What it does beyond the console is the PREFILL: the focal length and
+// the camera from the master's header (the header only, without the 96 MB), the aperture and the
+// Nikon lens ID from a raw in flats/, when there is one - and the lens chosen from the list by
+// that ID. The rule is the core's (LensIdentification), the same one the Structure tab and the
+// console apply; here only the metadata are read (ImageLoader.LoadInfo, no pixel) and the values
+// put in the fields. Every field stays editable; what the user wrote beats what was read.
 //
-// Catalogul se incarca o singura data, in fundal, la prima deschidere de sesiune: sute de
-// fisiere .lcp de parsat inseamna o secunda-doua, care nu trebuie sa tina fereastra.
+// The catalog is loaded once, in the background, at the first opening of a session: hundreds of
+// .lcp files to parse mean a second or two, which must not hold the window.
 
 using System;
 using System.Collections.Generic;
@@ -43,10 +43,10 @@ using System.Threading.Tasks;
 namespace FlatCheck.Wpf
 {
     /// <summary>
-    /// Un rand din lista de obiective. Public pentru legare; alegerea nucleului ramane internal.
-    /// Observabil pentru <see cref="Details"/>, care soseste mai tarziu: un fisier Adobe se
-    /// parseaza in fundal, si randul se completeaza fara sa se reconstruiasca lista (si sa
-    /// se piarda selectia).
+    /// A row of the lens list. Public for the binding; the core's choice stays internal.
+    /// Observable for <see cref="Details"/>, which arrives later: an Adobe file is parsed in the
+    /// background, and the row is completed without rebuilding the list (and losing the
+    /// selection).
     /// </summary>
     public sealed class LensRow : ObservableObject
     {
@@ -54,23 +54,30 @@ namespace FlatCheck.Wpf
 
         public string Label { get; init; }
         public string SourceLabel { get; init; }
-        /// <summary>Montura, plus formatul de calibrare la lensfun (LensChoice.Where).</summary>
+        /// <summary>The mount, plus the calibration format for lensfun
+        /// (LensChoice.Where).</summary>
         public string Where { get; init; }
         internal LensChoice Choice { get; init; }
 
-        /// <summary>Focale, diafragme, distante, numar de profile (SyntheticReport.LensDetails); gol pe o lista lunga sau pana soseste.</summary>
+        /// <summary>Focal lengths, apertures, distances, number of profiles
+        /// (SyntheticReport.LensDetails); empty on a long list or until it arrives.</summary>
         public string Details { get => _details; internal set { if (Set(ref _details, value ?? "")) Raise(nameof(HasDetails)); } }
         public bool HasDetails => _details.Length > 0;
     }
 
+    /// <summary>The Sintetic tab's collapsible note on where the profiles come from; the text
+    /// from <see cref="SessionMessages"/>.</summary>
     public sealed class SyntheticGuideViewModel : ObservableObject
     {
-        bool _expanded;   // colapsat implicit: e documentatie, nu preconditie
+        bool _expanded;   // collapsed by default: it is documentation, not a precondition
         public string Intro => SessionMessages.SyntheticGuideIntro();
         public string Title => SessionMessages.SyntheticSourcesTitle();
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
 
+    /// <summary>The Sintetic tab: a lens from the profile list, its focal length, aperture and
+    /// crop prefilled from the session, the synthetic flat written beside the master on a button,
+    /// and the master compared with it.</summary>
     public sealed class SyntheticTabViewModel : TabViewModel
     {
         SirilSession _session;
@@ -78,7 +85,8 @@ namespace FlatCheck.Wpf
         Func<Task> _waitIdle;
         readonly Func<string, bool> _confirm;
         readonly ProfileCatalog _catalog;
-        /// <summary>Metadatele unui fisier fara pixeli; in teste, un cadru fabricat in locul unui raw.</summary>
+        /// <summary>A file's metadata without pixels; in the tests, a made-up frame in place of a
+        /// raw.</summary>
         readonly Func<string, LoadedFrame> _loadInfo;
         ProfileSources _sources;
 
@@ -108,13 +116,24 @@ namespace FlatCheck.Wpf
         Img _compareResidual;
         readonly Dictionary<MapScaleOption, byte[]> _mapCache = new();
 
+        /// <summary>A tab with a catalog of its own, for the tests that need no shared
+        /// one.</summary>
+        /// <param name="confirm">Asks the user a yes/no question (overwriting the synthetic flat);
+        /// null answers yes.</param>
+        /// <param name="locate">Finds the profile sources for the tab's own catalog; null for the
+        /// real lookup.</param>
+        /// <param name="loadInfo">Reads a file's header without its pixels; null uses
+        /// <see cref="ImageLoader.LoadInfo"/>.</param>
         internal SyntheticTabViewModel(Func<string, bool> confirm = null, Func<ProfileSources> locate = null,
                                        Func<string, LoadedFrame> loadInfo = null)
             : this(confirm, new ProfileCatalog(locate), loadInfo) { }
 
+        /// <summary>A tab on the window's shared catalog, with its commands and listeners
+        /// wired.</summary>
         /// <param name="confirm">Asks the user a yes/no question (overwriting the synthetic flat);
         /// null answers yes.</param>
-        /// <param name="catalog">Catalogul comun al ferestrei (MainViewModel il da si tabului Structura).</param>
+        /// <param name="catalog">The window's shared catalog (MainViewModel gives it to the
+        /// Structure tab too); null makes one of its own.</param>
         /// <param name="loadInfo">Reads a file's header without its pixels; null uses
         /// <see cref="ImageLoader.LoadInfo"/>.</param>
         internal SyntheticTabViewModel(Func<string, bool> confirm, ProfileCatalog catalog, Func<string, LoadedFrame> loadInfo)
@@ -135,7 +154,7 @@ namespace FlatCheck.Wpf
             };
         }
 
-        // ------------------------------------------------------------ ce se leaga
+        // ------------------------------------------------------------ what is bound
 
         public string Source { get => _source; private set => Set(ref _source, value); }
         public string Target { get => _target; private set => Set(ref _target, value); }
@@ -165,23 +184,29 @@ namespace FlatCheck.Wpf
 
         public IReadOnlyList<LensRow> Lenses { get => _lenses; private set { if (Set(ref _lenses, value)) RefreshDetails(); } }
 
-        /// <summary>De ce randurile n-au detalii: lista e prea lunga (SyntheticReport.ListDetailsHidden). Gol cand le au.</summary>
+        /// <summary>Why the rows have no details: the list is too long
+        /// (SyntheticReport.ListDetailsHidden). Empty when they have them.</summary>
         public string ListNote { get => _listNote; private set { if (Set(ref _listNote, value ?? "")) Raise(nameof(HasListNote)); } }
         public bool HasListNote => _listNote.Length > 0;
 
-        /// <summary>Calculul din spatele detaliilor randurilor, ca un test sa-l poata astepta.</summary>
+        /// <summary>The computation behind the rows' details, so a test can await it.</summary>
         internal Task DetailsPending { get; private set; } = Task.CompletedTask;
 
         /// <summary>
-        /// Umple a doua linie a fiecarui rand cu focalele, diafragmele si distantele lui - regula
-        /// consolei (--lenses): numai cand lista are cel mult ListDetailsMax randuri, fiindca
-        /// detaliile unui obiectiv Adobe cer parsarea fisierului lui (~10 ms fiecare, 36 s pe
-        /// toate). Aceeasi regula si pentru lensfun, desi acolo ar fi gratis, ca lista sa nu
-        /// arate jumatate cu detalii, jumatate fara. In fundal, in paralel, cu numar de
-        /// generatie: o cautare noua nu primeste detaliile celei vechi.
+        /// Fills each row's second line with its focal lengths, apertures and distances - the
+        /// console's rule (--lenses): only when the list has at most ListDetailsMax rows, because
+        /// an Adobe lens's details need its file parsed (~10 ms each, 36 s for all). The same rule
+        /// for lensfun too, though it would be free there, so the list does not show half with
+        /// details, half without. In the background, in parallel, with a generation number: a new
+        /// search does not receive the old one's details.
         /// </summary>
         void RefreshDetails() => DetailsPending = RefreshDetailsAsync();
 
+        /// <summary>The work behind <see cref="RefreshDetails"/>: the details of every row,
+        /// computed in parallel off the UI thread, applied only if no newer list arrived
+        /// meanwhile.</summary>
+        /// <returns>A task that completes when the details were applied or dropped; it never
+        /// faults.</returns>
         async Task RefreshDetailsAsync()
         {
             int gen = ++_detailsGen;
@@ -205,9 +230,12 @@ namespace FlatCheck.Wpf
             foreach (var (row, text) in details) row.Details = text;
         }
 
+        /// <summary>Runs a text computation that may throw.</summary>
+        /// <param name="f">The computation.</param>
+        /// <returns>Its text, or "" when it threw.</returns>
         static string Safe(Func<string> f)
         {
-            try { return f(); } catch (Exception) { return ""; }   // un fisier Adobe stricat lasa randul fara detalii; alegerea lui va spune de ce
+            try { return f(); } catch (Exception) { return ""; }   // a broken Adobe file leaves the row without details; choosing it will say why
         }
 
         public LensRow SelectedLens
@@ -226,8 +254,9 @@ namespace FlatCheck.Wpf
                 if (!Set(ref _cropText, value ?? "")) return;
                 if (!_cropFromChip)
                 {
-                    // Chip-urile urmaresc valoarea; nota spune de unde e si ce format e. Sursa o
-                    // pune cine scrie in camp (tabelul, la preumplere); fara ea, e tastat.
+                    // The chips follow the value; the note says where it is from and what format
+                    // it is. The source is set by whoever writes into the field (the table, at
+                    // the prefill); without it, it was typed.
                     double? crop = Num(_cropText);
                     SensorFormat.Follow(crop);
                     string source = _cropSource ?? SessionMessages.SyntheticCropTyped();
@@ -239,44 +268,54 @@ namespace FlatCheck.Wpf
             }
         }
 
-        /// <summary>Chip-urile de tip de senzor: arata formatul crop-ului din camp, si il pot pune cand nu vine din tabel.</summary>
+        /// <summary>The sensor-format chips: they show the format of the crop in the field, and
+        /// can set it when it does not come from the table.</summary>
         public SensorFormatViewModel SensorFormat { get; } = new();
 
-        /// <summary>De unde e crop-ul din camp si ce format e; sau ca nu se stie inca.</summary>
+        /// <summary>Where the crop in the field is from and what format it is; or that it is not
+        /// known yet.</summary>
         public string CropNote { get => _cropNote; private set => Set(ref _cropNote, value); }
 
-        /// <summary>Profilul ales fata de senzorul tau: formatul de calibrare, al tau, si ce urmeaza. Gol fara obiectiv.</summary>
+        /// <summary>The chosen profile against your sensor: the calibration format, yours, and
+        /// what follows. Empty without a lens.</summary>
         public string FormatNote { get => _formatNote; private set => Set(ref _formatNote, value); }
 
-        /// <summary>Adevarat cand FormatNote e un avertisment (extrapolare mare): se coloreaza.</summary>
+        /// <summary>True when FormatNote is a warning (a large extrapolation): it is
+        /// coloured.</summary>
         public bool FormatWarning { get => _formatWarning; private set => Set(ref _formatWarning, value); }
 
         /// <summary>
-        /// Cand focala sau diafragma din casute e departe de profilul care s-ar folosi
-        /// (SyntheticReport.ProfileMismatch): mereu un avertisment, gol cand nu e cazul.
-        /// Recalculat odata cu FormatNote, la fiecare tasta.
+        /// When the focal length or the aperture in the boxes is far from the profile that would
+        /// be used (SyntheticReport.ProfileMismatch): always a warning, empty when it does not
+        /// apply. Recomputed together with FormatNote, at every keystroke.
         /// </summary>
         public string RequestNote { get => _requestNote; private set { if (Set(ref _requestNote, value ?? "")) Raise(nameof(HasRequestNote)); } }
         public bool HasRequestNote => _requestNote.Length > 0;
 
-        /// <summary>Acelasi avertisment pentru flatul scris, sub "profil folosit"; gol cand cererea a fost in toleranta.</summary>
+        /// <summary>The same warning for the written flat, under "profil folosit"; empty when the
+        /// request was within tolerance.</summary>
         public string WrittenRequestNote { get => _writtenRequestNote; private set { if (Set(ref _writtenRequestNote, value ?? "")) Raise(nameof(HasWrittenRequestNote)); } }
         public bool HasWrittenRequestNote => _writtenRequestNote.Length > 0;
 
-        /// <summary>Acelasi lucru pentru linia de sub adancimile scrise.</summary>
+        /// <summary>The same thing for the line under the written depths.</summary>
         public bool CornerWarning { get => _cornerWarning; private set => Set(ref _cornerWarning, value); }
 
-        /// <summary>Calculul din spatele lui FormatNote, ca un test sa-l poata astepta.</summary>
+        /// <summary>The computation behind FormatNote, so a test can await it.</summary>
         internal Task FormatPending { get; private set; } = Task.CompletedTask;
 
         /// <summary>
-        /// Recalculeaza FormatNote: profilul cel mai apropiat al obiectivului ales (un fisier
-        /// Adobe se parseaza abia acum, unul singur), pus fata in fata cu crop-ul din camp pe
-        /// cadrul masterului. In fundal, cu numar de generatie: doar ultima cerere ajunge pe
-        /// ecran, ca la celelalte taburi.
+        /// Recomputes FormatNote: the chosen lens's nearest profile (an Adobe file is parsed only
+        /// now, a single one), set against the crop in the field on the master's frame. In the
+        /// background, with a generation number: only the last request reaches the screen, as on
+        /// the other tabs.
         /// </summary>
         void RefreshFormat() => FormatPending = RefreshFormatAsync();
 
+        /// <summary>The work behind <see cref="RefreshFormat"/>: the format note, its warning flag
+        /// and the request note, computed off the UI thread and applied only if no newer request
+        /// came meanwhile.</summary>
+        /// <returns>A task that completes when the notes were applied or dropped; it never
+        /// faults.</returns>
         async Task RefreshFormatAsync()
         {
             int gen = ++_formatGen;
@@ -293,22 +332,23 @@ namespace FlatCheck.Wpf
                     var profiles = sources.Catalog.ProfilesOf(lens.Choice);
                     if (profiles.Count == 0) return ("", false, "");
                     LensProfile p = LensCatalog.Nearest(profiles, focal ?? profiles[0].FocalMm, fstop ?? profiles[0].FStop);
-                    // Fara focala sau diafragma in casuta nu e nicio cerere de comparat: scrierea
-                    // le va lua din header / raw, si nota ei le va judeca atunci.
+                    // Without a focal length or an aperture in the box there is no request to
+                    // compare: the write will take them from the header / raw, and its note will
+                    // judge them then.
                     string request = focal.HasValue && fstop.HasValue
                         ? SyntheticReport.ProfileMismatch(p, focal.Value, fstop.Value, profiles) ?? "" : "";
                     return ($"{lens.Label}: " + SyntheticReport.FormatMatch(p.Model, crop ?? 0, w, h),
                             SyntheticReport.FormatMatchIsWarning(p.Model, crop ?? 0, w, h), request);
                 }).ConfigureAwait(true);
             }
-            catch (Exception) { note = ("", false, ""); }   // un fisier Adobe stricat lasa nota goala; scrierea il va refuza cu motivul
+            catch (Exception) { note = ("", false, ""); }   // a broken Adobe file leaves the note empty; the write will refuse it with the reason
             if (gen != _formatGen) return;
             FormatNote = note.Text;
             FormatWarning = note.Warning;
             RequestNote = note.Request;
         }
 
-        /// <summary>De unde au venit valorile preumplute, sau ce n-a putut fi citit.</summary>
+        /// <summary>Where the prefilled values came from, or what could not be read.</summary>
         public string PrefillNote { get => _prefillNote; private set => Set(ref _prefillNote, value); }
 
         public string AdobeWhere { get => _adobeWhere; private set => Set(ref _adobeWhere, value); }
@@ -339,7 +379,8 @@ namespace FlatCheck.Wpf
             private set { if (Set(ref _compareVerdict, value)) Raise(nameof(HasCompare)); }
         }
         public bool HasCompare => !string.IsNullOrEmpty(_compareVerdict);
-        /// <summary>Forma si adancimea, cele doua parti ale verdictului, cum le tipareste si consola.</summary>
+        /// <summary>The shape and the depth, the verdict's two parts, as the console prints
+        /// them too.</summary>
         public string CompareVerdictDetail { get => _compareVerdictDetail; private set => Set(ref _compareVerdictDetail, value); }
         public string CompareNote => AgainstReport.Meaning().Replace('\n', ' ');
         public byte[] CompareMap { get => _compareMap; private set => Set(ref _compareMap, value); }
@@ -349,8 +390,14 @@ namespace FlatCheck.Wpf
         internal Task Pending { get; private set; } = Task.CompletedTask;
         internal event Action<string> Saved;
 
-        // ------------------------------------------------------------ sesiunea
+        // ------------------------------------------------------------ the session
 
+        /// <summary>Prepares the paths, enables the button when the session has a master, and
+        /// starts the prefill in the background; it writes nothing.</summary>
+        /// <param name="session">The folder just opened.</param>
+        /// <param name="ct">The folder's token.</param>
+        /// <param name="waitIdle">Awaits the opening chain before a write or a comparison; null
+        /// runs at once.</param>
         internal void Attach(SirilSession session, CancellationToken ct, Func<Task> waitIdle = null)
         {
             _session = session;
@@ -363,14 +410,18 @@ namespace FlatCheck.Wpf
             if (CanRun) Pending = PrefillAsync();
         }
 
-        /// <summary>Catalogul comun, incarcat o singura data, in fundal.</summary>
+        /// <summary>The shared catalog, loaded once, in the background.</summary>
+        /// <returns>The profile sources, from the first load.</returns>
         internal Task<ProfileSources> EnsureProfilesAsync() => _catalog.EnsureAsync();
 
         /// <summary>
-        /// Preumplerea: catalogul, apoi headerul masterului (FOCALLEN, INSTRUME) si, dupa ce
-        /// lantul de deschidere s-a terminat, un raw din flats/ pentru diafragma si ID-ul de
-        /// obiectiv. Nimic din ce scrie aici nu suprascrie ce a tastat deja omul.
+        /// The prefill: the catalog, then the master's header (FOCALLEN, INSTRUME) and, when there
+        /// is one, the first raw from flats/ for the aperture and the lens ID - metadata only, read
+        /// at once, without waiting for the opening chain. Nothing written here overwrites what the
+        /// user has already typed.
         /// </summary>
+        /// <returns>A task that completes when the fields are filled; it never faults, a failure
+        /// ends up in <see cref="PrefillNote"/>.</returns>
         internal async Task PrefillAsync()
         {
             SirilSession session = _session;
@@ -386,10 +437,10 @@ namespace FlatCheck.Wpf
                 RefreshLenses();
                 ProfileSources sources = _sources;
 
-                // Metadatele, fara pixeli: headerul masterului si, cand exista, primul raw
-                // din flats/ - acelasi pe care il ia si tabul Structura. Identificarea e a
-                // nucleului; aici doar se pun valorile in campuri. Un raw pe care libraw
-                // nu-l deschide lasa diafragma goala si spune atat.
+                // The metadata, without pixels: the master's header and, when there is one, the
+                // first raw from flats/ - the same one the Structure tab takes. The identification
+                // is the core's; here the values are only put in the fields. A raw libraw does not
+                // open leaves the aperture empty and says only that.
                 var (id, reference, rawError) = await Task.Run(() =>
                 {
                     LoadedFrame reference = _loadInfo(master);
@@ -429,12 +480,15 @@ namespace FlatCheck.Wpf
             catch (OperationCanceledException) { }
             catch (Exception e)
             {
-                // Preumplerea e un confort, nu o analiza: un header ciudat lasa campurile
-                // goale si spune de ce. Un task de fundal care arunca ar dobori aplicatia.
+                // The prefill is a convenience, not an analysis: a strange header leaves the
+                // fields empty and says why. A background task that threw would bring the
+                // application down.
                 PrefillNote = "preumplerea a esuat: " + Describe(e);
             }
         }
 
+        /// <summary>Shows where each profile source was looked for and what it holds.</summary>
+        /// <param name="s">The profile sources found.</param>
         void ShowSources(ProfileSources s)
         {
             AdobeWhere = SyntheticReport.AdobeWhere(s);
@@ -442,6 +496,8 @@ namespace FlatCheck.Wpf
             ProfilesSummary = SyntheticReport.SourcesSummary(s).Replace("\n", "  |  ").Trim();
         }
 
+        /// <summary>Rebuilds the lens list from the search text, keeping the selected lens if it
+        /// is still in it; nothing before the catalog is loaded.</summary>
         void RefreshLenses()
         {
             if (_sources == null) return;
@@ -450,6 +506,9 @@ namespace FlatCheck.Wpf
             SelectedLens = Lenses.FirstOrDefault(r => r.Choice == keep);
         }
 
+        /// <summary>One list row per lens.</summary>
+        /// <param name="lenses">The core's lens choices.</param>
+        /// <returns>The rows, in the same order, without details yet.</returns>
         static List<LensRow> Rows(IEnumerable<LensChoice> lenses)
             => lenses.Select(l => new LensRow
             {
@@ -460,11 +519,15 @@ namespace FlatCheck.Wpf
             }).ToList();
 
         /// <summary>
-        /// Ce a spus raw-ul despre obiectiv, pus pe ecran: un singur candidat se alege; mai
-        /// multi (ID-ul 139 e si AT-X 11-20, si atx-i 11-20) restrang lista la ei si omul
-        /// alege - nu se ia primul in ordine alfabetica, cum se lua, cand era un Nikkor.
-        /// Intoarce nota de preumplere, sau null cand nu s-a facut nimic.
+        /// What the raw said about the lens, put on screen: a single candidate is selected; several
+        /// (ID 139 is both AT-X 11-20 and atx-i 11-20) narrow the list to them and the user
+        /// chooses - the first in alphabetical order is not taken, as it was when it was a Nikkor.
+        /// Returns the prefill note, or null when nothing was done.
         /// </summary>
+        /// <param name="candidates">The lenses the raw's lens ID matches; null or empty does
+        /// nothing.</param>
+        /// <param name="rawLabel">How the raw named the lens, for the note.</param>
+        /// <returns>The prefill note, or null.</returns>
         internal string OfferCandidates(IReadOnlyList<LensChoice> candidates, string rawLabel)
         {
             if (candidates == null || candidates.Count == 0) return null;
@@ -479,6 +542,7 @@ namespace FlatCheck.Wpf
             return SessionMessages.SyntheticLensCandidates(rawLabel, candidates.Count);
         }
 
+        /// <summary>Re-evaluates both buttons and <see cref="CanCompare"/>.</summary>
         void RaiseCommands()
         {
             Run.RaiseCanExecuteChanged();
@@ -486,11 +550,19 @@ namespace FlatCheck.Wpf
             Raise(nameof(CanCompare));
         }
 
+        /// <summary>Reads a positive number from a field, with either decimal separator.</summary>
+        /// <param name="text">The field's text, or null.</param>
+        /// <returns>The number, or null when it is not a number above 0.</returns>
         static double? Num(string text)
             => double.TryParse((text ?? "").Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) && v > 0 ? v : null;
 
-        // ------------------------------------------------------------ butoanele
+        // ------------------------------------------------------------ the buttons
 
+        /// <summary>Writes the synthetic flat for the chosen lens and the fields' values, guarded,
+        /// after the opening chain: the numbers on screen first, then the file beside the master,
+        /// asking before an overwrite, then the comparison with the master.</summary>
+        /// <returns>A task that completes when the write and its comparison ended; it never
+        /// faults.</returns>
         internal async Task RunAsync()
         {
             if (_session == null || !CanRun) return;
@@ -555,16 +627,20 @@ namespace FlatCheck.Wpf
             }).ConfigureAwait(true);
             RaiseCommands();
 
-            // Fisierul abia scris se compara imediat cu masterul: a scrie flatul sintetic si
-            // a nu-l pune fata in fata cu masterul e jumatate de treaba, si ecranul de dupa
-            // "Scrie" fara tabel si fara harta a fost citit ca un bug. Butonul separat ramane
-            // pentru un fisier scris alta data. Nu dupa un refuz de suprascriere (fisierul
-            // vechi poate fi al altui obiectiv), nu dupa o eroare de scriere.
+            // The file just written is compared with the master at once: writing the synthetic
+            // flat and not setting it against the master is half the job, and the screen after
+            // "Scrie" without a table and without a map was read as a bug. The separate button
+            // stays for a file written another time. Not after a refused overwrite (the old file
+            // may be another lens's), not after a write error.
             if (SavedTo == target && !HasError && !ct.IsCancellationRequested)
                 await CompareAsync(Report).ConfigureAwait(true);
         }
 
-        /// <param name="reportSoFar">Raportul scrierii, cand comparatia ii urmeaza; altfel null si se pune bannerul.</param>
+        /// <summary>Compares the session's master with the synthetic flat beside it, guarded,
+        /// after the opening chain, and shows the table, the verdict and the map.</summary>
+        /// <param name="reportSoFar">The write's report, when the comparison follows it; otherwise
+        /// null and the banner is written.</param>
+        /// <returns>A task that completes when the comparison ended; it never faults.</returns>
         internal async Task CompareAsync(string reportSoFar = null)
         {
             if (_session == null || !CanCompare) return;
@@ -594,6 +670,11 @@ namespace FlatCheck.Wpf
             RaiseCommands();
         }
 
+        /// <summary>Shows a written flat: the profile used against the request, the model, the
+        /// corner note and the depth rows. Internal, for the rendering tests.</summary>
+        /// <param name="r">The synthetic flat's result.</param>
+        /// <param name="req">The request it was written for, with the focal length and aperture
+        /// actually used.</param>
         internal void Populate(SyntheticFlatResult r, SyntheticRequest req)
         {
             LensProfile p = r.Profile;
@@ -606,6 +687,9 @@ namespace FlatCheck.Wpf
             HasResult = true;
         }
 
+        /// <summary>Shows a comparison: the A / B table, the verdict and its two parts, and the
+        /// ratio's residual map. Internal, for the rendering tests.</summary>
+        /// <param name="a">The comparison's result.</param>
         internal void PopulateCompare(AgainstResult a)
         {
             CompareTable = AgainstReport.Rows(a).Select(r => new CompareRow
@@ -627,6 +711,8 @@ namespace FlatCheck.Wpf
             RefreshMap();
         }
 
+        /// <summary>Shows the comparison's map on the chosen cap, from the cache or encoded now,
+        /// with its legend; empty before a comparison.</summary>
         void RefreshMap()
         {
             if (_compareResidual == null) { CompareMap = null; MapLegend = ""; return; }
@@ -640,6 +726,7 @@ namespace FlatCheck.Wpf
             MapLegend = RunReport.MapLegend(range);
         }
 
+        /// <inheritdoc/>
         internal override void Reset()
         {
             base.Reset();

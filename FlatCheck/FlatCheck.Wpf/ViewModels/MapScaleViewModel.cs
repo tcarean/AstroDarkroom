@@ -15,21 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MapScaleViewModel.cs - comutatorul de scara al hartii reziduale.
+// MapScaleViewModel.cs - the scale switch of the residual map.
 //
-// DE CE EXISTA. Scara automata intinde culoarea pe intervalul propriu al fiecarei
-// imagini, deci rosu plin nu spune nimic anume: masurat pe doua mastere ale aceluiasi
-// obiectiv, rosu plin era +3% pe unul si +10% pe altul. Pe o scara fixa doua sesiuni
-// se compara dintr-o privire, iar saturatia are un sens - "iese din banda".
+// WHY IT EXISTS. The automatic scale stretches the colour over each image's own range, so full
+// red says nothing in particular: measured on two masters of the same lens, full red was +3% on
+// one and +10% on the other. On a fixed scale two sessions compare at a glance, and saturation
+// has a meaning - "out of the band".
 //
-// DE CE E O CLASA SEPARATA, folosita de doua taburi. Structura si Ratio arata amandoua
-// un reziduu pe scara de reziduu, deci amandoua vor acelasi comutator. Doua copii ale
-// listei de plafoane ar fi divergat la prima ajustare, si oricum lista NU e a ferestrei:
-// vine din PngWriter.FixedCapsPct, care o ia din Th.Resid*.
+// WHY IT IS A CLASS OF ITS OWN, used by five tabs. Structure, Ratio, Netezire, Sintetic and Split
+// all show a residual on the residual scale, so all want the same switch. Copies of the list of
+// caps would have diverged at the first adjustment, and the list is NOT the window's anyway: it
+// comes from PngWriter.FixedCapsPct, which takes it from Th.Resid*.
 //
-// CE NU FACE: nu decide nimic si nu calculeaza nicio cifra. Traduce o alegere in
-// PngWriter.MapRange si anunta tabul ca trebuie sa reencodeze. Verdictul nu se schimba
-// niciodata cu scara - se schimba doar cat de tare arata culoarea.
+// WHAT IT DOES NOT DO: it decides nothing and computes no figure. It translates a choice into
+// PngWriter.MapRange and tells the tab it must re-encode. The verdict never changes with the
+// scale - only how strong the colour looks does.
 
 using System;
 using System.Collections.Generic;
@@ -38,15 +38,18 @@ using System.Linq;
 namespace FlatCheck.Wpf
 {
     /// <summary>
-    /// Un plafon oferit de comutator. <see cref="Label"/> si <see cref="IsSelected"/> sunt
-    /// tot ce vede XAML-ul; plafonul insusi e internal, fiindca e un detaliu al nucleului
-    /// si o clasa publica nu are ce sa expuna din el (vezi nota din TabViewModel).
+    /// A cap the switch offers. <see cref="Label"/> and <see cref="IsSelected"/> are all the XAML
+    /// sees; the cap itself is internal, because it is a detail of the core and a public class
+    /// has nothing of it to expose (see the note in TabViewModel).
     /// </summary>
     public sealed class MapScaleOption : ObservableObject
     {
         readonly MapScaleViewModel _owner;
         bool _selected;
 
+        /// <summary>Makes the chip, its label worded by the core.</summary>
+        /// <param name="owner">The switch the chip belongs to; told when it is ticked.</param>
+        /// <param name="capPct">The cap in percent, or null for the automatic scale.</param>
         internal MapScaleOption(MapScaleViewModel owner, double? capPct)
         {
             _owner = owner;
@@ -54,16 +57,17 @@ namespace FlatCheck.Wpf
             Label = RunReport.MapScaleLabel(capPct);
         }
 
-        /// <summary>Eticheta chipului: "auto" sau plafonul. Vine din nucleu, nu de aici.</summary>
+        /// <summary>The chip's label: "auto" or the cap. It comes from the core, not from
+        /// here.</summary>
         public string Label { get; }
 
-        /// <summary>Plafonul in procente, sau null pentru scara automata.</summary>
+        /// <summary>The cap in percent, or null for the automatic scale.</summary>
         internal double? CapPct { get; }
 
         /// <summary>
-        /// Legarea din XAML e TwoWay pe asta. Bifarea trece prin owner, ca sa se
-        /// debifeze celelalte si in ViewModel - altfel exclusivitatea ar exista numai
-        /// in grupul de RadioButton, si un test fara fereastra ar vedea doua bifate.
+        /// The XAML binding on this is TwoWay. Ticking goes through the owner, so the others are
+        /// unticked in the view-model too - otherwise the exclusivity would exist only in the
+        /// RadioButton group, and a test without a window would see two ticked.
         /// </summary>
         public bool IsSelected
         {
@@ -71,28 +75,31 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _selected, value) && value) _owner.Select(this); }
         }
 
-        /// <summary>Debifare fara sa reintre in owner - altfel Select ar recursa.</summary>
+        /// <summary>Unticks without re-entering the owner - otherwise Select would
+        /// recurse.</summary>
         internal void Unselect() => Set(ref _selected, false, nameof(IsSelected));
     }
 
-    /// <summary>Lista de plafoane plus cel ales. Un tab il tine ca proprietate si asculta <see cref="Changed"/>.</summary>
+    /// <summary>The list of caps plus the chosen one. A tab holds it as a property and listens
+    /// to <see cref="Changed"/>.</summary>
     public sealed class MapScaleViewModel : ObservableObject
     {
         MapScaleOption _selected;
 
+        /// <summary>Makes "auto" and the core's fixed caps, and ticks the default.</summary>
         /// <param name="defaultCapPct">
-        /// Plafonul bifat la inceput; implicit cel din nucleu. Tabul de netezire da
-        /// Th.ResidPerfect: ce se scoate e mic, si la +-10 % harta lui ar fi alba.
+        /// The cap ticked at the start; by default the core's. The smoothing tab gives
+        /// Th.ResidPerfect: what is removed is small, and at +-10 % its map would be white.
         /// </param>
         public MapScaleViewModel(double? defaultCapPct = null)
         {
-            // "auto" prima, apoi plafoanele in ordine crescatoare, ca in scara de reziduu.
+            // "auto" first, then the caps in ascending order, as on the residual scale.
             var options = new List<MapScaleOption> { new MapScaleOption(this, null) };
             options.AddRange(PngWriter.FixedCapsPct.Select(c => new MapScaleOption(this, c)));
             Options = options;
 
-            // Implicit plafonul din nucleu, nu "auto": banda in care se asteapta sa
-            // traiasca un flat normal, deci doua sesiuni se compara fara sa apesi nimic.
+            // By default the core's cap, not "auto": the band a normal flat is expected to live
+            // in, so two sessions compare without pressing anything.
             double cap = defaultCapPct ?? PngWriter.DefaultCapPct;
             _selected = options.First(o => o.CapPct == cap);
             _selected.IsSelected = true;
@@ -100,16 +107,20 @@ namespace FlatCheck.Wpf
 
         public IReadOnlyList<MapScaleOption> Options { get; }
 
-        /// <summary>Plafonul ales. Nu e null niciodata.</summary>
+        /// <summary>The chosen cap. Never null.</summary>
         public MapScaleOption Selected
         {
             get => _selected;
             private set => Set(ref _selected, value);
         }
 
-        /// <summary>S-a schimbat scara: tabul reencodeaza harta din rasterul pe care il tine.</summary>
+        /// <summary>The scale changed: the tab re-encodes the map from the raster it
+        /// holds.</summary>
         internal event Action Changed;
 
+        /// <summary>Makes the option the chosen one, unticks the others and raises
+        /// <see cref="Changed"/>; nothing when it is already chosen.</summary>
+        /// <param name="option">One of <see cref="Options"/>.</param>
         internal void Select(MapScaleOption option)
         {
             if (ReferenceEquals(option, _selected)) return;
@@ -121,7 +132,11 @@ namespace FlatCheck.Wpf
             Changed?.Invoke();
         }
 
-        /// <summary>Capetele cerute de alegerea curenta, pentru rasterul dat.</summary>
+        /// <summary>The ends the current choice asks for, for the given raster.</summary>
+        /// <param name="resid">The residual raster, in percent; read only on the automatic
+        /// scale.</param>
+        /// <returns>The fixed range of the chosen cap, or the raster's own automatic
+        /// range.</returns>
         internal PngWriter.MapRange RangeFor(Img resid)
             => Selected.CapPct is double cap
                 ? PngWriter.FixedRange(cap)

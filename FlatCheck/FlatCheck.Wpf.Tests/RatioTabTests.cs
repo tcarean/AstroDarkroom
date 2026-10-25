@@ -423,6 +423,36 @@ public class RatioTabTests
         Assert.NotNull(vm.Map);
     }
 
+    /// <summary>
+    /// Both masters picked while the opening chain still runs: the comparison waits for the
+    /// chain, as the smoothing does, instead of loading two more 24 MP masters beside it (the
+    /// "sequential, not parallel" rule of MainViewModel). Released, it computes as usual.
+    /// </summary>
+    [Fact]
+    public async Task R082_APickDuringTheOpeningChainWaitsForIt()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var chain = new TaskCompletionSource();
+        bool waited = false;
+        var vm = new RatioTabViewModel();
+        vm.Attach(f.Session, CancellationToken.None, () => { waited = true; return chain.Task; });
+
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+        Task run = vm.Pending;
+
+        Assert.NotSame(run, await Task.WhenAny(run, Task.Delay(1000)));
+        Assert.True(waited);
+        Assert.False(vm.HasResult);
+
+        chain.SetResult();
+        await run;
+
+        Assert.True(vm.HasResult);
+        Assert.Contains("pp_flat_stacked_B.fit", vm.Report);
+    }
+
     [Fact]
     public async Task WithoutTwoFilesNothingIsComputed()
     {

@@ -202,8 +202,16 @@ a library extraction and not a copy is ADR 0011.
     with the warning threshold read from `Th.LocalSpotWarn`, `LocalSpotWarning` or null -
     all three printed by the console too, see "1. Structure"), `LightReport.Diagnosis()`,
     `ExposureReport`'s `HistogramReading` / `ChannelNote` / `BandLabel` (the wording around
-    the exposure histograms) and `ScreenComparison` / `ScreenReading` / `NoPreviewReason`
-    (the raw-vs-screen table and its explanation) - all window-only, like `MapScaleLabel`,
+    the exposure histograms), `ScreenComparison` / `ScreenReading` / `NoPreviewReason` /
+    `PreviewChannelNote` / `ScreenGap` (the raw-vs-screen table and its explanation) and
+    `VerdictWord` / `Advice` / `ChannelsSummary` / `ChannelOrderNote` / `HistogramCaption`
+    (the Expo tab's verdict card and caption; `Advice` is the console's `VerdictLines`, the
+    one verdict tree, laid out as a head line and a paragraph), `LightReport.FieldText` /
+    `FieldWarning` / `TooWideText` and `LightSeriesReport.CorrelationValue` / `ReasonsText`
+    (the End to end tab's field line, refusal and reasons: the console's lines joined, the
+    Ratio tab named where the console names `--ratio`), and
+    `StructureReport.CornerShares` / `VignetteNote` / `CentroidNote` (the notes under the
+    Structure and Ratio rows, through the console's ratios) - all window-only, like `MapScaleLabel`,
     and for the same reason. `StructureReport` also owns the profile block: `ProfileRows`,
     `MasterDepth`, `ComparisonSummary`, `ComparisonNote`, `DepthScaleRows` /
     `DepthScaleNote` (the depth scale as four bands in stops, `Th.Resid*` through
@@ -316,9 +324,10 @@ a library extraction and not a copy is ADR 0011.
     (one script run as the run window - and the Split tab - sees it: log text, progress,
     current command and its index, outcome), plus
     `MainViewModel` for the folder, `AboutViewModel` for the "Despre" window (constant
-    properties only, ADR 0040), and two small companions of the residual map shared by
-    the Structure and Ratio tabs: `MapScaleViewModel` (the scale chips, which translate a
-    choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
+    properties only, ADR 0040), and two small companions of the residual map:
+    `MapScaleViewModel` (the scale chips, which translate a choice into a
+    `PngWriter.MapRange` and decide nothing; on every tab with a residual map - Structure,
+    Ratio, Netezire, Sintetic, Split) and `MapGuideViewModel` (on Structure and Ratio; the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
     either. `SensorFormatViewModel` is the same pattern on the Sintetic tab: six chips that

@@ -175,6 +175,42 @@ public class StructureReportTests
         Assert.Contains("informativa", note);
     }
 
+    /// <summary>
+    /// The window's corner line and vignetting note use the console's ratios: each corner over
+    /// the corners' mean, and the corners' mean over the centre. On a flat field all of them
+    /// are 100 %.
+    /// </summary>
+    [Fact]
+    public void TheWindowsCornerSharesAndVignetteNoteUseTheConsolesRatios()
+    {
+        StructureResult r = Result((_, _) => 1000);
+
+        string shares = StructureReport.CornerShares(r);
+        Assert.Equal(r.Corners.Count, shares.Split("100.0 %").Length - 1);
+        Assert.StartsWith("coltul e 100 % din centru", StructureReport.VignetteNote(r));
+    }
+
+    /// <summary>
+    /// The illumination-centre note names the vertex against the sensor's centre when the fit
+    /// found one inside the frame, and says why not otherwise.
+    /// </summary>
+    [Fact]
+    public void TheWindowsCentroidNoteNamesTheVertexOrWhyThereIsNone()
+    {
+        StructureResult vignetted = Result((x, y) => 1000 - 0.002 * ((x - 256.0) * (x - 256.0) + (y - 256.0) * (y - 256.0)));
+        StructureResult flat = Result((_, _) => 1000);
+
+        foreach (StructureResult r in new[] { vignetted, flat })
+        {
+            string note = StructureReport.CentroidNote(r);
+            if (r.CentroidValid)
+                Assert.StartsWith($"varf ({r.FitCx:F0}, {r.FitCy:F0}) vs centru senzor", note);
+            else
+                Assert.Equal("varf in afara cadrului sau fit degenerat", note);
+        }
+        Assert.True(vignetted.CentroidValid);
+    }
+
     /// <summary>The console prints the whole note under the row, indented like its neighbours.</summary>
     [Fact]
     public void TheReportPrintsTheNoteUnderTheRow()

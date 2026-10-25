@@ -15,20 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SirilRunViewModel.cs - o rulare de script Siril, vazuta din fereastra ei.
+// SirilRunViewModel.cs - a Siril script run, seen from its window.
 //
-// Primeste liniile de pe stdout de pe firele de citire ale procesului si le muta pe
-// firul de interfata cu dispecerul captat O DATA la pornire - aceeasi lectie ca la seria
-// de lights (LightTabViewModel): intrebat la fiecare linie, raspunsul se poate schimba
-// la mijloc si jumatate din actualizari ajung pe alt fir.
+// It receives the stdout lines on the process's reading threads and moves them to the UI thread
+// with the dispatcher captured ONCE at the start - the same lesson as the lights series
+// (LightTabViewModel): asked at every line, the answer can change midway and half the updates
+// land on another thread.
 //
-// Ce se arata: liniile "log:" ca text, ca in panoul Siril; liniile de progres ca bara si
-// eticheta, nu ca text - sunt trei sferturi din iesire si s-ar derula ca o cascada; si
-// comanda curenta, "comanda 7 din 20", numarata din liniile "Running command:" si citita
-// intreaga din script, fiindca Siril tipareste doar verbul si "cd" nu spune nimic fara
-// argument. La final, verdictul rularii - reusit, oprit la comanda X cu codul N, anulat -
-// si nimic altceva: fereastra nu interpreteaza ce a facut scriptul, folderul se
-// redeschide si Check() spune daca a aparut masterul.
+// What is shown: the "log:" lines as text, as in Siril's panel; the progress lines as a bar and
+// a label, not as text - they are three quarters of the output and would scroll like a waterfall;
+// and the current command, "comanda 7 din 20", counted from the "Running command:" lines and read
+// whole from the script, because Siril prints only the verb and "cd" says nothing without its
+// argument. At the end, the run's verdict - succeeded, stopped at command X with code N,
+// cancelled - and nothing else: the window does not interpret what the script did, the folder is
+// reopened and Check() says whether the master appeared.
 
 using System;
 using System.Collections.Generic;
@@ -40,6 +40,9 @@ using System.Windows.Threading;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>One run of a Siril script: its log, its progress, the current command and the
+    /// verdict at the end. The run window shows it; the Split tab shows one per part
+    /// inline.</summary>
     public sealed class SirilRunViewModel : ObservableObject
     {
         readonly StringBuilder _log = new();
@@ -59,9 +62,18 @@ namespace FlatCheck.Wpf
         bool? _succeeded;
         string _warning;
 
+        /// <summary>Prepares a run of the script, reading its commands from the file.</summary>
+        /// <param name="folder">The session folder the script runs in.</param>
+        /// <param name="scriptPath">The script's full path; an unreadable file gives a run with
+        /// no commands listed.</param>
         public SirilRunViewModel(string folder, string scriptPath)
             : this(folder, scriptPath, ReadScript(scriptPath)) { }
 
+        /// <summary>Prepares a run with the script's text given, for the tests.</summary>
+        /// <param name="folder">The session folder the script runs in.</param>
+        /// <param name="scriptPath">The script's full path; only its file name is shown.</param>
+        /// <param name="scriptText">The script's text, from which the commands are
+        /// listed.</param>
         internal SirilRunViewModel(string folder, string scriptPath, string scriptText)
         {
             Folder = folder;
@@ -70,6 +82,9 @@ namespace FlatCheck.Wpf
             _commands = SirilScript.Commands(scriptText);
         }
 
+        /// <summary>Reads the script's text.</summary>
+        /// <param name="path">The script's full path.</param>
+        /// <returns>The text, or "" when the file cannot be read.</returns>
         static string ReadScript(string path)
         {
             try { return File.ReadAllText(path); }
@@ -82,13 +97,16 @@ namespace FlatCheck.Wpf
         public string ScriptPath { get; }
         public string Folder { get; }
 
-        /// <summary>Cate comenzi are scriptul - numitorul din "comanda 7 din 20".</summary>
+        /// <summary>How many commands the script has - the denominator in "comanda 7 din
+        /// 20".</summary>
         public int CommandCount => _commands.Count;
 
-        /// <summary>A cata comanda ruleaza (de la 1); 0 inainte de prima. Tabul Split isi face bara din ea.</summary>
+        /// <summary>Which command is running (from 1); 0 before the first. The Split tab makes
+        /// its bar from it.</summary>
         public int CommandIndex { get => _commandIndex; private set => Set(ref _commandIndex, value); }
 
-        /// <summary>Liniile de log, asa cum le-ar arata Siril, cu linie noua intre ele.</summary>
+        /// <summary>The log lines, as Siril would show them, with a newline between
+        /// them.</summary>
         public string Log { get => _logText; private set => Set(ref _logText, value); }
 
         public bool IsRunning
@@ -97,20 +115,21 @@ namespace FlatCheck.Wpf
             private set { if (Set(ref _running, value)) Raise(nameof(IsFinished)); }
         }
 
-        /// <summary>true dupa ce rularea s-a terminat, oricum s-ar fi terminat.</summary>
+        /// <summary>True after the run ended, however it ended.</summary>
         public bool IsFinished => _started && !_running;
 
         public double Progress { get => _progress; private set => Set(ref _progress, value); }
         public bool ProgressKnown { get => _progressKnown; private set => Set(ref _progressKnown, value); }
         public string ProgressLabel { get => _progressLabel; private set => Set(ref _progressLabel, value); }
 
-        /// <summary>Comanda curenta, cu numarul ei din total.</summary>
+        /// <summary>The current command, with its number out of the total.</summary>
         public string Step { get => _step; private set => Set(ref _step, value); }
 
-        /// <summary>Verdictul rularii, gol cat timp ruleaza.</summary>
+        /// <summary>The run's verdict, empty while it runs.</summary>
         public string Outcome { get => _outcome; private set => Set(ref _outcome, value); }
 
-        /// <summary>null cat timp ruleaza sau n-a pornit; apoi daca scriptul a iesit cu 0.</summary>
+        /// <summary>Null while running or not started; then whether the script exited with
+        /// 0.</summary>
         public bool? Succeeded
         {
             get => _succeeded;
@@ -120,7 +139,8 @@ namespace FlatCheck.Wpf
         public bool IsSuccess => _succeeded == true;
         public bool IsFailure => _succeeded == false;
 
-        /// <summary>Avertismentul de pe card (Siril deschis), repetat in fereastra. Null cand nu e.</summary>
+        /// <summary>The card's warning (Siril open), repeated in the window. Null when there is
+        /// none.</summary>
         public string Warning
         {
             get => _warning;
@@ -130,10 +150,14 @@ namespace FlatCheck.Wpf
         public bool HasWarning => !string.IsNullOrEmpty(_warning);
 
         /// <summary>
-        /// Porneste rularea si asteapta sfarsitul ei. Se cheama o singura data; fereastra
-        /// o cheama la incarcare. Orice esec de PORNIRE (executabil disparut intre timp)
-        /// e un verdict pe ecran, nu o exceptie in fereastra.
+        /// Starts the run and awaits its end. Called once; the window calls it on loading. Any
+        /// failure to START (the executable gone meanwhile) is a verdict on screen, not an
+        /// exception in the window.
         /// </summary>
+        /// <param name="runner">What runs siril-cli, feeding each stdout line to
+        /// <see cref="OnLine"/>.</param>
+        /// <returns>A task that completes when the run ended; it faults only when called a second
+        /// time.</returns>
         internal async Task RunAsync(SirilRunner runner)
         {
             if (_started) throw new InvalidOperationException("rularea a pornit deja");
@@ -170,13 +194,14 @@ namespace FlatCheck.Wpf
             }
         }
 
-        /// <summary>Omoara procesul. Fara efect daca nu ruleaza nimic.</summary>
+        /// <summary>Kills the process. No effect when nothing is running.</summary>
         public void Cancel()
         {
             try { _cts?.Cancel(); } catch (ObjectDisposedException) { }
         }
 
-        /// <summary>De pe firele de citire ale procesului, sau direct in teste.</summary>
+        /// <summary>From the process's reading threads, or directly in the tests.</summary>
+        /// <param name="raw">One stdout line, as Siril printed it.</param>
         internal void OnLine(string raw)
         {
             SirilLogLine line = SirilLogLine.Parse(raw);
@@ -185,6 +210,10 @@ namespace FlatCheck.Wpf
             OnUi(() => Apply(line));
         }
 
+        /// <summary>Shows one parsed line, on the UI thread: a progress line moves the bar and
+        /// nothing else; any other line is appended to the log, and a command start also advances
+        /// the step and resets the bar.</summary>
+        /// <param name="line">The parsed line; never of kind Other.</param>
         void Apply(SirilLogLine line)
         {
             if (line.Kind == SirilLineKind.Progress)
@@ -209,6 +238,10 @@ namespace FlatCheck.Wpf
             Log = _log.ToString();
         }
 
+        /// <summary>Runs the work on the dispatcher captured at the start, synchronously; directly
+        /// when there is none (the tests), and not at all once the dispatcher is shutting
+        /// down.</summary>
+        /// <param name="work">The update to make.</param>
         void OnUi(Action work)
         {
             Dispatcher d = _ui;
@@ -220,6 +253,9 @@ namespace FlatCheck.Wpf
             catch (TaskCanceledException) { }
         }
 
+        /// <summary>The application's dispatcher, if it is alive.</summary>
+        /// <returns>The dispatcher, or null without an application (the tests) or once it is
+        /// shutting down.</returns>
         static Dispatcher UiDispatcher()
         {
             Dispatcher d = System.Windows.Application.Current?.Dispatcher;

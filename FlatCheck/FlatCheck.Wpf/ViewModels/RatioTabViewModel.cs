@@ -15,31 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RatioTabViewModel.cs - tabul 2, atribuirea prin rotatie la 180 de grade.
+// RatioTabViewModel.cs - tab 2, the attribution by 180-degree rotation.
 //
-// DE CE NU MAI CAUTA IN FOLDER. Pana la rescriere, tabul isi umplea o lista din
-// process/ si preselecta doua fisiere. Era gresit din constructie: modul cere doua
-// MASTERE, cate unul pentru fiecare orientare, iar un folder de sesiune Siril nu
-// contine niciodata asa ceva - cele doua orientari sunt doua sedinte, deci doua foldere.
-// Ce oferea lista erau cadrele individuale, si o pereche de cadre individuale produce
-// un rezultat sigur si fals: zgomotul unui singur cadru e de acelasi ordin cu semnalul
-// cautat. Deci acum se cer explicit doua fisiere, si nimic nu se presupune.
+// WHY IT NO LONGER LOOKS IN THE FOLDER. Until the rewrite, the tab filled a list from process/
+// and preselected two files. It was wrong by construction: the mode asks for two MASTERS, one for
+// each orientation, and a Siril session folder never holds such a thing - the two orientations
+// are two sittings, so two folders. What the list offered were the individual frames, and a pair
+// of individual frames gives a result that is confident and false: the noise of a single frame
+// is of the same order as the signal looked for. So now two files are asked for explicitly, and
+// nothing is assumed.
 //
-// Singurul tab care NU ruleaza la pornire, si acum cu si mai multa dreptate: pana nu
-// alege omul doua fisiere, nu exista nimic de calculat. Pana atunci arata documentatia -
-// vezi SessionMessages.RatioNeedsTwoMasters.
+// It does NOT run at start - only Structure and End to end do - and with good reason: until the
+// user chooses two files, there is nothing to compute. Until then it shows the documentation -
+// see SessionMessages.RatioNeedsTwoMasters.
 //
-// O ALEGERE NOUA O DEPASESTE PE CEA IN CURS. Choose porneste calculul fara sa-l astepte,
-// deci o realegere in timpul lui pornea a doua analiza peste prima, si amandoua ajungeau
-// pe ecran, in ordinea in care terminau. In aplicatie firul de interfata le serializa;
-// in teste, fara context de sincronizare, cele doua continuari rulau in paralel si
-// scriau in acelasi _mapCache de pe doua fire - un Dictionary, deci o exceptie rara si
-// un test care pica din cand in cand. Acum fiecare rulare are jetonul ei, legat de al
-// sesiunii, ca la tabul de histograma: cea noua o anuleaza pe cea veche, iar lambda
-// veche se opreste la verificarea de dupa await fara sa atinga nimic. Analiza deja
-// pornita in RatioRun tot merge pana la capat - nu primeste jeton - dar rezultatul ei
-// nu mai ajunge nicaieri.
+// A NEW CHOICE SUPERSEDES THE ONE IN PROGRESS. Choose starts the computation without awaiting it,
+// so a re-choice during it started a second analysis over the first, and both reached the screen,
+// in the order they finished. In the application the UI thread serialised them; in the tests,
+// without a synchronisation context, the two continuations ran in parallel and wrote into the
+// same _mapCache from two threads - a Dictionary, so a rare exception and a test that failed now
+// and then. Now each run has its own token, linked to the session's, as on the histogram tab: the
+// new one cancels the old one, and the old lambda stops at the check after the await without
+// touching anything. The analysis already started in RatioRun still goes to the end - it gets no
+// token - but its result no longer reaches anything.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -47,11 +47,15 @@ using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The Ratio tab: two flat masters chosen by hand, one per orientation, split into
+    /// the part fixed to the camera (the structure battery and its verdict) and the part fixed in
+    /// the world (informative), with both maps behind a toggle.</summary>
     public sealed class RatioTabViewModel : TabViewModel
     {
         SirilSession _session;
         CancellationToken _ct;
         CancellationTokenSource _runCts;
+        Func<Task> _waitIdle;
 
         string _fileA;
         string _fileB;
@@ -67,15 +71,16 @@ namespace FlatCheck.Wpf
         bool _showWorldMap;
 
         /// <summary>
-        /// Cele doua rastere, nu octetii: harta se reencodeaza la schimbarea scarii, si
-        /// amandoua vin deja in rezultat. Vezi nota din StructureTabViewModel.
+        /// The two rasters, not the bytes: the map is re-encoded on a change of scale, and both
+        /// come in the result already. See the note in StructureTabViewModel.
         /// </summary>
         Img _sensorResidual;
         Img _worldRaster;
 
-        /// <summary>Encodarile deja facute, pe (harta, plafon).</summary>
+        /// <summary>The encodings already made, per (map, cap).</summary>
         readonly Dictionary<(bool World, MapScaleOption Scale), byte[]> _mapCache = new();
 
+        /// <summary>An empty tab, listening to its scale switch.</summary>
         public RatioTabViewModel()
         {
             MapScale.Changed += RefreshMap;
@@ -85,44 +90,45 @@ namespace FlatCheck.Wpf
         public string FileB { get => _fileB; private set => Set(ref _fileB, value); }
 
         /// <summary>
-        /// Componenta fixa in lume: cifra cu bara ei de eroare si eticheta informativa, si
-        /// imprastierea colturilor. Doua randuri MetricRow, ca restul ecranului, fiecare cu
-        /// descrierea lui din nucleu - stateau ca doua Grid-uri scrise de mana, unul fara
-        /// niciun cuvant sub el si celalalt cu o pastila colorata care arata a verdict fara
-        /// sa fie. Lista inlocuibila, ca <see cref="Tests"/>, din acelasi motiv.
+        /// The component fixed in the world: the figure with its error bar and informative label,
+        /// and the corner spread. Two MetricRow rows, like the rest of the screen, each with its
+        /// description from the core - they used to be two hand-written Grids, one without a word
+        /// under it and the other with a coloured pill that looked like a verdict without being
+        /// one. A replaceable list, like <see cref="Tests"/>, for the same reason.
         /// </summary>
         public IReadOnlyList<MetricRow> WorldRows { get => _worldRows; private set => Set(ref _worldRows, value); }
 
-        /// <summary>Cate cadre si de cand, din headerele FITS. Precondistia se vede aici.</summary>
+        /// <summary>How many frames and from when, from the FITS headers. The precondition shows
+        /// here.</summary>
         public string ProvenanceA { get => _provenanceA; private set => Set(ref _provenanceA, value); }
         public string ProvenanceB { get => _provenanceB; private set => Set(ref _provenanceB, value); }
 
         /// <summary>
-        /// Bateria de structura pe masterul combinat - aceleasi cinci randuri ca tabul 1,
-        /// construite de <see cref="StructureRows"/>, deci cu aceleasi etichete, aceeasi
-        /// ordine si aceleasi descrieri. Erau zece proprietati si cinci blocuri de Grid
-        /// scrise de mana in XAML, si de aceea au ramas fara descrieri cand tabul 1 le-a
-        /// capatat.
+        /// The structure battery on the combined master - the same five rows as tab 1, built by
+        /// <see cref="StructureRows"/>, so with the same labels, the same order and the same
+        /// descriptions. They were ten properties and five Grid blocks hand-written in XAML, and
+        /// that is why they were left without descriptions when tab 1 got them.
         ///
-        /// LISTA SE INLOCUIESTE, nu se goleste si se reumple - si asta nu e un detaliu:
-        /// Choose() porneste RecomputeAsync fara sa astepte, iar tokenul e al sesiunii, nu
-        /// al rularii, deci doua alegeri rapide lasa doua calcule in aer si NICIUNUL nu-l
-        /// anuleaza pe celalalt. O ObservableCollection golita si reumpluta de amandoua ar
-        /// iesi cu randuri duplicate; o referinta inlocuita lasa pur si simplu ultimul sa
-        /// castige. Acelasi motiv ca la Histograms pe tabul de expunere.
+        /// THE LIST IS REPLACED, not cleared and refilled - and that is not a detail: Choose()
+        /// starts RecomputeAsync without awaiting it, so two quick choices leave two computations
+        /// in the air. Each run now has its own token and the new one cancels the old (see the
+        /// header), but the analysis already in RatioRun still runs to its end; a replaced
+        /// reference lets only the last one land, where an ObservableCollection cleared and
+        /// refilled by both would come out with duplicated rows. The same reason as for Histograms
+        /// on the exposure tab.
         /// </summary>
         public IReadOnlyList<MetricRow> Tests { get => _tests; private set => Set(ref _tests, value); }
 
         /// <summary>
-        /// Marimile fara verdict ale masterului combinat - vignetare, centru de iluminare,
-        /// pete locale - exact ce tipareste consola sub INFORMATIV in raportul --ratio.
-        /// Aceeasi lista inlocuibila ca <see cref="Tests"/>, din acelasi motiv.
+        /// The combined master's quantities without a verdict - vignetting, illumination centre,
+        /// local spots - exactly what the console prints under INFORMATIV in the --ratio report.
+        /// The same replaceable list as <see cref="Tests"/>, for the same reason.
         /// </summary>
         public IReadOnlyList<MetricRow> Informative { get => _informative; private set => Set(ref _informative, value); }
 
         /// <summary>
-        /// Atentionarea de praf pe masterul combinat, sau gol. Ca in tabul 1: sta sub
-        /// verdict fara sa-l coloreze, cu textul din StructureReport.LocalSpotWarning.
+        /// The dust warning on the combined master, or empty. As on tab 1: it sits under the
+        /// verdict without colouring it, with the text from StructureReport.LocalSpotWarning.
         /// </summary>
         public string LocalSpotWarning { get => _localSpotWarning; private set => Set(ref _localSpotWarning, value); }
 
@@ -130,10 +136,10 @@ namespace FlatCheck.Wpf
         public string Advice { get => _advice; private set => Set(ref _advice, value); }
 
         /// <summary>
-        /// Cele doua harti si comutatorul dintre ele. Modul desparte masterul in doua
-        /// componente, deci are doua forme de aratat: reziduul partii fixe pe aparat, care
-        /// se potriveste cu verdictul, si raportul A/B, care arata forma gradientului
-        /// extern. <see cref="Map"/> e cea afisata.
+        /// The two maps and the switch between them. The mode splits the master into two
+        /// components, so it has two shapes to show: the residual of the part fixed to the
+        /// camera, which matches the verdict, and the A/B ratio, which shows the shape of the
+        /// external gradient. <see cref="Map"/> is the one displayed.
         /// </summary>
         public byte[] Map { get => _map; private set => Set(ref _map, value); }
 
@@ -145,21 +151,23 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _showWorldMap, value)) RefreshMap(); }
         }
 
-        /// <summary>Comutatorul de scara. Se aplica hartii afisate, oricare din cele doua e.</summary>
+        /// <summary>The scale switch. It applies to the displayed map, whichever of the two it
+        /// is.</summary>
         public MapScaleViewModel MapScale { get; } = new();
 
         /// <summary>
-        /// Legenda urmeaza harta AFISATA: pe scara automata cele doua componente au
-        /// intervale diferite, si tocmai capetele reale sunt ce trebuie spus.
+        /// The legend follows the DISPLAYED map: on the automatic scale the two components have
+        /// different ranges, and the real ends are exactly what must be said.
         /// </summary>
         public string MapLegend { get => _mapLegend; private set => Set(ref _mapLegend, value); }
 
-        /// <summary>Acelasi ghid ca la tabul de structura: acelasi reziduu, aceeasi scara.</summary>
+        /// <summary>The same guide as on the structure tab: the same residual, the same
+        /// scale.</summary>
         public MapGuideViewModel MapGuide { get; } = new();
 
         /// <summary>
-        /// Reface harta pentru (componenta afisata, scara curenta). Vezi nota din
-        /// StructureTabViewModel despre de ce se tine rasterul si nu octetii.
+        /// Rebuilds the map for (the displayed component, the current scale). See the note in
+        /// StructureTabViewModel on why the raster is kept and not the bytes.
         /// </summary>
         void RefreshMap()
         {
@@ -183,32 +191,40 @@ namespace FlatCheck.Wpf
             MapLegend = RunReport.MapLegend(range);
         }
 
-        // ------------------------------------------------------------ textele fixe
-        // Vin din nucleu, nu se rescriu aici: aceleasi propozitii sunt in raportul salvat.
+        // ------------------------------------------------------------ the fixed texts
+        // They come from the core, they are not rewritten here: the same sentences are in the
+        // saved report.
 
-        // Proprietati de INSTANTA, desi valoarea e constanta: {Binding} rezolva prin
-        // DataContext, deci nu vede proprietati statice - o legare la una ar esua tacut,
-        // si tocmai documentatia tabului ar fi ramas goala.
+        // INSTANCE properties, though the value is constant: {Binding} resolves through the
+        // DataContext, so it does not see static properties - a binding to one would fail
+        // silently, and the tab's very documentation would have stayed empty.
         public string Documentation => SessionMessages.RatioNeedsTwoMasters();
         public string Precondition => RatioReport.Precondition();
         public string WorldMeaning => RatioReport.WorldMeaning();
         public string SensorCaveat => RatioReport.SensorCaveat();
 
         /// <summary>
-        /// Retine sesiunea si atat. Nu propune nimic si nu calculeaza nimic: cele doua
-        /// mastere vin din doua sedinte, iar folderul curent e cel mult unul dintre ele.
+        /// Keeps the session and nothing more. It proposes nothing and computes nothing: the two
+        /// masters come from two sittings, and the current folder is at most one of them.
         /// </summary>
-        internal void Attach(SirilSession session, CancellationToken ct)
+        /// <param name="session">The folder just opened; it only seeds the file
+        /// dialogs.</param>
+        /// <param name="ct">The folder's token, to which every run's own token is
+        /// linked.</param>
+        /// <param name="waitIdle">Awaits the opening chain before a comparison; null runs at
+        /// once.</param>
+        internal void Attach(SirilSession session, CancellationToken ct, Func<Task> waitIdle = null)
         {
             _session = session;
             _ct = ct;
+            _waitIdle = waitIdle;
             HasResult = false;
             ClearError();
         }
 
         /// <summary>
-        /// Folderul de la care porneste dialogul pentru setul A: cel in care sta masterul
-        /// sesiunii deschise, fiindca acolo sunt stivele; altfel process/, daca exista.
+        /// The folder the dialog for set A starts in: the one holding the open session's master,
+        /// because the stacks are there; otherwise process/, if it exists.
         /// </summary>
         internal string InitialDirectory
         {
@@ -222,9 +238,11 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Un fisier ales de om. Se valideaza dupa nume, iar daca nu e un master de flat
-        /// se explica ce sunt fisierele astea si de ce testul cere unul.
+        /// A file chosen by the user. It is validated by its name, and if it is not a flat master
+        /// the tab explains what these files are and why the test asks for one.
         /// </summary>
+        /// <param name="isA">True for set A, false for set B.</param>
+        /// <param name="path">The file chosen; null or empty is ignored.</param>
         internal void Choose(bool isA, string path)
         {
             if (string.IsNullOrEmpty(path)) return;
@@ -235,8 +253,8 @@ namespace FlatCheck.Wpf
                 return;
             }
 
-            // Prins la alegere, nu la calcul: asa omul vede imediat ce a gresit, si
-            // selectia buna de dinainte nu se pierde.
+            // Caught at the choice, not at the computation: that way the user sees at once what
+            // went wrong, and the good selection from before is not lost.
             string other = isA ? FileB : FileA;
             if (string.Equals(path, other, System.StringComparison.OrdinalIgnoreCase))
             {
@@ -250,9 +268,14 @@ namespace FlatCheck.Wpf
                 Pending = RecomputeAsync();
         }
 
-        /// <summary>Ultima rulare pornita de o alegere, ca un test sa poata astepta una pe care n-a pornit-o el.</summary>
+        /// <summary>The last run started by a choice, so a test can await one it did not
+        /// start.</summary>
         internal Task Pending { get; private set; } = Task.CompletedTask;
 
+        /// <summary>Compares the two chosen masters, guarded, after the opening chain,
+        /// superseding any run still going; without both files it only clears the
+        /// result.</summary>
+        /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal Task RecomputeAsync()
         {
             if (string.IsNullOrEmpty(FileA) || string.IsNullOrEmpty(FileB))
@@ -262,9 +285,10 @@ namespace FlatCheck.Wpf
             }
 
             string a = FileA, b = FileB;
+            Func<Task> waitIdle = _waitIdle;
 
-            // Rularea de dinainte, daca mai merge, e depasita: jetonul ei se anuleaza, iar
-            // lambda ei se opreste la prima verificare de dupa await, fara sa scrie nimic.
+            // The run from before, if it still goes, is superseded: its token is cancelled, and
+            // its lambda stops at the first check after the await, without writing anything.
             CancellationTokenSource old = _runCts;
             old?.Cancel();
             old?.Dispose();
@@ -274,6 +298,11 @@ namespace FlatCheck.Wpf
 
             return RunGuardedAsync("Compar cele doua mastere de flat...", async () =>
             {
+                // Two more 24 MP masters do not load beside the opening chain's: a pick made
+                // while Structure or the series still runs waits for them, as the smoothing does.
+                if (waitIdle != null) await waitIdle().ConfigureAwait(true);
+                ct.ThrowIfCancellationRequested();
+
                 var text = new StringWriter();
                 var outcome = await Task.Run(() =>
                 {
@@ -283,16 +312,16 @@ namespace FlatCheck.Wpf
                     return run;
                 }, ct).ConfigureAwait(true);
 
-                // Daca intre timp s-a ales alt fisier, jetonul asta e anulat si rezultatul
-                // nu mai are ce cauta pe ecran - nici in _mapCache, pe care l-ar imparti
-                // cu rularea noua.
+                // If another file was chosen meanwhile, this token is cancelled and the result has
+                // no business on screen any more - nor in _mapCache, which it would share with the
+                // new run.
                 ct.ThrowIfCancellationRequested();
 
                 Report = text.ToString();
                 Populate(outcome.Result);
 
-                // Rasterele, plus octetii pe scara automata direct in cache - sunt exact
-                // ce ar reencoda RefreshMap pentru chipul "auto".
+                // The rasters, plus the bytes on the automatic scale straight into the cache -
+                // they are exactly what RefreshMap would re-encode for the "auto" chip.
                 _sensorResidual = outcome.Result.Sensor.Residual;
                 _worldRaster = outcome.Result.World;
                 _mapCache.Clear();
@@ -304,6 +333,9 @@ namespace FlatCheck.Wpf
             });
         }
 
+        /// <summary>Fills the rows, the provenance lines, the verdict and the advice from a
+        /// result; the maps are set by the caller.</summary>
+        /// <param name="r">The analyzer's result.</param>
         void Populate(RatioResult r)
         {
             WorldRows = new[]
@@ -312,7 +344,7 @@ namespace FlatCheck.Wpf
                 {
                     Label = "gradient extern / orientare",
                     Value = RatioReport.WorldValue(r),
-                    Verdict = r.WorldLabel,          // informativa; nota spune ca nu voteaza
+                    Verdict = r.WorldLabel,          // informative; the note says it does not vote
                     Note = RatioReport.WorldNote(),
                 },
                 new MetricRow
@@ -330,11 +362,12 @@ namespace FlatCheck.Wpf
             LocalSpotWarning = StructureReport.LocalSpotWarning(r.Sensor) ?? "";
 
             Verdict = r.Verdict;
-            // Sfatul vine din nucleu, ca la tabul de structura: e acelasi verdict, pe
-            // aceeasi scara, deci trebuie sa fie aceeasi fraza.
+            // The advice comes from the core, as on the structure tab: it is the same verdict, on
+            // the same scale, so it must be the same sentence.
             Advice = StructureReport.Advice(r.Verdict);
         }
 
+        /// <inheritdoc/>
         internal override void Reset()
         {
             CancellationTokenSource cts = _runCts;
@@ -344,6 +377,7 @@ namespace FlatCheck.Wpf
 
             base.Reset();
             _session = null;
+            _waitIdle = null;
             FileA = null;
             FileB = null;
             WorldRows = System.Array.Empty<MetricRow>();
@@ -353,7 +387,7 @@ namespace FlatCheck.Wpf
             LocalSpotWarning = "";
             Verdict = "";
             Advice = "";
-            // Rasterele si encodarile pleaca; alegerea de scara ramane, ca la Structura.
+            // The rasters and the encodings go; the choice of scale stays, as on Structure.
             _sensorResidual = null;
             _worldRaster = null;
             _mapCache.Clear();

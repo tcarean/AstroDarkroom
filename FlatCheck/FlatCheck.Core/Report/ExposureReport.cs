@@ -22,11 +22,14 @@
 // comes from r.Bands, that is from exactly the scale the verdict was given on.
 //
 // Three pieces here are NOT printed in the console - HistogramReading, ChannelNote and
-// BandLabel - and neither are the three of the camera's preview (ScreenComparison,
-// ScreenReading, NoPreviewReason). They are the text that goes with the window's histograms
-// and its preview comparison, and they sit here for the same reason as RunReport.MapLegend: the
-// wording has a single place, even if today it has a single reader. In the console they would
-// have no business - a paragraph about the shape of a curve the console does not draw.
+// BandLabel - and neither are the five of the camera's preview (ScreenComparison,
+// ScreenReading, NoPreviewReason, PreviewChannelNote, ScreenGap) nor the window's verdict card
+// and caption (VerdictWord, Advice, ChannelsSummary, ChannelOrderNote, HistogramCaption). They
+// are the text that goes with the window's histograms and its preview comparison, and they sit
+// here for the same reason as RunReport.MapLegend: the wording has a single place, even if today
+// it has a single reader. In the console they would have no business - a paragraph about the
+// shape of a curve the console does not draw. Advice says what Write says, laid out for the
+// window.
 
 using System;
 using System.Collections.Generic;
@@ -76,7 +79,7 @@ namespace FlatCheck
 
             w.WriteLine($"    canal cel mai luminos, mediana GLOBALA : {r.GlobalMedianPct,5:F1}%  (trasa in jos de colturi)");
             w.WriteLine($"    canal cel mai luminos, CENTRU 20%      : {r.CentreMedianPct,5:F1}%  <- ASTA decide expunerea");
-            w.WriteLine($"    clipping in centru (>=98% white)       : {r.CentreClipPct:F3}%");
+            w.WriteLine($"    clipping in centru (>={Th.ExpoClipWhite * 100:F0}% white)       : {r.CentreClipPct:F3}%");
 
             if (!r.IsRaw)
             {
@@ -86,8 +89,10 @@ namespace FlatCheck
 
             w.WriteLine();
 
-            if (r.IsSky) WriteSky(r, w);
-            else WritePanel(r, w);
+            if (r.IsSky) w.WriteLine("    [mod --sky: praguri pt flats pe cer, nu pe panou]");
+            var (head, lines) = VerdictLines(r);
+            w.WriteLine("    VERDICT: " + head);
+            foreach (string line in lines) w.WriteLine("    " + line);
         }
 
         /// <summary>
@@ -119,71 +124,65 @@ namespace FlatCheck
             w.WriteLine("        care pastreaza mozaicul CFA nedebayerizat.");
         }
 
-        /// <summary>The verdict and its advice on the sky scale (<c>--sky</c>).</summary>
-        /// <param name="r">The result of a sky flat.</param>
-        /// <param name="w">Where to write.</param>
-        static void WriteSky(ExposureResult r, TextWriter w)
-        {
-            bool clipping = r.CentreClipPct > Th.ExpoClip;
-            ExposureBands b = r.Bands;
-            w.WriteLine("    [mod --sky: praguri pt flats pe cer, nu pe panou]");
-            switch (r.Verdict)
-            {
-                case ExposureVerdict.TooHigh:
-                    w.WriteLine("    VERDICT: PREA SUS" + (clipping ? " (CLIPPING in centru!)" : " (risc stele in cadru)"));
-                    w.WriteLine("    Scade expunerea.");
-                    break;
-                case ExposureVerdict.TooLow:
-                    w.WriteLine("    VERDICT: PREA JOS pentru sky flat");
-                    w.WriteLine($"    Creste cu ~{Math.Log2(b.Target / r.CentreMedianPct):F1} stopuri (dar repede, cerul se stinge).");
-                    break;
-                case ExposureVerdict.Ok:
-                    w.WriteLine($"    VERDICT: OK pentru sky flat  (centru {b.Lo:F0}-{b.Hi:F0}%)");
-                    w.WriteLine("    La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,");
-                    w.WriteLine("    nu din a urca expunerea (ai risca stele). NU forta mai sus.");
-                    break;
-                default:
-                    w.WriteLine("    VERDICT: cam sus, dar acceptabil");
-                    w.WriteLine("    Sub 60% e ok; peste, risti stele. Nu urca mai mult.");
-                    break;
-            }
-        }
-
-        /// <summary>The verdict and its correction in stops on the panel scale.</summary>
-        /// <param name="r">The result of a panel flat.</param>
-        /// <param name="w">Where to write.</param>
-        static void WritePanel(ExposureResult r, TextWriter w)
+        /// <summary>
+        /// The verdict and what to do next, in the console's words: the one decision tree both
+        /// applications print. The console writes the head after "VERDICT:" and each line
+        /// indented; the window (<see cref="Advice"/>) puts the head on a line and the rest in one
+        /// paragraph. The correction is in stops toward the bands' target, so it comes from the
+        /// scale the verdict was given on.
+        /// </summary>
+        /// <param name="r">The result of a raw flat.</param>
+        /// <returns>The verdict's head and the lines that follow it (none on a panel
+        /// OK).</returns>
+        static (string Head, string[] Lines) VerdictLines(ExposureResult r)
         {
             bool clipping = r.CentreClipPct > Th.ExpoClip;
             ExposureBands b = r.Bands;
             double cen = r.CentreMedianPct;
+
+            if (r.IsSky)
+                return r.Verdict switch
+                {
+                    ExposureVerdict.TooHigh =>
+                        ("PREA SUS" + (clipping ? " (CLIPPING in centru!)" : " (risc stele in cadru)"),
+                         new[] { "Scade expunerea." }),
+                    ExposureVerdict.TooLow =>
+                        ("PREA JOS pentru sky flat",
+                         new[] { $"Creste cu ~{Math.Log2(b.Target / cen):F1} stopuri (dar repede, cerul se stinge)." }),
+                    ExposureVerdict.Ok =>
+                        ($"OK pentru sky flat  (centru {b.Lo:F0}-{b.Hi:F0}%)",
+                         new[]
+                         {
+                             "La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,",
+                             "nu din a urca expunerea (ai risca stele). NU forta mai sus.",
+                         }),
+                    _ =>
+                        ("cam sus, dar acceptabil",
+                         new[] { $"Sub {Th.ExpoSkyTooHigh:F0}% e ok; peste, risti stele. Nu urca mai mult." }),
+                };
+
             switch (r.Verdict)
             {
                 case ExposureVerdict.TooHigh:
                     {
                         double stops = cen > 0 ? Math.Log2(b.Target / cen) : -1;
-                        w.WriteLine("    VERDICT: PREA SUS" + (clipping ? " (CLIPPING in centru!)" : ""));
-                        w.WriteLine($"    Scade expunerea cu ~{-stops:F1} stopuri.");
+                        var lines = new List<string> { $"Scade expunerea cu ~{-stops:F1} stopuri." };
                         if (clipping)
-                            w.WriteLine("    Centrul clipeaza -> pierzi info de vignetare exact unde semnalul e maxim.");
-                        break;
+                            lines.Add("Centrul clipeaza -> pierzi info de vignetare exact unde semnalul e maxim.");
+                        return ("PREA SUS" + (clipping ? " (CLIPPING in centru!)" : ""), lines.ToArray());
                     }
                 case ExposureVerdict.TooLow:
-                    w.WriteLine("    VERDICT: PREA JOS");
-                    w.WriteLine($"    Creste expunerea cu ~{Math.Log2(b.Target / cen):F1} stopuri.");
-                    w.WriteLine("    Sub ~30% in centru masterul iese zgomotos (zgomot fixed-pattern).");
-                    break;
+                    return ("PREA JOS", new[]
+                    {
+                        $"Creste expunerea cu ~{Math.Log2(b.Target / cen):F1} stopuri.",
+                        $"Sub ~{Th.ExpoTooLow:F0}% in centru masterul iese zgomotos (zgomot fixed-pattern).",
+                    });
                 case ExposureVerdict.AcceptableLow:
-                    w.WriteLine("    VERDICT: ACCEPTABIL, dar cam jos");
-                    w.WriteLine($"    Ai putea creste cu ~{Math.Log2(b.Target / cen):F1} stopuri.");
-                    break;
+                    return ("ACCEPTABIL, dar cam jos", new[] { $"Ai putea creste cu ~{Math.Log2(b.Target / cen):F1} stopuri." });
                 case ExposureVerdict.Ok:
-                    w.WriteLine($"    VERDICT: OK  (centrul in tinta {b.Lo:F0}-{b.Hi:F0}%)");
-                    break;
+                    return ($"OK  (centrul in tinta {b.Lo:F0}-{b.Hi:F0}%)", Array.Empty<string>());
                 default:
-                    w.WriteLine("    VERDICT: ACCEPTABIL, dar cam sus");
-                    w.WriteLine($"    Ai putea scadea cu ~{-Math.Log2(b.Target / cen):F1} stopuri.");
-                    break;
+                    return ("ACCEPTABIL, dar cam sus", new[] { $"Ai putea scadea cu ~{-Math.Log2(b.Target / cen):F1} stopuri." });
             }
         }
 
@@ -404,5 +403,137 @@ namespace FlatCheck
              + "iar unele raw-uri convertite o pierd - sau ea nu s-a putut decoda. Nu am ce "
              + "pune langa nivelul real, deci se arata doar datele brute. Verdictul nu e afectat: "
              + "el se da oricum numai pe ele.";
+
+        // The verdict card and the drawing's captions of the window. The same verdicts and the
+        // same corrections as Write, in the window's layout: paragraphs instead of indented
+        // console lines.
+
+        /// <summary>
+        /// The verdict in one word, for the window's coloured pill. The strings are those
+        /// VerdictPalette colours through Stats.Severity, so they stay in the same vocabulary as
+        /// the rest of the application.
+        /// </summary>
+        /// <param name="r">The result.</param>
+        /// <returns>INAPLICABIL, OK, ACCEPTABIL or PROBLEMA.</returns>
+        internal static string VerdictWord(ExposureResult r) => r.Verdict switch
+        {
+            ExposureVerdict.NotRaw => Stats.NotApplicable,
+            ExposureVerdict.Ok => "OK",
+            ExposureVerdict.AcceptableLow => "ACCEPTABIL",
+            ExposureVerdict.AcceptableHigh => "ACCEPTABIL",
+            _ => "PROBLEMA",
+        };
+
+        /// <summary>
+        /// What to do next, for the window's verdict card: the console's verdict and correction
+        /// (<see cref="VerdictLines"/>), the head on its own line and the rest as one paragraph;
+        /// for a file that is not a raw flat, the sanity gate's explanation in the window's
+        /// words, whose way out is the application's, not a console command.
+        /// </summary>
+        /// <param name="r">The result.</param>
+        /// <returns>The advice, on one or more lines.</returns>
+        internal static string Advice(ExposureResult r)
+        {
+            if (!r.IsRaw) return NotRawAdvice(r);
+
+            var (head, lines) = VerdictLines(r);
+            head = char.ToUpperInvariant(head[0]) + head.Substring(1);
+            return lines.Length == 0 ? head : head + "\n" + string.Join(" ", lines);
+        }
+
+        /// <summary>
+        /// The sanity gate, for the window. The typical cause is "I opened the NEF in Siril and
+        /// pressed Save", which debayers - so exactly that is said, not only that the file is not
+        /// good.
+        /// </summary>
+        /// <param name="r">The result, with the gate's two reasons.</param>
+        /// <returns>The explanation, in paragraphs.</returns>
+        static string NotRawAdvice(ExposureResult r)
+        {
+            string why = "";
+            if (r.LevelTooLow)
+                why += $"Nivelul e ~{r.CentreMedianPct:F1} % (langa zero) - flat-dark deja scazut, sau "
+                     + "imagine normalizata. Modul are nevoie de nivelul ADU original.\n\n";
+            if (r.LooksDebayered)
+                why += $"Cele 4 canale CFA sunt quasi-identice (spread {r.CfaSpread:F3}) - fisierul e "
+                     + "DEBAYERIZAT. Modul are nevoie de mozaicul Bayer intact.\n\n";
+
+            return "FISIERUL NU PARE UN FLAT BRUT\n\n" + why
+                 + "Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).\n\n"
+                 + "Solutii: ruleaza direct pe NEF - aplicatia citeste brutul exact - sau produ un "
+                 + "FITS brut cu tab-ul Conversion din Siril (NU Open + Save), care pastreaza "
+                 + "mozaicul CFA nedebayerizat.";
+        }
+
+        /// <summary>The four CFA channels' global medians as a percentage of the useful range,
+        /// one per line, the brightest marked - the window's version of Write's channel
+        /// rows.</summary>
+        /// <param name="r">The result.</param>
+        /// <returns>Four lines on a CFA frame; one sentence on a mono or processed one.</returns>
+        internal static string ChannelsSummary(ExposureResult r)
+        {
+            if (!r.IsCfa) return "imagine mono/procesata (fara CFA)";
+
+            var parts = new string[4];
+            for (int i = 0; i < 4; i++)
+            {
+                double pct = (r.ChannelMedians[i] - r.Black) / r.Range * 100;
+                parts[i] = $"{r.ChannelLabel(i),-8} {pct:F1} %"
+                         + (i == r.BrightestChannel ? "  (cel mai luminos)" : "");
+            }
+            return string.Join("\n", parts);
+        }
+
+        /// <summary>
+        /// Where the colour order comes from. It is read from the file or not known at all - it
+        /// is not guessed. When it is not known, the sentence says it does not even matter for
+        /// the verdict, because the limiting one is the brightest channel whatever its colour.
+        /// </summary>
+        /// <param name="r">The result.</param>
+        /// <returns>One or two sentences.</returns>
+        internal static string ChannelOrderNote(ExposureResult r)
+        {
+            if (!r.IsCfa)
+                return "Cadrul nu mai are mozaic CFA, deci nu exista canale de numit.";
+
+            return r.Cfa != null
+                ? $"Ordinea culorilor e citita din fisier ({r.Cfa.Source}: {r.Cfa.Letters}), nu ghicita. "
+                + "Canalul cel mai luminos clipeaza primul, deci el e cel limitant."
+                : "Nu stiu care pozitie CFA e R, G sau B - fisierul n-o spune, iar ordinea difera "
+                + "de la aparat la aparat. Nici nu conteaza pentru verdict: canalul cel mai "
+                + "luminos clipeaza primul, deci el e cel limitant.";
+        }
+
+        /// <summary>The caption under the window's histograms, for the raw data or for the
+        /// camera's preview, which has no target band.</summary>
+        /// <param name="preview">True when the preview's histograms are shown.</param>
+        /// <returns>One paragraph.</returns>
+        internal static string HistogramCaption(bool preview)
+            => preview
+                ? "Axa orizontala e in % din 255. Curba palida = tot cadrul, curba plina = "
+                  + "centrul 20 %, linia verticala = mediana centrului. FARA banda tinta: pe "
+                  + "ecranul aparatului nu exista o tinta, si nici n-ar putea exista. Dunga "
+                  + "rosie din dreapta = pixeli la 255, adica aici se satureaza ECRANUL, nu "
+                  + "senzorul."
+                : "Axa orizontala e in % din white (din intervalul util al senzorului). Curba "
+                  + "palida = tot canalul, curba plina = centrul 20 %, linia verticala = mediana "
+                  + "centrului, adica cifra care decide. Banda verde = tinta, dunga rosie din "
+                  + $"dreapta = clipping peste {Th.ExpoClipWhite * 100:F0} % din white.";
+
+        /// <summary>The note under a channel of the camera's preview: its share of saturated
+        /// pixels, when it is over <see cref="Th.ExpoClip"/>. Nothing else - on the preview
+        /// nothing decides.</summary>
+        /// <param name="c">A channel of the preview.</param>
+        /// <returns>The note, or "" when the channel does not clip.</returns>
+        internal static string PreviewChannelNote(ChannelLevels c)
+            => c.ClipPct > Th.ExpoClip ? $"pixeli la 255: {c.ClipPct:F2} % din cadru" : "";
+
+        /// <summary>The difference between the screen and the raw on a channel, for the raw /
+        /// screen table.</summary>
+        /// <param name="rawPct">The raw's central median, in percent of white.</param>
+        /// <param name="screenPct">The preview's central median, in percent of 255.</param>
+        /// <returns>The signed difference in whole points: "+52 puncte".</returns>
+        internal static string ScreenGap(double rawPct, double screenPct)
+            => $"{screenPct - rawPct:+0;-0} puncte";
     }
 }

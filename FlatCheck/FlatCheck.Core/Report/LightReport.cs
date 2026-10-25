@@ -15,7 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightReport.cs - LightResult -> the console's text. Formatting only.
+// LightReport.cs - LightResult -> the console's text, and the End to end tab's field line,
+// warning and refusal in the same words. Formatting only.
 //
 // The sign of the radial component IS the diagnosis, which is why it is always written
 // explicitly: positive = the background falls toward the edges = under-correction; negative =
@@ -69,9 +70,8 @@ namespace FlatCheck
 
             if (s.Level == FovLevel.Marginal)
             {
-                w.WriteLine($"\n    ATENTIE: camp la limita. Separarea plan/radial slabeste peste {Th.LightFovOk:F0}");
-                w.WriteLine("    grade diagonala, iar cifra de mai jos poate contine si cer, nu doar flat.");
-                w.WriteLine("    Citeste-o ca pe un indiciu, nu ca pe o masuratoare.");
+                w.WriteLine();
+                foreach (string line in MarginalLines()) w.WriteLine("    " + line);
             }
             else if (s.Level == FovLevel.Unknown)
             {
@@ -93,11 +93,8 @@ namespace FlatCheck
             WriteSuitability(s, w);
 
             w.WriteLine("\n  TESTUL NU SE APLICA PE CADRELE ASTEA");
-            w.WriteLine($"    Peste {Th.LightFovMax:F0} de grade diagonala, cupola de poluare luminoasa se");
-            w.WriteLine("    CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi");
-            w.WriteLine("    are exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra");
-            w.WriteLine("    ar iesi ar fi cerul, nu flat-ul.");
-            w.WriteLine("    Nu e o limitare a uneltei, e o degenerare geometrica.");
+            foreach (string line in DegeneracyLines()) w.WriteLine("    " + line);
+            w.WriteLine("    " + NotALimitation);
             w.WriteLine("\n    Pentru un setup cu camp larg, testul care raspunde e rotatia la 180 de");
             w.WriteLine("    grade (--ratio): valideaza flat-ul fara sa implice cerul deloc.");
             if (double.IsNaN(s.FovDeg) && !double.IsNaN(s.FocalMm))
@@ -106,6 +103,31 @@ namespace FlatCheck
                 w.WriteLine("    plauzibil. Daca al tau e mai mic, da campul real cu --fov <grade>.");
             }
         }
+
+        /// <summary>The warning of a field at the limit, in the console's lines: the console
+        /// indents them, the window joins them into one paragraph.</summary>
+        /// <returns>Three lines; the first quotes <see cref="Th.LightFovOk"/>.</returns>
+        static string[] MarginalLines() => new[]
+        {
+            $"ATENTIE: camp la limita. Separarea plan/radial slabeste peste {Th.LightFovOk:F0}",
+            "grade diagonala, iar cifra de mai jos poate contine si cer, nu doar flat.",
+            "Citeste-o ca pe un indiciu, nu ca pe o masuratoare.",
+        };
+
+        /// <summary>Why a field wider than <see cref="Th.LightFovMax"/> cannot be measured, in
+        /// the console's lines: the console indents them, the window joins them into one
+        /// paragraph.</summary>
+        /// <returns>Four lines of one paragraph.</returns>
+        static string[] DegeneracyLines() => new[]
+        {
+            $"Peste {Th.LightFovMax:F0} de grade diagonala, cupola de poluare luminoasa se",
+            "CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi",
+            "are exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra",
+            "ar iesi ar fi cerul, nu flat-ul.",
+        };
+
+        /// <summary>The sentence after the degeneracy, in both applications.</summary>
+        const string NotALimitation = "Nu e o limitare a uneltei, e o degenerare geometrica.";
 
         /// <summary>
         /// Writes the report of one frame: the field, the tiles kept, the sky plane (flagged
@@ -173,5 +195,50 @@ namespace FlatCheck
             return "Fondul CRESTE spre margini => SUPRA-corectie. Cel mai probabil\n"
                  + "flat-darks lipsa/gresite: imparti la un flat care contine offset.";
         }
+
+        // ------------------------------------------------------------ for the window
+        // The same field line, warning and refusal as WriteSuitability and WriteTooWide, in the
+        // window's layout: no column padding, paragraphs instead of indented lines, and the
+        // Ratio tab named where the console names --ratio.
+
+        /// <summary>The field covered, for the window's card.</summary>
+        /// <param name="s">The suitability check's answer, or null.</param>
+        /// <returns>The diagonal in degrees with its source, "nedeterminat" with the source when
+        /// only the focal length is known, a sentence when nothing is known, or "" for
+        /// null.</returns>
+        internal static string FieldText(SuitabilityResult s)
+        {
+            if (s == null) return "";
+            if (!double.IsNaN(s.FovDeg)) return $"{s.FovDeg:F1} grade diagonala  ({s.Source})";
+            if (!double.IsNaN(s.FocalMm)) return $"nedeterminat  ({s.Source})";
+            return "necunoscut - headerul nu da nici focala, nici scara";
+        }
+
+        /// <summary>The warning under the window's field line: a marginal field's caution, or
+        /// the note that the field could not be checked.</summary>
+        /// <param name="s">The suitability check's answer, or null.</param>
+        /// <returns>The warning, or "" for a suitable field or null.</returns>
+        internal static string FieldWarning(SuitabilityResult s)
+        {
+            if (s == null) return "";
+
+            if (s.Level == FovLevel.Marginal)
+                return string.Join(" ", MarginalLines());
+
+            if (s.Level == FovLevel.Unknown)
+                return "Nu pot verifica daca testul se aplica: headerul nu spune destul despre camp. "
+                     + "Rezultatul ruleaza oricum, dar necunoscut inseamna neverificat, nu verificat.";
+
+            return "";
+        }
+
+        /// <summary>Why the test does not apply on a field wider than
+        /// <see cref="Th.LightFovMax"/>, for the window: the geometric degeneracy and the Ratio
+        /// tab as the test that answers.</summary>
+        /// <returns>Three paragraphs separated by blank lines.</returns>
+        internal static string TooWideText()
+            => string.Join(" ", DegeneracyLines()) + "\n\n" + NotALimitation + "\n\n"
+             + "Pe un setup cu camp larg, testul care raspunde e cel din tabul Ratio: "
+             + "rotatia la 180 de grade valideaza flat-ul fara sa implice cerul deloc.";
     }
 }

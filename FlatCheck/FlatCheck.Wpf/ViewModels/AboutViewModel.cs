@@ -15,25 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AboutViewModel.cs - ce arata fereastra "Despre".
+// AboutViewModel.cs - what the "Despre" window shows.
 //
-// Nu decide si nu formuleaza nimic: versiunea si copyright-ul vin din VersionInfo, notita
-// de garantie din RunReport (aceeasi pe care consola o tipareste la --help), lista
-// componentelor din ThirdParty, iar titlurile din SessionMessages. Aici se face doar
-// trecerea de la tipurile internal ale nucleului la proprietati publice pe care XAML-ul
-// le poate lega - si lipirea liniilor de garantie, rupte pentru consola la ~70 de coloane,
-// intr-un paragraf pe care fereastra il impacheteaza singura.
+// It decides and words nothing: the version and the copyright come from VersionInfo, the warranty
+// notice from RunReport (the same one the console prints for --help), the component list from
+// ThirdParty, and the headings from SessionMessages. All that happens here is the passage from
+// the core's internal types to public properties the XAML can bind - and the joining of the
+// warranty lines, broken at ~70 columns for the console, into one paragraph the window wraps by
+// itself.
 //
-// Toate proprietatile sunt constante, deci nu e nevoie de ObservableObject. Sunt totusi
-// proprietati de instanta: {Binding} rezolva prin DataContext si nu vede una statica.
+// Every property is constant, so there is no need for ObservableObject. They are still instance
+// properties: {Binding} resolves through the DataContext and does not see a static one.
 
 using System.Collections.Generic;
 using System.Linq;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The "Despre" window's content: banner, copyright, licence notice and the
+    /// third-party components, as public properties for the binding.</summary>
     public sealed class AboutViewModel
     {
+        /// <summary>Copies the core's component list into public rows.</summary>
         public AboutViewModel()
         {
             Components = ThirdParty.Components
@@ -50,7 +53,8 @@ namespace FlatCheck.Wpf
 
         public string Title => SessionMessages.AboutTitle();
 
-        /// <summary>Numele si versiunea, exact cum apar pe prima linie a unui raport.</summary>
+        /// <summary>The name and version, exactly as they appear on a report's first
+        /// line.</summary>
         public string Banner => VersionInfo.Banner;
 
         public string Copyright => VersionInfo.Copyright;
@@ -59,7 +63,7 @@ namespace FlatCheck.Wpf
 
         public string LicenceHeading => SessionMessages.AboutLicenceHeading();
 
-        /// <summary>Notita GPLv3 sectiunea 5(d), intr-un singur paragraf.</summary>
+        /// <summary>The GPLv3 section 5(d) notice, in a single paragraph.</summary>
         public string Warranty => string.Join(" ", RunReport.WarrantyLines);
 
         public string LicenseUrl => RunReport.LicenseUrl;

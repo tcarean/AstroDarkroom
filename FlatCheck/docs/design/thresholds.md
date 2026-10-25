@@ -39,6 +39,7 @@ the last inline ones there and the `--expo` midpoints). Full picture:
 | fine texture of the output | smooth, `--scale auto` | 0.05 % = texture gone below | | `Th.SmoothTextureGone` |
 | drop in azimuthal asymmetry or tilt | smooth, `--scale auto` | 0.5 pts = scale too large above | | `Th.SmoothScaleLoss` |
 | centre clipping | expo | 0.05% | - | `Th.ExpoClip` |
+| saturated pixel (what clipping counts) | expo | at or above 98 % of white | - | `Th.ExpoClipWhite` |
 | centre level | expo | 50-65% | - | `Th.ExpoLo/Hi` |
 | centre level (sky) | expo `--sky` | 15-50% | - | `Th.ExpoSkyLo/Hi` |
 

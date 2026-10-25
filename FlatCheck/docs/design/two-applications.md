@@ -122,7 +122,9 @@ ADRs do not spell out:
 **The Ratio tab is the one exception to "one folder in".** ADR 0033 holds why it proposes
 nothing, starts empty and documents itself before it can be used, the `pp_flat*.fit` trap at
 both layers (the candidate list, then the file dialogs), `RatioPattern` and why its text
-properties are instance properties.
+properties are instance properties. It is not in the opening chain; a pair picked while the
+chain still runs waits for it through the same `WhenIdleAsync` seam as Netezire, Sintetic and
+Split (R-082), so its two masters never load beside the structure run's.
 
 **The Histogram tab lists the flat master first, then the smoothed master when it exists,
 then `flats/`, and lets a click interrupt a click.** The list and its order, the master not
@@ -146,9 +148,10 @@ preselected and not run at open, the smoothed master as a third kind of row (chi
   running frame's own token and starts over, and a superseded run may not touch the screen.
   That last part is general and lives in `TabViewModel.RunGuardedAsync`: it numbers its runs
   and lets only the latest one clear the busy state, show an error or drop the result; the
-  other tabs never overlap runs, so for them nothing changes. `TabViewModelTests` pins it with
-  a stub tab. The per-view PNGs are encoded on the UI thread and cached per chip, for the
-  reason ADR 0036 measured on the map.
+  Ratio tab overlaps the same way on a quick re-choice, and the other tabs never overlap runs,
+  so for them nothing changes. `TabViewModelTests` pins it with a stub tab. Each view is a
+  bitmap made on the UI thread straight from the full-resolution raster (`RasterBitmaps`), with
+  no PNG in between, and cached per chip.
 
 **The Netezire tab runs on a button and never on open**, awaits the structure run, writes
 after the numbers are on screen, asks about an existing file, and its output never becomes the

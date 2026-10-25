@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HistEqViewViewModel.cs - comutatorul de vederi al tabului de histograma.
+// HistEqViewViewModel.cs - the view switch of the histogram tab.
 //
-// Acelasi tipar ca MapScaleViewModel si HistogramSourceViewModel: chipuri radio, unul
-// bifat, tabul asculta Changed. Ce e diferit e ca LISTA depinde de rezultat - patru
-// pozitii plus compozit plus mozaic pe un cadru CFA, o singura vedere pe mono - deci se
-// reface la fiecare rulare, pastrand chipul bifat daca mai exista unul cu aceeasi
-// eticheta. Nu decide nimic: traduce o alegere in "ce raster se encodeaza".
+// The same pattern as MapScaleViewModel and HistogramSourceViewModel: radio chips, one ticked,
+// the tab listens to Changed. What differs is that the LIST depends on the result - four
+// positions plus the composite plus the mosaic on a CFA frame, a single view on mono - so it is
+// rebuilt on every run, keeping the ticked chip if there is still one with the same label. It
+// decides nothing: it translates a choice into "which raster is encoded".
 
 using System;
 using System.Collections.Generic;
@@ -29,14 +29,23 @@ using System.Linq;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>What a histogram-equalised view shows: the composite (RGB, or the mono
+    /// frame), one CFA position, or the undebayered mosaic.</summary>
     internal enum HistEqViewKind { Composite, Channel, Mosaic }
 
-    /// <summary>O vedere. XAML-ul vede eticheta si bifa; felul si indexul sunt ale ownerului.</summary>
+    /// <summary>One view. The XAML sees the label and the tick; the kind and the index are the
+    /// owner's.</summary>
     public sealed class HistEqViewOption : ObservableObject
     {
         readonly HistEqViewViewModel _owner;
         bool _selected;
 
+        /// <summary>Makes the chip.</summary>
+        /// <param name="owner">The switch the chip belongs to; told when it is ticked.</param>
+        /// <param name="kind">What the view shows.</param>
+        /// <param name="index">The channel's index for <see cref="HistEqViewKind.Channel"/>; 0
+        /// otherwise.</param>
+        /// <param name="label">The chip's text.</param>
         internal HistEqViewOption(HistEqViewViewModel owner, HistEqViewKind kind, int index, string label)
         {
             _owner = owner;
@@ -49,28 +58,32 @@ namespace FlatCheck.Wpf
 
         internal HistEqViewKind Kind { get; }
 
-        /// <summary>Indexul canalului pentru Kind = Channel; 0 altfel.</summary>
+        /// <summary>The channel's index for Kind = Channel; 0 otherwise.</summary>
         internal int Index { get; }
 
-        /// <summary>Legarea din XAML e TwoWay pe asta. Bifarea trece prin owner, ca sa se debifeze celelalte.</summary>
+        /// <summary>The XAML binding on this is TwoWay. Ticking goes through the owner, so the
+        /// others are unticked.</summary>
         public bool IsSelected
         {
             get => _selected;
             set { if (Set(ref _selected, value) && value) _owner.Select(this); }
         }
 
+        /// <summary>Unticks without re-entering the owner.</summary>
         internal void Unselect() => Set(ref _selected, false, nameof(IsSelected));
     }
 
+    /// <summary>The histogram tab's view chips, rebuilt from each result, with the one
+    /// ticked.</summary>
     public sealed class HistEqViewViewModel : ObservableObject
     {
         IReadOnlyList<HistEqViewOption> _options = Array.Empty<HistEqViewOption>();
         HistEqViewOption _selected;
 
         /// <summary>
-        /// Lista se INLOCUIESTE la fiecare rulare, nu se goleste si se reumple - acelasi
-        /// motiv ca la ExposureTabViewModel.Histograms: doua rulari suprapuse pe o colectie
-        /// observabila lasa randuri duplicate.
+        /// The list is REPLACED on every run, not cleared and refilled - the same reason as
+        /// ExposureTabViewModel.Histograms: two overlapping runs on an observable collection leave
+        /// duplicated rows.
         /// </summary>
         public IReadOnlyList<HistEqViewOption> Options
         {
@@ -78,31 +91,33 @@ namespace FlatCheck.Wpf
             private set { if (Set(ref _options, value)) Raise(nameof(IsVisible)); }
         }
 
-        /// <summary>Vederea aleasa; null doar inainte de prima rulare.</summary>
+        /// <summary>The chosen view; null only before the first run.</summary>
         public HistEqViewOption Selected
         {
             get => _selected;
             private set => Set(ref _selected, value);
         }
 
-        /// <summary>Un singur chip n-are ce comuta, deci randul nu se arata.</summary>
+        /// <summary>A single chip has nothing to switch, so the row is not shown.</summary>
         public bool IsVisible => _options.Count > 1;
 
-        /// <summary>S-a schimbat vederea: tabul reencodeaza din rezultatul pe care il tine.</summary>
+        /// <summary>The view changed: the tab re-encodes from the result it holds.</summary>
         internal event Action Changed;
 
         /// <summary>
-        /// Refacerea listei din rezultat. NU ridica Changed - tabul isi reface poza singur
-        /// dupa ce a pus in cache ce a primit gata encodat de la rulare.
+        /// Rebuilds the list from the result. Does NOT raise Changed - the tab rebuilds its
+        /// picture by itself after caching what it received already encoded from the run.
         /// </summary>
+        /// <param name="r">The run's result: a CFA frame gets mosaic, RGB and one chip per
+        /// position, a mono frame a single "mono" chip.</param>
         internal void Rebuild(HistEqResult r)
         {
             var list = new List<HistEqViewOption>();
             if (r.IsCfa)
             {
-                // Mozaicul primul, deci implicit: e vederea care se potriveste cu Siril pe un
-                // raw deschis nedebayerizat, adica cea din care omul a citit tipare pana acum.
-                // Compozitul e mai bogat, dar nu e cel cunoscut.
+                // The mosaic first, so the default: it is the view that matches Siril on a raw
+                // opened undebayered, that is the one the user has read patterns from so far.
+                // The composite is richer, but it is not the familiar one.
                 list.Add(new HistEqViewOption(this, HistEqViewKind.Mosaic, 0, "Mozaic"));
                 list.Add(new HistEqViewOption(this, HistEqViewKind.Composite, 0, "RGB"));
                 for (int i = 0; i < r.Channels.Length; i++)
@@ -122,6 +137,9 @@ namespace FlatCheck.Wpf
             Raise(nameof(Selected));
         }
 
+        /// <summary>Makes the option the chosen one, unticks the others and raises
+        /// <see cref="Changed"/>; nothing but the tick when it is already chosen.</summary>
+        /// <param name="option">One of <see cref="Options"/>.</param>
         internal void Select(HistEqViewOption option)
         {
             if (ReferenceEquals(option, _selected))

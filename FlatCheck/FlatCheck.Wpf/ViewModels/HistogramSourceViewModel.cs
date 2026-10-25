@@ -15,25 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HistogramSourceViewModel.cs - comutatorul dintre cele doua surse ale histogramelor.
+// HistogramSourceViewModel.cs - the switch between the histograms' two sources.
 //
-// Acelasi tipar ca MapScaleViewModel: doua chipuri radio, unul bifat, iar tabul asculta
-// Changed si isi reface randurile. Nu decide nimic - traduce o alegere. Ce e diferit fata
-// de scara hartii e ca a doua optiune poate LIPSI: un FITS n-are previzualizare, si nici
-// un raw caruia nu i s-a putut decoda. Atunci comutatorul se stinge si alegerea revine
-// pe datele brute, fiindca alea exista mereu.
+// The same pattern as MapScaleViewModel: two radio chips, one ticked, and the tab listens to
+// Changed and rebuilds its rows. It decides nothing - it translates a choice. What differs from
+// the map's scale is that the second option can be MISSING: a FITS has no preview, and neither
+// does a raw whose preview could not be decoded. Then the switch goes off and the choice returns
+// to the raw data, because that always exists.
 
 using System;
 using System.Collections.Generic;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>O sursa de histograme. XAML-ul vede eticheta si bifa; restul e al ownerului.</summary>
+    /// <summary>One histogram source. The XAML sees the label and the tick; the rest is the
+    /// owner's.</summary>
     public sealed class HistogramSourceOption : ObservableObject
     {
         readonly HistogramSourceViewModel _owner;
         bool _selected;
 
+        /// <summary>Makes the chip.</summary>
+        /// <param name="owner">The switch the chip belongs to; told when it is ticked.</param>
+        /// <param name="isPreview">True for the camera's preview, false for the raw
+        /// data.</param>
+        /// <param name="label">The chip's text, Romanian.</param>
         internal HistogramSourceOption(HistogramSourceViewModel owner, bool isPreview, string label)
         {
             _owner = owner;
@@ -43,12 +49,12 @@ namespace FlatCheck.Wpf
 
         public string Label { get; }
 
-        /// <summary>true pentru previzualizarea aparatului, false pentru datele brute.</summary>
+        /// <summary>True for the camera's preview, false for the raw data.</summary>
         internal bool IsPreview { get; }
 
         /// <summary>
-        /// Legarea din XAML e TwoWay pe asta. Bifarea trece prin owner, ca sa se debifeze
-        /// cealalta si in ViewModel, nu doar in grupul de RadioButton.
+        /// The XAML binding on this is TwoWay. Ticking goes through the owner, so the other one
+        /// is unticked in the view-model too, not only in the RadioButton group.
         /// </summary>
         public bool IsSelected
         {
@@ -56,18 +62,22 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _selected, value) && value) _owner.Select(this); }
         }
 
+        /// <summary>Unticks without re-entering the owner.</summary>
         internal void Unselect() => Set(ref _selected, false, nameof(IsSelected));
     }
 
-    /// <summary>Cele doua surse plus cea aleasa. Tabul o tine ca proprietate si asculta <see cref="Changed"/>.</summary>
+    /// <summary>The two sources plus the chosen one. The tab holds it as a property and listens
+    /// to <see cref="Changed"/>.</summary>
     public sealed class HistogramSourceViewModel : ObservableObject
     {
         HistogramSourceOption _selected;
         bool _enabled;
 
+        /// <summary>Makes the two chips, the raw data ticked; disabled until a file with a
+        /// preview arrives.</summary>
         public HistogramSourceViewModel()
         {
-            // Etichetele numesc ce E fiecare, nu formatul de fisier.
+            // The labels name what each one IS, not the file format.
             Raw = new HistogramSourceOption(this, false, "Date brute (ce masoara unealta)");
             Preview = new HistogramSourceOption(this, true, "Ce a aratat aparatul pe ecran");
             Options = new[] { Raw, Preview };
@@ -81,7 +91,7 @@ namespace FlatCheck.Wpf
 
         public IReadOnlyList<HistogramSourceOption> Options { get; }
 
-        /// <summary>Sursa aleasa. Nu e null niciodata.</summary>
+        /// <summary>The chosen source. Never null.</summary>
         public HistogramSourceOption Selected
         {
             get => _selected;
@@ -91,8 +101,8 @@ namespace FlatCheck.Wpf
         public bool IsPreviewSelected => _selected.IsPreview;
 
         /// <summary>
-        /// false cand fisierul n-are previzualizare. Stingerea forteaza alegerea inapoi pe
-        /// datele brute, ca tabul sa nu ramana pe o sursa care nu exista.
+        /// False when the file has no preview. Turning it off forces the choice back to the raw
+        /// data, so the tab does not stay on a source that does not exist.
         /// </summary>
         public bool IsEnabled
         {
@@ -104,9 +114,14 @@ namespace FlatCheck.Wpf
             }
         }
 
-        /// <summary>S-a schimbat sursa: tabul isi reface randurile din rezultatul pe care il tine.</summary>
+        /// <summary>The source changed: the tab rebuilds its rows from the result it
+        /// holds.</summary>
         internal event Action Changed;
 
+        /// <summary>Makes the option the chosen one and raises <see cref="Changed"/>; the
+        /// preview, while the switch is disabled, is refused and the tick goes back to the raw
+        /// data.</summary>
+        /// <param name="option"><see cref="Raw"/> or <see cref="Preview"/>.</param>
         internal void Select(HistogramSourceOption option)
         {
             if (ReferenceEquals(option, _selected))
@@ -116,7 +131,7 @@ namespace FlatCheck.Wpf
             }
             if (option.IsPreview && !_enabled)
             {
-                // Nu se poate: n-are ce arata. Bifa ramane pe brute.
+                // Not possible: there is nothing to show. The tick stays on the raw data.
                 option.Unselect();
                 Raw.IsSelected = true;
                 return;
