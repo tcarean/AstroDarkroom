@@ -145,8 +145,10 @@ public class WindowSmokeTests
         });
 
     /// <summary>
-    /// The four tabs, with real results in them. An empty tab would render even with half
-    /// of its templates wrong - only with data are all the bindings reached.
+    /// The window and its eight tabs: Structura, Ratio and End to end with real results in
+    /// them, the others in their opening state (their results are rendered by the tests
+    /// below). An empty tab would render even with half of its templates wrong - only with
+    /// data are all the bindings reached.
     /// </summary>
     [Fact]
     public async Task EveryTabRendersWithRealResultsAndNoBindingErrors()
@@ -347,11 +349,6 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// The histogram tab WITH a result: the view chips, the picture, the master note, the
-    /// guide expanded, then a per-channel view and a mono result (without chips). The result
-    /// comes straight from the analyzer, as for the preview on the exposure tab.
-    /// </summary>
-    /// <summary>
     /// The synthetic tab with a written flat and a comparison, from hand-made profiles and an
     /// analyzer result - no file, no Adobe on the machine. Both cards visible, the map on the
     /// right, the sources panel expanded, and no binding error.
@@ -391,6 +388,11 @@ public class WindowSmokeTests
         });
     }
 
+    /// <summary>
+    /// The histogram tab WITH a result: the view chips, the picture, the master note, the
+    /// guide expanded, then a per-channel view and a mono result (without chips). The result
+    /// comes straight from the analyzer, as for the preview on the exposure tab.
+    /// </summary>
     [Fact]
     public void TheHistEqTabRendersAResult()
         => _sta.Invoke(() =>

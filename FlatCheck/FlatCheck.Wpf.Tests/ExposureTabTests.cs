@@ -33,7 +33,7 @@ public class ExposureTabTests
 
     // ------------------------------------------------------------------ list
 
-    /// <summary>Requirement 8: the list comes from flats/, and holds only camera raws.</summary>
+    /// <summary>R-084: the list comes from flats/, and holds only camera raws.</summary>
     [Fact]
     public void TheListComesFromFlatsAndHoldsOnlyCameraRaws()
     {
@@ -124,7 +124,7 @@ public class ExposureTabTests
     }
 
     /// <summary>
-    /// REQUIREMENT 8: the "Sky" switch changes the thresholds, so the verdict too, on the same
+    /// R-043: the "Sky" switch changes the thresholds, so the verdict too, on the same
     /// file. The measured level stays identical - only how it is read changes.
     /// </summary>
     [Fact]

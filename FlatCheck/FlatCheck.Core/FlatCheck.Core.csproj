@@ -55,9 +55,9 @@
   </ItemGroup>
 
   <!-- The core stays internal entirely. No public surface was built for it because it has no
-       public: the three consumers are in the same repo, compile together, and making the five
-       result records public would have meant turning their fields into properties only to
-       please a compiler.
+       public: the four consumers (the console, the window and the two test projects) are in the
+       same repo, compile together, and making the result records public would have meant
+       turning their fields into properties only to please a compiler.
 
        The WPF application does not bind XAML directly to these records (WPF binding does not see
        fields, only properties) - it has view-models that read them and expose exactly what

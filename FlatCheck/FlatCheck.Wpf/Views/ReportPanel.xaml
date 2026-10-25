@@ -20,8 +20,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <!-- ReportPanel - the raw report, exactly as the console would have written it.
 
      Folded by default: the panels above say the same thing better laid out. It exists
-     because it is the text pasted on a forum or in a message, and because it is exactly the
-     content of the file saved on disk - not a second wording of it.
+     because it is the text pasted on a forum or in a message, and because on the Structura and
+     Split tabs it is exactly the content of the file saved on disk - not a second wording of
+     it.
 
      A TextBox and not a TextBlock, so that it can be selected and copied. IsReadOnly,
      obviously. -->

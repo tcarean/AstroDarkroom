@@ -8,7 +8,8 @@
 
        What is tested here: the deduction of the folder structure, the explanation messages,
        the verdict -> colour mapping, the converters and the view-models. That is, everything
-       that has rules. What is NOT tested: the XAML - there is no decision there, only layout. -->
+       that has rules. The XAML holds no decision, only layout: WindowSmokeTests only renders
+       it, and fails on a binding that breaks. -->
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>

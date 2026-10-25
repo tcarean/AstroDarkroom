@@ -22,8 +22,8 @@ namespace FlatCheck.Tests;
 ///
 /// <see cref="Stats.Percentile(List{double}, double)"/> is meant to match <c>numpy.percentile</c>'s
 /// default (linear interpolation between the two neighbouring order statistics), because
-/// flatcheck.py is the numeric oracle - the expected values below are the ones numpy produces for
-/// the same input.
+/// flatcheck.py was the numeric oracle until it froze (ADR 0047) - the expected values
+/// below are the ones numpy produces for the same input.
 /// </summary>
 public class StatsTests
 {

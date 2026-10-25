@@ -20,12 +20,12 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Opening a folder, end to end. Requirements 3 and 4 are checked here: what starts by
-/// itself, and what happens when the folder is not good.
+/// Opening a folder, end to end. R-081 and R-080 (with R-088) are checked here: what starts
+/// by itself, and what happens when the folder is not good.
 /// </summary>
 public class MainViewModelTests
 {
-    /// <summary>REQUIREMENT 3: the structure and the end-to-end test start by themselves.</summary>
+    /// <summary>R-081: the structure and the end-to-end test start by themselves.</summary>
     [Fact]
     public async Task OpeningAFolderRunsStructureAndEndToEndByItself()
     {
@@ -329,7 +329,7 @@ public class MainViewModelTests
     // ------------------------------------------------------------------ invalid folder
 
     /// <summary>
-    /// REQUIREMENT 4: without the flat master, the application does not start on this folder
+    /// R-080 with R-088: without the flat master, the application does not start on this folder
     /// and says exactly what to do - run the preprocessing script in Siril. A message that only
     /// described the missing file would leave the user to find the connection alone.
     ///

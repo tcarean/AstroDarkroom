@@ -17,10 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MainWindow - the bar with the folder, then the five tabs.
+<!-- MainWindow - the bar with the folder, then the eight tabs.
 
      When the folder is not good, the tabs are not shown at all and the explanation appears in
-     their place. It is deliberate: five empty panels would make the user open them one by one
+     their place. It is deliberate: eight empty panels would make the user open them one by one
      to understand that in fact a script has to be run in Siril.
 
      The window starts maximised: the map and the histograms are read at the screen's size.
@@ -163,7 +163,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </Border>
 
-      <!-- the five tabs -->
+      <!-- the eight tabs -->
       <TabControl>
         <TabControl.Style>
           <Style TargetType="TabControl" BasedOn="{StaticResource {x:Type TabControl}}">

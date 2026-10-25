@@ -77,7 +77,7 @@ public class SirilSessionTests
         Assert.Equal(SessionProblem.NoFlatMaster, Session(b, master: false).Check());
     }
 
-    /// <summary>Requirement 4: mode 1's input is taken by convention, not searched for by
+    /// <summary>R-080: mode 1's input is taken by convention, not searched for by
     /// content.</summary>
     [Fact]
     public void TheFlatMasterIsTakenByConventionFromProcess()
@@ -177,7 +177,7 @@ public class SirilSessionTests
         Assert.Equal(SessionProblem.NoFlatMaster, Session(b, process: false, master: false).Check());
     }
 
-    /// <summary>Requirement 5: the report is saved in the given folder, not in process/.</summary>
+    /// <summary>The report is saved in the session folder, not in process/.</summary>
     [Fact]
     public void TheReportGoesInTheChosenFolderNotInProcess()
     {

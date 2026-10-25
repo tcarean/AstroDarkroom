@@ -162,8 +162,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
   </Style>
 
-  <!-- The log of the Siril run window: mono text, read-only, on the window's background. The
-       only TextBox in the application, so a keyed style, not a default one. -->
+  <!-- The log of the Siril run window and of the Split tab: mono text, read-only, on the
+       window's background. A keyed style, not a default one: the other TextBoxes (the raw
+       report, the Sintetic fields) look different. -->
   <Style x:Key="LogBox" TargetType="TextBox">
     <Setter Property="Background" Value="{StaticResource WindowBg}" />
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />

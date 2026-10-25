@@ -86,9 +86,9 @@ public class VersionTests
     }
 
     /// <summary>
-    /// The copyright comes from &lt;Copyright&gt; in the csproj, just as the version comes
-    /// from &lt;Version&gt;. If someone removes it, the fallback in the code remains - and it
-    /// shows here.
+    /// The copyright comes from &lt;Copyright&gt; in Directory.Build.props, just as the version
+    /// comes from &lt;Version&gt;. If someone removes it, the fallback in the code remains -
+    /// and it shows here.
     /// </summary>
     [Fact]
     public void TheCopyrightComesFromDirectoryBuildProps()

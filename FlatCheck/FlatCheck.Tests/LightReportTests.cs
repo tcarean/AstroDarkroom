@@ -22,7 +22,8 @@ namespace FlatCheck.Tests;
 /// under-correction, negative over-correction - so it is always written explicitly.
 ///
 /// The expected values are the ones Python produces with "%+6.2f", checked by running
-/// the format there: flatcheck.py is the oracle, and the two must write the same.
+/// the format there: flatcheck.py was the oracle until it froze at 2.2.0 (ADR 0047), and
+/// the two wrote the same.
 /// </summary>
 public class LightReportTests
 {

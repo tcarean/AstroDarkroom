@@ -88,7 +88,7 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// REQUIREMENT 5, literally: the saved file must hold EXACTLY the console's output. It
+    /// R-081 and R-090, literally: the saved file must hold EXACTLY the console's output. It
     /// is compared with the text produced by the same layer flatcheck.exe uses - so if
     /// someone reformatted something for the window only, the test fails.
     /// </summary>
