@@ -5,8 +5,9 @@ repository: DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare and AstroPhot
 launcher is a small WPF window that lists the five, says which is in the suite folder beside it
 and starts the one the user picks; it computes nothing of its own. Its `<Version>` is the
 suite's version and its `/release` publishes the five components' windows and the launcher into
-one flat self-contained folder, zipped for Bitbucket Downloads; the consoles stay in the
-components' own releases (ADR 0002). It is for the owner and the few people who receive the
+one flat self-contained folder, zipped; the zip is shared from the owner's Google Drive, its
+link and SHA-256 in `README.md` (ADR 0005), and the consoles stay in the components' own
+releases (ADR 0002). It is for the owner and the few people who receive the
 zip; it is not a sixth analysis tool and never changes a component.
 
 ## Commands

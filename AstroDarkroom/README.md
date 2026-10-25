@@ -34,6 +34,23 @@ modificari nelansate.
 
 Executabilele nu sunt semnate: pe alt calculator, SmartScreen intreaba la prima pornire.
 
+## Descarcare
+
+Zip-ul fiecarei versiuni sta in Google Drive-ul proprietarului, partajat cu "Oricine are
+linkul"; aici e linkul si SHA-256-ul lui, cea mai noua versiune prima (ADR 0005). Dupa
+descarcare, verifica hash-ul inainte sa dezarhivezi:
+
+```
+certutil -hashfile AstroDarkroom-X.Y.Z-win-x64.zip SHA256
+```
+
+Rezultatul trebuie sa fie identic cu coloana SHA-256 a versiunii tale; altfel zip-ul s-a
+stricat la descarcare sau nu e cel publicat.
+
+| Versiune | Data | Zip | SHA-256 |
+| --- | --- | --- | --- |
+| (inca niciuna) | | | |
+
 ## Cum se face un release
 
 Din Claude Code, in folderul `AstroDarkroom` al checkout-ului principal, pe `main`, cu toate
@@ -42,8 +59,10 @@ folderele curate: `/release`. Scriptul (`scripts/release.ps1`) verifica, scrie v
 celor cinci componente, asa cum sunt pe `main`, in `artifacts/X.Y.Z/` (un fisier care ar fi scris de doua
 publicari cu continut diferit opreste release-ul), scrie `release.json` si zip-ul cu `.sha256`
 in `artifacts/`. Commit-ul si tag-ul `astrodarkroom-vX.Y.Z` le face omul, cum le propune
-skill-ul; zip-ul si `.sha256`-ul se urca de mana in Bitbucket Downloads. Componentele nu
-trebuie lansate inainte: `release.json` spune ce versiune si ce commit a intrat din fiecare.
+skill-ul. Zip-ul se urca de mana in Google Drive, partajat cu "Oricine are linkul"; apoi linkul
+si hash-ul din `.sha256` intra ca rand nou, primul, in tabelul de la "Descarcare", intr-un commit
+al lor. Componentele nu trebuie lansate inainte: `release.json` spune ce versiune si ce commit
+a intrat din fiecare.
 
 Versiunea suitei e `<Version>` din `Directory.Build.props` de aici; prima versiune reala,
 1.0.0, se da la cuvantul proprietarului.

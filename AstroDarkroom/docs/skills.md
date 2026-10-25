@@ -41,7 +41,12 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   are not bundled: their base runtime differs from the desktop one in three files (ADR 0002).
   `release.json` and the zip `AstroDarkroom-<version>-win-x64.zip` with its `.sha256` land in
   `artifacts/`. The tag is `astrodarkroom-vX.Y.Z`.
-- At step 7: the zip and its `.sha256` go to Bitbucket Downloads by hand; nothing uploads them.
+- At step 7: the owner uploads the zip to their Google Drive by hand and shares it as "Anyone
+  with the link"; nothing here uploads it or asks for Drive access (ADR 0005). With the link
+  the owner gives, propose a new first row of the table under `## Descarcare` in `README.md`:
+  the version, the release date, the link, and the hash from the zip's `.sha256`. Read the hash
+  from the file, never retype it. Then propose its commit, `Link the X.Y.Z zip in the README`,
+  limited to `README.md`; the owner commits it on `main`, as the release commit.
 
 ## /mutate
 
