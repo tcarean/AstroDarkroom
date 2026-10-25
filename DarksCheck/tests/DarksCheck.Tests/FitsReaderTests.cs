@@ -274,8 +274,8 @@ public class FitsReaderTests
     // ---------------------------------------------------------------- the header
 
     /// <summary>
-    /// The header was until now parsed and thrown away. --light needs it to find the focal
-    /// length and the scale, so that it can refuse a frame the test does not apply to.
+    /// LoadWithHeader returns the keywords of the HDU that held the image, the optics cards
+    /// among them.
     /// </summary>
     [Fact]
     public void LoadWithHeader_ReturnsTheCardsOfTheHduThatHeldTheImage()
@@ -316,7 +316,7 @@ public class FitsReaderTests
 
     /// <summary>
     /// Siril writes BAYERPAT on a frame that came through the Conversion tab, so the
-    /// exposure mode can name the four positions instead of numbering them.
+    /// four positions can be named (R, G1, G2, B) instead of numbered.
     /// </summary>
     [Fact]
     public void ACfaFitsCarriesTheMosaicOrder()
@@ -350,9 +350,9 @@ public class FitsReaderTests
     /// <summary>
     /// The header Siril actually writes on a converted or stacked frame: BAYERPAT RGGB
     /// and ROWORDER 'BOTTOM-UP'. Read in file order on an even height, the row parity
-    /// flips, so position [1,0] - which BAYERPAT calls G - is the real R. Measured on
-    /// pp_flat_stacked.fit (6016x4016): the channel labelled G2 sat at a third of the
-    /// green, exactly where --expo on the source NEF puts R.
+    /// flips, so position [1,0] - which BAYERPAT calls G - is the real R. Measured on a
+    /// stacked D3300 flat (6016x4016): the channel labelled G2 sat at a third of the
+    /// green, exactly where libraw puts R on the source NEF.
     /// </summary>
     [Fact]
     public void ABottomUpFrameOfEvenHeightShiftsTheOrderByOneRow()

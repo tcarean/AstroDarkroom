@@ -16,8 +16,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
 
-// PngWriter.cs - our own PNG encoder (no dependencies) for the maps.
+// PngWriter.cs - our own PNG encoder (no dependencies). DarksCheck writes its binned grey maps
+// with EncodeGrey (`--out`, the window's export); the diverging colour scale and Write are not
+// called here: the file is a copy (ADR 0003).
 //
 // The encoder writes the signature + IHDR (8 bits, color type 2 = RGB) + a single IDAT (each row
 // preceded by filter byte 0, deflated through ZLibStream) + IEND, with the CRC-32 computed by
@@ -73,9 +76,9 @@ namespace DarksCheck.Core
             => File.WriteAllBytes(path, Encode(rgb, w, h));
 
         /// <summary>
-        /// A grey raster, written as RGB with the three components equal. The encoder keeps a
-        /// single colour type; adding type 0 for the equalised views would have meant a second
-        /// path through IHDR and through the tests' decoder, for bytes no one counts.
+        /// A grey raster, written as RGB with the three components equal: the encoder keeps a
+        /// single colour type rather than a second path through IHDR for grey (type 0). The
+        /// maps of <c>--out</c> are written this way.
         /// </summary>
         /// <param name="grey">The pixels, w*h bytes, rows top down.</param>
         /// <param name="w">The width in pixels.</param>
@@ -155,9 +158,9 @@ namespace DarksCheck.Core
         // lazily initialised field ("if null, fill it"), which was a real race, not a theoretical
         // one: the field was assigned BEFORE it was filled, so a second thread coming in at that
         // moment saw the table non-null, read it with zeros and wrote a wrong CRC - that is, a
-        // corrupt PNG. Reproduced: 8 threads, 2000 rounds, 5261 wrong CRCs. In the window it is
-        // really possible, because the Ratio tab can encode while Structure is still running. A
-        // static initialiser has the CLR's guarantee that no one sees the table until it is ready.
+        // corrupt PNG. Reproduced: 8 threads, 2000 rounds, 5261 wrong CRCs. A static
+        // initialiser has the CLR's guarantee that no one sees the table until it is ready, so
+        // any caller may encode on any thread.
         static readonly uint[] _crcTable = BuildCrcTable();
 
         /// <summary>The 256-entry table of the PNG CRC-32 (polynomial 0xedb88320).</summary>

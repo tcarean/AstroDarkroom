@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
 
 // Img.cs - the 2D raster and the pure transforms on it.
 
@@ -23,10 +24,10 @@ namespace DarksCheck.Core
 {
     // ---------------- simple 2D image ----------------
     /// <summary>
-    /// A 2D raster of doubles, row-major: the one image type every reader fills and every
-    /// analyzer reads. Its values are whatever the producer put there (ADU of a raw, a FITS's
-    /// samples, a ratio near 1); the transforms below are pure and return a new raster, or their
-    /// input when there is nothing to do.
+    /// A 2D raster of doubles, row-major: what every reader fills, in ADU for a raw and as the
+    /// file's samples for a FITS. DarksCheck reads only its pixels (FrameStack turns them into
+    /// 16-bit mosaics); the transforms below are pure, return a new raster or their input when
+    /// there is nothing to do, and are not called by DarksCheck: the file is a copy (ADR 0003).
     /// </summary>
     sealed class Img
     {
@@ -77,9 +78,8 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// The analysis raster: a 2x2 block mean (it kills the Bayer CFA, each quad averaged into
-        /// one value), then a downsample by the whole factor that brings the long side to
-        /// ~<paramref name="targetLong"/> px, 1200 by default.
+        /// A 2x2 block mean (each Bayer quad averaged into one value), then a downsample by the
+        /// whole factor that brings the long side to ~<paramref name="targetLong"/> px.
         /// </summary>
         /// <param name="data">The frame as loaded, CFA mosaic or not.</param>
         /// <param name="targetLong">The long side to shrink towards, in pixels.</param>
@@ -106,17 +106,9 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Cuts a centred rectangle, dropping equally from both ends.
-        ///
-        /// It exists for the attribution mode, the only one that rotates the raster by 180
-        /// degrees and compares the result with the original. <see cref="BlockMean"/> drops the
-        /// partial blocks only at the END, so its grid is anchored at the top left: rotated by
-        /// 180 it no longer falls onto itself, but shifted by up to one tile. On a smooth
-        /// gradient the error is small, but it is systematic - measured, it moves the even/odd
-        /// ratio by ~20%. Cropping centred before the tiles removes it.
-        ///
-        /// NOT used in LargeScalePtp: there the grid anchored at the top left is what
-        /// flatcheck.py does, and the numeric parity is tested.
+        /// Cuts a centred rectangle, dropping equally from both ends. Unlike the grid of
+        /// <see cref="BlockMean"/>, which is anchored at the top left, a centred crop falls onto
+        /// itself when the raster is rotated by 180 degrees.
         /// </summary>
         /// <param name="a">The raster to crop.</param>
         /// <param name="h">The height to keep, in pixels, at most <c>a.H</c>.</param>
@@ -137,16 +129,9 @@ namespace DarksCheck.Core
         /// The grid of medians over tiles of <paramref name="k"/> px, WITH the partial tiles at
         /// the end, and the real centre of each tile in pixels.
         ///
-        /// Deliberately NOT the grid of <see cref="BlockMean"/>, which drops the partial blocks:
-        /// the smoothing has to reach the last pixel, and if the last 58 rows of a 4016 sensor
-        /// have no tile, their value is extrapolated. And the centre of the partial tile is
-        /// returned as it is, not as "one more step": an 8 px tile treated as a whole one
-        /// (fitted one tile away from its neighbour, when it is half that) put a 0.8 % error band
-        /// along the right edge of the synthetic with a known truth. With the real centres the
-        /// band disappeared (0.19 % over the whole frame).
-        ///
-        /// The median, not the mean: a tile with a hot pixel or a small dust shadow keeps its
-        /// typical value.
+        /// Unlike <see cref="BlockMean"/>, the partial tiles are kept, so the grid reaches the
+        /// last pixel, and a partial tile's centre is its real centre, not one more step. The
+        /// median, not the mean: a tile with a hot pixel keeps its typical value.
         /// </summary>
         /// <param name="a">The raster to tile.</param>
         /// <param name="k">The tile side in pixels.</param>
@@ -196,37 +181,9 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// The mean of the raster and its 180-degree rotation.
-        ///
-        /// It cancels the odd part EXACTLY - so any linear gradient - and leaves the even part
-        /// untouched. A radial profile cannot be odd, so the radial model loses nothing it is
-        /// allowed to contain, and exactly what made it jump is removed.
-        ///
-        /// WHY IT IS NEEDED, since it is not obvious: beyond the inscribed circle, a ring of
-        /// constant radius is no longer a whole ring, it is partial arcs. On a frame with a
-        /// gradient, the distribution of the pixels of those arcs is BIMODAL - one end dark, the
-        /// other bright - and the median falls into the sparse gap between the two modes, so it
-        /// jumps from one ring to the next with an amplitude set by the gradient. The
-        /// interpolated model inherited the jumps, and img/model showed them as concentric rings
-        /// plus a hard edge on the inscribed circle. Reproduced on a synthetic raster that is
-        /// only smooth vignetting times an 11% gradient: the rings appear without any edge
-        /// existing in the data.
-        ///
-        /// The verdict figures did not depend on this at the time - LargeScalePtp was restricted
-        /// to the inscribed circle, where the median was already exact (measured: the residual
-        /// moves by under 0.05 points) - but the MAP lied, and the map is the only thing the
-        /// shape of a problem is read from. Once the model was valid out to the corner, the
-        /// restriction was removed; see Metrics.LargeScalePtp.
-        ///
-        /// The alternative was the mean per ring instead of the median, which cures the
-        /// bimodality just as well (measured, the same figures), but gives up the median's
-        /// robustness against stars, hot pixels and dust - and the analyzer also gets single
-        /// frames.
-        ///
-        /// Symmetrising removes ONLY the odd part. The non-radial even part - a saddle, a
-        /// steeper fall along one axis - passes through it untouched and has the same fate on
-        /// the partial arcs; that one is handled by Metrics.RadialModel, per ring, with a 2t
-        /// correction. See there.
+        /// The mean of the raster and its 180-degree rotation: it cancels the odd part exactly
+        /// (any linear gradient among it) and leaves the even part, a radial profile included,
+        /// untouched.
         /// </summary>
         /// <param name="a">The raster to symmetrise.</param>
         /// <returns>A new raster of the same size, equal to its own 180-degree rotation.</returns>

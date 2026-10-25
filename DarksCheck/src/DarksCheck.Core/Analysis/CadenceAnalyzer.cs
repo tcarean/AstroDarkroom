@@ -124,8 +124,9 @@ internal static class CadenceAnalyzer
         return new Cadence(start, end, span, integration, timed, Median(intervals), pauses, longPauses);
     }
 
-    /// <summary>The median of a list (the mean of the two middle values when even); sorts the
-    /// list in place.</summary>
+    /// <summary>
+    /// The median of a list (the mean of the two middle values when even); sorts the list in place.
+    /// </summary>
     /// <param name="values">The values; sorted in place.</param>
     /// <returns>The median, or null for an empty list.</returns>
     private static double? Median(List<double> values)

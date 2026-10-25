@@ -37,9 +37,11 @@ internal enum Verdict
 /// readable frames, how many frames carry them, and whether every readable frame does
 /// (exposures within <see cref="Th.ExposureTolerance"/> of each other count as one).
 /// </summary>
-/// <param name="ExposureSeconds">The most frequent exact exposure of the dominant setting, in
-/// seconds; null when no readable frame says it.</param>
-/// <param name="Iso">The dominant setting's ISO; null when no readable frame says it.</param>
+/// <param name="ExposureSeconds">The most frequent exact exposure of the dominant setting (the
+/// largest cluster of readable frames), in seconds; null when that cluster's frames do not say
+/// it, even if other frames do.</param>
+/// <param name="Iso">The dominant setting's ISO; null when that cluster's frames do not say it,
+/// even if other frames do.</param>
 /// <param name="Frames">How many readable frames carry the dominant setting.</param>
 /// <param name="Readable">How many frames of the group were read without an error.</param>
 /// <param name="Uniform">True when every readable frame carries the dominant setting (also when

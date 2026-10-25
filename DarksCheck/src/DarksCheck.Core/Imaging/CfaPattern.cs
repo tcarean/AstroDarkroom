@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
 
 // CfaPattern.cs - which colour each of the four Bayer positions has.
 //
@@ -34,7 +35,8 @@ namespace DarksCheck.Core
 {
     /// <summary>
     /// The colour of the four Bayer positions of the LOADED raster - [0,0], [0,1], [1,0],
-    /// [1,1] - in the order ExposureAnalyzer numbers them too.
+    /// [1,1] - in the order <see cref="Mosaic.PositionOf"/> numbers them. DarksCheck names its
+    /// planes by it (G1 is the reference plane) and prints its letters in the darks' header line.
     /// </summary>
     internal sealed class CfaPattern
     {
@@ -42,7 +44,8 @@ namespace DarksCheck.Core
         internal readonly char[] Colours;
 
         /// <summary>
-        /// Where the order was read from: "libraw" or "BAYERPAT". Shown in the report.
+        /// Where the order was read from: "libraw" or "BAYERPAT". DarksCheck's report does not
+        /// show it.
         /// </summary>
         internal readonly string Source;
 
@@ -145,9 +148,9 @@ namespace DarksCheck.Core
         /// moves by one row: RGGB becomes GBRG. On an odd height the bottom row has the same
         /// parity as the top one and nothing changes. TOP-DOWN, no card, anything else: nothing.
         ///
-        /// Measured on pp_flat_stacked.fit (6016x4016, Tokina, blue dusk sky): without the
-        /// correction --histeq named "G2" the position [1,0], which sat at a third of the green -
-        /// that is, exactly the red --expo sees on the source NEF, through libraw.
+        /// Measured on a stacked D3300 flat (6016x4016) that Siril wrote bottom up: without the
+        /// correction the position [1,0] was named "G2" while it sat at a third of the green -
+        /// the red libraw reads at that place on the source NEF.
         /// </summary>
         /// <param name="rowOrder">The ROWORDER card's value, or null when there is none.</param>
         /// <param name="height">The frame's height in rows.</param>

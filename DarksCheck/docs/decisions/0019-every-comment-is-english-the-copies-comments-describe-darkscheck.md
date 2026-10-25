@@ -1,4 +1,4 @@
-# 0019. Every comment is English; the copies take FlatCheck's English comments ahead of LightsCheck
+# 0019. Every comment is English; the copies' comments describe DarksCheck
 
 Date: 2026-10-25
 Status: accepted 2026-10-25
@@ -13,7 +13,7 @@ a plain copy. On 2026-10-25 the owner asked for the XML documentation backfill (
 only from then on. FlatCheck's own backfill (its ADR 0060) had just made every one of its
 comments English, but LightsCheck, which DarksCheck refreshes its copies from, has not done its
 backfill yet. Measured on `main` at 3197e36: every Romanian comment line of the code (218) sat
-in eight `Imaging/` files, with twelve more comments in `Theme/Dark.xaml` and fourteen lines in
+in eight `Imaging/` files, with 18 of the 23 comments of `Theme/Dark.xaml` and fourteen lines in
 `FitsTestData.cs` and `FitsReaderTests.cs`; five of the ten `Imaging/` files had code identical
 to FlatCheck's (namespace, usings and `#nullable` aside), the other five did not (LightsCheck's
 adaptations in `RawReader.cs` and `ImageLoader.cs`, an older `FitsReader.cs`, members FlatCheck
@@ -22,12 +22,12 @@ added since to `PngWriter.cs` and `Stats.cs`).
 ## Decision
 
 Every comment in DarksCheck is English, in every file, the copies included. The copies' comments
-are translated here without waiting for LightsCheck: FlatCheck's English text word for word
-where the code is the same as FlatCheck's, a translation in FlatCheck's terms where it is not,
-and the comments that were already English (LightsCheck's adaptations) kept. The code of the
-copies does not change. Until LightsCheck's backfill recopies FlatCheck, DarksCheck's copies
-differ from LightsCheck's in their comments only, and the next refresh from LightsCheck replaces
-them. An ADR number in a comment the copies took from FlatCheck is named as FlatCheck's.
+are DarksCheck's own, written here without waiting for LightsCheck: they say what each file and
+member does in DarksCheck, who calls it, and that a member DarksCheck does not call is kept only
+because the file is a copy; they name no FlatCheck mode, option or tab. FlatCheck's English text
+was the starting point where it describes the same code. The code of the copies does not change:
+a refresh from LightsCheck takes its code and keeps these comments. Each copy says so under its
+`#nullable` line.
 
 ## Alternatives rejected
 
@@ -36,6 +36,11 @@ them. An ADR number in a comment the copies took from FlatCheck is named as Flat
   owner asked for now.
 - **Do LightsCheck's backfill first.** The same result a task later; the owner chose to start
   with DarksCheck.
+- **FlatCheck's English comments word for word.** The first form of this decision, taken in
+  planning. The review found that they describe FlatCheck's modes, options, tabs and types
+  (the attribution mode, `--light`, `--expo`, ExposureAnalyzer, FitsWriter), none of which
+  exists here, so a reader looks for code that is not there; the owner chose comments that
+  describe DarksCheck.
 - **Take FlatCheck's files whole.** Five of them differ in code (FlatCheck's ADR 0057 in
   `FitsReader.cs`, new members in `PngWriter.cs` and `Stats.cs`, LightsCheck's adaptations); taking
   them would change behaviour, which this task does not.
@@ -43,8 +48,8 @@ them. An ADR number in a comment the copies took from FlatCheck is named as Flat
 ## Consequences
 
 The rule "Languages" in `CLAUDE.md` loses its exception for the copied files, and `.editorconfig`
-no longer names Romanian comments among the copies' style. A refresh from LightsCheck before its
-own backfill would bring the Romanian comments back: that refresh takes the comments from this
-tree instead, until LightsCheck's are English. The comments of `FitsReader.cs` describe this
-copy's behaviour (no SIMPLE check, an empty header for a file that is not a FITS), not
-FlatCheck's newer one.
+no longer names Romanian comments among the copies' style. A refresh from LightsCheck takes the
+code only and keeps this tree's comments, adjusting the ones the new code makes false; the
+design note `docs/design/imaging.md` says so. A diff of a copy against its source shows every
+comment as changed. The comments of `FitsReader.cs` describe this copy's behaviour (no SIMPLE
+check, an empty header for a file that is not a FITS), not FlatCheck's newer one.

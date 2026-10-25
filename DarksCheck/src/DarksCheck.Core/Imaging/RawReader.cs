@@ -16,10 +16,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // adapted from FlatCheck 2.3.0, which compiles without nullable annotations (ADR 0003)
+// The code is LightsCheck's adaptation; the comments are DarksCheck's own (ADR 0019).
 
 // RawReader.cs - camera raw files (NEF and its relatives) through libraw: the one place in
 // the tool that touches an external library. Adapted from FlatCheck's reader (ADR 0003): the
-// embedded preview is gone, the shot metadata a light needs is added (exposure, ISO, time).
+// embedded preview is gone, the shot metadata the inventory needs is added (exposure, ISO,
+// time).
 //
 // What is asked of libraw is the raw data, never a developed image:
 //   - raw_image, cropped to the visible area   -> the CFA mosaic, as rawpy's raw_image_visible

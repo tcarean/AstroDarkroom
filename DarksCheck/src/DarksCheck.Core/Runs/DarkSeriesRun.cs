@@ -123,6 +123,10 @@ internal static class DarkSeriesRun
     /// The folder has no frames, a session without darks is run without a partner, the partner
     /// cannot be opened for such a session, or no dark could be decoded.
     /// </exception>
+    /// <exception cref="ArgumentException">The folder is null, empty or blank.</exception>
+    /// <exception cref="DirectoryNotFoundException">The folder does not exist.</exception>
+    /// <exception cref="IOException">A folder cannot be listed.</exception>
+    /// <exception cref="UnauthorizedAccessException">A folder may not be listed.</exception>
     internal static DarkSeriesResult Run(string folder, DarkOptions options, IProgress<RunProgress>? progress = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(options);

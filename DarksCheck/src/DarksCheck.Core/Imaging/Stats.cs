@@ -16,14 +16,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
 
-// Stats.cs - pure numeric primitives: percentile, interpolation, solver, verdicts.
+// Stats.cs - pure numeric primitives: percentile, interpolation, solver.
 
 namespace DarksCheck.Core
 {
     /// <summary>
-    /// The numeric primitives the analyzers share: percentiles as numpy computes them, linear
-    /// interpolation and a small linear solver.
+    /// Numeric primitives: percentiles as numpy computes them, linear interpolation and a small
+    /// linear solver. In DarksCheck only the readers use them (RawReader's median of the four
+    /// blacks, Img's tile medians); the analyzers have their own in Planes.
     /// </summary>
     internal static class Stats
     {

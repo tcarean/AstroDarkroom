@@ -18,8 +18,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- Dark.xaml - the palette and the default styles. Copied from LightsCheck (which copied it
-     from FlatCheck); a fix goes there first (ADR 0009). DarksCheck's own templates sit in
-     Rows.xaml.
+     from FlatCheck); a fix goes there first (ADR 0009), except the comments, which are
+     DarksCheck's own (ADR 0019). DarksCheck's own templates sit in Rows.xaml.
 
      Why a dark theme: the tool is used at night, beside the mount, and a white window in the
      dark spoils the eye's adaptation for a quarter of an hour. The verdict colours are NOT
@@ -74,9 +74,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="Margin" Value="0,0,0,8" />
   </Style>
 
-  <!-- The tooltips: WPF draws them light, and the application's text is light, so they came
-       out white on white (found on the sensor chips of the Sintetic tab). Background and border
-       from the palette, normal text, a maximum width so that it breaks into lines. -->
+  <!-- The tooltips: WPF draws them light, and the application's text is light, so they would
+       come out white on white (the settings' and the table columns' hints). Background and
+       border from the palette, normal text, a maximum width so that it breaks into lines. -->
   <Style TargetType="ToolTip">
     <Setter Property="Background" Value="{StaticResource PanelBg2}" />
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -147,9 +147,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="Padding" Value="14" />
   </Style>
 
-  <!-- The text fields of the Sintetic tab (the search, the focal length, the aperture, the
-       crop): a keyed style, like LogBox, because the TextBox is not a usual control of the
-       application. -->
+  <!-- The text fields of the top bar's settings (the thread count; Rows.xaml's SettingField
+       builds on it for the other three): a keyed style, because a TextBox is not a usual
+       control of the application. -->
   <Style x:Key="Field" TargetType="TextBox">
     <Setter Property="Background" Value="{StaticResource PanelBg2}" />
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -163,8 +163,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
   </Style>
 
-  <!-- The log of the Siril run window: mono text, read-only, on the window's background. The
-       only TextBox of the application, so a keyed style, not a default one. -->
+  <!-- A log box: mono text, read-only, on the window's background, keyed so it is not a
+       default style. DarksCheck's window has no log and does not use it: the style is part of
+       the copy. -->
   <Style x:Key="LogBox" TargetType="TextBox">
     <Setter Property="Background" Value="{StaticResource WindowBg}" />
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -561,8 +562,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   </DataTemplate>
 
 
-  <!-- The fold button: a chevron plus the label from Content. It appeared written by hand a
-       third time (the text report, the map guide, how to read the tab), so it sits here once. -->
+  <!-- The fold button: a chevron plus the label from Content, kept once here for every view that
+       folds a section. DarksCheck's views do not use it: the style is part of the copy. -->
   <Style x:Key="Disclosure" TargetType="ToggleButton">
     <Setter Property="HorizontalAlignment" Value="Left" />
     <Setter Property="Cursor" Value="Hand" />

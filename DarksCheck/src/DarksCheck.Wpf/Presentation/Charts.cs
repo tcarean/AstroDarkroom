@@ -42,7 +42,7 @@ public sealed record ChartPoint(double X, double Y, string Label, Color Colour, 
 
 /// <summary>A horizontal guide line at a value, with its label.</summary>
 /// <param name="Value">The y value of the line; the y axis stretches to include it, except below a
-/// set Minimum.</param>
+/// set Minimum or, on a bar chart, below 0, where the axis starts.</param>
 /// <param name="Label">The text drawn at the right end, above the line.</param>
 /// <param name="Colour">The colour of the dashed line and its label.</param>
 public sealed record GuideLine(double Value, string Label, Color Colour);

@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
 
 // IFrameReader.cs - the contract every input format implements.
 //
@@ -51,9 +52,9 @@ namespace DarksCheck.Core
         /// <summary>
         /// The same frame, but WITHOUT pixels: <see cref="LoadedFrame.Image"/> stays null and
         /// only what the file says about it is filled in - the header, the focal length, the
-        /// aperture, the camera, the lens. It exists because identifying the lens and prefilling
-        /// the Synthetic tab need metadata, and a 24 MP decode for an aperture is a waste that
-        /// makes the opening chain wait.
+        /// aperture, the camera, the lens, the exposure, the ISO, the time. The inventory reads
+        /// every frame of a session this way: a 24 MP decode for an exposure time would be
+        /// seconds per frame instead of milliseconds.
         /// </summary>
         /// <param name="path">A file this reader claims (<see cref="Handles"/>).</param>
         /// <returns>The frame's metadata, its image null.</returns>

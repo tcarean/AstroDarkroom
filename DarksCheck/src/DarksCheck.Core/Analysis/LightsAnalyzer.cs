@@ -243,8 +243,9 @@ internal static class LightsAnalyzer
             ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian);
     }
 
-    /// <summary>": file: error; file: error" for the first three lights that failed (not the
-    /// skipped ones).</summary>
+    /// <summary>
+    /// ": file: error; file: error" for the first three lights that failed (not the skipped ones).
+    /// </summary>
     /// <param name="frames">The lights' figures.</param>
     /// <returns>The errors, with a leading ": ", or an empty string.</returns>
     private static string FirstErrors(LightFigures[] frames)

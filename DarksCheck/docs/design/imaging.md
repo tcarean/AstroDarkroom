@@ -3,9 +3,11 @@
 **Covers:** `src/DarksCheck.Core/Imaging/RawReader.cs`, `src/DarksCheck.Core/Imaging/ImageLoader.cs`, `src/DarksCheck.Core/Imaging/IFrameReader.cs`, `src/DarksCheck.Core/Imaging/FitsReader.cs`, `src/DarksCheck.Core/Imaging/CfaPattern.cs`, `src/DarksCheck.Core/Imaging/Img.cs`, `src/DarksCheck.Core/Imaging/Mosaic.cs`, `src/DarksCheck.Core/Imaging/Stats.cs`, `src/DarksCheck.Core/Imaging/PngWriter.cs`, `src/DarksCheck.Core/Imaging/BitmapFont.cs`.
 
 The decision and the reasons are ADR 0003; the files are LightsCheck's
-(`E:\Photografie\Code\LightsCheck\src\LightsCheck.Core\Imaging`, `main` 6cc0078), unchanged but for
-the namespace. This note says what each file is for here and what LightsCheck changed against
-its own source, FlatCheck 2.3.0 (`E:\Photografie\Code\FlatCheck\FlatCheck.Core`),
+(`E:\Photografie\Code\LightsCheck\src\LightsCheck.Core\Imaging`, `main` 6cc0078), their code
+unchanged but for the namespace. Their comments are DarksCheck's own, English, and describe what
+the files do here (ADR 0019): a refresh from LightsCheck takes its code and keeps these comments,
+and a member DarksCheck does not call says so. This note says what each file is for here and
+what LightsCheck changed against its own source, FlatCheck 2.3.0 (`E:\Photografie\Code\FlatCheck\FlatCheck.Core`),
 whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
 `dependencies.md`) explain the mechanics in full and are not repeated.
 

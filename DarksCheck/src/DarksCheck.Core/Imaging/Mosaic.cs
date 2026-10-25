@@ -16,18 +16,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
 
 // Mosaic.cs - the shared rule of the CFA mosaic: which pixel is in which Bayer position, when a
 // frame "looks CFA", and what a position is called.
 //
-// It sat inline in ExposureAnalyzer until the histogram equalisation mode, which needed exactly
-// the same three things. Two copies of "(y & 1) * 2 + (x & 1)" and of "1.15" would have diverged
-// at the first adjustment, and the divergence would have shown only when a channel was called R
-// in one tab and G in another, on the same file.
-//
-// ExposureAnalyzer does NOT use Split: it fills the histograms in the same pass in which it reads
-// the pixels, and a second copy of the data would cost memory for nothing. It uses PositionOf,
-// LooksCfa and Label - the rule, not the buffers.
+// DarksCheck uses the rule and the names: FrameStack names its four planes with Label, and
+// Planes numbers them as PositionOf does (it extracts the planes of its 16-bit mosaics itself).
+// Split, Extract and Merge work on Img rasters and are not called here: the file is a copy
+// (ADR 0003).
 
 namespace DarksCheck.Core
 {
@@ -48,8 +45,8 @@ namespace DarksCheck.Core
         /// <summary>
         /// The threshold from which the four medians say "mosaic intact". Below it, the channels
         /// are too close to be different colour filters: the file is mono or debayered.
-        /// Empirical, like all the thresholds; a raw under very neutral light can fall below it,
-        /// and is then treated as mono - which is a safe choice.
+        /// Empirical; a raw under very neutral light can fall below it, and is then treated as
+        /// mono - which is a safe choice. Not used by DarksCheck, whose darks carry no light.
         /// </summary>
         internal const double CfaSpreadMin = 1.15;
 
@@ -82,9 +79,8 @@ namespace DarksCheck.Core
 
         /// <summary>
         /// A single position, as a raster of H/2 x W/2 - the same cut as <see cref="Split"/>, but
-        /// for a single <paramref name="p"/>. It exists for the smoothing mode, which works the
-        /// positions one at a time and has no reason to hold all four copies at once: on a 24 MP
-        /// frame that is 190 MB more, for nothing.
+        /// for a single <paramref name="p"/>, so a caller working one position at a time does not
+        /// hold all four copies at once (on a 24 MP frame, 190 MB more).
         /// </summary>
         /// <param name="a">The mosaic raster.</param>
         /// <param name="p">The position, 0..3, as <see cref="PositionOf"/> numbers it.</param>
@@ -106,8 +102,7 @@ namespace DarksCheck.Core
         ///
         /// Split drops an odd row or column at the end; here the missing line is filled by
         /// copying the nearest even line, so that the output always has the input's shape and
-        /// the last row of a 4017 frame is not zero - a flat with a line of zeros would divide
-        /// the lights by zero on that line.
+        /// the last row of a 4017 frame is not zero.
         /// </summary>
         /// <param name="positions">The four position rasters, each (h/2) x (w/2).</param>
         /// <param name="h">The height of the woven raster, in pixels.</param>

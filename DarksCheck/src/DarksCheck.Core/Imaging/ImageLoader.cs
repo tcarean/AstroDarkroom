@@ -16,10 +16,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // adapted from FlatCheck 2.3.0, which compiles without nullable annotations (ADR 0003)
+// The code is LightsCheck's adaptation; the comments are DarksCheck's own (ADR 0019).
 
 // ImageLoader.cs - the ONE place that decides whether a file is FITS or a camera raw. From
 // here down nothing knows where the pixels came from. Adapted from FlatCheck (ADR 0003): the
-// embedded preview is gone, the shot metadata a light needs is added.
+// embedded preview is gone, the shot metadata the inventory needs is added.
 
 namespace DarksCheck.Core
 {

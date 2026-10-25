@@ -387,8 +387,9 @@ internal static class LeakAnalyzer
     private static int[] Fitted(IReadOnlyList<DarkFrameFigures> frames) =>
         Enumerable.Range(0, frames.Count).Where(i => frames[i].Error is null && !frames[i].Skipped && !double.IsNaN(frames[i].AmpRatioMedian) && !double.IsNaN(frames[i].MeanAboveBlack)).ToArray();
 
-    /// <summary>The fit's scale: 1.4826 x the median absolute residual of the kept
-    /// points.</summary>
+    /// <summary>
+    /// The fit's scale: 1.4826 x the median absolute residual of the kept points.
+    /// </summary>
     /// <param name="x">The abscissae.</param>
     /// <param name="y">The ordinates.</param>
     /// <param name="kept">Which points count.</param>

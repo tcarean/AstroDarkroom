@@ -16,13 +16,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
 
-// BitmapFont.cs - a hand-made 5x7 bitmap font, for the labels of the split PNG.
-//
-// The PNG writer is written by hand (FlatCheck's ADR 0008) and draws no text; a label like
-// "PARTEA 1 DIN 4" or the title with the version and the date does not justify a font package
-// (FlatCheck's ADR 0054). Digits, capitals and a few signs; lower-case letters are drawn as
-// capitals, anything else stays blank but advances, so that the string does not shrink.
+// BitmapFont.cs - a hand-made 5x7 bitmap font, to write labels into a PNG raster without a font
+// package. Digits, capitals and a few signs; lower-case letters are drawn as capitals, anything
+// else stays blank but advances, so that the string does not shrink. DarksCheck's maps carry no
+// text, so nothing here calls it: the file is a copy (ADR 0003).
 
 namespace DarksCheck.Core
 {

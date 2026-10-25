@@ -161,8 +161,9 @@ internal sealed record MasterFigures(string Name, double Median, double Sigma, I
 /// deviation above <see cref="Th.RtsSigmaFactor"/> times the typical frame noise.</param>
 internal sealed record HotStability(double ThresholdAdu, int Hot, IReadOnlyList<int> FramesHotHistogram, int Always, int Flicker, double P10, double P50, double P90, double P99, double HotTemporalStd, double QuietTemporalStd, int RtsCandidates);
 
-/// <summary>One point of the noise curve (R-024): the mean of n frames against sigma /
-/// sqrt(n).</summary>
+/// <summary>
+/// One point of the noise curve (R-024): the mean of n frames against sigma / sqrt(n).
+/// </summary>
 /// <param name="N">How many frames each mean takes.</param>
 /// <param name="Measured">The clipped sigma of the difference of two disjoint means of
 /// <paramref name="N"/> frames over sqrt(2), at the quiet pixels of the crop, in raw
@@ -529,8 +530,9 @@ internal static class DarkSeriesAnalyzer
         return median;
     }
 
-    /// <summary>The per-pixel median, mean and population standard deviation over the
-    /// frames.</summary>
+    /// <summary>
+    /// The per-pixel median, mean and population standard deviation over the frames.
+    /// </summary>
     /// <param name="decoded">The decoded frames, at least one.</param>
     /// <param name="w">The mosaic's width.</param>
     /// <param name="h">The mosaic's height.</param>
@@ -567,8 +569,10 @@ internal static class DarkSeriesAnalyzer
         });
     }
 
-    /// <summary>One decoded frame's figures: per plane, against the master, the reference
-    /// plane's edges, and the amplitude ratio at the amplitude pixels.</summary>
+    /// <summary>
+    /// One decoded frame's figures: per plane, against the master, the reference plane's edges, and
+    /// the amplitude ratio at the amplitude pixels.
+    /// </summary>
     /// <param name="f">The frame; its mosaic not null.</param>
     /// <param name="stack">The stack, for the geometry and the scale.</param>
     /// <param name="masterPlanes">The median master's four planes.</param>
@@ -691,8 +695,10 @@ internal static class DarkSeriesAnalyzer
     /// <returns>The level in raw ADU.</returns>
     internal static double HotLevel(double levelEq, double norm) => Math.Max(levelEq * norm, Th.MinHotAdu);
 
-    /// <summary>How many values lie above each of <see cref="Th.HotLevelsAdu"/>, read as raw
-    /// ADU by <see cref="HotLevel"/>.</summary>
+    /// <summary>
+    /// How many values lie above each of <see cref="Th.HotLevelsAdu"/>, read as raw ADU by
+    /// <see cref="HotLevel"/>.
+    /// </summary>
     /// <param name="excess">The values above black, in raw ADU.</param>
     /// <param name="norm">The normalisation factor.</param>
     /// <returns>One count per level, strictly above it.</returns>
@@ -793,8 +799,9 @@ internal static class DarkSeriesAnalyzer
         return new BandingFigures(name, Planes.Std(rr), Planes.Std(cr), rr.Max() - rr.Min(), cr.Max() - cr.Min());
     }
 
-    /// <summary>The master's hot pixels over the frames, and the temporal noise of the
-    /// reference plane.</summary>
+    /// <summary>
+    /// The master's hot pixels over the frames, and the temporal noise of the reference plane.
+    /// </summary>
     /// <param name="decoded">The decoded frames.</param>
     /// <param name="excess">The median master minus the black, row-major.</param>
     /// <param name="tstd">The temporal standard deviation, row-major.</param>
@@ -875,9 +882,10 @@ internal static class DarkSeriesAnalyzer
             any ? Planes.Median(hotTstd) : double.NaN, quietStd, rts);
     }
 
-    /// <summary>The noise curve on a centred crop of the reference plane, at most
-    /// <see cref="Th.NoiseCropPx"/> mosaic pixels on a side, at the pixels under the hot
-    /// threshold.</summary>
+    /// <summary>
+    /// The noise curve on a centred crop of the reference plane, at most
+    /// <see cref="Th.NoiseCropPx"/> mosaic pixels on a side, at the pixels under the hot threshold.
+    /// </summary>
     /// <param name="decoded">The decoded frames.</param>
     /// <param name="excess">The median master minus the black, row-major.</param>
     /// <param name="w">The mosaic's width.</param>
@@ -1014,8 +1022,10 @@ internal static class DarkSeriesAnalyzer
         return [.. d];
     }
 
-    /// <summary>The warming of the series from its frames' amplitude ratios: first against
-    /// last, then the plateau fit and the frames off the plateau.</summary>
+    /// <summary>
+    /// The warming of the series from its frames' amplitude ratios: first against last, then the
+    /// plateau fit and the frames off the plateau.
+    /// </summary>
     /// <param name="frames">Every frame's figures; those with a ratio are read, in order.</param>
     /// <param name="pixels">How many amplitude pixels the ratios are read on.</param>
     /// <param name="nz">The normalisation settings, for the doubling rule.</param>

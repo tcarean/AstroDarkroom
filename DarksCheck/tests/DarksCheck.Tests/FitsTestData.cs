@@ -34,10 +34,9 @@ internal static class FitsTestData
         (key.PadRight(8) + "= " + value.PadLeft(20)).PadRight(CardSize);
 
     /// <summary>
-    /// The optics cards the --light guard reads. With the pixel size the field can be
-    /// computed exactly; without it only the focal length remains, and then the guard falls
-    /// back on the conservative full-frame assumption - exactly the case of a DSLR passed
-    /// through Siril, which does not write XPIXSZ.
+    /// The optics cards a FITS header may carry: FOCALLEN, and with a pixel size XPIXSZ, YPIXSZ
+    /// and the binning. A DSLR frame passed through Siril has no XPIXSZ, so the reader leaves
+    /// the pixel size null.
     /// </summary>
     internal static string[] OpticsCards(double focalMm, double? pixelUm = null, int binning = 1)
     {
@@ -256,7 +255,7 @@ internal static class FitsTestData
 
     /// <summary>
     /// The ideal flat: a purely radial field, centre <paramref name="center"/> ADU, falling
-    /// to center*(1-k) at the corner. Every structure metric should read ~0 on this.
+    /// to center*(1-k) at the corner: a smooth scene with no structure of its own.
     /// </summary>
     internal static Func<int, int, double> Radial(int w, int h, double center = 30000, double k = 0.45)
     {

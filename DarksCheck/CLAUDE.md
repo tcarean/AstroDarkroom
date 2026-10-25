@@ -104,9 +104,9 @@ varies a kit rule names it.
 - **Copied files stay copies** (ADR 0003). A file under `src/DarksCheck.Core/Imaging/` is
   not improved here: a fix goes to its source (LightsCheck, or FlatCheck through it) first,
   then the copy is refreshed. `RawReader.cs` and `ImageLoader.cs` carry LightsCheck's
-  adaptations and are refreshed from LightsCheck. The one exception is the comments, made
-  English here ahead of LightsCheck (ADR 0019): until LightsCheck's are English too, a refresh
-  keeps this tree's comments.
+  adaptations and are refreshed from LightsCheck. The one exception is the comments, which are
+  DarksCheck's own and describe what the files do here (ADR 0019): a refresh takes the code and
+  keeps them.
 - **License headers.** Every source file (`.cs`, `.xaml`, `.py`) starts with the GPL notice;
   `LicenseHeaderTests` fails otherwise. Scripts carry the SPDX line.
 

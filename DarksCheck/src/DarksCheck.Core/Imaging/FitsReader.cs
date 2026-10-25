@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+// The code is the copy's; the comments are DarksCheck's own (ADR 0019).
 
 // FitsReader.cs - our own FITS reader (no dependencies).
 // Header of 80-byte cards in 2880-byte blocks, then big-endian binary data.
@@ -43,9 +44,8 @@ namespace DarksCheck.Core
         static readonly string[] Extensions = { ".fit", ".fits", ".fts" };
 
         /// <summary>
-        /// The FITS extensions, exposed for the same reason as RawReader.RawExtensions: the WPF
-        /// application lists the frames of flats/ by them for the histogram tab, and a second
-        /// list would have diverged from this one.
+        /// The FITS extensions, as RawReader.RawExtensions exposes the raw ones. DarksCheck lists
+        /// a folder's FITS frames through <see cref="IsFitsPath"/> and does not read this list.
         /// </summary>
         internal static IReadOnlyList<string> FitsExtensions => Extensions;
 
@@ -63,9 +63,9 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Only the header of the primary HDU, without pixels: the 2880 blocks up to END. For
-        /// whoever wants FOCALLEN or INSTRUME from a 96 MB master without reading it (the
-        /// Synthetic tab, when the session opens). It checks no SIMPLE card and throws nothing
+        /// Only the header of the primary HDU, without pixels: the 2880 blocks up to END, for
+        /// <see cref="LoadInfo"/>, so the inventory reads a FITS frame's settings without its
+        /// pixels. It checks no SIMPLE card and throws nothing
         /// for the content: a file that ends before END gives the keywords read so far, and a
         /// file that is not a FITS gives whatever 80-byte pieces happen to read as cards,
         /// usually none. (FlatCheck's ADR 0057 makes the source refuse both; this copy is older.)
@@ -130,8 +130,8 @@ namespace DarksCheck.Core
                 ?.Shift(HInt(hdr, "YBAYROFF", 0), HInt(hdr, "XBAYROFF", 0))
                 ?.ForRowOrder(HStr(hdr, "ROWORDER", ""), img.H);
 
-            // A null scale, not an invented one: a FITS really does not carry the ADU levels,
-            // and ExposureAnalyzer has to fall back on AutoWhite, not believe a false number.
+            // A null scale, not an invented one: a FITS really does not carry the ADU levels;
+            // FrameStack then takes the white from BITPIX and estimates the black, and says so.
             var f = new LoadedFrame
             {
                 Image = img,
@@ -147,9 +147,9 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// Only what the header says: focal length, camera, planes, BITPIX, CFA order. No pixels
-        /// and no raw cards (LoadHeader does not keep them; whoever writes a file back loads
-        /// everything anyway). A file that is not a FITS gives what LoadHeader gives for it,
+        /// Only what the header says: focal length, camera, planes, BITPIX, CFA order and what
+        /// <see cref="FillShootingInfo"/> reads. No pixels and no raw cards (LoadHeader does not
+        /// keep them). A file that is not a FITS gives what LoadHeader gives for it,
         /// usually no keywords, not an error.
         /// </summary>
         /// <param name="path">The FITS file to read.</param>
@@ -217,10 +217,8 @@ namespace DarksCheck.Core
         internal static Img Load(byte[] raw) => LoadWithHeader(raw).Image;
 
         /// <summary>
-        /// Like <see cref="Load(byte[])"/>, but also returns the cards of the HDU the image came
-        /// from. The header used to be parsed and thrown away; <c>--light</c> needs it to find
-        /// the focal length and the scale, so that it can refuse a frame with too wide a field
-        /// for the test (see LightSuitability).
+        /// Like <see cref="Load(byte[])"/>, but also returns the keywords of the HDU the image
+        /// came from. Only the tests call it in DarksCheck.
         ///
         /// The known parsing limitation is kept - the value is cut at the first '/', which
         /// would break a string value that contains a slash. The keys read from here are numeric,
@@ -237,9 +235,9 @@ namespace DarksCheck.Core
 
         /// <summary>
         /// Like <see cref="LoadWithHeader"/>, plus the raw cards of the HDU the image came from
-        /// (without END), its number of planes and its BITPIX. The raw cards are what FitsWriter
-        /// copies into a file written back; the dictionary cannot be the source, because it
-        /// loses the comments and cuts the strings at the first '/'. It checks no SIMPLE card.
+        /// (without END), its number of planes and its BITPIX: the raw cards keep the comments
+        /// and the strings the dictionary cuts at the first '/'. DarksCheck reads BITPIX from it
+        /// (for a FITS's white level); nothing here writes a FITS back. It checks no SIMPLE card.
         /// Throws InvalidDataException when a header runs past the end of the file (what a file
         /// that is not a FITS usually does), when no HDU holds a 2D image (an empty file
         /// included), and when BITPIX is not one of the five.
@@ -377,9 +375,9 @@ namespace DarksCheck.Core
             => h.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
 
         /// <summary>
-        /// The raw value of a card, without the quotes around FITS strings. Used for BAYERPAT and
-        /// ROWORDER here, for INSTRUME, and for DATE-OBS in the attribution mode, where the date
-        /// is not interpreted, only shown to the person.
+        /// The raw value of a card, without the quotes around FITS strings. Used for BAYERPAT,
+        /// ROWORDER, INSTRUME and DATE-OBS, which <see cref="FillShootingInfo"/> then parses as a
+        /// UTC time.
         /// </summary>
         /// <param name="h">The header's keywords.</param>
         /// <param name="k">The keyword.</param>

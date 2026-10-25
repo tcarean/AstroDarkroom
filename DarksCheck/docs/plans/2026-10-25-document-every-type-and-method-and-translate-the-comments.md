@@ -27,7 +27,7 @@ Counter: the backfill scratch tool `doccount` (Roslyn; `count`, `romanian`, `wid
   Report 5/102, Runs 5/6, Session 1/5, Thresholds+ThirdParty 1/0, Version 0/2, Cli 2/5,
   Wpf 21/91. Properties: 140 undocumented, not required.
 - **Romanian:** 218 comment lines, all in 8 copied files: `Imaging/` BitmapFont, CfaPattern,
-  FitsReader, IFrameReader, Img, Mosaic, PngWriter, Stats. `Theme/Dark.xaml` has 12 comments.
+  FitsReader, IFrameReader, Img, Mosaic, PngWriter, Stats. `Theme/Dark.xaml` has 18 Romanian comments of 23 (counted again in review: 12 was wrong).
   The tests `FitsTestData.cs` (10 lines) and `FitsReaderTests.cs` (4 lines) have some too.
   Everything else (the other XAML, the csproj files, `Rows.xaml`, `Presentation/`) is already
   English.
@@ -151,3 +151,33 @@ Where it left a fragment in the middle of a paragraph, the paragraph was reflowe
 **Left as it is:** `MatchAnalyzer`'s `ModeExposure` comment says "Dictionary keeps insertion
 order". That holds when nothing is removed, as here, but .NET does not document it. No code
 defect was found.
+
+## Code review
+
+A high-effort `/code-review` of the branch found 8 findings, all in comments and docs, none in
+the code. The owner had all 8 fixed ("Repara toate cele 8, inclusiv 2"), and for finding 2 changed
+the planning answer: the copies' comments no longer take FlatCheck's text word for word but
+describe DarksCheck. ADR 0019 (renamed to "the copies' comments describe DarksCheck") records the
+new choice and keeps the old one as a rejected alternative.
+
+1. `docs/design/imaging.md` still said the copies were unchanged but for the namespace; it now
+   says their code is, and their comments are DarksCheck's own.
+2. The copies' comments named FlatCheck's modes, options, tabs and types (the attribution mode,
+   `--light`, `--expo`, `--histeq`, ExposureAnalyzer, LightSuitability, FitsWriter,
+   LargeScalePtp, the Sintetic/Ratio/Structure tabs). They were rewritten to say what each file
+   and member does in DarksCheck, who calls it, and that a member DarksCheck does not call is
+   kept only because the file is a copy (most of `Img`, `BitmapFont`, Mosaic's Split/Extract/
+   Merge, PngWriter's colour scale, Stats' interpolation and solver). The same was done in
+   `Dark.xaml` (the field, log and fold styles) and in `FitsTestData.cs` and `FitsReaderTests.cs`.
+3. ADR 0019 and this plan said `Dark.xaml` had 12 Romanian comments; 18 of its 23 were.
+4. `GroupSettings.ExposureSeconds` and `Iso` are null when the dominant cluster lacks them, even
+   if other frames carry them.
+5. `GuideLine.Value`: on a bar chart the axis starts at 0, so a guide below 0 is left off too.
+6. `DarkSeriesRun.Run` lists the folder exceptions (`ArgumentException`,
+   `DirectoryNotFoundException`, `IOException`, `UnauthorizedAccessException`) beside
+   `InvalidOperationException`.
+7. Every copy carries a line under its `#nullable` marker: the code is the copy's (or
+   LightsCheck's adaptation), the comments are DarksCheck's own (ADR 0019).
+8. Every multi-line summary is in block form (10 were not; `blockify.py`, scratchpad).
+
+The code is still token-identical to `main` in all 60 files.
