@@ -11,6 +11,9 @@ suite, Astro Darkroom: one flat self-contained win-x64 folder with one copy of t
 of every library, a launcher that is itself a kit project, its `<Version>` the suite's, its
 `/release` the suite's release, the components taken from `main` as they are, and a zip with
 its SHA-256 for Bitbucket Downloads (`docs/plans/2026-10-24-build-the-astro-darkroom-suite.md`).
+(Restated 2026-10-25: Bitbucket Cloud's Free plan has had no Downloads since 2025-05-29, so the
+suite's zip is shared from the owner's Google Drive instead, its link and hash in the suite's
+README, AstroDarkroom's ADR 0005; the zip and its hash stand as decided here.)
 `release.ps1` published every `release.publish` entry with `dotnet publish -o
 artifacts/<version>/<output>`, straight into the target, so a second entry writing a file the
 first one wrote replaced it unseen: two runtimes, two versions of a library or two licence files
