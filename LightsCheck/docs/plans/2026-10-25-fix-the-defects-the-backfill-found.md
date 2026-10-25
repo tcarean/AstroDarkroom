@@ -92,8 +92,46 @@ fix and pass after, shown in the session; `WindowSmokeTests` unchanged for items
 
 ## Questions for the owner
 
-(filled after the review)
+From `/code-review high` on the branch (2026-10-25, seven findings, none a bug; the four about
+this task's own changes were fixed in commit 7a2957f: the path named once in libraw's error,
+one `IsCurrent(cts)` for the three current-run checks, the `SeriesTests` summary, the
+`scara` label aligned by width). The three left, with a recommendation each:
+
+1. **The `EROARE: ` prefix is written in three places**: `Program.cs` (the parse error and the
+   run error) and `WindowTexts.Error`. The core could own it (`RunReport`), so both
+   applications print one prefix and `VerdictPalette` matches one word. Recommendation: a
+   small task of its own later; the prefix has not changed since 1.0.0.
+2. **libraw's English words reach the user in brackets**: `EROARE: <file>: libraw nu poate
+   citi fisierul (Failed opening file)`. The rule "Languages" wants Romanian in everything the
+   user sees; `Missing` already quotes the loader's message the same way. Recommendation: keep
+   it, as the library's own diagnosis in brackets, like `Missing`; the alternative is to drop
+   the inner message and lose what libraw knew ("Unsupported file format", "Corrupted data").
+3. **`RawReaderTests.AFileThatIsNotActuallyARawIsRefused`** (`Assert.ThrowsAny<Exception>`) is
+   now subsumed by `R007_AFileLibrawCannotOpenFailsWithInvalidDataNamingTheFile`, which pins
+   the type and the file name on the same junk `.NEF`. Recommendation: delete the older one;
+   a test edit, so the owner's call (the kit's rule "No test edited to pass").
+
+Open from item 7, not a review finding: `--frame` on a FITS whose data is shorter than its
+header says still crashes with `IndexOutOfRangeException`; the FlatCheck prompt above fixes
+the source, then `FitsReader.cs` is recopied here (with the FITS-magic check of FlatCheck's ADR
+0057, a task of its own by ADR 0018).
 
 ## What deviated
 
-(filled at wrap-up)
+- Item 8 was real, not only plausible: with the posts held in a queue (`QueuedContext`), the
+  eight-frame run's reports `Se masoara cadrele: 1 / 8` to `5 / 8` and more landed after the
+  three-frame run had started and were shown as its progress. Fixed with the same check the
+  `finally` makes, named `IsCurrent(cts)` after the review.
+- What libraw throws on a `.NEF` of 4096 zero bytes, measured: `Sdcb.LibRaw.LibRawException:
+  Failed opening file: <path>`, out of `RawContext.OpenFile`; `Program.Run` let it through.
+- The tests of items 2 and 8 needed a way to fix the order of the view-model's continuations:
+  `tests/LightsCheck.Wpf.Tests/QueuedContext.cs`, a SynchronizationContext that queues every
+  post until the test runs it, as the window's dispatcher queue does.
+- Item 3 touched `Report/` after all: the `scara` label had no core-exposed form, so
+  `SeriesReport.ScaleLabel` was added and the report's own line uses it (the goldens are
+  byte-identical). `Report/` is numeric code by `docs/skills.md`, so the validation cases ran
+  on the real sessions under `E:\Photografie\Astro` (2026-10-25, after 7a2957f): `Passed!  -
+  Failed: 0, Passed: 13, Skipped: 0, Total: 13, Duration: 7 m 58 s`; no figure of
+  `docs/validation.json` moved, as expected of a label constant.
+- One commit message came out at 101 characters and the hook refused it; recommitted shorter.
+- No plan mode: the owner's message was the plan, saved here before the first edit.
