@@ -20,14 +20,25 @@ using System.Windows.Input;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>
+/// The main window: the top bar and the four states over one <see cref="MainViewModel"/>. It
+/// owns what needs a window (the folder dialogs, the clipboard, the "Despre" window) and
+/// computes nothing.
+/// </summary>
 public partial class MainWindow : Window
 {
     private readonly MainViewModel _vm;
 
+    /// <summary>The window over a new view-model, which reads the stored settings.</summary>
     public MainWindow() : this(new MainViewModel())
     {
     }
 
+    /// <summary>
+    /// The window over a given view-model (the tests pass their own): binds it, asks for the dark
+    /// title bar once the window has a handle, and cancels a run in flight when the window closes.
+    /// </summary>
+    /// <param name="vm">The view-model the window binds; not null.</param>
     internal MainWindow(MainViewModel vm)
     {
         _vm = vm;
@@ -38,6 +49,9 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Starts on the folder from the command line, or asks for one at once.</summary>
+    /// <param name="folder">
+    /// The folder to open; null or empty opens the folder dialog once the window has been shown.
+    /// </param>
     internal void Start(string? folder)
     {
         if (!string.IsNullOrEmpty(folder))
@@ -49,25 +63,52 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(new Action(Choose));
     }
 
+    /// <summary>
+    /// The folder buttons (top bar, empty state, problem card): asks for a folder and opens it.
+    /// </summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void ChooseFolder(object sender, RoutedEventArgs e) => Choose();
 
+    /// <summary>The stop buttons (top bar, wait screen): cancels the run in flight.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void Stop(object sender, RoutedEventArgs e) => _vm.CancelPending();
 
     // The Index tab's buttons reach these: the dialogs and the clipboard belong to the window.
+    /// <summary>The Index tab's copy button: puts the label in the clipboard.</summary>
     internal void CopyLabelFromView() => CopyLabel(this, new RoutedEventArgs());
 
+    /// <summary>The Index tab's partner button: asks for the partner folder.</summary>
     internal void ChoosePartnerFromView() => ChoosePartner(this, new RoutedEventArgs());
 
+    /// <summary>The Index tab's clear button: forgets the partner folder.</summary>
     internal void ClearPartnerFromView() => ClearPartner(this, new RoutedEventArgs());
 
+    /// <summary>
+    /// The Index tab's rerun button: runs the same folder again with the settings and the partner
+    /// as they are now.
+    /// </summary>
     internal void RerunFromView() => _ = _vm.RerunAsync();
 
+    /// <summary>Shows the "Despre" window, modal, over this one.</summary>
+    /// <param name="sender">The command's source.</param>
+    /// <param name="e">The executed command.</param>
     private void ShowAbout(object sender, ExecutedRoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
 
-    /// <summary>The partner folder (R-073): a library or another session; the current one proposed.</summary>
+    /// <summary>
+    /// The partner folder (R-073): a library or another session; the current one proposed.
+    /// </summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void ChoosePartner(object sender, RoutedEventArgs e) => ChoosePartner();
 
-    /// <summary>Asks for the partner folder; true when one was chosen (the same one again counts).</summary>
+    /// <summary>
+    /// Asks for the partner folder, starting in the current partner when it still exists, and sets
+    /// it on the view-model.
+    /// </summary>
+    /// <returns>True when a folder was chosen (the same one again counts); false when the dialog
+    /// was cancelled.</returns>
     private bool ChoosePartner()
     {
         Microsoft.Win32.OpenFolderDialog dlg = new() { Title = WindowTexts.ChoosePartnerTitle, Multiselect = false };
@@ -85,9 +126,17 @@ public partial class MainWindow : Window
         return true;
     }
 
+    /// <summary>Forgets the partner folder; the next run has none.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void ClearPartner(object sender, RoutedEventArgs e) => _vm.Partner = null;
 
-    /// <summary>The problem card's way out for a session without darks (R-077): choose the partner, run the same folder again.</summary>
+    /// <summary>
+    /// The problem card's way out for a session without darks (R-077): choose the partner, run the
+    /// same folder again; a cancelled dialog does nothing.
+    /// </summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void ChoosePartnerAndRerun(object sender, RoutedEventArgs e)
     {
         if (ChoosePartner())
@@ -96,7 +145,12 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>The label goes to the clipboard; the folder is the owner's to rename (ADR 0002).</summary>
+    /// <summary>
+    /// The label goes to the clipboard; the folder is the owner's to rename (ADR 0002). Nothing
+    /// happens without a label, or when another process holds the clipboard.
+    /// </summary>
+    /// <param name="sender">The button, or this window when the Index tab calls.</param>
+    /// <param name="e">The click.</param>
     private void CopyLabel(object sender, RoutedEventArgs e)
     {
         if (_vm.Label.Length == 0)
@@ -111,11 +165,17 @@ public partial class MainWindow : Window
         }
         catch (System.Runtime.InteropServices.COMException)
         {
-            // The clipboard is held by another process: the label stays on screen to be selected by hand.
+            // The clipboard is held by another process: the label stays on screen to be selected by
+            // hand.
         }
     }
 
-    /// <summary>The export folder is asked for, the session root proposed (ADR 0002: beside the frames, never among them).</summary>
+    /// <summary>
+    /// The export folder is asked for, the opened folder proposed (ADR 0002: beside the frames,
+    /// never among them); the view-model writes the files and reports where.
+    /// </summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void ExportFiles(object sender, RoutedEventArgs e)
     {
         Microsoft.Win32.OpenFolderDialog dlg = new() { Title = WindowTexts.ExportTitle, Multiselect = false };
@@ -130,6 +190,9 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Asks for a session or library folder and opens it; a cancelled dialog does nothing.
+    /// </summary>
     private void Choose()
     {
         Microsoft.Win32.OpenFolderDialog dlg = new() { Title = WindowTexts.ChooseTitle, Multiselect = false };

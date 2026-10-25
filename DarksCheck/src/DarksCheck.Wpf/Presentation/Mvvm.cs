@@ -27,9 +27,20 @@ public abstract class ObservableObject : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    /// <summary>Raises <see cref="PropertyChanged"/> for one property.</summary>
+    /// <param name="name">The property's name; the caller's member name when omitted.</param>
     protected void Raise([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+    /// <summary>
+    /// Stores a value in a backing field and raises the change, only when it differs.
+    /// </summary>
+    /// <typeparam name="T">The property's type.</typeparam>
+    /// <param name="field">The backing field.</param>
+    /// <param name="value">The new value, compared with the default equality comparer.</param>
+    /// <param name="name">The property's name; the caller's member name when omitted.</param>
+    /// <returns>True when the value changed and the event was raised; false when it was
+    /// equal.</returns>
     protected bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value))

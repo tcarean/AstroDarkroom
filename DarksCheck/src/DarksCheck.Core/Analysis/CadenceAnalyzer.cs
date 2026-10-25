@@ -17,7 +17,12 @@
 
 namespace DarksCheck.Core;
 
-/// <summary>A pause longer than <see cref="Th.PauseSeconds"/> before a frame: which frame, how long.</summary>
+/// <summary>
+/// A pause longer than <see cref="Th.PauseSeconds"/> before a frame: which frame, how long.
+/// </summary>
+/// <param name="FrameIndex">The frame's own index (<see cref="FrameInfo.Index"/>), not its
+/// position in the list analysed.</param>
+/// <param name="Seconds">The pause, in seconds, above <see cref="Th.PauseSeconds"/>.</param>
 internal sealed record LongPause(int FrameIndex, double Seconds);
 
 /// <summary>
@@ -27,6 +32,20 @@ internal sealed record LongPause(int FrameIndex, double Seconds);
 /// entry per position of the list given), and the pauses long enough to be gaps. Frames
 /// without a time or an exposure stay out of the figures and get no pause.
 /// </summary>
+/// <param name="Start">The start of the first timed frame; null when no frame is timed.</param>
+/// <param name="End">The latest end (start plus exposure) of a timed frame; null when no frame
+/// is timed.</param>
+/// <param name="SpanSeconds">From <paramref name="Start"/> to <paramref name="End"/>, in
+/// seconds; 0 when no frame is timed.</param>
+/// <param name="IntegrationSeconds">The sum of the timed frames' exposures, in seconds.</param>
+/// <param name="TimedFrames">How many frames carry both a time and an exposure.</param>
+/// <param name="MedianIntervalSeconds">The median interval between the starts of two
+/// consecutive timed frames, in seconds; null without two of them in a row.</param>
+/// <param name="PauseSeconds">One entry per position of the list: the seconds from the end of
+/// the previous frame to the start of this one, at least 0; null for the first frame, for a
+/// frame without a time or an exposure, and for the frame after one.</param>
+/// <param name="LongPauses">The pauses above <see cref="Th.PauseSeconds"/>, in list
+/// order.</param>
 internal sealed record Cadence(
     DateTime? Start,
     DateTime? End,
@@ -41,8 +60,13 @@ internal sealed record Cadence(
     internal double DutyPct => SpanSeconds > 0 ? 100.0 * IntegrationSeconds / SpanSeconds : 0;
 }
 
+/// <summary>Reads the cadence of check 1 from the frames' times and exposures.</summary>
 internal static class CadenceAnalyzer
 {
+    /// <summary>The rhythm of a group of frames, taken in the order given.</summary>
+    /// <param name="frames">The frames, in shooting order; not null; may be a filtered
+    /// list.</param>
+    /// <returns>The group's cadence.</returns>
     internal static Cadence Analyze(IReadOnlyList<FrameInfo> frames)
     {
         ArgumentNullException.ThrowIfNull(frames);
@@ -100,6 +124,11 @@ internal static class CadenceAnalyzer
         return new Cadence(start, end, span, integration, timed, Median(intervals), pauses, longPauses);
     }
 
+    /// <summary>
+    /// The median of a list (the mean of the two middle values when even); sorts the list in place.
+    /// </summary>
+    /// <param name="values">The values; sorted in place.</param>
+    /// <returns>The median, or null for an empty list.</returns>
     private static double? Median(List<double> values)
     {
         if (values.Count == 0)

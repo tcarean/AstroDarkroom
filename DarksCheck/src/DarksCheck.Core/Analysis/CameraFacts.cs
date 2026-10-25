@@ -27,12 +27,23 @@ namespace DarksCheck.Core;
 /// caveat is that the method derives the gain from DxOMark's SNR curves and overestimates it
 /// on small, noisy sensors.
 /// </summary>
+/// <param name="Model">The camera's name, as the report prints it.</param>
+/// <param name="Gain">The gain at each nominal ISO, in electrons per ADU, in increasing ISO
+/// order.</param>
+/// <param name="FullWellElectrons">The full well, in electrons.</param>
+/// <param name="ReadNoiseElectrons">The read noise, in electrons.</param>
+/// <param name="QuantumEfficiencyPercent">The quantum efficiency, in percent.</param>
+/// <param name="UnityIso">The measured ISO at which one electron makes one ADU.</param>
 internal sealed record CameraFacts(string Model, IReadOnlyList<(double Iso, double ElectronsPerAdu)> Gain, double FullWellElectrons, double ReadNoiseElectrons, double QuantumEfficiencyPercent, double UnityIso)
 {
     /// <summary>The provenance, as the report prints it.</summary>
     internal const string SourceWords = "photonstophotos.net din curbele DxOMark, citit 2026-10-20; metoda supraestimeaza castigul pe senzorii mici";
 
-    /// <summary>The D3300 on 12 bits: 2^y of the gain chart's y at nominal ISO 100 .. 25600 (3.136, 2.096, 1.048, 0.074, -0.928, -1.921, -2.942, -3.893, -4.922), full well 34,446 e-, read noise 2.0 e-, QE 56 %, unity gain at measured ISO 841.</summary>
+    /// <summary>
+    /// The D3300 on 12 bits: 2^y of the gain chart's y at nominal ISO 100 .. 25600 (3.136, 2.096,
+    /// 1.048, 0.074, -0.928, -1.921, -2.942, -3.893, -4.922), full well 34,446 e-, read noise 2.0
+    /// e-, QE 56 %, unity gain at measured ISO 841.
+    /// </summary>
     private static readonly CameraFacts D3300 = new(
         "Nikon D3300",
         [(100, 8.79), (200, 4.28), (400, 2.07), (800, 1.05), (1600, 0.526), (3200, 0.264), (6400, 0.130), (12800, 0.0673), (25600, 0.0330)],
@@ -41,11 +52,22 @@ internal sealed record CameraFacts(string Model, IReadOnlyList<(double Iso, doub
         56,
         841);
 
-    /// <summary>The facts of the camera a frame names, or null for a camera the table does not know.</summary>
+    /// <summary>
+    /// The facts of the camera a frame names, or null for a camera the table does not know.
+    /// </summary>
+    /// <param name="camera">The camera name from a frame's metadata, null when unknown; matched
+    /// on "D3300", ignoring case.</param>
+    /// <returns>The camera's facts, or null.</returns>
     internal static CameraFacts? For(string? camera) =>
         camera is not null && camera.Contains("D3300", StringComparison.OrdinalIgnoreCase) ? D3300 : null;
 
-    /// <summary>The gain at a nominal ISO, in electrons per ADU: the table's value at a listed ISO, interpolated on the log2 scale between two, null outside the table.</summary>
+    /// <summary>
+    /// The gain at a nominal ISO, in electrons per ADU: the table's value at a listed ISO,
+    /// interpolated on the log2 scale between two, null outside the table.
+    /// </summary>
+    /// <param name="iso">The nominal ISO.</param>
+    /// <returns>The gain in electrons per ADU, or null for an ISO that is not positive or lies
+    /// outside the table.</returns>
     internal double? GainAt(double iso)
     {
         if (!(iso > 0) || Gain.Count == 0 || iso < Gain[0].Iso || iso > Gain[^1].Iso)

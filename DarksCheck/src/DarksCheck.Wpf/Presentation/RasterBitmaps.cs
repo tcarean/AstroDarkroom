@@ -22,9 +22,17 @@ using System.Windows.Media.Imaging;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>The core's byte rasters as WPF bitmaps, for the maps.</summary>
 internal static class RasterBitmaps
 {
-    /// <summary>A grey raster of w x h bytes, row by row; frozen, so usable from any thread.</summary>
+    /// <summary>
+    /// A grey raster of w x h bytes, row by row; frozen, so usable from any thread.
+    /// </summary>
+    /// <param name="grey">The pixels, one byte each (0 black, 255 white), row-major, w * h of
+    /// them.</param>
+    /// <param name="w">The width in pixels.</param>
+    /// <param name="h">The height in pixels.</param>
+    /// <returns>A frozen 8-bit grey bitmap at 96 dpi.</returns>
     internal static BitmapSource Grey(byte[] grey, int w, int h)
     {
         BitmapSource b = BitmapSource.Create(w, h, 96, 96, PixelFormats.Gray8, null, grey, w);

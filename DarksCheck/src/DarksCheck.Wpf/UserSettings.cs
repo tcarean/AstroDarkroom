@@ -20,25 +20,42 @@ using System.Text.Json;
 
 namespace DarksCheck.Wpf;
 
-/// <summary>The window's stored settings as text, exactly as typed or chosen (R-075): the thread count, the frame cap, the gain per ISO stop, the degrees per doubling, the partner folder.</summary>
+/// <summary>
+/// The window's stored settings as text, exactly as typed or chosen (R-075): the thread count,
+/// the frame cap, the gain per ISO stop, the degrees per doubling, the partner folder.
+/// </summary>
+/// <param name="Threads">The thread count as typed; null when never stored.</param>
+/// <param name="MaxFrames">The cap on frames held in memory as typed; null when never
+/// stored.</param>
+/// <param name="IsoFactor">The signal factor per ISO stop as typed; null when never stored.</param>
+/// <param name="Doubling">The degrees Celsius per doubling of the dark current as typed; null when
+/// never stored.</param>
+/// <param name="Partner">The partner folder's path; null when none.</param>
 public sealed record StoredSettings(string? Threads, string? MaxFrames, string? IsoFactor, string? Doubling, string? Partner);
 
 /// <summary>
-/// The window's settings that outlive a run (R-075): <c>%LOCALAPPDATA%\DarksCheck\settings.json</c>,
-/// the five strings of <see cref="StoredSettings"/>, which the view-model parses with the
-/// invariant culture and falls back from. This class stores and fetches text and judges
-/// nothing: a missing or unreadable file gives nulls, a failed write is ignored. The tests
-/// point <see cref="Path"/> at a file of their own.
+/// The window's settings that outlive a run (R-075):
+/// <c>%LOCALAPPDATA%\DarksCheck\settings.json</c>, the five strings of
+/// <see cref="StoredSettings"/>, which the view-model parses with the invariant culture and falls
+/// back from. This class stores and fetches text and judges nothing: a missing or unreadable file
+/// gives nulls, a failed write is ignored. The tests point <see cref="Path"/> at a file of their
+/// own.
 /// </summary>
 public static class UserSettings
 {
-    /// <summary>The file read and written; null = the default location under the local application data.</summary>
+    /// <summary>
+    /// The file read and written; null = the default location under the local application data.
+    /// </summary>
     public static string? Path { get; set; }
 
     private static string FilePath => Path ?? System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DarksCheck", "settings.json");
 
-    /// <summary>The stored strings, null each when the file is missing, unreadable or lacks them.</summary>
+    /// <summary>
+    /// The stored strings, null each when the file is missing, unreadable or lacks them.
+    /// </summary>
+    /// <returns>The settings; never null, all five null when the file is missing, unreadable or not
+    /// JSON.</returns>
     public static StoredSettings Load()
     {
         try
@@ -56,6 +73,11 @@ public static class UserSettings
         }
     }
 
+    /// <summary>
+    /// Writes the settings as indented JSON, creating the folder; a write the file system refuses
+    /// is ignored.
+    /// </summary>
+    /// <param name="settings">The five strings to store; not null.</param>
     public static void Save(StoredSettings settings)
     {
         try
@@ -70,11 +92,13 @@ public static class UserSettings
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // A setting that cannot be written is picked again next time; nothing else depends on it.
+            // A setting that cannot be written is picked again next time; nothing else depends on
+            // it.
         }
     }
 
-    // The folder path is written as itself, not as \u escapes, so the file reads as the README says.
+    // The folder path is written as itself, not as \u escapes, so the file reads as the README
+    // says.
     private static readonly JsonSerializerOptions Json = new()
     {
         PropertyNameCaseInsensitive = true,

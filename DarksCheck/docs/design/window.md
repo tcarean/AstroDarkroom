@@ -103,7 +103,7 @@ restored on dispose.
 ## Drawing (`Charts.cs`)
 
 `SeriesChart` is LightsCheck's: a `FrameworkElement` that draws in `OnRender`, a line with
-dots or bars over x, four y ticks, guide lines with labels on a dark backing, a `Minimum`, and
+dots or bars over x, five y ticks, guide lines with labels on a dark backing, a `Minimum`, and
 one owned `ToolTip` opened on hover over the point whose slot holds the cursor (`PointAt`).
 DarksCheck adds `Reference`, a second series drawn first as a dashed line without dots; the
 axes span both series.

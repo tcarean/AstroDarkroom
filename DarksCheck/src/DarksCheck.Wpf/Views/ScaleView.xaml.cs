@@ -19,8 +19,12 @@ using System.Windows.Controls;
 
 namespace DarksCheck.Wpf;
 
-/// <summary>The tab "Explicatii scara ADU" (R-078): the scale rows and paragraphs the core wrote, nothing computed here.</summary>
+/// <summary>
+/// The tab "Explicatii scara ADU" (R-078): the scale rows and paragraphs the core wrote, nothing
+/// computed here.
+/// </summary>
 public partial class ScaleView : UserControl
 {
+    /// <summary>The tab, its bindings resolved against the main view-model it inherits.</summary>
     public ScaleView() => InitializeComponent();
 }

@@ -36,15 +36,40 @@ public static class Emphasis
     public static readonly DependencyProperty BoldProperty = DependencyProperty.RegisterAttached(
         "Bold", typeof(IEnumerable<string>), typeof(Emphasis), new PropertyMetadata(null, OnChanged));
 
+    /// <summary>The attached text of an element.</summary>
+    /// <param name="d">The element; null gives null.</param>
+    /// <returns>The text, or null when unset.</returns>
     public static string? GetText(DependencyObject d) => (string?)d?.GetValue(TextProperty);
 
+    /// <summary>Sets the attached text of an element; a TextBlock's inlines are rebuilt.</summary>
+    /// <param name="d">The element; null does nothing.</param>
+    /// <param name="value">The row's text; null is drawn as nothing.</param>
     public static void SetText(DependencyObject d, string? value) => d?.SetValue(TextProperty, value);
 
+    /// <summary>The attached bold substrings of an element.</summary>
+    /// <param name="d">The element; null gives null.</param>
+    /// <returns>The substrings, or null when unset.</returns>
     public static IEnumerable<string>? GetBold(DependencyObject d) => (IEnumerable<string>?)d?.GetValue(BoldProperty);
 
+    /// <summary>
+    /// Sets the attached bold substrings of an element; a TextBlock's inlines are rebuilt.
+    /// </summary>
+    /// <param name="d">The element; null does nothing.</param>
+    /// <param name="value">The substrings to draw bold; null or empty draws the text plain.</param>
     public static void SetBold(DependencyObject d, IEnumerable<string>? value) => d?.SetValue(BoldProperty, value);
 
-    /// <summary>The text cut into plain and bold pieces: every occurrence of every bold substring that stands as a figure of its own (not preceded by a digit, a sign or a point, not followed by a digit) is bold, the longest substring first at a position, pieces never overlap.</summary>
+    /// <summary>
+    /// The text cut into plain and bold pieces: every occurrence of every bold substring that
+    /// stands as a figure of its own (not preceded by a digit, a sign or a point, not followed by a
+    /// digit) is bold, the longest substring first at a position, pieces never overlap.
+    /// </summary>
+    /// <param name="text">The row's text; null counts as empty.</param>
+    /// <param name="bold">The substrings to make bold; null, empty strings and duplicates are
+    /// ignored.</param>
+    /// <returns>
+    /// The pieces in order, which joined give the text back; adjacent pieces differ in weight.
+    /// Empty for an empty text; the whole text as one plain piece when nothing is bold.
+    /// </returns>
     public static IReadOnlyList<(string Text, bool Bold)> Segments(string? text, IEnumerable<string>? bold)
     {
         text ??= "";
@@ -96,9 +121,19 @@ public static class Emphasis
     private static readonly DependencyProperty PendingProperty = DependencyProperty.RegisterAttached(
         "Pending", typeof(bool), typeof(Emphasis), new PropertyMetadata(false));
 
+    /// <summary>
+    /// Whether a character can be part of a figure: an ASCII digit, a point or a sign.
+    /// </summary>
+    /// <param name="c">The character before a candidate match.</param>
+    /// <returns>True for 0-9, '.', '+' and '-'.</returns>
     private static bool IsFigureChar(char c) => char.IsAsciiDigit(c) || c is '.' or '+' or '-';
 
-    /// <summary>One rebuild per binding pass: the two properties arrive one after the other, so the first schedules it and the second finds it pending.</summary>
+    /// <summary>
+    /// One rebuild per binding pass: the two properties arrive one after the other, so the first
+    /// schedules it and the second finds it pending. Elements other than a TextBlock are ignored.
+    /// </summary>
+    /// <param name="d">The element whose text or bold list changed.</param>
+    /// <param name="e">The change; unused, the rebuild reads both properties.</param>
     private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not TextBlock block || (bool)block.GetValue(PendingProperty))
@@ -114,6 +149,10 @@ public static class Emphasis
         });
     }
 
+    /// <summary>
+    /// Replaces the block's inlines with the plain and bold runs of its two properties.
+    /// </summary>
+    /// <param name="block">The text block to redraw.</param>
     private static void Rebuild(TextBlock block)
     {
         block.Inlines.Clear();

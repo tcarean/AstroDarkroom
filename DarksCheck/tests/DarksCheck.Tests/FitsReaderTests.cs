@@ -271,11 +271,11 @@ public class FitsReaderTests
         throw new InvalidOperationException("card not found: " + key);
     }
 
-    // ---------------------------------------------------------------- headerul
+    // ---------------------------------------------------------------- the header
 
     /// <summary>
-    /// Headerul era pana acum parsat si aruncat. --light are nevoie de el ca sa afle
-    /// focala si scara, deci sa poata refuza un cadru pe care testul nu se aplica.
+    /// LoadWithHeader returns the keywords of the HDU that held the image, the optics cards
+    /// among them.
     /// </summary>
     [Fact]
     public void LoadWithHeader_ReturnsTheCardsOfTheHduThatHeldTheImage()
@@ -292,7 +292,7 @@ public class FitsReaderTests
         Assert.Equal(32, FitsReader.HInt(hdr, "NAXIS1", 0));
     }
 
-    /// <summary>Un header minimal nu e o eroare - doar nu are cheile optionale.</summary>
+    /// <summary>A minimal header is not an error - it just lacks the optional keys.</summary>
     [Fact]
     public void LoadWithHeader_OnAMinimalHeader_SimplyLacksTheOpticalKeys()
     {
@@ -303,7 +303,7 @@ public class FitsReaderTests
         Assert.Equal(0, FitsReader.HDbl(hdr, "FOCALLEN", 0));
     }
 
-    /// <summary>Load ramane exact ce era: acelasi raster, headerul doar ignorat.</summary>
+    /// <summary>Load stays exactly what it was: the same raster, the header just ignored.</summary>
     [Fact]
     public void Load_StillReturnsTheSameRasterAsLoadWithHeader()
     {
@@ -316,7 +316,7 @@ public class FitsReaderTests
 
     /// <summary>
     /// Siril writes BAYERPAT on a frame that came through the Conversion tab, so the
-    /// exposure mode can name the four positions instead of numbering them.
+    /// four positions can be named (R, G1, G2, B) instead of numbered.
     /// </summary>
     [Fact]
     public void ACfaFitsCarriesTheMosaicOrder()
@@ -350,9 +350,9 @@ public class FitsReaderTests
     /// <summary>
     /// The header Siril actually writes on a converted or stacked frame: BAYERPAT RGGB
     /// and ROWORDER 'BOTTOM-UP'. Read in file order on an even height, the row parity
-    /// flips, so position [1,0] - which BAYERPAT calls G - is the real R. Measured on
-    /// pp_flat_stacked.fit (6016x4016): the channel labelled G2 sat at a third of the
-    /// green, exactly where --expo on the source NEF puts R.
+    /// flips, so position [1,0] - which BAYERPAT calls G - is the real R. Measured on a
+    /// stacked D3300 flat (6016x4016): the channel labelled G2 sat at a third of the
+    /// green, exactly where libraw puts R on the source NEF.
     /// </summary>
     [Fact]
     public void ABottomUpFrameOfEvenHeightShiftsTheOrderByOneRow()

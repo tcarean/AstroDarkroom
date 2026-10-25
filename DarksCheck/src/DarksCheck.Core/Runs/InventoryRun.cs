@@ -21,6 +21,19 @@ namespace DarksCheck.Core;
 /// The inventory of a session: its folders, the metadata of every dark, bias and light, the
 /// cadence of the darks and of the lights, and the match of check 1.
 /// </summary>
+/// <param name="Session">The folder opened, with its frames' paths.</param>
+/// <param name="Darks">The darks' metadata, in file-name order; empty for a session without
+/// darks.</param>
+/// <param name="Biases">The biases' metadata, in file-name order; empty when there are
+/// none.</param>
+/// <param name="Lights">The lights' metadata, in file-name order; empty when there are
+/// none.</param>
+/// <param name="DarksCadence">The darks' gaps and cadence.</param>
+/// <param name="LightsCadence">The lights' gaps and cadence.</param>
+/// <param name="Match">The settings of each group and check 1's verdicts on them.</param>
+/// <param name="DarksFromPartner">The partner's root when its darks stand in for a session without
+/// darks (R-054), else null.</param>
+/// <param name="PartnerDarks">The partner's darks' metadata in that case, else null.</param>
 internal sealed record Inventory(
     SessionFolder Session,
     IReadOnlyList<FrameInfo> Darks,
@@ -43,6 +56,12 @@ internal sealed record Inventory(
 /// </summary>
 internal static class InventoryRun
 {
+    /// <summary>
+    /// Opens the folder (a session without darks allowed) and reads the metadata of every frame,
+    /// without decoding pixels.
+    /// </summary>
+    /// <param name="folder">The session folder or the library folder.</param>
+    /// <returns>The inventory; a file that could not be read is listed with its error.</returns>
     internal static Inventory Run(string folder)
     {
         SessionFolder session = SessionFolder.Open(folder, allowLightsOnly: true);
@@ -53,6 +72,11 @@ internal static class InventoryRun
             CadenceAnalyzer.Analyze(darks), CadenceAnalyzer.Analyze(lights), MatchAnalyzer.Analyze(darks, biases, lights));
     }
 
+    /// <summary>
+    /// Reads the metadata of each file, numbering them from 1 in the order given.
+    /// </summary>
+    /// <param name="paths">The files' paths.</param>
+    /// <returns>One record per path, in the same order; never throws for a bad file.</returns>
     internal static FrameInfo[] ReadAll(IReadOnlyList<string> paths)
     {
         FrameInfo[] frames = new FrameInfo[paths.Count];

@@ -19,10 +19,15 @@ using System.Globalization;
 
 namespace DarksCheck.Core;
 
-/// <summary>The lines every run shares: the banner, the copyright, the warranty of --help (R-001, R-004).</summary>
+/// <summary>
+/// The lines every run shares: the banner, the copyright, the warranty of --help (R-001, R-004).
+/// </summary>
 internal static class RunReport
 {
-    /// <summary>The first two lines of every run, before anything else, including errors and --help.</summary>
+    /// <summary>
+    /// The first two lines of every run, before anything else, including errors and --help.
+    /// </summary>
+    /// <param name="w">The writer; not null.</param>
     internal static void WriteBanner(TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(w);
@@ -32,7 +37,10 @@ internal static class RunReport
 
     internal const string LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html";
 
-    /// <summary>GPLv3 §5(d): a program that shows legal notices shows the warranty disclaimer too; here, in --help.</summary>
+    /// <summary>
+    /// GPLv3 §5(d): a program that shows legal notices shows the warranty disclaimer too; here, in
+    /// --help.
+    /// </summary>
     internal static readonly string[] WarrantyLines =
     [
         "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
@@ -43,16 +51,29 @@ internal static class RunReport
     ];
 
     /// <summary>"1 cadru", "20 cadre".</summary>
+    /// <param name="n">The frame count.</param>
+    /// <returns>The count with the Romanian word for frames.</returns>
     internal static string Frames(int n) => n == 1 ? "1 cadru" : n.ToString(CultureInfo.InvariantCulture) + " cadre";
 
-    /// <summary>The refusal of a session with lights and no darks run without a partner (R-002, R-054): what to give, in both applications' words.</summary>
+    /// <summary>
+    /// The refusal of a session with lights and no darks run without a partner (R-002, R-054): what
+    /// to give, in both applications' words.
+    /// </summary>
+    /// <param name="root">The session's folder.</param>
+    /// <returns>The message, in Romanian.</returns>
     internal static string LightsOnlyNeedsPartner(string root) =>
         $"sesiunea {root} are lights\\ dar nu are darks\\; da un partener de dark-uri (o biblioteca) ca sa compari lights-urile cu el: --against DIR in consola, \"Alege partener...\" in fereastra";
 
     /// <summary>A number with the invariant culture and a fixed number of decimals.</summary>
+    /// <param name="v">The number.</param>
+    /// <param name="decimals">The number of decimals.</param>
+    /// <returns>The formatted number; NaN prints as "NaN".</returns>
     internal static string F(double v, int decimals) => v.ToString("F" + decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
 
     /// <summary>A duration as "3 h 22 min", "54 min" or "48 s".</summary>
+    /// <param name="seconds">The duration in seconds, rounded to the nearest second.</param>
+    /// <returns>Seconds under a minute, whole minutes under an hour, else hours and
+    /// minutes.</returns>
     internal static string Duration(double seconds)
     {
         int s = (int)Math.Round(seconds);

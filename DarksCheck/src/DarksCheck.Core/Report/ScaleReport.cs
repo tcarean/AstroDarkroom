@@ -33,10 +33,32 @@ internal static class ScaleReport
     /// <summary>The console's wrap width for the paragraphs.</summary>
     private const int WrapColumns = 96;
 
-    /// <summary>Under this white level the file's values are floats (a scaled FITS), not integer ADU, and no bit depth is read from it.</summary>
+    /// <summary>
+    /// Under this white level the file's values are floats (a scaled FITS), not integer ADU, and no
+    /// bit depth is read from it.
+    /// </summary>
     private const double MinIntegerWhite = 255;
 
     /// <summary>The figures of the set the rows and the paragraphs share, computed once.</summary>
+    /// <param name="Darks">The dark series.</param>
+    /// <param name="ReferencePlane">The reference CFA position.</param>
+    /// <param name="Plane">The reference position's name.</param>
+    /// <param name="Norm">The normalisation factor: raw ADU per ADU-eq.</param>
+    /// <param name="Eq">The unit word of the figures, "ADU" or "ADU-eq".</param>
+    /// <param name="Bits">The file's bit depth read from its white level, or null for a float
+    /// file.</param>
+    /// <param name="First">The first readable dark's metadata, or null when none was read.</param>
+    /// <param name="Settings">That dark's ISO and exposure in words, or the Romanian for
+    /// unknown.</param>
+    /// <param name="SettingsKnown">True when that dark states both its ISO and its
+    /// exposure.</param>
+    /// <param name="Facts">The camera's published figures, or null for a camera not in the
+    /// table.</param>
+    /// <param name="Gain">The electrons per ADU at the darks' ISO, or null when unknown.</param>
+    /// <param name="BiasIso">The ISO of the first readable bias, or null.</param>
+    /// <param name="Stack">The lights' sky figures, or null without lights.</param>
+    /// <param name="MasterNoise">The dark master's noise per pixel in raw ADU; NaN for a single
+    /// frame.</param>
     private sealed record Figures(
         DarkSeriesAnalysis Darks,
         int ReferencePlane,
@@ -53,6 +75,9 @@ internal static class ScaleReport
         StackNoise? Stack,
         double MasterNoise)
     {
+        /// <summary>Computes the shared figures from the run's result.</summary>
+        /// <param name="r">The run's result.</param>
+        /// <returns>The figures.</returns>
         internal static Figures Of(DarkSeriesResult r)
         {
             DarkSeriesAnalysis d = r.Darks;
@@ -72,6 +97,9 @@ internal static class ScaleReport
     }
 
     /// <summary>The rows of the scale table.</summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The rows, in the console's order; the masters' noise and the light found carry
+    /// their bold parts.</returns>
     internal static IReadOnlyList<ReportRow> Rows(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -102,6 +130,8 @@ internal static class ScaleReport
     }
 
     /// <summary>The four paragraphs, with the set's numbers in them.</summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The four paragraphs, in Romanian, unwrapped.</returns>
     internal static IReadOnlyList<string> Paragraphs(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -127,7 +157,12 @@ internal static class ScaleReport
         return [p1, p2, p3, p4];
     }
 
-    /// <summary>The console's block: the title, the rows, a blank line, the paragraphs wrapped at <see cref="WrapColumns"/>.</summary>
+    /// <summary>
+    /// The console's block: the title, the rows, a blank line, the paragraphs wrapped at
+    /// <see cref="WrapColumns"/>.
+    /// </summary>
+    /// <param name="r">The run's result.</param>
+    /// <param name="w">The writer the block goes to; not null.</param>
     internal static void Write(DarkSeriesResult r, TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(w);
@@ -148,7 +183,13 @@ internal static class ScaleReport
         }
     }
 
-    /// <summary>Breaks a paragraph into lines of at most <paramref name="width"/> characters at spaces; a word longer than the width stands on its own line.</summary>
+    /// <summary>
+    /// Breaks a paragraph into lines of at most <paramref name="width"/> characters at spaces; a
+    /// word longer than the width stands on its own line.
+    /// </summary>
+    /// <param name="text">The paragraph; not null. Runs of spaces count as one.</param>
+    /// <param name="width">The longest line, in characters.</param>
+    /// <returns>The lines, without their leading indent; empty for a blank text.</returns>
     internal static IReadOnlyList<string> Wrap(string text, int width)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -178,7 +219,17 @@ internal static class ScaleReport
         return lines;
     }
 
-    /// <summary>The words that set a light in raw ADU against the masters' noise, and the figures to mark bold; empty without a master noise (one frame).</summary>
+    /// <summary>
+    /// The words that set a light in raw ADU against the masters' noise, and the figures to mark
+    /// bold; empty without a master noise (one frame).
+    /// </summary>
+    /// <param name="rawAdu">The light, in raw ADU.</param>
+    /// <param name="masterNoise">The dark master's noise per pixel in raw ADU; NaN or not positive
+    /// when unmeasured.</param>
+    /// <param name="stack">The lights' stack figures, which add the stack's ratio when its noise is
+    /// positive; null for none.</param>
+    /// <returns>The words in Romanian and the substrings to render bold; an empty text and no bold
+    /// when unmeasured.</returns>
     internal static (string Words, IReadOnlyList<string> Bold) AgainstMasters(double rawAdu, double masterNoise, StackNoise? stack)
     {
         if (double.IsNaN(masterNoise) || masterNoise <= 0)
@@ -200,6 +251,12 @@ internal static class ScaleReport
         return (words, bold);
     }
 
+    /// <summary>
+    /// The <c>zgomot in master</c> row: the dark master's noise per pixel and the lights' stack's,
+    /// both bold (ADR 0016).
+    /// </summary>
+    /// <param name="g">The set's figures.</param>
+    /// <returns>The row; NEMASURAT for a single frame.</returns>
     private static ReportRow MasterNoiseRow(Figures g)
     {
         if (double.IsNaN(g.MasterNoise))
@@ -225,6 +282,13 @@ internal static class ScaleReport
         return new("zgomot in master", $"{darkWords}; {stackWords}", bold);
     }
 
+    /// <summary>
+    /// The <c>electroni</c> row: what one ADU and one ADU-eq are in electrons at the darks' ISO,
+    /// with the camera's full well and QE.
+    /// </summary>
+    /// <param name="g">The set's figures.</param>
+    /// <returns>The row's value; the reason when the camera or its ISO is not in the
+    /// table.</returns>
     private static string Electrons(Figures g)
     {
         if (g.Facts is not CameraFacts facts)
@@ -240,7 +304,13 @@ internal static class ScaleReport
         return $"1 ADU = {F(gain, 2)} e- la ISO {F(iso, 0)} ({facts.Model}, {CameraFacts.SourceWords}); 1 ADU-eq = {F(g.Norm, 2)} ADU = {F(gain * g.Norm, 1)} e-; full well {F(facts.FullWellElectrons, 0)} e-, QE {F(facts.QuantumEfficiencyPercent, 0)} %";
     }
 
-    /// <summary>The read noise per pixel; in electrons too when the biases' own ISO has a gain in the table.</summary>
+    /// <summary>
+    /// The read noise per pixel; in electrons too when the biases' own ISO has a gain in the table.
+    /// </summary>
+    /// <param name="r">The run's result.</param>
+    /// <param name="g">The set's figures.</param>
+    /// <returns>The row's value; NEMASURAT without biases, with the published figure when the
+    /// camera is known.</returns>
     private static string ReadNoise(DarkSeriesResult r, Figures g)
     {
         if (r.Biases is BiasAnalysis b && !double.IsNaN(b.ReadNoise[g.ReferencePlane]))
@@ -254,6 +324,12 @@ internal static class ScaleReport
         return "NEMASURAT: fara bias-uri" + (g.Facts is null ? "" : $" (sursa da {F(g.Facts.ReadNoiseElectrons, 1)} e- pentru {g.Facts.Model})");
     }
 
+    /// <summary>
+    /// The <c>zgomot pe cadru</c> row: a dark's noise per pixel and the median dark current.
+    /// </summary>
+    /// <param name="r">The run's result.</param>
+    /// <param name="g">The set's figures.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string FrameNoise(DarkSeriesResult r, Figures g)
     {
         string sigma = double.IsNaN(g.Darks.Noise.SigmaFrame) ? "NEMASURAT" : $"sigma {F(g.Darks.Noise.SigmaFrame, 2)} ADU pe pixel pe un dark";
@@ -266,6 +342,15 @@ internal static class ScaleReport
         return $"{sigma}; curentul de intuneric median {F(dc.Median, 2)} ADU{eq} la {g.Settings}";
     }
 
+    /// <summary>
+    /// The <c>gasit</c> row: check 2's constant light, the largest light on a frame and the map
+    /// offset over the threshold, each in ADU-eq, raw ADU and electrons when known, set against the
+    /// masters' noise.
+    /// </summary>
+    /// <param name="r">The run's result.</param>
+    /// <param name="g">The set's figures.</param>
+    /// <returns>The row with its bold parts; "nimic peste praguri" when nothing was
+    /// found.</returns>
     private static ReportRow Found(DarkSeriesResult r, Figures g)
     {
         LeakVerdict l = r.Verdicts.Leak;
@@ -300,7 +385,14 @@ internal static class ScaleReport
         return parts.Count == 0 ? new("gasit", "nimic peste praguri") : new("gasit", string.Join("; ", parts), bold);
     }
 
+    /// <summary>A figure with fixed decimals, as the darks report prints it.</summary>
+    /// <param name="v">The figure; NaN prints "-".</param>
+    /// <param name="decimals">The number of decimals.</param>
+    /// <returns>The formatted figure.</returns>
     private static string F(double v, int decimals) => DarkReport.F(v, decimals);
 
+    /// <summary>A signed figure with two decimals, as the darks report prints it.</summary>
+    /// <param name="v">The figure.</param>
+    /// <returns>The formatted figure.</returns>
     private static string Signed(double v) => DarkReport.Signed(v, 2);
 }

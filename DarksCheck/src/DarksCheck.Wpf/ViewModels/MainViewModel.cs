@@ -21,28 +21,89 @@ using DarksCheck.Core;
 
 namespace DarksCheck.Wpf;
 
-/// <summary>One labelled line of a section (R-071): the label, the whole value as the console prints it, the value without its verdict word, and the word, shown as a chip.</summary>
+/// <summary>
+/// One labelled line of a section (R-071): the label, the whole value as the console prints it,
+/// the value without its verdict word, and the word, shown as a chip.
+/// </summary>
+/// <param name="Label">The row's label.</param>
+/// <param name="Value">The whole value as the console prints it.</param>
+/// <param name="Rest">The value without its leading verdict word; the whole value when it has
+/// none.</param>
+/// <param name="Verdict">The leading verdict word; null when the row carries none.</param>
+/// <param name="Bold">The substrings of <paramref name="Rest"/> the window draws bold (ADR 0016);
+/// empty for none.</param>
 public sealed record RowVm(string Label, string Value, string Rest, string? Verdict, IReadOnlyList<string> Bold)
 {
     public bool HasVerdict => Verdict is not null;
 }
 
 /// <summary>One check of the report as a card: its title and its rows, the core's.</summary>
+/// <param name="Title">The section's title as the report prints it.</param>
+/// <param name="Rows">The section's rows, in the report's order.</param>
 public sealed record SectionVm(string Title, IReadOnlyList<RowVm> Rows);
 
-/// <summary>One dark of the frames table (R-071): the console's cells as they are; Skipped or Error set when the frame has no figures; Off and Note mark a frame off the plateau of R-023, with the core's reason.</summary>
+/// <summary>
+/// One dark of the frames table (R-071): the console's cells as they are; Skipped or Error set
+/// when the frame has no figures; Off and Note mark a frame off the plateau of R-023, with the
+/// core's reason.
+/// </summary>
+/// <param name="Index">The frame's number in the series, as the console shows it.</param>
+/// <param name="FileName">The file's name.</param>
+/// <param name="Skipped">Why the frame was not read; null when it was.</param>
+/// <param name="Error">Why the frame could not be measured; null when it was.</param>
+/// <param name="Time">The shot's time cell.</param>
+/// <param name="Mean">The mean above the black cell.</param>
+/// <param name="Sigma">The reference plane's sigma cell.</param>
+/// <param name="Residual">The residual sigma cell.</param>
+/// <param name="Bands">The random banding ratio cell.</param>
+/// <param name="Amp">The hot pixels' amplitude ratio cell, against the master.</param>
+/// <param name="Plateau">The degrees from the plateau of R-023 cell (`-` without a fit).</param>
+/// <param name="Light">The frame's light excess cell (`-` when not measured).</param>
+/// <param name="Side">The worst side's offset after the bias cell (`-` without a side).</param>
+/// <param name="Above">The count of pixels above the hot level cell.</param>
+/// <param name="Off">True when the core gave the frame a note: a frame off the plateau.</param>
+/// <param name="Note">The core's note for a frame off the plateau; null for the others.</param>
 public sealed record FrameRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Plateau, string Light, string Side, string Above, bool Off, string? Note)
 {
+    /// <summary>
+    /// The table row of the core as the window binds it; Off is set when the row has a note.
+    /// </summary>
+    /// <param name="r">The core's row of the darks table.</param>
+    /// <returns>The row, its cells unchanged.</returns>
     internal static FrameRowVm From(DarkTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Mean, r.Sigma, r.Residual, r.Bands, r.Amp, r.Plateau, r.Light, r.Side, r.Above, r.Note is not null, r.Note);
 }
 
 /// <summary>One light of the lights table (R-071): the console's cells as they are.</summary>
+/// <param name="Index">The light's number, as the console shows it.</param>
+/// <param name="FileName">The file's name.</param>
+/// <param name="Skipped">Why the light was not read; null when it was.</param>
+/// <param name="Error">Why the light could not be measured; null when it was.</param>
+/// <param name="Time">The shot's time cell.</param>
+/// <param name="Sky">The sky level cell.</param>
+/// <param name="LocalSigma">The local sigma cell.</param>
+/// <param name="Candidates">The hot-pixel candidates cell.</param>
+/// <param name="Isolated">The isolated candidates cell (hot pixels, not stars).</param>
+/// <param name="Amp">The amplitude ratio cell against the dark master.</param>
+/// <param name="Q25">The ratio's first quartile cell.</param>
+/// <param name="Q75">The ratio's third quartile cell.</param>
 public sealed record LightRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Sky, string LocalSigma, string Candidates, string Isolated, string Amp, string Q25, string Q75)
 {
+    /// <summary>The table row of the core as the window binds it.</summary>
+    /// <param name="r">The core's row of the lights table.</param>
+    /// <returns>The row, its cells unchanged.</returns>
     internal static LightRowVm From(LightTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Sky, r.LocalSigma, r.Candidates, r.Isolated, r.Amp, r.Q25, r.Q75);
 }
 
-/// <summary>A binned map of the Harti tab: the title, the image (null when the map has no blocks or the group is absent), the report's row about it, and what the card says without an image.</summary>
+/// <summary>
+/// A binned map of the Harti tab: the title, the image (null when the map has no blocks or the
+/// group is absent), the report's row about it, and what the card says without an image.
+/// </summary>
+/// <param name="Title">The card's title.</param>
+/// <param name="Image">The frozen grey map; null when the map has no blocks or the group is
+/// absent.</param>
+/// <param name="Note">The value of the report's row of the same name; empty when there is
+/// none.</param>
+/// <param name="EmptyText">What the card shows instead of a missing image.</param>
 public sealed record MapVm(string Title, BitmapSource? Image, string Note, string EmptyText)
 {
     public bool HasImage => Image is not null;
@@ -70,6 +131,11 @@ public sealed class MainViewModel : ObservableObject
     private string _doublingText;
     private DarkSeriesResult? _result;
 
+    /// <summary>
+    /// The view-model before any folder: the four setting texts and the partner from the stored
+    /// settings, the core's defaults for the ones never stored (the thread count stays empty,
+    /// meaning the core's choice).
+    /// </summary>
     public MainViewModel()
     {
         StoredSettings s = UserSettings.Load();
@@ -98,7 +164,9 @@ public sealed class MainViewModel : ObservableObject
 
     public bool HasFolder => !string.IsNullOrEmpty(_folder);
 
-    /// <summary>The partner folder of `--against` (R-073), remembered between runs; null for none.</summary>
+    /// <summary>
+    /// The partner folder of `--against` (R-073), remembered between runs; null for none.
+    /// </summary>
     public string? Partner
     {
         get => _partner;
@@ -185,15 +253,21 @@ public sealed class MainViewModel : ObservableObject
 
     public string BusyMessage { get => _busyMessage; private set => Set(ref _busyMessage, value); }
 
-    /// <summary>The whole report, exactly as the console prints it; what the export writes.</summary>
+    /// <summary>
+    /// The whole report, exactly as the console prints it; what the export writes.
+    /// </summary>
     public string Report { get => _report; private set => Set(ref _report, value); }
 
     public bool HasResult => _result is not null;
 
-    /// <summary>A line under the top bar: what was written, that the run was stopped, that the partner changed.</summary>
+    /// <summary>
+    /// A line under the top bar: what was written, that the run was stopped, that the partner
+    /// changed.
+    /// </summary>
     public string? Status { get => _status; private set => Set(ref _status, value); }
 
-    // ---- the settings (R-075), as typed; parsed with the invariant culture when a folder is opened
+    // ---- the settings (R-075), as typed; parsed with the invariant culture when a folder is
+    // opened
 
     /// <summary>How many frames decode in parallel; empty = half the cores.</summary>
     public string ThreadsText
@@ -208,7 +282,10 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>How many frames are held in memory (and how many lights are measured); the core's cap when blank or not a positive integer.</summary>
+    /// <summary>
+    /// How many frames are held in memory (and how many lights are measured); the core's cap when
+    /// blank or not a positive integer.
+    /// </summary>
     public string MaxFramesText
     {
         get => _maxFramesText;
@@ -222,7 +299,9 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>The gain per ISO stop; 2 = linear in ISO. Not a number or not positive = the default.</summary>
+    /// <summary>
+    /// The gain per ISO stop; 2 = linear in ISO. Not a number or not positive = the default.
+    /// </summary>
     public string IsoFactorText
     {
         get => _isoFactorText;
@@ -236,7 +315,9 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>The degrees that double the dark current; not a number or not positive = the default.</summary>
+    /// <summary>
+    /// The degrees that double the dark current; not a number or not positive = the default.
+    /// </summary>
     public string DoublingText
     {
         get => _doublingText;
@@ -280,7 +361,10 @@ public sealed class MainViewModel : ObservableObject
     public IReadOnlyList<ChartPoint> WarmingPoints { get; private set; } = [];
     public IReadOnlyList<GuideLine> WarmingGuides { get; private set; } = [];
 
-    /// <summary>The core's sentence under the warming chart: what the points are, the plateau and the band of the frames to discard (R-071).</summary>
+    /// <summary>
+    /// The core's sentence under the warming chart: what the points are, the plateau and the band
+    /// of the frames to discard (R-071).
+    /// </summary>
     public string WarmingNote { get; private set; } = "";
     public IReadOnlyList<ChartPoint> ResidualPoints { get; private set; } = [];
     public IReadOnlyList<GuideLine> ResidualGuides { get; private set; } = [];
@@ -293,7 +377,9 @@ public sealed class MainViewModel : ObservableObject
     public IReadOnlyList<RowVm> LightRows { get; private set; } = [];
     public IReadOnlyList<RowVm> IndexRows { get; private set; } = [];
 
-    /// <summary>The scale rows and paragraphs of R-080, for the tab of R-078; the title is the core's.</summary>
+    /// <summary>
+    /// The scale rows and paragraphs of R-080, for the tab of R-078; the title is the core's.
+    /// </summary>
     public IReadOnlyList<RowVm> ScaleRows { get; private set; } = [];
     public IReadOnlyList<string> ScaleParagraphs { get; private set; } = [];
     public string ScaleTitle => ScaleReport.Title;
@@ -301,10 +387,13 @@ public sealed class MainViewModel : ObservableObject
     public string Tag { get; private set; } = "";
 
     /// <summary>
-    /// Opens a session or library folder and runs the whole analysis on a pool thread,
-    /// reporting progress on the UI thread. A run in flight is cancelled first; a cancelled
-    /// run leaves the window as it was. An error becomes the problem card, the tabs stay hidden.
+    /// Opens a session or library folder and runs the whole analysis on a pool thread, reporting
+    /// progress on the UI thread. A run in flight is cancelled first and the previous result is
+    /// cleared; a cancelled run leaves no result, and the status line says it was stopped. An error
+    /// the core throws for a bad folder becomes the problem card and the tabs stay hidden; any
+    /// other exception propagates.
     /// </summary>
+    /// <param name="folder">The session or library folder; not null.</param>
     public async Task OpenAsync(string folder)
     {
         CancelPending();
@@ -320,7 +409,8 @@ public sealed class MainViewModel : ObservableObject
         DarkOptions options = Options;
         Progress<RunProgress> progress = new(p =>
         {
-            // a run superseded by a later OpenAsync still posts a few callbacks: not over the new run's bar
+            // a run superseded by a later OpenAsync still posts a few callbacks: not over the new
+            // run's bar
             if (cts.IsCancellationRequested)
             {
                 return;
@@ -368,7 +458,9 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Runs the current folder again, with the settings and the partner as they are now.</summary>
+    /// <summary>
+    /// Runs the current folder again, with the settings and the partner as they are now.
+    /// </summary>
     public Task RerunAsync() => HasFolder ? OpenAsync(_folder) : Task.CompletedTask;
 
     /// <summary>Stops the run in flight, if any.</summary>
@@ -383,7 +475,12 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Writes the report, the CSV files and the maps into <paramref name="dir"/> (R-074): the same files as `--out`, refused inside the session or the partner.</summary>
+    /// <summary>
+    /// Writes the report, the CSV files and the maps into <paramref name="dir"/> (R-074): the same
+    /// files as `--out`, refused inside the session or the partner. The written paths or the error
+    /// go to the status line; nothing happens before a result.
+    /// </summary>
+    /// <param name="dir">The folder to write into.</param>
     public void Export(string dir)
     {
         if (_result is null)
@@ -404,12 +501,24 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>The window copied the label: says so under the top bar.</summary>
     public void LabelCopied() => Status = WindowTexts.LabelCopied;
 
+    /// <summary>Stores the four setting texts as typed and the partner.</summary>
     private void SaveSettings() => UserSettings.Save(new StoredSettings(_threadsText, _maxFramesText, _isoFactorText, _doublingText, _partner));
 
+    /// <summary>A setting text as a positive whole number, with the invariant culture.</summary>
+    /// <param name="s">The text as typed.</param>
+    /// <returns>The number when it is a positive integer; null otherwise, so the core's default is
+    /// used.</returns>
     private static int? ParseInt(string s) => int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out int v) && v > 0 ? v : null;
 
+    /// <summary>A setting text as a positive number, with the invariant culture.</summary>
+    /// <param name="s">The text as typed.</param>
+    /// <returns>The number when it parses and is above 0; null otherwise, so the core's default is
+    /// used.</returns>
     private static double? ParseDouble(string s) => double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out double v) && v > 0 ? v : null;
 
+    /// <summary>
+    /// Forgets the result: every tab's rows, tables, maps and charts empty, and the change raised.
+    /// </summary>
     private void Clear()
     {
         _result = null;
@@ -426,6 +535,11 @@ public sealed class MainViewModel : ObservableObject
         RaiseAll();
     }
 
+    /// <summary>
+    /// Shapes a finished run for the tabs: the report text, the cards, the tables, the maps and the
+    /// charts, all from the core's rows and figures; nothing is computed here.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
     internal void Populate(DarkSeriesResult r)
     {
         _result = r;
@@ -512,15 +626,33 @@ public sealed class MainViewModel : ObservableObject
         RaiseAll();
     }
 
+    /// <summary>A report row of the core as the window binds it.</summary>
+    /// <param name="r">The core's row.</param>
+    /// <returns>The row with its label, value, rest, verdict and bold parts.</returns>
     private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict, r.BoldParts);
 
+    /// <summary>
+    /// The rows of every section whose title starts with the given text, in order.
+    /// </summary>
+    /// <param name="sections">The report's sections.</param>
+    /// <param name="titleStart">The start of the title, compared ordinally ("5.", "9.",
+    /// "INDEX").</param>
+    /// <returns>The rows as the window binds them; empty when no section matches.</returns>
     private static List<RowVm> Rows(IReadOnlyList<ReportSection> sections, string titleStart) =>
         sections.Where(s => s.Title.StartsWith(titleStart, StringComparison.Ordinal)).SelectMany(s => s.Rows).Select(Row).ToList();
 
+    /// <summary>The value of the first row with the given label.</summary>
+    /// <param name="rows">The rows to search.</param>
+    /// <param name="label">The label, compared exactly.</param>
+    /// <returns>The row's value; empty when no row has that label.</returns>
     private static string Note(IReadOnlyList<ReportRow> rows, string label) => rows.FirstOrDefault(r => r.Label == label)?.Value ?? "";
 
+    /// <summary>A binned map as the grey bitmap the PNG of the export holds.</summary>
+    /// <param name="m">The map; not null.</param>
+    /// <returns>The frozen bitmap; null for a map without blocks.</returns>
     private static BitmapSource? Map(BinnedMap m) => DarkOutputs.MapRaster(m) is (byte[] grey, int w, int h) ? RasterBitmaps.Grey(grey, w, h) : null;
 
+    /// <summary>Raises the change of every property that depends on the result.</summary>
     private void RaiseAll()
     {
         foreach (string name in new[]

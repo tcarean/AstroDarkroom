@@ -17,7 +17,17 @@
 
 namespace DarksCheck.Core;
 
-/// <summary>One decoded frame of a stack: its metadata and its mosaic as 16-bit values, or why it has none: an error, or skipped by the frame cap (not an error).</summary>
+/// <summary>
+/// One decoded frame of a stack: its metadata and its mosaic as 16-bit values, or why it has none:
+/// an error, or skipped by the frame cap (not an error).
+/// </summary>
+/// <param name="Info">The frame's metadata.</param>
+/// <param name="Pixels">The mosaic, row-major, in ADU on the stack's scale; null when the frame
+/// failed or was skipped.</param>
+/// <param name="Error">Why the frame has no mosaic, in Romanian for the report; null when it
+/// decoded.</param>
+/// <param name="Skipped">True when the frame cap left the frame out; its
+/// <paramref name="Error"/> then says so.</param>
 internal sealed record StackFrame(FrameInfo Info, ushort[]? Pixels, string? Error, bool Skipped = false);
 
 /// <summary>
@@ -42,12 +52,34 @@ internal sealed class FrameStack
     internal string ScaleSource { get; }
     internal double Norm { get; }
 
-    /// <summary>The settings the normalisation was read with (R-076); the lights and the partner take the same.</summary>
+    /// <summary>
+    /// The settings the normalisation was read with (R-076); the lights and the partner take the
+    /// same.
+    /// </summary>
     internal Normalisation Normalisation { get; }
 
-    /// <summary>True when the files carry no black level of their own (a FITS), so the stack's black is an estimate or a value handed in.</summary>
+    /// <summary>
+    /// True when the files carry no black level of their own (a FITS), so the stack's black is an
+    /// estimate or a value handed in.
+    /// </summary>
     internal bool BlackEstimated { get; }
 
+    /// <summary>
+    /// A stack with its frames, geometry and scale, as <see cref="Load"/> found them.
+    /// </summary>
+    /// <param name="frames">Every file of the group, in file order, decoded or not.</param>
+    /// <param name="w">The mosaic's width, in pixels; 0 when nothing decoded.</param>
+    /// <param name="h">The mosaic's height, in pixels; 0 when nothing decoded.</param>
+    /// <param name="black">The black level, in ADU; NaN while a FITS's black is not yet
+    /// set.</param>
+    /// <param name="white">The white level, in ADU.</param>
+    /// <param name="cfa">The colour order; null when the file does not say it.</param>
+    /// <param name="scaleSource">Where the black and the white come from, in Romanian for the
+    /// report.</param>
+    /// <param name="norm">The first decoded frame's normalisation factor, above 0.</param>
+    /// <param name="normalisation">The settings the factor was read with.</param>
+    /// <param name="blackEstimated">True when the black is an estimate or a value handed in
+    /// (a FITS).</param>
     private FrameStack(IReadOnlyList<StackFrame> frames, int w, int h, double black, double white, CfaPattern? cfa, string scaleSource, double norm, Normalisation normalisation, bool blackEstimated = false)
     {
         Frames = frames;
@@ -65,10 +97,18 @@ internal sealed class FrameStack
     /// <summary>The frames that decoded, in file order.</summary>
     internal IReadOnlyList<StackFrame> Decoded => Frames.Where(f => f.Pixels is not null).ToList();
 
-    /// <summary>The name of CFA position p (R, G1, G2, B) from the file's colour order, or `CFA[r,c]` when unknown.</summary>
+    /// <summary>
+    /// The name of CFA position p (R, G1, G2, B) from the file's colour order, or `CFA[r,c]` when
+    /// unknown.
+    /// </summary>
+    /// <param name="p">The CFA position, 0..3.</param>
+    /// <returns>The position's name, for the report.</returns>
     internal string PlaneName(int p) => Mosaic.Label(Cfa, p);
 
-    /// <summary>The position named G1 when the colour order is known, else position 1 (the second of the first row).</summary>
+    /// <summary>
+    /// The position named G1 when the colour order is known, else position 1 (the second of the
+    /// first row).
+    /// </summary>
     internal int ReferencePlane
     {
         get
@@ -86,16 +126,27 @@ internal sealed class FrameStack
     }
 
     /// <summary>
-    /// Decodes the files, <paramref name="threads"/> at a time, with the decoder's double
-    /// raster converted to 16-bit as soon as it lands (a 24 MP raster of doubles is 194 MB,
-    /// four of them in flight at most). The first file in order sets the geometry and the
-    /// scale, the others must match it. Above <paramref name="maxFrames"/> frames only every
-    /// k-th file is decoded, so the memory stays bounded; the others are listed as skipped.
-    /// <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group read
-    /// before (the biases) already established it; null estimates it from the first frame.
+    /// Decodes the files, <paramref name="threads"/> at a time, with the decoder's double raster
+    /// converted to 16-bit as soon as it lands (a 24 MP raster of doubles is 194 MB,
+    /// <paramref name="threads"/> of them in flight at most). The first file in order sets the
+    /// geometry and the scale, the others must match it. Above <paramref name="maxFrames"/> frames
+    /// only every k-th file is decoded, so the memory stays bounded; the others are listed as
+    /// skipped. <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group
+    /// read before (the biases) already established it; null estimates it from the first frame.
     /// <paramref name="normalisation"/> is the settings the ADU-eq factor is read with
     /// (<see cref="Normalisation.Default"/> when null).
     /// </summary>
+    /// <param name="paths">The group's files, in order; not null.</param>
+    /// <param name="threads">How many files are decoded at once; below 1 counts as 1.</param>
+    /// <param name="maxFrames">The frame cap, at least 1: above it every k-th file is decoded,
+    /// k = ceil(n / maxFrames).</param>
+    /// <param name="progress">Told (done, total) after each file; null for none.</param>
+    /// <param name="fitsBlack">The black level for a FITS, in ADU; null to estimate it.</param>
+    /// <param name="normalisation">The normalisation settings; null for the defaults.</param>
+    /// <param name="cancel">Stops the decoding; the cancellation is thrown, not recorded as a
+    /// frame's error.</param>
+    /// <returns>The stack: every file listed, the decoded ones with their mosaic; a stack of
+    /// size 0 when no file decoded.</returns>
     internal static FrameStack Load(IReadOnlyList<string> paths, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, double? fitsBlack = null, Normalisation? normalisation = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(paths);
@@ -181,7 +232,8 @@ internal sealed class FrameStack
             }
             else
             {
-                // no black level in the file: the median of the first decoded frame's reference plane
+                // no black level in the file: the median of the first decoded frame's reference
+                // plane
                 StackFrame first = frames.First(f => f.Pixels is not null);
                 double black = Planes.Median(Planes.Extract(first.Pixels!, gw, gh, stack.ReferencePlane));
                 stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + $", negru {fmt(black)} estimat din mediana cadrului {first.Info.Index}", gnorm, nz, blackEstimated: true);
@@ -197,6 +249,12 @@ internal sealed class FrameStack
     /// <paramref name="h"/>; the file's black (NaN for a FITS) and white. Throws what the
     /// readers throw.
     /// </summary>
+    /// <param name="index">The frame's 1-based index in its group.</param>
+    /// <param name="path">The file.</param>
+    /// <param name="w">The width the frame must have, in pixels.</param>
+    /// <param name="h">The height the frame must have, in pixels.</param>
+    /// <returns>The frame, the file's black level in ADU (NaN for a FITS) and its white
+    /// level.</returns>
     internal static (StackFrame Frame, double Black, double White) DecodeOne(int index, string path, int w, int h)
     {
         LoadedFrame f = ImageLoader.Load(path);
@@ -207,9 +265,19 @@ internal sealed class FrameStack
             : (new StackFrame(info, null, $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}"), black, white);
     }
 
+    /// <summary>A setting for an error message: up to three decimals, invariant culture.</summary>
+    /// <param name="v">The value; null when unknown.</param>
+    /// <returns>The value as text, or "?" when null.</returns>
     private static string Fmt(double? v) => v is double d ? d.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) : "?";
 
-    /// <summary>The same ISO (when both say it) and an exposure within <see cref="Th.ExposureTolerance"/> of the first frame's (when both say it): each setting on its own, so ISO 800 at 60 s is not ISO 400 at 120 s.</summary>
+    /// <summary>
+    /// The same ISO (when both say it) and an exposure within <see cref="Th.ExposureTolerance"/> of
+    /// the first frame's (when both say it): each setting on its own, so ISO 800 at 60 s is not ISO
+    /// 400 at 120 s.
+    /// </summary>
+    /// <param name="a">The frame to compare; not null.</param>
+    /// <param name="first">The first decoded frame of the group; not null.</param>
+    /// <returns>True when neither setting known on both sides differs.</returns>
     internal static bool SameSettings(FrameInfo a, FrameInfo first)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -219,7 +287,12 @@ internal sealed class FrameStack
         return sameIso && sameExposure;
     }
 
-    /// <summary>": file: error; file: error" for the first three frames that failed (not the skipped ones), or "" when none did.</summary>
+    /// <summary>
+    /// ": file: error; file: error" for the first three frames that failed (not the skipped ones),
+    /// or "" when none did.
+    /// </summary>
+    /// <param name="stack">The stack; not null.</param>
+    /// <returns>The errors, with a leading ": ", or an empty string.</returns>
     internal static string FirstErrors(FrameStack stack)
     {
         ArgumentNullException.ThrowIfNull(stack);
@@ -227,9 +300,23 @@ internal sealed class FrameStack
         return errors.Length == 0 ? "" : ": " + string.Join("; ", errors);
     }
 
-    /// <summary>ISO / 400 times exposure / 120 s with the default settings, or 1 when either is unknown (ADR 0004); <see cref="Normalisation.NormOf"/> takes the settings.</summary>
+    /// <summary>
+    /// ISO / 400 times exposure / 120 s with the default settings, or 1 when either is unknown
+    /// (ADR 0004); <see cref="Normalisation.NormOf"/> takes the settings.
+    /// </summary>
+    /// <param name="info">The frame's metadata; not null.</param>
+    /// <returns>The factor, above 0.</returns>
     internal static double NormOf(FrameInfo info) => Normalisation.Default.NormOf(info);
 
+    /// <summary>
+    /// A decoded frame's raster as 16-bit values, rounded and clamped to 0..65535, with its
+    /// scale: the file's black and white, or for a FITS a NaN black and the white BITPIX
+    /// allows; a float FITS on 0..1 is multiplied by 65535, one already in ADU is kept, both
+    /// with 65535 as the white.
+    /// </summary>
+    /// <param name="f">The decoded frame.</param>
+    /// <returns>The mosaic, the black (NaN when the file has none), the white, and the scale's
+    /// source in Romanian for the report.</returns>
     private static (ushort[] Pixels, double Black, double White, string Source) ToUshort(LoadedFrame f)
     {
         Img img = f.Image;

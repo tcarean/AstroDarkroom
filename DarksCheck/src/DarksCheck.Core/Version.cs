@@ -28,18 +28,34 @@ internal static class VersionInfo
 {
     internal static string Value { get; } = Read();
 
-    /// <summary>The name and the version, exactly as the first line of every run prints them.</summary>
+    /// <summary>
+    /// The name and the version, exactly as the first line of every run prints them.
+    /// </summary>
     internal static string Banner => "darkscheck " + Value;
 
-    /// <summary>The copyright notice, the second line of every run (GPLv3 asks every copy to carry it).</summary>
+    /// <summary>
+    /// The copyright notice, the second line of every run (GPLv3 asks every copy to carry it).
+    /// </summary>
     internal static string Copyright { get; } = ReadCopyright();
 
+    /// <summary>
+    /// Reads the assembly's copyright attribute, which the build takes from
+    /// <c>&lt;Copyright&gt;</c> in Directory.Build.props.
+    /// </summary>
+    /// <returns>The copyright line; the project's own line when the attribute is missing or
+    /// blank.</returns>
     private static string ReadCopyright()
     {
         string? c = typeof(VersionInfo).Assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright;
         return string.IsNullOrWhiteSpace(c) ? "Copyright (C) 2026 Tudor Carean" : c;
     }
 
+    /// <summary>
+    /// Reads the version from the assembly: the informational version (the
+    /// <c>&lt;Version&gt;</c> of Directory.Build.props), else the assembly version, with any
+    /// "+metadata" suffix cut off.
+    /// </summary>
+    /// <returns>The version, as "1.0.1"; "0.0.0" when the assembly carries none.</returns>
     private static string Read()
     {
         Assembly asm = typeof(VersionInfo).Assembly;

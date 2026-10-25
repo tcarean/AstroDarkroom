@@ -25,14 +25,32 @@ namespace DarksCheck.Core;
 /// </summary>
 internal static class Planes
 {
-    /// <summary>How many values the clipped sigma reads at most; above it every k-th value of the plane is taken, as the prototype did.</summary>
+    /// <summary>
+    /// How many values the clipped sigma reads at most; above it every k-th value of the plane is
+    /// taken, as the prototype did.
+    /// </summary>
     internal const int SigmaSampleMax = 3_000_000;
 
+    /// <summary>The number of rows of one CFA position of a mosaic.</summary>
+    /// <param name="h">The mosaic's height, in pixels.</param>
+    /// <param name="p">The CFA position, 0..3.</param>
+    /// <returns>The plane's height: half the mosaic's, rounded up for the even rows.</returns>
     internal static int PlaneHeight(int h, int p) => (h - (p >> 1) + 1) / 2;
 
+    /// <summary>The number of columns of one CFA position of a mosaic.</summary>
+    /// <param name="w">The mosaic's width, in pixels.</param>
+    /// <param name="p">The CFA position, 0..3.</param>
+    /// <returns>The plane's width: half the mosaic's, rounded up for the even columns.</returns>
     internal static int PlaneWidth(int w, int p) => (w - (p & 1) + 1) / 2;
 
     /// <summary>The values of one CFA position, row-major, as floats.</summary>
+    /// <param name="a">The mosaic, row-major, <paramref name="w"/> x <paramref name="h"/>
+    /// values in ADU; not null.</param>
+    /// <param name="w">The mosaic's width, in pixels.</param>
+    /// <param name="h">The mosaic's height, in pixels.</param>
+    /// <param name="p">The CFA position, 0..3.</param>
+    /// <returns>A new array of <see cref="PlaneWidth"/> x <see cref="PlaneHeight"/>
+    /// values.</returns>
     internal static float[] Extract(ushort[] a, int w, int h, int p)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -52,6 +70,14 @@ internal static class Planes
         return r;
     }
 
+    /// <summary>The values of one CFA position of a float map (a master), row-major.</summary>
+    /// <param name="a">The map, row-major, <paramref name="w"/> x <paramref name="h"/> values;
+    /// not null.</param>
+    /// <param name="w">The map's width, in pixels.</param>
+    /// <param name="h">The map's height, in pixels.</param>
+    /// <param name="p">The CFA position, 0..3.</param>
+    /// <returns>A new array of <see cref="PlaneWidth"/> x <see cref="PlaneHeight"/>
+    /// values.</returns>
     internal static float[] Extract(float[] a, int w, int h, int p)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -78,6 +104,9 @@ internal static class Planes
     /// what lies more than 5 sigma (at least 5 ADU) from the running centre. Returns the sigma
     /// and the median of the sampled values.
     /// </summary>
+    /// <param name="plane">The values of one plane, in ADU; not null.</param>
+    /// <returns>The clipped sigma, in the plane's unit, and the median of the sampled values;
+    /// both NaN for an empty plane.</returns>
     internal static (double Sigma, double Median) ClippedSigma(float[] plane)
     {
         ArgumentNullException.ThrowIfNull(plane);
@@ -102,7 +131,18 @@ internal static class Planes
         return (s, med);
     }
 
-    /// <summary>Population standard deviation of the values within <paramref name="limit"/> of <paramref name="centre"/> (all of them when the centre is null); the mean of the kept values comes out too.</summary>
+    /// <summary>
+    /// Population standard deviation of the values within <paramref name="limit"/> of
+    /// <paramref name="centre"/> (all of them when the centre is null); the mean of the kept values
+    /// comes out too.
+    /// </summary>
+    /// <param name="x">The values.</param>
+    /// <param name="centre">The centre of the kept band, or null to keep every value.</param>
+    /// <param name="limit">The half-width of the kept band; a value at the limit or beyond is
+    /// dropped.</param>
+    /// <param name="mean">The mean of the kept values; the centre (0 when null) when none is
+    /// kept.</param>
+    /// <returns>The standard deviation of the kept values; 0 when none is kept.</returns>
     private static double Std(float[] x, double? centre, double limit, out double mean)
     {
         double sum = 0, sum2 = 0;
@@ -130,7 +170,12 @@ internal static class Planes
         return Math.Sqrt(Math.Max(var, 0));
     }
 
-    /// <summary>The median of a short list of doubles (the mean of the two middle values when even), on a sorted copy: the fits of <see cref="LeakAnalyzer"/>; NaN when empty.</summary>
+    /// <summary>
+    /// The median of a short list of doubles (the mean of the two middle values when even), on a
+    /// sorted copy: the fits of <see cref="LeakAnalyzer"/>; NaN when empty.
+    /// </summary>
+    /// <param name="values">The values; not null.</param>
+    /// <returns>The median, or NaN for an empty list.</returns>
     internal static double Median(IReadOnlyList<double> values)
     {
         ArgumentNullException.ThrowIfNull(values);
@@ -140,7 +185,11 @@ internal static class Planes
         return n == 0 ? double.NaN : n % 2 == 1 ? v[n / 2] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
     }
 
-    /// <summary>numpy's median: the middle value, or the mean of the two middle values; the array is copied.</summary>
+    /// <summary>
+    /// numpy's median: the middle value, or the mean of the two middle values; the array is copied.
+    /// </summary>
+    /// <param name="values">The values; not null, left unchanged.</param>
+    /// <returns>The median, or NaN for an empty array.</returns>
     internal static double Median(float[] values)
     {
         ArgumentNullException.ThrowIfNull(values);
@@ -161,7 +210,12 @@ internal static class Planes
         return 0.5 * (lo + hi);
     }
 
-    /// <summary>numpy's percentile with linear interpolation: rank p / 100 * (n - 1); the array is copied.</summary>
+    /// <summary>
+    /// numpy's percentile with linear interpolation: rank p / 100 * (n - 1); the array is copied.
+    /// </summary>
+    /// <param name="values">The values; not null, left unchanged.</param>
+    /// <param name="p">The percentile, 0..100.</param>
+    /// <returns>The percentile, or NaN for an empty array.</returns>
     internal static double Percentile(float[] values, double p)
     {
         ArgumentNullException.ThrowIfNull(values);
@@ -185,6 +239,9 @@ internal static class Planes
     }
 
     /// <summary>The k-th smallest value (0-based), by quickselect; reorders the array.</summary>
+    /// <param name="a">The values; not null, not empty; reordered in place.</param>
+    /// <param name="k">The rank, 0..length - 1.</param>
+    /// <returns>The value of rank <paramref name="k"/>.</returns>
     internal static float Select(float[] a, int k)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -241,7 +298,18 @@ internal static class Planes
         return a[k];
     }
 
-    /// <summary>The mean of each b x b block of a plane (the remainder rows and columns dropped), as a smaller map.</summary>
+    /// <summary>
+    /// The mean of each b x b block of a plane (the remainder rows and columns dropped), as a
+    /// smaller map.
+    /// </summary>
+    /// <param name="plane">The plane, row-major; not null.</param>
+    /// <param name="pw">The plane's width.</param>
+    /// <param name="ph">The plane's height.</param>
+    /// <param name="b">The block side, in plane pixels, at least 1.</param>
+    /// <param name="bw">The map's width: <paramref name="pw"/> / <paramref name="b"/>.</param>
+    /// <param name="bh">The map's height: <paramref name="ph"/> / <paramref name="b"/>.</param>
+    /// <returns>The block means, row-major, <paramref name="bw"/> x
+    /// <paramref name="bh"/>.</returns>
     internal static float[] BlockMean(float[] plane, int pw, int ph, int b, out int bw, out int bh)
     {
         ArgumentNullException.ThrowIfNull(plane);
@@ -271,6 +339,13 @@ internal static class Planes
     }
 
     /// <summary>The mean of a rectangle of a map, rows [y0, y1) and columns [x0, x1).</summary>
+    /// <param name="map">The map, row-major; not null.</param>
+    /// <param name="w">The map's width.</param>
+    /// <param name="y0">The first row.</param>
+    /// <param name="y1">The row after the last.</param>
+    /// <param name="x0">The first column.</param>
+    /// <param name="x1">The column after the last.</param>
+    /// <returns>The mean, or NaN for an empty rectangle.</returns>
     internal static double MeanOf(float[] map, int w, int y0, int y1, int x0, int x1)
     {
         ArgumentNullException.ThrowIfNull(map);
@@ -289,6 +364,11 @@ internal static class Planes
     }
 
     /// <summary>The mean of each row of a plane, and of each column.</summary>
+    /// <param name="plane">The plane, row-major; not null.</param>
+    /// <param name="pw">The plane's width, above 0.</param>
+    /// <param name="ph">The plane's height, above 0.</param>
+    /// <returns>The <paramref name="ph"/> row means and the <paramref name="pw"/> column
+    /// means.</returns>
     internal static (double[] Rows, double[] Cols) Profiles(float[] plane, int pw, int ph)
     {
         ArgumentNullException.ThrowIfNull(plane);
@@ -317,6 +397,8 @@ internal static class Planes
     }
 
     /// <summary>Population standard deviation of a sequence.</summary>
+    /// <param name="v">The values; not null.</param>
+    /// <returns>The standard deviation; 0 for an empty sequence.</returns>
     internal static double Std(IReadOnlyList<double> v)
     {
         ArgumentNullException.ThrowIfNull(v);
@@ -335,7 +417,14 @@ internal static class Planes
         return Math.Sqrt(s / v.Count);
     }
 
-    /// <summary>A running median over a window of <paramref name="window"/> values, the window clipped at the ends (scipy's `mode='nearest'` on a profile is the same up to the edges).</summary>
+    /// <summary>
+    /// A running median over 2 * (<paramref name="window"/> / 2) + 1 values centred on each
+    /// value (<paramref name="window"/> values when it is odd), the ends padded by repeating the
+    /// first and the last value, as scipy's `mode='nearest'`.
+    /// </summary>
+    /// <param name="v">The profile; not null.</param>
+    /// <param name="window">The window, in values, at least 1.</param>
+    /// <returns>A new array of the running medians, as long as <paramref name="v"/>.</returns>
     internal static double[] MedianFilter(double[] v, int window)
     {
         ArgumentNullException.ThrowIfNull(v);

@@ -19,7 +19,12 @@ using System.Windows.Controls;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>
+/// The Harti tab: the three binned maps of check 2, each with its report row; the code-behind only
+/// loads the XAML.
+/// </summary>
 public partial class MapsView : UserControl
 {
+    /// <summary>The tab, its bindings resolved against the main view-model it inherits.</summary>
     public MapsView() => InitializeComponent();
 }

@@ -16,10 +16,12 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // adapted from FlatCheck 2.3.0, which compiles without nullable annotations (ADR 0003)
+// The code is LightsCheck's adaptation; the comments are DarksCheck's own (ADR 0019).
 
 // RawReader.cs - camera raw files (NEF and its relatives) through libraw: the one place in
 // the tool that touches an external library. Adapted from FlatCheck's reader (ADR 0003): the
-// embedded preview is gone, the shot metadata a light needs is added (exposure, ISO, time).
+// embedded preview is gone, the shot metadata the inventory needs is added (exposure, ISO,
+// time).
 //
 // What is asked of libraw is the raw data, never a developed image:
 //   - raw_image, cropped to the visible area   -> the CFA mosaic, as rawpy's raw_image_visible
@@ -39,6 +41,10 @@ using Sdcb.LibRaw.Natives;
 
 namespace DarksCheck.Core
 {
+    /// <summary>
+    /// Reads a camera raw through libraw: the visible CFA mosaic in ADU, the exact white and black
+    /// levels, the CFA order and the shot metadata.
+    /// </summary>
     internal sealed class RawReader : IFrameReader
     {
         // No field of this class may be of a Sdcb.LibRaw type: fields are resolved when the
@@ -49,10 +55,14 @@ namespace DarksCheck.Core
         static readonly string[] Extensions =
         { ".nef", ".cr2", ".cr3", ".arw", ".dng", ".raf" };
 
-        /// <summary>The extensions recognised as camera raws; the session folder filters by them.</summary>
+        /// <summary>
+        /// The extensions recognised as camera raws; the session folder filters by them.
+        /// </summary>
         internal static IReadOnlyList<string> RawExtensions => Extensions;
 
         /// <summary>The dispatch gate: decided on the extension alone.</summary>
+        /// <param name="path">The file's path; null or empty allowed.</param>
+        /// <returns>True for one of the six raw extensions, any case.</returns>
         internal static bool IsRawPath(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
@@ -60,8 +70,18 @@ namespace DarksCheck.Core
             return Array.IndexOf(Extensions, ext) >= 0;
         }
 
+        /// <inheritdoc/>
         public bool Handles(string path) => IsRawPath(path);
 
+        /// <summary>
+        /// Decodes the raw: the visible mosaic in ADU (no development), the exact scale from
+        /// libraw, the CFA order and the shot metadata; the header is empty. Throws
+        /// FileNotFoundException for a missing file; InvalidOperationException when libraw cannot
+        /// be loaded, or gives no 16-bit Bayer mosaic, invalid dimensions or white not above black;
+        /// and, unwrapped, whatever libraw throws on a file it cannot open or unpack.
+        /// </summary>
+        /// <param name="path">The raw file to read.</param>
+        /// <returns>The frame, its image filled.</returns>
         public LoadedFrame Load(string path)
         {
             if (!File.Exists(path))
@@ -82,6 +102,8 @@ namespace DarksCheck.Core
         /// file is opened and those are read. No pixels, no scale: Image null, Header empty.
         /// Tens of milliseconds on a D3300 NEF instead of seconds.
         /// </summary>
+        /// <param name="path">The raw file to read.</param>
+        /// <returns>The frame's metadata, its image null.</returns>
         public LoadedFrame LoadInfo(string path)
         {
             if (!File.Exists(path))
@@ -97,6 +119,9 @@ namespace DarksCheck.Core
             catch (TypeInitializationException e) { throw Missing(e); }
         }
 
+        /// <summary>Opens the file in libraw and reads the shot metadata, without Unpack.</summary>
+        /// <param name="path">The raw file, known to exist.</param>
+        /// <returns>The frame's metadata, its image null and its header empty.</returns>
         static LoadedFrame ReadInfo(string path)
         {
             using RawContext ctx = RawContext.OpenFile(path);
@@ -106,6 +131,12 @@ namespace DarksCheck.Core
             return f;
         }
 
+        /// <summary>
+        /// The error that replaces a failure to load libraw's native DLLs: it says, in Romanian,
+        /// where they must sit and how to publish them.
+        /// </summary>
+        /// <param name="inner">The loader's exception, kept as the inner one.</param>
+        /// <returns>The exception to throw.</returns>
         static InvalidOperationException Missing(Exception inner)
             => new InvalidOperationException(
                 "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "
@@ -113,6 +144,12 @@ namespace DarksCheck.Core
               + "FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
               + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")", inner);
 
+        /// <summary>
+        /// The full decode behind <see cref="Load"/>: Unpack, the visible mosaic, the scale, the
+        /// CFA order and the metadata, all read while the file is open once.
+        /// </summary>
+        /// <param name="path">The raw file, known to exist.</param>
+        /// <returns>The frame, its image in ADU.</returns>
         static LoadedFrame Decode(string path)
         {
             using RawContext ctx = RawContext.OpenFile(path);
@@ -187,6 +224,9 @@ namespace DarksCheck.Core
         /// LensInfo.MakerNotes, not from LensInfo's top fields, which are 0 on a D3300 with a
         /// third-party lens (measured in FlatCheck).
         /// </summary>
+        /// <param name="f">The frame whose shot fields are set.</param>
+        /// <param name="ctx">The open libraw context.</param>
+        /// <param name="ip">libraw's image parameters, for the make and the model.</param>
         static void FillShootingInfo(LoadedFrame f, RawContext ctx, LibRawImageParams ip)
         {
             LibRawImageOtherParams other = ctx.ImageOtherParams;

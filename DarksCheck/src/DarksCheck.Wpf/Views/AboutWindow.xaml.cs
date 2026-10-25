@@ -21,8 +21,16 @@ using System.Windows.Navigation;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>
+/// The "Despre" window: the icon, the version, the copyright, the GPLv3 notice and the
+/// third-party list, all from <see cref="AboutViewModel"/>.
+/// </summary>
 public partial class AboutWindow : Window
 {
+    /// <summary>
+    /// The window over a new <see cref="AboutViewModel"/>, with the icon's largest frame as its
+    /// logo.
+    /// </summary>
     public AboutWindow()
     {
         InitializeComponent();
@@ -31,7 +39,12 @@ public partial class AboutWindow : Window
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
     }
 
-    /// <summary>Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.</summary>
+    /// <summary>
+    /// Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.
+    /// A refused start is ignored: the link stays on screen to be copied by hand.
+    /// </summary>
+    /// <param name="sender">The hyperlink.</param>
+    /// <param name="e">The navigation request; marked handled.</param>
     private void OpenLink(object sender, RequestNavigateEventArgs e)
     {
         e.Handled = true;
@@ -47,5 +60,8 @@ public partial class AboutWindow : Window
         }
     }
 
+    /// <summary>The close button: closes the window.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void CloseClick(object sender, RoutedEventArgs e) => Close();
 }

@@ -19,7 +19,12 @@ using System.Windows.Controls;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>
+/// The Cadre tab: the darks table, one row per frame with the console's cells, and the three
+/// per-frame charts; the code-behind only loads the XAML.
+/// </summary>
 public partial class FramesView : UserControl
 {
+    /// <summary>The tab, its bindings resolved against the main view-model it inherits.</summary>
     public FramesView() => InitializeComponent();
 }

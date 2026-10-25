@@ -24,11 +24,20 @@ namespace DarksCheck.Core;
 /// (<see cref="Th.DoublingCelsius"/>). The exposure factor is always linear. The console
 /// runs with <see cref="Default"/>.
 /// </summary>
+/// <param name="IsoFactorPerStop">The factor the gain grows by per ISO stop, above 0; 2 means
+/// linear in ISO.</param>
+/// <param name="DoublingCelsius">The degrees Celsius that double the dark current, above 0.</param>
 internal sealed record Normalisation(double IsoFactorPerStop = 2, double DoublingCelsius = Th.DoublingCelsius)
 {
     internal static readonly Normalisation Default = new();
 
-    /// <summary>The factor that turns a frame's ADU into ADU equivalent at ISO 400 and 120 s, or 1 when the frame does not say its ISO or its exposure.</summary>
+    /// <summary>
+    /// The factor that turns a frame's ADU into ADU equivalent at ISO 400 and 120 s, or 1 when the
+    /// frame does not say its ISO or its exposure.
+    /// </summary>
+    /// <param name="info">The frame's metadata; not null.</param>
+    /// <returns>The factor a frame's ADU are divided by, above 0; 1 also for an ISO or an
+    /// exposure that is not positive.</returns>
     internal double NormOf(FrameInfo info)
     {
         ArgumentNullException.ThrowIfNull(info);
@@ -42,6 +51,11 @@ internal sealed record Normalisation(double IsoFactorPerStop = 2, double Doublin
         return gain * (e / Th.NormExposureSeconds);
     }
 
-    /// <summary>The temperature offset the doubling rule reads from an amplitude ratio: D x log2(ratio); NaN for a ratio that is not positive.</summary>
+    /// <summary>
+    /// The temperature offset the doubling rule reads from an amplitude ratio: D x log2(ratio); NaN
+    /// for a ratio that is not positive.
+    /// </summary>
+    /// <param name="ratio">A ratio of two dark-current amplitudes.</param>
+    /// <returns>The offset in degrees Celsius, negative for a ratio below 1, or NaN.</returns>
     internal double Degrees(double ratio) => ratio > 0 ? DoublingCelsius * Math.Log2(ratio) : double.NaN;
 }

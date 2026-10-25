@@ -17,10 +17,25 @@
 
 namespace DarksCheck.Core;
 
-/// <summary>One bias frame: its metadata and figures per plane, or why it has none: an error, or skipped by the frame cap (not an error).</summary>
+/// <summary>
+/// One bias frame: its metadata and figures per plane, or why it has none: an error, or skipped by
+/// the frame cap (not an error).
+/// </summary>
+/// <param name="Info">The frame's metadata.</param>
+/// <param name="Error">Why it has no figures, in Romanian; null when it decoded.</param>
+/// <param name="Skipped">True when the frame cap left it out.</param>
+/// <param name="Planes">The four positions' figures in raw ADU (normalisation 1); empty
+/// without a mosaic.</param>
 internal sealed record BiasFrameFigures(FrameInfo Info, string? Error, bool Skipped, IReadOnlyList<PlaneFigures> Planes);
 
-/// <summary>Whether the noise around black is clipped (R-041): the minimum, the share of pixels below black, and the share below black minus two sigma against the 2.28 % of a Gaussian.</summary>
+/// <summary>
+/// Whether the noise around black is clipped (R-041): the minimum, the share of pixels below black,
+/// and the share below black minus two sigma against the 2.28 % of a Gaussian.
+/// </summary>
+/// <param name="Min">The smallest value, in raw ADU, the black included.</param>
+/// <param name="FractionBelowBlack">The share of pixels under the black, 0..1.</param>
+/// <param name="FractionBelowMinusTwoSigma">The share under the black minus two clipped sigmas,
+/// 0..1.</param>
 internal sealed record ClipCheck(int Min, double FractionBelowBlack, double FractionBelowMinusTwoSigma);
 
 /// <summary>
@@ -28,6 +43,19 @@ internal sealed record ClipCheck(int Min, double FractionBelowBlack, double Frac
 /// pairs of consecutive frames, the mean master's level and noise per plane, the binned
 /// master maps, and the clipping check on the first frame's reference plane.
 /// </summary>
+/// <param name="Width">The mosaic's width, in pixels.</param>
+/// <param name="Height">The mosaic's height, in pixels.</param>
+/// <param name="Black">The black level, in raw ADU.</param>
+/// <param name="White">The white level, in raw ADU.</param>
+/// <param name="Frames">Every bias file, in file order.</param>
+/// <param name="Used">How many decoded.</param>
+/// <param name="PlaneNames">The four positions' names.</param>
+/// <param name="ReadNoise">Per position, the median over the consecutive pairs of the clipped
+/// sigma of their difference over sqrt(2), in raw ADU; NaN under two frames.</param>
+/// <param name="Master">The mean master's level and noise per position (no counts).</param>
+/// <param name="MeanMaster">The mean master, row-major, in raw ADU with the black.</param>
+/// <param name="MeanMaps">The binned mean master per position, above black.</param>
+/// <param name="Clip">The clipping check.</param>
 internal sealed record BiasAnalysis(
     int Width,
     int Height,
@@ -42,11 +70,25 @@ internal sealed record BiasAnalysis(
     IReadOnlyList<BinnedMap> MeanMaps,
     ClipCheck Clip);
 
-/// <summary>The dark current (R-021, R-040): the dark's mean master minus the bias' mean master, binned per plane, with the regions and the spread of the reference plane.</summary>
+/// <summary>
+/// The dark current (R-021, R-040): the dark's mean master minus the bias' mean master, binned per
+/// plane, with the regions and the spread of the reference plane.
+/// </summary>
+/// <param name="Maps">The four positions' maps, in raw ADU above the bias.</param>
+/// <param name="Median">The reference plane map's median, in raw ADU.</param>
+/// <param name="P1">Its 1st percentile, in raw ADU.</param>
+/// <param name="P99">Its 99th percentile, in raw ADU.</param>
+/// <param name="ReferencePlane">The reference CFA position.</param>
 internal sealed record DarkCurrent(IReadOnlyList<BinnedMap> Maps, double Median, double P1, double P99, int ReferencePlane);
 
+/// <summary>Measures the biases (R-041) and the dark current against them.</summary>
 internal static class BiasAnalyzer
 {
+    /// <summary>Measures a stack of biases, in raw ADU.</summary>
+    /// <param name="stack">The decoded biases; not null; at least one must have decoded.</param>
+    /// <param name="threads">How many threads; below 1 counts as 1.</param>
+    /// <returns>The biases' figures.</returns>
+    /// <exception cref="InvalidOperationException">No bias decoded.</exception>
     internal static BiasAnalysis Analyze(FrameStack stack, int threads)
     {
         ArgumentNullException.ThrowIfNull(stack);
@@ -82,7 +124,8 @@ internal static class BiasAnalyzer
             frames[i] = new BiasFrameFigures(f.Info, null, false, planes);
         });
 
-        // read noise: consecutive pairs, sigma of the difference over sqrt(2), the median over the pairs
+        // read noise: consecutive pairs, sigma of the difference over sqrt(2), the median over the
+        // pairs
         double[] readNoise = new double[4];
         Parallel.For(0, 4, po, p =>
         {
@@ -168,7 +211,15 @@ internal static class BiasAnalyzer
         return new BiasAnalysis(w, h, black, stack.White, frames, n, names, readNoise, master, mean, maps, clip);
     }
 
-    /// <summary>The dark's mean master minus the bias' mean master, both binned: the dark current per block, in ADU above the bias.</summary>
+    /// <summary>
+    /// The dark's mean master minus the bias' mean master, both binned: the dark current per block,
+    /// in ADU above the bias.
+    /// </summary>
+    /// <param name="darks">The darks' figures; not null.</param>
+    /// <param name="biases">The biases' figures; not null.</param>
+    /// <param name="referencePlane">The reference CFA position, 0..3.</param>
+    /// <returns>The dark current.</returns>
+    /// <exception cref="InvalidOperationException">The two have different sizes.</exception>
     internal static DarkCurrent DarkMinusBias(DarkSeriesAnalysis darks, BiasAnalysis biases, int referencePlane)
     {
         ArgumentNullException.ThrowIfNull(darks);

@@ -36,6 +36,17 @@ internal sealed class Options
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
 
+    /// <summary>
+    /// Reads the command line into options. Stops at the first fault: the result then carries
+    /// <see cref="Error"/> (a Romanian message for the user) and the fields read so far. No
+    /// argument at all, <c>-h</c> or <c>--help</c> sets <see cref="Help"/> and nothing else is
+    /// checked.
+    /// </summary>
+    /// <param name="args">The arguments as the process received them; not null.</param>
+    /// <returns>
+    /// The parsed options, never null: <see cref="Help"/>, or <see cref="Error"/>, or a folder with
+    /// its flags.
+    /// </returns>
     internal static Options Parse(string[] args)
     {
         ArgumentNullException.ThrowIfNull(args);

@@ -17,23 +17,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- Dark.xaml - paleta si stilurile implicite. Copiat din LightsCheck (care l-a copiat din
-     FlatCheck); o corectie merge intai acolo (ADR 0009). Sabloanele proprii ale DarksCheck stau
-     in Rows.xaml.
+<!-- Dark.xaml - the palette and the default styles. Copied from LightsCheck (which copied it
+     from FlatCheck); a fix goes there first (ADR 0009), except the comments, which are
+     DarksCheck's own (ADR 0019). DarksCheck's own templates sit in Rows.xaml.
 
-     De ce tema intunecata: unealta se foloseste noaptea, langa montura, iar o fereastra
-     alba pe intuneric strica adaptarea ochiului pentru un sfert de ora. Culorile de
-     verdict NU se definesc aici, ci in VerdictPalette.cs, fiindca se deduc din
-     Stats.Severity - o lista de culori in XAML ar fi fost a doua definitie a ordinii
-     verdictelor. -->
+     Why a dark theme: the tool is used at night, beside the mount, and a white window in the
+     dark spoils the eye's adaptation for a quarter of an hour. The verdict colours are NOT
+     defined here but in VerdictPalette.cs, because they are derived from Stats.Severity - a
+     list of colours in XAML would have been a second definition of the verdicts' order. -->
 
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:DarksCheck.Wpf">
 
-  <!-- Convertoarele stau AICI, nu in App.xaml, ca sa fie vizibile sabloanelor de mai
-       jos: un StaticResource dintr-un dictionar se rezolva in dictionarul lui, nu in
-       cel care il importa. -->
+  <!-- The converters sit HERE, not in App.xaml, so that the templates below can see them: a
+       StaticResource of a dictionary is resolved in its own dictionary, not in the one that
+       imports it. -->
 
   <local:BoolToVisibilityConverter x:Key="BoolToVis" />
   <local:InverseBoolToVisibilityConverter x:Key="NotBoolToVis" />
@@ -41,7 +40,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <local:NotNullToVisibilityConverter x:Key="NotNullToVis" />
   <local:VerdictToBrushConverter x:Key="VerdictToBrush" />
 
-  <!-- ============================================================ paleta -->
+  <!-- ============================================================ palette -->
 
   <SolidColorBrush x:Key="WindowBg"  Color="#1B1B1D" />
   <SolidColorBrush x:Key="PanelBg"   Color="#232326" />
@@ -75,9 +74,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="Margin" Value="0,0,0,8" />
   </Style>
 
-  <!-- Tooltip-urile: WPF le deseneaza deschise la culoare, iar textul aplicatiei e deschis,
-       deci ieseau alb pe alb (gasit pe chip-urile de senzor din tabul Sintetic). Fundal si
-       chenar din paleta, text normal, latime maxima ca sa se rupa pe randuri. -->
+  <!-- The tooltips: WPF draws them light, and the application's text is light, so they would
+       come out white on white (the settings' and the table columns' hints). Background and
+       border from the palette, normal text, a maximum width so that it breaks into lines. -->
   <Style TargetType="ToolTip">
     <Setter Property="Background" Value="{StaticResource PanelBg2}" />
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -117,8 +116,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="FontSize" Value="11" />
   </Style>
 
-  <!-- Link-urile din "Despre". Implicit WPF le face albastru inchis pe fundal negru, adica
-       de necitit; accentul temei, subliniat abia la trecerea cu mouse-ul. -->
+  <!-- The links in "Despre". By default WPF makes them dark blue on a black background, that
+       is unreadable; the theme's accent, underlined only when the mouse passes over. -->
   <Style TargetType="Hyperlink">
     <Setter Property="Foreground" Value="{StaticResource AccentBr}" />
     <Setter Property="TextDecorations" Value="{x:Null}" />
@@ -130,7 +129,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Style.Triggers>
   </Style>
 
-  <!-- Cifrele se aliniaza pe coloana doar cu font monospatiat. -->
+  <!-- The figures line up in a column only with a monospaced font. -->
   <Style x:Key="Number" TargetType="TextBlock">
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
     <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
@@ -138,7 +137,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="HorizontalAlignment" Value="Right" />
   </Style>
 
-  <!-- ============================================================ panouri -->
+  <!-- ============================================================ panels -->
 
   <Style x:Key="Card" TargetType="Border">
     <Setter Property="Background" Value="{StaticResource PanelBg}" />
@@ -148,8 +147,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="Padding" Value="14" />
   </Style>
 
-  <!-- Campurile de scris ale tabului Sintetic (cautarea, focala, diafragma, crop-ul):
-       stil cu cheie, ca LogBox, fiindca TextBox-ul nu e un control obisnuit al aplicatiei. -->
+  <!-- The text fields of the top bar's settings (the thread count; Rows.xaml's SettingField
+       builds on it for the other three): a keyed style, because a TextBox is not a usual
+       control of the application. -->
   <Style x:Key="Field" TargetType="TextBox">
     <Setter Property="Background" Value="{StaticResource PanelBg2}" />
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -163,8 +163,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
   </Style>
 
-  <!-- Log-ul ferestrei de rulare Siril: text mono, doar citire, pe fundalul ferestrei.
-       Singurul TextBox din aplicatie, deci stil cu cheie, nu implicit. -->
+  <!-- A log box: mono text, read-only, on the window's background, keyed so it is not a
+       default style. DarksCheck's window has no log and does not use it: the style is part of
+       the copy. -->
   <Style x:Key="LogBox" TargetType="TextBox">
     <Setter Property="Background" Value="{StaticResource WindowBg}" />
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -182,7 +183,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
   </Style>
 
-  <!-- ============================================================ butoane -->
+  <!-- ============================================================ buttons -->
 
   <Style TargetType="Button">
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -215,7 +216,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Setter>
   </Style>
 
-  <!-- ============================================================ taburi -->
+  <!-- ============================================================ tabs -->
 
   <Style TargetType="TabControl">
     <Setter Property="Background" Value="{StaticResource WindowBg}" />
@@ -262,7 +263,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Setter>
   </Style>
 
-  <!-- ============================================================ liste -->
+  <!-- ============================================================ lists -->
 
   <Style TargetType="ListBox">
     <Setter Property="Background" Value="{StaticResource PanelBg}" />
@@ -392,9 +393,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="CheckBox">
-          <!-- Grid, nu StackPanel orizontal: acolo continutul primeste latime infinita
-               la masurare, deci o eticheta lunga nu s-ar rupe niciodata pe doua randuri -
-               s-ar taia. Coloana a doua e "*", deci textul stie cat loc are. -->
+          <!-- A Grid, not a horizontal StackPanel: there the content gets an infinite width when
+               measured, so a long label would never break into two lines - it would be cut. The
+               second column is "*", so the text knows how much room it has. -->
           <Grid Background="Transparent">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="Auto" />
@@ -428,7 +429,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Setter>
   </Style>
 
-  <!-- ============================================================ progres -->
+  <!-- ============================================================ progress -->
 
   <Style TargetType="ProgressBar">
     <Setter Property="Height" Value="4" />
@@ -511,11 +512,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Style.Triggers>
   </Style>
 
-  <!-- ============================================================ sabloane de rand -->
+  <!-- ============================================================ row templates -->
 
-  <!-- Pastila de verdict. Culoarea vine prin VerdictToBrush, care o deduce din
-       Stats.Severity - deci un verdict nou din nucleu se coloreaza corect fara sa se
-       atinga XAML-ul. Textul e inchis la culoare fiindca fundalul e mereu saturat. -->
+  <!-- The verdict pill. The colour comes through VerdictToBrush, which derives it from
+       Stats.Severity - so a new verdict from the core is coloured right without touching the
+       XAML. The text is dark because the background is always saturated. -->
   <DataTemplate x:Key="VerdictChip">
     <Border Background="{Binding Converter={StaticResource VerdictToBrush}}"
             CornerRadius="3" Padding="7,2" VerticalAlignment="Center">
@@ -561,8 +562,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   </DataTemplate>
 
 
-  <!-- Butonul de pliere: chevron plus eticheta din Content. Aparea a treia oara scris de
-       mana (raportul text, ghidul hartii, cum citesc tabul), deci sta o data aici. -->
+  <!-- The fold button: a chevron plus the label from Content, kept once here for every view that
+       folds a section. DarksCheck's views do not use it: the style is part of the copy. -->
   <Style x:Key="Disclosure" TargetType="ToggleButton">
     <Setter Property="HorizontalAlignment" Value="Left" />
     <Setter Property="Cursor" Value="Hand" />
@@ -591,11 +592,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   </Style>
 
 
-  <!-- O componenta terta din "Despre": numele si rolul pe primul rand, licenta si
-       copyright-ul sub el, link-ul la proiect ultimul. Licenta e ce cere afisat LGPL-ul,
-       deci sta pe randul ei, nu intr-un tooltip. Link-ul n-are handler aici - un
-       dictionar de resurse n-are code-behind - il prinde fereastra, prin evenimentul
-       rutat Hyperlink.RequestNavigate. -->
+  <!-- A third-party component in "Despre": the name and the role on the first line, the licence
+       and the copyright under it, the link to the project last. The licence is what the LGPL
+       asks to show, so it sits on its own line, not in a tooltip. The link has no handler here
+       - a resource dictionary has no code-behind - the window catches it, through the routed
+       event Hyperlink.RequestNavigate. -->
   <DataTemplate x:Key="ComponentRowTemplate">
     <StackPanel Margin="0,0,0,10">
       <TextBlock TextWrapping="Wrap">

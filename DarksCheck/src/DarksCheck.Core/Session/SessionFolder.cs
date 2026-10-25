@@ -38,9 +38,22 @@ internal sealed class SessionFolder
     internal IReadOnlyList<string> Biases { get; }
     internal IReadOnlyList<string> Lights { get; }
 
-    /// <summary>False for a session with lights and no darks (R-054), opened with <c>allowLightsOnly</c>: a partner's darks stand in for its own.</summary>
+    /// <summary>
+    /// False for a session with lights and no darks (R-054), opened with <c>allowLightsOnly</c>: a
+    /// partner's darks stand in for its own.
+    /// </summary>
     internal bool HasDarks => Darks.Count > 0;
 
+    /// <summary>Holds what <see cref="Open"/> found; nothing is checked here.</summary>
+    /// <param name="root">The full path of the folder opened.</param>
+    /// <param name="darksDir">The folder the darks were looked for in: <c>darks/</c>, or the root
+    /// for a library.</param>
+    /// <param name="biasesDir">The <c>biases/</c> folder when it holds frames, else null.</param>
+    /// <param name="lightsDir">The <c>lights/</c> folder when it holds frames, else null.</param>
+    /// <param name="darks">The darks' paths, sorted; empty only for a session without darks
+    /// (R-054).</param>
+    /// <param name="biases">The biases' paths, sorted; empty when there are none.</param>
+    /// <param name="lights">The lights' paths, sorted; empty when there are none.</param>
     private SessionFolder(string root, string darksDir, string? biasesDir, string? lightsDir, IReadOnlyList<string> darks, IReadOnlyList<string> biases, IReadOnlyList<string> lights)
     {
         Root = root;
@@ -62,6 +75,11 @@ internal sealed class SessionFolder
     /// throws <see cref="DirectoryNotFoundException"/>, a folder without frames
     /// <see cref="InvalidOperationException"/>, both with the path in the message.
     /// </summary>
+    /// <param name="path">The session folder or the library folder; not null or blank, relative
+    /// paths allowed.</param>
+    /// <param name="allowLightsOnly">True to accept a session with lights and no darks (R-054), as
+    /// a run against a partner does.</param>
+    /// <returns>The folder with its frames' paths.</returns>
     internal static SessionFolder Open(string path, bool allowLightsOnly = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
@@ -112,6 +130,8 @@ internal sealed class SessionFolder
     /// follows DSC_0009). Camera raws when there are any; otherwise FITS files. The two are
     /// not mixed: a folder with both holds converted copies beside the originals.
     /// </summary>
+    /// <param name="dir">The folder to list; it must exist.</param>
+    /// <returns>The full paths of its frames, sorted; empty when it holds none.</returns>
     internal static IReadOnlyList<string> FramesIn(string dir)
     {
         string[] files = Directory.GetFiles(dir);

@@ -19,7 +19,12 @@ using System.Windows.Controls;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>
+/// The Pixeli fierbinti tab: the rows of check 5 and the noise curve of check 8; the code-behind
+/// only loads the XAML.
+/// </summary>
 public partial class HotPixelsView : UserControl
 {
+    /// <summary>The tab, its bindings resolved against the main view-model it inherits.</summary>
     public HotPixelsView() => InitializeComponent();
 }

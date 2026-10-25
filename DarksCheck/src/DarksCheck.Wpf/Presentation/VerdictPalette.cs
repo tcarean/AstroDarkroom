@@ -36,7 +36,12 @@ internal static class VerdictPalette
     internal static readonly Color Neutral = Color.FromRgb(0x8B, 0x94, 0x9E);
     internal static readonly Color Accent = Color.FromRgb(0x4E, 0xA8, 0xDE);
 
-    /// <summary>Severity of a verdict word: 0 good (OK), 2 attention (ATENTIE), 3 bad (EROARE), -1 neutral (NEMASURAT, empty), 1 anything else.</summary>
+    /// <summary>
+    /// Severity of a verdict word: 0 good (OK), 2 attention (ATENTIE), 3 bad (EROARE), -1 neutral
+    /// (NEMASURAT, empty), 1 anything else. The word is read by its start, case-insensitively.
+    /// </summary>
+    /// <param name="verdict">The verdict word or the text it starts; null counts as empty.</param>
+    /// <returns>The severity, from -1 to 3.</returns>
     internal static int Severity(string? verdict)
     {
         string v = (verdict ?? "").Trim().ToUpperInvariant();
@@ -63,6 +68,9 @@ internal static class VerdictPalette
         return 1;
     }
 
+    /// <summary>The colour of a verdict word, by its <see cref="Severity"/>.</summary>
+    /// <param name="verdict">The verdict word; null counts as empty (neutral).</param>
+    /// <returns>One of the palette's colours.</returns>
     internal static Color For(string? verdict) => Severity(verdict) switch
     {
         0 => Good,
@@ -72,7 +80,12 @@ internal static class VerdictPalette
         _ => Neutral,
     };
 
-    /// <summary>The colour of a match verdict (R-062): direct is good, -opt and cosmetic are attention, unmatched is bad, unmeasured neutral.</summary>
+    /// <summary>
+    /// The colour of a match verdict (R-062): direct is good, -opt and cosmetic are attention,
+    /// unmatched is bad, unmeasured neutral.
+    /// </summary>
+    /// <param name="v">The match verdict of the core.</param>
+    /// <returns>One of the palette's colours.</returns>
     internal static Color For(MatchVerdict v) => v switch
     {
         MatchVerdict.Direct => Good,
@@ -82,6 +95,9 @@ internal static class VerdictPalette
         _ => Neutral,
     };
 
+    /// <summary>The colour of a verdict word as a frozen brush.</summary>
+    /// <param name="verdict">The verdict word; null counts as empty (neutral).</param>
+    /// <returns>A frozen solid brush, usable from any thread.</returns>
     internal static Brush BrushFor(string? verdict)
     {
         SolidColorBrush b = new(For(verdict));

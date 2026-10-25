@@ -21,12 +21,18 @@ using System.Windows.Media.Imaging;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>The one icon of both executables, for the windows that draw it themselves.</summary>
 internal static class AppIcon
 {
-    /// <summary>The same resource as Icon= in MainWindow.xaml, and the same file as the console's.</summary>
+    /// <summary>
+    /// The same resource as Icon= in MainWindow.xaml, and the same file as the console's.
+    /// </summary>
     internal static readonly Uri Source = new("pack://application:,,,/DarksCheck.Wpf;component/Icon/darkscheck.ico");
 
-    /// <summary>The frame with the most pixels, frozen so it can be shared between threads.</summary>
+    /// <summary>
+    /// The frame with the most pixels, frozen so it can be shared between threads.
+    /// </summary>
+    /// <returns>The widest frame of the icon file (256 px), frozen when it can be.</returns>
     internal static BitmapSource Largest()
     {
         BitmapDecoder decoder = BitmapDecoder.Create(Source, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
