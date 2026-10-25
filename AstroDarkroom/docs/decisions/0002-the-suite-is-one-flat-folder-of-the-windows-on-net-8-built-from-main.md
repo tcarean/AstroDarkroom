@@ -77,9 +77,9 @@ console field. The launcher's catalogue is compiled in, not scanned from the fol
 
 ## Consequences
 
-The suite's publish, every component clean at `main` (446947c), the launcher at its fourth
-commit (the output of `scripts/release.ps1 -Version 0.1.0 -PublishOnly`, pasted, paths
-shortened):
+The suite's publish, every component clean at `main` (446947c), the launcher at its third
+commit (94ac368) with this ADR and the console removal still uncommitted (the output of
+`scripts/release.ps1 -Version 0.1.0 -PublishOnly`, pasted, paths shortened):
 
 ```
 == publish only 0.1.0: no checks, Directory.Build.props and CHANGELOG.md untouched

@@ -17,6 +17,7 @@
 
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -45,7 +46,9 @@ public partial class MainWindow : Window
         _release = ReleaseManifest.TryRead(folder.ManifestPath);
         Logo.Source = App.LargestIconFrame();
         Banner.Text = VersionInfo.Banner;
-        FolderLine.Text = _release is { Date.Length: > 0 } r ? $"{folder.BaseDirectory}  -  release din {r.Date}" : folder.BaseDirectory;
+        // BaseDirectory ends with a separator; shown without it, so no backslash dangles before the dash.
+        string shownFolder = Path.TrimEndingDirectorySeparator(folder.BaseDirectory);
+        FolderLine.Text = _release is { Date.Length: > 0 } r ? $"{shownFolder}  -  release din {r.Date}" : shownFolder;
         Rows.ItemsSource = AppCatalogue.Apps
             .Select(app => new AppRow(app, folder.Locate(app), _release?.Find(app.Folder)))
             .ToList();
@@ -68,7 +71,8 @@ public partial class MainWindow : Window
         try
         {
             LaunchPlan plan = Launcher.Plan(row.App, _folder);
-            Process.Start(new ProcessStartInfo(plan.FileName) { UseShellExecute = true, WorkingDirectory = plan.WorkingDirectory });
+            // The Process object is only a handle to the started app; disposing it does not touch the app.
+            using Process? started = Process.Start(new ProcessStartInfo(plan.FileName) { UseShellExecute = true, WorkingDirectory = plan.WorkingDirectory });
         }
         catch (InvalidOperationException ex)
         {

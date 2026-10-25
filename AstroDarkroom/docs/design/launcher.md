@@ -57,12 +57,14 @@ the folder is ADR 0002, the split with no test project for the window is ADR 000
   appears or goes away is seen at the next start, or at the click, where a missing file
   becomes a message box instead of a crash.
 - `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `UseShellExecute` and the
-  plan's working directory. `Win32Exception` (Windows refused the start) and
+  plan's working directory, disposing the returned handle at once (the started app is not
+  affected). The bottom line shows the base directory without its trailing separator. `Win32Exception` (Windows refused the start) and
   `InvalidOperationException` (the file went away) end in a message box with the row's title.
 - `AboutWindow` takes the `ReleaseInfo` the main window read: banner, copyright, the warranty,
   the release date, and the component list from `release.json` without the launcher's own
   entry (`Name` equal to the release's `name`), each as a `ComponentLine` with `?` for an
-  unknown version and the unreleased note. Without a file the list is the catalogue with `?`.
+  unknown version and the unreleased note. Without a file, or with one that names no
+  component, the list is the catalogue with `?` and the line says the versions are unknown.
   Enter and Esc close it (`IsDefault` and `IsCancel` on one button).
 - The palette and the button, tooltip and card styles are in `App.xaml`, the same colours as
   LightsCheck's dark theme reduced to what two windows need. No dark title bar: that needs an

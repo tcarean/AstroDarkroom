@@ -50,10 +50,8 @@ public partial class RepoInvariantTests
         Assert.Contains("<TargetFramework>net8.0</TargetFramework>",
             File.ReadAllText(Path.Combine(root, "Directory.Build.props")), StringComparison.Ordinal);
         string window = Path.Combine(root, "src", "AstroDarkroom.Wpf", "AstroDarkroom.Wpf.csproj");
-        if (File.Exists(window))
-        {
-            Assert.Contains("<TargetFramework>net8.0-windows</TargetFramework>", File.ReadAllText(window), StringComparison.Ordinal);
-        }
+        Assert.True(File.Exists(window), "the window project is not where CLAUDE.md says: " + window);
+        Assert.Contains("<TargetFramework>net8.0-windows</TargetFramework>", File.ReadAllText(window), StringComparison.Ordinal);
     }
 
     /// <summary>Every fixture on disk is in the manifest; today there is none, the tests build their folders in temp.</summary>

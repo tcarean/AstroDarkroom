@@ -53,11 +53,7 @@ public partial class VersionTests
     public void NoProjectOverridesTheSharedVersionOrCopyright(string project)
     {
         string path = Path.Combine(TestData.FindRepoRoot(), project);
-        if (!File.Exists(path))
-        {
-            return;   // the window arrives in a later step
-        }
-
+        Assert.True(File.Exists(path), "project file not found: " + path);
         string csproj = File.ReadAllText(path);
         Assert.DoesNotContain("<Version>", csproj, StringComparison.Ordinal);
         Assert.DoesNotContain("<Copyright>", csproj, StringComparison.Ordinal);

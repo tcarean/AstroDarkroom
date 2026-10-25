@@ -45,15 +45,24 @@ public partial class AboutWindow : Window
         Banner.Text = VersionInfo.Banner;
         Copyright.Text = VersionInfo.Copyright;
         Warranty.Text = LicenseInfo.Warranty;
-        ReleaseLine.Text = release is { Date.Length: > 0 }
-            ? $"Release din {release.Date}; versiunile componentelor asa cum au intrat in pachet."
-            : "Fara release.json langa program: versiunile componentelor nu se cunosc.";
-        Components.ItemsSource = release is null
-            ? AppCatalogue.Apps.Select(a => new ComponentLine(a.Folder, "?", "")).ToList()
+        // The list the file gives, without the launcher's own entry; a file that names no
+        // component (hand-edited, truncated) falls back to the catalogue with unknown versions,
+        // the same thing the rows of the main window say.
+        List<ComponentLine> listed = release is null
+            ? []
             : release.Components
                 .Where(c => c.Name != release.Name)
                 .Select(c => new ComponentLine(c.Name, c.Version.Length > 0 ? c.Version : "?", c.Unreleased ? "modificari nelansate" : ""))
                 .ToList();
+        bool known = listed.Count > 0;
+        ReleaseLine.Text = known && release is { Date.Length: > 0 }
+            ? $"Release din {release.Date}; versiunile componentelor asa cum au intrat in pachet."
+            : known
+                ? "Versiunile componentelor asa cum au intrat in pachet."
+                : "Fara un release.json cu componente langa program: versiunile componentelor nu se cunosc.";
+        Components.ItemsSource = known
+            ? listed
+            : AppCatalogue.Apps.Select(a => new ComponentLine(a.Folder, "?", "")).ToList();
     }
 
     /// <summary>Closes the window.</summary>
