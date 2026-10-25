@@ -22,18 +22,37 @@ using LightsCheck.Core;
 
 namespace LightsCheck.Wpf;
 
-/// <summary>One paragraph of the Respinse explanation; the window sets the emphasised one in bold (R-037).</summary>
+/// <summary>
+/// One paragraph of an explanation the core words: the Respinse tab's (R-037) or the Dithering
+/// card's (R-047); the window sets the emphasised one in bold.
+/// </summary>
+/// <param name="Text">The paragraph, as the core wrote it (Romanian).</param>
+/// <param name="Emphasis">True for the paragraph the window sets in bold.</param>
 public sealed record ParagraphVm(string Text, bool Emphasis);
 
 /// <summary>A table of the Dithering tab, the core's cells as they are (R-037).</summary>
+/// <param name="Title">The table's title line.</param>
+/// <param name="Columns">The header cells, one per column.</param>
+/// <param name="Rows">
+/// The rows, each a list of cells in the order of <paramref name="Columns"/>.
+/// </param>
 public sealed record TableVm(string Title, IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
 
-/// <summary>One labelled line of a section, with the verdict chip when the line opens with one.</summary>
+/// <summary>
+/// One labelled line of a section, with the verdict chip when the line opens with one.
+/// </summary>
+/// <param name="Label">The row's label, as the console prints it before the colon.</param>
+/// <param name="Value">The row's value, as the console prints it after the colon.</param>
+/// <param name="Verdict">
+/// The verdict word the row opens with (shown as a chip), or null for a row without one.
+/// </param>
 public sealed record RowVm(string Label, string Value, string? Verdict)
 {
     public bool HasVerdict => Verdict is not null;
 
-    /// <summary>The theme's MetricRowTemplate binds these too; a report row has no note and no key row.</summary>
+    /// <summary>
+    /// The theme's MetricRowTemplate binds these too; a report row has no note and no key row.
+    /// </summary>
     public string? Note => null;
 
     public bool HasNote => false;
@@ -41,9 +60,19 @@ public sealed record RowVm(string Label, string Value, string? Verdict)
     public bool IsKey => false;
 }
 
-/// <summary>One frame of the table: the core's formatted cells, plus the path to decode for the cut-outs (null when the frame was not measured).</summary>
+/// <summary>
+/// One frame of the table: the core's formatted cells, plus the path to decode for the cut-outs
+/// (null when the frame was not measured).
+/// </summary>
 public sealed class FrameRowVm
 {
+    /// <summary>Copies the core's cells of one frame and keeps the path for the cut-outs.</summary>
+    /// <param name="row">
+    /// The frame's row of <see cref="LightsCheck.Core.SeriesReport.FrameRows"/>.
+    /// </param>
+    /// <param name="path">
+    /// The raw to decode for the cut-outs; null when the frame was not measured.
+    /// </param>
     internal FrameRowVm(FrameTableRow row, string? path)
     {
         Index = row.Index;
@@ -83,12 +112,15 @@ public sealed class FrameRowVm
 }
 
 /// <summary>A star cut-out for the selected frame.</summary>
+/// <param name="Caption">The caption the core writes for the cut-out (position and shape).</param>
+/// <param name="Image">The cut-out as a frozen grey bitmap, usable from any thread.</param>
 public sealed record CropVm(string Caption, BitmapSource Image);
 
 /// <summary>
 /// The window's state (R-029 to R-032): the folder, the inputs, the run with its progress and
-/// cancellation, and the result shaped for the tabs. Every sentence and every figure comes from
-/// the core's report rows; the view-model only arranges them.
+/// cancellation, and the result shaped for the tabs. Every figure and every sentence comes from
+/// the core; the view-model arranges them, and writes only a few labels of its own (the guide
+/// lines', the session card's "scara", the "EROARE: " before an error).
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
@@ -104,9 +136,14 @@ public sealed class MainViewModel : ObservableObject
     private string _eastArrow;
     private string _northArrow;
 
+    /// <summary>
+    /// An empty window state, with the SynScan arrows read from <see cref="UserSettings"/>; reads
+    /// the settings file, nothing else.
+    /// </summary>
     public MainViewModel()
     {
-        // The stored strings count only when they are one of the two arrows of their axis; the core's default otherwise.
+        // The stored strings count only when they are one of the two arrows of their axis; the
+        // core's default otherwise.
         (string? east, string? north) = UserSettings.Load();
         _eastArrow = ArrowKeys.FromSymbol(east) is Arrow.Left or Arrow.Right ? east! : ArrowKeys.Symbol(ArrowKeys.Default.East);
         _northArrow = ArrowKeys.FromSymbol(north) is Arrow.Up or Arrow.Down ? north! : ArrowKeys.Symbol(ArrowKeys.Default.North);
@@ -174,7 +211,9 @@ public sealed class MainViewModel : ObservableObject
 
     public string BusyMessage { get => _busyMessage; private set => Set(ref _busyMessage, value); }
 
-    /// <summary>The whole report, exactly as the console prints it; what the export writes.</summary>
+    /// <summary>
+    /// The whole report, exactly as the console prints it; what the export writes.
+    /// </summary>
     public string Report { get => _report; private set => Set(ref _report, value); }
 
     public bool HasResult => _result is not null;
@@ -182,7 +221,10 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>A line under the top bar: what was written, or that the run was stopped.</summary>
     public string? Status { get => _status; private set => Set(ref _status, value); }
 
-    /// <summary>The pixel size in microns, as typed; the D3300's by default, used when the files do not say it.</summary>
+    /// <summary>
+    /// The pixel size in microns, as typed; the D3300's by default, used when the files do not
+    /// say it.
+    /// </summary>
     public string PixelText
     {
         get => _pixelText;
@@ -200,7 +242,10 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>How many frames in parallel, as typed; empty = half the cores.</summary>
     public string ThreadsText { get => _threadsText; set => Set(ref _threadsText, value); }
 
-    /// <summary>The SynScan arrows that move the mount east and north, as symbols; the other two follow (R-041). Remembered in <see cref="UserSettings"/>.</summary>
+    /// <summary>
+    /// The SynScan arrows that move the mount east and north, as symbols; the other two follow
+    /// (R-041). Remembered in <see cref="UserSettings"/>.
+    /// </summary>
     public IReadOnlyList<string> EastChoices { get; } = [ArrowKeys.Symbol(ArrowKeys.Default.East), ArrowKeys.Symbol(ArrowKeys.Default.West)];
 
     public IReadOnlyList<string> NorthChoices { get; } = [ArrowKeys.Symbol(ArrowKeys.Default.North), ArrowKeys.Symbol(ArrowKeys.Default.South)];
@@ -265,7 +310,10 @@ public sealed class MainViewModel : ObservableObject
     public string RejectedHeading { get; private set; } = "";
     public IReadOnlyList<ParagraphVm> RejectedExplanation { get; } = SeriesReport.RejectedExplanation.Select(p => new ParagraphVm(p.Text, p.Emphasis)).ToList();
 
-    /// <summary>What the Dithering card says under its rows and tables: the core's paragraphs, one bold (R-047).</summary>
+    /// <summary>
+    /// What the Dithering card says under its rows and tables: the core's paragraphs, one bold
+    /// (R-047).
+    /// </summary>
     public IReadOnlyList<ParagraphVm> DitherExplanation { get; } = SeriesReport.DitherExplanation.Select(p => new ParagraphVm(p.Text, p.Emphasis)).ToList();
 
     public FrameRowVm? SelectedFrame
@@ -280,7 +328,10 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>The cut-outs of the selected frame being decoded; the tests await it, the window just binds Crops.</summary>
+    /// <summary>
+    /// The cut-outs of the selected frame being decoded; the tests await it, the window just binds
+    /// Crops.
+    /// </summary>
     internal Task CropsPending { get; private set; } = Task.CompletedTask;
 
     public IReadOnlyList<CropVm> Crops { get => _crops; private set => Set(ref _crops, value); }
@@ -290,8 +341,14 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Opens a session folder and runs the whole analysis on a pool thread, reporting progress
     /// on the UI thread. A run in flight is cancelled first; a cancelled run leaves the window
-    /// as it was. An error becomes the problem card, the tabs stay hidden.
+    /// empty, its result having been cleared at the start, and says in <see cref="Status"/>
+    /// that it was stopped. A folder the core refuses (an IO, format, state or argument error,
+    /// or a refused access) becomes the problem card and the tabs stay hidden; any other
+    /// exception propagates.
     /// </summary>
+    /// <param name="folder">
+    /// The session folder to analyse, as chosen or given on the command line.
+    /// </param>
     public async Task OpenAsync(string folder)
     {
         CancelPending();
@@ -359,7 +416,11 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Writes the report, the CSV and the rejected list into <paramref name="dir"/> (R-032).</summary>
+    /// <summary>
+    /// Writes the report, the CSV and the rejected list into <paramref name="dir"/> (R-032), and
+    /// shows the paths written, or the error, in <see cref="Status"/>; nothing without a result.
+    /// </summary>
+    /// <param name="dir">The folder to write into, as chosen in the dialog.</param>
     public void Export(string dir)
     {
         if (_result is null)
@@ -377,6 +438,10 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Drops the result: every tab's rows, tables, points and cut-outs back to empty and the
+    /// headers to their defaults, then raises the change of each.
+    /// </summary>
     private void Clear()
     {
         _result = null;
@@ -395,6 +460,14 @@ public sealed class MainViewModel : ObservableObject
         RaiseAll();
     }
 
+    /// <summary>
+    /// Shapes a finished run for the tabs: the console's text, the session lines, the core's row
+    /// and table producers, the frames table and the chart points (NaN where a frame has no
+    /// figure), the guide lines at the thresholds, the axis labels and headers. Every figure
+    /// comes from the core; the guide lines' labels and the session card's "scara" label are
+    /// written here.
+    /// </summary>
+    /// <param name="r">The finished run's result.</param>
     internal void Populate(SeriesResult r)
     {
         _result = r;
@@ -465,6 +538,12 @@ public sealed class MainViewModel : ObservableObject
         RaiseAll();
     }
 
+    /// <summary>
+    /// Decodes the selected frame again on a pool thread and publishes its star cut-outs, unless
+    /// another frame was selected meanwhile; a frame without a path, without a measurement or
+    /// without a cut-out gets the note instead, and a decoder error becomes the note.
+    /// </summary>
+    /// <param name="row">The frame selected; null for no selection, which clears the note.</param>
     private async Task LoadCropsAsync(FrameRowVm? row)
     {
         Crops = [];
@@ -502,8 +581,16 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>The core's report rows as the window's rows, one for one.</summary>
+    /// <param name="rows">The rows of one of the core's row producers.</param>
+    /// <returns>One <see cref="RowVm"/> per row, in order.</returns>
     private static List<RowVm> Rows(IReadOnlyList<ReportRow> rows) => rows.Select(r => new RowVm(r.Label, r.Value, r.Verdict)).ToList();
 
+    /// <summary>The colour a frame of a class is drawn in on the charts.</summary>
+    /// <param name="c">The frame's class.</param>
+    /// <returns>
+    /// Good, warning or bad from <see cref="VerdictPalette"/>; neutral for any other class.
+    /// </returns>
     internal static Color ClassColour(FrameClass c) => c switch
     {
         FrameClass.Good => VerdictPalette.Good,
@@ -512,6 +599,9 @@ public sealed class MainViewModel : ObservableObject
         _ => VerdictPalette.Neutral,
     };
 
+    /// <summary>
+    /// Raises the change of every property the result feeds, after a clear or a populate.
+    /// </summary>
     private void RaiseAll()
     {
         foreach (string name in new[]

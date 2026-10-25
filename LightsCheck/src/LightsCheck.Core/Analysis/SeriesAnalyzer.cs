@@ -17,7 +17,21 @@
 
 namespace LightsCheck.Core;
 
-/// <summary>One light with everything measured on it; Measurement and Registration are null where a step failed, Error says why.</summary>
+/// <summary>
+/// One light with everything measured on it; Measurement and Registration are null where a
+/// step failed, Error says why.
+/// </summary>
+/// <param name="Info">The frame's metadata, read without the pixels when the decode failed.</param>
+/// <param name="Measurement">
+/// The frame's figures; null when it could not be read or measured.
+/// </param>
+/// <param name="Registration">
+/// The frame's registration to the reference (Ok false when it failed); null for a frame without a
+/// measurement.
+/// </param>
+/// <param name="Error">
+/// The message of the failure that left the frame without a measurement; null otherwise.
+/// </param>
 internal sealed record AnalyzedFrame(FrameInfo Info, FrameMeasurement? Measurement, RegistrationResult? Registration, string? Error);
 
 /// <summary>The class of a frame for the stack (R-022).</summary>
@@ -44,8 +58,25 @@ internal enum FlagKind
 
 /// <summary>
 /// A reason attached to a frame: its kind, the measured value and the threshold it was judged
-/// against; for a trailing flag, the angle as Detail and the mount axis the trail runs along (R-033).
+/// against; for a trailing flag, the angle as Detail and the mount axis the trail runs along
+/// (R-033).
 /// </summary>
+/// <param name="Kind">What the flag is about.</param>
+/// <param name="Value">
+/// The measured value: the median elongation, the FWHM in pixels, the star count, the background's
+/// change in percent or the trail count; 0 for an unreadable or unregistered frame.
+/// </param>
+/// <param name="Threshold">
+/// The threshold <paramref name="Value"/> was judged against, in its units; 0 where none applies.
+/// </param>
+/// <param name="Detail">
+/// For a trailing flag the stars' angle in whole degrees, null without one; for an unreadable frame
+/// the error; null otherwise.
+/// </param>
+/// <param name="On">
+/// For a trailing flag, the mount axis the trail runs along; unknown otherwise or without an RA
+/// axis.
+/// </param>
 internal sealed record FrameFlag(FlagKind Kind, double Value, double Threshold, string? Detail = null, TrailAxis On = TrailAxis.Unknown);
 
 /// <summary>The mount axis a trail runs along, against the RA axis of the image (R-033).</summary>
@@ -62,6 +93,15 @@ internal enum TrailAxis
 /// and DEC to the north when Signed (a WCS was at hand), the magnitudes along the two axes
 /// when not (the axis came from the trails) (R-038).
 /// </summary>
+/// <param name="RaPx">
+/// The move along RA, in pixels: positive east when <paramref name="Signed"/>, a magnitude
+/// otherwise.
+/// </param>
+/// <param name="DecPx">
+/// The move along DEC, in pixels: positive north when <paramref name="Signed"/>, a magnitude
+/// otherwise.
+/// </param>
+/// <param name="Signed">Whether the senses are known (from a WCS).</param>
 internal sealed record MountMove(double RaPx, double DecPx, bool Signed);
 
 /// <summary>
@@ -70,9 +110,27 @@ internal sealed record MountMove(double RaPx, double DecPx, bool Signed);
 /// magnitudes along the two axes when not (the axis came from the trails) (R-050). The
 /// opposite of the pointing's motion: a mount that lags the sky shows stars drifting west.
 /// </summary>
+/// <param name="RaPxPerMin">
+/// The drift along RA, in pixels per minute: positive east when <paramref name="Signed"/>, a
+/// magnitude otherwise.
+/// </param>
+/// <param name="DecPxPerMin">
+/// The drift along DEC, in pixels per minute: positive north when <paramref name="Signed"/>, a
+/// magnitude otherwise.
+/// </param>
+/// <param name="Signed">Whether the senses are known (from a WCS).</param>
 internal sealed record StarDrift(double RaPxPerMin, double DecPxPerMin, bool Signed);
 
-/// <summary>Medians of the first and the last <see cref="Count"/> good frames, for the trends (R-023).</summary>
+/// <summary>
+/// Medians of the first and the last <see cref="Count"/> good frames, for the trends (R-023).
+/// </summary>
+/// <param name="First">
+/// The median of the first frames' values; null when none of them has one.
+/// </param>
+/// <param name="Last">
+/// The median of the last frames' values; null when none of them has one.
+/// </param>
+/// <param name="Count">How many frames each end holds; 0 with fewer than two good frames.</param>
 internal sealed record Trend(double? First, double? Last, int Count)
 {
     internal double? Change => First is double f && Last is double l ? l - f : null;
@@ -131,6 +189,137 @@ internal enum PolarAlignment
 /// median exposure; PolarElongation what the upper one adds to a star of the session FWHM;
 /// PolarRaDriftMaxArcsecPerMin how much of the RA drift the alignment can explain.
 /// </summary>
+/// <param name="Classes">Per frame, its class.</param>
+/// <param name="Flags">Per frame, the reasons found, in the order found.</param>
+/// <param name="GoodCount">The frames classed good.</param>
+/// <param name="MarginalCount">The frames classed marginal.</param>
+/// <param name="BadCount">The frames classed bad.</param>
+/// <param name="UnknownCount">The frames without a measurement.</param>
+/// <param name="SessionFwhm">
+/// The median of the FWHM medians of the frames neither trailed nor marginally trailed, in pixels;
+/// null when none has one.
+/// </param>
+/// <param name="SessionStars">
+/// The median of the detected star counts over every measured frame; null without one.
+/// </param>
+/// <param name="Fwhm">The trend of the FWHM median over the good frames, in pixels.</param>
+/// <param name="Halo">The trend of the halo over the good frames.</param>
+/// <param name="Background">
+/// The trend of the background median over the good frames, in ADU above black.
+/// </param>
+/// <param name="Stars">The trend of the detected star count over the good frames.</param>
+/// <param name="FocusHeld">
+/// Whether the FWHM's relative change stays under <see cref="Th.FocusHeldFraction"/>; null without
+/// the trend.
+/// </param>
+/// <param name="DewSuspected">
+/// Whether the FWHM rose by more than <see cref="Th.DewFwhmRise"/> and the halo by more than
+/// <see cref="Th.DewHaloRise"/>; null without both trends.
+/// </param>
+/// <param name="DriftXPerMin">
+/// The mean step per minute along x over the drift pairs, in pixels per minute; null without a
+/// timed pair.
+/// </param>
+/// <param name="DriftYPerMin">The same along y.</param>
+/// <param name="DriftPairs">The pairs the drift was read over.</param>
+/// <param name="MedianExposureSeconds">
+/// The median of the positive exposures, in seconds; null without one.
+/// </param>
+/// <param name="DriftPerExposurePx">
+/// The drift's length over one median exposure, in pixels; null without the drift or the exposure.
+/// </param>
+/// <param name="DriftAxis">
+/// The image axis with the larger drift component; unknown without the drift.
+/// </param>
+/// <param name="WalkingStreakPx">
+/// The dash the drift draws across <see cref="DitherAnalysis.WalkingStretch"/>: the drift per
+/// exposure times its frames minus one, in pixels (0 without a stretch); null without the drift per
+/// exposure.
+/// </param>
+/// <param name="WalkingNoise">The walking-noise verdict (R-043).</param>
+/// <param name="RotationTotalDeg">
+/// The last registered frame's rotation minus the first's, in degrees; null under two registered
+/// frames.
+/// </param>
+/// <param name="RotationPerHourDeg">
+/// That rotation over the hours between the two frames, in degrees per hour; null without both
+/// times in order.
+/// </param>
+/// <param name="CornerShiftPerExposurePx">
+/// How far that rate moves a star at the half-diagonal over the first registered frame's exposure
+/// (0 when unknown), in pixels; null without the rate or that frame's measurement.
+/// </param>
+/// <param name="RaAxis">
+/// The image axis RA runs along, from the WCS or else from the trails; unknown otherwise.
+/// </param>
+/// <param name="AxisSource">
+/// How <paramref name="RaAxis"/> was decided, in the Romanian words the report prints.
+/// </param>
+/// <param name="TrailAngleDeg">
+/// The mean angle of the bad frames whose stars agree better than
+/// <see cref="Th.TrailAxisCoherence"/>, in degrees from the x axis; null under
+/// <see cref="Th.TrailAxisMinFrames"/> of them.
+/// </param>
+/// <param name="TrailOn">
+/// The mount axis <paramref name="TrailAngleDeg"/> runs along; unknown without the angle or the RA
+/// axis.
+/// </param>
+/// <param name="MountMoves">
+/// Per frame, the mount's move behind its dither (R-038); null for a frame that is not a move, or
+/// without a WCS and an RA axis.
+/// </param>
+/// <param name="ReadNoise">
+/// The read noise per CFA position from the biases; null without two readable biases of the same
+/// size.
+/// </param>
+/// <param name="Swamping">
+/// The swamping figures of the first, the middle and the last measured frames; null without the
+/// read noise.
+/// </param>
+/// <param name="SwampingFrames">
+/// The <see cref="FrameInfo.Index"/> of each frame of <paramref name="Swamping"/>, in the same
+/// order.
+/// </param>
+/// <param name="DriftApproximate">
+/// Whether the drift fell back to the pairs with a pause and that added pairs.
+/// </param>
+/// <param name="StarDriftPerMin">
+/// The stars' drift along RA and DEC; null for an approximate drift, one under
+/// <see cref="Th.DriftMinPairs"/> pairs, or without a WCS and an RA axis.
+/// </param>
+/// <param name="DeclinationDeg">
+/// The declination of the solve's reference pixel, in degrees; null without a solve that gives it.
+/// </param>
+/// <param name="PolarRotationPerHourDeg">
+/// The field rotation the tracking made, the dithers' convergence taken out, in degrees per hour;
+/// null under <see cref="Th.PolarRotationMinHours"/> of span, without a signed drift, a declination
+/// or a scale.
+/// </param>
+/// <param name="PolarErrorMinArcmin">
+/// The polar error's lower bound, from the DEC drift alone, in arcminutes; null without the star
+/// drift, the scale or the median exposure.
+/// </param>
+/// <param name="PolarErrorMaxArcmin">
+/// The upper bound, adding the rotation in quadrature, in arcminutes; null without
+/// <paramref name="PolarRotationPerHourDeg"/> or within 0.01 of cos DEC = 0.
+/// </param>
+/// <param name="PolarDriftMinPx">
+/// The DEC drift over one median exposure, in pixels; null as
+/// <paramref name="PolarErrorMinArcmin"/>.
+/// </param>
+/// <param name="PolarDriftMaxPx">
+/// The DEC drift and the RA share in quadrature over one median exposure, in pixels; null as
+/// <paramref name="PolarErrorMaxArcmin"/>.
+/// </param>
+/// <param name="PolarElongation">
+/// What a smear of <paramref name="PolarDriftMaxPx"/> makes of a Gaussian star of the session FWHM,
+/// as a ratio of 1 or more; null without either.
+/// </param>
+/// <param name="PolarRaDriftMaxArcsecPerMin">
+/// The RA drift the alignment can explain at the rotation rate times tan DEC, in arcseconds per
+/// minute; null as <paramref name="PolarErrorMaxArcmin"/>.
+/// </param>
+/// <param name="PolarAlignment">The polar alignment's verdict (R-050).</param>
 internal sealed record SeriesAnalysis(
     IReadOnlyList<FrameClass> Classes,
     IReadOnlyList<IReadOnlyList<FrameFlag>> Flags,
@@ -177,9 +366,14 @@ internal sealed record SeriesAnalysis(
     double? PolarRaDriftMaxArcsecPerMin,
     PolarAlignment PolarAlignment);
 
+/// <summary>
+/// Reads the whole series from the frames' measurements, registrations and pauses.
+/// </summary>
 internal static class SeriesAnalyzer
 {
-    /// <summary>The sidereal rate in arcseconds per minute: a full turn in 23 h 56 min 4.09 s.</summary>
+    /// <summary>
+    /// The sidereal rate in arcseconds per minute: a full turn in 23 h 56 min 4.09 s.
+    /// </summary>
     private const double SiderealArcsecPerMin = 360.0 * 3600 / (23 * 60 + 56 + 4.0905 / 60);
 
     /// <summary>Arcminutes in a radian.</summary>
@@ -190,13 +384,31 @@ internal static class SeriesAnalyzer
     /// the drift and the rotation, the walking-noise dash, the RA axis, the mount's moves, the
     /// polar alignment and the swamping (R-022 to R-025, R-033, R-038, R-043, R-049, R-050).
     /// </summary>
-    /// <param name="frames">Every light with its measurement and registration, in file order; a frame without a measurement is classed unknown.</param>
-    /// <param name="cadence">The pauses before each frame, one per entry of <paramref name="frames"/>.</param>
-    /// <param name="dither">The steps and moves read from the registered positions of the same frames.</param>
-    /// <param name="readNoise">The read noise per CFA position from the biases, or null without two of them.</param>
-    /// <param name="wcs">The solve at the session root, or null; it gives the RA axis, the senses and the declination.</param>
-    /// <param name="arcsecPerPixel">The plate scale in arcseconds per pixel, or null when the focal length is unknown; without it the polar figures stay null.</param>
-    /// <returns>The analysis; every figure a session cannot give is null and every verdict without figures is unknown.</returns>
+    /// <param name="frames">
+    /// Every light with its measurement and registration, in file order; a frame without a
+    /// measurement is classed unknown.
+    /// </param>
+    /// <param name="cadence">
+    /// The pauses before each frame, one per entry of <paramref name="frames"/>.
+    /// </param>
+    /// <param name="dither">
+    /// The steps and moves read from the registered positions of the same frames.
+    /// </param>
+    /// <param name="readNoise">
+    /// The read noise per CFA position from the biases, or null without two of them.
+    /// </param>
+    /// <param name="wcs">
+    /// The solve at the session root, or null; it gives the RA axis, the senses and the
+    /// declination.
+    /// </param>
+    /// <param name="arcsecPerPixel">
+    /// The plate scale in arcseconds per pixel, or null when the focal length is unknown; without
+    /// it the polar figures stay null.
+    /// </param>
+    /// <returns>
+    /// The analysis; every figure a session cannot give is null and every verdict without figures
+    /// is unknown.
+    /// </returns>
     internal static SeriesAnalysis Analyze(IReadOnlyList<AnalyzedFrame> frames, Cadence cadence, DitherAnalysis dither, IReadOnlyList<ReadNoise>? readNoise, Wcs? wcs, double? arcsecPerPixel = null)
     {
         ArgumentNullException.ThrowIfNull(frames);
@@ -363,7 +575,8 @@ internal static class SeriesAnalyzer
             }
         }
 
-        // The RA axis: from a plate solve when one is at hand, else from the trails of the bad frames.
+        // The RA axis: from a plate solve when one is at hand, else from the trails of the bad
+        // frames.
         Axis ra = wcs?.RaAxis ?? Axis.Unknown;
         string source = wcs is null ? "necunoscut" : "plate solve (WCS)";
         double? trailAngle = null;
@@ -491,7 +704,8 @@ internal static class SeriesAnalyzer
         // brackets add to |e|^2 whatever the hour angle. The DEC drift alone bounds |e| from below;
         // the rotation, read as the alignment's, bounds it from above, and bounds the RA drift the
         // alignment can explain at rotation x tan d. The cost is the drift those bounds make in
-        // one exposure (the rotation itself moves no star at the centre) and the elongation it adds.
+        // one exposure (the rotation itself moves no star at the centre) and the elongation it
+        // adds.
         double? polarMin = null, polarMax = null, polarDriftMin = null, polarDriftMax = null, polarElongation = null, polarRaMax = null;
         PolarAlignment polar = PolarAlignment.Unknown;
         if (starDrift is not null && arcsecPerPixel is double scale && scale > 0 && medianExposure is double exposureSeconds)
@@ -554,7 +768,9 @@ internal static class SeriesAnalyzer
     /// <param name="frames">The frames, for their timestamps.</param>
     /// <param name="dither">The steps between consecutive frames.</param>
     /// <param name="take">Whether the pair ending at the given index counts.</param>
-    /// <returns>The summed X and Y steps in pixels, the summed minutes and the pairs counted.</returns>
+    /// <returns>
+    /// The summed X and Y steps in pixels, the summed minutes and the pairs counted.
+    /// </returns>
     private static (double SumX, double SumY, double Minutes, int Pairs) Drift(IReadOnlyList<AnalyzedFrame> frames, DitherAnalysis dither, Func<int, bool> take)
     {
         double sumX = 0, sumY = 0, minutes = 0;
@@ -578,6 +794,11 @@ internal static class SeriesAnalyzer
     /// along: RA within Th.TrailAxisTolerance of the image axis that is RA, DEC within it of the
     /// other axis, oblique otherwise; unknown without an RA axis (R-033).
     /// </summary>
+    /// <param name="angleDeg">
+    /// The trail's angle from the image's x axis, in degrees, -90 to 90.
+    /// </param>
+    /// <param name="ra">The image axis that is RA.</param>
+    /// <returns>The mount axis the trail runs along.</returns>
     internal static TrailAxis TrailAxisOf(double angleDeg, Axis ra)
     {
         if (ra == Axis.Unknown)
@@ -590,6 +811,15 @@ internal static class SeriesAnalyzer
         return fromRa < Th.TrailAxisTolerance ? TrailAxis.Ra : fromDec < Th.TrailAxisTolerance ? TrailAxis.Dec : TrailAxis.Oblique;
     }
 
+    /// <summary>
+    /// The medians of a figure over the first and the last <see cref="Th.TrendFrames"/> good
+    /// frames, or half the good frames when they are fewer than twice that.
+    /// </summary>
+    /// <param name="good">The good frames' measurements, in series order.</param>
+    /// <param name="pick">
+    /// The figure read from a measurement; null where the frame has none.
+    /// </param>
+    /// <returns>The trend; empty, with a count of 0, under two good frames.</returns>
     private static Trend TrendOf(List<FrameMeasurement> good, Func<FrameMeasurement, double?> pick)
     {
         if (good.Count < 2)

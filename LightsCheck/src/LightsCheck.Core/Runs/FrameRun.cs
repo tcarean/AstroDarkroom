@@ -17,7 +17,16 @@
 
 namespace LightsCheck.Core;
 
-/// <summary>One light of a session, decoded and measured, with the central crop the series keeps for the sensor's pattern (R-046).</summary>
+/// <summary>
+/// One light of a session, decoded and measured, with the central crop the series keeps for the
+/// sensor's pattern (R-046).
+/// </summary>
+/// <param name="Info">What the file says about the shot.</param>
+/// <param name="Measurement">The frame's figures.</param>
+/// <param name="Crop">
+/// The central square of the mosaic, in ADU above black, of side <see cref="Th.PatternCrop"/>
+/// or the frame's shorter side.
+/// </param>
 internal sealed record MeasuredFrame(FrameInfo Info, FrameMeasurement Measurement, PatternCrop Crop);
 
 /// <summary>
@@ -28,6 +37,14 @@ internal sealed record MeasuredFrame(FrameInfo Info, FrameMeasurement Measuremen
 /// </summary>
 internal static class FrameRun
 {
+    /// <summary>
+    /// Opens the session and measures one of its lights. The folder errors of
+    /// <see cref="SessionFolder.Open"/> propagate; an index outside the session throws
+    /// <see cref="InvalidOperationException"/> with a Romanian message.
+    /// </summary>
+    /// <param name="folder">The session folder.</param>
+    /// <param name="frameIndex">The light's 1-based position in the session's sorted list.</param>
+    /// <returns>The light, decoded and measured.</returns>
     internal static MeasuredFrame Run(string folder, int frameIndex)
     {
         SessionFolder session = SessionFolder.Open(folder);
@@ -40,7 +57,15 @@ internal static class FrameRun
         return Measure(frameIndex, path);
     }
 
-    /// <summary>Decodes and measures one file; the metadata comes with the same load.</summary>
+    /// <summary>
+    /// Decodes and measures one file; the metadata comes with the same load. A file the readers
+    /// cannot decode throws their exception.
+    /// </summary>
+    /// <param name="index">
+    /// The frame's 1-based position in the session, carried into its metadata.
+    /// </param>
+    /// <param name="path">The frame's file, a camera raw or a FITS.</param>
+    /// <returns>The frame's metadata, figures and central crop.</returns>
     internal static MeasuredFrame Measure(int index, string path)
     {
         LoadedFrame f = ImageLoader.Load(path);
@@ -53,7 +78,16 @@ internal static class FrameRun
         return new MeasuredFrame(info, m, PatternCrop.Cut(raw));
     }
 
-    /// <summary>The scale a FITS is assumed to use, from its BITPIX: never a guess from the data.</summary>
+    /// <summary>
+    /// The scale a FITS is assumed to use, from its BITPIX: never a guess from the data.
+    /// </summary>
+    /// <param name="bitpix">
+    /// The FITS BITPIX: 8, 16 or 32 for integers; any other value is taken as float.
+    /// </param>
+    /// <returns>
+    /// The white level of the integer range (255, 65535 or 2^32 - 1) or 1.0 for a float frame,
+    /// black at 0, with a Romanian source text for the report.
+    /// </returns>
     internal static AduScale AssumedScale(int bitpix) => bitpix switch
     {
         8 => new AduScale(255, 0, "FITS (presupus din BITPIX 8)"),

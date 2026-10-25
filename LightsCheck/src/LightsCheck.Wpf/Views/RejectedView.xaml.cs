@@ -19,7 +19,12 @@ using System.Windows.Controls;
 
 namespace LightsCheck.Wpf;
 
+/// <summary>
+/// The Respinse tab: the bad and unreadable frames with their reasons, and the explanation; all
+/// bound to <see cref="MainViewModel"/>, no code of its own.
+/// </summary>
 public partial class RejectedView : UserControl
 {
+    /// <summary>Loads the tab's XAML.</summary>
     public RejectedView() => InitializeComponent();
 }

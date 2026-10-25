@@ -25,6 +25,17 @@ namespace LightsCheck.Core;
 /// </summary>
 internal static class FrameAnalyzer
 {
+    /// <summary>
+    /// Measures one decoded frame: its mosaic is taken above black first, then measured as the
+    /// raster overload does.
+    /// </summary>
+    /// <param name="mosaic">The undebayered frame at its original ADU scale. Not null.</param>
+    /// <param name="scale">The frame's black and white levels, in ADU. Not null.</param>
+    /// <param name="cfa">
+    /// The colour order of the mosaic; null when the file does not say it, and the raster is then
+    /// read as one channel.
+    /// </param>
+    /// <returns>Every figure of the frame, in ADU above black and in pixels.</returns>
     internal static FrameMeasurement Analyze(Img mosaic, AduScale scale, CfaPattern? cfa)
     {
         ArgumentNullException.ThrowIfNull(mosaic);
@@ -34,6 +45,19 @@ internal static class FrameAnalyzer
     }
 
     /// <summary>The same, on a raster already above its black level.</summary>
+    /// <param name="raw">The mosaic above black, in ADU; not modified. Not null.</param>
+    /// <param name="scale">
+    /// The frame's black and white levels, in ADU; white minus black is the top of the scale the
+    /// saturation tests read. Not null.
+    /// </param>
+    /// <param name="cfa">
+    /// The colour order of the mosaic; null when unknown, and the raster then stands for the green
+    /// as it is.
+    /// </param>
+    /// <returns>
+    /// The channel levels, the background and noise of the green, the stars and their shapes, the
+    /// trails and the registration list.
+    /// </returns>
     internal static FrameMeasurement Analyze(Raster raw, AduScale scale, CfaPattern? cfa)
     {
         ArgumentNullException.ThrowIfNull(raw);
@@ -163,6 +187,15 @@ internal static class FrameAnalyzer
             trails, reg);
     }
 
+    /// <summary>
+    /// The levels of the four CFA positions (R-012): the median of every
+    /// <see cref="Th.BackgroundSampleStep"/>-th row and column of the position, the saturated
+    /// count and the minimum over every pixel of it, and its high-pass sigma.
+    /// </summary>
+    /// <param name="raw">The mosaic above black, in ADU.</param>
+    /// <param name="cfa">The colour order, for the names and colours; null when unknown.</param>
+    /// <param name="top">The top of the scale above black, in ADU (white minus black).</param>
+    /// <returns>Four levels, in position order (row parity, then column parity).</returns>
     private static List<ChannelLevel> ChannelLevels(Raster raw, CfaPattern? cfa, double top)
     {
         double margin = Th.SaturationMargin(top);
@@ -207,6 +240,13 @@ internal static class FrameAnalyzer
         return levels;
     }
 
+    /// <summary>The mean of a block of a raster, the block clipped to the raster.</summary>
+    /// <param name="t">The raster, here the tile medians.</param>
+    /// <param name="y0">The first row, included; may be negative.</param>
+    /// <param name="y1">The last row, excluded; may pass the raster's height.</param>
+    /// <param name="x0">The first column, included; may be negative.</param>
+    /// <param name="x1">The last column, excluded; may pass the raster's width.</param>
+    /// <returns>The mean value; NaN when the clipped block is empty.</returns>
     private static double Mean(Raster t, int y0, int y1, int x0, int x1)
     {
         y0 = Math.Max(0, y0);
@@ -227,6 +267,9 @@ internal static class FrameAnalyzer
         return n > 0 ? s / n : double.NaN;
     }
 
+    /// <summary>A copy of a raster, its own pixels.</summary>
+    /// <param name="a">The raster copied.</param>
+    /// <returns>A new raster of the same size and values.</returns>
     private static Raster Copy(Raster a)
     {
         Raster o = new(a.H, a.W);

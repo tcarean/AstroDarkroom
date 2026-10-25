@@ -28,6 +28,9 @@ internal sealed class Raster
     internal int W { get; }
     internal float[] D { get; }
 
+    /// <summary>A raster of zeros.</summary>
+    /// <param name="h">The height, in pixels, 0 or more.</param>
+    /// <param name="w">The width, in pixels, 0 or more.</param>
     internal Raster(int h, int w)
     {
         H = h;
@@ -35,9 +38,21 @@ internal sealed class Raster
         D = new float[h * w];
     }
 
+    /// <summary>The value at a pixel.</summary>
+    /// <param name="y">The row, 0 to <see cref="H"/> - 1.</param>
+    /// <param name="x">The column, 0 to <see cref="W"/> - 1.</param>
+    /// <returns>The pixel's value.</returns>
     internal float At(int y, int x) => D[y * W + x];
 
-    /// <summary>The mosaic above its black level, as floats; the double raster is not kept.</summary>
+    /// <summary>
+    /// The mosaic above its black level, as floats; the double raster is not kept.
+    /// </summary>
+    /// <param name="img">The decoded mosaic, in ADU. Not null.</param>
+    /// <param name="black">The black level subtracted, in ADU.</param>
+    /// <returns>
+    /// A new raster of the image's size, each value minus <paramref name="black"/>; negative values
+    /// are kept.
+    /// </returns>
     internal static Raster FromImg(Img img, double black)
     {
         ArgumentNullException.ThrowIfNull(img);
@@ -57,6 +72,12 @@ internal sealed class Raster
     /// positions are green comes from the CFA order; with none, the raster is returned as it
     /// is (a mono or debayered frame).
     /// </summary>
+    /// <param name="a">The mosaic above black; not modified. Not null.</param>
+    /// <param name="cfa">The colour order; null for a frame without one.</param>
+    /// <returns>
+    /// A new green raster of the same size, or <paramref name="a"/> itself when
+    /// <paramref name="cfa"/> is null.
+    /// </returns>
     internal static Raster InterpolateGreen(Raster a, CfaPattern? cfa)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -101,8 +122,13 @@ internal sealed class Raster
     /// <summary>
     /// The medians of the tiles of <paramref name="tile"/> pixels (partial tiles at the end
     /// dropped), each tile read at every <paramref name="step"/>-th pixel. A raster smaller
-    /// than a tile in either direction is one tile: the grid is never empty.
+    /// than a tile in either direction gets square tiles of its shorter side: the grid is
+    /// never empty.
     /// </summary>
+    /// <param name="a">The raster. Not null.</param>
+    /// <param name="tile">The tile's side, in pixels.</param>
+    /// <param name="step">The sampling step inside a tile, in pixels, 1 or more.</param>
+    /// <returns>The grid of medians, one value per whole tile, row-major.</returns>
     internal static Raster TileMedians(Raster a, int tile, int step)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -135,6 +161,10 @@ internal sealed class Raster
     /// The tile grid stretched back to <paramref name="h"/> x <paramref name="w"/> by bilinear
     /// interpolation, the grid's corners mapped onto the raster's corners (scipy's zoom).
     /// </summary>
+    /// <param name="t">The grid, here the tile medians. Not null.</param>
+    /// <param name="h">The height of the result, in pixels.</param>
+    /// <param name="w">The width of the result, in pixels.</param>
+    /// <returns>A new raster of <paramref name="h"/> x <paramref name="w"/>.</returns>
     internal static Raster BilinearResize(Raster t, int h, int w)
     {
         ArgumentNullException.ThrowIfNull(t);
@@ -171,6 +201,10 @@ internal sealed class Raster
     }
 
     /// <summary>a - b, in place in a.</summary>
+    /// <param name="a">The raster subtracted from, modified. Not null.</param>
+    /// <param name="b">
+    /// The raster subtracted, at least as many pixels as <paramref name="a"/>. Not null.
+    /// </param>
     internal static void SubtractInPlace(Raster a, Raster b)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -185,6 +219,9 @@ internal sealed class Raster
     /// A Gaussian blur of <paramref name="sigma"/> pixels, separable, the kernel truncated at
     /// four sigmas and normalised, the edges reflected (scipy's gaussian_filter defaults).
     /// </summary>
+    /// <param name="a">The raster; not modified. Not null.</param>
+    /// <param name="sigma">The Gaussian's sigma, in pixels, above 0.</param>
+    /// <returns>A new, blurred raster of the same size.</returns>
     internal static Raster Gaussian(Raster a, double sigma)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -240,6 +277,9 @@ internal sealed class Raster
     }
 
     /// <summary>scipy's "reflect" border: d c b a | a b c d | d c b a.</summary>
+    /// <param name="i">The index, inside or outside 0 to <paramref name="n"/> - 1.</param>
+    /// <param name="n">The length of the axis, 1 or more.</param>
+    /// <returns>The index reflected into 0 to <paramref name="n"/> - 1.</returns>
     internal static int Reflect(int i, int n)
     {
         if (n == 1)
@@ -262,6 +302,10 @@ internal sealed class Raster
     /// half-side <paramref name="half"/> read at every <paramref name="step"/>-th pixel; the
     /// whole raster when it is smaller than the window.
     /// </summary>
+    /// <param name="a">The raster. Not null.</param>
+    /// <param name="half">The window's half-side, in pixels.</param>
+    /// <param name="step">The sampling step, in pixels, 1 or more.</param>
+    /// <returns>The sigma, in the raster's units; NaN when the window holds no pixel.</returns>
     internal static double CentralMadSigma(Raster a, int half, int step)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -287,6 +331,12 @@ internal sealed class Raster
     }
 
     /// <summary>The median of the first <paramref name="n"/> values, the array reordered.</summary>
+    /// <param name="v">The values; its first <paramref name="n"/> are sorted in place.</param>
+    /// <param name="n">How many values count, 0 to the array's length.</param>
+    /// <returns>
+    /// The median, the mean of the two middle values for an even count; NaN when
+    /// <paramref name="n"/> is 0.
+    /// </returns>
     internal static float Median(float[] v, int n)
     {
         if (n == 0)
@@ -299,6 +349,9 @@ internal sealed class Raster
     }
 
     /// <summary>numpy's percentile: linear interpolation between the sorted neighbours.</summary>
+    /// <param name="values">The values; not modified. Not null.</param>
+    /// <param name="p">The percentile, 0 to 100.</param>
+    /// <returns>The percentile; NaN for an empty list.</returns>
     internal static double Percentile(IReadOnlyList<double> values, double p)
     {
         ArgumentNullException.ThrowIfNull(values);

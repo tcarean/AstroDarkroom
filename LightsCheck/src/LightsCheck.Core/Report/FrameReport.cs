@@ -19,9 +19,19 @@ using System.Globalization;
 
 namespace LightsCheck.Core;
 
-/// <summary>One frame's measurements as the console prints them (Romanian, R-017). Words only.</summary>
+/// <summary>
+/// One frame's measurements as the console prints them (Romanian, R-017). Words only.
+/// </summary>
 internal static class FrameReport
 {
+    /// <summary>
+    /// Writes the block of one measured frame: a blank line, the heading with its index and file
+    /// name, then one line each for the size and ADU scale, the CFA levels, the green
+    /// background and noise, the star counts, the FWHM, the elongation, the halo, the trails
+    /// and the registration stars. A missing figure is written as "-".
+    /// </summary>
+    /// <param name="frame">The frame and its measurement; not null.</param>
+    /// <param name="w">Where the lines go; not null.</param>
     internal static void Write(MeasuredFrame frame, TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(frame);
@@ -40,8 +50,25 @@ internal static class FrameReport
         w.WriteLine($"    inregistrare       : {m.RegistrationStars.Count.ToString(CultureInfo.InvariantCulture)} stele retinute");
     }
 
+    /// <summary>An optional figure with a fixed number of decimals and its unit, or "-".</summary>
+    /// <param name="v">The figure; null when it could not be measured.</param>
+    /// <param name="decimals">How many decimals to write.</param>
+    /// <param name="unit">
+    /// The text appended after the number (" px", " grade"); none by default.
+    /// </param>
+    /// <returns>
+    /// The formatted figure with its unit, or "-" when <paramref name="v"/> is null.
+    /// </returns>
     private static string Opt(double? v, int decimals, string unit = "") => v is double d ? RunReport.F(d, decimals) + unit : "-";
 
+    /// <summary>
+    /// One zone's figure with two decimals, followed by its star count in brackets.
+    /// </summary>
+    /// <param name="z">The zone (centre, middle or edge) of the frame.</param>
+    /// <param name="pick">Which figure of the zone to write (its FWHM or its elongation).</param>
+    /// <returns>
+    /// "2.31 (140)", or "-" with the zone's star count, "- (3)", when the zone has no figure.
+    /// </returns>
     private static string Zone(ZoneShape z, Func<ZoneShape, double?> pick)
         => (pick(z) is double v ? RunReport.F(v, 2) : "-") + " (" + z.Stars.ToString(CultureInfo.InvariantCulture) + ")";
 }

@@ -17,7 +17,14 @@
 
 namespace LightsCheck.Core;
 
-/// <summary>The inventory of a session: its folders, every light's metadata, and the cadence.</summary>
+/// <summary>
+/// The inventory of a session: its folders, every light's metadata, and the cadence.
+/// </summary>
+/// <param name="Session">The session's folders and frame lists.</param>
+/// <param name="Lights">
+/// Every light's metadata, in the session's order; an unreadable one carries its error.
+/// </param>
+/// <param name="Cadence">The timing of the series, from the lights' times and exposures.</param>
 internal sealed record Inventory(SessionFolder Session, IReadOnlyList<FrameInfo> Lights, Cadence Cadence)
 {
     internal bool HasErrors => Lights.Any(f => f.Error is not null);
@@ -29,6 +36,13 @@ internal sealed record Inventory(SessionFolder Session, IReadOnlyList<FrameInfo>
 /// </summary>
 internal static class InventoryRun
 {
+    /// <summary>
+    /// Opens the session and reads every light's metadata, without decoding a pixel. The folder
+    /// errors of <see cref="SessionFolder.Open"/> propagate; a light that cannot be read only
+    /// carries its error.
+    /// </summary>
+    /// <param name="folder">The session folder.</param>
+    /// <returns>The session's inventory.</returns>
     internal static Inventory Run(string folder)
     {
         SessionFolder session = SessionFolder.Open(folder);

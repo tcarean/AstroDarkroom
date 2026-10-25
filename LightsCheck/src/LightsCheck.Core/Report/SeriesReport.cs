@@ -19,19 +19,63 @@ using System.Globalization;
 
 namespace LightsCheck.Core;
 
-/// <summary>One labelled line of the report; Verdict is the word the summary rows open with (BUN, LA LIMITA, NU, ...), null elsewhere.</summary>
+/// <summary>
+/// One labelled line of the report; Verdict is the word the summary rows open with (BUN, LA
+/// LIMITA, NU, ...), null elsewhere.
+/// </summary>
+/// <param name="Label">The label left of the colon.</param>
+/// <param name="Value">The text right of the colon, after the verdict when there is one.</param>
+/// <param name="Verdict">The verdict word the value opens with; null for a row without one.</param>
 internal sealed record ReportRow(string Label, string Value, string? Verdict = null);
 
 /// <summary>A rejected frame: its index, its file and its reasons in words.</summary>
+/// <param name="Index">The frame's index in the session, from 1.</param>
+/// <param name="FileName">The raw's file name, without its folder.</param>
+/// <param name="Reasons">Why it is left out, in words; several reasons joined by "; ".</param>
 internal sealed record RejectedRow(int Index, string FileName, string Reasons);
 
-/// <summary>One paragraph of an explanation the window shows; Emphasis marks the one to set in bold (R-036).</summary>
+/// <summary>
+/// One paragraph of an explanation the window shows; Emphasis marks the one to set in bold
+/// (R-036).
+/// </summary>
+/// <param name="Text">The paragraph, in Romanian.</param>
+/// <param name="Emphasis">True for the paragraph set in bold.</param>
 internal sealed record ReportParagraph(string Text, bool Emphasis);
 
-/// <summary>A table the window lays out: a title, the column headers and the rows, every cell already a string (R-036).</summary>
+/// <summary>
+/// A table the window lays out: a title, the column headers and the rows, every cell already a
+/// string (R-036).
+/// </summary>
+/// <param name="Title">The table's title.</param>
+/// <param name="Columns">The column headers, left to right.</param>
+/// <param name="Rows">The rows, each with one cell per column.</param>
 internal sealed record ReportTable(string Title, IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
 
-/// <summary>One frame of the table, every cell already formatted; "-" where a figure is missing.</summary>
+/// <summary>
+/// One frame of the table, every cell already formatted; "-" where a figure is missing.
+/// </summary>
+/// <param name="Index">The frame's index in the session, from 1.</param>
+/// <param name="FileName">
+/// The raw's file name, whole (the console cuts it to 20 characters).
+/// </param>
+/// <param name="Time">The time of capture, HH:mm:ss.</param>
+/// <param name="Class">The frame's class in words (bun, la limita, SLAB, necitit).</param>
+/// <param name="Elongation">The median elongation of the stars, two decimals.</param>
+/// <param name="Fwhm">The median FWHM in pixels, two decimals.</param>
+/// <param name="Stars">How many stars were detected.</param>
+/// <param name="Background">The median green background in ADU above black, no decimals.</param>
+/// <param name="Pause">The pause before the frame, in whole seconds with " s".</param>
+/// <param name="Step">The registered step from the previous frame in pixels, one decimal.</param>
+/// <param name="Dx">
+/// The registered x offset from the reference frame in pixels, one decimal.
+/// </param>
+/// <param name="Dy">
+/// The registered y offset from the reference frame in pixels, one decimal.
+/// </param>
+/// <param name="Move">The `dithering` cell, the mount's move on each axis.</param>
+/// <param name="Spot">The cell of the frame's run at 10 px, `k/n de la f`.</param>
+/// <param name="Reasons">The frame's flags in words; empty when it has none.</param>
+/// <param name="StepTip">The tooltip of the step cell; null when the frame has no step.</param>
 internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Move, string Spot, string Reasons, string? StepTip);
 
 /// <summary>
@@ -42,6 +86,13 @@ internal static class SeriesReport
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
+    /// <summary>
+    /// Writes the whole series report: the session lines and the scale, the sections REZUMAT,
+    /// FOCUS, EXPUNERE SI ZGOMOT, ROUA, CADRE MISCATE, DRIFT SI ROTATIE and DITHERING, the
+    /// rejected frames, then the table of every frame.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <param name="w">Where the lines go; not null.</param>
     internal static void Write(SeriesResult r, TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -77,7 +128,14 @@ internal static class SeriesReport
         }
     }
 
-    /// <summary>The text in the RESPINSE heading's parentheses: the counts and the rule for the marginal frames.</summary>
+    /// <summary>
+    /// The text in the RESPINSE heading's parentheses: the counts and the rule for the marginal
+    /// frames.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The bad count, the unread count when there are any, and the marginal frames' rule.
+    /// </returns>
     internal static string RejectedHeading(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -85,7 +143,12 @@ internal static class SeriesReport
         return $"{s.BadCount.ToString(Inv)} cadre slabe{(s.UnknownCount > 0 ? ", " + s.UnknownCount.ToString(Inv) + " necitite" : "")}; cele la limita raman la alegerea ta";
     }
 
-    /// <summary>The table, one row per frame, the cells formatted as the console prints them (the window shows the same cells).</summary>
+    /// <summary>
+    /// The table, one row per frame, the cells formatted as the console prints them (the window
+    /// shows the same cells).
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>One row per frame, in the session's order.</returns>
     internal static IReadOnlyList<FrameTableRow> FrameRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -116,6 +179,13 @@ internal static class SeriesReport
     /// (`RA 15 px ← V`), the pixels alone otherwise; a component under Th.AxisStep is left
     /// out; `-` for no move.
     /// </summary>
+    /// <param name="m">The mount's move before the frame; null when there was none.</param>
+    /// <param name="keys">
+    /// Which SynScan key moves the mount to each side of the sky (ADR 0014).
+    /// </param>
+    /// <returns>
+    /// The components joined by ", ", or `-` when there is no move or none clears the step.
+    /// </returns>
     internal static string MoveCell(MountMove? m, ArrowKeys keys)
     {
         if (m is null)
@@ -127,7 +197,17 @@ internal static class SeriesReport
         return parts.Count == 0 ? "-" : string.Join(", ", parts);
     }
 
-    /// <summary>The SynScan arrows of a signed move, `←, ↓`, for the CSV; empty otherwise (R-038, R-040).</summary>
+    /// <summary>
+    /// The SynScan arrows of a signed move, `←, ↓`, for the CSV; empty otherwise (R-038, R-040).
+    /// </summary>
+    /// <param name="m">The mount's move before the frame; null when there was none.</param>
+    /// <param name="keys">
+    /// Which SynScan key moves the mount to each side of the sky (ADR 0014).
+    /// </param>
+    /// <returns>
+    /// The arrow of each component that clears the step, joined by ", "; empty for no move or an
+    /// unsigned one.
+    /// </returns>
     internal static string MoveArrows(MountMove? m, ArrowKeys keys)
         => m is null || !m.Signed ? "" : string.Join(", ", MoveComponents(m, keys).Select(c => c.Arrow));
 
@@ -136,6 +216,13 @@ internal static class SeriesReport
     /// its sense letter and the SynScan arrow that moves the mount that way under the given
     /// keys (ADR 0014); the sense and the arrow mean nothing when the move is unsigned.
     /// </summary>
+    /// <param name="m">The mount's move, its RA and DEC parts in pixels; not null.</param>
+    /// <param name="keys">Which SynScan key moves the mount to each side of the sky.</param>
+    /// <returns>
+    /// The RA component first, then the DEC one, each only when its size reaches
+    /// <see cref="Th.AxisStep"/>; the pixels are the absolute size, the sign is in the sense
+    /// letter (E or V on RA, N or S on DEC).
+    /// </returns>
     private static IEnumerable<(string Axis, double Px, string Sense, string Arrow)> MoveComponents(MountMove m, ArrowKeys keys)
     {
         if (Math.Abs(m.RaPx) >= Th.AxisStep)
@@ -149,11 +236,21 @@ internal static class SeriesReport
         }
     }
 
-    /// <summary>The cell `k/n de la f` of a frame's run at 10 px, `-` outside one (R-034).</summary>
+    /// <summary>
+    /// The cell `k/n de la f` of a frame's run at 10 px, `-` outside one (R-034).
+    /// </summary>
+    /// <param name="run">The frame's place in its run; null when the frame is in none.</param>
+    /// <returns>
+    /// The frame's ordinal in the run, the run's length and the index of its first frame, or `-`.
+    /// </returns>
     internal static string SpotCell(SpotRun? run)
         => run is null ? "-" : $"{run.Ordinal.ToString(Inv)}/{run.Frames.ToString(Inv)} de la {run.FirstIndex.ToString(Inv)}";
 
-    /// <summary>What the Respinse tab says under its heading, one paragraph per line: the elongation, where the marginal frames are, the trail and its axis, and in bold what each axis points to (R-035, R-036).</summary>
+    /// <summary>
+    /// What the Respinse tab says under its heading, one paragraph per line: the elongation, where
+    /// the marginal frames are, the trail and its axis, and in bold what each axis points to
+    /// (R-035, R-036).
+    /// </summary>
     internal static IReadOnlyList<ReportParagraph> RejectedExplanation { get; } =
     [
         new($"Alungirea e raportul dintre axa lunga si axa scurta a stelelor (1 = rotunde), mediana pe cadru: de la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
@@ -162,13 +259,24 @@ internal static class SeriesReport
         new("Dara pe RA vine din urmarire: eroarea periodica, viteza, backlash-ul pe RA. Dara pe DEC vine din alinierea polara, vant sau o atingere a monturii. Oblica: amandoua, sau o lovitura.", true),
     ];
 
-    /// <summary>The caption of a star cut-out: where it was taken and the star's three figures.</summary>
+    /// <summary>
+    /// The caption of a star cut-out: where it was taken and the star's three figures.
+    /// </summary>
+    /// <param name="c">The cut-out and its star; not null.</param>
+    /// <returns>The place, the FWHM in pixels, the elongation and the angle in degrees.</returns>
     internal static string CropCaption(StarCrop c)
     {
         ArgumentNullException.ThrowIfNull(c);
         return $"{c.Where}: FWHM {RunReport.F(c.Star.Fwhm, 1)} px, alungire {RunReport.F(c.Star.Elongation, 2)}, unghi {RunReport.F(c.Star.AngleDeg, 0)}";
     }
 
+    /// <summary>
+    /// Writes one section: a blank line, its title, then each row as its label padded to the
+    /// colon and its value, the verdict first when the row has one.
+    /// </summary>
+    /// <param name="w">Where the lines go.</param>
+    /// <param name="title">The section's title, in capitals.</param>
+    /// <param name="rows">The rows of the section.</param>
     private static void Section(TextWriter w, string title, IReadOnlyList<ReportRow> rows)
     {
         w.WriteLine();
@@ -180,6 +288,14 @@ internal static class SeriesReport
         }
     }
 
+    /// <summary>
+    /// The `scara` line: the image scale, the pixel size and its source, the reference frame.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The scale in arcseconds per pixel (unknown without a focal length), the pixel size in
+    /// micrometres, and the reference frame's index, or `niciunul` when none was chosen.
+    /// </returns>
     internal static string ScaleLine(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -188,6 +304,12 @@ internal static class SeriesReport
 
     // ------------------------------------------------------------------ the sections
 
+    /// <summary>
+    /// The REZUMAT section: focus, exposure, dew, the moved frames, dithering, polar alignment,
+    /// each with its verdict, and the frames to leave out of the stack.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>The seven rows, in the console's order.</returns>
     internal static IReadOnlyList<ReportRow> SummaryRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -210,6 +332,12 @@ internal static class SeriesReport
         ];
     }
 
+    /// <summary>
+    /// The FOCUS section: the session's median FWHM, the first against the last good frames and
+    /// whether the focus held, the zone medians, and the verdict.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>The four rows, in the console's order.</returns>
     internal static IReadOnlyList<ReportRow> FocusRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -224,7 +352,12 @@ internal static class SeriesReport
         ];
     }
 
-    /// <summary>The map's axis labels: which image axis is RA and which DEC, plain `X` / `Y` without an axis (R-036).</summary>
+    /// <summary>
+    /// The map's axis labels: which image axis is RA and which DEC, plain `X` / `Y` without an
+    /// axis (R-036).
+    /// </summary>
+    /// <param name="s">The series analysis, whose RA axis decides the labels; not null.</param>
+    /// <returns>The label of the horizontal axis and that of the vertical one.</returns>
     internal static (string X, string Y) AxisLabels(SeriesAnalysis s)
     {
         ArgumentNullException.ThrowIfNull(s);
@@ -236,7 +369,12 @@ internal static class SeriesReport
         };
     }
 
-    /// <summary>The headers of the position columns of the frame table: `dX (DEC)`, `dY (RA)`, plain without an axis (R-036).</summary>
+    /// <summary>
+    /// The headers of the position columns of the frame table: `dX (DEC)`, `dY (RA)`, plain
+    /// without an axis (R-036).
+    /// </summary>
+    /// <param name="s">The series analysis, whose RA axis decides the headers; not null.</param>
+    /// <returns>The header of the dX column and that of the dY column.</returns>
     internal static (string Dx, string Dy) PositionHeaders(SeriesAnalysis s)
     {
         ArgumentNullException.ThrowIfNull(s);
@@ -248,6 +386,17 @@ internal static class SeriesReport
         };
     }
 
+    /// <summary>
+    /// The EXPUNERE SI ZGOMOT section: the sky background of the first and last good frames,
+    /// the read noise per channel from the bias pair, then per sampled frame the sky, the
+    /// shot-to-read ratio and the noise penalty of each channel, and the row that explains the
+    /// ratio's scale.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The rows in the console's order; only the background and a `nemasurat` read-noise row
+    /// when the session has no two biases.
+    /// </returns>
     internal static IReadOnlyList<ReportRow> NoiseRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -272,6 +421,12 @@ internal static class SeriesReport
         return rows;
     }
 
+    /// <summary>
+    /// The ROUA section: the halo, the detected stars and the FWHM of the first against the last
+    /// good frames, and the dew verdict.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>The two rows, in the console's order.</returns>
     internal static IReadOnlyList<ReportRow> DewRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -284,6 +439,13 @@ internal static class SeriesReport
         ];
     }
 
+    /// <summary>
+    /// The CADRE MISCATE section: the bad frames, the marginal frames (each row naming its
+    /// elongation bounds, <see cref="Th.ElongationBad"/> and <see cref="Th.ElongationMarginal"/>),
+    /// and the direction of the trails with the mount axis it falls on.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>The three rows, in the console's order.</returns>
     internal static IReadOnlyList<ReportRow> TrailRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -296,6 +458,13 @@ internal static class SeriesReport
         ];
     }
 
+    /// <summary>
+    /// The DRIFT SI ROTATIE section: the drift between consecutive undithered frames in pixels
+    /// per minute (and arcseconds per minute when the scale is known), the drift over one
+    /// exposure, the field rotation, the polar alignment and the RA drift.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>The five rows, in the console's order.</returns>
     internal static IReadOnlyList<ReportRow> DriftRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -310,11 +479,24 @@ internal static class SeriesReport
         ];
     }
 
-    /// <summary>`39 perechi fara pauza`, or `29 perechi cu pauza, aproximativ: pasii mici de dithering intra in cifra` when the drift fell back to the paused pairs (R-049).</summary>
+    /// <summary>
+    /// `39 perechi fara pauza`, or `29 perechi cu pauza, aproximativ: pasii mici de dithering
+    /// intra in cifra` when the drift fell back to the paused pairs (R-049).
+    /// </summary>
+    /// <param name="s">The series analysis, with the drift's pair count; not null.</param>
+    /// <returns>The pair count and the kind of pairs the drift was measured on.</returns>
     private static string PairsWord(SeriesAnalysis s)
         => s.DriftApproximate ? $"{s.DriftPairs.ToString(Inv)} perechi cu pauza, aproximativ: pasii mici de dithering intra in cifra" : $"{s.DriftPairs.ToString(Inv)} perechi fara pauza";
 
-    /// <summary>Why the polar alignment is not measured, or null when it is (R-050): no registered pairs, under three drift pairs, no RA axis, no scale, no exposure.</summary>
+    /// <summary>
+    /// Why the polar alignment is not measured, or null when it is (R-050): no registered pairs,
+    /// under three drift pairs, no RA axis, no scale, no exposure.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The cell to show instead of the alignment, the first missing piece in the order above;
+    /// null when the lower bound of the polar error was measured.
+    /// </returns>
     private static string? PolarReason(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
@@ -326,11 +508,27 @@ internal static class SeriesReport
             : "- (fara expunere)";
     }
 
-    /// <summary>Why there is no upper bound when the lower one exists (R-050): no solve for the declination, or a span under Th.PolarRotationMinHours.</summary>
+    /// <summary>
+    /// Why there is no upper bound when the lower one exists (R-050): no solve for the
+    /// declination, or a span under Th.PolarRotationMinHours.
+    /// </summary>
+    /// <param name="s">The series analysis; not null.</param>
+    /// <returns>
+    /// The no-solve sentence when the declination is unknown, else the short-span one.
+    /// </returns>
     private static string NoUpperBound(SeriesAnalysis s)
         => s.DeclinationDeg is null ? "fara plate solve nu se stie declinatia pentru limita de sus" : $"sesiune sub {RunReport.F(Th.PolarRotationMinHours, 0)} h: rotatia nu da inca limita de sus";
 
-    /// <summary>`eroare intre 4.2' si 10.4'`, `eroare de 5.7'` when the bounds meet, `eroare de cel putin 5.7'` without an upper bound.</summary>
+    /// <summary>
+    /// `eroare intre 4.2' si 10.4'`, `eroare de 5.7'` when the bounds meet, `eroare de cel putin
+    /// 5.7'` without an upper bound.
+    /// </summary>
+    /// <param name="s">
+    /// The series analysis, with the polar error's bounds in arcminutes; not null.
+    /// </param>
+    /// <returns>
+    /// The bracket of the polar error, one decimal; the bounds meet when they print the same.
+    /// </returns>
     private static string PolarBounds(SeriesAnalysis s)
     {
         string min = RunReport.F(s.PolarErrorMinArcmin ?? 0, 1);
@@ -344,6 +542,10 @@ internal static class SeriesReport
     /// bound, the drift the alignment causes in one exposure and the elongation it adds; the
     /// lower bound alone without a solve; or why nothing is measured.
     /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The row's value; the drifts in pixels per exposure, the DEC drift in "/min.
+    /// </returns>
     private static string PolarRow(SeriesResult r)
     {
         if (PolarReason(r) is string why)
@@ -369,6 +571,11 @@ internal static class SeriesReport
     /// when the solve gives it, how much of it the alignment can explain (the rotation times
     /// tan DEC) and that the rest is the tracking; `-` when the alignment is not measured.
     /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The row's value; without the alignment's RA share, the drift and why that share is not
+    /// known yet.
+    /// </returns>
     private static string RaDriftRow(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
@@ -396,6 +603,12 @@ internal static class SeriesReport
     /// none when unknown) and the bracket with what it costs in one exposure, or why nothing
     /// is measured.
     /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The verdict word, null when there is none, and the text: the error's bracket and its cost
+    /// in pixels per exposure, at least the lower drift for ATENTIE or without an upper bound,
+    /// both drifts for LA LIMITA, otherwise at most the upper one.
+    /// </returns>
     private static (string? Verdict, string Text) PolarSummary(SeriesResult r)
     {
         if (PolarReason(r) is string why)
@@ -419,7 +632,15 @@ internal static class SeriesReport
         return (verdict, $"{PolarBounds(s)}, {cost}{suffix}");
     }
 
-    /// <summary>The drift over one exposure and the walking-noise dash it draws inside the longest run at 10 px (R-043).</summary>
+    /// <summary>
+    /// The drift over one exposure and the walking-noise dash it draws inside the longest run at
+    /// 10 px (R-043).
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The drift, the median exposure in seconds, the axis it runs along and the dash; a `-`
+    /// sentence when there are no consecutive undithered frames.
+    /// </returns>
     private static string DriftPerExposure(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
@@ -431,7 +652,15 @@ internal static class SeriesReport
         return $"{Px(d, r)} pe {RunReport.F(s.MedianExposureSeconds ?? 0, 0)} s, pe {DriftAxisWord(s)}; {Streak(r)}";
     }
 
-    /// <summary>`dare de walking noise de pana la 11 px (cadrele 61-70, 10 cadre la 10 px)`, the dash of R-043; without a stretch of two frames there is no dash.</summary>
+    /// <summary>
+    /// `dare de walking noise de pana la 11 px (cadrele 61-70, 10 cadre la 10 px)`, the dash of
+    /// R-043; without a stretch of two frames there is no dash.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The dash's length in pixels and its stretch; an unknown dash without a drift; no dash
+    /// without a stretch.
+    /// </returns>
     private static string Streak(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
@@ -440,13 +669,29 @@ internal static class SeriesReport
             : $"dare de walking noise de pana la {RunReport.F(st, 1)} px ({StretchWord(w)})";
     }
 
-    /// <summary>`cadrele 61-70, 10 cadre la 10 px`: the stretch of consecutive frames whose span is the dash.</summary>
+    /// <summary>
+    /// `cadrele 61-70, 10 cadre la 10 px`: the stretch of consecutive frames whose span is the
+    /// dash.
+    /// </summary>
+    /// <param name="w">The stretch: its first and last frame index and its frame count.</param>
+    /// <returns>The stretch in words, at <see cref="Th.CoverageLoose"/> px.</returns>
     private static string StretchWord(FrameStretch w) => $"cadrele {w.FirstIndex.ToString(Inv)}-{w.LastIndex.ToString(Inv)}, {FramesWord(w.Frames)} la {RunReport.F(Th.CoverageLoose, 0)} px";
 
-    /// <summary>`niciun grup de 2+ cadre consecutive la 10 px`: the frames that would share the dash do not exist.</summary>
+    /// <summary>
+    /// `niciun grup de 2+ cadre consecutive la 10 px`: the frames that would share the dash do
+    /// not exist.
+    /// </summary>
+    /// <returns>The sentence, at <see cref="Th.CoverageLoose"/> px.</returns>
     private static string NoRun() => $"niciun grup de 2+ cadre consecutive la {RunReport.F(Th.CoverageLoose, 0)} px";
 
-    /// <summary>The axis the drift mostly runs along: RA or DEC when the RA axis is known, else the image axis.</summary>
+    /// <summary>
+    /// The axis the drift mostly runs along: RA or DEC when the RA axis is known, else the image
+    /// axis.
+    /// </summary>
+    /// <param name="s">
+    /// The series analysis, with the drift's axis and the RA axis; not null.
+    /// </param>
+    /// <returns>"RA", "DEC", "X", "Y", or "-" when the drift has no axis.</returns>
     private static string DriftAxisWord(SeriesAnalysis s) => s.DriftAxis switch
     {
         Axis.Unknown => "-",
@@ -454,6 +699,14 @@ internal static class SeriesReport
         _ => s.DriftAxis == s.RaAxis ? "RA" : "DEC",
     };
 
+    /// <summary>
+    /// The DITHERING section: the pauses and moves, how often and how far the mount moved, the
+    /// directions, the coverage, the distinct positions, the groups at
+    /// <see cref="Th.CoverageMid"/> and <see cref="Th.CoverageLoose"/> px, the scale on the sky,
+    /// the pattern left in the stack, the sensor pattern, and the verdict.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>The thirteen rows, in the console's order.</returns>
     internal static IReadOnlyList<ReportRow> DitherRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -478,7 +731,14 @@ internal static class SeriesReport
         ];
     }
 
-    /// <summary>The DITHERING rows that are not tables, for the window's Dithering tab beside <see cref="DitherTables"/> (R-036).</summary>
+    /// <summary>
+    /// The DITHERING rows that are not tables, for the window's Dithering tab beside
+    /// <see cref="DitherTables"/> (R-036).
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The nine rows, the coverage cut to the median nearest frame and the isolated ones.
+    /// </returns>
     internal static IReadOnlyList<ReportRow> DitherScalarRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -498,7 +758,12 @@ internal static class SeriesReport
         ];
     }
 
-    /// <summary>What a move means on the sky at this focal length: `1 px = 5.99"; o miscare de 5 px (pragul) cere 30" pe cer, una de 10 px 60"` (R-044).</summary>
+    /// <summary>
+    /// What a move means on the sky at this focal length: `1 px = 5.99"; o miscare de 5 px
+    /// (pragul) cere 30" pe cer, una de 10 px 60"` (R-044).
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>The `scara` row; `necunoscuta (fara focala)` when the scale is unknown.</returns>
     private static ReportRow ScaleRow(SeriesResult r)
         => new("scara", r.ArcsecPerPixel is double a
             ? $"1 px = {RunReport.F(a, 2)}\"; o miscare de {RunReport.F(Th.DitherStep, 0)} px (pragul) cere {RunReport.F(Th.DitherStep * a, 0)}\" pe cer, una de {RunReport.F(Th.CoverageLoose, 0)} px {RunReport.F(Th.CoverageLoose * a, 0)}\""
@@ -508,6 +773,8 @@ internal static class SeriesReport
     /// How much of one frame's pattern the mean of the stack keeps (R-048): `1.6 % din al unui
     /// cadru (ideal 1.1 % la 87 cadre; perechi de cadre la sub 1.5 px: 27)`.
     /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>The `pattern in stiva` row.</returns>
     private static ReportRow SurvivingRow(SeriesResult r)
     {
         DitherAnalysis d = r.Dither;
@@ -523,6 +790,11 @@ internal static class SeriesReport
     /// (mediana a 87 cadre neinregistrate, 512 x 512 px din centru); fara dark-uri in sesiune:
     /// raman in cadre`.
     /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The `pattern fix` row: the figures when the pattern was measured, else why not, and in
+    /// both cases what the session's darks do.
+    /// </returns>
     private static ReportRow PatternRow(SeriesResult r)
     {
         SensorPattern p = r.Pattern;
@@ -555,7 +827,15 @@ internal static class SeriesReport
         new($"Cifrele: randul 'drift intr-o expunere' din DRIFT SI ROTATIE da driftul pe un cadru si dara de walking noise, cat de intins e cel mai intins grup de cadre consecutive ramase la {RunReport.F(Th.CoverageLoose, 0)} px; sub {RunReport.F(Th.WalkingStreakVisible, 0)} px nu e walking noise, oricum ar arata harta. Randul 'pattern in stiva' spune cat din pattern-ul unui cadru ramane in medie dupa stivuire (1 / cadre cand niciun cadru nu sta peste altul), iar 'pattern fix' cat de mare e pattern-ul senzorului fata de zgomotul unui cadru si daca sesiunea are dark-uri care sa-l scoata.", false),
     ];
 
-    /// <summary>The DITHERING figures that are tables, for the window (R-036): how often, how far, direction, coverage, runs; the console keeps its rows (ADR 0012).</summary>
+    /// <summary>
+    /// The DITHERING figures that are tables, for the window (R-036): how often, how far,
+    /// direction, coverage, runs; the console keeps its rows (ADR 0012).
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The five tables in that order; how often has a single row with the console's words when
+    /// no interval between moves was counted, the runs table one row per run and radius.
+    /// </returns>
     internal static IReadOnlyList<ReportTable> DitherTables(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -592,21 +872,58 @@ internal static class SeriesReport
         ];
     }
 
+    /// <summary>
+    /// The first DITHERING row: the pauses longer than <see cref="Th.DitherPause"/>, the moves of
+    /// at least <see cref="Th.DitherStep"/>, the pauses without a move, the moves without a
+    /// pause, and how many frames were registered.
+    /// </summary>
+    /// <param name="r">The result of the series run, for its frame count.</param>
+    /// <param name="d">The dither analysis of the series.</param>
+    /// <returns>The row, labelled with the pause threshold.</returns>
     private static ReportRow PausesRow(SeriesResult r, DitherAnalysis d)
         => new($"pauze > {RunReport.F(Th.DitherPause, 0)} s", $"{d.Pauses.ToString(Inv)}; miscari >= {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauze fara miscare: {d.PausesWithoutMove.ToString(Inv)}; miscari fara pauza: {d.MovesWithoutPause.ToString(Inv)}; cadre inregistrate: {d.Registered.ToString(Inv)} din {r.Frames.Count.ToString(Inv)}");
 
+    /// <summary>
+    /// The row of the longest stretch between two moves: its first and last frame, its frame
+    /// count, and its duration when the frames carry a time.
+    /// </summary>
+    /// <param name="r">The result of the series run, for the times of the frames.</param>
+    /// <param name="d">The dither analysis of the series.</param>
+    /// <returns>The `cel mai lung interval intre doua miscari` row.</returns>
     private static ReportRow LongestRow(SeriesResult r, DitherAnalysis d)
         => new("cel mai lung interval intre doua miscari", $"cadrele {d.LongestStretchFirst.ToString(Inv)}-{d.LongestStretchLast.ToString(Inv)} ({d.LongestStretchFrames.ToString(Inv)} cadre de la o miscare la urmatoarea{Minutes(r, d.LongestStretchFirst, d.LongestStretchLast)})");
 
+    /// <summary>A frame count with its noun in the right number.</summary>
+    /// <param name="frames">The count.</param>
+    /// <returns>"1 cadru", or "N cadre" for any other count.</returns>
     private static string FramesWord(int frames) => $"{frames.ToString(Inv)} {(frames == 1 ? "cadru" : "cadre")}";
 
+    /// <summary>A number of times with its noun in the right number.</summary>
+    /// <param name="times">The count.</param>
+    /// <returns>"1 data", or "N ori" for any other count.</returns>
     private static string TimesWord(int times) => $"{times.ToString(Inv)} {(times == 1 ? "data" : "ori")}";
 
+    /// <summary>A size class of the moves in pixels.</summary>
+    /// <param name="c">
+    /// The class, with its lower bound and its upper bound (null for the last).
+    /// </param>
+    /// <returns>"5-10 px" for a closed class, "20+ px" for the open last one.</returns>
     private static string SizeWord(SizeClass c) => $"{RunReport.F(c.Lower, 0)}{(c.Upper is double u ? "-" + RunReport.F(u, 0) : "+")} px";
 
+    /// <summary>A radius in whole pixels.</summary>
+    /// <param name="px">The radius in pixels.</param>
+    /// <returns>"10 px".</returns>
     private static string PxWord(double px) => RunReport.F(px, 0) + " px";
 
-    /// <summary>The rows of one radius in the runs table: one per run, or a single `niciunul` row.</summary>
+    /// <summary>
+    /// The rows of one radius in the runs table: one per run, or a single `niciunul` row.
+    /// </summary>
+    /// <param name="runs">The runs of consecutive frames found at that radius.</param>
+    /// <param name="radius">The radius in pixels.</param>
+    /// <param name="r">The result of the series run, for the runs' durations.</param>
+    /// <returns>
+    /// Per row: the radius, the run's first-last frames, its frame count, its duration.
+    /// </returns>
     private static List<IReadOnlyList<string>> RunRows(IReadOnlyList<FrameStretch> runs, double radius, SeriesResult r)
     {
         if (runs.Count == 0)
@@ -617,13 +934,25 @@ internal static class SeriesReport
         return runs.Select(x => (IReadOnlyList<string>)[PxWord(radius), $"{x.FirstIndex.ToString(Inv)}-{x.LastIndex.ToString(Inv)}", x.Frames.ToString(Inv), MinutesCell(r, x.FirstIndex, x.LastIndex)]).ToList();
     }
 
-    /// <summary>The duration of a stretch as a cell: <see cref="Minutes"/> without its leading separator, `-` when the frames carry no time.</summary>
+    /// <summary>
+    /// The duration of a stretch as a cell: <see cref="Minutes"/> without its leading separator,
+    /// `-` when the frames carry no time.
+    /// </summary>
+    /// <param name="r">The result of the series run, for the times of the frames.</param>
+    /// <param name="first">The stretch's first frame, 1-based.</param>
+    /// <param name="last">The stretch's last frame, 1-based.</param>
+    /// <returns>The duration ("12 min"), or `-`.</returns>
     private static string MinutesCell(SeriesResult r, int first, int last)
     {
         string m = Minutes(r, first, last);
         return m.Length > 2 ? m[2..] : "-";
     }
 
+    /// <summary>
+    /// The frames to leave out of the stack: the bad and the unreadable ones, with their reasons.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>One row per frame classed bad or unknown, in the session's order.</returns>
     internal static IReadOnlyList<RejectedRow> RejectedRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -642,6 +971,8 @@ internal static class SeriesReport
     // ------------------------------------------------------------------ the words
 
     /// <summary>The words of a flag: the kind, the figure and the threshold.</summary>
+    /// <param name="f">The flag; not null.</param>
+    /// <returns>The flag in words; the kind's name for a kind without words.</returns>
     internal static string Reason(FrameFlag f)
     {
         ArgumentNullException.ThrowIfNull(f);
@@ -659,10 +990,20 @@ internal static class SeriesReport
         };
     }
 
-    /// <summary>`, dara pe RA (-90 grade)` when the trail's axis is known, `, dara la -90 grade` when only its angle is, nothing without an angle (R-033).</summary>
+    /// <summary>
+    /// `, dara pe RA (-90 grade)` when the trail's axis is known, `, dara la -90 grade` when only
+    /// its angle is, nothing without an angle (R-033).
+    /// </summary>
+    /// <param name="f">
+    /// The trail flag; its Detail holds the angle in degrees, already formatted.
+    /// </param>
+    /// <returns>The suffix, starting with ", ", or "".</returns>
     private static string TrailSuffix(FrameFlag f)
         => f.Detail is null ? "" : f.On == TrailAxis.Unknown ? $", dara la {f.Detail} grade" : $", dara {AxisWord(f.On)} ({f.Detail} grade)";
 
+    /// <summary>The mount axis a trail falls on, as the report's sentences say it.</summary>
+    /// <param name="on">The trail's axis.</param>
+    /// <returns>"pe RA", "pe DEC", "oblica", or "" for an unknown axis.</returns>
     internal static string AxisWord(TrailAxis on) => on switch
     {
         TrailAxis.Ra => "pe RA",
@@ -671,12 +1012,18 @@ internal static class SeriesReport
         _ => "",
     };
 
+    /// <summary>A frame's flags in words, in their order.</summary>
+    /// <param name="flags">The flags of one frame; not null.</param>
+    /// <returns>Each flag's <see cref="Reason"/> joined by "; ", or "" without flags.</returns>
     internal static string Reasons(IReadOnlyList<FrameFlag> flags)
     {
         ArgumentNullException.ThrowIfNull(flags);
         return flags.Count == 0 ? "" : string.Join("; ", flags.Select(Reason));
     }
 
+    /// <summary>A frame's class as the table and the CSV write it.</summary>
+    /// <param name="c">The class.</param>
+    /// <returns>"bun", "la limita", "SLAB", or "necitit" for an unknown class.</returns>
     internal static string ClassWord(FrameClass c) => c switch
     {
         FrameClass.Good => "bun",
@@ -685,6 +1032,15 @@ internal static class SeriesReport
         _ => "necitit",
     };
 
+    /// <summary>
+    /// The focus verdict and its text: the session's FWHM and whether the focus held.
+    /// </summary>
+    /// <param name="s">The series analysis.</param>
+    /// <param name="r">The result of the series run, for the scale.</param>
+    /// <returns>
+    /// NEDETERMINAT without a good frame, ATENTIE when the focus moved, BUN otherwise (also when
+    /// too few good frames show a trend); the text gives the median FWHM and the trend.
+    /// </returns>
     private static (string Verdict, string Text) Focus(SeriesAnalysis s, SeriesResult r)
     {
         if (s.SessionFwhm is null)
@@ -696,6 +1052,17 @@ internal static class SeriesReport
         return (s.FocusHeld is false ? "ATENTIE" : "BUN", $"FWHM median {Px(s.SessionFwhm, r)} pe cadrele bune, {TrendPx(s.Fwhm)} la inceput / sfarsit: {held}");
     }
 
+    /// <summary>
+    /// The exposure verdict and its text, from the channel whose shot-to-read ratio is the lowest
+    /// of all the sampled frames.
+    /// </summary>
+    /// <param name="s">The series analysis.</param>
+    /// <param name="r">The result of the series run (not read).</param>
+    /// <returns>
+    /// BUNA when that ratio reaches <see cref="Th.SwampingRatioOk"/>, LA LIMITA under it,
+    /// NEMASURAT without biases or without a finite ratio; the text opens with the green
+    /// background of the first and last good frames in ADU.
+    /// </returns>
     private static (string Verdict, string Text) Exposure(SeriesAnalysis s, SeriesResult r)
     {
         string bg = s.Background.First is double bf && s.Background.Last is double bl ? $"fond G {RunReport.F(bf, 0)} -> {RunReport.F(bl, 0)} ADU" : "fond necunoscut";
@@ -713,6 +1080,13 @@ internal static class SeriesReport
         return (worst.SwampingRatio >= Th.SwampingRatioOk ? "BUNA" : "LA LIMITA", $"{bg}; canalul cel mai slab {worst.Name}: shot/citire {RunReport.F(worst.SwampingRatio, 1)}, penalizare {RunReport.F(worst.PenaltyPct, 0)} %");
     }
 
+    /// <summary>
+    /// The dew verdict and its text: the change of the FWHM in percent and of the halo.
+    /// </summary>
+    /// <param name="s">The series analysis.</param>
+    /// <returns>
+    /// POSIBIL when dew is suspected, NU when not, NEDETERMINAT with too few good frames.
+    /// </returns>
     private static (string Verdict, string Text) Dew(SeriesAnalysis s) => s.DewSuspected switch
     {
         true => ("POSIBIL", $"FWHM a crescut cu {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} % si halo-ul cu {Signed(s.Halo.Change ?? 0, 3)}"),
@@ -720,6 +1094,9 @@ internal static class SeriesReport
         null => ("NEDETERMINAT", "prea putine cadre bune"),
     };
 
+    /// <summary>Which image axis is RA and which DEC, and where that came from.</summary>
+    /// <param name="s">The series analysis, with the RA axis and its source.</param>
+    /// <returns>The sentence, or `axa RA nedeterminata` when the RA axis is unknown.</returns>
     private static string AxisLine(SeriesAnalysis s) => s.RaAxis switch
     {
         Axis.X => $"axa X a imaginii = RA, Y = DEC ({s.AxisSource})",
@@ -734,6 +1111,11 @@ internal static class SeriesReport
     /// otherwise; hot pixels `OK` or `ATENTIE`. The words stay short for the chip; the dash,
     /// the drift, the run and the hot-pixel rule open the text.
     /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The two words joined by ", " and the text, the counts of the moves and positions last;
+    /// NEDETERMINAT when fewer than two frames were registered.
+    /// </returns>
     private static (string Verdict, string Text) DitherVerdict(SeriesResult r)
     {
         DitherAnalysis d = r.Dither;
@@ -759,6 +1141,12 @@ internal static class SeriesReport
         return ($"{first.Word}, {second.Word}", string.Join("; ", new[] { first.Detail, second.Detail, counts }.Where(x => x is not null)));
     }
 
+    /// <summary>
+    /// The `de scos din stiva` cell: how many frames to leave out (bad and unreadable), how many
+    /// stay (good and marginal) and their total exposure.
+    /// </summary>
+    /// <param name="r">The result of the series run.</param>
+    /// <returns>The cell; frames without an exposure time add nothing to the duration.</returns>
     private static string Keep(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
@@ -774,6 +1162,14 @@ internal static class SeriesReport
         return $"{(s.BadCount + s.UnknownCount).ToString(Inv)} cadre (lista la RESPINSE); raman {(s.GoodCount + s.MarginalCount).ToString(Inv)} = {RunReport.Duration(kept)}";
     }
 
+    /// <summary>
+    /// How often the mount moved: each interval between moves in frames and how many times.
+    /// </summary>
+    /// <param name="d">The dither analysis of the series.</param>
+    /// <returns>
+    /// The intervals, shortest first, joined by "; "; `nicio miscare` without a move, `o singura
+    /// miscare` when no interval was counted.
+    /// </returns>
     private static string HowOften(DitherAnalysis d)
     {
         if (d.Moves == 0)
@@ -790,6 +1186,17 @@ internal static class SeriesReport
         return parts.Count == 0 ? "o singura miscare" : string.Join("; ", parts);
     }
 
+    /// <summary>
+    /// The duration of a stretch of frames, from the start of its first to the end of its last
+    /// (the last frame's time of capture plus its exposure), as a suffix.
+    /// </summary>
+    /// <param name="r">The result of the series run, for the times of the frames.</param>
+    /// <param name="first">The stretch's first frame, 1-based.</param>
+    /// <param name="last">The stretch's last frame, 1-based.</param>
+    /// <returns>
+    /// ", " and the duration; "" when the range is not inside the series, or either end has no
+    /// time, or the last frame has no exposure.
+    /// </returns>
     private static string Minutes(SeriesResult r, int first, int last)
     {
         if (first < 1 || last > r.Frames.Count || last < first)
@@ -802,15 +1209,28 @@ internal static class SeriesReport
         return t0 is DateTime a && t1 is DateTime b && e is double ex ? ", " + RunReport.Duration((b - a).TotalSeconds + ex) : "";
     }
 
+    /// <summary>The runs of one radius as a single cell of the console's rows.</summary>
+    /// <param name="runs">The runs of consecutive frames found at that radius.</param>
+    /// <param name="r">The result of the series run, for the runs' durations.</param>
+    /// <returns>Each run's first-last frames, frame count and duration, or `niciunul`.</returns>
     private static string Runs(IReadOnlyList<FrameStretch> runs, SeriesResult r)
         => runs.Count == 0 ? "niciunul" : string.Join(", ", runs.Select(x => $"{x.FirstIndex.ToString(Inv)}-{x.LastIndex.ToString(Inv)} ({x.Frames.ToString(Inv)}{Minutes(r, x.FirstIndex, x.LastIndex)})"));
 
+    /// <summary>The indices of the frames of one class.</summary>
+    /// <param name="r">The result of the series run.</param>
+    /// <param name="c">The class to list.</param>
+    /// <returns>The indices joined by ", ", or `niciunul`.</returns>
     private static string List(SeriesResult r, FrameClass c)
     {
         List<int> idx = Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Classes[i] == c).Select(i => r.Frames[i].Info.Index).ToList();
         return idx.Count == 0 ? "niciunul" : string.Join(", ", idx.Select(i => i.ToString(Inv)));
     }
 
+    /// <summary>
+    /// The median FWHM of the centre, middle and edge zones over the good frames.
+    /// </summary>
+    /// <param name="r">The result of the series run.</param>
+    /// <returns>"2.10 / 2.25 / 2.60 px", a zone without any figure written "-".</returns>
     private static string ZoneMedians(SeriesResult r)
     {
         List<FrameMeasurement> good = Enumerable.Range(0, r.Frames.Count).Where(i => r.Series.Classes[i] == FrameClass.Good).Select(i => r.Frames[i].Measurement!).ToList();
@@ -823,19 +1243,45 @@ internal static class SeriesReport
         return $"{Z(m => m.Centre.Fwhm)} / {Z(m => m.Mid.Fwhm)} / {Z(m => m.Edge.Fwhm)} px";
     }
 
+    /// <summary>
+    /// A length in pixels, two decimals, and on the sky in arcseconds when the scale is known.
+    /// </summary>
+    /// <param name="v">The length in pixels; null when unknown.</param>
+    /// <param name="r">The result of the series run, for the scale in arcseconds per pixel.</param>
+    /// <returns>`2.31 px = 13.8"`, `2.31 px` without a scale, or `-`.</returns>
     private static string Px(double? v, SeriesResult r)
         => v is double d ? RunReport.F(d, 2) + " px" + (r.ArcsecPerPixel is double a ? " = " + RunReport.F(d * a, 1) + "\"" : "") : "-";
 
+    /// <summary>
+    /// A trend in pixels: the first and the last value, and the relative change in percent.
+    /// </summary>
+    /// <param name="t">The trend; any of its parts may be null.</param>
+    /// <returns>
+    /// "2.10 / 2.40 px (+14 %)"; a missing value is "-", a missing change left out.
+    /// </returns>
     private static string TrendPx(Trend t)
         => $"{Opt(t.First, 2)} / {Opt(t.Last, 2)} px" + (t.RelativeChange is double rc ? " (" + Signed(100 * rc, 0) + " %)" : "");
 
+    /// <summary>The median of the known values.</summary>
+    /// <param name="v">The values, null where unknown.</param>
+    /// <returns>The 50th percentile of the non-null values, or null when there are none.</returns>
     private static double? Median(IReadOnlyList<double?> v)
     {
         List<double> x = v.Where(a => a is not null).Select(a => a!.Value).ToList();
         return x.Count > 0 ? Raster.Percentile(x, 50) : null;
     }
 
+    /// <summary>An optional figure with a fixed number of decimals, or "-".</summary>
+    /// <param name="v">The figure; null when unknown.</param>
+    /// <param name="decimals">How many decimals to write.</param>
+    /// <returns>The formatted figure, or "-" when <paramref name="v"/> is null.</returns>
     private static string Opt(double? v, int decimals) => v is double d ? RunReport.F(d, decimals) : "-";
 
+    /// <summary>An optional figure with its sign always written.</summary>
+    /// <param name="v">The figure; null when unknown.</param>
+    /// <param name="decimals">How many decimals to write.</param>
+    /// <returns>
+    /// "+1.25" or "-1.25" ("+" also for zero), or "-" when <paramref name="v"/> is null.
+    /// </returns>
     private static string Signed(double? v, int decimals) => v is double d ? (d >= 0 ? "+" : "") + RunReport.F(d, decimals) : "-";
 }

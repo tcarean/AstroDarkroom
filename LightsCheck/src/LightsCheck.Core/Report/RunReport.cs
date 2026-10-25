@@ -19,10 +19,16 @@ using System.Globalization;
 
 namespace LightsCheck.Core;
 
-/// <summary>The lines every run shares: the banner, the copyright, the warranty of --help (R-001, R-004).</summary>
+/// <summary>
+/// The lines every run shares: the banner, the copyright, the warranty of --help (R-001, R-004).
+/// </summary>
 internal static class RunReport
 {
-    /// <summary>The first two lines of every run, before anything else, including errors and --help.</summary>
+    /// <summary>
+    /// Writes the first two lines of every run, the banner and the copyright, before anything
+    /// else, including errors and --help.
+    /// </summary>
+    /// <param name="w">Where the lines go; not null.</param>
     internal static void WriteBanner(TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(w);
@@ -32,7 +38,10 @@ internal static class RunReport
 
     internal const string LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html";
 
-    /// <summary>GPLv3 §5(d): a program that shows legal notices shows the warranty disclaimer too; here, in --help.</summary>
+    /// <summary>
+    /// GPLv3 §5(d): a program that shows legal notices shows the warranty disclaimer too; here, in
+    /// --help.
+    /// </summary>
     internal static readonly string[] WarrantyLines =
     [
         "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
@@ -43,9 +52,16 @@ internal static class RunReport
     ];
 
     /// <summary>A number with the invariant culture and a fixed number of decimals.</summary>
+    /// <param name="v">The number.</param>
+    /// <param name="decimals">How many decimals to write; 0 or more.</param>
+    /// <returns>The number with a point as the decimal separator and no group separator.</returns>
     internal static string F(double v, int decimals) => v.ToString("F" + decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
 
     /// <summary>A duration as "3 h 22 min", "54 min" or "48 s".</summary>
+    /// <param name="seconds">The duration in seconds; rounded to the whole second first.</param>
+    /// <returns>
+    /// Seconds under a minute, whole minutes under an hour, else hours and minutes.
+    /// </returns>
     internal static string Duration(double seconds)
     {
         int s = (int)Math.Round(seconds);

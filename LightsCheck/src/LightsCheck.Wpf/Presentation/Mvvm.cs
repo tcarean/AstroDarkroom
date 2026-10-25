@@ -26,9 +26,22 @@ public abstract class ObservableObject : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    /// <summary>Raises <see cref="PropertyChanged"/> for one property.</summary>
+    /// <param name="name">The property's name; the caller's own name when left out.</param>
     protected void Raise([CallerMemberName] string? name = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+    /// <summary>
+    /// Stores a value in a property's field and raises the change, only when it differs from the
+    /// stored one by the type's default equality.
+    /// </summary>
+    /// <typeparam name="T">The property's type.</typeparam>
+    /// <param name="field">The property's backing field.</param>
+    /// <param name="value">The new value.</param>
+    /// <param name="name">The property's name; the caller's own name when left out.</param>
+    /// <returns>
+    /// True when the value changed and the change was raised; false when it was equal.
+    /// </returns>
     protected bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value))
@@ -42,14 +55,24 @@ public abstract class ObservableObject : INotifyPropertyChanged
     }
 }
 
-/// <summary>A command over a delegate; CanExecuteChanged is raised explicitly, not through CommandManager.</summary>
+/// <summary>
+/// A command over a delegate; CanExecuteChanged is raised explicitly, not through CommandManager.
+/// </summary>
+/// <param name="run">What the command does.</param>
+/// <param name="can">Whether it can run now; null = always.</param>
 internal sealed class RelayCommand(Action run, Func<bool>? can = null) : ICommand
 {
     public event EventHandler? CanExecuteChanged;
 
+    /// <summary>Whether the command can run now.</summary>
+    /// <param name="parameter">The command parameter, not used.</param>
+    /// <returns>True when no condition was given, else the condition's answer.</returns>
     public bool CanExecute(object? parameter) => can is null || can();
 
+    /// <summary>Runs the command's delegate.</summary>
+    /// <param name="parameter">The command parameter, not used.</param>
     public void Execute(object? parameter) => run();
 
+    /// <summary>Tells the bound controls to ask <see cref="CanExecute"/> again.</summary>
     internal void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }

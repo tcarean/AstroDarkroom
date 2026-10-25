@@ -19,12 +19,18 @@ using System.Windows.Media.Imaging;
 
 namespace LightsCheck.Wpf;
 
+/// <summary>The application's icon, for the windows that draw it themselves (About).</summary>
 internal static class AppIcon
 {
-    /// <summary>The same resource as Icon= in MainWindow.xaml, and the same file as the console's.</summary>
+    /// <summary>
+    /// The same resource as Icon= in MainWindow.xaml, and the same file as the console's.
+    /// </summary>
     internal static readonly Uri Source = new("pack://application:,,,/LightsCheck.Wpf;component/Icon/lightscheck.ico");
 
-    /// <summary>The frame with the most pixels, frozen so it can be shared between threads.</summary>
+    /// <summary>
+    /// The frame with the most pixels, frozen so it can be shared between threads.
+    /// </summary>
+    /// <returns>The icon's widest frame.</returns>
     internal static BitmapSource Largest()
     {
         BitmapDecoder decoder = BitmapDecoder.Create(Source, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);

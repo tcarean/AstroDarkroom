@@ -1,7 +1,7 @@
 # 0003. The readers are copied from FlatCheck, libraw is taken under LGPL-2.1, the Python prototype is frozen
 
 Date: 2026-10-09
-Status: accepted 2026-10-09
+Status: accepted 2026-10-09; the Romanian comments of the copies superseded by 0018
 
 ## Context
 

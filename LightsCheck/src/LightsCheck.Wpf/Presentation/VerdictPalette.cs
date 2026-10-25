@@ -31,7 +31,13 @@ internal static class VerdictPalette
     internal static readonly Color Bad = Color.FromRgb(0xF8, 0x51, 0x49);
     internal static readonly Color Neutral = Color.FromRgb(0x8B, 0x94, 0x9E);
 
-    /// <summary>Severity of a verdict word: 0 good, 1 fair, 2 attention, 3 bad, -1 neutral.</summary>
+    /// <summary>
+    /// Severity of a verdict word: 0 good, 1 fair, 2 attention, 3 bad, -1 neutral.
+    /// </summary>
+    /// <param name="verdict">
+    /// The word, or the start of a longer verdict; null, empty and any case allowed.
+    /// </param>
+    /// <returns>The severity; 1 for a word not in the lists.</returns>
     internal static int Severity(string? verdict)
     {
         string v = (verdict ?? "").Trim().ToUpperInvariant();
@@ -45,7 +51,8 @@ internal static class VerdictPalette
             return v == "DA" ? 2 : 0;
         }
 
-        // The dithering verdict opens with its worst part; FARA (no walking noise) is as good as OK.
+        // The dithering verdict opens with its worst part; FARA (no walking noise) is as good as
+        // OK.
         if (v.StartsWith("FARA", StringComparison.Ordinal) || v.StartsWith("OK", StringComparison.Ordinal))
         {
             return 0;
@@ -64,6 +71,9 @@ internal static class VerdictPalette
         return 1;
     }
 
+    /// <summary>The colour of a verdict word, by its <see cref="Severity"/>.</summary>
+    /// <param name="verdict">The word; null allowed.</param>
+    /// <returns>One of the five colours.</returns>
     internal static Color For(string? verdict) => Severity(verdict) switch
     {
         0 => Good,
@@ -73,6 +83,9 @@ internal static class VerdictPalette
         _ => Neutral,
     };
 
+    /// <summary>The colour of a verdict word as a frozen brush.</summary>
+    /// <param name="verdict">The word; null allowed.</param>
+    /// <returns>A frozen solid brush.</returns>
     internal static Brush BrushFor(string? verdict)
     {
         SolidColorBrush b = new(For(verdict));

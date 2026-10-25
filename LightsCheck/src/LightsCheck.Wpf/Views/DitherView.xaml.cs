@@ -19,7 +19,13 @@ using System.Windows.Controls;
 
 namespace LightsCheck.Wpf;
 
+/// <summary>
+/// The Dithering tab: the map of positions, the step and nearest-distance charts, the DITHERING
+/// rows and tables and their explanation; all bound to <see cref="MainViewModel"/>, no code of its
+/// own.
+/// </summary>
 public partial class DitherView : UserControl
 {
+    /// <summary>Loads the tab's XAML.</summary>
     public DitherView() => InitializeComponent();
 }

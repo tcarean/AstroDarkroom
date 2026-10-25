@@ -23,7 +23,8 @@ namespace LightsCheck.Cli;
 /// <summary>
 /// The console's arguments: one folder, the mode (the whole series by default,
 /// <c>--inventory</c>, <c>--frame N</c>), <c>--out DIR</c>, <c>--threads N</c>,
-/// <c>--pixel UM</c>, or --help. Anything else is an error naming the argument (R-004).
+/// <c>--pixel UM</c>, <c>--est stanga|dreapta</c>, <c>--nord sus|jos</c>, or --help. Anything else
+/// is an error naming the argument (R-004).
 /// </summary>
 internal sealed class Options
 {
@@ -37,6 +38,16 @@ internal sealed class Options
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
 
+    /// <summary>
+    /// Reads the command line. No argument, <c>-h</c> or <c>--help</c> sets
+    /// <see cref="Help"/>; the first wrong argument stops the reading and sets
+    /// <see cref="Error"/> to a Romanian message naming it. Never throws for a bad argument.
+    /// </summary>
+    /// <param name="args">The command line, without the program's name; not null.</param>
+    /// <returns>
+    /// The options read, with <see cref="Help"/> or <see cref="Error"/> set when the run must not
+    /// start.
+    /// </returns>
     internal static Options Parse(string[] args)
     {
         ArgumentNullException.ThrowIfNull(args);

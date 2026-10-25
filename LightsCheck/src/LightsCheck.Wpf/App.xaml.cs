@@ -20,8 +20,18 @@ using System.Windows;
 
 namespace LightsCheck.Wpf;
 
+/// <summary>
+/// The window application: pins the number culture, opens the main window and starts it on the
+/// folder given on the command line, if any.
+/// </summary>
 public partial class App : Application
 {
+    /// <summary>
+    /// Runs at start: pins the number culture to the invariant one before any window exists, then
+    /// shows the main window and starts it on the first command-line argument that is an existing
+    /// folder, or on the folder dialog when there is none.
+    /// </summary>
+    /// <param name="e">The start arguments; <c>e.Args</c> is the command line.</param>
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -47,6 +57,11 @@ public partial class App : Application
     }
 
     /// <summary>The first argument that is an existing folder; anything else is ignored.</summary>
+    /// <param name="args">The command-line arguments; null is allowed and gives null.</param>
+    /// <returns>
+    /// The first argument, as given, that is not blank and names an existing folder; null when
+    /// none does.
+    /// </returns>
     internal static string? FolderFromArgs(string[]? args)
     {
         if (args is null)

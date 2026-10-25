@@ -1,7 +1,7 @@
 # 0005. Romanian for what the user sees, English for the process and the code
 
 Date: 2026-10-09
-Status: accepted 2026-10-09
+Status: accepted 2026-10-09; the comments of the copied files superseded by 0018
 
 ## Context
 

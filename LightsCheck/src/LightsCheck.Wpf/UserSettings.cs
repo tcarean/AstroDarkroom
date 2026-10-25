@@ -29,15 +29,26 @@ namespace LightsCheck.Wpf;
 /// </summary>
 public static class UserSettings
 {
-    /// <summary>The file read and written; null = the default location under the local application data.</summary>
+    /// <summary>
+    /// The file read and written; null = the default location under the local application data.
+    /// </summary>
     public static string? Path { get; set; }
 
     private static string FilePath => Path ?? System.IO.Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LightsCheck", "settings.json");
 
+    /// <summary>The file's content, as JSON reads and writes it.</summary>
+    /// <param name="East">The arrow symbol stored for east; null when absent.</param>
+    /// <param name="North">The arrow symbol stored for north; null when absent.</param>
     private sealed record Stored(string? East, string? North);
 
-    /// <summary>The two stored strings, null each when the file is missing, unreadable or lacks them.</summary>
+    /// <summary>
+    /// The two stored strings, null each when the file is missing, unreadable or lacks them.
+    /// </summary>
+    /// <returns>
+    /// The east and north strings as stored, unjudged; (null, null) when the file is missing, not
+    /// readable or not valid JSON.
+    /// </returns>
     public static (string? East, string? North) Load()
     {
         try
@@ -56,6 +67,12 @@ public static class UserSettings
         }
     }
 
+    /// <summary>
+    /// Writes the two strings to the file, creating its folder; a write that fails for IO or
+    /// access is ignored.
+    /// </summary>
+    /// <param name="east">The arrow symbol chosen for east.</param>
+    /// <param name="north">The arrow symbol chosen for north.</param>
     public static void Save(string east, string north)
     {
         try
@@ -70,11 +87,13 @@ public static class UserSettings
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // A setting that cannot be written is picked again next time; nothing else depends on it.
+            // A setting that cannot be written is picked again next time; nothing else depends
+            // on it.
         }
     }
 
-    // The arrows are written as themselves, not as \u escapes, so the file reads as the README says.
+    // The arrows are written as themselves, not as \u escapes, so the file reads as the README
+    // says.
     private static readonly JsonSerializerOptions Json = new()
     {
         PropertyNameCaseInsensitive = true,

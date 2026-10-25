@@ -19,7 +19,12 @@ using System.Windows.Controls;
 
 namespace LightsCheck.Wpf;
 
+/// <summary>
+/// The Cadre tab: one row per frame and the selected frame's star cut-outs; all bound to <see
+/// cref="MainViewModel"/>, no code of its own.
+/// </summary>
 public partial class FramesView : UserControl
 {
+    /// <summary>Loads the tab's XAML.</summary>
     public FramesView() => InitializeComponent();
 }

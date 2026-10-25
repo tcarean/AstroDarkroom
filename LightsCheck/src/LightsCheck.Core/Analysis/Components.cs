@@ -48,6 +48,24 @@ internal static class Components
     /// and measures each component on <paramref name="values"/> (background-subtracted) and
     /// <paramref name="raw"/> (above black, for the saturation test; may be the same raster).
     /// </summary>
+    /// <param name="mask">
+    /// The raster thresholded, the smoothed residual in the frame analysis. Not null.
+    /// </param>
+    /// <param name="threshold">
+    /// The level a pixel must exceed, strictly, in the units of <paramref name="mask"/>.
+    /// </param>
+    /// <param name="values">
+    /// The background-subtracted raster the peak, flux and centroid are read on; the size of
+    /// <paramref name="mask"/>. Not null.
+    /// </param>
+    /// <param name="raw">
+    /// The raster above black whose highest value per component is kept as
+    /// <see cref="Component.PeakRaw"/>; the size of <paramref name="mask"/>. Not null.
+    /// </param>
+    /// <returns>
+    /// The components, in the raster order of their first pixel (top to bottom, left to right);
+    /// empty when no pixel passes.
+    /// </returns>
     internal static List<Component> Find(Raster mask, double threshold, Raster values, Raster raw)
     {
         ArgumentNullException.ThrowIfNull(mask);
@@ -171,6 +189,15 @@ internal static class Components
         return result;
     }
 
+    /// <summary>
+    /// The root of a provisional label, halving the path on the way (each visited label points to
+    /// its grandparent).
+    /// </summary>
+    /// <param name="parent">
+    /// The union-find table: each label's parent, a root its own. Modified.
+    /// </param>
+    /// <param name="i">The label, 1 or more.</param>
+    /// <returns>The root label of <paramref name="i"/>'s set.</returns>
     private static int FindRoot(List<int> parent, int i)
     {
         while (parent[i] != i)

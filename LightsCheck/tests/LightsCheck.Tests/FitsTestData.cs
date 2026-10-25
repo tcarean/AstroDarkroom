@@ -34,10 +34,10 @@ internal static class FitsTestData
         (key.PadRight(8) + "= " + value.PadLeft(20)).PadRight(CardSize);
 
     /// <summary>
-    /// Cardurile de optica pe care le citeste garda din --light. Cu marimea pixelului se
-    /// poate calcula campul exact; fara ea ramane doar focala, si atunci garda cade pe
-    /// presupunerea conservatoare de full-frame - exact cazul unui DSLR trecut prin
-    /// Siril, care nu scrie XPIXSZ.
+    /// The optics cards the --light guard reads. With the pixel size the field can be
+    /// computed exactly; without it only the focal length remains, and then the guard falls
+    /// back on the conservative full-frame assumption - exactly the case of a DSLR passed
+    /// through Siril, which does not write XPIXSZ.
     /// </summary>
     internal static string[] OpticsCards(double focalMm, double? pixelUm = null, int binning = 1)
     {
@@ -52,16 +52,16 @@ internal static class FitsTestData
         return cards.ToArray();
     }
 
-    /// <summary>Scara masurata de un plate solve, in grade/pixel.</summary>
+    /// <summary>The scale measured by a plate solve, in degrees/pixel.</summary>
     internal static string[] WcsCards(double degPerPixel) =>
         new[] { Card("CDELT1", degPerPixel.ToString("0.#########")) };
 
     /// <summary>
-    /// Ordinea mozaicului, asa cum o scrie Siril pe un cadru trecut prin Conversion.
-    /// Offset-urile sunt optionale fiindca si Siril le scrie doar cand exista un decupaj.
-    /// ROWORDER e optional din alt motiv: Siril il scrie mereu ('BOTTOM-UP'), dar cele
-    /// mai multe fixture-uri de aici nu vor sa-l testeze, si fara card cititorul nu muta
-    /// nimic - exact ca inainte sa existe.
+    /// The mosaic order, as Siril writes it on a frame passed through Conversion. The
+    /// offsets are optional because Siril too writes them only when there is a crop.
+    /// ROWORDER is optional for another reason: Siril always writes it ('BOTTOM-UP'), but
+    /// most fixtures here do not want to test it, and without the card the reader moves
+    /// nothing - exactly as before it existed.
     /// </summary>
     internal static string[] BayerCards(string pattern, int xOffset = 0, int yOffset = 0, string? rowOrder = null)
     {

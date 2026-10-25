@@ -28,18 +28,32 @@ internal static class VersionInfo
 {
     internal static string Value { get; } = Read();
 
-    /// <summary>The name and the version, exactly as the first line of every run prints them.</summary>
+    /// <summary>
+    /// The name and the version, exactly as the first line of every run prints them.
+    /// </summary>
     internal static string Banner => "lightscheck " + Value;
 
-    /// <summary>The copyright notice, the second line of every run (GPLv3 asks every copy to carry it).</summary>
+    /// <summary>
+    /// The copyright notice, the second line of every run (GPLv3 asks every copy to carry it).
+    /// </summary>
     internal static string Copyright { get; } = ReadCopyright();
 
+    /// <summary>Reads the assembly's copyright attribute.</summary>
+    /// <returns>
+    /// The notice, or the owner's 2026 notice when the attribute is missing or blank.
+    /// </returns>
     private static string ReadCopyright()
     {
         string? c = typeof(VersionInfo).Assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright;
         return string.IsNullOrWhiteSpace(c) ? "Copyright (C) 2026 Tudor Carean" : c;
     }
 
+    /// <summary>
+    /// Reads the assembly's informational version, falling back to its assembly version.
+    /// </summary>
+    /// <returns>
+    /// The version without any "+metadata" suffix, or "0.0.0" when the assembly carries none.
+    /// </returns>
     private static string Read()
     {
         Assembly asm = typeof(VersionInfo).Assembly;
