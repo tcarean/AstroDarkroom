@@ -17,7 +17,6 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 
 namespace LightsCheck.Wpf;
 
@@ -53,26 +52,4 @@ public abstract class ObservableObject : INotifyPropertyChanged
         Raise(name);
         return true;
     }
-}
-
-/// <summary>
-/// A command over a delegate; CanExecuteChanged is raised explicitly, not through CommandManager.
-/// </summary>
-/// <param name="run">What the command does.</param>
-/// <param name="can">Whether it can run now; null = always.</param>
-internal sealed class RelayCommand(Action run, Func<bool>? can = null) : ICommand
-{
-    public event EventHandler? CanExecuteChanged;
-
-    /// <summary>Whether the command can run now.</summary>
-    /// <param name="parameter">The command parameter, not used.</param>
-    /// <returns>True when no condition was given, else the condition's answer.</returns>
-    public bool CanExecute(object? parameter) => can is null || can();
-
-    /// <summary>Runs the command's delegate.</summary>
-    /// <param name="parameter">The command parameter, not used.</param>
-    public void Execute(object? parameter) => run();
-
-    /// <summary>Tells the bound controls to ask <see cref="CanExecute"/> again.</summary>
-    internal void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }

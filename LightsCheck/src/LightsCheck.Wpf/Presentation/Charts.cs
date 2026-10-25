@@ -52,7 +52,6 @@ public sealed record GuideLine(double Value, string Label, Color Colour);
 /// </summary>
 public abstract class ChartElement : FrameworkElement
 {
-    protected static readonly Brush AxisBrush = Frozen(Color.FromArgb(0x66, 0x6E, 0x6E, 0x77));
     protected static readonly Brush TickBrush = Frozen(Color.FromRgb(0x9A, 0x9A, 0xA3));
     protected static readonly Brush LabelBrush = Frozen(Color.FromRgb(0xE4, 0xE4, 0xE7));
     protected static readonly Brush LabelBacking = Frozen(Color.FromArgb(0xD0, 0x1E, 0x1E, 0x22));
