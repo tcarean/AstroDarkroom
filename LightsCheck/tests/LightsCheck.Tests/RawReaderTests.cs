@@ -68,6 +68,25 @@ public class RawReaderTests
     }
 
     /// <summary>
+    /// What libraw refuses becomes the reader's own error, the type a corrupt FITS gives, naming
+    /// the file (R-007): the console and the window handle it; libraw's exception type does not
+    /// leave the reader.
+    /// </summary>
+    [Fact]
+    public void R007_AFileLibrawCannotOpenFailsWithInvalidDataNamingTheFile()
+    {
+        using TempWorkspace ws = new();
+        string path = ws.WriteFile("minte.NEF", new byte[4096]);
+
+        InvalidDataException full = Assert.Throws<InvalidDataException>(() => Reader.Load(path));
+        InvalidDataException info = Assert.Throws<InvalidDataException>(() => Reader.LoadInfo(path));
+
+        Assert.Contains("minte.NEF", full.Message, StringComparison.Ordinal);
+        Assert.Contains("minte.NEF", info.Message, StringComparison.Ordinal);
+        Assert.NotNull(full.InnerException);
+    }
+
+    /// <summary>
     /// The end-to-end proof, on a real file: LIGHTSCHECK_NEF=E:/.../DSC_0001.NEF. Does nothing
     /// without the variable. The mosaic is undebayered, the scale exact, the CFA order read,
     /// and the shot metadata filled; the metadata-only load agrees with the full one.

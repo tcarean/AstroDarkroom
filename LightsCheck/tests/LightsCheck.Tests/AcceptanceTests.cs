@@ -173,6 +173,25 @@ public class AcceptanceTests
         Assert.StartsWith("EROARE:", stderr, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A raw libraw cannot open (a .NEF of junk bytes) ends --frame with an EROARE line naming
+    /// the file and exit 1, not with libraw's own exception (R-007): the reader wraps it where
+    /// it happens, so the console's filter stays as it is.
+    /// </summary>
+    [Fact]
+    public void R007_FrameOnARawLibrawCannotOpenEndsWithAnErrorLineNotACrash()
+    {
+        using TempWorkspace ws = new();
+        Directory.CreateDirectory(Path.Combine(ws.Dir, "lights"));
+        ws.WriteFile(Path.Combine("lights", "minte.NEF"), new byte[4096]);
+
+        (int code, _, string stderr) = Cli.Run(ws.Dir, "--frame", "1");
+
+        Assert.Equal(1, code);
+        Assert.StartsWith("EROARE: ", stderr, StringComparison.Ordinal);
+        Assert.Contains("minte.NEF", stderr, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R027_TheDefaultRunPrintsTheSeriesReport_Exit0()
     {
