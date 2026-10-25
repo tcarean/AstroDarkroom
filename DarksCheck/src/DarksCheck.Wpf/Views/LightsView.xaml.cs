@@ -19,7 +19,12 @@ using System.Windows.Controls;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>
+/// The Lights tab: check 9, the report's rows, the lights-over-dark ratio per light and the lights
+/// table; the code-behind only loads the XAML.
+/// </summary>
 public partial class LightsView : UserControl
 {
+    /// <summary>The tab, its bindings resolved against the main view-model it inherits.</summary>
     public LightsView() => InitializeComponent();
 }

@@ -22,11 +22,22 @@ using DarksCheck.Core;
 namespace DarksCheck.Wpf;
 
 /// <summary>A third-party component as the "Despre" window lists it.</summary>
+/// <param name="Name">The component's name.</param>
+/// <param name="Role">What it does in the program.</param>
+/// <param name="Licence">Its licence.</param>
+/// <param name="Copyright">Its copyright line.</param>
+/// <param name="Url">Where it comes from.</param>
 public sealed record ComponentRow(string Name, string Role, string Licence, string Copyright, string Url);
 
-/// <summary>The "Despre" window: the banner, the GPLv3 notice and the third-party list, all from the core.</summary>
+/// <summary>
+/// The "Despre" window: the banner, the GPLv3 notice and the third-party list, all from the core.
+/// </summary>
 public sealed class AboutViewModel
 {
+    /// <summary>
+    /// The window's texts, with the third-party list taken from the core's
+    /// <see cref="ThirdParty"/>.
+    /// </summary>
     public AboutViewModel()
     {
         Components = ThirdParty.Components.Select(c => new ComponentRow(c.Name, c.Role, c.Licence, c.Copyright, c.Url)).ToList();

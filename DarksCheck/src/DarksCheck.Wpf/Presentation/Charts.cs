@@ -27,13 +27,29 @@ using System.Windows.Media;
 
 namespace DarksCheck.Wpf;
 
-/// <summary>A point of a chart: x, y (NaN = missing), a label, the colour it is drawn in, and an optional tooltip.</summary>
+/// <summary>
+/// A point of a chart: x, y (NaN = missing), a label, the colour it is drawn in, and an optional
+/// tooltip.
+/// </summary>
+/// <param name="X">The position on the x axis (the frame index, or n); NaN is never
+/// hovered.</param>
+/// <param name="Y">The value; NaN = missing, which breaks the line and draws no bar.</param>
+/// <param name="Label">The point's label (the frame's name or number).</param>
+/// <param name="Colour">The colour of the dot, the bar, and the segment that ends at this
+/// point.</param>
+/// <param name="Tip">The tooltip shown while the mouse is over the point; null shows none.</param>
 public sealed record ChartPoint(double X, double Y, string Label, Color Colour, string? Tip = null);
 
 /// <summary>A horizontal guide line at a value, with its label.</summary>
+/// <param name="Value">The y value of the line; the y axis stretches to include it, except below a
+/// set Minimum.</param>
+/// <param name="Label">The text drawn at the right end, above the line.</param>
+/// <param name="Colour">The colour of the dashed line and its label.</param>
 public sealed record GuideLine(double Value, string Label, Color Colour);
 
-/// <summary>What every chart shares: the palette, the typeface, the margins, the axis mapping.</summary>
+/// <summary>
+/// What every chart shares: the palette, the typeface, the margins, the axis mapping.
+/// </summary>
 public abstract class ChartElement : FrameworkElement
 {
     protected static readonly Brush TickBrush = Frozen(Color.FromRgb(0x9A, 0x9A, 0xA3));
@@ -42,6 +58,11 @@ public abstract class ChartElement : FrameworkElement
     protected static readonly Typeface Face = new(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
     protected const double MarginLeft = 44, MarginRight = 12, MarginTop = 10, MarginBottom = 22;
 
+    /// <summary>
+    /// A frozen solid brush, so the shared static brushes can be used from any thread.
+    /// </summary>
+    /// <param name="c">The colour.</param>
+    /// <returns>The frozen brush.</returns>
     protected static Brush Frozen(Color c)
     {
         SolidColorBrush b = new(c);
@@ -49,6 +70,11 @@ public abstract class ChartElement : FrameworkElement
         return b;
     }
 
+    /// <summary>A frozen pen of one colour.</summary>
+    /// <param name="c">The colour.</param>
+    /// <param name="thickness">The width in device-independent pixels.</param>
+    /// <param name="dashed">True for a dashed line, false for a solid one.</param>
+    /// <returns>The frozen pen.</returns>
     protected static Pen FrozenPen(Color c, double thickness, bool dashed = false)
     {
         Pen p = new(Frozen(c), thickness);
@@ -61,13 +87,32 @@ public abstract class ChartElement : FrameworkElement
         return p;
     }
 
+    /// <summary>Registers a dependency property whose change redraws the chart.</summary>
+    /// <typeparam name="T">The property's type.</typeparam>
+    /// <param name="name">The property's name.</param>
+    /// <param name="owner">The chart type that owns it.</param>
+    /// <param name="def">The default value; the type's default when omitted.</param>
+    /// <returns>The registered property.</returns>
     protected static DependencyProperty Reg<T>(string name, Type owner, T? def = default) =>
         DependencyProperty.Register(name, typeof(T), owner, new FrameworkPropertyMetadata(def, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    /// <summary>
+    /// A text in the chart's typeface, with invariant culture, at the element's DPI.
+    /// </summary>
+    /// <param name="s">The text.</param>
+    /// <param name="size">The font size in device-independent pixels.</param>
+    /// <param name="brush">The text's brush.</param>
+    /// <returns>The formatted text, ready to draw.</returns>
     protected FormattedText Text(string s, double size, Brush brush) =>
         new(s, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Face, size, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
-    /// <summary>A tick label with as many decimals as the tick step needs, so two ticks never read the same.</summary>
+    /// <summary>
+    /// A tick label with as many decimals as the tick step needs, so two ticks never read the same.
+    /// </summary>
+    /// <param name="v">The tick's value.</param>
+    /// <param name="step">The distance between two ticks: 0 decimals from 1 up, 1 from 0.1, 2 from
+    /// 0.01, 3 below.</param>
+    /// <returns>The value with the invariant culture.</returns>
     protected static string Num(double v, double step)
     {
         int decimals = step >= 1 ? 0 : step >= 0.1 ? 1 : step >= 0.01 ? 2 : 3;
@@ -91,13 +136,17 @@ public sealed class SeriesChart : ChartElement
 
     public IReadOnlyList<ChartPoint>? Points { get => (IReadOnlyList<ChartPoint>?)GetValue(PointsProperty); set => SetValue(PointsProperty, value); }
 
-    /// <summary>A second series drawn as a dashed line without dots: what the points should follow.</summary>
+    /// <summary>
+    /// A second series drawn as a dashed line without dots: what the points should follow.
+    /// </summary>
     public IReadOnlyList<ChartPoint>? Reference { get => (IReadOnlyList<ChartPoint>?)GetValue(ReferenceProperty); set => SetValue(ReferenceProperty, value); }
     public IReadOnlyList<GuideLine>? Guides { get => (IReadOnlyList<GuideLine>?)GetValue(GuidesProperty); set => SetValue(GuidesProperty, value); }
     public bool Bars { get => (bool)GetValue(BarsProperty); set => SetValue(BarsProperty, value); }
     public string? Title { get => (string?)GetValue(TitleProperty); set => SetValue(TitleProperty, value); }
 
-    /// <summary>The y axis starts here when set; otherwise at the smallest value (or 0 for bars).</summary>
+    /// <summary>
+    /// The y axis starts here when set; otherwise at the smallest value (or 0 for bars).
+    /// </summary>
     public double Minimum { get => (double)GetValue(MinimumProperty); set => SetValue(MinimumProperty, value); }
 
     // The last layout, for the hover: which point sits under the mouse. The tooltip is one
@@ -108,12 +157,20 @@ public sealed class SeriesChart : ChartElement
     private readonly ToolTip _tip = new() { Placement = System.Windows.Controls.Primitives.PlacementMode.Mouse };
     private ChartPoint? _hover;
 
+    /// <summary>An empty chart; its one tooltip opens at the mouse over this element.</summary>
     public SeriesChart()
     {
         _tip.PlacementTarget = this;
     }
 
-    /// <summary>The point whose slot holds the x position, or null outside every slot; the tooltip shows its Tip.</summary>
+    /// <summary>
+    /// The point whose slot holds the x position, or null outside every slot; the tooltip shows its
+    /// Tip.
+    /// </summary>
+    /// <param name="x">The horizontal position in the element, in device-independent pixels, as of
+    /// the last render.</param>
+    /// <returns>The nearest drawn point (not the reference) within half a slot; null when none, or
+    /// before the first render.</returns>
     internal ChartPoint? PointAt(double x)
     {
         if (_drawn.Count == 0 || _plotW <= 0)
@@ -142,6 +199,11 @@ public sealed class SeriesChart : ChartElement
         return hit;
     }
 
+    /// <summary>
+    /// Opens the hovered point's tooltip, or closes it when the hovered point changes to one
+    /// without a tip or to none.
+    /// </summary>
+    /// <param name="e">The mouse event; not null.</param>
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
@@ -161,6 +223,8 @@ public sealed class SeriesChart : ChartElement
         }
     }
 
+    /// <summary>Closes the tooltip and forgets the hovered point.</summary>
+    /// <param name="e">The mouse event.</param>
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
@@ -168,6 +232,12 @@ public sealed class SeriesChart : ChartElement
         _tip.IsOpen = false;
     }
 
+    /// <summary>
+    /// Draws the chart: the axes with five y ticks and the x ticks, the reference dashed, the
+    /// points as a line with dots or as bars, the guides with their labels, and the title; and
+    /// keeps the layout for the hover. Too small an element draws only its transparent background.
+    /// </summary>
+    /// <param name="drawingContext">The context to draw into.</param>
     protected override void OnRender(DrawingContext drawingContext)
     {
         double w = ActualWidth, h = ActualHeight;

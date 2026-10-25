@@ -20,7 +20,9 @@ using DarksCheck.Core;
 
 namespace DarksCheck.Wpf;
 
-/// <summary>The window's own sentences (Romanian), in one place; no figure is decided here.</summary>
+/// <summary>
+/// The window's own sentences (Romanian), in one place; no figure is decided here.
+/// </summary>
 internal static class WindowTexts
 {
     internal const string AppName = "DarksCheck";
@@ -53,6 +55,15 @@ internal static class WindowTexts
 
     internal static string ProblemTitle => "Folderul nu se poate analiza";
 
+    /// <summary>
+    /// The wait screen's line: the phase and how far it got, or the opening message before any
+    /// count.
+    /// </summary>
+    /// <param name="phase">The core's phase word.</param>
+    /// <param name="done">The items done so far.</param>
+    /// <param name="total">The items of the phase; 0 while the session is still being
+    /// opened.</param>
+    /// <returns>The Romanian line.</returns>
     internal static string Busy(string phase, int done, int total) =>
         total == 0 ? "Se deschide sesiunea..." : $"{phase}: {done.ToString(CultureInfo.InvariantCulture)} / {total.ToString(CultureInfo.InvariantCulture)}";
 
@@ -60,6 +71,9 @@ internal static class WindowTexts
 
     internal static string ExportTitle => "Alege folderul in care se scriu raportul, CSV-urile si hartile";
 
+    /// <summary>The status after an export: the written files, one per line.</summary>
+    /// <param name="paths">The paths written.</param>
+    /// <returns>The Romanian status text.</returns>
     internal static string Written(IReadOnlyList<string> paths) => "Scris:\n" + string.Join("\n", paths);
 
     internal static string NoPartner => "(niciunul: alege o biblioteca sau alta sesiune ca sa compari dark-urile)";

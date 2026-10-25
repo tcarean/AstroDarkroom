@@ -20,18 +20,34 @@ using System.Windows.Controls;
 
 namespace DarksCheck.Wpf;
 
-/// <summary>The Index tab; its three buttons reach the main window's handlers, which own the dialogs and the clipboard.</summary>
+/// <summary>
+/// The Index tab; its four buttons reach the main window's handlers, which own the dialogs and
+/// the clipboard.
+/// </summary>
 public partial class IndexView : UserControl
 {
+    /// <summary>The tab, its bindings resolved against the main view-model it inherits.</summary>
     public IndexView() => InitializeComponent();
 
     private MainWindow? Owner => Window.GetWindow(this) as MainWindow;
 
+    /// <summary>The copy button: the window puts the label in the clipboard.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void CopyLabel(object sender, RoutedEventArgs e) => Owner?.CopyLabelFromView();
 
+    /// <summary>The partner button: the window asks for the partner folder.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void ChoosePartner(object sender, RoutedEventArgs e) => Owner?.ChoosePartnerFromView();
 
+    /// <summary>The clear button: the window forgets the partner folder.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void ClearPartner(object sender, RoutedEventArgs e) => Owner?.ClearPartnerFromView();
 
+    /// <summary>The rerun button: the window runs the same folder again.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
     private void Rerun(object sender, RoutedEventArgs e) => Owner?.RerunFromView();
 }

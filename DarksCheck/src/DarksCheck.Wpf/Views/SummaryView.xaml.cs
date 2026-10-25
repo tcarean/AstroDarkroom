@@ -19,7 +19,12 @@ using System.Windows.Controls;
 
 namespace DarksCheck.Wpf;
 
+/// <summary>
+/// The Rezumat tab: the session card, then every check of the report as a card of rows; the
+/// code-behind only loads the XAML.
+/// </summary>
 public partial class SummaryView : UserControl
 {
+    /// <summary>The tab, its bindings resolved against the main view-model it inherits.</summary>
     public SummaryView() => InitializeComponent();
 }
