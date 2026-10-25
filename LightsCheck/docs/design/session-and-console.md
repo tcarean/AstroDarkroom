@@ -29,7 +29,8 @@ One record per light, with its 1-based `Index`, its path, the shot fields (camer
 length, f-number, exposure, ISO, timestamp, pixel size, the Nikon lens ID and the lens's own
 focal range and maximum aperture, all nullable) and an `Error`. `FrameInfo.Read(index, path)`
 never throws: it calls `ImageLoader.LoadInfo` (the metadata without the pixels,
-`imaging.md`), turns any exception, libraw's own type included, into the record's `Error`,
+`imaging.md`), turns any exception into the record's `Error` (libraw's own type no longer
+reaches it: `RawReader` wraps it into `InvalidDataException` naming the file, ADR 0019),
 and treats a `.fit` whose header came back empty (the reader's answer to a file that does
 not start with `SIMPLE`) as the error `nu e un fisier FITS`. `FrameInfo.From(index, path,
 loaded)` builds the same record from a frame that was decoded for measuring, so `FrameRun`

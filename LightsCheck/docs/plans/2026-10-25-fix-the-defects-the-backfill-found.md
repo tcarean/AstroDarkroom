@@ -111,6 +111,16 @@ one `IsCurrent(cts)` for the three current-run checks, the `SeriesTests` summary
    the type and the file name on the same junk `.NEF`. Recommendation: delete the older one;
    a test edit, so the owner's call (the kit's rule "No test edited to pass").
 
+A second review, by a fresh subagent with none of this session's context (2026-10-25, after
+4876057), found no bug and three low findings, all fixed in the commit after 4876057: the
+R-031 stale-decode test could pass without reaching the queued path when the failing decode
+finished before the await looked (now it reselects until the pending task is still open, and
+fails loudly after twenty inline finishes); `session-and-console.md` still said libraw's own
+type reaches `FrameInfo.Read`; `window.md` did not name `WindowTexts` nor where the class and
+scale words come from. It confirmed by running the console that the inventory row of a junk
+raw reads `eroare: <path>: libraw nu poate citi fisierul (Failed opening file)`; ADR 0019's
+Consequences now says so instead of "the same message with a prefix".
+
 Open from item 7, not a review finding: `--frame` on a FITS whose data is shorter than its
 header says still crashes with `IndexOutOfRangeException`; the FlatCheck prompt above fixes
 the source, then `FitsReader.cs` is recopied here (with the FITS-magic check of FlatCheck's ADR

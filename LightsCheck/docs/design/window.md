@@ -56,6 +56,13 @@ bug and propagates.
   `SeriesReport.AxisLabels`, and each step point carries the table row's `StepTip` as its
   `Tip`; the frames table shows the row's `Move` as the `dithering` column;
 
+The window's own words, the only Romanian the window writes, are `WindowTexts`: the empty and
+problem cards, the wait line (`Busy`, `BusyRegistering`), the dialog titles, the status after
+an export, the cut-out notes, the step chart's guide labels (`MoveGuide`, `WalkingNoiseGuide`,
+given the core's formatted figure), the map's grid note (`GridNote`) and the `Error` prefix.
+The class words on the elongation guides are `SeriesReport.ClassWord` and the session card's
+`scara` label is `SeriesReport.ScaleLabel`, so a verdict word changes in `Report/` alone.
+
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
 console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`.
 

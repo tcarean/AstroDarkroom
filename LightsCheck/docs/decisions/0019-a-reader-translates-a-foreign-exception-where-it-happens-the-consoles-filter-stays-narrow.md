@@ -42,5 +42,6 @@ crashes `--frame`.
 
 `RawReaderTests` pins the type and the file name on a junk `.NEF`; `AcceptanceTests` pins the
 `EROARE` line and exit 1 of `--frame` on it. A raw libraw refuses in a series or inventory run
-prints the same message as before, now with the reader's prefix. The truncated-FITS case is
+reads `eroare: <path>: libraw nu poate citi fisierul (Failed opening file)` where it read
+libraw's own `eroare: Failed opening file: <path>`. The truncated-FITS case is
 an open gap until FlatCheck's fix lands; the plan of this task holds the prompt for it.

@@ -358,8 +358,18 @@ public class MainViewModelTests
         FrameRowVm unmeasured = new(row, null);
 
         using QueuedContext ctx = new();
-        vm.SelectedFrame = failing;
-        Task stale = vm.CropsPending;
+        // The decode fails in microseconds. If it is already over when the await looks, the
+        // catch runs inline, nothing is queued, and the attempt proves nothing: select again
+        // until the continuation is the queued one (the pending task is then still open).
+        Task stale = Task.CompletedTask;
+        for (int attempt = 0; attempt < 20 && stale.IsCompleted; attempt++)
+        {
+            vm.SelectedFrame = null;
+            vm.SelectedFrame = failing;
+            stale = vm.CropsPending;
+        }
+
+        Assert.False(stale.IsCompleted, "the failing decode finished inline twenty times; nothing was queued");
         vm.SelectedFrame = unmeasured;
         Assert.Equal(WindowTexts.NoCrops, vm.CropsNote);
         ctx.RunUntil(stale);
