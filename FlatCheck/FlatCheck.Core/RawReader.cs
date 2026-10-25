@@ -199,7 +199,8 @@ namespace FlatCheck
 
             int h = s.Height, w = s.Width;
             if (h <= 0 || w <= 0)
-                throw new InvalidOperationException($"{path}: dimensiuni raw invalide ({w}x{h}).");
+                throw new InvalidOperationException(T($"{path}: invalid raw dimensions ({w}x{h}).",
+                                                      $"{path}: dimensiuni raw invalide ({w}x{h})."));
 
             // The colour order, evaluated at the origin of the VISIBLE area - the same margins
             // the copy below skips. Locals only, no field: a field of a libraw type would force

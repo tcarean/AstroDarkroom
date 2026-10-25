@@ -215,7 +215,7 @@ namespace FlatCheck
                             $"diafragma ceruta f/{Fmt(fStop, "0.0")} e la {Fmt(stops, "0.0")} stopuri de cel mai apropiat profil, f/{Fmt(used.FStop, "0.0")} ({range})"));
             }
             if (parts.Count == 0) return null;
-            return string.Join("; ", parts) + T(". The depth written is the profile's used, not the requested values'.",
+            return string.Join("; ", parts) + T(". The depth written is that of the profile used, not that of the values requested.",
                                                 ". Adancimea scrisa e a profilului folosit, nu a valorilor cerute.");
         }
 

@@ -5,7 +5,7 @@ Copyright (C) 2026 Tudor Carean
     reference frame    : <TMP>/ref.fit  (240 x 160)
     lens               : Tokina AT-X 11-20mm F2.8 PRO DX  [NIKON CORPORATION]  source: Adobe
     profile used       : 20 mm, f/2.8, infinity   (requested: 500 mm from --focal, f/1.0 from --fstop)
-    WARNING: the focal length requested, 500 mm, has no profile: 20 mm was taken (the lens has profiles at 18, 20 mm); the aperture requested, f/1.0, is 3.0 stops from the nearest profile, f/2.8 (profiles from f/2.8 to f/4.0). The depth written is the profile's used, not the requested values'.
+    WARNING: the focal length requested, 500 mm, has no profile: 20 mm was taken (the lens has profiles at 18, 20 mm); the aperture requested, f/1.0, is 3.0 stops from the nearest profile, f/2.8 (profiles from f/2.8 to f/4.0). The depth written is that of the profile used, not that of the values requested.
     model              : Adobe, V = 1 + a1 r^2 + a2 r^4 + a3 r^6 in focal-length units; a = -1.903047, 4.514725, -4.657911; SFF 1.5
     profile file       : NIKON CORPORATION (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp
     camera crop        : 1.523  (lensfun database, Nikon D3300)

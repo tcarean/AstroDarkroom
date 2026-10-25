@@ -15,9 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LanguageArgument.cs - the --lang option, read before anything else on the command line, by
-// both applications: the console needs the language before it can word a usage or a parse
-// error, the window before it builds its first view.
+// LanguageArgument.cs - the --lang option, read before anything else on the command line: the
+// console needs the language before it can word a usage or a parse error. The window will read
+// it the same way, before it builds its first view, in its own stage (R-101); until then it is
+// Romanian only.
 
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ using System.Collections.Generic;
 namespace FlatCheck
 {
     /// <summary>
-    /// The <c>--lang</c> option taken out of a command line (R-099, R-101).
+    /// The <c>--lang</c> option taken out of a command line (R-100, R-102).
     /// </summary>
     /// <param name="Language">The language named by the last <c>--lang</c>, or null when
     /// there was none or its value is not a language this program has.</param>

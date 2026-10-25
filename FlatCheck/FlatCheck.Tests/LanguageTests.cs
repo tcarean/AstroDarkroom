@@ -135,3 +135,42 @@ public class LanguageTests
         Assert.StartsWith(GoldenOutputTests.VersionPlaceholder, output);
     }
 }
+
+/// <summary>The tests that put <see cref="Ui.Default"/> back to the program's own for a while;
+/// a collection without parallelisation, so no other test runs in the meantime.</summary>
+[CollectionDefinition("startup language", DisableParallelization = true)]
+public class StartupLanguageCollection
+{
+}
+
+/// <summary>
+/// The console as the program starts it, with the default it has outside the test assembly
+/// (<see cref="Ui.StartupDefault"/>), not the Romanian one <see cref="RomanianByDefault"/> sets.
+/// </summary>
+[Collection("startup language")]
+public class StartupLanguageTests
+{
+    [Fact]
+    public void R100_WithNoLangTheConsoleSpeaksEnglish()
+    {
+        UiLanguage saved = Ui.Default;
+        try
+        {
+            Ui.Default = Ui.StartupDefault;
+            using var ws = new TempWorkspace();
+
+            var (usage, exit) = GoldenOutputTests.RunCli(ws);
+            var (error, _) = GoldenOutputTests.RunCli(ws, "f.fit", "--nope");
+            var (romanian, _) = GoldenOutputTests.RunCli(ws, "--lang", "ro");
+
+            Assert.Equal(0, exit);
+            Assert.Contains("Usage:", usage);
+            Assert.Contains("ERROR: unknown option: --nope", error);
+            Assert.Contains("Utilizare:", romanian);
+        }
+        finally
+        {
+            Ui.Default = saved;
+        }
+    }
+}

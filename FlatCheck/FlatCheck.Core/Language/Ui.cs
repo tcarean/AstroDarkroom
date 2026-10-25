@@ -25,7 +25,7 @@ using System.Threading;
 
 namespace FlatCheck
 {
-    /// <summary>The two languages of the interface (R-099).</summary>
+    /// <summary>The two languages of the interface (R-100).</summary>
     internal enum UiLanguage
     {
         /// <summary>English, the default when the command line names none.</summary>

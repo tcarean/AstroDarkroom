@@ -163,3 +163,10 @@ ThirdParty and the split-mosaic labels becomes a pair:
 - **Found on the way:** `--against`'s spot cell cut `StructureReport.LocalSpotValue` at its
   Romanian `" la ("`; it now uses `StructureReport.LocalSpotSize`. The English golden of
   `against_radial` is its test.
+- **Review follow-up (subagent review of 55e959c):** one message left Romanian in English runs
+  (`RawReader`, invalid raw dimensions) now paired; R-006, R-020 and R-061 name `-world` and
+  `-after`; two doc comments cited a non-existent R-099; `StartupLanguageTests` runs the console
+  with the program's own default (English), which no test did; one English sentence reworded.
+  For stage 2: `LensChoice.Calibration` is built at catalog load with `SensorFormats.LabelOf`,
+  so "unusual format" is fixed in the language of the load; `SplitTabViewModel` compares a
+  cell's value with its verdict key, and the Structure tab shows `DepthScaleRows().Band` keys.
