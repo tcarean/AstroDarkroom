@@ -60,7 +60,7 @@ namespace FlatCheck.Wpf
             {
                 Title = isA ? "Masterul setului A" : "Masterul setului B",
                 // Only a starting point. Set A is often in the open session, but set B is
-                // by definition another night, so another folder - and after the first
+                // by definition another sitting, so another folder - and after the first
                 // choice the dialog remembers by itself where it was.
                 InitialDirectory = isA ? vm.InitialDirectory : null,
                 // The pattern comes from SirilSession, not written a second time here: the

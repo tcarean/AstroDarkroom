@@ -20,7 +20,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <!-- HistEqView - the "Histogram" tab.
 
      The list on the left: the master from masters/ or process/ in the first position, marked,
-     then the frames from flats/. The picture on the right, with the view switch above it.
+     the smoothed flat right after it when there is one, then the frames from flats/. The
+     picture on the right, with the view switch above it.
 
      The waiting screen sits in the RIGHT column, not over the whole tab: the list stays
      clickable while it computes, and a click on another file starts another run over the

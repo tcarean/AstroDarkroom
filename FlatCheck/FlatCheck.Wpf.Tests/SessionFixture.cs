@@ -18,9 +18,10 @@
 // SessionFixture.cs - a fake Siril session folder, but a complete one.
 //
 // The frames are small (128 px) on purpose: the view-model tests run the whole chain, not
-// mocks, and the whole suite must stay under a few seconds. The figures that come out are
-// not "realistic" and need not be - what is checked here is the interface's behaviour,
-// and the figures' correctness is the job of the tests in FlatCheck.Tests.
+// mocks, and the whole suite must stay quick (it runs serially, about 100 s on 2026-10-25).
+// The figures that come out are not "realistic" and need not be - what is checked here is
+// the interface's behaviour, and the figures' correctness is the job of the tests in
+// FlatCheck.Tests.
 
 using FlatCheck.Tests;
 

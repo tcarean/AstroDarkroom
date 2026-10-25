@@ -44,4 +44,6 @@ file first.
 - During the backfill some files hold both languages; `doccount romanian`, the backfill's scratch
   check, lists what is left per area, and the last area shows none.
 - `CLAUDE.md` "Languages" says English for every comment and names the temporary exception.
+  (Restated 2026-10-25: the fifth area removed the exception from `CLAUDE.md`; the rule now
+  says English for every comment, with no exception.)
 - LightsCheck's copies of FlatCheck's readers are recopied after the backfill (its own task).

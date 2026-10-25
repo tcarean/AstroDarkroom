@@ -21,7 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
      The only tab that asks for two files chosen explicitly, and the only one that explains
      its requirements BEFORE any computation. The reason is in RatioTabViewModel: the mode
-     needs two MASTERS, one for each orientation, and the two come from two nights, so from
+     needs two MASTERS, one for each orientation, and the two come from two sittings, so from
      two session folders. A folder cannot offer them, and a list that tried offered in fact
      the individual frames - from which comes a result that is confident and false. So: the
      documentation at the top, two buttons, and nothing presumed. -->

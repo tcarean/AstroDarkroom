@@ -50,7 +50,7 @@ namespace FlatCheck.Wpf
         /// Opens the link in the system's browser. UseShellExecute is mandatory on
         /// .NET Core - without it Process.Start tries to execute the URL as a program.
         /// A system without an associated browser throws; that is no reason for the window
-        /// to fall.
+        /// to crash.
         /// </summary>
         /// <param name="sender">The hyperlink.</param>
         /// <param name="e">The navigation; marked handled.</param>

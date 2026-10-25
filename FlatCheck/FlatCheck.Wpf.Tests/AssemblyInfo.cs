@@ -31,6 +31,7 @@
 // whole of a run), but that does not make the tests deterministic: they would still find six
 // versus five, only for a cleaner reason. The determinism comes from here.
 //
-// The cost is nil in practice: the whole suite runs in about two seconds.
+// The cost: the suite runs serially, in about 100 s on 2026-10-25 (about two seconds when
+// this was written).
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]

@@ -446,15 +446,20 @@ Each area adds its own section at its wrap-up.
   - `facts`: no number, ID or identifier of the old comments missing, except "ViewModel"
     becoming "view-model" in 15 files, as in areas 3 and 4.
   - `romanian`: tests 0 of 3,952 comment lines; code 8 lines, every one quoted output or the
-    English "care" (the same as areas 1-4 left). XAML and csproj read line by line: only
-    quoted UI words remain ("Despre", "Restaurare", "Toate fisierele", "Opreste", NETEZIT,
-    INAPLICABIL, tab names).
+    English "care" (the same as areas 1-4 left); `RatioView.xaml.cs` quotes the dialog's
+    "Toate fisierele". XAML and csproj read line by line: only quoted UI words remain
+    ("Despre", "Restaurare", "Opreste", NETEZIT, INAPLICABIL, tab names).
   - `width`: no comment line over 100 columns in the code and the tests; XAML and csproj
     comments checked by script, none; every added line ASCII.
   - `check-design.ps1 -Since main`: eight notes cover the files; none describes a corrected
     claim, and none repeats one.
   - Goldens: none changed. `/validate`: not run, as assumption 7 says (no formula file).
   - The gate: `== OK` at each commit, 969 + 348 tests (`main`'s counts).
+- **A high-effort `/code-review`** of the branch found 8, all comments or records, no code;
+  the owner said to fix all eight: the Wpf suite's "two seconds" and "a few seconds" (now
+  ~100 s, serial), "nights" for "sedinte" in the Ratio view (now "sittings", as elsewhere),
+  the smoothed-flat row in `HistEqView`'s header, a dated note on ADR 0060's consequence, this
+  record's "Toate fisierele" (a code file, not XAML), two orphan words, "to crash".
 
 ## Glossary: one English word per Romanian term, in every area
 
