@@ -124,6 +124,42 @@ public class MainViewModelTests
         Assert.True(vm.HasProblem);
     }
 
+    /// <summary>
+    /// A progress report queued by a run that was replaced must not write over the new run's
+    /// progress (R-029): the callback checks that its run is still the current one, as the finally
+    /// block does. The posts are held back by a queued context, so a report of the first run is
+    /// delivered only after the second has started, as it can be on the window's dispatcher when
+    /// the second folder is opened while the first run's frames are still finishing.
+    /// </summary>
+    [Fact]
+    public void R029_AQueuedReportOfAReplacedRunDoesNotWriteOverTheNewRunsProgress()
+    {
+        using SessionFixture eight = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using SessionFixture three = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList());
+        MainViewModel vm = new();
+        using QueuedContext ctx = new();
+
+        Task first = vm.OpenAsync(eight.Root);
+        ctx.WaitForAPost();   // at least one report of the eight-frame run is queued, undelivered
+        Task second = vm.OpenAsync(three.Root);
+        List<string> afterSecond = [];
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(vm.BusyMessage))
+            {
+                afterSecond.Add(vm.BusyMessage);
+            }
+        };
+        ctx.RunUntil(second);
+        ctx.RunUntil(first);
+
+        Assert.DoesNotContain(afterSecond, m => m.Contains("/ 8", StringComparison.Ordinal));
+        Assert.Contains(afterSecond, m => m.Contains("/ 3", StringComparison.Ordinal));
+        Assert.True(vm.HasResult);
+        Assert.Equal(3, vm.Frames.Count);
+        Assert.False(vm.IsRunning);
+    }
+
     /// <summary>The inputs the files do not carry: invariant parsing, the D3300's pixel when blank or wrong.</summary>
     [Theory]
     [InlineData("4.5", 4.5, true)]
@@ -132,6 +168,8 @@ public class MainViewModelTests
     [InlineData("abc", SeriesOptions.D3300PixelUm, false)]
     [InlineData("4,5", SeriesOptions.D3300PixelUm, false)]
     [InlineData("-1", SeriesOptions.D3300PixelUm, false)]
+    [InlineData("NaN", SeriesOptions.D3300PixelUm, false)]
+    [InlineData("Infinity", SeriesOptions.D3300PixelUm, false)]
     public void R029_ThePixelInputIsParsedInvariantAndFallsBackToTheD3300(string typed, double expected, bool valid)
     {
         MainViewModel vm = new() { PixelText = typed };
@@ -201,6 +239,9 @@ public class MainViewModelTests
         Assert.Equal(Th.ElongationMarginal, vm.ElongationGuides[0].Value);
         Assert.Equal(Th.ElongationBad, vm.ElongationGuides[1].Value);
         Assert.Equal(Th.DitherStep, vm.StepGuides[0].Value);
+        Assert.Equal(SeriesReport.ClassWord(FrameClass.Marginal), vm.ElongationGuides[0].Label);
+        Assert.Equal(SeriesReport.ClassWord(FrameClass.Bad), vm.ElongationGuides[1].Label);
+        Assert.Equal(SeriesReport.ScaleLabel, vm.SessionRows[^1].Label);
     }
 
     /// <summary>The frames to drop are the bad and the unreadable ones, the marginal stay with the user.</summary>
@@ -296,6 +337,45 @@ public class MainViewModelTests
 
         Assert.Same(vm.Frames[1], vm.SelectedFrame);
         Assert.NotEmpty(vm.Crops);
+    }
+
+    /// <summary>
+    /// A decode that fails after another frame was selected must not write its error over the
+    /// newer frame's note (R-031): the error path of LoadCropsAsync checks the selection as the
+    /// success path does. The failing decode's continuation is held back by a queued context, so
+    /// it runs only after the newer selection, as a slow decode's would on the window's dispatcher.
+    /// </summary>
+    [Fact]
+    public async Task R031_AStaleDecodeThatFailsDoesNotOverwriteTheNewerFramesNote()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        FrameTableRow row = SeriesReport.FrameRows(vm.Result!)[0];
+        // The same measured frame twice: once with a path no reader can open, once without a
+        // path, which gets its note at once with no decode.
+        FrameRowVm failing = new(row, Path.Combine(f.LightsDir, "lipseste.fit"));
+        FrameRowVm unmeasured = new(row, null);
+
+        using QueuedContext ctx = new();
+        // The decode fails in microseconds. If it is already over when the await looks, the
+        // catch runs inline, nothing is queued, and the attempt proves nothing: select again
+        // until the continuation is the queued one (the pending task is then still open).
+        Task stale = Task.CompletedTask;
+        for (int attempt = 0; attempt < 20 && stale.IsCompleted; attempt++)
+        {
+            vm.SelectedFrame = null;
+            vm.SelectedFrame = failing;
+            stale = vm.CropsPending;
+        }
+
+        Assert.False(stale.IsCompleted, "the failing decode finished inline twenty times; nothing was queued");
+        vm.SelectedFrame = unmeasured;
+        Assert.Equal(WindowTexts.NoCrops, vm.CropsNote);
+        ctx.RunUntil(stale);
+
+        Assert.Equal(WindowTexts.NoCrops, vm.CropsNote);
+        Assert.Same(unmeasured, vm.SelectedFrame);
     }
 
     /// <summary>The export writes the console's three files into the chosen folder and nothing into lights/.</summary>

@@ -6,6 +6,21 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Fixed
+
+- `--pixel NaN` and `--pixel Infinity` were accepted by the console, `Infinity` by the window.
+  Both now refuse anything that is not a finite number greater than 0, with the same message as
+  before, by one check in the core (`SeriesOptions.PixelSizeIsValid`; R-004, R-029).
+- In the window, a star cut-out decode that failed after another frame had been selected wrote
+  its `EROARE` note under the newer frame; a stale decode now writes nothing, success or
+  failure alike (R-031).
+- `lightscheck --frame N` on a raw libraw cannot open (a `.NEF` that is not a raw) crashed with
+  libraw's own exception; the reader now reports it as an unreadable file naming it, so the
+  console prints `EROARE: <file>: ...` and exits 1 (R-007, ADR 0019).
+- In the window, the progress reports of a run that was stopped or replaced could still land
+  after the next run had started and show the old run's counts on the bar and the wait line;
+  a report of a run that is no longer the current one is now dropped (R-029).
+
 ### Internal
 
 - Every type and method in the code has its XML documentation comment (the kit's rule

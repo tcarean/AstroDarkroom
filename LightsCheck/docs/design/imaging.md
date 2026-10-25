@@ -41,7 +41,12 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   model "D3300"; the model is prefixed with the make only when it does not already start with
   the make's first word, so "SONY" + "ILCE-7M3" reads "SONY ILCE-7M3").
 - Exceptions: `FitsReader` throws `InvalidDataException` where FlatCheck threw `Exception`
-  (the kit's analyzer CA2201); `FrameInfo` and the console catch it.
+  (the kit's analyzer CA2201); `FrameInfo` and the console catch it. `RawReader` throws the
+  same type, naming the file, when libraw refuses to open or unpack one (`Open`, `Decode`;
+  libraw's `LibRawException` as the inner exception), so a raw that is not a raw is one more
+  unreadable frame to every caller (ADR 0019). A FITS whose data is shorter than its header
+  says still throws `IndexOutOfRangeException` from `LoadFull`, FlatCheck's gap too, fixed
+  there first.
 - Time: libraw's `Timestamp` is the EXIF `DateTimeOriginal` run through `mktime` on this
   machine, so `DateTimeOffset.FromUnixTimeSeconds(..).ToLocalTime()` gives back the camera's
   wall-clock to the second; EXIF `SubSecTime` is not exposed. Siril's `DATE-OBS` is UTC and is

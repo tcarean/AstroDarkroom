@@ -32,6 +32,14 @@ internal sealed record SeriesOptions(double PixelSizeUm = SeriesOptions.D3300Pix
 {
     /// <summary>The Nikon D3300's pixel pitch: 23.5 mm over 6000 pixels.</summary>
     internal const double D3300PixelUm = 3.92;
+
+    /// <summary>
+    /// Whether a pixel size typed by the user can be used: the console and the window both ask
+    /// here (R-004, R-029), so neither decides on its own.
+    /// </summary>
+    /// <param name="um">The pixel size in microns, as parsed.</param>
+    /// <returns>True for a finite number greater than 0; false for 0, a negative, NaN or an infinity.</returns>
+    internal static bool PixelSizeIsValid(double um) => double.IsFinite(um) && um > 0;
 }
 
 /// <summary>A direction key of the SynScan app (R-040).</summary>

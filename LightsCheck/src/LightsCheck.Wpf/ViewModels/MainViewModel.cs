@@ -119,8 +119,9 @@ public sealed record CropVm(string Caption, BitmapSource Image);
 /// <summary>
 /// The window's state (R-029 to R-032): the folder, the inputs, the run with its progress and
 /// cancellation, and the result shaped for the tabs. Every figure and every sentence comes from
-/// the core; the view-model arranges them, and writes only a few labels of its own (the guide
-/// lines', the session card's "scara", the "EROARE: " before an error).
+/// the core, the verdict words and the `scara` label included; the view-model arranges them, and
+/// its few words of its own (the guide lines' labels, the `EROARE: ` before an error) are
+/// <see cref="WindowTexts"/>'.
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
@@ -237,7 +238,7 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    public bool PixelIsValid => double.TryParse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) && p > 0;
+    public bool PixelIsValid => double.TryParse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) && SeriesOptions.PixelSizeIsValid(p);
 
     /// <summary>How many frames in parallel, as typed; empty = half the cores.</summary>
     public string ThreadsText { get => _threadsText; set => Set(ref _threadsText, value); }
@@ -342,7 +343,8 @@ public sealed class MainViewModel : ObservableObject
     /// Opens a session folder and runs the whole analysis on a pool thread, reporting progress
     /// on the UI thread. A run in flight is cancelled first; a cancelled run leaves the window
     /// empty, its result having been cleared at the start, and says in <see cref="Status"/>
-    /// that it was stopped. A folder the core refuses (an IO, format, state or argument error,
+    /// that it was stopped; its progress reports still queued when the next run starts are
+    /// dropped. A folder the core refuses (an IO, format, state or argument error,
     /// or a refused access) becomes the problem card and the tabs stay hidden; any other
     /// exception propagates.
     /// </summary>
@@ -364,6 +366,13 @@ public sealed class MainViewModel : ObservableObject
         SeriesOptions options = Options;
         Progress<(int Done, int Total)> progress = new(p =>
         {
+            // A report of a run that was stopped or replaced may still be queued when the next
+            // run starts; only the current run's reports reach the window (R-029).
+            if (!IsCurrent(cts))
+            {
+                return;
+            }
+
             Progress = p.Total > 0 ? p.Done / (double)p.Total : 0;
             BusyMessage = p.Done == p.Total ? WindowTexts.BusyRegistering : WindowTexts.Busy(p.Done, p.Total);
         });
@@ -380,7 +389,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
         {
-            if (ReferenceEquals(_cts, cts))
+            if (IsCurrent(cts))
             {
                 ProblemText = e.Message;
             }
@@ -389,7 +398,7 @@ public sealed class MainViewModel : ObservableObject
         {
             // Only the run still current touches the window: a run superseded by a later
             // OpenAsync must not write its "stopped" line over the new run's state.
-            if (ReferenceEquals(_cts, cts))
+            if (IsCurrent(cts))
             {
                 if (cts.IsCancellationRequested)
                 {
@@ -403,6 +412,15 @@ public sealed class MainViewModel : ObservableObject
             cts.Dispose();
         }
     }
+
+    /// <summary>
+    /// Whether a run is still the one the window follows: the one <see cref="OpenAsync"/>
+    /// started last and has not finished. Its progress, its error and its "stopped" line reach
+    /// the window only while this holds (R-029).
+    /// </summary>
+    /// <param name="cts">The run's own cancellation source, made at its start.</param>
+    /// <returns>True while that source is the current one.</returns>
+    private bool IsCurrent(CancellationTokenSource cts) => ReferenceEquals(_cts, cts);
 
     /// <summary>Stops the run in flight, if any.</summary>
     public void CancelPending()
@@ -434,7 +452,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
         {
-            Status = "EROARE: " + e.Message;
+            Status = WindowTexts.Error(e.Message);
         }
     }
 
@@ -463,9 +481,9 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Shapes a finished run for the tabs: the console's text, the session lines, the core's row
     /// and table producers, the frames table and the chart points (NaN where a frame has no
-    /// figure), the guide lines at the thresholds, the axis labels and headers. Every figure
-    /// comes from the core; the guide lines' labels and the session card's "scara" label are
-    /// written here.
+    /// figure), the guide lines at the thresholds, the axis labels and headers. Every figure and
+    /// every word of the report comes from the core; the guide lines' labels are
+    /// <see cref="WindowTexts"/>'.
     /// </summary>
     /// <param name="r">The finished run's result.</param>
     internal void Populate(SeriesResult r)
@@ -485,7 +503,7 @@ public sealed class MainViewModel : ObservableObject
             SessionRows = header.ToString().ReplaceLineEndings("\n").Split('\n')
                 .Where(l => l.StartsWith("    ", StringComparison.Ordinal) && l.Contains(" : ", StringComparison.Ordinal))
                 .Select(l => new RowVm(l[4..l.IndexOf(" : ", StringComparison.Ordinal)].Trim(), l[(l.IndexOf(" : ", StringComparison.Ordinal) + 3)..], null))
-                .Append(new RowVm("scara", SeriesReport.ScaleLine(r), null))
+                .Append(new RowVm(SeriesReport.ScaleLabel, SeriesReport.ScaleLine(r), null))
                 .ToList();
         }
 
@@ -527,10 +545,10 @@ public sealed class MainViewModel : ObservableObject
         MapPoints = map;
         StepPoints = steps;
         NearestPoints = nearest;
-        StepGuides = [new GuideLine(Th.DitherStep, $"miscare >= {RunReport.F(Th.DitherStep, 0)} px", VerdictPalette.Warn), new GuideLine(Th.CoverageLoose, $"{RunReport.F(Th.CoverageLoose, 0)} px (walking noise)", VerdictPalette.Good)];
+        StepGuides = [new GuideLine(Th.DitherStep, WindowTexts.MoveGuide(RunReport.F(Th.DitherStep, 0)), VerdictPalette.Warn), new GuideLine(Th.CoverageLoose, WindowTexts.WalkingNoiseGuide(RunReport.F(Th.CoverageLoose, 0)), VerdictPalette.Good)];
         FwhmPoints = fwhm;
         ElongationPoints = elong;
-        ElongationGuides = [new GuideLine(Th.ElongationMarginal, "la limita", VerdictPalette.Warn), new GuideLine(Th.ElongationBad, "SLAB", VerdictPalette.Bad)];
+        ElongationGuides = [new GuideLine(Th.ElongationMarginal, SeriesReport.ClassWord(FrameClass.Marginal), VerdictPalette.Warn), new GuideLine(Th.ElongationBad, SeriesReport.ClassWord(FrameClass.Bad), VerdictPalette.Bad)];
         StarPoints = stars;
         BackgroundPoints = bg;
         (MapXLabel, MapYLabel) = SeriesReport.AxisLabels(s);
@@ -541,7 +559,8 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Decodes the selected frame again on a pool thread and publishes its star cut-outs, unless
     /// another frame was selected meanwhile; a frame without a path, without a measurement or
-    /// without a cut-out gets the note instead, and a decoder error becomes the note.
+    /// without a cut-out gets the note instead, and a decoder error becomes the note, again
+    /// only while the frame is still the one selected.
     /// </summary>
     /// <param name="row">The frame selected; null for no selection, which clears the note.</param>
     private async Task LoadCropsAsync(FrameRowVm? row)
@@ -576,8 +595,12 @@ public sealed class MainViewModel : ObservableObject
         catch (Exception e) when (e is not OperationCanceledException)
         {
             // The same net as SeriesRun casts per frame: whatever the decoder throws is this
-            // frame's error, shown in its place, never an unobserved task exception.
-            CropsNote = "EROARE: " + e.Message;
+            // frame's error, shown in its place, never an unobserved task exception; in its
+            // place only while this frame is still the one selected (R-031).
+            if (ReferenceEquals(_selectedFrame, row))
+            {
+                CropsNote = WindowTexts.Error(e.Message);
+            }
         }
     }
 

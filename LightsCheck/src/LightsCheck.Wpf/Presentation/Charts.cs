@@ -52,7 +52,6 @@ public sealed record GuideLine(double Value, string Label, Color Colour);
 /// </summary>
 public abstract class ChartElement : FrameworkElement
 {
-    protected static readonly Brush AxisBrush = Frozen(Color.FromArgb(0x66, 0x6E, 0x6E, 0x77));
     protected static readonly Brush TickBrush = Frozen(Color.FromRgb(0x9A, 0x9A, 0xA3));
     protected static readonly Brush LabelBrush = Frozen(Color.FromRgb(0xE4, 0xE4, 0xE7));
     protected static readonly Brush LabelBacking = Frozen(Color.FromArgb(0xD0, 0x1E, 0x1E, 0x22));
@@ -431,7 +430,7 @@ public sealed class DitherMap : ChartElement
             drawingContext.DrawText(t, new Point(here.X + 5, here.Y - t.Height / 2));
         }
 
-        FormattedText xl = Text($"{XLabel} (px); grila la {gridStep.ToString("F0", CultureInfo.InvariantCulture)} px", 10, TickBrush);
+        FormattedText xl = Text($"{XLabel} (px); {WindowTexts.GridNote(gridStep.ToString("F0", CultureInfo.InvariantCulture))}", 10, TickBrush);
         drawingContext.DrawText(xl, new Point(MarginLeft + plotW - xl.Width, MarginTop + plotH + 4));
         FormattedText yl = Text($"{YLabel} (px)", 10, TickBrush);
         drawingContext.DrawText(yl, new Point(4, MarginTop));

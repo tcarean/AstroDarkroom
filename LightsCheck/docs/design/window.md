@@ -21,7 +21,10 @@ code. The six tabs are `UserControl`s under `Views/` with no code of their own b
 `MainViewModel` has every property the XAML binds. `OpenAsync(folder)` cancels a run in
 flight, clears the result, then runs `SeriesRun.Run` on `Task.Run` with a `Progress<T>` whose
 callback lands on the UI thread (the `Progress<T>` is created on it) and sets `Progress` and
-`BusyMessage`. `ConfigureAwait(true)` brings `Populate` back to the UI thread; a run whose
+`BusyMessage`, only while its run is still the current one (`IsCurrent(cts)`, the same check the
+`catch` and the `finally` make): the frames in flight when a run is stopped or replaced still
+report, and their posts may sit in the dispatcher's queue when the next run starts.
+`ConfigureAwait(true)` brings `Populate` back to the UI thread; a run whose
 token was cancelled returns before `Populate` so a stopped run leaves nothing. The three
 exception types the core throws for a bad folder become `ProblemText`; anything else is a
 bug and propagates.
@@ -53,6 +56,13 @@ bug and propagates.
   `SeriesReport.AxisLabels`, and each step point carries the table row's `StepTip` as its
   `Tip`; the frames table shows the row's `Move` as the `dithering` column;
 
+The window's own words, the only Romanian the window writes, are `WindowTexts`: the empty and
+problem cards, the wait line (`Busy`, `BusyRegistering`), the dialog titles, the status after
+an export, the cut-out notes, the step chart's guide labels (`MoveGuide`, `WalkingNoiseGuide`,
+given the core's formatted figure), the map's grid note (`GridNote`) and the `Error` prefix.
+The class words on the elongation guides are `SeriesReport.ClassWord` and the session card's
+`scara` label is `SeriesReport.ScaleLabel`, so a verdict word changes in `Report/` alone.
+
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
 console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`.
 
@@ -68,7 +78,8 @@ and the `StarShape`; `SeriesReport.CropCaption` writes the caption (the words st
 window, shown 5x with nearest-neighbour scaling so the pixels stay square. Whatever the
 decoder throws becomes the note of that frame, caught by the same net `SeriesRun` casts per
 frame. `CropsPending` is the decode in flight; a selection made while it runs wins
-(`LoadCropsAsync` checks the selected row before publishing).
+(`LoadCropsAsync` checks the selected row before publishing the cut-outs and before publishing
+an error alike: a stale decode that fails writes nothing).
 
 ## Drawing (`Charts.cs`)
 

@@ -75,9 +75,9 @@ namespace LightsCheck.Core
         /// Decodes the raw: the visible mosaic in ADU (no development), the exact scale from
         /// libraw, the CFA order and the shot metadata. Throws FileNotFoundException for a
         /// missing file; InvalidOperationException when libraw cannot be loaded, or gives no
-        /// 16-bit Bayer mosaic, invalid dimensions or an impossible scale; and, unwrapped,
-        /// whatever libraw throws on a file it cannot open or unpack (a file that is not a raw
-        /// at all).
+        /// 16-bit Bayer mosaic, invalid dimensions or an impossible scale; and
+        /// InvalidDataException naming the file when libraw cannot open or unpack it (a file
+        /// that is not a raw at all), libraw's own exception kept as the inner one (R-007).
         /// </summary>
         /// <param name="path">The raw file to read.</param>
         /// <returns>The frame, its image filled and its header empty.</returns>
@@ -100,7 +100,7 @@ namespace LightsCheck.Core
         /// The metadata only: libraw fills the shot fields at OpenFile, before Unpack, so the
         /// file is opened and those are read. No pixels, no scale: Image null, Header empty.
         /// Tens of milliseconds on a D3300 NEF instead of seconds. The same lazy-loading guards as
-        /// Load.
+        /// Load, and the same InvalidDataException for a file libraw cannot open.
         /// </summary>
         /// <param name="path">The raw file to read.</param>
         /// <returns>The frame's metadata, its image null.</returns>
@@ -126,7 +126,7 @@ namespace LightsCheck.Core
         /// <returns>The frame's metadata, its image null.</returns>
         static LoadedFrame ReadInfo(string path)
         {
-            using RawContext ctx = RawContext.OpenFile(path);
+            using RawContext ctx = Open(path);
             LibRawData d = Marshal.PtrToStructure<LibRawData>(ctx.UnsafeGetHandle());
             var f = new LoadedFrame { Image = null, Header = NoHeader };
             FillShootingInfo(f, ctx, d.RawData.IParams);
@@ -147,6 +147,34 @@ namespace LightsCheck.Core
               + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")", inner);
 
         /// <summary>
+        /// The reader's own error for a file libraw refuses: InvalidDataException, the type a
+        /// corrupt FITS gives, so the console, the inventory and the window handle it as one
+        /// more unreadable frame (R-007, ADR 0019); libraw's words stay inside, in brackets,
+        /// less the path when they repeat it ("Failed opening file: ..." names the file).
+        /// </summary>
+        /// <param name="path">The file libraw refused.</param>
+        /// <param name="inner">libraw's exception, kept as the inner one.</param>
+        /// <returns>The exception to throw, naming the file once.</returns>
+        static InvalidDataException Unreadable(string path, LibRawException inner)
+        {
+            string detail = inner.Message.Replace(path, "", StringComparison.Ordinal).Trim().TrimEnd(':').Trim();
+            return new InvalidDataException($"{path}: libraw nu poate citi fisierul ({detail})", inner);
+        }
+
+        /// <summary>
+        /// Opens the file in libraw. Here and not in Load or LoadInfo, so that those two keep no
+        /// Sdcb.LibRaw type in their bodies and the lazy-loading guards around them still see a
+        /// missing assembly as a load failure (see the note at the top).
+        /// </summary>
+        /// <param name="path">The raw file, known to exist.</param>
+        /// <returns>The open libraw context; the caller disposes it.</returns>
+        static RawContext Open(string path)
+        {
+            try { return RawContext.OpenFile(path); }
+            catch (LibRawException e) { throw Unreadable(path, e); }
+        }
+
+        /// <summary>
         /// The full decode behind <see cref="Load"/>: Unpack, the visible mosaic, the scale and
         /// the metadata, all read while the file is open once.
         /// </summary>
@@ -154,8 +182,9 @@ namespace LightsCheck.Core
         /// <returns>The frame, its image in ADU.</returns>
         static LoadedFrame Decode(string path)
         {
-            using RawContext ctx = RawContext.OpenFile(path);
-            ctx.Unpack();
+            using RawContext ctx = Open(path);
+            try { ctx.Unpack(); }
+            catch (LibRawException e) { throw Unreadable(path, e); }
 
             LibRawData d = Marshal.PtrToStructure<LibRawData>(ctx.UnsafeGetHandle());
             LibRawImageSizes s = d.RawData.Sizes;

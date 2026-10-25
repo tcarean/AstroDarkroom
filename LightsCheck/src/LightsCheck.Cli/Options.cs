@@ -103,7 +103,7 @@ internal sealed class Options
                         o.Threads = t;
                         break;
                     case "--pixel":
-                        if (!double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) || p <= 0)
+                        if (!double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) || !SeriesOptions.PixelSizeIsValid(p))
                         {
                             o.Error = "--pixel cere marimea pixelului in microni, de exemplu 3.92";
                             return o;

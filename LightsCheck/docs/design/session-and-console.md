@@ -29,7 +29,8 @@ One record per light, with its 1-based `Index`, its path, the shot fields (camer
 length, f-number, exposure, ISO, timestamp, pixel size, the Nikon lens ID and the lens's own
 focal range and maximum aperture, all nullable) and an `Error`. `FrameInfo.Read(index, path)`
 never throws: it calls `ImageLoader.LoadInfo` (the metadata without the pixels,
-`imaging.md`), turns any exception, libraw's own type included, into the record's `Error`,
+`imaging.md`), turns any exception into the record's `Error` (libraw's own type no longer
+reaches it: `RawReader` wraps it into `InvalidDataException` naming the file, ADR 0019),
 and treats a `.fit` whose header came back empty (the reader's answer to a file that does
 not start with `SIMPLE`) as the error `nu e un fisier FITS`. `FrameInfo.From(index, path,
 loaded)` builds the same record from a frame that was decoded for measuring, so `FrameRun`
@@ -76,7 +77,8 @@ every report in `Report/` uses them, so no text is formatted by a view-model or 
 `--out DIR`, `--threads N`, `--pixel UM`, `--est stanga|dreapta`, `--nord sus|jos`,
 `-h`/`--help`; no arguments at all means help. The first error wins and is a sentence in
 Romanian naming the argument: an option without its value, a frame or thread count under 1,
-a pixel size that is not a positive number, an arrow word that is not one of the two, an
+a pixel size that is not a finite positive number (`SeriesOptions.PixelSizeIsValid`, the check
+the window shares), an arrow word that is not one of the two, an
 unknown option (anything else starting with `-`), a second folder, a missing folder,
 `--inventory` with `--frame`. The pixel size defaults to `SeriesOptions.D3300PixelUm` (3.92
 um), the thread count to 0, which `SeriesRun` reads as half the cores, and the arrow keys to
