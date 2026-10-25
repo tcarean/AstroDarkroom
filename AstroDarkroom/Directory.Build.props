@@ -1,0 +1,45 @@
+<Project>
+  <!-- Shared by every project in the solution. The single place for version, strictness and
+       analyzers. Do not move <Version> into a csproj: VersionTests checks this file.
+       <Version> is the suite's version: a release of this project is the release of the whole
+       Astro Darkroom suite (ADR 0002). -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
+    <Authors>Tudor Carean</Authors>
+
+    <!-- .NET 8, like every component of the suite, so the flat release folder carries one
+         runtime (ADR 0002). The window overrides this with net8.0-windows. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- The release publishes self-contained for win-x64; declaring the runtime here keeps
+         the publish from rewriting the lock files (the kit's ADR 0034). The test projects
+         are not published. -->
+    <RuntimeIdentifiers Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">win-x64</RuntimeIdentifiers>
+
+    <!-- Strictness: warnings fail the build, style is checked at build time, analyzers at the
+         newest recommended level. The model cannot argue with these. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+
+    <!-- Reproducibility: same inputs, same bytes; package versions locked. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+
+    <!-- IDE0005 (unused usings) only runs at build when the doc file is generated. CS1591
+         (missing XML comment) stays muted: the rule "Documentation comments" asks for a comment
+         on every type and method, private ones included, and nothing checks it; CS1591 would
+         ask only for public members, properties and fields included (the kit's ADR 0035). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+</Project>

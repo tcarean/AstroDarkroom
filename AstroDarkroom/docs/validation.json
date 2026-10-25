@@ -1,0 +1,4 @@
+{
+  "$comment": "Acceptance figures, machine-readable; docs/validation.md explains each entry. The launcher has none: it computes nothing. Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "cases": []
+}

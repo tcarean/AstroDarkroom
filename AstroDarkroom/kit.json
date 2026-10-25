@@ -1,0 +1,34 @@
+{
+  "$comment": "What the shared scripts, skills and agent need to know about AstroDarkroom. With docs/skills.md, the only file edited here to use them; scripts/, .claude/skills/, .claude/agents/ and .claude/rules/kit/ are byte-identical with ../ClaudeCodeStarterKit's (scripts/sync.ps1 keeps them so; the kit's ADRs 0017, 0018 and 0028). The release is the Astro Darkroom suite's (ADR 0002): release.publish lists the launcher's window first, then the window and console of every component, each a sibling kit project bundled from its clean checkout into one flat folder (the kit's ADR 0036); SuiteTests keeps this list and the catalogue in src/AstroDarkroom.Core in step. No single-file publish here: the shared folder already carries the runtime. See scripts/kit-config.ps1 for every key.",
+  "solution": "AstroDarkroom.sln",
+  "testFilter": "",
+  "codeFolders": ["src/"],
+  "codeFiles": [],
+  "testFolders": ["tests/"],
+  "testData": {
+    "folder": "tests/testdata/",
+    "largeEnv": "ASTRODARKROOM_TESTDATA_LARGE"
+  },
+  "mutate": {
+    "testProject": "tests/AstroDarkroom.Tests/"
+  },
+  "release": {
+    "publish": [
+      { "project": "src/AstroDarkroom.Wpf/AstroDarkroom.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../DarksCheck/src/DarksCheck.Cli/DarksCheck.Cli.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../DarksCheck/src/DarksCheck.Wpf/DarksCheck.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../FlatCheck/FlatCheck/FlatCheck.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../FlatCheck/FlatCheck.Wpf/FlatCheck.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../LightsCheck/src/LightsCheck.Cli/LightsCheck.Cli.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../LightsCheck/src/LightsCheck.Wpf/LightsCheck.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../ImageVisualCompare/src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../AstroPhotoAnalyzer/AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../AstroPhotoAnalyzer/AstroPhotoAnalyzer.Wpf/AstroPhotoAnalyzer.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] }
+    ],
+    "zip": "AstroDarkroom-{version}-win-x64.zip"
+  },
+  "audit": {
+    "alsoRead": []
+  },
+  "kit": "../ClaudeCodeStarterKit"
+}

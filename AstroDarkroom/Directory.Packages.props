@@ -1,0 +1,12 @@
+<Project>
+  <!-- Central Package Management: every package version lives here, once.
+       The kit's rule "Packages": no new package without asking, and every package gets a
+       one-line "why" comment. Removing a package is a change worth a CHANGELOG line.
+       The launcher itself references no package: the test host and runner are all there is. -->
+  <ItemGroup>
+    <!-- Test host and runner. -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>

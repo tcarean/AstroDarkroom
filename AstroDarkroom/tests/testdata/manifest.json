@@ -1,0 +1,4 @@
+{
+  "$comment": "Every test data file, in repo or outside it. 'location' is 'repo' (under fixtures/) or 'large' (under tests/testdata/large/, git-ignored, fetched or copied by hand). scripts/check-testdata.ps1 verifies presence and SHA-256 of every entry; a 'large' entry that is missing is a warning locally and an error in CI only when 'requiredInCi' is true. -Update rewrites this file with PowerShell's JSON layout; reformat by hand if you care. The launcher has no fixture: its tests build the suite folders they need in a temp folder.",
+  "files": []
+}
