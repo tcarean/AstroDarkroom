@@ -39,6 +39,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -98,6 +99,11 @@ namespace FlatCheck.Wpf
         string _focalText = "", _fstopText = "", _cropText = "", _cropNote = "", _formatNote = "";
         bool _formatWarning, _cornerWarning;
         bool _cropFromChip;
+
+        // True while CropNote is the "crop unknown" note (SessionMessages.SyntheticCropUnknown):
+        // an emptied field shows it again. A flag, not a match on the note's words, which
+        // differ between the languages.
+        bool _cropUnknown;
         string _cropSource;
         int _masterW, _masterH;
         int _formatGen;
@@ -150,6 +156,7 @@ namespace FlatCheck.Wpf
                 try { CropText = f.CropText; }
                 finally { _cropFromChip = false; }
                 CropNote = SessionMessages.SyntheticCropFromFormat(f.Label, f.CropText);
+                _cropUnknown = false;
                 RefreshFormat();
             };
         }
@@ -215,7 +222,7 @@ namespace FlatCheck.Wpf
             if (sources == null || rows.Count == 0) { ListNote = ""; return; }
             if (rows.Count > SyntheticReport.ListDetailsMax)
             {
-                ListNote = SyntheticReport.ListDetailsHidden(rows.Count) + " - scrie un text in campul obiectiv";
+                ListNote = SyntheticReport.ListDetailsHidden(rows.Count) + T(" - type a text in the lens field", " - scrie un text in campul obiectiv");
                 return;
             }
             ListNote = "";
@@ -262,7 +269,8 @@ namespace FlatCheck.Wpf
                     string source = _cropSource ?? SessionMessages.SyntheticCropTyped();
                     _cropSource = null;
                     CropNote = crop.HasValue ? SessionMessages.SyntheticCropNote(_cropText.Trim(), source, SensorFormats.LabelOf(crop.Value))
-                             : _cropText.Trim().Length > 0 ? "" : _cropNote.StartsWith("crop necunoscut") ? _cropNote : "";
+                             : _cropText.Trim().Length > 0 ? "" : _cropUnknown ? _cropNote : "";
+                    if (crop.HasValue || _cropText.Trim().Length > 0) _cropUnknown = false;
                 }
                 RefreshFormat();
             }
@@ -370,9 +378,9 @@ namespace FlatCheck.Wpf
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
         public IReadOnlyList<CompareRow> CompareTable { get => _compareTable; private set => Set(ref _compareTable, value); }
-        public string CompareColumnA => "masterul";
-        public string CompareColumnB => "sinteticul";
-        public string CompareColumnDiff => "diferenta (A / B)";
+        public string CompareColumnA => T("the master", "masterul");
+        public string CompareColumnB => T("the synthetic", "sinteticul");
+        public string CompareColumnDiff => T("difference (A / B)", "diferenta (A / B)");
         public string CompareVerdict
         {
             get => _compareVerdict;
@@ -449,7 +457,11 @@ namespace FlatCheck.Wpf
                     if (rawPath != null)
                     {
                         try { raw = _loadInfo(rawPath); }
-                        catch (Exception e) { error = $"{Path.GetFileName(rawPath)} nu s-a putut citi ({e.Message}); diafragma se scrie de mana"; }
+                        catch (Exception e)
+                        {
+                            error = T($"{Path.GetFileName(rawPath)} could not be read ({e.Message}); type the aperture by hand",
+                                      $"{Path.GetFileName(rawPath)} nu s-a putut citi ({e.Message}); diafragma se scrie de mana");
+                        }
                     }
                     return (LensIdentification.Identify(reference, raw, sources, rawName: LensIdentification.NameOf(rawPath)), reference, error);
                 }, ct).ConfigureAwait(true);
@@ -468,14 +480,14 @@ namespace FlatCheck.Wpf
                         _cropSource = SessionMessages.SyntheticCropFromTable(id.Camera);
                         CropText = id.Crop.Value.ToString("0.###", CultureInfo.InvariantCulture);
                     }
-                    else CropNote = SessionMessages.SyntheticCropUnknown(id.Camera);
+                    else { CropNote = SessionMessages.SyntheticCropUnknown(id.Camera); _cropUnknown = true; }
                 }
                 if (id.HasRawLensId && SelectedLens == null)
                 {
                     string note = OfferCandidates(id.Candidates, id.RawLensLabel);
                     if (note != null) notes.Add(note);
                 }
-                PrefillNote = notes.Count == 0 ? "" : "preumplut: " + string.Join("; ", notes);
+                PrefillNote = notes.Count == 0 ? "" : T("prefilled: ", "preumplut: ") + string.Join("; ", notes);
             }
             catch (OperationCanceledException) { }
             catch (Exception e)
@@ -483,7 +495,7 @@ namespace FlatCheck.Wpf
                 // The prefill is a convenience, not an analysis: a strange header leaves the
                 // fields empty and says why. A background task that threw would bring the
                 // application down.
-                PrefillNote = "preumplerea a esuat: " + Describe(e);
+                PrefillNote = T("the prefill failed: ", "preumplerea a esuat: ") + Describe(e);
             }
         }
 
@@ -535,7 +547,7 @@ namespace FlatCheck.Wpf
             if (candidates.Count == 1)
             {
                 SelectedLens = Lenses.FirstOrDefault(r => r.Choice == candidates[0]);
-                return "obiectivul dupa " + rawLabel;
+                return T("the lens by ", "obiectivul dupa ") + rawLabel;
             }
             Lenses = Rows(candidates);
             SelectedLens = null;
@@ -572,7 +584,7 @@ namespace FlatCheck.Wpf
             LensRow lens = SelectedLens;
             double? focal = Num(FocalText), fstop = Num(FStopText), crop = Num(CropText);
 
-            await RunGuardedAsync("Scriu flatul sintetic...", async () =>
+            await RunGuardedAsync(T("Writing the synthetic flat...", "Scriu flatul sintetic..."), async () =>
             {
                 RaiseCommands();
                 using IDisposable lease = await EnterGateAsync(_gate, ct).ConfigureAwait(true);
@@ -621,7 +633,7 @@ namespace FlatCheck.Wpf
                 }
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
-                    SaveError = "Nu am putut scrie flatul sintetic:\n" + Describe(e);
+                    SaveError = T("Could not write the synthetic flat:\n", "Nu am putut scrie flatul sintetic:\n") + Describe(e);
                 }
                 Report = text.ToString();
             }).ConfigureAwait(true);
@@ -648,7 +660,7 @@ namespace FlatCheck.Wpf
             string target = _session.SyntheticMasterPath;
             CancellationToken ct = _ct;
 
-            await RunGuardedAsync("Compar masterul cu flatul sintetic...", async () =>
+            await RunGuardedAsync(T("Comparing the master with the synthetic flat...", "Compar masterul cu flatul sintetic..."), async () =>
             {
                 RaiseCommands();
                 using IDisposable lease = await EnterGateAsync(_gate, ct).ConfigureAwait(true);
@@ -678,7 +690,8 @@ namespace FlatCheck.Wpf
         internal void Populate(SyntheticFlatResult r, SyntheticRequest req)
         {
             LensProfile p = r.Profile;
-            ProfileLine = $"{p.Lens.Name}  [{p.Lens.Where}]  ({p.Lens.SourceLabel}): {p.Settings}   -   cerut: {SyntheticReport.Requested(req)}";
+            ProfileLine = $"{p.Lens.Name}  [{p.Lens.Where}]  ({p.Lens.SourceLabel}): {p.Settings}   -   "
+                        + T("requested: ", "cerut: ") + SyntheticReport.Requested(req);
             ModelLine = p.Model.Describe();
             CornerNote = SyntheticReport.FormatMatch(p.Model, r.CameraCrop, r.Width, r.Height);
             CornerWarning = SyntheticReport.FormatMatchIsWarning(p.Model, r.CameraCrop, r.Width, r.Height);
@@ -740,6 +753,7 @@ namespace FlatCheck.Wpf
             FStopText = "";
             CropText = "";
             CropNote = "";
+            _cropUnknown = false;
             FormatNote = "";
             FormatWarning = CornerWarning = false;
             _masterW = _masterH = 0;

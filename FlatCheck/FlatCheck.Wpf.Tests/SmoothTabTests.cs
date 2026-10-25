@@ -44,7 +44,7 @@ public class SmoothTabTests
         Assert.False(vm.HasError);
         Assert.True(vm.CanRun);
         Assert.Equal(f.Session.FlatMasterPath, vm.Source);
-        Assert.Equal(Path.Combine(f.ProcessDir, "pp_flat_stacked_netezit.fit"), vm.Target);
+        Assert.Equal(Path.Combine(f.ProcessDir, "pp_flat_stacked_smoothed.fit"), vm.Target);
         Assert.False(File.Exists(vm.Target));
         Assert.True(vm.Guide.IsExpanded);
         Assert.Equal(Th.ResidPerfect, vm.MapScale.Selected.CapPct);

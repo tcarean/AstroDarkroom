@@ -33,6 +33,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -181,7 +182,7 @@ namespace FlatCheck.Wpf
             Raise(nameof(Selected));
 
             if (Files.Count == 0)
-                Fail("Niciun flat brut de verificat", SessionMessages.NoRawFlats(session));
+                Fail(T("No raw flat to check", "Niciun flat brut de verificat"), SessionMessages.NoRawFlats(session));
             else
                 ClearError();
         }
@@ -206,7 +207,7 @@ namespace FlatCheck.Wpf
             HeavyRunGate gate = _gate;
             CancellationToken ct = _ct;
 
-            return RunGuardedAsync($"Masor expunerea pe {Path.GetFileName(path)}...", async () =>
+            return RunGuardedAsync(T($"Measuring the exposure of {Path.GetFileName(path)}...", $"Masor expunerea pe {Path.GetFileName(path)}..."), async () =>
             {
                 // A 24 MP raw and its preview do not decode beside another heavy run: the pick
                 // waits for the gate, and the waiting screen says so meanwhile (ADR 0061).
@@ -306,7 +307,7 @@ namespace FlatCheck.Wpf
                 Label = c.Label,
                 Position = r.IsCfa && r.Cfa != null ? $"CFA[{c.Position / 2},{c.Position % 2}]" : "",
                 Colour = ChannelPalette.BrushFor(c.Colour),
-                Median = $"{c.MedianPct:F1} % tot canalul",
+                Median = T($"{c.MedianPct:F1} % whole channel", $"{c.MedianPct:F1} % tot canalul"),
                 Centre = $"{c.CentreMedianPct:F1} %",
                 Note = ExposureReport.ChannelNote(r, c),
                 IsBrightest = c.IsBrightest && r.IsCfa,
@@ -339,7 +340,7 @@ namespace FlatCheck.Wpf
                 Label = c.Label,
                 Position = "",
                 Colour = ChannelPalette.BrushFor(c.Colour),
-                Median = $"{c.MedianPct:F1} % tot cadrul",
+                Median = T($"{c.MedianPct:F1} % whole frame", $"{c.MedianPct:F1} % tot cadrul"),
                 Centre = $"{c.CentreMedianPct:F1} %",
                 Note = ExposureReport.PreviewChannelNote(c),
                 IsBrightest = false,

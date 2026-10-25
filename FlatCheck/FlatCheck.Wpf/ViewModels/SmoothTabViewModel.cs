@@ -39,6 +39,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -134,7 +135,7 @@ namespace FlatCheck.Wpf
             string path = _session.FlatMasterPath;
             CancellationToken ct = _ct;
 
-            await RunGuardedAsync("Propun scara de netezire...", async () =>
+            await RunGuardedAsync(T("Proposing a smoothing scale...", "Propun scara de netezire..."), async () =>
             {
                 Run.RaiseCanExecuteChanged();
                 Advise.RaiseCanExecuteChanged();
@@ -171,10 +172,12 @@ namespace FlatCheck.Wpf
             AdviceTexture = SmoothReport.InputTextureLine(a);
             AdviceRows = a.Trials.Select(t => new MetricRow
             {
-                Label = $"scara {t.ScalePx:F0} px",
+                Label = T($"scale {t.ScalePx:F0} px", $"scara {t.ScalePx:F0} px"),
                 Value = SmoothReport.TrialVerdict(t),
-                Note = $"textura ramasa {t.TextureAfterPct:F2} %, asimetrie {t.AzimuthalDelta:+0.00;-0.00}, "
-                     + $"inclinare {t.TiltDelta:+0.00;-0.00}, scos {t.RemovedPtpPct:F2} % ptp",
+                Note = T($"texture left {t.TextureAfterPct:F2} %, asymmetry {t.AzimuthalDelta:+0.00;-0.00}, "
+                         + $"tilt {t.TiltDelta:+0.00;-0.00}, removed {t.RemovedPtpPct:F2} % ptp",
+                         $"textura ramasa {t.TextureAfterPct:F2} %, asimetrie {t.AzimuthalDelta:+0.00;-0.00}, "
+                         + $"inclinare {t.TiltDelta:+0.00;-0.00}, scos {t.RemovedPtpPct:F2} % ptp"),
             }).ToList();
             AdviceNote = SmoothReport.AdviceNote(a).Replace('\n', ' ');
             AdviceVerdict = SmoothReport.AdviceVerdict(a);
@@ -309,7 +312,7 @@ namespace FlatCheck.Wpf
             double scale = Scale.ScalePx;
             CancellationToken ct = _ct;
 
-            await RunGuardedAsync("Netezesc masterul de flat...", async () =>
+            await RunGuardedAsync(T("Smoothing the flat master...", "Netezesc masterul de flat..."), async () =>
             {
                 Run.RaiseCanExecuteChanged();
                 using IDisposable lease = await EnterGateAsync(_gate, ct).ConfigureAwait(true);
@@ -361,7 +364,7 @@ namespace FlatCheck.Wpf
                 }
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
-                    SaveError = "Nu am putut scrie flat-ul netezit:\n" + Describe(e);
+                    SaveError = T("Could not write the smoothed flat:\n", "Nu am putut scrie flat-ul netezit:\n") + Describe(e);
                 }
                 Report = text.ToString();
             }).ConfigureAwait(true);

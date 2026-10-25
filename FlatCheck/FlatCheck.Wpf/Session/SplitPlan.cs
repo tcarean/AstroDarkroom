@@ -52,7 +52,7 @@ namespace FlatCheck.Wpf
         /// (0/90/180/270).</summary>
         internal static readonly IReadOnlyList<int> Choices = new[] { 2, 4 };
 
-        internal const string PartPrefix = "parte-";
+        internal const string PartPrefix = "part-";
 
         internal const string FlatsFolder = "flats";
         internal const string LightsFolder = "lights";

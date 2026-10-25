@@ -22,33 +22,63 @@
 // be put on the current session's folder, and because during development it saves choosing the
 // same folder fifty times.
 
+using System;
 using System.Globalization;
 using System.IO;
 using System.Windows;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>The window application: fixes the number culture, opens the main window on
-    /// the folder given, if any.</summary>
+    /// <summary>The window application: fixes the number culture and the interface language,
+    /// opens the main window on the folder given, if any.</summary>
     public partial class App : Application
     {
-        /// <summary>Forces invariant numbers, shows the main window and starts it on the
-        /// command line's folder.</summary>
+        // The value of a --lang the start-up did not understand, kept for the message the window
+        // shows once it is up; null when there is nothing to say.
+        readonly string _unknownLanguage;
+
+        /// <summary>
+        /// Sets the interface language from the command line (R-101) before anything else: the
+        /// constructor runs before App.xaml's resources and the first view load, and both may
+        /// carry texts.
+        /// </summary>
+        public App()
+        {
+            string[] all = Environment.GetCommandLineArgs();
+            _unknownLanguage = ApplyCommandLine(all.Length > 1 ? all[1..] : Array.Empty<string>());
+        }
+
+        /// <summary>Forces invariant numbers, shows the main window, says a --lang it did not
+        /// understand, and starts the window on the command line's folder.</summary>
         /// <param name="e">The start-up arguments.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             ForceInvariantNumbers();
 
-            // The window's own texts are still Romanian only (R-101 is a draft), so the
-            // core's reports it shows are written in Romanian too, never a mixed screen.
-            Ui.Default = UiLanguage.Romanian;
-
             var window = new MainWindow();
             MainWindow = window;
             window.Show();
 
+            if (_unknownLanguage != null)
+                MessageBox.Show(window, LanguageArgument.BadValueMessage(_unknownLanguage), "FlatCheck",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+
             window.Start(FolderFromArgs(e.Args));
+        }
+
+        /// <summary>
+        /// Sets <see cref="Ui.Default"/> from the command line's <c>--lang</c>: its language when
+        /// it names one, English when there is none or its value is not understood.
+        /// </summary>
+        /// <param name="args">The command line without the executable; not null.</param>
+        /// <returns>The value of a <c>--lang</c> that names no language (an empty string for a
+        /// <c>--lang</c> with none), to be said to the user; null otherwise.</returns>
+        internal static string ApplyCommandLine(string[] args)
+        {
+            LanguageArgument lang = LanguageArgument.Extract(args);
+            Ui.Default = lang.Language ?? Ui.StartupDefault;
+            return lang.BadValue;
         }
 
         /// <summary>
@@ -71,9 +101,9 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// The first argument that looks like an existing folder. Anything else is ignored
-        /// silently: a window that refuses to start because of a wrong argument is more
-        /// annoying than one that asks which folder you want.
+        /// The first argument that looks like an existing folder, a <c>--lang</c> and its value
+        /// left out (R-101). Anything else is ignored silently: a window that refuses to start
+        /// because of a wrong argument is more annoying than one that asks which folder you want.
         /// </summary>
         /// <param name="args">The command line's arguments; null allowed.</param>
         /// <returns>The first existing folder, or null.</returns>
@@ -81,7 +111,7 @@ namespace FlatCheck.Wpf
         {
             if (args == null) return null;
 
-            foreach (string a in args)
+            foreach (string a in LanguageArgument.Extract(args).Rest)
                 if (!string.IsNullOrWhiteSpace(a) && Directory.Exists(a)) return a;
 
             return null;

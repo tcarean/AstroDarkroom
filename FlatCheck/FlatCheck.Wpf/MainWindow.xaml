@@ -29,6 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <Window x:Class="FlatCheck.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:FlatCheck.Wpf"
         xmlns:local="clr-namespace:FlatCheck.Wpf"
         Title="FlatCheck" Height="820" Width="1360" WindowState="Maximized"
         Icon="/FlatCheck.Wpf;component/Icon/flatcheck.ico"
@@ -67,23 +68,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
 
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-          <TextBlock Style="{StaticResource Faint}" Text="FOLDER SESIUNE SIRIL" />
+          <TextBlock Style="{StaticResource Faint}" Text="{l:T En='SIRIL SESSION FOLDER', Ro='FOLDER SESIUNE SIRIL'}" />
           <TextBlock Margin="0,3,0,0" TextTrimming="CharacterEllipsis"
                      Text="{Binding Folder}"
                      Visibility="{Binding HasFolder, Converter={StaticResource BoolToVis}}" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0" Text="(niciunul ales)"
+          <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0" Text="{l:T En='(none chosen)', Ro='(niciunul ales)'}"
                      Visibility="{Binding HasFolder, Converter={StaticResource NotBoolToVis}}" />
         </StackPanel>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
           <!-- locked while it runs: changing the folder in the middle would cancel the work
                started, and it is less confusing not to be able to than to lose it. -->
-          <Button Content="Alege folder..." Click="ChooseFolder"
+          <Button Content="{l:T En='Choose folder...', Ro='Alege folder...'}" Click="ChooseFolder"
                   IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}" />
 
           <!-- rightmost, at the edge of the bar; it stays active during the analysis too, because
                it touches nothing of what runs -->
-          <Button Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)"
+          <Button Content="{l:T En='About', Ro='Despre'}" Command="Help" ToolTip="{l:T En='Version, licence, components (F1)', Ro='Versiune, licenta, componente (F1)'}"
                   Margin="10,0,0,0" />
         </StackPanel>
       </Grid>
@@ -110,11 +111,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </Style>
         </StackPanel.Style>
 
-        <TextBlock Text="Alege folderul unei sesiuni" FontSize="17" FontWeight="SemiBold"
+        <TextBlock Text="{l:T En='Choose a session folder', Ro='Alege folderul unei sesiuni'}" FontSize="17" FontWeight="SemiBold"
                    HorizontalAlignment="Center" />
         <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextAlignment="Center"
-                   Text="Folderul de lucru din Siril, cel care contine subfolderele flats/, darks/, biases/, lights/ si process/ sau masters/. Analiza structurii si testul end-to-end pornesc singure imediat ce l-ai ales." />
-        <Button Content="Alege folder..." Margin="0,22,0,0" HorizontalAlignment="Center"
+                   Text="{l:T En='Siril\'s working folder, the one that holds the subfolders flats/, darks/, biases/, lights/ and process/ or masters/. The structure analysis and the end-to-end test start by themselves as soon as you choose it.', Ro='Folderul de lucru din Siril, cel care contine subfolderele flats/, darks/, biases/, lights/ si process/ sau masters/. Analiza structurii si testul end-to-end pornesc singure imediat ce l-ai ales.'}" />
+        <Button Content="{l:T En='Choose folder...', Ro='Alege folder...'}" Margin="0,22,0,0" HorizontalAlignment="Center"
                 Click="ChooseFolder" />
       </StackPanel>
 
@@ -134,7 +135,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <Border Style="{StaticResource Card}" Margin="0,16,0,0" DataContext="{Binding Preprocess}"
                   Visibility="{Binding IsOffered, Converter={StaticResource BoolToVis}}">
             <StackPanel>
-              <TextBlock Style="{StaticResource Heading}" Text="RULEAZA SCRIPTUL DE AICI" />
+              <TextBlock Style="{StaticResource Heading}" Text="{l:T En='RUN THE SCRIPT FROM HERE', Ro='RULEAZA SCRIPTUL DE AICI'}" />
               <TextBlock Style="{StaticResource Muted}" Text="{Binding Lead}" />
 
               <TextBlock Margin="0,10,0,0" Foreground="#F0C674" TextWrapping="Wrap"
@@ -152,13 +153,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <ComboBox Grid.Column="0" ItemsSource="{Binding Scripts}"
                           SelectedItem="{Binding Selected, Mode=TwoWay}"
                           DisplayMemberPath="Name" VerticalAlignment="Center" />
-                <Button Grid.Column="1" Content="Ruleaza in Siril" Margin="10,0,0,0"
+                <Button Grid.Column="1" Content="{l:T En='Run in Siril', Ro='Ruleaza in Siril'}" Margin="10,0,0,0"
                         IsEnabled="{Binding CanRun}" Click="RunPreprocessing" />
               </Grid>
             </StackPanel>
           </Border>
 
-          <Button Content="Alege alt folder..." Margin="0,20,0,0" HorizontalAlignment="Left"
+          <Button Content="{l:T En='Choose another folder...', Ro='Alege alt folder...'}" Margin="0,20,0,0" HorizontalAlignment="Left"
                   Click="ChooseFolder" />
         </StackPanel>
       </Border>
@@ -180,7 +181,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </Style>
         </TabControl.Style>
 
-        <TabItem Header="Structura">
+        <TabItem Header="{l:T En='Structure', Ro='Structura'}">
           <local:StructureView DataContext="{Binding Structure}" />
         </TabItem>
         <TabItem Header="Ratio">
@@ -189,16 +190,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TabItem Header="End to end">
           <local:LightView DataContext="{Binding Light}" />
         </TabItem>
-        <TabItem Header="Expunere">
+        <TabItem Header="{l:T En='Exposure', Ro='Expunere'}">
           <local:ExposureView DataContext="{Binding Exposure}" />
         </TabItem>
         <TabItem Header="Histogram">
           <local:HistEqView DataContext="{Binding HistEq}" />
         </TabItem>
-        <TabItem Header="Netezire">
+        <TabItem Header="{l:T En='Smoothing', Ro='Netezire'}">
           <local:SmoothView DataContext="{Binding Smooth}" />
         </TabItem>
-        <TabItem Header="Sintetic">
+        <TabItem Header="{l:T En='Synthetic', Ro='Sintetic'}">
           <local:SyntheticView DataContext="{Binding Synthetic}" />
         </TabItem>
         <TabItem Header="Split">

@@ -24,6 +24,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -66,8 +67,10 @@ namespace FlatCheck.Wpf
             if (!_vm.IsRunning) return;
 
             var answer = MessageBox.Show(this,
-                "Scriptul inca ruleaza. Il opresc? Fisierele scrise pe jumatate raman in process/ "
-                + "si o rulare noua le suprascrie.",
+                T("The script is still running. Stop it? The half-written files stay in process/ "
+                  + "and a new run overwrites them.",
+                  "Scriptul inca ruleaza. Il opresc? Fisierele scrise pe jumatate raman in process/ "
+                  + "si o rulare noua le suprascrie."),
                 _vm.Title, MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
 
             if (answer != MessageBoxResult.Yes) { e.Cancel = true; return; }

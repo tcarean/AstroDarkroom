@@ -24,6 +24,7 @@
 
 using System.Windows;
 using System.Windows.Controls;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -58,7 +59,7 @@ namespace FlatCheck.Wpf
 
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
-                Title = isA ? "Masterul setului A" : "Masterul setului B",
+                Title = isA ? T("The master of set A", "Masterul setului A") : T("The master of set B", "Masterul setului B"),
                 // Only a starting point. Set A is often in the open session, but set B is
                 // by definition another sitting, so another folder - and after the first
                 // choice the dialog remembers by itself where it was.
@@ -68,8 +69,8 @@ namespace FlatCheck.Wpf
                 // picks from the list something refused right after. The filter still
                 // guarantees nothing - one can always switch to "Toate fisierele" - so the
                 // real check stays in the view-model.
-                Filter = $"Master de flat ({SirilSession.RatioPattern})|{SirilSession.RatioPattern}"
-                         + "|Toate fisierele|*.*",
+                Filter = T($"Flat master ({SirilSession.RatioPattern})|{SirilSession.RatioPattern}|All files|*.*",
+                           $"Master de flat ({SirilSession.RatioPattern})|{SirilSession.RatioPattern}|Toate fisierele|*.*"),
                 CheckFileExists = true,
             };
 

@@ -188,6 +188,31 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
+    /// The word of a verdict key, in the run's language, for a pill's text; the pill's colour
+    /// keeps reading the key (<see cref="VerdictToBrushConverter"/>).
+    /// </summary>
+    internal sealed class VerdictToWordConverter : IValueConverter
+    {
+        /// <summary>A verdict key to its word.</summary>
+        /// <param name="value">The verdict key, a string; anything else counts as null.</param>
+        /// <param name="t">The target type; ignored.</param>
+        /// <param name="p">The converter parameter; ignored.</param>
+        /// <param name="c">The culture; ignored.</param>
+        /// <returns><see cref="VerdictWords.Of"/> of the key.</returns>
+        public object Convert(object value, Type t, object p, CultureInfo c)
+            => VerdictWords.Of(value as string);
+
+        /// <summary>Not supported: the binding is one way.</summary>
+        /// <param name="value">Ignored.</param>
+        /// <param name="t">Ignored.</param>
+        /// <param name="p">Ignored.</param>
+        /// <param name="c">Ignored.</param>
+        /// <returns>Never; throws <see cref="NotSupportedException"/>.</returns>
+        public object ConvertBack(object value, Type t, object p, CultureInfo c)
+            => throw new NotSupportedException();
+    }
+
+    /// <summary>
     /// The colour of a verdict. It goes through VerdictPalette, which deduces it from
     /// Stats.Severity - so a new verdict from the core is coloured right without touching the
     /// XAML.

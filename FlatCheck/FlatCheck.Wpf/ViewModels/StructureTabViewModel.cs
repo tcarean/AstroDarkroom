@@ -52,6 +52,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -227,8 +228,10 @@ namespace FlatCheck.Wpf
         {
             string rawPath = session.ReferenceRawPath;
             bool compares = rawPath != null && _catalog != null;
-            return RunGuardedAsync(compares ? "Analizez structura masterului de flat si caut profilul obiectivului..."
-                                            : "Analizez structura masterului de flat...", async () =>
+            return RunGuardedAsync(compares
+                ? T("Analysing the structure of the flat master and looking for the lens profile...",
+                    "Analizez structura masterului de flat si caut profilul obiectivului...")
+                : T("Analysing the structure of the flat master...", "Analizez structura masterului de flat..."), async () =>
             {
                 FlatMasterLookup master = session.FindFlatMaster();
                 string path = master.Path;
@@ -323,7 +326,8 @@ namespace FlatCheck.Wpf
             // On three lines, with the labels without the console's padding: the parts come from
             // the report.
             VerdictDetail = o.Compared
-                ? $"forma: {StructureReport.ShapeDetail(o)}\nadancimea: {StructureReport.DepthDetail(o)}\n{StructureReport.WorseOfBoth}"
+                ? T($"shape: {StructureReport.ShapeDetail(o)}\ndepth: {StructureReport.DepthDetail(o)}\n{StructureReport.WorseOfBoth}",
+                    $"forma: {StructureReport.ShapeDetail(o)}\nadancimea: {StructureReport.DepthDetail(o)}\n{StructureReport.WorseOfBoth}")
                 : "";
 
             StructureOutcome explained = o.Profiles != null ? o : gap;
@@ -343,7 +347,7 @@ namespace FlatCheck.Wpf
                     Error = r.Error,
                     Verdict = r.Verdict,
                     IsNearest = r.IsNearest,
-                    Note = (r.IsNearest ? "Cel mai apropiat profil - da verdictul. " : "") + r.Note,
+                    Note = (r.IsNearest ? T("The nearest profile - it gives the verdict. ", "Cel mai apropiat profil - da verdictul. ") : "") + r.Note,
                     IsWarning = r.IsWarning,
                 }).ToList();
                 ProfileSummary = StructureReport.ComparisonSummary(c).Replace('\n', ' ');
@@ -360,7 +364,7 @@ namespace FlatCheck.Wpf
                 ProfileScale = Array.Empty<ScaleRow>();
                 ProfileMaster = ProfileSummary = ProfileScaleNote = ProfileNote = "";
                 ProfileGap = explained == null ? ""
-                    : "Nu se poate compara: " + StructureReport.GapText(explained) + "\n" + StructureReport.GapMeaning().Replace('\n', ' ');
+                    : T("Cannot compare: ", "Nu se poate compara: ") + StructureReport.GapText(explained) + "\n" + StructureReport.GapMeaning().Replace('\n', ' ');
             }
         }
 
@@ -370,7 +374,7 @@ namespace FlatCheck.Wpf
         /// <param name="r">The structure result.</param>
         void Populate(StructureResult r)
         {
-            Size = $"{r.Width} x {r.Height} px  (dupa 2x2 + downsample)";
+            Size = T($"{r.Width} x {r.Height} px  (after 2x2 + downsample)", $"{r.Width} x {r.Height} px  (dupa 2x2 + downsample)");
             // The formatting comes from the core: on a float master written by Siril, "F0" gave
             // "0 / 0", and the window and the console must say the same thing.
             Levels = $"median / max ADU  {StructureReport.Levels(r)}";
@@ -419,7 +423,7 @@ namespace FlatCheck.Wpf
             }
             catch (Exception e)
             {
-                SaveError = "Nu am putut salva raportul:\n" + Describe(e);
+                SaveError = T("Could not save the report:\n", "Nu am putut salva raportul:\n") + Describe(e);
             }
         }
 

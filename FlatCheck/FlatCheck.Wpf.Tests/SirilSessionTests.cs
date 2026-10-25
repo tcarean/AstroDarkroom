@@ -184,7 +184,7 @@ public class SirilSessionTests
         using var ws = new TempWorkspace();
         var s = Session(ws);
 
-        Assert.Equal(Path.Combine(ws.Dir, "Rezultat testare.txt"), s.ResultTextPath);
+        Assert.Equal(Path.Combine(ws.Dir, "Test result.txt"), s.ResultTextPath);
         Assert.Equal(Path.Combine(ws.Dir, "flatcheck.png"), s.ResidualPngPath);
     }
 
@@ -453,7 +453,7 @@ public class SirilSessionTests
         Assert.Equal(new[] { HistEqKind.Master, HistEqKind.Smoothed, HistEqKind.Frame, HistEqKind.Frame },
                      c.Select(x => x.Kind));
         Assert.Equal(s.SmoothedMasterPath, c[1].Path);
-        Assert.Equal("pp_flat_stacked_netezit.fit", Path.GetFileName(c[1].Path));
+        Assert.Equal("pp_flat_stacked_smoothed.fit", Path.GetFileName(c[1].Path));
     }
 
     /// <summary>
@@ -483,14 +483,14 @@ public class SirilSessionTests
         Assert.Equal(new[] { HistEqKind.Master, HistEqKind.Smoothed }, s.HistEqCandidates().Select(x => x.Kind));
     }
 
-    /// <summary>Without a master there is no "beside the master": a stray _netezit is not listed
+    /// <summary>Without a master there is no "beside the master": a stray _smoothed is not listed
     /// and does not throw.</summary>
     [Fact]
     public void WithoutAMasterASmoothedFileIsNotListed()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws, master: false);
-        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_stacked_netezit.fit"), "x");
+        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_stacked_smoothed.fit"), "x");
         File.WriteAllText(Path.Combine(s.FlatsDir, "a.NEF"), "x");
 
         Assert.Null(s.SmoothedMasterPath);

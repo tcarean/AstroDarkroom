@@ -22,10 +22,10 @@ a path of its own. What differs is only what each application does with the thre
 | | console | window |
 |---|---|---|
 | input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders; the Histogram tab lists the flat master and every raw or FITS in `flats/`; the Netezire tab takes the session's master and writes beside it. A folder without a master in either `masters/` or `process/` can be preprocessed from the window, through the user's own `siril-cli` |
-| report | written to stdout | shown as panels, saved as `Rezultat testare.txt` |
+| report | written to stdout | shown as panels, saved as `Test result.txt` |
 | map | written to `-o <path>` (`--ratio` writes a second, `-world`; `--smooth` a second, `-after`), always on the automatic scale | shown from memory (`--ratio` and the Netezire tab offer both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
-| smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_netezit.fit` beside the master, on a button, after asking about an existing file |
-| synthetic flat | written to `--synthetic <path>`, the lens from `--lens` text; `--against` compares two files | written to `pp_flat_stacked_sintetic.fit` beside the master, the lens from a searchable list, focal / f-stop / crop prefilled from the master's header and a raw in `flats/`; the comparison against the file follows the write by itself, and "Compara cu masterul" runs it alone on a file written earlier |
+| smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_smoothed.fit` beside the master, on a button, after asking about an existing file |
+| synthetic flat | written to `--synthetic <path>`, the lens from `--lens` text; `--against` compares two files | written to `pp_flat_stacked_synthetic.fit` beside the master, the lens from a searchable list, focal / f-stop / crop prefilled from the master's header and a raw in `flats/`; the comparison against the file follows the write by itself, and "Compara cu masterul" runs it alone on a file written earlier |
 | result | exit code | coloured verdict |
 | options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale`, `--lens`, `--raw`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the smoothing scale (three chips), the lens list, its three prefilled fields and the sensor-format chips behind the crop; the Structure tab's profile comparison takes the first raw in `flats/` by itself |
 
@@ -144,7 +144,7 @@ without a gate (the tests) runs at once.
 
 **The Histogram tab lists the flat master first, then the smoothed master when it exists,
 then `flats/`, and lets a click interrupt a click.** The list and its order, the master not
-preselected and not run at open, the smoothed master as a third kind of row (chip `NETEZIT`,
+preselected and not run at open, the smoothed master as a third kind of row (chip `SMOOTHED`, Romanian `NETEZIT`,
 `IsMaster` false) found by exact path, and the one wire from `SmoothTabViewModel.Saved` to
 `HistEq.FileWritten` are ADR 0033 and ADR 0036. What they do not say:
 
@@ -177,7 +177,7 @@ session's master: ADR 0036, with ADR 0033 for why the smoothed stack still match
 - Its guide (`SessionMessages.SmoothGuideRows`, mirrored in the README by hand) is the one
   guide that starts *expanded*: it is the button's precondition.
 - Three scale chips (`SmoothScaleViewModel`; ADR 0027 for the ladder) and the button; the
-  output is `pp_flat_stacked_netezit.fit` in the master's own folder
+  output is `pp_flat_stacked_smoothed.fit` in the master's own folder
   (`SirilSession.SmoothedMasterPath`, `SmoothedSuffix`).
 - The tab keeps the two rasters (removed component, smoothed flat's residual) behind a radio
   toggle, cached per (map, cap) like Ratio; `MapScaleViewModel` took a constructor argument

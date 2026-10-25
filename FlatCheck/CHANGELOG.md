@@ -13,7 +13,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   reports, the verdict words (`REDO` for `REFA`, `GOOD` for `BUN`...), the refusals and the
   error prefix follow it; the figures and the exit codes do not move. A value other than `en`
   or `ro` stops with an English error and exit 1 (R-102). The Romanian is the text as it was.
-  The window stays Romanian until its own stage.
+- The window speaks English or Romanian too, with the same `--lang` on its command line,
+  English by default (R-101): tabs, labels, guides, messages and reports. A value it does not
+  understand is said in an English message, and the window goes on in English.
 
 - The window's `Split` tab (R-091 to R-093, ADR 0054): divides the flats of a session into 2
   or 4 consecutive groups, builds a temp session per group (every folder the script enters,
@@ -37,6 +39,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - The second maps the console writes have English names in both languages (R-103): `--ratio`
   writes `<name>-world.png` (was `-lume`), `--smooth` writes `<name>-after.png` (was `-dupa`).
+- The files the window writes have English names in both languages (R-101): `Test result.txt`
+  (was `Rezultat testare.txt`), `Split result.txt`, `pp_flat_stacked_smoothed.fit` (was
+  `_netezit`), `pp_flat_stacked_synthetic.fit` (was `_sintetic`), the split's `part-<i>`
+  folders. Files with the old names are no longer recognised: rename them to keep them.
 - The window's Expo and End to end tabs share more of their sentences with the console (the
   review of 2026-10-25 after the documentation backfill's area 4): the "not a raw flat"
   reasons on the Expo card are now the console's lines, each one paragraph (`--expo are

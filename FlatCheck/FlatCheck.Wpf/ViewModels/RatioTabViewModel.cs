@@ -44,6 +44,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -249,7 +250,7 @@ namespace FlatCheck.Wpf
 
             if (!SirilSession.IsFlatMasterName(path))
             {
-                Fail("Fisierul ales nu e un master de flat", SessionMessages.NotAFlatMaster(path));
+                Fail(T("The file chosen is not a flat master", "Fisierul ales nu e un master de flat"), SessionMessages.NotAFlatMaster(path));
                 return;
             }
 
@@ -258,7 +259,7 @@ namespace FlatCheck.Wpf
             string other = isA ? FileB : FileA;
             if (string.Equals(path, other, System.StringComparison.OrdinalIgnoreCase))
             {
-                Fail("Aceleasi doua fisiere", SessionMessages.SameFileTwice());
+                Fail(T("The same file twice", "Aceleasi doua fisiere"), SessionMessages.SameFileTwice());
                 return;
             }
 
@@ -343,14 +344,14 @@ namespace FlatCheck.Wpf
             {
                 new MetricRow
                 {
-                    Label = "gradient extern / orientare",
+                    Label = T("external gradient / orientation", "gradient extern / orientare"),
                     Value = RatioReport.WorldValue(r),
                     Verdict = r.WorldLabel,          // informative; the note says it does not vote
                     Note = RatioReport.WorldNote(),
                 },
                 new MetricRow
                 {
-                    Label = "imprastiere colturi",
+                    Label = T("corner spread", "imprastiere colturi"),
                     Value = StructureRows.Pct(r.WorldCornerPct),
                     Note = RatioReport.WorldCornerNote(),
                 },

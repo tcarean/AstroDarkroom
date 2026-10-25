@@ -248,8 +248,8 @@ public class SplitTabTests
         Assert.Equal(2, seen.Count);
 
         string temp = Path.Combine(ws.Dir, "temp");
-        Assert.Equal(Path.Combine(temp, "parte-1"), seen[0].Folder);
-        Assert.Equal(Path.Combine(temp, "parte-2"), seen[1].Folder);
+        Assert.Equal(Path.Combine(temp, "part-1"), seen[0].Folder);
+        Assert.Equal(Path.Combine(temp, "part-2"), seen[1].Folder);
         Assert.All(seen, s => Assert.Equal(new[] { "bias_01.NEF", "bias_02.NEF", "bias_03.NEF" }, s.Biases));
         Assert.All(seen, s => Assert.Equal(new[] { "light_01.NEF", "light_02.NEF" }, s.Lights));   // at most MaxLights, the first by name
         Assert.Equal(new[] { "DSC_0001.NEF", "DSC_0002.NEF" }, seen[0].Flats);
@@ -294,7 +294,7 @@ public class SplitTabTests
         Assert.False(vm.HasResult);
         Assert.Equal(2, seen.Count);
         string temp = Path.Combine(ws.Dir, "temp");
-        Assert.True(Directory.Exists(Path.Combine(temp, "parte-2")));
+        Assert.True(Directory.Exists(Path.Combine(temp, "part-2")));
         Assert.Contains(temp, vm.ErrorText);
         Assert.Contains("2", vm.ErrorText);
         Assert.NotNull(vm.Run);
@@ -313,8 +313,8 @@ public class SplitTabTests
         await vm.StartAsync();
 
         Assert.True(vm.HasError);
-        Assert.Contains(Path.Combine(ws.Dir, "temp", "parte-1"), vm.ErrorText);
-        Assert.True(Directory.Exists(Path.Combine(ws.Dir, "temp", "parte-1")));
+        Assert.Contains(Path.Combine(ws.Dir, "temp", "part-1"), vm.ErrorText);
+        Assert.True(Directory.Exists(Path.Combine(ws.Dir, "temp", "part-1")));
     }
 
     [Fact]

@@ -170,3 +170,17 @@ ThirdParty and the split-mosaic labels becomes a pair:
   For stage 2: `LensChoice.Calibration` is built at catalog load with `SensorFormats.LabelOf`,
   so "unusual format" is fixed in the language of the load; `SplitTabViewModel` compares a
   cell's value with its verdict key, and the Structure tab shows `DepthScaleRows().Band` keys.
+
+## Stage 2 (the window), recorded at the end of the stage
+
+- **Done as planned:** `{l:T En, Ro}` in the XAML (`TExtension`, 111 labels), `SessionMessages`
+  and the view-models as `T(en, ro)` pairs, the window's files renamed, `App` reading `--lang`.
+- **Deviation:** the language is read in `App`'s constructor, not in `OnStartup` as planned:
+  App.xaml's resources (the theme, which carries two texts) load between the two.
+- **Added:** `VerdictToWordConverter`, because the pills bound the verdict key both to their
+  colour and to their text; the Histogram views got a `Key` beside their label.
+- **Test changes, all expected file names:** `_netezit` -> `_smoothed`, `_sintetic` ->
+  `_synthetic`, `Rezultat testare.txt` -> `Test result.txt`, `parte-` -> `part-` in five window
+  test files. The `NETEZIT` chip stays asserted: the tests run in Romanian.
+- **Not re-validated:** stage 2 touched no numeric code (`Metrics.cs`, `Stats.cs`, `Analysis/`,
+  `Report/`); stage 1's `/validate` (40/40) stands.

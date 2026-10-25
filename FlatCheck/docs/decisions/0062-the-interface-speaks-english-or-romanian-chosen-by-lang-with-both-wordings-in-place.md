@@ -71,6 +71,14 @@ ImageVisualCompare made the same request into one `UiText` table (its ADR 0038) 
 
 ## Consequences
 
+(Restated 2026-10-25: the window's stage is done. `App`'s constructor reads `--lang` before the
+resources and the first view load; a value it does not understand is said in an English message
+once the window is up, and the window goes on in English (the owner's decision 4). A XAML label
+is a `{l:T En='...', Ro='...'}` pair (`TExtension`); a verdict pill's text goes through
+`VerdictToWordConverter` while its colour keeps the key. The window's files are named
+`Test result.txt`, `Split result.txt`, `pp_flat_stacked_smoothed.fit`, `pp_flat_stacked_synthetic.fit`
+and `part-<i>` in both languages.)
+
 - A new text is a `T(english, romanian)` pair, never a single literal; a printed verdict goes
   through `VerdictWords.Of`.
 - The English output is pinned by `Golden/en_*.txt`, one per main scenario; for those and for

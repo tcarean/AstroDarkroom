@@ -21,8 +21,14 @@ Vezi [„Aplicația cu ferestre"](#aplicația-cu-ferestre).
 Consola vorbește **engleză sau română**: engleză implicit, română cu `--lang ro` (sau
 `--lang=ro`), oriunde pe linia de comandă. Limba schimbă doar cuvintele — cifrele, verdictul
 din spatele lor, codul de ieșire și numele fișierelor scrise sunt aceleași în ambele.
-Exemplele de ieșire din acest fișier sunt cele românești, adică cu `--lang ro`. Fereastra e
-deocamdată numai în română.
+Exemplele de ieșire din acest fișier sunt cele românești, adică cu `--lang ro`. Fereastra
+primește același `--lang` (`FlatCheck.Wpf.exe <folder> --lang ro`) și e tradusă toată: taburi,
+butoane, ghiduri, mesaje și rapoarte. Numele etichetelor și ale taburilor din acest fișier sunt
+cele românești; în engleză tabul Structura e `Structure`, Expunere `Exposure`, Netezire
+`Smoothing`, Sintetic `Synthetic`. Fișierele pe care le scrie fereastra au nume englezești în
+ambele limbi (`Test result.txt`, `Split result.txt`, `pp_flat_stacked_smoothed.fit`,
+`pp_flat_stacked_synthetic.fit`); cele scrise de versiunile dinainte, cu nume românești
+(`_netezit`, `_sintetic`), nu mai sunt recunoscute — redenumește-le dacă le vrei înapoi.
 
 `flatcheck.py` este prototipul Python din care a fost portat, **înghețat la 2.2.0** din
 2026-09-26 și neîntreținut. Cifrele pe care le-a confirmat sunt fixate ca golden-uri de
@@ -445,7 +451,7 @@ fel; ce se vede acolo e ce a rămas după stivuire.
 ### 6. Netezire — `--smooth`
 
 ```bash
-flatcheck process/pp_flat_stacked.fit --smooth process/pp_flat_stacked_netezit.fit
+flatcheck process/pp_flat_stacked.fit --smooth process/pp_flat_stacked_smoothed.fit
 flatcheck process/pp_flat_stacked.fit --smooth netezit.fit --scale 150
 ```
 
@@ -550,8 +556,8 @@ n-au voie să se miște.
 
 ```bash
 flatcheck --lenses --lens "Tokina 11-20"                         # ce obiective au profil
-flatcheck process/pp_flat_stacked.fit --synthetic process/pp_flat_stacked_sintetic.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
-flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_sintetic.fit   # cu cât diferă masterul de model
+flatcheck process/pp_flat_stacked.fit --synthetic process/pp_flat_stacked_synthetic.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
+flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_synthetic.fit   # cu cât diferă masterul de model
 ```
 
 Nu e un test și nu dă verdict. Scrie **un flat radial din profilul de vignetare publicat
@@ -1077,8 +1083,8 @@ călătoresc garantat cu programul.
 | **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
 | **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
 | **Histogram** | modul 5 pe masterul sesiunii, pe flat-ul netezit de lângă el (când există) sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
-| **Netezire** | modul 6 pe masterul sesiunii; scrie `pp_flat_stacked_netezit.fit` lângă el | la buton, niciodată singur — scrie un fișier |
-| **Sintetic** | modul 7: alege obiectivul din profilele Adobe de pe disc și din baza lensfun de lângă program, scrie `pp_flat_stacked_sintetic.fit` lângă master și îl compară cu masterul (`--against`) | la buton; doar preumplerea rulează singură |
+| **Netezire** | modul 6 pe masterul sesiunii; scrie `pp_flat_stacked_smoothed.fit` lângă el | la buton, niciodată singur — scrie un fișier |
+| **Sintetic** | modul 7: alege obiectivul din profilele Adobe de pe disc și din baza lensfun de lângă program, scrie `pp_flat_stacked_synthetic.fit` lângă master și îl compară cu masterul (`--against`) | la buton; doar preumplerea rulează singură |
 | **Split** | împarte flat-urile în 2 sau 4 grupuri, rulează scriptul Siril pe fiecare într-o sesiune temporară și pune masterele grupurilor lângă masterul întreg: cele cinci teste, vignetarea față de profil, hărțile una lângă alta; scrie `Rezultat split.txt` și `flatcheck-split.png` în folderul sesiunii | la buton, niciodată singur — copiază gigaocteți și rulează Siril de N ori |
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
@@ -1094,7 +1100,7 @@ părți scrise sub ea. Fără raw, cardul spune de ce nu s-a putut compara și r
 simplu. Salvează în folderul
 ales:
 
-- **`Rezultat testare.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
+- **`Test result.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
   raportul, linia hărții;
 - `flatcheck.png` — harta pe scara automată, aceiași octeți pe care i-ar scrie consola.
 
@@ -1186,7 +1192,7 @@ flat, și se strânge spre saturație. Pe vederea din previzualizare **nu exist�
 sau pe un raw fără previzualizare decodabilă.
 
 **Histogram** listează în stânga **masterul pe prima poziție**, marcat `MASTER`; sub el,
-**când există, `pp_flat_stacked_netezit.fit`**, marcat `NETEZIT` — fișierul scris de tabul
+**când există, `pp_flat_stacked_smoothed.fit`**, marcat `NETEZIT` — fișierul scris de tabul
 Netezire, exact pe calea pe care o scrie acela, nu orice stivă din folder; și apoi cadrele
 din `flats/` — raw de aparat **și** FITS, fiindcă pentru egalizare un flat trecut prin
 Conversion e la fel de bun ca NEF-ul. Un click egalizează fișierul; alt click egalizează
@@ -1321,7 +1327,7 @@ aceeași comparație separat, pentru un fișier sintetic scris altă dată. Fiș
 cadre din `flats/` trebuie să se împartă exact, altfel butonul spune de ce nu), alegi
 scriptul Siril din aceeași listă ca pe cardul de problemă (`OSC_Preprocessing_WithoutDark.ssf`
 propus) și apeși „Start Split". Pentru fiecare parte se construiește o sesiune temporară în
-`%TEMP%\FlatCheck\split-<data-ora>\parte-<i>\`: fiecare folder în care intră scriptul
+`%TEMP%\FlatCheck\split-<data-ora>\part-<i>\`: fiecare folder în care intră scriptul
 (`biases/`, `darks/`) întreg — niciodată `process/` sau `masters/`, care sunt ce scrie
 Siril — **cel mult două** cadre din `lights/` (primele după nume — atât cât să meargă
 scriptul până la capăt; lights-urile nu contează pentru masterul de flat) și felia ei de
@@ -1343,14 +1349,14 @@ profil). Profilul de referință e **cel mai apropiat profil al întregului,
 același pe toate coloanele** — „cel mai apropiat" se alege pe fiecare master în parte, iar pe
 prima sesiune reală partea 1 și întregul aleseseră profile diferite; un tabel cu altă
 referință pe coloană n-ar compara nimic. Sub tabel, hărțile reziduale una lângă alta, pe
-scară comutabilă. Se salvează în folderul sesiunii `Rezultat split.txt` (bannerul de versiune,
+scară comutabilă. Se salvează în folderul sesiunii `Split result.txt` (bannerul de versiune,
 data și ora, tabelul, ce înseamnă) și `flatcheck-split.png` — părțile de la stânga la
 dreapta, apoi întregul, **pe o singură scară de culoare** (cea automată peste toate
 hărțile deodată), fiecare cu eticheta ei și cu versiunea, data și capetele scării pe rândul
 de titlu, desenate cu un font bitmap propriu, fără vreo dependență.
 
 Sesiunea originală e **doar citită**: nimic din ea nu se mută sau se șterge; se scriu doar
-cele două fișiere de mai sus, suprascrise fără întrebare, ca `Rezultat testare.txt`.
+cele două fișiere de mai sus, suprascrise fără întrebare, ca `Test result.txt`.
 Folderul temporar se șterge după analiză și la „Oprește" (și când alegi alt folder, sau
 închizi fereastra în timpul rulării — te întreabă, oprește Siril, șterge, apoi se închide);
 după un eșec (Siril iese cu cod nenul, sau scriptul nu lasă master) rămâne, cu calea pe

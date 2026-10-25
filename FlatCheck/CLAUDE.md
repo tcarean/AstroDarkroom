@@ -94,8 +94,9 @@ a kit rule names it.
   everything the model reads or writes about the process: docs, tests of invariants, scripts,
   commits, CHANGELOG. What the user sees is in English and Romanian, chosen by `--lang`
   (English by default): every text a `T("english", "romana")` pair where it is composed, the
-  Romanian without diacritics, a printed verdict through `VerdictWords.Of`; the window is
-  Romanian only until its stage (R-101). `README.md` stays Romanian. Every comment is English,
+  Romanian without diacritics, a printed verdict through `VerdictWords.Of` (in XAML, a label
+  is `{l:T En='...', Ro='...'}` and a pill's text goes through `VerdictToWord`). The files
+  written have English names in both. `README.md` stays Romanian. Every comment is English,
   in C#, XAML, csproj and the tests; output quoted in a comment stays as the user sees it.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in

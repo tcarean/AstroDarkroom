@@ -96,7 +96,7 @@ public class HistEqTabTests
         Assert.False(smoothed.IsMaster);
         Assert.True(smoothed.IsSmoothed);
         Assert.True(smoothed.HasTag);
-        Assert.Equal("pp_flat_stacked_netezit.fit", smoothed.Name);
+        Assert.Equal("pp_flat_stacked_smoothed.fit", smoothed.Name);
         Assert.Equal("process/", smoothed.Where);
         Assert.Equal(f.Session.SmoothedMasterPath, smoothed.Path);
         Assert.Equal(new[] { false, true, false }, vm.Files.Select(r => r.ClosesGroup));
@@ -193,7 +193,7 @@ public class HistEqTabTests
 
         Assert.True(vm.HasResult);
         Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
-        Assert.Contains("pp_flat_stacked_netezit.fit", vm.Report);
+        Assert.Contains("pp_flat_stacked_smoothed.fit", vm.Report);
 
         vm.Selected = vm.Files[0];
         await vm.RecomputeAsync();
@@ -415,7 +415,7 @@ public class HistEqTabTests
         ImageSource picture = vm.Image!;
 
         vm.FileWritten(f.Session.FlatMasterPath);
-        vm.FileWritten(Path.Combine(f.ProcessDir, "altceva_netezit.fit"));
+        vm.FileWritten(Path.Combine(f.ProcessDir, "altceva_smoothed.fit"));
         vm.FileWritten(null!);
         await vm.Pending;
 
