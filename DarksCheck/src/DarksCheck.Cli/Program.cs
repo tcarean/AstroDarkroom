@@ -20,8 +20,15 @@ using DarksCheck.Core;
 
 namespace DarksCheck.Cli;
 
+/// <summary>
+/// The entry point of <c>darkscheck.exe</c>: reads the options, calls the core's runs and
+/// writers, and turns the outcome into the exit code. It computes nothing itself.
+/// </summary>
 internal static class Program
 {
+    /// <summary>Runs the console on the process's own output and error streams.</summary>
+    /// <param name="args">The command-line arguments.</param>
+    /// <returns>The exit code: 0 on a clean run or for --help, 1 otherwise.</returns>
     private static int Main(string[] args) => Run(args, Console.Out, Console.Error);
 
     /// <summary>
@@ -29,6 +36,13 @@ internal static class Program
     /// text. Exit 0 on a clean run and for --help, 1 on an error or when a frame could not be
     /// read (R-002, R-003, R-004, R-025).
     /// </summary>
+    /// <param name="args">The command-line arguments; not null.</param>
+    /// <param name="stdout">Where the banner, the usage and the report go; not null.</param>
+    /// <param name="stderr">Where the progress line and the error messages go; not null.</param>
+    /// <returns>
+    /// 0 when every frame was read (or for --help); 1 on a bad argument, on an error the run
+    /// reported, or when a frame could not be read.
+    /// </returns>
     internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
     {
         ArgumentNullException.ThrowIfNull(args);
@@ -62,7 +76,8 @@ internal static class Program
                 return inv.HasErrors ? 1 : 0;
             }
 
-            // a bad --against or --out is refused before the minutes of decoding, not after (R-026, R-063)
+            // a bad --against or --out is refused before the minutes of decoding, not after (R-026,
+            // R-063)
             string? partnerRoot = o.Against is null ? null : SessionFolder.Open(o.Against).Root;
             if (o.Out is not null)
             {
@@ -99,12 +114,18 @@ internal static class Program
         }
     }
 
-    /// <summary>Progress written as it happens, on the calling thread, serialised by a lock.</summary>
+    /// <summary>
+    /// Progress written as it happens, on the calling thread, serialised by a lock.
+    /// </summary>
+    /// <param name="stderr">The stream the progress line is rewritten on.</param>
     private sealed class ConsoleProgress(TextWriter stderr) : IProgress<RunProgress>
     {
         private readonly object _lock = new();
         private bool _shown;
 
+        /// <summary>Rewrites the progress line with the phase and its count.</summary>
+        /// <param name="value">The phase and how many of its items are done out of how
+        /// many.</param>
         public void Report(RunProgress value)
         {
             lock (_lock)
@@ -114,7 +135,10 @@ internal static class Program
             }
         }
 
-        /// <summary>Wipes the progress line, when one was written, so the report or an error starts on a clean line.</summary>
+        /// <summary>
+        /// Wipes the progress line, when one was written, so the report or an error starts on a
+        /// clean line.
+        /// </summary>
         public void Clear()
         {
             lock (_lock)
@@ -128,6 +152,11 @@ internal static class Program
         }
     }
 
+    /// <summary>
+    /// Writes the Romanian help text: the usage lines, what each option does, the exit codes and
+    /// the warranty lines.
+    /// </summary>
+    /// <param name="w">The writer the text goes to.</param>
     private static void WriteUsage(TextWriter w)
     {
         w.WriteLine();

@@ -21,6 +21,14 @@ namespace DarksCheck.Core;
 /// A third-party component the tool links: its name, its role here, the licence it is taken
 /// under, whose it is, where its project lives, and which NuGet packages bring it.
 /// </summary>
+/// <param name="Name">The component's name, as the "Despre" window lists it.</param>
+/// <param name="Role">What it does in the tool, in Romanian (the window shows it).</param>
+/// <param name="Licence">The licence it is taken under, as the window shows it (Romanian words when
+/// a choice is named).</param>
+/// <param name="Copyright">Its copyright line, as its own files state it.</param>
+/// <param name="Url">The address of its project.</param>
+/// <param name="Packages">The NuGet package IDs that bring it; ThirdPartyTests matches them to the
+/// Core csproj.</param>
 internal sealed record ThirdPartyComponent(
     string Name,
     string Role,

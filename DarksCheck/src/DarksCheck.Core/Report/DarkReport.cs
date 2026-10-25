@@ -28,6 +28,13 @@ namespace DarksCheck.Core;
 /// </summary>
 internal static class DarkReport
 {
+    /// <summary>
+    /// Prints the whole darks report for the console: the inventory's header, the darks' header
+    /// line and rows, every section, the frames table, the lights table when there are lights, and
+    /// the ADU scale's explanation.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <param name="w">The writer the report goes to; not null.</param>
     internal static void Write(DarkSeriesResult r, TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -84,11 +91,22 @@ internal static class DarkReport
         ScaleReport.Write(r, w);
     }
 
+    /// <summary>
+    /// Prints one row as <c>label : value</c>, the label padded to 19 characters.
+    /// </summary>
+    /// <param name="w">The writer.</param>
+    /// <param name="row">The row to print.</param>
     private static void WriteRow(TextWriter w, ReportRow row) => w.WriteLine($"    {row.Label,-19}: {row.Value}");
 
+    /// <summary>Cuts a file name to the 20 characters of the tables' name column.</summary>
+    /// <param name="name">The file name.</param>
+    /// <returns>The name, at most 20 characters long.</returns>
     private static string Trim20(string name) => name.Length > 20 ? name[..20] : name;
 
     /// <summary>The `=== DARK-URI ... ===` line: frames decoded, size, scale and CFA.</summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The line, in Romanian, with the partner's folder named when its darks stand in for
+    /// the session's.</returns>
     internal static string HeaderLine(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -97,7 +115,12 @@ internal static class DarkReport
         return $"=== DARK-URI{whose}: {(d.Used == 1 ? "1 cadru decodat" : d.Used.ToString(CultureInfo.InvariantCulture) + " cadre decodate")} din {d.Frames.Count}, {d.Width} x {d.Height} px, scara {F(d.Black, 0)} .. {F(d.White, 0)} ADU ({d.ScaleSource}), CFA {d.CfaLetters ?? "necunoscut"} ===";
     }
 
-    /// <summary>The rows under the header line: the normalisation, the quantisation, the biases' warnings.</summary>
+    /// <summary>
+    /// The rows under the header line: the normalisation, the quantisation, the biases' warnings.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The normalisation and quantisation rows, then a row for each problem with the
+    /// biases.</returns>
     internal static IReadOnlyList<ReportRow> HeaderRows(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -128,6 +151,9 @@ internal static class DarkReport
     }
 
     /// <summary>Checks 2 to 9 and INDEX, each as its titled rows, in the console's order.</summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The nine sections (checks 2 to 9, then INDEX), titled as the console prints
+    /// them.</returns>
     internal static IReadOnlyList<ReportSection> Sections(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -204,6 +230,14 @@ internal static class DarkReport
         ];
     }
 
+    /// <summary>
+    /// The rows of check 9 (R-050 onwards): the lights' warnings, the persistent hot pixels, their
+    /// overlap with the master in both directions, the misses, the amplitude and the verdict; a
+    /// single unmeasured verdict row without lights.
+    /// </summary>
+    /// <param name="r">The run's result.</param>
+    /// <param name="eq">The unit word of the figures, "ADU" or "ADU-eq".</param>
+    /// <returns>The rows, in the console's order.</returns>
     private static List<ReportRow> LightsRows(DarkSeriesResult r, string eq)
     {
         if (r.Lights is not LightsAnalysis l)
@@ -239,6 +273,13 @@ internal static class DarkReport
         return rows;
     }
 
+    /// <summary>
+    /// The rows of the INDEX block (R-060 to R-064): the darks' index and label, the lights'
+    /// equivalent index, and, with a partner, its index, the darks over it, the shared hot pixels
+    /// and the verdict against it.
+    /// </summary>
+    /// <param name="r">The run's result.</param>
+    /// <returns>The rows, in the console's order.</returns>
     private static List<ReportRow> IndexRows(DarkSeriesResult r)
     {
         DarkSeriesAnalysis d = r.Darks;
@@ -274,7 +315,8 @@ internal static class DarkReport
             rows.Add(new("pixeli comuni", $"{p.OwnHot50InPartner50} din {p.OwnHot50} ai sesiunii peste {lvl} ADU-eq sunt peste {lvl} si la partener{(p.OwnHot50 > 0 ? $" ({F(100.0 * p.OwnHot50InPartner50 / p.OwnHot50, 0)} %)" : "")}; {p.PartnerHot50InOwn20} din {p.PartnerHot50} ai partenerului peste {lvl} sunt peste {F(Th.HotAdu, 0)} in sesiune{(p.PartnerHot50 > 0 ? $" ({F(100.0 * p.PartnerHot50InOwn20 / p.PartnerHot50, 0)} %)" : "")}"));
             if (p.LightsOverPartner.Verdict != MatchVerdict.Unmeasured)
             {
-                // lights over the partner, through the session's darks: (lights / dark) x (dark / partner)
+                // lights over the partner, through the session's darks: (lights / dark) x (dark /
+                // partner)
                 MatchFigures chained = p.LightsOverPartner;
                 rows.Add(new("lights / partener", $"{F(chained.Ratio, 2)} (prin dark-urile sesiunii), adica lights-urile sunt cu {Degrees(chained)} fata de partener"));
                 rows.Add(new("verdict partener", MatchText(chained, "partenerul", "lights-urile")));
@@ -288,14 +330,24 @@ internal static class DarkReport
         return rows;
     }
 
-    /// <summary>The frames table's header line: the column names, then <see cref="FrameTableNote"/>.</summary>
+    /// <summary>
+    /// The frames table's header line: the column names, then <see cref="FrameTableNote"/>.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The header line, in Romanian.</returns>
     internal static string FrameTableHeader(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
         return $"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}";
     }
 
-    /// <summary>One line of the frames table as the console prints it: the cells in their columns, the note of a frame off the plateau after the last one; a skipped or failed frame prints its reason instead of cells.</summary>
+    /// <summary>
+    /// One line of the frames table as the console prints it: the cells in their columns, the note
+    /// of a frame off the plateau after the last one; a skipped or failed frame prints its reason
+    /// instead of cells.
+    /// </summary>
+    /// <param name="f">The formatted row; not null.</param>
+    /// <returns>The line, without a line break.</returns>
     internal static string FrameLine(DarkTableRow f)
     {
         ArgumentNullException.ThrowIfNull(f);
@@ -315,6 +367,8 @@ internal static class DarkReport
     }
 
     /// <summary>The unit note of the frames table: the plane and what the columns mean.</summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The note in square brackets, in Romanian.</returns>
     internal static string FrameTableNote(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -325,10 +379,18 @@ internal static class DarkReport
         return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste {F(Th.OffPlateauCelsius, 1)} grade de platou (verificarea 3); lumina = {eq} peste dreapta mediei pe incalzire; {side}]";
     }
 
-    /// <summary>The hover hint of the frames table's `platou` column (R-071): what the figure is and when a frame is one to discard.</summary>
+    /// <summary>
+    /// The hover hint of the frames table's `platou` column (R-071): what the figure is and when a
+    /// frame is one to discard.
+    /// </summary>
     internal static readonly string PlateauColumnTip = $"gradele cadrului fata de platoul seriei, citite din pixelii fierbinti; un cadru la peste {F(Th.OffPlateauCelsius, 1)} grade de platou e de aruncat si are motivul pe randul de sub celule (verificarea 3)";
 
-    /// <summary>The sentence under the window's warming chart (R-071): what the points are, and with a fit the plateau and the band outside which a frame is one to discard.</summary>
+    /// <summary>
+    /// The sentence under the window's warming chart (R-071): what the points are, and with a fit
+    /// the plateau and the band outside which a frame is one to discard.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The sentence, in Romanian.</returns>
     internal static string WarmingChartNote(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -339,7 +401,12 @@ internal static class DarkReport
             : $"{what} Sub {Th.WarmingFitMinFrames} cadre cu pixeli fierbinti nu se potriveste un platou.";
     }
 
-    /// <summary>One row per dark, the cells formatted as the console prints them, on the reference plane.</summary>
+    /// <summary>
+    /// One row per dark, the cells formatted as the console prints them, on the reference plane.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>One row per dark in series order; a skipped or failed frame has its reason and
+    /// empty cells.</returns>
     internal static IReadOnlyList<DarkTableRow> FrameRows(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -385,7 +452,11 @@ internal static class DarkReport
         return rows;
     }
 
-    /// <summary>The lights table's header line: the column names, then <see cref="LightTableNote"/>.</summary>
+    /// <summary>
+    /// The lights table's header line: the column names, then <see cref="LightTableNote"/>.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The header line, in Romanian.</returns>
     internal static string LightTableHeader(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -393,13 +464,21 @@ internal static class DarkReport
     }
 
     /// <summary>The unit note of the lights table: the plane and what the columns mean.</summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The note in square brackets, in Romanian.</returns>
     internal static string LightTableNote(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
         return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; cer = ADU peste negru; sigma = a excesului local, scara detectorului; amplit. = lights / dark la pixelii fierbinti ai masterului]";
     }
 
-    /// <summary>One row per light, the cells formatted as the console prints them, on the reference plane; empty without lights.</summary>
+    /// <summary>
+    /// One row per light, the cells formatted as the console prints them, on the reference plane;
+    /// empty without lights.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>One row per light in file order; a skipped or failed light has its reason and empty
+    /// cells.</returns>
     internal static IReadOnlyList<LightTableRow> LightRows(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -430,10 +509,22 @@ internal static class DarkReport
         return rows;
     }
 
-    /// <summary>"+2.3 grade", or "0.0 grade" when the ratio is not positive (no degrees from a ratio of 0).</summary>
+    /// <summary>
+    /// "+2.3 grade", or "0.0 grade" when the ratio is not positive (no degrees from a ratio of 0).
+    /// </summary>
+    /// <param name="m">The match, whose temperature offset is printed.</param>
+    /// <returns>The signed degrees with one decimal and the word "grade".</returns>
     private static string Degrees(MatchFigures m) => double.IsNaN(m.DeltaCelsius) ? "0.0 grade" : Signed(m.DeltaCelsius, 1) + " grade";
 
-    /// <summary>The words of a match verdict, <paramref name="master"/> being "dark-ul" or "partenerul" and <paramref name="set"/> the set measured against it ("lights-urile", "dark-urile sesiunii"): what Siril can do with it.</summary>
+    /// <summary>
+    /// The words of a match verdict, <paramref name="master"/> being "dark-ul" or "partenerul" and
+    /// <paramref name="set"/> the set measured against it ("lights-urile", "dark-urile sesiunii"):
+    /// what Siril can do with it.
+    /// </summary>
+    /// <param name="m">The match; not null.</param>
+    /// <param name="master">The word for the master: "dark-ul" or "partenerul".</param>
+    /// <param name="set">The words for the set measured against the master.</param>
+    /// <returns>The verdict's words, opening with OK, ATENTIE or NEMASURAT.</returns>
     internal static string MatchText(MatchFigures m, string master, string set)
     {
         ArgumentNullException.ThrowIfNull(m);
@@ -456,6 +547,9 @@ internal static class DarkReport
         };
     }
 
+    /// <summary>The report's word for a verdict.</summary>
+    /// <param name="v">The verdict.</param>
+    /// <returns>"OK", "ATENTIE", or "NEMASURAT" for an unmeasured one.</returns>
     internal static string VerdictWord(Verdict v) => v switch
     {
         Verdict.Ok => "OK",
@@ -463,9 +557,20 @@ internal static class DarkReport
         _ => "NEMASURAT",
     };
 
-    /// <summary>"ADU" when the normalisation is 1, "ADU-eq" otherwise: the unit the figures carry.</summary>
+    /// <summary>
+    /// "ADU" when the normalisation is 1, "ADU-eq" otherwise: the unit the figures carry.
+    /// </summary>
+    /// <param name="d">The dark series, whose normalisation factor decides.</param>
+    /// <returns>"ADU" or "ADU-eq".</returns>
     internal static string Eq(DarkSeriesAnalysis d) => Math.Abs(d.Norm - 1) < 1e-9 ? "ADU" : "ADU-eq";
 
+    /// <summary>
+    /// The value of the <c>normalizare</c> row: the settings of the first readable dark, the
+    /// factor to the reference ISO and exposure, and the gain per ISO stop when it is not the
+    /// default 2.
+    /// </summary>
+    /// <param name="d">The dark series; not null.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     internal static string Normalisation(DarkSeriesAnalysis d)
     {
         ArgumentNullException.ThrowIfNull(d);
@@ -479,6 +584,9 @@ internal static class DarkReport
             : $"{from} -> x{F(d.Norm, 2)} fata de ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s (1 ADU-eq = {F(d.Norm, 2)} ADU){gain}";
     }
 
+    /// <summary>The Romanian name of a map region (a corner or an edge).</summary>
+    /// <param name="r">The region.</param>
+    /// <returns>The name, as "stanga-sus" or "jos".</returns>
     internal static string RegionName(MapRegion r) => r switch
     {
         MapRegion.TopLeft => "stanga-sus",
@@ -491,10 +599,26 @@ internal static class DarkReport
         _ => "dreapta",
     };
 
+    /// <summary>
+    /// The centre, the four corners and the four edges of a binned map, each divided by the
+    /// normalisation.
+    /// </summary>
+    /// <param name="r">The map's region values, in raw ADU above the black.</param>
+    /// <param name="n">The normalisation factor the values are divided by; 1 for raw ADU.</param>
+    /// <returns>The line, in Romanian.</returns>
     private static string RegionsLine(Regions r, double n) =>
         $"centru {F(r.Centre / n, 2)}, colturi {F(r.TopLeft / n, 2)} / {F(r.TopRight / n, 2)} / {F(r.BottomLeft / n, 2)} / {F(r.BottomRight / n, 2)} (SS / DS / SJ / DJ), margini sus {F(r.Top / n, 2)} jos {F(r.Bottom / n, 2)} stanga {F(r.Left / n, 2)} dreapta {F(r.Right / n, 2)}";
 
-    /// <summary>Check 2's verdict row: the words of <see cref="Leak"/>, with the constant light and the master's noise marked bold when the verdict names them (ADR 0016).</summary>
+    /// <summary>
+    /// Check 2's verdict row: the words of <see cref="Leak"/>, with the constant light and the
+    /// master's noise marked bold when the verdict names them (ADR 0016).
+    /// </summary>
+    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="eq">The unit word of the figures.</param>
+    /// <param name="norm">The normalisation factor, which turns the constant light back into raw
+    /// ADU.</param>
+    /// <param name="masterNoise">The dark master's noise in raw ADU.</param>
+    /// <returns>The row, with the parts to mark bold, or none.</returns>
     private static ReportRow LeakVerdictRow(LeakVerdict l, string eq, double norm, double masterNoise)
     {
         string against = "";
@@ -509,7 +633,15 @@ internal static class DarkReport
         return new("verdict", Leak(l, eq, against), bold.Count == 0 ? null : bold);
     }
 
-    /// <summary>The verdict's words; <paramref name="against"/> is the constant light's ratio to the master's noise, already worded, or empty.</summary>
+    /// <summary>
+    /// The verdict's words; <paramref name="against"/> is the constant light's ratio to the
+    /// master's noise, already worded, or empty.
+    /// </summary>
+    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="eq">The unit word of the figures.</param>
+    /// <param name="against">The constant light set against the masters' noise, already worded, or
+    /// empty.</param>
+    /// <returns>The verdict's words, opening with OK, ATENTIE or NEMASURAT.</returns>
     private static string Leak(LeakVerdict l, string eq, string against)
     {
         string source = l.FromDarkMinusBias ? "pe dark - bias" : "pe masterul dark (fara bias)";
@@ -546,7 +678,19 @@ internal static class DarkReport
         return "ATENTIE: " + string.Join("; in plus ", parts);
     }
 
-    /// <summary>The row `lumina constanta` (R-029, ADR 0014): the four sides after the bias, or their constants without biases; a side over the threshold against the masters' noise, bold (ADR 0016).</summary>
+    /// <summary>
+    /// The row `lumina constanta` (R-029, ADR 0014): the four sides after the bias, or their
+    /// constants without biases; a side over the threshold against the masters' noise, bold
+    /// (ADR 0016).
+    /// </summary>
+    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="eq">The unit word of the figures.</param>
+    /// <param name="norm">The normalisation factor, which turns the light back into raw
+    /// ADU.</param>
+    /// <param name="masterNoise">The dark master's noise in raw ADU.</param>
+    /// <param name="stack">The lights' sky figures for the comparison with the stack, or null
+    /// without lights.</param>
+    /// <returns>The row; the side over the threshold and its comparison are bold.</returns>
     private static ReportRow SidesRow(LeakVerdict l, string eq, double norm, double masterNoise, StackNoise? stack)
     {
         const string label = "lumina constanta";
@@ -577,6 +721,9 @@ internal static class DarkReport
         return new(label, $"dupa bias, fata de centru: {sides} {eq}; peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea la {SideName(c.Side)}{tail}", [$"{Signed(c.LightAdu, 2)} (±{F(c.ErrorAdu, 2)})", .. bold]);
     }
 
+    /// <summary>The Romanian name of a side of the frame.</summary>
+    /// <param name="s">The side.</param>
+    /// <returns>"sus", "jos", "stanga" or "dreapta".</returns>
     internal static string SideName(MapSide s) => s switch
     {
         MapSide.Top => "sus",
@@ -585,7 +732,12 @@ internal static class DarkReport
         _ => "dreapta",
     };
 
-    /// <summary>The words of R-021's brighter case, from R-029's cause of the verdict region.</summary>
+    /// <summary>
+    /// The words of R-021's brighter case, from R-029's cause of the verdict region.
+    /// </summary>
+    /// <param name="l">Check 2's verdict; its split must be set for every cause but the
+    /// fallback.</param>
+    /// <returns>The words of the cause, in Romanian.</returns>
     private static string CauseWords(LeakVerdict l)
     {
         EdgeSplit? s = l.Split;
@@ -600,6 +752,9 @@ internal static class DarkReport
     }
 
     /// <summary>The lit frames with their excess, at most eight, then how many more.</summary>
+    /// <param name="fl">The per-frame light figures.</param>
+    /// <param name="sep">What goes between a frame's number and its excess.</param>
+    /// <returns>The list, as "3 +0.45, 7 +0.52 si inca 2".</returns>
     private static string LitList(FrameLight fl, string sep)
     {
         const int shown = 8;
@@ -613,7 +768,18 @@ internal static class DarkReport
         return string.Join(", ", parts) + (more > 0 ? $" si inca {more.ToString(CultureInfo.InvariantCulture)}" : "");
     }
 
-    /// <summary>The row `lumina pe cadre` (R-028); with lit frames, the largest excess against the masters' noise, both bold (ADR 0016).</summary>
+    /// <summary>
+    /// The row `lumina pe cadre` (R-028); with lit frames, the largest excess against the masters'
+    /// noise, both bold (ADR 0016).
+    /// </summary>
+    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="eq">The unit word of the figures.</param>
+    /// <param name="norm">The normalisation factor, which turns the excess back into raw
+    /// ADU.</param>
+    /// <param name="masterNoise">The dark master's noise in raw ADU.</param>
+    /// <param name="stack">The lights' sky figures for the comparison with the stack, or null
+    /// without lights.</param>
+    /// <returns>The row.</returns>
     private static ReportRow FrameLightRow(LeakVerdict l, string eq, double norm, double masterNoise, StackNoise? stack)
     {
         const string label = "lumina pe cadre";
@@ -634,7 +800,13 @@ internal static class DarkReport
         return new(label, $"{n} {(n == 1 ? "cadru" : "cadre")}: {LitList(fl, " ")} {eq} peste dreapta mediei pe incalzire (abaterea tipica {F(fl.ScaleAdu, 2)}){tail}", bold.Count == 0 ? null : [$"{Signed(max, 2)} {eq}", .. bold]);
     }
 
-    /// <summary>Why the split (or the sides, which need <paramref name="minFrames"/> frames left) is unmeasured, or null when it is measured (R-028, R-029).</summary>
+    /// <summary>
+    /// Why the split (or the sides, which need <paramref name="minFrames"/> frames left) is
+    /// unmeasured, or null when it is measured (R-028, R-029).
+    /// </summary>
+    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="minFrames">How many frames must be left once the lit ones are dropped.</param>
+    /// <returns>The NEMASURAT words, or null.</returns>
     private static string? SplitUnmeasured(LeakVerdict l, int minFrames)
     {
         if (l.Frames is not FrameLight fl)
@@ -655,7 +827,14 @@ internal static class DarkReport
         return null;
     }
 
-    /// <summary>The row `glow / constant` (R-029): the verdict region's split, with the raw ADU beside the equivalent when the two differ.</summary>
+    /// <summary>
+    /// The row `glow / constant` (R-029): the verdict region's split, with the raw ADU beside the
+    /// equivalent when the two differ.
+    /// </summary>
+    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="eq">The unit word of the figures.</param>
+    /// <param name="norm">The normalisation factor; when not 1 the raw ADU are added.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string SplitRow(LeakVerdict l, string eq, double norm)
     {
         if (SplitUnmeasured(l, 3) is string why)
@@ -674,6 +853,12 @@ internal static class DarkReport
             : $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)} {eq} (fara bias: lumina sau offset de citire){raw}";
     }
 
+    /// <summary>
+    /// The <c>amplitudine</c> row of check 3: the hot pixels' level in the first and the last frame
+    /// against the master.
+    /// </summary>
+    /// <param name="d">The dark series.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string Amplitude(DarkSeriesAnalysis d) =>
         double.IsNaN(d.Warming.FirstRatio)
             ? "NEMASURAT: prea putine cadre sau niciun pixel fierbinte"
@@ -681,7 +866,13 @@ internal static class DarkReport
 
     private static readonly string NoPlateau = $"NEMASURAT: sub {Th.WarmingFitMinFrames} cadre cu pixeli fierbinti";
 
-    /// <summary>The `platou` row of check 3: the plateau, the time constant, the master's and the last frame's distance to it; a flat series says so.</summary>
+    /// <summary>
+    /// The `platou` row of check 3: the plateau, the time constant, the master's and the last
+    /// frame's distance to it; a flat series says so.
+    /// </summary>
+    /// <param name="w">The series' warming fit.</param>
+    /// <param name="nz">The normalisation, which turns ratios into degrees.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string PlateauRow(Warming w, Normalisation nz)
     {
         if (!w.HasFit)
@@ -702,7 +893,12 @@ internal static class DarkReport
         return $"seria se apropie de un platou la {F(w.Plateau, 2)} din master ({tau}); masterul, mediana seriei, e {FromPlateau(w.PlateauCelsius)}; la ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou";
     }
 
-    /// <summary>The `de aruncat` row of check 3: the frames more than Th.OffPlateauCelsius from the plateau, the band's bounds, and where the master would sit without them.</summary>
+    /// <summary>
+    /// The `de aruncat` row of check 3: the frames more than Th.OffPlateauCelsius from the plateau,
+    /// the band's bounds, and where the master would sit without them.
+    /// </summary>
+    /// <param name="w">The series' warming fit.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string OffPlateauRow(Warming w)
     {
         if (!w.HasFit)
@@ -720,6 +916,13 @@ internal static class DarkReport
         return $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) la peste {deg} grade de platou (amplit. sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)}; platoul {F(w.Plateau, 2)}); {without}";
     }
 
+    /// <summary>
+    /// The verdict row of check 3: whether the series settled, and the frames outside the range
+    /// -opt corrects.
+    /// </summary>
+    /// <param name="v">Check 3's verdict.</param>
+    /// <param name="nz">The normalisation, whose doubling rule the words name.</param>
+    /// <returns>The verdict's words, opening with OK, ATENTIE or NEMASURAT.</returns>
     private static string Drift(DriftVerdict v, Normalisation nz)
     {
         Warming w = v.Warming;
@@ -762,10 +965,19 @@ internal static class DarkReport
         return "ATENTIE: " + string.Join("; ", parts);
     }
 
+    /// <summary>
+    /// A distance to the plateau in words: "la platou", or the degrees under or over it.
+    /// </summary>
+    /// <param name="degrees">The distance in degrees, negative under the plateau.</param>
+    /// <returns>The words, in Romanian.</returns>
     private static string FromPlateau(double degrees) =>
         Math.Abs(degrees) < 0.05 ? "la platou" : $"cu {F(Math.Abs(degrees), 1)} grade {(degrees < 0 ? "sub" : "peste")} platou";
 
-    /// <summary>Frame numbers as ranges: `1 .. 11`, `1 .. 3, 7`; a run of two prints both numbers.</summary>
+    /// <summary>
+    /// Frame numbers as ranges: `1 .. 11`, `1 .. 3, 7`; a run of two prints both numbers.
+    /// </summary>
+    /// <param name="frames">The frame numbers, ascending; not null.</param>
+    /// <returns>The ranges joined by ", "; empty for no frames.</returns>
     internal static string Ranges(IReadOnlyList<int> frames)
     {
         ArgumentNullException.ThrowIfNull(frames);
@@ -797,6 +1009,13 @@ internal static class DarkReport
         return string.Join(", ", parts);
     }
 
+    /// <summary>
+    /// The <c>sigma rezidual</c> row of check 4: each plane's smallest and largest
+    /// frame-minus-master sigma, with the median on the reference plane.
+    /// </summary>
+    /// <param name="d">The dark series.</param>
+    /// <param name="rp">The reference plane.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string ResidualRange(DarkSeriesAnalysis d, int rp)
     {
         if (d.Used < 2)
@@ -819,6 +1038,13 @@ internal static class DarkReport
         return parts.Count == 0 ? "NEMASURAT" : string.Join("; ", parts);
     }
 
+    /// <summary>
+    /// The <c>zgomot de citire</c> row of check 4: the biases' read noise per plane and the
+    /// temporal noise above it.
+    /// </summary>
+    /// <param name="r">The run's result.</param>
+    /// <param name="rp">The reference plane.</param>
+    /// <returns>The row's value, in Romanian; NEMASURAT without biases.</returns>
     private static string ReadNoise(DarkSeriesResult r, int rp)
     {
         if (r.Biases is not BiasAnalysis b)
@@ -831,11 +1057,20 @@ internal static class DarkReport
         return $"{planes} ADU (din {Math.Max(b.Used - 1, 0)} perechi de bias-uri consecutive){shot}";
     }
 
+    /// <summary>
+    /// The <c>benzi aleatoare</c> row of check 4: the random row banding, its ratio to the white
+    /// noise, and the columns' ratio.
+    /// </summary>
+    /// <param name="v">Check 4's verdict.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string Banding(NoiseVerdict v) =>
         double.IsNaN(v.RowBandingAdu)
             ? "NEMASURAT"
             : $"orizontale {F(v.RowBandingAdu, 3)} ADU rms pe rand (de {F(v.RowBandingRatio, 1)} ori zgomotul alb), verticale de {F(v.ColBandingRatio, 1)} ori";
 
+    /// <summary>The verdict row of check 4.</summary>
+    /// <param name="v">Check 4's verdict.</param>
+    /// <returns>The verdict's words, opening with OK, ATENTIE or NEMASURAT.</returns>
     private static string Noise(NoiseVerdict v) => v.Verdict switch
     {
         Verdict.Unmeasured => "NEMASURAT",
@@ -843,6 +1078,12 @@ internal static class DarkReport
         _ => $"ATENTIE: {v.OutlierFrames.Count} {(v.OutlierFrames.Count == 1 ? "cadru" : "cadre")} cu zgomot peste {F(Th.NoiseOutlierFactor, 1)} x mediana ({F(v.MedianSigma, 2)} ADU): {string.Join(", ", v.OutlierFrames.Select(i => i.ToString(CultureInfo.InvariantCulture)))}",
     };
 
+    /// <summary>
+    /// The <c>master peste nivel</c> row of check 5: how many master pixels lie above each hot
+    /// level, all planes together.
+    /// </summary>
+    /// <param name="d">The dark series.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string Levels(DarkSeriesAnalysis d)
     {
         List<string> parts = [];
@@ -855,12 +1096,30 @@ internal static class DarkReport
         return string.Join("; ", parts) + $"  [{Eq(d)} peste negru, mediana seriei, toate planurile]";
     }
 
+    /// <summary>How many master pixels of each plane lie above one hot level.</summary>
+    /// <param name="d">The dark series.</param>
+    /// <param name="level">The index of the level in <see cref="Th.HotLevelsAdu"/>.</param>
+    /// <returns>The counts, as "R 12  G1 9 ...".</returns>
     private static string PerPlane(DarkSeriesAnalysis d, int level) =>
         string.Join("  ", d.Master.Select(m => $"{m.Name} {m.Above[level]}"));
 
+    /// <summary>
+    /// The <c>amplitudine</c> row of check 5: the hot pixels' percentiles above the black.
+    /// </summary>
+    /// <param name="h">The hot pixels' figures, in raw ADU.</param>
+    /// <param name="n">The normalisation factor the percentiles are divided by.</param>
+    /// <param name="eq">The unit word of the figures.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string Percentiles(HotStability h, double n, string eq) =>
         h.Hot == 0 ? "NEMASURAT: niciun pixel fierbinte" : $"mediana {F(h.P50 / n, 0)}, p10 {F(h.P10 / n, 0)}, p90 {F(h.P90 / n, 0)}, p99 {F(h.P99 / n, 0)} {eq} (din {h.Hot})";
 
+    /// <summary>
+    /// The <c>stabilitate</c> row of check 5: the hot pixels present in every frame, the flickering
+    /// ones, their temporal noise and the RTS candidates.
+    /// </summary>
+    /// <param name="d">The dark series.</param>
+    /// <param name="rp">The reference plane.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string Stability(DarkSeriesAnalysis d, int rp)
     {
         HotStability h = d.Hot;
@@ -877,6 +1136,12 @@ internal static class DarkReport
         return $"{h.Always} din {h.Hot} peste jumatate din prag in toate cele {RunReport.Frames(d.Used)}, {h.Flicker} lipsesc din 2 sau mai multe; sigma temporala {F(h.HotTemporalStd, 2)} ADU la cei fierbinti, {F(h.QuietTemporalStd, 2)} la restul; {h.RtsCandidates} candidati RTS pe {d.PlaneNames[rp]} (sigma temporala peste {F(Th.RtsSigmaFactor, 0)} x zgomotul unui cadru, {F(d.Noise.SigmaFrame, 2)})";
     }
 
+    /// <summary>
+    /// The <c>benzi structurate</c> row of check 6: the worst planes' row and column profiles of
+    /// the master.
+    /// </summary>
+    /// <param name="d">The dark series.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string StructuredBanding(DarkSeriesAnalysis d)
     {
         BandingFigures worstRow = d.Banding.MaxBy(b => b.RowP2p)!;
@@ -885,6 +1150,14 @@ internal static class DarkReport
         return $"randuri {F(worstRow.RowStd / n, 3)} {Eq(d)} rms ({F(worstRow.RowP2p / n, 2)} varf la varf, {worstRow.Name}), coloane {F(worstCol.ColStd / n, 3)} ({F(worstCol.ColP2p / n, 2)}, {worstCol.Name})  [profilul masterului minus mediana glisanta pe {Th.BandingWindow}]";
     }
 
+    /// <summary>
+    /// The <c>glow</c> row of check 6: the glow at check 2's region, with the constant beside it
+    /// when the split is measured.
+    /// </summary>
+    /// <param name="l">Check 2's verdict.</param>
+    /// <param name="p">Check 6's verdict.</param>
+    /// <param name="eq">The unit word of the figures.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string Glow(LeakVerdict l, PatternVerdict p, string eq)
     {
         string source = l.FromDarkMinusBias ? "dark - bias" : "masterul dark";
@@ -898,6 +1171,10 @@ internal static class DarkReport
             : $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)} fata de centru ({source})";
     }
 
+    /// <summary>The verdict row of check 6.</summary>
+    /// <param name="p">Check 6's verdict.</param>
+    /// <param name="eq">The unit word of the figures.</param>
+    /// <returns>The verdict's words, opening with OK, ATENTIE or NEMASURAT.</returns>
     private static string Pattern(PatternVerdict p, string eq) => p.Verdict switch
     {
         Verdict.Unmeasured => "NEMASURAT: harta sau profilele nu au valori",
@@ -905,15 +1182,30 @@ internal static class DarkReport
         _ => $"ATENTIE: {(p.BandingP2pAdu > Th.BandingAdu ? $"benzi de {F(p.BandingP2pAdu, 2)} {eq} varf la varf" : "")}{(p.BandingP2pAdu > Th.BandingAdu && Math.Abs(p.GlowAdu) > Th.LeakAdu ? " si " : "")}{(Math.Abs(p.GlowAdu) > Th.LeakAdu ? $"glow de {Signed(p.GlowAdu, 2)} {eq}" : "")}; modelul ramane in lights fara dark-uri",
     };
 
+    /// <summary>The verdict row of check 7.</summary>
+    /// <param name="v">Check 7's verdict.</param>
+    /// <returns>The verdict's words, opening with OK or ATENTIE.</returns>
     private static string DeadSat(DeadSatVerdict v) => v.Verdict == Verdict.Ok
         ? "OK: niciun pixel mort sau saturat pe master"
         : $"ATENTIE: {v.Dead} {(v.Dead == 1 ? "pixel mort" : "pixeli morti")}, {v.Saturated} {(v.Saturated == 1 ? "saturat" : "saturati")}";
 
+    /// <summary>
+    /// The <c>zgomotul mediei</c> row of check 8: the measured and the expected noise of the mean
+    /// of n frames.
+    /// </summary>
+    /// <param name="nv">The noise-against-n figures.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string Curve(NoiseVsN nv) =>
         nv.Curve.Count == 0
             ? "NEMASURAT: sub 2 cadre"
             : string.Join("; ", nv.Curve.Select(p => $"n={p.N} {F(p.Measured, 2)} (asteptat {F(p.Expected, 2)})"));
 
+    /// <summary>
+    /// The <c>master</c> row of check 8: the median master's noise and what it is computed from.
+    /// </summary>
+    /// <param name="d">The dark series.</param>
+    /// <param name="e">Check 8's verdict.</param>
+    /// <returns>The row's value, in Romanian.</returns>
     private static string Enough(DarkSeriesAnalysis d, EnoughVerdict e)
     {
         if (double.IsNaN(e.MasterNoise))
@@ -926,6 +1218,9 @@ internal static class DarkReport
         return $"{RunReport.Frames(e.Frames)} -> {F(e.MasterNoise, 2)} ADU zgomot al masterului median ({F(Th.MedianNoiseFactor, 2)} x {basis} / sqrt({e.Frames})){half}";
     }
 
+    /// <summary>The verdict row of check 8.</summary>
+    /// <param name="e">Check 8's verdict.</param>
+    /// <returns>The verdict's words, opening with OK, ATENTIE or NEMASURAT.</returns>
     private static string EnoughVerdictText(EnoughVerdict e) => e.Verdict switch
     {
         Verdict.Unmeasured => "NEMASURAT: un singur cadru nu e o serie",
@@ -934,19 +1229,39 @@ internal static class DarkReport
         _ => $"ATENTIE: zgomotul masterului median ({F(e.MasterNoise, 2)} ADU) e peste pasul de cuantizare ({e.QuantStep} ADU); ar cobori sub pas de la {e.FramesNeeded} cadre",
     };
 
+    /// <summary>A ratio with three decimals, or "-" when NaN.</summary>
+    /// <param name="v">The ratio.</param>
+    /// <returns>The formatted ratio.</returns>
     private static string Ratio(double v) => double.IsNaN(v) ? "-" : F(v, 3);
 
+    /// <summary>
+    /// A figure with its sign always written, rounded half away from zero; zero prints as "+0.00".
+    /// </summary>
+    /// <param name="v">The figure.</param>
+    /// <param name="decimals">The number of decimals.</param>
+    /// <returns>The formatted figure.</returns>
     internal static string Signed(double v, int decimals)
     {
         double r = Math.Round(v, decimals, MidpointRounding.AwayFromZero);
         return (r < 0 ? "-" : "+") + F(Math.Abs(r), decimals);
     }
 
+    /// <summary>A pixel count in words: "1 pixel", "20 pixeli".</summary>
+    /// <param name="n">The count.</param>
+    /// <returns>The words.</returns>
     private static string Pixels(int n) => n == 1 ? "1 pixel" : n.ToString(CultureInfo.InvariantCulture) + " pixeli";
 
+    /// <summary>A frame's time of day as HH:mm:ss, or "-" without a timestamp.</summary>
+    /// <param name="t">The timestamp, or null.</param>
+    /// <returns>The formatted time.</returns>
     private static string Time(DateTime? t) => t is DateTime d ? d.ToString("HH:mm:ss", CultureInfo.InvariantCulture) : "-";
 
-    /// <summary>A figure with fixed decimals; a value that rounds to zero prints without a minus sign.</summary>
+    /// <summary>
+    /// A figure with fixed decimals; a value that rounds to zero prints without a minus sign.
+    /// </summary>
+    /// <param name="v">The figure; NaN prints "-".</param>
+    /// <param name="decimals">The number of decimals.</param>
+    /// <returns>The formatted figure, with the invariant culture.</returns>
     internal static string F(double v, int decimals)
     {
         if (double.IsNaN(v))

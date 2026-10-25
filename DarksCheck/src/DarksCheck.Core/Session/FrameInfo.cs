@@ -22,6 +22,27 @@ namespace DarksCheck.Core;
 /// field the file does not carry is null; a file that cannot be read keeps its name and
 /// index and carries the error instead.
 /// </summary>
+/// <param name="Index">The frame's position in its folder's sorted list, from 1.</param>
+/// <param name="Path">The full path of the file.</param>
+/// <param name="Camera">The camera model, or null.</param>
+/// <param name="FocalMm">The focal length in mm, or null.</param>
+/// <param name="FNumber">The aperture as an f-number, or null.</param>
+/// <param name="ExposureSeconds">The exposure time in seconds, or null.</param>
+/// <param name="Iso">The ISO setting, or null.</param>
+/// <param name="Timestamp">
+/// The time of the shot as the file states it (a raw's converted to this computer's local time),
+/// or null.
+/// </param>
+/// <param name="PixelSizeUm">The pixel pitch in micrometres, or null.</param>
+/// <param name="NikonLensId">The Nikon lens ID from the maker notes, or null.</param>
+/// <param name="LensMinFocalMm">The lens's shortest focal length in mm, from the maker notes, or
+/// null.</param>
+/// <param name="LensMaxFocalMm">The lens's longest focal length in mm, from the maker notes, or
+/// null.</param>
+/// <param name="LensMaxAperture">The lens's widest aperture (f-number) at its shortest focal
+/// length, or null.</param>
+/// <param name="Error">The message of the read that failed (Romanian for the user), or null when
+/// the file was read.</param>
 internal sealed record FrameInfo(
     int Index,
     string Path,
@@ -40,7 +61,13 @@ internal sealed record FrameInfo(
 {
     internal string FileName => System.IO.Path.GetFileName(Path);
 
-    /// <summary>The shot fields of a loaded frame, whether or not its pixels were decoded.</summary>
+    /// <summary>
+    /// The shot fields of a loaded frame, whether or not its pixels were decoded.
+    /// </summary>
+    /// <param name="index">The frame's position in its folder's sorted list, from 1.</param>
+    /// <param name="path">The full path of the file.</param>
+    /// <param name="f">The loaded frame whose shot fields are copied; not null.</param>
+    /// <returns>The record, with no error.</returns>
     internal static FrameInfo From(int index, string path, LoadedFrame f)
     {
         ArgumentNullException.ThrowIfNull(f);
@@ -48,7 +75,13 @@ internal sealed record FrameInfo(
             f.Timestamp, f.PixelSizeUm, f.NikonLensId, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
     }
 
-    /// <summary>Reads the metadata of one file; never throws, the error becomes part of the record.</summary>
+    /// <summary>
+    /// Reads the metadata of one file; never throws, the error becomes part of the record.
+    /// </summary>
+    /// <param name="index">The frame's position in its folder's sorted list, from 1.</param>
+    /// <param name="path">The full path of the file.</param>
+    /// <returns>The record; every shot field null and <see cref="Error"/> set when the file could
+    /// not be read.</returns>
     internal static FrameInfo Read(int index, string path)
     {
         try

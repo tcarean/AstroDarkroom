@@ -21,10 +21,11 @@ using System.Text;
 namespace DarksCheck.Core;
 
 /// <summary>
-/// The files `--out DIR` writes (R-026): the report as the console prints it, a CSV per dark
-/// and one per bias with every figure, and the binned maps of the reference plane as PNG
-/// (the dark master, the bias master, dark minus bias), each block drawn as a 4 x 4 square,
-/// stretched between its 1st and 99th percentile. Nothing is written into the session.
+/// The files `--out DIR` writes (R-026): the report as the console prints it, a CSV with a row
+/// per dark, one per bias and one per light with every figure, and the binned maps of the
+/// reference plane as PNG (the dark master, the bias master, dark minus bias), each block
+/// drawn as a 4 x 4 square, stretched between its 1st and 99th percentile. Nothing is written
+/// into the session.
 /// </summary>
 internal static class DarkOutputs
 {
@@ -37,6 +38,17 @@ internal static class DarkOutputs
     internal const string DarkMinusBiasMapName = "darkscheck-harta-dark-minus-bias.png";
     internal const int MapScale = 4;
 
+    /// <summary>
+    /// Writes every output file into <paramref name="dir"/>, creating it when missing, after
+    /// refusing a folder inside the session or the partner (the rule "Read-only input"). Existing
+    /// files of the same names are overwritten.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <param name="dir">The output folder.</param>
+    /// <returns>The paths written, in order; the CSVs of biases and lights and the maps only when
+    /// there is something to write.</returns>
+    /// <exception cref="InvalidOperationException">The folder is the session's or the partner's, or
+    /// lies inside one.</exception>
     internal static IReadOnlyList<string> WriteAll(DarkSeriesResult r, string dir)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -101,6 +113,12 @@ internal static class DarkOutputs
     /// The rule "Read-only input": the output folder may not be the session folder or one under
     /// it. Called before the analysis runs (the console) and again by <see cref="WriteAll"/>.
     /// </summary>
+    /// <param name="sessionRoot">The folder nothing may be written into; not null or blank.</param>
+    /// <param name="dir">The output folder asked for; not null or blank.</param>
+    /// <param name="whose">The Romanian word for whose folder it is, in the refusal ("sesiunii",
+    /// "partenerului").</param>
+    /// <exception cref="InvalidOperationException">The output folder is that folder or lies inside
+    /// it (compared without case).</exception>
     internal static void CheckOutDir(string sessionRoot, string dir, string whose = "sesiunii")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionRoot);
@@ -113,7 +131,13 @@ internal static class DarkOutputs
         }
     }
 
-    /// <summary>One row per dark: the metadata, then per plane the levels and the residual figures, then the amplitude ratio and the edges; a row without figures is padded to the header's width.</summary>
+    /// <summary>
+    /// One row per dark: the metadata, then per plane the levels and the residual figures, then the
+    /// amplitude ratio and the edges; a row without figures is padded to the header's width.
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The CSV text, a header line then one line per dark, invariant culture, text
+    /// quoted.</returns>
     internal static string DarksCsv(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -153,6 +177,13 @@ internal static class DarkOutputs
         return sb.ToString();
     }
 
+    /// <summary>
+    /// One row per bias: the metadata, then per plane the levels; a row without figures is padded
+    /// to the header's width.
+    /// </summary>
+    /// <param name="b">The biases' figures; not null.</param>
+    /// <returns>The CSV text, a header line then one line per bias, invariant culture, text
+    /// quoted.</returns>
     internal static string BiasesCsv(BiasAnalysis b)
     {
         ArgumentNullException.ThrowIfNull(b);
@@ -182,7 +213,15 @@ internal static class DarkOutputs
         return sb.ToString();
     }
 
-    /// <summary>One row per light: the metadata, the sky per plane, the candidates, the isolated hot pixels, the amplitude ratio and its quartiles.</summary>
+    /// <summary>
+    /// One row per light: the metadata, the sky per plane, the candidates, the isolated hot pixels,
+    /// the amplitude ratio and its quartiles.
+    /// </summary>
+    /// <param name="l">The lights' figures; not null.</param>
+    /// <param name="planeNames">The names of the four CFA positions, for the column names; not
+    /// null.</param>
+    /// <returns>The CSV text, a header line then one line per light, invariant culture, text
+    /// quoted.</returns>
     internal static string LightsCsv(LightsAnalysis l, IReadOnlyList<string> planeNames)
     {
         ArgumentNullException.ThrowIfNull(l);
@@ -216,6 +255,11 @@ internal static class DarkOutputs
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Adds a written path to the list; a null path (nothing written) is left out.
+    /// </summary>
+    /// <param name="written">The list of paths written.</param>
+    /// <param name="path">The path, or null.</param>
     private static void Add(List<string> written, string? path)
     {
         if (path is not null)
@@ -224,6 +268,9 @@ internal static class DarkOutputs
         }
     }
 
+    /// <summary>Appends empty cells until the row has as many as the header.</summary>
+    /// <param name="row">The row's cells.</param>
+    /// <param name="columns">The header's number of columns.</param>
     private static void Pad(List<string> row, int columns)
     {
         while (row.Count < columns)
@@ -232,7 +279,14 @@ internal static class DarkOutputs
         }
     }
 
-    /// <summary>A binned map as an 8-bit grey PNG, each block a MapScale x MapScale square, black at the 1st percentile and white at the 99th; null (nothing written) for a map without blocks.</summary>
+    /// <summary>
+    /// A binned map as a grey PNG (8-bit RGB, the three components equal), each block a MapScale x
+    /// MapScale square, black at the 1st percentile and white at the 99th; null (nothing written)
+    /// for a map without blocks.
+    /// </summary>
+    /// <param name="path">The PNG's path; an existing file is overwritten.</param>
+    /// <param name="m">The binned map; not null.</param>
+    /// <returns>The path written, or null.</returns>
     internal static string? WriteMap(string path, BinnedMap m)
     {
         ArgumentNullException.ThrowIfNull(m);
@@ -245,7 +299,14 @@ internal static class DarkOutputs
         return path;
     }
 
-    /// <summary>The map as an 8-bit grey raster, each block a <see cref="MapScale"/> x <see cref="MapScale"/> square stretched from the 1st to the 99th percentile (what the PNG holds and what the window shows); null for a map without blocks.</summary>
+    /// <summary>
+    /// The map as an 8-bit grey raster, each block a <see cref="MapScale"/> x
+    /// <see cref="MapScale"/> square stretched from the 1st to the 99th percentile (what the PNG
+    /// holds and what the window shows); null for a map without blocks.
+    /// </summary>
+    /// <param name="m">The binned map; not null.</param>
+    /// <returns>The grey bytes, row-major, with the raster's width and height in pixels; null for
+    /// an empty map.</returns>
     internal static (byte[] Grey, int W, int H)? MapRaster(BinnedMap m)
     {
         ArgumentNullException.ThrowIfNull(m);
@@ -275,7 +336,15 @@ internal static class DarkOutputs
         return (grey, w, h);
     }
 
+    /// <summary>
+    /// A CSV number: round-trip format, invariant culture; empty for null or NaN.
+    /// </summary>
+    /// <param name="v">The number, or null.</param>
+    /// <returns>The cell's text.</returns>
     private static string N(double? v) => v is double d && !double.IsNaN(d) ? d.ToString("R", CultureInfo.InvariantCulture) : "";
 
+    /// <summary>A CSV text cell: in double quotes, an inner quote doubled.</summary>
+    /// <param name="s">The text.</param>
+    /// <returns>The quoted cell.</returns>
     private static string Q(string s) => "\"" + s.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
 }
