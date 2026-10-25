@@ -18,6 +18,7 @@
 using System.Globalization;
 using System.Windows.Media.Imaging;
 using DarksCheck.Core;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Wpf;
 
@@ -494,7 +495,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
-            Status = "EROARE: " + e.Message;
+            Status = T("ERROR: ", "EROARE: ") + e.Message;
         }
     }
 
@@ -592,22 +593,22 @@ public sealed class MainViewModel : ObservableObject
 
         WarmingPoints = warming;
         Warming wm = d.Warming;
-        GuideLine master = new(1.0, "masterul (mediana seriei)", VerdictPalette.Neutral);
+        GuideLine master = new(1.0, T("the master (median of the series)", "masterul (mediana seriei)"), VerdictPalette.Neutral);
         WarmingGuides = wm.HasFit
             ?
             [
                 master,
-                new GuideLine(wm.Plateau, $"platoul {RunReport.F(wm.Plateau, 2)}", VerdictPalette.Neutral),
-                new GuideLine(wm.OffPlateauLow, $"{RunReport.F(wm.OffPlateauLow, 2)} de aruncat", VerdictPalette.Warn),
-                new GuideLine(wm.OffPlateauHigh, $"{RunReport.F(wm.OffPlateauHigh, 2)} de aruncat", VerdictPalette.Warn),
+                new GuideLine(wm.Plateau, T($"plateau {RunReport.F(wm.Plateau, 2)}", $"platoul {RunReport.F(wm.Plateau, 2)}"), VerdictPalette.Neutral),
+                new GuideLine(wm.OffPlateauLow, T($"{RunReport.F(wm.OffPlateauLow, 2)} discard", $"{RunReport.F(wm.OffPlateauLow, 2)} de aruncat"), VerdictPalette.Warn),
+                new GuideLine(wm.OffPlateauHigh, T($"{RunReport.F(wm.OffPlateauHigh, 2)} discard", $"{RunReport.F(wm.OffPlateauHigh, 2)} de aruncat"), VerdictPalette.Warn),
             ]
             : [master];
         WarmingNote = DarkReport.WarmingChartNote(r);
         ResidualPoints = residual;
-        ResidualGuides = double.IsNaN(r.Verdicts.Noise.OutlierLimitAdu) ? [] : [new GuideLine(r.Verdicts.Noise.OutlierLimitAdu, $"{RunReport.F(Th.NoiseOutlierFactor, 1)} x mediana", VerdictPalette.Warn)];
+        ResidualGuides = double.IsNaN(r.Verdicts.Noise.OutlierLimitAdu) ? [] : [new GuideLine(r.Verdicts.Noise.OutlierLimitAdu, T($"{RunReport.F(Th.NoiseOutlierFactor, 1)} x median", $"{RunReport.F(Th.NoiseOutlierFactor, 1)} x mediana"), VerdictPalette.Warn)];
         BandingPoints = banding;
-        BandingGuides = [new GuideLine(1.0, "zgomot alb", VerdictPalette.Neutral)];
-        NoisePoints = d.Noise.Curve.Select(p => new ChartPoint(p.N, p.Measured, p.N.ToString(CultureInfo.InvariantCulture), VerdictPalette.Accent, $"n={p.N}: {RunReport.F(p.Measured, 3)} masurat, {RunReport.F(p.Expected, 3)} asteptat")).ToList();
+        BandingGuides = [new GuideLine(1.0, T("white noise", "zgomot alb"), VerdictPalette.Neutral)];
+        NoisePoints = d.Noise.Curve.Select(p => new ChartPoint(p.N, p.Measured, p.N.ToString(CultureInfo.InvariantCulture), VerdictPalette.Accent, T($"n={p.N}: {RunReport.F(p.Measured, 3)} measured, {RunReport.F(p.Expected, 3)} expected", $"n={p.N}: {RunReport.F(p.Measured, 3)} masurat, {RunReport.F(p.Expected, 3)} asteptat"))).ToList();
         NoiseExpected = d.Noise.Curve.Select(p => new ChartPoint(p.N, p.Expected, p.N.ToString(CultureInfo.InvariantCulture), VerdictPalette.Neutral)).ToList();
 
         if (r.Lights is LightsAnalysis l)

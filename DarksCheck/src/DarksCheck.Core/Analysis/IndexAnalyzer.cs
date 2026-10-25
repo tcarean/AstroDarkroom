@@ -17,6 +17,7 @@
 
 using System.Globalization;
 using System.Text.RegularExpressions;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core;
 
@@ -162,7 +163,7 @@ internal static partial class IndexAnalyzer
         ArgumentNullException.ThrowIfNull(reference);
         if (own.Count != reference.Count)
         {
-            throw new InvalidOperationException("masterele nu au aceeasi dimensiune");
+            throw new InvalidOperationException(T("the masters do not have the same size", "masterele nu au aceeasi dimensiune"));
         }
 
         double refMin = DarkSeriesAnalyzer.HotLevel(Th.MatchMinAdu, refNorm), ownMin = DarkSeriesAnalyzer.HotLevel(Th.MatchMinAdu, ownNorm);

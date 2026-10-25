@@ -8,6 +8,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The files `--out` and the window's `Scrie fisierele...` write are named in English in both
+  languages: `darkscheck-report.txt` and `darkscheck-map-dark.png`, `-map-bias.png`,
+  `-map-dark-minus-bias.png` (they were `darkscheck-raport.txt` and `darkscheck-harta-*.png`)
+  (R-026, ADR 0021).
+
 - The projects target .NET 8 instead of .NET 9, so the Astro Darkroom suite ships one runtime
   (ADR 0018).
 
@@ -27,6 +32,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   again, not `...-idx67-idx67`, and a changed index shows as a changed number (R-061, ADR 0013).
 
 ### Added
+
+- The console and the window speak English or Romanian, chosen by `--lang en` or `--lang ro`
+  (also `--lang=ro`), **English when `--lang` is missing**; a value other than `en` or `ro` is
+  refused with `ERROR:` and exit 1 in the console and said in a message by the window. The
+  figures are the same in both languages (R-090 to R-094, ADR 0021).
 
 - Check 2 tells a light leak from the sensor's glow by the warming of the series (R-028,
   R-029, ADR 0012). The row `lumina pe cadre` fits every frame's mean on the hot pixels'

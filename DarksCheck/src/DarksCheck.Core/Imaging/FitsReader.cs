@@ -16,14 +16,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
-// The code is the copy's, with FlatCheck's cut-data check of 469da9b (ADR 0020); the comments
-// are DarksCheck's own (ADR 0019).
+// The code is the copy's, with FlatCheck's cut-data check of 469da9b (ADR 0020) and the
+// English-or-Romanian wordings of FlatCheck's messages, its T(...) pairs taken as they are for
+// the messages this copy has (ADR 0021); the comments are DarksCheck's own (ADR 0019).
 
 // FitsReader.cs - our own FITS reader (no dependencies).
 // Header of 80-byte cards in 2880-byte blocks, then big-endian binary data.
 
 using System.Globalization;
 using System.Text;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core
 {
@@ -261,7 +263,7 @@ namespace DarksCheck.Core
                 bool end = false;
                 while (!end)
                 {
-                    if (pos + 2880 > raw.Length) throw new InvalidDataException("FITS: header incomplet.");
+                    if (pos + 2880 > raw.Length) throw new InvalidDataException(HeaderIncomplete);
                     for (int c = 0; c < 36; c++)
                     {
                         string card = System.Text.Encoding.ASCII.GetString(raw, pos + c * 80, 80);
@@ -337,8 +339,11 @@ namespace DarksCheck.Core
                 // an HDU without a usable 2D image: skip its data blocks and go on
                 pos += (int)dataBlocks;
             }
-            throw new InvalidDataException("FITS: niciun HDU cu imagine 2D gasit.");
+            throw new InvalidDataException(T("FITS: no HDU with a 2D image found.", "FITS: niciun HDU cu imagine 2D gasit."));
         }
+
+        /// <summary>The refusal of a header that ends before its END card, in the run's language.</summary>
+        static string HeaderIncomplete => T("FITS: incomplete header.", "FITS: header incomplet.");
 
         /// <summary>
         /// The refusal of a data area shorter than its header declares, a copy cut
@@ -347,13 +352,15 @@ namespace DarksCheck.Core
         /// </summary>
         /// <param name="announced">The bytes of pixels the header's NAXISn and BITPIX promise.</param>
         /// <param name="held">The bytes the file holds after that header, fewer than announced.</param>
-        /// <returns>The message, Romanian.</returns>
+        /// <returns>The message, in the run's language.</returns>
         static string DataCut(long announced, long held)
         {
             string n = announced.ToString(CultureInfo.InvariantCulture);
             string m = held.ToString(CultureInfo.InvariantCulture);
-            // a label form, so the Romanian numeral needs no "de" agreement for any count
-            return "FITS: date trunchiate: octeti de pixeli anuntati de header: " + n + ", in fisier doar " + m + ".";
+            return T(
+                "FITS: data cut short: the header announces " + n + " bytes of pixels, the file holds only " + m + ".",
+                // a label form, so the Romanian numeral needs no "de" agreement for any count
+                "FITS: date trunchiate: octeti de pixeli anuntati de header: " + n + ", in fisier doar " + m + ".");
         }
 
         /// <summary>One big-endian sample, as stored (before BZERO and BSCALE).</summary>
@@ -380,7 +387,7 @@ namespace DarksCheck.Core
                         for (int k = 0; k < 8; k++) bits = (bits << 8) | b[p + k];
                         return BitConverter.Int64BitsToDouble(bits);
                     }
-                default: throw new InvalidDataException("BITPIX neacceptat: " + bitpix);
+                default: throw new InvalidDataException(T("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
             }
         }
 

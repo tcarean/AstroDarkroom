@@ -17,6 +17,7 @@
 
 using System.Globalization;
 using System.Text;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core;
 
@@ -29,13 +30,14 @@ namespace DarksCheck.Core;
 /// </summary>
 internal static class DarkOutputs
 {
-    internal const string ReportName = "darkscheck-raport.txt";
+    // The names are English in both languages (ADR 0021).
+    internal const string ReportName = "darkscheck-report.txt";
     internal const string DarksCsvName = "darkscheck-darks.csv";
     internal const string BiasesCsvName = "darkscheck-biases.csv";
     internal const string LightsCsvName = "darkscheck-lights.csv";
-    internal const string DarkMapName = "darkscheck-harta-dark.png";
-    internal const string BiasMapName = "darkscheck-harta-bias.png";
-    internal const string DarkMinusBiasMapName = "darkscheck-harta-dark-minus-bias.png";
+    internal const string DarkMapName = "darkscheck-map-dark.png";
+    internal const string BiasMapName = "darkscheck-map-bias.png";
+    internal const string DarkMinusBiasMapName = "darkscheck-map-dark-minus-bias.png";
     internal const int MapScale = 4;
 
     /// <summary>
@@ -55,13 +57,13 @@ internal static class DarkOutputs
         CheckOutDir(r.Inventory.Session.Root, dir);
         if (r.Partner is PartnerAnalysis partner)
         {
-            CheckOutDir(partner.Folder, dir, "partenerului");
+            CheckOutDir(partner.Folder, dir, partner: true);
         }
 
         if (r.DarksFromPartner is string darksPartner)
         {
             // a lights-only run: the partner's folder is the one whose darks were read (R-054)
-            CheckOutDir(darksPartner, dir, "partenerului");
+            CheckOutDir(darksPartner, dir, partner: true);
         }
 
         Directory.CreateDirectory(dir);
@@ -115,11 +117,11 @@ internal static class DarkOutputs
     /// </summary>
     /// <param name="sessionRoot">The folder nothing may be written into; not null or blank.</param>
     /// <param name="dir">The output folder asked for; not null or blank.</param>
-    /// <param name="whose">The Romanian word for whose folder it is, in the refusal ("sesiunii",
-    /// "partenerului").</param>
+    /// <param name="partner">True when the folder is the partner's, false for the session's; it
+    /// names the folder in the refusal.</param>
     /// <exception cref="InvalidOperationException">The output folder is that folder or lies inside
     /// it (compared without case).</exception>
-    internal static void CheckOutDir(string sessionRoot, string dir, string whose = "sesiunii")
+    internal static void CheckOutDir(string sessionRoot, string dir, bool partner = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(dir);
@@ -127,7 +129,9 @@ internal static class DarkOutputs
         string root = Path.GetFullPath(sessionRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (full.Equals(root, StringComparison.OrdinalIgnoreCase) || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"--out nu poate fi folderul {whose} sau unul din el ({root}): acolo nu se scrie nimic");
+            throw new InvalidOperationException(partner
+                ? T($"--out cannot be the partner's folder or one inside it ({root}): nothing is written there", $"--out nu poate fi folderul partenerului sau unul din el ({root}): acolo nu se scrie nimic")
+                : T($"--out cannot be the session's folder or one inside it ({root}): nothing is written there", $"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic"));
         }
     }
 

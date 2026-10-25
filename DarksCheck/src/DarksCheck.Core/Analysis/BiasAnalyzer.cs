@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static DarksCheck.Core.Ui;
+
 namespace DarksCheck.Core;
 
 /// <summary>
@@ -22,7 +24,7 @@ namespace DarksCheck.Core;
 /// the frame cap (not an error).
 /// </summary>
 /// <param name="Info">The frame's metadata.</param>
-/// <param name="Error">Why it has no figures, in Romanian; null when it decoded.</param>
+/// <param name="Error">Why it has no figures, in the run's language; null when it decoded.</param>
 /// <param name="Skipped">True when the frame cap left it out.</param>
 /// <param name="Planes">The four positions' figures in raw ADU (normalisation 1); empty
 /// without a mosaic.</param>
@@ -95,7 +97,7 @@ internal static class BiasAnalyzer
         IReadOnlyList<StackFrame> decoded = stack.Decoded;
         if (decoded.Count == 0)
         {
-            throw new InvalidOperationException("niciun bias nu s-a putut decoda" + FrameStack.FirstErrors(stack));
+            throw new InvalidOperationException(T("no bias could be decoded", "niciun bias nu s-a putut decoda") + FrameStack.FirstErrors(stack));
         }
 
         int w = stack.Width, h = stack.Height, n = decoded.Count;
@@ -226,7 +228,7 @@ internal static class BiasAnalyzer
         ArgumentNullException.ThrowIfNull(biases);
         if (darks.Width != biases.Width || darks.Height != biases.Height)
         {
-            throw new InvalidOperationException($"bias-urile au {biases.Width} x {biases.Height} px, dark-urile {darks.Width} x {darks.Height}");
+            throw new InvalidOperationException(T($"the biases are {biases.Width} x {biases.Height} px, the darks {darks.Width} x {darks.Height}", $"bias-urile au {biases.Width} x {biases.Height} px, dark-urile {darks.Width} x {darks.Height}"));
         }
 
         BinnedMap[] maps = new BinnedMap[4];

@@ -108,6 +108,23 @@ one owned `ToolTip` opened on hover over the point whose slot holds the cursor (
 DarksCheck adds `Reference`, a second series drawn first as a dashed line without dots; the
 axes span both series.
 
+## Language
+
+`App`'s constructor sets `Ui.Default` from the command line (`App.LanguageFromArgs`, over
+`LanguageArgument.Extract`; `docs/design/session-and-console.md`, "The interface language")
+before `App.xaml`'s resources and the first view load, since both carry texts; a value it does
+not understand is kept and said in an English `MessageBox` once the main window is shown, and
+the window goes on in English. `FolderFromArgs` looks only at the arguments left once `--lang`
+and its value are out. A XAML label is a `{l:T En='...', Ro='...'}` pair (`TExtension`, taken
+from FlatCheck): on a dependency property or a `Setter` it returns a one-time binding, so a
+template parsed once picks its wording when each element is made; elsewhere it returns the
+wording at once. The view-model's sentences (`WindowTexts`, the chart captions) are `T(...)`
+pairs read as properties. The verdict chips colour either language's words
+(`VerdictPalette.Severity`). The window still finds the maps' rows by the labels `master dark`,
+`master bias` and `dark - bias` and the sections by their `5.`, `9.` and `INDEX` prefixes,
+which the report keeps the same in both languages. `LanguageWindowTests` render every tab in an
+English scope and look for Romanian words.
+
 ## Culture, title bar, icon
 
 `App.ForceInvariantNumbers` sets the default and current cultures to the invariant one at

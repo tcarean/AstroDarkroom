@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static DarksCheck.Core.Ui;
+
 namespace DarksCheck.Core;
 
 /// <summary>
@@ -41,8 +43,8 @@ namespace DarksCheck.Core;
 /// null.</param>
 /// <param name="LensMaxAperture">The lens's widest aperture (f-number) at its shortest focal
 /// length, or null.</param>
-/// <param name="Error">The message of the read that failed (Romanian for the user), or null when
-/// the file was read.</param>
+/// <param name="Error">The message of the read that failed (in the run's language, for the user),
+/// or null when the file was read.</param>
 internal sealed record FrameInfo(
     int Index,
     string Path,
@@ -92,7 +94,7 @@ internal sealed record FrameInfo(
             // header, not an error; for a frame that is one nothing can be said about (ADR 0003).
             if (FitsReader.IsFitsPath(path) && f.Header.Count == 0)
             {
-                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, "nu e un fisier FITS (nu incepe cu SIMPLE)");
+                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
             }
 
             return From(index, path, f);

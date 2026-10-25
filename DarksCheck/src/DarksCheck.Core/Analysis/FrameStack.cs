@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static DarksCheck.Core.Ui;
+
 namespace DarksCheck.Core;
 
 /// <summary>
@@ -24,8 +26,8 @@ namespace DarksCheck.Core;
 /// <param name="Info">The frame's metadata.</param>
 /// <param name="Pixels">The mosaic, row-major, in ADU on the stack's scale; null when the frame
 /// failed or was skipped.</param>
-/// <param name="Error">Why the frame has no mosaic, in Romanian for the report; null when it
-/// decoded.</param>
+/// <param name="Error">Why the frame has no mosaic, in the run's language, for the report; null
+/// when it decoded.</param>
 /// <param name="Skipped">True when the frame cap left the frame out; its
 /// <paramref name="Error"/> then says so.</param>
 internal sealed record StackFrame(FrameInfo Info, ushort[]? Pixels, string? Error, bool Skipped = false);
@@ -74,8 +76,8 @@ internal sealed class FrameStack
     /// set.</param>
     /// <param name="white">The white level, in ADU.</param>
     /// <param name="cfa">The colour order; null when the file does not say it.</param>
-    /// <param name="scaleSource">Where the black and the white come from, in Romanian for the
-    /// report.</param>
+    /// <param name="scaleSource">Where the black and the white come from, in the run's language,
+    /// for the report.</param>
     /// <param name="norm">The first decoded frame's normalisation factor, above 0.</param>
     /// <param name="normalisation">The settings the factor was read with.</param>
     /// <param name="blackEstimated">True when the black is an estimate or a value handed in
@@ -167,7 +169,7 @@ internal sealed class FrameStack
             string path = paths[i];
             if (i % step != 0)
             {
-                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, $"sarit (peste {maxFrames} cadre, se decodeaza unul din {step})", Skipped: true);
+                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, T($"skipped (over {maxFrames} frames, one in {step} is decoded)", $"sarit (peste {maxFrames} cadre, se decodeaza unul din {step})"), Skipped: true);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }
@@ -185,9 +187,9 @@ internal sealed class FrameStack
 
                 (int w, int h, _, _, _, _, _) = geometry.Value;
                 frames[i] = f.Image.W != w || f.Image.H != h
-                    ? new StackFrame(info, null, $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}")
+                    ? new StackFrame(info, null, T($"different size: {f.Image.W} x {f.Image.H} instead of {w} x {h}", $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}"))
                     : !SameSettings(info, firstInfo)
-                        ? new StackFrame(info, null, $"setari diferite de primul cadru: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s")
+                        ? new StackFrame(info, null, T($"settings differ from the first frame: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s", $"setari diferite de primul cadru: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s"))
                         : new StackFrame(info, px, null);
                 f = null!;
 
@@ -218,7 +220,7 @@ internal sealed class FrameStack
 
         if (geometry is null)
         {
-            return new FrameStack(frames, 0, 0, 0, 0, null, "niciun cadru decodat", 1, nz);
+            return new FrameStack(frames, 0, 0, 0, 0, null, T("no frame decoded", "niciun cadru decodat"), 1, nz);
         }
 
         (int gw, int gh, double gb, double gwhite, CfaPattern? gcfa, string gsource, double gnorm) = geometry.Value;
@@ -228,7 +230,7 @@ internal sealed class FrameStack
             string fmt(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
             if (fitsBlack is double known)
             {
-                stack = new FrameStack(frames, gw, gh, known, gwhite, gcfa, gsource + $", negru {fmt(known)} din bias-uri", gnorm, nz, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, known, gwhite, gcfa, gsource + T($", black {fmt(known)} from the biases", $", negru {fmt(known)} din bias-uri"), gnorm, nz, blackEstimated: true);
             }
             else
             {
@@ -236,7 +238,7 @@ internal sealed class FrameStack
                 // plane
                 StackFrame first = frames.First(f => f.Pixels is not null);
                 double black = Planes.Median(Planes.Extract(first.Pixels!, gw, gh, stack.ReferencePlane));
-                stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + $", negru {fmt(black)} estimat din mediana cadrului {first.Info.Index}", gnorm, nz, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + T($", black {fmt(black)} estimated from the median of frame {first.Info.Index}", $", negru {fmt(black)} estimat din mediana cadrului {first.Info.Index}"), gnorm, nz, blackEstimated: true);
             }
         }
 
@@ -262,7 +264,7 @@ internal sealed class FrameStack
         (ushort[] px, double black, double white, _) = ToUshort(f);
         return f.Image.W == w && f.Image.H == h
             ? (new StackFrame(info, px, null), black, white)
-            : (new StackFrame(info, null, $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}"), black, white);
+            : (new StackFrame(info, null, T($"different size: {f.Image.W} x {f.Image.H} instead of {w} x {h}", $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}")), black, white);
     }
 
     /// <summary>A setting for an error message: up to three decimals, invariant culture.</summary>
@@ -316,14 +318,14 @@ internal sealed class FrameStack
     /// </summary>
     /// <param name="f">The decoded frame.</param>
     /// <returns>The mosaic, the black (NaN when the file has none), the white, and the scale's
-    /// source in Romanian for the report.</returns>
+    /// source in the run's language, for the report.</returns>
     private static (ushort[] Pixels, double Black, double White, string Source) ToUshort(LoadedFrame f)
     {
         Img img = f.Image;
         // NaN marks a missing black level; Load replaces it with the first frame's median
         double black = f.Scale?.Black ?? double.NaN;
         double white = f.Scale?.White ?? (f.Bitpix < 0 ? 1.0 : (1 << Math.Min(f.Bitpix, 16)) - 1);
-        string source = f.Scale?.Source ?? $"FITS (presupus din BITPIX {f.Bitpix})";
+        string source = f.Scale?.Source ?? T($"FITS (assumed from BITPIX {f.Bitpix})", $"FITS (presupus din BITPIX {f.Bitpix})");
         double factor = 1;
         if (f.Scale is null && f.Bitpix < 0)
         {
@@ -334,12 +336,12 @@ internal sealed class FrameStack
             {
                 factor = 65535;
                 white = 65535;
-                source += ", adus la 0 .. 65535";
+                source += T(", scaled to 0 .. 65535", ", adus la 0 .. 65535");
             }
             else
             {
                 white = 65535;
-                source += ", valori in ADU, alb presupus 65535";
+                source += T(", values in ADU, white assumed 65535", ", valori in ADU, alb presupus 65535");
             }
         }
 

@@ -16,12 +16,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core;
 
 /// <summary>
-/// The inventory as the console prints it (Romanian, R-003, R-006, R-007). Words only; the numbers
-/// come from the run.
+/// The inventory as the console prints it (in the run's language, R-003, R-006, R-007). Words only;
+/// the numbers come from the run.
 /// </summary>
 internal static class InventoryReport
 {
@@ -50,7 +51,7 @@ internal static class InventoryReport
         ArgumentNullException.ThrowIfNull(inv);
         ArgumentNullException.ThrowIfNull(w);
         w.WriteLine();
-        w.WriteLine($"=== SESIUNE: {inv.Session.Root} ===");
+        w.WriteLine(T($"=== SESSION: {inv.Session.Root} ===", $"=== SESIUNE: {inv.Session.Root} ==="));
         foreach (ReportRow row in HeaderRows(inv))
         {
             w.WriteLine($"    {row.Label,-19}: {row.Value}");
@@ -72,42 +73,44 @@ internal static class InventoryReport
         string? partner = inv.DarksFromPartner;
         List<ReportRow> rows =
         [
-            new("darks", noDarks ? (partner is null ? "(lipsa)" : $"(lipsa; se folosesc dark-urile partenerului {partner})") : FolderLine(s.Root, s.DarksDir, s.Darks)),
-            new("biases", s.BiasesDir is null ? "(lipsa)" : FolderLine(s.Root, s.BiasesDir, s.Biases)),
-            new("lights", s.LightsDir is null ? "(lipsa)" : FolderLine(s.Root, s.LightsDir, s.Lights)),
-            new("aparat", Distinct(inv.Darks.Concat(inv.PartnerDarks ?? []).Concat(inv.Biases).Concat(inv.Lights).Select(f => f.Camera))),
+            new("darks", noDarks ? (partner is null ? None : T($"(none; the darks of the partner {partner} are used)", $"(lipsa; se folosesc dark-urile partenerului {partner})")) : FolderLine(s.Root, s.DarksDir, s.Darks)),
+            new("biases", s.BiasesDir is null ? None : FolderLine(s.Root, s.BiasesDir, s.Biases)),
+            new("lights", s.LightsDir is null ? None : FolderLine(s.Root, s.LightsDir, s.Lights)),
+            new(T("camera", "aparat"), Distinct(inv.Darks.Concat(inv.PartnerDarks ?? []).Concat(inv.Biases).Concat(inv.Lights).Select(f => f.Camera))),
         ];
         if (noDarks && partner is null)
         {
-            rows.Add(new("expunere darks", "(lipsa)"));
+            rows.Add(new(T("darks exposure", "expunere darks"), None));
         }
         else
         {
-            rows.Add(new(noDarks ? "expunere partener" : "expunere darks", Settings(m.Darks)));
+            rows.Add(new(noDarks ? T("partner exposure", "expunere partener") : T("darks exposure", "expunere darks"), Settings(m.Darks)));
         }
 
         if (m.Biases is not null)
         {
-            rows.Add(new("expunere biases", Settings(m.Biases)));
+            rows.Add(new(T("biases exposure", "expunere biases"), Settings(m.Biases)));
         }
 
         if (m.Lights is not null)
         {
-            rows.Add(new("expunere lights", Settings(m.Lights)));
+            rows.Add(new(T("lights exposure", "expunere lights"), Settings(m.Lights)));
         }
 
-        rows.Add(new("interval darks", noDarks ? "(lipsa)" : Interval(inv.DarksCadence)));
+        rows.Add(new(T("darks interval", "interval darks"), noDarks ? None : Interval(inv.DarksCadence)));
         if (m.Lights is not null)
         {
-            rows.Add(new("interval lights", Interval(inv.LightsCadence)));
+            rows.Add(new(T("lights interval", "interval lights"), Interval(inv.LightsCadence)));
         }
 
-        rows.Add(new("potrivire", DarksVsLights(m, partner is null ? "dark-urile" : "dark-urile partenerului")));
+        rows.Add(new(T("match", "potrivire"), DarksVsLights(m, partner is not null)));
         rows.Add(new("bias", Bias(m)));
         if (inv.HasErrors)
         {
             int n = inv.ErrorCount;
-            rows.Add(new("ATENTIE", $"{n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi tabelele)"));
+            rows.Add(new(T("WARNING", "ATENTIE"), n == 1
+                ? T("1 frame could not be read (see the tables)", "1 cadru nu s-a putut citi (vezi tabelele)")
+                : T($"{n} frames could not be read (see the tables)", $"{n} cadre nu s-au putut citi (vezi tabelele)")));
         }
 
         return rows;
@@ -135,14 +138,15 @@ internal static class InventoryReport
 
         w.WriteLine();
         w.WriteLine("  " + title);
-        w.WriteLine("     nr  fisier                ora       expunere   ISO" + (cadence is null ? "" : "   pauza"));
+        // The headers keep the columns of the rows below them in both languages.
+        w.WriteLine(T("     no  file                  time      exposure   ISO", "     nr  fisier                ora       expunere   ISO") + (cadence is null ? "" : T("     gap", "   pauza")));
         for (int i = 0; i < frames.Count; i++)
         {
             FrameInfo f = frames[i];
             string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
             if (f.Error is not null)
             {
-                w.WriteLine($"    {f.Index,3}  {name,-20}  eroare: {f.Error}");
+                w.WriteLine($"    {f.Index,3}  {name,-20}  " + T("error: ", "eroare: ") + f.Error);
                 continue;
             }
 
@@ -174,56 +178,56 @@ internal static class InventoryReport
     /// <param name="root">The session's folder.</param>
     /// <param name="dir">The group's folder; "." when it is the session's.</param>
     /// <param name="frames">The group's frames.</param>
-    /// <returns>The line, as "darks\ (20 cadre .NEF)".</returns>
+    /// <returns>The line, as "darks\ (20 frames .NEF)".</returns>
     private static string FolderLine(string root, string dir, IReadOnlyList<string> frames)
     {
         string rel = dir == root ? "." : Path.GetRelativePath(root, dir) + "\\";
         string ext = frames.Count > 0 ? Path.GetExtension(frames[0]) : "";
-        return $"{rel} ({frames.Count} {(frames.Count == 1 ? "cadru" : "cadre")} {ext})";
+        return $"{rel} ({RunReport.Frames(frames.Count)} {ext})";
     }
 
     /// <summary>The distinct non-blank values joined by " / ".</summary>
     /// <param name="values">The values; null and blank ones are skipped.</param>
-    /// <returns>The joined values, or "necunoscut" when there are none.</returns>
+    /// <returns>The joined values, or "unknown" when there are none.</returns>
     private static string Distinct(IEnumerable<string?> values)
     {
         string[] v = values.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!).Distinct(StringComparer.Ordinal).ToArray();
-        return v.Length == 0 ? "necunoscut" : string.Join(" / ", v);
+        return v.Length == 0 ? T("unknown", "necunoscut") : string.Join(" / ", v);
     }
 
     /// <summary>
-    /// "119.2 s la ISO 400 (toate cadrele)" or "... (17 din 20 cadre; expuneri sau ISO diferite)".
+    /// "119.2 s at ISO 400 (all frames)" or "... (17 of 20 frames; different exposures or ISOs)".
     /// </summary>
     /// <param name="g">The group's settings, or null.</param>
-    /// <returns>The settings in words; "necunoscuta" when no frame states them.</returns>
+    /// <returns>The settings in words; "unknown" when no frame states them.</returns>
     private static string Settings(GroupSettings? g)
     {
         if (g is null || g.Readable == 0)
         {
-            return "necunoscuta";
+            return T("unknown", "necunoscuta");
         }
 
-        string combo = (g.ExposureSeconds is double e ? Exposure(e) + " s" : "? s") + (g.Iso is double i ? " la ISO " + RunReport.F(i, 0) : "");
+        string combo = (g.ExposureSeconds is double e ? Exposure(e) + " s" : "? s") + (g.Iso is double i ? T(" at ISO ", " la ISO ") + RunReport.F(i, 0) : "");
         return g.Uniform
-            ? combo + " (toate cadrele)"
-            : combo + $" ({g.Frames} din {RunReport.Frames(g.Readable)}; expuneri sau ISO diferite)";
+            ? combo + T(" (all frames)", " (toate cadrele)")
+            : combo + T($" ({g.Frames} of {RunReport.Frames(g.Readable)}; different exposures or ISOs)", $" ({g.Frames} din {RunReport.Frames(g.Readable)}; expuneri sau ISO diferite)");
     }
 
     /// <summary>A group's time span, its median interval and its long pauses.</summary>
     /// <param name="c">The group's cadence.</param>
-    /// <returns>The row's value, in Romanian.</returns>
+    /// <returns>The row's value, in the run's language.</returns>
     private static string Interval(Cadence c)
     {
         if (c.Start is not DateTime start || c.End is not DateTime end)
         {
-            return "necunoscut (cadrele nu au ora sau expunerea)";
+            return T("unknown (the frames carry no time or exposure)", "necunoscut (cadrele nu au ora sau expunerea)");
         }
 
-        string interval = c.MedianIntervalSeconds is double mi ? $"; {RunReport.Frames(c.TimedFrames)} la {RunReport.F(mi, 1)} s" : $"; {RunReport.Frames(c.TimedFrames)}";
+        string interval = c.MedianIntervalSeconds is double mi ? $"; {RunReport.Frames(c.TimedFrames)}" + T(" every ", " la ") + $"{RunReport.F(mi, 1)} s" : $"; {RunReport.Frames(c.TimedFrames)}";
         string pauses = c.LongPauses.Count switch
         {
-            0 => $"fara pauze peste {RunReport.F(Th.PauseSeconds, 0)} s",
-            1 => $"1 pauza peste {RunReport.F(Th.PauseSeconds, 0)} s ({RunReport.F(c.LongPauses[0].Seconds, 0)} s inainte de cadrul {c.LongPauses[0].FrameIndex})",
+            0 => T($"no gap over {RunReport.F(Th.PauseSeconds, 0)} s", $"fara pauze peste {RunReport.F(Th.PauseSeconds, 0)} s"),
+            1 => T($"1 gap over {RunReport.F(Th.PauseSeconds, 0)} s ({RunReport.F(c.LongPauses[0].Seconds, 0)} s before frame {c.LongPauses[0].FrameIndex})", $"1 pauza peste {RunReport.F(Th.PauseSeconds, 0)} s ({RunReport.F(c.LongPauses[0].Seconds, 0)} s inainte de cadrul {c.LongPauses[0].FrameIndex})"),
             _ => Longest(c),
         };
         return $"{start.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} -> {end.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} "
@@ -232,31 +236,45 @@ internal static class InventoryReport
 
     /// <summary>The count of the long pauses and the longest of them.</summary>
     /// <param name="c">A cadence with at least one long pause.</param>
-    /// <returns>The words, in Romanian.</returns>
+    /// <returns>The words, in the run's language.</returns>
     private static string Longest(Cadence c)
     {
         LongPause longest = c.LongPauses.MaxBy(p => p.Seconds)!;
-        return $"{c.LongPauses.Count} pauze peste {RunReport.F(Th.PauseSeconds, 0)} s (cea mai lunga {RunReport.F(longest.Seconds, 0)} s inainte de cadrul {longest.FrameIndex})";
+        return T(
+            $"{c.LongPauses.Count} gaps over {RunReport.F(Th.PauseSeconds, 0)} s (the longest {RunReport.F(longest.Seconds, 0)} s before frame {longest.FrameIndex})",
+            $"{c.LongPauses.Count} pauze peste {RunReport.F(Th.PauseSeconds, 0)} s (cea mai lunga {RunReport.F(longest.Seconds, 0)} s inainte de cadrul {longest.FrameIndex})");
     }
 
     /// <summary>
-    /// <paramref name="darks"/> is "dark-urile" or "dark-urile partenerului", whose settings the
-    /// lights are compared with.
+    /// Check 1's match: whether the darks have the lights' exposure and ISO; the darks are the
+    /// session's or, in a lights-only run, the partner's.
     /// </summary>
     /// <param name="m">Check 1's match.</param>
-    /// <param name="darks">The words for the darks compared: "dark-urile" or "dark-urile
-    /// partenerului".</param>
-    /// <returns>The verdict's words, opening with OK, ATENTIE or NEMASURAT.</returns>
-    private static string DarksVsLights(MatchAnalysis m, string darks)
+    /// <param name="partner">True when the darks compared are the partner's (R-054).</param>
+    /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
+    /// NEMASURAT in Romanian).</returns>
+    private static string DarksVsLights(MatchAnalysis m, bool partner)
     {
         switch (m.DarksVsLights)
         {
             case Verdict.Unmeasured:
-                return m.Darks is null ? "NEMASURAT: nu exista darks" : m.Lights is null ? "NEMASURAT: nu exista lights" : "NEMASURAT: cadrele nu spun expunerea sau ISO-ul";
+                return m.Darks is null ? T("UNMEASURED: there are no darks", "NEMASURAT: nu exista darks")
+                    : m.Lights is null ? T("UNMEASURED: there are no lights", "NEMASURAT: nu exista lights")
+                    : T("UNMEASURED: the frames do not state the exposure or the ISO", "NEMASURAT: cadrele nu spun expunerea sau ISO-ul");
             case Verdict.Ok:
-                return $"OK: {darks} au expunerea ({Exposure(m.Darks!.ExposureSeconds)} s) si ISO-ul ({Opt(m.Darks.Iso, 0)}) lights-urilor";
+                string exposure = Exposure(m.Darks!.ExposureSeconds);
+                string iso = Opt(m.Darks.Iso, 0);
+                return partner
+                    ? T($"OK: the partner's darks have the lights' exposure ({exposure} s) and ISO ({iso})", $"OK: dark-urile partenerului au expunerea ({exposure} s) si ISO-ul ({iso}) lights-urilor")
+                    : T($"OK: the darks have the lights' exposure ({exposure} s) and ISO ({iso})", $"OK: dark-urile au expunerea ({exposure} s) si ISO-ul ({iso}) lights-urilor");
             default:
-                return $"ATENTIE: {(darks == "dark-urile" ? "dark-uri" : "dark-uri ale partenerului")} de {Exposure(m.Darks!.ExposureSeconds)} s la ISO {Opt(m.Darks.Iso, 0)}, lights de {Exposure(m.Lights!.ExposureSeconds)} s la ISO {Opt(m.Lights.Iso, 0)}";
+                string settings = $"{Exposure(m.Darks!.ExposureSeconds)} s";
+                string darkIso = Opt(m.Darks.Iso, 0);
+                string lights = $"{Exposure(m.Lights!.ExposureSeconds)} s";
+                string lightIso = Opt(m.Lights.Iso, 0);
+                return partner
+                    ? T($"WARNING: the partner's darks at {settings}, ISO {darkIso}, lights at {lights}, ISO {lightIso}", $"ATENTIE: dark-uri ale partenerului de {settings} la ISO {darkIso}, lights de {lights} la ISO {lightIso}")
+                    : T($"WARNING: darks at {settings}, ISO {darkIso}, lights at {lights}, ISO {lightIso}", $"ATENTIE: dark-uri de {settings} la ISO {darkIso}, lights de {lights} la ISO {lightIso}");
         }
     }
 
@@ -264,19 +282,24 @@ internal static class InventoryReport
     /// The <c>bias</c> row: whether the biases' exposure is short enough to be a bias.
     /// </summary>
     /// <param name="m">Check 1's match.</param>
-    /// <returns>The verdict's words, or "(lipsa)" without biases.</returns>
+    /// <returns>The verdict's words, or "(none)" without biases.</returns>
     private static string Bias(MatchAnalysis m)
     {
         switch (m.Bias)
         {
             case Verdict.Unmeasured:
-                return m.Biases is null ? "(lipsa)" : "NEMASURAT: cadrele nu spun expunerea";
+                return m.Biases is null ? None : T("UNMEASURED: the frames do not state the exposure", "NEMASURAT: cadrele nu spun expunerea");
             case Verdict.Ok:
                 return $"OK: {Exposure(m.Biases!.ExposureSeconds)} s";
             default:
-                return $"ATENTIE: {Exposure(m.Biases!.ExposureSeconds)} s nu e un bias (peste {RunReport.F(Th.BiasMaxExposureSeconds, 0)} s)";
+                return T(
+                    $"WARNING: {Exposure(m.Biases!.ExposureSeconds)} s is not a bias (over {RunReport.F(Th.BiasMaxExposureSeconds, 0)} s)",
+                    $"ATENTIE: {Exposure(m.Biases!.ExposureSeconds)} s nu e un bias (peste {RunReport.F(Th.BiasMaxExposureSeconds, 0)} s)");
         }
     }
+
+    /// <summary>The value of a group that is absent: "(none)", "(lipsa)".</summary>
+    private static string None => T("(none)", "(lipsa)");
 
     /// <summary>A frame's time of day as HH:mm:ss, or "-" without a timestamp.</summary>
     /// <param name="t">The timestamp, or null.</param>

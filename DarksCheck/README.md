@@ -66,14 +66,24 @@ doua nu se amesteca. Ordinea e cea a numelor de fisier.
 ## Folosire
 
 ```
-darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--out DIR] [--threads N] [--max-frames N]
-darkscheck <folder> --inventory
-darkscheck --help
+darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--out DIR] [--threads N] [--max-frames N] [--lang en|ro]
+darkscheck <folder> --inventory [--lang en|ro]
+darkscheck --help [--lang en|ro]
 ```
 
 Fiecare rulare incepe cu `darkscheck <versiune>` si notita de copyright. Codul de iesire e `0`
 cand toate cadrele s-au citit si `1` la eroare (folder lipsa, niciun cadru, un cadru care nu se
 poate citi sau decoda; cadrul e listat cu `eroare:` si restul sunt analizate in continuare).
+
+### Limba: `--lang`
+
+Textele programului sunt in engleza sau in romana: `--lang ro` sau `--lang=ro` pentru romana,
+`--lang en` pentru engleza, oriunde in linia de comanda (conteaza ultimul). Fara `--lang`,
+consola si fereastra vorbesc engleza. O alta valoare (`--lang fr`) e refuzata in consola cu
+`ERROR: --lang expects en or ro, got 'fr'` si codul `1`; fereastra o spune intr-un mesaj si
+porneste in engleza. Cifrele, eticheta si numele fisierelor scrise sunt aceleasi in amandoua
+limbile; in engleza, verdictele sunt `OK`, `WARNING` (pentru `ATENTIE`) si `UNMEASURED` (pentru
+`NEMASURAT`). Exemplele de text din documentul asta sunt cele din romana.
 
 ### Toate verificarile (fara optiuni)
 
@@ -280,11 +290,11 @@ la 4095 intr-un FITS pe 16 biti nu apare ca saturat. Un dark cu alt ISO sau alta
 primul e lasat deoparte cu `setari diferite`; un singur dark nu e o serie: verificarile 3, 4, 5
 si 8 raman `NEMASURAT`.
 
-`--out DIR` scrie in DIR raportul (`darkscheck-raport.txt`), cate un CSV cu toate cifrele pe
+`--out DIR` scrie in DIR raportul (`darkscheck-report.txt`), cate un CSV cu toate cifrele pe
 cadru si pe plan (`darkscheck-darks.csv`, `darkscheck-biases.csv`, `darkscheck-lights.csv`
 cand sesiunea are lights) si hartile planului G1 ca
-PNG (`darkscheck-harta-dark.png`, `-bias.png`, `-dark-minus-bias.png`; un bloc = 4 x 4 px,
-intins intre percentilele 1 si 99). Nimic nu se scrie in folderul sesiunii: un `DIR` care e
+PNG (`darkscheck-map-dark.png`, `-bias.png`, `-dark-minus-bias.png`; un bloc = 4 x 4 px,
+intins intre percentilele 1 si 99). Numele fisierelor sunt aceleasi in amandoua limbile. Nimic nu se scrie in folderul sesiunii: un `DIR` care e
 folderul sesiunii sau unul din el e refuzat cu `EROARE`.
 
 ### Inventarul: `--inventory`
@@ -327,9 +337,11 @@ Smida, masurat pe 2026-10-11):
 
 ## Fereastra
 
-`DarksCheck.Wpf.exe [folder]`. Fara argument, cere folderul la pornire: folderul sesiunii Siril
+`DarksCheck.Wpf.exe [--lang en|ro] [folder]`. Limba se alege ca in consola, implicit engleza;
+etichetele de mai jos sunt cele din romana (in engleza: Summary, Frames, Maps, Hot pixels,
+Lights, Index, ADU scale explained, Report). Fara folder, cere folderul la pornire: folderul sesiunii Siril
 (cel cu `darks\`) sau folderul unei biblioteci de dark-uri. Analiza porneste singura (aceeasi ca
-`darkscheck <folder>`, cu bara de progres si buton de oprire) si rezultatul apare in sapte
+`darkscheck <folder>`, cu bara de progres si buton de oprire) si rezultatul apare in opt
 taburi:
 
 - **Rezumat**: linia sesiunii, apoi fiecare verificare ca un card de randuri, cu verdictul
@@ -349,6 +361,8 @@ taburi:
   ales dupa o analiza se aplica la urmatoarea. O sesiune fara dark-uri deschisa fara partener
   arata cardul de problema cu butonul `Alege partener...`: alegi biblioteca si analiza porneste
   din nou cu dark-urile ei.
+- **Explicatii scara ADU**: randurile si paragrafele sectiunii `EXPLICATII SCARA ADU` din
+  raport.
 - **Raport**: textul consolei, identic.
 
 In bara de sus: `FIRE` (cate cadre se decodeaza in paralel; gol = jumatate din nuclee), `CADRE

@@ -17,6 +17,7 @@
 
 using System.Globalization;
 using DarksCheck.Core;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Cli;
 
@@ -50,6 +51,32 @@ internal static class Program
         ArgumentNullException.ThrowIfNull(stderr);
         RunReport.WriteBanner(stdout);
 
+        // --lang first, so the usage and every error after it are in the language (R-090); a
+        // value it does not know is said in English (R-092). With no --lang the run keeps the
+        // process's language, English (Ui.Default).
+        LanguageArgument lang = LanguageArgument.Extract(args);
+        if (lang.BadValue is not null)
+        {
+            stderr.WriteLine("ERROR: " + LanguageArgument.BadValueMessage(lang.BadValue));
+            return 1;
+        }
+
+        using (lang.Language is UiLanguage chosen ? Ui.Use(chosen) : null)
+        {
+            return RunInLanguage(lang.Rest, stdout, stderr);
+        }
+    }
+
+    /// <summary>
+    /// The console after the banner and <c>--lang</c>: parses the options, runs and reports, every
+    /// text in <see cref="Ui.Current"/>.
+    /// </summary>
+    /// <param name="args">The arguments without <c>--lang</c> and its value; not null.</param>
+    /// <param name="stdout">Where the usage and the report go; not null.</param>
+    /// <param name="stderr">Where the progress line and the error messages go; not null.</param>
+    /// <returns>The exit code of <see cref="Run"/>.</returns>
+    private static int RunInLanguage(string[] args, TextWriter stdout, TextWriter stderr)
+    {
         Options o = Options.Parse(args);
         if (o.Help)
         {
@@ -59,7 +86,7 @@ internal static class Program
 
         if (o.Error is not null)
         {
-            stderr.WriteLine("EROARE: " + o.Error);
+            stderr.WriteLine(T("ERROR: ", "EROARE: ") + o.Error);
             return 1;
         }
 
@@ -84,7 +111,7 @@ internal static class Program
                 DarkOutputs.CheckOutDir(SessionFolder.Open(o.Folder!, allowLightsOnly: true).Root, o.Out);
                 if (partnerRoot is not null)
                 {
-                    DarkOutputs.CheckOutDir(partnerRoot, o.Out, "partenerului");
+                    DarkOutputs.CheckOutDir(partnerRoot, o.Out, partner: true);
                 }
             }
 
@@ -97,7 +124,7 @@ internal static class Program
                 stdout.WriteLine();
                 foreach (string p in written)
                 {
-                    stdout.WriteLine($"    -> scris: {p}");
+                    stdout.WriteLine(T("    -> written: ", "    -> scris: ") + p);
                 }
             }
 
@@ -109,7 +136,7 @@ internal static class Program
             // The progress line, if one was being written, is cleared first.
             string message = e is AggregateException a ? string.Join("; ", a.Flatten().InnerExceptions.Select(x => x.Message).Distinct(StringComparer.Ordinal)) : e.Message;
             progress.Clear();
-            stderr.WriteLine("EROARE: " + message);
+            stderr.WriteLine(T("ERROR: ", "EROARE: ") + message);
             return 1;
         }
     }
@@ -153,40 +180,81 @@ internal static class Program
     }
 
     /// <summary>
-    /// Writes the Romanian help text: the usage lines, what each option does, the exit codes and
-    /// the warranty lines.
+    /// Writes the help text in the run's language: the usage lines, what each option does, the exit
+    /// codes and the warranty lines. Each language is written whole, since its columns are aligned
+    /// by hand.
     /// </summary>
     /// <param name="w">The writer the text goes to.</param>
     private static void WriteUsage(TextWriter w)
     {
+        string raws = string.Join(", ", RawReader.RawExtensions);
+        string files = DarkOutputs.ReportName + ", " + DarkOutputs.DarksCsvName + ",";
+        string moreFiles = DarkOutputs.BiasesCsvName + ", " + DarkOutputs.LightsCsvName + ", " + DarkOutputs.DarkMapName + ", ...).";
+        string maxFrames = Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture);
         w.WriteLine();
-        w.WriteLine("Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--out DIR] [--threads N] [--max-frames N]");
-        w.WriteLine("          darkscheck <folder> --inventory");
-        w.WriteLine();
-        w.WriteLine("  Folderul sesiunii Siril: dark-urile se iau din darks\\ (sau direct din folder,");
-        w.WriteLine("  daca nu exista darks\\ si nici alt subfolder de sesiune), bias-urile din biases\\");
-        w.WriteLine("  si lights-urile din lights\\, amandoua optionale. Raw de aparat");
-        w.WriteLine("  (" + string.Join(", ", RawReader.RawExtensions) + ") sau FITS. Nimic nu e scris in folder.");
-        w.WriteLine();
-        w.WriteLine("  Fara optiuni: decodeaza bias-urile, dark-urile si lights-urile si tipareste raportul:");
-        w.WriteLine("                scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti,");
-        w.WriteLine("                model fix, pixeli morti, cate dark-uri ajung, lights-urile fata de");
-        w.WriteLine("                dark, indexul si eticheta, cate un tabel pe dark-uri si pe lights.");
-        w.WriteLine("  --against DIR alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si");
-        w.WriteLine("                raportul dark-urilor sesiunii fata de el, in grade echivalente; o sesiune");
-        w.WriteLine("                cu lights dar fara dark-uri ia dark-urile lui drept ale ei.");
-        w.WriteLine("  --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe");
-        w.WriteLine("                bias-uri si pe lights si hartile (" + DarkOutputs.ReportName + ", " + DarkOutputs.DarksCsvName + ",");
-        w.WriteLine("                " + DarkOutputs.BiasesCsvName + ", " + DarkOutputs.LightsCsvName + ", " + DarkOutputs.DarkMapName + ", ...).");
-        w.WriteLine("  --threads N   cate cadre se decodeaza in paralel (implicit jumatate din nuclee).");
-        w.WriteLine("  --max-frames N  cate cadre se tin in memorie (implicit " + Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture) + ", 48 MB fiecare la 24 MP) si cate lights se masoara;");
-        w.WriteLine("                peste, se decodeaza unul din k si restul sunt listate ca sarite.");
-        w.WriteLine("  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO,");
-        w.WriteLine("                pauzele si cadenta fiecarui grup, potrivirea dark-urilor cu");
-        w.WriteLine("                lights-urile.");
-        w.WriteLine("  -h, --help    acest text");
-        w.WriteLine();
-        w.WriteLine("Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.");
+        if (Ui.Current == UiLanguage.Romanian)
+        {
+            w.WriteLine("Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--out DIR] [--threads N] [--max-frames N]");
+            w.WriteLine("          darkscheck <folder> --inventory");
+            w.WriteLine();
+            w.WriteLine("  Folderul sesiunii Siril: dark-urile se iau din darks\\ (sau direct din folder,");
+            w.WriteLine("  daca nu exista darks\\ si nici alt subfolder de sesiune), bias-urile din biases\\");
+            w.WriteLine("  si lights-urile din lights\\, amandoua optionale. Raw de aparat");
+            w.WriteLine("  (" + raws + ") sau FITS. Nimic nu e scris in folder.");
+            w.WriteLine();
+            w.WriteLine("  Fara optiuni: decodeaza bias-urile, dark-urile si lights-urile si tipareste raportul:");
+            w.WriteLine("                scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti,");
+            w.WriteLine("                model fix, pixeli morti, cate dark-uri ajung, lights-urile fata de");
+            w.WriteLine("                dark, indexul si eticheta, cate un tabel pe dark-uri si pe lights.");
+            w.WriteLine("  --against DIR alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si");
+            w.WriteLine("                raportul dark-urilor sesiunii fata de el, in grade echivalente; o sesiune");
+            w.WriteLine("                cu lights dar fara dark-uri ia dark-urile lui drept ale ei.");
+            w.WriteLine("  --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe");
+            w.WriteLine("                bias-uri si pe lights si hartile (" + files);
+            w.WriteLine("                " + moreFiles);
+            w.WriteLine("  --threads N   cate cadre se decodeaza in paralel (implicit jumatate din nuclee).");
+            w.WriteLine("  --max-frames N  cate cadre se tin in memorie (implicit " + maxFrames + ", 48 MB fiecare la 24 MP) si cate lights se masoara;");
+            w.WriteLine("                peste, se decodeaza unul din k si restul sunt listate ca sarite.");
+            w.WriteLine("  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO,");
+            w.WriteLine("                pauzele si cadenta fiecarui grup, potrivirea dark-urilor cu");
+            w.WriteLine("                lights-urile.");
+            w.WriteLine("  --lang en|ro  limba textelor: en (engleza, implicit) sau ro (romana).");
+            w.WriteLine("  -h, --help    acest text");
+            w.WriteLine();
+            w.WriteLine("Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.");
+        }
+        else
+        {
+            w.WriteLine("Usage: darkscheck <session folder or folder of darks> [--against DIR] [--out DIR] [--threads N] [--max-frames N]");
+            w.WriteLine("       darkscheck <folder> --inventory");
+            w.WriteLine();
+            w.WriteLine("  The Siril session folder: the darks are taken from darks\\ (or from the folder");
+            w.WriteLine("  itself, when there is no darks\\ and no other session subfolder), the biases");
+            w.WriteLine("  from biases\\ and the lights from lights\\, both optional. Camera raw");
+            w.WriteLine("  (" + raws + ") or FITS. Nothing is written into the folder.");
+            w.WriteLine();
+            w.WriteLine("  No options:   decodes the biases, the darks and the lights and prints the report:");
+            w.WriteLine("                light leaks, thermal drift, noise, hot pixels, fixed pattern,");
+            w.WriteLine("                dead pixels, how many darks are enough, the lights against the");
+            w.WriteLine("                dark, the index and the label, one table for the darks and one for the lights.");
+            w.WriteLine("  --against DIR another folder of darks (a library or a session): its index and");
+            w.WriteLine("                the report of the session's darks against it, in equivalent degrees;");
+            w.WriteLine("                a session with lights but no darks takes its darks as its own.");
+            w.WriteLine("  --out DIR     writes into DIR the report, a CSV with every figure for the darks,");
+            w.WriteLine("                the biases and the lights, and the maps (" + files);
+            w.WriteLine("                " + moreFiles);
+            w.WriteLine("  --threads N   how many frames are decoded in parallel (default: half the cores).");
+            w.WriteLine("  --max-frames N  how many frames are held in memory (default " + maxFrames + ", 48 MB each at 24 MP) and how many lights are measured;");
+            w.WriteLine("                above that, one in k is decoded and the rest are listed as skipped.");
+            w.WriteLine("  --inventory   the frames' metadata only (no decoding): time, exposure, ISO,");
+            w.WriteLine("                the gaps and the cadence of each group, how the darks match");
+            w.WriteLine("                the lights.");
+            w.WriteLine("  --lang en|ro  the language of the texts: en (English, the default) or ro (Romanian).");
+            w.WriteLine("  -h, --help    this text");
+            w.WriteLine();
+            w.WriteLine("Exit code: 0 when every frame was read, 1 on an error or when a frame could not be read.");
+        }
+
         w.WriteLine();
         foreach (string line in RunReport.WarrantyLines)
         {

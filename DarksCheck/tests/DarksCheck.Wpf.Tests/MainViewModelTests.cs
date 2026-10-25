@@ -330,8 +330,8 @@ public class MainViewModelTests
 
         Assert.StartsWith("Scris:", vm.Status, StringComparison.Ordinal);
         string[] files = Directory.GetFiles(outDir.Dir).Select(Path.GetFileName).Order(StringComparer.Ordinal).ToArray()!;
-        Assert.Equal(["darkscheck-biases.csv", "darkscheck-darks.csv", "darkscheck-harta-bias.png", "darkscheck-harta-dark-minus-bias.png", "darkscheck-harta-dark.png", "darkscheck-lights.csv", "darkscheck-raport.txt"], files);
-        Assert.Equal(vm.Report.ReplaceLineEndings("\n"), File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-raport.txt")).ReplaceLineEndings("\n"));
+        Assert.Equal(["darkscheck-biases.csv", "darkscheck-darks.csv", "darkscheck-lights.csv", "darkscheck-map-bias.png", "darkscheck-map-dark-minus-bias.png", "darkscheck-map-dark.png", "darkscheck-report.txt"], files);
+        Assert.Equal(vm.Report.ReplaceLineEndings("\n"), File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-report.txt")).ReplaceLineEndings("\n"));
         Assert.DoesNotContain(Directory.GetFiles(f.DarksDir), p => Path.GetFileName(p).StartsWith("darkscheck", StringComparison.Ordinal));
 
         // inside the session: refused, as --out is, and nothing written there

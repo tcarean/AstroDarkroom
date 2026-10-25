@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static DarksCheck.Core.Ui;
+
 namespace DarksCheck.Core;
 
 /// <summary>
@@ -94,7 +96,8 @@ internal sealed record EdgeFigures(double Left, double Right, double Top, double
 /// hot-pixel amplitude relative to the master (R-023), or the error that kept it out.
 /// </summary>
 /// <param name="Info">The frame's metadata.</param>
-/// <param name="Error">Why the frame has no figures, in Romanian; null when it decoded.</param>
+/// <param name="Error">Why the frame has no figures, in the run's language; null when it
+/// decoded.</param>
 /// <param name="Skipped">True when the frame cap left it out.</param>
 /// <param name="Planes">The four positions' figures; empty without a mosaic.</param>
 /// <param name="Residuals">The four positions against the median master; empty without a
@@ -324,7 +327,8 @@ internal sealed record Warming(
 /// <param name="Height">The mosaic's height, in pixels.</param>
 /// <param name="Black">The black level, in raw ADU.</param>
 /// <param name="White">The white level, in raw ADU.</param>
-/// <param name="ScaleSource">Where the black and the white come from, in Romanian.</param>
+/// <param name="ScaleSource">Where the black and the white come from, in the run's
+/// language.</param>
 /// <param name="CfaLetters">The colour order's letters; null when the file does not say
 /// it.</param>
 /// <param name="Norm">The factor from raw ADU to ADU equivalent at ISO 400 and 120 s.</param>
@@ -391,7 +395,7 @@ internal static class DarkSeriesAnalyzer
         IReadOnlyList<StackFrame> decoded = stack.Decoded;
         if (decoded.Count == 0)
         {
-            throw new InvalidOperationException("niciun dark nu s-a putut decoda" + FrameStack.FirstErrors(stack));
+            throw new InvalidOperationException(T("no dark could be decoded", "niciun dark nu s-a putut decoda") + FrameStack.FirstErrors(stack));
         }
 
         int w = stack.Width, h = stack.Height, n = decoded.Count;
@@ -522,7 +526,7 @@ internal static class DarkSeriesAnalyzer
         IReadOnlyList<StackFrame> decoded = stack.Decoded;
         if (decoded.Count == 0)
         {
-            throw new InvalidOperationException("niciun dark al partenerului nu s-a putut decoda" + FrameStack.FirstErrors(stack));
+            throw new InvalidOperationException(T("none of the partner's darks could be decoded", "niciun dark al partenerului nu s-a putut decoda") + FrameStack.FirstErrors(stack));
         }
 
         float[] median = new float[stack.Width * stack.Height];

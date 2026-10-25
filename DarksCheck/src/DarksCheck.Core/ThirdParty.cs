@@ -15,16 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static DarksCheck.Core.Ui;
+
 namespace DarksCheck.Core;
 
 /// <summary>
 /// A third-party component the tool links: its name, its role here, the licence it is taken
 /// under, whose it is, where its project lives, and which NuGet packages bring it.
 /// </summary>
-/// <param name="Name">The component's name, as the "Despre" window lists it.</param>
-/// <param name="Role">What it does in the tool, in Romanian (the window shows it).</param>
-/// <param name="Licence">The licence it is taken under, as the window shows it (Romanian words when
-/// a choice is named).</param>
+/// <param name="Name">The component's name, as the About window lists it.</param>
+/// <param name="Role">What it does in the tool, in the run's language (the window shows it).</param>
+/// <param name="Licence">The licence it is taken under, as the window shows it (in the run's
+/// language when a choice is named).</param>
 /// <param name="Copyright">Its copyright line, as its own files state it.</param>
 /// <param name="Url">The address of its project.</param>
 /// <param name="Packages">The NuGet package IDs that bring it; ThirdPartyTests matches them to the
@@ -38,7 +40,7 @@ internal sealed record ThirdPartyComponent(
     IReadOnlyList<string> Packages);
 
 /// <summary>
-/// The components written by others, as a value: what the "Despre" window shows. LGPL-2.1 §6
+/// The components written by others, as a value: what the About window shows. LGPL-2.1 §6
 /// asks that LibRaw's notice appear where the program displays its own copyright, and the
 /// reasons for GPLv3 compatibility are in THIRD-PARTY-NOTICES.md, which does not travel with
 /// a single executable. A new package needs an entry here and one in the notices file;
@@ -46,11 +48,12 @@ internal sealed record ThirdPartyComponent(
 /// </summary>
 internal static class ThirdParty
 {
-    internal static readonly IReadOnlyList<ThirdPartyComponent> Components =
+    /// <summary>The components, their words picked in the run's language when read.</summary>
+    internal static IReadOnlyList<ThirdPartyComponent> Components =>
     [
         new ThirdPartyComponent(
             Name: "Sdcb.LibRaw",
-            Role: "ambalajul C# peste libraw",
+            Role: T("the C# wrapper over libraw", "ambalajul C# peste libraw"),
             Licence: "MIT",
             Copyright: "Copyright (c) Zhou Jie (sdcb)",
             Url: "https://github.com/sdcb/Sdcb.LibRaw",
@@ -60,8 +63,8 @@ internal static class ThirdParty
         // the one in LibRaw 0.21.1's COPYRIGHT file, the version the runtime packages carry.
         new ThirdPartyComponent(
             Name: "LibRaw",
-            Role: "citirea fisierelor raw de aparat (bibliotecile native)",
-            Licence: "LGPL-2.1 (optiunea aleasa din dubla LGPL-2.1 / CDDL-1.0)",
+            Role: T("reading camera raw files (the native libraries)", "citirea fisierelor raw de aparat (bibliotecile native)"),
+            Licence: T("LGPL-2.1 (the option chosen from the dual LGPL-2.1 / CDDL-1.0)", "LGPL-2.1 (optiunea aleasa din dubla LGPL-2.1 / CDDL-1.0)"),
             Copyright: "Copyright (C) 2008-2021 LibRaw LLC (info@libraw.org)",
             Url: "https://www.libraw.org/",
             Packages: ["Sdcb.LibRaw.runtime.win64", "Sdcb.LibRaw.runtime.linux64"]),
