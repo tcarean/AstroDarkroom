@@ -29,7 +29,7 @@ public class TabViewModelTests
     {
         internal Task Run(string message, Func<Task> work) => RunGuardedAsync(message, work);
         internal void SetResult(string report) { Report = report; HasResult = true; }
-        internal Task<IDisposable> Enter(HeavyRunGate gate) => EnterGateAsync(gate, CancellationToken.None);
+        internal Task<IDisposable> Enter(HeavyRunGate? gate) => EnterGateAsync(gate, CancellationToken.None);
     }
 
     /// <summary>
