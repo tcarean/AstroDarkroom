@@ -182,7 +182,59 @@ public class FitsReaderTests
         byte[] fits = FitsTestData.BuildFits(64, 64, (x, y) => 100);
         byte[] truncated = fits.Take(FitsTestData.BlockSize + 100).ToArray();
 
-        Assert.ThrowsAny<Exception>(() => Load(truncated));
+        // the R-009 refusal, not the IndexOutOfRangeException the sample loop used to throw
+        Assert.Throws<InvalidDataException>(() => Load(truncated));
+    }
+
+    /// <summary>
+    /// R-009: a valid header for a 4 x 4 16-bit image (32 bytes of pixels) followed by only 8
+    /// data bytes is refused with InvalidDataException naming both counts, before any sample
+    /// is read; it used to be an IndexOutOfRangeException out of the sample loop.
+    /// </summary>
+    [Fact]
+    public void R009_LoadRefusesAFitsWhoseDataIsCut()
+    {
+        byte[] fits = FitsTestData.BuildFits(4, 4, (x, y) => 100, bitpix: 16);
+        byte[] cut = fits.Take(FitsTestData.BlockSize + 8).ToArray();
+
+        var ex = Assert.Throws<InvalidDataException>(() => Load(cut));
+
+        Assert.StartsWith("FITS:", ex.Message);
+        Assert.Contains("32", ex.Message);
+        Assert.EndsWith(" 8.", ex.Message);
+    }
+
+    /// <summary>
+    /// R-009: the check counts the data alone, so a last HDU with every pixel but without its
+    /// padding to 2880 bytes still loads.
+    /// </summary>
+    [Fact]
+    public void R009_LoadReadsAFitsWhoseLastPaddingIsMissing()
+    {
+        byte[] fits = FitsTestData.BuildFits(4, 4, (x, y) => 100, bitpix: 16);
+        byte[] unpadded = fits.Take(FitsTestData.BlockSize + 32).ToArray();
+
+        var img = Load(unpadded);
+
+        Assert.Equal(4, img.W);
+        Assert.Equal(100, img.At(3, 3), 6);
+    }
+
+    /// <summary>
+    /// R-009: the check runs for every HDU, the skipped ones too. A 1-D HDU of 100 16-bit
+    /// samples (200 bytes) cut after 100 bytes is refused with the two counts, not skipped
+    /// into "no HDU with a 2D image".
+    /// </summary>
+    [Fact]
+    public void R009_LoadRefusesACutHduWithoutA2DImage()
+    {
+        byte[] fits = FitsTestData.BuildFitsNaxis1(100);
+        byte[] cut = fits.Take(FitsTestData.BlockSize + 100).ToArray();
+
+        var ex = Assert.Throws<InvalidDataException>(() => Load(cut));
+
+        Assert.Contains("200", ex.Message);
+        Assert.EndsWith(" 100.", ex.Message);
     }
 
     /// <summary>
