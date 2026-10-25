@@ -124,6 +124,42 @@ public class MainViewModelTests
         Assert.True(vm.HasProblem);
     }
 
+    /// <summary>
+    /// A progress report queued by a run that was replaced must not write over the new run's
+    /// progress (R-029): the callback checks that its run is still the current one, as the finally
+    /// block does. The posts are held back by a queued context, so a report of the first run is
+    /// delivered only after the second has started, as it can be on the window's dispatcher when
+    /// the second folder is opened while the first run's frames are still finishing.
+    /// </summary>
+    [Fact]
+    public void R029_AQueuedReportOfAReplacedRunDoesNotWriteOverTheNewRunsProgress()
+    {
+        using SessionFixture eight = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using SessionFixture three = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList());
+        MainViewModel vm = new();
+        using QueuedContext ctx = new();
+
+        Task first = vm.OpenAsync(eight.Root);
+        ctx.WaitForAPost();   // at least one report of the eight-frame run is queued, undelivered
+        Task second = vm.OpenAsync(three.Root);
+        List<string> afterSecond = [];
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(vm.BusyMessage))
+            {
+                afterSecond.Add(vm.BusyMessage);
+            }
+        };
+        ctx.RunUntil(second);
+        ctx.RunUntil(first);
+
+        Assert.DoesNotContain(afterSecond, m => m.Contains("/ 8", StringComparison.Ordinal));
+        Assert.Contains(afterSecond, m => m.Contains("/ 3", StringComparison.Ordinal));
+        Assert.True(vm.HasResult);
+        Assert.Equal(3, vm.Frames.Count);
+        Assert.False(vm.IsRunning);
+    }
+
     /// <summary>The inputs the files do not carry: invariant parsing, the D3300's pixel when blank or wrong.</summary>
     [Theory]
     [InlineData("4.5", 4.5, true)]

@@ -17,6 +17,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - `lightscheck --frame N` on a raw libraw cannot open (a `.NEF` that is not a raw) crashed with
   libraw's own exception; the reader now reports it as an unreadable file naming it, so the
   console prints `EROARE: <file>: ...` and exits 1 (R-007, ADR 0019).
+- In the window, the progress reports of a run that was stopped or replaced could still land
+  after the next run had started and show the old run's counts on the bar and the wait line;
+  a report of a run that is no longer the current one is now dropped (R-029).
 
 ### Internal
 

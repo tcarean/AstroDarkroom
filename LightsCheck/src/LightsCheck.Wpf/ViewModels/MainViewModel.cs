@@ -342,7 +342,8 @@ public sealed class MainViewModel : ObservableObject
     /// Opens a session folder and runs the whole analysis on a pool thread, reporting progress
     /// on the UI thread. A run in flight is cancelled first; a cancelled run leaves the window
     /// empty, its result having been cleared at the start, and says in <see cref="Status"/>
-    /// that it was stopped. A folder the core refuses (an IO, format, state or argument error,
+    /// that it was stopped; its progress reports still queued when the next run starts are
+    /// dropped. A folder the core refuses (an IO, format, state or argument error,
     /// or a refused access) becomes the problem card and the tabs stay hidden; any other
     /// exception propagates.
     /// </summary>
@@ -364,6 +365,13 @@ public sealed class MainViewModel : ObservableObject
         SeriesOptions options = Options;
         Progress<(int Done, int Total)> progress = new(p =>
         {
+            // A report of a run that was stopped or replaced may still be queued when the next
+            // run starts; only the current run's reports reach the window (R-029).
+            if (!ReferenceEquals(_cts, cts))
+            {
+                return;
+            }
+
             Progress = p.Total > 0 ? p.Done / (double)p.Total : 0;
             BusyMessage = p.Done == p.Total ? WindowTexts.BusyRegistering : WindowTexts.Busy(p.Done, p.Total);
         });

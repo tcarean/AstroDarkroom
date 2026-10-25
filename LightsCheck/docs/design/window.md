@@ -21,7 +21,10 @@ code. The six tabs are `UserControl`s under `Views/` with no code of their own b
 `MainViewModel` has every property the XAML binds. `OpenAsync(folder)` cancels a run in
 flight, clears the result, then runs `SeriesRun.Run` on `Task.Run` with a `Progress<T>` whose
 callback lands on the UI thread (the `Progress<T>` is created on it) and sets `Progress` and
-`BusyMessage`. `ConfigureAwait(true)` brings `Populate` back to the UI thread; a run whose
+`BusyMessage`, only while its run is still the current one (`ReferenceEquals(_cts, cts)`, the
+same check the `finally` makes): the frames in flight when a run is stopped or replaced still
+report, and their posts may sit in the dispatcher's queue when the next run starts.
+`ConfigureAwait(true)` brings `Populate` back to the UI thread; a run whose
 token was cancelled returns before `Populate` so a stopped run leaves nothing. The three
 exception types the core throws for a bad folder become `ProblemText`; anything else is a
 bug and propagates.
