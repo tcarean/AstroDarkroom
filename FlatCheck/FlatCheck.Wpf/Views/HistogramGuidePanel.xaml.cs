@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HistogramGuidePanel.xaml.cs - doar legatura cu XAML-ul; textul e in SessionMessages.
+// HistogramGuidePanel.xaml.cs - only the link to the XAML; the text is in SessionMessages.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The folded guide on how to read the per-channel histograms of the Expunere tab, bound to
+    /// its <c>HistogramGuide</c>.
+    /// </summary>
     public partial class HistogramGuidePanel : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public HistogramGuidePanel() => InitializeComponent();
     }
 }

@@ -17,14 +17,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- HistEqView - tabul "Histogram".
+<!-- HistEqView - the "Histogram" tab.
 
-     Lista la stanga: masterul din process/ pe prima pozitie, marcat, apoi cadrele din
-     flats/. Poza la dreapta, cu comutatorul de vederi deasupra.
+     The list on the left: the master from masters/ or process/ in the first position, marked,
+     the smoothed flat right after it when there is one, then the frames from flats/. The
+     picture on the right, with the view switch above it.
 
-     Ecranul de asteptare sta in coloana din DREAPTA, nu peste tot tabul: lista ramane
-     apasabila cat timp se calculeaza, si un click pe alt fisier porneste alta rulare
-     peste cea curenta (vezi HistEqTabViewModel). -->
+     The waiting screen sits in the RIGHT column, not over the whole tab: the list stays
+     clickable while it computes, and a click on another file starts another run over the
+     current one (see HistEqTabViewModel). -->
 
 <UserControl x:Class="FlatCheck.Wpf.HistEqView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -37,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <ColumnDefinition Width="*" MinWidth="380" />
     </Grid.ColumnDefinitions>
 
-    <!-- ============================================================ lista -->
+    <!-- ============================================================ list -->
     <Border Grid.Column="0" Background="{StaticResource PanelBg}"
             BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,1,0">
       <DockPanel Margin="16,16,16,16">
@@ -51,10 +52,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding Selected, Mode=TwoWay}">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <!-- Masterul si, cand exista, flat-ul netezit se despart de cadre printr-o
-                   linie sub ultimul din ei si cate un chip, nu printr-o a doua lista: e
-                   acelasi fel de alegere, cu alt inteles. Chipul NETEZIT e stins, ca sa
-                   nu para al doilea master. -->
+              <!-- The master and, when there is one, the smoothed flat are set apart from the
+                   frames by a line under the last of them and a chip each, not by a second list: it
+                   is the same kind of choice, with another meaning. The NETEZIT chip is dimmed, so
+                   that it does not look like a second master. -->
               <Border x:Name="row" BorderBrush="{StaticResource BorderBr}" BorderThickness="0">
                 <StackPanel>
                   <StackPanel Orientation="Horizontal">
@@ -85,11 +86,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </DockPanel>
     </Border>
 
-    <!-- ============================================================ poza -->
+    <!-- ============================================================ picture -->
     <Grid Grid.Column="1">
       <local:MessagePanel Margin="20" />
 
-      <!-- starea de dinainte de prima alegere -->
+      <!-- the state before the first choice -->
       <TextBlock MaxWidth="420" Margin="24"
                  HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
                  Text="Alege masterul sau un flat din lista ca sa-l vad egalizat.">
@@ -122,8 +123,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                   <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Vederile. GroupName UNIC in fereastra, ca la celelalte grupuri de
-                     radio: WPF grupeaza dupa nume peste tot. Ascuns cand e un singur chip. -->
+                <!-- The views. A UNIQUE GroupName in the window, as for the other radio groups:
+                     WPF groups by name everywhere. Hidden when there is a single chip. -->
                 <ItemsControl ItemsSource="{Binding View.Options}" VerticalAlignment="Center"
                               Visibility="{Binding View.IsVisible, Converter={StaticResource BoolToVis}}">
                   <ItemsControl.ItemsPanel>
@@ -140,7 +141,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- Zoom-ul: starea e in ViewModel, deplasarea in control. -->
+                <!-- The zoom: the state is in the view-model, the panning in the control. -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                   <TextBlock Style="{StaticResource Faint}" VerticalAlignment="Center"
                              Margin="0,0,10,0" Text="{Binding Zoom.Label}" />
@@ -151,8 +152,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 </StackPanel>
               </Grid>
 
-              <!-- Rasterul la rezolutie intreaga, intr-un viewport fix: mai mic decat
-                   inainte, dar cu zoom si deplasare pana la pixelul de senzor. -->
+              <!-- The full-resolution raster, in a fixed viewport: smaller than before, but with
+                   zoom and panning down to the sensor pixel. -->
               <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="4">
                 <local:ZoomableImage Height="520"
                                      Source="{Binding Image}"
@@ -186,7 +187,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </ScrollViewer>
 
-      <!-- Ultimul copil al coloanei din dreapta, deci acopera poza si nu lista. -->
+      <!-- The last child of the right column, so it covers the picture and not the list. -->
       <local:BusyOverlay />
     </Grid>
   </Grid>

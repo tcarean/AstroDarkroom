@@ -100,7 +100,7 @@ public class MetricsTests
         Assert.Equal(64, cy, 6);
     }
 
-    // ------------------------------------------------------------ FitCenter: inclinare
+    // ------------------------------------------------------------ FitCenter: tilt
     //
     // The tilt is the reason the vertex offset stopped being a test in 1.2.0. The vertex
     // is ~ -b/(2d), a gradient-over-curvature ratio, so it is not scale-invariant: the
@@ -540,7 +540,9 @@ public class MetricsTests
         Assert.InRange(Metrics.MaxTileDeviation(img), 0.075, 0.081);
     }
 
-    /// <summary>On pixel noise alone the tile mean stays near 1: the metric measures structure, not grain.</summary>
+    /// <summary>
+    /// On pixel noise alone the tile mean stays near 1: the metric measures structure, not grain.
+    /// </summary>
     [Fact]
     public void MaxTileDeviation_AveragesPixelNoiseAway()
     {
@@ -670,7 +672,7 @@ public class MetricsTests
         Assert.Equal(4, k);
     }
 
-    // ------------------------------------------------- profilul radial nu sare
+    // ------------------------------------------------- the radial profile does not jump
 
     /// <summary>
     /// Max relative deviation of a profile from its own 9-point Savitzky-Golay
@@ -731,7 +733,7 @@ public class MetricsTests
 
         double raw = ProfileRoughnessPct(rawProf), sym = ProfileRoughnessPct(symProf);
 
-        // masurat: 1.54 % brut, 0.02 % simetrizat
+        // measured: 1.54 % raw, 0.02 % symmetrised
         Assert.True(raw > 1.0, $"profilul brut ar trebui sa sara, dar a dat {raw:F3} %");
         Assert.True(sym < 0.1, $"profilul simetrizat ar trebui neted, dar a dat {sym:F3} %");
     }
@@ -800,9 +802,9 @@ public class MetricsTests
     }
 
     /// <summary>
-    /// Si celalalt capat: pe un camp radial simetrizarea nu are ce sa scoata, deci
-    /// profilul nu se muta mai mult decat artefactul de o jumatate de pixel al centrarii
-    /// (problema cunoscuta 5) - masurat 0.20 % pe 256x256, si scade ca ~1/n.
+    /// And the other end: on a radial field the symmetrisation has nothing to remove, so
+    /// the profile moves no more than the centring's half-pixel artefact (known issue 5) -
+    /// measured 0.20 % on 256x256, and it falls as ~1/n.
     /// </summary>
     [Fact]
     public void RadialModel_OnARadialField_SymmetrisingBarelyMovesTheProfile()

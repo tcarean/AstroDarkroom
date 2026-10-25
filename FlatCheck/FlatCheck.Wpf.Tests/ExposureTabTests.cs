@@ -18,9 +18,9 @@
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Tabul de expunere. Comportamentul cerut e simplu - alegi un fisier, se calculeaza;
-/// comuti "Sky", se recalculeaza - dar al doilea e si cel usor de uitat, si atunci un
-/// sky flat corect expus la 22 % ar fi raportat ca subexpus.
+/// The exposure tab. The behaviour asked for is simple - pick a file, it computes; flip
+/// "Sky", it computes again - but the second is also the easy one to forget, and then a
+/// sky flat correctly exposed at 22 % would be reported as underexposed.
 /// </summary>
 public class ExposureTabTests
 {
@@ -31,9 +31,9 @@ public class ExposureTabTests
         return vm;
     }
 
-    // ------------------------------------------------------------------ lista
+    // ------------------------------------------------------------------ list
 
-    /// <summary>Cerinta 8: lista vine din flats/, si contine doar raw de aparat.</summary>
+    /// <summary>R-084: the list comes from flats/, and holds only camera raws.</summary>
     [Fact]
     public void TheListComesFromFlatsAndHoldsOnlyCameraRaws()
     {
@@ -47,8 +47,8 @@ public class ExposureTabTests
     }
 
     /// <summary>
-    /// Fara raw-uri, tabul explica de ce modul cere un cadru brut - stivuirea
-    /// normalizeaza exact nivelul care se masoara aici.
+    /// Without raws, the tab explains why the mode asks for a raw frame - stacking normalises
+    /// exactly the level measured here.
     /// </summary>
     [Fact]
     public void WithoutRawFlatsItExplainsWhyAMasterWouldNotDo()
@@ -74,7 +74,7 @@ public class ExposureTabTests
         Assert.False(vm.HasResult);
     }
 
-    // ------------------------------------------------------------------ calcul
+    // ------------------------------------------------------------------ computation
 
     /// <summary>
     /// A pick made while another heavy run holds the gate (the opening chain, say) waits for it
@@ -124,8 +124,8 @@ public class ExposureTabTests
     }
 
     /// <summary>
-    /// CERINTA 8: comutatorul "Sky" schimba pragurile, deci si verdictul, pe acelasi
-    /// fisier. Nivelul masurat ramane identic - se schimba doar cum se citeste.
+    /// R-043: the "Sky" switch changes the thresholds, so the verdict too, on the same
+    /// file. The measured level stays identical - only how it is read changes.
     /// </summary>
     [Fact]
     public async Task TheSkySwitchChangesTheVerdictWithoutChangingTheMeasurement()
@@ -141,11 +141,11 @@ public class ExposureTabTests
         vm.Sky = true;
         await vm.RecomputeAsync();
 
-        Assert.Equal(level, vm.Centre);              // aceeasi masuratoare
-        Assert.NotEqual(panelVerdict, vm.Verdict);   // alta citire
+        Assert.Equal(level, vm.Centre);              // the same measurement
+        Assert.NotEqual(panelVerdict, vm.Verdict);   // another reading
     }
 
-    /// <summary>Sfatul pentru sky flat spune explicit sa NU se forteze mai sus.</summary>
+    /// <summary>The advice for a sky flat says explicitly NOT to push higher.</summary>
     [Fact]
     public async Task TheSkyAdviceWarnsAgainstPushingHigher()
     {
@@ -179,8 +179,8 @@ public class ExposureTabTests
     }
 
     /// <summary>
-    /// Gate-ul de sanitate: un fisier deja calibrat sau debayerizat nu primeste verdict,
-    /// ci explicatia - inclusiv cauza tipica, "am deschis NEF-ul in Siril si am dat Save".
+    /// The sanity gate: a file already calibrated or debayered gets no verdict, but the
+    /// explanation - including the typical cause, "I opened the NEF in Siril and pressed Save".
     /// </summary>
     [Fact]
     public async Task ADebayeredFileGetsAnExplanationInsteadOfAVerdict()
@@ -194,8 +194,8 @@ public class ExposureTabTests
         vm.Selected = path;
         await vm.RecomputeAsync();
 
-        Assert.True(vm.HasResult);       // a rulat
-        Assert.False(vm.IsRawFlat);      // dar fisierul nu e ce cere modul
+        Assert.True(vm.HasResult);       // it ran
+        Assert.False(vm.IsRawFlat);      // but the file is not what the mode asks for
         Assert.Equal(Stats.NotApplicable, vm.Verdict);
         Assert.Contains("DEBAYERIZAT", vm.Advice);
         Assert.Contains("Conversion", vm.Advice);
@@ -234,12 +234,12 @@ public class ExposureTabTests
         Assert.Equal(expected.ToString(), vm.Report);
     }
 
-    // ------------------------------------------------------------------ histograme
+    // ------------------------------------------------------------------ histograms
 
     /// <summary>
-    /// Un rand pe pozitie Bayer, cu ambele curbe gata normalizate. Fiecare curba e scalata
-    /// la propriul varf, deci maximul ei e 1 - altfel fereastra centrala, care are 4 % din
-    /// pixelii canalului, ar fi o linie plata, si tocmai ea decide.
+    /// One row per Bayer position, with both curves already normalised. Each curve is scaled
+    /// to its own peak, so its maximum is 1 - otherwise the central window, which holds 4 % of
+    /// the channel's pixels, would be a flat line, and it is the one that decides.
     /// </summary>
     [Fact]
     public async Task PickingAFileFillsOneHistogramRowPerChannel()
@@ -283,7 +283,9 @@ public class ExposureTabTests
         Assert.Contains("Nu stiu", vm.ChannelOrder);
     }
 
-    /// <summary>...and with it, they get their colours, read off the file and named as such.</summary>
+    /// <summary>
+    /// ...and with it, they get their colours, read off the file and named as such.
+    /// </summary>
     [Fact]
     public async Task WithABayerPatternTheRowsAreNamedByColour()
     {
@@ -384,13 +386,12 @@ public class ExposureTabTests
         Assert.Contains("nu e un flat brut", vm.Reading);
     }
 
-    // ------------------------------------------------------------------ previzualizarea aparatului
+    // ------------------------------------------------------------------ the camera's preview
 
     /// <summary>
-    /// Un rezultat cu previzualizare, fara niciun raw adevarat: JPEG-ul se face in test
-    /// cu encoderul ImageSharp, se decodeaza cu PreviewReader si intra in analizor ca
-    /// intr-o rulare reala. Previzualizarea e mult mai luminoasa decat raw-ul, ca pe un
-    /// aparat adevarat.
+    /// A result with a preview, without any real raw: the JPEG is made in the test with the
+    /// ImageSharp encoder, decoded with PreviewReader and goes into the analyzer as in a real
+    /// run. The preview is much brighter than the raw, as on a real camera.
     /// </summary>
     static ExposureResult ResultWithPreview(bool cfa = true)
     {
@@ -399,7 +400,7 @@ public class ExposureTabTests
             : FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128, center: 550));
         PreviewImage preview = PreviewReader.Decode(FlatCheck.Tests.TestImages.JpegOf(160, 120, (x, y) =>
         {
-            // centru mai luminos decat colturile, ca sa se vada ca tabelul ia CENTRUL
+            // centre brighter than the corners, so it shows that the table takes the CENTRE
             double d = Math.Sqrt((x - 80) * (x - 80) + (y - 60) * (y - 60)) / 100.0;
             byte v = (byte)(230 - 60 * d);
             return ((byte)(v - 40), v, (byte)Math.Min(255, v + 15));
@@ -415,7 +416,8 @@ public class ExposureTabTests
         return vm;
     }
 
-    /// <summary>Un FITS n-are previzualizare: comutatorul e stins, vederea e pe brute, si se spune de ce.</summary>
+    /// <summary>A FITS has no preview: the switch is off, the view is on the raw values, and it
+    /// says why.</summary>
     [Fact]
     public async Task WithoutAPreviewTheSwitchIsDisabled()
     {
@@ -441,14 +443,14 @@ public class ExposureTabTests
 
         Assert.True(vm.Source.IsEnabled);
         Assert.False(vm.Source.IsPreviewSelected);
-        Assert.Equal(4, vm.Histograms.Count);          // randurile raw
-        Assert.Equal("", vm.SourceNote);               // pe brute, cu previzualizare disponibila: nimic de explicat
+        Assert.Equal(4, vm.Histograms.Count);          // the raw rows
+        Assert.Equal("", vm.SourceNote);               // on the raw values, with a preview available: nothing to explain
         Assert.True(vm.HasComparison);
     }
 
     /// <summary>
-    /// Comutarea reface randurile din rezultatul tinut, nu reruleaza nimic: cifrele
-    /// verdictului raman identice si tabul nu trece prin starea de asteptare.
+    /// Switching rebuilds the rows from the result held, it reruns nothing: the verdict's
+    /// figures stay identical and the tab does not go through the waiting state.
     /// </summary>
     [Fact]
     public void TheSwitchDoesNotRerunTheAnalysis()
@@ -472,9 +474,9 @@ public class ExposureTabTests
     }
 
     /// <summary>
-    /// Decizia cea mai importanta a functiei: pe previzualizare nu exista benzi, nota,
-    /// sau canal "care decide". Toate cele patru praguri sunt NaN, deci desenul nu
-    /// traseaza nicio zona - fara niciun steag in HistogramCanvas.
+    /// The function's most important decision: on the preview there are no bands, no note,
+    /// no channel "that decides". All four thresholds are NaN, so the drawing traces no
+    /// zone - without any flag in HistogramCanvas.
     /// </summary>
     [Fact]
     public void ThePreviewRowsCarryNoBands()
@@ -496,7 +498,7 @@ public class ExposureTabTests
         });
     }
 
-    /// <summary>Tabelul compara centru cu centru, nu mediana intregului cadru.</summary>
+    /// <summary>The table compares centre with centre, not the median of the whole frame.</summary>
     [Fact]
     public void TheComparisonPairsCentreWithCentre()
     {
@@ -510,11 +512,13 @@ public class ExposureTabTests
         ChannelLevels prevR = r.Preview.Channels.Single(c => c.Colour == 'R');
         Assert.Equal($"{rawR.CentreMedianPct:F1} %", vm.Comparison[0].Raw);
         Assert.Equal($"{prevR.CentreMedianPct:F1} %", vm.Comparison[0].Screen);
-        Assert.NotEqual($"{prevR.MedianPct:F1} %", vm.Comparison[0].Screen);   // centrul e mai luminos decat cadrul
+        Assert.NotEqual($"{prevR.MedianPct:F1} %", vm.Comparison[0].Screen);   // the centre is brighter than the frame
         Assert.StartsWith("+", vm.Comparison[0].Gap);
     }
 
-    /// <summary>Un raw judecat mono (un singur canal, fara culoare): o singura pereche, fara exceptie.</summary>
+    /// <summary>
+    /// A raw judged mono (a single channel, no colour): a single pair, no exception.
+    /// </summary>
     [Fact]
     public void AMonoRawGetsOneComparisonRow()
     {
@@ -538,11 +542,13 @@ public class ExposureTabTests
         Assert.Empty(vm.Comparison);
         Assert.Equal("", vm.SourceNote);
         Assert.False(vm.Source.IsEnabled);
-        // Stingerea trage alegerea inapoi pe brute: n-are ce arata pe previzualizare.
+        // Switching off pulls the choice back to the raw values: there is nothing to show on the
+        // preview.
         Assert.False(vm.Source.IsPreviewSelected);
     }
 
-    /// <summary>Un fisier nou fara previzualizare, dupa unul cu: comutatorul se stinge si vederea revine pe brute.</summary>
+    /// <summary>A new file without a preview, after one with: the switch goes off and the view
+    /// returns to the raw values.</summary>
     [Fact]
     public void ANewFileWithoutAPreviewFallsBackToRaw()
     {
@@ -572,7 +578,7 @@ public class ExposureTabTests
         Assert.Empty(vm.Histograms);
         Assert.Empty(vm.Reading);
         Assert.Empty(vm.ChannelOrder);
-        // Preferinta de vizualizare supravietuieste, ca la ghidul hartii.
+        // The view preference survives, as with the map guide.
         Assert.True(vm.HistogramGuide.IsExpanded);
     }
 

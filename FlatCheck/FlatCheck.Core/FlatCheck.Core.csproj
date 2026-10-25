@@ -1,15 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Nucleul: tot ce calculeaza si tot ce formateaza. Nu stie nimic despre consola sau
-       despre ferestre, si nici nu trebuie sa stie - de asta au putut sa apara doua
-       aplicatii peste el fara sa se duplice o cifra.
+  <!-- The core: everything that computes and everything that formats. It knows nothing about the
+       console or the windows, nor does it need to - that is why two applications could appear
+       over it without a single figure being duplicated.
 
-       Impartirea nu e cosmetica: inainte, "Analysis/ si Report/ sunt pure" era o
-       conventie tinuta de bunavointa. Acum e o granita de compilare - nimic de aici nu
-       POATE ajunge la Console, fiindca nu exista un punct de intrare care sa-l cheme.
+       The split is not cosmetic: before, "Analysis/ and Report/ are pure" was a convention kept
+       by goodwill. Now it is a compile boundary - nothing here CAN reach Console, because there
+       is no entry point to call it.
 
-       Versiunea si copyright-ul NU sunt aici: vin din Directory.Build.props, ca sa fie
-       aceleasi in toate cele trei assembly-uri. Vezi comentariul de acolo. -->
+       The version and the copyright are NOT here: they come from Directory.Build.props, so that
+       they are the same in all three assemblies. See the comment there. -->
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -18,35 +18,35 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
-  <!-- Dependentele externe. Regula e in docs/design/dependencies.md, "The rule": se discuta
-       inainte si se aproba, nu se evita si nu se adauga in tacere. Licenta fiecareia si
-       DE CE e compatibila cu GPLv3 sunt scrise in THIRD-PARTY-NOTICES.md. Ce ramane scris
-       de mana - FITS, PNG, toate calculele - ramane asa fiindca acolo e onest.
+  <!-- The external dependencies. The rule is in docs/design/dependencies.md, "The rule": they
+       are discussed beforehand and approved, neither avoided nor added silently. The licence of
+       each and WHY it is compatible with GPLv3 are written in THIRD-PARTY-NOTICES.md. What stays
+       written by hand - FITS, PNG, all the computations - stays so because there it is honest.
 
-       Sdcb.LibRaw, si numai pentru fisiere raw de aparat: nu exista NICIO librarie .NET
-       pur managed care sa decodeze mozaicul Bayer dintr-un NEF. Leaga chiar libraw-ul
-       pe care il foloseste si rawpy in flatcheck.py, deci cifrele ies bit-identice.
-       Orice alternativa ori debayerizeaza (si atunci modul de expunere n-are ce masura), ori e
-       comerciala, ori porneste un dcraw.exe extern. Pachetele runtime.* aduc DLL-uri
-       native (raw_r, jpeg8, lcms2, zlib1, ~2.1 MB); ele NU intra in flatcheck.exe decat
-       la publish cu IncludeNativeLibrariesForSelfExtract (vezi README). Fara ele
-       modurile pe FITS merg neschimbate; doar caile raw refuza, cu mesaj explicit.
+       Sdcb.LibRaw, and only for camera raw files: there is NO purely managed .NET library that
+       decodes the Bayer mosaic of a NEF. It binds the very libraw that rawpy uses in
+       flatcheck.py too, so the figures come out bit-identical. Any alternative either
+       debayers (and then the exposure mode has nothing to measure), or is commercial, or starts
+       an external dcraw.exe. The runtime.* packages bring native DLLs (raw_r, jpeg8, lcms2,
+       zlib1, ~2.1 MB); they go into flatcheck.exe ONLY at a publish with
+       IncludeNativeLibrariesForSelfExtract (see README). Without them the FITS modes work
+       unchanged; only the raw paths refuse, with an explicit message.
 
-       SixLabors.ImageSharp, si numai pentru previzualizarea JPEG pe care aparatul o
-       ingloba in raw - imaginea din care si-a calculat histograma de pe ecran. Nu
-       inlocuieste nimic scris de mana: alternativa era un decodor JPEG propriu, cu
-       Huffman, DCT si subesantionare, pentru o poza care nu voteaza nimic. Pur managed,
-       deci PublishSingleFile nu se schimba. Versiunea e FIXATA si din motive juridice:
-       licenta Six Labors e conditionata si grantul vine cu versiunea luata. Atins dintr-un
-       singur fisier, PreviewReader.cs, ca sa poata fi inlocuit daca licenta se muta.
+       SixLabors.ImageSharp, and only for the JPEG preview the camera embedded in the raw - the
+       image from which it computed its on-screen histogram. It replaces nothing written by
+       hand: the alternative was a JPEG decoder of our own, with Huffman, DCT and subsampling,
+       for a picture that votes on nothing. Purely managed, so PublishSingleFile does not
+       change. The version is PINNED for legal reasons too: the Six Labors licence is
+       conditional and the grant comes with the version taken. Touched from a single file,
+       PreviewReader.cs, so that it can be replaced if the licence moves.
 
-       DE CE 3.1.x SI NU 4.x: de la 4.0.0 pachetul aduce un task MSBuild care cere o cheie
-       de licenta la compilare - pe Debug e avertisment, pe Release e EROARE. Proiectele
-       open source primesc cheia gratuit, dar pe baza de cerere, si oricine cloneaza repo-ul
-       ar avea nevoie de a lui ca sa faca publish. 3.1.x are exact aceiasi termeni de licenta
-       (Split License 1.0, ramura Apache 2.0 pentru open source) si niciun task; singura
-       diferenta de API care ne priveste e ca 3.x nu aplica niciodata profilul ICC la decodare,
-       ceea ce e chiar comportamentul dorit. Vezi THIRD-PARTY-NOTICES.md. -->
+       WHY 3.1.x AND NOT 4.x: since 4.0.0 the package brings an MSBuild task that asks for a
+       licence key at compile time - on Debug a warning, on Release an ERROR. Open source
+       projects get the key for free, but on request, and anyone who clones the repo would need
+       their own to publish. 3.1.x has exactly the same licence terms (Split License 1.0, the
+       Apache 2.0 branch for open source) and no task; the only API difference that concerns us
+       is that 3.x never applies the ICC profile when decoding, which is exactly the behaviour
+       wanted. See THIRD-PARTY-NOTICES.md. -->
   <ItemGroup>
     <PackageReference Include="Sdcb.LibRaw" />
     <PackageReference Include="Sdcb.LibRaw.runtime.win64" />
@@ -54,14 +54,14 @@
     <PackageReference Include="SixLabors.ImageSharp" />
   </ItemGroup>
 
-  <!-- Nucleul ramane internal in intregime. Nu i s-a construit o suprafata publica
-       fiindca n-are public: cei trei consumatori sunt in acelasi repo, se compileaza
-       impreuna, si a face publice cele cinci record-uri de rezultat ar fi insemnat sa
-       le transform campurile in proprietati doar ca sa multumesc un compilator.
+  <!-- The core stays internal entirely. No public surface was built for it because it has no
+       public: the four consumers (the console, the window and the two test projects) are in the
+       same repo, compile together, and making the result records public would have meant
+       turning their fields into properties only to please a compiler.
 
-       Aplicatia WPF nu leaga XAML direct de record-urile astea (binding-ul WPF nu vede
-       campuri, doar proprietati) - are ViewModel-uri care le citesc si expun exact ce
-       trebuie afisat. Deci lista de mai jos nu e o portita, e contractul. -->
+       The WPF application does not bind XAML directly to these records (WPF binding does not see
+       fields, only properties) - it has view-models that read them and expose exactly what
+       must be shown. So the list below is not a loophole, it is the contract. -->
   <ItemGroup>
     <InternalsVisibleTo Include="flatcheck" />
     <InternalsVisibleTo Include="FlatCheck.Tests" />

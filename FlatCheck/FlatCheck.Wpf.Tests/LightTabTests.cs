@@ -20,9 +20,9 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Tabul end-to-end. Testele care conteaza aici nu sunt despre cifre, ci despre cele
-/// trei feluri in care se poate termina - verdict, NEDETERMINAT, INAPLICABIL - si mai
-/// ales despre faptul ca ultimul nu e o eroare.
+/// The end-to-end tab. The tests that matter here are not about figures, but about the
+/// three ways it can end - verdict, NEDETERMINAT, INAPLICABIL - and above all about the
+/// fact that the last one is not an error.
 /// </summary>
 public class LightTabTests
 {
@@ -48,8 +48,8 @@ public class LightTabTests
     }
 
     /// <summary>
-    /// Tabelul se umple pe masura ce cadrele sunt gata, in ordine. Pe 32 de cadre rularea
-    /// ia doua minute, iar un tabel care apare tot deodata la sfarsit ar parea blocat.
+    /// The table fills as the frames are ready, in order. On 32 frames the run takes two
+    /// minutes, and a table that appeared all at once at the end would look stuck.
     /// </summary>
     [Fact]
     public async Task TheTableFillsUpInFileOrder()
@@ -64,7 +64,7 @@ public class LightTabTests
             vm.Frames.Select(r => r.Name).ToArray());
     }
 
-    /// <summary>Fiecare rand poarta semnul explicit: semnul E diagnosticul.</summary>
+    /// <summary>Every row carries the explicit sign: the sign IS the diagnosis.</summary>
     [Fact]
     public async Task EveryRowShowsTheRadialComponentWithAnExplicitSign()
     {
@@ -77,7 +77,9 @@ public class LightTabTests
                         "randul nu poarta semn: " + r.Radial));
     }
 
-    /// <summary>Bara de progres e determinata pe serie: se stie cate cadre sunt.</summary>
+    /// <summary>
+    /// The progress bar is determinate on a series: the number of frames is known.
+    /// </summary>
     [Fact]
     public async Task ProgressIsKnownAndReachesTheEnd()
     {
@@ -89,13 +91,13 @@ public class LightTabTests
         Assert.Equal(1.0, vm.Progress, 6);
     }
 
-    // ------------------------------------------------------------------ refuzul
+    // ------------------------------------------------------------------ the refusal
 
     /// <summary>
-    /// CERINTA implicita a gardei din 1.2.0: pe un camp prea larg testul refuza. Refuzul
-    /// NU e o eroare a aplicatiei - se afiseaza ca rezultat, cu explicatie, si tabul
-    /// ramane utilizabil. Daca ar aparea ca eroare, omul ar crede ca unealta e stricata
-    /// exact cand ea tocmai l-a scutit de o concluzie falsa.
+    /// The implicit REQUIREMENT of the guard since 1.2.0: on a field too wide the test refuses.
+    /// The refusal is NOT an error of the application - it is shown as a result, with an
+    /// explanation, and the tab stays usable. Were it to appear as an error, the user would
+    /// think the tool is broken exactly when it has just spared them a false conclusion.
     /// </summary>
     [Fact]
     public async Task ATooWideFieldIsRefusedAsAResultNotAsAnError()
@@ -105,13 +107,13 @@ public class LightTabTests
 
         var vm = await Run(f);
 
-        Assert.True(vm.HasResult);          // a raspuns
-        Assert.False(vm.HasError);          // dar nu a esuat
+        Assert.True(vm.HasResult);          // it answered
+        Assert.False(vm.HasError);          // but it did not fail
         Assert.True(vm.Refused);
         Assert.Equal(Stats.NotApplicable, vm.Verdict);
     }
 
-    /// <summary>Cand se refuza, nu se produce nicio cifra si nicio harta.</summary>
+    /// <summary>When it refuses, no figure and no map is produced.</summary>
     [Fact]
     public async Task ARefusalProducesNoNumbersAtAll()
     {
@@ -127,7 +129,8 @@ public class LightTabTests
         Assert.Null(vm.Map);
     }
 
-    /// <summary>Refuzul explica degenerarea geometrica si trimite la testul care raspunde.</summary>
+    /// <summary>The refusal explains the geometric degeneracy and points to the test that
+    /// answers.</summary>
     [Fact]
     public async Task ARefusalExplainsWhyAndPointsAtTheRotationTest()
     {
@@ -160,7 +163,7 @@ public class LightTabTests
         Assert.DoesNotContain("--fov", vm.Reasons);
     }
 
-    /// <summary>Verdictul de refuz se coloreaza neutru, nu rosu.</summary>
+    /// <summary>The refusal verdict is coloured neutral, not red.</summary>
     [Fact]
     public async Task ARefusalIsColouredNeutrally()
     {
@@ -172,11 +175,11 @@ public class LightTabTests
         Assert.Equal(VerdictPalette.Neutral, VerdictPalette.For(vm.Verdict));
     }
 
-    // ------------------------------------------------------------------ neconcludent
+    // ------------------------------------------------------------------ inconclusive
 
     /// <summary>
-    /// O serie prea scurta nu poate concluziona - sub cinci cadre media nu e o
-    /// masuratoare. Verdictul e NEDETERMINAT si se spune de ce, dar cifrele exista.
+    /// A series too short cannot conclude - under five frames the mean is not a
+    /// measurement. The verdict is NEDETERMINAT and it says why, but the figures exist.
     /// </summary>
     [Fact]
     public async Task AShortSeriesIsUndeterminedButStillShowsItsNumbers()
@@ -189,14 +192,14 @@ public class LightTabTests
         Assert.True(vm.HasNumbers);
         Assert.NotEmpty(vm.MeanRadial);
         Assert.NotEmpty(vm.Reasons);
-        Assert.Empty(vm.Diagnosis);        // fara verdict nu se pune diagnostic
+        Assert.Empty(vm.Diagnosis);        // without a verdict no diagnosis is given
     }
 
-    // ------------------------------------------------------------------ fara cadre
+    // ------------------------------------------------------------------ no frames
 
     /// <summary>
-    /// Fara cadre calibrate, tabul explica ce cere si de ce cele registrate nu se
-    /// potrivesc - in loc sa arunce o exceptie de la mijlocul unui calcul.
+    /// Without calibrated frames, the tab explains what it asks for and why the registered
+    /// ones do not fit - instead of throwing an exception from the middle of a computation.
     /// </summary>
     [Fact]
     public async Task WithoutCalibratedFramesItExplainsWhatItNeeds()
@@ -223,11 +226,11 @@ public class LightTabTests
         Assert.True(vm.HasError);
     }
 
-    // ------------------------------------------------------------------ anulare
+    // ------------------------------------------------------------------ cancellation
 
     /// <summary>
-    /// Anularea nu e o eroare: inseamna ca omul a schimbat folderul sau a inchis
-    /// fereastra. Tabul ramane gol, fara panou rosu.
+    /// Cancellation is not an error: it means the user changed the folder or closed the
+    /// window. The tab stays empty, without a red panel.
     /// </summary>
     [Fact]
     public async Task CancellingLeavesTheTabEmptyWithoutAnError()
@@ -260,12 +263,12 @@ public class LightTabTests
         Assert.Empty(vm.MapLegend);
     }
 
-    // ------------------------------------------------------------------ legenda
+    // ------------------------------------------------------------------ legend
 
     /// <summary>
-    /// Legenda spune capetele scarii automate, care aici sunt de obicei foarte asimetrice -
-    /// harta e 1 + radial/a, deci se duce mult intr-o parte. Fara legenda, culoarea nu
-    /// spune nimic.
+    /// The legend gives the ends of the automatic scale, which here are usually very
+    /// asymmetric - the map is 1 + radial/a, so it goes far to one side. Without the legend, the
+    /// colour says nothing.
     /// </summary>
     [Fact]
     public async Task AConclusiveRunHasALegend()
@@ -278,7 +281,9 @@ public class LightTabTests
         Assert.Contains("rosu", vm.MapLegend);
     }
 
-    /// <summary>La refuz nu exista harta, deci nici legenda nu are ce sa descrie.</summary>
+    /// <summary>
+    /// On a refusal there is no map, so the legend has nothing to describe either.
+    /// </summary>
     [Fact]
     public async Task ARefusedRunHasNoLegend()
     {

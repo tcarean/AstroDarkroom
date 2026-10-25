@@ -19,8 +19,14 @@ using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The Sintetic tab: the lens, focal length, aperture and calibration crop chosen, the
+    /// synthetic flat written from the lens's profile and its comparison with the master,
+    /// bound to <see cref="SyntheticTabViewModel"/>.
+    /// </summary>
     public partial class SyntheticView : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public SyntheticView()
         {
             InitializeComponent();

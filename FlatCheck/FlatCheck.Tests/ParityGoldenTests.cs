@@ -94,7 +94,7 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
         { "light too wide field", new[] { "widefield.fit", "--light" } },
         { "light --fov override", new[] { "widefield.fit", "--light", "--fov", "10" } },
 
-        // --light pe serie: enumerarea, ordinea si ramura de verdict, pe amandoua folderele.
+        // --light on a series: the enumeration, the order and the verdict branch, on both folders.
         { "light series stable", new[] { "serie_stabil", "--light", "--fov", "10" } },
         { "light series sweeping", new[] { "serie_baleiaj", "--light", "--fov", "10" } },
         { "light series pattern", new[] { "serie_stabil", "--light", "--fov", "10", "--pattern", "pp_light_0000?.fit" } },
@@ -114,7 +114,9 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
         { "expo 65% --sky", new[] { "expo65.fit", "--expo", "--sky", "--sat", "4095" } },
     };
 
-    /// <summary>"expo 25% --sky" -> "expo_25_sky": the golden file name, unique per scenario.</summary>
+    /// <summary>
+    /// "expo 25% --sky" -> "expo_25_sky": the golden file name, unique per scenario.
+    /// </summary>
     internal static string Slug(string name)
         => Regex.Replace(name.ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
 

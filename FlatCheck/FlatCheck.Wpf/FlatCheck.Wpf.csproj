@@ -1,15 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Aplicatia cu ferestre. Acelasi nucleu ca flatcheck.exe, prin FlatCheck.Core - nu
-       reimplementeaza nicio cifra si niciun rand de raport; vezi Runs/RunOutcome.cs din
-       Core pentru cum se imparte munca.
+  <!-- The windowed application. The same core as flatcheck.exe, through FlatCheck.Core - it
+       reimplements no figure and no report line; see Runs/RunOutcome.cs in Core for how the
+       work is divided.
 
-       net8.0-windows + UseWPF face proiectul asta Windows-only, si asta face ca
-       "dotnet build FlatCheck.sln" sa nu mai mearga pe Linux. Consola ramane portabila
-       daca se construieste direct proiectul ei (dotnet build FlatCheck/FlatCheck.csproj).
+       net8.0-windows + UseWPF makes this project Windows-only, and that makes
+       "dotnet build FlatCheck.sln" no longer work on Linux. The console stays portable if its
+       own project is built directly (dotnet build FlatCheck/FlatCheck.csproj).
 
-       Versiunea si copyright-ul vin din Directory.Build.props, ca la celelalte proiecte,
-       ca banner-ul scris in "Rezultat testare.txt" sa fie garantat acelasi cu al consolei. -->
+       The version and the copyright come from Directory.Build.props, as for the other
+       projects, so that the banner written in "Rezultat testare.txt" is guaranteed the same as
+       the console's. -->
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -20,21 +21,20 @@
     <AssemblyName>FlatCheck.Wpf</AssemblyName>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
 
-    <!-- Icoana exe-ului (Explorer, fixarea in taskbar). Aceeasi ca la consola, din Icon/
-         la radacina. Fereastra o primeste separat, prin <Resource> de mai jos si
-         Icon= in MainWindow.xaml: fara ea WPF o cauta in exe-ul procesului, care la
-         "dotnet FlatCheck.Wpf.dll" sau sub un test e dotnet.exe. -->
+    <!-- The exe's icon (Explorer, pinning to the taskbar). The same as the console's, from Icon/
+         at the root. The window gets it separately, through the <Resource> below and Icon= in
+         MainWindow.xaml: without it WPF looks for it in the process's exe, which under
+         "dotnet FlatCheck.Wpf.dll" or under a test is dotnet.exe. -->
     <ApplicationIcon>..\Icon\flatcheck.ico</ApplicationIcon>
 
-    <!-- NU pune InvariantGlobalization aici, oricat de tentant ar fi prin simetrie cu
-         proiectul consola. WPF cere date de cultura ca sa poata lega ceva de o
-         proprietate: cu ele scoase, fereastra crapa la INCARCAREA XAML-ului, cu
-         "Cannot find non-neutral culture related to 'en-us'" - deci nu la o rulare
-         anume, ci la pornire, mereu.
+    <!-- Do NOT put InvariantGlobalization here, however tempting by symmetry with the console
+         project. WPF needs culture data to bind anything to a property: with them removed, the
+         window crashes at the LOADING of the XAML, with "Cannot find non-neutral culture
+         related to 'en-us'" - so not at some particular run, but at start-up, always.
 
-         Invarianta de care avem nevoie e alta si se obtine altfel: App.ForceInvariantNumbers
-         fixeaza cultura firelor, ca "0.24" sa nu devina "0,24" pe un Windows romanesc.
-         Vezi comentariul de acolo pentru de ce conteaza. -->
+         The invariance we need is another one and is obtained otherwise:
+         App.ForceInvariantNumbers fixes the threads' culture, so that "0.24" does not become
+         "0,24" on a Romanian Windows. See the comment there for why it matters. -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -45,10 +45,10 @@
     <Resource Include="..\Icon\flatcheck.ico" Link="Icon\flatcheck.ico" />
   </ItemGroup>
 
-  <!-- Baza lensfun (CC BY-SA 3.0), livrata neschimbata in folderul lensfun/ de langa exe:
-       profilele de vignetare pentru flatul sintetic. Nu e inglobata in assembly - se
-       actualizeaza inlocuind fisierele din folder. Sursa e lensfun/ de la radacina repo-ului,
-       copiata la build si la publish. Vezi THIRD-PARTY-NOTICES.md. -->
+  <!-- The lensfun database (CC BY-SA 3.0), shipped unchanged in the lensfun/ folder beside
+       the exe: the vignetting profiles for the synthetic flat. It is not embedded in the
+       assembly - it is updated by replacing the files in the folder. The source is lensfun/
+       at the repo's root, copied at build and at publish. See THIRD-PARTY-NOTICES.md. -->
   <ItemGroup>
     <None Include="..\lensfun\*.xml;..\lensfun\*.dtd;..\lensfun\LENSFUN-VERSION.txt;..\lensfun\LICENSE.txt"
           Link="lensfun\%(Filename)%(Extension)"

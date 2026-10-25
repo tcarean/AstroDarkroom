@@ -22,12 +22,12 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Tabul "Histogram". Comportamentul cerut: lista cu masterul intai, flat-ul netezit
-/// dupa el cand exista, si cadrele din flats/ dupa ei; un click calculeaza, alt click
-/// recalculeaza, iar un click in timpul unui calcul il inlocuieste in loc sa astepte.
-/// Netezitul poate aparea si in timpul sesiunii, scris de tabul Netezire - lista se
-/// reface fara sa strice alegerea. Cifrele nu se verifica aici - nu exista cifre - ci ca
-/// poza chiar se schimba cu fisierul si cu vederea.
+/// The "Histogram" tab. The required behaviour: the list with the master first, the smoothed
+/// flat after it when there is one, and the frames from flats/ after them; a click computes,
+/// another click recomputes, and a click during a computation replaces it instead of
+/// waiting. The smoothed flat can also appear during the session, written by the Netezire
+/// tab - the list is rebuilt without spoiling the choice. No figures are checked here - there
+/// are none - but that the picture really changes with the file and with the view.
 /// </summary>
 public class HistEqTabTests
 {
@@ -38,7 +38,7 @@ public class HistEqTabTests
         return vm;
     }
 
-    // ------------------------------------------------------------------ lista
+    // ------------------------------------------------------------------ the list
 
     [Fact]
     public void TheListHasTheMasterFirst_ThenTheReadableFramesFromFlats()
@@ -53,7 +53,7 @@ public class HistEqTabTests
         Assert.True(vm.Files[0].IsMaster);
         Assert.Equal("MASTER", vm.Files[0].Tag);
         Assert.True(vm.Files[0].HasTag);
-        Assert.True(vm.Files[0].ClosesGroup);     // fara netezit, linia sta sub master
+        Assert.True(vm.Files[0].ClosesGroup);     // without a smoothed flat, the line sits under the master
         Assert.Equal("process/", vm.Files[0].Where);
         Assert.Equal(f.Session.FlatMasterPath, vm.Files[0].Path);
         Assert.All(vm.Files.Skip(1), r =>
@@ -68,7 +68,7 @@ public class HistEqTabTests
         Assert.False(vm.HasError);
     }
 
-    /// <summary>Coloana "unde" spune folderul REAL al masterului, care poate fi masters/.</summary>
+    /// <summary>The "where" column gives the master's REAL folder, which can be masters/.</summary>
     [Fact]
     public void AMasterInMastersIsListedWithItsRealFolder()
     {
@@ -81,8 +81,8 @@ public class HistEqTabTests
     }
 
     /// <summary>
-    /// Cazul A: fisierul netezit exista la deschidere. Al doilea rand, chip NETEZIT, nu
-    /// master; linia de sub grup se muta sub el.
+    /// Case A: the smoothed file exists at opening. The second row, chip NETEZIT, not
+    /// master; the line under the group moves under it.
     /// </summary>
     [Fact]
     public void ASmoothedMasterPresentAtOpenIsListedSecond_TaggedNetezit()
@@ -113,7 +113,7 @@ public class HistEqTabTests
         Assert.Equal("masters/", vm.Files[1].Where);
     }
 
-    /// <summary>Jumatate de raspuns e tot un raspuns: masterul singur se poate vedea.</summary>
+    /// <summary>Half an answer is still an answer: the master alone can be seen.</summary>
     [Fact]
     public void WithTheMasterButNoFlatsFolder_TheListHasOneRowAndNoError()
     {
@@ -126,7 +126,9 @@ public class HistEqTabTests
         Assert.False(vm.HasError);
     }
 
-    /// <summary>Numai prin atasare directa: MainViewModel refuza folderul fara master.</summary>
+    /// <summary>
+    /// Only by attaching directly: MainViewModel refuses the folder without a master.
+    /// </summary>
     [Fact]
     public void WithoutMasterAndWithoutFrames_ItExplains()
     {
@@ -153,7 +155,7 @@ public class HistEqTabTests
         Assert.Null(vm.Image);
     }
 
-    // ------------------------------------------------------------------ calcul
+    // ------------------------------------------------------------------ the computation
 
     [Fact]
     public async Task PickingTheMasterEqualisesTheMasterFile()
@@ -172,12 +174,14 @@ public class HistEqTabTests
         Assert.Contains("EGALIZARE DE HISTOGRAMA", vm.Report);
         Assert.Contains(SirilSession.FlatMasterName, vm.Report);
         Assert.NotEmpty(vm.Caveat);
-        // un master mono: o singura vedere, deci fara chipuri
+        // a mono master: a single view, so no chips
         Assert.Single(vm.View.Options);
         Assert.False(vm.View.IsVisible);
     }
 
-    /// <summary>Netezitul are nota lui, nu pe a masterului; si masterul o pastreaza pe a lui.</summary>
+    /// <summary>
+    /// The smoothed flat has its own note, not the master's; and the master keeps its own.
+    /// </summary>
     [Fact]
     public async Task PickingTheSmoothedMasterShowsTheSmoothedNote()
     {
@@ -215,17 +219,17 @@ public class HistEqTabTests
         Assert.NotSame(master, vm.Image);
         Assert.Equal("", vm.MasterNote);
         Assert.Contains("CFA (ordine RGGB", vm.Frame);
-        // mozaicul primul si implicit; RGB al doilea
+        // the mosaic first and by default; RGB second
         Assert.Equal(new[] { "Mozaic", "RGB", "R", "G1", "G2", "B" }, vm.View.Options.Select(o => o.Label));
         Assert.Equal("Mozaic", vm.View.Selected.Label);
         Assert.True(vm.View.IsVisible);
-        // fisier nou = zoom la potrivit
+        // a new file = zoom to fit
         Assert.True(vm.Zoom.IsFit);
     }
 
     /// <summary>
-    /// Fereastra arata rasterele la rezolutie intreaga, direct ca bitmap: mozaicul cat
-    /// cadrul, o pozitie la jumatate pe fiecare latura, compozitul color.
+    /// The window shows the rasters at full resolution, directly as a bitmap: the mosaic the
+    /// size of the frame, a position at half on each side, the colour composite.
     /// </summary>
     [Fact]
     public async Task ThePictureIsTheFullResolutionRaster_NotAShrunkPng()
@@ -249,8 +253,9 @@ public class HistEqTabTests
     }
 
     /// <summary>
-    /// Comutarea vederii nu reciteste fisierul si nu reface rezultatul: reencodeaza din
-    /// rasterele tinute, si a doua oara nici atat - vine din cache, acelasi obiect.
+    /// Switching the view neither rereads the file nor redoes the result: it re-encodes from
+    /// the rasters kept, and the second time not even that - it comes from the cache, the
+    /// same object.
     /// </summary>
     [Fact]
     public async Task SwitchingTheViewChangesThePictureWithoutRerunning()
@@ -272,19 +277,19 @@ public class HistEqTabTests
 
         Assert.NotSame(mosaic, red);
         Assert.NotSame(red, rgb);
-        Assert.Same(mosaic, vm.Image);     // din cache, acelasi obiect
+        Assert.Same(mosaic, vm.Image);     // from the cache, the same object
         Assert.Same(report, vm.Report);
         Assert.False(vm.IsBusy);
         Assert.True(vm.Pending.IsCompleted);
-        // schimbarea vederii NU reseteaza zoom-ul
+        // changing the view does NOT reset the zoom
         Assert.False(vm.Zoom.IsFit);
         Assert.Equal(2, vm.Zoom.Zoom);
         Assert.Contains("pozitia R", HistEqReport.ViewCaption(HistEqAnalyzer.Analyze(TestImages.FlatCfa(8, 8, 100), null), "R"));
     }
 
     /// <summary>
-    /// CERINTA: un click pe alt fisier in timpul unui calcul nu asteapta - il inlocuieste.
-    /// Oricare din cele doua rulari termina prima, pe ecran ramane ultima alegere.
+    /// REQUIREMENT: a click on another file during a computation does not wait - it replaces
+    /// it. Whichever of the two runs ends first, the last choice stays on the screen.
     /// </summary>
     [Fact]
     public async Task ASecondPickSupersedesTheFirst()
@@ -293,9 +298,9 @@ public class HistEqTabTests
         f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var vm = Attached(f);
 
-        vm.Selected = vm.Files[0];          // porneste, nu se asteapta
+        vm.Selected = vm.Files[0];          // starts, not awaited
         Task first = vm.Pending;
-        vm.Selected = vm.Files[1];          // peste ea
+        vm.Selected = vm.Files[1];          // over it
         Task second = vm.Pending;
         await Task.WhenAll(first, second);
 
@@ -346,11 +351,12 @@ public class HistEqTabTests
         Assert.False(gate.IsHeld);
     }
 
-    // ------------------------------------------------------------------ fisier scris de alt tab
+    // ------------------------------------------------------------------ a file written by another
+    // tab
 
     /// <summary>
-    /// Cazul B: netezitul apare in timpul sesiunii. Lista se reface, alegerea ramane,
-    /// nimic nu se recalculeaza - poza e acelasi obiect.
+    /// Case B: the smoothed flat appears during the session. The list is rebuilt, the choice
+    /// stays, nothing is recomputed - the picture is the same object.
     /// </summary>
     [Fact]
     public async Task AFileWrittenLaterAppearsInTheList_WithoutDisturbingTheSelection()
@@ -375,7 +381,8 @@ public class HistEqTabTests
         Assert.False(vm.IsBusy);
     }
 
-    /// <summary>Fisierul de pe ecran a fost rescris: poza se reface, altfel ar arata octeti care nu mai exista.</summary>
+    /// <summary>The file on the screen was rewritten: the picture is redone, otherwise it would
+    /// show bytes that no longer exist.</summary>
     [Fact]
     public async Task RewritingTheSelectedSmoothedFileRerunsIt()
     {
@@ -395,7 +402,8 @@ public class HistEqTabTests
         Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
     }
 
-    /// <summary>Singurul fisier de care ii pasa tabului e netezitul sesiunii; orice altceva nu misca nimic.</summary>
+    /// <summary>The only file the tab cares about is the session's smoothed flat; anything else
+    /// moves nothing.</summary>
     [Fact]
     public async Task AWriteOfSomeOtherPathIsIgnored()
     {

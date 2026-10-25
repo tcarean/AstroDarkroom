@@ -57,7 +57,9 @@ public class RatioReportTests
         Assert.Contains("PROBLEMA", note);
     }
 
-    /// <summary>The corner row had no description at all. It is the same gradient read in the four corners.</summary>
+    /// <summary>
+    /// The corner row had no description at all. It is the same gradient read in the four corners.
+    /// </summary>
     [Fact]
     public void TheWorldCornerNoteSaysWhatItReadsAndWhere()
     {

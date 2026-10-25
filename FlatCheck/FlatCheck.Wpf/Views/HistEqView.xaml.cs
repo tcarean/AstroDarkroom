@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HistEqView.xaml.cs - doar legatura cu XAML-ul; tot comportamentul e in HistEqTabViewModel.
+// HistEqView.xaml.cs - only the link to the XAML; all the behaviour is in HistEqTabViewModel.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The Histogram tab: the master and the frames on the left, Siril's histogram display of
+    /// the chosen one on the right, bound to <see cref="HistEqTabViewModel"/>.
+    /// </summary>
     public partial class HistEqView : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public HistEqView() => InitializeComponent();
     }
 }

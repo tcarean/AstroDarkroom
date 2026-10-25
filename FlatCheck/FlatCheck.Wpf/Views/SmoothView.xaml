@@ -17,13 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- SmoothView - tabul 6, flat-ul netezit.
+<!-- SmoothView - tab 6, the smoothed flat.
 
-     Ca tabul de structura: cifrele la stanga, harta la dreapta. Deosebirea e ca aici
-     nimic nu ruleaza singur - ghidul sta deschis deasupra butonului, fiindca butonul
-     scrie un fisier langa master si trebuie stiut ce face inainte de a-l apasa. Dupa
-     rulare, ce conteaza e CE S-A SCOS: cifrele lui si harta lui; bateria de structura
-     inainte/dupa arata ca ce era al obiectivului a ramas. -->
+     Like the structure tab: the figures on the left, the map on the right. The difference is
+     that here nothing runs by itself - the guide stays open above the button, because the
+     button writes a file beside the master and what it does must be known before pressing
+     it. After the run, what matters is WHAT WAS REMOVED: its figures and its map; the
+     structure battery before/after shows that what was the lens's has remained. -->
 
 <UserControl x:Class="FlatCheck.Wpf.SmoothView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -37,7 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ColumnDefinition Width="2*" MinWidth="280" />
       </Grid.ColumnDefinitions>
 
-      <!-- ========================================================== cifrele -->
+      <!-- ========================================================== figures -->
       <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="20,18,10,18">
         <StackPanel>
 
@@ -48,7 +48,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Run Text="in: " /><Run Text="{Binding Target, Mode=OneWay}" />
           </TextBlock>
 
-          <!-- ghidul, DESCHIS implicit: e preconditia butonului de sub el -->
+          <!-- the guide, OPEN by default: it is the button's precondition -->
           <ToggleButton Style="{StaticResource Disclosure}" Margin="0,14,0,0"
                         Content="Ce face netezirea"
                         IsChecked="{Binding Guide.IsExpanded, Mode=TwoWay}" />
@@ -61,7 +61,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </StackPanel>
           </Border>
 
-          <!-- scara si butonul. GroupName unic in fereastra, ca la chipurile de harta. -->
+          <!-- the scale and the button. A unique GroupName in the window, as for the map chips. -->
           <Border Style="{StaticResource Card}" Margin="0,14,0,0">
             <StackPanel Orientation="Horizontal">
               <TextBlock Style="{StaticResource Faint}" Text="scara:" Margin="0,0,10,0"
@@ -87,7 +87,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </StackPanel>
           </Border>
 
-          <!-- propunerea de scara: tabelul treptelor si concluzia, sub chipuri -->
+          <!-- the scale proposal: the table of the steps and the conclusion, under the chips -->
           <Border Style="{StaticResource Card}" Margin="0,10,0,0"
                   Visibility="{Binding HasAdvice, Converter={StaticResource BoolToVis}}">
             <StackPanel>
@@ -110,7 +110,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" Margin="2,2,0,0" Text="{Binding ScaleLine}" />
             <TextBlock Style="{StaticResource Faint}" Margin="2,2,0,0" Text="{Binding Rejected}" TextWrapping="Wrap" />
 
-            <!-- unde a ajuns fisierul, sau de ce nu -->
+            <!-- where the file went, or why not -->
             <TextBlock Style="{StaticResource Muted}" Margin="2,12,0,0" TextWrapping="Wrap"
                        Visibility="{Binding SavedTo, Converter={StaticResource NotNullToVis}}">
               <Run Text="Flat netezit salvat:" />
@@ -120,7 +120,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                        TextWrapping="Wrap" Text="{Binding SaveError}"
                        Visibility="{Binding SaveError, Converter={StaticResource NotNullToVis}}" />
 
-            <!-- atentionarea: galben, nu rosu - nu e un verdict, e o intrebare pusa omului -->
+            <!-- the warning: yellow, not red - it is not a verdict, it is a question put to the
+                 user -->
             <Border Style="{StaticResource Card}" Margin="0,14,0,0"
                     Visibility="{Binding HasWarning, Converter={StaticResource BoolToVis}}">
               <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" TextWrapping="Wrap"
@@ -172,7 +173,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </ScrollViewer>
 
-      <!-- ========================================================== harta -->
+      <!-- ========================================================== map -->
       <Grid Grid.Column="1" Margin="10,18,20,18"
             Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
         <Grid.RowDefinitions>
@@ -185,7 +186,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="HARTA" />
 
-        <!-- care harta: ce s-a scos (implicit) sau ce a ramas -->
+        <!-- which map: what was removed (default) or what remained -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,4">
           <RadioButton GroupName="SmoothMapKind" Margin="0,0,16,0"
                        Content="ce s-a scos (original / netezit)"

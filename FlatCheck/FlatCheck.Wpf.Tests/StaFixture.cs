@@ -15,24 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StaFixture.cs - un fir de interfata adevarat, pentru testele care ating ferestre.
+// StaFixture.cs - a real UI thread, for the tests that touch windows.
 //
-// TREI LUCRURI IL FAC SA ARATE ASA, si toate trei au fost invatate cand nu aratau asa:
+// THREE THINGS MAKE IT LOOK LIKE THIS, and all three were learnt when it did not:
 //
-//   1. STA. WPF o cere; xunit ruleaza testele pe fire MTA.
+//   1. STA. WPF requires it; xunit runs the tests on MTA threads.
 //
-//   2. Dispatcher.Run(), nu doar un fir STA. Prima varianta pornea firul si il astepta cu
-//      Join, iar testul se bloca definitiv: ViewModel-urile folosesc "await ...
-//      ConfigureAwait(true)", adica isi cer continuarea inapoi pe contextul de sincronizare
-//      - care pe un fir cu Application e dispecerul WPF. Fara bucla de mesaje, continuarea
-//      se pune in coada si nu se executa niciodata, iar firul asteapta la infinit un
-//      rezultat pe care singur nu-l lasa sa vina. E EXACT deadlock-ul pe care l-ar avea si
-//      aplicatia daca ar bloca firul de interfata - deci bucla asta nu e un artificiu de
-//      test, e ce face si aplicatia adevarata.
+//   2. Dispatcher.Run(), not just an STA thread. The first version started the thread and
+//      waited for it with Join, and the test hung for good: the view-models use "await ...
+//      ConfigureAwait(true)", that is, they ask for their continuation back on the
+//      synchronisation context - which on a thread with an Application is the WPF
+//      dispatcher. Without a message loop the continuation is queued and never runs, and
+//      the thread waits forever for a result it does not itself let come. It is EXACTLY the
+//      deadlock the application would have too if it blocked the UI thread - so this loop
+//      is not a test artifice, it is what the real application does too.
 //
-//   3. Unul singur pe proces. Application e unic, si e un DispatcherObject legat de firul
-//      care l-a creat: al doilea fir care ar incerca sa-l foloseasca ar arunca. De aceea
-//      firul se imparte intre teste printr-o fixtura de colectie, si nu se creeaza per test.
+//   3. Only one per process. Application is unique, and it is a DispatcherObject bound to
+//      the thread that created it: a second thread that tried to use it would throw. That
+//      is why the thread is shared between tests through a collection fixture, and not
+//      created per test.
 
 using System.Windows;
 using System.Windows.Threading;
@@ -70,15 +71,15 @@ public sealed class StaFixture : IDisposable
     }
 
     /// <summary>
-    /// Ruleaza ceva pe firul de interfata si asteapta rezultatul. Exceptiile se propaga
-    /// la apelant, ca sa arate ca un esec de test obisnuit.
+    /// Runs something on the UI thread and waits for the result. Exceptions propagate to
+    /// the caller, so that they show as an ordinary test failure.
     /// </summary>
     public void Invoke(Action body)
         => _dispatcher.Invoke(body, DispatcherPriority.Normal);
 
     /// <summary>
-    /// Ca <see cref="Invoke"/>, dar pentru munca asincrona: continuarile se intorc pe
-    /// firul asta, care pompeaza, deci nu se blocheaza nimic.
+    /// Like <see cref="Invoke"/>, but for asynchronous work: the continuations come back to
+    /// this thread, which pumps, so nothing blocks.
     /// </summary>
     public Task InvokeAsync(Func<Task> body)
         => _dispatcher.InvokeAsync(body).Task.Unwrap();
@@ -95,7 +96,7 @@ public sealed class StaFixture : IDisposable
 }
 
 /// <summary>
-/// Testele de fereastra impart un singur fir de interfata, deci nu pot rula in paralel.
+/// The window tests share a single UI thread, so they cannot run in parallel.
 /// </summary>
 [CollectionDefinition("fereastra")]
 public class WindowCollection : ICollectionFixture<StaFixture> { }

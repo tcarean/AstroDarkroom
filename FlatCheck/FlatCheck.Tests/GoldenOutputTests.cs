@@ -111,9 +111,9 @@ public class GoldenOutputTests
 
     internal const string VersionPlaceholder = "flatcheck <VERSIUNE>";
 
-    // \r? pentru ca StringWriter scrie CRLF pe Windows, iar '$' in modul Multiline din
-    // .NET se potriveste doar inainte de '\n' - nu sare peste '\r'. Fara el, regexul nu
-    // prinde nimic si scrub-ul devine tacut un no-op.
+    // \r? because StringWriter writes CRLF on Windows, and '$' in .NET's Multiline mode
+    // matches only before '\n' - it does not skip '\r'. Without it, the regex catches
+    // nothing and the scrub silently becomes a no-op.
     static readonly Regex VersionBanner =
         new(@"^flatcheck \d+\.\d+\.\d+\r?$", RegexOptions.Multiline | RegexOptions.Compiled);
 
@@ -295,9 +295,10 @@ public class GoldenOutputTests
     }
 
     /// <summary>
-    /// Garda de aplicabilitate: pe un camp de ~70 de grade modul refuza sa raspunda, si
-    /// iese cu 1 - intrare nepotrivita, nu verdict. Exact cazul care a motivat-o: 20 mm
-    /// pe APS-C raporta increzator "SUSPECT, SUB-corectie" pe un flat fara cusur radial.
+    /// The applicability guard: on a field of ~70 degrees the mode refuses to answer, and
+    /// exits with 1 - unsuitable input, not a verdict. Exactly the case that motivated it:
+    /// 20 mm on APS-C confidently reported "SUSPECT, SUB-corectie" on a flat without a
+    /// radial flaw.
     /// </summary>
     [Fact]
     public void R031_Light_OnATooWideField_RefusesInsteadOfAnswering()
@@ -305,7 +306,7 @@ public class GoldenOutputTests
         using var ws = new TempWorkspace();
         string f = ws.WriteFile("light.fit", FitsTestData.BuildFits(
             Size, Size, FitsTestData.Radial(Size, Size),
-            extraCards: FitsTestData.WcsCards(0.1)));   // 512x512, diag 724 px, 0.1 gr/px -> 72.4 gr
+            extraCards: FitsTestData.WcsCards(0.1)));   // 512x512, diag 724 px, 0.1 deg/px -> 72.4 deg
 
         var (output, exit) = RunCli(ws, f, "--light", "-o", ws.PathTo("out.png"));
 
@@ -315,11 +316,11 @@ public class GoldenOutputTests
         AssertGolden("light_rejected_wide_field", output);
     }
 
-    // ---------------------------------------------------------------- light pe serie
+    // ---------------------------------------------------------------- light on a series
 
     /// <summary>
-    /// Serie stransa: toate cadrele arata aceeasi sub-corectie, gradientul de cer nu
-    /// variaza, deci media E o masuratoare si primeste un verdict adevarat.
+    /// Tight series: all frames show the same under-correction, the sky gradient does not
+    /// vary, so the mean IS a measurement and gets a true verdict.
     /// </summary>
     [Fact]
     public void R032_LightSeries_OnAStableSeries_GivesARealVerdict()
@@ -333,21 +334,21 @@ public class GoldenOutputTests
 
         Assert.Contains("VERDICT:", output);
         Assert.DoesNotContain("NEDETERMINAT", output);
-        Assert.Equal(3, exit);                 // sub-corectie mare, dar MASURATA
+        Assert.Equal(3, exit);                 // large under-correction, but MEASURED
         AssertGolden("light_series_conclusive", output);
     }
 
     /// <summary>
-    /// Serie care baleiaza: componenta radiala se plimba mult si urmareste gradientul de
-    /// cer. Flat-ul e acelasi in toate cadrele prin constructie, deci ce se misca e cerul
-    /// - iar modul refuza sa dea un verdict, cu exit 2.
+    /// Sweeping series: the radial component wanders a lot and follows the sky gradient.
+    /// The flat is the same in all frames by construction, so what moves is the sky - and
+    /// the mode refuses to give a verdict, with exit 2.
     /// </summary>
     [Fact]
     public void R032_LightSeries_OnASweepingSeries_RefusesToConclude()
     {
         using var ws = new TempWorkspace();
-        // k urca de la sub- la supra-corectie, iar planul de cer scade odata cu el: exact
-        // tiparul sesiunii reale, in care cele doua s-au dovedit corelate la -0.94
+        // k rises from under- to over-correction, and the sky plane falls with it: exactly
+        // the pattern of the real session, in which the two proved correlated at -0.94
         string dir = SeriesDir(ws, "baleiaj", Enumerable.Range(0, 6)
             .Select(i => (Func<int, int, double>)FitsTestData.WithLinearGradient(
                 TestImages.InvertedRadial(Size, Size, k: -0.5 + 0.2 * i), Size, 0.6 - 0.1 * i))
@@ -373,7 +374,8 @@ public class GoldenOutputTests
         Assert.Contains("--pattern", output);
     }
 
-    /// <summary>Un folder nu are ce cauta la celelalte moduri; se spune, nu se incearca.</summary>
+    /// <summary>A folder has no place in the other modes; it is said, not
+    /// attempted.</summary>
     [Fact]
     public void ADirectoryWithAnyOtherMode_IsAnError()
     {
@@ -385,7 +387,7 @@ public class GoldenOutputTests
         Assert.Contains("doar cu --light", output);
     }
 
-    /// <summary>Scrie cadrele unei serii intr-un subfolder, cu numele Siril.</summary>
+    /// <summary>Writes a series' frames into a subfolder, with Siril's names.</summary>
     static string SeriesDir(TempWorkspace ws, string name, params Func<int, int, double>[] scenes)
     {
         string dir = Path.Combine(ws.Dir, name);
@@ -742,7 +744,10 @@ public class GoldenOutputTests
         AssertGolden("smooth_auto_proposed", output);
     }
 
-    /// <summary>--scale auto on a clean fixture: "nothing to smooth", no file, exit 2 - read before deciding.</summary>
+    /// <summary>
+    /// --scale auto on a clean fixture: "nothing to smooth", no file, exit 2 - read before
+    /// deciding.
+    /// </summary>
     [Fact]
     public void R062_SmoothAuto_OnACleanFlat_WritesNothingAndExitsTwo()
     {
@@ -759,7 +764,9 @@ public class GoldenOutputTests
         AssertGolden("smooth_auto_no_texture", output);
     }
 
-    /// <summary>--smooth wins over every other mode flag: dispatch is first-match, and it comes first.</summary>
+    /// <summary>
+    /// --smooth wins over every other mode flag: dispatch is first-match, and it comes first.
+    /// </summary>
     [Fact]
     public void R003_Smooth_TakesPrecedenceOverHisteq()
     {
@@ -848,7 +855,10 @@ public class GoldenOutputTests
         Assert.InRange(img.At(80, 120), 0.99, 1.0);
     }
 
-    /// <summary>lensfun needs the camera's crop; here it comes from the database by INSTRUME, and the corner is extrapolated.</summary>
+    /// <summary>
+    /// lensfun needs the camera's crop; here it comes from the database by INSTRUME, and the corner
+    /// is extrapolated.
+    /// </summary>
     [Fact]
     public void R072_Synthetic_FromLensfun_TakesTheCropFromTheDatabase()
     {
@@ -883,7 +893,9 @@ public class GoldenOutputTests
         Assert.True(File.Exists(ws.PathTo("s.fit")));
     }
 
-    /// <summary>Two lenses match: nothing is written, the candidates are listed, exit 2 - "read this first".</summary>
+    /// <summary>
+    /// Two lenses match: nothing is written, the candidates are listed, exit 2 - "read this first".
+    /// </summary>
     [Fact]
     public void R071_Synthetic_AnAmbiguousLensListsTheCandidatesAndExitsTwo()
     {
@@ -899,7 +911,9 @@ public class GoldenOutputTests
         Assert.False(File.Exists(outPath));
     }
 
-    /// <summary>A FITS reference carries no f-number: without --fstop the mode refuses with 1.</summary>
+    /// <summary>
+    /// A FITS reference carries no f-number: without --fstop the mode refuses with 1.
+    /// </summary>
     [Fact]
     public void R071_Synthetic_WithoutAnFStopRefusesWithOne()
     {

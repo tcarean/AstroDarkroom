@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ReportPanel.xaml.cs - doar legatura cu XAML-ul; comportamentul e in ViewModel.
+// ReportPanel.xaml.cs - only the link to the XAML; the behaviour is in the view-model.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The folded raw report of a tab, the text the console would print, selectable to copy,
+    /// bound to the tab's <c>Report</c>.
+    /// </summary>
     public partial class ReportPanel : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public ReportPanel() => InitializeComponent();
     }
 }

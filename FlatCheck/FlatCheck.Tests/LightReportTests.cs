@@ -18,11 +18,12 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Formatarea componentei radiale. Semnul ei E diagnosticul - pozitiv inseamna
-/// sub-corectie, negativ supra-corectie - deci se scrie mereu explicit.
+/// The formatting of the radial component. Its sign IS the diagnosis - positive means
+/// under-correction, negative over-correction - so it is always written explicitly.
 ///
-/// Valorile asteptate sunt cele pe care le produce Python cu "%+6.2f", verificate rulând
-/// formatul acolo: flatcheck.py e oracolul, si cele doua trebuie sa scrie la fel.
+/// The expected values are the ones Python produces with "%+6.2f", checked by running
+/// the format there: flatcheck.py was the oracle until it froze at 2.2.0 (ADR 0047), and
+/// the two wrote the same.
 /// </summary>
 public class LightReportTests
 {
@@ -32,19 +33,19 @@ public class LightReportTests
     [InlineData(-44.4, "-44.40")]
     [InlineData(-0.5, "-0.50")]
     [InlineData(123.456, "+123.46")]
-    [InlineData(0.004, "+0.00")]      // pozitiv mic: rotunjeste la zero, semnul ramane +
-    [InlineData(-0.004, "-0.00")]     // negativ mic: rotunjeste la zero, semnul ramane -
+    [InlineData(0.004, "+0.00")]      // small positive: rounds to zero, the sign stays +
+    [InlineData(-0.004, "-0.00")]     // small negative: rounds to zero, the sign stays -
     public void SignIsAlwaysExplicit(double value, string expected)
     {
         Assert.Equal(expected, LightReport.Signed(value));
     }
 
     /// <summary>
-    /// Regresie. Formatul cu sectiuni "+0.00;-0.00" dadea "-+0.00" pentru zero negativ:
-    /// .NET alege sectiunea pozitiva (fiindca -0.0 nu e sub zero) dar tot pune minusul.
-    /// Se intampla fix pe cazul bun - un fond fara componenta radiala - iar Python scria
-    /// "-0.00" acolo, deci era si o divergenta intre implementari pe care crosscheck.py
-    /// n-o prindea, ambele parsandu-se ca 0.
+    /// Regression. The format with sections "+0.00;-0.00" gave "-+0.00" for negative zero:
+    /// .NET picks the positive section (because -0.0 is not below zero) but still puts the
+    /// minus. It happens exactly on the good case - a background without a radial
+    /// component - and Python wrote "-0.00" there, so there was also a divergence between
+    /// the implementations that crosscheck.py did not catch, both parsing as 0.
     /// </summary>
     [Fact]
     public void NegativeZeroRendersAsMinusZero_NotMinusPlusZero()
@@ -61,14 +62,14 @@ public class LightReportTests
         Assert.Equal("+0.00", LightReport.Signed(0.0));
     }
 
-    /// <summary>Un negativ prea mic ca sa se vada la doua zecimale isi pastreaza semnul.</summary>
+    /// <summary>A negative too small to show at two decimals keeps its sign.</summary>
     [Fact]
     public void ATinyNegativeKeepsItsSign()
     {
         Assert.Equal("-0.00", LightReport.Signed(-1e-15));
     }
 
-    /// <summary>Iesirea completa, ca sa se vada ca alinierea nu s-a stricat.</summary>
+    /// <summary>The complete output, to show that the alignment did not break.</summary>
     [Fact]
     public void TheRadialLineIsAlignedToSixColumns()
     {
@@ -88,8 +89,8 @@ public class LightReportTests
     }
 
     /// <summary>
-    /// Cand campul nu s-a putut afla, raportul spune asta explicit in loc sa taca.
-    /// Tacerea ar lasa impresia ca s-a verificat si e in regula.
+    /// When the field could not be found, the report says so explicitly instead of staying
+    /// silent. Silence would give the impression that it was checked and is fine.
     /// </summary>
     [Fact]
     public void AnUnknownFieldOfViewIsStatedInTheReport()
@@ -102,7 +103,8 @@ public class LightReportTests
         Assert.Contains("nu pot verifica daca testul se aplica", w.ToString());
     }
 
-    /// <summary>Pe camp la limita se ruleaza, dar cifra vine cu un avertisment.</summary>
+    /// <summary>On a field at the limit it runs, but the figure comes with a
+    /// warning.</summary>
     [Fact]
     public void AMarginalFieldOfViewWarnsButStillReports()
     {
@@ -116,8 +118,8 @@ public class LightReportTests
     }
 
     /// <summary>
-    /// Refuzul nu e un raport prescurtat: nu contine nicio cifra de componenta radiala,
-    /// tocmai fiindca acolo nu se poate masura una.
+    /// The refusal is not a shortened report: it holds no radial component figure,
+    /// precisely because none can be measured there.
     /// </summary>
     [Fact]
     public void TheRefusalExplainsTheDegeneracyAndPointsAtTheRatioTest()

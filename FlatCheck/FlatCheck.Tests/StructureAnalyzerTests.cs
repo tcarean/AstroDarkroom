@@ -111,9 +111,11 @@ public class StructureAnalyzerTests
         Assert.Equal(all.Max(Stats.Severity), Stats.Severity(r.Verdict));
     }
 
-    // ------------------------------------------------- pata maxima si petele locale
+    // ------------------------------------------------- the largest spot and the local spots
 
-    /// <summary>A compact +10 % blotch in a corner, the size of a fingertip on a 24 MP frame.</summary>
+    /// <summary>
+    /// A compact +10 % blotch in a corner, the size of a fingertip on a 24 MP frame.
+    /// </summary>
     static Func<int, int, double> CornerBlotch(Func<int, int, double> b, int w, int h, double amp) =>
         (x, y) =>
         {
@@ -121,7 +123,10 @@ public class StructureAnalyzerTests
             return b(x, y) * (1 + amp * Math.Exp(-(dx * dx + dy * dy) / (2 * s * s)));
         };
 
-    /// <summary>A dust shadow: a disc of radius <paramref name="radius"/> px, <paramref name="depth"/> darker.</summary>
+    /// <summary>
+    /// A dust shadow: a disc of radius <paramref name="radius"/> px, <paramref name="depth"/>
+    /// darker.
+    /// </summary>
     static Func<int, int, double> DustShadow(Func<int, int, double> b, double px, double py, double radius, double depth) =>
         (x, y) =>
         {
@@ -201,7 +206,9 @@ public class StructureAnalyzerTests
         Assert.Null(StructureReport.LocalSpotWarning(r));
     }
 
-    /// <summary>A gradient is not a spot: the warning must not fire on the commonest defect.</summary>
+    /// <summary>
+    /// A gradient is not a spot: the warning must not fire on the commonest defect.
+    /// </summary>
     [Fact]
     public void AGradientRaisesNoLocalSpotWarning()
     {
@@ -334,7 +341,8 @@ public class StructureAnalyzerTests
         Assert.InRange(r.ResidualPtpPct, 2.5, 3.6);   // the injected 3 %, not the model's error
     }
 
-    /// <summary>Cel mai mare salt intre mediile a doua inele consecutive, in procente.</summary>
+    /// <summary>The largest jump between the means of two consecutive rings, in
+    /// percent.</summary>
     static double WorstRingStep(Img resid)
     {
         double cx = resid.W / 2.0, cy = resid.H / 2.0;

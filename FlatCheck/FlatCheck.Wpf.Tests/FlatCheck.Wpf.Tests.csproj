@@ -1,14 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Teste pentru aplicatia cu ferestre.
+  <!-- Tests for the windowed application.
 
-       Proiect separat de FlatCheck.Tests, si nu un folder in el, dintr-un motiv anume:
-       ca sa tinteasca net8.0-windows trebuie sa fie Windows-only, iar FlatCheck.Tests -
-       care verifica nucleul si golden-urile - merita sa ramana portabil.
+       A project separate from FlatCheck.Tests, and not a folder in it, for a specific reason:
+       to target net8.0-windows it must be Windows-only, and FlatCheck.Tests - which checks
+       the core and the goldens - deserves to stay portable.
 
-       Ce se testeaza aici: deducerea structurii de foldere, mesajele de explicatie,
-       maparea verdict -> culoare, convertoarele si ViewModel-urile. Adica tot ce are
-       reguli. Ce NU se testeaza: XAML-ul - acolo nu e nicio decizie, doar asezare. -->
+       What is tested here: the deduction of the folder structure, the explanation messages,
+       the verdict -> colour mapping, the converters and the view-models. That is, everything
+       that has rules. The XAML holds no decision, only layout: WindowSmokeTests only renders
+       it, and fails on a binding that breaks. -->
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -27,9 +28,9 @@
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
-  <!-- Un proiect WPF NU primeste System.IO in usings-urile implicite: acolo Path ar
-       intra in coliziune cu System.Windows.Shapes.Path. Testele nu deseneaza forme, dar
-       umbla mult cu fisiere, deci il aducem explicit. -->
+  <!-- A WPF project does NOT get System.IO in the implicit usings: there Path would collide
+       with System.Windows.Shapes.Path. The tests draw no shapes, but handle files a lot, so
+       we bring it in explicitly. -->
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="System.IO" />
@@ -40,16 +41,16 @@
     <ProjectReference Include="..\FlatCheck.Core\FlatCheck.Core.csproj" />
   </ItemGroup>
 
-  <!-- Fixturile FITS si folderul temporar se IMPRUMUTA din FlatCheck.Tests, prin link,
-       in loc sa fie copiate. Doua generatoare de FITS sintetic ar fi insemnat ca un test
-       de aici si unul de acolo lucreaza pe cadre usor diferite fara sa se stie. -->
+  <!-- The FITS fixtures and the temporary folder are BORROWED from FlatCheck.Tests, by link,
+       instead of being copied. Two generators of synthetic FITS would have meant that a test
+       here and one there work on slightly different frames without anyone knowing. -->
   <ItemGroup>
     <Compile Include="..\FlatCheck.Tests\FitsTestData.cs" Link="Shared\FitsTestData.cs" />
     <Compile Include="..\FlatCheck.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
     <Compile Include="..\FlatCheck.Tests\LensProfileTestData.cs" Link="Shared\LensProfileTestData.cs" />
-    <!-- TestImages aduce JpegOf: previzualizarea aparatului, facuta in test cu encoderul
-         ImageSharp, ca tabul de expunere sa poata fi testat cu comutatorul aprins fara
-         niciun raw adevarat. -->
+    <!-- TestImages brings JpegOf: the camera's preview, made in the test with the ImageSharp
+         encoder, so that the exposure tab can be tested with the switch on without any real
+         raw. -->
     <Compile Include="..\FlatCheck.Tests\TestImages.cs" Link="Shared\TestImages.cs" />
   </ItemGroup>
 

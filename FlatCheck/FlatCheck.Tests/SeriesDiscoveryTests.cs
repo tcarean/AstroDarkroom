@@ -18,32 +18,32 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Alegerea fisierelor pentru --light pe un folder.
+/// The choice of files for --light on a folder.
 ///
-/// Doua capcane sunt fixate aici, si amandoua ar trece neobservate in productie.
+/// Two traps are pinned here, and both would pass unnoticed in production.
 ///
-/// Prima: <see cref="ThePatternDoesNotLeakIntoLongerExtensions"/>. Directory.GetFiles cu
-/// un tipar foloseste potrivirea Win32, care din mostenirea 8.3 mai prinde si extensii
-/// mai lungi - "*.fit" ar inghiti si ".fits". De aceea enumerarea e completa si potrivirea
-/// se face in proces.
+/// The first: <see cref="ThePatternDoesNotLeakIntoLongerExtensions"/>. Directory.GetFiles
+/// with a pattern uses Win32 matching, which from the 8.3 legacy also catches longer
+/// extensions - "*.fit" would swallow ".fits" too. That is why the enumeration is complete
+/// and the matching is done in process.
 ///
-/// A doua: <see cref="RegisteredFramesAreLeftOutByTheDefaultPattern"/>. Cadrele r_pp_light_*
-/// sunt registrate, adica transformate geometric, deci eroarea de flat - fixa pe senzor -
-/// e mutata fata de centrul in jurul caruia se fiteaza modelul radial. Includerea lor ar
-/// strica masuratoarea in tacere.
+/// The second: <see cref="RegisteredFramesAreLeftOutByTheDefaultPattern"/>. The frames
+/// r_pp_light_* are registered, that is geometrically transformed, so the flat's error -
+/// fixed on the sensor - is moved relative to the centre around which the radial model is
+/// fitted. Including them would spoil the measurement silently.
 /// </summary>
 public class SeriesDiscoveryTests
 {
-    // ------------------------------------------------------------ potrivirea
+    // ------------------------------------------------------------ the matching
 
     [Theory]
     [InlineData("pp_light_00001.fit", "pp_light_*.fit", true)]
     [InlineData("pp_light_00042.fit", "pp_light_*.fit", true)]
-    [InlineData("r_pp_light_00001.fit", "pp_light_*.fit", false)]   // tiparul e ancorat la inceput
+    [InlineData("r_pp_light_00001.fit", "pp_light_*.fit", false)]   // the pattern is anchored at the start
     [InlineData("light_00001.fit", "pp_light_*.fit", false)]
     [InlineData("pp_flat_stacked.fit", "pp_light_*.fit", false)]
     [InlineData("pp_light_00001.fits", "pp_light_*.fit", false)]
-    [InlineData("PP_LIGHT_00001.FIT", "pp_light_*.fit", true)]      // fara distinctie de litere
+    [InlineData("PP_LIGHT_00001.FIT", "pp_light_*.fit", true)]      // case-insensitive
     [InlineData("a.fit", "?.fit", true)]
     [InlineData("ab.fit", "?.fit", false)]
     [InlineData("orice", "*", true)]
@@ -55,10 +55,10 @@ public class SeriesDiscoveryTests
     }
 
     /// <summary>
-    /// Clasele de caractere nu sunt suportate - sunt tratate LITERAL, in ambele
-    /// implementari. Daca C#-ul le-ar ignora si Python-ul le-ar interpreta (fnmatch o
-    /// face), cele doua ar alege fisiere diferite din acelasi folder, iar crosscheck-ul
-    /// ar raporta diferente numerice care de fapt sunt diferente de intrare.
+    /// Character classes are not supported - they are treated LITERALLY, in both
+    /// implementations. If the C# ignored them and the Python interpreted them (fnmatch
+    /// does), the two would pick different files from the same folder, and the crosscheck
+    /// would report numeric differences that are in fact input differences.
     /// </summary>
     [Fact]
     public void CharacterClassesAreLiteralNotWildcards()
@@ -67,7 +67,7 @@ public class SeriesDiscoveryTests
         Assert.False(SeriesFinder.GlobMatch("a.fit", "[ab].fit"));
     }
 
-    /// <summary>Backtracking-ul: mai multe stele si o coada care trebuie sa se potriveasca.</summary>
+    /// <summary>The backtracking: several stars and a tail that must match.</summary>
     [Theory]
     [InlineData("pp_light_00001.fit", "*light*.fit", true)]
     [InlineData("pp_light_00001.fit", "*light*.png", false)]
@@ -78,7 +78,7 @@ public class SeriesDiscoveryTests
         Assert.Equal(expected, SeriesFinder.GlobMatch(name, pattern));
     }
 
-    // ------------------------------------------------------------ enumerarea
+    // ------------------------------------------------------------ the enumeration
 
     [Fact]
     public void ThePatternDoesNotLeakIntoLongerExtensions()
@@ -109,10 +109,10 @@ public class SeriesDiscoveryTests
     }
 
     /// <summary>
-    /// Ordinea e ordinala pe numele fisierului, ca fereastra (cu date de cultura) si
-    /// consola (fara) sa listeze seria la fel. Numele de aici au doar cifre, deci testul
-    /// fixeaza ordinea, nu comparatia ordinala: sub InvariantGlobalization (ADR 0043) o
-    /// sortare culturala ar da acelasi rezultat.
+    /// The order is ordinal on the file name, so that the window (with culture data) and
+    /// the console (without) list the series the same way. The names here hold only digits,
+    /// so the test pins the order, not the ordinal comparison: under InvariantGlobalization
+    /// (ADR 0043) a cultural sort would give the same result.
     /// </summary>
     [Fact]
     public void FilesComeBackSortedOrdinallyByName()
@@ -136,7 +136,8 @@ public class SeriesDiscoveryTests
         Assert.Empty(SeriesFinder.Find(ws.Dir, "pp_light_*.fit"));
     }
 
-    /// <summary>Subfolderele nu se coboara: process/cache/ nu contine cadre de analizat.</summary>
+    /// <summary>Subfolders are not descended into: process/cache/ holds no frames to
+    /// analyse.</summary>
     [Fact]
     public void SubdirectoriesAreNotDescendedInto()
     {

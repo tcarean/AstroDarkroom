@@ -15,22 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AssemblyInfo.cs - testele din assembly-ul asta nu ruleaza in paralel.
+// AssemblyInfo.cs - the tests in this assembly do not run in parallel.
 //
-// DE CE. Aproape tot ce se testeaza aici atinge stare GLOBALA de WPF, nu doar obiecte
-// proprii: Application.Current, cultura firelor, si un dispecer care apartine unui singur
-// fir STA. Colectiile rulate in paralel isi calca in picioare exact aceste lucruri.
+// WHY. Almost everything tested here touches GLOBAL WPF state, not only objects of its
+// own: Application.Current, the threads' culture, and a dispatcher that belongs to a single
+// STA thread. Collections run in parallel trample on exactly these things.
 //
-// S-a si intamplat, si a fost greu de vazut fiindca pica doar cateodata: fixtura STA se
-// inchidea la mijlocul unei serii rulate de alta colectie, Application.Current trecea din
-// "exista" in "are dispecerul inchis", si randurile din tabel ajungeau parte pe firul de
-// interfata, parte pe firul de calcul. ObservableCollection pierde randuri tacut cand i se
-// intampla asta - sase cadre analizate, cinci randuri in tabel, o data la cateva rulari.
+// It did happen, and it was hard to see because it failed only sometimes: the STA fixture
+// closed in the middle of a series run by another collection, Application.Current went from
+// "exists" to "has its dispatcher shut down", and the table's rows landed partly on the UI
+// thread, partly on the computing thread. ObservableCollection silently loses rows when
+// that happens - six frames analysed, five rows in the table, once every few runs.
 //
-// Codul a fost intarit separat (LightTabViewModel.OnUi tine un singur fir pe toata
-// durata unei rulari), dar asta nu face testele deterministe: ele tot ar constata sase
-// versus cinci, doar dintr-un motiv mai curat. Determinismul vine de aici.
+// The code was hardened separately (LightTabViewModel.OnUi keeps a single thread for the
+// whole of a run), but that does not make the tests deterministic: they would still find six
+// versus five, only for a cleaner reason. The determinism comes from here.
 //
-// Costul e zero in practica: suita intreaga ruleaza in vreo doua secunde.
+// The cost: the suite runs serially, in about 100 s on 2026-10-25 (about two seconds when
+// this was written).
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]

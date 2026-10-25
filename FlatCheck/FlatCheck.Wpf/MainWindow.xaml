@@ -17,14 +17,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MainWindow - bara cu folderul, apoi cele cinci taburi.
+<!-- MainWindow - the bar with the folder, then the eight tabs.
 
-     Cand folderul nu e bun, taburile nu se arata deloc si in locul lor apare explicatia.
-     E deliberat: cinci panouri goale l-ar pune pe om sa le deschida pe rand ca sa
-     inteleaga ca de fapt trebuie sa ruleze un script in Siril.
+     When the folder is not good, the tabs are not shown at all and the explanation appears in
+     their place. It is deliberate: eight empty panels would make the user open them one by one
+     to understand that in fact a script has to be run in Siril.
 
-     Fereastra porneste maximizata: harta si histogramele se citesc la marimea ecranului.
-     Height/Width raman dimensiunea la care revine dupa "Restaurare". -->
+     The window starts maximised: the map and the histograms are read at the screen's size.
+     Height/Width remain the size it returns to after "Restaurare". -->
 
 <Window x:Class="FlatCheck.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -37,9 +37,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display">
 
-  <!-- "Despre" merge pe ApplicationCommands.Help, al carui gest implicit e F1: butonul
-       si tasta ajung in acelasi handler fara o comanda pe ViewModel - care n-are voie
-       sa deschida ferestre, ca sa ramana testabil. -->
+  <!-- "Despre" goes through ApplicationCommands.Help, whose default gesture is F1: the button
+       and the key reach the same handler without a command on the view-model - which may not
+       open windows, so as to stay testable. -->
   <Window.CommandBindings>
     <CommandBinding Command="Help" Executed="ShowAbout" />
   </Window.CommandBindings>
@@ -50,7 +50,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
-    <!-- ============================================================ bara de sus -->
+    <!-- ============================================================ top bar -->
     <Border Grid.Row="0" Background="{StaticResource PanelBg}"
             BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1"
             Padding="20,12">
@@ -76,23 +76,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-          <!-- blocat cat timp ruleaza: schimbarea folderului la mijloc ar anula munca
-               pornita, si e mai putin derutant sa nu se poata decat sa se piarda. -->
+          <!-- locked while it runs: changing the folder in the middle would cancel the work
+               started, and it is less confusing not to be able to than to lose it. -->
           <Button Content="Alege folder..." Click="ChooseFolder"
                   IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}" />
 
-          <!-- cel mai la dreapta, la marginea barei; ramane activ si in timpul
-               analizei, fiindca nu atinge nimic din ce ruleaza -->
+          <!-- rightmost, at the edge of the bar; it stays active during the analysis too, because
+               it touches nothing of what runs -->
           <Button Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)"
                   Margin="10,0,0,0" />
         </StackPanel>
       </Grid>
     </Border>
 
-    <!-- ============================================================ continut -->
+    <!-- ============================================================ content -->
     <Grid Grid.Row="1">
 
-      <!-- niciun folder inca -->
+      <!-- no folder yet -->
       <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="520"
                   Margin="24">
         <StackPanel.Style>
@@ -118,7 +118,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 Click="ChooseFolder" />
       </StackPanel>
 
-      <!-- folder ales, dar nu se poate porni pe el -->
+      <!-- folder chosen, but nothing can start on it -->
       <Border MaxWidth="620" VerticalAlignment="Center" HorizontalAlignment="Center"
               Style="{StaticResource Card}" BorderBrush="#5A3A3A" Background="#2A2224"
               Margin="24"
@@ -128,8 +128,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                      Foreground="#F0857E" TextWrapping="Wrap" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding ProblemText}" />
 
-          <!-- rularea scriptului de aici; doar cand problema e una pe care un script o
-               rezolva. Alegerea scriptului e pe card, nu in fereastra de rulare - vezi
+          <!-- running the script from here; only when the problem is one that a script solves. The
+               choice of the script is on the card, not in the run window - see
                PreprocessViewModel. -->
           <Border Style="{StaticResource Card}" Margin="0,16,0,0" DataContext="{Binding Preprocess}"
                   Visibility="{Binding IsOffered, Converter={StaticResource BoolToVis}}">
@@ -163,7 +163,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </Border>
 
-      <!-- cele cinci taburi -->
+      <!-- the eight tabs -->
       <TabControl>
         <TabControl.Style>
           <Style TargetType="TabControl" BasedOn="{StaticResource {x:Type TabControl}}">

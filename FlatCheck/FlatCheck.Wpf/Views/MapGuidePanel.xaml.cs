@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MapGuidePanel.xaml.cs - doar legatura cu XAML-ul; textul e in SessionMessages.
+// MapGuidePanel.xaml.cs - only the link to the XAML; the text is in SessionMessages.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The folded guide on how to read the residual map and what its shapes mean, under the
+    /// map of the Structura and Ratio tabs, bound to the tab's <c>MapGuide</c>.
+    /// </summary>
     public partial class MapGuidePanel : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public MapGuidePanel() => InitializeComponent();
     }
 }

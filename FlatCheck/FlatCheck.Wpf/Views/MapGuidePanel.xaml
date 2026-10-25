@@ -17,19 +17,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MapGuidePanel - ghidul de citire al hartii: cum se citeste si ce inseamna formele.
+<!-- MapGuidePanel - the map's reading guide: how to read it and what the shapes mean.
 
-     Un singur control pentru doua taburi (Structura si Ratio), fiindca amandoua arata
-     acelasi reziduu pe aceeasi scara, deci acelasi ghid. Se leaga la MapGuide.* din
-     ViewModel-ul tabului, exact ca ReportPanel la Report.
+     A single control for two tabs (Structura and Ratio), because both show the same
+     residual on the same scale, so the same guide. It binds to MapGuide.* of the tab's
+     view-model, exactly as ReportPanel does to Report.
 
-     Pliat implicit: sase randuri de text sub fiecare harta ar ineca tocmai cifrele.
-     Starea sta in ViewModel (MapGuide.IsExpanded), nu intr-un ElementName local, ca s-o
-     poata deschide un test - o legare gresita intr-un panou pliat compileaza si cade
-     abia la afisare.
+     Folded by default: six lines of text under each map would drown the very figures. The
+     state sits in the view-model (MapGuide.IsExpanded), not in a local ElementName, so that
+     a test can open it - a wrong binding in a folded panel compiles and fails only on
+     display.
 
-     Inaltime marginita cu ScrollViewer: harta sta pe un rand elastic, deci un ghid
-     desfasurat fara plafon ar strange-o pana devine inutila. -->
+     Height bounded with a ScrollViewer: the map sits on an elastic row, so a guide unfolded
+     without a ceiling would squeeze it until it is useless. -->
 
 <UserControl x:Class="FlatCheck.Wpf.MapGuidePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

@@ -29,11 +29,16 @@ namespace FlatCheck.Tests;
 /// </summary>
 internal static class TestData
 {
-    /// <summary>The project folder (the one holding FlatCheck.sln), from this file's own path.</summary>
+    /// <summary>
+    /// The project folder (the one holding FlatCheck.sln), from this file's own path.
+    /// </summary>
     internal static string RepoDir([CallerFilePath] string thisFile = "")
         => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
 
-    /// <summary>The folder the large files live in: FLATCHECK_TESTDATA_LARGE, or testdata/large/ under the test project.</summary>
+    /// <summary>
+    /// The folder the large files live in: FLATCHECK_TESTDATA_LARGE, or testdata/large/ under the
+    /// test project.
+    /// </summary>
     internal static string LargeDir()
         => Environment.GetEnvironmentVariable("FLATCHECK_TESTDATA_LARGE")
            ?? Path.Combine(RepoDir(), "FlatCheck.Tests", "testdata", "large");

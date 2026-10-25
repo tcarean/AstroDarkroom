@@ -20,18 +20,18 @@ using System.Globalization;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Cultura. Un fisier mic pentru o problema care s-ar fi vazut abia pe calculatorul
-/// altcuiva.
+/// Culture. A small file for a problem that would have shown only on someone else's
+/// computer.
 ///
-/// Consola isi obtine invarianta din &lt;InvariantGlobalization&gt;, dar aia nu se poate
-/// folosi intr-o aplicatie WPF - fereastra crapa la incarcarea XAML-ului. Aici se face
-/// de mana, la pornire, iar testele astea sunt tot ce impiedica pe cineva sa scoata acel
-/// apel ca "inutil": pe un Windows romanesc raportul salvat ar incepe brusc sa scrie
-/// "0,24" unde consola scrie "0.24", iar cerinta e ca fisierul sa fie IDENTIC, nu
-/// echivalent.
+/// The console gets its invariance from &lt;InvariantGlobalization&gt;, but that cannot be
+/// used in a WPF application - the window crashes when loading the XAML. Here it is done
+/// by hand, at start-up, and these tests are all that keeps someone from removing that
+/// call as "useless": on a Romanian Windows the saved report would suddenly start writing
+/// "0,24" where the console writes "0.24", and the requirement is that the file be
+/// IDENTICAL, not equivalent.
 ///
-/// Testele isi pun singure o cultura romaneasca si o dau inapoi la sfarsit; xunit poate
-/// rula clase in paralel, deci colectia le tine separat de restul.
+/// The tests set a Romanian culture themselves and give it back at the end; xunit can run
+/// classes in parallel, so the collection keeps them apart from the rest.
 /// </summary>
 [Collection("cultura")]
 public class CultureTests
@@ -55,7 +55,7 @@ public class CultureTests
         }
     }
 
-    /// <summary>Confirma ca fixtura chiar produce problema pe care o testam.</summary>
+    /// <summary>Confirms that the fixture really produces the problem we are testing.</summary>
     [Fact]
     public void RomanianCultureReallyWouldWriteACommaDecimalSeparator()
     {
@@ -75,9 +75,9 @@ public class CultureTests
     }
 
     /// <summary>
-    /// Si firele din pool, unde ruleaza analizoarele prin Task.Run. Doar CurrentCulture
-    /// n-ar ajunge: firele noi si-ar lua cultura sistemului, iar raportul s-ar compune
-    /// tocmai acolo.
+    /// The pool threads too, where the analyzers run through Task.Run. CurrentCulture alone
+    /// would not be enough: new threads would take the system's culture, and the report is
+    /// composed exactly there.
     /// </summary>
     [Fact]
     public async Task ForcingInvariantNumbersAlsoCoversPoolThreads()
@@ -91,8 +91,8 @@ public class CultureTests
     }
 
     /// <summary>
-    /// Proba adevarata: raportul salvat de fereastra, sub cultura romaneasca, e identic
-    /// cu cel pe care l-ar scrie consola. Nu doar separatorul - tot textul.
+    /// The real proof: the report saved by the window, under the Romanian culture, is identical
+    /// to the one the console would write. Not only the separator - the whole text.
     /// </summary>
     [Fact]
     public async Task R090_TheSavedReportIsTheSameUnderARomanianCulture()
@@ -117,8 +117,8 @@ public class CultureTests
     }
 
     /// <summary>
-    /// Si cifrele din interfata: un "51,6 %" langa un raport care scrie "51.6 %" ar fi
-    /// doar derutant.
+    /// The figures in the interface too: a "51,6 %" beside a report that writes "51.6 %" would
+    /// only be confusing.
     /// </summary>
     [Fact]
     public async Task TheOnScreenNumbersUseTheSameSeparatorAsTheReport()
@@ -138,9 +138,9 @@ public class CultureTests
     }
 
     /// <summary>
-    /// Si legenda hartii. Are propriul format ("+0.0;-0.0"), deci nu e acoperita de
-    /// niciun test de mai sus: pe un Windows romanesc ar fi scris "-10,0 %" langa un
-    /// raport care scrie "10.96 %".
+    /// The map legend too. It has its own format ("+0.0;-0.0"), so it is not covered by any
+    /// test above: on a Romanian Windows it would have written "-10,0 %" beside a report that
+    /// writes "10.96 %".
     /// </summary>
     [Fact]
     public async Task TheMapLegendUsesTheSameSeparatorAsTheReport()
@@ -161,7 +161,7 @@ public class CultureTests
 }
 
 /// <summary>
-/// Testele de cultura schimba o stare globala, deci nu pot rula in paralel cu nimic.
+/// The culture tests change a global state, so they cannot run in parallel with anything.
 /// </summary>
 [CollectionDefinition("cultura", DisableParallelization = true)]
 public class CultureCollection { }

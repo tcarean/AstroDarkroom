@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HistEqGuidePanel.xaml.cs - doar legatura cu XAML-ul; textul e in SessionMessages.
+// HistEqGuidePanel.xaml.cs - only the link to the XAML; the text is in SessionMessages.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The folded guide on how to read the equalised picture of the Histogram tab, bound to
+    /// its <c>Guide</c>.
+    /// </summary>
     public partial class HistEqGuidePanel : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public HistEqGuidePanel() => InitializeComponent();
     }
 }

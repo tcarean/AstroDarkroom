@@ -56,7 +56,7 @@ public class HistEqAnalyzerTests
     [Fact]
     public void TheHistogramMedianIsWithinABinOfTheExactOne()
     {
-        // la latimea unui cos: 2 sta in cosul 32767 din 65535, adica la 1.99997
+        // at the width of one bin: 2 sits in bin 32767 of 65535, that is at 1.99997
         Assert.InRange(HistEqLut.Build(new double[] { 1, 2, 2, 3 }).Median(), 2.0 - 2.0 / 65535, 2.0);
 
         var ramp = Enumerable.Range(0, 4001).Select(i => (double)(100 + i)).ToArray();   // 100..4100
@@ -307,7 +307,7 @@ public class HistEqAnalyzerTests
         Assert.Equal(1200 * 50, r.Mosaic!.Length);
         Assert.Equal(1200 * 50 * 3, r.CompositeRgb.Length);
 
-        // ...si rasterele intregi, pe care le arata fereastra
+        // ...and the full rasters, which the window shows
         Assert.Equal((2400, 100), (r.FullW, r.FullH));
         Assert.All(r.Channels, c => { Assert.Equal(2400 * 100, c.Full.Length); Assert.Equal((2400, 100), (c.FullW, c.FullH)); });
         Assert.Equal(4800 * 200, r.MosaicFull!.Length);
@@ -346,7 +346,9 @@ public class HistEqAnalyzerTests
         Assert.Equal(BlockMean(r.MosaicFull!, r.SourceW, r.SourceH, 2 * r.Shrink), r.Mosaic);
     }
 
-    /// <summary>On a small frame nothing is shrunk, so Full IS Equalised and the mosaic is the frame.</summary>
+    /// <summary>
+    /// On a small frame nothing is shrunk, so Full IS Equalised and the mosaic is the frame.
+    /// </summary>
     [Fact]
     public void WithoutShrinkingTheFullRastersAreTheDisplayedOnes()
     {

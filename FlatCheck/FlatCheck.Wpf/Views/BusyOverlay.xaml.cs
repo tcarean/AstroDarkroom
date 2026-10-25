@@ -15,14 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// BusyOverlay.xaml.cs - doar legatura cu XAML-ul; comportamentul e in ViewModel.
+// BusyOverlay.xaml.cs - only the link to the XAML; the behaviour is in the view-model.
 
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The waiting screen of a tab: the busy message, its detail and a progress bar, bound to
+    /// the inherited <see cref="TabViewModel"/>.
+    /// </summary>
     public partial class BusyOverlay : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public BusyOverlay() => InitializeComponent();
     }
 }

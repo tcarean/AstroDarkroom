@@ -15,15 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SirilInstallTests.cs - ce se citeste din configurarea Siril, din scripturi si din
-// stdout-ul lui siril-cli. Toate pe text, fara registru si fara Siril instalat: textele
-// sunt copiate din masina pe care s-a masurat (Siril 1.4.4), nu inventate.
+// SirilInstallTests.cs - what is read from the Siril configuration, from the scripts and
+// from siril-cli's stdout. All on text, without the registry and without Siril installed:
+// the texts are copied from the machine it was measured on (Siril 1.4.4), not invented.
 
 namespace FlatCheck.Wpf.Tests;
 
 public class SirilInstallTests
 {
-    /// <summary>Sectiunea [gui] din config.1.4.ini, cu caile scrise ca in GKeyFile ("\\").</summary>
+    /// <summary>The [gui] section of config.1.4.ini, with the paths written as in GKeyFile
+    /// ("\\").</summary>
     const string Config =
         "[core]\n" +
         "wd=E:\\\\Astro\\\\sesiune\n" +
@@ -52,8 +53,8 @@ public class SirilInstallTests
     }
 
     /// <summary>
-    /// Doar .ssf, doar ce exista, fara dubluri, in ordinea numelui - adica lista din
-    /// meniul Siril. Scriptul .py e al mediului Python si nu e de preprocesare.
+    /// Only .ssf, only what exists, no duplicates, in name order - that is the list in Siril's
+    /// menu. The .py script belongs to the Python environment and is not a preprocessing one.
     /// </summary>
     [Fact]
     public void TheScriptsAreTheExistingSsfFilesFromBothKeys_SortedByName()
@@ -71,7 +72,7 @@ public class SirilInstallTests
             "OSC_Preprocessing_WithoutDark.ssf",
             "OSC_Preprocessing_WithoutDBF.ssf",
         }, scripts.Select(Path.GetFileName));
-        Assert.All(scripts, p => Assert.False(p.Contains('/')));  // cai normalizate
+        Assert.All(scripts, p => Assert.False(p.Contains('/')));  // normalised paths
     }
 
     [Fact]
@@ -113,7 +114,9 @@ public class SirilInstallTests
         }
     }
 
-    /// <summary>WithoutDark e propus indiferent de pozitia lui in lista; fara el, primul.</summary>
+    /// <summary>
+    /// WithoutDark is proposed whatever its position in the list; without it, the first.
+    /// </summary>
     [Fact]
     public void TheDefaultScriptIsWithoutDarkWhenPresent_OtherwiseTheFirst()
     {
@@ -128,7 +131,7 @@ public class SirilInstallTests
         Assert.Equal(SirilSession.PreprocessingScript, SirilInstall.DefaultScript);
     }
 
-    // ------------------------------------------------------------------ scriptul
+    // ------------------------------------------------------------------ the script
 
     internal const string WithoutDark =
         "############################################\n" +
@@ -171,8 +174,8 @@ public class SirilInstallTests
     }
 
     /// <summary>
-    /// Intrarile sunt "cd &lt;nume simplu&gt;"; "cd ../process" e iesirea si "cd .." e
-    /// intoarcerea, si niciuna nu e o cerinta a folderului.
+    /// The inputs are "cd &lt;simple name&gt;"; "cd ../process" is the exit and "cd .." is
+    /// the return, and neither is a requirement of the folder.
     /// </summary>
     [Fact]
     public void TheRequiredFoldersAreTheOnesTheScriptEntersDirectly()
@@ -201,7 +204,8 @@ public class SirilInstallTests
         Assert.Equal(text, line.Text);
     }
 
-    /// <summary>Cele doua forme ale progresului: cu eticheta la inceput, apoi doar procentul, cu ESC-uri in fata.</summary>
+    /// <summary>The two forms of the progress: with the label first, then only the percentage, with
+    /// ESCs in front.</summary>
     [Fact]
     public void ProgressLinesGiveTheLabelAndThePercent_EscapesStripped()
     {

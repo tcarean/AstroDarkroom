@@ -20,12 +20,12 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Deschiderea unui folder, cap-coada. Aici se verifica cerintele 3 si 4: ce porneste
-/// singur, si ce se intampla cand folderul nu e bun.
+/// Opening a folder, end to end. R-081 and R-080 (with R-088) are checked here: what starts
+/// by itself, and what happens when the folder is not good.
 /// </summary>
 public class MainViewModelTests
 {
-    /// <summary>CERINTA 3: structura si testul end-to-end pornesc singure.</summary>
+    /// <summary>R-081: the structure and the end-to-end test start by themselves.</summary>
     [Fact]
     public async Task OpeningAFolderRunsStructureAndEndToEndByItself()
     {
@@ -40,10 +40,10 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// Tabul Ratio nu calculeaza la deschidere, oricate mastere ar fi in folder, si asta
-    /// e o decizie: modul cere doua stive din DOUA orientari, adica din doua sedinte,
-    /// deci din doua foldere. Ce poate propune un singur folder sunt cadre individuale,
-    /// din care iese un rezultat sigur si fals.
+    /// The Ratio tab does not compute at opening, however many masters the folder holds, and
+    /// that is a decision: the mode asks for two stacks from TWO orientations, that is from two
+    /// sessions, so from two folders. What a single folder can propose are individual frames,
+    /// from which comes a result that is confident and false.
     /// </summary>
     [Fact]
     public async Task RatioWaitsForTwoExplicitChoices()
@@ -204,7 +204,9 @@ public class MainViewModelTests
         LensMaxAperture = 2.8,
     };
 
-    /// <summary>Tabul de expunere isi ia lista, dar nu calculeaza pana nu se alege ceva.</summary>
+    /// <summary>
+    /// The exposure tab takes its list, but computes nothing until something is chosen.
+    /// </summary>
     [Fact]
     public async Task ExposureGetsItsListButWaitsForAChoice()
     {
@@ -218,8 +220,8 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// Tabul de histograma primeste lista - masterul intai - si nu calculeaza nimic la
-    /// deschidere: masterul de 24 MP il citeste deja Structura atunci.
+    /// The histogram tab gets the list - the master first - and computes nothing at opening:
+    /// the 24 MP master is already being read by Structura then.
     /// </summary>
     [Fact]
     public async Task HistEqGetsItsListWithTheMasterFirstButWaitsForAChoice()
@@ -235,7 +237,8 @@ public class MainViewModelTests
         Assert.Null(vm.HistEq.Selected);
     }
 
-    /// <summary>Cazul A prin fereastra: un folder cu netezitul deja scris il listeaza pe loc, al doilea.</summary>
+    /// <summary>Case A through the window: a folder with the smoothed master already written lists
+    /// it at once, second.</summary>
     [Fact]
     public async Task AFolderOpenedWithASmoothedMasterListsItAtOnce()
     {
@@ -249,9 +252,9 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// Cazul B, cap-coada: butonul de netezire scrie fisierul si randul apare in lista
-    /// tabului Histogram, fara sa porneasca nimic acolo - "nimic la deschidere" e si
-    /// "nimic la o scriere".
+    /// Case B, end to end: the smoothing button writes the file and the row appears in the
+    /// Histogram tab's list, without starting anything there - "nothing at opening" is also
+    /// "nothing at a write".
     /// </summary>
     [Fact]
     public async Task SmoothingFromTheWindowPutsTheSmoothedMasterIntoTheHistogramList()
@@ -271,7 +274,8 @@ public class MainViewModelTests
         Assert.False(vm.HistEq.HasResult);
     }
 
-    /// <summary>Alt folder, fara netezit: randul NETEZIT nu supravietuieste schimbarii.</summary>
+    /// <summary>Another folder, without a smoothed master: the NETEZIT row does not survive the
+    /// change.</summary>
     [Fact]
     public async Task OpeningAnotherFolderDropsTheSmoothedRow()
     {
@@ -289,8 +293,8 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// Sesiunea Smida din arhiva: masterul in masters/, cum il lasa OSC_Preprocessing.ssf
-    /// din Siril 1.4, lights calibrate in process/. Se deschide si ruleaza amandoua.
+    /// The Smida session from the archive: the master in masters/, as OSC_Preprocessing.ssf
+    /// from Siril 1.4 leaves it, calibrated lights in process/. It opens and runs both.
     /// </summary>
     [Fact]
     public async Task AFolderWithTheMasterInMastersOpensAndRuns()
@@ -306,7 +310,8 @@ public class MainViewModelTests
         Assert.True(vm.HistEq.Files[0].IsMaster);
     }
 
-    /// <summary>Fara process/ dar cu masterul in masters/: structura ruleaza, seria lipseste cu explicatie.</summary>
+    /// <summary>No process/ but the master in masters/: the structure runs, the series is missing
+    /// with an explanation.</summary>
     [Fact]
     public async Task WithoutProcessButWithTheMasterInMastersStructureStillRuns()
     {
@@ -321,15 +326,15 @@ public class MainViewModelTests
         Assert.True(vm.Light.HasError);
     }
 
-    // ------------------------------------------------------------------ folder invalid
+    // ------------------------------------------------------------------ invalid folder
 
     /// <summary>
-    /// CERINTA 4: fara masterul de flat, aplicatia nu porneste pe folderul asta si spune
-    /// exact ce sa faca - sa ruleze scriptul de preprocesare in Siril. Un mesaj care ar
-    /// descrie doar fisierul lipsa l-ar lasa pe om sa caute singur legatura.
+    /// R-080 with R-088: without the flat master, the application does not start on this folder
+    /// and says exactly what to do - run the preprocessing script in Siril. A message that only
+    /// described the missing file would leave the user to find the connection alone.
     ///
-    /// Scriptul numit e WithoutDark, scriptul autorului; cel standard din Siril 1.4 merge
-    /// la fel de bine de cand masterul se cauta si in masters/.
+    /// The script named is WithoutDark, the author's script; the standard one from Siril 1.4
+    /// works just as well since the master is also looked for in masters/.
     /// </summary>
     [Fact]
     public async Task WithoutTheFlatMasterItNamesTheSirilScriptToRun()
@@ -358,12 +363,12 @@ public class MainViewModelTests
         Assert.Contains("process/", vm.ProblemText);
     }
 
-    // ------------------------------------------------------------------ rularea scriptului
+    // ------------------------------------------------------------------ running the script
 
     /// <summary>
-    /// O instalare Siril falsa: "siril-cli" e un fisier oarecare (doar existenta conteaza
-    /// aici), scripturile sunt fisiere .ssf scrise in test. Folderele de intrare cerute de
-    /// WithoutDark se pun optional.
+    /// A fake Siril install: "siril-cli" is an arbitrary file (only its existence matters
+    /// here), the scripts are .ssf files written in the test. The input folders WithoutDark
+    /// asks for are added optionally.
     /// </summary>
     static SirilInstall FakeInstall(TempWorkspace ws, bool cli = true, params string[] scripts)
     {
@@ -389,7 +394,8 @@ public class MainViewModelTests
         }
     }
 
-    /// <summary>Pe un folder fara master, cu Siril instalat si cu intrarile la loc, se poate apasa.</summary>
+    /// <summary>On a folder without a master, with Siril installed and the inputs in place, the
+    /// button can be pressed.</summary>
     [Fact]
     public async Task WithoutTheMasterTheScriptCanBeRunFromHere_WithoutDarkProposed()
     {
@@ -427,8 +433,8 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// Un subfolder de intrare lipsa sau gol blocheaza butonul si se numeste - altfel
-    /// Siril s-ar opri la linia trei cu un "cd" esuat, si omul ar citi log-ul ca sa afle.
+    /// A missing or empty input subfolder blocks the button and is named - otherwise Siril
+    /// would stop at line three with a failed "cd", and the user would read the log to find out.
     /// </summary>
     [Fact]
     public async Task AMissingInputFolderBlocksTheButtonAndIsNamed()
@@ -436,7 +442,7 @@ public class MainViewModelTests
         using var f = new SessionFixture().WithProcess();
         using var ws = new TempWorkspace();
         WithInputs(f, "biases", "flats");
-        Directory.CreateDirectory(Path.Combine(f.Root, "lights"));   // exista, dar gol
+        Directory.CreateDirectory(Path.Combine(f.Root, "lights"));   // exists, but empty
         var vm = new MainViewModel(() => FakeInstall(ws, true, "OSC_Preprocessing_WithoutDark.ssf"), () => false);
 
         await vm.OpenAsync(f.Root);
@@ -478,7 +484,8 @@ public class MainViewModelTests
         Assert.Null(vm.Preprocess.Selected);
     }
 
-    /// <summary>Siril deschis e un avertisment, nu un blocaj: nu se stie pe ce folder lucreaza.</summary>
+    /// <summary>Siril open is a warning, not a block: there is no knowing which folder it works
+    /// on.</summary>
     [Fact]
     public async Task SirilRunningIsAWarningNotABlocker()
     {
@@ -493,13 +500,13 @@ public class MainViewModelTests
         Assert.True(vm.Preprocess.CanRun);
         Assert.Equal(SessionMessages.SirilGuiRunning(), vm.Preprocess.Warning);
 
-        // se reverifica la apasare: Siril s-a inchis intre timp
+        // checked again at the press: Siril was closed meanwhile
         running = false;
         vm.Preprocess.Refresh();
         Assert.Null(vm.Preprocess.Warning);
     }
 
-    /// <summary>Alt script, alte cerinte: schimbarea alegerii reface blocajul.</summary>
+    /// <summary>Another script, other requirements: changing the choice redoes the block.</summary>
     [Fact]
     public async Task ChangingTheScriptRechecksTheInputs()
     {
@@ -521,7 +528,9 @@ public class MainViewModelTests
         Assert.Null(vm.Preprocess.Blocker);
     }
 
-    /// <summary>Pe un folder bun nu e nimic de rulat; pe unul inexistent, niciun script nu ajuta.</summary>
+    /// <summary>
+    /// On a good folder there is nothing to run; on a missing one, no script helps.
+    /// </summary>
     [Fact]
     public async Task TheScriptIsNotOfferedOnAGoodFolderOrOnAMissingOne()
     {
@@ -538,7 +547,9 @@ public class MainViewModelTests
         Assert.Empty(vm.Preprocess.Scripts);
     }
 
-    /// <summary>Dupa rulare, acelasi folder se redeschide si trece prin Check() din nou.</summary>
+    /// <summary>
+    /// After the run, the same folder is opened again and goes through Check() again.
+    /// </summary>
     [Fact]
     public async Task ReopeningAfterTheScriptPicksUpTheNewMaster()
     {
@@ -551,7 +562,7 @@ public class MainViewModelTests
         Assert.True(vm.HasProblem);
         Assert.True(vm.Preprocess.IsOffered);
 
-        f.WithFlatMaster();   // ce ar fi produs scriptul
+        f.WithFlatMaster();   // what the script would have produced
         await vm.ReopenAsync();
 
         Assert.False(vm.HasProblem);
@@ -570,7 +581,7 @@ public class MainViewModelTests
         Assert.Equal(SessionMessages.Title(SessionProblem.NoFolder), vm.ProblemTitle);
     }
 
-    /// <summary>Pe un folder invalid nu se calculeaza nimic: taburile raman goale.</summary>
+    /// <summary>On an invalid folder nothing is computed: the tabs stay empty.</summary>
     [Fact]
     public async Task NothingRunsOnAnInvalidFolder()
     {
@@ -585,11 +596,11 @@ public class MainViewModelTests
         Assert.Empty(vm.Exposure.Files);
     }
 
-    // ------------------------------------------------------------------ schimbarea folderului
+    // ------------------------------------------------------------------ changing the folder
 
     /// <summary>
-    /// Alt folder inseamna alt inceput: rezultatele vechi dispar, in loc sa stea langa
-    /// cele noi si sa se poata confunda.
+    /// Another folder means another start: the old results disappear, instead of staying
+    /// beside the new ones where they could be mistaken for them.
     /// </summary>
     [Fact]
     public async Task OpeningAnotherFolderClearsTheOldResults()
@@ -639,7 +650,9 @@ public class MainViewModelTests
         Assert.False(vm.HasProblem);
     }
 
-    /// <summary>Anularea de la inchidere e idempotenta - se cheama si cand n-a rulat nimic.</summary>
+    /// <summary>
+    /// The cancellation at closing is idempotent - it is called also when nothing ran.
+    /// </summary>
     [Fact]
     public void CancellingWithNothingRunningIsHarmless()
     {
@@ -649,11 +662,11 @@ public class MainViewModelTests
         vm.CancelPending();
     }
 
-    // ------------------------------------------------------------------ antet
+    // ------------------------------------------------------------------ banner
 
     /// <summary>
-    /// Fereastra arata acelasi banner ca prima linie a consolei. Vine din acelasi loc,
-    /// deci un bump de versiune il muta in amandoua deodata.
+    /// The window shows the same banner as the console's first line. It comes from the same
+    /// place, so a version bump moves it in both at once.
     /// </summary>
     [Fact]
     public void TheHeaderIsTheSameVersionAndCopyrightTheConsolePrints()
@@ -665,7 +678,7 @@ public class MainViewModelTests
     }
 }
 
-/// <summary>Argumentul de linie de comanda: un folder, sau nimic.</summary>
+/// <summary>The command-line argument: a folder, or nothing.</summary>
 public class AppStartupTests
 {
     [Fact]
@@ -677,8 +690,8 @@ public class AppStartupTests
     }
 
     /// <summary>
-    /// Orice altceva se ignora. O fereastra care refuza sa porneasca din cauza unui
-    /// argument gresit e mai enervanta decat una care intreaba ce folder vrei.
+    /// Anything else is ignored. A window that refuses to start because of a wrong argument is
+    /// more annoying than one that asks which folder you want.
     /// </summary>
     [Fact]
     public void AnythingElseIsIgnoredRatherThanFatal()

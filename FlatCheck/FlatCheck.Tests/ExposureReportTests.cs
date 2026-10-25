@@ -35,7 +35,9 @@ public class ExposureReportTests
         => ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, Sat * pct / 100.0), Sat, null, sky,
                                     null, pattern == null ? null : CfaPattern.Parse(pattern, "BAYERPAT"));
 
-    /// <summary>Saturates pixels inside the exact window the analyzer reads (see ExposureAnalyzerTests).</summary>
+    /// <summary>
+    /// Saturates pixels inside the exact window the analyzer reads (see ExposureAnalyzerTests).
+    /// </summary>
     static ExposureResult Clipped(bool sky = false)
     {
         var img = TestImages.FlatCfa(N, N, Sat * 0.55);
@@ -129,7 +131,8 @@ public class ExposureReportTests
         Assert.Contains("!! FISIERUL NU PARE UN FLAT BRUT !!", console);
         Assert.StartsWith("FISIERUL NU PARE UN FLAT BRUT\n\n", advice);
 
-        // every console line between the heading and SOLUTII is in the advice, as a paragraph's part
+        // every console line between the heading and SOLUTII is in the advice, as a paragraph's
+        // part
         string[] lines = console.Split('\n').Select(l => l.Trim()).ToArray();
         int from = Array.FindIndex(lines, l => l.StartsWith("!! FISIERUL")) + 1;
         int to = Array.FindIndex(lines, l => l == "SOLUTII:");
@@ -143,7 +146,9 @@ public class ExposureReportTests
         Assert.Contains("aplicatia citeste brutul exact", advice);
     }
 
-    /// <summary>The channel lines, the colour-order note and the screen gap of the window.</summary>
+    /// <summary>
+    /// The channel lines, the colour-order note and the screen gap of the window.
+    /// </summary>
     [Fact]
     public void TheWindowsChannelLinesOrderNoteAndGap()
     {
@@ -212,7 +217,9 @@ public class ExposureReportTests
         Assert.Contains("10.0 puncte", s);
     }
 
-    /// <summary>Clipping overrides the median, and the reading has to say so in those words.</summary>
+    /// <summary>
+    /// Clipping overrides the median, and the reading has to say so in those words.
+    /// </summary>
     [Fact]
     public void WhenTheCentreClipsTheReadingSaysThatOverridesTheMedian()
     {
@@ -237,7 +244,9 @@ public class ExposureReportTests
         Assert.Contains("clipezi centrul", s);
     }
 
-    /// <summary>Without a known order the reading says the colour is unknown instead of picking one.</summary>
+    /// <summary>
+    /// Without a known order the reading says the colour is unknown instead of picking one.
+    /// </summary>
     [Fact]
     public void WithoutAKnownOrderTheReadingSaysTheColourIsUnknown()
     {

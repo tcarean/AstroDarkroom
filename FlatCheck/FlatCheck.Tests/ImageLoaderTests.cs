@@ -259,7 +259,9 @@ public class ImageLoaderTests
         Assert.Equal(info.Message, full.Message);
     }
 
-    /// <summary><paramref name="start"/> in ASCII, then spaces, <paramref name="length"/> bytes in all.</summary>
+    /// <summary>
+    /// <paramref name="start"/> in ASCII, then spaces, <paramref name="length"/> bytes in all.
+    /// </summary>
     static byte[] Padded(string start, int length)
     {
         byte[] bytes = Enumerable.Repeat((byte)' ', length).ToArray();

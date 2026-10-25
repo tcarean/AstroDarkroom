@@ -30,7 +30,9 @@ public class ExposureAnalyzerTests
     const int N = 128;
     const double Sat = 1000;
 
-    /// <summary>A raw-looking CFA frame whose centre reads exactly <paramref name="pct"/>%.</summary>
+    /// <summary>
+    /// A raw-looking CFA frame whose centre reads exactly <paramref name="pct"/>%.
+    /// </summary>
     static ExposureResult AtLevel(double pct, bool sky = false, double? black = null)
         => ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, Sat * pct / 100.0), Sat, black, sky);
 
@@ -342,7 +344,9 @@ public class ExposureAnalyzerTests
         Assert.Equal(N * N / 4, bright.Whole.Counts[LevelHistogram.Bins - 1]);
     }
 
-    /// <summary>The other end: a black level above the data must not produce a negative index.</summary>
+    /// <summary>
+    /// The other end: a black level above the data must not produce a negative index.
+    /// </summary>
     [Fact]
     public void LevelsBelowBlackLandInTheFirstBin()
     {
@@ -384,7 +388,9 @@ public class ExposureAnalyzerTests
                 $"{c.Label}: global {c.MedianPct} vs centru {c.CentreMedianPct}");
     }
 
-    /// <summary>A mono/processed frame has no mosaic left, so it gets one unnamed channel.</summary>
+    /// <summary>
+    /// A mono/processed frame has no mosaic left, so it gets one unnamed channel.
+    /// </summary>
     [Fact]
     public void OnAMonoFrameThereIsOneChannel()
     {

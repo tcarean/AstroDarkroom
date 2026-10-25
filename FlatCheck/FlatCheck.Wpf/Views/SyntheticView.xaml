@@ -16,21 +16,22 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
-<!-- SyntheticView - tabul 7, flatul sintetic din profilul obiectivului.
-     Ca tabul Netezire: cifrele la stanga, harta (a comparatiei) la dreapta. Panoul cu
-     sursele profilelor e COLAPSAT implicit - e documentatie, nu preconditie. Lista de
-     obiective se cauta dupa text; focala, diafragma si crop-ul sunt preumplute din fisiere
-     si raman editabile. -->
+<!-- SyntheticView - tab 7, the synthetic flat from the lens's profile.
+     Like the Netezire tab: the figures on the left, the map (of the comparison) on the right.
+     The panel with the profiles' sources is COLLAPSED by default - it is documentation, not a
+     precondition. The list of lenses is searched by text; the focal length, the aperture and
+     the crop are prefilled from the files and stay editable. -->
 <UserControl x:Class="FlatCheck.Wpf.SyntheticView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:FlatCheck.Wpf">
   <UserControl.Resources>
-    <!-- Un rand al comparatiei: in stanga eticheta cu nota ei dedesubt (coloana elastica, nota
-         se rupe pe mai multe randuri in aceeasi coloana), in dreapta A, B si A / B, fiecare
-         cu cifra si, unde e, verdictul - coloane cat continutul, lipite, aliniate intre
-         randuri prin SharedSizeGroup. Prima varianta dadea coloanelor de valori tot restul
-         latimii si nota trecea pe sub ele; utilizatorul a vrut spatiul la text. -->
+    <!-- A row of the comparison: on the left the label with its note under it (an elastic
+         column, the note breaks into several lines in the same column), on the right A, B and
+         A / B, each with the figure and, where there is one, the verdict - columns as wide as
+         their content, packed together, aligned across rows through SharedSizeGroup. The first
+         version gave the value columns all the remaining width and the note ran under them; the
+         user wanted the room for the text. -->
     <DataTemplate x:Key="CompareRowTemplate">
       <Grid Margin="0,0,0,10">
         <Grid.ColumnDefinitions>
@@ -70,10 +71,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Grid.Style>
       </Grid>
     </DataTemplate>
-    <!-- Un rand al adancimii scrise: eticheta cu nota ei dedesubt, care se rupe pe mai multe
-         randuri in coloana din stanga si nu trece sub valoare; valoarea singura, in dreapta.
-         MetricRowTemplate din Dark.xaml intinde nota sub toata latimea, cum vor taburile de
-         structura; aici utilizatorul a vrut-o tinuta la eticheta. -->
+    <!-- A row of the written depth: the label with its note under it, which breaks into several
+         lines in the left column and does not run under the value; the value alone, on the
+         right. MetricRowTemplate in Dark.xaml stretches the note under the whole width, as the
+         structure tabs want; here the user wanted it kept to the label. -->
     <DataTemplate x:Key="DepthRowTemplate">
       <Grid Margin="0,0,0,10">
         <Grid.ColumnDefinitions>
@@ -95,7 +96,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ColumnDefinition Width="3*" MinWidth="440" />
         <ColumnDefinition Width="2*" MinWidth="280" />
       </Grid.ColumnDefinitions>
-      <!-- ========================================================== cifrele -->
+      <!-- ========================================================== figures -->
       <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="20,18,10,18">
         <StackPanel>
           <TextBlock Style="{StaticResource Faint}" TextTrimming="CharacterEllipsis">
@@ -105,7 +106,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Run Text="in: " /><Run Text="{Binding Target, Mode=OneWay}" />
           </TextBlock>
           <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap" Text="{Binding Guide.Intro}" />
-          <!-- sursele profilelor, colapsat implicit -->
+          <!-- the profiles' sources, collapsed by default -->
           <ToggleButton Style="{StaticResource Disclosure}" Margin="0,14,0,0"
                         Content="{Binding Guide.Title}"
                         IsChecked="{Binding Guide.IsExpanded, Mode=TwoWay}" />
@@ -117,7 +118,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding ProfilesSummary}" />
             </StackPanel>
           </Border>
-          <!-- obiectivul: cautare + lista -->
+          <!-- the lens: search + list -->
           <Border Style="{StaticResource Card}" Margin="0,14,0,0">
             <StackPanel>
               <DockPanel>
@@ -137,7 +138,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                         <TextBlock Style="{StaticResource Faint}" DockPanel.Dock="Right" Margin="10,0,0,0" Text="{Binding Where}" />
                         <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
                       </DockPanel>
-                      <!-- focale, diafragme, distante: doar pe o lista scurta (regula consolei) -->
+                      <!-- focal lengths, apertures, distances: only on a short list (the console's
+                           rule) -->
                       <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" TextWrapping="Wrap" Text="{Binding Details}"
                                  Visibility="{Binding HasDetails, Converter={StaticResource BoolToVis}}" />
                     </StackPanel>
@@ -146,7 +148,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </ListBox>
               <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding ListNote}"
                          Visibility="{Binding HasListNote, Converter={StaticResource BoolToVis}}" />
-              <!-- focala, diafragma, crop; preumplute, editabile -->
+              <!-- focal length, aperture, crop; prefilled, editable -->
               <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                 <TextBlock Style="{StaticResource Faint}" Text="focala (mm):" VerticalAlignment="Center" />
                 <TextBox Style="{StaticResource Field}" Width="64" Margin="6,0,14,0" Text="{Binding FocalText, UpdateSourceTrigger=PropertyChanged}" />
@@ -155,8 +157,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Style="{StaticResource Faint}" Text="crop:" VerticalAlignment="Center" />
                 <TextBox Style="{StaticResource Field}" Width="56" Margin="6,0,0,0" Text="{Binding CropText, UpdateSourceTrigger=PropertyChanged}" />
               </StackPanel>
-              <!-- tipul de senzor: rezerva pentru un aparat pe care baza lensfun nu-l are; un chip
-                   umple campul de crop, tastarea in camp stinge chip-ul -->
+              <!-- the sensor type: a fallback for a camera the lensfun database does not have; a
+                   chip fills the crop field, typing in the field turns the chip off -->
               <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                 <TextBlock Style="{StaticResource Faint}" Text="senzor:" Margin="0,0,10,0" VerticalAlignment="Center" />
                 <ItemsControl ItemsSource="{Binding SensorFormat.Options}">
@@ -176,7 +178,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </StackPanel>
               <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding CropNote}"
                          Visibility="{Binding CropNote, Converter={StaticResource NotNullToVis}}" />
-              <!-- profilul ales fata de senzorul tau: formatul de calibrare, al tau, extrapolarea -->
+              <!-- the chosen profile against your sensor: the calibration format, yours, the
+                   extrapolation -->
               <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding FormatNote}"
                          Visibility="{Binding FormatNote, Converter={StaticResource NotNullToVis}}">
                 <TextBlock.Style>
@@ -189,7 +192,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                   </Style>
                 </TextBlock.Style>
               </TextBlock>
-              <!-- focala / diafragma din casute departe de profilul care s-ar folosi: mereu avertisment -->
+              <!-- focal length / aperture in the boxes far from the profile that would be used:
+                   always a warning -->
               <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="0,6,0,0" TextWrapping="Wrap"
                          Text="{Binding RequestNote}"
                          Visibility="{Binding HasRequestNote, Converter={StaticResource BoolToVis}}" />
@@ -202,10 +206,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </StackPanel>
           </Border>
           <local:MessagePanel Margin="0,14,0,0" />
-          <!-- rezultatul scrierii -->
+          <!-- the result of the writing -->
           <StackPanel Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
             <TextBlock Style="{StaticResource Faint}" Margin="2,14,0,0" TextWrapping="Wrap" Text="{Binding ProfileLine}" />
-            <!-- profilul folosit departe de ce s-a cerut: adancimea scrisa e a profilului -->
+            <!-- the profile used far from what was asked: the depth written is the profile's -->
             <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="2,4,0,0" TextWrapping="Wrap"
                        Text="{Binding WrittenRequestNote}"
                        Visibility="{Binding HasWrittenRequestNote, Converter={StaticResource BoolToVis}}" />
@@ -240,7 +244,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" Margin="2,18,0,0" TextWrapping="Wrap" Text="{Binding Caveat}" />
             <TextBlock Style="{StaticResource Faint}" Margin="2,8,0,0" TextWrapping="Wrap" Text="{Binding SirilNote}" />
           </StackPanel>
-          <!-- comparatia master / sintetic -->
+          <!-- the master / synthetic comparison -->
           <StackPanel Visibility="{Binding HasCompare, Converter={StaticResource BoolToVis}}">
             <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="MASTERUL FATA DE FLATUL SINTETIC" />
             <Border Style="{StaticResource Card}">
@@ -253,7 +257,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                   </Border>
                 </StackPanel>
                 <TextBlock Style="{StaticResource Faint}" Margin="0,0,0,12" TextWrapping="Wrap" Text="{Binding CompareVerdictDetail}" />
-                <!-- capul de tabel si randurile impart aceleasi grupuri de latime -->
+                <!-- the table's header and the rows share the same width groups -->
                 <Grid Grid.IsSharedSizeScope="True">
                   <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -279,7 +283,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <local:ReportPanel Margin="0,14,0,0" />
         </StackPanel>
       </ScrollViewer>
-      <!-- ========================================================== harta comparatiei -->
+      <!-- ========================================================== the comparison's map -->
       <Grid Grid.Column="1" Margin="10,18,20,18"
             Visibility="{Binding HasCompare, Converter={StaticResource BoolToVis}}">
         <Grid.RowDefinitions>

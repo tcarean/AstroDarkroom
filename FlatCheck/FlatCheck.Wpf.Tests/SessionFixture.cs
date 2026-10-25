@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SessionFixture.cs - un folder de sesiune Siril fals, dar complet.
+// SessionFixture.cs - a fake Siril session folder, but a complete one.
 //
-// Cadrele sunt mici (128 px) dinadins: testele de ViewModel ruleaza lantul intreg, nu
-// mock-uri, si intreaga suita trebuie sa stea sub cateva secunde. Cifrele care ies nu
-// sunt "realiste" si nici nu trebuie sa fie - ce se verifica aici e comportamentul
-// interfetei, iar corectitudinea cifrelor e treaba testelor din FlatCheck.Tests.
+// The frames are small (128 px) on purpose: the view-model tests run the whole chain, not
+// mocks, and the whole suite must stay quick (it runs serially, about 100 s on 2026-10-25).
+// The figures that come out are not "realistic" and need not be - what is checked here is
+// the interface's behaviour, and the figures' correctness is the job of the tests in
+// FlatCheck.Tests.
 
 using FlatCheck.Tests;
 
@@ -52,11 +53,11 @@ internal sealed class SessionFixture : IDisposable
     }
 
     /// <summary>
-    /// Masterul de flat, prin conventia scripturilor Siril: in process/ (scripturile din
-    /// depozit, WithoutDark si fratii lui) sau, cu <paramref name="folder"/> = "masters",
-    /// acolo unde il lasa scripturile din instalarea 1.4. Implicit pe 16 biti;
-    /// <paramref name="bitpix"/> -32 da ce scrie Siril de fapt - float, cu valorile
-    /// impartite la 65535 - pentru testele care privesc scara fisierului.
+    /// The flat master, by the Siril scripts' convention: in process/ (the scripts from the
+    /// repository, WithoutDark and its siblings) or, with <paramref name="folder"/> = "masters",
+    /// where the scripts of the 1.4 install leave it. 16-bit by default;
+    /// <paramref name="bitpix"/> -32 gives what Siril actually writes - float, with the values
+    /// divided by 65535 - for the tests that look at the file's scale.
     /// </summary>
     internal SessionFixture WithFlatMaster(Func<int, int, double>? scene = null, int bitpix = 16,
                                            string folder = "process")
@@ -68,13 +69,16 @@ internal sealed class SessionFixture : IDisposable
         return this;
     }
 
-    /// <summary>Masterul in masters/, cum il lasa OSC_Preprocessing.ssf din Siril 1.4.</summary>
+    /// <summary>
+    /// The master in masters/, as OSC_Preprocessing.ssf from Siril 1.4 leaves it.
+    /// </summary>
     internal SessionFixture WithFlatMasterInMasters(Func<int, int, double>? scene = null)
         => WithFlatMaster(scene, folder: "masters");
 
     /// <summary>
-    /// Flat-ul netezit langa master, unde il scrie tabul Netezire: o copie a masterului.
-    /// Pentru lista si pentru egalizare continutul nu conteaza, doar sa se incarce.
+    /// The smoothed flat beside the master, where the Netezire tab writes it: a copy of the
+    /// master. For the list and for the equalisation the content does not matter, only that it
+    /// loads.
     /// </summary>
     internal SessionFixture WithSmoothedMaster()
     {
@@ -92,10 +96,12 @@ internal sealed class SessionFixture : IDisposable
         return this;
     }
 
-    /// <summary>Calea unuia dintre masterele scrise de <see cref="WithFlatMasters"/>.</summary>
+    /// <summary>The path of one of the masters written by <see cref="WithFlatMasters"/>.</summary>
     internal string MasterPath(string name) => Path.Combine(ProcessDir, name);
 
-    /// <summary>O serie de lights calibrate, cu vignetare reziduala usor diferita.</summary>
+    /// <summary>
+    /// A series of calibrated lights, with slightly different residual vignetting.
+    /// </summary>
     internal SessionFixture WithLightSeries(int count, IEnumerable<string>? cards = null)
     {
         WithProcess();
@@ -106,10 +112,10 @@ internal sealed class SessionFixture : IDisposable
     }
 
     /// <summary>
-    /// Un flat brut. Nu e un raw adevarat - FITS-ul cu mozaic Bayer pastreaza exact ce
-    /// masoara modul, adica cele patru pozitii CFA la scala ADU originala - dar poarta o
-    /// extensie raw ca sa apara in lista, si asta ar face-o pe cea reala sa esueze.
-    /// Deci testele care ating fisierele astea verifica LISTA, nu analiza.
+    /// A raw flat. It is not a real raw - the FITS with a Bayer mosaic keeps exactly what the
+    /// mode measures, that is the four CFA positions at the original ADU scale - but it carries
+    /// a raw extension so it appears in the list, and that would make the real analysis fail.
+    /// So the tests that touch these files check the LIST, not the analysis.
     /// </summary>
     internal SessionFixture WithRawFlats(params string[] names)
     {
@@ -119,10 +125,11 @@ internal sealed class SessionFixture : IDisposable
     }
 
     /// <summary>
-    /// Un flat brut analizabil: FITS cu mozaic CFA, la scala ADU originala.
+    /// An analysable raw flat: a FITS with a CFA mosaic, at the original ADU scale.
     ///
-    /// Cu <paramref name="bayerPat"/> poarta si ordinea culorilor, cum o scrie Siril pe un
-    /// cadru trecut prin Conversion - atunci canalele se numesc R/G1/G2/B in loc de pozitii.
+    /// With <paramref name="bayerPat"/> it also carries the colour order, as Siril writes it on
+    /// a frame passed through Conversion - then the channels are named R/G1/G2/B instead of
+    /// positions.
     /// </summary>
     internal string WriteAnalysableRawFlat(string name, double centre = 34000, string? bayerPat = null)
     {
@@ -136,7 +143,7 @@ internal sealed class SessionFixture : IDisposable
     static void Write(string path, Func<int, int, double> scene, IEnumerable<string>? cards = null)
         => File.WriteAllBytes(path, FitsTestData.BuildFits(Size, Size, scene, extraCards: cards));
 
-    /// <summary>Carduri care fac campul prea larg pentru testul end-to-end.</summary>
+    /// <summary>Cards that make the field too wide for the end-to-end test.</summary>
     internal static IEnumerable<string> WideFieldCards => FitsTestData.WcsCards(0.4);
 
     public void Dispose() => _ws.Dispose();

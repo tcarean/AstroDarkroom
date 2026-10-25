@@ -15,26 +15,43 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RatioView.xaml.cs - legatura cu XAML-ul, plus cele doua dialoge de fisier.
+// RatioView.xaml.cs - the link to the XAML, plus the two file dialogs.
 //
-// Dialogul se deschide de aici si nu din ViewModel dinadins: un ViewModel care deschide
-// ferestre nu se mai poate testa. Aici se alege o cale, atat; validarea ei - inclusiv
-// explicatia cand nu e un master de flat - e in RatioTabViewModel.Choose, unde se poate
-// verifica cu un test.
+// The dialog opens from here and not from the view-model on purpose: a view-model that opens
+// windows can no longer be tested. Here a path is chosen, nothing more; its validation -
+// including the explanation when it is not a flat master - is in RatioTabViewModel.Choose,
+// where a test can check it.
 
 using System.Windows;
 using System.Windows.Controls;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The Ratio tab: the two masters chosen explicitly, one per orientation, then the split
+    /// into the camera-fixed and world-fixed parts, bound to <see cref="RatioTabViewModel"/>.
+    /// </summary>
     public partial class RatioView : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public RatioView() => InitializeComponent();
 
+        /// <summary>The button that chooses the master of set A.</summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">The click.</param>
         void ChooseA(object sender, RoutedEventArgs e) => Choose(isA: true);
 
+        /// <summary>The button that chooses the master of set B.</summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">The click.</param>
         void ChooseB(object sender, RoutedEventArgs e) => Choose(isA: false);
 
+        /// <summary>
+        /// Opens the file dialog for one set's master and hands the chosen path to
+        /// <see cref="RatioTabViewModel.Choose"/>, which validates it; a cancelled dialog
+        /// changes nothing.
+        /// </summary>
+        /// <param name="isA">True for set A, false for set B.</param>
         void Choose(bool isA)
         {
             if (DataContext is not RatioTabViewModel vm) return;
@@ -42,15 +59,15 @@ namespace FlatCheck.Wpf
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
                 Title = isA ? "Masterul setului A" : "Masterul setului B",
-                // Doar un punct de plecare. Setul A e adesea in sesiunea deschisa, dar
-                // setul B e prin definitie alta sedinta, deci alt folder - iar dupa prima
-                // alegere dialogul retine el singur unde a fost.
+                // Only a starting point. Set A is often in the open session, but set B is
+                // by definition another sitting, so another folder - and after the first
+                // choice the dialog remembers by itself where it was.
                 InitialDirectory = isA ? vm.InitialDirectory : null,
-                // Tiparul vine din SirilSession, nu scris a doua oara aici: dialogul
-                // trebuie sa propuna exact ce accepta validarea, altfel omul alege din
-                // lista ceva ce i se refuza imediat dupa. Filtrul tot nu garanteaza
-                // nimic - se poate oricand trece pe "Toate fisierele" - deci verificarea
-                // adevarata ramane in ViewModel.
+                // The pattern comes from SirilSession, not written a second time here: the
+                // dialog must offer exactly what the validation accepts, otherwise the user
+                // picks from the list something refused right after. The filter still
+                // guarantees nothing - one can always switch to "Toate fisierele" - so the
+                // real check stays in the view-model.
                 Filter = $"Master de flat ({SirilSession.RatioPattern})|{SirilSession.RatioPattern}"
                          + "|Toate fisierele|*.*",
                 CheckFileExists = true,

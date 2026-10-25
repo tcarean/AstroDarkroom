@@ -17,12 +17,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MessagePanel - explicatia care apare in locul rezultatelor.
+<!-- MessagePanel - the explanation that appears instead of the results.
 
-     Ca si BusyOverlay, se leaga la TabViewModel-ul mostenit ca DataContext. Textele sunt
-     lungi intentionat: cerintele cer sa se explice CE lipseste si CE sa faca omul, nu
-     doar ca ceva a esuat. De aceea panoul se intinde pe latime si nu incearca sa incapa
-     intr-o singura linie. -->
+     Like BusyOverlay, it binds to the TabViewModel inherited as DataContext. The texts are
+     long on purpose: the requirements ask to explain WHAT is missing and WHAT the user should
+     do, not only that something failed. That is why the panel stretches across the width
+     and does not try to fit on a single line. -->
 
 <UserControl x:Class="FlatCheck.Wpf.MessagePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

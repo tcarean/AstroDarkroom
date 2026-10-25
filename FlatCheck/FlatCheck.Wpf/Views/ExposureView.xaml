@@ -17,11 +17,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ExposureView - tabul 4.
+<!-- ExposureView - tab 4.
 
-     Lista de flat-uri brute la stanga, rezultatul la dreapta. Comutatorul "Sky" e sus,
-     langa lista, fiindca schimba pragurile pentru orice fisier ales, nu doar pentru cel
-     curent - iar la comutare se recalculeaza pe loc. -->
+     The list of raw flats on the left, the result on the right. The "Sky" switch is at the
+     top, beside the list, because it changes the thresholds for any file chosen, not only for
+     the current one - and switching it recomputes at once. -->
 
 <UserControl x:Class="FlatCheck.Wpf.ExposureView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -38,14 +38,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <ColumnDefinition Width="*" MinWidth="380" />
     </Grid.ColumnDefinitions>
 
-    <!-- ============================================================ lista -->
+    <!-- ============================================================ list -->
     <Border Grid.Column="0" Background="{StaticResource PanelBg}"
             BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,1,0">
       <DockPanel Margin="16,16,16,16">
 
         <StackPanel DockPanel.Dock="Top">
-          <!-- Continut ca TextBlock, nu ca sir: eticheta e prea lunga pentru coloana
-               si trebuie sa se poata rupe pe doua randuri. -->
+          <!-- Content as a TextBlock, not as a string: the label is too long for the column and
+               must be able to break into two lines. -->
           <CheckBox IsChecked="{Binding Sky, Mode=TwoWay}">
             <TextBlock Text="Sky flat - praguri pentru cer, nu pentru panou"
                        TextWrapping="Wrap" />
@@ -67,11 +67,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </DockPanel>
     </Border>
 
-    <!-- ============================================================ rezultatul -->
+    <!-- ============================================================ result -->
     <Grid Grid.Column="1">
       <local:MessagePanel Margin="20" />
 
-      <!-- starea de dinainte de prima alegere: lista are fisiere, dar niciunul apasat -->
+      <!-- the state before the first choice: the list has files, but none pressed -->
       <TextBlock MaxWidth="420" Margin="24"
                  HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
                  Text="Alege un flat brut din lista ca sa-i masor expunerea.">
@@ -94,8 +94,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
       <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18"
                     Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
-        <!-- Mai lat decat celelalte taburi: patru desene de 96 px au nevoie de latime ca
-             sa se poata compara pozitiile varfurilor intre canale. -->
+        <!-- Wider than the other tabs: four drawings of 96 px need width so that the positions
+             of the peaks can be compared between channels. -->
         <StackPanel MaxWidth="820" HorizontalAlignment="Left">
 
           <Border Style="{StaticResource Card}">
@@ -149,13 +149,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </StackPanel>
           </Border>
 
-          <!-- ================================================== histogramele pe canal -->
+          <!-- ================================================== per-channel histograms -->
           <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="HISTOGRAME PE CANAL" />
           <Border Style="{StaticResource Card}">
             <StackPanel>
-              <!-- Sursa desenelor. GroupName UNIC in fereastra: WPF grupeaza radio-urile
-                   dupa nume peste tot, si un nume comun cu alt tab ar debifa chipurile
-                   celuilalt. Stins cand fisierul n-are previzualizare. -->
+              <!-- The drawings' source. A UNIQUE GroupName in the window: WPF groups radio buttons
+                   by name everywhere, and a name shared with another tab would uncheck the other
+                   one's chips. Disabled when the file has no preview. -->
               <ItemsControl ItemsSource="{Binding Source.Options}" Margin="0,0,0,12"
                             IsEnabled="{Binding Source.IsEnabled}">
                 <ItemsControl.ItemsPanel>
@@ -176,7 +176,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                             ItemTemplate="{StaticResource ChannelHistogramRowTemplate}" />
               <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Caption}" />
 
-              <!-- Tabelul raw / ecran: pe amandoua vederile, fiindca el e tot rostul. -->
+              <!-- The raw / screen table: on both views, because it is the whole point. -->
               <StackPanel Margin="0,14,0,0"
                           Visibility="{Binding HasComparison, Converter={StaticResource BoolToVis}}">
                 <TextBlock Style="{StaticResource Heading}" Margin="0,0,0,6"
@@ -187,8 +187,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
               <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding SourceNote}"
                          Visibility="{Binding SourceNote, Converter={StaticResource NotNullToVis}}" />
-              <!-- Citirea cifrelor brute, doar pe vederea bruta: sub desenul ecranului, o
-                   propozitie despre "varful la 55 %" ar contrazice curba de deasupra. -->
+              <!-- The reading of the raw figures, only on the raw view: under the screen's drawing,
+                   a sentence about "the peak at 55 %" would contradict the curve above. -->
               <TextBlock Style="{StaticResource Muted}" Margin="0,14,0,0" Text="{Binding Reading}"
                          Visibility="{Binding Source.IsPreviewSelected, Converter={StaticResource NotBoolToVis}}" />
             </StackPanel>

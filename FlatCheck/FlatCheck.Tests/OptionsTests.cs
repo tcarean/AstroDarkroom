@@ -74,7 +74,9 @@ public class OptionsTests
         Assert.Null(after.Error);
     }
 
-    /// <summary>Mode flags are not mutually validated here; dispatch order in the CLI decides.</summary>
+    /// <summary>
+    /// Mode flags are not mutually validated here; dispatch order in the CLI decides.
+    /// </summary>
     [Fact]
     public void HisteqAndExpoTogether_BothStaySet()
     {
@@ -243,12 +245,12 @@ public class OptionsTests
         Assert.Null(Options.Parse(new[] { "raw.fit", "--expo", "--sat", "4095", "--black", "150" }).Error);
     }
 
-    // ---------------------------------------------------------------- --light pe serie
+    // ---------------------------------------------------------------- --light on a series
 
     /// <summary>
-    /// Implicitul e conventia Siril pentru cadre CALIBRATE dar NEREGISTRATE. Nu se
-    /// schimba fara sa se citeasca comentariul de langa el in Options.cs: "r_pp_light_*"
-    /// e exclus intentionat.
+    /// The default is Siril's convention for CALIBRATED but UNREGISTERED frames. It is not
+    /// changed without reading the comment beside it in Options.cs: "r_pp_light_*" is
+    /// left out on purpose.
     /// </summary>
     [Fact]
     public void ThePatternDefaultsToTheSirilCalibratedNaming()
@@ -297,7 +299,8 @@ public class OptionsTests
         Assert.Contains(expected, Options.Parse(new[] { "light.fit", "--fov", value }).Error);
     }
 
-    /// <summary>Un folder e o cale ca oricare alta la parsare; dispeceratul decide ce face cu ea.</summary>
+    /// <summary>A folder is a path like any other at parsing; the dispatch decides what to
+    /// do with it.</summary>
     [Fact]
     public void ADirectoryIsAcceptedAsThePositional()
     {
@@ -375,7 +378,9 @@ public class OptionsTests
         Assert.False(Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", "300" }).ScaleAuto);
     }
 
-    /// <summary>--scale without --smooth parses and is simply unused; dispatch never reads it.</summary>
+    /// <summary>
+    /// --scale without --smooth parses and is simply unused; dispatch never reads it.
+    /// </summary>
     [Fact]
     public void ScaleFlag_WithoutSmooth_IsAccepted()
     {

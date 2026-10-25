@@ -18,13 +18,13 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Textul raportului pe serie.
+/// The text of the series report.
 ///
-/// Doua lucruri conteaza aici si nu sunt acoperite de testele analizorului. Primul: cand
-/// verdictul e NEDETERMINAT, raportul trebuie sa spuna CARE conditie a picat - "nu stiu"
-/// fara motiv e mai rau decat un numar gresit, fiindca nu-i lasa omului nimic de facut.
-/// Al doilea: raportul nu trebuie sa scape un verdict de calitate cand n-are voie sa dea
-/// unul, si nici sa refuze cand seria e curata.
+/// Two things matter here and are not covered by the analyzer's tests. The first: when
+/// the verdict is NEDETERMINAT, the report must say WHICH condition failed - "I do not
+/// know" without a reason is worse than a wrong number, because it leaves the user
+/// nothing to do. The second: the report must not let slip a quality verdict when it is
+/// not allowed to give one, nor refuse when the series is clean.
 /// </summary>
 public class LightSeriesReportTests
 {
@@ -51,7 +51,7 @@ public class LightSeriesReportTests
             .Select(i => Frame($"f{i:00}.fit", mean + (i % 2 == 0 ? jitter : -jitter), 10.0))
             .ToList();
 
-    // ------------------------------------------------------------ antet si randuri
+    // ------------------------------------------------------------ header and rows
 
     [Fact]
     public void TheHeaderNamesTheFolderThePatternAndTheCount()
@@ -66,7 +66,7 @@ public class LightSeriesReportTests
         Assert.Contains("=== TEST END-TO-END (SERIE): process ===", text);
         Assert.Contains("cadre gasite            : 32  (tipar pp_light_*.fit)", text);
         Assert.Contains("camp diagonal           :  12.0 grade  (WCS)", text);
-        // cerinta de intrare e alta decat la un cadru singur: si NEREGISTRATE
+        // the input requirement differs from a single frame's: also UNREGISTERED
         Assert.Contains("NEREGISTRATE", text);
     }
 
@@ -83,7 +83,8 @@ public class LightSeriesReportTests
         Assert.Contains("984/1080", w.ToString());
     }
 
-    /// <summary>Un nume lung se scurteaza de la stanga, ca sa ramana vizibil numarul cadrului.</summary>
+    /// <summary>A long name is shortened from the left, so that the frame number stays
+    /// visible.</summary>
     [Fact]
     public void ALongFileNameIsTrimmedFromTheLeft()
     {
@@ -97,7 +98,7 @@ public class LightSeriesReportTests
         Assert.Contains("...", w.ToString());
     }
 
-    // ------------------------------------------------------------ concludent
+    // ------------------------------------------------------------ conclusive
 
     [Fact]
     public void AConclusiveSeriesReportsTheVerdictAndTheDiagnosis()
@@ -110,7 +111,7 @@ public class LightSeriesReportTests
         Assert.DoesNotContain("NEDETERMINAT", text);
     }
 
-    /// <summary>Semnul mediei e diagnosticul, exact ca la un cadru singur.</summary>
+    /// <summary>The sign of the mean is the diagnosis, just as for a single frame.</summary>
     [Fact]
     public void TheSignOfTheMeanIsReadAsTheDiagnosis()
     {
@@ -118,11 +119,11 @@ public class LightSeriesReportTests
         Assert.Contains("SUPRA-corectie", Summary(Steady(10, mean: -3.5)));
     }
 
-    // ------------------------------------------------------------ nedeterminat
+    // ------------------------------------------------------------ inconclusive
 
     /// <summary>
-    /// Cifrele reale ale sesiunii care a motivat modul: media e +0.23, adica ar fi trecut
-    /// drept OK, dar amandoua conditiile pica. Raportul trebuie sa spuna amandoua.
+    /// The real figures of the session that motivated the mode: the mean is +0.23, that is
+    /// it would have passed as OK, but both conditions fail. The report must say both.
     /// </summary>
     [Fact]
     public void BothFailedConditionsAreSpelledOut()
@@ -135,13 +136,13 @@ public class LightSeriesReportTests
         Assert.Contains("Media NU se poate citi ca eroare de flat", text);
         Assert.Contains("eroarea mediei", text);
         Assert.Contains("urmareste gradientul de cer", text);
-        // si trimite la testul care chiar raspunde pe asemenea date
+        // and points to the test that really answers on such data
         Assert.Contains("--ratio", text);
     }
 
     /// <summary>
-    /// Explicatia de fond: flat-ul e constant prin constructie, deci ce se misca e cerul.
-    /// Fara fraza asta, "nedeterminat" ramane o afirmatie fara temei.
+    /// The underlying explanation: the flat is constant by construction, so what moves is
+    /// the sky. Without this sentence, "nedeterminat" stays an unfounded claim.
     /// </summary>
     [Fact]
     public void TheRefusalExplainsWhyMovementMeansSky()
@@ -161,11 +162,11 @@ public class LightSeriesReportTests
         Assert.Contains("prea putine cadre", text);
     }
 
-    // ------------------------------------------------------------ corelatia
+    // ------------------------------------------------------------ the correlation
 
     /// <summary>
-    /// Cand gradientul de cer nu variaza, linia spune ca testul NU s-a aplicat, in loc sa
-    /// tipareasca o corelatie fara sens. Altfel ar arata ca o masuratoare.
+    /// When the sky gradient does not vary, the line says the test was NOT applied, instead
+    /// of printing a meaningless correlation. Otherwise it would look like a measurement.
     /// </summary>
     [Fact]
     public void AConstantSkyGradientSaysTheTestDidNotApply()

@@ -45,15 +45,15 @@ internal static class ParityFixtures
         Write(dir, "raw_cfa.fit", rawCfa);      // --expo and --expo --sky
         Write(dir, "raw12bit.fit", raw12);      // --expo --sat 4095 --black 150
 
-        // Acelasi mozaic, dar cu ordinea culorilor scrisa in header - cum o scrie Siril
-        // pe un cadru trecut prin Conversion. Amandoua implementarile citesc BAYERPAT, deci
-        // linia canalelor trebuie sa iasa identica; pe un raw ar diferi sursa (libraw vs
-        // rawpy), la fel ca linia de scala.
+        // The same mosaic, but with the colour order written in the header - as Siril writes
+        // it on a frame passed through Conversion. Both implementations read BAYERPAT, so the
+        // channels line must come out identical; on a raw the source would differ (libraw vs
+        // rawpy), like the scale line.
         File.WriteAllBytes(Path.Combine(dir, "raw_bayerpat.fit"),
             FitsTestData.BuildFits(Size, Size, rawCfa, extraCards: FitsTestData.BayerCards("RGGB")));
 
-        // Si cu ROWORDER 'BOTTOM-UP', cum il scrie Siril de fapt: pe inaltimea para faza
-        // mozaicului se muta cu un rand, si amandoua implementarile trebuie s-o mute.
+        // And with ROWORDER 'BOTTOM-UP', as Siril actually writes it: on an even height the
+        // mosaic's phase moves by one row, and both implementations must move it.
         File.WriteAllBytes(Path.Combine(dir, "raw_bayerpat_bottomup.fit"),
             FitsTestData.BuildFits(Size, Size, rawCfa,
                 extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
@@ -122,19 +122,19 @@ internal static class ParityFixtures
                     return bright;
                 }));
 
-        // --light: garda de aplicabilitate. Scara vine dintr-un plate solve, deci campul
-        // e exact si refuzul trebuie sa fie acelasi de fiecare data.
+        // --light: the applicability guard. The scale comes from a plate solve, so the field
+        // is exact and the refusal must be the same every time.
         File.WriteAllBytes(Path.Combine(dir, "widefield.fit"),
             FitsTestData.BuildFits(Size, Size, radial,
-                extraCards: FitsTestData.WcsCards(0.1)));       // diag 724 px -> 72.4 grade
+                extraCards: FitsTestData.WcsCards(0.1)));       // diag 724 px -> 72.4 degrees
 
-        // --light pe serie. Doua subfoldere, cate unul pentru fiecare ramura de verdict.
-        // Numele sunt cele Siril, ca sa treaca prin tiparul implicit.
+        // --light on a series. Two subfolders, one for each verdict branch.
+        // The names are Siril's, so that they pass the default pattern.
         SeriesDir(dir, "serie_stabil", Enumerable.Range(0, 6)
             .Select(i => FitsTestData.Radial(Size, Size, k: 0.44 + 0.002 * i)).ToArray());
 
-        // k urca de la sub- la supra-corectie iar planul de cer scade odata cu el: exact
-        // tiparul sesiunii reale, in care cele doua s-au dovedit corelate la -0.94
+        // k rises from under- to over-correction and the sky plane falls with it: exactly
+        // the pattern of the real session, in which the two proved correlated at -0.94
         SeriesDir(dir, "serie_baleiaj", Enumerable.Range(0, 6)
             .Select(i => FitsTestData.WithLinearGradient(
                 TestImages.InvertedRadial(Size, Size, k: -0.5 + 0.2 * i), Size, 0.6 - 0.1 * i))

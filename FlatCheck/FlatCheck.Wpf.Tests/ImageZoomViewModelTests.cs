@@ -18,8 +18,9 @@
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Starea de zoom, fara control: pasii, limitele, eticheta, resetarea. Ce face controlul
-/// cu ea (deplasare, rotita, "potrivit" din marimea ferestrei) se verifica cu ochiul.
+/// The zoom state, without the control: the steps, the limits, the label, the reset. What
+/// the control does with it (panning, the wheel, "potrivit" from the window's size) is
+/// checked by eye.
 /// </summary>
 public class ImageZoomViewModelTests
 {

@@ -51,7 +51,9 @@ public class PreviewReaderTests
         Assert.InRange(Median(p, 2), 199, 201);
     }
 
-    /// <summary>The property AnalyzePreview leans on: levels keep their order through the codec.</summary>
+    /// <summary>
+    /// The property AnalyzePreview leans on: levels keep their order through the codec.
+    /// </summary>
     [Fact]
     public void AGradientKeepsItsOrder()
     {
@@ -74,7 +76,7 @@ public class PreviewReaderTests
         PreviewImage p = PreviewReader.Decode(e);
 
         Assert.NotNull(p);
-        Assert.Same(e.Data, p.Rgb);          // nici macar copiat: n-are de ce
+        Assert.Same(e.Data, p.Rgb);          // not even copied: no reason to
         Assert.Equal(e.Source, p.Source);
     }
 

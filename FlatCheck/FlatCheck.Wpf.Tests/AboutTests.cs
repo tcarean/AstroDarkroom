@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AboutTests.cs - fereastra "Despre" arata ce arata consola, nu o copie a ei.
+// AboutTests.cs - the "Despre" window shows what the console shows, not a copy of it.
 //
-// Tot ce e verificabil aici e ca ViewModel-ul nu si-a facut propriile texte: versiunea
-// si copyright-ul sunt ale lui VersionInfo, garantia e cea din RunReport, componentele
-// sunt cele din ThirdParty, in aceeasi ordine. Daca una din legaturile astea se rupe,
-// fereastra ar putea spune altceva decat --help despre aceeasi licenta.
+// All that can be checked here is that the view-model did not make its own texts: the
+// version and the copyright are VersionInfo's, the warranty is RunReport's, the components
+// are ThirdParty's, in the same order. If one of these links broke, the window could say
+// something other than --help about the same licence.
 
 namespace FlatCheck.Wpf.Tests;
 
@@ -37,8 +37,8 @@ public class AboutTests
     }
 
     /// <summary>
-    /// GPLv3 5(d): notita de garantie si trimiterea la licenta. Acelasi text ca la --help,
-    /// doar lipit intr-un paragraf - consola il rupe la ~70 de coloane.
+    /// GPLv3 5(d): the warranty notice and the pointer to the licence. The same text as in
+    /// --help, only joined into one paragraph - the console breaks it at ~70 columns.
     /// </summary>
     [Fact]
     public void TheWarrantyIsTheConsoleTextJoinedIntoAParagraph()
@@ -53,8 +53,8 @@ public class AboutTests
     }
 
     /// <summary>
-    /// Fereastra nu poate pierde o componenta pe care nucleul o declara - LGPL-ul cere
-    /// notita LibRaw exact aici. Aceleasi nume, in aceeasi ordine, cu aceleasi campuri.
+    /// The window cannot lose a component the core declares - the LGPL requires LibRaw's
+    /// notice exactly here. The same names, in the same order, with the same fields.
     /// </summary>
     [Fact]
     public void TheComponentsAreTheOnesTheCoreDeclares()

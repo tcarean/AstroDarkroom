@@ -18,15 +18,15 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Stratul Runs/ e singurul lucru pe care il impart aplicatia de consola si cea WPF.
-/// Toata valoarea lui e in promisiunea "amandoua obtin exact aceleasi cifre si exact
-/// acelasi text", deci exact aia se verifica aici - nu ca lantul ruleaza, ci ca ruland
-/// prin el iese acelasi lucru ca ruland pe langa el.
+/// The Runs/ layer is the only thing the console application and the WPF one share.
+/// Its whole value is in the promise "both get exactly the same figures and exactly
+/// the same text", so exactly that is checked here - not that the chain runs, but that
+/// running through it gives the same thing as running beside it.
 ///
-/// De ce nu ajung testele golden: alea verifica ce scrie CONSOLA. Daca maine fereastra
-/// ar cheama analizorul direct, in loc de Run, golden-urile ar ramane verzi si cele doua
-/// aplicatii ar raporta cifre diferite pe acelasi fisier. Testele de aici sunt cele care
-/// s-ar face rosii.
+/// Why the golden tests are not enough: they check what the CONSOLE writes. If tomorrow
+/// the window called the analyzer directly, instead of Run, the goldens would stay green
+/// and the two applications would report different figures on the same file. The tests
+/// here are the ones that would turn red.
 /// </summary>
 public class RunsTests
 {
@@ -35,10 +35,10 @@ public class RunsTests
     static string WriteFlat(TempWorkspace ws, string name = "flat.fit")
         => ws.WriteFile(name, FitsTestData.BuildFits(Size, Size, FitsTestData.Radial(Size, Size)));
 
-    // ---------------------------------------------------------------- structura
+    // ---------------------------------------------------------------- structure
 
     /// <summary>
-    /// Cifrele care ies prin Run sunt cele ale analizorului, nu o a doua socoteala.
+    /// The figures that come out through Run are the analyzer's, not a second calculation.
     /// </summary>
     [Fact]
     public void StructureRun_ProducesTheSameNumbersAsCallingTheAnalyzerDirectly()
@@ -57,8 +57,8 @@ public class RunsTests
     }
 
     /// <summary>
-    /// Textul care ajunge in "Rezultat testare.txt" trebuie sa fie acelasi cu al
-    /// consolei. Cerinta e literala, deci testul e literal.
+    /// The text that reaches "Rezultat testare.txt" must be the same as the console's.
+    /// The requirement is literal, so the test is literal.
     /// </summary>
     [Fact]
     public void StructureRun_WritesTheSameTextAsTheReportWouldOnItsOwn()
@@ -76,8 +76,9 @@ public class RunsTests
     }
 
     /// <summary>
-    /// Harta se intoarce ca octeti, si sunt exact octetii pe care i-ar fi scris pe disc
-    /// varianta de consola - altfel fereastra ar arata alta imagine decat cea salvata.
+    /// The map comes back as bytes, and they are exactly the bytes the console variant
+    /// would have written to disk - otherwise the window would show another image than the
+    /// saved one.
     /// </summary>
     [Fact]
     public void StructureRun_ReturnsTheSamePngBytesThatWouldBeWrittenToDisk()
@@ -104,7 +105,7 @@ public class RunsTests
         Assert.Equal(run.Result.Structure.Height, img.Height);
     }
 
-    // ---------------------------------------------------------------- raport A/B
+    // ---------------------------------------------------------------- A/B ratio
 
     [Fact]
     public void RatioRun_ProducesTheSameNumbersAsTheAnalyzer()
@@ -123,15 +124,16 @@ public class RunsTests
         Assert.Equal(direct.Sensor.CornerSpreadPct, run.Result.Sensor.CornerSpreadPct, 12);
         Assert.Equal(direct.Verdict, run.Result.Verdict);
 
-        // Doua harti: reziduul partii fixe pe aparat, si raportul A/B.
+        // Two maps: the residual of the camera-fixed part, and the A/B ratio.
         Assert.NotNull(run.Png);
         Assert.NotNull(run.SecondaryPng);
         Assert.NotEqual(run.Png, run.SecondaryPng);
     }
 
     /// <summary>
-    /// Provenienta vine din headerele FITS, nu din nume: e singurul loc din raport in
-    /// care se vede daca cele doua stive chiar pot fi din doua orientari diferite.
+    /// The provenance comes from the FITS headers, not from the names: it is the only place
+    /// in the report where one sees whether the two stacks really can come from two
+    /// different orientations.
     /// </summary>
     [Fact]
     public void RatioRun_ReadsTheStackProvenanceFromTheHeaders()
@@ -142,13 +144,13 @@ public class RunsTests
 
         var run = RatioRun.Execute(a, b, new StringWriter());
 
-        // Fixture-urile n-au STACKCNT/DATE-OBS, iar lipsa lor nu e o eroare.
+        // The fixtures have no STACKCNT/DATE-OBS, and their absence is not an error.
         Assert.Equal(0, run.Result.StackCountA);
         Assert.Null(run.Result.DateObsA);
         Assert.Contains("necunoscut", RatioReport.Provenance(run.Result.StackCountA, run.Result.DateObsA));
     }
 
-    // ---------------------------------------------------------------- expunere
+    // ---------------------------------------------------------------- exposure
 
     [Fact]
     public void ExposureRun_ProducesTheSameNumbersAsTheAnalyzer()
@@ -167,8 +169,8 @@ public class RunsTests
     }
 
     /// <summary>
-    /// Modul masoara un nivel, n-are ce desena. Fereastra se bazeaza pe null ca sa nu
-    /// arate un panou de imagine gol la tabul de expunere.
+    /// The mode measures a level, it has nothing to draw. The window relies on null so as
+    /// not to show an empty image panel on the exposure tab.
     /// </summary>
     [Fact]
     public void ExposureRun_ProducesNoMap()
@@ -197,7 +199,7 @@ public class RunsTests
         Assert.NotEqual(panel.Result.Verdict, sky.Result.Verdict);
     }
 
-    // ---------------------------------------------------------------- light, un cadru
+    // ---------------------------------------------------------------- light, one frame
 
     [Fact]
     public void LightRun_ProducesTheSameNumbersAsTheAnalyzer()
@@ -216,9 +218,8 @@ public class RunsTests
     }
 
     /// <summary>
-    /// Refuzul e absenta unui verdict, nu un verdict prost: nu se produce nicio cifra si
-    /// nicio harta. Fereastra se bazeaza pe asta ca sa nu afiseze un panou de rezultate
-    /// pe jumatate populat.
+    /// The refusal is the absence of a verdict, not a bad verdict: no figure and no map is
+    /// produced. The window relies on this so as not to show a half-filled results panel.
     /// </summary>
     [Fact]
     public void LightRun_OnATooWideField_RefusesWithoutProducingNumbersOrAMap()
@@ -226,7 +227,7 @@ public class RunsTests
         using var ws = new TempWorkspace();
         string path = ws.WriteFile("wide.fit", FitsTestData.BuildFits(
             Size, Size, FitsTestData.Radial(Size, Size),
-            extraCards: FitsTestData.WcsCards(0.2)));   // 256x256, diag 362 px -> ~72 gr
+            extraCards: FitsTestData.WcsCards(0.2)));   // 256x256, diag 362 px -> ~72 deg
 
         var run = LightRun.Execute(path, null, new StringWriter());
 
@@ -236,14 +237,14 @@ public class RunsTests
         Assert.Equal(FovLevel.TooWide, run.Suitability.Level);
     }
 
-    /// <summary>Refuzul explica de ce, chiar daca nu da cifre.</summary>
+    /// <summary>The refusal explains why, even though it gives no figures.</summary>
     [Fact]
     public void LightRun_OnATooWideField_StillWritesAnExplanation()
     {
         using var ws = new TempWorkspace();
         string path = ws.WriteFile("wide.fit", FitsTestData.BuildFits(
             Size, Size, FitsTestData.Radial(Size, Size),
-            extraCards: FitsTestData.WcsCards(0.2)));   // 256x256, diag 362 px -> ~72 gr
+            extraCards: FitsTestData.WcsCards(0.2)));   // 256x256, diag 362 px -> ~72 deg
 
         var w = new StringWriter();
         LightRun.Execute(path, null, w);
@@ -251,7 +252,8 @@ public class RunsTests
         Assert.Contains("TESTUL NU SE APLICA", w.ToString());
     }
 
-    /// <summary>--fov spune adevarul, nu forteaza: un camp larg declarat e tot refuzat.</summary>
+    /// <summary>--fov tells the truth, it does not force: a declared wide field is still
+    /// refused.</summary>
     [Fact]
     public void LightRun_HonoursTheFovOverride()
     {
@@ -263,7 +265,7 @@ public class RunsTests
         Assert.True(LightRun.Execute(path, 70.0, new StringWriter()).Refused);
     }
 
-    // ---------------------------------------------------------------- light, serie
+    // ---------------------------------------------------------------- light, series
 
     static string WriteSeries(TempWorkspace ws, int n)
     {
@@ -288,9 +290,9 @@ public class RunsTests
     }
 
     /// <summary>
-    /// Callback-ul e cum isi umple fereastra tabelul. Trebuie sa vina o data per cadru,
-    /// in ordine, cu acelasi rezultat care ajunge si in sinteza - altfel randul afisat
-    /// si media raportata ar fi din calcule diferite.
+    /// The callback is how the window fills its table. It must come once per frame, in
+    /// order, with the same result that also reaches the summary - otherwise the row shown
+    /// and the mean reported would come from different calculations.
     /// </summary>
     [Fact]
     public void LightSeriesRun_ReportsEveryFrameOnceInOrderWithTheResultThatIsCombined()
@@ -310,8 +312,8 @@ public class RunsTests
     }
 
     /// <summary>
-    /// Textul scris in TextWriter e identic cu cel al consolei, deci fereastra poate
-    /// salva raportul unei serii la fel ca pe cel de structura.
+    /// The text written to the TextWriter is identical to the console's, so the window can
+    /// save a series' report the same way as the structure one.
     /// </summary>
     [Fact]
     public void LightSeriesRun_WritesTheFullConsoleReport()
@@ -326,13 +328,14 @@ public class RunsTests
         Assert.Contains("=== TEST END-TO-END (SERIE):", text);
         Assert.Contains("SINTEZA PE SERIE", text);
         Assert.Contains("VERDICT: " + run.Result.Verdict, text);
-        // cate un rand pentru fiecare cadru
+        // one row for each frame
         foreach (string name in run.Result.Names) Assert.Contains(name, text);
     }
 
     /// <summary>
-    /// Anularea se verifica INTRE cadre. Un token deja anulat trebuie sa opreasca inainte
-    /// de primul cadru, nu dupa toate - altfel inchiderea ferestrei ar astepta doua minute.
+    /// Cancellation is checked BETWEEN frames. A token already cancelled must stop before
+    /// the first frame, not after all of them - otherwise closing the window would wait two
+    /// minutes.
     /// </summary>
     [Fact]
     public void LightSeriesRun_StopsWhenCancelled()
@@ -348,7 +351,7 @@ public class RunsTests
                 onFrame: (i, total, name, r) => { done++; cts.Cancel(); },
                 ct: cts.Token));
 
-        Assert.Equal(1, done);   // primul cadru s-a terminat, al doilea n-a mai pornit
+        Assert.Equal(1, done);   // the first frame finished, the second never started
     }
 
     [Fact]
@@ -362,13 +365,13 @@ public class RunsTests
         Assert.Contains("pp_light_*.fit", e.Message);
     }
 
-    // ---------------------------------------------------------------- antetul comun
+    // ---------------------------------------------------------------- the shared header
 
     /// <summary>
-    /// Cele doua aplicatii scriu acelasi antet, fiindca il scriu din acelasi loc. Daca
-    /// cineva l-ar rescrie in WPF, raportul salvat ar putea ramane pe o versiune veche.
+    /// The two applications write the same header, because they write it from the same
+    /// place. If someone rewrote it in WPF, the saved report could stay on an old version.
     /// </summary>
-    // ---------------------------------------------------------------- egalizare de histograma
+    // ---------------------------------------------------------------- histogram equalisation
 
     static string WriteCfaFlat(TempWorkspace ws)
         => ws.WriteFile("raw.fit", FitsTestData.BuildFits(Size, Size,
@@ -430,7 +433,9 @@ public class RunsTests
         Assert.Contains("EGALIZARE DE HISTOGRAMA", actual.ToString());
     }
 
-    /// <summary>The per-view encoders the window uses: greys, all of the composite's size.</summary>
+    /// <summary>
+    /// The per-view encoders the window uses: greys, all of the composite's size.
+    /// </summary>
     [Fact]
     public void HistEqRun_EncodesEveryViewAtTheSameSize()
     {

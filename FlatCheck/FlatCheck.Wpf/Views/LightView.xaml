@@ -17,12 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- LightView - tabul 3, testul end-to-end pe serie.
+<!-- LightView - tab 3, the end-to-end test on a series.
 
-     Refuzul gardei de camp (INAPLICABIL) se afiseaza in acelasi loc ca un verdict, cu
-     pastila neutra, si NU ca eroare. E un raspuns: unealta a stabilit ca pe datele astea
-     intrebarea nu are raspuns masurabil. Sa arate ca un esec l-ar invata pe om ca
-     aplicatia e stricata, cand tocmai l-a scutit de o concluzie falsa. -->
+     The field guard's refusal (INAPLICABIL) is shown in the same place as a verdict, with
+     the neutral pill, and NOT as an error. It is an answer: the tool established that on
+     these data the question has no measurable answer. Showing it as a failure would teach
+     the user that the application is broken, when it has just spared them a false
+     conclusion. -->
 
 <UserControl x:Class="FlatCheck.Wpf.LightView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -38,7 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ColumnDefinition Width="2*" MinWidth="300" />
       </Grid.ColumnDefinitions>
 
-      <!-- ========================================================== sinteza -->
+      <!-- ========================================================== summary -->
       <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="20,18,10,18">
         <StackPanel>
 
@@ -66,7 +67,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </StackPanel>
           </Border>
 
-          <!-- campul acoperit: la refuz e chiar motivul, deci se arata mereu -->
+          <!-- the field covered: on a refusal it is the very reason, so it is always shown -->
           <Border Style="{StaticResource Card}" Margin="0,14,0,0">
             <StackPanel>
               <Grid>
@@ -128,7 +129,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </ScrollViewer>
 
-      <!-- ========================================================== cadrele -->
+      <!-- ========================================================== frames -->
       <Grid Grid.Column="1" Margin="10,18,20,18">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
@@ -170,8 +171,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                  RenderOptions.BitmapScalingMode="HighQuality" />
         </Border>
 
-        <!-- Legenda, dar fara comutator de scara: harta de aici e termenul radial fitat,
-             iar pragurile lui sunt Th.LightRad*, nu scara de reziduu. -->
+        <!-- The legend, but without a scale switch: the map here is the fitted radial term,
+             and its thresholds are Th.LightRad*, not the residual scale. -->
         <TextBlock Grid.Row="3" Style="{StaticResource Muted}" Margin="2,8,0,0"
                    Text="{Binding MapLegend}"
                    Visibility="{Binding HasNumbers, Converter={StaticResource BoolToVis}}" />
