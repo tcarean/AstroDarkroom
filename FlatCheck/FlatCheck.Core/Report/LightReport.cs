@@ -24,6 +24,7 @@
 
 using System;
 using System.IO;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -61,7 +62,7 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void WriteSuitability(SuitabilityResult s, TextWriter w)
         {
-            string label = double.IsNaN(s.FovDeg) ? "camp acoperit" : "camp diagonal";
+            string label = double.IsNaN(s.FovDeg) ? T("field covered", "camp acoperit") : T("diagonal field", "camp diagonal");
             w.WriteLine($"    {label,-24}: {FieldValue(s, 5)}");
 
             if (s.Level == FovLevel.Marginal)
@@ -71,7 +72,8 @@ namespace FlatCheck
             }
             else if (s.Level == FovLevel.Unknown)
             {
-                w.WriteLine("    (nu pot verifica daca testul se aplica; vezi --fov si README)");
+                w.WriteLine(T("    (cannot check whether the test applies; see --fov and the README)",
+                              "    (nu pot verifica daca testul se aplica; vezi --fov si README)"));
             }
         }
 
@@ -85,14 +87,16 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void WriteTooWide(SuitabilityResult s, string path, TextWriter w)
         {
-            w.WriteLine($"\n=== TEST END-TO-END: {path} ===");
+            w.WriteLine(T($"\n=== END-TO-END TEST: {path} ===", $"\n=== TEST END-TO-END: {path} ==="));
             WriteSuitability(s, w);
 
-            w.WriteLine("\n  TESTUL NU SE APLICA PE CADRELE ASTEA");
+            w.WriteLine(T("\n  THE TEST DOES NOT APPLY TO THESE FRAMES", "\n  TESTUL NU SE APLICA PE CADRELE ASTEA"));
             foreach (string line in DegeneracyLines()) w.WriteLine("    " + line);
             w.WriteLine("    " + NotALimitation);
-            w.WriteLine("\n    Pentru un setup cu camp larg, testul care raspunde e rotatia la 180 de");
-            w.WriteLine("    grade (--ratio): valideaza flat-ul fara sa implice cerul deloc.");
+            w.WriteLine(T("\n    For a wide-field setup, the test that answers is the 180-degree",
+                          "\n    Pentru un setup cu camp larg, testul care raspunde e rotatia la 180 de"));
+            w.WriteLine(T("    rotation (--ratio): it validates the flat without involving the sky at all.",
+                          "    grade (--ratio): valideaza flat-ul fara sa implice cerul deloc."));
             if (JudgedOnTheFocalLengthAlone(s))
             {
                 w.WriteLine("\n    " + FocalOnlyLines[0]);
@@ -110,15 +114,17 @@ namespace FlatCheck
 
         /// <summary>The note of a refusal judged on the focal length alone, in both applications,
         /// as the console's two lines: the window joins them into one sentence.</summary>
-        static readonly string[] FocalOnlyLines =
+        static string[] FocalOnlyLines => new[]
         {
-            "Decizia s-a luat doar pe focala, presupunand cel mai mare senzor",
-            "plauzibil.",
+            T("The decision was made on the focal length alone, assuming the largest plausible",
+              "Decizia s-a luat doar pe focala, presupunand cel mai mare senzor"),
+            T("sensor.", "plauzibil."),
         };
 
         /// <summary>The way out the console adds to that note; the window has no control for
         /// it, so it does not say it.</summary>
-        const string FovAdvice = "Daca al tau e mai mic, da campul real cu --fov <grade>.";
+        static string FovAdvice => T("If yours is smaller, give the real field with --fov <degrees>.",
+                                     "Daca al tau e mai mic, da campul real cu --fov <grade>.");
 
         /// <summary>
         /// The value of the field line, the one three-way choice both applications print: the
@@ -132,9 +138,12 @@ namespace FlatCheck
         /// <returns>The value, without the label.</returns>
         static string FieldValue(SuitabilityResult s, int width)
         {
-            if (!double.IsNaN(s.FovDeg)) return $"{s.FovDeg.ToString("F1").PadLeft(width)} grade  ({s.Source})";
-            if (!double.IsNaN(s.FocalMm)) return $"nedeterminat ({s.Source})";
-            return "necunoscut (headerul nu da nici focala, nici scara)";
+            if (!double.IsNaN(s.FovDeg))
+                return T($"{s.FovDeg.ToString("F1").PadLeft(width)} degrees  ({s.Source})",
+                         $"{s.FovDeg.ToString("F1").PadLeft(width)} grade  ({s.Source})");
+            if (!double.IsNaN(s.FocalMm)) return T($"undetermined ({s.Source})", $"nedeterminat ({s.Source})");
+            return T("unknown (the header gives neither the focal length nor the scale)",
+                     "necunoscut (headerul nu da nici focala, nici scara)");
         }
 
         /// <summary>The warning of a field at the limit, in the console's lines: the console
@@ -142,9 +151,12 @@ namespace FlatCheck
         /// <returns>Three lines; the first quotes <see cref="Th.LightFovOk"/>.</returns>
         static string[] MarginalLines() => new[]
         {
-            $"ATENTIE: camp la limita. Separarea plan/radial slabeste peste {Th.LightFovOk:F0}",
-            "grade diagonala, iar cifra de mai jos poate contine si cer, nu doar flat.",
-            "Citeste-o ca pe un indiciu, nu ca pe o masuratoare.",
+            T($"WARNING: field at the limit. The plane/radial separation weakens beyond {Th.LightFovOk:F0}",
+              $"ATENTIE: camp la limita. Separarea plan/radial slabeste peste {Th.LightFovOk:F0}"),
+            T("degrees of diagonal, and the figure below may hold sky too, not only the flat.",
+              "grade diagonala, iar cifra de mai jos poate contine si cer, nu doar flat."),
+            T("Read it as a hint, not as a measurement.",
+              "Citeste-o ca pe un indiciu, nu ca pe o masuratoare."),
         };
 
         /// <summary>Why a field wider than <see cref="Th.LightFovMax"/> cannot be measured, in
@@ -153,14 +165,19 @@ namespace FlatCheck
         /// <returns>Four lines of one paragraph.</returns>
         static string[] DegeneracyLines() => new[]
         {
-            $"Peste {Th.LightFovMax:F0} de grade diagonala, cupola de poluare luminoasa se",
-            "CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi",
-            "are exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra",
-            "ar iesi ar fi cerul, nu flat-ul.",
+            T($"Beyond {Th.LightFovMax:F0} degrees of diagonal, the light-pollution dome",
+              $"Peste {Th.LightFovMax:F0} de grade diagonala, cupola de poluare luminoasa se"),
+            T("CURVES inside the frame. The radially symmetric part of that curvature",
+              "CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi"),
+            T("has exactly the shape of the vignetting, so the fit can no longer separate them: any figure",
+              "are exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra"),
+            T("that came out would be the sky, not the flat.",
+              "ar iesi ar fi cerul, nu flat-ul."),
         };
 
         /// <summary>The sentence after the degeneracy, in both applications.</summary>
-        const string NotALimitation = "Nu e o limitare a uneltei, e o degenerare geometrica.";
+        static string NotALimitation => T("It is not a limitation of the tool, it is a geometric degeneracy.",
+                                          "Nu e o limitare a uneltei, e o degenerare geometrica.");
 
         /// <summary>
         /// Writes the report of one frame: the field, the tiles kept, the sky plane (flagged
@@ -173,24 +190,30 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void Write(LightResult r, SuitabilityResult s, string path, TextWriter w)
         {
-            w.WriteLine($"\n=== TEST END-TO-END: {path} ===");
-            w.WriteLine("    Astept un stack CALIBRAT cu flat, dar FARA background extraction.");
+            w.WriteLine(T($"\n=== END-TO-END TEST: {path} ===", $"\n=== TEST END-TO-END: {path} ==="));
+            w.WriteLine(T("    Expecting a stack CALIBRATED with the flat, but WITHOUT background extraction.",
+                          "    Astept un stack CALIBRAT cu flat, dar FARA background extraction."));
             WriteSuitability(s, w);
 
-            w.WriteLine($"\n    tile-uri folosite       : {r.KeptTiles} / {r.TotalTiles} (restul = nebulozitate/stele, respinse)");
-            w.WriteLine($"    gradient de cer (plan)  : {r.PlanePct,5:F2} %  <- poluare luminoasa, IGNORA"
-                      + (r.PlanePct > Th.LightPlaneWarn ? "  (mare!)" : ""));
-            w.WriteLine($"    componenta radiala      : {Signed(r.RadPct),6} %   [{r.Verdict}]  <- ASTA e flat-ul");
+            w.WriteLine(T($"\n    tiles used              : {r.KeptTiles} / {r.TotalTiles} (the rest = nebulosity/stars, rejected)",
+                          $"\n    tile-uri folosite       : {r.KeptTiles} / {r.TotalTiles} (restul = nebulozitate/stele, respinse)"));
+            w.WriteLine(T($"    sky gradient (plane)    : {r.PlanePct,5:F2} %  <- light pollution, IGNORE",
+                          $"    gradient de cer (plan)  : {r.PlanePct,5:F2} %  <- poluare luminoasa, IGNORA")
+                      + (r.PlanePct > Th.LightPlaneWarn ? T("  (large!)", "  (mare!)") : ""));
+            w.WriteLine(T($"    radial component        : {Signed(r.RadPct),6} %   [{VerdictWords.Of(r.Verdict)}]  <- THIS is the flat",
+                          $"    componenta radiala      : {Signed(r.RadPct),6} %   [{VerdictWords.Of(r.Verdict)}]  <- ASTA e flat-ul"));
 
-            w.WriteLine("\n  INTERPRETARE");
+            w.WriteLine(T("\n  INTERPRETATION", "\n  INTERPRETARE"));
             WriteDiagnosis(r.RadPct, w);
 
             // A single frame mixes the flat error with the sky's radial term of that moment, and
             // the second changes during the session. On a real series the figure swept 55
             // points in 81 minutes. The mean over the series separates much better, so it is
             // worth saying on every run on a single frame.
-            w.WriteLine("\n    Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.");
-            w.WriteLine("    Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:");
+            w.WriteLine(T("\n    This figure is from a single frame, so it holds the sky of that moment too.",
+                          "\n    Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment."));
+            w.WriteLine(T("    Give the folder instead of the file to run on the whole series and average:",
+                          "    Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:"));
             w.WriteLine("        flatcheck process/ --light");
         }
 
@@ -218,15 +241,21 @@ namespace FlatCheck
         internal static string Diagnosis(double radPct)
         {
             if (Math.Abs(radPct) < Th.LightRadOk)
-                return "Fondul n-are componenta radiala. Flat-ul face treaba.\n"
-                     + "Asta e testul care conteaza - toate celelalte sunt proxy pentru el.";
+                return T("The background has no radial component. The flat does its job.\n"
+                         + "This is the test that matters - all the others are proxies for it.",
+                         "Fondul n-are componenta radiala. Flat-ul face treaba.\n"
+                         + "Asta e testul care conteaza - toate celelalte sunt proxy pentru el.");
 
             if (radPct > 0)
-                return "Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata\n"
-                     + "vignetarea: alta diafragma decat la lights, sau flat contaminat.";
+                return T("The background FALLS toward the edges => UNDER-correction. The flat does not catch all\n"
+                         + "the vignetting: another aperture than for the lights, or a contaminated flat.",
+                         "Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata\n"
+                         + "vignetarea: alta diafragma decat la lights, sau flat contaminat.");
 
-            return "Fondul CRESTE spre margini => SUPRA-corectie. Cel mai probabil\n"
-                 + "flat-darks lipsa/gresite: imparti la un flat care contine offset.";
+            return T("The background RISES toward the edges => OVER-correction. Most likely\n"
+                     + "missing/wrong flat-darks: you divide by a flat that holds an offset.",
+                     "Fondul CRESTE spre margini => SUPRA-corectie. Cel mai probabil\n"
+                     + "flat-darks lipsa/gresite: imparti la un flat care contine offset.");
         }
 
         // ------------------------------------------------------------ for the window
@@ -254,8 +283,10 @@ namespace FlatCheck
                 return string.Join(" ", MarginalLines());
 
             if (s.Level == FovLevel.Unknown)
-                return "Nu pot verifica daca testul se aplica: headerul nu spune destul despre camp. "
-                     + "Rezultatul ruleaza oricum, dar necunoscut inseamna neverificat, nu verificat.";
+                return T("Cannot check whether the test applies: the header does not say enough about the field. "
+                         + "The result runs anyway, but unknown means unchecked, not checked.",
+                         "Nu pot verifica daca testul se aplica: headerul nu spune destul despre camp. "
+                         + "Rezultatul ruleaza oricum, dar necunoscut inseamna neverificat, nu verificat.");
 
             return "";
         }
@@ -270,8 +301,10 @@ namespace FlatCheck
         /// alone.</returns>
         internal static string TooWideText(SuitabilityResult s)
             => string.Join(" ", DegeneracyLines()) + "\n\n" + NotALimitation + "\n\n"
-             + "Pe un setup cu camp larg, testul care raspunde e cel din tabul Ratio: "
-             + "rotatia la 180 de grade valideaza flat-ul fara sa implice cerul deloc."
+             + T("On a wide-field setup, the test that answers is the one in the Ratio tab: "
+                 + "the 180-degree rotation validates the flat without involving the sky at all.",
+                 "Pe un setup cu camp larg, testul care raspunde e cel din tabul Ratio: "
+                 + "rotatia la 180 de grade valideaza flat-ul fara sa implice cerul deloc.")
              + (JudgedOnTheFocalLengthAlone(s) ? "\n\n" + string.Join(" ", FocalOnlyLines) : "");
     }
 }

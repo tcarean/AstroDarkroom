@@ -68,6 +68,7 @@
 
 using System;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -121,7 +122,7 @@ namespace FlatCheck
             Img a = Img.Prepare(rawA);
             Img b = Img.Prepare(rawB);
             if (a.H != b.H || a.W != b.W)
-                throw new Exception("Cele doua imagini au dimensiuni diferite.");
+                throw new Exception(T("The two images have different sizes.", "Cele doua imagini au dimensiuni diferite."));
 
             // Normalising each to median 1 before averaging is not cosmetic: it is
             // what Siril does with "multiplicative normalized input". Without it, on a

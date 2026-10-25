@@ -1,7 +1,7 @@
 # 0006. Romanian for what the user sees and for the existing code comments; English for the process files
 
 Date: 2026-09-25
-Status: accepted 2026-09-25; Romanian comments in the source files superseded by the kit's ADR 0035; the Romanian comments of the tests and of the XAML and project files superseded by 0060
+Status: accepted 2026-09-25; Romanian comments in the source files superseded by the kit's ADR 0035; the Romanian comments of the tests and of the XAML and project files superseded by 0060; Romanian as the only language of what the user sees superseded by 0062
 
 ## Context
 

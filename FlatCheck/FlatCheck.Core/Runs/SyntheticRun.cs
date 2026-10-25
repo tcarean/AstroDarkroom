@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -250,16 +251,18 @@ namespace FlatCheck
         /// <param name="o">A run that was not refused.</param>
         /// <param name="referencePath">The reference frame; only its file name is
         /// written.</param>
-        /// <returns>Four lines, in Romanian.</returns>
+        /// <returns>Four lines, in the run's language.</returns>
         internal static IReadOnlyList<string> History(SyntheticRunOutcome o, string referencePath)
         {
             LensProfile p = o.Result.Profile;
             return new[]
             {
-                $"{VersionInfo.Banner} --synthetic: flat sintetic din profilul de vignetare, sursa {p.Lens.SourceLabel}",
-                $"obiectiv: {p.Lens.Name} [{p.Lens.Where}]; profil: {p.Settings}; cerut: {SyntheticReport.Requested(o.Request)}",
+                T($"{VersionInfo.Banner} --synthetic: synthetic flat from the vignetting profile, source {p.Lens.SourceLabel}",
+                  $"{VersionInfo.Banner} --synthetic: flat sintetic din profilul de vignetare, sursa {p.Lens.SourceLabel}"),
+                T($"lens: {p.Lens.Name} [{p.Lens.Where}]; profile: {p.Settings}; requested: {SyntheticReport.Requested(o.Request)}",
+                  $"obiectiv: {p.Lens.Name} [{p.Lens.Where}]; profil: {p.Settings}; cerut: {SyntheticReport.Requested(o.Request)}"),
                 $"model: {p.Model.Describe()}",
-                $"geometrie si carduri din: {Path.GetFileName(referencePath)}",
+                T($"geometry and cards from: {Path.GetFileName(referencePath)}", $"geometrie si carduri din: {Path.GetFileName(referencePath)}"),
             };
         }
 

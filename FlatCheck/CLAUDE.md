@@ -43,7 +43,8 @@ It is not an image processor and it never decides what a shape on a map is.
 
 - `FlatCheck.Core/` - everything that computes and everything that formats. No Console, no UI,
   no entry point: a compile boundary. `Analysis/` decides numbers, `Report/` decides words
-  (Romanian), `Runs/` chains load, analyze, report, map; both applications call `Runs/` only.
+  (English and Romanian), `Runs/` chains load, analyze, report, map; both applications call
+  `Runs/` only.
 - `FlatCheck/` - the console, `flatcheck.exe`: options, dispatch, exit code, writing maps to disk.
 - `FlatCheck.Wpf/` - the window: one Siril session folder in, tabs out. Formats, never decides.
 - `FlatCheck.Tests/` (core + console, portable) and `FlatCheck.Wpf.Tests/` (window, Windows-only).
@@ -89,11 +90,13 @@ a kit rule names it.
 - **Discuss before designing** (extends the kit's rule "Two readings"). Every design, not only a
   choice with more than one reasonable answer, goes to the owner first: the measured facts, the
   decisions to take and a recommendation; then wait (the owner's standing instruction).
-- **Languages** (varies the kit's rule "Languages", ADR 0006, ADR 0060). English in everything
-  the model reads or writes about the process: docs, tests of invariants, scripts, commits,
-  CHANGELOG. Romanian in everything the user sees: CLI text, `--help`, window labels,
-  `README.md`. Every comment is English, in C#, XAML, csproj and the tests; Romanian output
-  quoted in a comment stays as the user sees it.
+- **Languages** (varies the kit's rule "Languages", ADR 0006, ADR 0060, ADR 0062). English in
+  everything the model reads or writes about the process: docs, tests of invariants, scripts,
+  commits, CHANGELOG. What the user sees is in English and Romanian, chosen by `--lang`
+  (English by default): every text a `T("english", "romana")` pair where it is composed, the
+  Romanian without diacritics, a printed verdict through `VerdictWords.Of`; the window is
+  Romanian only until its stage (R-101). `README.md` stays Romanian. Every comment is English,
+  in C#, XAML, csproj and the tests; output quoted in a comment stays as the user sees it.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in
   a view-model or the console.

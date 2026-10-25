@@ -40,6 +40,7 @@
 
 using System;
 using System.IO;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -57,7 +58,7 @@ namespace FlatCheck
         /// </summary>
         /// <param name="args">The command line.</param>
         /// <param name="stdout">Where the banner, the report and the usage go.</param>
-        /// <param name="stderr">Where the errors go, prefixed "EROARE: ".</param>
+        /// <param name="stderr">Where the errors go, prefixed "ERROR: " (Romanian "EROARE: ").</param>
         /// <returns>The exit code: 0 clean or done, 1 error or input refused, 2 look before
         /// deciding, 3 redo (<see cref="ExitFor(string)"/>).</returns>
         internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
@@ -66,6 +67,28 @@ namespace FlatCheck
             // the errors included.
             RunReport.WriteBanner(stdout);
 
+            // The language first: the usage and every parse error are already worded in it.
+            // With no --lang the run keeps the process's language, English (Ui.Default).
+            LanguageArgument lang = LanguageArgument.Extract(args);
+            if (lang.BadValue != null)
+            {
+                stderr.WriteLine("ERROR: " + LanguageArgument.BadValueMessage(lang.BadValue));
+                return 1;
+            }
+            using (lang.Language is UiLanguage chosen ? Ui.Use(chosen) : null)
+                return RunIn(lang.Rest, stdout, stderr);
+        }
+
+        /// <summary>
+        /// The run proper, after the banner and the language: the usage, an error or the
+        /// mode's report, in <see cref="Ui.Current"/>.
+        /// </summary>
+        /// <param name="args">The command line without its <c>--lang</c>.</param>
+        /// <param name="stdout">Where the report and the usage go.</param>
+        /// <param name="stderr">Where the errors go.</param>
+        /// <returns>The exit code, as <see cref="Run"/> describes it.</returns>
+        static int RunIn(string[] args, TextWriter stdout, TextWriter stderr)
+        {
             Options o = Options.Parse(args);
             if (o.Help)
             {
@@ -74,7 +97,7 @@ namespace FlatCheck
             }
             if (o.Error != null)
             {
-                stderr.WriteLine("EROARE: " + o.Error);
+                stderr.WriteLine(ErrorPrefix + o.Error);
                 return 1;
             }
 
@@ -82,8 +105,11 @@ namespace FlatCheck
             // other modes work on a master or on a given frame.
             if (Directory.Exists(o.Image) && !o.Light)
             {
-                stderr.WriteLine("EROARE: un folder se poate da doar cu --light, pentru rularea pe serie. "
-                               + "Celelalte moduri asteapta un fisier.");
+                stderr.WriteLine(ErrorPrefix + T(
+                    "a folder can be given only with --light, for the run on a series. "
+                    + "The other modes expect a file.",
+                    "un folder se poate da doar cu --light, pentru rularea pe serie. "
+                    + "Celelalte moduri asteapta un fisier."));
                 return 1;
             }
 
@@ -102,12 +128,15 @@ namespace FlatCheck
             }
             catch (Exception e)
             {
-                stderr.WriteLine("EROARE: " + e.Message);
+                stderr.WriteLine(ErrorPrefix + e.Message);
                 return 1;
             }
             stdout.WriteLine();
             return code;
         }
+
+        /// <summary>The prefix of every error line on stderr, in the run's language.</summary>
+        static string ErrorPrefix => T("ERROR: ", "EROARE: ");
 
         /// <summary>
         /// The input refusal, in the core's vocabulary. It exits with 1, the same category as
@@ -177,15 +206,15 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The path of the world-fixed component's map: the same name, with "-lume" before the
-        /// extension. "harta.png" -> "harta-lume.png".
+        /// The path of the world-fixed component's map: the same name, with "-world" before the
+        /// extension, in both languages (R-103). "map.png" -> "map-world.png".
         /// </summary>
         /// <param name="path">The main map's path (-o).</param>
         /// <returns>The second map's path, in the same folder.</returns>
         internal static string WorldMapPath(string path)
         {
             string dir = Path.GetDirectoryName(path);
-            string name = Path.GetFileNameWithoutExtension(path) + "-lume" + Path.GetExtension(path);
+            string name = Path.GetFileNameWithoutExtension(path) + "-world" + Path.GetExtension(path);
             return string.IsNullOrEmpty(dir) ? name : Path.Combine(dir, name);
         }
 
@@ -264,7 +293,7 @@ namespace FlatCheck
                 var advice = SmoothRun.Advise(o.Image, w);
                 if (advice.Refused)
                 {
-                    err.WriteLine("EROARE: " + advice.Refusal.Split('\n')[0]);
+                    err.WriteLine(ErrorPrefix + advice.Refusal.Split('\n')[0]);
                     return 1;
                 }
                 if (advice.Advice.Kind != SmoothAdviceKind.Proposed) return 2;
@@ -275,7 +304,7 @@ namespace FlatCheck
                 run = SmoothRun.Execute(o.Image, o.ScalePx, w);
                 if (run.Refused)
                 {
-                    err.WriteLine("EROARE: " + run.Refusal.Split('\n')[0]);
+                    err.WriteLine(ErrorPrefix + run.Refusal.Split('\n')[0]);
                     return 1;
                 }
             }
@@ -329,7 +358,7 @@ namespace FlatCheck
             SyntheticRunOutcome run = SyntheticRun.Execute(o.Image, req, Sources(o), o.Focal, o.FStop, o.Crop, w);
             if (run.Refused)
             {
-                err.WriteLine("EROARE: " + run.Refusal.Split('\n')[0]);
+                err.WriteLine(ErrorPrefix + run.Refusal.Split('\n')[0]);
                 return run.RefusedChoice ? 2 : 1;
             }
             using (var fs = new FileStream(o.Synthetic, FileMode.Create, FileAccess.Write))
@@ -351,15 +380,16 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The path of the smoothed flat's residual map: the same name, with "-dupa" before the
-        /// extension. "harta.png" -> "harta-dupa.png". The same convention as WorldMapPath.
+        /// The path of the smoothed flat's residual map: the same name, with "-after" before the
+        /// extension, in both languages (R-103). "map.png" -> "map-after.png". The same
+        /// convention as WorldMapPath.
         /// </summary>
         /// <param name="path">The main map's path (-o).</param>
         /// <returns>The second map's path, in the same folder.</returns>
         internal static string AfterMapPath(string path)
         {
             string dir = Path.GetDirectoryName(path);
-            string name = Path.GetFileNameWithoutExtension(path) + "-dupa" + Path.GetExtension(path);
+            string name = Path.GetFileNameWithoutExtension(path) + "-after" + Path.GetExtension(path);
             return string.IsNullOrEmpty(dir) ? name : Path.Combine(dir, name);
         }
 
@@ -377,6 +407,73 @@ namespace FlatCheck
         /// notice.</summary>
         /// <param name="w">Where the text is written.</param>
         static void WriteUsage(TextWriter w)
+        {
+            if (Ui.Current == UiLanguage.Romanian) WriteUsageRomanian(w);
+            else WriteUsageEnglish(w);
+
+            // GPLv3 section 5(d) - the warranty notice. The banner of every run carries only
+            // the copyright; the whole disclaimer would thicken every report for nothing, so it
+            // sits here, where the user comes to read anyway.
+            // The text sits in RunReport.WarrantyLines, because the "Despre" window shows it
+            // too.
+            foreach (string line in RunReport.WarrantyLines) w.WriteLine(line);
+        }
+
+        // The usage is the one text written whole in each language rather than line by line:
+        // its columns are aligned by hand, and a pair per line would hide that alignment.
+
+        /// <summary>The usage in English, without the warranty notice.</summary>
+        /// <param name="w">Where the text is written.</param>
+        static void WriteUsageEnglish(TextWriter w)
+        {
+            w.WriteLine("Usage:");
+            w.WriteLine("  flatcheck <flat.fit>                    # structure test");
+            w.WriteLine("  flatcheck <flat.fit> --raw <flat.NEF>   # the same, plus the vignetting against the lens profile named in the raw");
+            w.WriteLine("  flatcheck <A.fit> --ratio <B.fit>       # attribution by 180-degree rotation");
+            w.WriteLine("  flatcheck <light.fit> --light           # end-to-end test, one frame");
+            w.WriteLine("  flatcheck <folder/> --light             # end-to-end test on the whole series");
+            w.WriteLine("  flatcheck <raw_flat.NEF> --expo         # exposure check");
+            w.WriteLine("  flatcheck <raw_flat.fit> --expo         # the same, on a raw FITS from Siril");
+            w.WriteLine("  flatcheck <sky_flat.NEF> --expo --sky   # exposure for sky flats");
+            w.WriteLine("  flatcheck <flat.NEF> --histeq -o <picture.png>   # Siril's \"Histogram\" view, per channel");
+            w.WriteLine("  flatcheck <flat.fit> --smooth <smoothed.fit>     # smoothed flat: no texture, dust or spots");
+            w.WriteLine("  flatcheck <reference.fit> --synthetic <synthetic.fit> --lens <text>   # synthetic flat from the lens profile");
+            w.WriteLine("  flatcheck --lenses [--lens <text>]      # the lenses with a vignetting profile (Adobe on disk, lensfun/ beside the exe)");
+            w.WriteLine("  flatcheck <A.fit> --against <B.fit>     # how much and how two flats differ (e.g. real against synthetic)");
+            w.WriteLine("  optional: -o, --out <output.png> | --sat <white> --black <lvl> (for --expo)");
+            w.WriteLine("            --pattern <pattern> (for --light on a folder; default pp_light_*.fit)");
+            w.WriteLine("            --fov <degrees> (the field's diagonal, when the header does not give it)");
+            w.WriteLine($"            --scale <px>|auto (for --smooth: the smoothing scale on the sensor, default {SmoothAnalyzer.DefaultScalePx:F0};");
+            w.WriteLine("                         'auto' proposes it from the master and smooths at it, or exits with 2 and no file)");
+            w.WriteLine("            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (for --synthetic");
+            w.WriteLine("                         and for structure with --lens/--raw; the focal length and the aperture come from the raw or");
+            w.WriteLine("                         from FOCALLEN when not given; the crop from the lensfun database)");
+            w.WriteLine("            --lens <text> | --raw <file> (for structure: compares the master's vignetting with the lens's");
+            w.WriteLine("                         profiles - by name, or by the ID in the raw beside the master; the verdict includes them)");
+            w.WriteLine("            --lang en|ro (the language of every text: en English, the default; ro Romanian)");
+            w.WriteLine();
+            w.WriteLine("Accepted: FITS (.fit/.fits/.fts) and camera raw (.nef/.cr2/.cr3/.arw/.dng/.raf).");
+            w.WriteLine("On a raw, --expo takes the exact white and black levels from the file instead of guessing them from the maximum.");
+            w.WriteLine();
+            w.WriteLine("--light does not work on everything: beyond a ~40-degree diagonal it refuses to answer,");
+            w.WriteLine("because there the sky and the vignetting have the same shape. See README.md.");
+            w.WriteLine();
+            w.WriteLine("--histeq is a picture, not a test: every grey level gets the same number of pixels,");
+            w.WriteLine("so it shows the shape of what is not uniform, not how large it is. Exits with 0 once written.");
+            w.WriteLine();
+            w.WriteLine("--smooth writes a second master that keeps everything smooth and removes the diffuser's");
+            w.WriteLine("texture, the dust and the spots. It gives no verdict; it reports WHAT IT REMOVED, and writes the map");
+            w.WriteLine("of that component at -o (plus the residual of the smoothed flat, with the suffix -after).");
+            w.WriteLine();
+            w.WriteLine("--synthetic writes a radial flat from the lens's published vignetting profile -");
+            w.WriteLine("its model, achromatic, with no dust and no light source at all. --against compares it");
+            w.WriteLine("with a real flat: the vignetting of the ratio is the difference in stops, the map is its shape.");
+            w.WriteLine();
+        }
+
+        /// <summary>The usage in Romanian, without the warranty notice.</summary>
+        /// <param name="w">Where the text is written.</param>
+        static void WriteUsageRomanian(TextWriter w)
         {
             w.WriteLine("Utilizare:");
             w.WriteLine("  flatcheck <flat.fit>                    # test structura");
@@ -402,6 +499,7 @@ namespace FlatCheck
             w.WriteLine("                         cand nu le dai; crop-ul din baza lensfun)");
             w.WriteLine("            --lens <text> | --raw <fisier> (pt structura: compara vignetarea masterului cu profilele");
             w.WriteLine("                         obiectivului - dupa nume, sau dupa ID-ul din raw-ul de langa master; verdictul le cuprinde)");
+            w.WriteLine("            --lang en|ro (limba tuturor textelor: en engleza, implicit; ro romana)");
             w.WriteLine();
             w.WriteLine("Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).");
             w.WriteLine("Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.");
@@ -414,19 +512,12 @@ namespace FlatCheck
             w.WriteLine();
             w.WriteLine("--smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura");
             w.WriteLine("difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta");
-            w.WriteLine("acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -dupa).");
+            w.WriteLine("acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -after).");
             w.WriteLine();
             w.WriteLine("--synthetic scrie un flat radial din profilul de vignetare publicat al obiectivului -");
             w.WriteLine("modelul lui, acromatic, fara praf si fara nicio sursa de lumina. --against il compara");
             w.WriteLine("cu un flat real: vignetarea raportului e diferenta in stopuri, harta e forma ei.");
             w.WriteLine();
-
-            // GPLv3 section 5(d) - the warranty notice. The banner of every run carries only
-            // the copyright; the whole disclaimer would thicken every report for nothing, so it
-            // sits here, where the user comes to read anyway.
-            // The text sits in RunReport.WarrantyLines, because the "Despre" window shows it
-            // too.
-            foreach (string line in RunReport.WarrantyLines) w.WriteLine(line);
         }
     }
 }

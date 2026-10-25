@@ -50,5 +50,5 @@ Copyright (C) 2026 Tudor Carean
 
     -> harta salvata: <TMP>/out.png
 
-    -> harta salvata: <TMP>/out-dupa.png
+    -> harta salvata: <TMP>/out-after.png
 

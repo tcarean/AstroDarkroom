@@ -1,0 +1,38 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== COMPARISON: A / B ===
+    A : <TMP>/a.fit
+    B : <TMP>/b.fit
+    analysis size      : 256 x 256 (after 2x2 + downsample)
+
+    Three columns: each flat through the structure battery, and their ratio. In the A / B column
+    the figures are about the DIFFERENCE: "vignetting" is the depth difference (positive = A falls
+    more toward the corner than B) and carries the depth verdict; the five tests say whether the difference
+    is radial or has a shape, and the map shows it. What is in A and not in B - a saddle of the sky, a panel's
+    fall-off, a spot - stays in the difference.
+
+                              A                                     B                                     A / B (difference)
+    vignetting centre->corner 0.76 stops                            0.46 stops                            0.30 stops [REDO]
+    illum. centre offset      0.19 %                                0.19 %                                0.18 %
+    local spots (dust etc.)   +0.08 % (brighter)                    +0.05 % (brighter)                    +0.04 % (brighter)
+    spread of the 4 corners   0.57 % [PERFECT]                      0.31 % [PERFECT]                      0.26 %
+    max azimuthal asymmetry   0.29 % [PERFECT]                      0.18 % [PERFECT]                      0.11 %
+    residual (radial model)   0.29 % [PERFECT]                      0.17 % [PERFECT]                      0.11 %
+    tilt (gradient)           0.41 % [PERFECT]                      0.26 % [PERFECT]                      0.15 %
+    worst spot (one tile)     0.40 % [PERFECT]                      0.22 % [PERFECT]                      0.18 %
+
+  THE DIFFERENCE'S VERDICT: REDO
+    shape     : PERFECT: the five tests on the ratio, on the structure's residual scale
+                (under 2 % PERFECT, 2-10 GOOD, 10-20 ACCEPTABLE, over 20 REDO)
+    depth     : REDO: 0.30 stops = 23.0 % error in the corner of the calibrated light,
+                on the same scale (under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, over REDO)
+                In the corner of a light calibrated with the master: 23.0 %; on the scale of the --light mode (2 % OK,
+                5 % PROBLEM), which measures the same quantity directly in the light, it would be PROBLEM.
+                The reference itself differs by 0.2 stops = 15 % between the profile databases,
+                so the depth verdict cannot be finer than that and stays on the residual scale.
+    The worse of the two. Two correct flats of the same lens give PERFECT and 0.00 stops.
+
+    -> map saved: <TMP>/out.png
+
+[exit 3]

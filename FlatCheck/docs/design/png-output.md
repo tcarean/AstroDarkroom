@@ -42,7 +42,7 @@ wording is in `RunReport` (`MapScaleLabel`, `MapLegend`), which is also why thos
 have no console caller today. `EncodeResidualMapWithTheAutoRangeIsByteIdenticalToTheOldEntryPoint`
 pins that the parameterless overload still encodes what it always did.
 
-`--ratio`'s two maps (the residual of `S` at the `-o` path, `A/B` beside it with the `-lume`
+`--ratio`'s two maps (the residual of `S` at the `-o` path, `A/B` beside it with the `-world`
 suffix from `FlatCheckCli.WorldMapPath`) are ADR 0019; the window offers the same two behind a
 radio toggle, from `RunOutcome.Png` / `SecondaryPng`.
 

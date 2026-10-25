@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -63,8 +64,8 @@ namespace FlatCheck
             return Array.IndexOf(Extensions, ext) >= 0;
         }
 
-        const string NotSimple = "FITS: fisierul nu incepe cu SIMPLE.";
-        const string HeaderIncomplete = "FITS: header incomplet.";
+        static string NotSimple => T("FITS: the file does not begin with SIMPLE.", "FITS: fisierul nu incepe cu SIMPLE.");
+        static string HeaderIncomplete => T("FITS: incomplete header.", "FITS: header incomplet.");
 
         /// <summary>
         /// A card's keyword: the first 8 bytes, without blanks. One definition for Load and
@@ -344,7 +345,7 @@ namespace FlatCheck
                 // an HDU without a usable 2D image: skip its data blocks and go on
                 pos += (int)dataBlocks;
             }
-            throw new Exception("FITS: niciun HDU cu imagine 2D gasit.");
+            throw new Exception(T("FITS: no HDU with a 2D image found.", "FITS: niciun HDU cu imagine 2D gasit."));
         }
 
         /// <summary>One big-endian sample, as stored (before BZERO and BSCALE).</summary>
@@ -370,7 +371,7 @@ namespace FlatCheck
                         for (int k = 0; k < 8; k++) bits = (bits << 8) | b[p + k];
                         return BitConverter.Int64BitsToDouble(bits);
                     }
-                default: throw new Exception("BITPIX neacceptat: " + bitpix);
+                default: throw new Exception(T("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
             }
         }
 

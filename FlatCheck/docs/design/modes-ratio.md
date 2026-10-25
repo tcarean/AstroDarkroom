@@ -17,7 +17,7 @@ out of three on real pairs, what `S = (A + B) / 2` (the camera-fixed part, the v
 derived from the even part of `log(A/B)`, the three load-bearing details (median normalisation
 before averaging, the odd/even split on the tile grid of `Img.CropCentred`, `AnalyzePrepared`
 at analysis resolution), what the report says the mode cannot do (`STACKCNT` / `DATE-OBS`, the
-blind spot, the distance test) and the two maps (`-lume`, `RunOutcome.SecondaryPng`). ADR 0016
+blind spot, the distance test) and the two maps (`-world`, `RunOutcome.SecondaryPng`). ADR 0016
 records why `LargeScalePtp` keeps the top-left grid `CropCentred` was made to avoid.
 
 One check with no other home: "camera-fixed" does not mean "harmless". A strap over the front

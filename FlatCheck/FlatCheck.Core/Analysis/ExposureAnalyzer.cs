@@ -32,6 +32,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -266,7 +267,8 @@ namespace FlatCheck
             else
             {
                 white = AutoWhite(mx);
-                src = $"auto-detectat din max={mx:F0} (foloseste --sat/--black daca e gresit)";
+                src = T($"auto-detected from max={mx:F0} (use --sat/--black if it is wrong)",
+                        $"auto-detectat din max={mx:F0} (foloseste --sat/--black daca e gresit)");
             }
             double black = blackOverride ?? fileScale?.Black ?? 0.0;
             double rng = white - black;

@@ -42,6 +42,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Sdcb.LibRaw;
 using Sdcb.LibRaw.Natives;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -95,7 +96,7 @@ namespace FlatCheck
         public LoadedFrame Load(string path)
         {
             if (!File.Exists(path))
-                throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
+                throw new FileNotFoundException(T($"cannot find the file {path}", $"nu gasesc fisierul {path}"), path);
 
             try
             {
@@ -119,7 +120,7 @@ namespace FlatCheck
         public LoadedFrame LoadInfo(string path)
         {
             if (!File.Exists(path))
-                throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
+                throw new FileNotFoundException(T($"cannot find the file {path}", $"nu gasesc fisierul {path}"), path);
 
             try
             {
@@ -160,13 +161,17 @@ namespace FlatCheck
         /// to publish so that they are not.
         /// </summary>
         /// <param name="inner">The loader's own exception, kept as the inner one.</param>
-        /// <returns>An InvalidOperationException with a Romanian message for the user.</returns>
+        /// <returns>An InvalidOperationException with a message for the user.</returns>
         static Exception Missing(Exception inner)
-            => new InvalidOperationException(
+            => new InvalidOperationException(T(
+                "cannot load libraw, so camera raw files cannot be read. The native "
+              + "DLLs (raw_r.dll and its neighbours) must sit beside flatcheck.exe. The FITS "
+              + "modes work without them; for raw, publish with IncludeNativeLibrariesForSelfExtract "
+              + "or copy the whole folder, not only the executable. (",
                 "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "
               + "native (raw_r.dll si vecinii) trebuie sa stea langa flatcheck.exe. Modurile "
               + "pe FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
-              + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")", inner);
+              + "sau copiaza tot folderul, nu doar executabilul. (") + inner.Message + ")", inner);
 
         /// <summary>
         /// The full decode behind <see cref="Load"/>: Unpack, the visible mosaic, the scale, the
@@ -186,13 +191,16 @@ namespace FlatCheck
             // Foveon and some formats do not produce a 16-bit mosaic, but colour planes
             // directly. --expo has nothing to do with them, so they are refused openly.
             if (src == IntPtr.Zero)
-                throw new InvalidOperationException(
+                throw new InvalidOperationException(T(
+                    $"{path}: libraw did not produce a 16-bit Bayer mosaic for this file "
+                  + "(a non-Bayer sensor or a format not covered).",
                     $"{path}: libraw n-a produs un mozaic Bayer pe 16 biti pentru fisierul asta "
-                  + "(senzor non-Bayer sau format neacoperit).");
+                  + "(senzor non-Bayer sau format neacoperit)."));
 
             int h = s.Height, w = s.Width;
             if (h <= 0 || w <= 0)
-                throw new InvalidOperationException($"{path}: dimensiuni raw invalide ({w}x{h}).");
+                throw new InvalidOperationException(T($"{path}: invalid raw dimensions ({w}x{h}).",
+                                                      $"{path}: dimensiuni raw invalide ({w}x{h})."));
 
             // The colour order, evaluated at the origin of the VISIBLE area - the same margins
             // the copy below skips. Locals only, no field: a field of a libraw type would force
@@ -234,9 +242,11 @@ namespace FlatCheck
             // up as "the file does not look like a raw flat", which would send the person down
             // the wrong track.
             if (!(white > black))
-                throw new InvalidOperationException(
+                throw new InvalidOperationException(T(
+                    $"{path}: libraw gives an impossible scale (white {white:F0} <= black {black:F0}). "
+                  + "Use --sat and --black if you know the right values.",
                     $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0}). "
-                  + "Foloseste --sat si --black daca stii valorile corecte.");
+                  + "Foloseste --sat si --black daca stii valorile corecte."));
 
             // The camera's preview, chosen from the METADATA (the thumbnail list is already
             // marshalled in d) and only it unpacked. It is done here, while the file is open,
@@ -392,7 +402,7 @@ namespace FlatCheck
                 // checked here - the bytes are the compressed stream, not pixels.
                 byte[] data = t.AsSpan<byte>().ToArray();
                 return new EmbeddedPreview(true, data, t.Width, t.Height, flip,
-                    $"previzualizare JPEG {t.Width}x{t.Height} din fisier");
+                    T($"JPEG preview {t.Width}x{t.Height} from the file", $"previzualizare JPEG {t.Width}x{t.Height} din fisier"));
             }
 
             if (t.ImageType == ProcessedImageType.Bitmap && t.Bits == 8 && t.Channels == 3
@@ -400,7 +410,7 @@ namespace FlatCheck
             {
                 byte[] data = t.AsSpan<byte>().ToArray();
                 return new EmbeddedPreview(false, data, t.Width, t.Height, flip,
-                    $"miniatura RGB {t.Width}x{t.Height} din fisier");
+                    T($"RGB thumbnail {t.Width}x{t.Height} from the file", $"miniatura RGB {t.Width}x{t.Height} din fisier"));
             }
 
             // Anything else (another bit depth, another number of channels) is not reinterpreted.

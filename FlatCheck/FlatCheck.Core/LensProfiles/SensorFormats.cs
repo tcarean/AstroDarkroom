@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -83,9 +84,10 @@ namespace FlatCheck
             return bestRel <= Tolerance ? best : null;
         }
 
-        internal const string Unusual = "format neobisnuit";
+        /// <summary>The label of a crop that matches no common format.</summary>
+        internal static string Unusual => T("unusual format", "format neobisnuit");
 
-        /// <summary>The format's label, or "format neobisnuit".</summary>
+        /// <summary>The format's label, or <see cref="Unusual"/>.</summary>
         /// <param name="crop">The crop factor.</param>
         /// <returns>The nearest format's label, or <see cref="Unusual"/>.</returns>
         internal static string LabelOf(double crop) => Nearest(crop)?.Label ?? Unusual;

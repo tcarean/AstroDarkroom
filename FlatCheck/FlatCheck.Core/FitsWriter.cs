@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -71,7 +72,7 @@ namespace FlatCheck
         internal static void Write(Stream s, Img img, int bitpix, IReadOnlyList<string> cards, IReadOnlyList<string> history)
         {
             if (bitpix != -32 && bitpix != 16)
-                throw new ArgumentException("FitsWriter scrie doar BITPIX -32 sau 16, nu " + bitpix);
+                throw new ArgumentException(T("FitsWriter writes only BITPIX -32 or 16, not ", "FitsWriter scrie doar BITPIX -32 sau 16, nu ") + bitpix);
 
             var header = new List<string>
             {

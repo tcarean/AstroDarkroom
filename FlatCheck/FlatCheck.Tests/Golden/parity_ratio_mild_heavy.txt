@@ -70,6 +70,6 @@ Copyright (C) 2026 Tudor Carean
 
     -> harta salvata: <TMP>/ratio_mild_heavy.png
 
-    -> harta salvata: <TMP>/ratio_mild_heavy-lume.png
+    -> harta salvata: <TMP>/ratio_mild_heavy-world.png
 
 [exit 0]

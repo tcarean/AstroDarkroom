@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -111,9 +112,11 @@ namespace FlatCheck
         {
             var files = SeriesFinder.Find(dir, pattern);
             if (files.Count == 0)
-                throw new Exception(
+                throw new Exception(T(
+                    $"No file matches '{pattern}' in {dir}. "
+                    + "Give another pattern with --pattern.",
                     $"Niciun fisier care sa se potriveasca cu '{pattern}' in {dir}. "
-                    + "Da alt tipar cu --pattern.");
+                    + "Da alt tipar cu --pattern."));
 
             // Applicability is decided on the first frame: they all come from the same
             // session, so they have the same focal length and the same scale.

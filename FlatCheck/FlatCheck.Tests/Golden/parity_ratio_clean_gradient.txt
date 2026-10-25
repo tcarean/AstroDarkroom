@@ -71,6 +71,6 @@ Copyright (C) 2026 Tudor Carean
 
     -> harta salvata: <TMP>/ratio_clean_gradient.png
 
-    -> harta salvata: <TMP>/ratio_clean_gradient-lume.png
+    -> harta salvata: <TMP>/ratio_clean_gradient-world.png
 
 [exit 0]

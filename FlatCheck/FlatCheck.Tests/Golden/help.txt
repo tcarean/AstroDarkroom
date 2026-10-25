@@ -24,6 +24,7 @@ Utilizare:
                          cand nu le dai; crop-ul din baza lensfun)
             --lens <text> | --raw <fisier> (pt structura: compara vignetarea masterului cu profilele
                          obiectivului - dupa nume, sau dupa ID-ul din raw-ul de langa master; verdictul le cuprinde)
+            --lang en|ro (limba tuturor textelor: en engleza, implicit; ro romana)
 
 Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).
 Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.
@@ -36,7 +37,7 @@ deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scri
 
 --smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura
 difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta
-acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -dupa).
+acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -after).
 
 --synthetic scrie un flat radial din profilul de vignetare publicat al obiectivului -
 modelul lui, acromatic, fara praf si fara nicio sursa de lumina. --against il compara

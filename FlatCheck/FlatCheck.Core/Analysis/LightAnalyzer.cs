@@ -38,6 +38,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -130,7 +131,8 @@ namespace FlatCheck
             // phase 8 the next line threw NullReferenceException; now it says why.
             if (coef == null)
                 throw new Exception(
-                    "Fitul fondului a esuat (sistem singular) - prea putine tile-uri utilizabile.");
+                    T("The background fit failed (singular system) - too few usable tiles.",
+                      "Fitul fondului a esuat (sistem singular) - prea putine tile-uri utilizabile."));
 
             double a0 = coef[0], b0 = coef[1], c0 = coef[2], d0 = coef[3], e0 = coef[4];
             double radAtCorner = d0 + e0;                       // R2 = 1 at the corner

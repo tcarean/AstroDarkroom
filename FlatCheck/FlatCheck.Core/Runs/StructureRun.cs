@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -153,7 +154,11 @@ namespace FlatCheck
             if (query.RawPath != null)
             {
                 try { raw = query.LoadInfo(query.RawPath); }
-                catch (Exception e) { rawError = $"{Path.GetFileName(query.RawPath)} nu s-a putut citi: {e.Message}"; }
+                catch (Exception e)
+                {
+                    rawError = T($"{Path.GetFileName(query.RawPath)} could not be read: {e.Message}",
+                                 $"{Path.GetFileName(query.RawPath)} nu s-a putut citi: {e.Message}");
+                }
             }
             ShotIdentity shot = LensIdentification.Identify(reference, raw, query.Sources, query.Focal, query.FStop, query.Crop,
                                                             LensIdentification.NameOf(query.RawPath));

@@ -34,6 +34,7 @@
 // wording, only the presence.
 
 using System.Collections.Generic;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -42,7 +43,7 @@ namespace FlatCheck
     /// taken, whose it is, where its project is, and which NuGet packages of the csproj bring it.
     /// </summary>
     /// <param name="Name">The component's name, as the notices file's heading spells it.</param>
-    /// <param name="Role">What it does in the tool, in Romanian, as the window shows it.</param>
+    /// <param name="Role">What it does in the tool, in the run's language, as the window shows it.</param>
     /// <param name="Licence">The licence it is taken under.</param>
     /// <param name="Copyright">Its copyright notice.</param>
     /// <param name="Url">Its project's home page.</param>
@@ -66,11 +67,11 @@ namespace FlatCheck
     /// <summary>The components the tool links or ships, for the notices it shows.</summary>
     internal static class ThirdParty
     {
-        internal static readonly IReadOnlyList<ThirdPartyComponent> Components = new[]
+        internal static IReadOnlyList<ThirdPartyComponent> Components => new[]
         {
             new ThirdPartyComponent(
                 Name: "Sdcb.LibRaw",
-                Role: "ambalajul C# peste libraw",
+                Role: T("the C# wrapper over libraw", "ambalajul C# peste libraw"),
                 Licence: "MIT",
                 Copyright: "Copyright (c) Zhou Jie (sdcb)",
                 Url: "https://github.com/sdcb/Sdcb.LibRaw",
@@ -82,16 +83,17 @@ namespace FlatCheck
             // packages bring.
             new ThirdPartyComponent(
                 Name: "LibRaw",
-                Role: "citirea fisierelor raw de aparat (bibliotecile native)",
-                Licence: "LGPL-2.1 (optiunea aleasa din dubla LGPL-2.1 / CDDL-1.0)",
+                Role: T("reading camera raw files (the native libraries)", "citirea fisierelor raw de aparat (bibliotecile native)"),
+                Licence: T("LGPL-2.1 (the option chosen of the dual LGPL-2.1 / CDDL-1.0)", "LGPL-2.1 (optiunea aleasa din dubla LGPL-2.1 / CDDL-1.0)"),
                 Copyright: "Copyright (C) 2008-2021 LibRaw LLC (info@libraw.org)",
                 Url: "https://www.libraw.org/",
                 Packages: new[] { "Sdcb.LibRaw.runtime.win64", "Sdcb.LibRaw.runtime.linux64" }),
 
             new ThirdPartyComponent(
                 Name: "SixLabors.ImageSharp",
-                Role: "decodarea previzualizarii JPEG din raw",
-                Licence: "Six Labors Split License 1.0 (termenii Apache 2.0 pentru software open source)",
+                Role: T("decoding the JPEG preview in a raw", "decodarea previzualizarii JPEG din raw"),
+                Licence: T("Six Labors Split License 1.0 (the Apache 2.0 terms for open source software)",
+                           "Six Labors Split License 1.0 (termenii Apache 2.0 pentru software open source)"),
                 Copyright: "Copyright (c) Six Labors",
                 Url: "https://github.com/SixLabors/ImageSharp",
                 Packages: new[] { "SixLabors.ImageSharp" }),
@@ -100,9 +102,11 @@ namespace FlatCheck
             // folder beside the exe, for the synthetic flat. CC BY-SA asks for attribution, and
             // this list is the place where the program shows its notices - which is why it is here.
             new ThirdPartyComponent(
-                Name: "lensfun (baza de date)",
-                Role: "profilele de vignetare ale obiectivelor, pentru flatul sintetic (fisierele din lensfun/)",
-                Licence: "CC BY-SA 3.0 (doar datele; biblioteca lensfun nu e folosita)",
+                Name: T("lensfun (database)", "lensfun (baza de date)"),
+                Role: T("the lenses' vignetting profiles, for the synthetic flat (the files in lensfun/)",
+                        "profilele de vignetare ale obiectivelor, pentru flatul sintetic (fisierele din lensfun/)"),
+                Licence: T("CC BY-SA 3.0 (the data only; the lensfun library is not used)",
+                           "CC BY-SA 3.0 (doar datele; biblioteca lensfun nu e folosita)"),
                 Copyright: "Copyright (C) the lensfun contributors",
                 Url: "https://github.com/lensfun/lensfun",
                 Packages: System.Array.Empty<string>()),

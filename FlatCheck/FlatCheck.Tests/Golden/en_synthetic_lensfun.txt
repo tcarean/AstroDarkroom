@@ -1,0 +1,32 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== SYNTHETIC FLAT from the lens profile ===
+    reference frame    : <TMP>/ref.fit  (240 x 160)
+    lens               : Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8  [Canon EF / Nikon F AF, calibrated on APS-C Canon 1.61]  source: lensfun
+    profile used       : 20 mm, f/2.8, distance unspecified   (requested: 20 mm from FOCALLEN, f/2.8 from --fstop)
+    model              : lensfun pa, V = 1 + k1 r^2 + k2 r^4 + k3 r^6, r at the half-diagonal of 36x24 / 1.61; k = -0.619500, 0.327600, -0.149400
+    profile file       : slr-tokina.xml
+    camera crop        : 1.523  (lensfun database, Nikon D3300)
+    format             : profile calibrated on APS-C Canon (crop 1.61); your sensor APS-C (1.523): another format, the radius is recomputed through mm; your corner falls at 1.06 x the calibration corner: a small extrapolation
+
+  DEPTH OF THE VIGNETTING WRITTEN (against the axis)
+    corner (the 5 % box)        :  55.5 % of the axis  ( 0.85 stops)
+    long edge (left/right)      :  67.6 % of the axis  ( 0.56 stops)
+    short edge (top/bottom)     :  83.5 % of the axis  ( 0.26 stops)
+    half the half-diagonal      :  84.9 % of the axis  ( 0.24 stops)
+
+    INFORMATIVE: the synthetic flat is the lens MODEL, not a measurement of your copy. It has
+    only the vignetting, radial and achromatic (the published profiles have a single set of
+    parameters for every channel): it holds no chromatic part of the fall-off, no shading
+    specific to the body, no dust, nor any non-radial structure. The two databases differ
+    from each other by ~0.2 stops in the corner on the same lens; ask no more precision of it.
+    What it lacks against a real flat - and what it has besides: no light source,
+    so neither the sky's curvature nor a panel's fall-off. Check a real flat against
+    it with --against.
+    The Siril scripts name pp_flat_stacked explicitly, so they do not take the synthetic flat by themselves:
+    rename it in place of the master (keep the original) or give it to calibrate with -flat=.
+
+    -> synthetic flat written: <TMP>/s.fit
+
+[exit 0]

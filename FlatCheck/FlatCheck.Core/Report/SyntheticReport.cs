@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -48,22 +49,26 @@ namespace FlatCheck
         internal static void Write(SyntheticFlatResult r, SyntheticRequest req, string referencePath, TextWriter w)
         {
             LensProfile p = r.Profile;
-            w.WriteLine($"\n=== FLAT SINTETIC din profilul obiectivului ===");
-            w.WriteLine($"    cadru de referinta : {referencePath}  ({r.Width} x {r.Height})");
-            w.WriteLine($"    obiectiv           : {p.Lens.Name}  [{p.Lens.Where}]  sursa: {p.Lens.SourceLabel}");
-            w.WriteLine($"    profil folosit     : {p.Settings}   (cerut: {Requested(req)})");
+            w.WriteLine(T("\n=== SYNTHETIC FLAT from the lens profile ===", "\n=== FLAT SINTETIC din profilul obiectivului ==="));
+            w.WriteLine(T($"    reference frame    : {referencePath}  ({r.Width} x {r.Height})",
+                          $"    cadru de referinta : {referencePath}  ({r.Width} x {r.Height})"));
+            w.WriteLine(T($"    lens               : {p.Lens.Name}  [{p.Lens.Where}]  source: {p.Lens.SourceLabel}",
+                          $"    obiectiv           : {p.Lens.Name}  [{p.Lens.Where}]  sursa: {p.Lens.SourceLabel}"));
+            w.WriteLine(T($"    profile used       : {p.Settings}   (requested: {Requested(req)})",
+                          $"    profil folosit     : {p.Settings}   (cerut: {Requested(req)})"));
             string mismatch = ProfileMismatch(p, req.FocalMm, req.FStop, r.LensProfiles);
-            if (mismatch != null) Indent("ATENTIE: " + mismatch, w);
+            if (mismatch != null) Indent(T("WARNING: ", "ATENTIE: ") + mismatch, w);
             w.WriteLine($"    model              : {p.Model.Describe()}");
-            w.WriteLine($"    fisier profil      : {Path.GetFileName(p.File)}");
-            w.WriteLine("    crop aparat        : " + CropLine(r, req));
+            w.WriteLine(T($"    profile file       : {Path.GetFileName(p.File)}",
+                          $"    fisier profil      : {Path.GetFileName(p.File)}"));
+            w.WriteLine(T("    camera crop        : ", "    crop aparat        : ") + CropLine(r, req));
             w.WriteLine("    format             : " + FormatMatch(p.Model, r.CameraCrop, r.Width, r.Height));
 
-            w.WriteLine("\n  ADANCIMEA VIGNETARII SCRISE (fata de axa)");
+            w.WriteLine(T("\n  DEPTH OF THE VIGNETTING WRITTEN (against the axis)", "\n  ADANCIMEA VIGNETARII SCRISE (fata de axa)"));
             foreach (string line in DepthLines(r)) w.WriteLine("    " + line);
 
             w.WriteLine();
-            Indent("INFORMATIV: " + Caveat(), w);
+            Indent(T("INFORMATIVE: ", "INFORMATIV: ") + Caveat(), w);
             Indent(SirilNote(), w);
         }
 
@@ -77,7 +82,8 @@ namespace FlatCheck
         /// <returns>The crop and its source, or "necunoscut" with the profile's SFF.</returns>
         internal static string CropLine(SyntheticFlatResult r, SyntheticRequest req)
             => r.CameraCrop <= 0
-                ? $"necunoscut  ({req.CropSource}; SFF {Fmt(r.Profile.Model.CropFactor, "0.###")})"
+                ? T($"unknown  ({req.CropSource}; SFF {Fmt(r.Profile.Model.CropFactor, "0.###")})",
+                    $"necunoscut  ({req.CropSource}; SFF {Fmt(r.Profile.Model.CropFactor, "0.###")})")
                 : $"{Fmt(r.CameraCrop, "0.###")}  ({req.CropSource})";
 
         /// <summary>
@@ -116,12 +122,15 @@ namespace FlatCheck
         {
             string calib = $"{SensorFormats.LabelOf(m.CropFactor)} (crop {Fmt(m.CropFactor, "0.###")})";
             if (!(cameraCrop > 0))
-                return $"profil calibrat pe {calib}; crop-ul tau nu se stie, se ia senzorul de calibrare";
+                return T($"profile calibrated on {calib}; your crop is not known, the calibration sensor is taken",
+                         $"profil calibrat pe {calib}; crop-ul tau nu se stie, se ia senzorul de calibrare");
             string yours = $"{SensorFormats.LabelOf(cameraCrop)} ({Fmt(cameraCrop, "0.###")})";
             bool same = Math.Abs(cameraCrop - m.CropFactor) / m.CropFactor <= SameFormatTolerance;
             string head = same
-                ? $"profil calibrat pe {calib}; senzorul tau {yours}: acelasi format"
-                : $"profil calibrat pe {calib}; senzorul tau {yours}: alt format, raza se recalculeaza prin mm";
+                ? T($"profile calibrated on {calib}; your sensor {yours}: the same format",
+                    $"profil calibrat pe {calib}; senzorul tau {yours}: acelasi format")
+                : T($"profile calibrated on {calib}; your sensor {yours}: another format, the radius is recomputed through mm",
+                    $"profil calibrat pe {calib}; senzorul tau {yours}: alt format, raza se recalculeaza prin mm");
             return head + ExtrapolationTail(extrapolation);
         }
 
@@ -146,10 +155,13 @@ namespace FlatCheck
         {
             string es = Fmt(e, "0.00");
             if (!(e > 1.0))
-                return e < 0.97 ? $"; coltul tau cade la {es} din coltul de calibrare, in interiorul profilului" : "";
+                return e < 0.97 ? T($"; your corner falls at {es} of the calibration corner, inside the profile",
+                                    $"; coltul tau cade la {es} din coltul de calibrare, in interiorul profilului") : "";
             return e <= SyntheticFlatResult.SmallExtrapolation
-                ? $"; coltul tau cade la {es} x coltul de calibrare: extrapolare mica"
-                : $"; coltul tau cade la {es} x coltul de calibrare: extrapolare MARE, polinomul nu e de incredere dincolo de ce a fost calibrat - ia un profil calibrat pe formatul tau";
+                ? T($"; your corner falls at {es} x the calibration corner: a small extrapolation",
+                    $"; coltul tau cade la {es} x coltul de calibrare: extrapolare mica")
+                : T($"; your corner falls at {es} x the calibration corner: a LARGE extrapolation, the polynomial cannot be trusted beyond what was calibrated - take a profile calibrated on your format",
+                    $"; coltul tau cade la {es} x coltul de calibrare: extrapolare MARE, polinomul nu e de incredere dincolo de ce a fost calibrat - ia un profil calibrat pe formatul tau");
         }
 
         /// <summary>
@@ -163,7 +175,8 @@ namespace FlatCheck
         /// <param name="req">The request.</param>
         /// <returns>"N mm din ..., f/N.N din ...".</returns>
         internal static string Requested(SyntheticRequest req)
-            => $"{Fmt(req.FocalMm, "0.#")} mm din {req.FocalSource}, f/{Fmt(req.FStop, "0.0")} din {req.FStopSource}";
+            => T($"{Fmt(req.FocalMm, "0.#")} mm from {req.FocalSource}, f/{Fmt(req.FStop, "0.0")} from {req.FStopSource}",
+                 $"{Fmt(req.FocalMm, "0.#")} mm din {req.FocalSource}, f/{Fmt(req.FStop, "0.0")} din {req.FStopSource}");
 
         /// <summary>
         /// When the profile used is far from what was requested: the focal length by more than
@@ -186,18 +199,24 @@ namespace FlatCheck
             if (!LensSpec.Close(used.FocalMm, focalMm))
             {
                 var focals = all.Select(p => p.FocalMm).Distinct().OrderBy(f => f).Select(f => Fmt(f, "0.#")).ToList();
-                parts.Add($"focala ceruta {Fmt(focalMm, "0.#")} mm n-are profil: s-a luat {Fmt(used.FocalMm, "0.#")} mm"
-                        + $" (obiectivul are profile la {string.Join(", ", focals)} mm)");
+                parts.Add(T($"the focal length requested, {Fmt(focalMm, "0.#")} mm, has no profile: {Fmt(used.FocalMm, "0.#")} mm was taken"
+                            + $" (the lens has profiles at {string.Join(", ", focals)} mm)",
+                            $"focala ceruta {Fmt(focalMm, "0.#")} mm n-are profil: s-a luat {Fmt(used.FocalMm, "0.#")} mm"
+                            + $" (obiectivul are profile la {string.Join(", ", focals)} mm)"));
             }
             double stops = Math.Abs(LensCatalog.Stops(used.FStop) - LensCatalog.Stops(fStop));
             if (stops > Th.ProfileStopsTol)
             {
                 double lo = all.Min(p => p.FStop), hi = all.Max(p => p.FStop);
-                string range = Math.Abs(lo - hi) < 1e-9 ? $"un singur profil, f/{Fmt(lo, "0.0")}" : $"profile de la f/{Fmt(lo, "0.0")} la f/{Fmt(hi, "0.0")}";
-                parts.Add($"diafragma ceruta f/{Fmt(fStop, "0.0")} e la {Fmt(stops, "0.0")} stopuri de cel mai apropiat profil, f/{Fmt(used.FStop, "0.0")} ({range})");
+                string range = Math.Abs(lo - hi) < 1e-9
+                    ? T($"a single profile, f/{Fmt(lo, "0.0")}", $"un singur profil, f/{Fmt(lo, "0.0")}")
+                    : T($"profiles from f/{Fmt(lo, "0.0")} to f/{Fmt(hi, "0.0")}", $"profile de la f/{Fmt(lo, "0.0")} la f/{Fmt(hi, "0.0")}");
+                parts.Add(T($"the aperture requested, f/{Fmt(fStop, "0.0")}, is {Fmt(stops, "0.0")} stops from the nearest profile, f/{Fmt(used.FStop, "0.0")} ({range})",
+                            $"diafragma ceruta f/{Fmt(fStop, "0.0")} e la {Fmt(stops, "0.0")} stopuri de cel mai apropiat profil, f/{Fmt(used.FStop, "0.0")} ({range})"));
             }
             if (parts.Count == 0) return null;
-            return string.Join("; ", parts) + ". Adancimea scrisa e a profilului folosit, nu a valorilor cerute.";
+            return string.Join("; ", parts) + T(". The depth written is that of the profile used, not that of the values requested.",
+                                                ". Adancimea scrisa e a profilului folosit, nu a valorilor cerute.");
         }
 
         /// <summary>Whether the profile used is outside the tolerance of the request.</summary>
@@ -230,46 +249,62 @@ namespace FlatCheck
         /// half-diagonal.</returns>
         internal static (string Label, string Value, string Note)[] DepthRows(SyntheticFlatResult r) => new[]
         {
-            ("colt (cutia de 5 %)", Depth(r.CornerStops),
-             "centrul cutiei de 5 % din colt pe care o masoara si testul de colturi, deci direct comparabil cu \"vignetare centru -> colt\" al masterului; e punctul cel mai adanc al flatului"),
-            ("marginea lunga (st/dr)", Depth(r.LongEdgeStops),
-             "mijlocul laturii din stanga / dreapta (95 % din semilatime, pe axa orizontala); mai putin adanc decat coltul fiindca e mai aproape de axa"),
-            ("marginea scurta (sus/jos)", Depth(r.ShortEdgeStops),
-             "mijlocul laturii de sus / jos (95 % din semiinaltime, pe axa verticala); cel mai putin adanc dintre cele trei puncte de margine, fiind cel mai aproape de axa"),
-            ("jumatate de semidiagonala", Depth(r.HalfDiagonalStops),
-             "la jumatatea drumului dintre centru si colt, pe diagonala: mijlocul campului, unde sta cea mai mare parte a obiectului; spune cat din cadere e deja acolo"),
+            (T("corner (the 5 % box)", "colt (cutia de 5 %)"), Depth(r.CornerStops),
+             T("the centre of the 5 % corner box the corner test measures too, so directly comparable with the master's \"vignetting centre -> corner\"; it is the deepest point of the flat",
+               "centrul cutiei de 5 % din colt pe care o masoara si testul de colturi, deci direct comparabil cu \"vignetare centru -> colt\" al masterului; e punctul cel mai adanc al flatului")),
+            (T("long edge (left/right)", "marginea lunga (st/dr)"), Depth(r.LongEdgeStops),
+             T("the middle of the left / right side (95 % of the half-width, on the horizontal axis); less deep than the corner because it is nearer the axis",
+               "mijlocul laturii din stanga / dreapta (95 % din semilatime, pe axa orizontala); mai putin adanc decat coltul fiindca e mai aproape de axa")),
+            (T("short edge (top/bottom)", "marginea scurta (sus/jos)"), Depth(r.ShortEdgeStops),
+             T("the middle of the top / bottom side (95 % of the half-height, on the vertical axis); the least deep of the three edge points, being nearest the axis",
+               "mijlocul laturii de sus / jos (95 % din semiinaltime, pe axa verticala); cel mai putin adanc dintre cele trei puncte de margine, fiind cel mai aproape de axa")),
+            (T("half the half-diagonal", "jumatate de semidiagonala"), Depth(r.HalfDiagonalStops),
+             T("halfway between the centre and the corner, on the diagonal: the middle of the field, where most of the subject sits; it says how much of the fall-off is already there",
+               "la jumatatea drumului dintre centru si colt, pe diagonala: mijlocul campului, unde sta cea mai mare parte a obiectului; spune cat din cadere e deja acolo")),
         };
 
         /// <summary>A depth as the level against the axis and in stops.</summary>
         /// <param name="stops">The depth, stops.</param>
         /// <returns>"NN.N % din axa  (N.NN stopuri)".</returns>
         internal static string Depth(double stops)
-            => $"{100 * Math.Pow(2, -stops),5:F1} % din axa  ({stops,5:F2} stopuri)";
+            => T($"{100 * Math.Pow(2, -stops),5:F1} % of the axis  ({stops,5:F2} stops)",
+                 $"{100 * Math.Pow(2, -stops),5:F1} % din axa  ({stops,5:F2} stopuri)");
 
         /// <summary>What the synthetic flat is and is not.</summary>
         /// <returns>Eight lines joined by '\n'.</returns>
         internal static string Caveat()
-            => "flatul sintetic e MODELUL obiectivului, nu o masuratoare a exemplarului tau. Are\n"
-             + "doar vignetarea, radiala si acromatica (profilele publicate au un singur set de\n"
-             + "parametri pentru toate canalele): nu contine partea cromatica a caderii, umbrirea\n"
-             + "specifica body-ului, praful, nici vreo structura neradiala. Cele doua baze difera\n"
-             + "intre ele cu ~0.2 stopuri in colt pe acelasi obiectiv; atata precizie sa-i ceri.\n"
-             + "Ce ii lipseste fata de un flat real - si ce are in plus: nicio sursa de lumina,\n"
-             + "deci nici curbura cerului, nici caderea unui panou. Verifica un flat real fata de\n"
-             + "el cu --against.";
+            => T("the synthetic flat is the lens MODEL, not a measurement of your copy. It has\n"
+                 + "only the vignetting, radial and achromatic (the published profiles have a single set of\n"
+                 + "parameters for every channel): it holds no chromatic part of the fall-off, no shading\n"
+                 + "specific to the body, no dust, nor any non-radial structure. The two databases differ\n"
+                 + "from each other by ~0.2 stops in the corner on the same lens; ask no more precision of it.\n"
+                 + "What it lacks against a real flat - and what it has besides: no light source,\n"
+                 + "so neither the sky's curvature nor a panel's fall-off. Check a real flat against\n"
+                 + "it with --against.",
+                 "flatul sintetic e MODELUL obiectivului, nu o masuratoare a exemplarului tau. Are\n"
+                 + "doar vignetarea, radiala si acromatica (profilele publicate au un singur set de\n"
+                 + "parametri pentru toate canalele): nu contine partea cromatica a caderii, umbrirea\n"
+                 + "specifica body-ului, praful, nici vreo structura neradiala. Cele doua baze difera\n"
+                 + "intre ele cu ~0.2 stopuri in colt pe acelasi obiectiv; atata precizie sa-i ceri.\n"
+                 + "Ce ii lipseste fata de un flat real - si ce are in plus: nicio sursa de lumina,\n"
+                 + "deci nici curbura cerului, nici caderea unui panou. Verifica un flat real fata de\n"
+                 + "el cu --against.");
 
         /// <summary>
         /// How the file gets into Siril: the scripts do not take it by themselves.
         /// </summary>
         /// <returns>Two lines joined by '\n'.</returns>
         internal static string SirilNote()
-            => "Scripturile Siril numesc pp_flat_stacked explicit, deci nu iau flatul sintetic singure:\n"
-             + "redenumeste-l in locul masterului (pastreaza originalul) sau da-l la calibrate cu -flat=.";
+            => T("The Siril scripts name pp_flat_stacked explicitly, so they do not take the synthetic flat by themselves:\n"
+                 + "rename it in place of the master (keep the original) or give it to calibrate with -flat=.",
+                 "Scripturile Siril numesc pp_flat_stacked explicit, deci nu iau flatul sintetic singure:\n"
+                 + "redenumeste-l in locul masterului (pastreaza originalul) sau da-l la calibrate cu -flat=.");
 
         /// <summary>The line that announces the file written.</summary>
         /// <param name="path">The path written to, as printed.</param>
         /// <returns>The line, after an empty one.</returns>
-        internal static string SavedLine(string path) => $"\n    -> flat sintetic scris: {path}";
+        internal static string SavedLine(string path)
+            => T($"\n    -> synthetic flat written: {path}", $"\n    -> flat sintetic scris: {path}");
 
         // ---------------------------------------------------------------- refusals
 
@@ -281,9 +316,10 @@ namespace FlatCheck
         /// <returns>The lens ID and the range read from the raw.</returns>
         internal static string RawLensLabel(LoadedFrame f)
         {
-            if (f?.NikonLensId == null) return "(ID obiectiv)";
+            if (f?.NikonLensId == null) return T("(lens ID)", "(ID obiectiv)");
             string range = LensSpec.Describe(f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
-            return $"ID-ul Nikon {f.NikonLensId.Value} din raw" + (range.Length > 0 ? $" ({range})" : "");
+            return T($"the Nikon ID {f.NikonLensId.Value} from the raw", $"ID-ul Nikon {f.NikonLensId.Value} din raw")
+                 + (range.Length > 0 ? $" ({range})" : "");
         }
 
         /// <summary>
@@ -295,22 +331,27 @@ namespace FlatCheck
         internal static string RawRangeLabel(LoadedFrame f)
         {
             string range = LensSpec.Describe(f?.LensMinFocalMm, f?.LensMaxFocalMm, f?.LensMaxAperture);
-            string id = f?.NikonLensId != null ? $" (ID-ul Nikon {f.NikonLensId.Value} nu se potriveste cu niciun profil)" : " (fara ID de obiectiv)";
-            return $"gama {range} din raw" + id;
+            string id = f?.NikonLensId != null
+                ? T($" (the Nikon ID {f.NikonLensId.Value} matches no profile)", $" (ID-ul Nikon {f.NikonLensId.Value} nu se potriveste cu niciun profil)")
+                : T(" (no lens ID)", " (fara ID de obiectiv)");
+            return T($"the range {range} from the raw", $"gama {range} din raw") + id;
         }
 
         /// <summary>The refusal when no lens was given.</summary>
         /// <returns>One line.</returns>
         internal static string NoLensGiven()
-            => "FLAT SINTETIC: spune obiectivul cu --lens <text> (cauta in nume; vezi --lenses pentru lista).";
+            => T("SYNTHETIC FLAT: name the lens with --lens <text> (it searches the names; see --lenses for the list).",
+                 "FLAT SINTETIC: spune obiectivul cu --lens <text> (cauta in nume; vezi --lenses pentru lista).");
 
         /// <summary>The refusal when no lens matches the text.</summary>
         /// <param name="text">The --lens text, as given.</param>
         /// <param name="sources">What profiles were found, for the summary.</param>
         /// <returns>Lines joined by '\n'.</returns>
         internal static string NoMatch(string text, ProfileSources sources)
-            => $"FLAT SINTETIC: niciun obiectiv nu se potriveste cu \"{text}\".\n" + SourcesSummary(sources)
-             + "\nIncearca alt text, sau --lenses <text> ca sa vezi ce e in lista.";
+            => T($"SYNTHETIC FLAT: no lens matches \"{text}\".\n", $"FLAT SINTETIC: niciun obiectiv nu se potriveste cu \"{text}\".\n")
+             + SourcesSummary(sources)
+             + T("\nTry another text, or --lenses <text> to see what is in the list.",
+                 "\nIncearca alt text, sau --lenses <text> ca sa vezi ce e in lista.");
 
         /// <summary>
         /// The refusal when several lenses match the text; the first 20 are listed.
@@ -319,45 +360,54 @@ namespace FlatCheck
         /// <param name="hits">The lenses that match.</param>
         /// <returns>Lines joined by '\n'.</returns>
         internal static string Ambiguous(string text, IReadOnlyList<LensChoice> hits)
-            => $"FLAT SINTETIC: \"{text}\" se potriveste cu {hits.Count} obiective; alege unul cu un text mai lung"
-             + " (sau --source adobe|lensfun):\n" + string.Join("\n", hits.Take(20).Select(h => "    " + h))
-             + (hits.Count > 20 ? $"\n    ... si inca {hits.Count - 20}" : "");
+            => T($"SYNTHETIC FLAT: \"{text}\" matches {hits.Count} lenses; choose one with a longer text"
+                 + " (or --source adobe|lensfun):\n",
+                 $"FLAT SINTETIC: \"{text}\" se potriveste cu {hits.Count} obiective; alege unul cu un text mai lung"
+                 + " (sau --source adobe|lensfun):\n")
+             + string.Join("\n", hits.Take(20).Select(h => "    " + h))
+             + (hits.Count > 20 ? T($"\n    ... and {hits.Count - 20} more", $"\n    ... si inca {hits.Count - 20}") : "");
 
         /// <summary>The refusal when the focal length is not known.</summary>
         /// <returns>One line.</returns>
         internal static string NoFocal()
-            => "FLAT SINTETIC: nu stiu focala - cadrul de referinta n-are FOCALLEN si nu e un raw; da --focal <mm>.";
+            => T("SYNTHETIC FLAT: the focal length is not known - the reference frame has no FOCALLEN and is not a raw; give --focal <mm>.",
+                 "FLAT SINTETIC: nu stiu focala - cadrul de referinta n-are FOCALLEN si nu e un raw; da --focal <mm>.");
 
         /// <summary>The refusal when the aperture is not known.</summary>
         /// <returns>One line.</returns>
         internal static string NoFStop()
-            => "FLAT SINTETIC: nu stiu diafragma - un FITS n-o poarta; da --fstop <f> (sau un raw ca referinta).";
+            => T("SYNTHETIC FLAT: the aperture is not known - a FITS does not carry it; give --fstop <f> (or a raw as the reference).",
+                 "FLAT SINTETIC: nu stiu diafragma - un FITS n-o poarta; da --fstop <f> (sau un raw ca referinta).");
 
         /// <summary>The refusal when a lensfun profile needs a crop nobody supplied.</summary>
         /// <param name="camera">The camera's name from the reference frame; null when it does not
         /// say.</param>
         /// <returns>One line, with the known sensor formats.</returns>
         internal static string NoCrop(string camera)
-            => "FLAT SINTETIC: profilul lensfun are nevoie de crop factor-ul aparatului, si "
-             + (camera == null ? "cadrul de referinta nu spune ce aparat e" : $"\"{camera}\" nu e in baza lensfun")
-             + $". Da --crop <factor>: {SensorFormats.Describe()}.";
+            => T("SYNTHETIC FLAT: the lensfun profile needs the camera's crop factor, and ",
+                 "FLAT SINTETIC: profilul lensfun are nevoie de crop factor-ul aparatului, si ")
+             + (camera == null
+                 ? T("the reference frame does not say which camera it is", "cadrul de referinta nu spune ce aparat e")
+                 : T($"\"{camera}\" is not in the lensfun database", $"\"{camera}\" nu e in baza lensfun"))
+             + T($". Give --crop <factor>: {SensorFormats.Describe()}.", $". Da --crop <factor>: {SensorFormats.Describe()}.");
 
         /// <summary>The refusal for a colour cube as the reference.</summary>
         /// <param name="path">The refused file's path, as printed.</param>
         /// <param name="planes">How many colour planes it has.</param>
         /// <returns>One line.</returns>
         internal static string RefusalCube(string path, int planes)
-            => $"FLAT SINTETIC: {path} are {planes} planuri de culoare (debayerizat); da un cadru CFA sau mono ca referinta.";
+            => T($"SYNTHETIC FLAT: {path} has {planes} colour planes (debayered); give a CFA or mono frame as the reference.",
+                 $"FLAT SINTETIC: {path} are {planes} planuri de culoare (debayerizat); da un cadru CFA sau mono ca referinta.");
 
         /// <summary>What profiles were found, in two lines: Adobe and lensfun.</summary>
         /// <param name="s">The profile sources found on the machine.</param>
         /// <returns>Two lines joined by '\n'.</returns>
         internal static string SourcesSummary(ProfileSources s)
-            => $"    Adobe  : {s.AdobeLenses} obiective din {s.AdobeFiles} fisiere"
-             + (s.AdobeFilesSkipped > 0 ? $" ({s.AdobeFilesSkipped} sarite)" : "")
-             + (s.AdobeFiles == 0 ? " - niciun profil gasit in " + string.Join(" / ", s.AdobeDirectories) : "") + "\n"
-             + $"    lensfun: {s.LensfunLenses} obiective din {s.LensfunDirectory}"
-             + (s.LensfunPresent ? "" : " - folderul lipseste sau e gol");
+            => T($"    Adobe  : {s.AdobeLenses} lenses from {s.AdobeFiles} files", $"    Adobe  : {s.AdobeLenses} obiective din {s.AdobeFiles} fisiere")
+             + (s.AdobeFilesSkipped > 0 ? T($" ({s.AdobeFilesSkipped} skipped)", $" ({s.AdobeFilesSkipped} sarite)") : "")
+             + (s.AdobeFiles == 0 ? T(" - no profile found in ", " - niciun profil gasit in ") + string.Join(" / ", s.AdobeDirectories) : "") + "\n"
+             + T($"    lensfun: {s.LensfunLenses} lenses from {s.LensfunDirectory}", $"    lensfun: {s.LensfunLenses} obiective din {s.LensfunDirectory}")
+             + (s.LensfunPresent ? "" : T(" - the folder is missing or empty", " - folderul lipseste sau e gol"));
 
         // ---------------------------------------------------------------- --lenses
 
@@ -374,10 +424,11 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void WriteList(IReadOnlyList<LensChoice> lenses, LensCatalog catalog, string text, ProfileSources sources, TextWriter w)
         {
-            w.WriteLine($"\n=== OBIECTIVE CU PROFIL DE VIGNETARE" + (string.IsNullOrWhiteSpace(text) ? "" : $" care contin \"{text}\"") + " ===");
+            w.WriteLine(T("\n=== LENSES WITH A VIGNETTING PROFILE", "\n=== OBIECTIVE CU PROFIL DE VIGNETARE")
+                        + (string.IsNullOrWhiteSpace(text) ? "" : T($" that contain \"{text}\"", $" care contin \"{text}\"")) + " ===");
             w.WriteLine(SourcesSummary(sources));
             w.WriteLine();
-            if (lenses.Count == 0) { w.WriteLine("    (niciunul)"); return; }
+            if (lenses.Count == 0) { w.WriteLine(T("    (none)", "    (niciunul)")); return; }
             // The focal lengths and the apertures need the Adobe file parsed; on a long list (no
             // filter, thousands of lenses) that would add up to tens of seconds, so only on a short
             // one.
@@ -387,7 +438,8 @@ namespace FlatCheck
                 w.WriteLine($"    {l.SourceLabel,-7} {l.Name}  [{l.Where}]");
                 if (details) w.WriteLine("            " + LensDetails(l, catalog));
             }
-            if (!details) w.WriteLine($"\n    ({ListDetailsHidden(lenses.Count)} - da un text la --lens)");
+            if (!details) w.WriteLine(T($"\n    ({ListDetailsHidden(lenses.Count)} - give a text to --lens)",
+                                        $"\n    ({ListDetailsHidden(lenses.Count)} - da un text la --lens)"));
         }
 
         /// <summary>
@@ -413,9 +465,10 @@ namespace FlatCheck
             if (metres.Count > 0) distances.Add(string.Join(", ", metres) + " m");
             if (ps.Any(p => p.DistanceM >= 1000)) distances.Add(LensProfile.DistanceInfinity);
             if (ps.Any(p => double.IsNaN(p.DistanceM))) distances.Add(LensProfile.DistanceUnspecified);
-            return $"focale: {string.Join(", ", focals.Select(f => f.ToString("0.#", CultureInfo.InvariantCulture)))} mm;"
-                 + $" diafragme: f/{string.Join(", f/", stops.Select(f => f.ToString("0.0", CultureInfo.InvariantCulture)))};"
-                 + $" distante: {string.Join(", ", distances)}; {ps.Count} profile";
+            string focalList = string.Join(", ", focals.Select(f => f.ToString("0.#", CultureInfo.InvariantCulture)));
+            string stopList = string.Join(", f/", stops.Select(f => f.ToString("0.0", CultureInfo.InvariantCulture)));
+            return T($"focal lengths: {focalList} mm; apertures: f/{stopList}; distances: {string.Join(", ", distances)}; {ps.Count} profiles",
+                     $"focale: {focalList} mm; diafragme: f/{stopList}; distante: {string.Join(", ", distances)}; {ps.Count} profile");
         }
 
         /// <summary>
@@ -425,7 +478,8 @@ namespace FlatCheck
         /// <param name="count">How many lenses are listed.</param>
         /// <returns>One sentence, without a final full stop.</returns>
         internal static string ListDetailsHidden(int count)
-            => $"{count} obiective; focalele, diafragmele si distantele se arata cand lista are cel mult {ListDetailsMax}";
+            => T($"{count} lenses; the focal lengths, apertures and distances are shown when the list has at most {ListDetailsMax}",
+                 $"{count} obiective; focalele, diafragmele si distantele se arata cand lista are cel mult {ListDetailsMax}");
 
         // ---------------------------------------------------------------- the window's panel
 
@@ -433,18 +487,24 @@ namespace FlatCheck
         /// <param name="s">The profile sources, with the Adobe folders.</param>
         /// <returns>Lines joined by '\n'.</returns>
         internal static string AdobeWhere(ProfileSources s)
-            => "Profilele Adobe (.lcp) le instaleaza Lightroom, Camera Raw sau DNG Converter (gratuit) in:\n"
+            => T("The Adobe profiles (.lcp) are installed by Lightroom, Camera Raw or DNG Converter (free) in:\n",
+                 "Profilele Adobe (.lcp) le instaleaza Lightroom, Camera Raw sau DNG Converter (gratuit) in:\n")
              + string.Join("\n", s.AdobeDirectories.Select(d => "  " + d)) + "\n"
-             + "Se citesc de acolo la pornire; nu se copiaza si nu se redistribuie. Fara Adobe, jumatatea asta a listei e goala.";
+             + T("They are read from there at start-up; they are not copied and not redistributed. Without Adobe, this half of the list is empty.",
+                 "Se citesc de acolo la pornire; nu se copiaza si nu se redistribuie. Fara Adobe, jumatatea asta a listei e goala.");
 
         /// <summary>Where the lensfun database is and how to update it.</summary>
         /// <param name="s">The profile sources, with the lensfun folder and version.</param>
         /// <returns>Lines joined by '\n'.</returns>
         internal static string LensfunWhere(ProfileSources s)
-            => "Baza lensfun (CC BY-SA 3.0) e livrata cu unealta in folderul:\n  " + s.LensfunDirectory + "\n"
+            => T("The lensfun database (CC BY-SA 3.0) ships with the tool, in the folder:\n  ",
+                 "Baza lensfun (CC BY-SA 3.0) e livrata cu unealta in folderul:\n  ") + s.LensfunDirectory + "\n"
              + (s.LensfunVersion != null ? s.LensfunVersion + "\n" : "")
-             + "Actualizare: descarca fisierele XML din https://github.com/lensfun/lensfun/tree/master/data/db,\n"
-             + "inlocuieste-le pe cele din folder si reporneste. Versiunea copiei e in " + ProfileLocator.LensfunVersionFile + ".";
+             + T("To update: download the XML files from https://github.com/lensfun/lensfun/tree/master/data/db,\n"
+                 + "replace those in the folder and restart. The copy's version is in ",
+                 "Actualizare: descarca fisierele XML din https://github.com/lensfun/lensfun/tree/master/data/db,\n"
+                 + "inlocuieste-le pe cele din folder si reporneste. Versiunea copiei e in ")
+             + ProfileLocator.LensfunVersionFile + ".";
 
         /// <summary>Writes each line of a text indented by four spaces.</summary>
         /// <param name="text">The lines, joined by '\n'.</param>

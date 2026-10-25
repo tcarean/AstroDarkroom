@@ -36,6 +36,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -139,7 +140,7 @@ namespace FlatCheck
             {
                 Level = level,
                 FocalMm = focal,
-                Source = $"FOCALLEN={Num(focal)}mm, fara marimea pixelului",
+                Source = T($"FOCALLEN={Num(focal)}mm, without the pixel size", $"FOCALLEN={Num(focal)}mm, fara marimea pixelului"),
             };
         }
 

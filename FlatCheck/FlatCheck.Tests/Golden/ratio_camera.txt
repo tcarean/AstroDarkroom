@@ -71,5 +71,5 @@ Copyright (C) 2026 Tudor Carean
 
     -> harta salvata: <TMP>/out.png
 
-    -> harta salvata: <TMP>/out-lume.png
+    -> harta salvata: <TMP>/out-world.png
 

@@ -39,6 +39,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -75,12 +76,12 @@ namespace FlatCheck
         /// <summary>
         /// The mount, plus the calibration when known: "Nikon F AF, calibrat pe full frame 1".
         /// </summary>
-        internal string Where => HasCalibration ? $"{Mount}, calibrat pe {Calibration}" : Mount;
+        internal string Where => HasCalibration ? T($"{Mount}, calibrated on {Calibration}", $"{Mount}, calibrat pe {Calibration}") : Mount;
 
         /// <summary>
         /// The name, plus the calibration when known - for sentences that name the chosen profile.
         /// </summary>
-        internal string Title => HasCalibration ? $"{Name} (calibrat pe {Calibration})" : Name;
+        internal string Title => HasCalibration ? T($"{Name} (calibrated on {Calibration})", $"{Name} (calibrat pe {Calibration})") : Name;
 
         /// <summary>
         /// "APS-C 1.528", "full frame 1", "format neobisnuit 1.37": the nominal format and the
@@ -240,7 +241,11 @@ namespace FlatCheck
         internal LensProfile WithLens(LensChoice lens)
             => new LensProfile(lens, Aliases, LensIds, FocalMm, FStop, DistanceM, Model, File);
 
-        internal const string DistanceUnspecified = "nespecificata", DistanceInfinity = "infinit";
+        /// <summary>The distance of a profile that does not say it.</summary>
+        internal static string DistanceUnspecified => T("unspecified", "nespecificata");
+
+        /// <summary>The distance of a profile at 1000 m and over.</summary>
+        internal static string DistanceInfinity => T("infinity", "infinit");
 
         /// <summary>
         /// "0.36 m" / "infinit" (1000 m and over) / "nespecificata" (NaN) - a single way of
@@ -259,7 +264,7 @@ namespace FlatCheck
         /// </summary>
         internal string Settings
             => $"{FocalMm.ToString("0.#", CultureInfo.InvariantCulture)} mm, f/{FStop.ToString("0.0", CultureInfo.InvariantCulture)}, "
-             + (double.IsNaN(DistanceM) ? "distanta " : "") + DistanceLabel(DistanceM);
+             + (double.IsNaN(DistanceM) ? T("distance ", "distanta ") : "") + DistanceLabel(DistanceM);
     }
 
     /// <summary>An Adobe file not parsed yet: what is known from its name and its folder.</summary>

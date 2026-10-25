@@ -1,0 +1,16 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== SMOOTHING, scale proposal: <TMP>/clean.fit ===
+    input fine texture   : 0.00 % (under 0.20 %: nothing to smooth)
+
+  NOTHING TO SMOOTH
+    The master's fine texture is under 0.20 %: there are no diffuser cells to remove.
+    A smoothing would take only the dust, and if you want that (a library flat) choose the scale by hand;
+    for the session whose lights have the same dust, the flat is better as it is.
+
+    The rule proposes, it does not decide: it does not know what is the lens's and what is the source's - the hot spot of
+    an LCD looks the same as a ring of the lens - and it is blind to a real structure that sits only
+    in the corners, outside the inscribed circle. Look at the map of the removed component before you press.
+
+[exit 2]

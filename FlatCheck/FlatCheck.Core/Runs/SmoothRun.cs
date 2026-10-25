@@ -27,6 +27,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -193,12 +194,14 @@ namespace FlatCheck
         /// file.</summary>
         /// <param name="o">A smoothing that was not refused.</param>
         /// <param name="sourcePath">The master smoothed; only its file name is written.</param>
-        /// <returns>Two lines, in Romanian, each short enough for one HISTORY card.</returns>
+        /// <returns>Two lines, in the run's language, each short enough for one HISTORY
+        /// card.</returns>
         internal static IReadOnlyList<string> History(SmoothRunOutcome o, string sourcePath) => new[]
         {
             // under 72 characters each, so they fit on a single HISTORY card
-            $"{VersionInfo.Banner} --smooth: fit patratic local pe dale, sigma {o.Result.ScalePx:F0} px",
-            $"sursa: {Path.GetFileName(sourcePath)}",
+            T($"{VersionInfo.Banner} --smooth: local quadratic fit on tiles, sigma {o.Result.ScalePx:F0} px",
+              $"{VersionInfo.Banner} --smooth: fit patratic local pe dale, sigma {o.Result.ScalePx:F0} px"),
+            T($"source: {Path.GetFileName(sourcePath)}", $"sursa: {Path.GetFileName(sourcePath)}"),
         };
 
         /// <summary>

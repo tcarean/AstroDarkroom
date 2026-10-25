@@ -22,6 +22,7 @@
 // in a ViewModel.
 
 using System.IO;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -40,16 +41,18 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void Write(HistEqResult r, string path, TextWriter w)
         {
-            w.WriteLine("== EGALIZARE DE HISTOGRAMA (vederea \"Histogram\" din Siril) ==");
-            w.WriteLine($"fisier:     {path}");
-            w.WriteLine($"cadru:      {FrameLine(r)}");
-            w.WriteLine($"afisare:    {DisplayLine(r)}");
+            w.WriteLine(T("== HISTOGRAM EQUALISATION (Siril's \"Histogram\" view) ==",
+                          "== EGALIZARE DE HISTOGRAMA (vederea \"Histogram\" din Siril) =="));
+            w.WriteLine(T($"file:       {path}", $"fisier:     {path}"));
+            w.WriteLine(T($"frame:      {FrameLine(r)}", $"cadru:      {FrameLine(r)}"));
+            w.WriteLine(T($"display:    {DisplayLine(r)}", $"afisare:    {DisplayLine(r)}"));
             w.WriteLine();
-            w.WriteLine("canal      interval intrare               niveluri folosite");
+            w.WriteLine(T("channel    input range                    levels used",
+                          "canal      interval intrare               niveluri folosite"));
             for (int i = 0; i < r.Channels.Length; i++)
                 w.WriteLine("  " + ChannelLine(r, i));
             w.WriteLine();
-            w.WriteLine("INFORMATIV: " + Caveat());
+            w.WriteLine(T("INFORMATIVE: ", "INFORMATIV: ") + Caveat());
         }
 
         /// <summary>
@@ -61,10 +64,10 @@ namespace FlatCheck
         internal static string FrameLine(HistEqResult r)
         {
             string kind = !r.IsCfa
-                ? "mono/procesat (fara mozaic CFA)"
+                ? T("mono/processed (no CFA mosaic)", "mono/procesat (fara mozaic CFA)")
                 : r.Cfa != null
-                    ? $"CFA (ordine {r.Cfa.Letters}, din {r.Cfa.Source})"
-                    : "CFA (ordine necunoscuta - fisierul n-o spune)";
+                    ? T($"CFA (order {r.Cfa.Letters}, from {r.Cfa.Source})", $"CFA (ordine {r.Cfa.Letters}, din {r.Cfa.Source})")
+                    : T("CFA (order unknown - the file does not say)", "CFA (ordine necunoscuta - fisierul n-o spune)");
             return $"{r.SourceW} x {r.SourceH}, {kind}";
         }
 
@@ -73,8 +76,11 @@ namespace FlatCheck
         /// <returns>The shrunk size, the block and the bin count.</returns>
         internal static string DisplayLine(HistEqResult r)
         {
-            string shrink = r.Shrink > 1 ? $"bloc {r.Shrink}x{r.Shrink} pe canal" : "nemicsorat";
-            return $"{r.W} x {r.H} ({shrink}), {HistEqLut.Bins} cosuri pe canal";
+            string shrink = r.Shrink > 1
+                ? T($"{r.Shrink}x{r.Shrink} block per channel", $"bloc {r.Shrink}x{r.Shrink} pe canal")
+                : T("not shrunk", "nemicsorat");
+            return T($"{r.W} x {r.H} ({shrink}), {HistEqLut.Bins} bins per channel",
+                     $"{r.W} x {r.H} ({shrink}), {HistEqLut.Bins} cosuri pe canal");
         }
 
         /// <summary>
@@ -86,7 +92,7 @@ namespace FlatCheck
         internal static string ChannelLine(HistEqResult r, int i)
         {
             HistEqChannel c = r.Channels[i];
-            string range = c.NonZero == 0 ? "(numai zerouri)" : $"{c.Min:0.###} .. {c.Max:0.###}";
+            string range = c.NonZero == 0 ? T("(zeros only)", "(numai zerouri)") : $"{c.Min:0.###} .. {c.Max:0.###}";
             return $"{c.Label,-9}  {range,-30} {c.LevelsUsed,3} / 256";
         }
 
@@ -95,10 +101,14 @@ namespace FlatCheck
         /// </summary>
         /// <returns>The caveat: the picture shows the shape, not the size.</returns>
         internal static string Caveat()
-            => "modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform - nu si cat de mare e: "
-             + "fiecare nivel de gri primeste acelasi numar de pixeli, deci o unda de 0.5 % si un "
-             + "gradient de 10 % ies la fel, iar un flat perfect isi arata propriul zgomot la contrast "
-             + "maxim. Cifrele sunt in modul de structura.";
+            => T("the mode gives no verdict. The picture shows the SHAPE of what is not uniform - not how large it is: "
+                 + "every grey level gets the same number of pixels, so a ripple of 0.5 % and a "
+                 + "gradient of 10 % come out the same, and a perfect flat shows its own noise at maximum "
+                 + "contrast. The figures are in the structure mode.",
+                 "modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform - nu si cat de mare e: "
+                 + "fiecare nivel de gri primeste acelasi numar de pixeli, deci o unda de 0.5 % si un "
+                 + "gradient de 10 % ies la fel, iar un flat perfect isi arata propriul zgomot la contrast "
+                 + "maxim. Cifrele sunt in modul de structura.");
 
         /// <summary>
         /// What it means to put the master beside a frame it was made from. Screen text; the
@@ -106,11 +116,16 @@ namespace FlatCheck
         /// </summary>
         /// <returns>One paragraph.</returns>
         internal static string MasterVersusFrame()
-            => "Masterul e stiva cadrelor de mai jos. O forma care se vede pe un cadru si lipseste "
-             + "de pe master a fost trecatoare si s-a mediat; una care se vede pe amandoua e fixa pe "
-             + "montaj, si pe ea o masoara cifrele din tabul Structura. Egalizarea fiind pe ranguri, "
-             + "zgomotul mai mic al masterului face o forma comuna sa para acolo mai CLARA, nu mai "
-             + "slaba.";
+            => T("The master is the stack of the frames below. A shape that shows on a frame and is missing "
+                 + "from the master was transient and was averaged out; one that shows on both is fixed to the "
+                 + "setup, and that is the one the figures of the Structure tab measure. The equalisation being by ranks, "
+                 + "the master's lower noise makes a shared shape look CLEARER there, not "
+                 + "weaker.",
+                 "Masterul e stiva cadrelor de mai jos. O forma care se vede pe un cadru si lipseste "
+                 + "de pe master a fost trecatoare si s-a mediat; una care se vede pe amandoua e fixa pe "
+                 + "montaj, si pe ea o masoara cifrele din tabul Structura. Egalizarea fiind pe ranguri, "
+                 + "zgomotul mai mic al masterului face o forma comuna sa para acolo mai CLARA, nu mai "
+                 + "slaba.");
 
         /// <summary>
         /// What it means to put the smoothed flat beside the master it was made from. Screen
@@ -120,12 +135,18 @@ namespace FlatCheck
         /// </summary>
         /// <returns>One paragraph.</returns>
         internal static string SmoothedVersusMaster()
-            => "Flat-ul netezit e masterul de deasupra cu textura, praful si petele compacte "
-             + "scoase. O forma care se vede pe master si lipseste de aici a fost scoasa de "
-             + "netezire; una care se vede pe amandoua e neteda la scara aleasa si a ramas - "
-             + "obiectiv sau sursa, poza nu spune; --ratio spune. Egalizarea fiind pe ranguri, "
-             + "ce a ramas pe netezit, oricat de mic in amplitudine, iese la contrast maxim: un "
-             + "netezit care pare mai ZGOMOTOS decat masterul e poza asteptata, nu un defect.";
+            => T("The smoothed flat is the master above with the texture, the dust and the compact spots "
+                 + "removed. A shape that shows on the master and is missing here was removed by the "
+                 + "smoothing; one that shows on both is smooth at the chosen scale and stayed - "
+                 + "lens or source, the picture does not say; --ratio does. The equalisation being by ranks, "
+                 + "what is left on the smoothed one, however small in amplitude, comes out at maximum contrast: a "
+                 + "smoothed flat that looks NOISIER than the master is the expected picture, not a defect.",
+                 "Flat-ul netezit e masterul de deasupra cu textura, praful si petele compacte "
+                 + "scoase. O forma care se vede pe master si lipseste de aici a fost scoasa de "
+                 + "netezire; una care se vede pe amandoua e neteda la scara aleasa si a ramas - "
+                 + "obiectiv sau sursa, poza nu spune; --ratio spune. Egalizarea fiind pe ranguri, "
+                 + "ce a ramas pe netezit, oricat de mic in amplitudine, iese la contrast maxim: un "
+                 + "netezit care pare mai ZGOMOTOS decat masterul e poza asteptata, nu un defect.");
 
         /// <summary>
         /// Which view is on screen, as the caption under the picture. The size is the
@@ -133,18 +154,21 @@ namespace FlatCheck
         /// of the sensor, a position or the composite at half on each side.
         /// </summary>
         /// <param name="r">The equalised result.</param>
-        /// <param name="viewLabel">The view's label: "RGB", "Mozaic", "mono" or a channel's
-        /// label.</param>
+        /// <param name="viewLabel">The view's key, the same in both languages: "RGB", "Mozaic",
+        /// "mono" or a channel's label.</param>
         /// <returns>What the view is, and its size in pixels.</returns>
         internal static string ViewCaption(HistEqResult r, string viewLabel)
         {
             string what = viewLabel switch
             {
-                "RGB" when r.Cfa != null => "cele patru pozitii egalizate fiecare pe repartitia ei, puse in culorile lor",
-                "RGB" => "media celor patru pozitii egalizate fiecare pe repartitia ei (ordinea culorilor nu se stie, deci fara culoare)",
-                "Mozaic" => "tot mozaicul egalizat ca un singur strat - exact ce arata Siril pe un fisier nedebayerizat",
-                "mono" => "cadrul egalizat pe repartitia lui",
-                _ => $"pozitia {viewLabel} egalizata pe repartitia ei",
+                "RGB" when r.Cfa != null => T("the four positions, each equalised on its own distribution, put in their colours",
+                                              "cele patru pozitii egalizate fiecare pe repartitia ei, puse in culorile lor"),
+                "RGB" => T("the mean of the four positions, each equalised on its own distribution (the order of the colours is not known, so no colour)",
+                           "media celor patru pozitii egalizate fiecare pe repartitia ei (ordinea culorilor nu se stie, deci fara culoare)"),
+                "Mozaic" => T("the whole mosaic equalised as a single layer - exactly what Siril shows on an undebayered file",
+                              "tot mozaicul egalizat ca un singur strat - exact ce arata Siril pe un fisier nedebayerizat"),
+                "mono" => T("the frame equalised on its own distribution", "cadrul egalizat pe repartitia lui"),
+                _ => T($"the position {viewLabel} equalised on its own distribution", $"pozitia {viewLabel} egalizata pe repartitia ei"),
             };
             bool mosaic = viewLabel == "Mozaic";
             int w = mosaic ? r.SourceW : r.FullW, h = mosaic ? r.SourceH : r.FullH;

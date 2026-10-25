@@ -178,6 +178,9 @@ a library extraction and not a copy is ADR 0011.
     The members of every `XxxResult`, with their units, which of them vote and which are
     informative, and the `docs/validation.json` keys that read them, are tabulated under
     "Result records (Analysis/)" at the end of this note.
+  - `Language/` - `Ui` (the run's language and the `T(english, romanian)` pick) and
+    `LanguageArgument` (`--lang`); see `language.md`. `Report/VerdictWords.cs` prints a
+    verdict key in the run's language.
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
     function. `SplitReport` is the one with a variable number of columns: `Headers`,
     `Rows` of `SplitCell` (value + verdict), the report text with the date line, the map
@@ -188,7 +191,7 @@ a library extraction and not a copy is ADR 0011.
     the other direction: the attribution mode prints its own header and then wants that
     exact body - minus the ADU line, which means nothing on a raster normalised to a median
     of 1. `RunReport` holds the two lines that frame every mode - the version banner and the
-    "harta salvata" line. It also holds `MapScaleLabel` and `MapLegend`, the two bits of
+    "map saved" line. It also holds `MapScaleLabel` and `MapLegend`, the two bits of
     wording that go with the map; they have no console caller today, and live here anyway so
     a future `--scala` reuses them instead of rewriting them. And `WarrantyLines` +
     `LicenseUrl`, the GPLv3 §5(d) notice (ADR 0040).
@@ -274,7 +277,7 @@ a library extraction and not a copy is ADR 0011.
   - `PngWriter.cs` - the hand-rolled PNG encoder (ADR 0008) and the residual colour map.
     `Encode(rgb, w, h)` is the real entry point; `EncodeResidualMap` is what both
     applications use, and `WriteResidualMap` is a thin file wrapper over it. It prints
-    nothing - the "harta salvata" line comes from `RunReport`. `EncodeGrey` writes a grey
+    nothing - the "map saved" line comes from `RunReport`. `EncodeGrey` writes a grey
     raster as RGB with equal components; the encoder keeps its single colour type.
     `EncodeMosaic` lays several maps in one row on one `MapRange`, under a title band and a
     label band drawn with `BitmapFont`; the text scale follows the tile width.

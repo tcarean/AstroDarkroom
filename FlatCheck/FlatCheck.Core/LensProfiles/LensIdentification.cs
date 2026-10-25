@@ -36,6 +36,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -141,13 +142,23 @@ namespace FlatCheck
             {
                 id.FocalMm = reference.FocalMm;
                 id.FocalSource = referenceIsRaw ? "raw (libraw)" : "FOCALLEN";
-                notes.Add(referenceIsRaw ? "focala din raw" : "focala din FOCALLEN");
+                notes.Add(referenceIsRaw ? T("focal length from the raw", "focala din raw") : T("focal length from FOCALLEN", "focala din FOCALLEN"));
             }
-            else if (raw?.FocalMm != null) { id.FocalMm = raw.FocalMm; id.FocalSource = besideLabel; notes.Add($"focala din {rawName ?? "raw"}"); }
+            else if (raw?.FocalMm != null)
+            {
+                id.FocalMm = raw.FocalMm;
+                id.FocalSource = besideLabel;
+                notes.Add(T($"focal length from {rawName ?? "raw"}", $"focala din {rawName ?? "raw"}"));
+            }
 
             if (fstop.HasValue) { id.FStop = fstop; id.FStopSource = "--fstop"; }
             else if (reference?.FNumber != null) { id.FStop = reference.FNumber; id.FStopSource = "raw (libraw)"; }
-            else if (raw?.FNumber != null) { id.FStop = raw.FNumber; id.FStopSource = besideLabel; notes.Add($"diafragma din {rawName ?? "raw"}"); }
+            else if (raw?.FNumber != null)
+            {
+                id.FStop = raw.FNumber;
+                id.FStopSource = besideLabel;
+                notes.Add(T($"aperture from {rawName ?? "raw"}", $"diafragma din {rawName ?? "raw"}"));
+            }
 
             id.Camera = reference?.Camera ?? raw?.Camera;
             if (crop.HasValue) { id.Crop = crop; id.CropSource = "--crop"; }
@@ -157,11 +168,12 @@ namespace FlatCheck
                 if (known.HasValue)
                 {
                     id.Crop = known;
-                    id.CropSource = $"baza lensfun, {id.Camera}";
+                    id.CropSource = T($"lensfun database, {id.Camera}", $"baza lensfun, {id.Camera}");
                     id.CropFromTable = true;
-                    notes.Add($"crop din baza lensfun ({id.Camera.Trim()})");
+                    notes.Add(T($"crop from the lensfun database ({id.Camera.Trim()})", $"crop din baza lensfun ({id.Camera.Trim()})"));
                 }
-                else id.CropSource = "necunoscut - se ia senzorul de calibrare al profilului";
+                else id.CropSource = T("unknown - the profile's calibration sensor is taken",
+                                       "necunoscut - se ia senzorul de calibrare al profilului");
             }
 
             // The lens: from the raw beside, or from the reference when it is itself a raw.

@@ -52,6 +52,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Collections.Generic;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -204,7 +205,7 @@ namespace FlatCheck
         /// <returns>The PNG file's bytes.</returns>
         internal static byte[] EncodeMosaic(IReadOnlyList<(Img Map, string Label)> tiles, MapRange range, string title)
         {
-            if (tiles == null || tiles.Count == 0) throw new ArgumentException("mozaic fara dale", nameof(tiles));
+            if (tiles == null || tiles.Count == 0) throw new ArgumentException(T("a mosaic without tiles", "mozaic fara dale"), nameof(tiles));
 
             int w = 0, tileH = 0, minTileW = int.MaxValue;
             foreach (var (map, _) in tiles)

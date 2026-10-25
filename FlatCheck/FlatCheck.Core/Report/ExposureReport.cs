@@ -35,6 +35,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -54,8 +55,9 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void Write(ExposureResult r, string path, TextWriter w)
         {
-            w.WriteLine($"\n=== EXPUNERE: {path} ===");
-            w.WriteLine($"    saturatie (white) : {r.White:F0}   black : {r.Black:F0}   sursa: {r.ScaleSource}");
+            w.WriteLine(T($"\n=== EXPOSURE: {path} ===", $"\n=== EXPUNERE: {path} ==="));
+            w.WriteLine(T($"    saturation (white): {r.White:F0}   black : {r.Black:F0}   source: {r.ScaleSource}",
+                          $"    saturatie (white) : {r.White:F0}   black : {r.Black:F0}   sursa: {r.ScaleSource}"));
 
             if (r.IsCfa)
             {
@@ -64,22 +66,27 @@ namespace FlatCheck
                 // because the order differs from camera to camera and a guessed label would look
                 // measured.
                 w.WriteLine(r.Cfa != null
-                    ? $"    nivel median GLOBAL per canal CFA (ordinea R/G/B din {r.Cfa.Source}):"
-                    : "    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):");
+                    ? T($"    GLOBAL median level per CFA channel (the R/G/B order from {r.Cfa.Source}):",
+                        $"    nivel median GLOBAL per canal CFA (ordinea R/G/B din {r.Cfa.Source}):")
+                    : T("    GLOBAL median level per CFA channel (informative; which is R/G/B is not known):",
+                        "    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):"));
                 for (int i = 0; i < 4; i++)
                 {
-                    string mk = i == r.BrightestChannel ? "  <- cel mai luminos" : "";
+                    string mk = i == r.BrightestChannel ? T("  <- the brightest", "  <- cel mai luminos") : "";
                     w.WriteLine($"        {ChannelColumn(r, i)}: {ChannelMedianPct(r, i),5:F1}%{mk}");
                 }
             }
             else
             {
-                w.WriteLine("    imagine mono/procesata (fara CFA)");
+                w.WriteLine(T("    mono/processed image (no CFA)", "    imagine mono/procesata (fara CFA)"));
             }
 
-            w.WriteLine($"    canal cel mai luminos, mediana GLOBALA : {r.GlobalMedianPct,5:F1}%  (trasa in jos de colturi)");
-            w.WriteLine($"    canal cel mai luminos, CENTRU 20%      : {r.CentreMedianPct,5:F1}%  <- ASTA decide expunerea");
-            w.WriteLine($"    clipping in centru (>={Th.ExpoClipWhite * 100:F0}% white)       : {r.CentreClipPct:F3}%");
+            w.WriteLine(T($"    brightest channel, GLOBAL median      : {r.GlobalMedianPct,5:F1}%  (pulled down by the corners)",
+                          $"    canal cel mai luminos, mediana GLOBALA : {r.GlobalMedianPct,5:F1}%  (trasa in jos de colturi)"));
+            w.WriteLine(T($"    brightest channel, CENTRE 20%         : {r.CentreMedianPct,5:F1}%  <- THIS decides the exposure",
+                          $"    canal cel mai luminos, CENTRU 20%      : {r.CentreMedianPct,5:F1}%  <- ASTA decide expunerea"));
+            w.WriteLine(T($"    clipping in the centre (>={Th.ExpoClipWhite * 100:F0}% white)  : {r.CentreClipPct:F3}%",
+                          $"    clipping in centru (>={Th.ExpoClipWhite * 100:F0}% white)       : {r.CentreClipPct:F3}%"));
 
             if (!r.IsRaw)
             {
@@ -89,7 +96,7 @@ namespace FlatCheck
 
             w.WriteLine();
 
-            if (r.IsSky) w.WriteLine("    [mod --sky: praguri pt flats pe cer, nu pe panou]");
+            if (r.IsSky) w.WriteLine(T("    [--sky mode: thresholds for sky flats, not for a panel]", "    [mod --sky: praguri pt flats pe cer, nu pe panou]"));
             var (head, lines) = VerdictLines(r);
             w.WriteLine("    VERDICT: " + head);
             foreach (string line in lines) w.WriteLine("    " + line);
@@ -104,16 +111,19 @@ namespace FlatCheck
         static void WriteNotRaw(ExposureResult r, TextWriter w)
         {
             w.WriteLine();
-            w.WriteLine("    !! FISIERUL NU PARE UN FLAT BRUT !!");
+            w.WriteLine(T("    !! THE FILE DOES NOT LOOK LIKE A RAW FLAT !!", "    !! FISIERUL NU PARE UN FLAT BRUT !!"));
             foreach (string[] reason in NotRawReasons(r))
                 foreach (string line in reason) w.WriteLine("    " + line);
             w.WriteLine();
             w.WriteLine("    " + NotRawTypicalCause);
-            w.WriteLine("    SOLUTII:");
-            w.WriteLine("      - ruleaza direct pe NEF (flatcheck citeste brutul exact):");
+            w.WriteLine(T("    SOLUTIONS:", "    SOLUTII:"));
+            w.WriteLine(T("      - run directly on the NEF (flatcheck reads the raw exactly):",
+                          "      - ruleaza direct pe NEF (flatcheck citeste brutul exact):"));
             w.WriteLine("          flatcheck flat.NEF --expo");
-            w.WriteLine("      - SAU produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),");
-            w.WriteLine("        care pastreaza mozaicul CFA nedebayerizat.");
+            w.WriteLine(T("      - OR make a raw FITS with Siril's Conversion tab (NOT Open+Save),",
+                          "      - SAU produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),"));
+            w.WriteLine(T("        which keeps the CFA mosaic undebayered.",
+                          "        care pastreaza mozaicul CFA nedebayerizat."));
         }
 
         /// <summary>
@@ -131,21 +141,27 @@ namespace FlatCheck
             if (r.LevelTooLow)
                 reasons.Add(new[]
                 {
-                    $"Nivelul e ~{r.CentreMedianPct:F1}% (langa zero/negativ) -> flat-dark deja scazut,",
-                    "sau imagine normalizata. --expo are nevoie de nivelul ADU original.",
+                    T($"The level is ~{r.CentreMedianPct:F1}% (near zero/negative) -> a flat-dark already subtracted,",
+                      $"Nivelul e ~{r.CentreMedianPct:F1}% (langa zero/negativ) -> flat-dark deja scazut,"),
+                    T("or a normalised image. --expo needs the original ADU level.",
+                      "sau imagine normalizata. --expo are nevoie de nivelul ADU original."),
                 });
             if (r.LooksDebayered)
                 reasons.Add(new[]
                 {
-                    $"Cele 4 canale CFA sunt quasi-identice (spread {r.CfaSpread:F3}) -> fisierul",
-                    "e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.",
+                    T($"The 4 CFA channels are almost identical (spread {r.CfaSpread:F3}) -> the file",
+                      $"Cele 4 canale CFA sunt quasi-identice (spread {r.CfaSpread:F3}) -> fisierul"),
+                    T("is DEBAYERED. --expo needs the Bayer mosaic intact.",
+                      "e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact."),
                 });
             return reasons;
         }
 
         /// <summary>The usual way a flat stops being raw, said in both applications: it was
         /// opened in Siril and saved, which debayers.</summary>
-        const string NotRawTypicalCause = "Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).";
+        static string NotRawTypicalCause
+            => T("Typical cause: you opened the NEF in Siril and pressed Save (that debayers).",
+                 "Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).");
 
         /// <summary>A channel's global median as a percentage of the useful range (black to
         /// white), the figure of the console's per-channel rows and of the window's
@@ -175,21 +191,25 @@ namespace FlatCheck
                 return r.Verdict switch
                 {
                     ExposureVerdict.TooHigh =>
-                        ("PREA SUS" + (clipping ? " (CLIPPING in centru!)" : " (risc stele in cadru)"),
-                         new[] { "Scade expunerea." }),
+                        (T("TOO HIGH", "PREA SUS") + (clipping ? T(" (CLIPPING in the centre!)", " (CLIPPING in centru!)") : T(" (risk of stars in the frame)", " (risc stele in cadru)")),
+                         new[] { T("Lower the exposure.", "Scade expunerea.") }),
                     ExposureVerdict.TooLow =>
-                        ("PREA JOS pentru sky flat",
-                         new[] { $"Creste cu ~{Math.Log2(b.Target / cen):F1} stopuri (dar repede, cerul se stinge)." }),
+                        (T("TOO LOW for a sky flat", "PREA JOS pentru sky flat"),
+                         new[] { T($"Raise it by ~{Math.Log2(b.Target / cen):F1} stops (but quickly, the sky is fading).",
+                                   $"Creste cu ~{Math.Log2(b.Target / cen):F1} stopuri (dar repede, cerul se stinge).") }),
                     ExposureVerdict.Ok =>
-                        ($"OK pentru sky flat  (centru {b.Lo:F0}-{b.Hi:F0}%)",
+                        (T($"OK for a sky flat  (centre {b.Lo:F0}-{b.Hi:F0}%)", $"OK pentru sky flat  (centru {b.Lo:F0}-{b.Hi:F0}%)"),
                          new[]
                          {
-                             "La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,",
-                             "nu din a urca expunerea (ai risca stele). NU forta mai sus.",
+                             T("On a sky flat a modest level is right. The SNR comes from the number of frames,",
+                               "La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,"),
+                             T("not from raising the exposure (you would risk stars). Do NOT push higher.",
+                               "nu din a urca expunerea (ai risca stele). NU forta mai sus."),
                          }),
                     _ =>
-                        ("cam sus, dar acceptabil",
-                         new[] { $"Sub {Th.ExpoSkyTooHigh:F0}% e ok; peste, risti stele. Nu urca mai mult." }),
+                        (T("rather high, but acceptable", "cam sus, dar acceptabil"),
+                         new[] { T($"Below {Th.ExpoSkyTooHigh:F0}% it is fine; above, you risk stars. Do not go higher.",
+                                   $"Sub {Th.ExpoSkyTooHigh:F0}% e ok; peste, risti stele. Nu urca mai mult.") }),
                 };
 
             switch (r.Verdict)
@@ -197,23 +217,28 @@ namespace FlatCheck
                 case ExposureVerdict.TooHigh:
                     {
                         double stops = cen > 0 ? Math.Log2(b.Target / cen) : -1;
-                        var lines = new List<string> { $"Scade expunerea cu ~{-stops:F1} stopuri." };
+                        var lines = new List<string> { T($"Lower the exposure by ~{-stops:F1} stops.", $"Scade expunerea cu ~{-stops:F1} stopuri.") };
                         if (clipping)
-                            lines.Add("Centrul clipeaza -> pierzi info de vignetare exact unde semnalul e maxim.");
-                        return ("PREA SUS" + (clipping ? " (CLIPPING in centru!)" : ""), lines.ToArray());
+                            lines.Add(T("The centre clips -> you lose vignetting information exactly where the signal is highest.",
+                                        "Centrul clipeaza -> pierzi info de vignetare exact unde semnalul e maxim."));
+                        return (T("TOO HIGH", "PREA SUS") + (clipping ? T(" (CLIPPING in the centre!)", " (CLIPPING in centru!)") : ""), lines.ToArray());
                     }
                 case ExposureVerdict.TooLow:
-                    return ("PREA JOS", new[]
+                    return (T("TOO LOW", "PREA JOS"), new[]
                     {
-                        $"Creste expunerea cu ~{Math.Log2(b.Target / cen):F1} stopuri.",
-                        $"Sub ~{Th.ExpoTooLow:F0}% in centru masterul iese zgomotos (zgomot fixed-pattern).",
+                        T($"Raise the exposure by ~{Math.Log2(b.Target / cen):F1} stops.",
+                          $"Creste expunerea cu ~{Math.Log2(b.Target / cen):F1} stopuri."),
+                        T($"Below ~{Th.ExpoTooLow:F0}% in the centre the master comes out noisy (fixed-pattern noise).",
+                          $"Sub ~{Th.ExpoTooLow:F0}% in centru masterul iese zgomotos (zgomot fixed-pattern)."),
                     });
                 case ExposureVerdict.AcceptableLow:
-                    return ("ACCEPTABIL, dar cam jos", new[] { $"Ai putea creste cu ~{Math.Log2(b.Target / cen):F1} stopuri." });
+                    return (T("ACCEPTABLE, but rather low", "ACCEPTABIL, dar cam jos"),
+                            new[] { T($"You could raise it by ~{Math.Log2(b.Target / cen):F1} stops.", $"Ai putea creste cu ~{Math.Log2(b.Target / cen):F1} stopuri.") });
                 case ExposureVerdict.Ok:
-                    return ($"OK  (centrul in tinta {b.Lo:F0}-{b.Hi:F0}%)", Array.Empty<string>());
+                    return (T($"OK  (the centre in the target {b.Lo:F0}-{b.Hi:F0}%)", $"OK  (centrul in tinta {b.Lo:F0}-{b.Hi:F0}%)"), Array.Empty<string>());
                 default:
-                    return ("ACCEPTABIL, dar cam sus", new[] { $"Ai putea scadea cu ~{-Math.Log2(b.Target / cen):F1} stopuri." });
+                    return (T("ACCEPTABLE, but rather high", "ACCEPTABIL, dar cam sus"),
+                            new[] { T($"You could lower it by ~{-Math.Log2(b.Target / cen):F1} stops.", $"Ai putea scadea cu ~{-Math.Log2(b.Target / cen):F1} stopuri.") });
             }
         }
 
@@ -238,7 +263,8 @@ namespace FlatCheck
         /// <param name="b">The bands the verdict was given on.</param>
         /// <returns>The label, with "sky" in it on the sky scale.</returns>
         internal static string BandLabel(ExposureBands b)
-            => b.Sky ? $"tinta sky {b.Lo:F0}-{b.Hi:F0} %" : $"tinta {b.Lo:F0}-{b.Hi:F0} %";
+            => b.Sky ? T($"sky target {b.Lo:F0}-{b.Hi:F0} %", $"tinta sky {b.Lo:F0}-{b.Hi:F0} %")
+                     : T($"target {b.Lo:F0}-{b.Hi:F0} %", $"tinta {b.Lo:F0}-{b.Hi:F0} %");
 
         /// <summary>
         /// The short note under a channel's label, or "" when it has nothing to say.
@@ -250,8 +276,8 @@ namespace FlatCheck
         internal static string ChannelNote(ExposureResult r, ChannelLevels c)
         {
             var parts = new List<string>();
-            if (c.IsBrightest && r.IsCfa) parts.Add("cel mai luminos - decide expunerea");
-            if (c.ClipPct > Th.ExpoClip) parts.Add($"clipping {c.ClipPct:F2} % pe tot canalul");
+            if (c.IsBrightest && r.IsCfa) parts.Add(T("the brightest - decides the exposure", "cel mai luminos - decide expunerea"));
+            if (c.ClipPct > Th.ExpoClip) parts.Add(T($"clipping {c.ClipPct:F2} % over the whole channel", $"clipping {c.ClipPct:F2} % pe tot canalul"));
             return string.Join("; ", parts);
         }
 
@@ -266,9 +292,12 @@ namespace FlatCheck
         internal static string HistogramReading(ExposureResult r)
         {
             if (!r.IsRaw)
-                return "Fisierul nu e un flat brut - e deja calibrat sau debayerizat - deci ce se "
-                     + "vede mai jos e distributia lui de niveluri, nu o expunere. Cifrele n-au "
-                     + "cum sa insemne ceva pana nu rulezi pe cadrul brut de la aparat.";
+                return T("The file is not a raw flat - it is already calibrated or debayered - so what "
+                         + "shows below is its distribution of levels, not an exposure. The figures cannot "
+                         + "mean anything until you run on the camera's raw frame.",
+                         "Fisierul nu e un flat brut - e deja calibrat sau debayerizat - deci ce se "
+                         + "vede mai jos e distributia lui de niveluri, nu o expunere. Cifrele n-au "
+                         + "cum sa insemne ceva pana nu rulezi pe cadrul brut de la aparat.");
 
             ChannelLevels c = r.Channels[r.IsCfa ? r.BrightestChannel : 0];
             ExposureBands b = r.Bands;
@@ -276,39 +305,56 @@ namespace FlatCheck
 
             // 1. who decides
             if (!r.IsCfa)
-                s.Add("Cadrul e mono sau deja procesat, deci se masoara pe tot, nu pe canale.");
+                s.Add(T("The frame is mono or already processed, so it is measured as a whole, not per channel.",
+                        "Cadrul e mono sau deja procesat, deci se masoara pe tot, nu pe canale."));
             else if (c.Colour != '\0')
-                s.Add($"Canalul cel mai luminos e {c.Label}, deci el decide: el clipeaza primul.");
+                s.Add(T($"The brightest channel is {c.Label}, so it decides: it clips first.",
+                        $"Canalul cel mai luminos e {c.Label}, deci el decide: el clipeaza primul."));
             else
-                s.Add($"Canalul cel mai luminos e {c.Label} - nu stiu ce culoare are - deci el "
-                    + "decide: el clipeaza primul.");
+                s.Add(T($"The brightest channel is {c.Label} - its colour is not known - so it "
+                        + "decides: it clips first.",
+                        $"Canalul cel mai luminos e {c.Label} - nu stiu ce culoare are - deci el "
+                        + "decide: el clipeaza primul."));
 
             // 2. where the peak sits against the band
             double cen = r.CentreMedianPct;
             if (cen < b.Lo)
-                s.Add($"Varful ferestrei centrale e la {cen:F1} %, cu {b.Lo - cen:F1} puncte sub "
-                    + $"{BandLabel(b)}.");
+                s.Add(T($"The peak of the central window is at {cen:F1} %, {b.Lo - cen:F1} points below the "
+                        + $"{BandLabel(b)}.",
+                        $"Varful ferestrei centrale e la {cen:F1} %, cu {b.Lo - cen:F1} puncte sub "
+                        + $"{BandLabel(b)}."));
             else if (cen > b.Hi)
-                s.Add($"Varful ferestrei centrale e la {cen:F1} %, cu {cen - b.Hi:F1} puncte peste "
-                    + $"{BandLabel(b)}.");
+                s.Add(T($"The peak of the central window is at {cen:F1} %, {cen - b.Hi:F1} points above the "
+                        + $"{BandLabel(b)}.",
+                        $"Varful ferestrei centrale e la {cen:F1} %, cu {cen - b.Hi:F1} puncte peste "
+                        + $"{BandLabel(b)}."));
             else
-                s.Add($"Varful ferestrei centrale e la {cen:F1} %, in {BandLabel(b)}.");
+                s.Add(T($"The peak of the central window is at {cen:F1} %, in the {BandLabel(b)}.",
+                        $"Varful ferestrei centrale e la {cen:F1} %, in {BandLabel(b)}."));
 
             // 3. how far it still is to the top - or that there is no room left at all
             if (r.CentreClipPct > Th.ExpoClip)
-                s.Add($"Centrul atinge deja saturatia ({r.CentreClipPct:F3} % din pixelii lui), "
-                    + "deci PREA SUS oricare ar fi mediana - acolo se pierde exact informatia "
-                    + "de vignetare, unde semnalul e maxim.");
+                s.Add(T($"The centre already reaches saturation ({r.CentreClipPct:F3} % of its pixels), "
+                        + "so TOO HIGH whatever the median - that is exactly where the vignetting "
+                        + "information is lost, where the signal is highest.",
+                        $"Centrul atinge deja saturatia ({r.CentreClipPct:F3} % din pixelii lui), "
+                        + "deci PREA SUS oricare ar fi mediana - acolo se pierde exact informatia "
+                        + "de vignetare, unde semnalul e maxim."));
             else if (c.CentreP99Pct > 0)
-                s.Add($"Cel mai luminos 1 % din centru ajunge la {c.CentreP99Pct:F1} % din white, "
-                    + $"deci mai sunt ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stopuri pana la saturatie.");
+                s.Add(T($"The brightest 1 % of the centre reaches {c.CentreP99Pct:F1} % of white, "
+                        + $"so there are ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stops left to saturation.",
+                        $"Cel mai luminos 1 % din centru ajunge la {c.CentreP99Pct:F1} % din white, "
+                        + $"deci mai sunt ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stopuri pana la saturatie."));
 
             // 4. why the curve in the background is wide
             double drop = cen - c.MedianPct;
             if (drop > 0.5)
-                s.Add($"Mediana intregului canal e cu {drop:F1} puncte sub centru - aia e "
-                    + "vignetarea, nu subexpunere, si curba lata din fundal o arata. Daca "
-                    + "expui dupa ea, clipezi centrul.");
+                s.Add(T($"The median of the whole channel is {drop:F1} points below the centre - that is "
+                        + "the vignetting, not underexposure, and the wide curve in the background shows it. If "
+                        + "you expose by it, you clip the centre.",
+                        $"Mediana intregului canal e cu {drop:F1} puncte sub centru - aia e "
+                        + "vignetarea, nu subexpunere, si curba lata din fundal o arata. Daca "
+                        + "expui dupa ea, clipezi centrul."));
 
             // 5. whether anyone else clips too
             if (r.IsCfa)
@@ -318,8 +364,10 @@ namespace FlatCheck
                     .Select(x => x.Label)
                     .ToList();
                 if (others.Count > 0)
-                    s.Add($"Are pixeli saturati si pe tot cadrul, nu doar in centru: "
-                        + $"{string.Join(", ", others)}.");
+                    s.Add(T($"Saturated pixels over the whole frame too, not only in the centre: "
+                            + $"{string.Join(", ", others)}.",
+                            $"Are pixeli saturati si pe tot cadrul, nu doar in centru: "
+                            + $"{string.Join(", ", others)}."));
             }
 
             return string.Join(" ", s);
@@ -361,7 +409,8 @@ namespace FlatCheck
                     if (raws.Count == 0) continue;
                     string label = raws.Count == 1
                         ? p.Label
-                        : $"{p.Label} (media {string.Join(", ", raws.Select(c => c.Label))})";
+                        : T($"{p.Label} (mean of {string.Join(", ", raws.Select(c => c.Label))})",
+                            $"{p.Label} (media {string.Join(", ", raws.Select(c => c.Label))})");
                     rows.Add((label, p.Colour, raws.Average(c => c.CentreMedianPct), p.CentreMedianPct));
                 }
                 return rows;
@@ -369,7 +418,8 @@ namespace FlatCheck
 
             ChannelLevels rawBest = r.Channels[r.IsCfa ? r.BrightestChannel : 0];
             ChannelLevels prevBest = r.Preview.Channels.OrderByDescending(c => c.MedianPct).First();
-            rows.Add(($"cel mai luminos: {rawBest.Label} in raw, {prevBest.Label} pe ecran",
+            rows.Add((T($"the brightest: {rawBest.Label} in the raw, {prevBest.Label} on the screen",
+                        $"cel mai luminos: {rawBest.Label} in raw, {prevBest.Label} pe ecran"),
                       '\0', rawBest.CentreMedianPct, prevBest.CentreMedianPct));
             return rows;
         }
@@ -390,9 +440,12 @@ namespace FlatCheck
 
             var s = new List<string>();
             if (!r.IsRaw)
-                s.Add("Fisierul nu e un flat brut - e deja calibrat sau debayerizat - deci niciuna "
-                    + "din cele doua curbe nu e o expunere. Comparatia de mai jos ramane adevarata "
-                    + "despre cele doua developari, atat.");
+                s.Add(T("The file is not a raw flat - it is already calibrated or debayered - so neither "
+                        + "of the two curves is an exposure. The comparison below stays true "
+                        + "about the two renderings, nothing more.",
+                        "Fisierul nu e un flat brut - e deja calibrat sau debayerizat - deci niciuna "
+                        + "din cele doua curbe nu e o expunere. Comparatia de mai jos ramane adevarata "
+                        + "despre cele doua developari, atat."));
 
             ChannelLevels raw = r.Channels[r.IsCfa ? r.BrightestChannel : 0];
             ChannelLevels screen = raw.Colour != '\0'
@@ -401,27 +454,45 @@ namespace FlatCheck
             screen ??= r.Preview.Channels.OrderByDescending(c => c.MedianPct).First();
 
             double gap = screen.CentreMedianPct - raw.CentreMedianPct;
-            s.Add($"Pe canalul care decide, senzorul e la {raw.CentreMedianPct:F1} % si ecranul "
-                + $"aparatului arata {screen.CentreMedianPct:F1} %: {gap:+0.0;-0.0} puncte, in "
-                + "aceeasi fereastra centrala de 20 %.");
+            s.Add(T($"On the deciding channel, the sensor is at {raw.CentreMedianPct:F1} % and the camera's "
+                    + $"screen shows {screen.CentreMedianPct:F1} %: {gap:+0.0;-0.0} points, in "
+                    + "the same central window of 20 %.",
+                    $"Pe canalul care decide, senzorul e la {raw.CentreMedianPct:F1} % si ecranul "
+                    + $"aparatului arata {screen.CentreMedianPct:F1} %: {gap:+0.0;-0.0} puncte, in "
+                    + "aceeasi fereastra centrala de 20 %."));
 
-            s.Add("Cea mai mare parte e gama: un JPEG e codificat gamma prin definitie, ca sa "
-                + "imparta 256 de trepte dupa cum vede ochiul, nu dupa cat primeste senzorul. "
-                + "Nicio setare din aparat n-o scoate - Picture Control Neutral si contrastul "
-                + "la minim taie curba SUPLIMENTARA, nu codificarea. Restul e curba de ton si "
-                + "balansul de alb, care e diferit pe fiecare canal.");
+            s.Add(T("Most of it is the gamma: a JPEG is gamma-encoded by definition, so as to "
+                    + "spread 256 steps the way the eye sees, not by how much the sensor receives. "
+                    + "No camera setting removes it - Picture Control Neutral and the contrast "
+                    + "at minimum cut the ADDITIONAL curve, not the encoding. The rest is the tone curve and "
+                    + "the white balance, which is different on each channel.",
+                    "Cea mai mare parte e gama: un JPEG e codificat gamma prin definitie, ca sa "
+                    + "imparta 256 de trepte dupa cum vede ochiul, nu dupa cat primeste senzorul. "
+                    + "Nicio setare din aparat n-o scoate - Picture Control Neutral si contrastul "
+                    + "la minim taie curba SUPLIMENTARA, nu codificarea. Restul e curba de ton si "
+                    + "balansul de alb, care e diferit pe fiecare canal."));
 
-            s.Add("O curba compresiva intinde cel mai tare nivelurile de jos si de mijloc, "
-                + "adica exact unde sta un flat. De aia un flat pare alarmant pe ecran cand nu e, "
-                + "si de aia diferenta nu e o constanta de tinut minte: se schimba cu aparatul, "
-                + "cu Picture Control si cu lumina.");
+            s.Add(T("A compressive curve stretches the low and middle levels the most, "
+                    + "which is exactly where a flat sits. That is why a flat looks alarming on the screen when it is not, "
+                    + "and why the difference is not a constant to remember: it changes with the camera, "
+                    + "with the Picture Control and with the light.",
+                    "O curba compresiva intinde cel mai tare nivelurile de jos si de mijloc, "
+                    + "adica exact unde sta un flat. De aia un flat pare alarmant pe ecran cand nu e, "
+                    + "si de aia diferenta nu e o constanta de tinut minte: se schimba cu aparatul, "
+                    + "cu Picture Control si cu lumina."));
 
-            s.Add("La ce mai e bun ecranul: cat timp balansul de alb amplifica un canal si curba "
-                + "de ton ajunge la 255, JPEG-ul se satureaza INAINTEA senzorului - pe aparatele "
-                + "masurate aici, cu o treime de stop pana la un stop. Deci \"nu e lipit de "
-                + "margine\" e o garantie solida ca n-ai ars nimic. \"E lipit\" nu e informatie: de "
-                + "acolo incolo ecranul sta pe loc, oricat ai depasi. E o alarma intr-un singur "
-                + "sens, nu un instrument de masura.");
+            s.Add(T("What the screen is still good for: as long as the white balance amplifies a channel and the tone "
+                    + "curve reaches 255, the JPEG saturates BEFORE the sensor - on the cameras "
+                    + "measured here, by a third of a stop up to a stop. So \"not touching the "
+                    + "edge\" is a solid guarantee that nothing is burnt. \"Touching\" is no information: from "
+                    + "there on the screen stays put, however far you go over. It is a one-way "
+                    + "alarm, not a measuring instrument.",
+                    "La ce mai e bun ecranul: cat timp balansul de alb amplifica un canal si curba "
+                    + "de ton ajunge la 255, JPEG-ul se satureaza INAINTEA senzorului - pe aparatele "
+                    + "masurate aici, cu o treime de stop pana la un stop. Deci \"nu e lipit de "
+                    + "margine\" e o garantie solida ca n-ai ars nimic. \"E lipit\" nu e informatie: de "
+                    + "acolo incolo ecranul sta pe loc, oricat ai depasi. E o alarma intr-un singur "
+                    + "sens, nu un instrument de masura."));
 
             return string.Join(" ", s);
         }
@@ -430,10 +501,14 @@ namespace FlatCheck
         /// <param name="r">The result; not read, the reason is the same for every file.</param>
         /// <returns>One paragraph.</returns>
         internal static string NoPreviewReason(ExposureResult r)
-            => "Fisierul asta nu poarta o previzualizare a aparatului - un FITS n-are niciodata, "
-             + "iar unele raw-uri convertite o pierd - sau ea nu s-a putut decoda. Nu am ce "
-             + "pune langa nivelul real, deci se arata doar datele brute. Verdictul nu e afectat: "
-             + "el se da oricum numai pe ele.";
+            => T("This file carries no camera preview - a FITS never has one, "
+                 + "and some converted raws lose it - or it could not be decoded. There is nothing "
+                 + "to put beside the real level, so only the raw data are shown. The verdict is not affected: "
+                 + "it is given on them alone anyway.",
+                 "Fisierul asta nu poarta o previzualizare a aparatului - un FITS n-are niciodata, "
+                 + "iar unele raw-uri convertite o pierd - sau ea nu s-a putut decoda. Nu am ce "
+                 + "pune langa nivelul real, deci se arata doar datele brute. Verdictul nu e afectat: "
+                 + "el se da oricum numai pe ele.");
 
         // The verdict card and the drawing's captions of the window. The same verdicts and the
         // same corrections as Write, in the window's layout: paragraphs instead of indented
@@ -484,11 +559,14 @@ namespace FlatCheck
         {
             string why = string.Concat(NotRawReasons(r).Select(lines => string.Join(" ", lines) + "\n\n"));
 
-            return "FISIERUL NU PARE UN FLAT BRUT\n\n" + why
+            return T("THE FILE DOES NOT LOOK LIKE A RAW FLAT\n\n", "FISIERUL NU PARE UN FLAT BRUT\n\n") + why
                  + NotRawTypicalCause + "\n\n"
-                 + "Solutii: ruleaza direct pe NEF - aplicatia citeste brutul exact - sau produ un "
-                 + "FITS brut cu tab-ul Conversion din Siril (NU Open + Save), care pastreaza "
-                 + "mozaicul CFA nedebayerizat.";
+                 + T("Solutions: run directly on the NEF - the application reads the raw exactly - or make a "
+                     + "raw FITS with Siril's Conversion tab (NOT Open + Save), which keeps "
+                     + "the CFA mosaic undebayered.",
+                     "Solutii: ruleaza direct pe NEF - aplicatia citeste brutul exact - sau produ un "
+                     + "FITS brut cu tab-ul Conversion din Siril (NU Open + Save), care pastreaza "
+                     + "mozaicul CFA nedebayerizat.");
         }
 
         /// <summary>The four CFA channels' global medians as a percentage of the useful range,
@@ -498,12 +576,12 @@ namespace FlatCheck
         /// <returns>Four lines on a CFA frame; one sentence on a mono or processed one.</returns>
         internal static string ChannelsSummary(ExposureResult r)
         {
-            if (!r.IsCfa) return "imagine mono/procesata (fara CFA)";
+            if (!r.IsCfa) return T("mono/processed image (no CFA)", "imagine mono/procesata (fara CFA)");
 
             var parts = new string[4];
             for (int i = 0; i < 4; i++)
                 parts[i] = $"{r.ChannelLabel(i),-8} {ChannelMedianPct(r, i):F1} %"
-                         + (i == r.BrightestChannel ? "  (cel mai luminos)" : "");
+                         + (i == r.BrightestChannel ? T("  (the brightest)", "  (cel mai luminos)") : "");
             return string.Join("\n", parts);
         }
 
@@ -517,14 +595,20 @@ namespace FlatCheck
         internal static string ChannelOrderNote(ExposureResult r)
         {
             if (!r.IsCfa)
-                return "Cadrul nu mai are mozaic CFA, deci nu exista canale de numit.";
+                return T("The frame no longer has a CFA mosaic, so there are no channels to name.",
+                         "Cadrul nu mai are mozaic CFA, deci nu exista canale de numit.");
 
             return r.Cfa != null
-                ? $"Ordinea culorilor e citita din fisier ({r.Cfa.Source}: {r.Cfa.Letters}), nu ghicita. "
-                + "Canalul cel mai luminos clipeaza primul, deci el e cel limitant."
-                : "Nu stiu care pozitie CFA e R, G sau B - fisierul n-o spune, iar ordinea difera "
-                + "de la aparat la aparat. Nici nu conteaza pentru verdict: canalul cel mai "
-                + "luminos clipeaza primul, deci el e cel limitant.";
+                ? T($"The order of the colours is read from the file ({r.Cfa.Source}: {r.Cfa.Letters}), not guessed. "
+                    + "The brightest channel clips first, so it is the limiting one.",
+                    $"Ordinea culorilor e citita din fisier ({r.Cfa.Source}: {r.Cfa.Letters}), nu ghicita. "
+                    + "Canalul cel mai luminos clipeaza primul, deci el e cel limitant.")
+                : T("Which CFA position is R, G or B is not known - the file does not say, and the order differs "
+                    + "from camera to camera. Nor does it matter for the verdict: the brightest "
+                    + "channel clips first, so it is the limiting one.",
+                    "Nu stiu care pozitie CFA e R, G sau B - fisierul n-o spune, iar ordinea difera "
+                    + "de la aparat la aparat. Nici nu conteaza pentru verdict: canalul cel mai "
+                    + "luminos clipeaza primul, deci el e cel limitant.");
         }
 
         /// <summary>The caption under the window's histograms, for the raw data or for the
@@ -533,15 +617,24 @@ namespace FlatCheck
         /// <returns>One paragraph.</returns>
         internal static string HistogramCaption(bool preview)
             => preview
-                ? "Axa orizontala e in % din 255. Curba palida = tot cadrul, curba plina = "
-                  + "centrul 20 %, linia verticala = mediana centrului. FARA banda tinta: pe "
-                  + "ecranul aparatului nu exista o tinta, si nici n-ar putea exista. Dunga "
-                  + "rosie din dreapta = pixeli la 255, adica aici se satureaza ECRANUL, nu "
-                  + "senzorul."
-                : "Axa orizontala e in % din white (din intervalul util al senzorului). Curba "
-                  + "palida = tot canalul, curba plina = centrul 20 %, linia verticala = mediana "
-                  + "centrului, adica cifra care decide. Banda verde = tinta, dunga rosie din "
-                  + $"dreapta = clipping peste {Th.ExpoClipWhite * 100:F0} % din white.";
+                ? T("The horizontal axis is in % of 255. Pale curve = the whole frame, solid curve = "
+                    + "the centre 20 %, vertical line = the centre's median. NO target band: on "
+                    + "the camera's screen there is no target, nor could there be one. The red "
+                    + "stripe on the right = pixels at 255, that is where the SCREEN saturates, not "
+                    + "the sensor.",
+                    "Axa orizontala e in % din 255. Curba palida = tot cadrul, curba plina = "
+                    + "centrul 20 %, linia verticala = mediana centrului. FARA banda tinta: pe "
+                    + "ecranul aparatului nu exista o tinta, si nici n-ar putea exista. Dunga "
+                    + "rosie din dreapta = pixeli la 255, adica aici se satureaza ECRANUL, nu "
+                    + "senzorul.")
+                : T("The horizontal axis is in % of white (of the sensor's useful range). Pale "
+                    + "curve = the whole channel, solid curve = the centre 20 %, vertical line = the centre's "
+                    + "median, that is the figure that decides. Green band = the target, red stripe on the "
+                    + $"right = clipping above {Th.ExpoClipWhite * 100:F0} % of white.",
+                    "Axa orizontala e in % din white (din intervalul util al senzorului). Curba "
+                    + "palida = tot canalul, curba plina = centrul 20 %, linia verticala = mediana "
+                    + "centrului, adica cifra care decide. Banda verde = tinta, dunga rosie din "
+                    + $"dreapta = clipping peste {Th.ExpoClipWhite * 100:F0} % din white.");
 
         /// <summary>The note under a channel of the camera's preview: its share of saturated
         /// pixels, when it is over <see cref="Th.ExpoClip"/>. Nothing else - on the preview
@@ -549,7 +642,7 @@ namespace FlatCheck
         /// <param name="c">A channel of the preview.</param>
         /// <returns>The note, or "" when the channel does not clip.</returns>
         internal static string PreviewChannelNote(ChannelLevels c)
-            => c.ClipPct > Th.ExpoClip ? $"pixeli la 255: {c.ClipPct:F2} % din cadru" : "";
+            => c.ClipPct > Th.ExpoClip ? T($"pixels at 255: {c.ClipPct:F2} % of the frame", $"pixeli la 255: {c.ClipPct:F2} % din cadru") : "";
 
         /// <summary>The difference between the screen and the raw on a channel, for the raw /
         /// screen table.</summary>
@@ -557,6 +650,6 @@ namespace FlatCheck
         /// <param name="screenPct">The preview's central median, in percent of 255.</param>
         /// <returns>The signed difference in whole points: "+52 puncte".</returns>
         internal static string ScreenGap(double rawPct, double screenPct)
-            => $"{screenPct - rawPct:+0;-0} puncte";
+            => T($"{screenPct - rawPct:+0;-0} points", $"{screenPct - rawPct:+0;-0} puncte");
     }
 }

@@ -93,9 +93,11 @@ tests and documents; this section is that list, in the order the work goes.
   failure wins: `Fail(message)` stores it and returns the same object), or fully parsed with
   `Error == null`. There is no exception path and no result type; `OptionsTests` asserts on
   the fields and on `Error` directly.
-- The error is a Romanian string that names the argument and what it expected, without the
-  `EROARE: ` prefix; `FlatCheckCli.Run` adds the prefix when it prints it to stderr and exits
-  1 (R-005). Follow the existing shape: `--fov asteapta grade intre 0 si 180, a primit {v}`.
+- The error is a `T(english, romanian)` pair that names the argument and what it expected,
+  without the `ERROR: ` prefix (`EROARE: ` in Romanian); `FlatCheckCli.Run` adds the prefix when
+  it prints it to stderr and exits 1 (R-005). Follow the existing shape:
+  `T($"--fov expects degrees between 0 and 180, got {v}", $"--fov asteapta grade intre 0 si 180, a primit {v}")`.
+  `--lang` never reaches `Options`: `LanguageArgument.Extract` takes it out first (`language.md`).
 - Every flag is in exactly one of two static sets: `BoolFlags` (a switch, no value) or
   `ValueFlags` (consumes the next token). A token that starts with `-` and is in neither set
   fails with `optiune necunoscuta`, unless it parses as a number, so `-5` stays a positional.
@@ -129,23 +131,25 @@ every test calls, with two `StringWriter`s. In order:
    else, so `--help` and errors carry them too (R-001). The order is the invariant R-001 states:
    the banner is written before the options are parsed, so no option can suppress or move it;
    a machine-readable output would be the only exception (ADR 0042), and none exists.
-2. `Options.Parse`. `Help` prints `WriteUsage` and returns 0. `Error` prints
-   `EROARE: <Error>` to stderr and returns 1.
-3. A folder as input is refused with exit 1 unless `--light` (series mode).
-4. The mode, chosen by the first match in a fixed `if / else if` chain: `--lenses`,
+2. `LanguageArgument.Extract` takes `--lang` out; a value it does not know prints an English
+   `ERROR:` and returns 1; the rest runs in that language (`language.md`).
+3. `Options.Parse`. `Help` prints `WriteUsage` and returns 0. `Error` prints
+   `ERROR: <Error>` (Romanian `EROARE:`) to stderr and returns 1.
+4. A folder as input is refused with exit 1 unless `--light` (series mode).
+5. The mode, chosen by the first match in a fixed `if / else if` chain: `--lenses`,
    `--synthetic`, `--against`, `--smooth`, `--histeq`, `--expo`, `--ratio`, `--light`,
    structure (the default, no flag). This chain is the mutual exclusion R-003 promises and its
    order is the requirement. The comment at the top of `FlatCheckCli.cs` still lists the
    pre-mode-7 order; the code is the truth. A new mode is one more `else if`, placed where its
    precedence belongs, and R-003 is updated in the same task.
-5. Everything inside the chain runs under one `try`; any exception becomes
-   `EROARE: <message>` on stderr and exit 1. That is how a missing file, an invalid FITS or a
+6. Everything inside the chain runs under one `try`; any exception becomes
+   `ERROR: <message>` on stderr and exit 1. That is how a missing file, an invalid FITS or a
    failed fit are reported; the run methods do not catch.
-6. A trailing empty line on stdout, then the exit code.
+7. A trailing empty line on stdout, then the exit code.
 
 Each mode has one static `RunX(Options, TextWriter[, TextWriter err])` that calls its
 `XRun.Execute(...)` in `FlatCheck.Core/Runs/`, writes the map(s) through `SaveMap` (which also
-prints the `harta salvata` line via `RunReport.WriteMapSaved`) and returns either the verdict
+prints the `map saved` line via `RunReport.WriteMapSaved`) and returns either the verdict
 string or an exit code:
 
 - A mode with a verdict returns the verdict and the chain wraps it in `ExitFor(string)`
@@ -154,22 +158,24 @@ string or an exit code:
   mapping is R-002, explained in `thresholds.md`, pinned by `R002_ExitCodesFollowVerdictSeverity`.
 - A mode without a verdict (`--histeq`, `--smooth`, `--synthetic`, `--lenses`) returns its
   `int` directly and must not invent an `OK`: 0 means "wrote the file", 1 a refusal (the first
-  line of the outcome's `Refusal` goes to stderr with the `EROARE: ` prefix), 2 "read this
+  line of the outcome's `Refusal` goes to stderr with the `ERROR: ` prefix), 2 "read this
   before deciding" (`--scale auto` with nothing to propose, `--synthetic` with an ambiguous
   lens).
-- Secondary map paths are derived from `-o` by suffix (`WorldMapPath` → `-lume`,
-  `AfterMapPath` → `-dupa`; R-006), never by a second flag.
+- Secondary map paths are derived from `-o` by suffix (`WorldMapPath` → `-world`,
+  `AfterMapPath` → `-after`, the same in both languages; R-006, R-103), never by a second flag.
 
 Nothing in these methods computes: a run method that needs a number or a sentence gets it from
 a `Runs/` outcome (the rule "Computed only in the core").
 
 ### Usage text
 
-`WriteUsage(TextWriter)` is a private static method at the bottom of `FlatCheckCli.cs`: one
-`WriteLine` per invocation form, then the optional flags grouped by the mode they serve, then a
-short paragraph per mode, then `RunReport.WarrantyLines` (GPLv3 §5(d); see "Licensing"). It is
-Romanian without diacritics, like every console line; `README.md` uses diacritics.
-`Golden/help.txt` pins the whole text through `Help_IsPrintedForNoArgs` and
+`WriteUsage(TextWriter)` is a private static method at the bottom of `FlatCheckCli.cs`: it
+writes `WriteUsageEnglish` or `WriteUsageRomanian`, each one `WriteLine` per invocation form,
+then the optional flags grouped by the mode they serve, then a short paragraph per mode, and
+then `RunReport.WarrantyLines` (GPLv3 §5(d); see "Licensing"). The two are written whole, not
+line by line in pairs, because their columns are aligned by hand; a new flag goes in both. The
+Romanian is without diacritics, like every console line; `README.md` uses diacritics.
+`Golden/help.txt` (Romanian) and `Golden/en_help.txt` pin the whole text through `Help_IsPrintedForNoArgs` and
 `Help_IsPrintedForHelpFlags` (`-h`, `--help`), and
 `R005_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense` in `VersionTests` pins the legal
 lines. Any edit to `WriteUsage`, a new flag included, therefore changes `help.txt` and goes
@@ -206,11 +212,13 @@ The procedure:
    `RunCli`, assert the exit code and one or two `Assert.Contains` on the lines that carry the
    behaviour, and end with `AssertGolden("<name>", output)`. Name the test `R###_...` when it
    implements a requirement row. Add a golden file only for a genuinely distinct behaviour;
-   when one line must appear, an `Assert.Contains` on an existing scenario is enough.
+   when one line must appear, an `Assert.Contains` on an existing scenario is enough. Add the
+   scenario to `EnglishOutputTests` too (`Scenarios` and `Arguments`), which writes
+   `Golden/en_<name>.txt` and checks its numbers against the Romanian run (`language.md`).
 2. Run the update once, on the golden tests only:
 
    ```powershell
-   $env:FLATCHECK_UPDATE_GOLDEN = '1'; dotnet test FlatCheck.sln --filter GoldenOutputTests; Remove-Item Env:\FLATCHECK_UPDATE_GOLDEN
+   $env:FLATCHECK_UPDATE_GOLDEN = '1'; dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"; Remove-Item Env:\FLATCHECK_UPDATE_GOLDEN
    ```
 
    The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests` form in
@@ -221,7 +229,7 @@ The procedure:
    existing file is an output change you did not mean, or one you did mean and must now
    account for; either way it is read line by line, never re-approved by reflex.
 4. Read the new file top to bottom, as the user reads the console: the banner placeholder, the
-   copyright, the header lines, the numbers, the verdict, the `harta salvata` line with
+   copyright, the header lines, the numbers, the verdict, the `harta salvata` (English `map saved`) line with
    `<TMP>/`.
 5. Run the suite without the variable; it must be green.
 6. The wrap-up report names the new file and every changed line of an existing one with its

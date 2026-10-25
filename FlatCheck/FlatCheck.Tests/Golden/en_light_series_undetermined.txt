@@ -1,0 +1,40 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== END-TO-END TEST (SERIES): <TMP>/baleiaj ===
+    Expecting frames CALIBRATED with the flat, WITHOUT background extraction and NOT REGISTERED.
+    frames found            : 6  (pattern pp_light_*.fit)
+    diagonal field          :  10.0 degrees  (--fov)
+
+    frame                              radial   sky gradient     tiles
+    pp_light_00001.fit               +58.65 %      34.98 %    1643/1764
+    pp_light_00002.fit               +34.26 %      31.88 %    1647/1764
+    pp_light_00003.fit               +11.03 %      27.56 %    1637/1764
+    pp_light_00004.fit                -9.00 %      21.82 %    1624/1764
+    pp_light_00005.fit               -27.72 %      15.33 %    1619/1764
+    pp_light_00006.fit               -47.87 %       8.07 %    1623/1764
+
+  SERIES SUMMARY
+    radial component, mean    :   +3.23 %
+    spread (min .. max)       :  -47.87 .. +58.65 %
+    error of the mean         :   16.14 points   <- above the threshold of 2.00
+    correlation w. sky grad.  :    0.98          <- above the threshold of 0.70
+
+    VERDICT: UNDETERMINED
+    The mean can NOT be read as the flat error:
+      - the error of the mean (16.14) exceeds even the OK threshold (2.00),
+        so the series does not resolve the flat to the precision the thresholds
+        speak at. A verdict here would be an opinion, not a measurement.
+      - the radial component follows the sky gradient (r = 0.98
+        over a range of 27 points of gradient), a sign that what is
+        measured is the sky.
+
+    The flat is the same on every frame by construction - it was divided out of
+    each one. So everything that moves during the series is sky, not flat.
+    On data like these the answer comes from the 180 rotation test (--ratio), which
+    validates the flat without involving the sky at all. See the README, the section
+    on when --light can be used.
+
+    -> map saved: <TMP>/out.png
+
+[exit 2]
