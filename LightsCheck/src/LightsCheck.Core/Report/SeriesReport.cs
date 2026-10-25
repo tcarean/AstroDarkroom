@@ -101,7 +101,7 @@ internal static class SeriesReport
         DitherAnalysis d = r.Dither;
         List<FrameInfo> infos = r.Frames.Select(f => f.Info).ToList();
         InventoryReport.WriteHeader(new Inventory(r.Session, infos, r.Cadence), w);
-        w.WriteLine($"    {ScaleLabel}              : {ScaleLine(r)}");
+        w.WriteLine($"    {ScaleLabel,-19}: {ScaleLine(r)}");
 
         Section(w, "REZUMAT", SummaryRows(r));
         Section(w, "FOCUS", FocusRows(r));

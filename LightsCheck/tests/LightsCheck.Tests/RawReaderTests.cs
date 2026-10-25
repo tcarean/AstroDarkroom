@@ -84,6 +84,8 @@ public class RawReaderTests
         Assert.Contains("minte.NEF", full.Message, StringComparison.Ordinal);
         Assert.Contains("minte.NEF", info.Message, StringComparison.Ordinal);
         Assert.NotNull(full.InnerException);
+        // Once: libraw's own message names the file too, and that copy is cut from the brackets.
+        Assert.Equal(full.Message.IndexOf(path, StringComparison.Ordinal), full.Message.LastIndexOf(path, StringComparison.Ordinal));
     }
 
     /// <summary>

@@ -368,7 +368,7 @@ public sealed class MainViewModel : ObservableObject
         {
             // A report of a run that was stopped or replaced may still be queued when the next
             // run starts; only the current run's reports reach the window (R-029).
-            if (!ReferenceEquals(_cts, cts))
+            if (!IsCurrent(cts))
             {
                 return;
             }
@@ -389,7 +389,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
         {
-            if (ReferenceEquals(_cts, cts))
+            if (IsCurrent(cts))
             {
                 ProblemText = e.Message;
             }
@@ -398,7 +398,7 @@ public sealed class MainViewModel : ObservableObject
         {
             // Only the run still current touches the window: a run superseded by a later
             // OpenAsync must not write its "stopped" line over the new run's state.
-            if (ReferenceEquals(_cts, cts))
+            if (IsCurrent(cts))
             {
                 if (cts.IsCancellationRequested)
                 {
@@ -412,6 +412,15 @@ public sealed class MainViewModel : ObservableObject
             cts.Dispose();
         }
     }
+
+    /// <summary>
+    /// Whether a run is still the one the window follows: the one <see cref="OpenAsync"/>
+    /// started last and has not finished. Its progress, its error and its "stopped" line reach
+    /// the window only while this holds (R-029).
+    /// </summary>
+    /// <param name="cts">The run's own cancellation source, made at its start.</param>
+    /// <returns>True while that source is the current one.</returns>
+    private bool IsCurrent(CancellationTokenSource cts) => ReferenceEquals(_cts, cts);
 
     /// <summary>Stops the run in flight, if any.</summary>
     public void CancelPending()

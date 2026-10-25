@@ -20,7 +20,10 @@ using LightsCheck.Core;
 
 namespace LightsCheck.Tests;
 
-/// <summary>The whole series on the synthetic eight-frame session (R-022 to R-028).</summary>
+/// <summary>
+/// The whole series on the synthetic eight-frame session (R-022 to R-028), and the options a
+/// series run takes (the pixel-size check of R-004 and R-029).
+/// </summary>
 public class SeriesTests
 {
     /// <summary>The one pixel-size check both applications call (R-004, R-029): finite and above 0.</summary>
