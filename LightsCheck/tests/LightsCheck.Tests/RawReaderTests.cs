@@ -58,19 +58,10 @@ public class RawReaderTests
         Assert.Contains("lightscheck-nu-exista.NEF", e.Message, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void AFileThatIsNotActuallyARawIsRefused()
-    {
-        using TempWorkspace ws = new();
-        string path = ws.WriteFile("minte.NEF", new byte[4096]);
-        Assert.ThrowsAny<Exception>(() => Reader.Load(path));
-        Assert.ThrowsAny<Exception>(() => Reader.LoadInfo(path));
-    }
-
     /// <summary>
     /// What libraw refuses becomes the reader's own error, the type a corrupt FITS gives, naming
-    /// the file (R-007): the console and the window handle it; libraw's exception type does not
-    /// leave the reader.
+    /// the file in Romanian (R-007): the console and the window handle it; libraw's exception
+    /// type and words do not leave the reader.
     /// </summary>
     [Fact]
     public void R007_AFileLibrawCannotOpenFailsWithInvalidDataNamingTheFile()
@@ -81,11 +72,12 @@ public class RawReaderTests
         InvalidDataException full = Assert.Throws<InvalidDataException>(() => Reader.Load(path));
         InvalidDataException info = Assert.Throws<InvalidDataException>(() => Reader.LoadInfo(path));
 
-        Assert.Contains("minte.NEF", full.Message, StringComparison.Ordinal);
-        Assert.Contains("minte.NEF", info.Message, StringComparison.Ordinal);
+        // Romanian, the file named once; libraw's own words ("Failed opening file: <path>") are
+        // the inner exception's, not the user's (ADR 0020).
+        Assert.Equal($"{path}: libraw nu poate citi fisierul", full.Message);
+        Assert.Equal($"{path}: libraw nu poate citi fisierul", info.Message);
         Assert.NotNull(full.InnerException);
-        // Once: libraw's own message names the file too, and that copy is cut from the brackets.
-        Assert.Equal(full.Message.IndexOf(path, StringComparison.Ordinal), full.Message.LastIndexOf(path, StringComparison.Ordinal));
+        Assert.Contains("minte.NEF", full.InnerException.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

@@ -1,7 +1,7 @@
 # 0019. A reader translates a foreign exception where it happens; the console's filter stays narrow
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; the message's bracketed libraw words superseded by 0020
 
 ## Context
 

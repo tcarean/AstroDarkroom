@@ -88,9 +88,4 @@ internal static class WindowTexts
     /// <param name="px">The spacing in px, formatted whole.</param>
     /// <returns>`grila la 20 px`.</returns>
     internal static string GridNote(string px) => $"grila la {px} px";
-
-    /// <summary>An error shown in place of a result: the console's prefix before the message.</summary>
-    /// <param name="message">The exception's message, as the core worded it.</param>
-    /// <returns>`EROARE: ` followed by the message.</returns>
-    internal static string Error(string message) => "EROARE: " + message;
 }

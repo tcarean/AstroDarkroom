@@ -42,9 +42,9 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   the make's first word, so "SONY" + "ILCE-7M3" reads "SONY ILCE-7M3").
 - Exceptions: `FitsReader` throws `InvalidDataException` where FlatCheck threw `Exception`
   (the kit's analyzer CA2201); `FrameInfo` and the console catch it. `RawReader` throws the
-  same type, naming the file, when libraw refuses to open or unpack one (`Open`, `Decode`;
-  libraw's `LibRawException` as the inner exception), so a raw that is not a raw is one more
-  unreadable frame to every caller (ADR 0019). A FITS whose data is shorter than its header
+  same type, naming the file in Romanian, when libraw refuses to open or unpack one (`Open`,
+  `Decode`; libraw's `LibRawException` and its English words only as the inner exception,
+  ADR 0020), so a raw that is not a raw is one more unreadable frame to every caller (ADR 0019). A FITS whose data is shorter than its header
   says still throws `IndexOutOfRangeException` from `LoadFull`, FlatCheck's gap too, fixed
   there first.
 - Time: libraw's `Timestamp` is the EXIF `DateTimeOriginal` run through `mktime` on this
