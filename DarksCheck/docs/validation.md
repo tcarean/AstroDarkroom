@@ -174,3 +174,6 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   s on .NET 9 and 5.72 / 5.87 GB in 64.7 / 62.9 s on .NET 8. The runtime moves neither. Smida
   is above ADR 0007's 4.5 to 4.7 GB and 35 s on both runtimes alike; what makes that gap was not
   looked for, and ADR 0007 is left as it is.
+- 2026-10-26: after a comma in check 2's English verdict (`; that is, `, a text change under
+  `Report/`), all ten cases re-run with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`:
+  `Total tests: 10, Passed: 10, Total time: 7.4932 Minutes`; no figure moved.

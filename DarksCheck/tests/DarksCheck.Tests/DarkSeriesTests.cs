@@ -491,6 +491,23 @@ public class DarkSeriesTests
     }
 
     [Fact]
+    public void R021_InEnglishTheVerdictSetsTheConstantLightAgainstTheNoiseInOneClause()
+    {
+        // the eyepiece band of the test above, worded in English: "that is" opens a sentence with its own verb, so it
+        // takes a comma ("that is, +x ADU is y times ..."), never "that is +x ADU is y times ..."
+        static double Band(int x, int y) => y < 64 ? 2 : 0;
+        using SessionFixture leak = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 }, biases: 4);
+        using (Ui.Use(UiLanguage.English))
+        {
+            DarkSeriesResult r = Run(leak);
+            Assert.NotNull(r.Verdicts.Leak.ConstantLight);
+            ReportRow verdict = DarkReport.Sections(r)[0].Rows.Single(x => x.Label == "verdict");
+            Assert.Matches(@"; that is, [+-][0-9.]+ ADU is [0-9.]+ times the dark master's noise per pixel \([0-9.]+ ADU\)", verdict.Value);
+            Assert.DoesNotContain("; that is +", verdict.Value, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void R029_TheSidesNeedFiveFramesLeftAfterTheLitOnes()
     {
         // six clean frames warming; the per-frame light is then told, by hand, that the last two are lit: four remain,
