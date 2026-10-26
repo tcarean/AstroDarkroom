@@ -40,6 +40,19 @@ session; the coloured bitmaps enter the per-view cache.
 
 ## Alternatives rejected
 
+(Restated 2026-10-26, after the merge, on the Decision above - "the console ... writes the Mosaic on
+a CFA frame", "`--rainbow` without `--histeq` is a parse error", "the coloured bitmaps enter the
+per-view cache", "never coloured" for the composite: four points the owner confirmed when asked
+again, none changing what is done. The console's coloured picture on a CFA frame stays the shrunk Mosaic although it uses the
+middle of the table only - ranks 48..204 of 256 on the Tokina tablet-and-paper master, p1 51,
+p99 202, blue to yellow - because the shape reads as well and the window shows the full palette
+at 100 % and on the channels; a channel instead would be our choice of layer, not Siril's.
+`--rainbow` without `--histeq` stays an error, unlike `--sky` without `--expo`, which changes
+thresholds and not the file written. The coloured Mosaic stays in the window's cache (62 ms,
++73 MB, 958 MB with everything cached, against 1.1 GB for `--expo`). On a CFA frame of unknown
+order the grey mean of the four positions stays uncoloured: it is no layer of Siril's, and the
+Mosaic beside it is.)
+
 - **Siril's literal RGB mix on the composite.** It is what Siril's RGB tab does, but on the
   NEF it produced colours outside the palette wherever the channels differ, and nothing can be
   read from them (the measurement of 2026-10-26).
@@ -69,6 +82,7 @@ session; the coloured bitmaps enter the per-view cache.
 - The console's picture on a CFA frame, the shrunk Mosaic, uses the middle of the table only
   (blue to yellow on the Tokina master): a block averages the ranks of three colour
   populations. The shape reads as well; the window at 100 % and the channel views show the
-  full palette. A new fact after the decision, put to the owner at wrap-up.
+  full palette. A new fact after the decision, put to the owner at wrap-up; kept (the
+  Restated note above).
 - Amplitude stays destroyed by construction (ADR 0025): the colours are ranks, not values, and
   the mode still never votes.

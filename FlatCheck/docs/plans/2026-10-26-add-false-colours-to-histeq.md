@@ -171,4 +171,6 @@ Followed as written, with three deviations:
 
 A fact found after the decisions, put to the owner at wrap-up: the console's coloured Mosaic
 on a CFA frame uses the middle of the table only (blue to yellow on the Tokina master),
-because a shrunk block averages the ranks of three colour populations; ADR 0063 records it.
+because a shrunk block averages the ranks of three colour populations; ADR 0063 records it. Answered
+2026-10-26: kept, with three more confirmations (the Restated note in ADR 0063); nothing in
+the code changed.
