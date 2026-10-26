@@ -64,8 +64,9 @@ public sealed class WicImageLoader : IImageLoader
     }
 
     /// <inheritdoc/>
-    public Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default) =>
-        Task.Run(() => Load(path, cancellationToken), cancellationToken);
+    public Task<LoadedImage> LoadAsync(
+        string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default) =>
+        Task.Run(() => Load(path, mode, cancellationToken), cancellationToken);
 
     /// <summary>
     /// Decodes the full image on the calling thread: the file's own format first, reported as
@@ -75,13 +76,17 @@ public sealed class WicImageLoader : IImageLoader
     /// WIC's own failures included.
     /// </summary>
     /// <param name="path">The file; what it holds, not its name, says what it is.</param>
+    /// <param name="mode">
+    /// How the samples become pixels: honoured for float samples, which are shown as stored;
+    /// every other format is <see cref="DisplayMode.Linear"/> through WIC's conversion (R-110).
+    /// </param>
     /// <param name="cancellationToken">
     /// Looked at before each band of rows of float samples; a stopped load throws
     /// <see cref="OperationCanceledException"/>. Any other format WIC converts in one call that
     /// does not look at it.
     /// </param>
     /// <returns>The frozen Bgra32 pixels, and what the file was.</returns>
-    public LoadedImage Load(string path, CancellationToken cancellationToken = default)
+    public LoadedImage Load(string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default)
     {
         using FileStream stream = OpenRead(path);
 
@@ -92,9 +97,9 @@ public sealed class WicImageLoader : IImageLoader
             BitmapFrame frame = CreateDecoder(stream, BitmapCreateOptions.PreservePixelFormat).Frames[0];
             ImageInfo info = Describe(path, frame);
 
-            if (info.IsFloat)
+            if (info.ShownAsStored)
             {
-                return LoadFloat(frame, info, cancellationToken);
+                return LoadFloat(frame, info, mode, cancellationToken);
             }
 
             var converted = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
@@ -138,12 +143,14 @@ public sealed class WicImageLoader : IImageLoader
     /// <summary>
     /// Decodes floating-point samples as a FITS of the same samples is shown: as stored, through
     /// <see cref="FloatSamples"/>, read as 0 to 1, and once more as 0 to 65535 when
-    /// <see cref="FitsScale.IsRescaled"/> finds the image counts so (ADR 0035).
+    /// <see cref="FitsScale.IsRescaled"/> finds the image counts so (ADR 0035), and rendered in
+    /// the mode asked for (ADR 0040).
     /// </summary>
     /// <param name="frame">The decoded frame, in its own float format.</param>
     /// <param name="info">
     /// What the file is, float, gray, RGB or RGBA; the range is added here.
     /// </param>
+    /// <param name="mode">How the samples become pixels; every mode is honoured.</param>
     /// <param name="cancellationToken">
     /// Looked at before each band of rows; a stopped load throws
     /// <see cref="OperationCanceledException"/>.
@@ -151,7 +158,8 @@ public sealed class WicImageLoader : IImageLoader
     /// <returns>
     /// The frozen Bgra32 pixels, and what the file was, with the range its values were read in.
     /// </returns>
-    private static LoadedImage LoadFloat(BitmapFrame frame, ImageInfo info, CancellationToken cancellationToken)
+    private static LoadedImage LoadFloat(
+        BitmapFrame frame, ImageInfo info, DisplayMode mode, CancellationToken cancellationToken)
     {
         bool gray = info.Channels == ColorChannels.Gray;
 
@@ -163,51 +171,82 @@ public sealed class WicImageLoader : IImageLoader
         var floats = new FormatConvertedBitmap(frame, target, null, 0);
 
         WriteableBitmap bitmap = Bitmaps.Create(info.PixelWidth, info.PixelHeight, fits: false);
-        long above = Decode(floats, gray, bitmap, FitsScale.FullScale(-32), cancellationToken);
+        var renderer = new DisplayRenderer(mode, info.PixelWidth, gray ? 1 : 3);
+        double fullScale = FitsScale.FullScale(-32);
+        long samples = (long)info.PixelWidth * info.PixelHeight * (gray ? 1 : 3);
+        string? valueRange = null;
 
         // As for a float FITS: whether the samples count in 0 to 1 or in 0 to 65535 is known only
-        // once all of them have been seen, so the rare image in 0 to 65535 is decoded twice.
-        string? valueRange = null;
-        long samples = (long)info.PixelWidth * info.PixelHeight * (gray ? 1 : 3);
-        if (FitsScale.IsRescaled(-32, above, samples))
+        // once all of them have been seen, so the rare image in 0 to 65535 is decoded twice; a
+        // mode that equalises counts every sample before it renders any, as the FITS loader does.
+        if (renderer.NeedsCount)
         {
-            Decode(floats, gray, bitmap, FitsScale.FullScale(-32, rescaled: true), cancellationToken);
-            valueRange = FitsScale.SixteenBitRange;
+            long above = Pass(floats, gray, renderer, fullScale, bitmap: null, cancellationToken);
+            if (FitsScale.IsRescaled(-32, above, samples))
+            {
+                fullScale = FitsScale.FullScale(-32, rescaled: true);
+                valueRange = FitsScale.SixteenBitRange;
+                renderer.ClearCounts();
+                Pass(floats, gray, renderer, fullScale, bitmap: null, cancellationToken);
+            }
+
+            renderer.Prepare();
+            Pass(floats, gray, renderer, fullScale, bitmap, cancellationToken);
+        }
+        else
+        {
+            long above = Pass(floats, gray, renderer, fullScale, bitmap, cancellationToken);
+            if (FitsScale.IsRescaled(-32, above, samples))
+            {
+                Pass(floats, gray, renderer, FitsScale.FullScale(-32, rescaled: true), bitmap, cancellationToken);
+                valueRange = FitsScale.SixteenBitRange;
+            }
         }
 
         bitmap.Freeze();
-        return new LoadedImage(info with { ValueRange = valueRange }, bitmap);
+        return new LoadedImage(info with { ValueRange = valueRange }, bitmap, mode);
     }
 
     /// <summary>
-    /// Writes every row of float samples into the bitmap, a band of rows at a time, as
-    /// <see cref="FloatSamples.ToBgra32"/> converts them.
+    /// One pass over every row of float samples, a band of rows at a time: each row brought to
+    /// sixteen bits by <see cref="FloatSamples.ToSixteenBit"/> and either counted towards the
+    /// renderer's histograms or rendered into the bitmap.
     /// </summary>
     /// <param name="floats">
     /// The frame converted to a float format: one float a pixel when <paramref name="gray"/>,
     /// otherwise four.
     /// </param>
     /// <param name="gray">True for one float a pixel.</param>
-    /// <param name="bitmap">Receives the rows: the image's size, Bgra32, not yet frozen.</param>
+    /// <param name="renderer">Counts or renders the rows, in the mode asked for.</param>
     /// <param name="fullScale">
     /// The value shown as white (<see cref="FitsScale.FullScale"/>).
     /// </param>
+    /// <param name="bitmap">
+    /// Receives the rows, the image's size, Bgra32, not yet frozen; null for a pass that only
+    /// counts.
+    /// </param>
     /// <param name="cancellationToken">
-    /// Looked at before each band; a stopped decode throws
+    /// Looked at before each band; a stopped pass throws
     /// <see cref="OperationCanceledException"/>.
     /// </param>
     /// <returns>How many samples count towards the rescale.</returns>
-    private static long Decode(
-        BitmapSource floats, bool gray, WriteableBitmap bitmap, double fullScale, CancellationToken cancellationToken)
+    private static long Pass(
+        BitmapSource floats,
+        bool gray,
+        DisplayRenderer renderer,
+        double fullScale,
+        WriteableBitmap? bitmap,
+        CancellationToken cancellationToken)
     {
-        int width = bitmap.PixelWidth;
-        int height = bitmap.PixelHeight;
+        int width = floats.PixelWidth;
+        int height = floats.PixelHeight;
         int floatsPerRow = width * (gray ? 1 : 4);
 
         // A band at a time keeps the floats held to a few megabytes; the whole of a 6016 x 4016
         // RGB image as floats would be 386 MB.
         int bandRows = Math.Max(1, BandFloats / floatsPerRow);
         float[] band = new float[bandRows * floatsPerRow];
+        ushort[] planesRow = new ushort[width * (gray ? 1 : 3)];
         int stride = width * 4;
         byte[] levels = new byte[bandRows * stride];
         long above = 0;
@@ -219,13 +258,20 @@ public sealed class WicImageLoader : IImageLoader
             floats.CopyPixels(new Int32Rect(0, top, width, rows), band, floatsPerRow * sizeof(float), 0);
             for (int y = 0; y < rows; y++)
             {
-                above += FloatSamples.ToBgra32(
-                    band.AsSpan(y * floatsPerRow, floatsPerRow), gray, levels.AsSpan(y * stride, stride), fullScale);
+                above += FloatSamples.ToSixteenBit(band.AsSpan(y * floatsPerRow, floatsPerRow), gray, planesRow, fullScale);
+                if (bitmap is null)
+                {
+                    renderer.Count(planesRow);
+                }
+                else
+                {
+                    renderer.Render(planesRow, levels.AsSpan(y * stride, stride));
+                }
             }
 
             // The whole band in one write: each WritePixels locks the bitmap, and a row at a time
             // would be thousands of locks per pass.
-            bitmap.WritePixels(new Int32Rect(0, top, width, rows), levels, stride, 0);
+            bitmap?.WritePixels(new Int32Rect(0, top, width, rows), levels, stride, 0);
         }
 
         return above;
@@ -289,7 +335,7 @@ public sealed class WicImageLoader : IImageLoader
         if (FloatSamplesOf(frame) is { } floats)
         {
             return new ImageInfo(
-                path, frame.PixelWidth, frame.PixelHeight, floats.BitsPerChannel, floats.Channels, IsFloat: true);
+                path, frame.PixelWidth, frame.PixelHeight, floats.BitsPerChannel, floats.Channels, IsFloat: true, ShownAsStored: true);
         }
 
         (int bitsPerChannel, ColorChannels channels) = Classify(frame.Format);

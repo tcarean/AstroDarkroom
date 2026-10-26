@@ -174,4 +174,68 @@ public class WicImageLoaderTests : IDisposable
         Assert.True(loaded.Bitmap.IsFrozen);
         Assert.Equal(32, loaded.Info.PixelWidth);
     }
+
+    [Fact]
+    public async Task R110_AFloatTiff_IsShownAsStored_AndAnIntegerPngIsNot()
+    {
+        string tiff = _images.WriteFloatTiff("stored.tif", 2, 1, 1, [0.5f, 0.25f]);
+        string png = _images.WritePng("rgb48-stored.png", PixelFormats.Rgb48, 4, 4);
+
+        Assert.True(_loader.Probe(tiff).ShownAsStored);
+        Assert.True((await _loader.LoadAsync(tiff)).Info.ShownAsStored);
+        Assert.False(_loader.Probe(png).ShownAsStored);
+        Assert.False((await _loader.LoadAsync(png)).Info.ShownAsStored);
+    }
+
+    [Fact]
+    public async Task R110_AnIntegerPng_IsLinearWhateverModeIsAsked()
+    {
+        string png = _images.WritePng("linear.png", PixelFormats.Rgb48, 4, 4);
+
+        LoadedImage linear = await _loader.LoadAsync(png);
+        LoadedImage asked = await _loader.LoadAsync(png, DisplayMode.Histogram);
+
+        Assert.Equal(DisplayMode.Linear, asked.Mode);
+        byte[] expected = new byte[64];
+        byte[] got = new byte[64];
+        linear.Bitmap.CopyPixels(expected, 16, 0);
+        asked.Bitmap.CopyPixels(got, 16, 0);
+        Assert.Equal(expected, got);
+    }
+
+    [Fact]
+    public async Task R111_AFloatTiff_IsEqualisedPerChannel_AsAFitsIs()
+    {
+        // 4 x 1 RGB: red 1, 2, 2, 3 of 65535 (64, 191, 191, 255); green all 3 (255); blue
+        // 0, 0, 0, 9 (0, 0, 0, 64): the same bytes the FITS of these samples gives.
+        float[] samples =
+        [
+            1 / 65535f, 3 / 65535f, 0, 2 / 65535f, 3 / 65535f, 0, 2 / 65535f, 3 / 65535f, 0, 3 / 65535f, 3 / 65535f, 9 / 65535f,
+        ];
+        string path = _images.WriteFloatTiff("histogram.tif", 4, 1, 3, samples);
+
+        LoadedImage loaded = await _loader.LoadAsync(path, DisplayMode.Histogram);
+        byte[] bgra = new byte[16];
+        loaded.Bitmap.CopyPixels(bgra, 16, 0);
+
+        Assert.Equal(new byte[] { 0, 255, 64, 255, 0, 255, 191, 255, 0, 255, 191, 255, 64, 255, 255, 255 }, bgra);
+        Assert.Equal(DisplayMode.Histogram, loaded.Mode);
+    }
+
+    [Fact]
+    public async Task R112_AGrayFloatTiffInZeroTo65535_IsColouredOnThatScale()
+    {
+        // 10, 20, 20, 30 count to 65535 (every sample above 2) and equalise as 1, 2, 2, 3 do.
+        string path = _images.WriteFloatTiff("rainbow.tif", 4, 1, 1, [10f, 20f, 20f, 30f]);
+
+        LoadedImage loaded = await _loader.LoadAsync(path, DisplayMode.FalseColours);
+        byte[] bgra = new byte[16];
+        loaded.Bitmap.CopyPixels(bgra, 16, 0);
+
+        (byte r, byte g, byte b) = RainbowTable.Colour(64);
+        Assert.Equal(new byte[] { b, g, r, 255 }, bgra[..4]);
+        (r, g, b) = RainbowTable.Colour(255);
+        Assert.Equal(new byte[] { b, g, r, 255 }, bgra[12..16]);
+        Assert.Equal("32-bit float gray (0..65535)", loaded.Info.FormatDescription);
+    }
 }

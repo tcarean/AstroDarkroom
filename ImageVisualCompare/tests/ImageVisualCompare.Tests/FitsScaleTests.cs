@@ -118,4 +118,32 @@ public class FitsScaleTests
         // result_3813s_wcsplane_bge.fit: 1 sample above 1 (1.0005, not above 2) of 69 260 832.
         Assert.False(FitsScale.IsRescaled(-32, 0, 69260832));
     }
+
+    [Theory]
+    [InlineData(0.0, 0)]
+    [InlineData(0.49, 0)]
+    [InlineData(0.5, 1)]
+    [InlineData(255.4, 255)]
+    [InlineData(32767.5, 32768)]
+    [InlineData(65534.4, 65534)]
+    [InlineData(65534.6, 65535)]
+    [InlineData(65535.0, 65535)]
+    [InlineData(70000.0, 65535)]
+    [InlineData(-1.0, 0)]
+    [InlineData(double.NaN, 0)]
+    [InlineData(double.PositiveInfinity, 65535)]
+    public void R111_SixteenBit_RoundsToTheNearestSample_AndClampsTheScale(double value, int expected)
+    {
+        Assert.Equal(expected, FitsScale.SixteenBit(value));
+    }
+
+    [Fact]
+    public void R111_TheLevelIsTheHighByteOfTheSixteenBitSample()
+    {
+        for (int value = 0; value <= 65535; value++)
+        {
+            double half = value + 0.25;
+            Assert.Equal(FitsScale.SixteenBit(half) >> 8, FitsScale.Level(half));
+        }
+    }
 }

@@ -30,14 +30,16 @@ window:
    file, and the canvas.
 2. A forced release (`MemoryHousekeeping.ReleaseImageBuffers`) and a reading of the process's
    private bytes, the baseline; then `ImagePairLoader.LoadAsync` with the padding question
-   answered yes, timed.
+   answered yes, timed, in the display mode the case's `mode` names (`Histogram`,
+   `FalseColours`; `Linear` when the case has none, ADR 0040).
 3. The pair dropped, `ReleaseImageBuffers` again, and a second reading.
 
 `ValidationTests` prints the figures as one JSON line, `MEASURED <id> {...}`, in the test output
 and in the file `IVC_VALIDATION_DUMP` names when it is set. The names: `before.*` and `after.*`
 for each file (`width`, `height`, `bitsPerChannel`, `channels`, `format`, `displayBytes`,
 `fileBytes`); `pad.*` for the canvas (`width`, `height`, `requiresPadding`, `dimensions`);
-`load.*` for the loaded pair (`success`, `displayBytes`, `beforeIsBgra32`, `afterIsBgra32`,
+`load.*` for the loaded pair (`success`, `mode`, the display mode the pair was rendered in,
+`displayBytes`, `beforeIsBgra32`, `afterIsBgra32`,
 `frozen`, and `beforeFormat` and `afterFormat`, the format the loaded image reports, which for
 a FITS can say more than the probe's, R-018); `memory.privateDeltaMb`, what the load added to the baseline, and
 `memory.privateAfterReleaseDeltaMb`, what is left after the release, in megabytes of 1 048 576
@@ -62,6 +64,8 @@ stops on a drift instead of editing them.
 | V-002 | `de_printat.png` | `de_printat_50x35_TIFF8.tif` | a mismatched pair, 16-bit against 8-bit: the probe of the second file (5554 x 3888, 8 bits, RGB, `8-bit RGB`, 86 375 808 display bytes), a 5938 x 3888 canvas with `RequiresPadding` true and `Dimensions` `5938 × 3888`, a load once the question is answered yes, 178 723 584 display bytes, the memory figures |
 | V-003 | `result_3813s.fit` | `result_3813s_Graxpert_AI.fit` | a matched pair of two float FITS files: what the probe reports for both (5938 x 3888, 32 bits, RGB, `32-bit float RGB`, 92 347 776 display bytes, the file sizes), no padding, a load whose two bitmaps are Bgra32 and frozen and still say `32-bit float RGB` (neither file was rescaled, R-016), 184 695 552 display bytes, the memory figures |
 | V-004 | `result_3813s.fit` | `de_printat.png` | a FITS against a PNG, one loader each behind `RoutingImageLoader`: `32-bit float RGB` against `16-bit RGB` on one 5938 x 3888 canvas with no padding, the load, the memory figures |
+| V-005 | `result_3813s.fit` | `result_3813s_Graxpert_AI.fit` | V-003's pair loaded in `Histogram` (ADR 0040): the same probe figures, `load.mode` `Histogram`, the two bitmaps still Bgra32 and frozen at the same display bytes, the memory figures (the two counting passes leave nothing behind) |
+| V-006 | `result_3813s.fit` | `result_3813s_Graxpert_AI.fit` | the same pair in `FalseColours`: `load.mode` `FalseColours`, the same sizes and bytes, the memory figures |
 
 ## The figures of 2026-10-05
 
@@ -155,3 +159,13 @@ files above. They are kept here as they were written, as the history of the figu
   +201.9 and 24.8 MB; V-004 in 2.37 s, +175.2 and -1.1 MB. The memory figures sit within 3.3 MB
   of the .NET 9 ones. The decode times are longer than on 2026-10-22, V-003's most; the time is
   printed and never guarded, and what made it longer was not looked for.
+- 2026-10-26: the display modes (ADR 0040). V-005 and V-006 added, V-003's FITS pair in
+  `Histogram` and in `FalseColours`, and measured the same day in the task's worktree, in the
+  order V-005, V-003, V-002, V-001, V-006, V-004: V-005 decoded in 2.52 s, +204.9 MB and 27.1
+  MB after the release, the first FITS load of the process as V-003 was before (its 28 MB are
+  the same first-load cost, now on V-005); V-006 in 2.19 s, +179.2 and 1.7 MB. The four
+  earlier cases ran against their figures and passed, left as they are: V-001 in 3.01 s,
+  +177.7 MB and -0.7 MB; V-002 in 2.15 s, +171 and -0.7 MB; V-003 in 1.17 s, +177.9 and -1.3
+  MB (no longer the first FITS load); V-004 in 2.08 s, +177.3 and 0.2 MB. The linear decode
+  now goes through a 16-bit row and `DisplayRenderer`; on `result_3813s.fit` alone it took
+  0.52 to 0.54 s against 0.56 to 0.59 s for `main`'s code the same day (ADR 0040).

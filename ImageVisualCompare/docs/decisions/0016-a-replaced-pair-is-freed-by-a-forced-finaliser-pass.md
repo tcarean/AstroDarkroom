@@ -1,7 +1,7 @@
 # 0016. A replaced pair is freed by a forced finaliser pass before the new one is shown; the memory readout ticks every 2 s
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the moment of the release (before the new pair is shown) superseded by 0040
 
 ## Context
 

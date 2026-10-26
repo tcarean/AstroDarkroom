@@ -58,7 +58,7 @@ recunoscut după conținut, nu după extensie.
 - **Valorile se afișează așa cum sunt în fișier, fără niciun stretch.** Un FITS deja procesat
   arată exact ca exportul lui PNG sau TIFF pe 16 biți, nivel cu nivel, deci îl poți compara
   cinstit cu exportul. Un stack liniar, nestretch-uit, apare aproape negru: e corect, așa e
-  el. Stretch-uiește-l în Siril și salvează-l dacă vrei să-l vezi.
+  el. Ca să vezi totuși ce e în el, ai cele două moduri de afișare de mai jos.
 - **Orientarea e cea din Siril.** Prima linie din fișier e jos, cum o arată Siril, orice ar
   spune `ROWORDER` din antet: Siril folosește acest cuvânt-cheie doar la demozaicare, nu la
   afișare, iar un fișier care spune `TOP-DOWN` peste date scrise de jos în sus există.
@@ -71,6 +71,31 @@ recunoscut după conținut, nu după extensie.
   e, nu o eroare generică; la fel pentru un antet stricat sau o imagine prea mare ca să fie
   afișată. Un cadru brut cu matrice Bayer se deschide, dar apare ca mozaicul
   gri care este: nu se face debayer.
+
+### Histogramă și culori false
+
+Pentru o pereche în care amândouă fișierele sunt FITS sau TIFF float (fișierele afișate „așa
+cum sunt stocate"), ai două moduri de afișare în plus față de cel liniar, amândouă copiate din
+Siril 1.4.4, ca să vezi într-un stack liniar ce ochiul nu vede: un gradient de o unitate, o
+pată, o dungă.
+
+- **`Histogramă`** (butonul din toolbar sau tasta `H`) e modul de afișare „Histogram" din
+  Siril: egalizare de histogramă, fiecare canal pe propria lui histogramă, cu 65 536 de
+  clase pe valoarea de 16 biți. Fiecare nivel de gri de pe ecran primește același număr de
+  pixeli, deci o diferență minusculă în date devine mulți pași de gri pe ecran. Amplitudinea
+  e distrusă prin construcție: o diferență de 0,5 % și una de 10 % cu aceeași formă arată la
+  fel. Pixelii cu valoarea 0 rămân 0.
+- **`Culori false`** (butonul sau tasta `F`) e tabelul „rainbow" din Siril peste un singur
+  strat egalizat ca mai sus: nuanța merge de la magenta (nivelul 0) prin albastru, cyan,
+  verde și galben până la roșu (nivelul 255). Stratul e media celor trei plane la un FITS
+  RGB, sau planul însuși la unul gri; Siril nu colorează compozitul RGB, și nici programul
+  acesta.
+
+Comutarea decodează din nou amândouă fișierele în noul mod (o secundă-două pe un stack de 23
+MP, fără memorie în plus), și păstrează zoom-ul, poziția și linia unde erau; apasă din nou
+același buton sau aceeași tastă ca să revii la liniar. Modul ales rămâne și pentru perechea
+următoare, dacă și aceea îl permite. La o pereche cu un PNG sau un TIFF întreg, butoanele sunt
+dezactivate și tastele nu fac nimic: nu se egalizează nimic din niveluri pe 8 biți.
 
 ### TIFF float
 
@@ -129,10 +154,13 @@ Windows, cum e motivul pentru care un codec n-a putut citi un fișier, sunt în 
 | încadrează tot | `Ctrl+0`, sau butonul `Fit` (`Încadrează`) |
 | mărime reală | `Ctrl+1`, sau butonul `100%` |
 | sari în altă zonă | click sau drag în minimap-ul din stânga-jos |
+| histogramă (FITS, TIFF float) | `H`, sau butonul `Histogram` (`Histogramă`); încă o dată revine la liniar |
+| culori false (FITS, TIFF float) | `F`, sau butonul `False colours` (`Culori false`); încă o dată revine la liniar |
 | deschide altă pereche | `Ctrl+O`, sau butonul `Open…` (`Deschide…`; nu în timpul unei încărcări) |
 
 Scurtăturile de tastatură merg când suprafața de comparație are focus; îl primește singură
-după încărcare, și îl recapătă la orice click pe imagine. Pasul săgeților e în pixeli
+după încărcare, și îl recapătă la orice click pe imagine. `Ctrl+O`, `H` și `F` merg oriunde
+în fereastră. Pasul săgeților e în pixeli
 logici, ca tot ce ține de linie: la scalarea Windows de 100% e un pixel de ecran, la 150%
 linia se mută cu 1,5 pixeli de ecran, respectiv 15 cu `Shift`.
 
@@ -161,6 +189,12 @@ Pentru un FITS, ca și pentru un TIFF float, formatul arată adâncimea și plan
 de exemplu `A 32-bit float RGB` sau `B 16-bit gray`. Valorile RGB citite sunt tot cele 0–255
 de pe ecran, nu valorile float din fișier.
 
+În modul histogramă, prima parte se termină cu `· Histogram` (`· Histogramă`), iar valorile
+citite sunt nivelurile egalizate de pe ecran, nu cele din fișier: apasă `H` din nou ca să le
+vezi pe acelea. În culori false se termină cu `· False colours` (`· Culori false`), iar
+citirea e un singur număr pe imagine, `A 143`, `B 141`: nivelul egalizat pe care îl reprezintă
+culoarea de sub cursor, nu RGB-ul culorii.
+
 Când perechea a avut nevoie de padding, prima parte devine `600 × 400 padded · A 600 × 300 ·
 B 400 × 400`: dimensiunea pânzei singură ar fi o jumătate de adevăr, fiindcă niciuna dintre
 imagini nu are dimensiunea aceea.
@@ -179,8 +213,10 @@ adică 84 MB, indiferent cât avea pe disc). Cu randarea WPF pornită, procesul 
 platou de ~570 MB memorie privată și ~300 MB rezidenți. Platoul e mărginit, nu o scurgere —
 plimbarea prin nivele de zoom nu îl mai crește. La deschiderea unei perechi noi, cea veche
 rămâne pe ecran cât timp se decodează noua, deci în timpul încărcării stau amândouă în
-memorie; imediat ce noua e gata, cea veche e eliberată explicit, înainte ca noua să fie
-afișată, și de acolo rămâne una singură.
+memorie; imediat ce noua e afișată și randată o dată, cea veche e eliberată explicit, și de
+acolo rămâne una singură. Ordinea contează: suprafața ține bitmap-urile vechi în conținutul ei
+de randare până la prima randare a celor noi, deci o eliberare înainte de ea nu eliberează
+nimic (măsurat pe 2026-10-26). La fel la comutarea între liniar, histogramă și culori false.
 
 Decodarea a două fișiere de ~108 MB durează ~2,7 secunde, cu bară de progres.
 

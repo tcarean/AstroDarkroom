@@ -17,6 +17,8 @@
 
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
 using ImageVisualCompare.Wpf;
 using ImageVisualCompare.Wpf.Imaging;
@@ -65,7 +67,141 @@ public class MainWindowTests
     {
         public ImageInfo Probe(string path) => new(path, 4, 4, 8, ColorChannels.Rgb);
 
-        public Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default) =>
+        public Task<LoadedImage> LoadAsync(
+            string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default) =>
             new TaskCompletionSource<LoadedImage>().Task;
+    }
+
+    [Fact]
+    public async Task R113_ASwitchOfMode_DecodesThePairAgain_AndKeepsTheDivider()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        Task switched = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window.Compare.Divider.Position = 0.3;
+            switched = window.ToggleModeAsync(DisplayMode.Histogram);
+        });
+        await switched;
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.Equal(0.3, window.Compare.Divider.Position);
+            Assert.True(window.HistogramButton.IsChecked);
+            Assert.False(window.FalseColoursButton.IsChecked);
+            Assert.EndsWith("  ·  Histogram", window.StatusPair.Text);
+        });
+        Assert.Equal(
+            [DisplayMode.Linear, DisplayMode.Linear, DisplayMode.Histogram, DisplayMode.Histogram],
+            loader.Modes);
+    }
+
+    [Fact]
+    public async Task R114_TheModeAlreadyShown_SwitchesBackToLinear()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        Task switched = null!;
+        await WpfThread.RunAsync(() => switched = window.ToggleModeAsync(DisplayMode.FalseColours));
+        await switched;
+        await WpfThread.RunAsync(() => switched = window.ToggleModeAsync(DisplayMode.FalseColours));
+        await switched;
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.False(window.HistogramButton.IsChecked);
+            Assert.False(window.FalseColoursButton.IsChecked);
+            Assert.True(window.HistogramButton.IsEnabled);
+            Assert.DoesNotContain("  ·  False colours", window.StatusPair.Text);
+        });
+        Assert.Equal(
+            [DisplayMode.Linear, DisplayMode.Linear, DisplayMode.FalseColours, DisplayMode.FalseColours, DisplayMode.Linear, DisplayMode.Linear],
+            loader.Modes);
+    }
+
+    [Fact]
+    public async Task R110_APairNotShownAsStored_DisablesTheButtons_AndIgnoresTheKeys()
+    {
+        var loader = new ModeLoader(shownAsStored: false);
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        Task switched = null!;
+        await WpfThread.RunAsync(() => switched = window.ToggleModeAsync(DisplayMode.Histogram));
+        await switched;
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.False(window.HistogramButton.IsEnabled);
+            Assert.False(window.FalseColoursButton.IsEnabled);
+            Assert.False(window.HistogramButton.IsChecked);
+        });
+        Assert.Equal([DisplayMode.Linear, DisplayMode.Linear], loader.Modes);
+    }
+
+    /// <summary>
+    /// Waits for the open the test started to put its pair on screen: the open runs on through
+    /// the dispatcher once the test's body returns, so the window is looked at between pumps.
+    /// </summary>
+    private static async Task WaitForPairAsync(MainWindow window)
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            bool shown = false;
+            await WpfThread.RunAsync(() => shown = window.StatusPair.Text.Length > 0);
+            if (shown)
+            {
+                return;
+            }
+
+            await Task.Delay(50);
+        }
+
+        Assert.Fail("the pair was not shown within 5 s");
+    }
+
+    /// <summary>
+    /// Probes every file as one small image, shown as stored or not, decodes it as a 2 x 2
+    /// bitmap at once, and records the mode of every load.
+    /// </summary>
+    private sealed class ModeLoader(bool shownAsStored) : IImageLoader
+    {
+        public List<DisplayMode> Modes { get; } = [];
+
+        public ImageInfo Probe(string path) =>
+            new(path, 2, 2, 32, ColorChannels.Rgb, IsFloat: shownAsStored, ShownAsStored: shownAsStored);
+
+        public Task<LoadedImage> LoadAsync(
+            string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default)
+        {
+            lock (Modes)
+            {
+                Modes.Add(mode);
+            }
+
+            var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Bgra32, null, new byte[16], 8);
+            bitmap.Freeze();
+            return Task.FromResult(new LoadedImage(Probe(path), bitmap, mode));
+        }
     }
 }

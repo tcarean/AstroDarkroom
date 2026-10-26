@@ -57,10 +57,31 @@ public sealed class UiText
 
     public string About => Pick("About", "Despre");
 
+    // The two display-mode toggles (R-114), and the words the status bar's pair line ends with
+    // in those modes.
+    public string Histogram => Pick("Histogram", "Histogramă");
+
+    public string FalseColours => Pick("False colours", "Culori false");
+
+    /// <summary>
+    /// Names a display mode as the toolbar and the status bar do (R-114).
+    /// </summary>
+    /// <param name="mode">The mode.</param>
+    /// <returns>
+    /// <see cref="Histogram"/> or <see cref="FalseColours"/>; null for
+    /// <see cref="DisplayMode.Linear"/>, which the status bar does not name.
+    /// </returns>
+    public string? ModeName(DisplayMode mode) => mode switch
+    {
+        DisplayMode.Histogram => Histogram,
+        DisplayMode.FalseColours => FalseColours,
+        _ => null,
+    };
+
     // The status bar's hint (R-054): what each gesture does, shortest first to go when trimmed.
     public string Hint => Pick(
-        "wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open",
-        "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide");
+        "wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open · H histogram · F false colours",
+        "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false");
 
     // The dialog titles of a pair that failed to load (R-005) and of the padding question (R-003).
     public string CannotCompareTitle => Pick("Cannot compare these files", "Fișierele nu pot fi comparate");

@@ -9,6 +9,9 @@
 > `tests/ImageVisualCompare.Tests/ImagePairLoaderTests.cs`,
 > `tests/ImageVisualCompare.Tests/WpfThread.cs`,
 > `tests/ImageVisualCompare.Tests/MainWindowTests.cs`,
+> `tests/ImageVisualCompare.Tests/DisplayRendererTests.cs`,
+> `tests/ImageVisualCompare.Tests/LevelLookupTests.cs`,
+> `tests/ImageVisualCompare.Tests/RainbowTableTests.cs`,
 > `tests/ImageVisualCompare.Tests/MinimapViewTests.cs`,
 > `tests/ImageVisualCompare.Tests/Win32Resources.cs`,
 > and the WPF files it names, `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
@@ -48,7 +51,20 @@ test of its own (ADR 0032). `WpfThread` starts one STA thread for the run, creat
 calls `Run`, and posts each test body to that thread's dispatcher; an exception in the body
 fails the test. `MainWindowTests` builds the main window there with dialogs that count the
 asking and a loader whose decode never ends, and clicks Open twice while the body still holds
-the dispatcher. `MinimapViewTests` lays the minimap out with `Measure`, `Arrange` and
+the dispatcher. For the display modes (R-113, R-114) it uses a loader that decodes a 2 × 2
+bitmap at once and records the mode of every load: it clicks Open, waits between pumps of the
+dispatcher until the pair line of the status bar is filled, moves the divider, calls
+`ToggleModeAsync` and reads the buttons, the status bar and the divider back; the keys `H` and
+`F` themselves are checked by launching the application, since a `KeyEventArgs` needs a
+presentation source a window never shown does not have.
+
+The display modes' arithmetic is Core's: `LevelLookupTests` pins Siril's equalisation on
+hand-computed histograms (R-111's two examples, the rounding, a uniform histogram, the share
+per level), `RainbowTableTests` the ten colours R-112 names and the inverse the readout uses,
+`DisplayRendererTests` the three modes over 16-bit rows, including the mean layer of an RGB
+image. `FitsImageLoaderTests` and `WicImageLoaderTests` then load fixtures in each mode and
+compare bytes, and `ImagePairLoaderTests` checks the fallback to linear for a pair one file of
+which is not shown as stored. `MinimapViewTests` lays the minimap out with `Measure`, `Arrange` and
 `UpdateLayout` at the size it gives itself, then checks a click on the thumbnail's corner and
 the rectangle at the far edge against the thumbnail inside the border. `UiTextTests` builds the
 main window in Romanian there and reads its toolbar and hint; it and the other Romanian tests run
