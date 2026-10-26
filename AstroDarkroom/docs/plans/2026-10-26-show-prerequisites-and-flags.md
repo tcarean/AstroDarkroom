@@ -122,4 +122,10 @@ then work in `<worktree>\AstroDarkroom`. The plan is saved there as
   foreground, so a screen copy caught whatever was on top and `SendKeys` went elsewhere. The
   four screenshots (both windows, both languages) showed what the plan asked; the settings
   file was restored afterwards.
-- Nothing else: the code, the texts and the docs are as planned.
+- The US flag keeps its stars, as a grid of twenty dots: left out, the canton was a flat blue
+  block. The `Image` is 13 px high with `Stretch="Uniform"`, not 21x14 with `Fill`, so each
+  flag keeps its own proportions; 13 px makes the thirteen stripes one pixel each.
+- The flags went under CHANGELOG `Added`, not `Changed`: the buttons gained something.
+- After a subagent's review, in a second commit: `docs/skills.md` no longer says the launcher
+  shows "modificari nelansate", `CLAUDE.md`'s line on Core names the prerequisites texts, the
+  test class summary names R-009, and this section lists the deviations above.

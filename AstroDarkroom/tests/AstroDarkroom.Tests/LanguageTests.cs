@@ -19,7 +19,7 @@ using AstroDarkroom.Core;
 
 namespace AstroDarkroom.Tests;
 
-/// <summary>R-006 to R-008: the two languages, the remembered setting, the tool's language.</summary>
+/// <summary>R-006 to R-009: the two languages, the remembered setting, the tool's language, the prerequisites texts.</summary>
 public class LanguageTests
 {
     private static SuiteApp App(string folder) => AppCatalogue.Apps.Single(a => a.Folder == folder);
