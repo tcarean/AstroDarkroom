@@ -29,8 +29,10 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
   consoles stay in the tools' own releases: their base runtime and the windows' desktop runtime
   carry three DLLs of the same name with different bytes. `SuiteTests` keeps the catalogue,
   `kit.json` and the components' frameworks and package versions in step.
-- `README.md` has a "Descarcare" section: each version's zip is shared from the owner's Google
-  Drive, with its link and SHA-256 in a table, and the command that checks the hash (ADR 0005).
+- `README.md`, in English (ADR 0009), has a "Download" section: each version's zip is shared
+  from the owner's Google Drive, with its link and SHA-256 in a table, and the command that
+  checks the hash (ADR 0005); the repository's root `README.md`, its Bitbucket front page,
+  repeats the latest row and says how to build the suite from a checkout (ADR 0008).
 - The project, started from `ClaudeCodeStarterKit` on 2026-10-25 as the launcher and the
   release of the Astro Darkroom suite (ADR 0001).
 

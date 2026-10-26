@@ -20,6 +20,10 @@ FlatCheck opens the master `pp_flat_stacked.fit` Siril's script writes into `pro
 and `%APPDATA%\Adobe\CameraRaw\LensProfiles` when an Adobe program installed them (FlatCheck
 R-070, ADR 0028); its README names Lightroom, Camera Raw (Photoshop) and the free Adobe DNG
 Converter as the programs that do, and falls back to the lensfun database it ships with.
+(Corrected 2026-10-26: Lightroom Classic and Lightroom keep their profiles inside their own
+program folders, which FlatCheck does not read; of the three, only the DNG Converter and Camera
+Raw install them where FlatCheck reads them. ADR 0008 records the measurement. The third
+paragraph of `Prerequisites.Details` was written from FlatCheck's README and names Lightroom.)
 
 Asked in this session, the owner chose: the **United States flag** for English (over the
 Union Jack and the cross of St George); the prerequisites **in "Despre" and in `README.md`,
@@ -39,7 +43,7 @@ newer"**, since 1.4.4 is the version everything was measured on.
   so the test R009 guards both wordings and the facts they must name; the window only shows
   them. The main window shows the summary under its subtitle and points at "Despre", which
   shows the three paragraphs in a card between the licence and the components. `README.md`
-  says the same in its "Cerinte" section. The launcher checks none of it: it computes nothing
+  says the same in its "Requirements" section. The launcher checks none of it: it computes nothing
   of its own and never looks outside its folder.
 - **The flags are vector drawings in `App.xaml`**, two `DrawingImage` resources at the flags'
   official proportions, shown 13 px high and aliased so the stripes stay crisp; the US flag's
@@ -70,6 +74,6 @@ newer"**, since 1.4.4 is the version everything was measured on.
 - `AppRow.UnreleasedHint` and `ComponentLine.Note` are gone; a reader of `release.json` still
   sees `unreleased` there.
 - A change of the suite's needs (a new Siril version, another profile source) is an edit of
-  the three pairs in `Prerequisites.cs`, of R-009 and of the README's "Cerinte".
+  the three pairs in `Prerequisites.cs`, of R-009 and of the README's "Requirements".
 - Guard: `LanguageTests.R009_ThePrerequisites_NameSirilAndTheAdobeProfilesInBothLanguages`.
   The flags and the card are checked by eye: the window has no test project (ADR 0001).

@@ -1,109 +1,114 @@
 # Astro Darkroom
 
-Suita celor cinci unelte de astrofoto din acest repository, intr-un singur download, cu un
-lansator care le arata si le porneste:
+The five astrophotography tools of this repository in one download, with a launcher that lists
+them and starts them:
 
-| Unealta | Ce face | Fereastra |
+| Tool | What it does | Window |
 | --- | --- | --- |
-| DarksCheck | verifica dark-urile unei sesiuni sau ale unei biblioteci | `DarksCheck.Wpf.exe` |
-| FlatCheck | verifica flat-urile unui obiectiv | `FlatCheck.Wpf.exe` |
-| LightsCheck | verifica light-urile unei sesiuni: focus, trailing, dithering, drift | `LightsCheck.Wpf.exe` |
-| ImageVisualCompare | compara doua variante ale aceleiasi procesari, pixel cu pixel | `ImageVisualCompare.Wpf.exe` |
-| AstroPhotoAnalyzer | verifica o imagine finala inainte de print | `AstroPhotoAnalyzer.Wpf.exe` |
+| DarksCheck | checks the darks of a session or of a library | `DarksCheck.Wpf.exe` |
+| FlatCheck | checks the flats of a lens | `FlatCheck.Wpf.exe` |
+| LightsCheck | checks the lights of a session: focus, trailing, dithering, drift | `LightsCheck.Wpf.exe` |
+| ImageVisualCompare | compares two versions of the same processing, pixel by pixel | `ImageVisualCompare.Wpf.exe` |
+| AstroPhotoAnalyzer | checks a final image before printing | `AstroPhotoAnalyzer.Wpf.exe` |
 
-Suita contine doar ferestrele. Consolele (`darkscheck.exe`, `flatcheck.exe`, `lightscheck.exe`,
-`AstroPhotoAnalyzer.exe`) raman in release-urile proprii ale fiecarei unelte: runtime-ul lor de
-baza si runtime-ul desktop al ferestrelor au trei DLL-uri cu acelasi nume si continut diferit,
-deci nu incap in acelasi folder (ADR 0002). Fiecare unealta are documentatia ei de utilizator
-in `README.md`-ul folderului ei. Toate sunt GPLv3 sau ulterioara ([LICENSE](LICENSE)).
+The suite holds the windows only. The consoles (`darkscheck.exe`, `flatcheck.exe`,
+`lightscheck.exe`, `AstroPhotoAnalyzer.exe`) stay in each tool's own release: their base runtime
+and the windows' desktop runtime carry three DLLs with the same names and different contents, so
+they cannot share one folder (ADR 0002). Each tool's user documentation is the `README.md` of its
+folder, and the repository's front page, the `README.md` at its root, describes every tool and
+how to build the whole suite from a checkout. All of them are GPLv3 or later
+([LICENSE](LICENSE)).
 
-## Ce primesti
+## What you get
 
-Un zip, `AstroDarkroom-X.Y.Z-win-x64.zip`, cu un fisier `.sha256` alaturi. Dezarhivat, e un
-singur folder cu toate executabilele unul langa altul, runtime-ul .NET 8 inclus (nu trebuie
-instalat nimic), si `AstroDarkroom.exe`, lansatorul: o fereastra cu un rand pentru fiecare
-unealta (titlu, descriere, versiunea ei) si un buton **Deschide**. Un rand
-al carui executabil lipseste din folder e dezactivat si spune ce fisier lipseste. **Despre**
-(F1) arata versiunea suitei, data ei, licenta, cerintele de mai jos si versiunea fiecarei
-componente.
+A zip, `AstroDarkroom-X.Y.Z-win-x64.zip`, with a `.sha256` file beside it. Unzipped, it is one
+folder with every executable side by side and the .NET 8 runtime included (nothing to install),
+and `AstroDarkroom.exe`, the launcher: a window with one row per tool (title, description, its
+version) and an **Open** button. A row whose executable is missing from the folder is disabled
+and names the missing file. **About** (F1) shows the suite's version, its date, the licence, the
+requirements below and the version of every component.
 
-Lansatorul vorbeste engleza sau romana: cele doua butoane cu steag, **English** / **Romana**,
-din bara de jos schimba toate textele pe loc, fara repornire. La prima pornire e in engleza, ca uneltele;
-alegerea se tine minte in `%LOCALAPPDATA%\AstroDarkroom\settings.json` (`{"language":"ro"}`)
-si se aplica la urmatoarea pornire. O unealta deschisa din lansator porneste in limba
-lansatorului (primeste `--lang=ro` sau `--lang=en`); pornita direct din folder, porneste in
-engleza, cum spune README-ul ei.
+The launcher speaks English or Romanian: the two buttons with a flag in the bottom bar,
+**English** / **Romana**, switch every text at once, without a restart. At its first start it is
+in English, like the tools; the choice is remembered in
+`%LOCALAPPDATA%\AstroDarkroom\settings.json` (`{"language":"ro"}`) and applies at the next start.
+A tool opened from the launcher starts in the launcher's language (it receives `--lang=ro` or
+`--lang=en`); started directly from the folder, it starts in English, as its README says.
 
-`release.json`, in acelasi folder, spune acelasi lucru in forma citibila de programe: versiunea
-suitei, data, commit-ul, si pentru fiecare componenta versiunea, commit-ul si daca are
-modificari nelansate.
+`release.json`, in the same folder, says the same in a form programs read: the suite's version,
+its date, its commit, and for each component its version, its commit and whether it had
+unreleased changes.
 
-Executabilele nu sunt semnate: pe alt calculator, SmartScreen intreaba la prima pornire.
+The executables are not signed: on another computer, SmartScreen asks at the first start.
 
-## Cerinte
+## Requirements
 
-Lansatorul nu verifica nimic din cele de mai jos; le spune (o linie sub titlu, detaliile in
-**Despre**) fiindca uneltele le asteapta:
+The launcher checks none of the following; it states them (one line under the title, the
+details under **About**) because the tools expect them:
 
-- **Folderul unei sesiuni Siril**: folderul unei nopti cu `lights/`, `darks/`, `flats/` si
-  `biases/` cum le aseaza Siril, si rezultatele scripturilor lui in `process/` (sau `masters/`,
-  dupa script). DarksCheck, FlatCheck si LightsCheck deschid acel folder; ImageVisualCompare si
-  AstroPhotoAnalyzer deschid fisierele exportate din Siril. Fiecare README spune exact ce
-  cauta unealta in el.
-- **Siril 1.4.4 sau mai nou instalat** (<https://siril.org>): masterele si stack-urile pe care
-  le verifica uneltele ies din scripturile lui, iar FlatCheck ruleaza scriptul de preprocesare
-  prin `siril-cli.exe` din instalarea ta (cu o copie privata a setarilor tale, pe care nu le
-  atinge). Cifrele uneltelor au fost masurate pe 1.4.4.
-- **Optional, pentru FlatCheck: profilele de obiective Adobe** (`.lcp`), citite de pe
-  calculator din `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` si
-  `%APPDATA%\Adobe\CameraRaw\LensProfiles` cand le-a instalat un program Adobe: Lightroom,
-  Photoshop cu Camera Raw, sau Adobe DNG Converter, care e gratuit si le aduce singur. Fara
-  ele, FlatCheck foloseste baza lensfun livrata cu el in folderul `lensfun/`; cu ele, flatul
-  sintetic si comparatia de vignetare au si profilul Adobe al obiectivului tau.
+- **A Siril session folder**: the folder of one night with `lights/`, `darks/`, `flats/` and
+  `biases/` as Siril lays them out, and the results of its scripts in `process/` (or `masters/`,
+  depending on the script). DarksCheck, FlatCheck and LightsCheck open that folder;
+  ImageVisualCompare and AstroPhotoAnalyzer open the files exported from Siril. Each tool's
+  README says exactly what the tool looks for in it.
+- **Siril 1.4.4 or newer, installed** (<https://siril.org>): the masters and the stacks the
+  tools check come out of its scripts, and FlatCheck runs the preprocessing script through
+  `siril-cli.exe` from your installation (with a private copy of your settings, which it never
+  touches). The tools' figures were measured on 1.4.4.
+- **Optional, for FlatCheck: Adobe's lens profiles** (`.lcp`), read from
+  `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` and `%APPDATA%\Adobe\CameraRaw\LensProfiles`.
+  The free Adobe DNG Converter installs them there, and so does Camera Raw with Photoshop;
+  Lightroom Classic and Lightroom keep their own copy inside their program folders, which
+  FlatCheck does not read. Without the profiles, FlatCheck uses the lensfun database it ships in
+  its `lensfun/` folder; with them, the synthetic flat and the vignetting comparison also have
+  Adobe's profile of your lens.
 
-## Descarcare
+## Download
 
-Zip-ul fiecarei versiuni sta in Google Drive-ul proprietarului, partajat cu "Oricine are
-linkul"; aici e linkul si SHA-256-ul lui, cea mai noua versiune prima (ADR 0005). Dupa
-descarcare, verifica hash-ul inainte sa dezarhivezi:
+Each version's zip sits in the owner's Google Drive, shared with "Anyone with the link"; here
+are its link and its SHA-256, the newest version first (ADR 0005). After the download, check the
+hash before you unzip:
 
 ```
 certutil -hashfile AstroDarkroom-X.Y.Z-win-x64.zip SHA256
 ```
 
-Rezultatul trebuie sa fie identic cu coloana SHA-256 a versiunii tale; altfel zip-ul s-a
-stricat la descarcare sau nu e cel publicat.
+The result must be identical to the SHA-256 column of your version; otherwise the zip broke
+during the download or is not the published one.
 
-| Versiune | Data | Zip | SHA-256 |
+| Version | Date | Zip | SHA-256 |
 | --- | --- | --- | --- |
-| (inca niciuna) | | | |
+| (none yet) | | | |
 
-## Cum se face un release
+## How a release is made
 
-Din Claude Code, in folderul `AstroDarkroom` al checkout-ului principal, pe `main`, cu toate
-folderele curate: `/release`. Scriptul (`scripts/release.ps1`) verifica, scrie versiunea in
-`Directory.Build.props` si sectiunea datata in `CHANGELOG.md`, publica lansatorul si ferestrele
-celor cinci componente, asa cum sunt pe `main`, in `artifacts/X.Y.Z/` (un fisier care ar fi scris de doua
-publicari cu continut diferit opreste release-ul), scrie `release.json` si zip-ul cu `.sha256`
-in `artifacts/`. Commit-ul si tag-ul `astrodarkroom-vX.Y.Z` le face omul, cum le propune
-skill-ul. Zip-ul se urca de mana in Google Drive, partajat cu "Oricine are linkul"; apoi linkul
-si hash-ul din `.sha256` intra ca rand nou, primul, in tabelul de la "Descarcare", intr-un commit
-al lor. Componentele nu trebuie lansate inainte: `release.json` spune ce versiune si ce commit
-a intrat din fiecare.
+From Claude Code, in the `AstroDarkroom` folder of the main checkout, on `main`, with every
+folder clean: `/release`. The script (`scripts/release.ps1`) checks, writes the version into
+`Directory.Build.props` and the dated section into `CHANGELOG.md`, publishes the launcher and
+the windows of the five components, as they are on `main`, into `artifacts/X.Y.Z/` (a file that
+two publishes would write with different contents stops the release), and writes
+`release.json` and the zip with its `.sha256` into `artifacts/`. The owner makes the commit and
+the tag `astrodarkroom-vX.Y.Z`, as the skill proposes them. The zip is uploaded to Google Drive
+by hand, shared with "Anyone with the link"; then the link and the hash from the `.sha256` go in
+as a new first row of the table under "Download" and as the only row of the "Download" table of
+the `README.md` at the repository's root, its Bitbucket page (ADR 0008), in one commit of the
+two files. The components need not be released first: `release.json` says which version and
+which commit of each went in.
 
-Versiunea suitei e `<Version>` din `Directory.Build.props` de aici; prima versiune reala,
-1.0.0, se da la cuvantul proprietarului.
+The suite's version is `<Version>` in this folder's `Directory.Build.props`; the first real
+version, 1.0.0, is set at the owner's word.
 
-## Compilare
+## Building
 
-.NET SDK 9.0.3xx (`global.json`), tinta .NET 8. `dotnet build AstroDarkroom.sln -c Release`
-(fereastra cere Windows). Gate-ul complet (format, build strict, teste): `scripts/verify.ps1`.
-Lansatorul singur, din folderul de build, vede toate uneltele ca lipsa: e facut sa ruleze din
-folderul suitei, `artifacts/X.Y.Z/`, dupa un `scripts/release.ps1 -Version X.Y.Z -PublishOnly`.
+.NET SDK 9.0.3xx (`global.json`), target .NET 8. `dotnet build AstroDarkroom.sln -c Release`
+(the window needs Windows). The full gate (format, strict build, tests): `scripts/verify.ps1`.
+The launcher alone, from the build folder, sees every tool as missing: it is made to run from
+the suite's folder, `artifacts/X.Y.Z/`, after a `scripts/release.ps1 -Version X.Y.Z -PublishOnly`
+(the steps are in the `README.md` at the repository's root).
 
-## Pentru cine dezvolta
+## For developers
 
-Regulile de lucru sunt in `CLAUDE.md` si `.claude/rules/kit/process.md`, cerintele cu ID in
-`docs/requirements.md`, deciziile in `docs/decisions/`, cum e facut lansatorul in
-`docs/design/launcher.md`. Planul intregii suite e in kit:
+The working rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`, the requirements with
+IDs in `docs/requirements.md`, the decisions in `docs/decisions/`, how the launcher is made in
+`docs/design/launcher.md`. The plan of the whole suite is in the kit:
 `ClaudeCodeStarterKit/docs/plans/2026-10-24-build-the-astro-darkroom-suite.md`.

@@ -6,8 +6,9 @@ launcher is a small WPF window that lists the five, says which is in the suite f
 and starts the one the user picks; it computes nothing of its own. Its `<Version>` is the
 suite's version and its `/release` publishes the five components' windows and the launcher into
 one flat self-contained folder, zipped; the zip is shared from the owner's Google Drive, its
-link and SHA-256 in `README.md` (ADR 0005), and the consoles stay in the components' own
-releases (ADR 0002). It is for the owner and the few people who receive the
+link and SHA-256 in `README.md` (ADR 0005) and, for the latest release, in the repository
+root's `README.md`, the Bitbucket front page (ADR 0008), and the consoles stay in the
+components' own releases (ADR 0002). It is for the owner and the few people who receive the
 zip; it is not a sixth analysis tool and never changes a component.
 
 ## Commands
@@ -48,7 +49,7 @@ zip; it is not a sixth analysis tool and never changes a component.
   `docs/validation.md` + `.json` - no measured figures: the launcher computes nothing.
   `docs/design/` - the design notes, read on demand. `docs/plans/` - approved plans; the plan
   of the whole suite is the kit's `docs/plans/2026-10-24-build-the-astro-darkroom-suite.md`.
-  `README.md` - the user documentation, Romanian.
+  `README.md` - the user documentation, English (ADR 0009).
 - `kit.json` - what the kit's scripts, skills and agent need to know about AstroDarkroom,
   the suite's publish list included. `docs/skills.md` - AstroDarkroom's additions to the kit's
   skills. `scripts/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` and the process
@@ -72,13 +73,13 @@ varies a kit rule names it.
   gives; `SuiteTests` checks it, and refuses a console entry (ADR 0002). A new app in the
   suite is one entry, one catalogue line and that test run.
 - **Two interface languages, English everywhere else** (varies the kit's rule "Languages",
-  ADRs 0003 and 0006). Every text the user sees is a pair `T("english", "romana")` where it is
-  composed, the Romanian without diacritics, never a single literal; the only single literals
-  are the product name `Astro Darkroom`, the language selector's own labels (each language
-  named in itself) and symbols such as `?`. The window switches between the two live and
-  remembers the choice. `README.md` is Romanian. Code, comments,
-  tests, docs, commits and the CHANGELOG are English; the Romanian wordings and the tests and
-  docs that quote them are the one exception. Never leave a file in two languages otherwise.
+  ADRs 0003, 0006 and 0009). Every text the user sees in the windows is a pair
+  `T("english", "romana")` where it is composed, the Romanian without diacritics, never a single
+  literal; the only single literals are the product name `Astro Darkroom`, the language
+  selector's own labels (each language named in itself) and symbols such as `?`. The window
+  switches between the two live and remembers the choice. `README.md`, code, comments, tests,
+  docs, commits and the CHANGELOG are English; the Romanian wordings and the tests and docs that
+  quote them are the one exception. Never leave a file in two languages otherwise.
 - **Same .NET and same packages across the suite.** Every component targets .NET 8 and a
   package two components share resolves to one version; `SuiteTests` reads the components'
   lock files. A component that drifts is fixed in that component, never worked around here.

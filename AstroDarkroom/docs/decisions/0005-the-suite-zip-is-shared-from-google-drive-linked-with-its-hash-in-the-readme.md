@@ -1,7 +1,7 @@
 # 0005. The suite's zip is shared from Google Drive, linked with its hash in the README
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; the row's commit of README.md alone superseded by 0008
 
 ## Context
 
@@ -20,7 +20,7 @@ put the zip in their own Google Drive, shared, with the link and the hash in a R
 
 Each release's zip, `AstroDarkroom-X.Y.Z-win-x64.zip`, is uploaded by the owner, by hand, to
 their Google Drive and shared as "Anyone with the link". `README.md` of this project carries a
-"Descarcare" section with one table row per version, newest first: the version, the release
+"Download" section with one table row per version, newest first: the version, the release
 date, the share link and the SHA-256 from the zip's `.sha256`, beside the `certutil` command
 that checks it. The row is added after the upload, in a commit of `README.md` alone that the
 owner makes on `main` like the release commit; `/release` proposes the row (`docs/skills.md`).
