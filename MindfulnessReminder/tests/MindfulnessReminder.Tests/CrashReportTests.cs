@@ -74,10 +74,13 @@ public class CrashReportTests
             CrashReport.Format(new BadImageFormatException("m", "C:\\x\\bad.dll"), Banner));
     }
 
-    [Fact]
-    public void R101_A_file_error_without_a_file_name_has_no_file_line()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void R101_A_file_error_without_a_file_name_has_no_file_line(string? fileName)
     {
-        var text = CrashReport.Format(new FileNotFoundException("m"), Banner);
+        var text = CrashReport.Format(new FileNotFoundException("m", fileName), Banner);
 
         Assert.Equal("System.IO.FileNotFoundException: m\n\n" + Banner, text);
     }

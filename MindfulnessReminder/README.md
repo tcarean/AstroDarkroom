@@ -27,7 +27,8 @@ application. Each of the two reminders has its own switch and its own message in
   is not, and that is deliberate: a dark rectangle appearing over dark work is easy to miss,
   and being seen is the whole point of it.
 - Comes back after an error. If the tray copy crashes after running for at least a minute,
-  Windows starts it again and the new copy shows a balloon, `Restarted after an error. The
+  Windows starts it again, as long as Windows Error Reporting is on, which it is by default,
+  and the new copy shows a balloon, `Restarted after an error. The
   details are in the Windows Application log.` The dialog that appears first names the error
   and, when a file could not be loaded, which one; the same text and the stack land in Event
   Viewer, under Windows Logs, Application, source `.NET Runtime`, event 1025. This is what a

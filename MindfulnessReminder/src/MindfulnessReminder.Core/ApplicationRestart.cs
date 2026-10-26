@@ -34,7 +34,8 @@ public static class ApplicationRestart
     /// <c>RESTART_NO_REBOOT</c>: no restart after a reboot, where the Run entry starts the
     /// application (R-003). The other flags, all left clear, are <c>RESTART_NO_CRASH</c> (1),
     /// <c>RESTART_NO_HANG</c> (2) and <c>RESTART_NO_PATCH</c> (4): a crash, a hang and an
-    /// installer asking the application to close all restart it.
+    /// installer running as the same user asking the application to close all restart it (one
+    /// running as SYSTEM, as Windows Update does, cannot ask: 2026-10-26, event 10010).
     /// </summary>
     public const int Flags = 8;
 
@@ -43,12 +44,16 @@ public static class ApplicationRestart
     /// <c>--preview</c> or <c>--detect</c> would put a second, unasked-for window up.
     /// </summary>
     /// <param name="args">The command-line arguments, without the program's name; not null.</param>
-    /// <returns><c>false</c> when the arguments carry <c>--preview</c> or <c>--detect</c>, in any case.</returns>
+    /// <returns>
+    /// <c>false</c> when the arguments carry <c>--preview</c> as an argument of its own, or
+    /// <c>--detect</c> alone or with <c>=</c> and a value, in any case: the shapes App reads
+    /// them in, so that what App treats as the tray copy is what registers.
+    /// </returns>
     public static bool ShouldRegister(IReadOnlyList<string> args)
     {
         ArgumentNullException.ThrowIfNull(args);
 
-        return !CommandLineSwitches.Has(args, CommandLineSwitches.Preview)
+        return !CommandLineSwitches.HasExactly(args, CommandLineSwitches.Preview)
                && !CommandLineSwitches.Has(args, CommandLineSwitches.Detect);
     }
 

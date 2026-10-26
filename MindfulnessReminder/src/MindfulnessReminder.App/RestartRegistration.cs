@@ -23,8 +23,8 @@ namespace MindfulnessReminder.App;
 /// <summary>
 /// The one Windows call behind R-100: asks Windows Error Reporting to start the executable
 /// again, with <see cref="ApplicationRestart.CommandLine"/>, after a crash or a hang, or when an
-/// installer that holds one of its files asks it to close. Windows honours it only for a process
-/// that has run for 60 seconds (ADR 0036).
+/// installer running as the same user asks it to close. Windows honours it only for a process
+/// that has run for 60 seconds, and only while Windows Error Reporting is on (ADR 0036).
 /// </summary>
 internal static class RestartRegistration
 {

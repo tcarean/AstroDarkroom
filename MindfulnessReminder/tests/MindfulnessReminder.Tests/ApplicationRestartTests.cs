@@ -33,11 +33,16 @@ public class ApplicationRestartTests
         Assert.Equal(8, ApplicationRestart.Flags);
     }
 
+    /// <summary>
+    /// <c>--preview=x</c> is not a preview to App, which reads the message from the next
+    /// argument, so that start is a tray copy and registers like one.
+    /// </summary>
     [Fact]
     public void R100_A_plain_start_and_a_restarted_start_both_register()
     {
         Assert.True(ApplicationRestart.ShouldRegister(Array.Empty<string>()));
         Assert.True(ApplicationRestart.ShouldRegister(new[] { "--restarted" }));
+        Assert.True(ApplicationRestart.ShouldRegister(new[] { "--preview=x" }));
     }
 
     /// <summary>

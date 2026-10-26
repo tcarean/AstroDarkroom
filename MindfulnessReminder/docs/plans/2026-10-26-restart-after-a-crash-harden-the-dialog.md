@@ -116,3 +116,32 @@ Stop hook needed a green gate while waiting for the ADR answer. Branch
 - The crash path and the registration were not exercised here, as planned: a tray start of a
   worktree build would repair the auto-start entry (R-006). The only check run was `--preview`
   from the worktree's Release build, which opened the window and left the Run entry untouched.
+
+## Code review (2026-10-26)
+
+A subagent reviewed fa5f264 read-only against the rules, the rows and ADR 0036 (275 tests
+green). Seven findings, none blocking; all applied in the follow-up commit:
+
+1. `ReportCrash` could nest: the dialog pumps messages, so the timer, the session hook and the
+   tray menu kept running under it, and a second error opened a second dialog. Now the first
+   call stops the coordinator before the dialog and a flag makes a second call return; R-076
+   says so.
+2. Core and App disagreed on `--preview=x`: App reads `--preview` exactly (the message is the
+   next argument), Core matched the `=` form too. `ShouldRegister` now uses `HasExactly` for
+   `--preview` and `Has` for `--detect`; a test pins `--preview=x` as a registering start;
+   R-100 names the two shapes.
+3. Two balloons at one start replace each other in the shell; R-102 now says the restart
+   balloon replaces the first-run one instead of claiming both show.
+4. R-101 said `FileName` "set", the code drops a blank one: the row says "not blank", and the
+   test covers `null`, empty and white space.
+5. R-100 and R-102 say which part the tests pin and which a tray start checks, so
+   `implemented` is not read as "the Windows call is tested".
+6. The restart "when an installer asks it to close" over-promised: Windows Update's installer
+   runs as SYSTEM and could not ask on 2026-10-26 (event 10010). Row, comment and summary now
+   say "running as the same user".
+7. The README and R-100 say the restart needs Windows Error Reporting on, the default.
+
+Nothing found: the P/Invoke signature, the ordering in `OnStartup`, what `ReportCrash` needs
+before the fail-fast (all in assemblies already loaded), null and case handling, tests against
+rows, documentation comments, GPL headers, `code-map.md`, CHANGELOG and README against the code,
+the code against ADR 0036.

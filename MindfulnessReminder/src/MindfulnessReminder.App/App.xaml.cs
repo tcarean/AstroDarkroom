@@ -78,6 +78,12 @@ public partial class App : WpfApplication
     private string? _tooltip;
 
     /// <summary>
+    /// 1 once <see cref="ReportCrash"/> has started. The dialog it shows pumps messages, so a
+    /// second error can arrive while it is up; the first one is the one that ends the process.
+    /// </summary>
+    private int _crashReported;
+
+    /// <summary>
     /// Runs <c>--preview</c> or <c>--detect</c> when one is given; each quits when it is done.
     /// Otherwise claims the single-instance mutex, so that a second copy quits at once, and
     /// starts the tray icon, the reminders and, on the very first run, auto-start.
@@ -439,10 +445,29 @@ public partial class App : WpfApplication
     /// <param name="exception">What went wrong; rendered by <see cref="CrashReport.Format"/>.</param>
     private void ReportCrash(Exception exception)
     {
+        // The dialog below pumps messages, so the timer, the session events and the tray menu
+        // all keep running under it; an error from any of them lands here again. The first
+        // error is the one reported and the one that ends the process; a second one returns to
+        // its handler, which has already marked it handled, and waits for the OK.
+        if (Interlocked.Exchange(ref _crashReported, 1) == 1)
+        {
+            return;
+        }
+
         // A tray app that dies silently just vanishes; say so before going. The banner goes
         // along: a screenshot of this dialog is often all a bug report has, and it has to say
         // which version broke -- and, since 2026-10-26, which file was missing.
         var text = CrashReport.Format(exception, VersionInfo.Banner);
+
+        // Stops the timer and the session hook, so that what failed is not run again under the
+        // dialog; nothing in the coordinator's teardown is worth a second failure here.
+        try
+        {
+            _coordinator?.Dispose();
+        }
+        catch (Exception)
+        {
+        }
 
         MessageBox.Show(
             text,
