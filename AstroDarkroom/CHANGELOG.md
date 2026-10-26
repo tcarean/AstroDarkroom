@@ -8,6 +8,10 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Added
 
+- The launcher speaks English or Romanian (R-006..R-008, ADR 0006): two buttons in the bottom
+  bar switch every text at once, English at a first start, the choice remembered in
+  `%LOCALAPPDATA%\AstroDarkroom\settings.json`; a tool opened from the launcher starts in the
+  launcher's language (`--lang=ro` / `--lang=en`).
 - The launcher, `AstroDarkroom.exe` (R-001..R-004): one row per tool of the suite, in workflow
   order, with its Romanian title and description, its version from `release.json` and a
   "Deschide" button, disabled with the missing file's name when the tool's window is not in

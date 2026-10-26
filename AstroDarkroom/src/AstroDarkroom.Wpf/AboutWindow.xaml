@@ -19,12 +19,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <!-- AboutWindow: the icon, the banner, the copyright, the GPLv3 notice (section 5(d)), the
      suite's date and the version of every component bundled, from release.json. Modal; Enter
-     and Esc close it. -->
+     and Esc close it. Every text is assigned by the code behind in the current language; the
+     product name is the same in both. -->
 
 <Window x:Class="AstroDarkroom.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Despre Astro Darkroom"
         Icon="/AstroDarkroom;component/Icon/astrodarkroom.ico"
         Width="560" SizeToContent="Height"
         ResizeMode="NoResize" ShowInTaskbar="False"
@@ -42,8 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              RenderOptions.BitmapScalingMode="HighQuality" />
       <StackPanel Grid.Column="1" VerticalAlignment="Center">
         <TextBlock Text="Astro Darkroom" FontSize="22" FontWeight="SemiBold" />
-        <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0"
-                   Text="Lansatorul si pachetul comun al uneltelor de astrofoto." />
+        <TextBlock x:Name="Tagline" Style="{StaticResource Muted}" Margin="0,4,0,0" />
         <TextBlock x:Name="Banner" Margin="0,10,0,0" FontFamily="{StaticResource MonoFont}" />
         <TextBlock x:Name="Copyright" Style="{StaticResource Faint}" Margin="0,2,0,0" />
       </StackPanel>
@@ -51,14 +50,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     <Border Style="{StaticResource Card}" Margin="0,18,0,0">
       <StackPanel>
-        <TextBlock Style="{StaticResource Heading}" Text="LICENTA" />
+        <TextBlock x:Name="LicenceHeading" Style="{StaticResource Heading}" />
         <TextBlock x:Name="Warranty" Style="{StaticResource Muted}" />
       </StackPanel>
     </Border>
 
     <Border Style="{StaticResource Card}" Margin="0,12,0,0">
       <StackPanel>
-        <TextBlock Style="{StaticResource Heading}" Text="COMPONENTE" />
+        <TextBlock x:Name="ComponentsHeading" Style="{StaticResource Heading}" />
         <TextBlock x:Name="ReleaseLine" Style="{StaticResource Muted}" Margin="0,0,0,10" />
         <ItemsControl x:Name="Components" Focusable="False">
           <ItemsControl.ItemTemplate>
@@ -80,7 +79,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </StackPanel>
     </Border>
 
-    <Button Content="Inchide" IsCancel="True" IsDefault="True" Click="CloseClick"
+    <Button x:Name="CloseButton" IsCancel="True" IsDefault="True" Click="CloseClick"
             HorizontalAlignment="Right" Margin="0,16,0,0" MinWidth="96" />
   </StackPanel>
 </Window>

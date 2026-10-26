@@ -17,20 +17,23 @@
 
 using System.Windows;
 using AstroDarkroom.Core;
+using static AstroDarkroom.Core.Ui;
 
 namespace AstroDarkroom.Wpf;
 
 /// <summary>
-/// One line of the component list in "Despre".
+/// One line of the component list in the about window.
 /// </summary>
 /// <param name="Name">The component's folder name.</param>
 /// <param name="Version">Its version as release.json records it, or "?" when unknown.</param>
-/// <param name="Note">"modificari nelansate" when it was bundled with unreleased changes; else "".</param>
+/// <param name="Note">"unreleased changes", in the current language, when it was bundled with unreleased changes; else "".</param>
 public sealed record ComponentLine(string Name, string Version, string Note);
 
 /// <summary>
-/// "Despre": the banner, the copyright, the disclaimer of warranty GPLv3 section 5(d) asks for,
-/// the suite's date and each component's version, all from the core and from release.json.
+/// The about window: the banner, the copyright, the disclaimer of warranty GPLv3 section 5(d)
+/// asks for, the suite's date and each component's version, all from the core and from
+/// release.json, worded in the language current when it opens (R-006); it is modal and made
+/// anew at every open, so it never has to switch.
 /// </summary>
 public partial class AboutWindow : Window
 {
@@ -42,10 +45,17 @@ public partial class AboutWindow : Window
     {
         InitializeComponent();
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        Title = T("About Astro Darkroom", "Despre Astro Darkroom");
         Logo.Source = App.LargestIconFrame();
+        Tagline.Text = T(
+            "The launcher and the shared package of the astrophotography tools.",
+            "Lansatorul si pachetul comun al uneltelor de astrofoto.");
         Banner.Text = VersionInfo.Banner;
         Copyright.Text = VersionInfo.Copyright;
+        LicenceHeading.Text = T("LICENCE", "LICENTA");
         Warranty.Text = LicenseInfo.Warranty;
+        ComponentsHeading.Text = T("COMPONENTS", "COMPONENTE");
+        CloseButton.Content = T("Close", "Inchide");
         // The list the file gives, without the launcher's own entry; a file that names no
         // component (hand-edited, truncated) falls back to the catalogue with unknown versions,
         // the same thing the rows of the main window say.
@@ -53,14 +63,17 @@ public partial class AboutWindow : Window
             ? []
             : release.Components
                 .Where(c => c.Name != release.Name)
-                .Select(c => new ComponentLine(c.Name, c.Version.Length > 0 ? c.Version : "?", c.Unreleased ? "modificari nelansate" : ""))
+                .Select(c => new ComponentLine(c.Name, c.Version.Length > 0 ? c.Version : "?", c.Unreleased ? T("unreleased changes", "modificari nelansate") : ""))
                 .ToList();
         bool known = listed.Count > 0;
         ReleaseLine.Text = known && release is { Date.Length: > 0 }
-            ? $"Release din {release.Date}; versiunile componentelor asa cum au intrat in pachet."
+            ? T($"Release of {release.Date}; the components' versions as they went into the package.",
+                $"Release din {release.Date}; versiunile componentelor asa cum au intrat in pachet.")
             : known
-                ? "Versiunile componentelor asa cum au intrat in pachet."
-                : "Fara un release.json cu componente langa program: versiunile componentelor nu se cunosc.";
+                ? T("The components' versions as they went into the package.",
+                    "Versiunile componentelor asa cum au intrat in pachet.")
+                : T("No release.json with components beside the program: the components' versions are not known.",
+                    "Fara un release.json cu componente langa program: versiunile componentelor nu se cunosc.");
         Components.ItemsSource = known
             ? listed
             : AppCatalogue.Apps.Select(a => new ComponentLine(a.Folder, "?", "")).ToList();

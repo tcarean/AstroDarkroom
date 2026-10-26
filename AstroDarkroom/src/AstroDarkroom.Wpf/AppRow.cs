@@ -16,13 +16,15 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using AstroDarkroom.Core;
+using static AstroDarkroom.Core.Ui;
 
 namespace AstroDarkroom.Wpf;
 
 /// <summary>
 /// One row of the main window, bound by the XAML: the catalogue's texts, what the suite folder
-/// says about the app and what release.json says about its version. Built once at start-up;
-/// the window does not watch the folder.
+/// says about the app and what release.json says about its version. Built at start-up and
+/// again at every change of language, in the current one (R-006); the window does not watch
+/// the folder.
 /// </summary>
 /// <param name="App">The app of the catalogue this row shows.</param>
 /// <param name="Location">Where its window executable is, and whether it exists (R-002).</param>
@@ -38,12 +40,17 @@ public sealed record AppRow(SuiteApp App, AppLocation Location, ComponentInfo? C
     /// <summary>Whether the app can be started from this folder.</summary>
     public bool IsAvailable => Location.IsAvailable;
 
+    /// <summary>The label of the button that starts the app, picked when the row is built (the XAML binds instance members only).</summary>
+    public string OpenLabel { get; } = T("Open", "Deschide");
+
     /// <summary>The tooltip of the button: why the app cannot start, or the file it starts.</summary>
     public string ButtonHint => Location.IsAvailable ? App.WindowExe : Location.Reason ?? "";
 
-    /// <summary>The component's version from release.json ("versiunea 2.3.0"), or that it is unknown.</summary>
-    public string VersionHint => Component is { Version.Length: > 0 } c ? "versiunea " + c.Version : "versiune necunoscuta";
+    /// <summary>The component's version from release.json ("version 2.3.0"), or that it is unknown.</summary>
+    public string VersionHint => Component is { Version.Length: > 0 } c
+        ? T("version ", "versiunea ") + c.Version
+        : T("version unknown", "versiune necunoscuta");
 
-    /// <summary>"modificari nelansate" when release.json says the component was bundled with changes its version does not name yet; else "".</summary>
-    public string UnreleasedHint => Component is { Unreleased: true } ? "modificari nelansate" : "";
+    /// <summary>"unreleased changes" when release.json says the component was bundled with changes its version does not name yet; else "".</summary>
+    public string UnreleasedHint => Component is { Unreleased: true } ? T("unreleased changes", "modificari nelansate") : "";
 }

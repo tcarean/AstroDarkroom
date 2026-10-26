@@ -22,7 +22,7 @@ namespace AstroDarkroom.Core;
 /// </summary>
 /// <param name="Path">The full path of the app's window executable, whether or not it exists.</param>
 /// <param name="IsAvailable">True when the executable exists there.</param>
-/// <param name="Reason">Why the app cannot start, Romanian ("Lipseste DarksCheck.Wpf.exe"); null when it is available.</param>
+/// <param name="Reason">Why the app cannot start, in the current language ("DarksCheck.Wpf.exe is missing"); null when it is available.</param>
 public sealed record AppLocation(string Path, bool IsAvailable, string? Reason);
 
 /// <summary>
@@ -51,6 +51,6 @@ public sealed class SuiteFolder(string baseDirectory)
         string path = Path.Combine(BaseDirectory, app.WindowExe);
         return File.Exists(path)
             ? new AppLocation(path, true, null)
-            : new AppLocation(path, false, "Lipseste " + app.WindowExe);
+            : new AppLocation(path, false, Ui.T(app.WindowExe + " is missing", "Lipseste " + app.WindowExe));
     }
 }

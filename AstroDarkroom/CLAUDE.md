@@ -71,10 +71,12 @@ varies a kit rule names it.
   project) and every component is in the catalogue, under the exe name its project file
   gives; `SuiteTests` checks it, and refuses a console entry (ADR 0002). A new app in the
   suite is one entry, one catalogue line and that test run.
-- **Romanian without diacritics in what the user sees, English everywhere else** (varies the
-  kit's rule "Languages", ADR 0003). The window's labels, the catalogue's titles and
-  descriptions and `README.md` are Romanian, written without diacritics; code, comments, tests,
-  docs, commits and the CHANGELOG are English. Never leave a file in two languages.
+- **Two interface languages, English everywhere else** (varies the kit's rule "Languages",
+  ADRs 0003 and 0006). Every text the user sees is a pair `T("english", "romana")` where it is
+  composed, the Romanian without diacritics, never a single literal; the window switches
+  between the two live and remembers the choice. `README.md` is Romanian. Code, comments,
+  tests, docs, commits and the CHANGELOG are English; the Romanian wordings and the tests and
+  docs that quote them are the one exception. Never leave a file in two languages otherwise.
 - **Same .NET and same packages across the suite.** Every component targets .NET 8 and a
   package two components share resolves to one version; `SuiteTests` reads the components'
   lock files. A component that drifts is fixed in that component, never worked around here.

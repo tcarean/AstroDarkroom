@@ -23,17 +23,19 @@ namespace AstroDarkroom.Core;
 /// </summary>
 /// <param name="FileName">The full path of the executable to start.</param>
 /// <param name="WorkingDirectory">The folder to start it in: the suite folder, where its own files are.</param>
-public sealed record LaunchPlan(string FileName, string WorkingDirectory);
+/// <param name="Arguments">The arguments, one per entry: the launcher's language as <c>--lang=ro</c> or <c>--lang=en</c> (R-008).</param>
+public sealed record LaunchPlan(string FileName, string WorkingDirectory, IReadOnlyList<string> Arguments);
 
 /// <summary>Plans the start of an app from the suite folder (R-003).</summary>
 public static class Launcher
 {
     /// <summary>
-    /// The start of an available app: its window executable, run from the suite folder.
+    /// The start of an available app: its window executable, run from the suite folder, in
+    /// the launcher's current language (R-008), the form every component's window accepts.
     /// </summary>
     /// <param name="app">The app to start; not null.</param>
     /// <param name="folder">The suite folder the app is looked up in; not null.</param>
-    /// <returns>The file to start and the working directory.</returns>
+    /// <returns>The file to start, the working directory and the <c>--lang=</c> argument.</returns>
     /// <exception cref="InvalidOperationException">The app is not in the folder; the message is the reason of R-002.</exception>
     public static LaunchPlan Plan(SuiteApp app, SuiteFolder folder)
     {
@@ -44,6 +46,6 @@ public static class Launcher
             throw new InvalidOperationException(location.Reason);
         }
 
-        return new LaunchPlan(location.Path, folder.BaseDirectory);
+        return new LaunchPlan(location.Path, folder.BaseDirectory, ["--lang=" + Ui.Code(Ui.Current)]);
     }
 }

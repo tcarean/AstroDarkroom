@@ -22,7 +22,7 @@ namespace AstroDarkroom.Core;
 /// windows only; a component's console stays in that component's own release (ADR 0002).
 /// </summary>
 /// <param name="Folder">The component's project folder in the repository, which is also its name in release.json ("DarksCheck").</param>
-/// <param name="Title">The title the launcher shows, Romanian without diacritics.</param>
-/// <param name="Description">One line, Romanian without diacritics, saying what the app checks.</param>
+/// <param name="Title">The title the launcher shows: the component's name, the same in both languages.</param>
+/// <param name="Description">One line saying what the app checks, in the language the catalogue was asked in (R-006).</param>
 /// <param name="WindowExe">The file name of the window executable in the suite folder ("DarksCheck.Wpf.exe").</param>
 public sealed record SuiteApp(string Folder, string Title, string Description, string WindowExe);

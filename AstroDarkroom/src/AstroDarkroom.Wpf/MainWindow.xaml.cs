@@ -22,43 +22,90 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using AstroDarkroom.Core;
+using static AstroDarkroom.Core.Ui;
 
 namespace AstroDarkroom.Wpf;
 
 /// <summary>
-/// The launcher's window: a row per app of the catalogue, each with its "Deschide" button, and
-/// "Despre". It shows what the core says about the suite folder and starts what the core plans
-/// (R-002, R-003); it decides nothing itself.
+/// The launcher's window: a row per app of the catalogue, each with its open button, the
+/// language selector and the about button. It shows what the core says about the suite folder
+/// and starts what the core plans (R-002, R-003); it decides nothing itself. Every label is
+/// assigned in <see cref="Relabel"/>, in the current language, which is what lets a change of
+/// language apply at once (R-006).
 /// </summary>
 public partial class MainWindow : Window
 {
     private readonly SuiteFolder _folder;
+    private readonly string _settingsPath;
     private readonly ReleaseInfo? _release;
 
     /// <summary>
-    /// The window on one suite folder, with its rows built once.
+    /// The window on one suite folder, labelled in the language <see cref="Ui.Default"/> holds
+    /// when it is made.
     /// </summary>
     /// <param name="folder">The suite folder the apps are looked up in: the launcher's own folder.</param>
-    public MainWindow(SuiteFolder folder)
+    /// <param name="settingsPath">The file the chosen language is written to at every change (R-007).</param>
+    public MainWindow(SuiteFolder folder, string settingsPath)
     {
         InitializeComponent();
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         _folder = folder;
+        _settingsPath = settingsPath;
         _release = ReleaseManifest.TryRead(folder.ManifestPath);
         Logo.Source = App.LargestIconFrame();
         Banner.Text = VersionInfo.Banner;
+        // Checking the current language fires LanguageChecked, which sees no change and does
+        // nothing; from here on the selector fires only for the user's clicks.
+        (Current == UiLanguage.Romanian ? RomanianChoice : EnglishChoice).IsChecked = true;
+        Relabel();
+    }
+
+    /// <summary>
+    /// Assigns every text of the window in the current language and rebuilds the rows, whose
+    /// texts come from the core in that language too. Called once at start and at every change
+    /// of the selector.
+    /// </summary>
+    private void Relabel()
+    {
+        Subtitle.Text = T(
+            "The astrophotography tools, in the order they are used. Open one from its row.",
+            "Uneltele de astrofoto, in ordinea in care se folosesc. Deschide una din randul ei.");
         // BaseDirectory ends with a separator; shown without it, so no backslash dangles before the dash.
-        string shownFolder = Path.TrimEndingDirectorySeparator(folder.BaseDirectory);
-        FolderLine.Text = _release is { Date.Length: > 0 } r ? $"{shownFolder}  -  release din {r.Date}" : shownFolder;
+        string shownFolder = Path.TrimEndingDirectorySeparator(_folder.BaseDirectory);
+        FolderLine.Text = _release is { Date.Length: > 0 } r
+            ? shownFolder + T("  -  release of ", "  -  release din ") + r.Date
+            : shownFolder;
+        EnglishChoice.ToolTip = RomanianChoice.ToolTip = T("Interface language", "Limba interfetei");
+        AboutButton.Content = T("About", "Despre");
+        AboutButton.ToolTip = T("Version, licence, components (F1)", "Versiune, licenta, componente (F1)");
         Rows.ItemsSource = AppCatalogue.Apps
-            .Select(app => new AppRow(app, folder.Locate(app), _release?.Find(app.Folder)))
+            .Select(app => new AppRow(app, _folder.Locate(app), _release?.Find(app.Folder)))
             .ToList();
     }
 
     /// <summary>
-    /// Starts the app of the clicked row, from the suite folder, through the shell (R-003). A
-    /// start that fails (the file went away since the window opened, or Windows refused it) is
-    /// told in a message box; the launcher stays open.
+    /// Switches the language to the checked choice: the default for the whole run, the
+    /// setting file, then every label (R-006, R-007). A check that names the language already
+    /// in use (the one the constructor makes) changes nothing.
+    /// </summary>
+    /// <param name="sender">The checked RadioButton; its Tag is the language.</param>
+    /// <param name="e">The check; not read.</param>
+    private void LanguageChecked(object sender, RoutedEventArgs e)
+    {
+        if (sender is not RadioButton { Tag: UiLanguage language } || language == Default)
+        {
+            return;
+        }
+
+        Default = language;
+        LanguageSetting.Write(_settingsPath, language);
+        Relabel();
+    }
+
+    /// <summary>
+    /// Starts the app of the clicked row, from the suite folder, in the launcher's language,
+    /// through the shell (R-003, R-008). A start that fails (the file went away since the
+    /// window opened, or Windows refused it) is told in a message box; the launcher stays open.
     /// </summary>
     /// <param name="sender">The row's button; its DataContext is the row.</param>
     /// <param name="e">The click; not read.</param>
@@ -72,8 +119,14 @@ public partial class MainWindow : Window
         try
         {
             LaunchPlan plan = Launcher.Plan(row.App, _folder);
+            ProcessStartInfo start = new(plan.FileName) { UseShellExecute = true, WorkingDirectory = plan.WorkingDirectory };
+            foreach (string argument in plan.Arguments)
+            {
+                start.ArgumentList.Add(argument);
+            }
+
             // The Process object is only a handle to the started app; disposing it does not touch the app.
-            using Process? started = Process.Start(new ProcessStartInfo(plan.FileName) { UseShellExecute = true, WorkingDirectory = plan.WorkingDirectory });
+            using Process? started = Process.Start(start);
         }
         catch (InvalidOperationException ex)
         {
@@ -81,11 +134,12 @@ public partial class MainWindow : Window
         }
         catch (Win32Exception ex)
         {
-            MessageBox.Show(this, $"{row.App.WindowExe} nu a putut porni: {ex.Message}", row.Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, T($"{row.App.WindowExe} could not start: {ex.Message}", $"{row.App.WindowExe} nu a putut porni: {ex.Message}"),
+                row.Title, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
-    /// <summary>Opens "Despre" (the Help command, F1 or the button).</summary>
+    /// <summary>Opens the about window (the Help command, F1 or the button).</summary>
     /// <param name="sender">The window; not read.</param>
     /// <param name="e">The command; not read.</param>
     private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
