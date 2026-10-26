@@ -33,7 +33,7 @@ deviation from the model; the bands are peak-to-peak amplitudes. A one-sided +10
 reaches the 10% cap right at the `BUN` boundary; a 10% gradient runs from -5% to +5% and
 reaches only half of it, saturating at 20%, i.e. at `REFA`. Measured: at a 10% gradient
 the map's p1/p99 sit at -4.9/+4.8%. There is no cap that is exact for both, so the README
-explains it under "Scara culorilor" and the numbers stay as they are.
+explains it under "The colour scale" and the numbers stay as they are.
 
 **The console was deliberately left alone.** A legend line in the console would move every
 golden file, the parity ones included - for a line a console user cannot act on. The pieces

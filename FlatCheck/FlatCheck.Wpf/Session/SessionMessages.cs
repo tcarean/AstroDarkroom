@@ -238,8 +238,8 @@ namespace FlatCheck.Wpf
         // classify. The verdict stays the median of the central window of the brightest
         // channel, and nothing in the drawing votes.
         //
-        // The table mirrors the README, the section about the Expunere tab. There is NO test
-        // linking the two - if you reword here, go there too.
+        // The table mirrors the README's, in its window section under "Exposure", which carries
+        // the English text. There is NO test linking the two - if you reword here, go there too.
 
         /// <summary>What the axis is and what role the drawing has, before the list of
         /// readings.</summary>
@@ -384,8 +384,8 @@ namespace FlatCheck.Wpf
         // masters, and which test separates the cases. So: rows of text, no verdict, no
         // threshold, no figure computed here.
         //
-        // The text mirrors the table in the README, the "Iesire PNG" section. There is NO test
-        // linking the two - if you reword here, go there too.
+        // The text mirrors the README's table under "What the shapes mean", in English. There is
+        // NO test linking the two - if you reword here, go there too.
 
         /// <summary>The guide's introduction: how the map is read, before the list of
         /// shapes.</summary>
@@ -510,8 +510,8 @@ namespace FlatCheck.Wpf
             + ".arw, .dng, .raf, .pef) sau FITS (.fit, .fits, .fts) - si, pe prima pozitie, masterul "
             + "facut din ele, ca sa se vada ce s-a mediat si ce a ramas.");
 
-        // The guide below mirrors the table in the README ("Histogram"). There is no test
-        // linking the two - if you reword here, go there too.
+        // The guide below mirrors the table in the README's window section ("Histogram"), in
+        // English. There is no test linking the two - if you reword here, go there too.
 
         /// <summary>What the picture is, before the list of readings.</summary>
         /// <returns>The guide's intro.</returns>
@@ -638,8 +638,8 @@ namespace FlatCheck.Wpf
 
         // ------------------------------------------------------- smoothing
         //
-        // The smoothing tab's guide. Like the others, it mirrors the README ("Netezire") with no
-        // test linking them. Unlike the others it is OPEN by default: it is the tab's
+        // The smoothing tab's guide. Like the others, it mirrors the README ("5. Smoothing") with
+        // no test linking them. Unlike the others it is OPEN by default: it is the tab's
         // precondition - a button that writes a 96 MB file
         // beside the master is not pressed before knowing what it does.
 

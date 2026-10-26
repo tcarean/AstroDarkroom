@@ -25,8 +25,8 @@ are in `kit.json`, not here.
   "Formula changes re-validate"). The golden files are regenerated with
   `FLATCHECK_UPDATE_GOLDEN=1` and `--filter GoldenOutputTests` (the rule "Golden files", the
   kit's ADR 0033).
-- At step 8: `README.md` is in Romanian; the "Opțiuni" section lists every console flag
-  (`docs/design/process.md`, "The README Opțiuni section").
+- At step 8: `README.md` is English and holds the user guide only (ADR 0069); its "Options"
+  section lists every console flag (`docs/design/process.md`, "The README Options section").
 
 ## /wrap-up
 
@@ -46,8 +46,8 @@ are in `kit.json`, not here.
   stale figure on the real masters gets noticed.
 - At step 5: the console is published as the single copyable `flatcheck.exe` under `console/`
   and the window under `wpf/`, both with `lensfun/` beside them; the tag is `flatcheck-vX.Y.Z`.
-- At step 7: the README's build section names the publish commands; `artifacts/` is what they
-  produce.
+- At step 7: the README's "Development" section names the publish commands; `artifacts/` is
+  what they produce.
 
 ## /mutate
 

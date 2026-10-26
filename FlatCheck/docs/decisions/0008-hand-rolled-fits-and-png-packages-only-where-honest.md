@@ -38,8 +38,8 @@ licence must be GPLv3-compatible and the reason recorded in `THIRD-PARTY-NOTICES
 - A new package means three places: the `PackageReference`, an entry in
   `THIRD-PARTY-NOTICES.md` (why the licence is compatible) and an entry in
   `FlatCheck.Core/ThirdParty.cs` (name, role, licence, copyright notice, URL - what the
-  window's "Despre" displays). The README table under "Componente terțe" is a fourth copy kept
-  by hand.
+  window's "Despre" displays). The README table under "Third-party components" is a fourth copy
+  kept by hand.
 - `ThirdPartyTests.R095_EveryPackageTheCoreLinksIsListed` fails if a Core package is not claimed by
   exactly one component or a component claims a package that is gone;
   `R095_EveryComponentHasAnEntryInTheNoticesFile` fails if the notices file has no heading for it;

@@ -63,6 +63,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- `README.md`, the user guide, is in English (ADR 0069), up to date (two packages, five projects,
+  the SDK the build needs, how to publish both applications, the lens read from the raw on every
+  mount) and holds only what a user needs: the development process, the parity goldens and the
+  differences from the Python prototype are left to `CLAUDE.md` and `docs/`, which already hold
+  them. The Romanian README is gone; the interface keeps its Romanian with `--lang ro`.
 - The second maps the console writes have English names in both languages (R-103): `--ratio`
   writes `<name>-world.png` (was `-lume`), `--smooth` writes `<name>-after.png` (was `-dupa`).
 - The files the window writes have English names in both languages (R-101): `Test result.txt`

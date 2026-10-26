@@ -60,7 +60,7 @@ It is not an image processor and it never decides what a shape on a map is.
   ADR 0049; the kit's ADR 0028).
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
   + `.json` - figures on the real masters. `docs/design/` - the explanations, per area, read on
-  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, Romanian.
+  demand. `docs/plans/` - approved plans. `README.md` - the user guide, English.
 - The process rules are the kit's, in `.claude/rules/kit/process.md`; FlatCheck's own are in this
   file. The reasons behind the process are in `GHID.md` in the kit folder `ClaudeCodeStarterKit`
   beside this project in the `photo` repository (for people, not loaded).
@@ -89,14 +89,15 @@ a kit rule names it.
 - **Discuss before designing** (extends the kit's rule "Two readings"). Every design, not only a
   choice with more than one reasonable answer, goes to the owner first: the measured facts, the
   decisions to take and a recommendation; then wait (the owner's standing instruction).
-- **Languages** (varies the kit's rule "Languages", ADR 0006, ADR 0060, ADR 0062). English in
-  everything the model reads or writes about the process: docs, tests of invariants, scripts,
-  commits, CHANGELOG. What the user sees is in English and Romanian, chosen by `--lang`
+- **Languages** (varies the kit's rule "Languages", ADR 0006, ADR 0060, ADR 0062, ADR 0069).
+  English in everything the model reads or writes about the process: docs, tests of invariants,
+  scripts, commits, CHANGELOG. What the user sees is in English and Romanian, chosen by `--lang`
   (English by default): every text a `T("english", "romana")` pair where it is composed, the
   Romanian without diacritics, a printed verdict through `VerdictWords.Of` (in XAML, a label
   is `{l:T En='...', Ro='...'}` and a pill's text goes through `VerdictToWord`). The files
-  written have English names in both. `README.md` stays Romanian. Every comment is English,
-  in C#, XAML, csproj and the tests; output quoted in a comment stays as the user sees it.
+  written have English names in both. `README.md` is English and holds the user guide only; the
+  process, the parity goldens and the history stay in `CLAUDE.md` and `docs/`. Every comment is
+  English, in C#, XAML, csproj and the tests; output quoted in a comment stays as the user sees it.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in
   a view-model or the console.
