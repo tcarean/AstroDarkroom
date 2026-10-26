@@ -31,7 +31,7 @@ namespace FlatCheck
 {
     /// <summary>
     /// The geometry of a flat (the paraboloid fit, the radial model) and the metrics the
-    /// structure, ratio, light and smoothing analyzers compute on it. Every metric is a ratio or
+    /// structure, light and smoothing analyzers compute on it. Every metric is a ratio or
     /// a fraction, so ISO and gain cancel.
     /// </summary>
     internal static class Metrics

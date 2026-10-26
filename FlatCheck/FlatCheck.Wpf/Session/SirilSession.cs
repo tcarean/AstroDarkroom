@@ -91,22 +91,6 @@ namespace FlatCheck.Wpf
         /// </summary>
         internal const string PreprocessingScript = "OSC_Preprocessing_WithoutDark.ssf";
 
-        /// <summary>
-        /// The pattern of the files the 180-degree rotation test accepts: flat MASTERS, that is
-        /// stacks, not individual frames.
-        ///
-        /// It was "pp_flat*.fit", and that also caught the individual calibrated frames Siril
-        /// writes in the same folder with the same prefix - pp_flat_00001.fit and the following.
-        /// Exactly the trap the candidate list was removed for: a pair of individual frames
-        /// gives a confident and false result, because the noise of a single frame is of the
-        /// same order as the signal looked for. The dialog still proposed them.
-        ///
-        /// The "*" after "stacked" stays because the two masters can end up in the same
-        /// folder, and then at least one must be renamed (pp_flat_stacked_0deg.fit); the
-        /// stack's name stays recognised, the individual frames do not get in.
-        /// </summary>
-        internal const string RatioPattern = "pp_flat_stacked*.fit";
-
         /// <summary>The structure report, saved beside the session's data.</summary>
         internal const string ResultFileName = "Test result.txt";
 
@@ -170,8 +154,7 @@ namespace FlatCheck.Wpf
         /// made from. The name is NOT one of <see cref="FlatMasterCandidates"/> - exact paths,
         /// not patterns - so the session's master stays the one photographed and the Structure
         /// tab still shows the texture; the smoothed file must not hide the problem it was made
-        /// for. It does match <see cref="RatioPattern"/>, though, which is right: a smoothed
-        /// stack is still a stack.
+        /// for.
         /// </summary>
         internal const string SmoothedSuffix = "_smoothed";
 
@@ -196,7 +179,7 @@ namespace FlatCheck.Wpf
         /// <summary>
         /// The SYNTHETIC flat's suffix (the Sintetic tab): pp_flat_stacked_sintetic.fit, beside
         /// the master, for the same reasons as the smoothed one - it does not become the
-        /// session's master, but it matches RatioPattern and what --against expects.
+        /// session's master, but it is what --against expects.
         /// </summary>
         internal const string SyntheticSuffix = "_synthetic";
 
@@ -283,27 +266,6 @@ namespace FlatCheck.Wpf
                 : Array.Empty<string>();
 
         /// <summary>
-        /// A file is accepted by the Ratio tab only if it is a flat master. The check is on the
-        /// NAME, not on the path: in the normal flow the two masters come from TWO different
-        /// session folders - one for each orientation - so the path says nothing. R-082 says
-        /// to explain, not to refuse silently.
-        ///
-        /// There is no separate rule for "pp_flat_stacked.fit": it IS a session's flat master,
-        /// so exactly what the mode asks for. There was an exclusion of it until the tab's
-        /// rewrite, but that was a PRESELECTION fix - the sort being ordinal,
-        /// "pp_flat_stacked.fit" fell after "pp_flat_A/B.fit" and landed on set B's
-        /// preselection. Without the list and without the preselection, the reason is gone.
-        ///
-        /// What is refused now are the individual calibrated frames (pp_flat_00001.fit) - see
-        /// <see cref="RatioPattern"/>.
-        /// </summary>
-        /// <param name="path">A file path, or null.</param>
-        /// <returns>True when the file name matches <see cref="RatioPattern"/>.</returns>
-        internal static bool IsFlatMasterName(string path)
-            => !string.IsNullOrEmpty(path)
-               && SeriesFinder.GlobMatch(Path.GetFileName(path), RatioPattern);
-
-        /// <summary>
         /// The raw flats for --expo: camera raws only.
         ///
         /// The mode needs the CFA mosaic intact and the original ADU scale, and a raw carries
@@ -357,8 +319,8 @@ namespace FlatCheck.Wpf
         /// class is tested on its own and never throws.
         ///
         /// Only the master by convention - the one Structure measures too, so the same one
-        /// when there are two - not any stack in process/: two stacks in a folder are the
-        /// Ratio tab's business. For the same reason a smoothed file beside the OLDER master,
+        /// when there are two - not any stack in process/: a second stack in a folder is not
+        /// the session's master. For the same reason a smoothed file beside the OLDER master,
         /// when there are two, does not appear: it is the smoothing of another master than the
         /// one on screen. And nothing is de-duplicated by content - a master copied into
         /// flats/ appears twice, under two paths, which is the truth.

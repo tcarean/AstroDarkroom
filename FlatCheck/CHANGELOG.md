@@ -111,6 +111,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Removed
 
+- The `--ratio` mode and the window's Ratio tab (R-020 and R-082 dropped, ADR 0065): the
+  attribution by 180-degree rotation needed two masters from two rotated sittings, an input the
+  workflow never produced, so the tab stayed empty and the flag unused. `--ratio` is now an
+  unknown option, no `-world` map is written, and the sentences of the other modes that sent
+  the reader to `--ratio` say instead what one master can and cannot tell apart. The four
+  `--ratio` parity goldens are gone and 17 others were recaptured for those sentences, with the
+  owner's yes; no figure moved. Removing a documented flag is a breaking change by SemVer.
+
 - `scripts/crosscheck.ps1`, its permission line in `.claude/settings.json`, and the two tests
   that tied `__version__` and `__copyright__` in `flatcheck.py` to the C#.
 

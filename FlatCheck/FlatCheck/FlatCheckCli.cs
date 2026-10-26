@@ -17,7 +17,7 @@
 
 // FlatCheckCli.cs - the testable orchestration: parsing, dispatch by mode, exit code.
 // The dispatch order: --lenses -> --synthetic -> --against -> --smooth -> --histeq -> --expo
-// -> --ratio -> --light -> structure (the default).
+// -> --light -> structure (the default).
 //
 // WHAT IS LEFT HERE, after the core became FlatCheck.Core: exactly what is the console's and
 // nobody else's - the arguments, the choice of the mode, the writing of the map to disk and the
@@ -122,7 +122,6 @@ namespace FlatCheck
                 else if (o.Smooth != null) code = RunSmooth(o, stdout, stderr);
                 else if (o.Histeq) code = RunHisteq(o, stdout);
                 else if (o.Expo) code = ExitFor(RunExpo(o, stdout));
-                else if (o.Ratio != null) code = ExitFor(RunRatio(o, stdout));
                 else if (o.Light) code = ExitFor(RunLight(o, stdout));
                 else code = ExitFor(RunStructure(o, stdout));
             }
@@ -187,35 +186,6 @@ namespace FlatCheck
             var run = StructureRun.Execute(o.Image, w, query);
             SaveMap(o.OutPng, run.Png, w);
             return run.Result.Verdict;
-        }
-
-        /// <summary>--ratio: the attribution, the camera-fixed map at -o and the A/B map beside
-        /// it.</summary>
-        /// <param name="o">The parsed options.</param>
-        /// <param name="w">Where the report is written.</param>
-        /// <returns>The camera-fixed part's verdict.</returns>
-        static string RunRatio(Options o, TextWriter w)
-        {
-            var run = RatioRun.Execute(o.Image, o.Ratio, w);
-            SaveMap(o.OutPng, run.Png, w);
-            // The mode splits the master into two components, so it has two shapes to show.
-            // The second goes beside the first, with a suffix, so it asks for no further
-            // argument.
-            SaveMap(WorldMapPath(o.OutPng), run.SecondaryPng, w);
-            return run.Result.Verdict;
-        }
-
-        /// <summary>
-        /// The path of the world-fixed component's map: the same name, with "-world" before the
-        /// extension, in both languages (R-103). "map.png" -> "map-world.png".
-        /// </summary>
-        /// <param name="path">The main map's path (-o).</param>
-        /// <returns>The second map's path, in the same folder.</returns>
-        internal static string WorldMapPath(string path)
-        {
-            string dir = Path.GetDirectoryName(path);
-            string name = Path.GetFileNameWithoutExtension(path) + "-world" + Path.GetExtension(path);
-            return string.IsNullOrEmpty(dir) ? name : Path.Combine(dir, name);
         }
 
         /// <summary>--light: a folder goes to the series, a file to the single-frame run; the
@@ -381,8 +351,7 @@ namespace FlatCheck
 
         /// <summary>
         /// The path of the smoothed flat's residual map: the same name, with "-after" before the
-        /// extension, in both languages (R-103). "map.png" -> "map-after.png". The same
-        /// convention as WorldMapPath.
+        /// extension, in both languages (R-103). "map.png" -> "map-after.png".
         /// </summary>
         /// <param name="path">The main map's path (-o).</param>
         /// <returns>The second map's path, in the same folder.</returns>
@@ -429,7 +398,6 @@ namespace FlatCheck
             w.WriteLine("Usage:");
             w.WriteLine("  flatcheck <flat.fit>                    # structure test");
             w.WriteLine("  flatcheck <flat.fit> --raw <flat.NEF>   # the same, plus the vignetting against the lens profile named in the raw");
-            w.WriteLine("  flatcheck <A.fit> --ratio <B.fit>       # attribution by 180-degree rotation");
             w.WriteLine("  flatcheck <light.fit> --light           # end-to-end test, one frame");
             w.WriteLine("  flatcheck <folder/> --light             # end-to-end test on the whole series");
             w.WriteLine("  flatcheck <raw_flat.NEF> --expo         # exposure check");
@@ -481,7 +449,6 @@ namespace FlatCheck
             w.WriteLine("Utilizare:");
             w.WriteLine("  flatcheck <flat.fit>                    # test structura");
             w.WriteLine("  flatcheck <flat.fit> --raw <flat.NEF>   # idem, plus vignetarea fata de profilul obiectivului din raw");
-            w.WriteLine("  flatcheck <A.fit> --ratio <B.fit>       # atribuire prin rotatie 180");
             w.WriteLine("  flatcheck <light.fit> --light           # test end-to-end, un cadru");
             w.WriteLine("  flatcheck <folder/> --light             # test end-to-end pe toata seria");
             w.WriteLine("  flatcheck <flat_brut.NEF> --expo        # verificare expunere");

@@ -35,10 +35,11 @@ pointed at `/validate`); CLAUDE.md "Layout" says the same in one line. The mecha
   `FLATCHECK_DUMP_FIXTURES`, so `python crosscheck.py <folder>` can be run by hand against the
   frozen prototype for as long as its output means anything. Nothing requires it.
 
-## Coverage of the 43 scenarios
+## Coverage of the 39 scenarios
 
-Kept whole on purpose (ADR 0047): 15 structure, 4 `--ratio`, 11 `--light` (three of them
-series folders), 13 `--expo`. Across them: all four residual bands (`grad_bun`, `grad`,
+Kept whole on purpose (ADR 0047), 43 until the four `--ratio` scenarios left with the mode on
+2026-10-26 (ADR 0065): 15 structure, 11 `--light` (three of them series folders), 13 `--expo`.
+Across them: all four residual bands (`grad_bun`, `grad`,
 `grad_refa`, plus the clean field), both gradient directions and a diagonal, an inverted
 (over-corrected) field, a pure sky plane, a constant frame, mild and heavy vignetting, an offset
 pedestal, nebulosity in one quadrant, a dust shadow (the local-spot line and its position),
@@ -67,9 +68,16 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
 - The capitalised diagnosis ("Fondul CADE/CRESTE spre margini") accounted for the wording-only
   differences in the `--light` scenarios that print one; the sign *is* the diagnosis, so the
   emphasis is deliberate.
-- The second map of `--ratio` is named `-world.png` since 2026-10-25 (ADR 0062; Python wrote
+- The second map of `--ratio` was named `-world.png` from 2026-10-25 (ADR 0062; Python wrote
   `-lume.png`): the four `parity_ratio_*.txt` were recaptured, with the owner's yes, for that
-  one line each, the map's path; every figure is unchanged. A C#-only call, like the rest.
+  one line each, the map's path; every figure was unchanged. A C#-only call, like the rest.
+- The `--ratio` mode was removed on 2026-10-26 (ADR 0065): the four `parity_ratio_*.txt` were
+  deleted, and the 17 parity goldens whose text recommended `--ratio` as the next test (the 15
+  structure scenarios, `parity_light_too_wide_field`, `parity_light_series_sweeping`) were
+  recaptured, with the owner's yes, for those sentences alone: the "why the residual matters"
+  paragraph (one line in every structure scenario), the REFA advice (two lines, in
+  `parity_structure_band_refa`), the too-wide refusal and the series' closing paragraph (two
+  lines each). Every figure is unchanged. A C#-only call, like the rest.
 - The goldens run in Romanian, the language the prototype spoke; the console's default is
   English since the same date, and `EnglishOutputTests` checks that each parity scenario prints
   the same numbers in English.

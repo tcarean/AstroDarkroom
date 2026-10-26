@@ -20,8 +20,8 @@
 // Everything that means a decision sits in MainViewModel. Here remain only the main window's
 // own dialogs and child windows (the folder dialog, the "Despre" window, the Siril run window,
 // the question when closing during a split) and the request to DWM to darken the title bar.
-// The other dialogs live in their views (RatioView's file pickers, SirilRunWindow's stop
-// question), or reach a view-model only as a delegate it is given (the Netezire and Sintetic
+// The other dialogs live in their views (SirilRunWindow's stop question), or reach a
+// view-model only as a delegate it is given (the Netezire and Sintetic
 // tabs' overwrite question, MainViewModel.AskOnScreen by default), so that a test can answer
 // it.
 

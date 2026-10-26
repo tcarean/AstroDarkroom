@@ -106,34 +106,6 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Cuts a centred rectangle, dropping equally from both ends.
-        ///
-        /// It exists for the attribution mode, the only one that rotates the raster by 180
-        /// degrees and compares the result with the original. <see cref="BlockMean"/> drops the
-        /// partial blocks only at the END, so its grid is anchored at the top left: rotated by
-        /// 180 it no longer falls onto itself, but shifted by up to one tile. On a smooth
-        /// gradient the error is small, but it is systematic - measured, it moves the even/odd
-        /// ratio by ~20%. Cropping centred before the tiles removes it.
-        ///
-        /// NOT used in LargeScalePtp: there the grid anchored at the top left is what
-        /// flatcheck.py does, and the numeric parity is tested.
-        /// </summary>
-        /// <param name="a">The raster to crop.</param>
-        /// <param name="h">The height to keep, in pixels, at most <c>a.H</c>.</param>
-        /// <param name="w">The width to keep, in pixels, at most <c>a.W</c>.</param>
-        /// <returns>The centred crop, or <paramref name="a"/> itself when nothing is cut.</returns>
-        internal static Img CropCentred(Img a, int h, int w)
-        {
-            if (h == a.H && w == a.W) return a;
-            int oy = (a.H - h) / 2, ox = (a.W - w) / 2;
-            var o = new Img(h, w);
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                    o.Set(y, x, a.At(oy + y, ox + x));
-            return o;
-        }
-
-        /// <summary>
         /// The grid of medians over tiles of <paramref name="k"/> px, WITH the partial tiles at
         /// the end, and the real centre of each tile in pixels.
         ///
@@ -181,18 +153,6 @@ namespace FlatCheck
                 }
             }
             return (t, cy, cx);
-        }
-
-        /// <summary>The raster rotated by 180 degrees about its centre.</summary>
-        /// <param name="a">The raster to rotate.</param>
-        /// <returns>A new raster of the same size.</returns>
-        internal static Img Rotate180(Img a)
-        {
-            var o = new Img(a.H, a.W);
-            for (int y = 0; y < a.H; y++)
-                for (int x = 0; x < a.W; x++)
-                    o.Set(y, x, a.At(a.H - 1 - y, a.W - 1 - x));
-            return o;
         }
 
         /// <summary>

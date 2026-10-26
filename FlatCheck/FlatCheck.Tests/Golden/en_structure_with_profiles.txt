@@ -38,7 +38,7 @@ Copyright (C) 2026 Tudor Carean
     the frame a purely radial model does NOT explain. It is an UPPER BOUND of the
     flat's error, not the error itself - it holds both the part fixed to the camera
     (the optics; divided out of the lights correctly) and the part fixed in the world (the
-    illumination; it does not repeat). The --ratio mode separates them. The corner spread,
+    illumination; it does not repeat); one master cannot tell them apart. The corner spread,
     the azimuthal asymmetry and the tilt are partial views of the same deviation.
     "Worst spot" catches what the others miss: a compact defect - a small leak,
     a condensation spot - that the residual clips as an extreme.
@@ -59,7 +59,7 @@ Copyright (C) 2026 Tudor Carean
     5 % PROBLEM), which measures the same quantity directly in the light, it would be PROBLEM.
     The reference itself differs by 0.2 stops = 15 % between the profile databases,
     so the depth verdict cannot be finer than that and stays on the residual scale.
-    The difference is RADIAL, so invisible to the five tests, to the map and to the --ratio mode: it is the
+    The difference is RADIAL, so invisible to the five tests and to the map: it is the
     only place where a source that falls off with the angle (plus) or fills the corners (minus) shows. The
     profile is the lens model, not your copy of it, and it is achromatic; the master is the 2x2 mean of the mosaic.
 
@@ -71,7 +71,7 @@ Copyright (C) 2026 Tudor Carean
     the angle - a panel (monitor, tablet) too close or without a real diffuser; matte sheets
     do not diffuse. A Lambertian diffuser helps (opal acrylic, a thick stack of white paper)
     or a white wall lit from the side; more rotations do not help.
-    The excess is radial, so the five tests and --ratio do not see it; background extraction
+    The excess is radial, so the five tests do not see it; background extraction
     will not remove it either. Redo the flats.
 
     -> map saved: <TMP>/out.png

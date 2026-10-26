@@ -3,7 +3,7 @@
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
 > CLAUDE.md nor a decision record says (ADR 0051): the hand-rolled encoder and its three-way
 > verification are ADR 0008, the fixed caps ADR 0012, why files stay on the automatic scale ADR
-> 0036, the two maps of `--ratio` ADR 0019. **Covers:** `PngWriter.cs` (`EncodeResidualMap`,
+> 0036. **Covers:** `PngWriter.cs` (`EncodeResidualMap`,
 > `MapRange`, `FixedCapsPct`), `Report/RunReport.cs` (`MapScaleLabel`, `MapLegend`); the
 > encoder's bytes and `PngWriterTests.cs` by pointer.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
@@ -42,9 +42,9 @@ wording is in `RunReport` (`MapScaleLabel`, `MapLegend`), which is also why thos
 have no console caller today. `EncodeResidualMapWithTheAutoRangeIsByteIdenticalToTheOldEntryPoint`
 pins that the parameterless overload still encodes what it always did.
 
-`--ratio`'s two maps (the residual of `S` at the `-o` path, `A/B` beside it with the `-world`
-suffix from `FlatCheckCli.WorldMapPath`) are ADR 0019; the window offers the same two behind a
-radio toggle, from `RunOutcome.Png` / `SecondaryPng`.
+`--smooth`'s two maps (the removed component at the `-o` path, the smoothed flat's residual
+beside it with the `-after` suffix from `FlatCheckCli.AfterMapPath`) are `modes-smooth.md`'s; the window
+offers the same two behind a radio toggle, from `SmoothRunOutcome.Png` / `SecondaryPng`.
 
 The encoder writes signature + IHDR (8-bit, colour type 2 = RGB) + a single IDAT
 (each row prefixed with filter byte 0, deflated via `ZLibStream`) + IEND, with a

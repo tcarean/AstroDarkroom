@@ -3,7 +3,6 @@ Copyright (C) 2026 Tudor Carean
 Utilizare:
   flatcheck <flat.fit>                    # test structura
   flatcheck <flat.fit> --raw <flat.NEF>   # idem, plus vignetarea fata de profilul obiectivului din raw
-  flatcheck <A.fit> --ratio <B.fit>       # atribuire prin rotatie 180
   flatcheck <light.fit> --light           # test end-to-end, un cadru
   flatcheck <folder/> --light             # test end-to-end pe toata seria
   flatcheck <flat_brut.NEF> --expo        # verificare expunere

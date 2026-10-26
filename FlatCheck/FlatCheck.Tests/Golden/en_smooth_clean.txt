@@ -23,7 +23,7 @@ Copyright (C) 2026 Tudor Carean
 
     INFORMATIVE: the smoothed file keeps EVERYTHING that is smooth in the master and removes everything that is not. It does not know
     what is the lens's and what is the source's: a monitor's blotches, the sky's gradient or
-    a panel's uneven corners stay, because they are smooth; only --ratio separates them.
+    a panel's uneven corners stay, because they are smooth; nothing here separates them.
     What it removes - texture, dust, compact spots - can also be wanted: a dust shadow
     is right for the session whose lights have it too. A real structure narrower
     than the scale (~300 px) is partly taken; the scale is the only knob.

@@ -143,8 +143,6 @@ Figures that exist in the design notes but have no case here, and why:
   through -19.20 % to +35.73 %, correlation -0.94): a 32-frame run of 24 MP lights, and the
   frames are not in the manifest. The figures are in `modes-light.md`; the behaviour is pinned
   by the synthetic series goldens.
-- The `--ratio` figure 4.02 % computed from two 15-frame stacks against 4.00 % measured on the
-  30-frame master (`modes-ratio.md`): the per-orientation stacks are not kept as files.
 - The per-orientation numpy analyses of the flat sources (`flat-sources.md`): benches, not the
   tool.
 

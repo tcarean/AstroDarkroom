@@ -46,7 +46,6 @@ Cea mai probabilă cauză de rezultat greșit nu e în cod, e în fișierul ales
 | mod | ce vrea |
 |---|---|
 | structură (implicit) | master flat **calibrat** — `pp_flat_stacked.fit`, în `process/` sau în `masters/`, după scriptul Siril folosit |
-| `--ratio` | două master flats calibrate, din două orientări la 180° — de regulă `pp_flat_stacked.fit` din două foldere de sesiune |
 | `--light` | light **calibrat cu flat**, **fără background extraction**, **neregistrat** |
 | `--expo` | un **singur cadru brut, necalibrat** — de preferat chiar `.NEF`-ul |
 
@@ -96,7 +95,7 @@ la 180° — vezi [„O capcană care a fost reparată"](#o-capcană-care-a-fost
 
 ---
 
-## Cele șapte moduri
+## Cele șase moduri
 
 ### 1. Structură (implicit)
 
@@ -145,12 +144,12 @@ O pată **rotundă și centrată exact pe axă** — un panou prea aproape, back
 monitor pe care ai centrat obiectivul — e absorbită întreagă de modelul radial, exact ca
 vignetarea: măsurat, o pată de 10 % în centru lasă toate cifrele sub 0.1 % și harta goală.
 Singura ei urmă e cifra de vignetare, care crește. Se vede doar dacă e puțin descentrată,
-și atunci ca o semilună, nu ca un disc. `--ratio` e la fel de orb la ea; contra-testul e
+și atunci ca o semilună, nu ca un disc. Nicio rotație nu o scoate; contra-testul e
 distanța — un set la 30 cm, unul la 60.
 
 Ce iese de aici e o **limită superioară** a erorii de flat, nu eroarea: tot ce măsoară e
 suma părții fixate de aparat (inofensivă) și a celei fixate în lume (dăunătoare), iar un
-singur master nu conține informația care le desparte — vezi „Scara de reziduu" și modul 2.
+singur master nu conține informația care le desparte — vezi „Scara de reziduu".
 Rămâne totuși testul cu care începi, fiindcă e singurul care nu cere să mai fotografiezi
 nimic.
 
@@ -160,9 +159,9 @@ Cele cinci teste măsoară abaterea de la simetria radială, deci sunt **oarbe l
 radial**: un master de tabletă (Tokina 20 mm f/2.8, patru orientări la 90°) a ieșit PERFECT
 pe toate cinci cu 1.26 stopuri de vignetare, când cele două baze de profile dau 0.66–0.92
 pentru obiectivul ăsta. Excesul era căderea unghiulară a panoului, făcută radială de
-rotație; `--ratio` e la fel de orb la el. Singura referință externă pe care o are unealta e
+rotație; mai multe rotații nu ajută. Singura referință externă pe care o are unealta e
 **profilul publicat al obiectivului** (Adobe LCP de pe mașină, baza lensfun de lângă
-program — vezi modul 7), și asta e comparația:
+program — vezi modul 6), și asta e comparația:
 
 ```bash
 flatcheck process/pp_flat_stacked.fit --raw flats/DSC_0001.NEF     # obiectivul și diafragma din raw
@@ -195,8 +194,8 @@ refaci flat-urile, și ține minte că `--light` însuși e refuzat pe un câmp 
 **Semnul e diagnosticul.** Plus înseamnă că masterul cade spre colț mai mult decât modelul:
 sursa cade cu unghiul — un panou prea aproape sau fără difuzor adevărat (foile mate nu
 difuzează). Minus înseamnă că sursa umple colțurile: cupola cerului, lumină ambiantă, o
-reflexie în parasolar. Nici `--ratio`, nici mai multe rotații nu ajută, fiindcă excesul se
-rotește cu aparatul sau e simetrizat de rotație.
+reflexie în parasolar. Mai multe rotații nu ajută, fiindcă excesul se rotește cu aparatul
+sau e simetrizat de rotație.
 
 Măsurat pe biblioteca proprie (2026-09-18, D3300, `--raw` pe primul raw din `flats/`):
 
@@ -218,58 +217,7 @@ spune exact gama din raw (135 mm f/2.0), iar raportul spune că lista poate cupr
 obiectiv cu aceeași gamă — citește rândul obiectivului tău. Fără raw lângă master și fără
 `--lens` nu se compară: blocul spune de ce, verdictul rămâne al celor cinci teste.
 
-### 2. Atribuire prin rotație 180° — `--ratio`
-
-```bash
-flatcheck sesiune_0deg/process/pp_flat_stacked.fit --ratio sesiune_180deg/process/pp_flat_stacked.fit
-```
-
-Nu îți spune dacă setup-ul e curat — **nu poate**, și e important să știi de ce. Îți spune
-altceva, la care niciun alt mod nu poate răspunde: **din structura ne-radială a flat-ului
-tău, cât e fixat de aparat și cât e fixat în lume.**
-
-Tragi ~15 flats, rotești camera 180° în jurul axei optice, mai tragi ~15, stivuiești
-**separat** cele două seturi — adică în două foldere de sesiune, câte unul pentru fiecare
-orientare. Din cele două mastere se calculează:
-
-| | ce e | cum se citește |
-|---|---|---|
-| `(A+B)/2` | partea fixă **pe aparat** | e chiar masterul pe care îl obții stivuind ambele orientări. **De aici vine verdictul**, pe aceeași scară de reziduu ca modul 1. |
-| `A/B` | partea fixă **în lume** | informativ: atât ți-a scos rotația din master. |
-
-Rotația **nu trebuie să fie exactă.** Vignetarea e rotațional simetrică, deci se anulează
-la orice unghi; cele 180° servesc doar la inversarea gradientului extern. O eroare de unghi
-δ lasă amplitudinea măsurată la `2·G·cos(δ/2)` — la 10° pierzi 0.4%, la 30° pierzi 3.4%.
-Testul **subraportează, niciodată nu supraraportează**.
-
-**Bara de eroare nu e calibrată, e derivată.** `log(A/B)` trebuie să fie exact antisimetric
-la rotația de 180°: o contaminare fixă în lume intră integral în partea impară și zero în
-cea pară, iar zgomotul se împarte cu varianță egală. Deci partea pară e un estimator al
-zgomotului din partea impară, construit din aceleași date, fără nicio constantă de reglat.
-Când cifra și eroarea ei sunt comparabile, nu s-a detectat nimic peste zgomot.
-
-**Trei lucruri pe care modul NU le poate face**, și pe care raportul le spune pe față:
-
-- **Nu poate verifica din pixeli că ai rotit.** Două stive din aceeași orientare și două
-  stive rotite dintr-un setup cu adevărat curat produc date statistic identice — în ambele
-  cazuri `A/B` e numai zgomot. De aceea raportul tipărește `STACKCNT` și `DATE-OBS` pentru
-  ambele fișiere: două stive care încep una imediat după cealaltă n-au avut când să fie
-  rotite.
-- **„Fix pe aparat" nu înseamnă „inofensiv".** Vignetarea obiectivului se împarte corect
-  din lights. O curea căzută pe lentilă, condensul sau o parasolară strâmbă se rotesc și
-  ele cu aparatul, arată identic aici, și la lights nu mai sunt acolo. Ca să le deosebești,
-  compară două ședințe diferite cu **același obiectiv**: semnătura fixă pe aparat trebuie
-  să iasă la fel.
-- **Punct orb:** orice contaminare care se rotește împreună cu aparatul — inclusiv una
-  radial simetrică în jurul axei optice, cum e căderea de backlight a unui monitor pe care
-  ai centrat obiectivul. Contra-testul e un **test de distanță**: un set la 30 cm, unul la
-  60 cm. Vignetarea obiectivului nu depinde de distanță, contaminarea de la panou depinde.
-
-Scrie **două** hărți: la calea dată cu `-o`, reziduul părții fixe pe aparat (cea care se
-potrivește cu verdictul), și lângă ea, cu sufixul `-world`, raportul `A/B` — pe care se
-vede *forma* gradientului extern.
-
-### 3. End-to-end — `--light`
+### 2. End-to-end — `--light`
 
 ```bash
 flatcheck process/pp_light_00001.fit --light    # un cadru
@@ -333,7 +281,7 @@ Tiparul implicit exclude `r_pp_light_*` — cadrele registrate sunt transformate
 deci eroarea de flat, care e fixă pe senzor, e mutată față de centrul în jurul căruia se
 fitează modelul radial. Folosește `--pattern` dacă ai altă convenție de nume.
 
-### 4. Expunere — `--expo`
+### 3. Expunere — `--expo`
 
 ```bash
 flatcheck DSC_0060.NEF --expo                           # calea recomandată
@@ -406,7 +354,7 @@ subexpus.
 
 ---
 
-### 5. Egalizare de histogramă — `--histeq`
+### 4. Egalizare de histogramă — `--histeq`
 
 ```bash
 flatcheck flats/DSC_0060.NEF --histeq -o poza.png
@@ -470,7 +418,7 @@ chipul **Culori false** de lângă vederi face același lucru pe Mozaic, pe un c
 
 ---
 
-### 6. Netezire — `--smooth`
+### 5. Netezire — `--smooth`
 
 ```bash
 flatcheck process/pp_flat_stacked.fit --smooth process/pp_flat_stacked_smoothed.fit
@@ -520,7 +468,7 @@ plus praful) și 3.7 % pe cel cu textură, unde pata compactă cade de la +6.19 
 metodei e sub 0.2 % pe tot cadrul, colțuri incluse.
 
 **Ce NU știe.** Ce e al obiectivului și ce e al sursei: petele unui monitor, gradientul
-cerului, colțurile inegale ale unui panou rămân, fiindcă sunt netede — doar `--ratio` le
+cerului, colțurile inegale ale unui panou rămân, fiindcă sunt netede — nimic de aici nu le
 desparte. Și ce scoate poate fi ceva dorit: o umbră de praf e corectă pentru sesiunea ale
 cărei lights o au și ele, și greșită într-un flat de bibliotecă. O structură reală de
 ~300 px (inelul descentrat al Nikkor-ului, 0.3-0.5 %) e luată parțial la 300 px și rămâne
@@ -536,7 +484,7 @@ masterului (păstrează originalul) sau dă-l la `calibrate` cu `-flat=`. Modul 
 media într-un mono).
 
 **Verificarea** pe care o poți face singur: netezește două mastere ale aceleiași lentile
-și trece-le prin `--ratio`; ce rămâne trebuie să fie un câmp neted de ordin mic. Că flat-ul
+și compară-le cu `--against`; ce rămâne trebuie să fie un câmp neted de ordin mic. Că flat-ul
 netezit chiar corectează mai bine o spune doar `--light` pe lights calibrate — și pe un
 câmp mai larg de 40° el refuză.
 
@@ -574,7 +522,7 @@ n-au voie să se miște.
 
 ---
 
-### 7. Flat sintetic — `--synthetic`, `--lenses`, `--against`
+### 6. Flat sintetic — `--synthetic`, `--lenses`, `--against`
 
 ```bash
 flatcheck --lenses --lens "Tokina 11-20"                         # ce obiective au profil
@@ -720,8 +668,8 @@ putut verifica. Necunoscut înseamnă neverificat, nu suspect.
 **Contra-exemplu concret.** Tokina la 20 mm pe D3300 acoperă ~70° diagonală. Pe o sesiune
 reală de Cale Lactee cu setup-ul ăsta, corelația între componenta radială raportată și
 gradientul de cer a ieșit **−0.94** (R² = 0.88): 88% din ce raporta unealta drept „flat"
-era explicat de cer. Pentru astfel de date răspunsul îl dă `--ratio`: el nu implică cerul
-deloc și separă direct cât din abaterea masterului e fixată de aparat.
+era explicat de cer. Pe astfel de date flat-ul se judecă singur, pe testele de structură
+ale masterului, care nu implică cerul deloc.
 
 ---
 
@@ -752,8 +700,8 @@ vizibilă în hartă. Pata maximă citește 9.3 % pe ea.
 **E o limită superioară a erorii de flat, nu eroarea.** Ce măsoară e suma a două lucruri
 cu urmări opuse: o parte fixată de **aparat** (optica — se împarte corect din lights, deci
 inofensivă) și una fixată în **lume** (iluminarea — nu se reproduce, deci dăunătoare). Pe
-un singur master cele două nu se pot separa; informația pur și simplu nu e acolo. `--ratio`
-e cel care le desparte.
+un singur master cele două nu se pot separa; informația pur și simplu nu e acolo. Le
+desparte doar o a doua sesiune cu același obiectiv: ce revine identic e al aparatului.
 
 De-aia un obiectiv cu vignetare genuin ne-radială iese aici ca „eroare" fără să fie una.
 Măsurat pe biblioteca proprie: un master de Nikkor 35 DX are 4.00% de împrăștiere a
@@ -787,8 +735,6 @@ setup despre care ești sigur. Toate stau în `FlatCheck.Core/Thresholds.cs`.
 | pata maximă (o dală) | structură | *scara de reziduu* | |
 | pete locale (praf) | structură | 2 % (doar atenționare, nu votează) | |
 | vignetare față de profilul obiectivului | structură cu `--raw` / `--lens` | 0.03 / 0.14 / 0.26 stopuri = scara de reziduu prin `2^|D| − 1` | REFA peste 0.26 |
-| cele cinci teste pe `(A+B)/2` | `--ratio` | *scara de reziduu* | |
-| gradient extern / orientare | `--ratio` | 1% | 3% (doar etichetă informativă) |
 | \|componentă radială\| | `--light` | 2% | 5% |
 | câmp diagonal | `--light` | 20° | 40° (refuz) |
 | eroarea mediei pe serie | `--light` folder | 2.00 puncte | |
@@ -799,10 +745,6 @@ setup despre care ești sigur. Toate stau în `FlatCheck.Core/Thresholds.cs`.
 
 Pragurile de serie sunt cele mai puțin calibrate din fișier: vin dintr-o singură sesiune
 reală. Recalibrează-le când ai una despre care ești sigur.
-
-`--ratio` **nu are praguri proprii pentru verdict**: verdictul lui e cel de structură,
-pe masterul combinat, deci pe aceeași scară de reziduu ca modul 1. Pragurile de 1%/3%
-au rămas doar ca etichetă pe componenta fixă în lume, care e informativă și nu votează.
 
 ---
 
@@ -833,7 +775,6 @@ vignetării față de profil.
 ```
 flatcheck <flat.fit>                     # structură
 flatcheck <flat.fit> --raw <flat.NEF>    # structură + vignetarea față de profilul obiectivului din raw
-flatcheck <A.fit> --ratio <B.fit>        # atribuire prin rotație 180
 flatcheck <light.fit> --light            # end-to-end, un cadru
 flatcheck <folder/> --light              # end-to-end pe toată seria
 flatcheck <flat_brut.fit> --expo         # expunere
@@ -847,9 +788,8 @@ flatcheck --lenses [--lens <text>]       # obiectivele cu profil (Adobe de pe di
                                          # focale, diafragme, distanțe și numărul de profile sub fiecare, pe o listă de cel mult 40
 flatcheck <A.fit> --against <B.fit>      # cât și cum diferă două flaturi
 
-  -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; --ratio mai scrie
-                           una lângă ea, cu sufixul -world; la --histeq e poza egalizată;
-                           --smooth mai scrie una cu sufixul -after)
+  -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; la --histeq e poza
+                           egalizată; --smooth mai scrie una lângă ea, cu sufixul -after)
   --rainbow                poza egalizată în culorile false din Siril, magenta = cel mai jos,
                            roșu = cel mai sus (--histeq; singur e eroare)
   --sat <white>            nivel de saturație, dacă auto-detecția greșește (--expo)
@@ -892,14 +832,8 @@ lights-urilor.
 
 O hartă divergentă albastru → alb → roșu, cu albul fixat la **1.0** și intervalul scalat
 la percentilele 1/99 plus 10% padding. Fixarea la 1.0 e validă pentru toți apelanții:
-reziduul de structură e `img/model ≈ 1`, ambele hărți din `--ratio` sunt centrate pe 1
-(reziduul masterului combinat, și `A/B` normalizat la mediana 1), iar harta din `--light`
-e `1 + radial/a`.
-
-**`--ratio` scrie două hărți**, fiindcă desparte masterul în două componente. La calea dată
-cu `-o` merge reziduul părții fixe pe aparat — cea care se potrivește cu verdictul — iar
-lângă ea, cu sufixul `-world`, raportul `A/B`, pe care se vede *forma* gradientului extern.
-În fereastră aceleași două stau sub un comutator.
+reziduul de structură e `img/model ≈ 1`, hărțile din `--smooth` sunt centrate pe 1 (ce s-a
+scos, și reziduul flat-ului netezit), iar harta din `--light` e `1 + radial/a`.
 
 Spre deosebire de versiunea Python nu există figură cu 4 panouri, doar hărțile de mai sus.
 Cifrele din consolă sunt aceleași; harta există ca să vezi *forma* unei probleme —
@@ -943,10 +877,10 @@ forma, care spune *de ce*. Aceeași listă e și în fereastră, sub hartă, la 
 | formă | ce a însemnat |
 |---|---|
 | pete fără direcție | Abateri mici, fără o axă preferată. Semnătura difuzorului plus zgomotul cerului. Background extraction le scoate fără efort. |
-| dipol (o parte albastră, cealaltă roșie) | Un gradient, deci o direcție; se potrivește cu `inclinare`. Sursă neuniformă, lumină ambientală, sau un obstacol întins asimetric peste obiectiv. `--ratio` spune dacă e fix în lume sau fix pe aparat. |
+| dipol (o parte albastră, cealaltă roșie) | Un gradient, deci o direcție; se potrivește cu `inclinare`. Sursă neuniformă, lumină ambientală, sau un obstacol întins asimetric peste obiectiv. Dacă e fix în lume (cerul) sau pe aparat (difuzorul, parasolarul) un singur master nu poate spune; o a doua sesiune cu același obiectiv poate. |
 | cercuri sau arce concentrice | Un inel centrat pe senzor **nu poate** rămâne în hartă — modelul radial îl absoarbe prin construcție. Deci dacă vezi unul, e centrat în altă parte: ceva rotund din fața obiectivului e în afara axei, sau lumina nu e difuză. **Nu s-a văzut încă pe un master real:** inelele care apăreau pe mastere cu gradient mare erau un artefact al modelului radial, corectat între timp — vezi mai jos. |
-| pată locală într-un colț sau la o margine | Light leak: vizor, montură, latura difuzorului. Nu se rotește cu cerul, deci `--ratio` o pune pe aparat. |
-| pată rotundă în centru | Iluminare contaminată simetric față de axă: un panou prea aproape, backlight-ul unui monitor. Când e chiar centrată, **nu poate apărea pe hartă** și nu o vede niciun test — modelul radial o absoarbe întreagă, exact ca vignetarea; măsurat, o pată de 10% în centru lasă harta goală și toate cifrele sub 0.1%. Singura ei urmă e cifra de vignetare, care crește. Se vede doar când e puțin descentrată, și atunci ca o semilună, nu ca un disc. Testul prin rotație e la fel de orb la ea; contra-testul e distanța — un set la 30 cm, unul la 60. |
+| pată locală într-un colț sau la o margine | Light leak: vizor, montură, latura difuzorului. E fixă pe aparat, deci revine în fiecare sesiune până i se găsește cauza. |
+| pată rotundă în centru | Iluminare contaminată simetric față de axă: un panou prea aproape, backlight-ul unui monitor. Când e chiar centrată, **nu poate apărea pe hartă** și nu o vede niciun test — modelul radial o absoarbe întreagă, exact ca vignetarea; măsurat, o pată de 10% în centru lasă harta goală și toate cifrele sub 0.1%. Singura ei urmă e cifra de vignetare, care crește. Se vede doar când e puțin descentrată, și atunci ca o semilună, nu ca un disc. Nicio rotație nu o scoate; contra-testul e distanța — un set la 30 cm, unul la 60. |
 | granulație fină peste tot | Zgomot, nu structură: prea puține cadre sau expunere prea joasă. Nu e nimic de reparat la sursă, doar de stivuit mai mult. |
 
 ### Cine decide: cifrele sau harta
@@ -960,8 +894,8 @@ aceluiași lucru.
   fi forma. **Verdictul nu depinde niciodată de ce vezi în hartă.**
 - **Ce fel** — aici intră ochiul, dar nu de la zero. Forma spune ce să schimbi la ședința
   următoare, nu dacă flat-ul e bun. Și cifrele fac o parte din treabă înainte: dacă
-  `inclinare` e aproape de reziduu, e un gradient, și `--ratio` spune dacă e fix pe aparat
-  sau în lume; dacă `pata maximă` e mult peste reziduu, e ceva compact — o scurgere mică,
+  `inclinare` e aproape de reziduu, e un gradient, și harta spune în ce direcție; dacă
+  `pata maximă` e mult peste reziduu, e ceva compact — o scurgere mică,
   condens — și `pete locale` spune unde; iar dacă a apărut atenționarea de praf, întrebarea
   nu mai e dacă flat-ul e bun, ci pentru ce îl folosești: sesiunea ale cărei lights au
   aceeași pată, sau biblioteca. Ce rămâne pentru ochi e tabelul de mai sus.
@@ -1031,7 +965,7 @@ FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"
 
 Imediat ce folderul e ales pornesc singure **structura** și **testul end-to-end**, cu ecran
 de așteptare (și, în fundal, preumplerea tabului Sintetic, care nu scrie nimic). Rulează una după
-alta, nu în paralel, și nici o analiză pornită cu un clic (Ratio, Expunere, Histogram, Netezire,
+alta, nu în paralel, și nici o analiză pornită cu un clic (Expunere, Histogram, Netezire,
 Sintetic, analiza din Split) nu rulează lângă ele sau lângă alta: toate trec printr-o singură
 poartă, una la rând. Măsurat pe masterele de 24 MP: o singură analiză ajunge la 0.7-1.25 GB de
 memorie, două deodată la 1.3-2.2 GB. Un clic făcut în timpul analizelor de la deschidere, sau
@@ -1099,17 +1033,16 @@ lângă a noastră. Un `.exe` copiat singur n-are fișierele `LICENSE` și
 `THIRD-PARTY-NOTICES.md` lângă el, deci fereastra e singurul loc în care notițele
 călătoresc garantat cu programul.
 
-### Cele opt taburi
+### Cele șapte taburi
 
 | tab | ce face | când rulează |
 |---|---|---|
 | **Structura** | modul 1 pe `pp_flat_stacked.fit` din `masters/` sau `process/` | la deschiderea folderului |
-| **Ratio** | modul 2 între două mastere alese explicit, din două sesiuni | după ce alegi ambele fișiere |
-| **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
-| **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
-| **Histogram** | modul 5 pe masterul sesiunii, pe flat-ul netezit de lângă el (când există) sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
-| **Netezire** | modul 6 pe masterul sesiunii; scrie `pp_flat_stacked_smoothed.fit` lângă el | la buton, niciodată singur — scrie un fișier |
-| **Sintetic** | modul 7: alege obiectivul din profilele Adobe de pe disc și din baza lensfun de lângă program, scrie `pp_flat_stacked_synthetic.fit` lângă master și îl compară cu masterul (`--against`) | la buton; doar preumplerea rulează singură |
+| **End to end** | modul 2 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
+| **Expunere** | modul 3 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
+| **Histogram** | modul 4 pe masterul sesiunii, pe flat-ul netezit de lângă el (când există) sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
+| **Netezire** | modul 5 pe masterul sesiunii; scrie `pp_flat_stacked_smoothed.fit` lângă el | la buton, niciodată singur — scrie un fișier |
+| **Sintetic** | modul 6: alege obiectivul din profilele Adobe de pe disc și din baza lensfun de lângă program, scrie `pp_flat_stacked_synthetic.fit` lângă master și îl compară cu masterul (`--against`) | la buton; doar preumplerea rulează singură |
 | **Split** | împarte flat-urile în 2 sau 4 grupuri, rulează scriptul Siril pe fiecare într-o sesiune temporară și pune masterele grupurilor lângă masterul întreg: cele cinci teste, vignetarea față de profil, hărțile una lângă alta; scrie `Split result.txt` și `flatcheck-split.png` în folderul sesiunii | la buton, niciodată singur — copiază gigaocteți și rulează Siril de N ori |
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
@@ -1133,44 +1066,12 @@ Harta de pe ecran are butoanele de scară și legenda descrise la [Scara
 culorilor](#scara-culorilor), plus ghidul de forme sub ea. Fișierul rămâne pe `auto`
 indiferent ce buton e apăsat, deci se potrivește cu chipul `auto`, nu neapărat cu ce vezi.
 
-**Ratio** nu caută nimic în folder și nu presupune nimic: îți cere **două fișiere alese
-explicit**, prin două butoane. Motivul e că modul are nevoie de două *mastere*, câte unul
-pentru fiecare orientare, iar cele două orientări sunt două ședințe — deci două foldere de
-sesiune. Un singur folder nu le poate propune; ce putea propune erau cadrele individuale,
-iar o pereche de cadre individuale dă un rezultat sigur și fals, fiindcă zgomotul unui
-cadru e de același ordin cu semnalul căutat.
-
-Deasupra selectoarelor stă un panou care explică exact ce îi trebuie modului, cum se produc
-cele două mastere în Siril, și ce **nu** îți poate spune testul. Îl poți plia, dar pornește
-deschis: e singurul mod al aplicației care cere ceva ce nu se poate deduce din folderul
-deschis.
-
-Ferestrele de deschidere propun `pp_flat_stacked*.fit`, adică **stiva**, nu cadrele
-calibrate individuale (`pp_flat_00001.fit` și următoarele) care stau în același `process/`
-cu același prefix. Dacă fișierul ales nu e un master de flat, aplicația explică ce sunt
-fișierele astea și de ce testul are nevoie de unul, în loc să eșueze la parsare.
-`pp_flat_stacked.fit` **este** o alegere validă — în fluxul normal chiar e alegerea: câte
-unul din fiecare dintre cele două sesiuni; iar dacă ai adus ambele mastere în același
-folder și ai redenumit unul, `pp_flat_stacked_0deg.fit` rămâne recunoscut. Același fișier
-în ambele sloturi se refuză la alegere, cu explicație.
-
-După calcul, tabul arată întâi **de unde vin cele două stive** — câte cadre și de la ce oră,
-din headerele FITS — fiindcă acolo se vede singurul lucru pe care tool-ul nu-l poate
-verifica singur: că cele două chiar pot fi din două orientări diferite. Apoi componenta
-fixă în lume, informativă, cu bara ei de eroare, cu cele două rânduri explicate sub ele
-și cu eticheta OK/SUSPECT/PROBLEMĂ spusă pe față drept informativă, cu pragurile ei — ea
-nu votează. Apoi verdictul și cele cinci teste, pe
-masterul combinat, fiecare cu descrierea lui, urmate de mărimile informative — vignetarea,
-centrul de iluminare, petele locale — și de atenționarea de praf când e cazul, exact ca
-în tabul Structură și ca în raportul din consolă. Harta are un comutator: reziduul părții fixe pe aparat (implicit, se
-potrivește cu verdictul) sau raportul `A/B`. Scara și legenda se aplică celei afișate,
-oricare dintre cele două e.
-
 **End to end** rulează pe toată seria și își umple tabelul pe măsură ce cadrele sunt gata —
 32 de cadre iau vreo două minute, iar un ecran gol tot timpul ăla ar părea blocat. Poate
 ieși legitim `INAPLICABIL`: pe un câmp mai larg de ~40 de grade diagonală cerul și
 vignetarea au aceeași formă, deci nu se produce nicio cifră. **Nu e o eroare** — vezi
-secțiunea despre când merge `--light`. Pe date ca astea răspunde tabul Ratio.
+secțiunea despre când merge `--light`. Pe date ca astea flat-ul se judecă în tabul Structura,
+care nu implică cerul.
 
 Tabul se explică singur, pe loc, nu într-un ghid pliat: sub fiecare din cele patru cifre ale
 sintezei pe serie stă un rând care spune ce e cifra și cum se judecă (rândul rămâne în
@@ -1295,7 +1196,7 @@ păstrează când schimbi vederea și se resetează când schimbi fișierul.
 | masterul față de un cadru | vezi paragraful de mai sus: ce lipsește de pe master s-a mediat, ce e pe amândouă e fix pe montaj. |
 | unde e cifra | în tabul Structura. Poza spune ce *formă* are ce măsoară ea. |
 
-**Netezire** e modul 6 pe masterul sesiunii, și singurul tab care **nu rulează singur**:
+**Netezire** e modul 5 pe masterul sesiunii, și singurul tab care **nu rulează singur**:
 scrie un fișier de ~96 MB lângă master, și un fișier nu se produce fiindcă s-a deschis un
 folder. Ghidul stă deschis deasupra butonului, fiindcă e precondiția lui; sub el, trei
 chipuri de scară (150 / 300 / 600 px, implicit 300), butonul „Propune scara" — care
@@ -1314,15 +1215,14 @@ model radial, adică ce face obiectivul odată textura plecată. Scara hărții 
 
 Fișierul netezit **nu devine masterul sesiunii**: numele lui nu e printre cele două căi pe
 care le caută aplicația, deci tabul Structura măsoară în continuare masterul fotografiat
-și arată textura pentru care a fost nevoie de netezire. Dialogul din Ratio îl acceptă
-însă, fiindcă o stivă netezită e tot o stivă. Și **apare în tabul Histogram**, ca rând
+și arată textura pentru care a fost nevoie de netezire. **Apare în tabul Histogram**, ca rând
 propriu sub master, marcat `NETEZIT`, imediat ce a fost scris — ca să se vadă, unul lângă
 altul, ce a scos netezirea și ce a lăsat.
 
 > Ghidul pliat „Ce face netezirea" (`SessionMessages.SmoothGuideRows`) e în oglindă cu
 > secțiunea „6. Netezire" de mai sus; nu există test care să lege cele două.
 
-**Sintetic** e modul 7. Lista de obiective vine din amândouă sursele, cu un chip `Adobe`
+**Sintetic** e modul 6. Lista de obiective vine din amândouă sursele, cu un chip `Adobe`
 sau `lensfun` pe fiecare rând și montura în dreapta — la lensfun și formatul pe care a fost
 calibrat profilul, fiindcă același obiectiv poate fi de două ori în bază, calibrat pe două
 formate (vezi mai sus); se caută după text, fiecare cuvânt trebuie să apară, formatul
@@ -1466,7 +1366,7 @@ macOS — n-au binare libraw în pachetele astea, deci acolo merge doar FITS-ul.
 
 **Folderul `lensfun/` merge lângă exe**: build-ul și publish-ul îl copiază singure lângă
 `flatcheck.exe` și `FlatCheck.Wpf.exe`, iar unealta citește `lensfun/*.xml` de lângă
-propriul executabil. E jumătatea lensfun a listei de obiective din modul 7; fără folder
+propriul executabil. E jumătatea lensfun a listei de obiective din modul 6; fără folder
 totul merge, doar lista are numai profilele Adobe de pe mașină (dacă există) și spune ce
 folder a căutat. Când copiezi binarul, copiază și folderul.
 
@@ -1494,7 +1394,8 @@ Până pe 2026-09-26 `flatcheck.py` a fost oracolul numeric: `crosscheck.py` rul
 implementările pe aceiași octeți, în 43 de scenarii, și compara fiecare cifră. În acea zi cele
 două erau de acord pe toate cele 43 (0 diferențe numerice), prototipul a fost înghețat la 2.2.0
 și cele 43 de scenarii au devenit `FlatCheck.Tests/Golden/parity_*.txt`, rulate de
-`ParityGoldenTests` în gate. Spre deosebire de celelalte golden-uri, acestea poartă cifre
+`ParityGoldenTests` în gate (39 azi: cele patru ale modului `--ratio` au plecat cu el pe
+2026-10-26). Spre deosebire de celelalte golden-uri, acestea poartă cifre
 confirmate de o implementare independentă; o re-aprobare acolo e o decizie luată doar pe C#,
 și se citește ca atare. De aceea comanda de mai sus le lasă neatinse: se recapturează separat,
 cu `--filter ParityGoldenTests`, numai după ce schimbarea a fost aprobată, iar schimbarea se

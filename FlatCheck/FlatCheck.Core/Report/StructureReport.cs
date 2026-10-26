@@ -102,17 +102,8 @@ namespace FlatCheck
 
         /// <summary>
         /// Everything that follows the header: the informative figures, the five tests, the
-        /// scale and the verdict. Taken out separately because the attribution mode runs the same
-        /// battery on the combined master (A+B)/2 and wants exactly this body under its own header
-        /// - but not the ADU row, which on a raster normalised to median 1 would mean
-        /// nothing.
-        /// </summary>
-        /// <param name="r">The structure result.</param>
-        /// <param name="w">Where to write.</param>
-        internal static void WriteBody(StructureResult r, TextWriter w) => WriteBody(r, w, null);
-
-        /// <summary>
-        /// The body, with the profile comparison's block and verdict when the run had one.
+        /// scale and the verdict, with the profile comparison's block and verdict when the run
+        /// had one.
         /// </summary>
         /// <param name="r">The structure battery's result to write.</param>
         /// <param name="w">Where the text goes.</param>
@@ -341,10 +332,10 @@ namespace FlatCheck
         /// </summary>
         /// <returns>Three lines joined by '\n'.</returns>
         internal static string ComparisonNote()
-            => T("The difference is RADIAL, so invisible to the five tests, to the map and to the --ratio mode: it is the\n"
+            => T("The difference is RADIAL, so invisible to the five tests and to the map: it is the\n"
                  + "only place where a source that falls off with the angle (plus) or fills the corners (minus) shows. The\n"
                  + "profile is the lens model, not your copy of it, and it is achromatic; the master is the 2x2 mean of the mosaic.",
-                 "Diferenta e RADIALA, deci invizibila celor cinci teste, hartii si modului --ratio: e singurul\n"
+                 "Diferenta e RADIALA, deci invizibila celor cinci teste si hartii: e singurul\n"
                  + "loc unde se vede o sursa care cade cu unghiul (plus) sau umple colturile (minus). Profilul e\n"
                  + "modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.");
 
@@ -392,9 +383,9 @@ namespace FlatCheck
         /// <returns>Two lines joined by '\n'.</returns>
         internal static string GapMeaning()
             => T("The comparison would have said whether the depth of the vignetting is the lens's: a radial excess - a panel's\n"
-                 + "fall-off, the sky's curvature - goes unnoticed through the five tests and through --ratio.",
+                 + "fall-off, the sky's curvature - goes unnoticed through the five tests.",
                  "Comparatia ar fi spus daca adancimea vignetarii e cea a obiectivului: un exces radial - caderea\n"
-                 + "unui panou, curbura cerului - trece neobservat prin cele cinci teste si prin --ratio.");
+                 + "unui panou, curbura cerului - trece neobservat prin cele cinci teste.");
 
         /// <summary>
         /// The two parts of the verdict, on two rows, as the console prints them under VERDICT.
@@ -447,8 +438,8 @@ namespace FlatCheck
         /// the angle (measured on the tablet masters: cos^2 of the field angle, +0.57 stops, made
         /// radial by the 90-degree rotation); minus = the source fills the corners (the sky's dome
         /// brightens toward the horizon all around the zenith, ambient light, a reflection).
-        /// Neither --ratio nor more rotations help: the excess rotates with the camera or is
-        /// symmetrised by the rotation.
+        /// More rotations do not help: the excess rotates with the camera or is symmetrised by
+        /// the rotation.
         /// </summary>
         /// <param name="diffStops">The master's depth minus the nearest profile's, stops.</param>
         /// <param name="verdict">The depth verdict; "REFA" adds the advice to reshoot.</param>
@@ -473,13 +464,13 @@ namespace FlatCheck
                     + "sursa, o reflexie in parasolar. Fereste obiectivul de tot ce nu e sursa; pe cer, fereste\n"
                     + "zenitul si asteapta un cer mai uniform.");
             string weight = verdict == "REFA"
-                ? T("\nThe excess is radial, so the five tests and --ratio do not see it; background extraction\n"
+                ? T("\nThe excess is radial, so the five tests do not see it; background extraction\n"
                     + "will not remove it either. Redo the flats.",
-                    "\nExcesul e radial, deci cele cinci teste si --ratio nu-l vad; nu-l va scoate nici background\n"
+                    "\nExcesul e radial, deci cele cinci teste nu-l vad; nu-l va scoate nici background\n"
                     + "extraction. Refa flat-urile.")
-                : T($"\nThe excess is radial, so the five tests and --ratio do not see it. Below {VerdictWords.Of("ACCEPTABIL")} it cannot be told\n"
+                : T($"\nThe excess is radial, so the five tests do not see it. Below {VerdictWords.Of("ACCEPTABIL")} it cannot be told\n"
                     + "from the model's uncertainty (the two databases differ from each other by ~0.2 stops).",
-                    "\nExcesul e radial, deci cele cinci teste si --ratio nu-l vad. Sub ACCEPTABIL nu se deosebeste\n"
+                    "\nExcesul e radial, deci cele cinci teste nu-l vad. Sub ACCEPTABIL nu se deosebeste\n"
                     + "de incertitudinea modelului (cele doua baze difera intre ele cu ~0.2 stopuri).");
             return cause + weight;
         }
@@ -811,7 +802,7 @@ namespace FlatCheck
                  + "the frame a purely radial model does NOT explain. It is an UPPER BOUND of the\n"
                  + "flat's error, not the error itself - it holds both the part fixed to the camera\n"
                  + "(the optics; divided out of the lights correctly) and the part fixed in the world (the\n"
-                 + "illumination; it does not repeat). The --ratio mode separates them. The corner spread,\n"
+                 + "illumination; it does not repeat); one master cannot tell them apart. The corner spread,\n"
                  + "the azimuthal asymmetry and the tilt are partial views of the same deviation.\n"
                  + "\"Worst spot\" catches what the others miss: a compact defect - a small leak,\n"
                  + "a condensation spot - that the residual clips as an extreme.",
@@ -819,7 +810,7 @@ namespace FlatCheck
                  + "cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a\n"
                  + "erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat\n"
                  + "(optica; se imparte corect din lights) si partea fixa in lume (iluminarea;\n"
-                 + "nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,\n"
+                 + "nu se reproduce); un singur master nu le desparte. Imprastierea colturilor,\n"
                  + "asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.\n"
                  + "\"Pata maxima\" prinde ce le scapa celorlalte: un defect compact - o scurgere\n"
                  + "mica, o pata de condens - pe care reziduul il taie ca extrema.");
@@ -860,19 +851,19 @@ namespace FlatCheck
                 "Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de\n"
               + "un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza."),
 
-            // Points to --ratio BEFORE "reshoot": the figure is an upper bound, and a part fixed
-            // to the camera (a genuinely non-radial optic, an off-centre axis) comes out here
-            // too, without being a flat error. Measured: an axis off-centre by 5% of the
-            // width gives REFA on a flat that corrects perfectly.
+            // Says that the figure is an upper bound: a part fixed to the camera (a genuinely
+            // non-radial optic, an off-centre axis) comes out here too, without being a flat
+            // error. Measured: an axis off-centre by 5% of the width gives REFA on a flat that
+            // corrects perfectly.
             _ => T(
                 "Too large a deviation from radial symmetry => an uneven source, a light\n"
-              + "leak, a tilted camera, or ambient light. It is NOT vignetting. Before you redo,\n"
-              + "run --ratio on two rotated stacks: if the deviation is fixed to the camera,\n"
-              + "the flat is right. Otherwise redo the flats. See the map for the shape of the problem.",
+              + "leak, a tilted camera, or ambient light. It is NOT vignetting. Redo the flats;\n"
+              + "see the map for the shape of the problem. The figure is an upper bound: an\n"
+              + "optic that is itself off-centre shows here too, and that part is not a flat error.",
                 "Abatere prea mare de la simetria radiala => sursa neuniforma, light\n"
-              + "leak, camera inclinata, sau ambient. NU e vignetare. Inainte sa refaci,\n"
-              + "ruleaza --ratio pe doua stive rotite: daca abaterea e fixa pe aparat,\n"
-              + "flat-ul e corect. Altfel refa flat-urile. Vezi harta pentru forma problemei."),
+              + "leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile; vezi\n"
+              + "harta pentru forma problemei. Cifra e o limita superioara: o optica ea insasi\n"
+              + "descentrata apare si ea aici, si partea aceea nu e eroare de flat."),
         };
 
         /// <summary>Writes the advice of a verdict, indented.</summary>

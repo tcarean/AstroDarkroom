@@ -38,7 +38,7 @@ Copyright (C) 2026 Tudor Carean
     cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
     erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
     (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
-    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    nu se reproduce); un singur master nu le desparte. Imprastierea colturilor,
     asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
     "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
     mica, o pata de condens - pe care reziduul il taie ca extrema.
@@ -46,7 +46,7 @@ Copyright (C) 2026 Tudor Carean
   VIGNETAREA fata de profilul obiectivului
     nu se poate compara: diafragma nu se stie - Siril n-o scrie in master, si n-a fost niciun raw langa el; da --fstop <f> sau --raw <fisier>
     Comparatia ar fi spus daca adancimea vignetarii e cea a obiectivului: un exces radial - caderea
-    unui panou, curbura cerului - trece neobservat prin cele cinci teste si prin --ratio.
+    unui panou, curbura cerului - trece neobservat prin cele cinci teste.
 
   VERDICT: PERFECT
     Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.

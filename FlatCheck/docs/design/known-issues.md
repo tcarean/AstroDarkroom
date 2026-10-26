@@ -31,8 +31,8 @@ correctness bugs that used to live here were fixed in phase 8.
    theoretical one: the field was assigned *before* the table was filled, so a second
    thread arriving in that window saw a non-null table of zeros and wrote a wrong CRC -
    a corrupt PNG. Reproduced: 8 threads, 2000 rounds, 5261 wrong CRCs out of 32000. In
-   the window it was reachable, since the Ratio tab can encode while Structure is still
-   running. It is now a `static readonly` built by a static method, which the CLR
+   the window it was reachable, since a scale chip on one tab can encode while Structure is
+   still running. It is now a `static readonly` built by a static method, which the CLR
    publishes only when complete; `EncodingOnManyThreadsGivesTheSameBytesAsSerially` pins
    the determinism. Kept in this list so nobody reintroduces the lazy form.
 5. **The corner-spread metric has a non-zero floor.** ADR 0013 holds it: the analysis centre
@@ -47,7 +47,7 @@ correctness bugs that used to live here were fixed in phase 8.
    twice. Measured peak was ~330 MB on a 3000x2000 frame before that change. On the 24 MP
    D3300 masters, measured 2026-10-25 as peak working set of one test host process (ADR 0061
    holds the table): 809 MB structure, 729 MB histeq, 1079 MB a six-frame light series,
-   1113 MB ratio, 1135 MB smooth, 1249 MB expo with the preview decoded; two runs at once add
+   1113 MB the ratio mode of the time, 1135 MB smooth, 1249 MB expo with the preview decoded; two runs at once add
    up (1.3-2.2 GB), which is why the window lets one heavy run compute at a time. Runtime is
    fine (1.3 s structure / 0.6 s expo / 0.5 s light on 3000x2000; 1-5 s per run on 24 MP).
 8. **A raw whose only preview is full-size costs a decode of it.** ADR 0024 holds the figures

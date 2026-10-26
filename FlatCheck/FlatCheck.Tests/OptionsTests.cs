@@ -50,7 +50,6 @@ public class OptionsTests
 
         Assert.False(o.Help);
         Assert.Equal("flat.fit", o.Image);
-        Assert.Null(o.Ratio);
         Assert.False(o.Light);
         Assert.False(o.Expo);
         Assert.False(o.Sky);
@@ -85,15 +84,6 @@ public class OptionsTests
         Assert.True(o.Histeq);
         Assert.True(o.Expo);
         Assert.Null(o.Error);
-    }
-
-    [Fact]
-    public void RatioFlag_CapturesTheSecondPath()
-    {
-        var o = Options.Parse(new[] { "a.fit", "--ratio", "b.fit" });
-
-        Assert.Equal("a.fit", o.Image);
-        Assert.Equal("b.fit", o.Ratio);
     }
 
     [Fact]
@@ -185,11 +175,11 @@ public class OptionsTests
     [Fact]
     public void ValueFlagsAlsoWorkBeforeThePath()
     {
-        var o = Options.Parse(new[] { "--sat", "4095", "--ratio", "b.fit", "a.fit" });
+        var o = Options.Parse(new[] { "--sat", "4095", "--against", "b.fit", "a.fit" });
 
         Assert.Null(o.Error);
         Assert.Equal("a.fit", o.Image);
-        Assert.Equal("b.fit", o.Ratio);
+        Assert.Equal("b.fit", o.Against);
         Assert.Equal(4095.0, o.Sat);
     }
 
@@ -207,7 +197,7 @@ public class OptionsTests
     [Fact]
     public void AMissingValue_IsAnError()
     {
-        var o = Options.Parse(new[] { "a.fit", "--ratio" });
+        var o = Options.Parse(new[] { "a.fit", "--against" });
 
         Assert.Contains("lipseste valoarea", o.Error);
     }

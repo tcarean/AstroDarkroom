@@ -2,9 +2,8 @@
 
 Quantitative diagnostic for astrophotography flat frames, for a photographic lens on a DSLR
 (the author's Samyang 135 f/2, Nikkor 35 DX and Tokina 11-20 on a Nikon D3300, Siril workflow).
-Seven modes: structure (is the master radially symmetric, and does its vignetting match the
-lens's published profile), `--ratio` (camera-fixed versus world-fixed by 180° rotation),
-`--light` (does the flat correct a real light), `--expo` (is a raw flat exposed right),
+Six modes: structure (is the master radially symmetric, and does its vignetting match the
+lens's published profile), `--light` (does the flat correct a real light), `--expo` (is a raw flat exposed right),
 `--histeq` (Siril's histogram display, a picture, no verdict), `--smooth` (writes a second
 master with the diffuser texture removed), `--synthetic` / `--lenses` / `--against` (writes a
 radial flat from the lens's Adobe or lensfun profile and compares). Two applications, a console
@@ -21,10 +20,10 @@ It is not an image processor and it never decides what a shape on a map is.
 - Test: `dotnet test FlatCheck.sln -c Release --nologo --filter "Category!=Validation"`
 - One test: `dotnet test FlatCheck.sln --filter "FullyQualifiedName~R012"`
 - Format: `dotnet format FlatCheck.sln` (check only: `--verify-no-changes`)
-- Run: `dotnet run --project FlatCheck -- <file.fit> [--ratio B.fit | --light | --expo | ...]`;
+- Run: `dotnet run --project FlatCheck -- <file.fit> [--light | --expo | --histeq | ...]`;
   the flag may come before or after the path (R-003). Window: `dotnet run --project FlatCheck.Wpf -- <session folder>`
 - Golden console texts, after an intended output change (the rule "Golden files"):
-  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests`; the 43
+  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests`; the 39
   parity goldens only after the owner's yes: `... --filter ParityGoldenTests`
 - Window renders as PNGs without running it: `FLATCHECK_DUMP_SCREENS=<dir> dotnet test FlatCheck.Wpf.Tests --filter WindowSmokeTests`
 - Figures on the real masters (minutes, not in the gate): `/validate`, or
@@ -75,7 +74,7 @@ a kit rule names it.
 - **Golden files** (extends the kit's rule "No test edited to pass", the kit's ADR 0033). The
   golden files are the console snapshots `FlatCheck.Tests/Golden/*.txt`, regenerated with
   `FLATCHECK_UPDATE_GOLDEN=1` and `--filter GoldenOutputTests`, which leaves the parity goldens
-  alone. The 43 `Golden/parity_*.txt` captured on 2026-09-26 carry the figures the Python
+  alone. The 39 `Golden/parity_*.txt` captured on 2026-09-26 carry the figures the Python
   prototype confirmed before it froze (`docs/design/python-parity.md` lists them and the one
   divergence): they are the goldens with confirmed figures. Any line that changes there is a
   finding; only after the owner's yes are they recaptured, with `--filter ParityGoldenTests`,
@@ -132,7 +131,7 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. FlatCheck adds:
 - Anything in `LensProfiles/`: `docs/design/lens-profiles.md` (two coordinate conventions,
   quoted from their sources; the calibration crop is part of a lens's identity).
 - The Siril session rules of the window: `docs/design/two-applications.md` (two places for the
-  master; the Ratio tab proposes nothing on purpose; the smoothed master is never the master).
+  master; the smoothed master is never the master).
 - Any threshold or verdict wording: `docs/design/thresholds.md`.
 - A "bug" in `known-issues.md` is probably deliberate; read it first.
 

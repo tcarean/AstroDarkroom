@@ -23,7 +23,7 @@ namespace FlatCheck.Wpf
 {
     /// <summary>
     /// The folded guide on how to read the residual map and what its shapes mean, under the
-    /// map of the Structura and Ratio tabs, bound to the tab's <c>MapGuide</c>.
+    /// map of the Structura tab, bound to the tab's <c>MapGuide</c>.
     /// </summary>
     public partial class MapGuidePanel : UserControl
     {

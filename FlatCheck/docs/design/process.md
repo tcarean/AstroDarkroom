@@ -80,7 +80,7 @@ tests and documents; this section is that list, in the order the work goes.
 ### The Options contract
 
 - `Options` is an `internal sealed class` of plain `internal` fields: no properties, no
-  setters, no builder. One field per flag (`Image`, `Ratio`, `Light`, `Expo`, `Sky`, `Histeq`,
+  setters, no builder. One field per flag (`Image`, `Light`, `Expo`, `Sky`, `Histeq`,
   `Rainbow`, `Smooth`, `ScalePx`, `ScaleAuto`, `Synthetic`, `Lens`, `Source`, `Focal`, `FStop`, `Crop`,
   `Profiles`, `Lenses`, `Against`, `Raw`, `OutPng`, `Sat`, `Black`, `Pattern`, `Fov`), plus
   `Help` and `Error`. A flag with a value is a `string` or a nullable number (`double?`), so
@@ -137,7 +137,7 @@ every test calls, with two `StringWriter`s. In order:
    `ERROR: <Error>` (Romanian `EROARE:`) to stderr and returns 1.
 4. A folder as input is refused with exit 1 unless `--light` (series mode).
 5. The mode, chosen by the first match in a fixed `if / else if` chain: `--lenses`,
-   `--synthetic`, `--against`, `--smooth`, `--histeq`, `--expo`, `--ratio`, `--light`,
+   `--synthetic`, `--against`, `--smooth`, `--histeq`, `--expo`, `--light`,
    structure (the default, no flag). This chain is the mutual exclusion R-003 promises and its
    order is the requirement. The comment at the top of `FlatCheckCli.cs` still lists the
    pre-mode-7 order; the code is the truth. A new mode is one more `else if`, placed where its
@@ -200,7 +200,7 @@ The golden tests are the console's output contract; the class comment in
   file instead (UTF-8 without BOM, LF) and asserts nothing; **a missing file is therefore
   created on the first run under the variable**. Without the variable a missing file fails
   with a message that says to re-run with it.
-- Names are lowercase `mode_scenario` in snake case: `structure_clean`, `ratio_world`,
+- Names are lowercase `mode_scenario` in snake case: `structure_clean`,
   `light_series_undetermined`, `smooth_auto_no_texture`, `synthetic_ambiguous`, `help`. A name
   describes the behaviour, not the fixture.
 
@@ -274,8 +274,8 @@ figure on a real master).
 `R001_EveryModePrintsTheBannerOnTheFirstLine` and `R001_EveryModePrintsTheCopyrightOnTheSecondLine`
 each hold an explicit list of invocations, one `Assert.Equal` per mode; the copyright one adds a
 `--smooth` refusal, `--help` and a missing file. A new mode is one more line in each, with the
-arguments it needs to reach its report. Since 2026-09-27 the lists cover all nine modes:
-structure, `--ratio`, `--light`, `--expo`, `--histeq`, `--smooth` (fixed scale and `auto`),
+arguments it needs to reach its report. Since 2026-09-27 the lists cover every mode (eight
+since `--ratio` left, ADR 0065): structure, `--light`, `--expo`, `--histeq`, `--smooth` (fixed scale and `auto`),
 `--synthetic`, `--lenses` and `--against` (the last three with an empty `--profiles` folder,
 which is enough for the banner: it is written before the options are parsed).
 

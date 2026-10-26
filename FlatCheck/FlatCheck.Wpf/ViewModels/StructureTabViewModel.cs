@@ -379,7 +379,7 @@ namespace FlatCheck.Wpf
             // "0 / 0", and the window and the console must say the same thing.
             Levels = $"median / max ADU  {StructureReport.Levels(r)}";
 
-            // The five rows are built in StructureRows, where the Ratio tab takes them from too:
+            // The five rows are built in StructureRows, where the Netezire tab takes them from too:
             // it is the same battery, and two compositions of it have already diverged once.
             Tests.Clear();
             foreach (var row in StructureRows.Tests(r)) Tests.Add(row);

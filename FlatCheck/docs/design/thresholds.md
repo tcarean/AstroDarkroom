@@ -2,8 +2,8 @@
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
 > CLAUDE.md nor a decision record says (ADR 0051): the rule that every metric is a ratio and every
-> threshold lives in `Th` is CLAUDE.md's rule "Ratios" and ADR 0012; the residual scale, the fifth test
-> and the `--ratio` verdict are ADR 0015 and ADR 0019; the illumination offset and the tilt are
+> threshold lives in `Th` is CLAUDE.md's rule "Ratios" and ADR 0012; the residual scale and the fifth test
+> are ADR 0015; the illumination offset and the tilt are
 > ADR 0014. This note keeps the table of every threshold, the wording each band carries, the
 > mechanics of the verdict ladders and the exit codes. **Covers:** `Thresholds.cs` (`Th`),
 > `Stats.Verdict` / `Severity` / `ResidualVerdict`, `FlatCheckCli.ExitFor`.
@@ -25,8 +25,6 @@ the last inline ones there and the `--expo` midpoints). Full picture:
 | worst tile (`pata maxima`) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | local spot (`pete locale`) | structure | 2% = warning only, never a verdict | | `Th.LocalSpotWarn` |
 | vignetting vs the lens profile (nearest) | structure, `--raw`/`--lens` | *residual scale* through `2^|D| - 1`: 0.03 / 0.14 / 0.26 stops; the report also prints what `--light`'s 2 / 5 % would say of the same corner error, and the reference's own spread (`Th.ProfileDatabaseSpreadStops` = 0.2 stops = 15 %) - informative, never a verdict | | `Th.Resid*` via `Stats.DepthVerdict`; `Stats.DepthOnLightScale` for the note |
-| the five structure tests on `(A+B)/2` | ratio | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
-| world-fixed gradient per orientation | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` - informative label only |
 | \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |
 | field of view (diagonal) | light | 20° | 40° = refused | `Th.LightFovOk/Max` |
 | focal length, no pixel size | light | 120 mm | below 60 mm = refused | `Th.LightFocalOk/Min` |
@@ -68,9 +66,8 @@ its complement: the residual trims extremes, the worst tile *is* the extreme.
 
 `Stats.Severity` spans both ladders (`OK`/`PERFECT` = 0, `BUN` = 1, `SUSPECT`/`ACCEPTABIL` = 2,
 `PROBLEMA`/`REFA` = 3), and the exit code is derived across all modes. Only `--light` speaks
-`OK`/`SUSPECT`/`PROBLEMA`; `--ratio` gives a residual-scale verdict because its verdict *is* a
-structure verdict (ADR 0019), and the `OK`/`SUSPECT`/`PROBLEMA` words survive in its output only
-as the informative label on the world-fixed component.
+`OK`/`SUSPECT`/`PROBLEMA` (the `--ratio` mode's informative label on `Th.RatioOk/Bad` left with
+the mode, ADR 0065).
 
 ## Exit codes
 
@@ -92,5 +89,4 @@ the scale was undetermined - "read this before you decide", the meaning 2 has el
 `--synthetic` follows the same shape: 0 written, 1 refused (a colour cube, or a focal
 length, f-stop or crop factor nobody could supply), 2 the lens could not be chosen from
 the text (none, or several - the candidates are printed). `--lenses` is always 0.
-`--against` goes through `ExitFor` on the verdict of the *difference*. `--ratio` exits on the
-residual-scale band of the combined master (ADR 0019).
+`--against` goes through `ExitFor` on the verdict of the *difference*.

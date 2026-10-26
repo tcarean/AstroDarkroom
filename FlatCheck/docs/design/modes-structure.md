@@ -54,7 +54,7 @@ extra shooting.
 
 **The sixth test: the master's vignetting against the lens profiles** (`--raw <flat.NEF>`
 or `--lens <text>`; the window does it by itself when `flats/` holds a raw). ADR 0031 holds
-the decision and every measured reason: why the five tests and `--ratio` are blind to a
+the decision and every measured reason: why the five tests (and any rotation) are blind to a
 radial excess (the tablet masters of 2026-09-18), the depth measured with the master's own
 operator (ADR 0013), no new threshold (`Stats.DepthErrorPct`, `2^|D| - 1`, onto the residual
 scale), the two scales for one number and option A over option B, the nearest profile's

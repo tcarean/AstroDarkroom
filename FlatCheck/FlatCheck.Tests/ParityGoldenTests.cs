@@ -20,18 +20,19 @@ using System.Text.RegularExpressions;
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// The 43 scenarios of the retired Python cross-check, pinned as golden files.
+/// The 39 scenarios of the retired Python cross-check, pinned as golden files.
 ///
 /// Until 2026-09-26 crosscheck.py ran flatcheck.py and the console over the same synthetic
 /// FITS (<see cref="ParityFixtures"/>) and compared every number; on that day the two agreed
-/// on all 43 scenarios (0 numeric differences, ADR 0047), and the prototype was frozen. The
+/// on all 43 scenarios (0 numeric differences, ADR 0047), and the prototype was frozen; the
+/// four --ratio scenarios left with the mode on 2026-10-26 (ADR 0065). The
 /// texts in Golden/parity_*.txt were captured from the console on that day, so they carry the
 /// numbers the independent implementation confirmed. That is what makes them different from
 /// the main set in <see cref="GoldenOutputTests"/>, which pins behaviour without confirming
 /// it: a re-approval here (FLATCHECK_UPDATE_GOLDEN=1) is a decision that the C# alone is now
 /// right, and the diff is read with that in mind.
 ///
-/// Keep all 43. They are not to be trimmed like the main set: each one was chosen to reach a
+/// Keep all 39. They are not to be trimmed like the main set: each one was chosen to reach a
 /// branch the main goldens miss (a residual band, a BITPIX, a non-square frame, an exposure
 /// band boundary, a series verdict), and the coverage they add is listed in
 /// docs/design/python-parity.md. A new scenario is added the same way as a golden one
@@ -58,8 +59,8 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
 
     /// <summary>
     /// The scenario table, name and arguments exactly as SCENARIOS in crosscheck.py had them.
-    /// Every argument that names a fixture file or folder in the workspace (the input, the
-    /// B side of a --ratio, a series folder) is made absolute by the test; the rest pass
+    /// Every argument that names a fixture file or folder in the workspace (the input, a
+    /// series folder) is made absolute by the test; the rest pass
     /// through, so "--pattern pp_light_0000?.fit" stays a pattern - no such file exists.
     /// </summary>
     public static TheoryData<string, string[]> Scenarios => new()
@@ -79,11 +80,6 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
         { "structure int32", new[] { "int32.fit" } },
         { "structure float 0..1", new[] { "float01.fit" } },
         { "structure dust shadow", new[] { "dust.fit" } },
-
-        { "ratio clean/gradient", new[] { "clean.fit", "--ratio", "grad.fit" } },
-        { "ratio clean/clean", new[] { "clean.fit", "--ratio", "clean.fit" } },
-        { "ratio mild/heavy", new[] { "vign_mild.fit", "--ratio", "vign_heavy.fit" } },
-        { "ratio wide/wide", new[] { "wide.fit", "--ratio", "wide.fit" } },
 
         { "light undercorrected", new[] { "clean.fit", "--light" } },
         { "light overcorrected", new[] { "overcorrected.fit", "--light" } },
@@ -133,7 +129,8 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
 
         // A fixture left relative is resolved against the test host's folder: the console
         // then reports a missing file with that machine's path in it, and the golden pins an
-        // error nobody meant. The first capture did exactly that on the four --ratio rows.
+        // error nobody meant. The first capture did exactly that on the four --ratio rows of
+        // the time (a second file argument).
         Assert.DoesNotContain(Environment.CurrentDirectory, output);
         Assert.DoesNotContain("Could not find file", output);
 
@@ -144,11 +141,11 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
         => File.Exists(fx.Ws.PathTo(arg)) || Directory.Exists(fx.Ws.PathTo(arg));
 
     [Fact]
-    public void TheTableHasTheFortyThreeScenariosOfTheCrossCheckAndNoTwoShareAGolden()
+    public void TheTableHasTheThirtyNineScenariosLeftOfTheCrossCheckAndNoTwoShareAGolden()
     {
         var slugs = Scenarios.Select(row => Slug((string)row[0])).ToList();
 
-        Assert.Equal(43, slugs.Count);
+        Assert.Equal(39, slugs.Count);
         Assert.Equal(slugs.Count, slugs.Distinct().Count());
     }
 }

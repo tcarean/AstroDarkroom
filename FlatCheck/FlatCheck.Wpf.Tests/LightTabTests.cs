@@ -129,10 +129,10 @@ public class LightTabTests
         Assert.Null(vm.Map);
     }
 
-    /// <summary>The refusal explains the geometric degeneracy and points to the test that
-    /// answers.</summary>
+    /// <summary>The refusal explains the geometric degeneracy and points to the Structure tab,
+    /// what is left to judge the flat on.</summary>
     [Fact]
-    public async Task ARefusalExplainsWhyAndPointsAtTheRotationTest()
+    public async Task ARefusalExplainsWhyAndPointsAtTheStructureTab()
     {
         using var f = new SessionFixture().WithFlatMaster()
                                           .WithLightSeries(6, SessionFixture.WideFieldCards);
@@ -140,7 +140,7 @@ public class LightTabTests
         var vm = await Run(f);
 
         Assert.Contains("degenerare geometrica", vm.Reasons);
-        Assert.Contains("Ratio", vm.Reasons);
+        Assert.Contains("Structura", vm.Reasons);
         Assert.NotEmpty(vm.Field);
     }
 

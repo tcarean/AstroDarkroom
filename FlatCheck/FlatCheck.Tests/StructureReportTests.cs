@@ -75,17 +75,16 @@ public class StructureReportTests
     /// The figures are an upper bound: a camera-fixed part (an axis off the sensor
     /// centre, a lens with genuinely non-radial vignetting) lands in REFA too, without
     /// being a flat error. Measured: an axis decentred by 5 % of the width gives REFA on a
-    /// flat that corrects perfectly. So the advice must send to --ratio before "reshoot".
+    /// flat that corrects perfectly. So the advice must say so beside "reshoot".
     /// </summary>
     [Fact]
-    public void TheReshootAdvicePointsAtRatioBeforeReshooting()
+    public void TheReshootAdviceSaysTheFigureIsAnUpperBound()
     {
         string advice = StructureReport.Advice("REFA");
 
-        Assert.Contains("--ratio", advice);
-        Assert.Contains("fixa pe aparat", advice);
-        Assert.True(advice.IndexOf("--ratio") < advice.IndexOf("refa flat-urile"),
-            "--ratio should come before the instruction to reshoot");
+        Assert.Contains("Refa flat-urile", advice);
+        Assert.Contains("limita superioara", advice);
+        Assert.Contains("nu e eroare de flat", advice);
     }
 
     // ---------------------------------------------------------------- local spots
@@ -486,7 +485,7 @@ public class StructureReportTests
         Assert.Contains("Refa flat-urile", deeper);
         Assert.Contains("MAI PUTIN", shallower);
         Assert.Contains("cer", shallower);
-        Assert.Contains("--ratio nu-l vad", mild);
+        Assert.Contains("cele cinci teste nu-l vad", mild);
         Assert.DoesNotContain("Refa flat-urile", mild);
         Assert.Contains("0.2 stopuri", mild);
     }

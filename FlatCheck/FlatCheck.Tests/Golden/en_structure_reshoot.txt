@@ -38,16 +38,16 @@ Copyright (C) 2026 Tudor Carean
     the frame a purely radial model does NOT explain. It is an UPPER BOUND of the
     flat's error, not the error itself - it holds both the part fixed to the camera
     (the optics; divided out of the lights correctly) and the part fixed in the world (the
-    illumination; it does not repeat). The --ratio mode separates them. The corner spread,
+    illumination; it does not repeat); one master cannot tell them apart. The corner spread,
     the azimuthal asymmetry and the tilt are partial views of the same deviation.
     "Worst spot" catches what the others miss: a compact defect - a small leak,
     a condensation spot - that the residual clips as an extreme.
 
   VERDICT: REDO
     Too large a deviation from radial symmetry => an uneven source, a light
-    leak, a tilted camera, or ambient light. It is NOT vignetting. Before you redo,
-    run --ratio on two rotated stacks: if the deviation is fixed to the camera,
-    the flat is right. Otherwise redo the flats. See the map for the shape of the problem.
+    leak, a tilted camera, or ambient light. It is NOT vignetting. Redo the flats;
+    see the map for the shape of the problem. The figure is an upper bound: an
+    optic that is itself off-centre shows here too, and that part is not a flat error.
 
     -> map saved: <TMP>/out.png
 

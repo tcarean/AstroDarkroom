@@ -42,9 +42,9 @@ public class LanguageTests
     [Fact]
     public void R100_TheOtherArgumentsKeepTheirOrder()
     {
-        var lang = LanguageArgument.Extract(new[] { "a.fit", "--lang", "ro", "--ratio", "b.fit", "-o", "x.png" });
+        var lang = LanguageArgument.Extract(new[] { "a.fit", "--lang", "ro", "--against", "b.fit", "-o", "x.png" });
 
-        Assert.Equal(new[] { "a.fit", "--ratio", "b.fit", "-o", "x.png" }, lang.Rest);
+        Assert.Equal(new[] { "a.fit", "--against", "b.fit", "-o", "x.png" }, lang.Rest);
     }
 
     [Fact]

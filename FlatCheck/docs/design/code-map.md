@@ -15,7 +15,7 @@
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
 
-What the tool is and what its seven modes answer is the first paragraph of CLAUDE.md; each
+What the tool is and what its six modes answer is the first paragraph of CLAUDE.md; each
 mode has its own note (`modes-*.md`, mapped by the index). The dependency rule, the hand-rolled
 FITS and PNG and the two packages are ADR 0008, 0009 and 0010 with `dependencies.md`; what each
 of the two applications owns is ADR 0011 with `two-applications.md`. The target is .NET 8.
@@ -32,7 +32,7 @@ a library extraction and not a copy is ADR 0011.
 - `FlatCheck.Core/` - the compile boundary of ADR 0011.
   - `FitsReader.cs` - the hand-rolled FITS reader (ADR 0008). `HInt`/`HDbl`/`HStr` read single
     cards out of a header dictionary with a default, so a missing card is never an error - which
-    is what lets `--light` and `--ratio` degrade instead of throwing on a raw, which has no
+    is what lets `--light` degrade instead of throwing on a raw, which has no
     FITS header at all. `LoadHeader(path)` reads the header blocks alone, for the window's
     Sintetic tab, which wants `FOCALLEN` and `INSTRUME` out of a 96 MB master at open. Both
     reads refuse the same files with the same `InvalidDataException`, through two shared
@@ -156,7 +156,7 @@ a library extraction and not a copy is ADR 0011.
     came from, how the candidates are chosen (`CandidatesByRangeOnly` for a manual lens) and
     `FirstRaw` are ADR 0030, `PreferCamera` ADR 0029.
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
-    `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
+    `StructureAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
     `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5),
     `SyntheticFlatBuilder` (mode 7: a `VignettingModel` and a frame size in, the raster
     and its depth at four reference points out), `AgainstAnalyzer` (in `Runs/AgainstRun.cs`:
@@ -177,10 +177,9 @@ a library extraction and not a copy is ADR 0011.
     `header -> SuitabilityResult` (it decides whether `--light` applies at all, before any
     pixel is read), and `LightSeriesAnalyzer` is `[LightResult] -> LightSeriesResult` (it
     combines per-frame results; the file loading stays in `Runs/`, like every other mode).
-    `RatioAnalyzer` is `Img × Img -> RatioResult` and is the one analyzer that *calls*
-    another: the verdict of the attribution mode is `StructureAnalyzer` run on the
-    combined master, through `AnalyzePrepared` - the overload that skips `Img.Prepare`
-    because the caller has already prepared its input (ADR 0019).
+    `StructureAnalyzer.AnalyzePrepared` is the overload that skips `Img.Prepare` because the
+    caller has already prepared its input; `SmoothAnalyzer` and `AgainstAnalyzer` run the
+    battery through it on rasters of their own making.
     The members of every `XxxResult`, with their units, which of them vote and which are
     informative, and the `docs/validation.json` keys that read them, are tabulated under
     "Result records (Analysis/)" at the end of this note.
@@ -221,11 +220,11 @@ a library extraction and not a copy is ADR 0011.
     `ChannelMedianPct` as the console's channel rows), `LightReport.FieldText` /
     `FieldWarning` / `TooWideText` and `LightSeriesReport.CorrelationValue` / `ReasonsText`
     (the End to end tab's field line, refusal and reasons: `FieldText` is the console's
-    `FieldValue` unpadded, the other lines joined into paragraphs, the Ratio tab named where
-    the console names `--ratio`, and the focal-length-only note said without the console's
+    `FieldValue` unpadded, the other lines joined into paragraphs, the Structure tab named
+    where the console names the structure tests, and the focal-length-only note said without the console's
     `--fov` way out), and
     `StructureReport.CornerShares` / `VignetteNote` / `CentroidNote` (the notes under the
-    Structure and Ratio rows, through the console's ratios) - all window-only, like `MapScaleLabel`,
+    Structure rows, through the console's ratios) - all window-only, like `MapScaleLabel`,
     and for the same reason. `StructureReport` also owns the profile block: `ProfileRows`,
     `MasterDepth`, `ComparisonSummary`, `ComparisonNote`, `DepthScaleRows` /
     `DepthScaleNote` (the depth scale as four bands in stops, `Th.Resid*` through
@@ -234,17 +233,8 @@ a library extraction and not a copy is ADR 0011.
     (one sentence per `ComparisonGap`), `ShapeDetail` / `DepthDetail` (the two halves of
     the verdict; the console pads them into `VerdictDetail`, the window labels them itself)
     and `DepthAdvice`, which replaces `Advice` when the depth carried the verdict
-    (ADR 0031). From `RatioReport` the seven that the Ratio tab shows verbatim -
-    `Provenance`, `WorldValue`, `Precondition`, `WorldMeaning`, `SensorCaveat`, and the two
-    window-only notes under the world-fixed rows, `WorldNote` (what "per orientation"
-    means, and that the coloured label does not vote, with its thresholds read from
-    `Th.RatioOk`/`Th.RatioBad`) and `WorldCornerNote`. Those two rows were the last on the
-    Ratio screen without a description; `EveryRowOnTheScreenCarriesADescription` now covers
-    every row on it. The console formats them into columns, the WPF app puts them in cards
-    and under a coloured chip; the wording has one definition either way. `WorldValue` and
-    `WorldLine` are split for exactly that reason: the console wants the figure with its
-    label glued on, the window shows the label as a separate chip, and without the split
-    the verdict appeared twice on one row. `HistEqReport` has no verdict to write; what it
+    (ADR 0031). The console formats them into columns, the WPF app puts them in cards
+    and under a coloured chip; the wording has one definition either way. `HistEqReport` has no verdict to write; what it
     exposes as values is `Caveat()` (what the picture cannot show), `MasterVersusFrame()`
     and `ViewCaption()` - window-only, like the others. `SmoothReport` prints "what was
     removed" and the structure battery before/after; it reuses the structure report's own
@@ -252,7 +242,7 @@ a library extraction and not a copy is ADR 0011.
     reports cannot name a test differently) and `LocalSpotValue(pct, x, y)`, the overload
     that formats a spot measured on another raster (its negative-zero rounding is ADR 0041).
   - `Runs/` - the chain of one mode, the layer both applications call (ADR 0011):
-    `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
+    `StructureRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
     `SmoothRun`, `SyntheticRun`, `AgainstRun`, `SplitRun`, plus `SeriesFinder` (which files a
     series run covers). `StructureRun.Analyze` is the first half of `Execute` (load, analyze,
     compare, no text, no map); `SplitRun` calls it once per master - the whole, then the
@@ -302,11 +292,10 @@ a library extraction and not a copy is ADR 0011.
   - `Options.cs` - CLI parsing.
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See `two-applications.md`.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
-    master and where it may be, ADR 0034; which are raw flats; what counts as a flat master
-    by name, ADR 0033; `SmoothedMasterPath` and `SyntheticMasterPath`, the two files the
+    master and where it may be, ADR 0034; which are raw flats; `SmoothedMasterPath` and `SyntheticMasterPath`, the two files the
     writing tabs put beside the master, ADR 0036) and `SessionMessages` (the explanations
-    shown when the input is not usable, the Ratio tab's in-UI documentation, and the
-    residual map's shape guide), plus the four files behind the "run the script from here"
+    shown when the input is not usable and the residual map's shape guide), plus the four
+    files behind the "run the script from here"
     button of ADR 0035: `SirilInstall` (where `siril-cli.exe` and the `.ssf` scripts are;
     the config parsing is pure, `Locate()` is the only thing that touches the machine),
     `SirilScript` (commands and input folders read out of a `.ssf`), `SirilLogLine` (one
@@ -321,7 +310,7 @@ a library extraction and not a copy is ADR 0011.
     *and* FITS from `flats/` (via `FitsReader.IsFitsPath`), and `HistEqCandidates()` builds
     the Histogram tab's list in the order and by the exact-path rule of ADR 0033; three
     kinds of row, `HistEqKind`. The only part of the app with real rules, and the part with
-    the most tests. It has no `RatioCandidates` (ADR 0033).
+    the most tests.
     `ProfileCatalog` is the lens-profile catalog loaded once for the whole window (in the
     background, on first request, retried after a failure) - it was the Sintetic tab's
     until the Structure tab needed the same list; `MainViewModel` builds it and hands it
@@ -343,7 +332,7 @@ a library extraction and not a copy is ADR 0011.
     properties only, ADR 0040), and two small companions of the residual map:
     `MapScaleViewModel` (the scale chips, which translate a choice into a
     `PngWriter.MapRange` and decide nothing; on every tab with a residual map - Structure,
-    Ratio, Netezire, Sintetic, Split) and `MapGuideViewModel` (on Structure and Ratio; the
+    Netezire, Sintetic, Split) and `MapGuideViewModel` (on Structure; the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
     either. `SensorFormatViewModel` is the same pattern on the Sintetic tab: six chips that
@@ -363,8 +352,8 @@ a library extraction and not a copy is ADR 0011.
     a factor, plus the effective factor the control writes back - so a test can drive it
     and the tab can reset it on a new file (and deliberately not on a chip change).
     `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
-    deviation battery, built once for **both** the Structure and the Ratio tab, since Ratio
-    runs the same analyzer on the combined master. They are `public` because WPF binding
+    deviation battery, built once for every tab that shows the battery (Structure, and
+    Netezire before and after the smoothing). They are `public` because WPF binding
     reads public properties by reflection (the consequence for internal core types is
     ADR 0037).
     `TestNote` earns its place the hard way: two of the five rows - the azimuthal
@@ -375,40 +364,17 @@ a library extraction and not a copy is ADR 0011.
     has no caller: its explanations are grouped under the scale, and five notes threaded
     between the rows would drown the figures.
 
-    **The Ratio tab was the same battery composed a second time**, and that is why it kept
-    falling behind: five hand-written `Grid` blocks in XAML with the labels as literals and
-    ten string properties behind them, so the fifth test had to be added twice and the
-    notes reached only one tab. Both tabs now render `StructureRows.Tests(result)` through
-    the shared `MetricRowTemplate`, and `TheRowsAreTheSameOnesTheStructureTabShows`
-    compares the two tabs' labels, notes and key flags directly. Ratio's list is a
-    **replaceable `IReadOnlyList`, not an `ObservableCollection`**, for the reason
-    `Histograms` is: `Choose` starts `RecomputeAsync` without awaiting it, so two quick
-    picks put two analyses in flight - a collection cleared and refilled by both ends up
-    with duplicated rows, a replaced reference just lets the last one win. Since the
-    per-run token below, only the latest run reaches the screen at all, but the list
-    shape stays: it is right whatever the timing. Structure keeps its
-    `ObservableCollection` because `MainViewModel.OpenAsync` cancels the previous run first.
-
-    **Each Ratio run has its own token, linked to the session's**, the Histogram tab's
-    pattern: a new pick cancels the previous run's token, and the superseded lambda stops
-    at its check after the await without touching anything. It used to run on the
-    session's token alone, so a re-pick during a run let both results land, in whichever
-    order they finished. In the app the UI thread serialised the two continuations; in
-    the tests there is no synchronisation context, the two continuations ran in parallel
-    on the pool, both mutated `_mapCache` (a `Dictionary`) from two threads, and
-    `ChoosingTheSecondFileComputes` failed once in a while - the guard turned the
-    exception in the latest run into `HasResult = false`. `RatioRun.Execute` takes no
-    token, so an analysis already started still runs to the end (memory overlaps for its
-    duration, as on the Histogram tab); its result is dropped. `Pending` exposes the run a
-    pick started, so a test can await one it did not start;
-    `ASecondPickSupersedesTheFirst` pins that the last pair wins.
+    The builder exists because the battery was once composed twice (the Ratio tab of the
+    time, ADR 0033, removed by ADR 0065: five hand-written `Grid` blocks with the labels as
+    literals), and the second copy kept falling behind the first. Every tab that shows the
+    battery renders `StructureRows.Tests(result)` through the shared `MetricRowTemplate`.
+    Structure keeps its `ObservableCollection` because `MainViewModel.OpenAsync` cancels
+    the previous run first.
 
     `StructureRows.Informative` does the same for the three no-verdict rows (vignetting,
-    illumination centre, local spots), so Ratio now shows everything the console's
-    `--ratio` report prints under `INFORMATIV`, plus the dust warning under its verdict.
-    The one line deliberately left out is `median / max ADU`: it belongs to the structure
-    mode's header, not to `WriteBody`, because on Ratio's combined master - normalised to a
-    median of 1 - it would mean nothing, and the console does not print it there either.
+    illumination centre, local spots). The one line deliberately left out is
+    `median / max ADU`: it belongs to the structure mode's header, not to `WriteBody`,
+    because on a raster normalised to a median of 1 it would mean nothing.
   - `Views/SirilRunWindow.xaml` - the live log of a script run, modal over the main
     window; starts the run on `Loaded`, confirms before closing mid-run (closing kills
     Siril), scrolls the log to the end.
@@ -497,7 +463,7 @@ a library extraction and not a copy is ADR 0011.
 `Stats.ResidualVerdict(pct)` on `Th.ResidPerfect` / `Th.ResidUsable` / `Th.ResidCheck`; every
 structure test, the depth verdicts and `--against` speak it. The *light scale* is `OK` /
 `SUSPECT` / `PROBLEMA`, given by `Stats.Verdict(val, ok, bad)`; `--light` uses it on
-`Th.LightRadOk` / `Th.LightRadBad`, the ratio mode's world label on `Th.RatioOk` / `Th.RatioBad`.
+`Th.LightRadOk` / `Th.LightRadBad`.
 `NEDETERMINAT` is the series mode's "ran, cannot conclude". `Stats.Severity(word)` maps all of
 them onto 0..3 so a "worst of" can be taken across the two scales; an unknown word counts as
 the worst. A depth in stops becomes a residual-scale percentage through
@@ -607,21 +573,6 @@ a missing raw, because it is the deeper cause; an unknown catalog (`null`) is no
 without a raw the answer is "no raw", which is what a person can fix.
 
 ### The other analyzers' results, briefly
-
-**`RatioResult`** (`RatioAnalyzer.cs`, mode `--ratio`; the run fills the four metadata members
-from the FITS headers).
-
-| Member | Unit | Meaning | Role |
-| --- | --- | --- | --- |
-| `Sensor` | `StructureResult` on `(A + B) / 2`, prepared (its `RawMedian` / `RawMax` are not ADU) | the camera-fixed part | **the mode's verdict is `Sensor.Verdict`** |
-| `WorldPtpPct` | percent, per orientation (odd part / 2) | the external gradient | informative |
-| `WorldErrPct` | percent | its error bar (even part / 2) | informative |
-| `WorldCornerPct` | percent, per orientation | corner spread of the world map | informative |
-| `WorldLabel` | light-scale word on `Th.RatioOk` / `Th.RatioBad` | coloured label of the world figure | **does not vote** |
-| `World` | `Img`, `A / B` normalised to median 1 | the second map's source | the map |
-| `StackCountA`, `StackCountB` | count, `STACKCNT`, 0 = unknown | how many frames each stack has | informative |
-| `DateObsA`, `DateObsB` | string, `DATE-OBS`, null = unknown | when each was shot | informative |
-| `Verdict` | residual-scale word | `Sensor.Verdict` | the vote |
 
 **`SuitabilityResult`** (`LightSuitability.cs`, before any pixel of `--light` is read).
 
@@ -766,7 +717,7 @@ run's `Result.Profile.Lens.Name` and `Profile.Settings`.
 **The text is always written; there is no way to ask for silence except a null writer.** Every
 `Execute` in this folder takes a `TextWriter report` and writes the mode's whole report into it
 before returning: `StructureRun.Execute` calls `StructureReport.Write(outcome, path, report)`
-unconditionally, and the same holds for `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`,
+unconditionally, and the same holds for `ExposureRun`, `LightRun`, `LightSeriesRun`,
 `HistEqRun`, `SmoothRun`, `SyntheticRun` and `AgainstRun`. The runs that can refuse (`LightRun`,
 `LightSeriesRun`, `SmoothRun`, `SyntheticRun`) write the refusal text into the same writer. No
 flag suppresses it, and nothing returns the text as a string (why the writer is the caller's is
@@ -783,15 +734,16 @@ unconditionally).
 | --- | --- |
 | `Result` | the analyzer's record, never null |
 | `Png` | the residual map, already encoded; null when the mode has no map (`--expo`) |
-| `SecondaryPng` | a second map when the mode has two; only `--ratio` (the world map), null everywhere else |
 
-| Run and signature | Returns | `Png` | `SecondaryPng` |
-| --- | --- | --- | --- |
-| `StructureRun.Execute(path, report, query = null)`; `StructureRun.Compare(result, reference, query)` for the second half alone | `RunOutcome<StructureOutcome>`; `StructureOutcome` | `Structure.Residual` map | null |
-| `RatioRun.Execute(pathA, pathB, report)` | `RunOutcome<RatioResult>` | `Sensor.Residual` map (camera-fixed part) | `World` map (`A / B`) |
-| `ExposureRun.Execute(path, sat?, black?, sky, report, withPreview = false)` | `RunOutcome<ExposureResult>` | null | null |
-| `HistEqRun.Execute(path, report)`; `EncodeChannel(result, i)` and `EncodeMosaic(result)` on demand | `RunOutcome<HistEqResult>` | `CompositeRgb` as PNG | null |
-| `AgainstRun.Execute(pathA, pathB, report)` | `RunOutcome<AgainstResult>` | `Structure.Residual` map (the ratio's residual) | null |
+A mode with two maps (`--smooth`) has an outcome type of its own with its `SecondaryPng`;
+`RunOutcome` carries one map since the `--ratio` mode left (ADR 0065).
+
+| Run and signature | Returns | `Png` |
+| --- | --- | --- |
+| `StructureRun.Execute(path, report, query = null)`; `StructureRun.Compare(result, reference, query)` for the second half alone | `RunOutcome<StructureOutcome>`; `StructureOutcome` | `Structure.Residual` map |
+| `ExposureRun.Execute(path, sat?, black?, sky, report, withPreview = false)` | `RunOutcome<ExposureResult>` | null |
+| `HistEqRun.Execute(path, report)`; `EncodeChannel(result, i)` and `EncodeMosaic(result)` on demand | `RunOutcome<HistEqResult>` | `CompositeRgb` as PNG |
+| `AgainstRun.Execute(pathA, pathB, report)` | `RunOutcome<AgainstResult>` | `Structure.Residual` map (the ratio's residual) |
 
 The runs that can refuse have their own outcome type, each with `Refused => Result == null`
 (or `Advice == null`):

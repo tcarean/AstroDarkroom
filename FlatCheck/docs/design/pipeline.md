@@ -45,10 +45,11 @@ what dispatches. A raw carries no FITS header, so `--light` sees an empty
 dictionary and lands in the guard's `Unknown` layer - runs, with a note (ADR 0020).
 
 
-## The seven modes
+## The six modes
 
 Dispatch order in `FlatCheckCli.Run` is `--lenses` → `--synthetic` → `--against` →
-`--smooth` → `--histeq` → `--expo` → `--ratio` → `--light` → structure (default). The
+`--smooth` → `--histeq` → `--expo` → `--light` → structure (default; `--ratio` sat between
+`--expo` and `--light` until its removal, ADR 0065). The
 modes are mutually exclusive; the first match wins (R-003; the mechanics of the chain are
 "Dispatch in FlatCheckCli.Run" in `process.md`). The WPF app has no dispatch: each tab is one
 mode.

@@ -130,7 +130,7 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// When all you need is the pixels - structure, --ratio, the --light series.
+        /// When all you need is the pixels - structure, the --light series.
         /// </summary>
         /// <param name="path">The file to read, as for <see cref="Load"/>.</param>
         /// <returns>The frame's image.</returns>

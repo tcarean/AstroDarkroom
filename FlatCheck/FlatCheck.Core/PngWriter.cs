@@ -19,7 +19,7 @@
 //
 // The map is diverging: blue (below) -> white -> red (above), with the white FIXED at 1.0.
 // Fixing it at 1.0 is valid for every caller of today - the structure residual is img/model ~ 1,
-// the A/B ratio is normalised to median 1, and the --light map is 1 + radial/a. If you add a
+// the smoothing's removed component is a ratio around 1, and the --light map is 1 + radial/a. If you add a
 // caller whose data are NOT centred on 1, the map will lie.
 //
 // The ENDS of the range come from outside, as MapRange, and are of two kinds:
@@ -361,7 +361,7 @@ namespace FlatCheck
         // one: the field was assigned BEFORE it was filled, so a second thread coming in at that
         // moment saw the table non-null, read it with zeros and wrote a wrong CRC - that is, a
         // corrupt PNG. Reproduced: 8 threads, 2000 rounds, 5261 wrong CRCs. In the window it is
-        // really possible, because the Ratio tab can encode while Structure is still running. A
+        // really possible, because a scale chip on one tab can encode while Structure is still running. A
         // static initialiser has the CLR's guarantee that no one sees the table until it is ready.
         static readonly uint[] _crcTable = BuildCrcTable();
 

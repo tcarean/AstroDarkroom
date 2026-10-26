@@ -3,7 +3,6 @@ Copyright (C) 2026 Tudor Carean
 Usage:
   flatcheck <flat.fit>                    # structure test
   flatcheck <flat.fit> --raw <flat.NEF>   # the same, plus the vignetting against the lens profile named in the raw
-  flatcheck <A.fit> --ratio <B.fit>       # attribution by 180-degree rotation
   flatcheck <light.fit> --light           # end-to-end test, one frame
   flatcheck <folder/> --light             # end-to-end test on the whole series
   flatcheck <raw_flat.NEF> --expo         # exposure check

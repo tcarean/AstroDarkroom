@@ -146,17 +146,17 @@ public class ImgTests
             FitsTestData.WithLinearGradient(FitsTestData.Radial(64, 48), 64, 0.20));
 
         var sym = Img.Symmetrise(tilted);
-        var spun = Img.Rotate180(sym);
 
-        for (int i = 0; i < sym.D.Length; i++)
-            Assert.Equal(sym.D[i], spun.D[i], 12);
+        for (int y = 0; y < sym.H; y++)
+            for (int x = 0; x < sym.W; x++)
+                Assert.Equal(sym.At(y, x), sym.At(sym.H - 1 - y, sym.W - 1 - x), 12);
     }
 
     /// <summary>
     /// A field that is already even about the ROTATION centre comes back untouched, bit
     /// for bit - so the radial model gives up nothing it was entitled to keep.
     ///
-    /// Note the centre: `Rotate180` mirrors about ((H-1)/2, (W-1)/2), the true middle of
+    /// Note the centre: the 180-degree rotation mirrors about ((H-1)/2, (W-1)/2), the true middle of
     /// the pixel indices, so the scene here is built about that and not about (w/2, h/2)
     /// like <see cref="FitsTestData.Radial"/>. That half-pixel difference is known issue
     /// 5, and the next test measures what it costs.
