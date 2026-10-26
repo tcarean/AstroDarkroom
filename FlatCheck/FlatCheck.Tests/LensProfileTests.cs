@@ -1081,6 +1081,54 @@ public class LensIdentificationTests
         Assert.False(id.HasRawLensId);
         Assert.Empty(id.Candidates);
         Assert.Null(id.Raw);
+        Assert.False(id.RawSaysNoLens);                      // no raw at all is not a raw without a lens
+    }
+
+    /// <summary>What a Canon EOS 40D on a telescope writes: a camera, and nothing of the lens.</summary>
+    static LoadedFrame NoLensRaw() => new LoadedFrame
+    {
+        Header = new Dictionary<string, string>(),
+        Camera = "Canon EOS 40D",
+    };
+
+    [Fact]
+    public void ARawThatCarriesNoLensIsSaidSoInTheNotes()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+
+        ShotIdentity id = LensIdentification.Identify(Master(), NoLensRaw(), sources, rawName: "IMG_7290.CR2");
+
+        Assert.True(id.RawSaysNoLens);
+        Assert.False(id.HasRawLensId);
+        Assert.False(id.HasRawLensRange);
+        Assert.Empty(id.Candidates);
+        Assert.Null(id.FStop);
+        Assert.Contains(id.Notes, n => n.StartsWith("IMG_7290.CR2 nu spune nimic despre obiectiv"));
+        Assert.Contains(id.Notes, n => n.Contains("telescop"));
+    }
+
+    [Fact]
+    public void ARawWithAnIdOrARangeIsNotARawWithoutALens()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var manual = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(),
+            FocalMm = 135,
+            FNumber = 2,
+            Camera = "NIKON D3300",
+            NikonLensId = 74,                                 // the "non-CPU lens" ID, with the menu's range
+            LensMinFocalMm = 135,
+            LensMaxFocalMm = 135,
+            LensMaxAperture = 2,
+        };
+
+        Assert.False(LensIdentification.Identify(Master(), Raw(), sources, rawName: "DSC_0001.NEF").RawSaysNoLens);
+        Assert.False(LensIdentification.Identify(Master(), manual, sources, rawName: "DSC_0002.NEF").RawSaysNoLens);
+        Assert.DoesNotContain(LensIdentification.Identify(Master(), manual, sources, rawName: "DSC_0002.NEF").Notes,
+                              n => n.Contains("nu spune nimic despre obiectiv"));
     }
 
     [Fact]

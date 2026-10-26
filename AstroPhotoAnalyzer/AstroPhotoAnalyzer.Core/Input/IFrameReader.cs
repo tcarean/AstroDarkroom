@@ -59,8 +59,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="path">A file this reader handles.</param>
         /// <returns>
         /// The raster: 1 or 3 planes, row 0 the image's first row as the reader takes it (a FITS
-        /// is flipped only on ROWORDER = 'BOTTOM-UP'; an EXIF or TIFF orientation tag is not
-        /// applied).
+        /// is always flipped, its file's first row last, as Siril shows it whatever ROWORDER
+        /// says; an EXIF or TIFF orientation tag is not applied).
         /// </returns>
         Raster Load(string path);
     }

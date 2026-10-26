@@ -17,6 +17,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A FITS is read the way up Siril shows it, whatever its `ROWORDER` says: the file's first row
+  is the bottom of the image, keyword or not, and a `TOP-DOWN` keyword is noted as ignored in
+  the report; before, a file without the keyword, or one saying `TOP-DOWN` over bottom-up
+  data (a SyQon step in Siril writes such a file), was analysed upside down, so the report
+  named the wrong corner and the dark nebulae were looked for in the wrong place. The FITS
+  saved from a PNG or TIFF is now written bottom-up under `ROWORDER = 'BOTTOM-UP'`, so Siril
+  shows it the way up it was analysed; a WCS lent through `--wcs` follows the same rule
+  (R-011, R-018, R-145; ADR 0049).
 - The paper-black line of the Tonuri histogram stood half a bin (about 5 px) left of its value:
   the bins are centred on whole L\* values, and the line now falls at the centre of its bin,
   as does the new threshold line (R-113; the code review of ADR 0046's task).

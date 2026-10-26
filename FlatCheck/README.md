@@ -1125,7 +1125,10 @@ profil, rândul care dă verdictul îngroșat, scara adâncimii ca tabel de patr
 (aceeași scară de reziduu, tradusă, nu un prag nou) cu banda verdictului marcată, și
 verdictul rulării — cel mai rău dintre formă și adâncime — în pastila de sus, cu cele două
 părți scrise sub ea. Fără raw, cardul spune de ce nu s-a putut compara și raportul rămâne cel
-simplu. Salvează în folderul
+simplu; un raw care nu spune nimic despre obiectiv (aparat pe telescop sau pe un obiectiv fără
+contacte: focală 0, fără ID, fără gamă) e numit ca atare, cu ce-i lipsește, nu ca „niciun raw",
+iar comparația se face numind obiectivul în tabul Sintetic sau în consolă cu `--lens`, `--focal`
+și `--fstop`. Salvează în folderul
 ales:
 
 - **`Test result.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
@@ -1341,7 +1344,10 @@ Tokina 11-20 f/2.8, și Nikkor 18-200 f/3.5-5.6, și Sigma 18-35 f/1.8 — așa 
 al căror nume contrazice gama sunt scoase, iar obiectivele lensfun ale aceluiași producător
 cu aceeași gamă intră și ele (lensfun nu poartă ID-uri Nikon); rămâne unul, e ales; rămân
 mai multe (cele două generații Adobe ale Tokinei 11-20 și cele două intrări lensfun), lista se
-restrânge la ele și alegi tu, iar nota de sub câmpuri spune ce a citit din raw. Sub câmpuri
+restrânge la ele și alegi tu, iar nota de sub câmpuri spune ce a citit din raw — sau că raw-ul
+nu spune nimic despre obiectiv (niciun ID, nicio gamă: un telescop sau un obiectiv fără
+contacte), caz în care diafragma rămâne goală și scrii tu focala și diafragma și alegi
+obiectivul. Sub câmpuri
 stau **chip-urile de tip de senzor** — full frame, APS-C, APS-C Canon, APS-H, Micro 4/3,
 1" — care arată formatul valorii din câmp: se aprinde cel mai apropiat (în 5 %), deci
 1.523 din baza lensfun aprinde APS-C 1.5, iar nota de sub câmp spune mereu de unde e

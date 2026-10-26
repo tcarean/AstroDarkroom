@@ -124,9 +124,14 @@ public class GoldenOutputTests
             FitsTestData.StringCard("CTYPE1", "RA---TAN"), FitsTestData.StringCard("CTYPE2", "DEC--TAN"),
             FitsTestData.Card("CRPIX1", "256.5"), FitsTestData.Card("CRPIX2", "256.5"),
             FitsTestData.Card("CRVAL1", "263.27"), FitsTestData.Card("CRVAL2", "-25.70"),
-            FitsTestData.Card("CDELT1", "-0.01158"), FitsTestData.Card("CDELT2", "0.01158"),
+            FitsTestData.Card("CDELT1", "-0.01158"), FitsTestData.Card("CDELT2", "-0.01158"),
+            FitsTestData.StringCard("ROWORDER", "BOTTOM-UP"),
         };
-        string fits = ws.WriteFile("cer-intunecat-wcs.fit", FitsTestData.Build(r.W, r.H, 3, (x, y, p) => r.At(p, y, x), bitpix: -32, extraCards: cards));
+        // Written as Siril writes a FITS, the scene's bottom row first and the header saying so,
+        // so that the reader, which always flips (ADR 0049), gets the scene the way it was drawn.
+        // The WCS is mirrored with the rows (CDELT2 negative about CRPIX2 at the centre), so the
+        // catalogue meets the same scene pixels as when the rows were written top first.
+        string fits = ws.WriteFile("cer-intunecat-wcs.fit", FitsTestData.Build(r.W, r.H, 3, (x, y, p) => r.At(p, r.H - 1 - y, x), bitpix: -32, extraCards: cards));
 
         CheckBoth("dark-sky-wcs", ws, fits, "--target-bg", "0.135", "--dmax", "2.0");
     }

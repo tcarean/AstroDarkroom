@@ -26,7 +26,12 @@
 // untouched.
 //
 // FROM ANYTHING ELSE (PNG, TIFF, JPEG). A 32-bit float FITS with a minimal header, the rows from
-// the top down. The source's ICC profile is not carried: FITS has no standard place for it.
+// the bottom up under ROWORDER = 'BOTTOM-UP': Siril puts a file's first row at the bottom
+// whatever the keyword says (ADR 0049), so this is the file it shows the way up it was
+// analysed. The source's ICC profile is not carried: FITS has no standard place for it.
+//
+// Either way the raster, whose row 0 is the top, is written from its last row to its first:
+// the inverse of the reader's flip.
 //
 // The values are the raster's: what the reader clipped to 0..1 stays clipped.
 //
@@ -114,7 +119,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The FITS of a source that is not one: a minimal header (32-bit float, 2 or 3 axes,
-        /// ROWORDER = 'TOP-DOWN', the HISTORY cards), then the data.
+        /// ROWORDER = 'BOTTOM-UP', the HISTORY cards), then the data, bottom row first.
         /// </summary>
         /// <param name="r">The raster, 0..1.</param>
         /// <param name="curve">The curve applied to every sample.</param>
@@ -129,11 +134,11 @@ namespace AstroPhotoAnalyzer
                 ValueCard("NAXIS1", r.W.ToString(CultureInfo.InvariantCulture)), ValueCard("NAXIS2", r.H.ToString(CultureInfo.InvariantCulture)),
             };
             if (r.IsColor) cards.Add(ValueCard("NAXIS3", "3"));
-            cards.Add(StringCard("ROWORDER", "TOP-DOWN"));
+            cards.Add(StringCard("ROWORDER", "BOTTOM-UP"));
             foreach (string h in history) cards.Add(HistoryCard(h));
             cards.Add(Encoding.ASCII.GetBytes("END".PadRight(Card)));
             WriteCards(o, cards);
-            WriteData(o, r, curve, -32, 0, 1, bottomUp: false);
+            WriteData(o, r, curve, -32, 0, 1);
         }
 
         /// <summary>
@@ -192,8 +197,9 @@ namespace AstroPhotoAnalyzer
                 cards.Add(Encoding.ASCII.GetBytes("END".PadRight(Card)));
                 WriteCards(o, cards);
 
-                bool bottomUp = string.Equals(FitsReader.HStr(hdr, "ROWORDER", ""), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase);
-                WriteData(o, r, curve, bitpix, FitsReader.HDbl(hdr, "BZERO", 0.0), FitsReader.HDbl(hdr, "BSCALE", 1.0), bottomUp);
+                // The raster was flipped on reading whatever the source's ROWORDER said, so
+                // writing it flipped back keeps the file's own order and its keyword true.
+                WriteData(o, r, curve, bitpix, FitsReader.HDbl(hdr, "BZERO", 0.0), FitsReader.HDbl(hdr, "BSCALE", 1.0));
 
                 // What follows the image (extensions) passes as it is.
                 Copy(s, o, headerEnd + dataBlocks, s.Length);
@@ -241,9 +247,9 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The data, plane after plane, in the given encoding and row order: the inverse of
-        /// FitsReader.ReadData. Throws on a BITPIX it does not know or a BSCALE of 0, and, after
-        /// writing, when a value fell outside the type by more than a rounding.
+        /// The data, plane after plane, in the given encoding, the raster's last row first: the
+        /// inverse of FitsReader.ReadData. Throws on a BITPIX it does not know or a BSCALE of 0,
+        /// and, after writing, when a value fell outside the type by more than a rounding.
         /// </summary>
         /// <param name="o">The output, after the header.</param>
         /// <param name="r">The raster, 0..1.</param>
@@ -251,8 +257,7 @@ namespace AstroPhotoAnalyzer
         /// <param name="bitpix">The encoding: 8, 16, 32, -32 or -64.</param>
         /// <param name="bzero">The BZERO the stored values are written for.</param>
         /// <param name="bscale">The BSCALE the stored values are written for; not 0.</param>
-        /// <param name="bottomUp">Whether the rows are written from the bottom up.</param>
-        static void WriteData(Stream o, Raster r, ToneCurve curve, int bitpix, double bzero, double bscale, bool bottomUp)
+        static void WriteData(Stream o, Raster r, ToneCurve curve, int bitpix, double bzero, double bscale)
         {
             int bytesPer = Math.Abs(bitpix) / 8;
             if (bscale == 0 || (bitpix != 8 && bitpix != 16 && bitpix != 32 && bitpix != -32 && bitpix != -64))
@@ -270,7 +275,7 @@ namespace AstroPhotoAnalyzer
             foreach (float[] plane in r.Planes)
                 for (int fy = 0; fy < r.H; fy++)
                 {
-                    int y = bottomUp ? r.H - 1 - fy : fy;
+                    int y = r.H - 1 - fy;
                     for (int x = 0; x < r.W; x++)
                     {
                         double stored = (curve.MapSample(plane[y * r.W + x]) * scale - bzero) / bscale;

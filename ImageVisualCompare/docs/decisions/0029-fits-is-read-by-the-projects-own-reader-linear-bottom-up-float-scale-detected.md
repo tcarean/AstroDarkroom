@@ -1,7 +1,7 @@
 # 0029. FITS is read by the project's own reader in Core: shown linearly, bottom-up unless the file says otherwise, the float scale detected
 
 Date: 2026-10-05
-Status: accepted 2026-10-05
+Status: accepted 2026-10-05; the row order (bottom-up unless the file says `TOP-DOWN`) superseded by 0039
 
 ## Context
 

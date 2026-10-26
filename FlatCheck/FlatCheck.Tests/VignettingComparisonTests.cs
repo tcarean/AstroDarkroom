@@ -208,6 +208,28 @@ public class VignettingComparisonTests
         Assert.Null(c.Nearest);
     }
 
+    /// <summary>
+    /// A raw that was read but carries neither a lens ID nor a focal range (a camera on a
+    /// telescope) is its own gap, not "no raw": the person has 17 raws in flats/ and would look
+    /// for a file that is there.
+    /// </summary>
+    [Fact]
+    public void ARawThatCarriesNoLensIsItsOwnGapNotAMissingRaw()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = StructureAnalyzer.Analyze(ModelFlat(sources));
+        var noLens = new LoadedFrame { Header = new Dictionary<string, string>(), Camera = "Canon EOS 40D" };
+        ShotIdentity shot = LensIdentification.Identify(Master(), noLens, sources, rawName: "IMG_7290.CR2");
+
+        VignettingComparison c = VignettingComparer.Analyze(r, shot, sources.Catalog);
+
+        Assert.False(c.Compared);
+        Assert.Null(c.Verdict);
+        Assert.Equal(ComparisonGap.RawWithoutLens, c.Gap);
+        Assert.Empty(c.Profiles);
+    }
+
     [Fact]
     public void WithLensesButNoFStopTheGapIsTheFStop()
     {

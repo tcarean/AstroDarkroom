@@ -40,7 +40,7 @@ that knows both. An unknown extension is an error naming the accepted ones.
 
 | reader | extensions | what it reads |
 |---|---|---|
-| `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; NAXIS3 = 1 or 3, anything else refused; rows flipped when `ROWORDER = 'BOTTOM-UP'`; empty primary HDUs skipped |
+| `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; NAXIS3 = 1 or 3, anything else refused; rows always flipped, the file's first row last, as Siril shows every FITS whatever `ROWORDER` says (ADR 0049; a `TOP-DOWN` keyword is noted as ignored); empty primary HDUs skipped |
 | `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`) |
 
 ### The writer (`Input/FitsWriter.cs`, R-145, ADR 0032)
@@ -54,7 +54,9 @@ row order (`WriteData` is `FitsReader.ReadData` inverted: integers are rounded a
 their type). HDUs before and after the image pass unchanged. `FitsReader.ReadHeader` is shared
 for the dictionary; the raw header bytes are re-read between the two stream positions it
 leaves. From any other source the file is a 32-bit float FITS with a minimal header and
-`ROWORDER = 'TOP-DOWN'`. The values are the raster's: what the reader clipped to 0..1 stays
+`ROWORDER = 'BOTTOM-UP'`. Either way the raster is written from its last row to its first, the
+inverse of the reader's flip, so the file's order is the source's, or the one Siril shows the
+right way up (ADR 0049). The values are the raster's: what the reader clipped to 0..1 stays
 clipped. The write goes through `AtomicFile.Write` (`Input/AtomicFile.cs`), the one way the
 tool writes a file, shared with the report's `ReportWriter.SaveFull` (R-005): an existing
 target is opened for writing first, so that one held open by another program or refused is
@@ -86,9 +88,11 @@ returns null (never throws): `CTYPE1` starting `RA---TAN` and `CTYPE2` starting 
 or as `CDELT` + `CROTA2` (the AIPS convention). `PixelToSky` is the TAN deprojection of FITS
 WCS Paper II with `LONPOLE` 180; `SkyToPixel` its inverse (NaN behind the tangent plane).
 Both take **raster** coordinates (0-based, row 0 at the top) and convert to FITS pixels
-inside: `y_fits = H - y` when the rows were flipped (`ROWORDER = BOTTOM-UP`), `y + 1`
-otherwise. A WCS lent through `--wcs` keeps the lent FITS's flip, since the borrowing PNG is
-that FITS's flipped array; `WithRowsFlipped`, which re-targets a flip, is called by tests only.
+inside: `y_fits = H - y` on a flipped raster, which every raster the reader makes is (ADR
+0049), `y + 1` on one that is not, which only tests make. A WCS lent through `--wcs` is flipped
+too, since the borrowing PNG is Siril's display of that FITS, the file's first row at the
+bottom whatever its `ROWORDER` says; `WithRowsFlipped`, which re-targets a flip, is called by
+tests only.
 `ScaleDegPerPx` is the root of the determinant. `FitsReader` attaches the WCS to
 `SourceInfo.Wcs`; `FitsReader.ReadImageHeader(path)` reads a header without its data, for
 `AnalysisRun.BorrowWcs` (`--wcs`, R-027), which refuses a different size or a header without
@@ -120,7 +124,7 @@ only plane on mono: the channel every single-channel measurement uses.
 `PlanesInFile`, `Compression`, `Icc` (bytes), `IccDescription` (from the `desc` tag, v2
 text or v4 mluc, parsed by `IccProfileInfo`; null when absent or malformed),
 `FileBytes`, `Wcs` (R-018, null without one), `Note` (reader observations: clipped values,
-flipped rows, palette, multi-page).
+an ignored `TOP-DOWN` row order, palette, multi-page).
 
 Memory: float planes cost `4 x W x H x planes` bytes - 277 MB for 23 MP RGB. Float was
 chosen over double (554 MB) because 24 mantissa bits recover every 16-bit level exactly

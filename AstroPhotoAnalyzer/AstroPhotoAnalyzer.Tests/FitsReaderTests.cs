@@ -27,7 +27,7 @@ public class FitsReaderTests
 
         var (raster, _, _, _, note) = FitsReader.LoadFrom(new MemoryStream(fits));
 
-        Assert.Equal(0f, raster.At(0, 1, 3));
+        Assert.Equal(0f, raster.At(0, 2, 3));     // the file's row 1 is the raster's row 4 - 1 - 1 (ADR 0049)
         Assert.Equal(0.25f, raster.At(0, 0, 0));
         Assert.All(raster.Planes[0], v => Assert.False(float.IsNaN(v)));
         Assert.Contains("1 valori in afara [0, 1] au fost taiate", note);
@@ -75,7 +75,7 @@ public class FitsReaderTests
     }
 
     [Fact]
-    public void BottomUpRowOrderIsFlippedSoThatRowZeroIsTheTop()
+    public void R011_BottomUpRowOrderIsFlippedSoThatRowZeroIsTheTop()
     {
         // Siril writes the rows bottom to top: the file's first row is the image's BOTTOM one.
         byte[] fits = FitsTestData.Build2D(2, 3, (x, y) => y * 1000, bitpix: -32, bzero: 0,
@@ -84,18 +84,33 @@ public class FitsReaderTests
 
         Assert.Equal(1f, r.At(0, 0, 0));      // top row = the file's last row (2000, clipped to 1)
         Assert.Equal(0f, r.At(0, 2, 0));      // the bottom row = the file's first row
-        Assert.Contains("ROWORDER", r.Source.Note);
+        Assert.DoesNotContain("ROWORDER", r.Source.Note);   // the usual case: only the clipping is remarked
     }
 
     [Fact]
-    public void WithoutRowOrderTheFileOrderIsKept()
+    public void R011_WithoutRowOrderTheRowsAreFlippedToo()
     {
+        // Siril shows every FITS with the file's first row at the bottom, keyword or not (ADR 0049).
         byte[] fits = FitsTestData.Build2D(2, 3, (x, y) => y * 0.1, bitpix: -32);
         Raster r = Load(fits);
 
-        Assert.Equal(0f, r.At(0, 0, 0));
-        Assert.Equal(0.2f, r.At(0, 2, 0), 6);
+        Assert.Equal(0.2f, r.At(0, 0, 0), 6);
+        Assert.Equal(0f, r.At(0, 2, 0));
         Assert.Null(r.Source.Note);
+    }
+
+    [Fact]
+    public void R011_TopDownIsIgnoredAndNoted()
+    {
+        // A file saying TOP-DOWN over bottom-up data exists (a SyQon step in Siril writes one);
+        // Siril ignores the keyword on display, so does the reader, and the report says so.
+        byte[] fits = FitsTestData.Build2D(2, 3, (x, y) => y * 0.1, bitpix: -32,
+            extraCards: new[] { FitsTestData.StringCard("ROWORDER", "TOP-DOWN") });
+        Raster r = Load(fits);
+
+        Assert.Equal(0.2f, r.At(0, 0, 0), 6);
+        Assert.Equal(0f, r.At(0, 2, 0));
+        Assert.Contains("TOP-DOWN", r.Source.Note);
     }
 
     [Fact]
