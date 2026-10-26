@@ -110,15 +110,16 @@ public class FitsImageLoaderTests : IDisposable
     public void R016_OneHotPixelAboveTwo_DoesNotTurnAZeroToOneImageBlack()
     {
         // 20 x 10 at 0.5, one sample at 2.5: 1 in 200, under the 1 in 100 that changes the scale.
+        // The first sample of the file is the bottom-left pixel of the image.
         double[] samples = Enumerable.Repeat(0.5, 200).ToArray();
         samples[0] = 2.5;
-        string path = _images.WriteBytes("hot.fit", FitsFixture.Image(-32, 20, 10, 1, samples, FitsFixture.Text("ROWORDER", "TOP-DOWN")));
+        string path = _images.WriteBytes("hot.fit", FitsFixture.Image(-32, 20, 10, 1, samples));
 
         LoadedImage loaded = _loader.Load(path);
         byte[] pixels = Pixels(loaded.Bitmap);
 
-        Assert.Equal(255, pixels[0]);
-        Assert.Equal(128, pixels[4]);
+        Assert.Equal(255, pixels[9 * 20 * 4]);
+        Assert.Equal(128, pixels[0]);
         Assert.Equal(128, pixels[^4]);
         Assert.Equal("32-bit float gray", loaded.Info.FormatDescription);
     }
@@ -149,19 +150,22 @@ public class FitsImageLoaderTests : IDisposable
         double[] planes = new double[interleaved.Length];
         for (int pixel = 0; pixel < Width * Height; pixel++)
         {
+            // The PNG's rows run top-down; a FITS's run bottom-up, so the same pixel sits in
+            // the mirrored row of its plane.
+            int fitsPixel = ((Height - 1 - (pixel / Width)) * Width) + (pixel % Width);
             for (int channel = 0; channel < 3; channel++)
             {
                 ushort value = (ushort)random.Next(65536);
                 interleaved[(pixel * 3) + channel] = value;
 
                 // Stored signed, as FITS stores unsigned 16-bit samples, under BZERO 32768.
-                planes[(channel * Width * Height) + pixel] = value - 32768;
+                planes[(channel * Width * Height) + fitsPixel] = value - 32768;
             }
         }
 
         string png = _images.WritePng("same.png", interleaved, Width, Height);
         string fits = _images.WriteBytes("same.fit", FitsFixture.Image(
-            16, Width, Height, 3, planes, FitsFixture.Card("BZERO", 32768), FitsFixture.Text("ROWORDER", "TOP-DOWN")));
+            16, Width, Height, 3, planes, FitsFixture.Card("BZERO", 32768)));
 
         byte[] fromPng = Pixels(new WicImageLoader().Load(png).Bitmap);
         byte[] fromFits = Pixels(_loader.Load(fits).Bitmap);
@@ -198,22 +202,22 @@ public class FitsImageLoaderTests : IDisposable
     }
 
     [Theory]
-    [InlineData(null, 1)]
-    [InlineData("BOTTOM-UP", 1)]
-    [InlineData("TOP-DOWN", 0)]
-    public void R017_TheFirstRowOfTheFile_IsTheBottomRowUnlessTheFileSaysTopDown(string? rowOrder, int whiteRow)
+    [InlineData(null)]
+    [InlineData("BOTTOM-UP")]
+    [InlineData("TOP-DOWN")]
+    public void R017_TheFirstRowOfTheFile_IsTheBottomRowWhateverRowOrderSays(string? rowOrder)
     {
-        // 2 x 2, the first sample of the file white and the other three black.
+        // 2 x 2, the first sample of the file white and the other three black: white at the
+        // bottom left, as Siril shows the file whatever its ROWORDER says (ADR 0039).
         string[] cards = rowOrder is null ? [] : [FitsFixture.Text("ROWORDER", rowOrder)];
         string path = _images.WriteBytes("rows.fit", FitsFixture.Image(-32, 2, 2, 1, [1, 0, 0, 0], cards));
 
         byte[] pixels = Pixels(_loader.Load(path).Bitmap);
 
-        for (int row = 0; row < 2; row++)
-        {
-            Assert.Equal(row == whiteRow ? 255 : 0, pixels[row * 8]);
-            Assert.Equal(0, pixels[(row * 8) + 4]);
-        }
+        Assert.Equal(0, pixels[0]);
+        Assert.Equal(0, pixels[4]);
+        Assert.Equal(255, pixels[8]);
+        Assert.Equal(0, pixels[12]);
     }
 
     [Fact]

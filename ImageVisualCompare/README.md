@@ -59,8 +59,9 @@ recunoscut după conținut, nu după extensie.
   arată exact ca exportul lui PNG sau TIFF pe 16 biți, nivel cu nivel, deci îl poți compara
   cinstit cu exportul. Un stack liniar, nestretch-uit, apare aproape negru: e corect, așa e
   el. Stretch-uiește-l în Siril și salvează-l dacă vrei să-l vezi.
-- **Orientarea e cea din Siril.** Se respectă `ROWORDER` din antet; un fișier fără acest
-  cuvânt-cheie e considerat scris de jos în sus, cum îl arată și Siril.
+- **Orientarea e cea din Siril.** Prima linie din fișier e jos, cum o arată Siril, orice ar
+  spune `ROWORDER` din antet: Siril folosește acest cuvânt-cheie doar la demozaicare, nu la
+  afișare, iar un fișier care spune `TOP-DOWN` peste date scrise de jos în sus există.
 - **Float în 0..1 sau în 0..65535.** Siril scrie float între 0 și 1. Dacă mai mult de 1% din
   valorile din fișier trec de 2, fișierul e citit ca fiind între 0 și 65535, iar bara de stare
   o spune: `32-bit float RGB (0..65535)`. Câțiva pixeli fierbinți peste 2 nu schimbă scara.

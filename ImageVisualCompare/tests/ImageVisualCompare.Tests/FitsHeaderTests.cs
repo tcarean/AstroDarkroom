@@ -108,18 +108,19 @@ public class FitsHeaderTests
     }
 
     [Theory]
-    [InlineData(null, true)]
-    [InlineData("BOTTOM-UP", true)]
-    [InlineData("TOP-DOWN", false)]
-    public void R017_RowOrder_IsBottomUpUnlessTheFileSaysTopDown(string? rowOrder, bool bottomUp)
+    [InlineData(null)]
+    [InlineData("BOTTOM-UP")]
+    [InlineData("TOP-DOWN")]
+    public void R017_TheFirstRowOfTheFile_IsTheBottomRowWhateverRowOrderSays(string? rowOrder)
     {
+        // Siril shows every FITS bottom-up and reads ROWORDER only for the Bayer pattern; a
+        // file that says TOP-DOWN over bottom-up data exists (ADR 0039).
         string[] cards = rowOrder is null ? [] : [FitsFixture.Text("ROWORDER", rowOrder)];
 
         FitsImageLayout layout = Read(FitsFixture.Image(8, 2, 4, 1, new double[8], cards));
 
-        Assert.Equal(bottomUp, layout.BottomUp);
-        Assert.Equal(bottomUp ? 3 : 0, layout.DisplayRow(0));
-        Assert.Equal(bottomUp ? 0 : 3, layout.DisplayRow(3));
+        Assert.Equal(3, layout.DisplayRow(0));
+        Assert.Equal(0, layout.DisplayRow(3));
     }
 
     [Fact]
@@ -455,27 +456,27 @@ public class FitsHeaderTests
         Assert.Equal(16, layout.BitPix);
         Assert.Equal(32768, layout.BZero);
         Assert.Equal(1, layout.BScale);
-        Assert.False(layout.BottomUp);
+        Assert.Equal(1, layout.DisplayRow(0));
     }
 
     [Fact]
     public void R014_ReadLayout_ReadsAHeaderLongerThanOneBlock()
     {
-        // 36 cards fill a block: with 50 HISTORY cards the row order and END are in the second.
+        // 36 cards fill a block: with 50 HISTORY cards BZERO and END are in the second.
         IEnumerable<string> history = Enumerable.Range(1, 50).Select(i => $"HISTORY step {i}".PadRight(80));
         byte[] file =
         [
             .. FitsFixture.Header(
             [
                 FitsFixture.Card("SIMPLE", "T"), .. FitsFixture.ImageCards(8, 2, 2, 1), .. history,
-                FitsFixture.Text("ROWORDER", "TOP-DOWN"),
+                FitsFixture.Card("BZERO", 32768),
             ]),
             .. FitsFixture.Data(8, [1, 2, 3, 4]),
         ];
 
         FitsImageLayout layout = Read(file);
 
-        Assert.False(layout.BottomUp);
+        Assert.Equal(32768, layout.BZero);
         Assert.Equal(2 * 2880, layout.DataOffset);
     }
 
