@@ -102,9 +102,8 @@ or varies a kit rule names it.
   `--lang en|ro`, English by default: every such text is a pair written where it is used,
   `Tr.Pick(english, romanian)` in C# and `{local:T En='...', Ro='...'}` in XAML, the two changed
   together, the Romanian without diacritics (`docs/design/language.md`). `README.md`, the user
-  documentation, is English; `THIRD-PARTY-NOTICES.md` stays Romanian, with diacritics. Output
-  quoted inside a comment or a test stays as the user sees it. Never leave a file in two
-  languages, the pairs apart.
+  documentation, and `THIRD-PARTY-NOTICES.md` are English. Output quoted inside a comment or a
+  test stays as the user sees it. Never leave a file in two languages, the pairs apart.
 - **Computed only in the core.** Nothing is computed outside `AstroPhotoAnalyzer.Core`: a new
   number, threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`,
   never in a view-model or the console (ADR 0007).

@@ -364,11 +364,11 @@ other skills: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`
 
 AstroPhotoAnalyzer is free software, under the GNU General Public License version 3 or (at your
 option) any later version: see [LICENSE](LICENSE). The components it ships from others are listed
-in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), in Romanian, each with its licence and why
-it is compatible with the GPL:
+in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), each with its licence and why it is
+compatible with the GPL:
 
 | Component | What it does here | Licence |
 | --- | --- | --- |
-| SixLabors.ImageSharp | reads TIFF, PNG and JPEG, and encodes the JPEGs of the compression table | Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software) |
-| Wacton.Unicolour | evaluates the tables of a printer ICC profile, from which the paper's Dmax is read | MIT |
+| SixLabors.ImageSharp | reads TIFF, PNG and JPEG, and encodes the JPEGs and the 8-bit TIFF of the compression table | Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software) |
+| Wacton.Unicolour | evaluates the tables of a printer ICC profile, for the paper's Dmax and for the out-of-gamut figure of the Curves tab | MIT |
 | Lynds' Catalogue of Dark Nebulae (data, not code) | the catalogue of dust clouds (LDN, 1962) by which the clouds of a plate-solved FITS are recognized | published data (Lynds 1962, ApJS 7, 1), the ADC/NASA version of 1979 distributed by CDS/VizieR as VII/7A; citing the source is the only condition |

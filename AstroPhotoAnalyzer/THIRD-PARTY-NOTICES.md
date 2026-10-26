@@ -1,148 +1,155 @@
-# Componente terțe
+# Third-party components
 
-AstroPhotoAnalyzer e distribuit sub **GNU General Public License v3 sau ulterioară** (vezi
-[LICENSE](LICENSE)). Fișierul ăsta listează codul terț pe care îl leagă, licența fiecărei
-componente și motivul pentru care e compatibilă cu GPLv3.
+AstroPhotoAnalyzer is distributed under the **GNU General Public License v3 or later** (see
+[LICENSE](LICENSE)). This file lists the third-party code it links, the licence of each component
+and the reason it is compatible with GPLv3.
 
-Nu e o formalitate: licența ImageSharp e condiționată și trebuie arătat că se aplică. Un
-pachet adăugat fără o intrare aici e un pachet a cărui compatibilitate n-a verificat-o
-nimeni.
+It is not a formality: ImageSharp's licence is conditional, and it has to be shown that the
+condition is met. A package added without an entry here is a package whose compatibility nobody
+has checked.
 
-Ce e scris de mână și **nu** e cod terț: cititorul FITS, cititorul WCS, toate măsurătorile,
-toate pragurile și tot textul recomandărilor. Pe lângă cod, unealta îmbarcă un set de **date**
-scrise de alții, catalogul Lynds; e tratat aici ca o componentă, cu aceeași notiță.
+Written by hand, and **not** third-party code: the FITS reader, the WCS reader, every
+measurement, every threshold and all the text of the recommendations. Besides code, the tool
+ships one set of **data** written by others, the Lynds catalogue; it is treated here as a
+component, with the same kind of notice.
 
 ---
 
 ## Lynds' Catalogue of Dark Nebulae
 
-**Rol.** Catalogul norilor de praf după care unealta recunoaște, într-un FITS plate-solved,
-ce nebuloase întunecate sunt în cadru și unde: 1787 de nori cu centrul, aria și clasa de
-opacitate, plus numerele Barnard cu care sunt cunoscuți (B78 pentru LDN 42, de pildă). Fără el,
-praful se măsoară pe tot cadrul, ca o fracție; cu el, pe nume (ADR 0025, R-019, R-044). Stă în
-`AstroPhotoAnalyzer.Core/Input/ldn.txt`, o resursă text de 52 KB citită de `DarkNebulaCatalogue`.
+**Role.** The catalogue of dust clouds by which the tool recognizes, in a plate-solved FITS, which
+dark nebulae are in the frame and where: 1787 clouds with their centre, area and opacity class,
+plus the Barnard numbers they are also known by (B78 for LDN 42, for instance). The background's
+verdict does not depend on it (ADR 0026); it names the clouds: their rows in the report and their
+circles on the map (ADR 0025, R-019, R-044). It lives in
+`AstroPhotoAnalyzer.Core/Input/ldn.txt`, a 52 KB text resource read by `DarkNebulaCatalogue`.
 
-**Sursa.** Lynds, B. T., *Catalogue of Dark Nebulae*, Astrophysical Journal Supplement 7, 1
-(1962). Fișierul îmbarcat e versiunea citibilă de mașină din 1979, pregătită de NASA/ADC din
-copia autorului (1791 de intrări, cu identificările Barnard adăugate din tabelul publicației
-originale), distribuită de CDS Strasbourg prin VizieR ca **VII/7A**
-(<https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/7A>), luată pe 2026-10-02. Se păstrează
-coloanele originale (centrul în B1950, aria, opacitatea, numerele Barnard), nu coloanele ICRS
-calculate de VizieR; precesia în J2000 o face unealta. Cele patru intrări fără număr LDN de la
-sfârșitul tabelului sunt lăsate afară.
+**Source.** Lynds, B. T., *Catalogue of Dark Nebulae*, Astrophysical Journal Supplement 7, 1
+(1962). The file shipped is the machine-readable version of 1979, prepared by NASA/ADC from the
+author's copy (1791 entries, with the Barnard identifications added from the table of the
+original publication), distributed by CDS Strasbourg through VizieR as **VII/7A**
+(<https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/7A>), taken on 2026-10-02. The original columns
+are kept (the centre in B1950, the area, the opacity, the Barnard numbers), not the ICRS columns
+VizieR computes; the tool precesses the centres to J2000 itself. The four entries without an LDN
+number at the end of the table are left out.
 
-**Licență.** Nicio licență formală nu însoțește catalogul: e un tabel de fapte dintr-o
-publicație științifică din 1962, distribuit de 47 de ani de agențiile de date astronomice.
-Regulile VizieR (<https://cds.unistra.fr/vizier-org/licences_vizier.html>) cer citarea
-autorului și a publicației originale și apreciază o mențiune a serviciului VizieR
-(DOI 10.26093/cds/vizier); nota lor despre licența CC-BY-NC privește tabelele jurnalelor AAS din
-seria `J/` (J/ApJ, J/ApJS, J/AJ), din care VII/7A nu face parte. ReadMe-ul catalogului nu
-conține nicio clauză de copyright.
+**Licence.** No formal licence comes with the catalogue: it is a table of facts from a scientific
+publication of 1962, distributed by the astronomical data centres for 47 years. VizieR's rules
+(<https://cds.unistra.fr/vizier-org/licences_vizier.html>) require a citation of the author and
+of the original publication, and appreciate a mention of the VizieR service
+(DOI 10.26093/cds/vizier); their note on the CC-BY-NC licence concerns the tables of the AAS
+journals in the `J/` series (J/ApJ, J/ApJS, J/AJ), to which VII/7A does not belong. The
+catalogue's ReadMe holds no copyright clause.
 
-**Compatibilitate.** Datele nu sunt cod și nu se leagă de licența programului: GPLv3 acoperă
-programul, iar un tabel de poziții, arii și clase e un set de fapte, pe care dreptul de autor
-american nu-l protejează (Feist, 1991); dreptul european *sui generis* asupra bazelor de date
-durează 15 ani de la constituire, iar compilația e din 1979. Rămâne obligația de citare, pe
-care unealta o îndeplinește aici, în `ThirdParty.cs` (ce arată „Despre") și în README. Un
-derivat al AstroPhotoAnalyzer preia aceeași obligație, nimic mai mult.
+**Compatibility.** Data are not code and are not bound by the program's licence: GPLv3 covers the
+program, and a table of positions, areas and classes is a set of facts, which US copyright law
+does not protect (Feist, 1991); the European *sui generis* database right lasts 15 years from the
+making of the database, and the compilation dates from 1979. What remains is the duty to cite,
+which the tool fulfils here, in `ThirdParty.cs` (what **About** shows) and in the README. A
+derivative of AstroPhotoAnalyzer takes on the same duty, nothing more.
 
-**Un lucru de știut.** Catalogul dă aria unui nor, nu conturul lui: unealta îl tratează ca un
-disc de aceeași arie în jurul centrului (ADR 0025), iar rândul unui nor neregulat amestecă
-dalele lui cu cerul din jur.
+**One thing to know.** The catalogue gives a cloud's area, not its outline: the tool treats it as
+a disc of the same area around the centre (ADR 0025), and the row of an irregular cloud mixes its
+patches with the sky around it.
 
-Lynds B. T., 1962; versiunea citibilă NASA/ADC, 1979; distribuită de CDS, Strasbourg.
+Lynds B. T., 1962; machine-readable version NASA/ADC, 1979; distributed by CDS, Strasbourg.
 
-- Catalog: <https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/7A>
-- Articol: <https://ui.adsabs.harvard.edu/abs/1962ApJS....7....1L>
+- Catalogue: <https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/7A>
+- Paper: <https://ui.adsabs.harvard.edu/abs/1962ApJS....7....1L>
 
 ---
 
 ## SixLabors.ImageSharp
 
-**Rol.** Decodează TIFF și PNG (8 și 16 biți pe canal, RGB și mono, cu profilul ICC
-încorporat) — adică pixelii pe care se fac toate măsurătorile — și encodează/decodează
-JPEG pentru tabelul de compresie (q100 / q95 / q90, 4:4:4). Spre deosebire de rolul ei
-în FlatCheck, aici pachetul **nu** e periferic: cifrele din tabelul JPEG sunt ale
-encoderului lui, și ce vede unealta într-un TIFF e ce a decodat el.
+**Role.** It decodes TIFF and PNG (8 and 16 bits per channel, RGB and mono, with the embedded ICC
+profile) and JPEG, that is, the pixels every measurement is made on; it encodes and decodes the
+JPEGs of the compression table (q100 / q95 / q90, 4:4:4), and encodes the 8-bit LZW TIFF whose
+size the table gives. Unlike its role in FlatCheck, here the package is **not** peripheral: the
+figures of the JPEG table are its encoder's, and what the tool sees in a TIFF is what the package
+decoded.
 
-**De ce nu scris de mână.** Un cititor TIFF onest înseamnă strips și tiles, LZW, Deflate,
-PackBits, predictor orizontal, planar și chunky, 8 și 16 biți, big și little endian, plus
-PNG cu Adam7 și un encoder JPEG cu DCT, Huffman și subeșantionare controlată. Sunt
-săptămâni de muncă pentru a reproduce, cu bug-uri proprii, ceva ce există și e testat pe
-milioane de fișiere. Cititorul FITS rămâne scris de mână, fiindcă acolo chiar e simplu:
-carduri de 80 de octeți în blocuri de 2880, apoi date big-endian.
+**Why not written by hand.** An honest TIFF reader means strips and tiles, LZW, Deflate,
+PackBits, the horizontal predictor, planar and chunky layouts, 8 and 16 bits, big and little
+endian, plus PNG with Adam7, and a JPEG encoder with DCT, Huffman coding and controlled
+subsampling. That is weeks of work to reproduce, with bugs of its own, something that exists and
+is tested on millions of files. The FITS reader stays hand-written, because there it really is
+simple: 80-byte cards in blocks of 2880 bytes, then big-endian data.
 
-**Licență.** Six Labors Split License, versiunea 1.0 (iunie 2022).
+**Licence.** Six Labors Split License, version 1.0 (June 2022).
 
-**Compatibilitate.** Nu e o licență restrictivă unică, ci una **duală condiționată**.
-Textul acordă termenii Apache 2.0 când:
+**Compatibility.** It is not a single restrictive licence but a **conditional dual** one. Its text
+grants the Apache 2.0 terms when:
 
 > "You are consuming the Work in for use in software licensed under an Open Source or
 > Source Available license."
 
-AstroPhotoAnalyzer e sub GPLv3, deci e software sub o licență open source și califică pe
-condiția asta. Licența comercială e cerută doar pentru celelalte cazuri, în esență
-utilizarea proprietară de către o entitate cu venit anual de cel puțin 1M USD.
+AstroPhotoAnalyzer is under GPLv3, so it is software under an open source licence and meets
+this condition. The commercial licence is required only in the other cases, in essence
+proprietary use by an entity with an annual gross revenue of at least 1M USD.
 
-Iar Apache 2.0 intră în GPLv3 într-o singură direcție, ceea ce Apache Software Foundation
-afirmă explicit:
+And Apache 2.0 code may go into GPLv3 work, in that direction only, as the Apache Software
+Foundation states explicitly:
 
 > "Apache 2 software can therefore be included in GPLv3 projects, because the GPLv3 license
 > accepts our software into GPLv3 works."
 
-Nu e nevoie de nicio modificare a licenței AstroPhotoAnalyzer.
+AstroPhotoAnalyzer's licence needs no change.
 
-**Două lucruri de păstrat.**
+**Two things to preserve.**
 
-1. **Versiunea se fixează în `PackageReference`.** Textul licenței e „Version 1.0, June
-   2022" și nu spune ce versiune de licență guvernează care lansare. Grantul primit vine cu
-   versiunea luată, deci fixarea e igienă juridică, nu doar reproductibilitate.
-   Versiunea fixată e **3.1.11**, nu 4.x: de la 4.0.0 pachetul aduce un task MSBuild care
-   validează o cheie de licență la compilare, avertisment pe Debug și **eroare pe
-   Release** fără `sixlabors.lic` sau `$(SixLaborsLicenseKey)`. Six Labors acordă cheia
-   gratuit proiectelor open source, dar pe bază de cerere, și oricine clonează repo-ul ar
-   avea nevoie de a lui ca să facă publish. 3.1.x are exact același text de licență și
-   niciun task.
-2. **Calificarea nu se rupe în aval.** GPLv3 obligă orice derivat să rămână GPLv3, adică tot
-   o licență open source, deci oricine preia AstroPhotoAnalyzer califică la rândul lui pe
-   aceeași condiție.
+1. **The version is pinned**, in `Directory.Packages.props`. The licence's text says "Version
+   1.0, June 2022" and does not say which version of the licence governs which release. The
+   grant comes with the version taken, so the pin is legal hygiene, not only reproducibility.
+   The pinned version is **3.1.11**, not 4.x: from 4.0.0 the package brings an MSBuild task that
+   validates a licence key at build time, a warning in Debug and an **error in Release** without
+   `sixlabors.lic` or `$(SixLaborsLicenseKey)`. Six Labors gives the key free of charge to open
+   source projects, but on request, and anyone who clones the repository would need their own to
+   publish. 3.1.x has exactly the same licence text and no task (ADR 0009). The security
+   advisories published against 3.1.11, and why the pin stays despite them, are in ADR 0036.
+2. **The condition stays met downstream.** GPLv3 requires every derivative to stay under GPLv3,
+   that is, under an open source licence still, so anyone who takes up AstroPhotoAnalyzer meets
+   the same condition in turn.
 
-**Un lucru de știut la decodare.** 3.1.x nu aplică niciodată profilul ICC la decodare —
-pixelii ies exact cum sunt în fișier, iar profilul e disponibil separat în metadate. E
-chiar comportamentul dorit: unealta măsoară ce a scris Siril, nu o conversie de culoare.
+**One thing to know about decoding.** 3.1.x never applies the ICC profile when it decodes: the
+pixels come out exactly as they are in the file, and the profile is available separately in the
+metadata. That is the behaviour wanted: the tool measures what Siril wrote, not a colour
+conversion of it.
 
 Copyright (c) Six Labors.
 
-- Proiect: <https://github.com/SixLabors/ImageSharp>
-- Licență: <https://github.com/SixLabors/ImageSharp/blob/main/LICENSE>
+- Project: <https://github.com/SixLabors/ImageSharp>
+- Licence: <https://github.com/SixLabors/ImageSharp/blob/main/LICENSE>
 
 ---
 
 ## Wacton.Unicolour
 
-**Rol.** Evaluează tabelele unui profil ICC de imprimantă (v2 `lut8`/`lut16`, v4 `lutAToB`):
-unealta îi dă negrul dispozitivului și intenția colorimetrică relativă și primește culoarea
-lui față de albul hârtiei, din care iese Dmax-ul hârtiei pe imprimanta aceea (`--icc`, butonul
-„Din profil ICC..." al ferestrei). Nu face nicio conversie de culoare pe imagine.
+**Role.** It evaluates the tables of a printer's ICC profile. The tool gives it the device's
+black and the relative colorimetric intent, through the table from the device (v2
+`lut8`/`lut16`, v4 `lutAToB`), and gets back that black's colour against the paper's white, from
+which comes the paper's Dmax on that printer (`--icc`, the window's **From ICC profile...**
+button). For the out-of-gamut figure of the **Curves** tab it also takes the image's colours to
+the printer and back through the profile's relative colorimetric tables (R-144). It never
+changes the image itself.
 
-**De ce nu scris de mână.** Un cititor scris de mână pentru cele două profile ale atelierului a
-dat aceleași cifre până la ultima zecimală, dar știa un singur format de tabelă; al doilea
-(`lutAToB`, din profilele v4) înseamnă curbe parametrice, matrice și cub, fiecare opțional.
-Pachetul le are pe toate și e testat pe profile reale.
+**Why not written by hand.** A hand-written reader for the lab's two profiles gave the same
+figures to the last decimal, but knew a single kind of table; the second kind (`lutAToB`, in the
+v4 profiles) means parametric curves, matrices and a colour lookup table, each of them optional.
+The package has all of them and is tested on real profiles.
 
-**Licență.** MIT.
+**Licence.** MIT.
 
-**Compatibilitate.** MIT e o licență permisivă, compatibilă cu GPLv3 fără condiții în afara
-păstrării notiței de copyright și a textului licenței, reprodus mai jos. Pachetul e
-cod gestionat pur, fără dependențe și fără componente native, deci consola rămâne un singur
-fișier copiabil.
+**Compatibility.** MIT is a permissive licence, compatible with GPLv3 with no condition beyond
+keeping the copyright notice and the licence text, reproduced below. The package is pure managed
+code, with no dependencies and no native components, so the console stays a single file that can
+be copied.
 
-**Un lucru de știut.** Pe un fișier care nu e profil, pachetul nu aruncă: notează o eroare și
-calculează „naiv" mai departe (L\* 100). Unealta verifică antetul înainte și eroarea după.
-Intenția perceptuală dă același negru (L\* 3.14) pentru orice profil; unealta cere mereu
-intenția colorimetrică relativă.
+**One thing to know.** On a file that is not a profile, the package does not throw: it notes an
+error and goes on computing "naively" (L\* 100). The tool checks the header before and the error
+after. The perceptual intent gives the same black (L\* 3.14) for every profile; the tool always
+asks for the relative colorimetric intent.
 
-Textul licenței, așa cum îl cere ea păstrat în orice copie:
+The licence's text, which the licence requires to be kept in every copy:
 
 > MIT License
 >
@@ -166,26 +173,27 @@ Textul licenței, așa cum îl cere ea păstrat în orice copie:
 > OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 > SOFTWARE.
 
-- Proiect: <https://github.com/waacton/Unicolour>
-- Licență: <https://github.com/waacton/Unicolour/blob/main/LICENSE>
+- Project: <https://github.com/waacton/Unicolour>
+- Licence: <https://github.com/waacton/Unicolour/blob/main/LICENSE>
 
 ---
 
-## Componente de test
+## Test components
 
-Folosite numai la compilarea și rularea testelor, deci nu sunt distribuite cu unealta.
+Used only to build and run the tests, so they are not distributed with the tool.
 
-| pachet | licență |
+| package | licence |
 |---|---|
-| xUnit | Apache-2.0 |
+| xunit | Apache-2.0 |
+| xunit.runner.visualstudio | Apache-2.0 |
 | Microsoft.NET.Test.Sdk | MIT |
 | coverlet.collector | MIT |
 
 ---
 
-## Cum se adaugă o intrare
+## How to add an entry
 
-Vezi regula „Packages" a kit-ului, în `.claude/rules/kit/process.md`, regula „Package notices"
-din [CLAUDE.md](CLAUDE.md) și ADR 0009, în `docs/decisions/`. Pe scurt: pachetul se discută înainte,
-nu după; compatibilitatea cu GPLv3 se demonstrează, nu se presupune; iar motivul se scrie
-aici, ca următorul cititor să nu fie nevoit să-l redescopere.
+See the kit's rule "Packages", in `.claude/rules/kit/process.md`, the rule "Package notices" in
+[CLAUDE.md](CLAUDE.md), and ADR 0009, in `docs/decisions/`. In short: a package is discussed
+before it is added, not after; its compatibility with GPLv3 is shown, not assumed; and the reason
+is written here, so that the next reader does not have to find it again.
