@@ -115,8 +115,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The WCS of another FITS, for a raster of the same geometry (R-027). A PNG or TIFF
-        /// exported from Siril is in the displayed orientation, that is the BOTTOM-UP FITS flipped,
-        /// so the WCS's flip follows the ROWORDER of the borrowed FITS, not the analysed file.
+        /// exported from Siril is in the displayed orientation, that is the FITS flipped whatever
+        /// its ROWORDER says (ADR 0049), so the lent WCS is always the flipped one.
         /// Throws, with a message in the interface language that starts with "--wcs:", when the file is missing,
         /// cannot be read, has another size or holds no TAN WCS.
         /// </summary>
@@ -126,13 +126,13 @@ namespace AstroPhotoAnalyzer
         internal static Wcs BorrowWcs(string wcsPath, Raster r)
         {
             if (!File.Exists(wcsPath)) throw new Exception("--wcs: " + Tr.Pick("the file does not exist: ", "fisierul nu exista: ") + wcsPath);
-            IReadOnlyDictionary<string, string> hdr; int w, h; bool bottomUp;
-            try { (hdr, w, h, bottomUp) = FitsReader.ReadImageHeader(wcsPath); }
+            IReadOnlyDictionary<string, string> hdr; int w, h;
+            try { (hdr, w, h) = FitsReader.ReadImageHeader(wcsPath); }
             catch (Exception e) { throw new Exception("--wcs: " + e.Message); }
             if (w != r.W || h != r.H)
                 throw new Exception(Tr.Pick($"--wcs: the FITS is {Fmt.Dim(w, h)} px, the image {Fmt.Dim(r.W, r.H)}: a WCS is lent only between images of the same size.",
                                             $"--wcs: FITS-ul are {Fmt.Dim(w, h)} px, imaginea {Fmt.Dim(r.W, r.H)}: WCS-ul se imprumuta doar intre imagini de aceeasi marime."));
-            Wcs wcs = Wcs.TryFrom(hdr, w, h, bottomUp);
+            Wcs wcs = Wcs.TryFrom(hdr, w, h, rowsFlipped: true);
             if (wcs == null)
                 throw new Exception(Tr.Pick("--wcs: the FITS has no WCS (CTYPE RA---TAN / DEC--TAN with CRPIX, CRVAL and CD, PC + CDELT or CDELT + CROTA2): ",
                                             "--wcs: FITS-ul n-are WCS (CTYPE RA---TAN / DEC--TAN cu CRPIX, CRVAL si CD, PC + CDELT sau CDELT + CROTA2): ") + wcsPath);

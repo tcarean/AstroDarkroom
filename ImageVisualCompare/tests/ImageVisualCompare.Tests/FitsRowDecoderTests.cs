@@ -163,7 +163,7 @@ public class FitsRowDecoderTests
     [Fact]
     public void R019_ARowPastTheEndOfTheData_IsAMessageNotACrash()
     {
-        var layout = new FitsImageLayout(4, 4, 1, -32, 0, 1, BottomUp: true, DataOffset: 2880);
+        var layout = new FitsImageLayout(4, 4, 1, -32, 0, 1, DataOffset: 2880);
         var decoder = new FitsRowDecoder(layout, new MemoryStream(new byte[2880 + 16]), 1);
 
         var ex = Assert.Throws<EndOfStreamException>(() => decoder.ReadFileRow(1, new byte[16]));

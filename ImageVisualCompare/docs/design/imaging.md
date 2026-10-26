@@ -60,9 +60,9 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
    `ZIMAGE = T` is a tile-compressed image and is refused by name. After the primary, a block
    that does not start with `XTENSION` is not a header, and the search ends there with "no
    image": programs leave padding after the last unit. The result is a `FitsImageLayout`:
-   size, planes, `BITPIX`, `BZERO`, `BSCALE`, the row order, and the offset of the first
-   sample. The length of the stream is checked here, so a file cut short fails at the probe,
-   before the padding question and before any decode.
+   size, planes, `BITPIX`, `BZERO`, `BSCALE`, and the offset of the first sample; `ROWORDER`
+   is not read (ADR 0039). The length of the stream is checked here, so a file cut short fails
+   at the probe, before the padding question and before any decode.
 
    The header is input from outside and is not trusted. `Count` reads every keyword the
    layout is computed from: an integer, never negative except `BITPIX`, and a value that is
@@ -83,8 +83,9 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
    the row and thrown away at the next seek.
 4. `FitsImageLoader.Load` walks the rows in the order of the file, so the disk is read
    forwards three times over, and writes each into a `WriteableBitmap` at
-   `FitsImageLayout.DisplayRow`, which is where the row order is applied; the cancellation
-   token is checked at every row. Then it asks `FitsScale.IsRescaled` about the count: more
+   `FitsImageLayout.DisplayRow`, counted from the bottom, which is the one place the row order
+   is applied; the cancellation token is checked at every row. Then it asks
+   `FitsScale.IsRescaled` about the count: more
    than one sample in a hundred above 2.0 means the file counts to 65 535, every byte written
    so far is wrong (nearly all white), and the same loop runs again with 65 535 as the full
    scale. Then `Freeze`. A size WPF makes no bitmap of becomes the too-large message here.

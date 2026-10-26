@@ -25,8 +25,9 @@
 //   - the planes are KEPT (1 or 3), not averaged into one - here colour is an object of
 //     measurement, not noise;
 //   - the values are normalised to 0..1 by the type in the file, like the TIFF and the PNG;
-//   - the rows are flipped on ROWORDER = 'BOTTOM-UP' (that is how Siril writes), so that the
-//     report's "colt dreapta-jos" is the same corner as in a TIFF.
+//   - the rows are always flipped, the file's first row last, which is how Siril shows every
+//     FITS whatever its ROWORDER says (ADR 0049), so that the report's "colt dreapta-jos" is
+//     the same corner as in Siril and as in a TIFF exported from it.
 // WHAT WAS CUT: CFA, focal length, camera, lens - a finished image has no mosaic and is not
 // compared with vignetting profiles.
 
@@ -41,8 +42,9 @@ namespace AstroPhotoAnalyzer
 {
     /// <summary>
     /// The hand-written FITS reader (.fit, .fits, .fts): the first HDU with NAXIS 2 or more, which
-    /// must be 2D or have 3 planes; BITPIX 8, 16, 32, -32 and -64; BZERO and BSCALE; ROWORDER;
-    /// the WCS. XTENSION is not checked, so a table HDU with two axes is taken for an image.
+    /// must be 2D or have 3 planes; BITPIX 8, 16, 32, -32 and -64; BZERO and BSCALE; the rows
+    /// flipped as Siril shows them; the WCS. XTENSION is not checked, so a table HDU with two
+    /// axes is taken for an image.
     /// </summary>
     internal sealed class FitsReader : IFrameReader
     {
@@ -61,7 +63,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Reads the first HDU with NAXIS 2 or more: its samples normalised to 0..1 by the BITPIX
         /// after BZERO and BSCALE, the values outside clipped and counted in the note, the rows
-        /// flipped when ROWORDER is BOTTOM-UP, and the WCS attached when the header has one.
+        /// flipped so that the file's last row is row 0 (as Siril shows every FITS, whatever
+        /// ROWORDER says; a TOP-DOWN keyword is noted as ignored), and the WCS attached when the
+        /// header has one.
         /// Throws, with a message for the user, on a file with no image, cut short, with a
         /// BITPIX it does not know, or with more than 3 axes or planes other than 1 or 3; a file
         /// that does not open throws the platform's exception.
@@ -83,7 +87,7 @@ namespace AstroPhotoAnalyzer
                 Icc = null,
                 IccDescription = null,
                 FileBytes = fs.Length,
-                Wcs = Wcs.TryFrom(hdr, raster.W, raster.H, IsBottomUp(hdr)),
+                Wcs = Wcs.TryFrom(hdr, raster.W, raster.H, rowsFlipped: true),
                 Note = note,
             };
             return raster;
@@ -91,15 +95,12 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Only the header of the first HDU with an image, without its data: for a FITS whose WCS
-        /// is lent to another file (R-027). Also returns the width, the height and the flip, so
-        /// that the geometry can be checked. Throws on a file with no image or cut short.
+        /// is lent to another file (R-027). Also returns the width and the height, so that the
+        /// geometry can be checked. Throws on a file with no image or cut short.
         /// </summary>
         /// <param name="path">The FITS file.</param>
-        /// <returns>
-        /// The header (keyword -> value), the width and height in pixels, and whether ROWORDER
-        /// is BOTTOM-UP.
-        /// </returns>
-        internal static (IReadOnlyDictionary<string, string> Header, int W, int H, bool BottomUp) ReadImageHeader(string path)
+        /// <returns>The header (keyword -> value) and the width and height in pixels.</returns>
+        internal static (IReadOnlyDictionary<string, string> Header, int W, int H) ReadImageHeader(string path)
         {
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16);
             var block = new byte[2880];
@@ -109,7 +110,7 @@ namespace AstroPhotoAnalyzer
                 if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
                 int naxis = HInt(hdr, "NAXIS", 0);
                 int n1 = HInt(hdr, "NAXIS1", 0), n2 = HInt(hdr, "NAXIS2", 0);
-                if (naxis >= 2 && n1 > 0 && n2 > 0) return (hdr, n1, n2, IsBottomUp(hdr));
+                if (naxis >= 2 && n1 > 0 && n2 > 0) return (hdr, n1, n2);
 
                 long npix = naxis == 0 ? 0 : 1;
                 for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
@@ -117,12 +118,6 @@ namespace AstroPhotoAnalyzer
                 if (!SkipExact(fs, (dataBytes + 2879) / 2880 * 2880)) throw new Exception(Tr.Pick("FITS: truncated file.", "FITS: fisier trunchiat."));
             }
         }
-
-        /// <summary>Whether the header's ROWORDER is 'BOTTOM-UP', in any case.</summary>
-        /// <param name="hdr">The header, keyword -> value.</param>
-        /// <returns><c>true</c> when the rows are stored from the bottom up.</returns>
-        static bool IsBottomUp(IReadOnlyDictionary<string, string> hdr)
-            => string.Equals(HStr(hdr, "ROWORDER", ""), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// The first HDU with NAXIS 2 or more. Also returns its header, its BITPIX, the number of
@@ -132,7 +127,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="s">The stream, at the start of the file; read forward only.</param>
         /// <returns>
         /// The raster without its <see cref="Raster.Source"/>, the image HDU's header, its BITPIX,
-        /// its planes (1 or 3) and the note: the values clipped, the rows flipped, or null.
+        /// its planes (1 or 3) and the note: the values clipped, a TOP-DOWN row order ignored,
+        /// or null.
         /// </returns>
         internal static (Raster Raster, IReadOnlyDictionary<string, string> Header, int Bitpix, int Planes, string Note)
             LoadFrom(Stream s)
@@ -168,16 +164,18 @@ namespace AstroPhotoAnalyzer
 
                     double bzero = HDbl(hdr, "BZERO", 0.0);
                     double bscale = HDbl(hdr, "BSCALE", 1.0);
-                    bool bottomUp = string.Equals(HStr(hdr, "ROWORDER", ""), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase);
 
                     var raster = new Raster(n2, n1, n3);
-                    long clipped = ReadData(s, raster, bitpix, bzero, bscale, bottomUp);
+                    long clipped = ReadData(s, raster, bitpix, bzero, bscale);
 
                     string note = null;
                     if (clipped > 0)
                         note = Tr.Pick($"{clipped} values outside [0, 1] were clipped on reading", $"{clipped} valori in afara [0, 1] au fost taiate la citire");
-                    if (bottomUp)
-                        note = (note == null ? "" : note + "; ") + Tr.Pick("the rows were flipped after ROWORDER = BOTTOM-UP", "randurile au fost rasturnate dupa ROWORDER = BOTTOM-UP");
+                    // Siril ignores ROWORDER on display and so does the reader (ADR 0049); a file
+                    // that says TOP-DOWN over bottom-up data exists, and the reader says what it did.
+                    if (string.Equals(HStr(hdr, "ROWORDER", ""), "TOP-DOWN", StringComparison.OrdinalIgnoreCase))
+                        note = (note == null ? "" : note + "; ") + Tr.Pick("ROWORDER = TOP-DOWN was ignored: the rows are shown as Siril shows them, the file's first row at the bottom",
+                                                                           "ROWORDER = TOP-DOWN a fost ignorat: randurile sunt aratate cum le arata Siril, prima linie din fisier jos");
 
                     return (raster, hdr, bitpix, n3, note);
                 }
@@ -241,6 +239,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The data, plane after plane (FITS is plane-sequential), decoded in chunks of 1 MB.
+        /// The rows are flipped: the file's first row lands last in the raster (ADR 0049).
         /// Returns how many values fell outside [0, 1] and were clipped - it does not happen on
         /// integers with the usual BZERO, it can on float and on signed integers stored without
         /// it, whose positive half is also read on the same scale (0..32767 gives 0..0.5, with no
@@ -251,9 +250,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="bitpix">The header's BITPIX: 8, 16, 32, -32 or -64.</param>
         /// <param name="bzero">The header's BZERO, 0 when absent.</param>
         /// <param name="bscale">The header's BSCALE, 1 when absent.</param>
-        /// <param name="bottomUp">Whether the file's rows run from the bottom up.</param>
         /// <returns>The number of samples clipped to 0 or 1, NaN ones counted at 0.</returns>
-        static long ReadData(Stream s, Raster r, int bitpix, double bzero, double bscale, bool bottomUp)
+        static long ReadData(Stream s, Raster r, int bitpix, double bzero, double bscale)
         {
             int bytesPer = Math.Abs(bitpix) / 8;
             long plane = (long)r.W * r.H;
@@ -286,12 +284,9 @@ namespace AstroPhotoAnalyzer
                     else if (v > 1) { v = 1; clipped++; }
                     int p = (int)(i / plane);
                     long idx = i % plane;
-                    if (bottomUp)
-                    {
-                        long y = idx / r.W, x = idx % r.W;
-                        idx = (r.H - 1 - y) * r.W + x;
-                    }
-                    r.Planes[p][idx] = (float)v;
+                    // The file's first row is the image's bottom row, as Siril shows it (ADR 0049).
+                    long y = idx / r.W, x = idx % r.W;
+                    r.Planes[p][(r.H - 1 - y) * r.W + x] = (float)v;
                 }
             }
             return clipped;

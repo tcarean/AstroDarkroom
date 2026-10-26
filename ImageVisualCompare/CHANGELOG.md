@@ -15,9 +15,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - FITS files (`.fit`, `.fits`, `.fts`) open as image A or B, next to or against a PNG or a
   TIFF: 8, 16 and 32-bit integers, 32 and 64-bit floats, one plane (gray) or three (RGB). The
   values are shown as stored, with no stretch, at the level the same value has in a 16-bit
-  PNG; rows follow `ROWORDER`, bottom-up without it, as in Siril; a float file that counts to
-  65 535 instead of 1 is recognised and the status bar says so; a damaged header or an image
-  too large to show is a message (R-014 to R-019, ADR 0029).
+  PNG; the first row of the file is at the bottom whatever `ROWORDER` says, as Siril shows it;
+  a float file that counts to 65 535 instead of 1 is recognised and the status bar says so; a
+  damaged header or an image too large to show is a message (R-014 to R-019, ADR 0029, ADR
+  0039).
 - The application has its own icon, in the window's caption, the taskbar and Explorer: a dim
   star field and a brighter one either side of the turquoise divider (R-064, ADR 0030).
 

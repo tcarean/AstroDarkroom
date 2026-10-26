@@ -34,7 +34,6 @@ namespace ImageVisualCompare.Core;
 /// <param name="BScale">
 /// What every stored sample is multiplied by: BSCALE, 1 when the header has none.
 /// </param>
-/// <param name="BottomUp">The first row in the file is the bottom row of the image.</param>
 /// <param name="DataOffset">Where the first sample is, in bytes from the start of the file.</param>
 public sealed record FitsImageLayout(
     int Width,
@@ -43,7 +42,6 @@ public sealed record FitsImageLayout(
     int BitPix,
     double BZero,
     double BScale,
-    bool BottomUp,
     long DataOffset)
 {
     public bool IsFloat => BitPix < 0;
@@ -59,10 +57,10 @@ public sealed record FitsImageLayout(
     /// <summary>Maps a row as the file orders them to the row it is in the image.</summary>
     /// <param name="fileRow">The row's place in the file, 0 for the first one stored.</param>
     /// <returns>
-    /// The image row, 0 at the top, that a row of the file is: the same number in a top-down
-    /// file, counted from the bottom in any other.
+    /// The image row, 0 at the top, that a row of the file is: counted from the bottom, as
+    /// Siril shows every FITS, whatever the header's ROWORDER says (ADR 0039).
     /// </returns>
-    public int DisplayRow(int fileRow) => BottomUp ? Height - 1 - fileRow : fileRow;
+    public int DisplayRow(int fileRow) => Height - 1 - fileRow;
 
     /// <summary>Says what the file is, for the status bar and for the pair's canvas.</summary>
     /// <param name="path">The file this layout was read from.</param>
@@ -270,10 +268,8 @@ public static class FitsHeader
             throw TooLarge(width, height);
         }
 
-        // Siril writes its rows bottom first and says so. A file that says nothing is bottom
-        // first too: that is the FITS convention, and how Siril shows such a file (ADR 0029).
-        bool bottomUp = !string.Equals(Text(cards, "ROWORDER"), "TOP-DOWN", StringComparison.OrdinalIgnoreCase);
-
+        // ROWORDER is not read: Siril shows every FITS bottom-up and uses the keyword only for
+        // the Bayer pattern, and a file saying TOP-DOWN over bottom-up data exists (ADR 0039).
         var layout = new FitsImageLayout(
             (int)width,
             (int)height,
@@ -281,7 +277,6 @@ public static class FitsHeader
             (int)bitPix,
             Number(cards, "BZERO", 0),
             Number(cards, "BSCALE", 1),
-            bottomUp,
             stream.Position);
 
         // 2^31 x 2^31 doubles would not fit a 64-bit count, and a count that wrapped to a
