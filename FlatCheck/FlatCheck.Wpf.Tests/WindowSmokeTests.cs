@@ -433,6 +433,9 @@ public class WindowSmokeTests
                 FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128)), null);
             vm.Populate(mono, HistEqKind.Smoothed);
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-mono");
+            vm.View.Rainbow = true;                   // the chip alone, without the view row
+            Render(new HistEqView { DataContext = vm }, name: "tab-histeq-mono-rainbow");
+            vm.View.Rainbow = false;
 
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
             Assert.True(vm.HasResult);

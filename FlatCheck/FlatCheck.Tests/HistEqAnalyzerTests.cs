@@ -96,10 +96,7 @@ public class HistEqAnalyzerTests
     [InlineData(254, 255, 5, 0)]
     [InlineData(255, 255, 0, 0)]
     public void R104_TheRainbowTableIsSirils(int level, byte r, byte g, byte b)
-    {
-        Assert.Equal((r, g, b), RainbowLut.Of(level));
-        Assert.Equal(new[] { r, g, b }, RainbowLut.Table.Skip(level * 3).Take(3));
-    }
+        => Assert.Equal(new[] { r, g, b }, RainbowLut.Table.Skip(level * 3).Take(3));
 
     /// <summary>
     /// Colouring is the table at every pixel, three bytes per pixel in RGB order: a 256-level

@@ -61,7 +61,10 @@ namespace FlatCheck
         /// <param name="r">An equalisation result.</param>
         /// <returns>The coloured view as RGB PNG bytes, at the shrunk size.</returns>
         internal static byte[] EncodeRainbow(HistEqResult r)
-            => PngWriter.Encode(RainbowLut.Colour(r.Mosaic ?? r.Channels[0].Equalised), r.W, r.H);
+        {
+            var (grey, w, h) = r.OneLayer(full: false);
+            return PngWriter.Encode(RainbowLut.Colour(grey), w, h);
+        }
 
         /// <summary>Encodes the composite view, RGB on a CFA frame of known order.</summary>
         /// <param name="r">An equalisation result.</param>

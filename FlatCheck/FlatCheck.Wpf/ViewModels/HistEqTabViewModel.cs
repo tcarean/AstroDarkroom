@@ -80,6 +80,16 @@ namespace FlatCheck.Wpf
         /// file.</summary>
         HistEqResult _last;
 
+        /// <summary>The last result's file, for the report rebuilt when the chip goes on.</summary>
+        string _lastPath;
+
+        /// <summary>
+        /// The run's report as the console would write it without --rainbow, and the same
+        /// with it, built once from the kept result when the chip first colours the picture:
+        /// the panel says what is on screen without re-reading the file.
+        /// </summary>
+        string _plainReport, _colouredReport;
+
         /// <summary>One bitmap per view, grey and in false colours, made on first use. The
         /// coloured mosaic of a 24 MP frame is 72 MB (ADR 0063 records the measured peak).</summary>
         readonly Dictionary<(HistEqViewOption Option, bool Rainbow), ImageSource> _cache = new();
@@ -259,7 +269,7 @@ namespace FlatCheck.Wpf
                 ct.ThrowIfCancellationRequested();
 
                 Report = text.ToString();
-                Populate(outcome.Result, row.Kind);
+                Populate(outcome.Result, row.Kind, row.Path);
             });
         }
 
@@ -270,9 +280,14 @@ namespace FlatCheck.Wpf
         /// <param name="r">The analyzer's result; kept for a later change of view.</param>
         /// <param name="kind">What the file is: a master and a smoothed master get their note
         /// under the picture, a frame none.</param>
-        internal void Populate(HistEqResult r, HistEqKind kind = HistEqKind.Frame)
+        /// <param name="path">The file the result came from, printed in the report rebuilt
+        /// when the chip goes on; null when there is none (a result built in a test).</param>
+        internal void Populate(HistEqResult r, HistEqKind kind = HistEqKind.Frame, string path = null)
         {
             _last = r;
+            _lastPath = path;
+            _plainReport = Report;
+            _colouredReport = null;
             _cache.Clear();
             View.Rebuild(r);
             Zoom.Reset();
@@ -308,9 +323,9 @@ namespace FlatCheck.Wpf
                     (HistEqViewKind.Channel, false) => RasterBitmaps.Grey(r.Channels[option.Index].Full, r.FullW, r.FullH),
                     (HistEqViewKind.Channel, true) => RasterBitmaps.Rgb(RainbowLut.Colour(r.Channels[option.Index].Full), r.FullW, r.FullH),
                     (HistEqViewKind.Mosaic, false) => RasterBitmaps.Grey(r.MosaicFull, r.SourceW, r.SourceH),
-                    (HistEqViewKind.Mosaic, true) => RasterBitmaps.Rgb(RainbowLut.Colour(r.MosaicFull), r.SourceW, r.SourceH),
-                    // the mono frame: its composite is the one grey channel three times
-                    (_, true) => RasterBitmaps.Rgb(RainbowLut.Colour(r.Channels[0].Full), r.FullW, r.FullH),
+                    // the mosaic, or the mono frame (its composite is the one grey channel three
+                    // times): the core says which raster is the one layer
+                    (_, true) => ColouredOneLayer(r),
                     _ => RasterBitmaps.Rgb(r.CompositeFullRgb, r.FullW, r.FullH),
                 };
                 _cache[(option, coloured)] = bitmap;
@@ -318,7 +333,34 @@ namespace FlatCheck.Wpf
 
             Image = bitmap;
             Caption = HistEqReport.ViewCaption(r, option.Key);
-            Legend = View.Rainbow ? HistEqReport.RainbowLegend() : "";
+            Legend = coloured ? HistEqReport.RainbowLegend()
+                   : View.Rainbow ? HistEqReport.RainbowNotOnRgb()
+                   : "";
+            // The panel shows the report of what is on screen: the run's own text, or the same
+            // run written as the console writes it with --rainbow, rebuilt once from the kept
+            // result. The plain text is the very string the run produced, not a copy.
+            Report = coloured ? (_colouredReport ??= ColouredReport(r)) : _plainReport;
+        }
+
+        /// <summary>The full-resolution one-layer raster in false colours, as a bitmap.</summary>
+        /// <param name="r">The kept result.</param>
+        /// <returns>An RGB bitmap of the mosaic (CFA) or the channel (mono).</returns>
+        static ImageSource ColouredOneLayer(HistEqResult r)
+        {
+            var (grey, w, h) = r.OneLayer(full: true);
+            return RasterBitmaps.Rgb(RainbowLut.Colour(grey), w, h);
+        }
+
+        /// <summary>The run's report as the console writes it with --rainbow.</summary>
+        /// <param name="r">The kept result.</param>
+        /// <returns>The banner and the report, with the false-colours display line and the
+        /// legend.</returns>
+        string ColouredReport(HistEqResult r)
+        {
+            var text = new StringWriter();
+            RunReport.WriteBanner(text);
+            HistEqReport.Write(r, _lastPath ?? "", text, rainbow: true);
+            return text.ToString();
         }
 
         /// <inheritdoc/>
@@ -334,6 +376,9 @@ namespace FlatCheck.Wpf
             _session = null;
             _gate = null;
             _last = null;
+            _lastPath = null;
+            _plainReport = null;
+            _colouredReport = null;
             _cache.Clear();
             Image = null;
             Zoom.Reset();

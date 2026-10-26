@@ -112,12 +112,17 @@ public class HistEqReportTests
         Assert.Contains(legend, text);
         Assert.DoesNotContain(legend, Written(r));
         Assert.True(legend.IndexOf("magenta") < legend.IndexOf("rosu"), legend);
-        Assert.Contains("RGB", legend);
+        // the RGB sentence is the window's alone: the console writes one layer and has no RGB view
+        Assert.DoesNotContain("RGB", legend);
+        Assert.DoesNotContain(HistEqReport.RainbowNotOnRgb(), text);
+        Assert.Contains("RGB", HistEqReport.RainbowNotOnRgb());
+        Assert.NotEqual(legend, HistEqReport.RainbowNotOnRgb());
         using (Ui.Use(UiLanguage.English))
         {
             string en = HistEqReport.RainbowLegend();
             Assert.True(en.IndexOf("magenta") < en.IndexOf("red"), en);
             Assert.Contains("false colours", HistEqReport.DisplayLine(r, rainbow: true));
+            Assert.Contains("RGB", HistEqReport.RainbowNotOnRgb());
         }
     }
 

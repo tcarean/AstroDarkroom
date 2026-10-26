@@ -55,13 +55,18 @@ compresses badly.
 `RainbowLut` is Siril's 256-entry table, built once (`Table`, 768 bytes) and applied by
 `Colour(grey)` to a one-layer 8-bit raster, three bytes per pixel in the layout
 `PngWriter.Encode` and `RasterBitmaps.Rgb` take. Nothing coloured lives in `HistEqResult`:
-the console colours the shrunk raster in `HistEqRun.EncodeRainbow` (the `Mosaic` on CFA, the
-channel on mono), the window the full one in `HistEqTabViewModel.RefreshImage`, cached per
-(view, coloured) beside the grey bitmaps. The chip's state is `HistEqViewViewModel.Rainbow`;
-`RainbowAvailable` is false on the RGB composite, where the chip is disabled and the bitmap
-stays the plain composite while the legend still says why. The legend and the display line
-come from `HistEqReport` (`RainbowLegend`, `DisplayLine(r, rainbow)`), never from the
-view-model.
+which raster is "the one layer" when no channel is chosen is decided once, in
+`HistEqResult.OneLayer(full)` (the `Mosaic` on CFA, the channel on mono): the console colours
+the shrunk one in `HistEqRun.EncodeRainbow`, the window the full one in
+`HistEqTabViewModel.RefreshImage` (a chosen channel is coloured as itself), cached per (view,
+coloured) beside the grey bitmaps. The chip's state is `HistEqViewViewModel.Rainbow`;
+`RainbowAvailable` is the chosen option's `IsOneLayer`, false for the RGB composite only, where
+the chip is disabled, the bitmap stays the plain composite and the line under it is
+`HistEqReport.RainbowNotOnRgb`. A coloured picture gets `HistEqReport.RainbowLegend` under it,
+and the report panel switches to the run's text as the console writes it with `--rainbow`
+(`DisplayLine(r, rainbow)`, the legend line), rebuilt once from the kept result and the file's
+path, never by re-reading the file; with the chip off the panel shows the run's own string. No
+sentence is composed in the view-model.
 
 **What the picture shows.** Bands of one hue are contours of equal rank, so the shape of the
 vignetting reads at a glance: on the Tokina tablet-and-paper master a rounded square, on the

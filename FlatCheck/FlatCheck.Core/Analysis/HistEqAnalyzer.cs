@@ -173,6 +173,19 @@ namespace FlatCheck
         internal byte[] MosaicFull;
 
         internal int ChannelCount => Channels.Length;
+
+        /// <summary>
+        /// The raster the false colours go on when no channel is chosen: the mosaic on a CFA
+        /// frame (the whole frame as one layer, Siril on an undebayered file), the one channel
+        /// on mono. The console writes it shrunk, the window shows it whole; both ask here, so
+        /// the rule lives once (ADR 0063).
+        /// </summary>
+        /// <param name="full">True for the full-resolution raster, false for the shrunk one.</param>
+        /// <returns>The grey raster and its width and height.</returns>
+        internal (byte[] Grey, int W, int H) OneLayer(bool full)
+            => IsCfa
+                ? (full ? (MosaicFull, SourceW, SourceH) : (Mosaic, W, H))
+                : (full ? (Channels[0].Full, FullW, FullH) : (Channels[0].Equalised, W, H));
     }
 
     /// <summary>
@@ -336,12 +349,6 @@ namespace FlatCheck
                 _ => (v, p, q),
             };
         }
-
-        /// <summary>The colour of one level.</summary>
-        /// <param name="level">A grey level, 0..255.</param>
-        /// <returns>Its R, G and B bytes.</returns>
-        internal static (byte R, byte G, byte B) Of(int level)
-            => (Table[level * 3], Table[level * 3 + 1], Table[level * 3 + 2]);
 
         /// <summary>Colours a grey raster through the table, pixel by pixel.</summary>
         /// <param name="grey">Grey levels, row by row.</param>

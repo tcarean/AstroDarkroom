@@ -60,17 +60,27 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The legend of the false colours, under the picture and in the report: which end of
-        /// Siril's table is which, and that the RGB view is not coloured (ADR 0063).
+        /// The legend of a coloured picture, under it in the window and in the report: which
+        /// end of Siril's table is which (ADR 0063).
         /// </summary>
         /// <returns>One sentence, in the run's language.</returns>
         internal static string RainbowLegend()
             => T("false colours, Siril's rainbow table on one layer: magenta is the lowest level, then "
-                 + "blue, cyan, green, yellow, and red the highest; the colours are ranks, not values. The "
-                 + "RGB view keeps its own colours - the table applies to one layer only.",
+                 + "blue, cyan, green, yellow, and red the highest; the colours are ranks, not values.",
                  "culori false, tabelul rainbow din Siril pe un singur strat: magenta e nivelul cel mai jos, apoi "
-                 + "albastru, cyan, verde, galben, iar rosu cel mai sus; culorile sunt ranguri, nu valori. "
-                 + "Vederea RGB isi pastreaza culorile ei - tabelul se aplica pe un singur strat.");
+                 + "albastru, cyan, verde, galben, iar rosu cel mai sus; culorile sunt ranguri, nu valori.");
+
+        /// <summary>
+        /// What the window says under the RGB view while the chip is on: that view is not
+        /// coloured, because the table applies to one layer (ADR 0063). Never printed by the
+        /// console, which writes one layer and has no RGB view with <c>--rainbow</c>.
+        /// </summary>
+        /// <returns>One sentence, in the run's language.</returns>
+        internal static string RainbowNotOnRgb()
+            => T("the RGB view keeps its own colours: Siril's rainbow table applies to one layer - the "
+                 + "Mosaic, a channel or the mono frame - and the chip waits there.",
+                 "vederea RGB isi pastreaza culorile ei: tabelul rainbow din Siril se aplica pe un singur strat - "
+                 + "Mozaic, un canal sau cadrul mono - si chipul asteapta acolo.");
 
         /// <summary>
         /// "6000 x 4000, CFA (ordine RGGB, din libraw)" / "..., CFA (ordine necunoscuta)" / "...,

@@ -28,7 +28,8 @@ raster is 3 bytes per pixel: the full-resolution Mosaic of a 24 MP frame is 72 M
 The false colours are Siril's table, built exactly as `make_index_for_rainbow` and
 `hsv_to_rgb` (`RainbowLut` in `HistEqAnalyzer.cs`), applied after equalisation to a
 **one-layer** raster only: the Mosaic, a channel, or the mono frame. The RGB composite is never
-coloured; in the window the chip is disabled on it and the legend says so. The console gets a
+coloured; in the window the chip is disabled on it and a line under the picture says so
+(`HistEqReport.RainbowNotOnRgb`, the window's alone; the console prints only the table's legend). The console gets a
 modifier flag, `--rainbow`, Siril's name for the state, which writes the Mosaic on a CFA frame
 and the channel on mono, shrunk first and coloured after, so every colour in the file is a
 level of the table; `--rainbow` without `--histeq` is a parse error. The legend is one sentence

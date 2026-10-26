@@ -49,16 +49,23 @@ namespace FlatCheck.Wpf
         /// <param name="label">The chip's text, in the run's language.</param>
         /// <param name="key">The view's key for <see cref="HistEqReport.ViewCaption"/>, the same in
         /// both languages; null when it is the label itself (a channel's, "RGB", "mono").</param>
-        internal HistEqViewOption(HistEqViewViewModel owner, HistEqViewKind kind, int index, string label, string key = null)
+        /// <param name="oneLayer">Whether the view is one grey layer the false colours can go
+        /// on; false for the RGB composite only (ADR 0063).</param>
+        internal HistEqViewOption(HistEqViewViewModel owner, HistEqViewKind kind, int index, string label, string key = null, bool oneLayer = true)
         {
             _owner = owner;
             Kind = kind;
             Index = index;
             Label = label;
             Key = key ?? label;
+            IsOneLayer = oneLayer;
         }
 
         public string Label { get; }
+
+        /// <summary>True for the mosaic, a channel and the mono frame; false for the RGB
+        /// composite, which the false colours never touch.</summary>
+        internal bool IsOneLayer { get; }
 
         /// <summary>The view's key, the same in both languages: "Mozaic", "RGB", "mono" or a
         /// channel's label.</summary>
@@ -125,8 +132,7 @@ namespace FlatCheck.Wpf
         /// Whether the chosen view is one layer the table can colour: the mosaic, a position,
         /// or the mono frame. False on the RGB composite, where the chip is disabled.
         /// </summary>
-        public bool RainbowAvailable
-            => _selected != null && (_selected.Kind != HistEqViewKind.Composite || _selected.Key == "mono");
+        public bool RainbowAvailable => _selected != null && _selected.IsOneLayer;
 
         /// <summary>The view changed: the tab re-encodes from the result it holds.</summary>
         internal event Action Changed;
@@ -146,7 +152,7 @@ namespace FlatCheck.Wpf
                 // opened undebayered, that is the one the user has read patterns from so far.
                 // The composite is richer, but it is not the familiar one.
                 list.Add(new HistEqViewOption(this, HistEqViewKind.Mosaic, 0, T("Mosaic", "Mozaic"), "Mozaic"));
-                list.Add(new HistEqViewOption(this, HistEqViewKind.Composite, 0, "RGB"));
+                list.Add(new HistEqViewOption(this, HistEqViewKind.Composite, 0, "RGB", oneLayer: false));
                 for (int i = 0; i < r.Channels.Length; i++)
                     list.Add(new HistEqViewOption(this, HistEqViewKind.Channel, i, r.Channels[i].Label));
             }

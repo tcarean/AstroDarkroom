@@ -302,9 +302,11 @@ public class HistEqTabTests
         vm.Selected = vm.Files[1];
         await vm.RecomputeAsync();
         var grey = (BitmapSource)vm.Image!;
+        string report = vm.Report;
         Assert.False(vm.View.Rainbow);
         Assert.True(vm.View.RainbowAvailable);
         Assert.Equal("", vm.Legend);
+        Assert.DoesNotContain("culori false", report);
 
         vm.View.Rainbow = true;
         var mosaic = (BitmapSource)vm.Image!;
@@ -312,6 +314,13 @@ public class HistEqTabTests
         Assert.Equal(PixelFormats.Rgb24, mosaic.Format);
         Assert.Equal((grey.PixelWidth, grey.PixelHeight), (mosaic.PixelWidth, mosaic.PixelHeight));
         Assert.Equal(HistEqReport.RainbowLegend(), vm.Legend);
+        // the report panel says what is on screen: the console's --rainbow text, with the
+        // file's name, the display line and the legend, over the same banner
+        Assert.Contains("culori false", vm.Report);
+        Assert.Contains("LEGENDA: " + HistEqReport.RainbowLegend(), vm.Report);
+        Assert.Contains("flat.fit", vm.Report);
+        Assert.StartsWith(report.Split('\n')[0], vm.Report);
+        string colouredReport = vm.Report;
         // the first pixel is the table at the grey's first level: one channel 255, one 0
         var px = new byte[3];
         mosaic.CopyPixels(new System.Windows.Int32Rect(0, 0, 1, 1), px, 3, 0);
@@ -328,7 +337,8 @@ public class HistEqTabTests
         Assert.False(vm.View.RainbowAvailable);
         Assert.True(vm.View.Rainbow);                 // the choice is kept, only not applied
         ImageSource rgbWhileOn = vm.Image!;
-        Assert.Equal(HistEqReport.RainbowLegend(), vm.Legend);
+        Assert.Equal(HistEqReport.RainbowNotOnRgb(), vm.Legend);   // not the table's legend: nothing is coloured
+        Assert.Same(report, vm.Report);               // and the report is the plain run's
         vm.View.Rainbow = false;
         Assert.Same(rgbWhileOn, vm.Image);            // the plain composite either way
         Assert.Equal("", vm.Legend);
@@ -336,8 +346,10 @@ public class HistEqTabTests
 
         vm.View.Options.First(o => o.Label == "Mozaic").IsSelected = true;
         Assert.Same(mosaic, vm.Image);                // from the cache
+        Assert.Same(colouredReport, vm.Report);       // built once
         vm.View.Rainbow = false;
         Assert.Same(grey, vm.Image);
+        Assert.Same(report, vm.Report);
 
         // a new file keeps the chip; Reset clears it
         vm.View.Rainbow = true;
@@ -347,6 +359,37 @@ public class HistEqTabTests
         Assert.Equal(PixelFormats.Rgb24, ((BitmapSource)vm.Image!).Format);
         vm.Reset();
         Assert.False(vm.View.Rainbow);
+        Assert.Equal("", vm.Legend);
+    }
+
+    /// <summary>
+    /// On a mono frame the single view is one layer: the chip is available, colours the frame
+    /// through the core's table (the channel, not the grey-three-times composite) and shows
+    /// the legend; the report rebuilt for it names the file (ADR 0063).
+    /// </summary>
+    [Fact]
+    public void R104_OnAMonoFrameTheChipColoursTheSingleView()
+    {
+        var mono = HistEqAnalyzer.Analyze(TestImages.From(64, 48, FitsTestData.Radial(64, 48)), null);
+        var vm = new HistEqTabViewModel();
+        vm.Populate(mono, HistEqKind.Frame, "mono.fit");
+        Assert.True(vm.View.RainbowAvailable);
+        Assert.False(vm.View.IsVisible);              // one chip, no view row; the checkbox stays
+
+        vm.View.Rainbow = true;
+        var coloured = (BitmapSource)vm.Image!;
+        Assert.Equal(PixelFormats.Rgb24, coloured.Format);
+        Assert.Equal((64, 48), (coloured.PixelWidth, coloured.PixelHeight));
+        byte[] expected = RainbowLut.Colour(mono.Channels[0].Full);
+        var px = new byte[64 * 48 * 3];
+        coloured.CopyPixels(px, 64 * 3, 0);
+        Assert.Equal(expected, px);
+        Assert.Equal(HistEqReport.RainbowLegend(), vm.Legend);
+        Assert.Contains("fisier:     mono.fit", vm.Report);
+        Assert.Contains("culori false", vm.Report);
+
+        vm.View.Rainbow = false;
+        Assert.Equal(PixelFormats.Rgb24, ((BitmapSource)vm.Image!).Format);   // the plain composite, grey three times
         Assert.Equal("", vm.Legend);
     }
 
