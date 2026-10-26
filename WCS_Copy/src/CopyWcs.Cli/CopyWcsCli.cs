@@ -17,13 +17,25 @@
 
 namespace CopyWcs;
 
+/// <summary>
+/// The console, testable in process: the banner, the options, the copy run of the core and
+/// the printing of its outcome, with the exit code.
+/// </summary>
 internal static class CopyWcsCli
 {
+    /// <summary>
+    /// Runs the console once: prints the banner and the copyright, parses the options, runs the
+    /// copy and prints what happened.
+    /// </summary>
+    /// <param name="args">The command line without the executable; not null.</param>
+    /// <param name="stdout">Receives the banner, the copyright, the usage, the warnings and the result lines.</param>
+    /// <param name="stderr">Receives the one line of a parse error or a refusal.</param>
+    /// <returns>0 on success or a dry run, 1 when the copy was refused, 2 on a usage error.</returns>
     internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
     {
-        // Versiunea, pe prima linie a oricarei rulari - inclusiv --help si erorile - ca o
-        // iesire copiata undeva sa spuna singura ce versiune a produs-o. Sub ea, notita de
-        // copyright ceruta de GPLv3 (vezi LICENSE).
+        // The version, on the first line of every run, --help and the errors included, so that
+        // a pasted output says on its own which version produced it. Under it, the copyright
+        // notice GPLv3 asks for (see LICENSE).
         stdout.WriteLine(VersionInfo.Banner);
         stdout.WriteLine(LicenseInfo.Copyright);
 
@@ -45,88 +57,41 @@ internal static class CopyWcsCli
             return 0;
         }
 
-        FitsHeader source, dest;
-        try
+        var outcome = WcsCopy.Run(new WcsCopyRequest(
+            opt.Source, opt.Dest, opt.Output,
+            IncludeOptical: !opt.NoOptical, Force: opt.Force, DryRun: opt.DryRun));
+
+        foreach (var warning in outcome.Warnings)
         {
-            source = FitsHeader.ReadPrimary(opt.Source);
-        }
-        catch (Exception ex)
-        {
-            stderr.WriteLine($"Nu pot citi sursa '{opt.Source}': {ex.Message}");
-            return 1;
+            stdout.WriteLine(warning);
         }
 
-        try
+        switch (outcome.Kind)
         {
-            dest = FitsHeader.ReadPrimary(opt.Dest);
-        }
-        catch (Exception ex)
-        {
-            stderr.WriteLine($"Nu pot citi destinatia '{opt.Dest}': {ex.Message}");
-            return 1;
-        }
-
-        // Verificare geometrie: WCS-ul e valabil doar daca grila de pixeli e aceeasi.
-        var srcDim = (source.GetInt("NAXIS1"), source.GetInt("NAXIS2"));
-        var dstDim = (dest.GetInt("NAXIS1"), dest.GetInt("NAXIS2"));
-        if (srcDim != dstDim)
-        {
-            var msg = $"Dimensiuni diferite: sursa ({srcDim.Item1}, {srcDim.Item2}) " +
-                      $"vs destinatie ({dstDim.Item1}, {dstDim.Item2}).";
-            if (!opt.Force)
-            {
-                stderr.WriteLine(msg + " WCS-ul ar fi gresit. Foloseste --force daca stii ce faci.");
+            case WcsCopyKind.Refused:
+                stderr.WriteLine(outcome.Error);
                 return 1;
-            }
-            stdout.WriteLine($"ATENTIE: {msg} Continui oricum (--force).");
+
+            case WcsCopyKind.Previewed:
+                foreach (var note in outcome.Notes)
+                {
+                    stdout.WriteLine(note);
+                }
+
+                foreach (var card in outcome.Cards)
+                {
+                    stdout.WriteLine("  " + card.TrimEnd());
+                }
+
+                return 0;
+
+            default:
+                foreach (var note in outcome.Notes)
+                {
+                    stdout.WriteLine(note);
+                }
+
+                return 0;
         }
-
-        if (!source.Contains("CTYPE1"))
-        {
-            stdout.WriteLine("ATENTIE: sursa nu pare plate-solved (lipseste CTYPE1).");
-        }
-
-        var present = WcsMetadataKeys.SelectKeysToCopy(source, includeOptical: !opt.NoOptical);
-        if (present.Count == 0)
-        {
-            stderr.WriteLine("Nicio cheie relevanta gasita in sursa. Nimic de copiat.");
-            return 1;
-        }
-
-        if (opt.DryRun)
-        {
-            stdout.WriteLine($"Chei care ar fi copiate ({present.Count}):");
-            foreach (var k in present)
-            {
-                stdout.WriteLine("  " + source.GetCard(k)!.TrimEnd());
-            }
-
-            return 0;
-        }
-
-        // Se copiaza cardul brut de 80 de bytes, nu valoarea reparsata:
-        // asa se pastreaza formatarea si comentariul exact ca in sursa.
-        foreach (var k in present)
-        {
-            dest.SetCard(k, source.GetCard(k)!);
-        }
-
-        dest.AddHistory("WCS copiat din " + Path.GetFileName(opt.Source));
-
-        var target = opt.Output ?? opt.Dest;
-        try
-        {
-            dest.WriteWithDataFrom(opt.Dest, target);
-        }
-        catch (Exception ex)
-        {
-            stderr.WriteLine($"Eroare la scriere: {ex.Message}");
-            return 1;
-        }
-
-        stdout.WriteLine($"Copiate {present.Count} chei in {target}.");
-        stdout.WriteLine("Verifica vizual adnotarea: daca imaginea a fost oglindita/flip-uita " +
-                          "pe parcursul procesarii, WCS-ul copiat va fi gresit fara sa dea eroare.");
-        return 0;
     }
 }
