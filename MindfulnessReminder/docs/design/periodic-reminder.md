@@ -64,3 +64,7 @@ the elapsed time would mean changing 30 minutes to 10 with 25 gone either fires 
 or leaves the tooltip showing a number the new setting cannot explain.
 
 See ADR 0014.
+
+Each of these decisions also goes to the decision log, through the `IDecisionLog` the
+coordinator is given: a lock, an unlock, a reminder shown or raised, settings applied. The tick
+itself never writes a line; `code-map.md` says how the lines are composed (ADR 0037).

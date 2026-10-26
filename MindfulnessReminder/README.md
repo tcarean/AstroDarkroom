@@ -34,6 +34,9 @@ application. Each of the two reminders has its own switch and its own message in
   Viewer, under Windows Logs, Application, source `.NET Runtime`, event 1025. This is what a
   .NET or Visual Studio update needs: one removed the runtime under the running copy on
   2026-10-26, and the copy died on its next reminder.
+- Keeps a small log of what it decided, `%LOCALAPPDATA%\MindfulnessReminder\log.txt`, so a
+  reminder that did not appear can be explained after the fact — see
+  [The decision log](#the-decision-log).
 
 ## Two reminders, two messages
 
@@ -176,6 +179,39 @@ The message box waits until the run is over, so it cannot disturb what is being 
 Neither `--detect` nor `--preview` claims the single-instance mutex, so both run happily
 alongside the copy already in the tray. Anything over ten minutes is clamped to ten.
 
+## The decision log
+
+The tray copy writes one line for each thing it decides to
+`%LOCALAPPDATA%\MindfulnessReminder\log.txt` (open it in any text editor; there is no menu item
+for it). Each line is the local time, two spaces, and what happened:
+
+```
+2026-10-26 07:47:09  Started Mindfulness Reminder 1.4.0 on .NET 8.0.33, arguments: (none); restart registration: ok
+2026-10-26 07:47:09  Settings loaded: periodic on every 30 min, unlock on, pause for mic on, pause for full screen on, retry 20 s, messages "Ground yourself" / "Ground yourself"
+2026-10-26 08:17:09  Periodic reminder held back: microphone or camera in use, looking again every 20 s
+2026-10-26 08:21:00  Periodic reminder shown after 4 min held back: Ground yourself
+2026-10-26 09:02:31  Workstation locked
+2026-10-26 09:15:48  Workstation unlocked
+2026-10-26 09:15:48  Unlock reminder skipped: full screen
+```
+
+What gets a line: the start (which build, which .NET runtime, the arguments, whether Windows
+accepted the restart registration); every lock and unlock; every reminder shown, raised,
+skipped or held back, with the reason; a reminder held back gets one line when the hold starts,
+one more only if the reason changes, and one with the total when it finally appears; the
+settings read at start, naming any value that was missing or unreadable and fell back to its
+default, or was clamped into range; the settings saved from the window; the auto-start entry
+registered on the first run or repaired after a move; and the text of the crash dialog, written
+before the dialog opens. Nothing is written on the one-second tick, so a quiet day is a few
+dozen lines.
+
+The file is capped: past 256 KB it is renamed `log.1.txt`, replacing the previous one, and a
+new `log.txt` starts, so the two files together never pass about half a megabyte. A write that
+fails for any reason (the folder cannot be created, the disk is full) is dropped silently: the
+log exists to explain the application, never to stop it. `--preview` and `--detect` write
+nothing. The log holds your two reminder messages and the path of the executable, and lives in
+your own profile folder only.
+
 ## Design decisions
 
 | Concern | Choice | Why |
@@ -195,6 +231,7 @@ alongside the copy already in the tray. Anything over ten minutes is clamped to 
 | Dark theme | the settings window, About and the tray menu, not the reminder | The three you go to on purpose are dark; the reminder stays a pale card, because a dark rectangle appearing over dark work is easy to miss and the point of it is to be seen. Written by hand -- control templates for WPF, a `ToolStripRenderer` for the menu -- so it costs no package |
 | About | a window, not a `MessageBox` | A Win32 dialog cannot be themed, and a white About box opening out of a dark tray menu reads as a different program. Being a window is also what lets it carry the app icon |
 | After a crash | `RegisterApplicationRestart` at start, `Environment.FailFast` after the dialog | Windows restarts a registered process that crashed after a minute of running, and only then, so a copy broken at start cannot loop. A clean exit after the dialog would not count as a crash and nothing would come back; WPF's own shutdown path loads assemblies, and once failed inside the crash handler itself when the runtime had been updated underneath |
+| Decision log | a capped text file in `%LOCALAPPDATA%`, always on | The one day a log is needed is the day nobody knew it would be, so it is never off; the Windows Application log would need an event source registered by an administrator, and ETW needs a session already running. A text file costs a few hundred kilobytes and opens anywhere. Core composes every line and the tests pin them; the file writer swallows its own errors so it can never take the tray down |
 
 ## Layout
 

@@ -30,15 +30,12 @@ internal static class RestartRegistration
 {
     /// <summary>
     /// Registers the running executable for restart with Windows. A refused registration, a
-    /// failed HRESULT, changes nothing: the application runs as it did before the registration
-    /// existed.
+    /// failed HRESULT, changes nothing but the start line of the decision log (R-111): the
+    /// application runs as it did before the registration existed.
     /// </summary>
-    public static void Register()
-    {
-        // The HRESULT is deliberately not read: there is nothing to do differently without the
-        // registration, and no dialog at start is worth a feature the user never sees.
-        _ = RegisterApplicationRestart(ApplicationRestart.CommandLine, ApplicationRestart.Flags);
-    }
+    /// <returns>The HRESULT Windows returned: 0 when registered.</returns>
+    public static int Register()
+        => RegisterApplicationRestart(ApplicationRestart.CommandLine, ApplicationRestart.Flags);
 
     /// <summary>
     /// kernel32's RegisterApplicationRestart: the command line Windows restarts the process

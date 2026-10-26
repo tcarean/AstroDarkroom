@@ -57,6 +57,15 @@
     so the tray can say so (ADR 0036).
   - `CrashReport.cs` — the crash dialog's text as a pure function: type, message when there is
     one, the file a load failure names, the inner exceptions, the banner (ADR 0036).
+  - `IDecisionLog.cs` — the seam the decision log is written through, one text per event, and
+    `NullDecisionLog`, the default that drops them. `DecisionLog.cs` — every text the log can
+    hold (the start line, the coordinator's decisions, the settings and auto-start lines, the
+    crash line), the shape of a line (`FormatLine` stamps the local time and folds line breaks)
+    and the rotation rule (`MaxBytes`, `ShouldRotate`); pure functions, all tested. The
+    coordinator, the settings store and the registrar take an `IDecisionLog` and write at the
+    point of each decision; the coordinator remembers when a hold began so that a held-back
+    reminder gets one line at the start, one per change of reason and one, with the total, when
+    it appears (ADR 0037).
   - `WindowPlacement.cs`, `Version.cs`, `LicenseInfo.cs`, `AutoStartStatus.cs`.
 - `src/MindfulnessReminder.App/` — `net8.0-windows`, `WinExe`, `AssemblyName` is
   `MindfulnessReminder`, so the binary is `MindfulnessReminder.exe`. A **thin adapter layer**:
@@ -66,11 +75,18 @@
     main window. Also holds the single-instance mutex, the restart registration right after
     it, the crash dialog (`CrashReport.Format`, then the tray icon hidden, then
     `Environment.FailFast`, never `Shutdown`: ADR 0036), the `--restarted` balloon, the
-    lifetimes of the Settings and About windows (both modeless and single-instance;
-    `TrayIconHost` only raises the request), and `--preview` / `--detect` — both of which run
-    BEFORE the mutex is claimed, so they work alongside the copy already in the tray.
+    decision log (created right after the mutex, its first line written after the restart
+    registration, handed to the store, the coordinator and the registrar, and given the crash
+    text before the dialog: ADR 0037), the lifetimes of the Settings and About windows (both
+    modeless and single-instance; `TrayIconHost` only raises the request), and `--preview` /
+    `--detect` — both of which run BEFORE the mutex is claimed, so they work alongside the copy
+    already in the tray and write no log.
   - `RestartRegistration.cs` — the one P/Invoke that registers the executable with Windows for
-    a restart after a crash; it ignores the HRESULT.
+    a restart after a crash; it returns the HRESULT for the log's start line and nothing acts
+    on it.
+  - `FileDecisionLog.cs` — the decision log as a file, `%LOCALAPPDATA%\MindfulnessReminder\log.txt`:
+    stamps each text with `DecisionLog.FormatLine`, appends, moves the file to `log.1.txt` once
+    it is past the cap, and swallows every error, so a log can never take the tray down.
   - `TrayIconHost.cs` — the icon and its four-item menu.
   - `BreakWindow.xaml(.cs)` — the reminder; takes its message in the constructor and has no
     text of its own. `SettingsWindow.xaml(.cs)` — the settings.

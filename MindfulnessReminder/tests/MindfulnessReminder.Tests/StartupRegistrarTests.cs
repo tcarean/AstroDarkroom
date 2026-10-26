@@ -269,6 +269,8 @@ public class StartupRegistrarTests
     {
         public bool EnableCalled { get; private set; }
 
+        public string Command => "\"" + ExePath + "\"";
+
         public AutoStartStatus GetStatus() => AutoStartStatus.Disabled;
 
         public void Enable() => EnableCalled = true;

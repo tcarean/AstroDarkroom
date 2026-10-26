@@ -64,6 +64,13 @@ Rules that are easy to break:
 See ADR 0017 for the first rule, ADR 0018 for the second and the last, ADR 0013 for the third
 and ADR 0019 for the fourth.
 
+The decision log records a skipped unlock reminder with its reason, and a held-back periodic
+one with one line when the hold starts, one more only when the reason changes, and one with the
+total when it finally appears: the coordinator keeps the moment the hold began (`_heldSince`)
+for that line alone, and clears it on a lock, an unlock or a settings change, which restart the
+countdown anyway. The retries in between, and the idle 10-second readings, write nothing
+(ADR 0037).
+
 `--detect` shows the raw readings and exits. It exists because neither signal can be
 exercised without a real call or a real game, and it is the only way to tell a signal that is
 not arriving from a setting that is switched off.

@@ -25,6 +25,12 @@ namespace MindfulnessReminder.Core;
 public interface IAutoStartManager
 {
     /// <summary>
+    /// The command the Run entry holds for this executable: its full path, quoted. What the
+    /// decision log names when the entry is written or repaired (R-113).
+    /// </summary>
+    string Command { get; }
+
+    /// <summary>
     /// Reads whether Windows will start the app at sign-in. A value this account may not read
     /// counts as missing: an unreadable entry is <see cref="AutoStartStatus.Disabled"/>, and an
     /// unreadable Task Manager veto is no veto.
