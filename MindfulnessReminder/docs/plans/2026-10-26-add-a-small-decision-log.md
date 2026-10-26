@@ -129,3 +129,33 @@ smoke check from the worktree's Release build opened the window, wrote no `log.t
 `%LOCALAPPDATA%\MindfulnessReminder` does not exist on this machine) and left the Run entry as it
 was. The tray-side behaviour, the file, its first line and the rotation, was not exercised here,
 as planned.
+
+## Code review (2026-10-26)
+
+A subagent reviewed 3472ecb read-only against the rules, the rows and ADR 0037 (308 tests
+green). Thirteen findings. Applied in the follow-up commit:
+
+1. A clock moved back during a hold restarted the countdown inside `IntervalSchedule` without
+   the coordinator noticing, so the next "shown after N min held back" line carried the old
+   hold. `IntervalSchedule.JumpRestartedCountdown` now reports it and the coordinator clears
+   the hold; a test pins it.
+2. The rotation and the append shared one `try`, so a `log.1.txt` held open would have
+   silenced the log until the lock cleared. The rotation has its own `try`; the line is
+   appended regardless and the file grows past the cap until the next write can rotate.
+3. A hold that ended on an open window lost its total: a new line, `Periodic reminder: window
+   already open, brought to front after N min held back`; R-112 also says that a lock, an
+   unlock, a save or a clock moved back ends a hold without a line of its own.
+4. Tests for the hold reset on an unlock and across a lock (two tests).
+5. R-114's example had one space between the two separators of the blank line; it is two.
+6. An empty `%LOCALAPPDATA%` would have put the log under the working directory; the writer
+   now writes nowhere in that case.
+8. "nothing changed" on a refusal could be false when a repair had succeeded first: the line
+   says "no registration made" (row, code, test).
+9. R-113 names the order of the fallback names (the reading order).
+10. ADR 0037 and the README now say the log also holds the command line and the crash text.
+11. The README example's timestamps sit on the 20-second retry grid.
+
+Left to the owner (see the wrap-up report): 7, moving `FileDecisionLog` to Core with the
+folder injected so the rotation and the swallow rules get tests (a disagreement with ADR
+0037's placement); 12, a save writes `Settings saved` and `Settings applied` back to back; 13,
+a message normalized on reading leaves no trace in the `Settings loaded` line.

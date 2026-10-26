@@ -1155,6 +1155,87 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
+    public void R112_A_hold_that_ends_on_an_open_window_logs_its_total_with_the_raise()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _presenter.SimulateShown();
+        _clock.Advance(TimeSpan.FromMinutes(3));
+        _timer.RaiseTick();
+
+        Assert.Equal("Periodic reminder: window already open, brought to front after 3 min held back", _log.Lines[^1]);
+    }
+
+    /// <summary>
+    /// An unlock restarts the countdown (R-024), so the postponement it was waiting on is gone:
+    /// the reminder that falls due a whole interval later was not held back, and a new hold is
+    /// a first one again.
+    /// </summary>
+    [Fact]
+    public void R112_An_unlock_ends_a_hold_so_the_next_reminder_is_logged_as_a_plain_one()
+    {
+        using var coordinator = CreateCoordinator(settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _monitor.RaiseUnlocked();
+        _log.Clear();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(["Periodic reminder shown: Ground yourself"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_hold_that_outlasts_a_lock_and_an_unlock_is_logged_again_as_a_new_one()
+    {
+        using var coordinator = CreateCoordinator(settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _monitor.RaiseLocked();
+        _monitor.RaiseUnlocked();
+        _log.Clear();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(["Periodic reminder held back: microphone or camera in use, looking again every 20 s"], _log.Lines);
+    }
+
+    /// <summary>
+    /// A clock moved back during a hold restarts the countdown inside the schedule (R-025); the
+    /// log must not carry the old hold into the reminder that falls due a whole interval later.
+    /// </summary>
+    [Fact]
+    public void R112_A_clock_moved_back_during_a_hold_ends_the_hold_in_the_log()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _clock.Advance(TimeSpan.FromHours(-1));
+        _timer.RaiseTick();
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _log.Clear();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(["Periodic reminder shown: Ground yourself"], _log.Lines);
+    }
+
+    [Fact]
     public void R112_A_short_hold_reads_as_one_minute()
     {
         using var coordinator = CreateCoordinator();

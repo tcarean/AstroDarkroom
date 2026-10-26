@@ -234,7 +234,7 @@ public class DecisionLogTests
 
         new StartupRegistrar(_registry, autoStart, _log).EnsureRegisteredOnFirstRun();
 
-        Assert.Equal(["Auto-start: the registry refused (UnauthorizedAccessException), nothing changed"], _log.Lines);
+        Assert.Equal(["Auto-start: the registry refused (UnauthorizedAccessException), no registration made"], _log.Lines);
     }
 
     // ----- R-114: the crash line -----

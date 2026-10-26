@@ -158,6 +158,15 @@ public static class DecisionLog
         => "Periodic reminder held back: " + Reason(reason) + ", looking again every "
            + Number((long)retry.TotalSeconds) + " s";
 
+    /// <summary>
+    /// A periodic reminder that, after being held back, found its window open and raised it
+    /// (R-112): the hold ends here, with its total.
+    /// </summary>
+    /// <param name="held">How long it was held back; rounded up to whole minutes, 1 at least.</param>
+    /// <returns><c>Periodic reminder: window already open, brought to front after &lt;N&gt; min held back</c>.</returns>
+    public static string BroughtToFrontAfterHold(TimeSpan held)
+        => BroughtToFront(ReminderKind.Periodic) + " after " + Number(HeldMinutes(held)) + " min held back";
+
     /// <summary>A periodic reminder that appeared after being held back (R-033).</summary>
     /// <param name="held">How long it was held back; rounded up to whole minutes, 1 at least.</param>
     /// <param name="message">What it said; not null.</param>
@@ -166,9 +175,13 @@ public static class DecisionLog
     {
         ArgumentNullException.ThrowIfNull(message);
 
-        var minutes = Math.Max(1, (long)Math.Ceiling(held.TotalMinutes));
-        return "Periodic reminder shown after " + Number(minutes) + " min held back: " + message;
+        return "Periodic reminder shown after " + Number(HeldMinutes(held)) + " min held back: " + message;
     }
+
+    /// <summary>A hold's length as the log states it: whole minutes, rounded up, 1 at least.</summary>
+    /// <param name="held">How long the reminder was held back.</param>
+    /// <returns>The minutes.</returns>
+    private static long HeldMinutes(TimeSpan held) => Math.Max(1, (long)Math.Ceiling(held.TotalMinutes));
 
     /// <summary>Settings saved from the window and applied at once (R-026).</summary>
     /// <param name="settings">The settings now in force; not null.</param>
@@ -239,11 +252,14 @@ public static class DecisionLog
 
     /// <summary>The registry refused a read or a write while registering or repairing (R-003, R-006).</summary>
     /// <param name="refusal">The exception the registry threw; not null.</param>
-    /// <returns><c>Auto-start: the registry refused (&lt;type name&gt;), nothing changed</c>.</returns>
+    /// <returns><c>Auto-start: the registry refused (&lt;type name&gt;), no registration made</c>.</returns>
     public static string AutoStartRefused(Exception refusal)
     {
         ArgumentNullException.ThrowIfNull(refusal);
-        return "Auto-start: the registry refused (" + refusal.GetType().Name + "), nothing changed";
+
+        // "No registration made", not "nothing changed": a path repaired before the refusal
+        // stays repaired (R-003), and its own line precedes this one.
+        return "Auto-start: the registry refused (" + refusal.GetType().Name + "), no registration made";
     }
 
     /// <summary>The crash dialog's text, as the log records it before the dialog opens (R-114).</summary>

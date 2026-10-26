@@ -65,5 +65,6 @@ nothing in the tray menu or About points at it.
   `IAutoStartManager` gains `Command`, which `RegistryAutoStartManager` already had.
 - `RestartRegistration.Register` returns the HRESULT instead of ignoring it, for the start line
   alone (R-100 still ignores a refusal).
-- The log holds the user's two reminder messages and the paths of the executable; it is in the
-  user's own profile folder and nowhere else.
+- The log holds the command line the copy started with, the user's two reminder messages, the
+  path of the executable and the text of a crash, whose messages can name a file or a registry
+  key; it is in the user's own profile folder and nowhere else.

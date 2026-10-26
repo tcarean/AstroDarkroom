@@ -41,10 +41,15 @@ internal sealed class FileDecisionLog : IDecisionLog
     private readonly string _path;
     private readonly string _rotatedPath;
 
-    /// <summary>A log writing under the current user's local application data.</summary>
+    /// <summary>
+    /// A log writing under the current user's local application data. When Windows cannot name
+    /// that folder, the log writes nowhere rather than into the working directory.
+    /// </summary>
     public FileDecisionLog()
     {
-        _folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), FolderName);
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        _folder = localAppData.Length == 0 ? string.Empty : Path.Combine(localAppData, FolderName);
         _path = Path.Combine(_folder, FileName);
         _rotatedPath = Path.Combine(_folder, RotatedFileName);
     }
@@ -52,21 +57,41 @@ internal sealed class FileDecisionLog : IDecisionLog
     /// <inheritdoc/>
     public void Write(string text)
     {
+        if (_folder.Length == 0)
+        {
+            return;
+        }
+
         try
         {
             Directory.CreateDirectory(_folder);
-
-            if (File.Exists(_path) && DecisionLog.ShouldRotate(new FileInfo(_path).Length))
-            {
-                File.Move(_path, _rotatedPath, overwrite: true);
-            }
-
+            Rotate();
             File.AppendAllText(_path, DecisionLog.FormatLine(DateTimeOffset.Now, text) + Environment.NewLine);
         }
         catch (Exception)
         {
             // A folder that cannot be created, a locked file, a full disk: none of them is a
             // reason to show a dialog or to stop. The line is lost, the application goes on.
+        }
+    }
+
+    /// <summary>
+    /// Moves the file to <see cref="RotatedFileName"/> once it is past the cap, replacing the
+    /// previous one. A rotation that fails (the old file held open by an editor or a scanner)
+    /// is let go on its own, so the line is still appended and the file grows past the cap
+    /// until the next write can rotate it; a log that went silent would be the worse failure.
+    /// </summary>
+    private void Rotate()
+    {
+        try
+        {
+            if (File.Exists(_path) && DecisionLog.ShouldRotate(new FileInfo(_path).Length))
+            {
+                File.Move(_path, _rotatedPath, overwrite: true);
+            }
+        }
+        catch (Exception)
+        {
         }
     }
 }

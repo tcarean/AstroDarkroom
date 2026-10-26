@@ -394,7 +394,9 @@ public sealed class ReminderCoordinator : IDisposable
             if (_presenter.IsShowing)
             {
                 _presenter.BringToFront();
-                _log.Write(DecisionLog.BroughtToFront(ReminderKind.Periodic));
+                _log.Write(_heldSince is { } heldSinceRaise
+                    ? DecisionLog.BroughtToFrontAfterHold(now - heldSinceRaise)
+                    : DecisionLog.BroughtToFront(ReminderKind.Periodic));
             }
             else
             {
@@ -408,6 +410,13 @@ public sealed class ReminderCoordinator : IDisposable
         }
         else
         {
+            // A clock moved back restarted the countdown inside TryConsumeDue (R-025): the
+            // postponement that was running is over, so the hold the log tracks is too.
+            if (_schedule.JumpRestartedCountdown)
+            {
+                ClearHold();
+            }
+
             RefreshSuppression(now);
         }
 

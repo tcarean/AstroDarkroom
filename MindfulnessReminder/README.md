@@ -189,7 +189,7 @@ for it). Each line is the local time, two spaces, and what happened:
 2026-10-26 07:47:09  Started Mindfulness Reminder 1.4.0 on .NET 8.0.33, arguments: (none); restart registration: ok
 2026-10-26 07:47:09  Settings loaded: periodic on every 30 min, unlock on, pause for mic on, pause for full screen on, retry 20 s, messages "Ground yourself" / "Ground yourself"
 2026-10-26 08:17:09  Periodic reminder held back: microphone or camera in use, looking again every 20 s
-2026-10-26 08:21:00  Periodic reminder shown after 4 min held back: Ground yourself
+2026-10-26 08:21:09  Periodic reminder shown after 4 min held back: Ground yourself
 2026-10-26 09:02:31  Workstation locked
 2026-10-26 09:15:48  Workstation unlocked
 2026-10-26 09:15:48  Unlock reminder skipped: full screen
@@ -209,8 +209,8 @@ The file is capped: past 256 KB it is renamed `log.1.txt`, replacing the previou
 new `log.txt` starts, so the two files together never pass about half a megabyte. A write that
 fails for any reason (the folder cannot be created, the disk is full) is dropped silently: the
 log exists to explain the application, never to stop it. `--preview` and `--detect` write
-nothing. The log holds your two reminder messages and the path of the executable, and lives in
-your own profile folder only.
+nothing. The log holds the command line the copy started with, your two reminder messages, the
+path of the executable and the text of a crash, and lives in your own profile folder only.
 
 ## Design decisions
 
