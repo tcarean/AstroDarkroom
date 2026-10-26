@@ -132,9 +132,8 @@ every text at once, and the choice is remembered; a tool opened from the launche
 launcher's language. Started on its own, a tool speaks English, or Romanian with `--lang ro`.
 
 Each tool has its own folder in this repository, with its sources, its tests and its
-documentation: the user guide is the folder's `README.md`, in English for LightsCheck,
-AstroPhotoAnalyzer, ImageVisualCompare and DarksCheck and in Romanian for FlatCheck; the
-requirements, the decisions and the validation figures are in its `docs/`, in English.
+documentation: the user guide is the folder's `README.md`, and the requirements, the decisions
+and the validation figures are in its `docs/`, all in English.
 
 ## The tools
 
@@ -157,8 +156,6 @@ or `masters/`, and runs two tests at once. **Structure**: is the master radially
 does its vignetting match the lens's published profile. **End to end**: does the flat correct the
 night's calibrated lights, `pp_light_*.fit` in `process/`. The other tabs:
 
-- **Ratio**: how much of a master's deviation is fixed to the camera and how much to the world,
-  from two masters taken with the camera turned 180 degrees.
 - **Exposure**: whether a raw flat is exposed right.
 - **Histogram**: a frame as Siril's histogram-equalised view shows it; a picture, not a test.
 - **Smoothing**: writes a second master with the diffuser's texture removed.
