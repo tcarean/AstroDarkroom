@@ -1,63 +1,62 @@
-# Componente terte
+# Third-party components
 
-DarksCheck e distribuit sub **GNU General Public License v3 sau ulterioara** (vezi
-[LICENSE](LICENSE)). Fisierul asta listeaza codul tert pe care il leaga, licenta fiecarei
-componente si motivul pentru care e compatibila cu GPLv3. Un pachet adaugat fara o intrare
-aici e un pachet a carui compatibilitate n-a verificat-o nimeni; `ThirdPartyTests` leaga
-lista de aici, lista din `ThirdParty.cs` (ce arata fereastra "Despre") si pachetele din
-`DarksCheck.Core.csproj`.
+DarksCheck is distributed under the **GNU General Public License v3 or later** (see
+[LICENSE](LICENSE)). This file lists the third-party code it links, the licence of each
+component and why it is compatible with GPLv3. A package added without an entry here is a
+package whose compatibility nobody checked; `ThirdPartyTests` binds the list here, the list in
+`ThirdParty.cs` (what the "About" window shows) and the packages of `DarksCheck.Core.csproj`.
 
-Ce e scris de mana si **nu** e cod tert: cititorul FITS, encoderul PNG, toate calculele si
-toate pragurile. Cititorul FITS, cititorul raw si encoderul PNG sunt copiate din LightsCheck,
-care le-a copiat din FlatCheck; acelasi autor, aceeasi licenta (ADR 0003).
+What is written by hand and is **not** third-party code: the FITS reader, the PNG encoder, every
+computation and every threshold. The FITS reader, the raw reader and the PNG encoder are copied
+from LightsCheck, which copied them from FlatCheck: the same author, the same licence (ADR 0003).
 
 ---
 
 ## Sdcb.LibRaw
 
-**Rol.** Citeste mozaicul Bayer nedebayerizat, nivelurile exacte de alb si negru, ordinea
-culorilor din CFA si metadatele fotografierii (expunere, ISO, ora, focala, diafragma,
-obiectiv) dintr-un fisier raw de aparat.
+**Role.** Reads the undebayered Bayer mosaic, the exact white and black levels, the colour order
+of the CFA and the shot's metadata (exposure, ISO, time, focal length, aperture, lens) from a
+camera raw file.
 
-**Licenta.** MIT (ambalajul C#).
+**Licence.** MIT (the C# wrapper).
 
-**Compatibilitate.** MIT e permisiva si compatibila cu GPLv3.
+**Compatibility.** MIT is permissive and compatible with GPLv3.
 
-- Proiect: <https://github.com/sdcb/Sdcb.LibRaw>
+- Project: <https://github.com/sdcb/Sdcb.LibRaw>
 
-## LibRaw (bibliotecile native din `Sdcb.LibRaw.runtime.*`)
+## LibRaw (the native libraries of `Sdcb.LibRaw.runtime.*`)
 
-**Rol.** Decodarea propriu-zisa a formatelor raw. Vine ca DLL-uri native (`raw_r`, `jpeg8`,
-`lcms2`, `zlib1`), livrate alaturi de executabil.
+**Role.** The decoding of the raw formats itself. It comes as native DLLs (`raw_r`, `jpeg8`,
+`lcms2`, `zlib1`), shipped with the executable (inside it, in the published single file).
 
-**Licenta.** Dubla, la alegerea celui care o foloseste: **LGPL-2.1-only SAU CDDL-1.0**.
+**Licence.** Dual, at the user's choice: **LGPL-2.1-only OR CDDL-1.0**.
 
-**Compatibilitate - aici se ia o decizie.** DarksCheck foloseste LibRaw sub **LGPL-2.1**,
-aceeasi alegere ca FlatCheck. CDDL-1.0 **nu** e compatibila cu GPL, deci alegerea celeilalte
-optiuni ar rupe licenta uneltei. LGPL-2.1 e compatibila: articolul 3 al ei permite explicit
-aplicarea termenilor GPL obisnuite, "version 2 of the ordinary GNU General Public License or
-any later version", asupra unei copii, ceea ce aduce codul intr-o lucrare GPLv3. LGPL-2.1
-articolul 6 cere ca, daca programul isi afiseaza notitele de copyright la rulare (o face, pe
-a doua linie a fiecarei rulari), notita LibRaw sa apara printre ele: de asta exista lista din
-`ThirdParty.cs` si fereastra "Despre".
+**Compatibility - a decision is made here.** DarksCheck uses LibRaw under **LGPL-2.1**, the same
+choice as FlatCheck. CDDL-1.0 is **not** compatible with the GPL, so choosing the other option
+would break the tool's licence. LGPL-2.1 is compatible: its section 3 explicitly allows applying
+the terms of the ordinary GPL, "version 2 of the ordinary GNU General Public License or any later
+version", to a copy, which brings the code into a GPLv3 work. LGPL-2.1 section 6 requires that,
+if the program displays its copyright notices at run time (it does, on the second line of every
+run), the LibRaw notice appear among them: that is why the list in `ThirdParty.cs` and the
+"About" window exist.
 
-- Proiect: <https://www.libraw.org/>
+- Project: <https://www.libraw.org/>
 
 ---
 
-## Componente de test
+## Test components
 
-Folosite numai la compilarea si rularea testelor, deci nu sunt distribuite cu unealta.
+Used only to build and run the tests, so they are not distributed with the tool.
 
-| pachet | licenta |
+| package | licence |
 |---|---|
 | xUnit | Apache-2.0 |
 | Microsoft.NET.Test.Sdk | MIT |
 
 ---
 
-## Cum se adauga o intrare
+## How to add an entry
 
-Vezi regula "Packages" a kit-ului (`.claude/rules/kit/process.md`) si regula "Package
-notices" din [CLAUDE.md](CLAUDE.md). Pe scurt: pachetul se discuta inainte, nu dupa;
-compatibilitatea cu GPLv3 se demonstreaza, nu se presupune; iar motivul se scrie aici.
+See the kit's rule "Packages" (`.claude/rules/kit/process.md`) and the rule "Package notices" in
+[CLAUDE.md](CLAUDE.md). In short: a package is discussed before, not after; its compatibility
+with GPLv3 is shown, not assumed; and the reason is written here.
