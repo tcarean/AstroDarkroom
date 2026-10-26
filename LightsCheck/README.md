@@ -1,278 +1,379 @@
-# lightscheck
+# LightsCheck
 
-Verificare de calitate pentru light frames de astrofoto, pentru un DSLR pe un star tracker
-(Nikon D3300 cu Samyang 135 pe Star Adventurer GTi, flux Siril). Citeste folderul unei sesiuni
-Siril, masoara fiecare cadru si spune ce cadre sa scoti din stiva si de ce, cat de des si cat
-de mult ai facut dithering, si ce sa faci altfel data viitoare. Pozele sunt doar citite: nimic
-nu e modificat, mutat sau scris in `lights/`.
+A quality check for the light frames of an astrophotography night, made for a DSLR on a star
+tracker and a Siril workflow (the author's Nikon D3300 with a Samyang 135 mm on a Star Adventurer
+GTi). It reads a Siril session folder, measures every frame and tells you which frames to leave
+out of the stack and why, how often and how far you dithered, how the mount drifted, how good the
+polar alignment was, and what to do differently next time. The frames are only read: nothing in
+`lights/` is modified, moved or written.
 
-Consola `lightscheck.exe` si fereastra `LightsCheck.Wpf.exe` stau peste acelasi nucleu si dau
-aceleasi cifre. Aceeasi licenta (GPLv3 sau ulterioara, [LICENSE](LICENSE)), acelasi mod de
-versionare si aceeasi fereastra "Despre" ca FlatCheck, de unde sunt copiate si cititoarele de
-raw si FITS (vezi [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
+There are two programs over one core, and they give the same figures: the console,
+`lightscheck.exe`, and the window, `LightsCheck.Wpf.exe`. Both speak English, or Romanian with
+`--lang ro`.
 
-**Stadiu: prima versiune.** Consola face inventarul, masoara fiecare cadru si analizeaza seria
-(dithering, drift, cadre de respins); fereastra arata aceleasi rezultate. Cifrele sunt
-verificate pe sesiunea Veil din 2026-10-06 fata de analiza facuta de mana (`docs/validation.md`).
+The figures are checked against two of the author's nights (`docs/validation.md`): the Veil
+Nebula on 2026-10-06, 87 frames at 135 mm, against the hand analysis the tool grew out of, and the
+Milky Way at Smida on 2026-08-12, 32 frames at 20 mm.
 
-> **Documentatia de utilizator sta aici, in acest fisier.** Nu o duplica in comentarii.
+## Getting it
 
----
+The window is one of the tools of the Astro Darkroom suite, described on the front page of this
+repository ([../README.md](../README.md)); opened from the suite's launcher, it starts in the
+launcher's language. The console is not part of the suite: build it from this folder, as
+"Building" below says.
 
-## Ce folder ii dai
+## The session folder
 
-Folderul sesiunii Siril, cel care are `lights/` si, optional, `biases/` si `darks/`:
+Give it the folder of one night, laid out the way Siril and its scripts lay it out:
 
 ```
 2026-10-06-3h\
-    lights\     DSC_0001.NEF ... DSC_0087.NEF     <- obligatoriu (sau cadrele direct in folder)
-    biases\     DSC_0128.NEF ...                  <- optional
-    darks\      DSC_0160.NEF ...                  <- optional, doar numarate, niciodata citite
-    flats\      ...                               <- neatins
-    process\    ...                               <- neatins
+    lights\      DSC_0001.NEF ... DSC_0087.NEF   <- required (or the frames directly in the folder)
+    biases\      DSC_0128.NEF ...                <- optional
+    darks\       DSC_0160.NEF ...                <- optional, only counted, never read
+    flats\       ...                             <- not touched
+    process\     ...                             <- not touched
+    result.fit                                   <- optional, once plate-solved
 ```
 
-Daca folderul dat nu are `lights/` dar are cadre direct in el, acelea sunt lights-urile. Un
-`lights/` gol e eroare, nu se cade pe radacina sesiunii (acolo stau `result.fit` si celelalte
-rezultate ale stivuirii).
-Cadrele sunt raw-urile de aparat (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`) daca exista,
-altfel fisierele FITS (`.fit`, `.fits`, `.fts`); cele doua nu se amesteca. Ordinea e cea a
-numelor de fisier.
+- The lights are the frames of `lights\`. A folder without `lights\` but with frames of its own
+  is taken as the lights; an empty `lights\` is an error, never a fall-back to the root of the
+  session, where `result.fit` and the other results of the stacking sit.
+- The frames are the camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`) when the folder
+  has any, otherwise its FITS files (`.fit`, `.fits`, `.fts`); the two kinds are never mixed. They
+  are taken in the order of their file names.
+- `biases\`, two frames or more, gives the read noise, and with it the verdict on the exposure.
+- `darks\` is only counted, to say whether the session has darks to take the sensor's pattern
+  out (DITHERING, `fixed pattern`).
+- A FITS at the root of the folder that Siril has plate-solved, such as the stack `result.fit`,
+  tells which image axis is RA, which way is east and which north, and the declination. Without
+  one the RA axis is taken from the direction of the trails when at least two bad frames agree on
+  it, assuming the tracking made them; the dither moves get no sense on the sky, and the polar
+  alignment gets its lower bound at most.
 
-## Folosire
+## The console
 
 ```
-lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--lang ro|en]
-lightscheck <folder sesiune> --inventory
-lightscheck <folder sesiune> --frame N
+lightscheck <session folder> [--out DIR] [--threads N] [--pixel UM] [--east left|right] [--north up|down] [--lang en|ro]
+lightscheck <session folder> --inventory
+lightscheck <session folder> --frame N
 lightscheck --help
 ```
 
-Limba textelor e engleza, daca nu ceri altfel: `--lang ro` (sau `--lang=ro`) da textele in
-romana, ca pana acum, `--lang en` in engleza; merge oriunde pe linia de comanda, si la consola si
-la fereastra. O valoare necunoscuta (`--lang fr`) opreste consola cu un `ERROR:` in engleza si
-codul `1`; fereastra o spune intr-un mesaj si merge mai departe in engleza. Cifrele sunt aceleasi
-in ambele limbi.
+- No option: measures every frame and prints the report of the night (below).
+- `--out DIR`: also writes the report, a CSV with every figure and the list of the frames to
+  reject into DIR.
+- `--threads N`: how many frames are measured in parallel; half the cores by default.
+- `--pixel UM`: the pixel size in microns, used when the files do not carry it (a raw never does,
+  a FITS may, in `XPIXSZ`); 3.92 by default, the D3300's. With the focal length of the files it
+  gives the scale in "/px.
+- `--east left|right` and `--north up|down`: the SynScan arrows that move the mount east and
+  north, for the `dithering` column (below); right and up by default. Their Romanian forms,
+  `--est stanga|dreapta` and `--nord sus|jos`, work too, in either language.
+- `--inventory`: the metadata of the frames only, without decoding them.
+- `--frame N`: measures one frame, the N-th of `lights\` (1 = the first).
+- `--lang en|ro`: the language of the texts, English by default.
+- `-h`, `--help`: the usage and the licence notice.
 
-Fiecare rulare incepe cu `lightscheck <versiune>` si notita de copyright. Codul de iesire e
-`0` cand toate cadrele s-au citit si `1` la eroare (folder lipsa, niciun cadru, un cadru care
-nu se poate citi; cadrul e listat cu `eroare:` si restul sunt analizate in continuare).
+Every run first prints `lightscheck <version>` and the copyright line. The exit code is `0` when
+every frame was read and `1` on an error: a missing folder, a folder without frames, a wrong
+option, or a frame that cannot be read, which is listed with its error while the others are still
+analysed.
 
-### Toata sesiunea (fara optiuni)
+`--lang ro` (or `--lang=ro`), anywhere on the command line, gives every text in Romanian: the
+usage, the report, the text in the files of `--out`, and in the window every label. `--lang en`,
+or no `--lang`, gives English. An unknown value (`--lang fr`) stops the console with an English
+`ERROR:` line and exit code `1`; the window says it in a message and goes on in English. The
+figures are the same in both languages.
 
-Masoara fiecare cadru (in paralel, `--threads N`, implicit jumatate din nuclee; 87 de cadre
-de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportul:
+### The whole night
 
-- **REZUMAT**: focus, expunere (fata de zgomotul de citire din `biases/`), roua, cadre
-  miscate, dithering, aliniere polara (`OK`, `LA LIMITA` sau `ATENTIE` dupa cat costa intr-o
-  expunere; fara verdict cand se stie doar limita de jos), cate cadre scoti din stiva si cate
-  raman.
-- **FOCUS**: FWHM median pe cadrele bune, la inceput si la sfarsit, pe trei zone radiale, si
-  verdictul (acelasi ca pe randul `focus` din REZUMAT).
-- **EXPUNERE SI ZGOMOT**: fondul de cer, zgomotul de citire pe fiecare canal, si pe trei
-  cadre raportul "shot/citire" pe canal: peste 10, cerul ineaca zgomotul de citire; sub,
-  canalul e limitat de citire si subexpunerile mai lungi ar ajuta.
-- **ROUA**: halo-ul si numarul de stele la inceput si la sfarsit.
-- **CADRE MISCATE**: cadrele slabe (alungire >= 1.6) si la limita (1.35..1.6), directia
-  darelor si care axa a imaginii e RA (din `result.fit` plate-solvat din folderul sesiunii,
-  daca exista, altfel din directia darelor). Cand axa RA se stie si stelele cadrului sunt de
-  acord intre ele (coerenta peste 0.8), motivul fiecarui cadru cu dara spune si pe ce axa a
-  monturii cade ea: `dara pe RA (-90 grade)` inseamna urmarirea (eroare periodica, viteza,
-  backlash pe RA); `pe DEC`, alinierea polara, vantul sau o atingere a monturii; `oblica`,
-  amandoua sau o lovitura. Fara axa ramane doar unghiul: `dara la -90 grade`.
-- **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering (masurat pe
-  perechile de cadre fara pauza si fara miscare intre ele, unde nu s-a apasat nimic si
-  montura n-a sarit; cand sunt sub 3 astfel de
-  perechi, de exemplu la dithering dupa fiecare cadru, se foloseste orice pereche fara miscare
-  de 5 px, cu mentiunea `aproximativ`, fiindca apasarile mici de dithering intra in cifra),
-  driftul intr-o expunere (pe ce axa a monturii) si dara de walking noise pe care o lasa in
-  cel mai lung grup de cadre consecutive ramase in acelasi loc la 10 px, de la 2 cadre in sus,
-  rotatia de camp, apoi `aliniere polara` si `drift pe RA`.
-  Alinierea polara se citeste din driftul pe DEC si din rotatia de camp: o axa polara gresita
-  cu un unghi `e` face stelele sa alunece pe DEC si campul sa se roteasca, in proportii care
-  depind doar de declinatie. Driftul pe DEC singur da o limita de jos a erorii (`eroare de cel
-  putin 4'`); rotatia de camp, curatata de dithering (fiecare miscare pe RA roteste putin
-  cadrul, cu pasul ei inmultit cu sinusul declinatiei, si pe Veil asta era cea mai mare parte
-  din rotatia masurata) si pusa toata pe seama alinierii, da limita de sus (`eroare intre 4'
-  si 7'`), pentru care trebuie declinatia din plate solve-ul de la radacina sesiunii si o
-  sesiune de cel putin o ora. Randul
-  spune si cat costa: driftul pe care alinierea il poate face intr-o expunere, in pixeli, si
-  alungirea pe care o adauga unei stele cu FWHM-ul sesiunii. `drift pe RA` spune cat din
-  driftul pe RA poate veni din aliniere (rotatia inmultita cu tangenta declinatiei); ce e peste
-  nu e alinierea, ci urmarirea (viteza, eroarea periodica, flexiune). Pe sesiunea Veil din
-  2026-10-06 driftul pe RA de 4.4"/min vine doar in mica parte din aliniere (cel mult 0.7"/min),
-  iar alinierea, intre 4.5' si 7', costa sub 0.5 px intr-o expunere de 120 s: nu ea a miscat
-  cadrele. Nemasurabila sub 3 perechi de cadre fara pauza si fara miscare (o serie de 10+ cadre fara
-  dithering ar masura-o); fara plate solve, sau sub o ora, ramane doar limita de jos. Impartirea erorii pe altitudine si
-  azimut ar cere locul si ora exacta, pe care raw-urile nu le au.
-- **DITHERING**: cate pauze si cate miscari (>= 5 px), la cate cadre o data, cat de mari, pe
-  ce axe si in ce sens, cat de aproape sunt cadrele unul de altul (pozitii distincte,
-  grupuri de cadre consecutive in acelasi loc), `scara` (cat inseamna pe cer, in secunde de
-  arc, o miscare de 5 si de 10 px la focala sesiunii), `pattern in stiva` (cat din pattern-ul
-  unui cadru ramane in medie dupa stivuire, fata de 1 / cadre, idealul in care niciun cadru nu
-  sta peste altul), `pattern fix` (cat de mare e pattern-ul fix al senzorului, citit din
-  mediana cadrelor neinregistrate: sigma pe fiecare canal, in ADU si ca procent din zgomotul
-  unui cadru, pixelii fierbinti pe megapixel, si daca sesiunea are dark-uri care sa-l scoata)
-  si verdictul pentru pixeli calzi si walking noise, cu cifrele lui.
-  Verdictul de walking noise citeste si driftul: `OK` cand dithering-ul e des, pe ambele axe
-  si cu pozitii distincte; `FARA walking noise` cand dara pe care o trage driftul in cel mai
-  lung grup de cadre la 10 px e sub 3 px, oricum ar arata harta (la 20 mm, un drift de 3"/min
-  e a cincisprezecea parte dintr-un pixel pe cadru si pattern-ul nu merge nicaieri);
-  `INSUFICIENT` altfel, cu dara in pixeli si pe ce axa.
+`lightscheck <session folder>` measures every frame, registers them all on the first and prints
+the report; the progress goes to stderr. On the author's computer, an Intel i7-4790K with the
+default 4 threads, the 87 raws of 24 MP of the Veil night take about two minutes (123 s, measured
+2026-10-26). The report's sections:
 
-  Walking noise-ul e pattern-ul fix al senzorului (pixelii calzi, restul de dark) tras in
-  dare: driftul il muta de la un cadru la altul si stiva aduna copiile pe traseul lui, in
-  grupurile de cadre consecutive ramase in acelasi loc. Aceeasi deriva a monturii si aceeasi
-  miscare de dithering sunt de atatea ori mai multi pixeli cu cat focala e mai lunga: focala
-  scurta iarta, focala lunga cere dithering la fiecare cadru, pe ambele axe, in directie
-  aleatoare; frecventa conteaza mai mult decat marimea, 5 px ajung cand doua cadre vecine nu
-  mai impart acelasi loc. Dark-urile scot pattern-ul inainte sa apuce sa mearga si nu cer
-  demontarea obiectivului sau a filtrului: scoti obiectivul cu tot cu filtru, pui capacul de
-  body, inchizi ocularul vizorului si tragi 20 de cadre la acelasi ISO, acelasi timp si aceeasi
-  temperatura, la finalul sesiunii; flat-urile raman valabile. Fereastra spune acelasi lucru
-  sub cardul DITHERING.
-- **RESPINSE**: fiecare cadru slab cu motivul, pragul si axa darei.
-- **TABEL PE CADRE**: o linie pe cadru. Coloana `dithering` spune ce a facut montura la
-  fiecare miscare de dithering: pe ce axa, cati pixeli, in ce sens pe cer si ce sageata din
-  SynScan e aceea, de exemplu `RA 15 px ← V, DEC 12 px ↓ S`: sageata apasata, apoi sensul pe
-  cer (E/V, N/S). Sensul vine din `result.fit` plate-solvat (Siril scrie FITS-ul cu randurile
-  de jos in sus fata de raw, si programul tine cont de asta; verificat pe sesiunea Veil cu plate
-  solve pe doua cadre brute; o sesiune din FITS-uri, de exemplu `pp_light_*.fit` copiate din
-  `process/`, e citita in aceeasi ordine ca plate solve-ul, si sensurile ies aceleasi ca din
-  raw-uri); fara el ramane doar `RA 15 px, DEC 12 px`. Care sageata muta
-  montura spre est si care spre nord depinde de setarile aplicatiei SynScan: implicit `→` est
-  (deci `←` vest) si `↑` nord (deci `↓` sud); le schimbi cu `--est stanga|dreapta` si
-  `--nord sus|jos` (sau, in engleza, `--east left|right` si `--north up|down`; ambele forme
-  merg in ambele limbi), iar in fereastra din selectoarele EST si NORD, tinute minte intre porniri
-  in `%LOCALAPPDATA%\LightsCheck\settings.json`. Coloana `acelasi loc` spune al catelea cadru
-  consecutiv e in acelasi loc (la 10 px), din cate si de la care: `7/10 de la 61` e al
-  saptelea din zece cadre ramase pe loc de la cadrul 61. Sirurile astea fac walking noise,
-  dar cadrul ramane bun si in stiva: leacul e dithering mai des data viitoare, nu mai putine
-  cadre.
+- **SUMMARY**: one row per question, each opening with its verdict: the focus, the exposure
+  against the read noise of the biases, dew, the trailed frames, the dithering, the polar
+  alignment, and how many frames to leave out of the stack and how much exposure stays.
+- **FOCUS**: the median FWHM of the good frames, at the start and at the end of the night and in
+  three radial zones (centre, middle, edge), and the verdict.
+- **EXPOSURE AND NOISE**: the sky background, the read noise of each channel, and on the first,
+  the middle and the last frame the shot/read ratio of each channel: above 10 the sky swamps the
+  read noise; under 10 the channel is limited by the read noise, and longer subs would help.
+- **DEW**: the halo of the bright stars and the star count at the start and at the end, and the
+  verdict.
+- **TRAILED FRAMES**: the bad frames (a median elongation of 1.60 or more) and the marginal ones
+  (1.35 to 1.60), the direction of the trails and which image axis is RA. When the RA axis is
+  known and a frame's stars agree on their direction (a coherence above 0.8), the reason of a
+  trailed frame names the mount axis its trail falls on:
+  - `trail on RA (-90 degrees)`: the tracking (periodic error, rate, backlash on RA);
+  - `trail on DEC`: the polar alignment, wind or a touch on the mount;
+  - `trail oblique`: both, or a knock.
 
-`--out DIR` scrie in DIR raportul (`lightscheck-report.txt`), un CSV cu toate cifrele pe
-cadru (`lightscheck-frames.csv`, cu axa darei in `trail_on`, sirul din `acelasi loc` in
-`spot_run_index`, `spot_run_frames`, `spot_run_first`, si miscarea de dithering in
-`move_ra_px`, `move_dec_px`, pixeli cu semn, plus spre est si spre nord, si `move_arrows`) si
-lista numelor de respins (`lightscheck-rejected.txt`),
-cate unul pe linie, de scos din secventa in Siril. Numele fisierelor sunt aceleasi in ambele
-limbi (pana la versiunea 1.0.0 erau `lightscheck-raport.txt`, `lightscheck-cadre.csv` si
-`lightscheck-respinse.txt`); textul din ele urmeaza limba rularii, si antetul CSV-ului ramane
-in engleza. Nimic nu se scrie in `lights/`.
-`--pixel UM` e marimea pixelului in microni cand fisierele n-o spun (implicit 3.92, D3300);
-cu focala din raw da scara in "/px. `--est stanga|dreapta` si `--nord sus|jos` spun care
-sageata SynScan muta montura spre est si care spre nord, pentru coloana `dithering`. Sagetile
-sunt caractere Unicode: in fereastra consolei se vad (programul o trece pe UTF-8 cat ruleaza);
-daca trimiti iesirea intr-un fisier cu `>` din Windows PowerShell 5.1, ele ies stricate, asa ca
-pentru fisiere foloseste `--out`, ale carui fisiere sunt UTF-8.
+  Without the axis it gives the angle alone: `trail at -90 degrees`.
+- **DRIFT AND ROTATION**: the drift between consecutive frames without dithering, the drift over
+  one exposure and the walking-noise streak it draws, the field rotation, the polar alignment and
+  the drift along RA (explained below).
+- **DITHERING**: the pauses and the moves (a step of 5 px or more), how often (every how many
+  frames), how far, on which axes and in which sense, and how close the frames sit to each other
+  (the nearest other frame, the distinct positions, the runs of consecutive frames in the same
+  spot); then:
+  - `scale`: what a move of 5 px and one of 10 px are on the sky at the session's focal length;
+  - `pattern in the stack`: how much of one frame's pattern stays in the mean after stacking,
+    against 1 / frames, the ideal when no two frames share a spot;
+  - `fixed pattern`: the sensor's fixed pattern, read from the median of the frames taken
+    without aligning them, so that the stars move with the dithers and only the pattern stays:
+    its sigma on each channel, in ADU and as a share of one frame's noise, the hot pixels per
+    megapixel, and whether the session has darks to take it out;
+  - the verdict, for walking noise and for hot pixels, with its figures (below).
+- **REJECTED**: each bad frame with its reason, its threshold and the axis of its trail, and each
+  frame that could not be read. The marginal frames stay in, your choice; their list is in
+  TRAILED FRAMES.
+- **FRAME BY FRAME**: one row per frame: time, class, elongation, FWHM, stars, background,
+  pause, step, the position against the first frame, `dithering`, `same spot` and the reasons
+  (below).
 
-### Doar inventarul: `--inventory`
+### Drift, field rotation and polar alignment
 
-Citeste metadatele fara sa decodeze pixelii (o secunda pentru 87 de cadre):
+The drift is measured on the pairs of consecutive frames with no pause and no move between them,
+where nothing was pressed and the mount did not jump. With fewer than 3 such pairs, as when you
+dither after every frame, every pair without a move of 5 px counts, and the row says
+`approximate`, since the small dither presses enter the figure. From the drift come the drift
+over one exposure, with the mount axis it runs along, and the walking-noise streak it draws over
+the longest run of consecutive frames, 2 or more, that stayed within 10 px of the run's first.
+
+The polar alignment is read from the drift along DEC and from the field rotation: a polar axis
+off by an angle e makes the stars slide along DEC and the field rotate, in proportions that depend
+on the declination alone. The DEC drift alone gives a lower bound of the error
+(`error of at least 5.7'`). The field rotation, put down entirely to the alignment, gives the
+upper bound (`error between 4.5' and 6.7'`), once it is cleared of the dithers' slews: each move
+in RA turns the frame a little, by its change of right ascension times the sine of the
+declination, and on the Veil night that was most of the rotation the registration saw. The upper bound needs the declination,
+from the plate solve at the root, and a session of an hour or more. The row also says what the
+error costs: the drift the alignment can cause over one exposure, in pixels, and the elongation it
+adds to a star of the session's FWHM. The verdict in SUMMARY weighs that drift against a third of
+the FWHM: `OK` when the upper bound's drift stays under it, `WARNING` when even the lower bound's
+reaches it, `MARGINAL` between; with the lower bound alone and under the third, no verdict.
+
+`RA drift` says how much of the drift along RA the alignment can explain (the rotation times the
+tangent of the declination); the rest is the tracking (the rate, the periodic error, flexure), not
+the alignment. On the Veil night the RA drift of 4.4"/min owed at most 0.7"/min to the alignment,
+and the alignment, between 4.5' and 6.7', cost at most 0.46 px over a 120 s exposure: it is not
+what moved the frames.
+
+The alignment cannot be measured with fewer than 3 pairs of frames without a pause and without a
+move; a run of 10 or more frames without dithering would measure it. Without a plate solve, or
+under an hour, it gets only its lower bound. Splitting the error into altitude and azimuth would
+need the exact place and time, which the raws do not carry.
+
+### Dithering and walking noise
+
+Walking noise is the sensor's fixed pattern (the hot pixels, what is left of the dark) dragged
+into streaks: the drift moves it from one frame to the next, and the stack adds up the copies
+along its path, in the runs of consecutive frames that stayed in the same spot. The same drift and
+the same dither move are more pixels the longer the focal length. On the Veil night, at 135 mm,
+the drift was 1.52 px per exposure and drew a streak of 13.7 px over frames 61 to 70; at Smida, at
+20 mm, it was 0.17 px per exposure, and a run of 12 frames in one spot drew 1.9 px. A short focal
+length forgives; a long one asks for a dither on every frame, on both axes, in a random direction.
+How often matters more than how far: 5 px are enough once two neighbouring frames no longer share a
+spot, while a big jump every 2 frames leaves runs in which the drift draws dashes.
+
+Darks take the pattern out before it gets to walk, and they do not ask you to take the filter off
+the lens: take the lens off with its filter on, put the body cap on, close the viewfinder's
+eyepiece and shoot 20 frames at the same ISO, the same exposure and the same temperature, at the
+end of the session. The flats stay valid. The window says the same under its DITHERING card.
+
+The verdict of DITHERING reads the drift as well as the map:
+
+- `OK for walking noise` when at least half the frames sit at distinct positions within 10 px, at
+  least 30 % stand 10 px or more from every other frame, and each axis carries at least a quarter
+  of the moves;
+- `NO walking noise` when the streak the drift draws over the longest run within 10 px is under
+  3 px, whatever the map looks like;
+- `INSUFFICIENT for walking noise` otherwise, with the streak in pixels and its axis;
+- `OK for hot pixels` while no more than 3 consecutive frames sit within 3 px of one spot, else
+  `WARNING on hot pixels`.
+
+### The frame table
+
+- `dithering` is the mount's move behind each dither: on which axis, how many pixels, which way on
+  the sky and which SynScan arrow, such as `RA 17 px ← W` or `RA 5 px ← W, DEC 29 px ↓ S`: the
+  arrow pressed, then the sense on the sky (E or W, N or S). The sense comes from the plate-solved
+  FITS at the root. Siril stores a FITS with its rows bottom-up against the raw, and the program
+  allows for it; this was checked on the Veil night against plate solves of raw frames. A session
+  of FITS lights, such as the `pp_light_*.fit` of Siril's `process\`, is read in the same order as
+  the solve and gives the same senses. Without a solve the cell is `RA 17 px`.
+- Which arrow moves the mount east and which north depends on the settings of the SynScan app: by
+  default `→` is east (so `←` is west) and `↑` north (so `↓` is south). Change them with `--east`
+  and `--north`, or with the EAST and NORTH selectors of the window.
+- `same spot` says which consecutive frame within 10 px of the run's first it is, out of how many,
+  from which frame: `7/10 from 61` is the seventh of ten frames that stayed at the spot of frame
+  61. Such runs make walking noise, but the frame stays good and in the stack: the cure is to
+  dither more often next time, not to stack fewer frames.
+
+The arrows are Unicode characters. The console window shows them, since the program switches it
+to UTF-8 while it runs; output redirected to a file with `>` from Windows PowerShell 5.1 garbles
+them, so for a file use `--out`, whose files are UTF-8.
+
+### The files of `--out`
+
+`--out DIR` writes three files into DIR, creating it when needed:
+
+- `lightscheck-report.txt`: the report, as printed;
+- `lightscheck-frames.csv`: every figure of every frame, among them the trail's axis
+  (`trail_on`), the `same spot` run (`spot_run_index`, `spot_run_frames`, `spot_run_first`) and the
+  dither move (`move_ra_px` and `move_dec_px`, in pixels, positive east and north, and
+  `move_arrows`);
+- `lightscheck-rejected.txt`: the names of the frames to reject, one per line, to take out of the
+  sequence in Siril.
+
+The names are the same in both languages; version 1.0.0 named them `lightscheck-raport.txt`,
+`lightscheck-cadre.csv` and `lightscheck-respinse.txt`. The text in them follows the language of
+the run, and the CSV's header row stays English. Give a folder outside `lights\` and `biases\`,
+such as the session folder itself.
+
+### Only the metadata: `--inventory`
+
+It reads the metadata of the frames without decoding their pixels, in a second or two for the 87
+raws of the Veil night:
 
 ```
-=== SESIUNE: E:\Photografie\Astro\Veil\2026-10-06-3h ===
-    lights             : lights\ (87 cadre .NEF)
-    biases             : biases\ (30 cadre .NEF)
-    aparat             : Nikon D3300
-    obiectiv           : 135 mm f/2.8 (poza), obiectiv 135 mm f/2.0, ID Nikon 74
-    expunere           : 120.2 s la ISO 1600 (toate cadrele)
-    interval           : 2026-10-06 23:35:03 -> 2026-10-07 02:57:49 (3 h 22 min); integrare 2 h 54 min din 87 cadre (86 % din interval)
+=== SESSION: E:\Photografie\Astro\Veil\2026-10-06-3h ===
+    lights             : lights\ (87 frames .NEF)
+    biases             : biases\ (30 frames .NEF)
+    darks              : (missing)
+    camera             : Nikon D3300
+    lens               : 135 mm f/2.8 (as shot), lens 135 mm f/2.0, Nikon ID 74
+    exposure           : 120.2 s at ISO 1600; 133.2 s at ISO 1600 (different exposures)
+    interval           : 2026-10-06 23:35:03 -> 2026-10-07 02:57:49 (3 h 22 min); integration 2 h 54 min from 87 frames (86 % of the interval)
 
-  CADRE
-     nr  fisier                ora       expunere   ISO    f/   focala   pauza
+  FRAMES
+     no  file                  time      exposure    ISO    f/    focal   pause
       1  DSC_0001.NEF          23:35:03     120.2   1600   2.8   135 mm       -
       2  DSC_0002.NEF          23:37:51     120.2   1600   2.8   135 mm    48 s
+      3  DSC_0003.NEF          23:40:14     120.2   1600   2.8   135 mm    23 s
 ```
 
-`pauza` e timpul dintre sfarsitul expunerii anterioare si inceputul acesteia: la dithering
-manual e pauza in care ai miscat montura. Ora vine din EXIF (ora aparatului) pe un raw si din
-`DATE-OBS` (UTC, cum il scrie Siril) pe un FITS.
+`exposure` lists each exposure and ISO the frames use; that night frame 75 was exposed for
+133.2 s. `pause` is the time between the end of the previous exposure and the start of this one:
+with manual dithering, the pause in which you moved the mount. The time comes from the EXIF of a
+raw (the camera's clock) and from the `DATE-OBS` of a FITS (UTC, as Siril writes it).
 
-### Un singur cadru: `--frame N`
+### One frame: `--frame N`
 
-```
-lightscheck <folder sesiune> --frame 4
-```
-
-Decodeaza al N-lea cadru din `lights/` (1 = primul) si il masoara:
+`lightscheck <session folder> --frame 4` decodes the 4th frame of `lights\` and measures it:
 
 ```
-=== CADRU 4: DSC_0004.NEF ===
-    dimensiune         : 6016 x 4016 px; scara 150 .. 4095 ADU (libraw (exact))
-    nivele CFA         : R 25 (saturati 63, min -3)  G1 120 (saturati 414, min 1)  G2 120 ...  [ADU peste black]
-    fond verde         : median 120, centru 165, colturi 76 .. 86 (dale 71 .. 171); zgomot sigma 13.1
-    stele              : 15132 detectate, 2104 luminoase, 357 saturate; 398 masurate
-    FWHM               : 3.06 px median (p90 3.64); centru 3.15 (95), mijloc 3.08 (202), margine 2.90 (101)
-    alungire           : 1.15 mediana (p90 1.39); 14 % peste 1.3; unghi 86 grade, coerenta 0.36; ...
-    halo               : 0.019 (inel 5-10 px / nucleu 3 px, la cele mai luminoase 40 stele)
-    dare               : 0
-    inregistrare       : 600 stele retinute
+=== FRAME 4: DSC_0004.NEF ===
+    size               : 6016 x 4016 px; scale 150 .. 4095 ADU (libraw (exact))
+    CFA levels         : R 25 (saturated 63, min -3)  G1 120 (saturated 414, min 1)  G2 120 (saturated 416, min 13)  B 138 (saturated 404, min 11)  [ADU above black]
+    green background   : median 120, centre 165, corners 76 .. 86 (tiles 71 .. 171); noise sigma 13.1
+    stars              : 15132 detected, 2104 bright, 357 saturated; 398 measured
+    FWHM               : 3.06 px median (p90 3.64); centre 3.15 (95), middle 3.08 (202), edge 2.90 (101)
+    elongation         : 1.15 median (p90 1.39); 14 % above 1.3; angle 86 degrees, coherence 0.36; centre 1.11 (95), edge 1.14 (101)
+    halo               : 0.019 (ring 5-10 px / core 3 px, over the 40 brightest stars)
+    trails             : 0
+    registration       : 600 stars kept
 ```
 
-- `nivele CFA`: mediana fiecarei pozitii Bayer peste black, cati pixeli ating varful scarii
-  (stelele luminoase; nebuloasa nu ar trebui sa apara aici), minimul (sub 0 = zgomot, nu
-  taiere in negru).
-- `fond verde`: fondul de cer pe verde, din mediane pe dale de 128 px; `centru` vs `colturi`
-  arata vignetarea si gradientul; `zgomot sigma` e abaterea robusta a pixelului fata de fond.
-- `stele`: cate componente de marimea unei stele s-au detectat la 5 sigma, cate au varful
-  peste 50 sigma, cate ating saturatia; `masurate` = cele carora li s-a masurat forma (cele
-  mai luminoase 400, nesaturate).
-- `FWHM`: latimea stelelor in pixeli (focusul), pe tot cadrul si pe trei zone radiale, cu
-  numarul de stele din fiecare in paranteze; margini mai mari decat centrul = coma sau camp
-  curb.
-- `alungire`: raportul axelor (1 = rotund); `% peste 1.3` cate stele sunt vizibil alungite;
-  `unghi` e directia axei mari fata de orizontala, `coerenta` cat de bine se aliniaza stelele
-  (aproape de 1 = toate in aceeasi directie, deci urmarirea; mic = fara directie, deci optica
-  sau zgomot). Peste 0.8, raportul seriei leaga unghiul de axa monturii (vezi CADRE MISCATE).
-- `halo`: cat din lumina unei stele luminoase sta intr-un inel de 5-10 px fata de nucleul de
-  3 px; creste cu roua sau ceata.
-- `dare`: urme de sateliti sau avioane, cu lungimea si coltul din stanga-sus.
+- `size`: the frame in pixels, and its scale in ADU from black to the white level, with where the
+  scale comes from.
+- `CFA levels`: the median of each Bayer position above black, how many of its pixels reach the
+  top of the scale (bright stars; a nebula should not show up here), and the minimum (below 0 is
+  noise, not clipping to black).
+- `green background`: the sky background on green, from medians over tiles of 128 px; `centre`
+  against `corners` shows the vignetting and the gradient; `noise sigma` is the robust deviation
+  of a pixel from the background.
+- `stars`: how many star-sized objects were detected at 5 sigma, how many peak above 50 sigma and
+  how many reach saturation; `measured` are those whose shape was measured, the 400 brightest that
+  stay under 80 % of the scale.
+- `FWHM`: the width of the stars in pixels, which is the focus, over the whole frame and in three
+  radial zones, with the stars of each in brackets; edges wider than the centre point to coma or a
+  curved field.
+- `elongation`: the ratio of the stars' axes (1 = round); `% above 1.3` is the share visibly
+  elongated; `angle` is the direction of the long axis against the horizontal, and `coherence` how
+  well the stars agree on it (near 1 = all the same way, so the tracking; small = no direction, so
+  the optics or the noise). Above 0.8 the report of the night ties the angle to a mount axis
+  (TRAILED FRAMES).
+- `halo`: how much of a bright star's light sits in a ring of 5 to 10 px against its core of
+  3 px; it grows with dew or haze.
+- `trails`: satellite or plane trails, each with its length and its top-left corner.
+- `registration`: the stars kept to register the frame on the others.
 
-## Fereastra
+## The window
 
-`LightsCheck.Wpf.exe [folder sesiune] [--lang ro|en]`. Fara folder, il cere la pornire; fara
-`--lang`, fereastra e in engleza (vezi Folosire), cu `--lang ro` in romana. Analiza
-porneste singura (aceeasi ca `lightscheck <folder>`, cu bara de progres si buton de oprire) si
-rezultatul apare in sase taburi:
+`LightsCheck.Wpf.exe [session folder] [--lang en|ro]`. Without a folder it asks for one at start.
+The analysis starts by itself, the same as `lightscheck <folder>`, with a progress bar and a
+**Stop** button, and the result fills six tabs:
 
-- **Rezumat**: sectiunile raportului, rand cu rand, cu verdictul colorat.
-- **Cadre**: un rand pe cadru (ora, clasa, alungire, FWHM, stele, fond, pauza, pas, pozitia
-  `dX (DEC)` / `dY (RA)` cand se stie axa, `dithering`, `acelasi loc`, motive). Alege un cadru si in dreapta
-  apar decupajele stelelor lui (centru si colturi, pe canalul verde): asa vezi cu ochiul dara
-  pe care o raporteaza alungirea.
-- **Dithering**: harta pozitiilor fata de primul cadru (grila la 10 px, culoarea e clasa
-  cadrului, inel in loc de punct = cadru dintr-un sir de 3 sau mai multe in acelasi loc),
-  pasul fata de cadrul anterior (galben = miscare >= 5 px; tine mouse-ul pe o bara si vezi
-  cadrul, pasul si miscarea monturii din coloana `dithering`), distanta la cel mai apropiat alt
-  cadru, si in dreapta cifrele DITHERING: pauzele si miscarile, cel mai lung interval,
-  acoperirea, intinderea si verdictul ca randuri, iar cat de des, cat de mult, directia,
-  acoperirea pe raze si grupurile ca tabele.
-- **Calitate**: FWHM, alungire (cu liniile 1.35 si 1.6), stele si fond de cer, cadru cu cadru.
-- **Respinse**: cadrele slabe si cele necitite, cu motivul si pragul, sub o explicatie a
-  cuvintelor (alungirea, dara si axa ei; ce inseamna dara pe RA fata de dara pe DEC, pe rand
-  separat, ingrosat); cele la limita raman la alegerea ta, lista lor e in CADRE MISCATE.
-- **Raport**: textul consolei, identic.
+- **Summary**: the report's sections, row by row, each verdict a coloured chip.
+- **Frames**: one row per frame (time, class, elongation, FWHM, stars, background, pause, step,
+  the position as `dX (DEC)` and `dY (RA)` when the RA axis is known, `dithering`, `same spot`,
+  reasons). Select a frame and the cut-outs of its stars appear on the right, from the centre and
+  the corners, on the green channel: there you see the trail the elongation reports.
+- **Dithering**: the map of the positions against the first frame (a 10 px grid; the colour is the
+  frame's class; a ring instead of a dot marks a frame in a run of 3 or more in the same spot), the
+  step from the previous frame (yellow = a move of 5 px or more; hover over a bar for the frame,
+  the step and the mount's move), the distance to the nearest other frame, and on the right the
+  DITHERING card: its rows, its tables (how often, how far, direction, coverage per radius, the
+  runs) and the explanation of walking noise.
+- **Quality**: FWHM, elongation (with its 1.35 and 1.6 lines), stars and sky background, frame by
+  frame.
+- **Rejected**: the bad and the unreadable frames with their reasons and thresholds, under an
+  explanation of the words (the elongation, the trail and its axis, and in bold what a trail on RA
+  and one on DEC point to). The marginal frames stay your choice; their list is in TRAILED FRAMES,
+  on the Summary tab.
+- **Report**: the console's text, the same to the byte.
 
-In bara de sus: `PIXEL (um)` (marimea pixelului cand fisierele n-o spun; 3.92 la D3300),
-`FIRE` (cate cadre se masoara in paralel; gol = jumatate din nuclee) si `EST` / `NORD`, sagetile
-SynScan care muta montura spre est si spre nord (implicit `→` si `↑`), citite la deschiderea
-folderului si tinute minte intre porniri in `%LOCALAPPDATA%\LightsCheck\settings.json`, singurul
-lucru pe care programul il scrie acolo. `Scrie fisierele...`
-scrie, intr-un folder la alegere (propus: folderul sesiunii), aceleasi trei fisiere ca
-`--out`. `Despre` (F1) arata versiunea, licenta si componentele terte. Nimic nu se scrie in
-`lights/` sau `biases/`.
+The top bar holds the inputs, read when a folder is opened: `PIXEL (um)`, the pixel size when the
+files do not carry it (3.92 for the D3300); `THREADS`, how many frames are measured in parallel
+(empty = half the cores); and `EAST` and `NORTH`, the SynScan arrows that move the mount east and
+north (`→` and `↑` by default), remembered between starts in
+`%LOCALAPPDATA%\LightsCheck\settings.json`, the only thing the program keeps there.
+**Write the files...** writes the three files of `--out` into a folder you choose; the session
+folder is proposed. **About** (F1) shows the version, the licence and the third-party components.
 
-## Compilare
+## Building
 
-.NET SDK 9.0.3xx (`global.json`). `dotnet build LightsCheck.sln -c Release` (fereastra cere
-Windows; consola singura se compileaza oriunde). Gate-ul complet (format, build strict,
-teste): `scripts/verify.ps1`. Publicarea (`scripts/release.ps1`) scrie `lightscheck.exe` si
-`LightsCheck.Wpf.exe`, fiecare un singur fisier cu DLL-urile libraw inglobate, in `artifacts/`.
+Windows 10 or 11 (x64) and the .NET 9 SDK, 9.0.318 or a later 9.0.3xx (`global.json`); the
+projects target .NET 8, which that SDK builds. From this folder:
 
-## Pentru cine dezvolta
+```
+dotnet build LightsCheck.sln -c Release
+```
 
-Regulile de lucru sunt in `CLAUDE.md` si `.claude/rules/kit/process.md`, cerintele cu ID in
-`docs/requirements.md`, deciziile in `docs/decisions/`, cifrele masurate pe sesiuni reale in
-`docs/validation.md`. Analiza din care a pornit unealta (scripturile Python, raportul pe
-sesiunea Veil din 2026-10-06) e in `prototype/` si `docs/validation/2026-10-06-veil/`.
+The full gate, the one every commit runs (format check, strict build, tests):
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
+```
+
+The two executables, each one self-contained file with the libraw DLLs inside, which runs without
+.NET installed:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 1.0.0 -PublishOnly
+```
+
+writes `artifacts\1.0.0\console\lightscheck.exe` and `artifacts\1.0.0\wpf\LightsCheck.Wpf.exe`
+and changes no tracked file; the `.pdb` and `.xml` files beside them are not needed to run them.
+`-Version` only names the folder: the version the programs print is `<Version>` in
+`Directory.Build.props`.
+
+## Licence
+
+LightsCheck is free software, under the GNU General Public License version 3 or, at your option,
+any later version: see [LICENSE](LICENSE). Its raw and FITS readers are copied from FlatCheck.
+What the programs ship from others is listed, each with its licence, in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), in Romanian.
+
+## For developers
+
+The rules of the work are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the behaviour, with
+IDs, in `docs/requirements.md`; the decisions in `docs/decisions/`; how the code works, area by
+area, in `docs/design/`; the figures measured on the real nights in `docs/validation.md`; the
+history of the versions in `CHANGELOG.md`. The analysis the tool grew out of, the Python scripts
+and the report on the Veil night of 2026-10-06 (in Romanian), is in `prototype/` and
+`docs/validation/2026-10-06-veil/`. This file is the user documentation; the comments in the code
+do not repeat it.

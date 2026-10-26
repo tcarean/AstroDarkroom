@@ -14,7 +14,7 @@ Rules for entries:
 - Error behaviour and the exit code are requirements too.
 
 The explanations behind each row (why this way, what was measured) are in `docs/design/` and
-`docs/decisions/`; the user documentation of the same behaviour, in Romanian, is `README.md`.
+`docs/decisions/`; the user documentation of the same behaviour, in English, is `README.md`.
 
 ## Console contract
 
