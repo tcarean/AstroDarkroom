@@ -115,6 +115,36 @@ namespace FlatCheck.Wpf
 
         public ObservableCollection<SeriesRow> Frames { get; } = new();
 
+        // The explanations in place (R-105): text from SessionMessages, the thresholds from Th.
+        // None depends on the run, so they are the same before it, on a refusal and after Reset.
+
+        /// <summary>The line under the mean radial component.</summary>
+        public string MeanRadialNote => SessionMessages.LightMeanNote();
+
+        /// <summary>The line under the spread.</summary>
+        public string SpreadNote => SessionMessages.LightSpreadNote();
+
+        /// <summary>The line under the error of the mean.</summary>
+        public string SemNote => SessionMessages.LightSemNote();
+
+        /// <summary>The line under the correlation with the sky gradient.</summary>
+        public string CorrelationNote => SessionMessages.LightCorrelationNote();
+
+        /// <summary>The paragraph under the map and its legend.</summary>
+        public string MapNote => SessionMessages.LightMapNote();
+
+        /// <summary>The tooltip of the table's "frame" header.</summary>
+        public string FrameTip => SessionMessages.LightFrameTip();
+
+        /// <summary>The tooltip of the table's "radial" header.</summary>
+        public string RadialTip => SessionMessages.LightRadialTip();
+
+        /// <summary>The tooltip of the table's "sky" header.</summary>
+        public string SkyTip => SessionMessages.LightSkyTip();
+
+        /// <summary>The tooltip of the table's "tiles" header.</summary>
+        public string TilesTip => SessionMessages.LightTilesTip();
+
         /// <summary>Runs the light series of the session's process/, guarded, adding a row per
         /// frame as it finishes; a folder without a series gets the explanation instead.</summary>
         /// <param name="session">The folder just opened.</param>

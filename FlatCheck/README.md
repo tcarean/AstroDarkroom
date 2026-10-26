@@ -1172,6 +1172,25 @@ ieși legitim `INAPLICABIL`: pe un câmp mai larg de ~40 de grade diagonală cer
 vignetarea au aceeași formă, deci nu se produce nicio cifră. **Nu e o eroare** — vezi
 secțiunea despre când merge `--light`. Pe date ca astea răspunde tabul Ratio.
 
+Tabul se explică singur, pe loc, nu într-un ghid pliat: sub fiecare din cele patru cifre ale
+sintezei pe serie stă un rând care spune ce e cifra și cum se judecă (rândul rămâne în
+coloana etichetei, nu ajunge sub valoare); capul de tabel explică fiecare coloană la trecerea
+mouse-ului; iar sub hartă și legenda ei, un paragraf spune ce e poza. Pragurile din texte
+sunt citite din `Th`, nu rescrise. Textele (`SessionMessages.Light*Note` și `Light*Tip`) sunt
+în oglindă cu lista de mai jos — dacă reformulezi aici, du-te și acolo.
+
+| unde | ce spune |
+|---|---|
+| componenta radială, medie | media coloanei radial, cifra pe care se dă verdictul, odată ce seria are cel puțin 5 cadre; sub 2 % OK, peste 5 % problemă, suspect între; semnul e diagnosticul (pozitiv: fondul cade spre margini, sub-corecție; negativ: crește, supra-corecție) |
+| împrăștiere (min .. max) | extremele coloanei; o medie aproape de zero nu înseamnă nimic când cadrele baleiază de departe sub ea până departe peste ea — ce baleiază așa e cerul, flat-ul e același în fiecare cadru |
+| eroarea mediei | σ/√n pe coloana radial; peste 2.00 puncte seria nu rezolvă flat-ul la precizia pragurilor și verdictul e nedeterminat |
+| corelație cu gradientul de cer | Pearson între coloana radial și coloana cer; o „eroare de flat" care urmărește cerul e cer, peste 0.70 în valoare absolută verdictul e nedeterminat; se verifică doar când gradientul variază cu cel puțin 10 puncte peste serie |
+| cadru (hover) | lights-urile calibrate din `process/`, în ordinea numelui, cele care se potrivesc cu `pp_light_*.fit`; cadrele înregistrate (`r_pp_light_*`) sunt lăsate deoparte, înregistrarea mută vignetarea din centrul senzorului |
+| radial (hover) | componenta radială a fondului cadrului, în procente din nivelul la centru, cu semn; un cadru conține și cerul din clipa lui, deci contează sinteza, nu un rând |
+| cer (hover) | gradientul de cer absorbit de plan, în procente din fond; informativ, niciodată o condiție, peste 40 % consola îl marchează ca mare; dacă se mișcă de la un rând la altul, cerul s-a mișcat în sesiune |
+| tile-uri (hover) | tile-urile păstrate în fit din total, după patru runde de clipping unilateral care scot nebulozitatea; puține păstrate înseamnă un fit cu mai puțin pe ce să stea |
+| harta (sub ea) | harta radială medie a seriei: termenul radial fitat al fiecărui cadru (R² și R⁴), desenat la mărimea cadrului și mediat pixel cu pixel; nicio stea, nicio nebuloasă, doar forma modelului; alb = fără componentă radială, colțuri albastre = fondul cade spre margini (sub-corecție), colțuri roșii = crește (supra-corecție); scara e intervalul propriu al hărții, deci o culoare tare poate fi o cifră mică |
+
 **Expunere** listează din `flats/` **doar raw-uri de aparat** (`.nef`, `.cr2`, `.cr3`,
 `.arw`, `.dng`, `.raf`). Modul are nevoie de mozaicul CFA intact și de scala ADU originală,
 iar pe un raw white și black se citesc exact din fișier în loc să fie ghicite din maxim.

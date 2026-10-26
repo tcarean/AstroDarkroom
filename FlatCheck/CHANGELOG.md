@@ -8,6 +8,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The window's End to end tab explains itself in place, in both languages (R-105, ADR 0064):
+  a line under each of the four series figures saying what it is and how it is judged, a
+  tooltip on each column header of the frames table, and a paragraph under the radial map
+  saying what the picture is and what its colours mean. The thresholds in the texts are read
+  from `Th`, never retyped.
 - False colours for the `--histeq` picture, after Siril 1.4.4's rainbow table (R-104, ADR
   0063): `--rainbow` beside `--histeq` writes the mosaic (or the mono channel) coloured from
   magenta at the lowest level to red at the highest, and prints the legend; the window's

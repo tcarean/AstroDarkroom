@@ -87,36 +87,60 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
           <StackPanel Visibility="{Binding HasNumbers, Converter={StaticResource BoolToVis}}">
             <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="{l:T En='SERIES SUMMARY', Ro='SINTEZA PE SERIE'}" />
+
+            <!-- Each figure is explained right under its label (R-105). The note sits in the
+                 label column only, one column wide: it wraps there and never runs under the
+                 value, which keeps its own column on the right. -->
             <Border Style="{StaticResource Card}">
               <StackPanel>
-                <Grid Margin="0,0,0,9">
+                <Grid Margin="0,0,0,12">
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MinWidth="150" />
                   </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
                   <TextBlock Text="{l:T En='radial component, mean', Ro='componenta radiala, medie'}" FontWeight="SemiBold" />
                   <TextBlock Grid.Column="1" Style="{StaticResource Number}" FontWeight="SemiBold"
                              Text="{Binding MeanRadial}" />
+                  <TextBlock Grid.Row="1" Style="{StaticResource Faint}" Margin="0,3,12,0"
+                             Text="{Binding MeanRadialNote}" />
                 </Grid>
-                <Grid Margin="0,0,0,9">
+                <Grid Margin="0,0,0,12">
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MinWidth="150" />
                   </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
                   <TextBlock Text="{l:T En='spread (min .. max)', Ro='imprastiere (min .. max)'}" />
                   <TextBlock Grid.Column="1" Style="{StaticResource Number}" Text="{Binding Spread}" />
+                  <TextBlock Grid.Row="1" Style="{StaticResource Faint}" Margin="0,3,12,0"
+                             Text="{Binding SpreadNote}" />
                 </Grid>
-                <Grid Margin="0,0,0,9">
+                <Grid Margin="0,0,0,12">
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MinWidth="150" />
                   </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
                   <TextBlock Text="{l:T En='error of the mean', Ro='eroarea mediei'}" />
                   <TextBlock Grid.Column="1" Style="{StaticResource Number}" Text="{Binding Sem}" />
+                  <TextBlock Grid.Row="1" Style="{StaticResource Faint}" Margin="0,3,12,0"
+                             Text="{Binding SemNote}" />
                 </Grid>
                 <Grid>
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MinWidth="150" />
                   </Grid.ColumnDefinitions>
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" /><RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
                   <TextBlock Text="{l:T En='correlation with the sky gradient', Ro='corelatie cu gradientul de cer'}" />
                   <TextBlock Grid.Column="1" Style="{StaticResource Number}" Text="{Binding Correlation}" />
+                  <TextBlock Grid.Row="1" Style="{StaticResource Faint}" Margin="0,3,12,0"
+                             Text="{Binding CorrelationNote}" />
                 </Grid>
               </StackPanel>
             </Border>
@@ -137,12 +161,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <RowDefinition Height="*" />
           <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="{l:T En='FRAMES', Ro='CADRE'}" />
 
         <Border Grid.Row="1" Style="{StaticResource Card}">
           <DockPanel>
+            <!-- Each header explains its column on hover (R-105). The transparent background
+                 makes the whole header hit-testable, not only the glyphs; the longer duration
+                 is for a paragraph, which WPF's five seconds would cut short. -->
             <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="180" />
@@ -150,13 +178,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <ColumnDefinition Width="96" />
                 <ColumnDefinition Width="86" />
               </Grid.ColumnDefinitions>
-              <TextBlock Style="{StaticResource Faint}" Text="{l:T En='frame', Ro='cadru'}" />
+              <TextBlock Style="{StaticResource Faint}" Background="Transparent"
+                         Text="{l:T En='frame', Ro='cadru'}"
+                         ToolTip="{Binding FrameTip}" ToolTipService.ShowDuration="30000" />
               <TextBlock Grid.Column="1" Style="{StaticResource Faint}" HorizontalAlignment="Right"
-                         Text="radial" />
+                         Background="Transparent" Text="radial"
+                         ToolTip="{Binding RadialTip}" ToolTipService.ShowDuration="30000" />
               <TextBlock Grid.Column="2" Style="{StaticResource Faint}" HorizontalAlignment="Right"
-                         Text="{l:T En='sky', Ro='cer'}" />
+                         Background="Transparent" Text="{l:T En='sky', Ro='cer'}"
+                         ToolTip="{Binding SkyTip}" ToolTipService.ShowDuration="30000" />
               <TextBlock Grid.Column="3" Style="{StaticResource Faint}" HorizontalAlignment="Right"
-                         Text="{l:T En='tiles', Ro='tile-uri'}" />
+                         Background="Transparent" Text="{l:T En='tiles', Ro='tile-uri'}"
+                         ToolTip="{Binding TilesTip}" ToolTipService.ShowDuration="30000" />
             </Grid>
             <ScrollViewer VerticalScrollBarVisibility="Auto">
               <ItemsControl ItemsSource="{Binding Frames}"
@@ -176,6 +209,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              and its thresholds are Th.LightRad*, not the residual scale. -->
         <TextBlock Grid.Row="3" Style="{StaticResource Muted}" Margin="2,8,0,0"
                    Text="{Binding MapLegend}"
+                   Visibility="{Binding HasNumbers, Converter={StaticResource BoolToVis}}" />
+
+        <!-- What the picture is, under it and its legend (R-105). -->
+        <TextBlock Grid.Row="4" Style="{StaticResource Faint}" Margin="2,8,0,0"
+                   Text="{Binding MapNote}"
                    Visibility="{Binding HasNumbers, Converter={StaticResource BoolToVis}}" />
       </Grid>
     </Grid>
