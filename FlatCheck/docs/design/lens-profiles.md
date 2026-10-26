@@ -181,8 +181,13 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   relative name seen before is counted in `AdobeFilesDuplicate` and skipped before a stub is
   made, so `ProfilesOf` concatenates one file per lens, not one per folder. The two Camera Raw
   roots are one level apart (`...\1.0` against `...\LensProfiles`), so a user's own profile
-  under `%APPDATA%` never collides with an installed one by that rule, which is what one wants:
-  it is theirs. `--profiles <dir>` replaces the whole list.
+  under `%APPDATA%` in Adobe's layout (`LensProfiles\1.0\<maker>\`) never collides with an
+  installed one by that rule, which is what one wants: it is theirs; a copy put directly under
+  `LensProfiles\<maker>\` with an installed file's name is its duplicate, and the installed one
+  wins. The enumeration of one folder is lazy: an exception part-way (a subfolder without list
+  rights) is caught per folder, the files found before it stay, the rest of that folder is
+  lost, and the next folder is searched; `AdobeAppDirectories` swallows the same for the
+  Program Files root. `--profiles <dir>` replaces the whole list.
 - **Search**: every word of the text must appear in name + maker + mount (+ known
   aliases), case-insensitive; empty text lists everything; `--source` restricts.
 - **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the

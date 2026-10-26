@@ -99,7 +99,8 @@ namespace FlatCheck
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             if (!string.IsNullOrEmpty(appData))
                 dirs.Add(Path.Combine(appData, "Adobe", "CameraRaw", "LensProfiles"));
-            // Lightroom is 64-bit only, so Program Files (x86) is not searched (ADR 0065).
+            // Lightroom is 64-bit only, so Program Files (x86) is not searched (ADR 0065); in the
+            // win-x64 build ProgramFiles is the 64-bit folder (a 32-bit process would get the x86 one).
             string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             if (!string.IsNullOrEmpty(programFiles))
                 dirs.AddRange(AdobeAppDirectories(Path.Combine(programFiles, "Adobe")));
@@ -164,7 +165,12 @@ namespace FlatCheck
             foreach (string dir in adobeDirs)
             {
                 if (!Directory.Exists(dir)) continue;
-                foreach (string f in Directory.EnumerateFiles(dir, "*.lcp", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal))
+                IEnumerable<string> found;
+                // The enumeration is lazy and throws on a subfolder without list rights; the files
+                // found before it stay, the rest of this folder is lost, the next folder is searched.
+                try { found = Directory.EnumerateFiles(dir, "*.lcp", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal).ToList(); }
+                catch (Exception) { continue; }
+                foreach (string f in found)
                 {
                     if (!seen.Add(Path.GetRelativePath(dir, f))) { duplicates++; continue; }
                     files++;

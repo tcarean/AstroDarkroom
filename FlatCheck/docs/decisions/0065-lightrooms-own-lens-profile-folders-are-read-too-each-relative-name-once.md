@@ -45,9 +45,14 @@ need anyway; the owner chose (b) the same day.
 - `Locate` keeps a set of each file's path relative to its own search folder, compared without
   case. A relative name already seen under an earlier folder is skipped before a stub is made
   and counted in `ProfileSources.AdobeFilesDuplicate`; `AdobeFiles` counts the files kept. So
-  a lens present in two folders is listed once and parsed once, from the first folder; the
-  user's own profiles under `%APPDATA%` sit one level deeper than the installed ones and never
-  collide, which is right, they are theirs.
+  a lens present in two folders is listed once and parsed once, from the first folder. The
+  user's own profiles under `%APPDATA%` sit one level deeper than the installed ones in Adobe's
+  layout (`LensProfiles\1.0\<maker>\...` against the installed root, which is the `1.0` itself),
+  so under that layout they never collide, which is right, they are theirs; a user's copy put
+  directly under `LensProfiles\<maker>\` with an installed file's name is a duplicate of it and
+  the installed one wins. A folder whose enumeration fails part-way (a subfolder without list
+  rights) keeps the files found before the failure and loses the rest, without an error, like a
+  root that cannot be listed.
 - The sources summary adds ` (N duplicates skipped)` / ` (N duplicate sarite)` only when N is
   not zero, and the Adobe paragraph of `--lenses` and of the window's Sintetic tab says a file
   present in two folders is read once, from the first. `--profiles <dir>` still replaces the

@@ -328,10 +328,14 @@ public class LensProfileReaderTests
         // The copy is not even XML: were it read, the lens would have no profiles.
         File.WriteAllText(Path.Combine(second, "TOKINA", nikon), "not the profile");
         File.WriteAllText(Path.Combine(second, "TOKINA", "Canon (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp"), LensProfileTestData.Lcp(make: "Canon"));
+        // The same name at another depth (the user's folder is searched one level above
+        // Adobe's 1.0) is another file, kept: the relative path is the key, not the name.
+        Directory.CreateDirectory(Path.Combine(second, "1.0", "Tokina"));
+        File.WriteAllText(Path.Combine(second, "1.0", "Tokina", nikon), LensProfileTestData.Lcp());
 
         var s = ProfileLocator.Locate(new[] { first, second }, Path.Combine(ws.Dir, "no-lensfun"));
 
-        Assert.Equal(2, s.AdobeFiles);
+        Assert.Equal(3, s.AdobeFiles);
         Assert.Equal(1, s.AdobeFilesDuplicate);
         Assert.Equal(0, s.AdobeFilesSkipped);
         var lenses = s.Catalog.Lenses;
@@ -339,7 +343,9 @@ public class LensProfileReaderTests
         Assert.Equal(new[] { "Canon", "NIKON CORPORATION" }, lenses.Select(l => l.Mount).OrderBy(m => m, StringComparer.Ordinal));
         var nikonLens = lenses.Single(l => l.Mount == "NIKON CORPORATION");
         var profiles = s.Catalog.ProfilesOf(nikonLens);
-        Assert.Equal(new[] { 18.0, 20.0, 20.0 }, profiles.Select(p => p.FocalMm));   // the fixture's three entries
+        // The fixture's three entries from the first folder and three from the deeper copy;
+        // nothing from the garbage copy, which was never read.
+        Assert.Equal(new[] { 18.0, 18.0, 20.0, 20.0, 20.0, 20.0 }, profiles.Select(p => p.FocalMm));
     }
 
     /// <summary>
