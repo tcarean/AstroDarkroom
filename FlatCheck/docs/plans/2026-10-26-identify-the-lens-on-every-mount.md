@@ -96,3 +96,25 @@ the owner's answer is recorded below when given.
 5. ADR 0068 (0030 superseded in part), CHANGELOG, `lens-profiles.md`, `modes-synthetic.md`,
    `code-map.md`, `README.md`, `validation.md` + manifest.
 6. Gate, commit, merge proposal. No formula moved, no golden gives a raw: no golden should change.
+
+## Outcome and deviations (2026-10-26)
+
+Merged into `main` as 876782d after an independent review and three commits (9a5cc52, 50cd7ef,
+9bc4e94) plus the merge of `main` into the branch (9b0cd8a). What deviated from the plan above:
+
+- Decision 3 said candidates = name hits ∪ ID hits. The first run on the Canon 7D Mark II sample
+  listed six lenses (three Zeiss ZE files share ID 198 and their names parse no range), so the
+  name decides where a hit of it survives the range, the ID otherwise; the review then made the
+  fallback to the ID real when the name's hits all fail the range. The owner was told at the
+  first wrap-up and merged the result.
+- Decision 4 said `MaxAperture` as the fallback of `MaxAperture4MinFocal`; the review noted it is
+  Canon's aperture at the current focal length, so it is taken only on a prime or a shot at the
+  short end (unmeasured on a variable-aperture zoom).
+- Step 5 said ADR 0067; `main` took 0067 for the ratio removal meanwhile, so the lens ADR is 0068,
+  renumbered on the branch when `main` was merged into it.
+- Six raw.pixls.us samples instead of four (two Canon RF after the owner's question), plus the
+  owner's Nikkor 35 DX and Tokina raws as V-047 and V-048: V-041 to V-048.
+- `.pef` also entered the help and the window texts, after the review; the two help goldens moved
+  one line each.
+- The mount label takes the lens's mount first (`RawReader.MountOf`), measured on the R5 Mark II.
+
