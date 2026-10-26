@@ -140,7 +140,7 @@ namespace FlatCheck
                 hits = MatchLenses(req.LensText, req.Source, sources, id);
                 if (hits.Count == 0) return SyntheticReport.NoMatch(req.LensText, sources);
             }
-            if (hits.Count > 1) return SyntheticReport.Ambiguous(req.LensText ?? id.RawLensLabel, hits);
+            if (hits.Count > 1) return SyntheticReport.Ambiguous(req.LensText != null ? $"\"{req.LensText}\"" : id.RawLensLabel, hits);
             req.Lens = hits[0];
             return null;
         }

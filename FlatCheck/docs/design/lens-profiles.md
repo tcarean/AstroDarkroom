@@ -140,7 +140,10 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   the `rdf:li` (the document's Appendix A); the `stCamera:VignetteModel` either with
   attributes or wrapping an `rdf:Description` (when a `VignetteModelPiecewiseParam` table
   is present, entries "r, V"); `AlternateLensNames`, `LensID` + `AlternateLensIDs`
-  (Nikon lens IDs: 122 and 139 for the Tokina). Entries without a vignette model (fisheye
+  (the maker's lens IDs: Nikon's 122 and 139 for the Tokina, Canon's 198 for the EF 50 f/1.4;
+  Pentax's two-number form `8 215` is read by `LcpReader.ParseLensId` as 8·256 + 215 = 2263,
+  libraw's value, and an entry of any other shape is dropped; `stCamera:Lens`, the camera's own
+  LensModel string, enters the aliases). Entries without a vignette model (fisheye
   files) are skipped; a file that is not XML throws, and the catalog swallows that per
   file. `Make`/`CameraPrettyName` becomes the mount label ("NIKON CORPORATION"),
   `LensPrettyName` the name, the first word of it the maker.
@@ -205,11 +208,20 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   the files named for the body itself ("NIKON D750 (lens)", letters and digits compared) beat
   the generic mount file ("NIKON CORPORATION (lens)"), because Adobe keeps per-body files
   with the body's SFF and Lightroom takes those; still several → refusal with the list,
-  exit 2. No text + a Nikon lens ID from a raw → `SyntheticRun.CandidatesFromRaw`:
-  `ByLensId` (the camera's maker word as hint), then `LensCatalog.Narrow` against the
-  range libraw reads out of the MakerNote (`LensMinFocalMm`, `LensMaxFocalMm`,
-  `LensMaxAperture` on `LoadedFrame`). The window passes the chosen `LensChoice` directly
-  and skips this, but its prefill starts from the same `CandidatesFromRaw`.
+  exit 2. No text + a raw that names its lens → `LensIdentification.CandidatesFromRaw` (ADR
+  0068): `LensCatalog.ByLensName` first, the raw's `LensName` (EXIF LensModel) letter for
+  letter (`LensCatalog.Letters`: letters and digits, upper-cased) against each lens's name and
+  aliases, the maker allowed in front, with the camera's maker word as the parse hint; when
+  that finds nothing, or the raw has no name, `ByLensId` with the raw's `LensId`; then
+  `LensCatalog.Narrow` against the range libraw reads (`LensMinFocalMm`, `LensMaxFocalMm`,
+  `LensMaxAperture` on `LoadedFrame`). On the ID path the lensfun lenses join, since only
+  Adobe carries IDs: those of the hits' makers whose name does not contradict the range (the
+  raw's, or the one every hit's name agrees on when the raw gives none, `AgreedRange`), and
+  those whose name is letter for letter a hit's name or alias (Pentax, where the Adobe stub's
+  maker is "smc"). On the name path there is no join: the name found the lensfun entry itself,
+  and a join by range would add another lens of the same range (the A-mount 16-35 f/2.8 beside
+  the FE). Adobe first, then lensfun, by name. The window passes the chosen `LensChoice`
+  directly and skips this, but its prefill starts from the same `CandidatesFromRaw`.
 - **Narrowing by name** (`LensSpec`; why, and the Tokina raw that preselected a Nikkor, are
   ADR 0030): `LensSpec.Parse(name)` reads the focal range (first `<n>[-<m>]mm`) and the
   maximum aperture (first `f/<n>`, `F<n>` or `f<n>-<m>` not preceded by a letter, so `AF-S`
@@ -255,11 +267,19 @@ APS-C 1.5, APS-C Canon 1.6, APS-H 1.3, Micro 4/3 2.0, 1" 2.7, with the sensor si
 notes) is the fallback the refusal text lists and the window offers as chips - a list of
 our own would age at the first new body, six numbers do not. Refusals: a colour cube, no
 lens chosen (exit 2), no focal / f-stop / crop (exit 1).
-`LoadedFrame` carries `FocalMm`, `FNumber`, `Camera`, `NikonLensId`, `LensMinFocalMm`,
-`LensMaxFocalMm`, `LensMaxAperture`: `FitsReader` from `FOCALLEN` / `INSTRUME`,
-`RawReader.ShootingInfo` from libraw's `ImageOtherParams` (`FocalLength`, `Aperture`),
-`IParams.Make/Model`, `LensInfo.Nikon.LensIDNumber` and `LensInfo.MakerNotes`
-(`MinFocal`, `MaxFocal`, `MaxAperture4MinFocal`; zero means null).
+`LoadedFrame` carries `FocalMm`, `FNumber`, `Camera`, `LensId`, `LensMount`, `LensName`,
+`LensMinFocalMm`, `LensMaxFocalMm`, `LensMaxAperture`: `FitsReader` from `FOCALLEN` /
+`INSTRUME`, `RawReader.FillShootingInfo` from libraw's `ImageOtherParams` (`FocalLength`,
+`Aperture`), `IParams.Make/Model` and `LensInfo`: the ID by mount (`RawReader.LensIdOf`:
+`Nikon.LensIDNumber` when above 0, else `MakerNotes.LensID` when the mount, `MakerNotes.LensMount`
+or the camera's when that is 0, is a known one other than Nikon's and the value is above 0 and
+fits 31 bits; on a Nikon that field holds the LensData signature), the mount's name
+(`MountLabel`, libraw's enumeration spelled "Nikon F", "Canon EF", "Canon RF", "Sony E",
+"Pentax K"), the name (`LensInfo.Lens` trimmed) and
+the range (`RangeOf`: the MakerNote's `MinFocal` / `MaxFocal` else the top fields;
+`MaxAperture4MinFocal` from the MakerNote else the top field, else the MakerNote's
+`MaxAperture` on a prime or a shot at the short end only; zero means null). The
+measured values behind each rule are in section 10.
 `FitsReader.LoadHeader(path)` reads only the 2880-byte header blocks, for the window's
 prefill on a 96 MB master.
 
@@ -402,6 +422,68 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   catalog are ADR 0028's context. Beyond them: 801 of the Adobe files lack the ` - RAW`
   suffix and 638 carry no parentheses; `lensfun/update-lensfun.py` refreshes `data/db` and
   rewrites `LENSFUN-VERSION.txt`.
+- **The lens on four raws of other makes, 2026-10-26** (the measurement behind ADR 0068; the
+  files are the CC0 samples 1064, 799, 2414 and 1141 of raw.pixls.us, kept as V-041 to V-044,
+  read with `Sdcb.LibRaw` 0.21.1.7 through a reflection dump of every `LensInfo` field; the
+  owner's D3300 raw beside them). `Nikon.LensIDNumber`: 74 on the D3300, 0 on the rest.
+  `MakerNotes.LensID`: 5356031691206446338 on the D3300 (the 8-byte LensData signature), 198
+  on the EOS 7D Mark II with the EF 50 f/1.4 USM, 155 on the EOS 6D with the EF 85 f/1.8 USM,
+  32831 on the ILCE-7M3 with the FE 16-35 F2.8 GM, 2263 on the K-70 with the DA 18-135 (8·256 +
+  215). `MakerNotes.CameraMount`: 27, 5, 5, 40, 33. `LensInfo.Lens`: empty, `EF50mm f/1.4 USM`,
+  `EF85mm f/1.8 USM`, `FE 16-35mm F2.8 GM`, empty. The range: the D3300 fills the MakerNote only
+  (135 / 135 / 2); the Canons fill `MinFocal` / `MaxFocal` (50 / 50, 85 / 85) but leave
+  `MaxAperture4MinFocal` 0 and write `MaxAperture` 1.414 / 1.834; the Sony fills the MakerNote
+  and the top fields alike (16 / 35 / 2.8); the Pentax none. On the Adobe side, the ProgramData
+  folder: 242 of 259 Canon files carry `stCamera:LensID` (the 17 without are FD, FL, LTM,
+  PowerShot and one Tamron; every RF lens has 61182; the Zeiss ZE files carry 198 in
+  `AlternateLensIDs`), 47 of 150 Sony files, all A-mount, and none of the 99 E / FE files;
+  all 18588 Pentax IDs are pairs. `stCamera:Lens` is the camera's LensModel string on every
+  make. Before the change the console gave "name the lens with --lens" on the Canons (no
+  candidate, and the raw counted as one that says nothing about the lens), five candidates by
+  range alone on the Sony (both A-mount 16-35 ZA among them), and "FITS: the file does not
+  begin with SIMPLE" on the PEF. After it, without `--lens`:
+
+  ```
+  Canon 7D Mark II:  "the lens "EF50mm f/1.4 USM" (ID 198) from the raw (Canon EF, 50 mm f/1.4)" matches 3 lenses
+                     Canon EF 50mm f1.4 USM [Canon EOS-1Ds Mark III] (Adobe), the two lensfun calibrations
+  Canon 6D:          "the lens "EF85mm f/1.8 USM" (ID 155) from the raw (Canon EF, 85 mm f/1.8)" matches 2 lenses
+  Sony ILCE-7M3:     "the lens "FE 16-35mm F2.8 GM" (ID 32831) from the raw (Sony E, 16-35 mm f/2.8)" matches 2 lenses
+                     Sony FE 16-35mm F2.8 GM [SONY] (Adobe), FE 16-35mm f/2.8 GM [Sony E, calibrated on full frame 1] (lensfun)
+  Pentax K-70:       "the lens ID 2263 from the raw (Pentax K)" matches 2 lenses
+                     smc PENTAX-DA 18-135mm ... AL[IF] DC WR [PENTAX] (Adobe), smc Pentax-DA 18-135mm ... AL IF DC WR [Pentax K, calibrated on APS-C 1.53] (lensfun)
+  ```
+
+  With `--source adobe` the Sony writes from the 35 mm f/4 profile (32 mm requested, crop 1 from
+  the lensfun table for the ILCE-7M3) and the Pentax from 18 mm f/5.6 (crop 1.534, K-70). The
+  first implementation took name hits ∪ ID hits and listed six lenses on the 7D Mark II: the
+  three Zeiss ZE files that share 198 survived the narrowing because "Milvus 1.4_25 ZE" gives
+  no range; hence the name wins where it matches (ADR 0068).
+- **The owner's D3300 with the Nikkor 35 DX and with the Tokina, 2026-10-26** (V-047, V-048,
+  after the review asked whether a Nikon body writes a name for a lens with CPU): `LensInfo.Lens`
+  empty on both, `Nikon.LensIDNumber` 159 and 139, `MakerNotes.LensID` 11482002309166440710 and
+  10036302762685531398 (signatures), the MakerNote range 35 / 35 / 1.8 and 11 / 20 / 2.8,
+  `LensFeaturesPre` "AF", suffix "G". The name key never runs on a Nikon; the two lensfun
+  calibrations of the Nikkor 35 join by maker and range as before.
+- **Canon RF, 2026-10-26** (two more CC0 samples, V-045 the EOS R6 4659 with the RF 70-200mm
+  F2.8 L IS USM, V-046 the EOS R5 Mark II 7884, APS-C crop CRAW, with the RF 135mm F1.8 L IS USM;
+  libraw 0.21.1 knows the R, RP, R3, R5, R6, R7 and R10 and opened the R5 Mark II anyway as
+  "EOS R5m2"). `MakerNotes.LensID` 266 and 303, Canon's RF lens types (exiftool's `RFLensType`),
+  while all 79 Adobe RF files on the machine carry `stCamera:LensID` 61182 (and 64 profiles 39),
+  so the ID matches nothing; `LensInfo.Lens` `RF70-200mm F2.8 L IS USM` and `RF135mm F1.8 L IS
+  USM`, equal to the files' `stCamera:Lens`. `MakerNotes.MaxAperture4MinFocal` 0 and
+  `MaxAperture` 2.828 / 1.834, as on the EF bodies; the R6 was shot at 200 mm, so its 2.828 is
+  not taken as the short end's aperture (`RangeOf`) and the lens is read as 70-200 mm, aperture
+  unknown. `MakerNotes.LensMount` 6 (Canon RF) on both;
+  `CameraMount` 6 on the R6 and 5 (Canon EF) on the R5 Mark II, libraw's guess for a body it does
+  not know, which is why the label takes the lens's mount first. Without `--lens` the R6 writes
+  straight from its one Adobe file (lensfun's RF 70-200 F2.8 has no vignetting calibration, so it
+  is not in the list) and the R5 Mark II lists the Adobe file and the lensfun entry:
+
+  ```
+  Canon EOS R6:          lens: Canon RF 70-200mm F2.8 L IS USM [Canon] source: Adobe; crop 1 (lensfun database, Canon EOS R6)
+  Canon EOS R5 Mark II:  "the lens "RF135mm F1.8 L IS USM" (ID 303) from the raw (Canon RF, 135 mm f/1.8)" matches 2 lenses
+                         Canon RF 135mm F1.8 L IS USM [Canon] (Adobe), Canon RF 135mm F1.8L IS USM [Canon RF, calibrated on full frame 1] (lensfun)
+  ```
 - **The three Adobe folders on the author's machine, 2026-10-26** (the measurement behind ADR
   0066): `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` holds 3531 files (446 MB, folder
   created 2026-04-16 by the DNG Converter 18.3, newest file 2026-06-04); `Adobe Lightroom
@@ -470,9 +552,9 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
   a Canon EOS 40D on a telescope writes focal length 0, aperture 0, lens ID 0, measured
   2026-10-26) gets `SyntheticReport.RawWithoutLensNote` in `Identify`'s notes, which the
   Synthetic tab shows under its fields, and the gap `RawWithoutLens` in the comparison (ADR
-  0065). The lens ID is still read from `LensInfo.Nikon.LensIDNumber` only; on a Canon with an
-  electronic lens libraw fills `LensInfo.MakerNotes.LensID` with the maker's number, which
-  Adobe's Canon files carry as `stCamera:LensID` - unmeasured, no such raw on the machine.
+  0065). Since 2026-10-26 the lens ID is read by mount and the camera's name of the lens is the
+  first key (ADR 0068, section 10), so a Canon with an EF lens is identified, not reported as a
+  raw that says nothing; a raw with an ID or a name is never this case.
 
 **Measured** (corner, stops; "nearest" is the profile that gives the verdict):
 

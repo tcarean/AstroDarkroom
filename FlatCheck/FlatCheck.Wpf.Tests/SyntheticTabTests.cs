@@ -415,12 +415,12 @@ public class SyntheticTabTests
             var both = vm.Lenses.Where(r => r.Label.Contains("11-20mm F2.8")).Select(r => r.Choice).ToList();
             Assert.Equal(2, both.Count);
 
-            string note = vm.OfferCandidates(both, "ID-ul Nikon 139 din raw (11-20 mm f/2.8)");
+            string note = vm.OfferCandidates(both, "ID-ul obiectivului 139 din raw (11-20 mm f/2.8)");
 
             Assert.Null(vm.SelectedLens);
             Assert.Equal(2, vm.Lenses.Count);
             Assert.Contains("2 obiective", note);
-            Assert.Contains("ID-ul Nikon 139", note);
+            Assert.Contains("ID-ul obiectivului 139", note);
 
             // typing brings the whole list back
             vm.Search = "tokina";
@@ -429,9 +429,9 @@ public class SyntheticTabTests
             Assert.Equal(all, vm.Lenses.Count);
 
             // one candidate is simply selected
-            note = vm.OfferCandidates(new[] { both[0] }, "ID-ul Nikon 139 din raw (11-20 mm f/2.8)");
+            note = vm.OfferCandidates(new[] { both[0] }, "ID-ul obiectivului 139 din raw (11-20 mm f/2.8)");
             Assert.Equal(both[0], vm.SelectedLens?.Choice);
-            Assert.StartsWith("obiectivul dupa ID-ul Nikon 139", note);
+            Assert.StartsWith("ales: ID-ul obiectivului 139", note);
             Assert.Null(vm.OfferCandidates(Array.Empty<LensChoice>(), "x"));
         }
     }

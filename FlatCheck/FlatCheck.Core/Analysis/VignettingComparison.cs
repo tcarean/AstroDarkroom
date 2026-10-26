@@ -245,7 +245,7 @@ namespace FlatCheck
                 return new VignettingComparison(masterStops, shot, null, ComparisonGap.NoProfiles, null);
             if (lenses.Count == 0)
                 return new VignettingComparison(masterStops, shot, null,
-                    shot != null && shot.HasRawLensId ? ComparisonGap.NoLensMatch
+                    shot != null && shot.RawNamesLens ? ComparisonGap.NoLensMatch
                     : shot != null && shot.RawSaysNoLens ? ComparisonGap.RawWithoutLens
                     : ComparisonGap.NoRaw, null);
             if (catalog == null)

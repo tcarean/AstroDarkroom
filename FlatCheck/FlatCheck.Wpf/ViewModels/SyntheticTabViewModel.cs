@@ -24,8 +24,8 @@
 // lensfun/ from beside the exe), the choice of profile and the figures from SyntheticRun, the
 // comparison from AgainstRun. What it does beyond the console is the PREFILL: the focal length and
 // the camera from the master's header (the header only, without the 96 MB), the aperture and the
-// Nikon lens ID from a raw in flats/, when there is one - and the lens chosen from the list by
-// that ID. The rule is the core's (LensIdentification), the same one the Structure tab and the
+// lens's ID and name from a raw in flats/, when there is one - and the lens chosen from the
+// list by them. The rule is the core's (LensIdentification), the same one the Structure tab and the
 // console apply; here only the metadata are read (ImageLoader.LoadInfo, no pixel) and the values
 // put in the fields. Every field stays editable; what the user wrote beats what was read.
 //
@@ -482,7 +482,7 @@ namespace FlatCheck.Wpf
                     }
                     else { CropNote = SessionMessages.SyntheticCropUnknown(id.Camera); _cropUnknown = true; }
                 }
-                if (id.HasRawLensId && SelectedLens == null)
+                if (id.RawNamesLens && SelectedLens == null)
                 {
                     string note = OfferCandidates(id.Candidates, id.RawLensLabel);
                     if (note != null) notes.Add(note);
@@ -536,8 +536,8 @@ namespace FlatCheck.Wpf
         /// chooses - the first in alphabetical order is not taken, as it was when it was a Nikkor.
         /// Returns the prefill note, or null when nothing was done.
         /// </summary>
-        /// <param name="candidates">The lenses the raw's lens ID matches; null or empty does
-        /// nothing.</param>
+        /// <param name="candidates">The lenses the raw's lens name or ID matches; null or empty
+        /// does nothing.</param>
         /// <param name="rawLabel">How the raw named the lens, for the note.</param>
         /// <returns>The prefill note, or null.</returns>
         internal string OfferCandidates(IReadOnlyList<LensChoice> candidates, string rawLabel)
@@ -547,7 +547,7 @@ namespace FlatCheck.Wpf
             if (candidates.Count == 1)
             {
                 SelectedLens = Lenses.FirstOrDefault(r => r.Choice == candidates[0]);
-                return T("the lens by ", "obiectivul dupa ") + rawLabel;
+                return T("chosen: ", "ales: ") + rawLabel;
             }
             Lenses = Rows(candidates);
             SelectedLens = null;

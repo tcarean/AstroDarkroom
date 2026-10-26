@@ -19,7 +19,7 @@ correctness bugs that used to live here were fixed in phase 8.
    string value containing a slash (e.g. a path or date in a `COMMENT`-adjacent card).
    Fine for the keys actually used: numbers, and strings without a slash (`BAYERPAT`,
    `ROWORDER`, `INSTRUME`, `DATE-OBS`).
-2. **File extension is only half-validated.** The six raw extensions dispatch to
+2. **File extension is only half-validated.** The seven raw extensions dispatch to
    `RawReader`; *everything else* goes to `FitsReader.Load`, so a `.jpg` surfaces as a
    FITS error, `FITS: fisierul nu incepe cu SIMPLE.` since the magic check of ADR 0057,
    rather than "unrecognised format". Python raises

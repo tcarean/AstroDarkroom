@@ -909,7 +909,7 @@ public class SyntheticRunTests
     {
         using var ws = new TempWorkspace();
         var sources = LensProfileTestData.Sources(ws);
-        var tokina = new LoadedFrame { Camera = "NIKON D3300", NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8 };
+        var tokina = new LoadedFrame { Camera = "NIKON D3300", LensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8 };
 
         // the Adobe file on the camera's mount by ID, plus the lensfun Tokina of the same range:
         // lensfun carries no Nikon IDs, so it joins by maker and range
@@ -928,20 +928,20 @@ public class SyntheticRunTests
         Assert.Null(SyntheticRun.ChooseLens(req, sources, tokina));
         Assert.Equal("NIKON CORPORATION", req.Lens.Mount);
         Assert.Equal(ProfileSource.Adobe, req.Lens.Source);
-        Assert.Equal("ID-ul Nikon 139 din raw (11-20 mm f/2.8)", SyntheticReport.RawLensLabel(tokina));
+        Assert.Equal("ID-ul obiectivului 139 din raw (11-20 mm f/2.8)", SyntheticReport.RawLensLabel(tokina));
 
         // the same ID from a lens whose range every name contradicts: nothing is chosen, --lens is
         // asked for
-        var nikkor = new LoadedFrame { Camera = "NIKON D3300", NikonLensId = 139, LensMinFocalMm = 18, LensMaxFocalMm = 200, LensMaxAperture = 3.5 };
+        var nikkor = new LoadedFrame { Camera = "NIKON D3300", LensId = 139, LensMinFocalMm = 18, LensMaxFocalMm = 200, LensMaxAperture = 3.5 };
         Assert.Empty(LensIdentification.CandidatesFromRaw(sources.Catalog, nikkor));
         string refusal = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, nikkor);
         Assert.Contains("--lens", refusal);
 
         // no camera: both Adobe mounts and the lensfun entry survive, and the refusal names what
         // the raw said
-        var unknownCamera = new LoadedFrame { NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8 };
+        var unknownCamera = new LoadedFrame { LensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8 };
         string ambiguous = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, unknownCamera);
-        Assert.Contains("ID-ul Nikon 139 din raw (11-20 mm f/2.8)", ambiguous);
+        Assert.Contains("ID-ul obiectivului 139 din raw (11-20 mm f/2.8)", ambiguous);
         Assert.Contains("3 obiective", ambiguous);
     }
 
@@ -1016,7 +1016,7 @@ public class LensIdentificationTests
         FocalMm = 18,
         FNumber = 2.8,
         Camera = "NIKON D3300",
-        NikonLensId = 139,
+        LensId = 139,
         LensMinFocalMm = 11,
         LensMaxFocalMm = 20,
         LensMaxAperture = 2.8,
@@ -1049,7 +1049,7 @@ public class LensIdentificationTests
         Assert.Equal(ProfileSource.Adobe, id.Candidates[0].Source);
         Assert.Equal("NIKON CORPORATION", id.Candidates[0].Mount);       // not the Canon file of the same lens
         Assert.Equal(ProfileSource.Lensfun, id.Candidates[1].Source);
-        Assert.Equal("ID-ul Nikon 139 din raw (11-20 mm f/2.8)", id.RawLensLabel);
+        Assert.Equal("ID-ul obiectivului 139 din raw (11-20 mm f/2.8)", id.RawLensLabel);
     }
 
     [Fact]
@@ -1119,7 +1119,7 @@ public class LensIdentificationTests
             FocalMm = 135,
             FNumber = 2,
             Camera = "NIKON D3300",
-            NikonLensId = 74,                                 // the "non-CPU lens" ID, with the menu's range
+            LensId = 74,                                 // the "non-CPU lens" ID, with the menu's range
             LensMinFocalMm = 135,
             LensMaxFocalMm = 135,
             LensMaxAperture = 2,
@@ -1173,14 +1173,14 @@ public class LensIdentificationTests
         using var ws = new TempWorkspace();
         var sources = LensProfileTestData.Sources(ws);
         var manual = Raw();
-        manual.NikonLensId = 999;                                   // no profile carries it
+        manual.LensId = 999;                                   // no profile carries it
 
         ShotIdentity id = LensIdentification.Identify(Master(), manual, sources, rawName: "x.NEF");
 
         Assert.True(id.CandidatesByRangeOnly);
         Assert.Equal(2, id.Candidates.Count);                       // the Nikon Adobe file and the lensfun entry, not the Canon file
         Assert.All(id.Candidates, c => Assert.Contains("11-20", c.Name));
-        Assert.StartsWith("gama 11-20 mm f/2.8 din raw (ID-ul Nikon 999", id.RawLensLabel);
+        Assert.StartsWith("gama 11-20 mm f/2.8 din raw (ID-ul obiectivului 999", id.RawLensLabel);
 
         // a range that no name matches: nothing, and the gap stays "no match"
         manual.LensMaxAperture = 5.6;
@@ -1190,7 +1190,7 @@ public class LensIdentificationTests
 
         // no camera: no range fallback
         var noCamera = Raw();
-        noCamera.NikonLensId = 999;
+        noCamera.LensId = 999;
         noCamera.Camera = null;
         var master = Master();
         master.Camera = null;

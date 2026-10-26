@@ -41,7 +41,7 @@ public class VignettingComparisonTests
         FocalMm = 20,
         FNumber = 2.8,
         Camera = "NIKON D3300",
-        NikonLensId = 139,
+        LensId = 139,
         LensMinFocalMm = 11,
         LensMaxFocalMm = 20,
         LensMaxAperture = 2.8,
@@ -228,6 +228,40 @@ public class VignettingComparisonTests
         Assert.Null(c.Verdict);
         Assert.Equal(ComparisonGap.RawWithoutLens, c.Gap);
         Assert.Empty(c.Profiles);
+    }
+
+    /// <summary>
+    /// A raw that names a lens no profile on this machine carries - a Canon whose Adobe file is
+    /// not installed - is a "no match", never a raw without a lens, with or without the ID
+    /// (R-108).
+    /// </summary>
+    [Fact]
+    public void R108_ARawThatNamesALensNoProfileCarriesIsANoMatch()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);           // the Nikon fixtures only
+        var r = StructureAnalyzer.Analyze(ModelFlat(sources));
+        var canon = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(),
+            Camera = "Canon EOS 6D",
+            FocalMm = 85,
+            FNumber = 5.6,
+            LensId = 155,
+            LensMount = "Canon EF",
+            LensName = "EF85mm f/1.8 USM",
+            LensMinFocalMm = 85,
+            LensMaxFocalMm = 85,
+            LensMaxAperture = 1.834,
+        };
+
+        VignettingComparison c = VignettingComparer.Analyze(r, LensIdentification.Identify(Master(), canon, sources, rawName: "EOS_6D.CR2"), sources.Catalog);
+        Assert.Equal(ComparisonGap.NoLensMatch, c.Gap);
+        Assert.Empty(c.Profiles);
+
+        canon.LensId = null;                                      // the name alone says the same
+        c = VignettingComparer.Analyze(r, LensIdentification.Identify(Master(), canon, sources, rawName: "EOS_6D.CR2"), sources.Catalog);
+        Assert.Equal(ComparisonGap.NoLensMatch, c.Gap);
     }
 
     [Fact]

@@ -216,7 +216,7 @@ namespace FlatCheck
         /// <summary>A profile.</summary>
         /// <param name="lens">The lens it belongs to.</param>
         /// <param name="aliases">The lens's other names; null for none.</param>
-        /// <param name="lensIds">The Nikon lens IDs it carries (Adobe); null for none.</param>
+        /// <param name="lensIds">The lens IDs it carries (Adobe; the maker's, R-108); null for none.</param>
         /// <param name="focalMm">The focal length, in mm.</param>
         /// <param name="fStop">The f-number.</param>
         /// <param name="distanceM">The focus distance in metres; NaN when not given.</param>
@@ -398,11 +398,12 @@ namespace FlatCheck
             });
 
         /// <summary>
-        /// The Adobe lenses that carry the given Nikon lens ID (LensID or AlternateLensIDs). It
-        /// parses the files whose mount or camera contains <paramref name="makerHint"/> (the Nikon
-        /// ones for a D3300), in parallel, or all of them when the hint is missing.
+        /// The lenses that carry the given lens ID (LensID or AlternateLensIDs; the Adobe files are
+        /// the ones that have IDs). It parses the files whose mount or camera contains
+        /// <paramref name="makerHint"/> (the Nikon ones for a D3300, the Canon ones for an EOS), in
+        /// parallel, or all of them when the hint is missing.
         /// </summary>
-        /// <param name="id">The Nikon lens ID.</param>
+        /// <param name="id">The lens ID as the raw gives it (R-108).</param>
         /// <param name="makerHint">A word of the camera's name; null or blank for every
         /// file.</param>
         /// <returns>The lenses with the ID, by name and mount.</returns>
@@ -421,8 +422,53 @@ namespace FlatCheck
             return hits.Distinct().OrderBy(l => l.Name).ThenBy(l => l.Mount).ToList();
         }
 
+        /// <summary>A name with only its letters and digits, upper-cased, for matching.</summary>
+        /// <param name="s">The name; null gives an empty string.</param>
+        /// <returns>The normalised name.</returns>
+        internal static string Letters(string s) => new string((s ?? "").Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+
         /// <summary>
-        /// Of the matches by ID, only those whose name does NOT contradict the range in the raw
+        /// The lenses whose name, or one of whose aliases, is <paramref name="name"/> letter for
+        /// letter (<see cref="Letters"/>: case and punctuation aside), the lens's maker allowed in
+        /// front: the camera's "EF50mm f/1.4 USM" is Adobe's <c>stCamera:Lens</c> alias as it
+        /// stands and lensfun's "Canon EF 50mm f/1.4 USM" with the maker; Sony's "FE 16-35mm F2.8
+        /// GM" is lensfun's name as it stands and Adobe's with the maker. The Adobe files whose
+        /// mount or maker contains <paramref name="makerHint"/> are parsed, in parallel, or all of
+        /// them without a hint, as in <see cref="ByLensId"/>; a stub whose file name already spells
+        /// the name matches without a parse. Nothing for a blank name (R-018).
+        /// </summary>
+        /// <param name="name">The lens's name as the raw wrote it; null or blank gives an empty
+        /// list.</param>
+        /// <param name="makerHint">A word of the camera's name; null or blank for every file.</param>
+        /// <returns>The lenses of that name, by name and mount.</returns>
+        internal IReadOnlyList<LensChoice> ByLensName(string name, string makerHint = null)
+        {
+            string want = Letters(name);
+            if (want.Length == 0) return Array.Empty<LensChoice>();
+            bool Same(LensChoice lens, string candidate)
+            {
+                string got = Letters(candidate);
+                return got == want || got == Letters(lens.Maker) + want;
+            }
+            bool Matches(LensChoice lens, IEnumerable<string> aliases) => Same(lens, lens.Name) || aliases.Any(a => Same(lens, a));
+
+            var hits = new List<LensChoice>();
+            foreach (var group in Profiles.GroupBy(p => p.Lens))
+                if (Matches(group.Key, group.SelectMany(p => p.Aliases))) hits.Add(group.Key);
+            IEnumerable<AdobeProfileFile> files = AdobeFiles;
+            if (!string.IsNullOrWhiteSpace(makerHint))
+                files = files.Where(f => (f.Lens.Mount + " " + f.Lens.Maker).Contains(makerHint, StringComparison.OrdinalIgnoreCase));
+            var found = new ConcurrentBag<LensChoice>();
+            Parallel.ForEach(files, f =>
+            {
+                if (Same(f.Lens, f.Lens.Name) || Matches(f.Lens, Parse(f).SelectMany(p => p.Aliases))) found.Add(f.Lens);
+            });
+            hits.AddRange(found);
+            return hits.Distinct().OrderBy(l => l.Name).ThenBy(l => l.Mount).ToList();
+        }
+
+        /// <summary>
+        /// Of the matches by ID or name, only those whose name does NOT contradict the range in the raw
         /// (minimum / maximum focal length, maximum aperture): a name that cannot be read stays.
         /// Without any range, the list stays whole.
         /// </summary>

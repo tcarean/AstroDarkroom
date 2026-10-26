@@ -26,7 +26,7 @@ Usage:
                          profiles - by name, or by the ID in the raw beside the master; the verdict includes them)
             --lang en|ro (the language of every text: en English, the default; ro Romanian)
 
-Accepted: FITS (.fit/.fits/.fts) and camera raw (.nef/.cr2/.cr3/.arw/.dng/.raf).
+Accepted: FITS (.fit/.fits/.fts) and camera raw (.nef/.cr2/.cr3/.arw/.dng/.raf/.pef).
 On a raw, --expo takes the exact white and black levels from the file instead of guessing them from the maximum.
 
 --light does not work on everything: beyond a ~40-degree diagonal it refuses to answer,

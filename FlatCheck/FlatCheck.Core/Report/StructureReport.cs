@@ -377,9 +377,9 @@ namespace FlatCheck
                 case ComparisonGap.RawWithoutLens:
                     return SyntheticReport.RawWithoutLensNote(shot?.RawName) + ". " + RawWithoutLensRemedy(shot);
                 case ComparisonGap.NoLensMatch:
-                    return shot != null && shot.HasRawLensId
-                        ? T($"{shot.RawLensLabel}: no lens in the catalog matches it (by ID and range). Give --lens <text>",
-                            $"{shot.RawLensLabel}: niciun obiectiv din catalog nu i se potriveste (dupa ID si gama). Da --lens <text>")
+                    return shot != null && shot.RawNamesLens
+                        ? T($"{shot.RawLensLabel}: no lens in the catalog matches it (by ID, name and range). Give --lens <text>",
+                            $"{shot.RawLensLabel}: niciun obiectiv din catalog nu i se potriveste (dupa ID, nume si gama). Da --lens <text>")
                         : T("no lens matches the text given; see --lenses",
                             "niciun obiectiv nu se potriveste cu textul dat; vezi --lenses");
                 case ComparisonGap.NoFocal:

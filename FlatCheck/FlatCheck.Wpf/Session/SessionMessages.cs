@@ -170,14 +170,14 @@ namespace FlatCheck.Wpf
             + "intact and the original ADU scale - stacking normalises exactly the level "
             + "measured here, so a master cannot be used.\n\n"
             + "The simplest is to leave the camera's own files in flats/ "
-            + "(.nef, .cr2, .cr3, .arw, .dng, .raf). On them white and black are read exactly "
+            + "(.nef, .cr2, .cr3, .arw, .dng, .raf, .pef). On them white and black are read exactly "
             + "from the file, not guessed from the maximum.",
               $"Niciun fisier raw de aparat in:\n{s.FlatsDir}\n\n"
             + "Verificarea expunerii ruleaza pe un flat BRUT, NECALIBRAT, cu mozaicul CFA "
             + "intact si scala ADU originala - stivuirea normalizeaza exact nivelul care se "
             + "masoara aici, deci un master nu se poate folosi.\n\n"
             + "Cel mai simplu e sa lasi in flats/ chiar fisierele de la aparat "
-            + "(.nef, .cr2, .cr3, .arw, .dng, .raf). Pe ele white si black se citesc exact "
+            + "(.nef, .cr2, .cr3, .arw, .dng, .raf, .pef). Pe ele white si black se citesc exact "
             + "din fisier, nu se mai ghicesc din maxim.");
 
         // --------------------------------------------------- how to read the tab
@@ -502,12 +502,12 @@ namespace FlatCheck.Wpf
             T($"Nothing to equalise: neither the master {SirilSession.FlatMasterName} in masters/ or process/, nor "
             + $"any readable frame in:\n{s.FlatsDir}\n\n"
             + "The tab shows the frames as they were shot - camera raw (.nef, .cr2, .cr3, "
-            + ".arw, .dng, .raf) or FITS (.fit, .fits, .fts) - and, in the first place, the master "
+            + ".arw, .dng, .raf, .pef) or FITS (.fit, .fits, .fts) - and, in the first place, the master "
             + "made from them, so that it shows what was averaged out and what stayed.",
               $"Nimic de egalizat: nici masterul {SirilSession.FlatMasterName} in masters/ sau process/, nici "
             + $"vreun cadru citibil in:\n{s.FlatsDir}\n\n"
             + "Tabul arata cadrele asa cum au fost trase - raw de aparat (.nef, .cr2, .cr3, "
-            + ".arw, .dng, .raf) sau FITS (.fit, .fits, .fts) - si, pe prima pozitie, masterul "
+            + ".arw, .dng, .raf, .pef) sau FITS (.fit, .fits, .fts) - si, pe prima pozitie, masterul "
             + "facut din ele, ca sa se vada ce s-a mediat si ce a ramas.");
 
         // The guide below mirrors the table in the README ("Histogram"). There is no test
