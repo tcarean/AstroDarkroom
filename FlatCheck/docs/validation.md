@@ -185,7 +185,8 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 - 2026-10-26: all 48 cases re-measured on `main` at 876782d (the merge of ADR 0068) while the
   README was rewritten in English (ADR 0069), whose tables quote V-016 to V-040: 48 passed, no
-  drift, 5.8 minutes. No figure changed; no formula moved.
+  drift, 5.8 minutes. Again after the note under the illumination offset was reworded (R-013, a
+  text in `Report/`): 48 passed, no drift, 4.1 minutes. No figure changed; no formula moved.
 
 - 2026-10-26: V-041 to V-048 added, the lens metadata of six raws of other makes and two of the
   owner's Nikon raws (ADR 0068); no

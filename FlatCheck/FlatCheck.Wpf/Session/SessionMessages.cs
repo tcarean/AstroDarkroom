@@ -470,7 +470,7 @@ namespace FlatCheck.Wpf
              + "exactly like vignetting; measured, a 10% spot in the centre leaves the map empty "
              + "and every figure under 0.1%. Its only trace is the vignetting figure, which "
              + "grows. It shows only when it is slightly off-centre, and then as a crescent, "
-             + "not as a disc. The rotation test is just as blind to it; the counter-test "
+             + "not as a disc. No rotation removes it; the counter-test "
              + "is distance - one set at 30 cm, one at 60.",
                "Iluminare contaminata simetric fata de axa: un panou prea aproape, "
              + "backlight-ul unui monitor. Cand e chiar centrata, NU poate aparea pe "
@@ -478,7 +478,7 @@ namespace FlatCheck.Wpf
              + "exact ca vignetarea; masurat, o pata de 10% in centru lasa harta goala "
              + "si toate cifrele sub 0.1%. Singura ei urma e cifra de vignetare, care "
              + "creste. Se vede doar cand e putin descentrata, si atunci ca o semiluna, "
-             + "nu ca un disc. Testul prin rotatie e la fel de orb la ea; contra-testul "
+             + "nu ca un disc. Nicio rotatie nu o scoate; contra-testul "
              + "e distanta - un set la 30 cm, unul la 60.")),
 
             (T("fine grain everywhere",

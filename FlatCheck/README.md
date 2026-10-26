@@ -1414,7 +1414,7 @@ languages. After an intended change of the output, regenerate them and read the 
 their value is:
 
 ```bash
-FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests
+FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"
 ```
 
 The 39 `parity_*.txt` among them hold the figures the Python prototype confirmed before it was frozen;

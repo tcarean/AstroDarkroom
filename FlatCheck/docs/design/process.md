@@ -221,8 +221,8 @@ The procedure:
    $env:FLATCHECK_UPDATE_GOLDEN = '1'; dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"; Remove-Item Env:\FLATCHECK_UPDATE_GOLDEN
    ```
 
-   The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests` form in
-   CLAUDE.md is the same thing from a POSIX shell. The variable rewrites **every** golden file
+   The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"`
+   form in CLAUDE.md is the same thing from a POSIX shell. The variable rewrites **every** golden file
    the filter selects, not only the new one; without the filter it would rewrite the 39 parity
    goldens too.
 3. `git status`: the only change under `Golden/` must be the new untracked file. A modified

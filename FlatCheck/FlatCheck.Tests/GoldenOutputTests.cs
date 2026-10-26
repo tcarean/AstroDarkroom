@@ -211,6 +211,26 @@ public class GoldenOutputTests
         Assert.Contains("inclinare (gradient)    :", output);
     }
 
+    /// <summary>
+    /// The note under the offset says what the user sees once the illumination peak leaves the
+    /// frame: the row reads nedeterminat / undetermined (ADR 0014). It used to say the figure
+    /// falls back toward 0, which is what the offset did before that guard, and never since.
+    /// </summary>
+    [Fact]
+    public void R013_Structure_OffsetNoteSaysAPeakOutsideTheFrameIsUndetermined()
+    {
+        using var ws = new TempWorkspace();
+        string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
+
+        var (ro, _) = RunCli(ws, f, "-o", ws.PathTo("ro.png"));
+        var (en, _) = RunCli(ws, f, "--lang", "en", "-o", ws.PathTo("en.png"));
+
+        Assert.Contains("iar cand varful iese din cadru e nedeterminat.", ro);
+        Assert.DoesNotContain("spre 0", ro);
+        Assert.Contains("and once the peak leaves the frame it reads undetermined.", en);
+        Assert.DoesNotContain("toward 0", en);
+    }
+
     // ---------------------------------------------------------------- light
 
     [Fact]

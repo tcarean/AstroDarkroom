@@ -23,7 +23,7 @@ It is not an image processor and it never decides what a shape on a map is.
 - Run: `dotnet run --project FlatCheck -- <file.fit> [--light | --expo | --histeq | ...]`;
   the flag may come before or after the path (R-003). Window: `dotnet run --project FlatCheck.Wpf -- <session folder>`
 - Golden console texts, after an intended output change (the rule "Golden files"):
-  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests`; the 39
+  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"`; the 39
   parity goldens only after the owner's yes: `... --filter ParityGoldenTests`
 - Window renders as PNGs without running it: `FLATCHECK_DUMP_SCREENS=<dir> dotnet test FlatCheck.Wpf.Tests --filter WindowSmokeTests`
 - Figures on the real masters (minutes, not in the gate): `/validate`, or
@@ -73,8 +73,9 @@ a kit rule names it.
 
 - **Golden files** (extends the kit's rule "No test edited to pass", the kit's ADR 0033). The
   golden files are the console snapshots `FlatCheck.Tests/Golden/*.txt`, regenerated with
-  `FLATCHECK_UPDATE_GOLDEN=1` and `--filter GoldenOutputTests`, which leaves the parity goldens
-  alone. The 39 `Golden/parity_*.txt` captured on 2026-09-26 carry the figures the Python
+  `FLATCHECK_UPDATE_GOLDEN=1` and `--filter "GoldenOutputTests|EnglishOutputTests"` (the second
+  writes the English `en_*.txt`), which leaves the parity goldens alone. The 39
+  `Golden/parity_*.txt` captured on 2026-09-26 carry the figures the Python
   prototype confirmed before it froze (`docs/design/python-parity.md` lists them and the one
   divergence): they are the goldens with confirmed figures. Any line that changes there is a
   finding; only after the owner's yes are they recaptured, with `--filter ParityGoldenTests`,

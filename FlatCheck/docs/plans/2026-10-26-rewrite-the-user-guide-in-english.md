@@ -141,3 +141,21 @@ merged yet and a branch cut from `main` would have clashed with ADR 0069 and `CL
   three; there were four).
 - ADR 0069 now covers the notices too; `CLAUDE.md`'s rule "Languages" and the CHANGELOG line say
   so.
+
+## Extension: the three stale texts (2026-10-26)
+
+The owner also took "Fix FlatCheck's stale offset note and map-guide line" into this session, on
+this branch as a third commit, with its own plan put through plan mode. The owner chose the
+recommended wordings and gave the yes for the parity goldens.
+
+- R-013 now names the note under the offset; the new `R013_Structure_OffsetNoteSaysAPeakOutsideTheFrameIsUndetermined`
+  failed on "cade inapoi spre 0" and passes on "iar cand varful iese din cadru e nedeterminat"
+  ("and once the peak leaves the frame it reads undetermined").
+- The goldens: 25 files, one line each (5 `en_structure_*`, 5 `structure_*`, 15
+  `parity_structure_*`), no figure moved; recorded in `docs/design/python-parity.md`.
+- The window's round-spot row says "No rotation removes it", as the README; R-081 says "in the
+  session folder", as the code and `SirilSessionTests` always had it.
+- Deviation: the regeneration command in `CLAUDE.md` (Commands and the rule "Golden files"),
+  `docs/skills.md` and the README filtered on `GoldenOutputTests` alone, which leaves the English
+  goldens of `EnglishOutputTests` stale; `docs/design/process.md` already had the right
+  `"GoldenOutputTests|EnglishOutputTests"`. The four now say the same.

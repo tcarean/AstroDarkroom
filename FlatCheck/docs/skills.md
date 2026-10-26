@@ -23,8 +23,8 @@ are in `kit.json`, not here.
   computed outside the core (the rule "Computed only in the core").
 - At step 6: numeric code is `Metrics.cs`, `Stats.cs`, `Analysis/` and `Report/` (the rule
   "Formula changes re-validate"). The golden files are regenerated with
-  `FLATCHECK_UPDATE_GOLDEN=1` and `--filter GoldenOutputTests` (the rule "Golden files", the
-  kit's ADR 0033).
+  `FLATCHECK_UPDATE_GOLDEN=1` and `--filter "GoldenOutputTests|EnglishOutputTests"` (the rule
+  "Golden files", the kit's ADR 0033).
 - At step 8: `README.md` is English and holds the user guide only (ADR 0069); its "Options"
   section lists every console flag (`docs/design/process.md`, "The README Options section").
 

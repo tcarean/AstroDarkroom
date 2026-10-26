@@ -112,6 +112,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The note under the illumination offset in the structure report no longer says the offset falls
+  back toward 0 past a threshold: since ADR 0014 the row reads `undetermined` / `nedeterminat` once
+  the peak leaves the frame, and the note now says so (R-013). Every structure golden changes in
+  that one line, the 15 structure parity goldens included, recaptured with the owner's yes; no
+  figure moved. The window's map guide no longer names the rotation test removed with `--ratio`
+  ("No rotation removes it", as the README says), and R-081 says the window saves its report and
+  map in the session folder, as it always did.
 - `.pef` (Pentax) is a raw extension: a PEF was refused as a FITS that "does not begin with
   SIMPLE" while libraw read it without trouble (R-004, ADR 0068). A Canon raw with an EF lens no
   longer reads as a raw that says nothing about the lens.
