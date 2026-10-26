@@ -45,7 +45,7 @@ public partial class App : WpfApplication
     /// it is saved -- which is the only way to see what the length cap looks like without
     /// the registry being involved. Without one it shows the default text.
     /// </summary>
-    private const string PreviewSwitch = "--preview";
+    private const string PreviewSwitch = CommandLineSwitches.Preview;
 
     /// <summary>
     /// Reports what the activity monitor can see and quits. The two pause settings cannot be
@@ -58,7 +58,7 @@ public partial class App : WpfApplication
     /// being measured. With a duration you start it, go and do the thing, and read the
     /// timeline when you come back.
     /// </summary>
-    private const string DetectSwitch = "--detect";
+    private const string DetectSwitch = CommandLineSwitches.Detect;
 
     /// <summary>Ten minutes. Long enough for any test, short enough that a typo ends.</summary>
     private static readonly TimeSpan MaxDetectDuration = TimeSpan.FromMinutes(10);
@@ -110,6 +110,13 @@ public partial class App : WpfApplication
             return;
         }
 
+        // Only the tray copy is worth bringing back: Windows starts it again, with --restarted,
+        // after a crash or a hang once it has run for a minute (R-100, ADR 0036).
+        if (ApplicationRestart.ShouldRegister(e.Args))
+        {
+            RestartRegistration.Register();
+        }
+
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
         // The tray menu is Windows Forms, whose window procedure catches an error in a menu
@@ -147,6 +154,13 @@ public partial class App : WpfApplication
             _tray.ShowBalloon(
                 VersionInfo.Name,
                 "Running in the tray. It now starts with Windows -- untick that in the tray menu to stop it.");
+        }
+
+        if (ApplicationRestart.IsRestart(e.Args))
+        {
+            _tray.ShowBalloon(
+                VersionInfo.Name,
+                "Restarted after an error. The details are in the Windows Application log.");
         }
     }
 
@@ -417,20 +431,39 @@ public partial class App : WpfApplication
         ReportCrash(e.Exception);
     }
 
-    /// <summary>Shows the error and the banner in a message box, then shuts the app down.</summary>
-    /// <param name="exception">What went wrong; its message is what the dialog shows.</param>
+    /// <summary>
+    /// Shows the error in a message box, hides the tray icon, and ends the process with a
+    /// fail-fast, which Windows takes as a crash: it logs the text and the stack, writes a dump
+    /// where it is set to, and starts the registered copy again (R-076, R-100). Never returns.
+    /// </summary>
+    /// <param name="exception">What went wrong; rendered by <see cref="CrashReport.Format"/>.</param>
     private void ReportCrash(Exception exception)
     {
         // A tray app that dies silently just vanishes; say so before going. The banner goes
         // along: a screenshot of this dialog is often all a bug report has, and it has to say
-        // which version broke.
+        // which version broke -- and, since 2026-10-26, which file was missing.
+        var text = CrashReport.Format(exception, VersionInfo.Banner);
+
         MessageBox.Show(
-            exception.Message + "\n\n" + VersionInfo.Banner,
+            text,
             VersionInfo.Name + " stopped",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
 
-        Shutdown();
+        // The fail-fast skips OnExit, so the icon is taken down here; it is cosmetic at this
+        // point, and an error taking it down must not get in the way of the fail-fast itself.
+        try
+        {
+            _tray?.Dispose();
+        }
+        catch (Exception)
+        {
+        }
+
+        // Not Shutdown(): WPF's shutdown path loads assemblies, and on 2026-10-26 it was the
+        // second failure after the first, inside this very handler. A fail-fast needs nothing,
+        // and a clean exit would not be a crash to Windows, so nothing would restart (ADR 0036).
+        Environment.FailFast(text, exception);
     }
 
     /// <summary>
