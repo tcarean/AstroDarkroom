@@ -21,7 +21,10 @@ throws `InvalidOperationException` naming the folder and the extensions looked f
 when the folder is absent or empty, and the report prints `(lipsa)`. The darks are only
 counted (R-042): the `pattern fix` row of the series report says whether Siril will subtract
 the sensor's pattern, and no dark is ever opened. The record exposes `Root`, `LightsDir`,
-`BiasesDir`, `DarksDir`, `Lights`, `Biases` and `Darks` as full paths; nothing here writes.
+`BiasesDir`, `DarksDir`, `Lights`, `Biases` and `Darks` as full paths, and `LightsAreRaws`,
+true when the lights are camera raws rather than FITS files (one file decides, since
+`FramesIn` never mixes the two; the series uses it to flip the solve, ADR 0023); nothing
+here writes.
 
 ## The metadata of a frame (`FrameInfo`)
 

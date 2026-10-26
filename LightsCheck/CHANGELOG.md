@@ -38,7 +38,6 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `pp_light_*.fit`, for one) had four cells more than its header on every row: the channel
   names `CFA[0,0]` to `CFA[1,1]` were written bare, comma and all. A channel name with a
   comma is now quoted (R-028).
-
 - A FITS light whose data is shorter than its header says (a copy cut mid-transfer) crashed
   `lightscheck --frame N` and was listed with `Index was outside the bounds of the array.`;
   the reader now refuses it with `FITS: data cut short: ...` (`FITS: date trunchiate: ...` with

@@ -67,9 +67,10 @@ true, the raws' case, which every hand-made `Wcs` in the tests is.
   test, R-041's window test, R-050's and `LanguageTests`') carry the Veil solve with its y
   column mirrored, the solve a FITS session of those frames would have, so their expected
   words did not change; R-025's, which reads the axis alone, needed nothing.
-- Seen on the way, not fixed here: in the CSV of a FITS session the channel names are
-  `CFA[0,0]` and the like, written bare, so every row has four cells more than the header
-  (R-028); the raws' `R`, `G1`, `G2`, `B` have no comma.
+- Seen on the way and fixed in the same task, as its own commit: in the CSV of a FITS session
+  the channel names were `CFA[0,0]` and the like, written bare, so every row had four cells
+  more than the header; a text cell with a comma is now quoted (R-028). The raws' `R`, `G1`,
+  `G2`, `B` have no comma, which is why it had not shown.
 - A solve not written by Siril (rows top-down) under raw lights would still read reversed,
   as ADR 0013 said; `ROWORDER` cannot tell (above), so it stays the place to revisit if the
   workflow changes.

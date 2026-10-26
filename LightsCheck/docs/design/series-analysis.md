@@ -116,8 +116,9 @@ slews proper, and subtracts their convergence, `-Wcs.Handedness x tan d x` the n
 the total rotation before dividing by the span; the drift's own projection stays in, since the
 bound reads the whole tracking rotation as the alignment's. `Wcs.Handedness` is the sign of
 the determinant of the pixel-to-sky map through `PointingOffsetDeg`, the lights' flip
-included, which a mirrored frame flips together with the registration's rotation sign. The rate is read only over `Th.PolarRotationMinHours` of
-registered span: the per-frame rotation still scatters by about 10" and a short run would
+included, which a mirrored frame flips together with the registration's rotation sign. The
+rate is read only over `Th.PolarRotationMinHours` of registered span: the per-frame rotation
+still scatters by about 10" and a short run would
 read that as arcminutes per hour. The same reading bounds the RA drift the alignment can
 explain at the rotation rate times `tan d` (`PolarRaDriftMaxArcsecPerMin`); on Veil 1.3 of
 the 5.8 "/min, the rest being the tracking, which these frames cannot separate (ADR 0016).

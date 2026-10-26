@@ -88,9 +88,9 @@ internal static class SeriesOutputs
     /// <returns>
     /// The header row and one row per frame, each ended by "\n"; a figure that is missing or NaN
     /// is an empty cell; the file name, the reasons, the arrows and the error are quoted, the
-    /// class, the channel names and the trail axis are written bare, except a channel name
-    /// that holds a comma (the CFA[row,col] of a mosaic of unknown order), which is quoted so
-    /// that every row keeps the header's cells (R-028).
+    /// class, the channel names and the trail axis are written bare unless one holds a comma
+    /// (the CFA[row,col] channel name of a mosaic of unknown order), in which case it is
+    /// quoted, so that every row keeps the header's cells (R-028).
     /// </returns>
     internal static string Csv(SeriesResult r)
     {
@@ -111,11 +111,11 @@ internal static class SeriesOutputs
             [
                 f.Info.Index.ToString(inv), Q(f.Info.FileName), f.Info.Timestamp?.ToString("yyyy-MM-ddTHH:mm:ss", inv) ?? "",
                 N(f.Info.ExposureSeconds), N(f.Info.Iso), N(f.Info.FNumber), N(f.Info.FocalMm),
-                SeriesReport.ClassWord(r.Series.Classes[i]), Q(SeriesReport.Reasons(r.Series.Flags[i])),
+                Cell(SeriesReport.ClassWord(r.Series.Classes[i])), Q(SeriesReport.Reasons(r.Series.Flags[i])),
                 N(r.Cadence.PauseSeconds[i]), N(r.Dither.Step[i]), N(r.Dither.StepX[i]), N(r.Dither.StepY[i]),
                 N(g?.Dx), N(g?.Dy), N(g?.RotationDeg), g is null ? "" : g.Matches.ToString(inv), N(g?.Rms),
                 m is null ? "" : m.Detected.ToString(inv), m is null ? "" : m.DetectedBright.ToString(inv), m is null ? "" : m.SaturatedStars.ToString(inv), m is null ? "" : m.Shapes.Count.ToString(inv),
-                N(m?.FwhmMedian), N(m?.FwhmP90), N(m?.Centre.Fwhm), N(m?.Mid.Fwhm), N(m?.Edge.Fwhm), N(m?.ElongationMedian), N(m?.ElongationP90), N(m?.ElongatedFraction), N(m?.AngleDeg), N(m?.AngleCoherence), TrailWord(trail?.On ?? TrailAxis.Unknown), N(m?.Halo),
+                N(m?.FwhmMedian), N(m?.FwhmP90), N(m?.Centre.Fwhm), N(m?.Mid.Fwhm), N(m?.Edge.Fwhm), N(m?.ElongationMedian), N(m?.ElongationP90), N(m?.ElongatedFraction), N(m?.AngleDeg), N(m?.AngleCoherence), Cell(TrailWord(trail?.On ?? TrailAxis.Unknown)), N(m?.Halo),
                 N(m?.BackgroundMedian), N(m?.BackgroundCentre), N(m?.BackgroundMin), N(m?.BackgroundMax), N(m?.NoiseSigma),
             ];
             for (int c = 0; c < 4; c++)
