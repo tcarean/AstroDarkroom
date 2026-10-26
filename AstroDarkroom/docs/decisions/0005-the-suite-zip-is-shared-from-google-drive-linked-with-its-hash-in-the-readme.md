@@ -1,7 +1,7 @@
 # 0005. The suite's zip is shared from Google Drive, linked with its hash in the README
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; the row's commit of README.md alone superseded by 0008
 
 ## Context
 

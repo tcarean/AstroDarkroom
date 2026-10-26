@@ -67,9 +67,10 @@ celor cinci componente, asa cum sunt pe `main`, in `artifacts/X.Y.Z/` (un fisier
 publicari cu continut diferit opreste release-ul), scrie `release.json` si zip-ul cu `.sha256`
 in `artifacts/`. Commit-ul si tag-ul `astrodarkroom-vX.Y.Z` le face omul, cum le propune
 skill-ul. Zip-ul se urca de mana in Google Drive, partajat cu "Oricine are linkul"; apoi linkul
-si hash-ul din `.sha256` intra ca rand nou, primul, in tabelul de la "Descarcare", intr-un commit
-al lor. Componentele nu trebuie lansate inainte: `release.json` spune ce versiune si ce commit
-a intrat din fiecare.
+si hash-ul din `.sha256` intra ca rand nou, primul, in tabelul de la "Descarcare" si ca singurul
+rand al tabelului "Download" din `README.md`-ul de la radacina repository-ului, pagina lui de pe
+Bitbucket (ADR 0008), intr-un commit al celor doua fisiere. Componentele nu trebuie lansate
+inainte: `release.json` spune ce versiune si ce commit a intrat din fiecare.
 
 Versiunea suitei e `<Version>` din `Directory.Build.props` de aici; prima versiune reala,
 1.0.0, se da la cuvantul proprietarului.
