@@ -19,8 +19,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <!-- MapGuidePanel - the map's reading guide: how to read it and what the shapes mean.
 
-     A single control for two tabs (Structura and Ratio), because both show the same
-     residual on the same scale, so the same guide. It binds to MapGuide.* of the tab's
+     A control of its own, not markup inside StructureView, so that any tab with a residual
+     map on the same scale can show the same guide. It binds to MapGuide.* of the tab's
      view-model, exactly as ReportPanel does to Report.
 
      Folded by default: six lines of text under each map would drown the very figures. The

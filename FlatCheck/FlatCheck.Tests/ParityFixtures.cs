@@ -18,7 +18,7 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// The synthetic FITS files of the 43 parity scenarios: the exact bytes the Python
+/// The synthetic FITS files of the parity scenarios (39 since ADR 0067): the exact bytes the Python
 /// prototype and the C# were compared on until 2026-09-26, when the cross-check was
 /// retired and the prototype frozen at 2.2.0 (ADR 0047). <see cref="ParityGoldenTests"/>
 /// runs the console over them and pins the text; <see cref="CrossCheckFixtures"/> can
@@ -41,7 +41,7 @@ internal static class ParityFixtures
         var raw12 = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 3600));
 
         Write(dir, "clean.fit", radial);        // structure / light / debayered-expo
-        Write(dir, "grad.fit", gradient);       // structure, and the B side of the ratio
+        Write(dir, "grad.fit", gradient);       // structure
         Write(dir, "raw_cfa.fit", rawCfa);      // --expo and --expo --sky
         Write(dir, "raw12bit.fit", raw12);      // --expo --sat 4095 --black 150
 

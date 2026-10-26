@@ -18,9 +18,8 @@
 // One flat against another: the structure of each and of the A / B ratio, side by side.
 // It exists for the synthetic flat - how much a real master differs from the lens's model,
 // and in what shape - but it works on any pair of flats of the same lens: two diffuser
-// thicknesses, two sources, the README's convergence test. It is not --ratio: that one
-// separates camera-fixed from world-fixed by rotation; this one only says by how much and how
-// two files differ.
+// thicknesses, two sources, the README's convergence test. It does not attribute the
+// difference to the camera or to the world; it only says by how much and how two files differ.
 //
 // Three columns, not one: the first report showed only the battery on the ratio, and the
 // figure "vignetting -0.42 stops" could not be read without knowing that the master has 0.26

@@ -1,7 +1,7 @@
 # 0019. The --ratio verdict is the structure verdict of the combined master (A+B)/2; A/B is informative
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: superseded by 0067
 
 ## Context
 

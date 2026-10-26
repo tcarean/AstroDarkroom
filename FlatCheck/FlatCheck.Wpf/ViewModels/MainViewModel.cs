@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - the session folder and the eight tabs.
+// MainViewModel.cs - the session folder and the seven tabs.
 //
 // Two decisions about behaviour deserve an explanation:
 //
@@ -99,7 +99,6 @@ namespace FlatCheck.Wpf
             // frame in place of a raw.
             var catalog = new ProfileCatalog(locateProfiles);
             Structure = new StructureTabViewModel(catalog, loadInfo);
-            Ratio = new RatioTabViewModel();
             Light = new LightTabViewModel();
             Exposure = new ExposureTabViewModel();
             HistEq = new HistEqTabViewModel();
@@ -127,7 +126,6 @@ namespace FlatCheck.Wpf
                == System.Windows.MessageBoxResult.Yes;
 
         public StructureTabViewModel Structure { get; }
-        public RatioTabViewModel Ratio { get; }
         public LightTabViewModel Light { get; }
         public ExposureTabViewModel Exposure { get; }
         public HistEqTabViewModel HistEq { get; }
@@ -153,7 +151,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// The problem that stops this folder from starting, if there is one. When it is set, the
-        /// tabs are not shown at all: there is no point seeing eight empty panels when what has to
+        /// tabs are not shown at all: there is no point seeing seven empty panels when what has to
         /// be done is to run a script in Siril.
         /// </summary>
         public string ProblemTitle { get => _problemTitle; private set => Set(ref _problemTitle, value); }
@@ -214,7 +212,6 @@ namespace FlatCheck.Wpf
             // The tabs that wait for a choice are prepared at once: their lists are read from the
             // folder, not from a computation, so they have no reason to wait. Every run a click
             // starts in them takes the gate, so it waits for the chain below, and for each other.
-            Ratio.Attach(session, ct, _gate);
             Exposure.Attach(session, ct, _gate);
             // A list too, also without a computation: the 24 MP master is not loaded twice on
             // opening - Structure is already reading it, below.
@@ -261,9 +258,6 @@ namespace FlatCheck.Wpf
 
                 await Light.RunAsync(session, ct).ConfigureAwait(true);
             }
-
-            // No Ratio here: it proposes nothing (R-082) and computes when the user has chosen two
-            // masters; a pick made during this chain waits for the gate.
         }
 
         /// <summary>Called when the window closes, so no threads are left working for
@@ -288,7 +282,6 @@ namespace FlatCheck.Wpf
         {
             Preprocess.Detach();
             Structure.Reset();
-            Ratio.Reset();
             Light.Reset();
             Exposure.Reset();
             HistEq.Reset();

@@ -101,8 +101,6 @@ public class SmoothTabTests
 
         Assert.Equal(Path.Combine(f.ProcessDir, SirilSession.FlatMasterName), f.Session.FlatMasterPath);
         Assert.False(f.Session.FindFlatMaster().Ambiguous);
-        // ...but the Ratio dialog may offer it: a smoothed stack is a stack
-        Assert.True(SirilSession.IsFlatMasterName(vm.Target));
     }
 
     [Fact]

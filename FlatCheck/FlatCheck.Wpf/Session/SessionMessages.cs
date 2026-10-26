@@ -108,47 +108,6 @@ namespace FlatCheck.Wpf
             _ => "",
         };
 
-        /// <summary>
-        /// R-082: when the user picks by hand a file that is not a flat master, it is
-        /// explained what these files are and why the test needs one, instead of a parsing
-        /// error from the FITS reader a few seconds later.
-        /// </summary>
-        /// <param name="path">The file picked.</param>
-        /// <returns>The explanation, with the path.</returns>
-        internal static string NotAFlatMaster(string path) =>
-            T($"The file chosen is not a flat master:\n{path}\n\n"
-            + "The 180-degree rotation test compares two flat MASTERS, that is two "
-            + "calibrated stacks of flats - the files Siril writes in process/ or "
-            + $"in masters/, named like {SirilSession.RatioPattern}.\n\n"
-            + "The single calibrated frames sit in the same folder and look the same "
-            + "(pp_flat_00001.fit and the next ones), but they do NOT work: the noise of a single frame "
-            + "is of the same order as the signal looked for, so a pair of frames gives a "
-            + "confident and false result.\n\n"
-            + "The prefix \"pp_\" means \"preprocessed\": the flat-dark and the offset have already been "
-            + "subtracted. An uncalibrated flat keeps a pedestal of a few hundred ADU "
-            + "that flattens the profile, and the tests come out \"OK\" anyway, because the profile "
-            + "stays radially symmetric and only the amplitude is wrong. It cannot be detected, "
-            + "only avoided.\n\n"
-            + "How to get two: shoot ~15 flats, rotate the camera 180 degrees about "
-            + "the optical axis, shoot ~15 more, and stack the two sets SEPARATELY - "
-            + "that is in two session folders, one for each orientation.",
-              $"Fisierul ales nu e un master de flat:\n{path}\n\n"
-            + "Testul de rotatie la 180 de grade compara doua MASTERE de flat, adica doua "
-            + "stive calibrate de flat-uri - fisierele pe care Siril le scrie in process/ sau "
-            + $"in masters/, cu numele de forma {SirilSession.RatioPattern}.\n\n"
-            + "Cadrele individuale calibrate stau in acelasi folder si arata la fel "
-            + "(pp_flat_00001.fit si urmatoarele), dar NU merg: zgomotul unui singur cadru "
-            + "e de acelasi ordin cu semnalul cautat, deci o pereche de cadre da un "
-            + "rezultat sigur si fals.\n\n"
-            + "Prefixul \"pp_\" inseamna \"preprocesat\": flat-dark-ul si offsetul au fost deja "
-            + "scazute. Pe un flat necalibrat mai ramane un piedestal de cateva sute de ADU "
-            + "care aplatizeaza profilul, iar testele ies \"OK\" oricum, fiindca profilul "
-            + "ramane simetric radial si doar amplitudinea e gresita. Nu se poate detecta, "
-            + "doar evita.\n\n"
-            + "Cum obtii doua: fotografiezi ~15 flat-uri, rotesti aparatul 180 de grade in "
-            + "jurul axei optice, mai faci ~15, si stivuiesti cele doua seturi SEPARAT - "
-            + "adica in doua foldere de sesiune, cate unul pentru fiecare orientare.");
-
         // ------------------------------------------------------- the waiting screen
         //
         // A run a click starts waits for the opening chain (the "sequential, not parallel" rule
@@ -161,80 +120,6 @@ namespace FlatCheck.Wpf
         internal static string WaitingForOpeningChain() =>
             T("Waiting for the analyses started when the folder was opened to finish...",
               "Astept sa se termine analizele pornite la deschiderea folderului...");
-
-        /// <summary>The Ratio tab's waiting screen while the two masters are compared.</summary>
-        /// <returns>The line.</returns>
-        internal static string RatioComparing() => T("Comparing the two flat masters...",
-                                                     "Compar cele doua mastere de flat...");
-
-        /// <summary>
-        /// The tab's documentation, shown before any computation. This mode is the only one
-        /// that asks for something that cannot be deduced from a folder, so it is the only one
-        /// that must explain what it wants BEFORE, not after it has failed.
-        /// </summary>
-        /// <returns>The Ratio tab's documentation.</returns>
-        internal static string RatioNeedsTwoMasters() =>
-            T("WHAT IT DOES. It splits the non-radial structure of your flat in two: what is fixed to the "
-            + "CAMERA (lens, sensor - it divides out of the lights correctly) and what is fixed in the "
-            + "WORLD (an uneven panel, a sky gradient - it does not repeat). The verdict is the "
-            + "first part's, that is the verdict of the master you get by stacking both orientations.\n\n"
-
-            + "WHAT YOU NEED: TWO FLAT MASTERS, FROM TWO SESSIONS.\n"
-            + "  1. ~15 flats.\n"
-            + "  2. Rotate the camera 180 degrees about the optical axis. Move nothing "
-            + "else - not the tripod, not the source, not the distance.\n"
-            + "  3. ~15 more flats.\n"
-            + "  4. Stack the two sets SEPARATELY, in two session folders, with the "
-            + $"preprocessing script. You are left with two {SirilSession.FlatMasterName} files, "
-            + "one in each session - in masters/ or in process/, depending on the script.\n\n"
-
-            + "The rotation need not be exact. Vignetting is rotationally symmetric, so "
-            + "it cancels at any angle; the 180 degrees only serve to invert the "
-            + "external gradient, and an angle error only under-reports, it never "
-            + "over-reports.\n\n"
-
-            + "WHAT IT DOES NOT TELL YOU. Whether the part fixed to the camera is the lens (harmless) or "
-            + "something ON the lens - a strap, condensation, a crooked lens hood - that rotates "
-            + "with it and looks identical, but is no longer there for the lights. For that, "
-            + "compare two different sessions with the same lens.",
-              "CE FACE. Desparte structura ne-radiala a flat-ului tau in doua: ce e fixat de "
-            + "APARAT (obiectiv, senzor - se imparte corect din lights) si ce e fixat in "
-            + "LUME (panou neuniform, gradient de cer - nu se reproduce). Verdictul e al "
-            + "primei parti, adica al masterului pe care il obtii stivuind ambele orientari.\n\n"
-
-            + "DE CE AI NEVOIE: DOUA MASTERE DE FLAT, DIN DOUA SEDINTE.\n"
-            + "  1. ~15 flat-uri.\n"
-            + "  2. Rotesti aparatul 180 de grade in jurul axei optice. Nu muta nimic "
-            + "altceva - nici trepiedul, nici sursa, nici distanta.\n"
-            + "  3. Inca ~15 flat-uri.\n"
-            + "  4. Stivuiesti cele doua seturi SEPARAT, in doua foldere de sesiune, cu "
-            + $"scriptul de preprocesare. Iti raman doua fisiere {SirilSession.FlatMasterName}, "
-            + "cate unul in fiecare sesiune - in masters/ sau in process/, dupa script.\n\n"
-
-            + "Rotatia nu trebuie sa fie exacta. Vignetarea e rotational simetrica, deci "
-            + "se anuleaza la orice unghi; cele 180 de grade servesc doar la inversarea "
-            + "gradientului extern, iar o eroare de unghi doar subraporteaza, nu "
-            + "supraraporteaza.\n\n"
-
-            + "CE NU ITI SPUNE. Daca partea fixata de aparat e obiectivul (inofensiva) sau "
-            + "ceva PE obiectiv - curea, condens, parasolara stramba - care se roteste "
-            + "odata cu el si arata identic, dar la lights nu mai e acolo. Pentru asta "
-            + "compara doua sedinte diferite cu acelasi obiectiv.");
-
-        /// <summary>
-        /// The same file in both slots. Caught at the pick, not at the computation, so the good
-        /// selection from before is not lost.
-        /// </summary>
-        /// <returns>The explanation.</returns>
-        internal static string SameFileTwice() =>
-            T("The test compares two DIFFERENT stacks: one from before the camera's rotation, one "
-            + "from after. Dividing a file by itself gives 1 everywhere, so an "
-            + "external component of exactly zero - which does not mean \"a clean setup\", "
-            + "it means \"nothing was measured\".",
-              "Testul compara doua stive DIFERITE: una dinainte de rotatia aparatului, una "
-            + "de dupa. Impartind un fisier la el insusi iese 1 peste tot, deci o "
-            + "componenta externa de exact zero - care nu inseamna \"setup curat\", "
-            + "inseamna \"nu s-a masurat nimic\".");
 
         /// <summary>
         /// The master exists both in masters/ and in process/: two preprocessings on the same
@@ -330,16 +215,16 @@ namespace FlatCheck.Wpf
                "CE FEL - aici intra ochiul, dar nu de la zero"),
              T("The shape says what to change in the next session, not whether the flat is good. And "
              + "the figures do part of the work before you look: if \"tilt\" is "
-             + "close to the residual, it is a gradient, and the Ratio tab says whether it is fixed to the "
-             + "camera or in the world; if \"worst spot\" is far above the residual, it is something "
+             + "close to the residual, it is a gradient, and the map says in which direction; if "
+             + "\"worst spot\" is far above the residual, it is something "
              + "compact - a small leak, condensation - and \"local spots\" says where; and "
              + "if the dust warning appeared, the question is no longer whether the flat is "
              + "good, but what you use it for: the session whose lights have the same "
              + "spot, or the library. What is left for the eye is the guide under the map.",
                "Forma spune ce sa schimbi la sedinta urmatoare, nu daca flat-ul e bun. Si "
              + "cifrele fac o parte din treaba inainte sa te uiti: daca \"inclinare\" e "
-             + "aproape de reziduu, e un gradient, si tabul Ratio spune daca e fix pe "
-             + "aparat sau in lume; daca \"pata maxima\" e mult peste reziduu, e ceva "
+             + "aproape de reziduu, e un gradient, si harta spune in ce directie; daca "
+             + "\"pata maxima\" e mult peste reziduu, e ceva "
              + "compact - o scurgere mica, condens - si \"pete locale\" spune unde; iar "
              + "daca a aparut atentionarea de praf, intrebarea nu mai e daca flat-ul e "
              + "bun, ci pentru ce il folosesti: sesiunea ale carei lights au aceeasi "
@@ -544,12 +429,12 @@ namespace FlatCheck.Wpf
                "dipol (o parte albastra, cealalta rosie)"),
              T("A gradient, so a direction. It matches \"tilt\". An uneven "
              + "source, ambient light, or an obstruction lying asymmetrically over the "
-             + "lens. The Ratio tab says whether it is fixed in the world (the sky) or fixed to the camera "
-             + "(the diffuser, the lens hood).",
+             + "lens. Whether it is fixed in the world (the sky) or to the camera (the diffuser, the "
+             + "lens hood) one master cannot say; a second session with the same lens can.",
                "Un gradient, deci o directie. Se potriveste cu \"inclinare\". Sursa "
              + "neuniforma, lumina ambientala, sau un obstacol intins asimetric peste "
-             + "obiectiv. Tabul Ratio spune daca e fix in lume (cerul) sau fix pe aparat "
-             + "(difuzorul, parasolarul).")),
+             + "obiectiv. Daca e fix in lume (cerul) sau pe aparat (difuzorul, parasolarul) un "
+             + "singur master nu poate spune; o a doua sesiune cu acelasi obiectiv poate.")),
 
             (T("concentric circles or arcs",
                "cercuri sau arce concentrice"),
@@ -572,10 +457,10 @@ namespace FlatCheck.Wpf
 
             (T("a local spot in a corner or at an edge",
                "pata locala intr-un colt sau la o margine"),
-             T("A light leak: the viewfinder, the mount, the diffuser's side. It does not rotate with the sky, "
-             + "so the Ratio tab puts it on the camera.",
-               "Light leak: vizor, montura, latura difuzorului. Nu se roteste cu cerul, "
-             + "deci tabul Ratio o pune pe aparat.")),
+             T("A light leak: the viewfinder, the mount, the diffuser's side. It is fixed to the "
+             + "camera, so it comes back in every session until its cause is found.",
+               "Light leak: vizor, montura, latura difuzorului. E fixa pe aparat, deci "
+             + "revine in fiecare sesiune pana i se gaseste cauza.")),
 
             (T("a round spot in the centre",
                "pata rotunda in centru"),
@@ -755,7 +640,7 @@ namespace FlatCheck.Wpf
         //
         // The smoothing tab's guide. Like the others, it mirrors the README ("Netezire") with no
         // test linking them. Unlike the others it is OPEN by default: it is the tab's
-        // precondition, like the documentation on Ratio - a button that writes a 96 MB file
+        // precondition - a button that writes a 96 MB file
         // beside the master is not pressed before knowing what it does.
 
         /// <summary>What the button does and what it cannot know, before the list.</summary>
@@ -784,12 +669,12 @@ namespace FlatCheck.Wpf
                "ce pastreaza"),
              T("Everything smooth at the chosen scale: the vignetting, uneven corners, a gradient, "
              + "a monitor's wide blotches. It does not know what is the lens's and what is the source's - "
-             + "only --ratio separates them - so a bad illumination stays just as bad "
+             + "nothing here separates them - so a bad illumination stays just as bad "
              + "in the smoothed file. The structure battery below shows that what was the "
              + "lens's stayed: the figures move by less than half a point.",
                "Tot ce e neted la scara aleasa: vignetarea, colturile inegale, un gradient, "
              + "petele largi ale unui monitor. Nu stie ce e al obiectivului si ce e al sursei - "
-             + "doar --ratio le desparte - deci o iluminare proasta ramane la fel de proasta "
+             + "nimic de aici nu le desparte - deci o iluminare proasta ramane la fel de proasta "
              + "in fisierul netezit. Bateria de structura de dedesubt arata ca ce era al "
              + "obiectivului a ramas: cifrele se misca sub o jumatate de punct.")),
 

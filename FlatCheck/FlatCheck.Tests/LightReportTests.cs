@@ -122,7 +122,7 @@ public class LightReportTests
     /// precisely because none can be measured there.
     /// </summary>
     [Fact]
-    public void TheRefusalExplainsTheDegeneracyAndPointsAtTheRatioTest()
+    public void TheRefusalExplainsTheDegeneracyAndPointsAtTheStructureTests()
     {
         var s = new SuitabilityResult { Level = FovLevel.TooWide, FovDeg = 70.4, Source = "WCS" };
         var w = new StringWriter();
@@ -132,17 +132,17 @@ public class LightReportTests
 
         Assert.Contains("TESTUL NU SE APLICA", text);
         Assert.Contains("degenerare geometrica", text);
-        Assert.Contains("--ratio", text);
+        Assert.Contains("testele de structura", text);
         Assert.DoesNotContain("componenta radiala", text);
     }
 
     /// <summary>
     /// The window's field line, warning and refusal live here with the console's: they quote
-    /// the field limits from Th, and the refusal names the Ratio tab where the console names
-    /// --ratio.
+    /// the field limits from Th, and the refusal names the Structure tab where the console names
+    /// the structure tests.
     /// </summary>
     [Fact]
-    public void TheWindowsFieldTextsQuoteThAndTheRefusalNamesTheRatioTab()
+    public void TheWindowsFieldTextsQuoteThAndTheRefusalNamesTheStructureTab()
     {
         var marginal = new SuitabilityResult { Level = FovLevel.Marginal, FovDeg = 30.0, Source = "WCS" };
         var ok = new SuitabilityResult { Level = FovLevel.Ok, FovDeg = 12.0, Source = "WCS" };
@@ -154,8 +154,7 @@ public class LightReportTests
 
         string refusal = LightReport.TooWideText(new SuitabilityResult { Level = FovLevel.TooWide, FovDeg = 70.4, Source = "WCS" });
         Assert.Contains($"Peste {Th.LightFovMax:F0} de grade", refusal);
-        Assert.Contains("tabul Ratio", refusal);
-        Assert.DoesNotContain("--ratio", refusal);
+        Assert.Contains("tabul Structura", refusal);
     }
 
     /// <summary>

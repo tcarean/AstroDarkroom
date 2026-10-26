@@ -105,51 +105,6 @@ public class RunsTests
         Assert.Equal(run.Result.Structure.Height, img.Height);
     }
 
-    // ---------------------------------------------------------------- A/B ratio
-
-    [Fact]
-    public void RatioRun_ProducesTheSameNumbersAsTheAnalyzer()
-    {
-        using var ws = new TempWorkspace();
-        string a = WriteFlat(ws, "a.fit");
-        string b = ws.WriteFile("b.fit",
-            FitsTestData.BuildFits(Size, Size,
-                FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.12)));
-
-        var direct = RatioAnalyzer.Analyze(ImageLoader.LoadImage(a), ImageLoader.LoadImage(b));
-        var run = RatioRun.Execute(a, b, new StringWriter());
-
-        Assert.Equal(direct.WorldPtpPct, run.Result.WorldPtpPct, 12);
-        Assert.Equal(direct.WorldErrPct, run.Result.WorldErrPct, 12);
-        Assert.Equal(direct.Sensor.CornerSpreadPct, run.Result.Sensor.CornerSpreadPct, 12);
-        Assert.Equal(direct.Verdict, run.Result.Verdict);
-
-        // Two maps: the residual of the camera-fixed part, and the A/B ratio.
-        Assert.NotNull(run.Png);
-        Assert.NotNull(run.SecondaryPng);
-        Assert.NotEqual(run.Png, run.SecondaryPng);
-    }
-
-    /// <summary>
-    /// The provenance comes from the FITS headers, not from the names: it is the only place
-    /// in the report where one sees whether the two stacks really can come from two
-    /// different orientations.
-    /// </summary>
-    [Fact]
-    public void RatioRun_ReadsTheStackProvenanceFromTheHeaders()
-    {
-        using var ws = new TempWorkspace();
-        string a = WriteFlat(ws, "a.fit");
-        string b = WriteFlat(ws, "b.fit");
-
-        var run = RatioRun.Execute(a, b, new StringWriter());
-
-        // The fixtures have no STACKCNT/DATE-OBS, and their absence is not an error.
-        Assert.Equal(0, run.Result.StackCountA);
-        Assert.Null(run.Result.DateObsA);
-        Assert.Contains("necunoscut", RatioReport.Provenance(run.Result.StackCountA, run.Result.DateObsA));
-    }
-
     // ---------------------------------------------------------------- exposure
 
     [Fact]
@@ -402,7 +357,6 @@ public class RunsTests
         var run = HistEqRun.Execute(WriteCfaFlat(ws), new StringWriter());
 
         Assert.Equal(HistEqRun.EncodeComposite(run.Result), run.Png);
-        Assert.Null(run.SecondaryPng);
     }
 
     [Fact]

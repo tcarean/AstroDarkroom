@@ -88,7 +88,7 @@ public class HistEqReportTests
 
         Assert.Contains("netezit", s);
         Assert.Contains("ZGOMOTOS", s);
-        Assert.Contains("--ratio", s);
+        Assert.Contains("poza nu spune", s);
         Assert.NotEqual(HistEqReport.MasterVersusFrame(), s);
     }
 

@@ -22,7 +22,7 @@
 // one and +10% on the other. On a fixed scale two sessions compare at a glance, and saturation
 // has a meaning - "out of the band".
 //
-// WHY IT IS A CLASS OF ITS OWN, used by five tabs. Structure, Ratio, Netezire, Sintetic and Split
+// WHY IT IS A CLASS OF ITS OWN, used by four tabs. Structure, Netezire, Sintetic and Split
 // all show a residual on the residual scale, so all want the same switch. Copies of the list of
 // caps would have diverged at the first adjustment, and the list is NOT the window's anyway: it
 // comes from PngWriter.FixedCapsPct, which takes it from Th.Resid*.

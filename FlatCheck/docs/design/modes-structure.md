@@ -48,13 +48,14 @@ tile reads 9.3 % on it and never carries a gradient. Pinned by
 `ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`.
 
 What the mode gives is an **upper bound** on the flat error, not the error (ADR 0015: the sum
-of a camera-fixed part and a world-fixed part, which one master cannot separate; mode 2 does).
+of a camera-fixed part and a world-fixed part, which one master cannot separate; nothing in
+the tool does since the `--ratio` mode left, ADR 0067).
 The bound is still the right thing to run first, because it is the only test that costs no
 extra shooting.
 
 **The sixth test: the master's vignetting against the lens profiles** (`--raw <flat.NEF>`
 or `--lens <text>`; the window does it by itself when `flats/` holds a raw). ADR 0031 holds
-the decision and every measured reason: why the five tests and `--ratio` are blind to a
+the decision and every measured reason: why the five tests (and any rotation) are blind to a
 radial excess (the tablet masters of 2026-09-18), the depth measured with the master's own
 operator (ADR 0013), no new threshold (`Stats.DepthErrorPct`, `2^|D| - 1`, onto the residual
 scale), the two scales for one number and option A over option B, the nearest profile's

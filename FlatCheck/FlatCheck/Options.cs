@@ -40,7 +40,6 @@ namespace FlatCheck
     internal sealed class Options
     {
         internal string Image;
-        internal string Ratio;
         internal bool Light;
         internal bool Expo;
         internal bool Sky;
@@ -100,7 +99,7 @@ namespace FlatCheck
         { "--light", "--expo", "--sky", "--histeq", "--rainbow", "--lenses", "-h", "--help" };
 
         static readonly HashSet<string> ValueFlags = new()
-        { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale",
+        { "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale",
           "--synthetic", "--lens", "--source", "--focal", "--fstop", "--crop", "--profiles", "--against", "--raw" };
 
         /// <summary>
@@ -146,7 +145,6 @@ namespace FlatCheck
 
                     switch (a)
                     {
-                        case "--ratio": o.Ratio = v; break;
                         case "-o":
                         case "--out": o.OutPng = v; break;
                         case "--sat":

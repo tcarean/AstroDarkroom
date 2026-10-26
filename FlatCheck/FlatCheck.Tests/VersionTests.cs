@@ -127,7 +127,6 @@ public class VersionTests
         string png = ws.PathTo("out.png");
 
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "-o", png));
-        Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--ratio", flat, "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--light", "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--expo"));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--histeq", "-o", png));
@@ -151,7 +150,6 @@ public class VersionTests
         string png = ws.PathTo("out.png");
 
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "-o", png));
-        Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--ratio", flat, "-o", png));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--light", "-o", png));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--expo"));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--histeq", "-o", png));

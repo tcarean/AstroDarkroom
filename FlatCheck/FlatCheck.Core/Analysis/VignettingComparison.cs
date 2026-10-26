@@ -22,9 +22,9 @@
 // by construction to a RADIAL excess: the tablet masters (2026-09-18, Tokina 20 mm
 // f/2.8, four orientations 90 degrees apart) came out PERFECT on all five with 1.26 stops
 // of vignetting, when the two databases give 0.67-0.92 for this lens - the panel's angular
-// falloff, made radial by the rotation. --ratio is just as blind (everything that rotates
-// with the camera or is symmetrised by the rotation escapes it). The only external reference
-// the tool has is the lens's model, and that is the comparison.
+// falloff, made radial by the rotation. More rotations do not help either: everything that
+// rotates with the camera or is symmetrised by the rotation escapes them. The only external
+// reference the tool has is the lens's model, and that is the comparison.
 //
 // HOW IT IS MEASURED. Not by evaluating the polynomial at the corner point, but by building the
 // model's raster at the size of the analysis raster (SyntheticFlatBuilder) and running EXACTLY

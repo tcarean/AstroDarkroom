@@ -113,7 +113,7 @@ The Romanian goldens and every test written before run in Romanian through the m
 initializer and need no `--lang`. `EnglishOutputTests` runs the 31 main golden scenarios with
 `--lang en` and pins each as `Golden/en_<name>.txt`, then runs it with `--lang ro` and asserts
 the same exit code and the same numbers (every digit run, sorted, compared as a multiset), and
-scans the English output, outside the workspace paths, for Romanian words. It runs the 43 parity
+scans the English output, outside the workspace paths, for Romanian words. It runs the 39 parity
 scenarios in English against their committed Romanian goldens for the numbers too. A new main
 golden scenario is added to `EnglishOutputTests.Arguments` as well. `LanguageTests` pins the
 parsing, the scope and the English error of a bad value. `WindowLanguageTests` pins the

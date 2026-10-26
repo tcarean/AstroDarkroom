@@ -109,14 +109,14 @@ namespace FlatCheck
             foreach (string line in SameFlatLines) w.WriteLine("    " + line);
             if (Ui.Current == UiLanguage.Romanian)
             {
-                w.WriteLine("    Pe date ca astea raspunsul il da testul de rotatie 180 (--ratio), care");
-                w.WriteLine("    valideaza flat-ul fara sa implice cerul deloc. Vezi README, sectiunea");
+                w.WriteLine("    Pe date ca astea flat-ul se judeca singur, pe testele de structura ale");
+                w.WriteLine("    masterului, care nu implica cerul deloc. Vezi README, sectiunea");
                 w.WriteLine("    despre cand se poate folosi --light.");
             }
             else
             {
-                w.WriteLine("    On data like these the answer comes from the 180 rotation test (--ratio), which");
-                w.WriteLine("    validates the flat without involving the sky at all. See the README, the section");
+                w.WriteLine("    On data like these the flat has to be judged on its own, on the structure tests");
+                w.WriteLine("    of the master, which do not involve the sky at all. See the README, the section");
                 w.WriteLine("    on when --light can be used.");
             }
         }
@@ -171,7 +171,7 @@ namespace FlatCheck
         };
 
         /// <summary>Why everything that moves during a series is sky, in both applications; the
-        /// console then points at --ratio, the window at the Ratio tab.</summary>
+        /// console then points at the structure tests, the window at the Structure tab.</summary>
         static string[] SameFlatLines => new[]
         {
             T("The flat is the same on every frame by construction - it was divided out of",
@@ -198,8 +198,8 @@ namespace FlatCheck
 
         // ------------------------------------------------------------ for the window
         // The same correlation figure and the same reasons as WriteSummary, in the window's
-        // layout: no column indentation, paragraphs, and the Ratio tab named where the console
-        // names --ratio.
+        // layout: no column indentation, paragraphs, and the Structure tab named where the
+        // console names the structure tests.
 
         /// <summary>The sky correlation for the window's figures, or why it does not
         /// apply.</summary>
@@ -217,8 +217,8 @@ namespace FlatCheck
         /// reasons as in the console report, only without the column indentation.
         /// </summary>
         /// <param name="r">The combined series; not conclusive.</param>
-        /// <returns>One paragraph per reason, then the closing paragraph pointing at the Ratio
-        /// tab, separated by blank lines.</returns>
+        /// <returns>One paragraph per reason, then the closing paragraph pointing at the
+        /// Structure tab, separated by blank lines.</returns>
         internal static string ReasonsText(LightSeriesResult r)
         {
             var parts = new System.Collections.Generic.List<string>();
@@ -230,8 +230,8 @@ namespace FlatCheck
             }
 
             parts.Add(string.Join(" ", SameFlatLines)
-                    + T(" On data like these the answer comes from the Ratio tab, which validates the flat without involving the sky at all.",
-                        " Pe date ca astea raspunsul il da tabul Ratio, care valideaza flat-ul fara sa implice cerul deloc."));
+                    + T(" On data like these the flat has to be judged on its own, on the Structure tab, which does not involve the sky at all.",
+                        " Pe date ca astea flat-ul se judeca singur, in tabul Structura, care nu implica cerul deloc."));
 
             return string.Join("\n\n", parts);
         }

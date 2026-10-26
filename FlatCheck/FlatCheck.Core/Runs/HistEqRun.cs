@@ -23,7 +23,6 @@
 // window on demand, through the functions below, and cached per chip: they are up to five
 // images of 1500x1000, and encoding them all in advance is exactly the problem the map cache
 // exists for.
-// RunOutcome.SecondaryPng stays null here.
 
 using System.IO;
 

@@ -245,67 +245,6 @@ public class SirilSessionTests
         Assert.Empty(s.LightSeries());
     }
 
-    // ------------------------------------------------------- what a flat master is
-
-    /// <summary>
-    /// A session's overall master IS a flat master, so it is a valid input - and in the
-    /// normal flow it really IS the input: the two orientations are two sittings, so two
-    /// folders, and pp_flat_stacked.fit is taken from each.
-    ///
-    /// There was an exclusion of it, until the tab was rewritten. It was not a domain rule:
-    /// it was a PRESELECTION fix from a time when the tab filled a list by itself from
-    /// process/ and, the sort being ordinal, "pp_flat_stacked.fit" fell after
-    /// "pp_flat_A/B.fit" and landed on set B's preselection. Without the list, the reason
-    /// went away.
-    /// </summary>
-    [Fact]
-    public void TheOverallFlatMasterIsAValidInput()
-    {
-        using var ws = new TempWorkspace();
-        var s = Session(ws);
-
-        Assert.True(SirilSession.IsFlatMasterName(s.FlatMasterPath));
-    }
-
-    /// <summary>The pattern matching is case-insensitive.</summary>
-    [Fact]
-    public void TheNameCheckIgnoresCase()
-    {
-        Assert.True(SirilSession.IsFlatMasterName(@"C:\undeva\PP_FLAT_STACKED.FIT"));
-        Assert.True(SirilSession.IsFlatMasterName(@"C:\undeva\Pp_Flat_Stacked_A.Fit"));
-    }
-
-    [Theory]
-    [InlineData("pp_flat_stacked.fit", true)]
-    [InlineData("pp_flat_stacked_A.fit", true)]
-    [InlineData(@"C:\altundeva\pp_flat_stacked_B.fit", true)]
-    [InlineData("flat_stacked.fit", false)]      // uncalibrated: without the pp_ prefix
-    [InlineData("pp_light_00001.fit", false)]
-    [InlineData("pp_flat_stacked.fits", false)]  // a different extension
-    [InlineData("pp_flat_stacked.tif", false)]
-    public void AFileIsAFlatMasterOnlyIfItsNameSaysSo(string path, bool expected)
-        => Assert.Equal(expected, SirilSession.IsFlatMasterName(path));
-
-    /// <summary>
-    /// The individual calibrated frames sit in the same process/, with the same prefix, and
-    /// look the same - but they are not masters. The pattern was "pp_flat*.fit" and caught
-    /// them, so the Ratio tab's dialog even offered them. A pair of individual frames gives a
-    /// confident and false result: a frame's noise is of the same order as the signal sought.
-    /// </summary>
-    [Theory]
-    [InlineData("pp_flat_00001.fit")]
-    [InlineData("pp_flat_00042.fit")]
-    [InlineData("pp_flat_.fit")]
-    public void R082_AnIndividualCalibratedFlatIsNotAFlatMaster(string name)
-        => Assert.False(SirilSession.IsFlatMasterName(@"C:\sesiune\process\" + name));
-
-    [Fact]
-    public void AnEmptyPathIsNotAFlatMaster()
-    {
-        Assert.False(SirilSession.IsFlatMasterName(null));
-        Assert.False(SirilSession.IsFlatMasterName(""));
-    }
-
     // ------------------------------------------------------------------ raw flats
 
     /// <summary>
@@ -419,8 +358,8 @@ public class SirilSessionTests
     }
 
     /// <summary>
-    /// Only the master by convention: a second stack in process/ is the Ratio tab's
-    /// business, and here it would appear as "one more master", which it is not.
+    /// Only the master by convention: a second stack in process/ is not the session's
+    /// master, and here it would appear as "one more master", which it is not.
     /// </summary>
     [Fact]
     public void AnotherStackInProcessIsNotACandidate()

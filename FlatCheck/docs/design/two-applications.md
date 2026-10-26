@@ -21,9 +21,9 @@ a path of its own. What differs is only what each application does with the thre
 
 | | console | window |
 |---|---|---|
-| input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders; the Histogram tab lists the flat master and every raw or FITS in `flats/`; the Netezire tab takes the session's master and writes beside it. A folder without a master in either `masters/` or `process/` can be preprocessed from the window, through the user's own `siril-cli` |
+| input | one file (or a folder, with `--light`) | one Siril session folder; the Histogram tab lists the flat master and every raw or FITS in `flats/`; the Netezire tab takes the session's master and writes beside it. A folder without a master in either `masters/` or `process/` can be preprocessed from the window, through the user's own `siril-cli` |
 | report | written to stdout | shown as panels, saved as `Test result.txt` |
-| map | written to `-o <path>` (`--ratio` writes a second, `-world`; `--smooth` a second, `-after`), always on the automatic scale | shown from memory (`--ratio` and the Netezire tab offer both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
+| map | written to `-o <path>` (`--smooth` writes a second, `-after`), always on the automatic scale | shown from memory (the Netezire tab offers both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
 | smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_smoothed.fit` beside the master, on a button, after asking about an existing file |
 | synthetic flat | written to `--synthetic <path>`, the lens from `--lens` text; `--against` compares two files | written to `pp_flat_stacked_synthetic.fit` beside the master, the lens from a searchable list, focal / f-stop / crop prefilled from the master's header and a raw in `flats/`; the comparison against the file follows the write by itself, and "Compara cu masterul" runs it alone on a file written earlier |
 | result | exit code | coloured verdict |
@@ -42,7 +42,7 @@ collapsed shape guide), why the guide is documentation and not a classifier, why
 gets the legend and no shape guide, why the guide texts mirror the README by hand and why the
 guide's ring row was rewritten are ADR 0036 (the ring row also ADR 0018). Two mechanics the
 ADRs do not spell out: the scale switch defaults to ±10 %, and the guide's text is in
-`Session/SessionMessages.cs`; Structure and Ratio get all three aids.
+`Session/SessionMessages.cs`; Structure gets all three aids.
 
 **The End to end tab explains itself in place, not in a folded guide** (ADR 0064): a `Faint`
 line under each of the four series figures, a tooltip on each header of the frames table and a
@@ -96,7 +96,7 @@ one, the report identical to `flatcheck master`, and the card under TESTE shows
 `StructureReport.GapText` computed by `StructureRun.Compare` on the master's header alone.
 The rows are `LensProfileRow` (public copy of the core's `ProfileRow`), rendered by a
 template local to `StructureView.xaml`; `Tests` stays five, so the scale heading and the
-Ratio and Netezire tabs, which reuse `StructureRows.Tests`, are untouched. `Populate` is
+Netezire tab, which reuses `StructureRows.Tests`, are untouched. `Populate` is
 `internal` and sets `HasResult` for the smoke test. The one thing the window cannot do
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
@@ -132,17 +132,15 @@ ADRs do not spell out:
   waiting. The Split's temp folder is different: its delete needs the dispatcher, hence the
   `MainWindow.OnClosing` wait below.
 
-**The Ratio tab is the one exception to "one folder in".** ADR 0033 holds why it proposes
-nothing, starts empty and documents itself before it can be used, the `pp_flat*.fit` trap at
-both layers (the candidate list, then the file dialogs), `RatioPattern` and why its text
-properties are instance properties. It is not in the opening chain; a pair picked while the
-chain still runs, or while another tab computes, waits for the one `HeavyRunGate` every heavy
-run takes (ADR 0061, R-082), so its two masters never load beside anyone else's.
+**Every tab takes the one open folder.** The Ratio tab, which took two files chosen by hand
+from two other folders, left with its mode on 2026-10-26 (ADR 0067; ADR 0033 holds what it
+was). One mechanic it taught stays everywhere: a tab's constant texts are instance properties,
+because `{Binding}` resolves through the DataContext and never sees a static one.
 
 **One gate for every heavy run.** `MainViewModel` owns the `HeavyRunGate` and hands it to
 every tab's `Attach`; `RunChainAsync` holds it from the structure run to the end of the series
 (one lease, so a click during the chain waits for the whole chain), and each click-run takes it
-around its computation through `TabViewModel.EnterGateAsync`, in a `using`: Ratio, Expo,
+around its computation through `TabViewModel.EnterGateAsync`, in a `using`: Expo,
 Histogram, Netezire (run and proposal), Sintetic (write and comparison). The Split, which has
 no overlay, waits for the gate before its copies start and holds it only around its analysis
 of the part masters, not through the Siril runs. The gate wait takes the run's own token, so a
@@ -177,16 +175,14 @@ preselected and not run at open, the smoothed master as a third kind of row (chi
   running frame's own token and starts over, and a superseded run may not touch the screen.
   That last part is general and lives in `TabViewModel.RunGuardedAsync`: it numbers its runs
   and lets only the latest one clear the busy state, show an error or drop the result; the
-  Ratio tab overlaps the same way on a quick re-choice, and the other tabs never overlap runs,
-  so for them nothing changes. `TabViewModelTests` pins it with a stub tab. Each view is a
+  other tabs never overlap runs, so for them nothing changes. `TabViewModelTests` pins it with a stub tab. Each view is a
   bitmap made on the UI thread straight from the full-resolution raster (`RasterBitmaps`), with
   no PNG in between, and cached per chip and per state of the false-colours checkbox
   (`modes-histeq.md`, "The false colours").
 
 **The Netezire tab runs on a button and never on open**, waits for the gate, writes
 after the numbers are on screen, asks about an existing file, and its output never becomes the
-session's master: ADR 0036, with ADR 0033 for why the smoothed stack still matches
-`RatioPattern`. Mechanics the ADR does not spell out:
+session's master: ADR 0036. Mechanics the ADR does not spell out:
 
 - Its guide (`SessionMessages.SmoothGuideRows`, mirrored in the README by hand) is the one
   guide that starts *expanded*: it is the button's precondition.
@@ -194,7 +190,7 @@ session's master: ADR 0036, with ADR 0033 for why the smoothed stack still match
   output is `pp_flat_stacked_smoothed.fit` in the master's own folder
   (`SirilSession.SmoothedMasterPath`, `SmoothedSuffix`).
 - The tab keeps the two rasters (removed component, smoothed flat's residual) behind a radio
-  toggle, cached per (map, cap) like Ratio; `MapScaleViewModel` took a constructor argument
+  toggle, cached per (map, cap); `MapScaleViewModel` took a constructor argument
   for its default cap so this tab can start at ±2 %, where at ±10 % the map would be white.
   `Populate` is `internal` and sets `HasResult`, so the smoke test renders the tab from an
   analyzer result without writing a file.

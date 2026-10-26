@@ -1,7 +1,7 @@
 # 0033. The window takes one Siril session folder; the Ratio tab is the exception and proposes nothing
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the Ratio tab superseded by 0067
 
 ## Context
 

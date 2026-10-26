@@ -40,7 +40,7 @@ Copyright (C) 2026 Tudor Carean
 
     INFORMATIV: fisierul netezit pastreaza TOT ce e neted in master si scoate tot ce nu e. Nu stie
     ce e al obiectivului si ce e al sursei: petele unui monitor, gradientul cerului sau
-    colturile inegale ale unui panou raman, fiindca sunt netede; doar --ratio le desparte.
+    colturile inegale ale unui panou raman, fiindca sunt netede; nimic de aici nu le desparte.
     Ce scoate - textura, praful, petele compacte - poate fi si ceva dorit: o umbra de
     praf e corecta pentru sesiunea ale carei lights o au si ele. O structura reala mai
     ingusta decat scara (~300 px) e luata partial; scara e singurul buton.

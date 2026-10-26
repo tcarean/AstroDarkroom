@@ -26,7 +26,7 @@ namespace FlatCheck.Tests;
 /// <c>--lang en</c>, pinned as <c>Golden/en_*.txt</c> - the place where the English wording is
 /// read and reviewed - and each is checked against the same run in Romanian: the same exit code
 /// and the same numbers, the same number of times, so a translation cannot move a figure. The
-/// 43 parity scenarios get the number check too, without goldens of their own. The Romanian
+/// 39 parity scenarios get the number check too, without goldens of their own. The Romanian
 /// goldens stay the reference for the figures.
 /// </summary>
 public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
@@ -38,7 +38,7 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
     /// <summary>The main golden scenarios, by the name of their Romanian golden.</summary>
     public static TheoryData<string> Scenarios => new()
     {
-        "structure_clean", "structure_gradient", "structure_reshoot", "ratio_world", "ratio_camera",
+        "structure_clean", "structure_gradient", "structure_reshoot",
         "light_undercorrected", "light_rejected_wide_field", "light_series_conclusive", "light_series_undetermined",
         "histeq_cfa", "histeq_mono", "histeq_rainbow", "expo_cfa", "expo_cfa_bayerpat", "expo_cfa_sky", "expo_rejects_debayered",
         "expo_manual_scale", "help", "smooth_clean", "smooth_textured", "smooth_refuses_cube", "smooth_auto_proposed",
@@ -64,12 +64,6 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
             case "structure_clean": return new[] { Flat(ws, "clean.fit", radial), "-o", Out() };
             case "structure_gradient": return new[] { Flat(ws, "grad.fit", FitsTestData.WithLinearGradient(radial, s, 0.12)), "-o", Out() };
             case "structure_reshoot": return new[] { Flat(ws, "violent.fit", FitsTestData.WithLinearGradient(radial, s, 0.60)), "-o", Out() };
-            case "ratio_world":
-                return new[] { Flat(ws, "a.fit", FitsTestData.WithLinearGradient(radial, s, +0.12)), "--ratio",
-                               Flat(ws, "b.fit", FitsTestData.WithLinearGradient(radial, s, -0.12)), "-o", Out() };
-            case "ratio_camera":
-                var grad = FitsTestData.WithLinearGradient(radial, s, 0.12);
-                return new[] { Flat(ws, "a.fit", grad), "--ratio", Flat(ws, "b.fit", grad), "-o", Out() };
             case "light_undercorrected": return new[] { Flat(ws, "light.fit", radial), "--light", "-o", Out() };
             case "light_rejected_wide_field":
                 return new[] { ws.WriteFile("light.fit", FitsTestData.BuildFits(s, s, radial, extraCards: FitsTestData.WcsCards(0.1))),
