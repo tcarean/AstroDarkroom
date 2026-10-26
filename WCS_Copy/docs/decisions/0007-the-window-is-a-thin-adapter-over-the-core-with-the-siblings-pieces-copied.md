@@ -27,6 +27,13 @@ the recommended options.
   names the console's flag (`Use --force if you know what you are doing.`) while the window
   offers a check box for the same thing; the sentence is the core's, pinned by the console's
   tests, and the window shows it verbatim rather than reword it.
+- **The core runs off the window's thread, the two buttons off until it ends** (added after
+  the code review of 2026-10-26). An in-place copy streams the whole data area through a temp
+  file, seconds on a large stack, and a window that computes nothing still must not freeze
+  while the core works; the request is built on the window's thread and the outcome shown
+  back on it, so the three things above are unchanged. The paths reach the core without their
+  surrounding whitespace, and a header without `NAXIS1` or `NAXIS2` shows no fact line (the
+  reader's -1 is not a size).
 - **The copied pieces stay copies**, each marked `copied from` in its header, a fix going to
   its source first: `Presentation/DarkTitleBar.cs` (AstroDarkroom's, LightsCheck's before it),
   `Presentation/TExtension.cs` and `Presentation/Mvvm.cs` (DarksCheck's, FlatCheck's

@@ -35,6 +35,9 @@ public sealed class MainViewModel : ObservableObject
     private bool _writeInPlace = true;
     private bool _includeOptical = true;
     private bool _force;
+    private bool _sourceExists;
+    private bool _destExists;
+    private bool _running;
     private string _sourceFacts = "";
     private string _destFacts = "";
     private WcsCopyOutcome? _outcome;
@@ -47,7 +50,8 @@ public sealed class MainViewModel : ObservableObject
         {
             if (Set(ref _source, value))
             {
-                SourceFacts = Facts(value, source: true);
+                _sourceExists = File.Exists(Clean(value));
+                SourceFacts = _sourceExists ? Facts(Clean(value), source: true) : "";
                 RaiseCanRun();
             }
         }
@@ -61,7 +65,8 @@ public sealed class MainViewModel : ObservableObject
         {
             if (Set(ref _dest, value))
             {
-                DestFacts = Facts(value, source: false);
+                _destExists = File.Exists(Clean(value));
+                DestFacts = _destExists ? Facts(Clean(value), source: false) : "";
                 RaiseCanRun();
             }
         }
@@ -129,8 +134,8 @@ public sealed class MainViewModel : ObservableObject
         private set => Set(ref _destFacts, value);
     }
 
-    /// <summary>True when both paths name existing files, so a preview can run (R-030).</summary>
-    public bool CanPreview => File.Exists(_source) && File.Exists(_dest);
+    /// <summary>True when both paths name existing files and no run is in flight, so a preview can run (R-030).</summary>
+    public bool CanPreview => !_running && _sourceExists && _destExists;
 
     /// <summary>True when a preview can run and, for a new file, its path is set (R-030).</summary>
     public bool CanCopy => CanPreview && (_writeInPlace || !string.IsNullOrWhiteSpace(_output));
@@ -170,20 +175,46 @@ public sealed class MainViewModel : ObservableObject
     public bool HasNotes => Notes.Count > 0;
 
     /// <summary>Runs the core's dry run on the boxes and shows its outcome (R-031).</summary>
-    public void Preview() => Show(WcsCopy.Run(Request(dryRun: true)));
+    /// <returns>Completes once the outcome is shown.</returns>
+    public Task Preview() => RunAsync(dryRun: true);
 
     /// <summary>Runs the copy on the boxes, shows its outcome and reads the destination's facts again (R-032).</summary>
-    public void Copy()
+    /// <returns>Completes once the outcome is shown and the facts are read.</returns>
+    public async Task Copy()
     {
-        Show(WcsCopy.Run(Request(dryRun: false)));
-        DestFacts = Facts(_dest, source: false);
+        await RunAsync(dryRun: false).ConfigureAwait(true);
+        DestFacts = Facts(Clean(_dest), source: false);
     }
 
-    /// <summary>The request the boxes and the options describe.</summary>
+    /// <summary>
+    /// Runs the core on a thread-pool thread, the commands off meanwhile (R-030): an in-place
+    /// copy streams the whole data area through a temp file, seconds on a large stack, and the
+    /// window must stay live. The request is built here, on the caller's thread, and the
+    /// outcome is shown back on it.
+    /// </summary>
+    /// <param name="dryRun">True to list the cards and write nothing.</param>
+    /// <returns>Completes once the outcome is shown.</returns>
+    private async Task RunAsync(bool dryRun)
+    {
+        WcsCopyRequest request = Request(dryRun);
+        _running = true;
+        RaiseCanRun();
+        try
+        {
+            Show(await Task.Run(() => WcsCopy.Run(request)).ConfigureAwait(true));
+        }
+        finally
+        {
+            _running = false;
+            RaiseCanRun();
+        }
+    }
+
+    /// <summary>The request the boxes and the options describe, the paths without their surrounding whitespace.</summary>
     /// <param name="dryRun">True to list the cards and write nothing.</param>
     /// <returns>The request for <see cref="WcsCopy.Run"/>.</returns>
     private WcsCopyRequest Request(bool dryRun)
-        => new(_source, _dest, _writeInPlace ? null : _output, _includeOptical, _force, dryRun);
+        => new(Clean(_source), Clean(_dest), _writeInPlace ? null : Clean(_output), _includeOptical, _force, dryRun);
 
     /// <summary>Keeps an outcome and raises every property the outcome card binds.</summary>
     /// <param name="outcome">The core's outcome; not null.</param>
@@ -201,27 +232,27 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    /// <summary>Raises the two enabling properties after a path or the output choice changed.</summary>
+    /// <summary>Raises the two enabling properties after a path, the output choice or the running state changed.</summary>
     private void RaiseCanRun()
     {
         Raise(nameof(CanPreview));
         Raise(nameof(CanCopy));
     }
 
+    /// <summary>A path as typed, without the whitespace around it: a box is typed into, and a name with a space in front is not the file meant.</summary>
+    /// <param name="path">The box's text; empty is allowed.</param>
+    /// <returns>The path trimmed at both ends.</returns>
+    private static string Clean(string path) => path.Trim();
+
     /// <summary>
     /// The two facts of a header, worded for the box they sit under: the size, and whether
     /// <c>CTYPE1</c> is present. The only reading of a file the window does itself (ADR 0007).
     /// </summary>
-    /// <param name="path">The file's path; empty, missing or unreadable gives an empty string.</param>
+    /// <param name="path">The file's path; one that cannot be read, or whose header has no <c>NAXIS1</c> or <c>NAXIS2</c>, gives an empty string.</param>
     /// <param name="source">True for the source's wording, false for the destination's.</param>
-    /// <returns>One line, or an empty string when the file cannot be read: the run will say why.</returns>
+    /// <returns>One line, or an empty string when there is no size to show: the run will say why.</returns>
     internal static string Facts(string path, bool source)
     {
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-        {
-            return "";
-        }
-
         FitsHeader header;
         try
         {
@@ -232,8 +263,14 @@ public sealed class MainViewModel : ObservableObject
             return "";
         }
 
+        // -1 is the reader's "no such key": a header without an image size has no fact to show.
         int width = header.GetInt("NAXIS1");
         int height = header.GetInt("NAXIS2");
+        if (width < 0 || height < 0)
+        {
+            return "";
+        }
+
         bool solved = header.Contains("CTYPE1");
         if (source)
         {

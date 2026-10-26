@@ -35,15 +35,24 @@ the command line. The three handlers of the buttons call the view-model and noth
 
 - **Build a request.** `Source`, `Dest`, `Output`, `WriteInPlace` (its mirror `WritesNewFile`
   serves the second radio button and the output row), `IncludeOptical` and `Force` become a
-  `WcsCopyRequest` in `Request(dryRun)`; `Preview()` runs it with the dry run, `Copy()`
-  without. `CanPreview` is "both paths name existing files", `CanCopy` adds "the output path
-  is not blank when a new file is chosen"; both are raised whenever a path or the choice
-  changes, and the buttons bind them. The view-model never guards the commands itself: a run
-  on a missing file is the core's refusal, in the core's words.
+  `WcsCopyRequest` in `Request(dryRun)`, the three paths through `Clean` (trimmed: a box is
+  typed into, and a name with a space in front is not the file meant); `Preview()` runs it
+  with the dry run, `Copy()` without. Both go through `RunAsync`: the request is built on the
+  caller's thread, the core runs in a `Task.Run` (an in-place copy streams the whole data
+  area through a temp file, seconds on a large stack, and the window must stay live), and the
+  outcome is shown back on the caller's thread; the window's two handlers are `async void`
+  over them. `CanPreview` is "both paths name existing files and no run is in flight",
+  `CanCopy` adds "the output path is not blank when a new file is chosen"; both are raised
+  whenever a path, the choice or the running state changes, and the buttons bind them, so a
+  second click during a run finds the buttons off. The existence of each file is checked once,
+  when its path is set (`_sourceExists`, `_destExists`), not in the getters: the boxes update
+  on every keystroke. The view-model never guards the commands itself: a run on a missing
+  file is the core's refusal, in the core's words.
 - **Read two facts of each header.** `Facts(path, source)` is the one reading of a file the
   window does: `FitsHeader.ReadPrimary`, `NAXIS1 x NAXIS2`, and whether `CTYPE1` is present,
   worded as `Source: 100 x 80, plate-solved` / `not plate-solved` and `Destination: 100 x 80`
-  / `, already plate-solved`; a file that is missing or that the reader refuses gives an empty
+  / `, already plate-solved`; a file that is missing (not read at all), that the reader refuses,
+  or whose header has no `NAXIS1` or `NAXIS2` (the reader's -1, not a size) gives an empty
   string, since the run will say why. The facts are read when a path is set and the
   destination's again after a copy, so an in-place copy shows up as `already plate-solved`.
 - **Show the outcome.** `Show(outcome)` keeps the `WcsCopyOutcome` and raises every bound
@@ -54,14 +63,16 @@ the command line. The three handlers of the buttons call the view-model and noth
 
 ## The application
 
-`App` reads `--lang` in its constructor, before `App.xaml`'s resources and the first view load,
-with `LanguageArgument.Extract` (the console's reader): the language becomes `Ui.Default`, a
-bad value is kept and said in an English message box once the window is up. `OnStartup` pins
-the invariant culture on the current thread and on `DefaultThreadCurrentCulture` (a WPF
+`App` reads the command line once, in its constructor, before `App.xaml`'s resources and the
+first view load: `Parse` takes `--lang` out with `LanguageArgument.Extract` (the console's
+reader) and then the first two existing files among the other arguments, in their order, so a
+`--lang` value is never mistaken for a file and a wrong argument never stops the window from
+opening; the result is a `StartArgs` record. The language becomes `Ui.Default` at once; a bad
+value is kept and said in an English message box once the window is up. `OnStartup` pins the
+invariant culture on the current thread and on `DefaultThreadCurrentCulture` (a WPF
 application cannot use `InvariantGlobalization`, FlatCheck's ADR 0037; the facts' figures must
-read as the console's), shows the window, and fills the boxes through `FilesFromArgs`: the
-first two existing files among the other arguments, in their order, so a `--lang` value is
-never mistaken for a file and a wrong argument never stops the window from opening.
+read as the console's), shows the window, and fills the boxes with the two files of
+`StartArgs`; `e.Args` is not read again.
 
 ## The theme and the pieces
 
@@ -92,6 +103,8 @@ bytes with the console's on a second fixture, the refusal line with the console'
 fail on any data-binding trace error, and in the English pass walk every `TextBlock` of the
 visual tree against a list of Romanian words; `COPYWCS_DUMP_SCREENS=<folder>` saves each
 render as a PNG. `AboutTests` bind the About view-model to `VersionInfo` and `LicenseInfo` and
-check the console prints the same five warranty lines; `AppTests` cover `--lang` and the files
-from the arguments; `IconTests` tie the sizes of the `.ico`, the script's `SIZES` line and the
-two `ApplicationIcon` paths together.
+check the console prints the same five warranty lines; `AppTests` cover `Parse`, `--lang` and
+the files from the arguments; `IconTests` tie the sizes of the `.ico`, the script's `SIZES`
+line and the two `ApplicationIcon` paths together. The tests that run the core await
+`Preview()` or `Copy()`; the smoke tests that do so run through `StaFixture.InvokeAsync`, since
+the outcome comes back on the dispatcher, which a blocking `Invoke` would hold.

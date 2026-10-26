@@ -508,6 +508,13 @@ title bar, made anew at every open. `AboutTests` as DarksCheck's (R-035).
   DarksCheck's way.
 - Nothing else deviated: 132 tests before, 168 after (36 in `tests/CopyWcs.Wpf.Tests`); the
   console's output is unchanged, `--help` included.
+- **After the code review (2026-10-26, a sixth commit):** the core runs in a `Task.Run` with
+  the buttons off meanwhile (the window froze for the whole in-place copy); the paths are
+  trimmed before the core sees them (` out.fit` wrote a file with a space in its name); a
+  header without `NAXIS1`/`NAXIS2` shows no fact line (it showed `-1 x -1`); `App.Parse`
+  reads the command line once, replacing `LanguageFromArgs` and `FilesFromArgs`; the licence
+  scan matches extensions case-insensitively; the icon script clips the grid with one
+  `ImageChops.multiply` (the `.ico` is byte-identical). 170 tests.
 
 ## Appendix A: the ADRs
 

@@ -15,14 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// App.xaml.cs - the application's start, after DarksCheck's and FlatCheck's: the language from
-// --lang before the first view, the invariant number culture by hand, and the two files from the
-// command line (R-034), so a shortcut or a "send to" can open the window on a pair.
+// App.xaml.cs - the application's start, after DarksCheck's and FlatCheck's: the command line
+// read once, in the constructor, for the language from --lang before the first view and for the
+// two files (R-034), so a shortcut or a "send to" can open the window on a pair; the invariant
+// number culture by hand.
 
 using System.Globalization;
 using System.Windows;
 
 namespace CopyWcs.Wpf;
+
+/// <summary>What the command line asks of the window (R-034).</summary>
+/// <param name="Language">The language of the last <c>--lang</c>; English when there is none or its value is not understood.</param>
+/// <param name="BadLanguage">The value of a <c>--lang</c> that names no language (an empty string for a <c>--lang</c> with none), to be said to the user; null otherwise.</param>
+/// <param name="Source">The first argument that names an existing file, as given; null when there is none.</param>
+/// <param name="Dest">The second such argument; null when there is none.</param>
+internal sealed record StartArgs(UiLanguage Language, string? BadLanguage, string? Source, string? Dest);
 
 /// <summary>
 /// The window application: sets the interface language from <c>--lang</c>, pins the number
@@ -30,26 +38,26 @@ namespace CopyWcs.Wpf;
 /// </summary>
 public partial class App : Application
 {
-    // The value of a --lang the start-up did not understand, kept for the message the window shows
-    // once it is up; null when there is nothing to say.
-    private readonly string? _unknownLanguage;
+    private readonly StartArgs _start;
 
     /// <summary>
-    /// Sets the interface language from the command line (R-034) before anything else: the
-    /// constructor runs before App.xaml's resources and the first view load, and both carry texts.
+    /// Reads the command line and sets the interface language (R-034) before anything else:
+    /// the constructor runs before App.xaml's resources and the first view load, and both carry
+    /// texts.
     /// </summary>
     public App()
     {
         string[] all = Environment.GetCommandLineArgs();
-        Ui.Default = LanguageFromArgs(all.Length > 1 ? all[1..] : [], out _unknownLanguage);
+        _start = Parse(all.Length > 1 ? all[1..] : []);
+        Ui.Default = _start.Language;
     }
 
     /// <summary>
     /// Sets the invariant number culture, shows <see cref="CopyWcs.Wpf.MainWindow"/>, says a
-    /// <c>--lang</c> value it did not understand, and fills the boxes from the first two
-    /// command-line arguments that are existing files.
+    /// <c>--lang</c> value it did not understand, and fills the boxes with the files the
+    /// constructor read.
     /// </summary>
-    /// <param name="e">The startup arguments; <c>e.Args</c> are the command-line arguments.</param>
+    /// <param name="e">The startup arguments; its <c>Args</c> are not read again, the constructor has them.</param>
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -61,29 +69,47 @@ public partial class App : Application
 
         // A --lang value not understood is said in English, and the window goes on in English
         // (R-034).
-        if (_unknownLanguage is not null)
+        if (_start.BadLanguage is not null)
         {
-            MessageBox.Show(window, LanguageArgument.BadValueMessage(_unknownLanguage), "CopyWcs", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(window, LanguageArgument.BadValueMessage(_start.BadLanguage), "CopyWcs", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        (string? source, string? dest) = FilesFromArgs(e.Args);
-        window.Start(source, dest);
+        window.Start(_start.Source, _start.Dest);
     }
 
     /// <summary>
-    /// The interface language a command line asks for: the language of its last <c>--lang</c>,
-    /// English when there is none or its value is not understood (R-034, R-020 to R-022).
+    /// Reads a command line once: the language of its last <c>--lang</c> (English when there is
+    /// none or its value is not understood; R-020 to R-022), and the first two other arguments
+    /// that are existing files, in their order, a <c>--lang</c> and its value left out; anything
+    /// else is ignored, so a wrong argument never stops the window from opening (R-034).
     /// </summary>
-    /// <param name="args">The command line without the executable; null is allowed and treated as
-    /// none.</param>
-    /// <param name="badValue">The value of a <c>--lang</c> that names no language (an empty string
-    /// for a <c>--lang</c> with none), to be said to the user; null otherwise.</param>
-    /// <returns>The language to set as <see cref="Ui.Default"/>.</returns>
-    internal static UiLanguage LanguageFromArgs(string[]? args, out string? badValue)
+    /// <param name="args">The command line without the executable; null is allowed and treated as none.</param>
+    /// <returns>The language, the value not understood if any, and the two files if any.</returns>
+    internal static StartArgs Parse(string[]? args)
     {
         LanguageArgument lang = LanguageArgument.Extract(args ?? []);
-        badValue = lang.BadValue;
-        return lang.Language ?? Ui.StartupDefault;
+
+        string? source = null;
+        string? dest = null;
+        foreach (string a in lang.Rest)
+        {
+            if (string.IsNullOrWhiteSpace(a) || !File.Exists(a))
+            {
+                continue;
+            }
+
+            if (source is null)
+            {
+                source = a;
+            }
+            else
+            {
+                dest = a;
+                break;
+            }
+        }
+
+        return new StartArgs(lang.Language ?? Ui.StartupDefault, lang.BadValue, source, dest);
     }
 
     /// <summary>
@@ -97,41 +123,5 @@ public partial class App : Application
     {
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-    }
-
-    /// <summary>
-    /// The first two arguments that are existing files, in their order, a <c>--lang</c> and its
-    /// value left out (R-034); anything else is ignored, so a wrong argument never stops the
-    /// window from opening.
-    /// </summary>
-    /// <param name="args">The command-line arguments; null is allowed and treated as none.</param>
-    /// <returns>The source and the destination, each as given, or null when no argument names
-    /// an existing file for it.</returns>
-    internal static (string? Source, string? Dest) FilesFromArgs(string[]? args)
-    {
-        if (args is null)
-        {
-            return (null, null);
-        }
-
-        string? source = null;
-        foreach (string a in LanguageArgument.Extract(args).Rest)
-        {
-            if (string.IsNullOrWhiteSpace(a) || !File.Exists(a))
-            {
-                continue;
-            }
-
-            if (source is null)
-            {
-                source = a;
-            }
-            else
-            {
-                return (source, a);
-            }
-        }
-
-        return (source, null);
     }
 }

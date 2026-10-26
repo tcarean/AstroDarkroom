@@ -118,15 +118,15 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>The Preview button: the core's dry run.</summary>
+    /// <summary>The Preview button: the core's dry run, off this thread; the buttons are off until it ends.</summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
-    private void Preview(object sender, RoutedEventArgs e) => _vm.Preview();
+    private async void Preview(object sender, RoutedEventArgs e) => await _vm.Preview().ConfigureAwait(true);
 
-    /// <summary>The Copy button: the core's copy.</summary>
+    /// <summary>The Copy button: the core's copy, off this thread; the buttons are off until it ends.</summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
-    private void CopyCards(object sender, RoutedEventArgs e) => _vm.Copy();
+    private async void CopyCards(object sender, RoutedEventArgs e) => await _vm.Copy().ConfigureAwait(true);
 
     /// <summary>The About button: the About window, modal, over this one (R-035).</summary>
     /// <param name="sender">The button.</param>

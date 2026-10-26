@@ -61,6 +61,11 @@ public class MainViewModelTests
         Assert.True(vm.CanPreview);
         Assert.True(vm.CanCopy);
 
+        // a path typed with spaces around it names the same file
+        vm.Source = "  " + f.Source + " ";
+        Assert.True(vm.CanPreview);
+        Assert.Equal("Sursa: 100 x 80, plate-solved", vm.SourceFacts);
+
         vm.WriteInPlace = false;
         Assert.True(vm.WritesNewFile);
         Assert.False(vm.CanCopy);
@@ -73,6 +78,23 @@ public class MainViewModelTests
         vm.Dest = f.FilePath("missing.fit");
         Assert.False(vm.CanPreview);
         Assert.False(vm.CanCopy);
+    }
+
+    /// <summary>The run goes off the window's thread, and both commands are off until it ends (R-030).</summary>
+    [Fact]
+    public async Task R030_TheCommandsAreOffWhileARunIsInFlight()
+    {
+        using WindowFixture f = new();
+        MainViewModel vm = Open(f);
+
+        Task run = vm.Preview();
+        Assert.False(vm.CanPreview);
+        Assert.False(vm.CanCopy);
+
+        await run;
+        Assert.True(vm.CanPreview);
+        Assert.True(vm.CanCopy);
+        Assert.True(vm.HasCards);
     }
 
     [Fact]
@@ -96,16 +118,26 @@ public class MainViewModelTests
         File.WriteAllText(f.FilePath("text.fit"), "not a FITS file at all, just text that is long enough to read");
         vm.Dest = f.FilePath("text.fit");
         Assert.Equal("", vm.DestFacts);
+
+        // a header the reader accepts but that names no image size (NAXIS = 0) says nothing
+        // either: the reader gives -1 for a missing key, and "-1 x -1" is not a fact of the file
+        List<string> noSize = FitsTestData.PlateSolvedCards()
+            .Where(c => !c.StartsWith("NAXIS1", StringComparison.Ordinal) && !c.StartsWith("NAXIS2", StringComparison.Ordinal))
+            .Select(c => c.StartsWith("NAXIS ", StringComparison.Ordinal) ? FitsTestData.Card("NAXIS", "0") : c)
+            .ToList();
+        using WindowFixture g = new(sourceCards: noSize);
+        vm.Source = g.Source;
+        Assert.Equal("", vm.SourceFacts);
     }
 
     [Fact]
-    public void R031_ThePreviewShowsTheConsolesDryRunLinesAndWritesNothing()
+    public async Task R031_ThePreviewShowsTheConsolesDryRunLinesAndWritesNothing()
     {
         using WindowFixture f = new();
         byte[] before = File.ReadAllBytes(f.Dest);
         MainViewModel vm = Open(f);
 
-        vm.Preview();
+        await vm.Preview();
 
         (int code, string[] lines, string stderr) = Console(f.Source, f.Dest, "--dry-run");
         Assert.Equal(0, code);
@@ -125,20 +157,20 @@ public class MainViewModelTests
 
         // without the optical keys: the console's --no-optical list
         vm.IncludeOptical = false;
-        vm.Preview();
+        await vm.Preview();
         (_, lines, _) = Console(f.Source, f.Dest, "--dry-run", "--no-optical");
         Assert.Equal("Chei care ar fi copiate (11):", vm.Heading);
         Assert.Equal(lines[1..].Select(l => l[2..]), vm.Cards);
     }
 
     [Fact]
-    public void R032_TheCopyInPlaceWritesTheConsolesBytes()
+    public async Task R032_TheCopyInPlaceWritesTheConsolesBytes()
     {
         using WindowFixture window = new();
         using WindowFixture console = new();
         MainViewModel vm = Open(window);
 
-        vm.Copy();
+        await vm.Copy();
 
         (int code, string[] lines, _) = Console(console.Source, console.Dest);
         Assert.Equal(0, code);
@@ -155,7 +187,7 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public void R032_TheCopyIntoANewFileWritesTheConsolesBytesAndLeavesTheDestination()
+    public async Task R032_TheCopyIntoANewFileWritesTheConsolesBytesAndLeavesTheDestination()
     {
         using WindowFixture window = new();
         using WindowFixture console = new();
@@ -166,7 +198,7 @@ public class MainViewModelTests
         vm.Force = false;
         vm.IncludeOptical = false;
 
-        vm.Copy();
+        await vm.Copy();
 
         (int code, _, _) = Console(console.Source, console.Dest, "-o", console.FilePath("out.fit"), "--no-optical");
         Assert.Equal(0, code);
@@ -176,14 +208,33 @@ public class MainViewModelTests
         Assert.Equal("Destinatia: 100 x 80", vm.DestFacts);
     }
 
+    /// <summary>A path typed with spaces around it names the same file: the core gets it trimmed, so the written file has no space in its name.</summary>
     [Fact]
-    public void R033_AMismatchIsRefusedInTheCoresWordsAndNothingIsWritten()
+    public async Task R032_ThePathsReachTheCoreWithoutTheirSurroundingWhitespace()
+    {
+        using WindowFixture f = new();
+        MainViewModel vm = Open(f);
+        string outFile = f.FilePath("out.fit");
+        vm.WriteInPlace = false;
+        vm.Output = "  " + outFile + " ";
+        Assert.True(vm.CanCopy);
+
+        await vm.Copy();
+
+        Assert.False(vm.HasError);
+        Assert.True(File.Exists(outFile));
+        Assert.Equal("Copiate 15 chei in " + outFile + ".", vm.Notes[0]);
+        Assert.Equal("dest.fit, out.fit, source.fit", string.Join(", ", Directory.GetFiles(f.Dir).Select(Path.GetFileName).Order()));
+    }
+
+    [Fact]
+    public async Task R033_AMismatchIsRefusedInTheCoresWordsAndNothingIsWritten()
     {
         using WindowFixture f = new(destWidth: 200);
         byte[] before = File.ReadAllBytes(f.Dest);
         MainViewModel vm = Open(f);
 
-        vm.Copy();
+        await vm.Copy();
 
         Assert.True(vm.HasOutcome);
         Assert.True(vm.HasError);
@@ -197,14 +248,14 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public void R033_AForcedMismatchCopiesAndShowsTheWarning()
+    public async Task R033_AForcedMismatchCopiesAndShowsTheWarning()
     {
         using WindowFixture window = new(destWidth: 200);
         using WindowFixture console = new(destWidth: 200);
         MainViewModel vm = Open(window);
         vm.Force = true;
 
-        vm.Copy();
+        await vm.Copy();
 
         (int code, string[] lines, _) = Console(console.Source, console.Dest, "--force");
         Assert.Equal(0, code);
@@ -216,14 +267,14 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public void R033_ASourceWithoutCtype1WarnsAndTheRunGoesOn()
+    public async Task R033_ASourceWithoutCtype1WarnsAndTheRunGoesOn()
     {
         List<string> cards = FitsTestData.PlateSolvedCards().Where(c => !c.StartsWith("CTYPE1", StringComparison.Ordinal)).ToList();
         using WindowFixture f = new(sourceCards: cards);
         MainViewModel vm = Open(f);
         Assert.Equal("Sursa: 100 x 80, fara plate solve", vm.SourceFacts);
 
-        vm.Preview();
+        await vm.Preview();
 
         Assert.Equal("ATENTIE: sursa nu pare plate-solved (lipseste CTYPE1).", Assert.Single(vm.Warnings));
         Assert.False(vm.HasError);
@@ -231,13 +282,13 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public void R033_AnUnreadableSourceOrANoKeySourceIsRefusedInTheCoresWords()
+    public async Task R033_AnUnreadableSourceOrANoKeySourceIsRefusedInTheCoresWords()
     {
         using WindowFixture f = new();
         MainViewModel vm = Open(f);
         vm.Source = f.FilePath("missing.fit");
 
-        vm.Preview();
+        await vm.Preview();
         Assert.True(vm.HasError);
         Assert.StartsWith("Nu pot citi sursa '", vm.Error, StringComparison.Ordinal);
         Assert.Equal(Console(f.FilePath("missing.fit"), f.Dest, "--dry-run").Stderr, vm.Error);
@@ -246,14 +297,14 @@ public class MainViewModelTests
         // those are left out): the heading of the preview is not shown
         vm.Source = f.Dest;
         vm.IncludeOptical = false;
-        vm.Preview();
+        await vm.Preview();
         Assert.Equal("Nicio cheie relevanta gasita in sursa. Nimic de copiat.", vm.Error);
         Assert.False(vm.HasHeading);
         Assert.False(vm.HasCards);
     }
 
     [Fact]
-    public void R036_TheFactsAndTheHeadingFollowTheLanguageOfTheRun()
+    public async Task R036_TheFactsAndTheHeadingFollowTheLanguageOfTheRun()
     {
         using WindowFixture f = new(destWidth: 200);
 
@@ -264,7 +315,7 @@ public class MainViewModelTests
             Assert.Equal("Destination: 200 x 80", vm.DestFacts);
             Assert.Equal("Refused", vm.RefusedHeading);
 
-            vm.Copy();
+            await vm.Copy();
             Assert.StartsWith("Different dimensions: source (100, 80) vs destination (200, 80).", vm.Error, StringComparison.Ordinal);
 
             vm.Source = f.Dest;

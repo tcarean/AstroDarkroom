@@ -73,7 +73,8 @@ public class LicenseHeaderTests
         {
             foreach (var f in Directory.EnumerateFiles(Path.Combine(root, project), "*", SearchOption.AllDirectories))
             {
-                if (!Kinds.Any(k => k.Ext == Path.GetExtension(f)))
+                // Case-insensitive, as the file system is: a .CS or .XAML is source too.
+                if (!Kinds.Any(k => k.Ext.Equals(Path.GetExtension(f), StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -98,7 +99,7 @@ public class LicenseHeaderTests
             : kind.Open + "\n" + string.Join("\n", Notice) + "\n" + kind.Close;
 
     private static (string Ext, string Open, string? Close) KindOf(string file)
-        => Kinds.First(k => k.Ext == Path.GetExtension(file));
+        => Kinds.First(k => k.Ext.Equals(Path.GetExtension(file), StringComparison.OrdinalIgnoreCase));
 
     private static string HeaderOf(string file)
     {

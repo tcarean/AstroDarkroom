@@ -34,7 +34,7 @@ Pillow is used only here, at generation time; nothing in the applications touche
 import math
 import os
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 # The sizes in the .ico. 20 and 40 are the title bar at 125 % and 250 % DPI, where Windows
 # would otherwise scale 16 or 32 and blur.
@@ -130,7 +130,8 @@ def draw(size):
     mask = Image.new("L", (px, px), 0)
     inner = (SOLVED[0] + 1.2, SOLVED[1] + 1.2, SOLVED[2] - 1.2, SOLVED[3] - 1.2)
     ImageDraw.Draw(mask).rounded_rectangle(scaled(inner, s), radius=2 * s, fill=255)
-    img.paste(layer, (0, 0), Image.composite(layer.getchannel("A"), mask, mask).point(lambda v: v))
+    # The grid's alpha, kept only where the mask is: the paste's mask.
+    img.paste(layer, (0, 0), ImageChops.multiply(layer.getchannel("A"), mask))
     d = ImageDraw.Draw(img)
     for i, (x, y, r) in enumerate(STARS):
         colour = STAR_WARM if i == len(STARS) - 1 else STAR

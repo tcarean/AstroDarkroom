@@ -84,8 +84,8 @@ public partial class WindowSmokeTests
     /// Romanian the buttons read as R-036 says.
     /// </summary>
     [Fact]
-    public void R036_BothWindowsRenderInEnglishWithNoRomanianWordAndInRomanian()
-        => _sta.Invoke(() =>
+    public Task R036_BothWindowsRenderInEnglishWithNoRomanianWordAndInRomanian()
+        => _sta.InvokeAsync(async () =>
         {
             using WindowFixture f = new(destWidth: 200);
             List<string> english;
@@ -93,13 +93,13 @@ public partial class WindowSmokeTests
             {
                 using BindingErrors errors = new();
                 MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, Force = true };
-                vm.Preview();
+                await vm.Preview();
                 Assert.True(vm.HasWarnings && vm.HasCards);
                 FrameworkElement window = (FrameworkElement)new MainWindow(vm).Content;
                 Render(window, name: "window-en");
                 english = TextsOf(window).ToList();
                 vm.Force = false;
-                vm.Preview();
+                await vm.Preview();
                 Assert.True(vm.HasError);
                 Render(window);
                 english.AddRange(TextsOf(window));
@@ -254,25 +254,25 @@ public partial class WindowSmokeTests
 
     /// <summary>The window with an outcome of every kind drawn: the refusal, the warning, the cards and the closing lines (R-037).</summary>
     [Fact]
-    public void R037_TheOutcomeCardRendersEveryKindWithNoBindingError()
-        => _sta.Invoke(() =>
+    public Task R037_TheOutcomeCardRendersEveryKindWithNoBindingError()
+        => _sta.InvokeAsync(async () =>
         {
             using WindowFixture f = new(destWidth: 200);
             using BindingErrors errors = new();
             MainViewModel vm = new() { Source = f.Source, Dest = f.Dest };
             MainWindow w = new(vm);
 
-            vm.Preview();
+            await vm.Preview();
             Assert.True(vm.HasError);
             Render((FrameworkElement)w.Content, name: "window-refused");
 
             vm.Force = true;
-            vm.Preview();
+            await vm.Preview();
             Assert.True(vm.HasWarnings);
             Assert.True(vm.HasCards);
             Render((FrameworkElement)w.Content, name: "window-preview");
 
-            vm.Copy();
+            await vm.Copy();
             Assert.True(vm.HasNotes);
             Render((FrameworkElement)w.Content, name: "window-copied");
 

@@ -20,13 +20,19 @@ using System.Globalization;
 namespace CopyWcs.Wpf.Tests;
 
 /// <summary>
-/// The window's command line (R-034): <c>--lang</c> read as the console reads it, English
-/// when absent or not understood, and the first two existing files among the other arguments
-/// as the source and the destination; and the number culture pinned by hand, which the
-/// console gets from InvariantGlobalization.
+/// The window's command line (R-034), read once by <see cref="App.Parse"/>: <c>--lang</c> as
+/// the console reads it, English when absent or not understood, and the first two existing
+/// files among the other arguments as the source and the destination; and the number culture
+/// pinned by hand, which the console gets from InvariantGlobalization.
 /// </summary>
 public class AppTests
 {
+    private static (string? Source, string? Dest) Files(params string[] args)
+    {
+        StartArgs start = App.Parse(args);
+        return (start.Source, start.Dest);
+    }
+
     [Theory]
     [InlineData(new[] { "--lang", "ro" }, false, null)]
     [InlineData(new[] { "--LANG=RO", "a.fit" }, false, null)]
@@ -38,19 +44,22 @@ public class AppTests
     [InlineData(new[] { "a.fit", "--lang" }, true, "")]
     public void R034_TheWindowTakesItsLanguageFromLang(string[] args, bool english, string? bad)
     {
-        UiLanguage lang = App.LanguageFromArgs(args, out string? badValue);
+        StartArgs start = App.Parse(args);
 
-        Assert.Equal(english ? UiLanguage.English : UiLanguage.Romanian, lang);
-        Assert.Equal(bad, badValue);
+        Assert.Equal(english ? UiLanguage.English : UiLanguage.Romanian, start.Language);
+        Assert.Equal(bad, start.BadLanguage);
     }
 
     [Fact]
-    public void R034_WithoutArgumentsTheWindowIsEnglish()
+    public void R034_WithoutArgumentsTheWindowIsEnglishWithEmptyBoxes()
     {
-        Assert.Equal(UiLanguage.English, App.LanguageFromArgs(null, out string? badValue));
-        Assert.Null(badValue);
-        Assert.Equal((null, null), App.FilesFromArgs(null));
-        Assert.Equal((null, null), App.FilesFromArgs([]));
+        foreach (StartArgs start in new[] { App.Parse(null), App.Parse([]) })
+        {
+            Assert.Equal(UiLanguage.English, start.Language);
+            Assert.Null(start.BadLanguage);
+            Assert.Null(start.Source);
+            Assert.Null(start.Dest);
+        }
     }
 
     [Fact]
@@ -59,14 +68,18 @@ public class AppTests
         using WindowFixture f = new();
         string missing = f.FilePath("missing.fit");
 
-        Assert.Equal((f.Source, f.Dest), App.FilesFromArgs([f.Source, f.Dest]));
-        Assert.Equal((f.Source, f.Dest), App.FilesFromArgs(["--lang", "ro", f.Source, "--lang=en", f.Dest]));
-        Assert.Equal((f.Dest, null), App.FilesFromArgs([f.Dest]));
-        Assert.Equal((f.Source, null), App.FilesFromArgs([missing, "", "  ", f.Source, f.Dir]));
+        Assert.Equal((f.Source, f.Dest), Files(f.Source, f.Dest));
+        Assert.Equal((f.Source, f.Dest), Files("--lang", "ro", f.Source, "--lang=en", f.Dest));
+        Assert.Equal((f.Dest, null), Files(f.Dest));
+        Assert.Equal((f.Source, null), Files(missing, "", "  ", f.Source, f.Dir));
         // the spaced form takes the next argument as its value, even an existing file
-        Assert.Equal((f.Dest, null), App.FilesFromArgs(["--lang", f.Source, f.Dest]));
+        Assert.Equal((f.Dest, null), Files("--lang", f.Source, f.Dest));
         // a third file is ignored
-        Assert.Equal((f.Source, f.Dest), App.FilesFromArgs([f.Source, f.Dest, f.Source]));
+        Assert.Equal((f.Source, f.Dest), Files(f.Source, f.Dest, f.Source));
+        // one reading of the command line gives both the language and the files
+        StartArgs both = App.Parse(["--lang", "ro", f.Source, f.Dest]);
+        Assert.Equal(UiLanguage.Romanian, both.Language);
+        Assert.Equal((f.Source, f.Dest), (both.Source, both.Dest));
     }
 
     /// <summary>The facts under the boxes (`100 x 80`) must read as the console's whatever the Windows culture.</summary>
