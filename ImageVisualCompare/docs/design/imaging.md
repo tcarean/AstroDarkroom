@@ -169,7 +169,8 @@ then copies a band of rows at a time, at most 8 MB of floats (`Pass`), into
 `FitsRowDecoder` does and counts the samples `FitsScale.IsAboveThreshold` takes, and the
 `DisplayRenderer` of the mode asked for turns the row into Bgra32. Then, as for a FITS,
 `FitsScale.IsRescaled` decides whether the image counts to 65 535, and if it does the bands
-are decoded again on that scale. A size WPF makes no bitmap of is the too-large message.
+are decoded again on that scale; a mode that counts first counts them again and renders after,
+three passes in all. A size WPF makes no bitmap of is the too-large message.
 
 ## Memory, measured
 

@@ -238,4 +238,39 @@ public class WicImageLoaderTests : IDisposable
         Assert.Equal(new byte[] { b, g, r, 255 }, bgra[12..16]);
         Assert.Equal("32-bit float gray (0..65535)", loaded.Info.FormatDescription);
     }
+
+    [Fact]
+    public async Task R112_AnRgbFloatTiff_IsColouredByTheMeanOfItsPlanes()
+    {
+        // Per pixel (R, G, B) of 65535: (1,1,1), (2,2,3), (2,3,3), (3,3,3): the means 1, 2, 3, 3
+        // of R-112's rounding equalise to 64, 128, 255, 255, as the FITS of these samples does.
+        float[] samples =
+        [
+            1 / 65535f, 1 / 65535f, 1 / 65535f, 2 / 65535f, 2 / 65535f, 3 / 65535f,
+            2 / 65535f, 3 / 65535f, 3 / 65535f, 3 / 65535f, 3 / 65535f, 3 / 65535f,
+        ];
+        string path = _images.WriteFloatTiff("rainbow-rgb.tif", 4, 1, 3, samples);
+
+        LoadedImage loaded = await _loader.LoadAsync(path, DisplayMode.FalseColours);
+        byte[] bgra = new byte[16];
+        loaded.Bitmap.CopyPixels(bgra, 16, 0);
+
+        foreach ((int pixel, byte level) in new[] { (0, (byte)64), (1, (byte)128), (2, (byte)255), (3, (byte)255) })
+        {
+            (byte r, byte g, byte b) = RainbowTable.Colour(level);
+            Assert.Equal(new byte[] { b, g, r, 255 }, bgra[(pixel * 4)..((pixel * 4) + 4)]);
+        }
+    }
+
+    [Fact]
+    public async Task R111_AGrayFloatTiff_IsEqualisedOnAllThreeChannels()
+    {
+        string path = _images.WriteFloatTiff("histogram-gray.tif", 4, 1, 1, [1 / 65535f, 2 / 65535f, 2 / 65535f, 3 / 65535f]);
+
+        LoadedImage loaded = await _loader.LoadAsync(path, DisplayMode.Histogram);
+        byte[] bgra = new byte[16];
+        loaded.Bitmap.CopyPixels(bgra, 16, 0);
+
+        Assert.Equal(new byte[] { 64, 64, 64, 255, 191, 191, 191, 255, 191, 191, 191, 255, 255, 255, 255, 255 }, bgra);
+    }
 }

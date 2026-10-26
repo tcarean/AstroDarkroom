@@ -81,6 +81,9 @@ public static class FloatSamples
     /// <summary>
     /// Converts one row of float samples to Bgra32 in the linear display: each channel at the
     /// level <see cref="FitsScale.Level"/> gives the sample on the full scale, and alpha 255.
+    /// The loaders go through <see cref="ToSixteenBit"/> and a <see cref="DisplayRenderer"/>
+    /// of their own; this is the one-call form the R-091 tests pin the levels through, and it
+    /// allocates a row and a renderer per call.
     /// </summary>
     /// <param name="samples">
     /// The row: one float a pixel when <paramref name="gray"/>, otherwise four, red, green, blue

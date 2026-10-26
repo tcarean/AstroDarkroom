@@ -15,8 +15,9 @@ a feature of its own (requirements, a decision on which stretch)".
 
 What Siril 1.4.4 does, read in its source for FlatCheck (its ADR 0025 and 0063,
 `docs/design/siril-histeq-source.md`): one histogram per layer of 65 536 bins on the 16-bit
-value (`round(v * 65535)` for floats), zeros skipped but counted in the denominator, `index[0] =
-0`, `index[i] = round_to_BYTE(cumulative(i) / pixels * 255)` with bin `i` included and
+value (for a float, `computeHisto` bins it at `floor(v * 65535)` and the remap looks it up at
+`round(v * 65535)`), zeros skipped but counted in the denominator, `index[0] = 0`, with the
+cumulative started from bin 0, `index[i] = round_to_BYTE(cumulative(i) / pixels * 255)` with bin `i` included and
 `round_to_BYTE(x) = (byte)min(255, (int)(x + 0.5))`; the RGB view composited from the three
 remapped layers. The rainbow is a hue from 300° at level 0 to 0° at level 255, saturation and
 value 1, through Siril's `hsv_to_rgb`, applied to the remapped byte of one layer; its RGB tab
@@ -100,12 +101,16 @@ rest.
   measured on `result_3813s.fit` and recorded below.
 - A FITS and its float TIFF export equalise to the same bytes, as they show the same levels:
   both go through the same 16-bit row and the same renderer.
-- A sample exactly 0 and a positive one below 1/131 070, which rounds to 0, are both skipped;
-  Siril skips only the exact zeros, so a file with many near-zero samples would equalise
-  slightly lower here. Measured on `result_3813s.fit` and recorded below.
+- A float sample is counted and looked up at the same rounded 16-bit value, where Siril bins it
+  at the floor and looks it up at the rounded value, and counts bin 0 into the cumulative: on a
+  float file the CDF here sits half a bin from Siril's, at most one bin's share of 255 on any
+  level, and a sample exactly 0 or positive below 1/131 070 is skipped where Siril skips only
+  the exact zeros. On integer data the two are the same thing. Measured on `result_3813s.fit`
+  and recorded below: no sample in bin 0 at all (the code review of 2026-10-26 found the
+  floor-versus-round half, which the first text of this ADR did not state).
 - The readout in `Histogram` shows the equalised levels, which is what is on screen (R-051
   reads the shown bitmap); the file's own levels are one `H` away.
-- Guards: `LevelLookupTests` and `SampleHistogramTests` (R-111's two examples, the rounding, a
+- Guards: `LevelLookupTests` (R-111's two examples, the rounding, a
   uniform ramp, the share per level), `RainbowTableTests` (R-112's ten colours, the inverse),
   `DisplayRendererTests`, `FitsRowDecoderTests` (`ReadPlaneRow` per BITPIX),
   `FitsImageLoaderTests` and `WicImageLoaderTests` (R110 to R112 on fixtures),

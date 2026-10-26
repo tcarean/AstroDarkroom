@@ -20,8 +20,9 @@ namespace ImageVisualCompare.Core;
 /// <summary>
 /// The level each of the 65 536 sixteen-bit values is shown at: the linear rule of
 /// <see cref="FitsScale.Level"/>, or the equalisation a <see cref="SampleHistogram"/> gives
-/// (R-111). One lookup per sample is what the decode does, whatever the mode, so that nothing
-/// is decided per sample.
+/// (R-111). One lookup per sample is what the equalising modes do, so that nothing is decided
+/// per sample; the linear mode takes the same high byte by a shift instead
+/// (<see cref="DisplayRenderer"/>), the table being larger than the first-level cache.
 /// </summary>
 public sealed class LevelLookup
 {

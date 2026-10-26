@@ -137,13 +137,4 @@ public class FitsScaleTests
         Assert.Equal(expected, FitsScale.SixteenBit(value));
     }
 
-    [Fact]
-    public void R111_TheLevelIsTheHighByteOfTheSixteenBitSample()
-    {
-        for (int value = 0; value <= 65535; value++)
-        {
-            double half = value + 0.25;
-            Assert.Equal(FitsScale.SixteenBit(half) >> 8, FitsScale.Level(half));
-        }
-    }
 }

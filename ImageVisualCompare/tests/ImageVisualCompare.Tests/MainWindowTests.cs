@@ -204,4 +204,30 @@ public class MainWindowTests
             return Task.FromResult(new LoadedImage(Probe(path), bitmap, mode));
         }
     }
+
+    [Fact]
+    public async Task R114_AToggleFlippedByItsOwnClick_IsPutBackWhenTheSwitchIsRefused()
+    {
+        // A ToggleButton flips IsChecked before it raises Click; on a pair that allows no mode
+        // the switch is refused, and the toggle must not stay lit for a mode not shown.
+        var loader = new ModeLoader(shownAsStored: false);
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        Task switched = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window.HistogramButton.IsChecked = true;
+            switched = window.ToggleModeAsync(DisplayMode.Histogram);
+        });
+        await switched;
+
+        await WpfThread.RunAsync(() => Assert.False(window.HistogramButton.IsChecked));
+        Assert.Equal([DisplayMode.Linear, DisplayMode.Linear], loader.Modes);
+    }
 }

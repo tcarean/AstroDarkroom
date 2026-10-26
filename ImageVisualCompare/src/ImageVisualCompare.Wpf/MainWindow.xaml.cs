@@ -150,33 +150,60 @@ public partial class MainWindow : Window
     /// <param name="mode">The mode asked for, <see cref="DisplayMode.Histogram"/> or <see cref="DisplayMode.FalseColours"/>.</param>
     internal async Task ToggleModeAsync(DisplayMode mode)
     {
-        if (_opening || _pair is null || _selection is null || !_pair.AllowsDisplayModes)
-        {
-            return;
-        }
-
-        DisplayMode target = _mode == mode ? DisplayMode.Linear : mode;
-
-        _opening = true;
+        // A ToggleButton flips its own IsChecked before it raises Click, so whatever way this
+        // returns, a refusal or a failed switch included, the two toggles are put back in step
+        // with the mode that is on screen (the code review of 2026-10-26).
         try
         {
-            // The padding was agreed when the pair was opened; the same two files need no second
-            // question (R-113).
-            ImagePairLoadResult result = await LoadWithOverlayAsync(_selection, target, _ => Task.FromResult(true));
-
-            if (result.IsSuccess)
+            if (_opening || _pair is null || _selection is null || !_pair.AllowsDisplayModes)
             {
-                ShowPair(result.Pair!, keepView: true);
+                return;
             }
-            else if (!result.WasDeclined)
+
+            DisplayMode target = _mode == mode ? DisplayMode.Linear : mode;
+            ImagePair shown = _pair;
+
+            _opening = true;
+            try
             {
-                MessageDialog.Show(this, UiText.Current.CannotCompareTitle, result.Error!);
+                // The padding was agreed when the pair was opened; the same two files need no
+                // second question (R-113).
+                ImagePairLoadResult result = await LoadWithOverlayAsync(_selection, target, _ => Task.FromResult(true));
+
+                if (result.IsSuccess)
+                {
+                    // The same files have the same canvas; should one have changed on disk in
+                    // between, the view is not worth keeping over a wrong canvas.
+                    ImagePair pair = result.Pair!;
+                    ShowPair(pair, keepView: pair.PixelWidth == shown.PixelWidth && pair.PixelHeight == shown.PixelHeight);
+                }
+                else if (!result.WasDeclined)
+                {
+                    MessageDialog.Show(this, UiText.Current.CannotCompareTitle, result.Error!);
+                }
+            }
+            finally
+            {
+                _opening = false;
             }
         }
         finally
         {
-            _opening = false;
+            SyncModeButtons();
         }
+    }
+
+    /// <summary>
+    /// Puts the two display-mode toggles in step with the pair on screen: enabled when it allows
+    /// the modes, and lit for the mode it is shown in (R-114).
+    /// </summary>
+    private void SyncModeButtons()
+    {
+        bool allowed = _pair?.AllowsDisplayModes == true;
+        HistogramButton.IsEnabled = allowed;
+        FalseColoursButton.IsEnabled = allowed;
+        HistogramButton.IsChecked = _mode == DisplayMode.Histogram;
+        FalseColoursButton.IsChecked = _mode == DisplayMode.FalseColours;
     }
 
     /// <summary>
@@ -320,10 +347,7 @@ public partial class MainWindow : Window
 
         _pair = pair;
         _mode = pair.Mode;
-        HistogramButton.IsEnabled = pair.AllowsDisplayModes;
-        FalseColoursButton.IsEnabled = pair.AllowsDisplayModes;
-        HistogramButton.IsChecked = _mode == DisplayMode.Histogram;
-        FalseColoursButton.IsChecked = _mode == DisplayMode.FalseColours;
+        SyncModeButtons();
 
         if (keepView)
         {

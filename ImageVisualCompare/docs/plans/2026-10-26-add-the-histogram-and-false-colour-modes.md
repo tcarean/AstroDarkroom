@@ -260,3 +260,13 @@ says why ADR 0022 is not broken.
   as for a switch. ADR 0040 supersedes ADR 0016 in that one part; R-008 and R-081 say the
   new order. Not in the plan: found by the rule "Run the application".
 - Nothing calls `CompareView.Clear` once the release moved after the render pass, so it went; `MinimapView.Hide`, which only it called, stays as the minimap's own API, unused for now.
+- The code review (a subagent, 2026-10-26) found: a `ToggleButton` flips `IsChecked` before it
+  raises `Click`, so a refused or failed switch left a toggle lit for a mode not shown
+  (`ToggleModeAsync` now puts both toggles back on every way out, `SyncModeButtons`, with a
+  test); ADR 0040 relayed FlatCheck's reading that Siril quantises a float at `round` for the
+  histogram where the quoted `computeHisto` bins at `floor` (stated now); R-113 still said the
+  release came first; the ADR named a test file that does not exist; `LevelLookup`'s comment
+  contradicted `RenderLinear`; the float-TIFF note said twice where a counting mode reads three
+  times; a test of `FitsScale.Level` could not fail (dropped); the WIC path lacked a gray
+  histogram and an RGB false-colour test (added). A switch whose files changed size on disk
+  falls back to `SetPair`.
