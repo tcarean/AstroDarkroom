@@ -479,9 +479,42 @@ title bar, made anew at every open. `AboutTests` as DarksCheck's (R-035).
   left as it was on `main`: `-o` naming the destination in another letter case is not seen as
   in place and fails with a sharing violation, exit 1.
 
-### Task 2
+### Task 2 (2026-10-26, branch `claude/Build-the-WPF-window`, five commits)
 
-(filled at its wrap-up)
+- **The destination's facts say when it is already plate-solved.** Appendix C had
+  `Destination: 6016 x 4016` only; the window shows `, already plate-solved` when the
+  destination has `CTYPE1` (a copy will overwrite a solve), and reads the facts again after a
+  copy, which is how an in-place copy shows up (R-030, R-032). A file the reader refuses gives
+  an empty fact line; the run says why.
+- **The warranty moved as five lines plus the joined paragraph**, `LicenseInfo.WarrantyLines`
+  and `LicenseInfo.Warranty`, not as one pair: the console's output stays byte-identical
+  (the lines are wrapped by hand), and the About window joins them, DarksCheck's way.
+- **`FilesFromArgs` and `MainWindow.Start` came in commit 3, not commit 2**: the analyzers
+  refuse a placeholder `Start` that touches no instance data (CA1822), so commit 2 shipped the
+  empty window and the App without them, and commit 3 brought them with the view-model.
+- **`AppTests` came in commit 3 with the plumbing** rather than in commit 5; `WindowSmokeTests`
+  started in commit 2 with the empty window and grew with each commit.
+- **A radio button style was drawn** after the check box: no sibling has a plain one
+  (AstroDarkroom's is a segmented button). The built-in `BooleanToVisibilityConverter` serves
+  every visibility; no converter of the project's own was copied.
+- **The dumped screens draw the window's background first**: the content alone renders on
+  transparency and the anti-aliased labels came out dim in the PNG.
+- **Two analyzer suppressions with their reason**: CA1822 on `RefusedHeading` and on
+  `AboutViewModel`'s properties, which XAML binds and so cannot be static (DarksCheck's ADR
+  0009 lists the same deviation).
+- **The dialogs' filter has an `All files` entry** as a pair, after the FITS one; Appendix C
+  listed the FITS entry only.
+- **`LicenseHeaderTests` now walks `Icon/` too**, and reads `.xaml` with the one-comment form,
+  DarksCheck's way.
+- Nothing else deviated: 132 tests before, 168 after (36 in `tests/CopyWcs.Wpf.Tests`); the
+  console's output is unchanged, `--help` included.
+- **After the code review (2026-10-26, a sixth commit):** the core runs in a `Task.Run` with
+  the buttons off meanwhile (the window froze for the whole in-place copy); the paths are
+  trimmed before the core sees them (` out.fit` wrote a file with a space in its name); a
+  header without `NAXIS1`/`NAXIS2` shows no fact line (it showed `-1 x -1`); `App.Parse`
+  reads the command line once, replacing `LanguageFromArgs` and `FilesFromArgs`; the licence
+  scan matches extensions case-insensitively; the icon script clips the grid with one
+  `ImageChops.multiply` (the `.ico` is byte-identical). 170 tests.
 
 ## Appendix A: the ADRs
 

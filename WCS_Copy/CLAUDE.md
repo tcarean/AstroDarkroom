@@ -2,10 +2,10 @@
 
 Copies the plate solve (WCS) and the optical metadata from a Siril-solved FITS into another
 FITS of the same pixel grid, by reading and writing the FITS header cards by hand: no FITS
-library, no package. A console, `copywcs.exe`, over a core library; a WPF window over the same
-core is the second task of `docs/plans/2026-10-26-adopt-the-kit-and-build-the-window.md`. It
-copies each selected card's 80 bytes verbatim and the destination's data unchanged; it never
-reads a pixel. It is for the owner's own stacks and exports.
+library, no package. Two applications over one core: a console (`copywcs.exe`) and a WPF
+window (`CopyWcs.Wpf.exe`). It copies each selected card's 80 bytes verbatim and the
+destination's data unchanged; it never reads a pixel. It is for the owner's own stacks and
+exports.
 
 ## Commands
 
@@ -17,6 +17,9 @@ reads a pixel. It is for the owner's own stacks and exports.
 - One test: `dotnet test CopyWcs.sln --filter "FullyQualifiedName~R005"`
 - Format: `dotnet format CopyWcs.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project src/CopyWcs.Cli -- <solved.fit> <destination.fit> [--dry-run] [--lang ro]`
+- Window: `dotnet run --project src/CopyWcs.Wpf -- [--lang ro] [<solved.fit> <destination.fit>]`
+- Rendered screens of the window tests as PNGs: `COPYWCS_DUMP_SCREENS=<folder>` before
+  `dotnet test tests/CopyWcs.Wpf.Tests`
 - Test data hashes after an intentional fixture change: `scripts/check-testdata.ps1 -Update`
 - Design notes a branch touched (the index and Covers paths are a gate step):
   `scripts/check-design.ps1 -Since main`
@@ -32,6 +35,12 @@ reads a pixel. It is for the owner's own stacks and exports.
   (`Language/`), the version and the copyright read from the assembly. No Console, no UI, no
   entry point: a compile boundary.
 - `src/CopyWcs.Cli/` - the console, `copywcs.exe`: options, dispatch, exit codes, printing.
+- `src/CopyWcs.Wpf/` - the window, `CopyWcs.Wpf.exe`: a thin adapter over the core, the theme
+  and presentation pieces copied from the siblings (ADR 0007). `Icon/` - the one icon of both
+  executables and the script that draws it.
+- `tests/CopyWcs.Wpf.Tests/` - the window's tests (the view-model against the console, the
+  rendering in both languages, the command line, the icon), a project of their own since
+  they need `net8.0-windows`.
 - `tests/CopyWcs.Tests/` - unit, acceptance on `CopyWcsCli.Run`, the language
   (`LanguageTests`), the one validation case (`ValidationTests`), repo rules
   (`RepoInvariantTests`, `LicenseHeaderTests`, `LicenseNoticeTests`, `VersionTests`). Every
@@ -64,14 +73,18 @@ varies a kit rule names it.
   comment survive (R-010). Do not "clean up" this into a reparse.
 - **`Main` is a one-line shim** to `CopyWcsCli.Run(args, stdout, stderr)`; new console
   behaviour goes in `CopyWcsCli` or `Options`, testable in process, without a subprocess.
+- **The window computes nothing.** `MainViewModel` builds a request, reads two header facts
+  and shows the core's outcome; every sentence about the copy is the core's, and a label is
+  a `{l:T En='...', Ro='...'}` pair in XAML (ADR 0007). The copied pieces are the siblings'
+  to improve first.
 - **Two interface languages, English everywhere else** (varies the kit's rule "Languages",
   ADR 0004). Every text the user sees is `T("english", "romana")` where it is composed, the
   Romanian without diacritics, never a single literal; the HISTORY card is English in both.
   Code, comments, docs, tests and commits are English; the Romanian wordings and the tests
   that quote them are the one exception. Never leave a file in two languages otherwise.
-- **Every source file starts with the GPL notice**, `.py` too, above the file's own header
-  comment; `LicenseHeaderTests` walks `src/`, `tests/` and `prototype/`. `LICENSE` is the
-  verbatim GPL v3 text: do not reword or reflow it.
+- **Every source file starts with the GPL notice**, `.xaml` and `.py` too, above the file's
+  own header comment; `LicenseHeaderTests` walks `src/`, `tests/`, `prototype/` and `Icon/`.
+  `LICENSE` is the verbatim GPL v3 text: do not reword or reflow it.
 - **The banner and the copyright are lines 1 and 2 of every run** (R-001), in every mode, at
   `--help` and on a failed run, read from `Directory.Build.props` through the assembly (ADR
   0003); `--help` carries the warranty paragraph of GPLv3 section 5(d). There is no
@@ -80,7 +93,7 @@ varies a kit rule names it.
 ## Read before touching
 
 `docs/design/README.md` maps the areas: `fits-header.md` before `FitsHeader` or the key lists,
-`run-and-console.md` before the run, the console or the language.
+`run-and-console.md` before the run, the console or the language, `window.md` before the window.
 
 ## Style
 

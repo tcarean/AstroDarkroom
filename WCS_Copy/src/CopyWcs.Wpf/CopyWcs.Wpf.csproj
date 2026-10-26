@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The window, CopyWcs.Wpf.exe. The same core as copywcs.exe, through CopyWcs.Core: it
+       computes nothing and words no sentence about the copy of its own; it builds a request,
+       calls WcsCopy.Run and shows the outcome's lines (ADR 0007). net8.0-windows + UseWPF makes
+       this project Windows-only, so the solution builds on Windows only; the console alone
+       builds anywhere.
+       No <InvariantGlobalization> here: WPF needs culture data to bind anything and would throw
+       while loading XAML (FlatCheck's ADR 0037); App.ForceInvariantNumbers pins the number
+       culture instead. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>CopyWcs.Wpf</RootNamespace>
+    <AssemblyName>CopyWcs.Wpf</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- The executable's icon (Explorer, the taskbar); the windows take the same file through
+         the <Resource> below and Icon= in their XAML. Drawn per size by Icon/make_icon.py. -->
+    <ApplicationIcon>..\..\Icon\copywcs.ico</ApplicationIcon>
+    <!-- DarkTitleBar's LibraryImport (DwmSetWindowAttribute) is source-generated as unsafe
+         code; nothing else in the project is unsafe (ADR 0007). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <!-- A WPF project gets no System.IO in its implicit usings (Path would collide with
+       System.Windows.Shapes.Path); the view-model and the App read files, so it is added here. -->
+  <ItemGroup>
+    <Using Include="System.IO" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CopyWcs.Core\CopyWcs.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="..\..\Icon\copywcs.ico" Link="Icon\copywcs.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- GPLv3 wants a copy of the licence to travel with every copy of the program, and the
+         About window says the text is in LICENSE beside the program, so it has to be there: in
+         the build output and in whatever is published from it (AstroDarkroom's reason). -->
+    <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="CopyWcs.Wpf.Tests" />
+  </ItemGroup>
+</Project>

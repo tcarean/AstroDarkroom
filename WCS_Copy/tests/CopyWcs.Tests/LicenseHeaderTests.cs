@@ -54,15 +54,31 @@ public class LicenseHeaderTests
         "along with this program.  If not, see <https://www.gnu.org/licenses/>.",
     };
 
+    /// <summary>
+    /// XAML is source like C#: hand-written, it describes the interface, so it carries the notice
+    /// too, inside one comment; the Python prototype and the icon script carry it with the hash.
+    /// </summary>
+    private static readonly (string Ext, string Open, string? Close)[] Kinds =
+    [
+        (".cs", "//", null),
+        (".xaml", "<!--", "-->"),
+        (".py", "#", null),
+    ];
+
     private static IEnumerable<string> SourceFiles()
     {
         var root = RepoDir();
 
-        foreach (var project in new[] { "src", "tests" })
+        foreach (var project in new[] { "src", "tests", "prototype", "Icon" })
         {
-            foreach (var f in Directory.EnumerateFiles(
-                         Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
+            foreach (var f in Directory.EnumerateFiles(Path.Combine(root, project), "*", SearchOption.AllDirectories))
             {
+                // Case-insensitive, as the file system is: a .CS or .XAML is source too.
+                if (!Kinds.Any(k => k.Ext.Equals(Path.GetExtension(f), StringComparison.OrdinalIgnoreCase)))
+                {
+                    continue;
+                }
+
                 // bin/ and obj/ hold files MSBuild generates (AssemblyInfo and such):
                 // not our source, and no reason to carry the notice.
                 var rel = Path.GetRelativePath(root, f).Replace('\\', '/');
@@ -74,36 +90,38 @@ public class LicenseHeaderTests
                 yield return f;
             }
         }
-
-        foreach (var f in Directory.EnumerateFiles(Path.Combine(root, "prototype"), "*.py", SearchOption.TopDirectoryOnly))
-        {
-            yield return f;
-        }
     }
 
-    /// <summary>Renders the notice with the comment prefix of the language.</summary>
-    private static string Expected(string prefix)
-        => string.Join("\n", Notice.Select(l => (prefix + " " + l).TrimEnd()));
+    /// <summary>Renders the notice with the comment marks of the language.</summary>
+    private static string Expected((string Ext, string Open, string? Close) kind)
+        => kind.Close == null
+            ? string.Join("\n", Notice.Select(l => (kind.Open + " " + l).TrimEnd()))
+            : kind.Open + "\n" + string.Join("\n", Notice) + "\n" + kind.Close;
+
+    private static (string Ext, string Open, string? Close) KindOf(string file)
+        => Kinds.First(k => k.Ext.Equals(Path.GetExtension(file), StringComparison.OrdinalIgnoreCase));
 
     private static string HeaderOf(string file)
     {
+        var kind = KindOf(file);
         var text = File.ReadAllText(file).Replace("\r\n", "\n");
         var lines = text.Split('\n').ToList();
 
-        // The shebang of a .py must stay on the first line, so the notice comes under it.
-        if (lines.Count > 0 && lines[0].StartsWith("#!"))
+        // The shebang of a .py must stay on the first line, so the notice comes under it; the
+        // XML declaration of a .xaml the same.
+        if (lines.Count > 0 && (lines[0].StartsWith("#!") || lines[0].StartsWith("<?xml")))
         {
             lines.RemoveAt(0);
         }
 
-        return string.Join("\n", lines.Take(Notice.Length));
+        return string.Join("\n", lines.Take(Notice.Length + (kind.Close == null ? 0 : 2)));
     }
 
     [Fact]
     public void EverySourceFileStartsWithTheLicenseNotice()
     {
         var offenders = SourceFiles()
-            .Where(f => HeaderOf(f) != Expected(Path.GetExtension(f) == ".py" ? "#" : "//"))
+            .Where(f => HeaderOf(f) != Expected(KindOf(f)))
             .Select(f => Path.GetRelativePath(RepoDir(), f))
             .ToList();
 
@@ -113,14 +131,17 @@ public class LicenseHeaderTests
 
     /// <summary>If the enumeration went wrong, the test above would pass on zero files.</summary>
     [Fact]
-    public void TheScanSeesBothProjectsAndThePythonPrototype()
+    public void TheScanSeesEveryProjectThePrototypeAndTheIconScript()
     {
         var names = SourceFiles().Select(Path.GetFileName).ToList();
 
         Assert.Contains("CopyWcsCli.cs", names);
         Assert.Contains("LicenseHeaderTests.cs", names);
+        Assert.Contains("MainWindow.xaml", names);
+        Assert.Contains("WindowSmokeTests.cs", names);
         Assert.Contains("copy_wcs.py", names);
-        Assert.True(names.Count > 8, "too few files scanned: " + names.Count);
+        Assert.Contains("make_icon.py", names);
+        Assert.True(names.Count > 20, "too few files scanned: " + names.Count);
     }
 
     [Fact]
