@@ -1359,5 +1359,138 @@ namespace FlatCheck.Wpf
             + "Cititorul FITS, encoderul PNG, toate calculele si toate pragurile sunt scrise "
             + "de mana. Motivele pentru care fiecare licenta e compatibila sunt in "
             + "THIRD-PARTY-NOTICES.md, langa sursa.");
+
+        // ------------------------------------------------------------ the End to end tab
+        // The tab explains itself in place (R-105, ADR 0064): a line under each series figure,
+        // a tooltip on each column header, a paragraph under the map - not a folded guide, so
+        // that each explanation sits beside what it explains. The thresholds are formatted from
+        // Th, so a recalibration cannot leave a stale figure on screen. The texts mirror the
+        // README ("End to end" in the window section) by hand; no test binds the two.
+
+        /// <summary>What the mean radial component is, when it gets a verdict, and what its
+        /// sign says.</summary>
+        /// <returns>The line under the series' first figure.</returns>
+        internal static string LightMeanNote() =>
+            T($"The mean of the radial column: the figure the verdict is given on, once the series "
+            + $"has at least {Th.LightSeriesMinFrames} frames. Under {Th.LightRadOk:F0} % it is OK, "
+            + $"above {Th.LightRadBad:F0} % a problem, suspect in between. The sign is the diagnosis: "
+            + "positive, the background falls toward the edges (under-correction: another aperture "
+            + "at the flats than at the lights, or a contaminated flat); negative, it rises "
+            + "(over-correction: almost always flat-darks missing or wrong).",
+              $"Media coloanei radial: cifra pe care se da verdictul, odata ce seria are cel putin "
+            + $"{Th.LightSeriesMinFrames} cadre. Sub {Th.LightRadOk:F0} % e OK, peste "
+            + $"{Th.LightRadBad:F0} % e problema, suspect intre ele. Semnul e diagnosticul: pozitiv, "
+            + "fondul cade spre margini (sub-corectie: alta diafragma la flats decat la lights, sau "
+            + "flat contaminat); negativ, creste (supra-corectie: aproape sigur flat-darks lipsa "
+            + "sau gresite).");
+
+        /// <summary>What the spread is and why a mean alone is not enough.</summary>
+        /// <returns>The line under the series' second figure.</returns>
+        internal static string LightSpreadNote() =>
+            T("The smallest and the largest value in the radial column. A mean near zero means "
+            + "nothing when the frames sweep from far below it to far above: what sweeps like that "
+            + "is the sky, not the flat, which is the same in every frame.",
+              "Cea mai mica si cea mai mare valoare din coloana radial. O medie aproape de zero nu "
+            + "inseamna nimic cand cadrele baleiaza de departe sub ea pana departe peste ea: ce "
+            + "baleiaza asa e cerul, nu flat-ul, care e acelasi in fiecare cadru.");
+
+        /// <summary>What the error of the mean is and where it stops the verdict.</summary>
+        /// <returns>The line under the series' third figure.</returns>
+        internal static string LightSemNote() =>
+            T("The standard deviation of the radial column divided by the square root of the frame "
+            + $"count: how tightly the series pins the mean down. Above {Th.LightSeriesSemMax:F2} "
+            + "points the series does not resolve the flat to the precision the thresholds speak at, "
+            + "and the verdict is undetermined.",
+              "Abaterea standard a coloanei radial impartita la radacina numarului de cadre: cat de "
+            + $"strans fixeaza seria media. Peste {Th.LightSeriesSemMax:F2} puncte seria nu rezolva "
+            + "flat-ul la precizia la care vorbesc pragurile, si verdictul e nedeterminat.");
+
+        /// <summary>What the sky correlation is, where it stops the verdict, and when it is not
+        /// checked at all.</summary>
+        /// <returns>The line under the series' fourth figure.</returns>
+        internal static string LightCorrelationNote() =>
+            T("Pearson's correlation between the radial column and the sky column. A \"flat error\" "
+            + $"that follows the sky is sky: above {Th.LightSeriesSkyCorr:F2} in absolute value the "
+            + "verdict is undetermined. It is checked only when the sky gradient varies by at least "
+            + $"{Th.LightSeriesSkySpanMin:F0} points over the series; on a constant sky the "
+            + "correlation is noise and would reject good data.",
+              "Corelatia Pearson intre coloana radial si coloana cer. O \"eroare de flat\" care "
+            + $"urmareste cerul e cer: peste {Th.LightSeriesSkyCorr:F2} in valoare absoluta "
+            + "verdictul e nedeterminat. Se verifica doar cand gradientul de cer variaza cu cel "
+            + $"putin {Th.LightSeriesSkySpanMin:F0} puncte peste serie; pe un cer constant corelatia "
+            + "e zgomot si ar respinge date bune.");
+
+        /// <summary>What the picture under the table is and what its colours mean. The sign
+        /// convention is the figures': blue corners are a background that falls toward the
+        /// edges, the positive sign, under-correction.</summary>
+        /// <returns>The paragraph under the map and its legend.</returns>
+        internal static string LightMapNote() =>
+            T("The series' mean radial map: for every frame, the radial part of the fitted "
+            + "background (the R^2 and R^4 terms) drawn at the frame's size, then averaged pixel by "
+            + "pixel. It holds no star and no nebula, only the shape of the model. White is a "
+            + "background with no radial component; blue corners, a background that falls toward "
+            + "the edges (under-correction); red corners, one that rises (over-correction). The "
+            + "colour scale is the map's own interval, so a strong colour can still be a small "
+            + "figure: how much is in the figures on the left.",
+              "Harta radiala medie a seriei: pentru fiecare cadru, partea radiala a fondului fitat "
+            + "(termenii R^2 si R^4) desenata la marimea cadrului, apoi mediata pixel cu pixel. Nu "
+            + "contine nicio stea si nicio nebuloasa, doar forma modelului. Alb e un fond fara "
+            + "componenta radiala; colturi albastre, un fond care cade spre margini (sub-corectie); "
+            + "colturi rosii, unul care creste (supra-corectie). Scara de culori e intervalul "
+            + "propriu al hartii, deci o culoare puternica poate fi tot o cifra mica: cat de mult "
+            + "e in cifrele din stanga.");
+
+        /// <summary>What the table's first column holds and which files are left out.</summary>
+        /// <returns>The tooltip of the "frame" header.</returns>
+        internal static string LightFrameTip() =>
+            T($"The calibrated lights of process/, in file-name order, those matching "
+            + $"{SeriesFinder.DefaultPattern}: the frames Siril wrote after dividing the flat out, "
+            + "before registration. Registered frames (r_pp_light_*) are left out: registration "
+            + "shifts the vignetting off the sensor's centre, and the measurement would be "
+            + "corrupted silently.",
+              $"Lights-urile calibrate din process/, in ordinea numelui de fisier, cele care se "
+            + $"potrivesc cu {SeriesFinder.DefaultPattern}: cadrele scrise de Siril dupa impartirea "
+            + "flat-ului, inainte de inregistrare. Cadrele inregistrate (r_pp_light_*) sunt lasate "
+            + "deoparte: inregistrarea muta vignetarea din centrul senzorului, si masuratoarea s-ar "
+            + "strica in tacere.");
+
+        /// <summary>What the table's radial column holds and why one row is not the
+        /// answer.</summary>
+        /// <returns>The tooltip of the "radial" header.</returns>
+        internal static string LightRadialTip() =>
+            T("The radial component of this frame's background, in percent of its level at the "
+            + "centre, with the sign: positive, the background falls toward the edges "
+            + "(under-correction); negative, it rises (over-correction). One frame holds the sky of "
+            + "its moment too, so it is the series summary that counts, not a row.",
+              "Componenta radiala a fondului acestui cadru, in procente din nivelul lui la centru, "
+            + "cu semn: pozitiv, fondul cade spre margini (sub-corectie); negativ, creste "
+            + "(supra-corectie). Un cadru contine si cerul din clipa lui, deci conteaza sinteza pe "
+            + "serie, nu un rand.");
+
+        /// <summary>What the table's sky column holds and that it never votes.</summary>
+        /// <returns>The tooltip of the "sky" header.</returns>
+        internal static string LightSkyTip() =>
+            T("The sky gradient the fit absorbed in its plane, as a percent of the background: "
+            + "light pollution, the Moon, the frame's tilt toward the horizon. Informative, never a "
+            + $"condition; above {Th.LightPlaneWarn:F0} % the console flags it as large. If it moves "
+            + "from row to row, the sky moved during the session - and that is what the correlation "
+            + "in the series summary is checked against.",
+              "Gradientul de cer pe care fitul l-a absorbit in planul lui, in procente din fond: "
+            + "poluare luminoasa, Luna, inclinarea cadrului spre orizont. Informativ, niciodata o "
+            + $"conditie; peste {Th.LightPlaneWarn:F0} % consola il marcheaza ca mare. Daca se misca "
+            + "de la un rand la altul, cerul s-a miscat in timpul sesiunii - si cu asta se compara "
+            + "corelatia din sinteza pe serie.");
+
+        /// <summary>What the table's tiles column holds and what a low count means.</summary>
+        /// <returns>The tooltip of the "tiles" header.</returns>
+        internal static string LightTilesTip() =>
+            T("The tiles kept in the fit out of all the tiles of the frame, after four rounds of "
+            + "one-sided clipping threw out those with nebulosity or other bright structure (a "
+            + "contaminant only adds signal, so only the high side is clipped). Few kept tiles mean "
+            + "a fit with less to stand on.",
+              "Tile-urile pastrate in fit din toate tile-urile cadrului, dupa ce patru runde de "
+            + "clipping unilateral le-au scos pe cele cu nebulozitate sau alta structura luminoasa "
+            + "(un contaminant doar adauga semnal, deci se taie doar partea de sus). Putine tile-uri "
+            + "pastrate inseamna un fit cu mai putin pe ce sa stea.");
     }
 }

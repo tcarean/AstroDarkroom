@@ -39,10 +39,23 @@ What the window adds - a workflow, never an analysis, a threshold or a wording -
 and ADR 0033. The "Despre" window, which formulates nothing, is ADR 0040. The three viewing
 aids around the residual map (the scale switch with its caps from `Th.Resid*`, the legend, the
 collapsed shape guide), why the guide is documentation and not a classifier, why End-to-end
-gets the legend only, why the guide texts mirror the README by hand and why the guide's ring
-row was rewritten are ADR 0036 (the ring row also ADR 0018). Two mechanics the ADRs do not
-spell out: the scale switch defaults to ±10 %, and the guide's text is in
+gets the legend and no shape guide, why the guide texts mirror the README by hand and why the
+guide's ring row was rewritten are ADR 0036 (the ring row also ADR 0018). Two mechanics the
+ADRs do not spell out: the scale switch defaults to ±10 %, and the guide's text is in
 `Session/SessionMessages.cs`; Structure and Ratio get all three aids.
+
+**The End to end tab explains itself in place, not in a folded guide** (ADR 0064): a `Faint`
+line under each of the four series figures, a tooltip on each header of the frames table and a
+paragraph under the map and its legend. Mechanics the ADR does not spell out: each summary
+figure is a two-row grid, the label and the value on the first row, the note on the second in
+column 0 only, which is what keeps it out from under the value; the headers get
+`Background="Transparent"` so the whole header, not only the glyphs, raises the tooltip, and
+`ToolTipService.ShowDuration="30000"`; the map note is the fifth row of the right column's
+grid, under the legend, hidden with the figures on a refusal (`HasNumbers`). The nine texts
+are `SessionMessages.Light*Note` / `Light*Tip`, surfaced by `LightTabViewModel` as plain
+properties with no backing field, so `Reset` has nothing to clear and a refusal nothing to
+hide. The thresholds in them are interpolated from `Th` at the call, with the same `F0` / `F2`
+formats as `LightSeriesReport`, under the invariant culture the application sets (R-090).
 
 The Exposure tab's histogram card is drawing and wording too (ADR 0011): the paragraph under
 the charts is `ExposureReport.HistogramReading`, the shaded target band *is* `ExposureBands`,
