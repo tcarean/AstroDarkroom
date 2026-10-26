@@ -19,9 +19,9 @@ reasons: hand-rolled where hand-rolled is honest (the FITS reader and writer, th
 package only after its candidate, licence, size and alternatives were brought to the author and
 measured, GPLv3 compatibility argued in `THIRD-PARTY-NOTICES.md`, per-RID native binaries a point
 against and not a veto, the three places a package touches and the two of them `ThirdPartyTests`
-enforces (the README table under "Componente terțe" is the fourth copy, kept by hand), and the one
-data component the tests allow. ADR 0028 holds why the lensfun database is that component and the
-Adobe profiles deliberately are not; ADR 0040 holds why the list is displayed in "Despre" rather
+enforces (the README table under "Third-party components" is the fourth copy, kept by hand), and
+the one data component the tests allow. ADR 0028 holds why the lensfun database is that component
+and the Adobe profiles deliberately are not; ADR 0040 holds why the list is displayed in "Despre" rather
 than shipped as a file (LGPL-2.1 §6 asks for it, and nothing rides beside a single-file exe).
 
 ### `Sdcb.LibRaw`

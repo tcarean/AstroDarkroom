@@ -238,8 +238,8 @@ namespace FlatCheck.Wpf
         // classify. The verdict stays the median of the central window of the brightest
         // channel, and nothing in the drawing votes.
         //
-        // The table mirrors the README, the section about the Expunere tab. There is NO test
-        // linking the two - if you reword here, go there too.
+        // The table mirrors the README's, in its window section under "Exposure", which carries
+        // the English text. There is NO test linking the two - if you reword here, go there too.
 
         /// <summary>What the axis is and what role the drawing has, before the list of
         /// readings.</summary>
@@ -384,8 +384,8 @@ namespace FlatCheck.Wpf
         // masters, and which test separates the cases. So: rows of text, no verdict, no
         // threshold, no figure computed here.
         //
-        // The text mirrors the table in the README, the "Iesire PNG" section. There is NO test
-        // linking the two - if you reword here, go there too.
+        // The text mirrors the README's table under "What the shapes mean", in English. There is
+        // NO test linking the two - if you reword here, go there too.
 
         /// <summary>The guide's introduction: how the map is read, before the list of
         /// shapes.</summary>
@@ -470,7 +470,7 @@ namespace FlatCheck.Wpf
              + "exactly like vignetting; measured, a 10% spot in the centre leaves the map empty "
              + "and every figure under 0.1%. Its only trace is the vignetting figure, which "
              + "grows. It shows only when it is slightly off-centre, and then as a crescent, "
-             + "not as a disc. The rotation test is just as blind to it; the counter-test "
+             + "not as a disc. No rotation removes it; the counter-test "
              + "is distance - one set at 30 cm, one at 60.",
                "Iluminare contaminata simetric fata de axa: un panou prea aproape, "
              + "backlight-ul unui monitor. Cand e chiar centrata, NU poate aparea pe "
@@ -478,7 +478,7 @@ namespace FlatCheck.Wpf
              + "exact ca vignetarea; masurat, o pata de 10% in centru lasa harta goala "
              + "si toate cifrele sub 0.1%. Singura ei urma e cifra de vignetare, care "
              + "creste. Se vede doar cand e putin descentrata, si atunci ca o semiluna, "
-             + "nu ca un disc. Testul prin rotatie e la fel de orb la ea; contra-testul "
+             + "nu ca un disc. Nicio rotatie nu o scoate; contra-testul "
              + "e distanta - un set la 30 cm, unul la 60.")),
 
             (T("fine grain everywhere",
@@ -510,8 +510,8 @@ namespace FlatCheck.Wpf
             + ".arw, .dng, .raf, .pef) sau FITS (.fit, .fits, .fts) - si, pe prima pozitie, masterul "
             + "facut din ele, ca sa se vada ce s-a mediat si ce a ramas.");
 
-        // The guide below mirrors the table in the README ("Histogram"). There is no test
-        // linking the two - if you reword here, go there too.
+        // The guide below mirrors the table in the README's window section ("Histogram"), in
+        // English. There is no test linking the two - if you reword here, go there too.
 
         /// <summary>What the picture is, before the list of readings.</summary>
         /// <returns>The guide's intro.</returns>
@@ -638,8 +638,8 @@ namespace FlatCheck.Wpf
 
         // ------------------------------------------------------- smoothing
         //
-        // The smoothing tab's guide. Like the others, it mirrors the README ("Netezire") with no
-        // test linking them. Unlike the others it is OPEN by default: it is the tab's
+        // The smoothing tab's guide. Like the others, it mirrors the README ("5. Smoothing") with
+        // no test linking them. Unlike the others it is OPEN by default: it is the tab's
         // precondition - a button that writes a 96 MB file
         // beside the master is not pressed before knowing what it does.
 

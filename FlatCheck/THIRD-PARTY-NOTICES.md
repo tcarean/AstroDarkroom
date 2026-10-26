@@ -1,166 +1,167 @@
-# Componente terțe
+# Third-party components
 
-FlatCheck e distribuit sub **GNU General Public License v3 sau ulterioară** (vezi
-[LICENSE](LICENSE)). Fișierul ăsta listează codul terț pe care îl leagă, licența fiecărei
-componente și motivul pentru care e compatibilă cu GPLv3.
+FlatCheck is distributed under the **GNU General Public License v3 or later** (see
+[LICENSE](LICENSE)). This file lists the third-party code it links, each component's licence and
+why that licence is compatible with GPLv3.
 
-Nu e o formalitate: două dintre intrările de mai jos presupun o **alegere**, nu o simplă
-constatare. LibRaw e oferit sub două licențe dintre care doar una e compatibilă cu GPL, iar
-licența ImageSharp e condiționată și trebuie arătat că se aplică. Un pachet adăugat fără o
-intrare aici e un pachet a cărui compatibilitate n-a verificat-o nimeni.
+It is not a formality: two of the entries below involve a **choice**, not a mere observation.
+LibRaw is offered under two licences of which only one is compatible with the GPL, and the
+ImageSharp licence is conditional, so it has to be shown that the condition is met. A package
+added without an entry here is a package whose compatibility nobody has checked.
 
-Ce e scris de mână și **nu** e cod terț: cititorul FITS, encoderul PNG, toate calculele și
-toate pragurile.
+What is written by hand and is **not** third-party code: the FITS reader, the PNG encoder, every
+computation and every threshold.
 
 ---
 
 ## Sdcb.LibRaw
 
-**Rol.** Citește mozaicul Bayer nedebayerizat, nivelurile exacte de alb și negru, ordinea
-culorilor din CFA și octeții previzualizării dintr-un fișier raw de aparat. Fără el, modul
-de expunere n-ar putea rula direct pe un `.NEF`.
+**Role.** Reads the undebayered Bayer mosaic, the exact white and black levels, the order of the
+colours in the CFA and the bytes of the preview from a camera raw file. Without it, the exposure
+mode could not run directly on a `.NEF`.
 
-**Licență.** MIT (ambalajul C#).
+**Licence.** MIT (the C# wrapper).
 
-**Compatibilitate.** MIT e permisivă și compatibilă cu GPLv3.
+**Compatibility.** MIT is permissive and compatible with GPLv3.
 
-- Proiect: <https://github.com/sdcb/Sdcb.LibRaw>
+- Project: <https://github.com/sdcb/Sdcb.LibRaw>
 
-## LibRaw (bibliotecile native din `Sdcb.LibRaw.runtime.*`)
+## LibRaw (the native libraries of `Sdcb.LibRaw.runtime.*`)
 
-**Rol.** Decodarea propriu-zisă a formatelor raw. Vine ca DLL-uri native
-(`raw_r`, `jpeg8`, `lcms2`, `zlib1`), livrate alături de executabil.
+**Role.** The actual decoding of the raw formats. It comes as native DLLs (`raw_r`, `jpeg8`,
+`lcms2`, `zlib1`), shipped beside the executable.
 
-**Licență.** Dublă, la alegerea celui care o folosește:
-**LGPL-2.1-only SAU CDDL-1.0**.
+**Licence.** Dual, at the choice of whoever uses it: **LGPL-2.1-only OR CDDL-1.0**.
 
-**Compatibilitate - aici se ia o decizie.** FlatCheck folosește LibRaw sub **LGPL-2.1**.
+**Compatibility: here a decision is taken.** FlatCheck uses LibRaw under the **LGPL-2.1**.
 
-CDDL-1.0 **nu** e compatibilă cu GPL, deci alegerea celeilalte opțiuni ar rupe licența
-uneltei. LGPL-2.1 e compatibilă: articolul 3 al ei permite explicit aplicarea termenilor
-GPL obișnuite, „version 2 of the ordinary GNU General Public License or any later version",
-asupra unei copii, ceea ce aduce codul într-o lucrare GPLv3.
+CDDL-1.0 is **not** compatible with the GPL, so choosing the other option would break the tool's
+licence. LGPL-2.1 is compatible: its section 3 explicitly allows applying the terms of the
+ordinary GPL, "version 2 of the ordinary GNU General Public License or any later version", to a
+copy, which brings the code into a GPLv3 work.
 
-Dacă cineva schimbă vreodată opțiunea asta, licența FlatCheck se rupe tăcut. De aceea e
-scrisă aici, nu dedusă la nevoie.
+If anyone ever changes this option, FlatCheck's licence breaks silently. That is why it is written
+here, and not worked out when needed.
 
-- Proiect: <https://www.libraw.org/>
+- Project: <https://www.libraw.org/>
 
 ## SixLabors.ImageSharp
 
-**Rol.** Decodează previzualizarea JPEG pe care aparatul o înglobează în fișierul raw,
-adică exact imaginea din care aparatul și-a calculat histograma de pe ecran. Folosită numai
-pentru afișare, în tabul de expunere: nu intră în niciun verdict și nu produce nicio cifră
-pe care să se sprijine o decizie despre flat.
+**Role.** Decodes the JPEG preview the camera embeds in the raw file, the very image from which
+the camera computed its on-screen histogram. It is used for display only, in the Exposure tab: it
+enters no verdict and produces no figure that a decision about the flat rests on.
 
-**Licență.** Six Labors Split License, versiunea 1.0 (iunie 2022).
+**Licence.** Six Labors Split License, version 1.0 (June 2022).
 
-**Compatibilitate.** Nu e o licență restrictivă unică, ci una **duală condiționată**.
-Textul acordă termenii Apache 2.0 când:
+**Compatibility.** It is not a single restrictive licence but a **conditional dual** one. The text
+grants the Apache 2.0 terms when:
 
 > "You are consuming the Work in for use in software licensed under an Open Source or
 > Source Available license."
 
-FlatCheck e sub GPLv3, deci e software sub o licență open source și califică pe condiția
-asta. Licența comercială e cerută doar pentru celelalte cazuri, în esență utilizarea
-proprietară de către o entitate cu venit anual de cel puțin 1M USD.
+FlatCheck is under GPLv3, so it is software under an open source licence and meets this
+condition. The commercial licence is required only in the other cases, essentially proprietary
+use by an entity with an annual revenue of at least USD 1M.
 
-Iar Apache 2.0 intră în GPLv3 într-o singură direcție, ceea ce Apache Software Foundation
-afirmă explicit:
+And Apache 2.0 goes into GPLv3 in one direction, which the Apache Software Foundation states
+explicitly:
 
 > "Apache 2 software can therefore be included in GPLv3 projects, because the GPLv3 license
 > accepts our software into GPLv3 works."
 
-Nu e nevoie de nicio modificare a licenței FlatCheck.
+FlatCheck's licence needs no change.
 
-**Două lucruri de păstrat.**
+**Two things to keep.**
 
-1. **Versiunea se fixează în `PackageReference`.** Textul licenței e „Version 1.0, June
-   2022" și nu spune ce versiune de licență guvernează care lansare. Grantul primit vine cu
-   versiunea luată, deci fixarea e igienă juridică, nu doar reproductibilitate.
-   Versiunea fixată e **3.1.11**, nu 4.x: de la 4.0.0 pachetul aduce un task MSBuild care
-   validează o cheie de licență la compilare, avertisment pe Debug și **eroare pe
-   Release** fără `sixlabors.lic` sau `$(SixLaborsLicenseKey)`. Six Labors acordă cheia
-   gratuit proiectelor open source, dar pe bază de cerere, și oricine clonează repo-ul ar
-   avea nevoie de a lui ca să facă publish. 3.1.x are exact același text de licență și
-   niciun task. Trecerea la 4.x înseamnă obținerea cheii și, în cod, setarea explicită a
-   lui `ColorProfileHandling.Preserve` la decodare.
-2. **Calificarea nu se rupe în aval.** GPLv3 obligă orice derivat să rămână GPLv3, adică tot
-   o licență open source, deci oricine preia FlatCheck califică la rândul lui pe aceeași
-   condiție.
+1. **The version is pinned**, in `Directory.Packages.props`. The licence text is "Version 1.0,
+   June 2022" and does not say which version of the licence governs which release. The grant
+   comes with the version taken, so the pin is legal hygiene, not only reproducibility. The
+   version pinned is **3.1.11**, not 4.x: since 4.0.0 the package brings an MSBuild task that
+   validates a licence key at compile time, a warning on Debug and an **error on Release** without
+   `sixlabors.lic` or `$(SixLaborsLicenseKey)`. Six Labors grants the key free to open source
+   projects, but on request, and anyone who clones the repository would need their own to
+   publish. 3.1.x has exactly the same licence text and no task. Moving to 4.x means obtaining the
+   key and, in the code, setting `ColorProfileHandling.Preserve` explicitly when decoding.
+2. **The condition holds downstream.** GPLv3 requires every derivative to stay GPLv3, which is an
+   open source licence too, so anyone who takes FlatCheck meets the same condition in turn.
 
-**Alternativa evaluată.** `StbImageSharp` (Unlicense sau MIT, fără dependințe tranzitive)
-produce, măsurat pe previzualizări reale față de un decodor independent, mediane identice
-pe toate canalele, și n-ar fi purtat nicio notă de licență. ImageSharp a fost preferată
-pentru robustețe pe cazurile incomode pe care le poate avea o previzualizare de aparat -
-JPEG progresiv, CMYK/YCCK, subeșantionare neobișnuită - și pentru decodarea la scară
-redusă. Dacă licența ei se mută vreodată, StbImageSharp e înlocuitorul direct, iar cusătura
-e lată de un singur fișier (`PreviewReader.cs`).
+**The alternative evaluated.** `StbImageSharp` (Unlicense or MIT, no transitive dependencies)
+gives, measured on real previews against an independent decoder, identical medians on every
+channel, and would have carried no licence note. ImageSharp was preferred for its robustness on
+the awkward cases a camera preview can present (progressive JPEG, CMYK/YCCK, unusual subsampling)
+and for decoding at a reduced scale. If its licence ever moves, StbImageSharp is the direct
+replacement, and the seam is one file wide (`PreviewReader.cs`).
 
 Copyright (c) Six Labors.
 
-- Proiect: <https://github.com/SixLabors/ImageSharp>
-- Licență: <https://github.com/SixLabors/ImageSharp/blob/main/LICENSE>
+- Project: <https://github.com/SixLabors/ImageSharp>
+- Licence: <https://github.com/SixLabors/ImageSharp/blob/main/LICENSE>
 
 ---
 
-## lensfun (baza de date)
+## lensfun (database)
 
-**Rol.** Profilele de vignetare ale obiectivelor, pentru flatul sintetic (`--synthetic`,
-tabul Sintetic): coeficienții modelului `pa` (Pablo D'Angelo / Hugin) pe focală, diafragmă
-și distanță, plus crop factor-ul aparatelor. Fișierele XML din `data/db` sunt copiate
-**neschimbate** în folderul `lensfun/` de la rădăcina repo-ului și livrate lângă exe;
-`lensfun/LENSFUN-VERSION.txt` spune din ce commit și de când e copia, iar
-`lensfun/update-lensfun.py` o reîmprospătează. Nu se folosește biblioteca lensfun
-(LGPL-3), numai datele; citirea și modelul sunt ale noastre (`FlatCheck.Core/LensProfiles/`).
+**Role.** The lenses' vignetting profiles, for the synthetic flat (`--synthetic`, the Synthetic
+tab) and for the structure mode's comparison with the lens profile: the coefficients of the `pa`
+model (Pablo D'Angelo / Hugin) per focal length, aperture and distance, plus the cameras' crop
+factors. The XML files of `data/db` are copied **unchanged** into the `lensfun/` folder at the
+project's root and shipped beside the executable; `lensfun/LENSFUN-VERSION.txt` says which commit
+the copy is from and when, and `lensfun/update-lensfun.py` refreshes it. The lensfun library
+(LGPL-3) is not used, only the data; the reading and the model are FlatCheck's own
+(`FlatCheck.Core/LensProfiles/`).
 
-**Licență.** Creative Commons Attribution-Share Alike 3.0 (CC BY-SA 3.0), declarată în
-README-ul proiectului lensfun pentru „the lens database (data/ subdirectory)".
+**Licence.** Creative Commons Attribution-Share Alike 3.0 (CC BY-SA 3.0), which the lensfun
+project's README states for "the lens database (data/ subdirectory)".
 
-**Compatibilitate.** Sunt date, nu cod: nu se leagă în program și nu devin parte din
-lucrarea GPLv3, ci sunt agregate lângă ea, neschimbate. CC BY-SA cere două lucruri, și
-amândouă sunt îndeplinite: **atribuirea** - componenta apare în fereastra „Despre", aici și
-în README, iar folderul poartă `LICENSE.txt` - și **share-alike pentru date**, care se
-respectă de la sine, fiindcă datele se redistribuie sub aceeași licență, nemodificate.
-(CC BY-SA 3.0 nu e declarată compatibilă cu GPLv3 pentru *adaptări*; nu facem una.)
+**Compatibility.** It is data, not code: it is not linked into the program and does not become
+part of the GPLv3 work, but is aggregated beside it, unchanged. CC BY-SA asks for two things, and
+both are met: **attribution** (the component appears in the About window, here and in the README,
+and the folder carries `LICENSE.txt`) and **share-alike for the data**, which holds by itself,
+since the data are redistributed under the same licence, unmodified. (CC BY-SA 3.0 is not
+declared compatible with GPLv3 for *adaptations*; FlatCheck makes none.)
 
-**De ce se livrează, și nu se citește de pe mașină ca profilele Adobe.** Nu există o
-instalare standard a bazei lensfun pe Windows; darktable și RawTherapee au fiecare copia
-lor. O copie lângă exe e cea care merge fără nimic altceva instalat, și se actualizează
-înlocuind fișierele din folder.
+**Why it ships, instead of being read from the machine like the Adobe profiles.** There is no
+standard installation of the lensfun database on Windows; darktable and RawTherapee each keep
+their own copy. A copy beside the executable is the one that works with nothing else installed,
+and it is updated by replacing the files in the folder.
 
 Copyright (C) the lensfun contributors.
 
-- Proiect: <https://github.com/lensfun/lensfun>
-- Licența datelor: <https://creativecommons.org/licenses/by-sa/3.0/>
+- Project: <https://github.com/lensfun/lensfun>
+- Licence of the data: <https://creativecommons.org/licenses/by-sa/3.0/>
 
 ---
 
-## Profilele Adobe (.lcp) - nu sunt o componentă livrată
+## The Adobe profiles (.lcp): not a shipped component
 
-Flatul sintetic citește și profilele de obiectiv ale Adobe, dacă Lightroom, Camera Raw sau
-DNG Converter le-a instalat pe mașină (`C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0`,
-`%APPDATA%\Adobe\CameraRaw\LensProfiles` și `C:\Program Files\Adobe\<aplicație>\Resources\LensProfiles\1.0`,
-copia proprie a lui Lightroom). **Nu se copiază, nu se înglobează și nu se
-redistribuie**: sunt ale Adobe, se citesc de unde le-a pus Adobe, și fără ele jumătatea
-Adobe a listei e goală. De aceea nu apar în lista din „Despre" - nu e nimic al lor în
-program - dar sunt menționate aici, ca următorul cititor să nu le adauge.
+The synthetic flat and the structure mode's comparison also read Adobe's lens profiles, when
+Lightroom, Camera Raw or the DNG Converter installed them on the machine
+(`C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0`, `%APPDATA%\Adobe\CameraRaw\LensProfiles` and
+`C:\Program Files\Adobe\<application>\Resources\LensProfiles\1.0`, Lightroom's own copy). **They
+are not copied, not embedded and not redistributed**: they are Adobe's, they are read where Adobe
+put them, and without them the Adobe half of the list is empty. That is why they are not in the
+About window's list (nothing of theirs is in the program), but they are named here, so that the
+next reader does not add them.
 
 ---
 
-## Componente de test
+## Test components
 
-Folosite numai la compilarea și rularea testelor, deci nu sunt distribuite cu unealta.
+Used only to build and run the tests, so they are not distributed with the tool.
 
-| pachet | licență |
+| package | licence |
 |---|---|
-| xUnit | Apache-2.0 |
+| xunit | Apache-2.0 |
+| xunit.runner.visualstudio | Apache-2.0 |
 | Microsoft.NET.Test.Sdk | MIT |
+| coverlet.collector | MIT |
 
 ---
 
-## Cum se adaugă o intrare
+## How an entry is added
 
-Vezi regula "Packages" a kit-ului (`.claude/rules/kit/process.md`), regula "Package notices" din [CLAUDE.md](CLAUDE.md) și nota [docs/design/dependencies.md](docs/design/dependencies.md). Pe scurt: pachetul se discută înainte,
-nu după; compatibilitatea cu GPLv3 se demonstrează, nu se presupune; iar motivul se scrie
-aici, ca următorul cititor să nu fie nevoit să-l redescopere.
+See the kit's rule "Packages" (`.claude/rules/kit/process.md`), the rule "Package notices" in
+[CLAUDE.md](CLAUDE.md) and the note [docs/design/dependencies.md](docs/design/dependencies.md). In
+short: a package is discussed before it is added, not after; its compatibility with GPLv3 is
+shown, not assumed; and the reason is written here, so the next reader does not have to find it
+again.

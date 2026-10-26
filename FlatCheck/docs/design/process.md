@@ -52,9 +52,9 @@ mechanics the ADR does not spell out:
 ## Build, test and publish
 
 The build, test, golden and screen-dump commands are in CLAUDE.md ("Commands"). The two publish
-targets are in `kit.json` (`scripts/release.ps1` runs them), and `README.md` ("Build, rulare,
-teste") explains them for the user: the two flags that keep `flatcheck.exe` a single copyable
-file now that libraw is in, the RIDs that have a libraw binary, the `lensfun/` folder that rides
+targets are in `kit.json` (`scripts/release.ps1` runs them), and `README.md` ("Getting it" and
+"Development") explains them for the user: the two flags that keep `flatcheck.exe` a single
+copyable file now that libraw is in, the RIDs that have a libraw binary, the `lensfun/` folder that rides
 beside both executables (ADR 0028), why the window publishes without `PublishSingleFile`, and
 why the whole solution no longer builds on Linux. `Directory.Build.props` declares the runtime
 they publish for and turns the single-file analyzer off, so a release's publish leaves the lock
@@ -69,7 +69,7 @@ the render does not (ADR 0037: the PNGs are for eyes, never a golden).
 > `FlatCheck/FlatCheckCli.cs`, `FlatCheck/Program.cs`, `FlatCheck/FlatCheck.csproj`,
 > `FlatCheck.Tests/GoldenOutputTests.cs` with `Golden/`, `FlatCheck.Tests/ParityGoldenTests.cs`
 > with `ParityFixtures.cs`, the mode lists in `FlatCheck.Tests/VersionTests.cs`, and
-> the "Opțiuni" section of `README.md`.
+> the "Options" section of `README.md`.
 
 The console is three files, and that is the point: `Program.cs` is a one-line shim (`Main`
 calls `FlatCheckCli.Run(args, Console.Out, Console.Error)`), `Options.cs` parses, and
@@ -174,7 +174,7 @@ writes `WriteUsageEnglish` or `WriteUsageRomanian`, each one `WriteLine` per inv
 then the optional flags grouped by the mode they serve, then a short paragraph per mode, and
 then `RunReport.WarrantyLines` (GPLv3 §5(d); see "Licensing"). The two are written whole, not
 line by line in pairs, because their columns are aligned by hand; a new flag goes in both. The
-Romanian is without diacritics, like every console line; `README.md` uses diacritics.
+Romanian is without diacritics, like every console line.
 `Golden/help.txt` (Romanian) and `Golden/en_help.txt` pin the whole text through `Help_IsPrintedForNoArgs` and
 `Help_IsPrintedForHelpFlags` (`-h`, `--help`), and
 `R005_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense` in `VersionTests` pins the legal
@@ -221,8 +221,8 @@ The procedure:
    $env:FLATCHECK_UPDATE_GOLDEN = '1'; dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"; Remove-Item Env:\FLATCHECK_UPDATE_GOLDEN
    ```
 
-   The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests` form in
-   CLAUDE.md is the same thing from a POSIX shell. The variable rewrites **every** golden file
+   The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"`
+   form in CLAUDE.md is the same thing from a POSIX shell. The variable rewrites **every** golden file
    the filter selects, not only the new one; without the filter it would rewrite the 39 parity
    goldens too.
 3. `git status`: the only change under `Golden/` must be the new untracked file. A modified
@@ -279,16 +279,17 @@ since `--ratio` left, ADR 0067): structure, `--light`, `--expo`, `--histeq`, `--
 `--synthetic`, `--lenses` and `--against` (the last three with an empty `--profiles` folder,
 which is enough for the banner: it is written before the options are parsed).
 
-### The README "Opțiuni" section
+### The README "Options" section
 
 `README.md` is the user documentation and the only place the options are described for users
-(the rule "Languages"; "Conventions" above). Its `## Opțiuni` section is a code block that mirrors
-`WriteUsage`: the invocation forms, then one line per flag with the modes it applies to and its
-default, then two paragraphs (flags on either side of the path; the banner on every run). Every
-option appears there, in Romanian with diacritics. A new flag gets its line there, a mention in
-the mode's own `### N.` section when it changes what that mode does, and a line under
-`## Coduri de ieșire` when it adds or changes an exit code. The requirement row of the kit's rule "Requirements first"
-goes under "Console contract" for a flag and in the mode's block for a mode.
+(the rule "Languages"; "Conventions" above). Its `## Options` section is a code block that mirrors
+the English `WriteUsage`: the invocation forms, then one line per flag with the modes it applies
+to and its default, then two paragraphs (flags on either side of the path, and the order the
+modes are dispatched in; the banner on every run). Every option appears there, in English (ADR
+0069). A new flag gets its line there, a mention in the mode's own `### N.` section when it
+changes what that mode does, a row under `## Thresholds` when it brings a threshold, and a line
+under `## Exit codes` when it adds or changes an exit code. The requirement row of the kit's rule
+"Requirements first" goes under "Console contract" for a flag and in the mode's block for a mode.
 
 ### InvariantGlobalization
 

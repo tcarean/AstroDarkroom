@@ -1,1567 +1,1476 @@
-# flatcheck
+# FlatCheck
 
-Diagnostic cantitativ pentru flat frames de astrofoto. Răspunde la patru întrebări:
-e master flat-ul simetric radial, cât din abaterea lui e fixată de *aparat* și cât de
-*lume*, corectează flat-ul un light real, și e un flat brut expus corect. Al cincilea mod
-nu răspunde la nimic — arată: cadrul văzut prin egalizare de histogramă, adică vederea
-„Histogram" din Siril, în care orice neuniformitate iese la contrast maxim.
+Quantitative diagnostic for astrophotography flat frames.
 
-Consolă mică în C#, cu **o singură dependință**: reader FITS propriu și encoder PNG
-propriu (prin `ZLibStream` din BCL), iar pentru fișierele raw de aparat — libraw, prin
-`Sdcb.LibRaw`. Un NEF nu e doar un container: pixelii sunt comprimați Huffman cu predictor
-și trecuți printr-o curbă de linearizare din MakerNote, și nu există niciun decodor .NET
-pur managed pentru asta. .NET 8. Binarul se numește `flatcheck.exe` și, publicat ca
-`PublishSingleFile`, se copiază oriunde ca până acum.
+FlatCheck measures the flats of a photographic lens on a DSLR, stacked with
+[Siril](https://siril.org), and answers three questions, each with a figure and the threshold
+behind it:
 
-Există și o **aplicație cu ferestre**, `FlatCheck.Wpf.exe`, care rulează aceleași șase
-moduri pe un folder de sesiune Siril, în șapte taburi. Nu e o a doua implementare: stă
-peste același nucleu (`FlatCheck.Core`) și produce aceleași cifre și același raport.
-Vezi [„Aplicația cu ferestre"](#aplicația-cu-ferestre).
+- Is the master flat radially symmetric, and does its vignetting match the lens's published
+  profile? (structure, the default mode)
+- Does the flat correct a real light? (`--light`)
+- Is a raw flat exposed right? (`--expo`)
 
-Consola vorbește **engleză sau română**: engleză implicit, română cu `--lang ro` (sau
-`--lang=ro`), oriunde pe linia de comandă. Limba schimbă doar cuvintele — cifrele, verdictul
-din spatele lor, codul de ieșire și numele fișierelor scrise sunt aceleași în ambele.
-Exemplele de ieșire din acest fișier sunt cele românești, adică cu `--lang ro`. Fereastra
-primește același `--lang` (`FlatCheck.Wpf.exe <folder> --lang ro`) și e tradusă toată: taburi,
-butoane, ghiduri, mesaje și rapoarte. Numele etichetelor și ale taburilor din acest fișier sunt
-cele românești; în engleză tabul Structura e `Structure`, Expunere `Exposure`, Netezire
-`Smoothing`, Sintetic `Synthetic`. Fișierele pe care le scrie fereastra au nume englezești în
-ambele limbi (`Test result.txt`, `Split result.txt`, `pp_flat_stacked_smoothed.fit`,
-`pp_flat_stacked_synthetic.fit`); cele scrise de versiunile dinainte, cu nume românești
-(`_netezit`, `_sintetic`), nu mai sunt recunoscute — redenumește-le dacă le vrei înapoi.
+Three more modes give no verdict. `--histeq` shows a frame the way Siril's "Histogram" display
+does, where any unevenness comes out at maximum contrast. `--smooth` writes a second master with
+the diffuser's texture removed. `--synthetic` writes a radial flat from the lens's published
+vignetting profile, and `--against` compares two flats, for example the real one with that
+synthetic one.
 
-`flatcheck.py` este prototipul Python din care a fost portat, **înghețat la 2.2.0** din
-2026-09-26 și neîntreținut. Cifrele pe care le-a confirmat sunt fixate ca golden-uri de
-paritate (vezi [„Golden-urile de paritate"](#golden-urile-de-paritate)).
+There are two applications over one core library, `FlatCheck.Core`:
 
-> **Documentația de utilizator stă aici, în acest fișier.** Nu o duplica în docstring-uri
-> sau comentarii — au divergat deja o dată.
+- `flatcheck.exe`, a console: one file, one mode, one report per run;
+- `FlatCheck.Wpf.exe`, a window: it opens a Siril session folder and runs the same six modes in
+  seven tabs.
 
----
+The window is not a second implementation. Both applications call the same code, so their
+figures are the same by construction, and the report the window saves is byte for byte the
+console's.
 
-## Ce fișier îi dai
+Both speak English by default, or Romanian with `--lang ro` (also `--lang=ro`), anywhere on the
+command line. The language changes the words only: the figures, the verdicts behind them, the
+exit codes and the names of the files written are the same in both. The output quoted in this
+file is the English one. Files that earlier versions wrote under Romanian names (`_netezit`,
+`_sintetic`, `Rezultat testare.txt`) are no longer recognised: rename them to keep using them.
 
-Cea mai probabilă cauză de rezultat greșit nu e în cod, e în fișierul ales.
+FlatCheck measures and reports. It never changes a file you give it, and it never decides what a
+shape on a map is. It was built and validated on the author's equipment: a Nikon D3300 with a
+Samyang 135 mm f/2, a Nikkor 35 mm f/1.8 DX and a Tokina 11-20 mm f/2.8. Raws of other cameras
+are read too, through LibRaw.
 
-| mod | ce vrea |
-|---|---|
-| structură (implicit) | master flat **calibrat** — `pp_flat_stacked.fit`, în `process/` sau în `masters/`, după scriptul Siril folosit |
-| `--light` | light **calibrat cu flat**, **fără background extraction**, **neregistrat** |
-| `--expo` | un **singur cadru brut, necalibrat** — de preferat chiar `.NEF`-ul |
+[TOC]
 
-Siril 1.4 scrie masterul ca **float**, cu valorile împărțite la 65535, deci linia
-`median / max ADU` iese de forma `0.0143 / 0.0190 (float normalizat 0..1)`. Nu e un
-fișier gol; toate metricile sunt rapoarte, deci scara nu contează.
+## Getting it
 
-Prefixul `pp_` din Siril înseamnă „calibrat". Un stack necalibrat mai are un piedestal
-de ~150-600 ADU care aplatizează profilul și subraportează vignetarea cu ~1% — iar
-**toate testele vor spune „OK" oricum**, fiindcă profilul rămâne simetric radial, doar
-amplitudinea e greșită. Nu e detectabil, doar evitabil.
+The window is one of the five tools of Astro Darkroom: the repository's front page (the
+`README.md` at the root of the `photo` repository) says how to get the suite, prebuilt or built
+from a checkout. The console is not part of the suite; build it as below.
 
-Formate acceptate: FITS (`.fit` / `.fits` / `.fts`), BITPIX 8/16/32/-32/-64, mono sau
-color, **și raw de aparat** (`.nef` / `.cr2` / `.cr3` / `.arw` / `.dng` / `.raf` / `.pef`). Raw-ul
-se citește prin libraw — exact biblioteca din spatele lui `rawpy`, cel folosit de
-versiunea Python — deci cifrele ies identice, nu doar apropiate.
-
-Pe raw, `--expo` capătă ceva ce pe FITS nu poate avea: nivelul de saturație și cel de
-negru scrise de aparat în fișier, în loc să fie ghicite din maximul cadrului.
-
-### ISO-ul nu contează
-
-Nu modifica nimic pentru ISO. Fiecare metrică e un raport — `log2(centru/colț)`,
-`(max−min)/medie`, `img/model` — iar ISO e un scalar, deci se simplifică din toate. Dacă
-o metrică nouă nu e invariantă la scală, ăsta e un semn că e greșită.
-
----
-
-## Ideea de bază
-
-Pentru un obiectiv fotografic fără tren optic, un flat *corect* este prin construcție o
-funcție **pur radială** centrată pe axa optică. Vignetarea e simetrică rotațional; praful
-la f/2 e sub prag (măsurat: umbra de praf vizibilă pe un master de Nikkor 35 la f/2.8 are
-0.31 %, la un prag de 2 %).
-
-Prin urmare orice abatere de la simetria radială **nu e vignetare — e eroare**: sursă de
-lumină neuniformă, light leak, cameră înclinată, lumină ambientală, hârtie difuzoare
-prea aproape de obiectiv.
-
-„Flat bun" nu înseamnă „arată plat". Înseamnă „abaterea de la simetria radială e sub
-zgomot". Aia e o cifră, și se poate măsura.
-
-Modelul radial și asimetria se calculează în jurul **centrului senzorului**, nu al
-vârfului de iluminare fitat. Fitarea centrului ar absorbi exact gradientul liniar pe care
-îl cauți, iar testul s-ar anula singur. Profilul radial se ia însă din rasterul simetrizat
-la 180° — vezi [„O capcană care a fost reparată"](#o-capcană-care-a-fost-reparată).
-
----
-
-## Cele șase moduri
-
-### 1. Structură (implicit)
+**Both applications from a checkout** need Windows 10 or 11 (x64), Git and the .NET 9 SDK,
+version 9.0.318 or a later 9.0.3xx patch (`global.json` asks for it; it builds the projects,
+which target .NET 8). From the `FlatCheck` folder:
 
 ```bash
-flatcheck process/pp_flat_stacked.fit          # sau masters/pp_flat_stacked.fit, după scriptul Siril
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version X.Y.Z -PublishOnly
 ```
 
-Rulează pe masterul final. Raportează informativ vignetarea și offsetul centrului de
-iluminare față de centrul senzorului, apoi cinci teste de abatere de la simetria radială:
-împrăștierea celor patru colțuri, asimetria azimutală pe 12 sectoare, **reziduul după
-modelul radial** — cel care contează cel mai mult, fiindcă măsoară direct cât din cadru nu
-se explică printr-un model pur radial — înclinarea, adică amplitudinea vârf-la-vârf a
-gradientului liniar peste cadru, și **pata maximă**, cea mai abătută dală de pe tot
-cadrul, care prinde un defect compact pe care reziduul îl taie ca extremă. Salvează o
-hartă reziduală PNG.
+`-PublishOnly` publishes and does nothing else: no checks, no change to any tracked file. Give as
+`X.Y.Z` the `<Version>` in `Directory.Build.props`; it names the output folder:
 
-#### Praful: sesiune sau bibliotecă
+- `artifacts/X.Y.Z/console/flatcheck.exe`, self-contained, a single file;
+- `artifacts/X.Y.Z/wpf/FlatCheck.Wpf.exe`, with its files.
 
-Pe lângă cele cinci teste, raportul dă o cifră informativă, **pete locale**: cea mai adâncă
-pată compactă rămasă după ce se scade structura de scară mare, cu poziția ei în rasterul
-de analiză. Un gradient nu intră în ea; o umbră de praf, un inel de condens sau o scurgere
-mică intră întreagă.
+Each has a `lensfun/` folder beside it: copy it along with the executable. Without it everything
+works, but the list of lens profiles holds only Adobe's, and says which folder it looked in. The
+two `dotnet publish` commands the script runs are under "Development".
 
-**Semnul e diagnosticul**, și raportul îl scrie în cuvinte lângă cifră:
+**What FlatCheck works with:**
 
-| semn | ce înseamnă | cauze tipice |
-|---|---|---|
-| negativ, `(mai intunecat)` | pata e mai întunecată decât ce o înconjoară | praf pe senzor sau pe filtru, condens, un obstacol |
-| pozitiv, `(mai luminos)` | pata e mai luminoasă | scurgere de lumină, o reflexie |
+- **Siril 1.4.4 or newer.** FlatCheck reads what Siril's preprocessing scripts write, and
+  `--histeq` mirrors Siril 1.4.4's display. The window's **Run in Siril** button starts your own
+  `siril-cli.exe`.
+- **Adobe's lens profiles, optional.** The `.lcp` files that Adobe DNG Converter (free), Camera
+  Raw or Lightroom install. Without them, the lens list holds the lensfun profiles that ship with
+  FlatCheck. See mode 6.
 
-Peste pragul de 2 % raportul tipărește o **atenționare**, nu un verdict, fiindcă răspunsul
-depinde de ce faci cu flat-ul: o pată fixă pe aparat e *corectă* pentru sesiunea ale cărei
-lights au aceeași pată, și *greșită* pentru un flat de bibliotecă, unde praful se va fi
-mutat. Sub prag cifra e doar informativă. Caută poziția în hartă înainte să decizi.
+## Quick start
 
-Un lucru de știut înainte să te iei după ea: cifra găsește ce e *compact*, dar prinde și
-muchia unei structuri mari, dacă aceasta e mai abruptă decât fereastra din care se scade
-fondul local. Măsurat pe biblioteca proprie, extrema unui master de Nikkor 35 la f/2.8 e o
-dungă verticală pe marginea din stânga (−0.44 %), nu o pată rotundă. Amândouă rămân la o
-cincime din prag, deci nu s-a aprins nimic — dar dacă vezi vreodată atenționarea, uită-te
-întâi dacă forma din hartă e rotundă. Numai aia e praf.
-
-#### Ce nu vede modul structură
-
-O pată **rotundă și centrată exact pe axă** — un panou prea aproape, backlight-ul unui
-monitor pe care ai centrat obiectivul — e absorbită întreagă de modelul radial, exact ca
-vignetarea: măsurat, o pată de 10 % în centru lasă toate cifrele sub 0.1 % și harta goală.
-Singura ei urmă e cifra de vignetare, care crește. Se vede doar dacă e puțin descentrată,
-și atunci ca o semilună, nu ca un disc. Nicio rotație nu o scoate; contra-testul e
-distanța — un set la 30 cm, unul la 60.
-
-Ce iese de aici e o **limită superioară** a erorii de flat, nu eroarea: tot ce măsoară e
-suma părții fixate de aparat (inofensivă) și a celei fixate în lume (dăunătoare), iar un
-singur master nu conține informația care le desparte — vezi „Scara de reziduu".
-Rămâne totuși testul cu care începi, fiindcă e singurul care nu cere să mai fotografiezi
-nimic.
-
-#### Al șaselea test: vignetarea față de profilul obiectivului
-
-Cele cinci teste măsoară abaterea de la simetria radială, deci sunt **oarbe la un exces
-radial**: un master de tabletă (Tokina 20 mm f/2.8, patru orientări la 90°) a ieșit PERFECT
-pe toate cinci cu 1.26 stopuri de vignetare, când cele două baze de profile dau 0.66–0.92
-pentru obiectivul ăsta. Excesul era căderea unghiulară a panoului, făcută radială de
-rotație; mai multe rotații nu ajută. Singura referință externă pe care o are unealta e
-**profilul publicat al obiectivului** (Adobe LCP de pe mașină, baza lensfun de lângă
-program — vezi modul 6), și asta e comparația:
-
-```bash
-flatcheck process/pp_flat_stacked.fit --raw flats/DSC_0001.NEF     # obiectivul și diafragma din raw
-flatcheck process/pp_flat_stacked.fit --lens "Tokina 11-20" --fstop 2.8   # sau după nume
-```
-
-Pentru fiecare obiectiv candidat (după numele obiectivului scris de aparat în raw sau, când
-lipsește, după ID-ul obiectivului — al lui Nikon, Canon, Sony sau Pentax —, restrâns pe gama din
-MakerNote și pe montura aparatului; sau după textul din `--lens`), profilul cel mai
-apropiat de focală și diafragmă se construiește ca raster la mărimea rasterului de analiză
-și i se măsoară vignetarea cu **exact operatorul masterului** (mediana cutiilor de colț de
-5 % față de centru). Diferența în stopuri, `master − profil`, trece prin aceeași aritmetică
-ca la `--against`: `2^|D| − 1` e eroarea din colțul unui light calibrat cu masterul, pe
-scara de reziduu, deci sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste
-REFA. **Verdictul comparației e al profilului cel mai apropiat**, nu al celui mai rău: cele
-două baze diferă între ele cu ~0.2 stopuri pe același obiectiv, și un master care coincide
-cu una din ele nu e greșit. Verdictul rulării e cel mai rău dintre formă (cele cinci teste)
-și adâncime, și codul de ieșire îl urmează.
-
-**Două scări pentru aceeași mărime.** Eroarea din colțul light-ului calibrat e exact ce
-măsoară și `--light`, direct în light, cu pragurile lui de 2 % OK și 5 % PROBLEMA. Aici
-aceeași eroare stă pe scara de reziduu, unde 10 % e încă BUN, pentru că referința e alta:
-profilul publicat, iar cele două baze diferă între ele cu 0.2 stopuri, adică 15 % în colț,
-de trei ori linia de PROBLEMA a lui `--light`. Un verdict mai fin decât referința lui ar fi
-o precizie inventată. De aceea raportul le arată pe amândouă: sub scara adâncimii tipărește
-eroarea din colț, ce ar citi `--light` din ea și incertitudinea referinței. La un exces de
-0.10 stopuri, cazul foilor de hârtie pe tabletă, asta înseamnă 7 % în colț, BUN pe scara de
-aici și PROBLEMA pe cea a lui `--light`; citește-le pe amândouă înainte să decizi dacă
-refaci flat-urile, și ține minte că `--light` însuși e refuzat pe un câmp mai larg de 40°.
-
-**Semnul e diagnosticul.** Plus înseamnă că masterul cade spre colț mai mult decât modelul:
-sursa cade cu unghiul — un panou prea aproape sau fără difuzor adevărat (foile mate nu
-difuzează). Minus înseamnă că sursa umple colțurile: cupola cerului, lumină ambiantă, o
-reflexie în parasolar. Mai multe rotații nu ajută, fiindcă excesul se rotește cu aparatul
-sau e simetrizat de rotație.
-
-Măsurat pe biblioteca proprie (2026-09-18, D3300, `--raw` pe primul raw din `flats/`):
-
-| master | vignetare | cel mai apropiat profil | diferența | verdict adâncime |
-|---|---|---|---|---|
-| Tokina 20 f/2.8, tabletă + 7 coperți mate | 1.26 | lensfun 0.91 | +0.34 | REFA |
-| Tokina 20 f/2.8, tabletă + 15 coperți | 1.24 | lensfun 0.91 | +0.33 | REFA |
-| Tokina 20 f/2.8, cer fără difuzor | 0.27 | Adobe 0.66 | −0.39 | REFA |
-| Tokina 20 f/2.8, monitor aproape | 0.85 | lensfun 0.85 | 0.00 | PERFECT |
-| Tokina 20 f/2.8, pe monitor | 0.78 | lensfun 0.85 | −0.07 | BUN |
-| Nikkor 35 DX f/2.8, cer (ISO 400 / 800) | 0.63 / 0.62 | Adobe 0.52 | +0.11 / +0.10 | BUN |
-| Samyang 135 f/2, cer (ISO 400 / 1600) | 0.61 / 0.60 | Nikkor 135 f/2 DC 0.50 | +0.11 / +0.10 | BUN |
-| Samyang 135 f/2.8, cer | 0.15 | lensfun Samyang 0.14 | +0.01 | PERFECT |
-
-Ce nu poate ști: profilul e modelul obiectivului, nu exemplarul tău, și e acromatic;
-masterul e media 2×2 a mozaicului. **Un obiectiv manual** (Samyang) nu are un ID de obiectiv
-pe care să-l poarte vreun profil; atunci candidații sunt obiectivele monturii al căror nume
-spune exact gama din raw (135 mm f/2.0), iar raportul spune că lista poate cuprinde și alt
-obiectiv cu aceeași gamă — citește rândul obiectivului tău. Fără raw lângă master și fără
-`--lens` nu se compară: blocul spune de ce, verdictul rămâne al celor cinci teste.
-
-### 2. End-to-end — `--light`
-
-```bash
-flatcheck process/pp_light_00001.fit --light    # un cadru
-flatcheck process/ --light                      # toată seria (recomandat)
-```
-
-Singurul mod care închide bucla; 1 și 2 sunt proxy pentru el. **Dar nu merge pe orice
-date** — vezi secțiunea următoare, e importantă.
-
-Estimează fondul local (percentila 15 pe fiecare tile, robustă la stele și nebulozitate)
-și fitează simultan:
-
-```
-fond = a + b·X + c·Y + d·R² + e·R⁴
-```
-
-Planul absoarbe gradientul de poluare luminoasă; termenii radiali captează vignetarea
-reziduală, adică eroarea de flat. Fitul simultan e ce face testul să meargă și pe cer
-poluat: cele două au forme diferite și se separă. Patru iterații de sigma-clipping
-unilateral resping tile-urile cu nebulozitate (contaminanții adaugă doar semnal pozitiv).
-
-**Semnul e diagnosticul:**
-
-- **pozitiv** — fondul *cade* spre margini → **sub-corecție**. Altă diafragmă la flats
-  decât la lights, sau flat contaminat.
-- **negativ** — fondul *crește* spre margini → **supra-corecție**. Aproape sigur
-  flat-darks lipsă sau greșite: împarți la un flat care încă conține offset.
-
-> **Fără darks:** lights-urile *trebuie* să primească un bias, altfel offsetul se împarte
-> la flat și se amplifică radial în colțuri. În Siril: `-bias=...` la calibrate.
-> Flat-darks-urile din `biases/` trebuie să fie la **același ISO** ca lights-urile.
-
-#### Rulează-l pe folder, nu pe un cadru
-
-Componenta radială dintr-un cadru e suma a două lucruri: eroarea de flat, care e
-**aceeași pe toate cadrele prin construcție** (același master flat s-a împărțit din
-fiecare), și un termen radial al cerului, care se schimbă în timpul sesiunii.
-
-Pe o sesiune reală de 32 de cadre în 81 de minute, cifra a baleiat neted de la +3.13%
-prin −19.20% până la +35.73%, cu doar 1.36 puncte între cadre consecutive. Tot ce se mișcă
-așa e cer, nu flat.
-
-Dându-i folderul, rulează pe toate cadrele care se potrivesc cu tiparul (implicit
-`pp_light_*.fit`), tipărește un tabel per cadru și mediază. **Dar dă verdict doar dacă
-media chiar înseamnă ceva** — trei condiții:
-
-| condiție | prag | de ce |
-|---|---|---|
-| număr de cadre | ≥ 5 | sub atât, o medie nu înseamnă nimic |
-| eroarea mediei (`σ/√n`) | < 2.00 puncte | dacă depășește chiar pragul de OK, seria nu rezolvă flat-ul la precizia la care se pronunță pragurile |
-| \|corelația cu gradientul de cer\| | < 0.70 | dacă „eroarea de flat" urmărește cerul, ce se măsoară e cerul |
-
-Testul de corelație se aplică doar când gradientul de cer chiar variază peste serie
-(interval > 10 puncte). Pe o sesiune curată unde stă constant, corelația e zgomot și ar
-respinge date bune.
-
-Dacă vreo condiție pică, verdictul e **`NEDETERMINAT`** și raportul spune care și de ce.
-Un „nu știu" motivat e mai util decât un număr care arată încrezător.
-
-Tiparul implicit exclude `r_pp_light_*` — cadrele registrate sunt transformate geometric,
-deci eroarea de flat, care e fixă pe senzor, e mutată față de centrul în jurul căruia se
-fitează modelul radial. Folosește `--pattern` dacă ai altă convenție de nume.
-
-### 3. Expunere — `--expo`
-
-```bash
-flatcheck DSC_0060.NEF --expo                           # calea recomandată
-flatcheck DSC_0060.NEF --expo --sky                     # flat pe cer
-flatcheck flat_brut.fit --expo                          # FITS brut din Siril
-flatcheck flat_brut.fit --expo --sat 4095 --black 150   # doar pe FITS, dacă scala e ghicită greșit
-```
-
-Rulează pe un **singur flat brut**, nu pe master — stacking-ul normalizează și șterge
-nivelul. Sparge cadrul în cele 4 poziții Bayer și ia mediana fiecăreia; dacă
-`max/min > 1.15` tratează fișierul ca CFA și folosește canalul cel mai luminos (el
-clipează primul, deci el e limitativ).
-
-**Canalele își spun culoarea, dar numai când fișierul o spune.** Pe un raw ordinea vine
-din libraw (`filters` + `cdesc`), pe un FITS din cardul `BAYERPAT` pe care îl scrie Siril
-la Conversion — și atunci raportul scrie `R (CFA[0,0])`, `G1 (CFA[0,1])` și așa mai
-departe. `BAYERPAT` descrie senzorul văzut de sus în jos, dar Siril scrie rândurile de jos
-în sus (`ROWORDER = 'BOTTOM-UP'`), iar pe o înălțime pară asta mută faza mozaicului cu un
-rând: pe un astfel de fișier `RGGB` se citește `GBRG`, deci `R` ajunge la `CFA[1,0]`.
-Unealta face mutarea singură, ca Siril la debayerizare. Fără sursă, pozițiile rămân
-anonime, ca înainte. Nu se ghicește: ordinea diferă
-de la aparat la aparat (RGGB e cea mai des întâlnită, dar există și GBRG, GRBG, BGGR), iar
-o etichetă pusă pe canalul greșit ar părea măsurată. Pe un D3300 iese `RGGB`. Pentru
-verdict oricum nu contează care e care — limitativ e cel mai luminos, orice culoare ar
-avea.
-
-**Cifra care decide e mediana ferestrei centrale de 20%, nu mediana globală.** Un flat are
-prin definiție o distribuție largă — asta *e* vignetarea — deci mediana globală e trasă în
-jos de colțuri. Dacă te iei după ea, supraexpui până clipează centrul, exact unde semnalul
-de vignetare e maxim.
-
-> Histograma camerei sau a ViewNX arată imaginea **procesată** — debayer + WB + gamma — și
-> trage vârfurile spre dreapta, de aceea pare „la limită" când datele brute sunt la ~40%.
-> Pentru histogramă pe date brute reale: Siril.
-
-**Pe un fișier raw nu se ghicește nimic**: aparatul scrie în fișier atât saturația cât și
-nivelul de negru, iar modul le folosește pe alea și scrie `sursa: libraw (exact)`. Pe un
-D3300 la 12 biți: white 4095, black 150.
-
-**Pe FITS**, unde scala nu mai există, nivelul de saturație e auto-detectat din maximul
-cadrului, iar `--sat` / `--black` sunt acolo pentru când ghicește greșit. Ca să afli
-white-ul exact: trage un cadru deliberat supraexpus — maximul de acolo *e* saturația.
-(Pe raw, nu-ți mai trebuie gestul ăsta.)
-
-`--sat` și `--black` bat fișierul, deci rămân portiță și pe raw. Un motiv real: libraw
-raportează `maximum = 4095` pentru D3300, dar senzorul nu mai e liniar peste ~3827.
-Diferența nu e cosmetică — pe același cadru, 50.3% față de 53.9%.
-
-**Verificare de sănătate:** modul respinge fișierul dacă nivelul central e sub 1.0
-(deja calibrat sau normalizat) sau dacă cele patru poziții CFA sunt aproape identice
-(fișierul e debayerizat). Prinde exact greșeala „am deschis NEF-ul în Siril și am dat
-Save".
-
-#### Dacă chiar ai nevoie de un FITS brut
-
-Nu mai e necesar pentru `--expo` — dă-i direct NEF-ul. Dar dacă îți trebuie FITS-ul din
-alt motiv: **NU** deschide NEF-ul și „Save", asta îl debayerizează și normalizează.
-Folosește tab-ul **Conversion**: adaugi NEF-urile → Convert. Fișierul rezultat păstrează
-mozaicul CFA brut, la scala ADU originală.
-
-Modul rămâne valabil pe FITS și pentru camerele astro mono, care scot FITS nativ și n-au
-fișier raw deloc.
-
-#### `--sky`, pentru flats pe cer
-
-La flats pe cerul de la ora albastră, un nivel modest e **corect**: cerul se întunecă
-continuu și e plin de stele slabe, iar SNR-ul masterului vine din *numărul* de cadre, nu
-din a urca un cadru la 55%. Fără `--sky`, un sky flat la 22% ar fi raportat greșit ca
-subexpus.
-
----
-
-### 4. Egalizare de histogramă — `--histeq`
-
-```bash
-flatcheck flats/DSC_0060.NEF --histeq -o poza.png
-```
-
-Nu e un test și nu dă verdict. E **vederea „Histogram" din Siril 1.4.4**, refăcută: imaginea
-trecută prin propria ei funcție de repartiție, astfel încât fiecare nivel de gri să
-primească același număr de pixeli. Pe un flat — o distribuție îngustă față de scala
-fișierului — curba e abruptă exact pe intervalul vignetării, și tot ce nu e uniform iese
-la contrast maxim, inclusiv ce nu se vede deloc pe imaginea liniară. Măsurat pe un
-sintetic cu 5 % vignetare: o undă de 0.3 % e o treime de nivel de gri în afișarea liniară
-și vreo cincisprezece niveluri egalizată.
-
-Ce face, exact ca Siril (citit din sursa lui, `image_display.c` și `histogram.c`):
-
-- o histogramă cu 65536 de coșuri **pe canal**, din care pixelii egali cu zero lipsesc;
-- tabelul de transfer e repartiția cumulată înmulțită cu 255, rotunjită ca `round_to_BYTE`;
-- pe un cadru CFA cele patru poziții Bayer se egalizează **fiecare pe repartiția ei**, ca
-  straturile unei imagini debayerizate în Siril; consola scrie compozitul RGB (R din
-  poziția roșie, G media celor doi verzi, B din cea albastră — după culoare, nu după
-  poziție, deci ordinea vine din fișier și nu se ghicește; fără ordine, media celor patru
-  în gri).
-
-Ce diferă: coșurile stau pe `[min, max]` ale canalului, nu pe 0..65535 absolut, fiindcă
-rasterele pot fi la orice scală (0..4095, 0..65535, 0..1); pe date întregi maparea e
-identică, pe float e mai fină. Egalizarea se face la rezoluție întreagă, apoi rezultatul
-pe 8 biți se micșorează la ~1500 px pe latura lungă, cu aceeași regulă ca rasterul de
-analiză.
-
-**Ce NU se poate citi din poză.** Amplitudinea. Fiecare nivel de gri primește același număr
-de pixeli, indiferent cât de apropiate erau valorile lor, deci o undă de 0.5 % și un
-gradient de 10 % cu aceeași formă ies identic — și un flat perfect își arată propriul
-zgomot la contrast maxim. Poza spune **ce formă** are ce măsoară modul de structură;
-cifrele sunt acolo. Iese cu 0 când a scris poza; raportul e informativ.
-
-Acceptă orice fișier pe care îl citește unealta: raw de aparat sau FITS, cadru individual
-sau master. Pe un master (float, 0..1, cu mozaic CFA intact cum îl scrie Siril) merge la
-fel; ce se vede acolo e ce a rămas după stivuire.
-
-**Culori false — `--rainbow`.** Siril are, lângă afișarea „Histogram", butonul de *color
-map*: stratul egalizat, deja pe 8 biți, trece printr-un tabel de 256 de nuanțe
-(`make_index_for_rainbow` din sursa lui: nuanța merge de la 300° la nivelul 0 până la 0° la
-nivelul 255, saturație și valoare 1). Deci **magenta e nivelul cel mai jos**, apoi albastru,
-cyan, verde, galben, iar **roșu cel mai sus**; nivelul 0 nu e negru. Benzile de o culoare sunt
-contururi de rang egal, și forma vignetării — rotundă, descentrată, pătrată — se citește
-dintr-o privire acolo unde în gri e o pată difuză. Culorile sunt ranguri, nu valori:
-amplitudinea tot lipsește.
-
-```bash
-flatcheck flats/DSC_0060.NEF --histeq --rainbow -o poza.png
-```
-
-Tabelul se aplică **pe un singur strat**: consola scrie mozaicul pe un cadru CFA și canalul pe
-mono, micșorat întâi și colorat după, astfel încât fiecare pixel din fișier e un nivel din
-tabel; raportul tipărește legenda. Compozitul RGB nu se colorează niciodată — în Siril tabul
-RGB ia câte un octet din culoarea fiecărui strat, și unde canalele au forme diferite ies
-culori din afara paletei, din care nu se mai citește nimic (măsurat pe NEF-ul Samyang,
-2026-10-26). `--rainbow` fără `--histeq` e eroare de linie de comandă, cod 1. În fereastră,
-chipul **Culori false** de lângă vederi face același lucru pe Mozaic, pe un canal și pe mono,
-și e dezactivat pe RGB.
-
----
-
-### 5. Netezire — `--smooth`
-
-```bash
-flatcheck process/pp_flat_stacked.fit --smooth process/pp_flat_stacked_smoothed.fit
-flatcheck process/pp_flat_stacked.fit --smooth netezit.fit --scale 150
-```
-
-Nu e un test și nu dă verdict. Scrie **un al doilea master**: același flat, cu tot ce e
-neted păstrat și tot ce nu e scos — textura difuzorului, umbrele de praf, petele compacte,
-zgomotul. Pentru un flat tras printr-un material pus pe monitor, a cărui textură ajunge în
-lights ca o pătură de celule de câțiva la sută.
-
-**De ce nu un flat sintetic radial.** Un model pur radial ar scoate textura, dar ar scoate
-și tot ce face obiectivul în afară de vignetare — iar pe un Tokina 20 mm cele patru
-colțuri diferă între ele cu 6-16 %, ceea ce e exact cazul în care un model radial
-corectează mai prost decât flat-ul pe care îl înlocuiește. Netezirea păstrează colțurile
-inegale, gradientul, petele largi: tot ce e neted la scara aleasă.
-
-**Ce face**, pe fiecare poziție Bayer separat (pe mono, pe tot cadrul):
-
-1. mediana pe dale de ~150 px pe senzor, cu dalele parțiale de la margine păstrate;
-2. în fiecare dală, un fit pătratic local pe dalele vecine, ponderat gaussian cu sigma =
-   scara (implicit 300 px pe senzor);
-3. robust: dalele care se abat de la fitul local cu peste 2.5 MAD *și* peste 2 % din
-   nivel — praf, pete, celulele cele mai adânci — nu mai cântăresc în fitul nimănui;
-4. pe fiecare pixel, media biliniară a predicțiilor celor patru dale din jur.
-
-Fără model radial, deliberat: două variante cu model radial au picat pe masterele reale.
-Un polinom global nu urmărește structura de scară medie pe care o are orice master
-(petele monitorului la 1000-1500 px, un inel descentrat), iar un model pe inele **pune
-inele în fișier** — dincolo de cercul înscris mediana pe inel sare de la un inel la altul,
-și un câmp local de 150 px nu le poate compensa. Netezirea de mai sus nu știe de niciun
-centru, deci nu poate face inele.
-
-**Ce raportează** e *ce a scos*, fiindcă asta e singura cifră după care se poate decide
-dacă fișierul e de încredere: p1/p99 pe pixel, structura la scară mare (p95 − p5 pe dale)
-și dala cea mai abătută a raportului `original / netezit`, pata cea mai adâncă, și
-bateria de structură pe intrare și pe ieșire, față în față. Când dala cea mai abătută
-trece de 2 % raportul atenționează că s-a scos și ceva de scară mare — praf adânc, o
-pată, sau o structură reală mai îngustă decât scara — și lasă decizia omului.
-
-Măsurat pe cinci mastere reale (Nikkor 35 DX pe cer la două ISO-uri, Tokina 20 cu
-difuzorul lângă lentilă și pe monitor, Samyang 135 pe LCD), la 300 px: toate verdictele
-și adâncimile de vignetare rămân neschimbate; cele cinci teste se mișcă sub o jumătate de
-punct; componenta scoasă e de 0.12-0.39 % pe cele patru mastere curate (zgomot de pixel
-plus praful) și 3.7 % pe cel cu textură, unde pata compactă cade de la +6.19 % la +0.62 %
-și textura din fișier de la ±3 % la ±0.3 %. Pe un sintetic cu adevăr cunoscut eroarea
-metodei e sub 0.2 % pe tot cadrul, colțuri incluse.
-
-**Ce NU știe.** Ce e al obiectivului și ce e al sursei: petele unui monitor, gradientul
-cerului, colțurile inegale ale unui panou rămân, fiindcă sunt netede — nimic de aici nu le
-desparte. Și ce scoate poate fi ceva dorit: o umbră de praf e corectă pentru sesiunea ale
-cărei lights o au și ele, și greșită într-un flat de bibliotecă. O structură reală de
-~300 px (inelul descentrat al Nikkor-ului, 0.3-0.5 %) e luată parțial la 300 px și rămâne
-la 150 px; scara e singurul buton. Ce rămâne din celule e fundamental: un câmp aleator cu
-lungimea de corelație de 300 px trece printr-un nucleu de 300 px la ~30 % în RMS.
-
-**Fișierul** are tipul intrării (float rămâne float la aceleași valori, 16 biți rămân 16
-biți), headerul intrării copiat card cu card — `BAYERPAT`, `STACKCNT`, `DATE-OBS` — plus
-două linii `HISTORY`. Nimic nu se renormalizează. Scripturile Siril numesc
-`pp_flat_stacked` explicit, deci nu iau fișierul netezit singure: redenumește-l în locul
-masterului (păstrează originalul) sau dă-l la `calibrate` cu `-flat=`. Modul refuză un raw
-(un cadru, necalibrat — pentru raw există `--expo`) și un cub de culoare (cititorul l-ar
-media într-un mono).
-
-**Verificarea** pe care o poți face singur: netezește două mastere ale aceleiași lentile
-și compară-le cu `--against`; ce rămâne trebuie să fie un câmp neted de ordin mic. Că flat-ul
-netezit chiar corectează mai bine o spune doar `--light` pe lights calibrate — și pe un
-câmp mai larg de 40° el refuză.
-
-#### Cum se alege scara, și `--scale auto`
-
-Scara trebuie să stea între mărimea a ce vrei să scoți și mărimea celei mai mici structuri
-reale pe care vrei să o păstrezi. Amândouă se citesc din master, și `--scale auto` le
-citește în locul tău:
-
-1. **Textura fină a intrării** — partea structurată a componentei sub ~128 px pe senzor,
-   cu zgomotul de pixel scăzut. Sub 0.20 % nu există nimic de netezit și unealta nu
-   rulează nimic: pe masterele reale cele fără textură dau 0.04-0.06 %, cel cu difuzorul pe
-   monitor 0.69 %.
-2. Altfel, **câte o netezire pe fiecare treaptă** (150 / 300 / 600 px, ~15 s în total pe
-   24 MP) și două cifre pe treaptă: textura rămasă în fișier (sub 0.05 % a plecat) și cât
-   au *scăzut* asimetria azimutală și înclinarea — singurele două teste pe care textura nu
-   le atinge, deci o scădere acolo de peste 0.5 puncte e structură reală care pleacă.
-3. **Cea mai mică treaptă** la care textura a plecat și garda tace. Pe masterul cu
-   difuzorul pe monitor: 150 lasă 0.09 % textură, 300 lasă 0.02 % cu garda la 0.00 / -0.01,
-   deci 300. La 600 garda prinde inelul real al Nikkor-ului (asimetria -0.79) și petele
-   monitorului pe Tokina (-0.80).
-
-Trei răspunsuri: `SCARA PROPUSA`, după care netezirea rulează la ea și scrie fișierul
-(cod 0); `NIMIC DE NETEZIT` și `NEDETERMINAT` (textura și structura reală au aceeași
-mărime), care nu scriu nimic și ies cu **2** — nu e o eroare, e „citește înainte să
-decizi". Regula **propune, nu decide**: nu știe ce e al obiectivului și ce e al sursei —
-punctul cald al unui LCD arată la fel ca un inel al lentilei — și e oarbă la o structură
-reală care stă doar în colțuri, în afara cercului înscris. Pragurile stau pe cinci mastere;
-unul cu textură slabă, de 0.15-0.25 %, cade lângă primul.
-
-De mână, criteriile sunt aceleași: uită-te la harta „ce s-a scos" la ±2 % — doar celule și
-praf e bine, o formă netedă și mare înseamnă scara prea mare; și la tabelul înainte /
-după — „pata maxima" și reziduul scad când pleacă textura, dar asimetria și înclinarea
-n-au voie să se miște.
-
----
-
-### 6. Flat sintetic — `--synthetic`, `--lenses`, `--against`
-
-```bash
-flatcheck --lenses --lens "Tokina 11-20"                         # ce obiective au profil
-flatcheck process/pp_flat_stacked.fit --synthetic process/pp_flat_stacked_synthetic.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
-flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_synthetic.fit   # cu cât diferă masterul de model
-```
-
-Nu e un test și nu dă verdict. Scrie **un flat radial din profilul de vignetare publicat
-al obiectivului**: modelul lui, nu o măsurătoare a exemplarului tău. Există pentru cazul
-în care nicio sursă de lumină nu dă adâncimea reală a vignetării: măsurat pe Tokina 20 mm
-f/2.8, cerul dă 0.27 stopuri în colț (bolta se luminează spre orizont de jur împrejurul
-zenitului și umple colțurile), monitorul de aproape 0.78-0.85 (căderea unghiulară a
-panoului), iar cele două baze publice 0.66 (Adobe) și 0.83 (lensfun). Un flat sintetic
-n-are nicio sursă în el, deci nici curbura cerului, nici căderea panoului.
-
-**Două surse de profile, o singură listă.**
-
-- **Adobe (.lcp)**, citite de pe disc dacă Lightroom, Camera Raw sau DNG Converter (gratuit)
-  le-a instalat: `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` și
-  `%APPDATA%\Adobe\CameraRaw\LensProfiles` (unde le pun Camera Raw și DNG Converter), apoi
-  `C:\Program Files\Adobe\<aplicație>\Resources\LensProfiles\1.0` (copia proprie a lui
-  Lightroom Classic și a lui Lightroom); un fișier prezent în două foldere se citește o
-  dată, din primul. Nu se copiază și nu se redistribuie; fără Adobe, jumătatea asta a listei
-  e goală. Un fișier per obiectiv și montură, cu un profil
-  per (focală, diafragmă, distanță). Modelul, din documentul „Adobe Camera Model":
-  `V = 1 + a1·r² + a2·r⁴ + a3·r⁶`, cu r în unități de focală (distanța în mm împărțită la
-  focala în mm), același pentru toate canalele.
-- **lensfun**, baza de date (CC BY-SA 3.0) livrată cu unealta în folderul `lensfun/` de
-  lângă exe. Modelul `pa` (Hugin): același polinom, cu r normalizat la semidiagonala unui
-  cadru 36×24 împărțit la crop-ul aparatului de calibrare; de aceea lensfun are nevoie de
-  crop-ul aparatului tău, pe care îl ia din propria bază de camere după `INSTRUME` sau din
-  `--crop`. Și modelul Adobe folosește crop-ul tău, pentru lățimea fizică a cadrului
-  (36 / crop); fără el ia senzorul pe care Adobe a calibrat profilul (SFF) și spune asta.
-  Un profil calibrat pe alt format decât al tău e recalculat prin milimetri și merge
-  până la colțul senzorului de calibrare; dincolo de el polinomul extrapolează, iar peste
-  10 % raportul spune „extrapolare MARE" — ia un profil calibrat pe formatul tău (Adobe
-  ține fișiere pe corp, „NIKON D750 (obiectiv)", pe care programul le preferă când
-  referința numește corpul). Baza de camere lensfun are 1053 de corpuri; pentru unul care
-  lipsește, `--crop` cu unul din cele șase crop-uri nominale (full frame 1.0, APS-C 1.5,
-  APS-C Canon 1.6, APS-H 1.3, Micro 4/3 2.0, 1" 2.7) sau 36 împărțit la lățimea senzorului
-  în mm. **Actualizare:** descarcă fișierele XML din
-  <https://github.com/lensfun/lensfun/tree/master/data/db>, înlocuiește-le pe cele din
-  folder și repornește; `lensfun/LENSFUN-VERSION.txt` spune din ce commit și de când e
-  copia, iar `lensfun/update-lensfun.py` face același lucru dintr-o comandă.
-
-Obiectivul se alege după text (`--lens` caută toate cuvintele în nume, producător,
-montură și, la lensfun, formatul de calibrare; `--source adobe|lensfun` restrânge), profilul se alege **cel mai apropiat**,
-nu interpolat — focala cea mai apropiată, apoi diafragma cea mai apropiată în stopuri,
-apoi distanța cea mai mare — și raportul spune ce s-a cerut și ce s-a folosit. O intrare
-lensfun scrisă la 10 m și la 1000 m cu aceiași coeficienți e o singură măsurătoare la o
-distanță nescrisă (așa marchează lensfun „nu știu"), și raportul spune „distanța
-nespecificată", nu „infinit": pe Nikkor 35 f/1.8G DX intrarea calibrată pe APS-C are forma
-profilului Adobe de la 0.36 m, nu a celui de la 1.5 m — un perete de aproape, cel mai probabil,
-iar vignetarea acestui obiectiv scade mult la focalizare apropiată. Focala vine
-din `FOCALLEN` sau din raw, diafragma numai din raw (un FITS Siril n-o poartă) sau din
-`--fstop`. Același obiectiv pe două monturi (Adobe are câte un fișier per montură) se
-alege după aparatul din `INSTRUME`; când tot rămân mai multe, lista lor se tipărește și
-codul de ieșire e 2. **O focală sau o diafragmă pe care obiectivul n-o are în profile nu e
-refuzată**: se ia profilul cel mai apropiat (500 mm f/1.0 pe Nikkor 35 f/1.8 ajunge la
-35 mm f/1.8) și raportul o spune sub „profil folosit", cu un „ATENTIE" — ce s-a cerut, ce s-a
-luat, ce are obiectivul, și că adâncimea scrisă e a profilului, nu a valorilor cerute.
-Pragul e 1 mm sau 5 % pe focală și o jumătate de stop pe diafragmă; grila Adobe e la stopuri
-întregi, deci orice cerere din interiorul gamei trece fără vorbă și doar cele din afara ei
-sunt semnalate. Aceeași propoziție apare și în tabelul de vignetare al modului structură,
-când focala sau diafragma raw-ului cade departe de profilele unui obiectiv. **Un obiectiv
-lensfun poate fi în listă de două ori**, cu același nume
-și aceeași montură: baza îl ține o dată pentru fiecare corp pe care l-a calibrat cineva, iar
-formatul de calibrare stă lângă montură („Nikon F AF, calibrat pe APS-C 1.528" și „..., calibrat
-pe full frame 1"). Sunt două profile diferite, nu o dublare — pe Nikkor 35 f/1.8G DX
-intrarea calibrată pe APS-C dă 0.19 stopuri în colț la f/2.8, cea calibrată pe D780 dă 0.51,
-iar Adobe 0.61 — și amândouă intră în tabelul de vignetare din modul structură. Numele
-singur le potrivește pe amândouă (cod 2, cu lista); adaugă cuvântul formatului
-(`--lens "Nikkor 35mm f/1.8G full"`) ca să o alegi pe una.
-
-**Ce raportează:** adâncimea scrisă, în procente din axă și în stopuri, în patru puncte —
-colț (cutia de 5 % a testului de colțuri), marginea lungă, marginea scurtă, jumătatea
-semidiagonalei — exact punctele în care s-au comparat masterele reale cu bazele. Pe
-Tokina la 20 mm f/2.8 pe D3300: Adobe 0.67 / 0.51 / 0.31 / 0.28 stopuri, lensfun 0.85 / 0.56 /
-0.26 / 0.24 (pe D3300 colțul cade la r = 1.06, dincolo de senzorul de calibrare, și
-raportul o spune).
-
-**Ce NU conține**, spus și de raport: partea cromatică a căderii (pe masterul de cer R cade
-cu ~25 % mai mult decât B), umbrirea specifică body-ului, praful, orice structură
-neradială — și nici exemplarul tău. Cele două baze diferă între ele cu ~0.2 stopuri în
-colț pe același obiectiv; atâta precizie să-i ceri. Fișierul e float, la mărimea cadrului
-de referință, cu headerul lui copiat (`BAYERPAT` inclusiv, deci Siril îl ia ca master CFA)
-și `HISTORY` cu profilul folosit; 1.0 pe axă, nimic renormalizat.
-
-**`--against`** e testul care închide bucla: bateria de structură pe fiecare din cele două
-flaturi (normalizate la mediana 1) **și** pe raportul lor, într-un tabel cu trei coloane —
-A, B, A / B — cu vignetarea în stopuri, offsetul centrului, pata locală și cele cinci teste.
-În coloana raportului cifrele sunt despre diferență: vignetarea e **diferența de adâncime
-în stopuri** (pozitiv = primul cade mai mult spre colț), cele cinci teste spun dacă diferența
-e radială sau are formă, harta o arată. **Verdictul diferenței are două părți**, forma —
-cele cinci teste pe raport — și adâncimea, și e cel mai rău dintre ele. Adâncimea nu are un
-prag nou: o diferență de D stopuri lasă în colțul unui light calibrat cu flatul greșit o
-eroare de 2^|D| − 1, care trece prin aceeași scară de reziduu — sub 0.03 stopuri PERFECT,
-sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste REFA. Sub ACCEPTABIL diferența nu se deosebește de
-incertitudinea modelului: cele două baze de profile diferă între ele cu ~0.2 stopuri pe
-același obiectiv. Rândul vignetării e singurul cu verdict în coloana diferenței; pe cele
-cinci teste verdictul rămâne pe fiecare flat, forma diferenței fiind cea de sus. Două flaturi
-corecte ale aceluiași obiectiv dau PERFECT și zero stopuri. Merge între oricare două flaturi — real față de sintetic, două
-grosimi de difuzor, două surse — deci e și testul de convergență pentru un difuzor: când
-cerul și monitorul, prin același difuzor, dau aceeași cifră față de model, sursa a
-dispărut din măsurătoare. Măsurat pe Tokina: monitorul de aproape față de sinteticul
-Adobe +0.19 stopuri, cerul fără difuzor -0.39, sinteticul Adobe față de cel lensfun -0.18
-cu structura PERFECT (cifre din 2026-09-18, cu crop-ul aparatului în modelul Adobe).
-
-**Când să-l folosești.** Sinteticul bate un flat de cer contaminat cu jumătate de stop și
-e cel puțin la egalitate cu unul de monitor; pierde cromaticul și partea de body. Un
-difuzor gros, convergent pe grosime și între două surse, rămâne mai bun — și sinteticul e
-referința cu care îl validezi.
-
----
-
-## Când merge și când NU merge `--light`
-
-Modul separă fondul în „plan de poluare luminoasă" + „termeni radiali = eroare de flat".
-Separarea ține **cât timp cupola de poluare e cvasi-liniară peste cadru**. Pe un câmp larg
-ea se *curbează în interiorul cadrului*, iar partea radial simetrică a acelei curburi are
-exact forma vignetării. Două lucruri cu aceeași formă nu se pot separa printr-un fit,
-oricât de bine ar fi scris. **Nu e o limitare a uneltei, e o degenerare geometrică.**
-
-De aceea unealta **refuză** să răspundă peste ~40° diagonală, în loc să dea un răspuns
-prost.
-
-Condiții, în ordinea importanței:
-
-1. **Câmp îngust.** Sub ~20° diagonală e sigur; peste ~40° nu se poate. Pe APS-C asta
-   înseamnă de la ~100 mm în sus. Un telescop e practic mereu în regulă.
-2. **Ținta sus pe cer.** Gradientul crește abrupt și neliniar spre orizont.
-3. **Cer decent**, și de preferat cu orașul în afara cadrului.
-4. **Ținta să nu umple cadrul.** La Calea Lactee centrală, „fondul" pe care îl măsoară
-   unealta nu e fond, e galaxie.
-
-Câmpul se deduce din headerul FITS, pe straturi, în ordinea încrederii: `--fov` declarat
-de tine → scara dintr-un plate solve (`CDELT1` / `CD1_1`) → `XPIXSZ` + `FOCALLEN` →
-`FOCALLEN` singură. Ultimul strat e cazul unui DSLR trecut prin Siril, care nu scrie
-`XPIXSZ`: acolo câmpul real nu se poate calcula, deci se presupune cel mai mare senzor
-plauzibil (full-frame) și se compară focala direct — conservator prin construcție. Pe un
-senzor mai mic, dă câmpul real cu `--fov <grade>`.
-
-**Dacă headerul nu spune nimic, testul rulează** și tipărește o linie care zice că n-a
-putut verifica. Necunoscut înseamnă neverificat, nu suspect.
-
-**Contra-exemplu concret.** Tokina la 20 mm pe D3300 acoperă ~70° diagonală. Pe o sesiune
-reală de Cale Lactee cu setup-ul ăsta, corelația între componenta radială raportată și
-gradientul de cer a ieșit **−0.94** (R² = 0.88): 88% din ce raporta unealta drept „flat"
-era explicat de cer. Pe astfel de date flat-ul se judecă singur, pe testele de structură
-ale masterului, care nu implică cerul deloc.
-
----
-
-## Scara de reziduu
-
-Cele cinci teste de abatere din modul structură — împrăștierea colțurilor, asimetria
-azimutală, reziduul după modelul radial, înclinarea și pata maximă — măsoară *același
-lucru* din unghiuri diferite: cât din cadru nu se explică printr-o funcție pur radială.
-Toate cinci sunt amplitudini în procente, deci împart o scară, nu un prag:
-
-| bandă | verdict | ce înseamnă |
-|---|---|---|
-| < 2% | `PERFECT` | calitate perfectă |
-| 2–10% | `BUN` | utilizabil; background extraction scoate ce rămâne |
-| 10–20% | `ACCEPTABIL` | utilizabil, dar confirmă cu `--light` înainte de un stretch dur |
-| > 20% | `REFA` | refă flat-urile |
-
-Cel mai important e **reziduul după modelul radial**: măsoară direct cât din cadru nu se
-explică printr-un model pur radial, pe tot cadrul, colțuri incluse. Colțurile, asimetria
-azimutală și înclinarea sunt vederi parțiale ale aceleiași abateri — colțurile o prind doar
-unde stau cele patru cutii, testul azimutal doar în interiorul cercului înscris, iar
-înclinarea doar partea care e un plan. **Pata maximă** e complementul reziduului: acesta
-taie 5 % din dale la fiecare capăt, ca să nu măsoare zgomot, deci un defect *compact* — o
-scurgere mică, o pată de condens — dispare din el oricât de adânc ar fi. Măsurat: o pată de
-+10 % cât un deget într-un colț dădea reziduu 0.04 % și verdict `PERFECT`, cu pata perfect
-vizibilă în hartă. Pata maximă citește 9.3 % pe ea.
-
-**E o limită superioară a erorii de flat, nu eroarea.** Ce măsoară e suma a două lucruri
-cu urmări opuse: o parte fixată de **aparat** (optica — se împarte corect din lights, deci
-inofensivă) și una fixată în **lume** (iluminarea — nu se reproduce, deci dăunătoare). Pe
-un singur master cele două nu se pot separa; informația pur și simplu nu e acolo. Le
-desparte doar o a doua sesiune cu același obiectiv: ce revine identic e al aparatului.
-
-De-aia un obiectiv cu vignetare genuin ne-radială iese aici ca „eroare" fără să fie una.
-Măsurat pe biblioteca proprie: un master de Nikkor 35 DX are 4.00% de împrăștiere a
-colțurilor, din care doar ~1.3% era cerul — restul a supraviețuit rotației de 180°, deci e
-fixat de aparat.
-
-Offsetul centrului de iluminare **nu** e pe scara asta și, din 1.2.0, nu mai e nici test:
-apare sub `INFORMATIV (nu sunt teste)`, fără verdict. Măsoară o poziție, iar poziția aia e
-raportul dintre gradient și curbură — deci nu e o fracție și nu e scale-invariantă. Cu
-același gradient de 11% ținut fix, offsetul raportat urcă de la 2.4% pe un obiectiv cu 2
-stopuri de vignetare la 57% pe unul cu 0.08 stopuri, iar sub asta vârful de iluminare iese
-din cadru și cifra cade brusc la 0.00%. Adică exact pe obiectivele cele mai plate, cu cât
-defectul era mai mare, cu atât raportul arăta mai curat.
-
-`Înclinarea` măsoară același defect ca amplitudine, ceea ce scara cere — și prinde în
-continuare o decentrare reală a axei optice, ponderată cu cât te costă ea de fapt.
-
----
-
-## Praguri
-
-Sunt **reguli empirice, nu constante fizice** — un punct de plecare, de calibrat pe un
-setup despre care ești sigur. Toate stau în `FlatCheck.Core/Thresholds.cs`.
-
-| metrică | mod | OK sub | PROBLEMĂ peste |
-|---|---|---|---|
-| împrăștiere colțuri | structură | *scara de reziduu* | |
-| asimetrie azimutală | structură | *scara de reziduu* | |
-| reziduu după model radial | structură | *scara de reziduu* | |
-| înclinare (gradient) | structură | *scara de reziduu* | |
-| pata maximă (o dală) | structură | *scara de reziduu* | |
-| pete locale (praf) | structură | 2 % (doar atenționare, nu votează) | |
-| vignetare față de profilul obiectivului | structură cu `--raw` / `--lens` | 0.03 / 0.14 / 0.26 stopuri = scara de reziduu prin `2^|D| − 1` | REFA peste 0.26 |
-| \|componentă radială\| | `--light` | 2% | 5% |
-| câmp diagonal | `--light` | 20° | 40° (refuz) |
-| eroarea mediei pe serie | `--light` folder | 2.00 puncte | |
-| corelație cu gradientul de cer | `--light` folder | 0.70 | |
-| clipping în centru | `--expo` | 0.05% | |
-| nivel centru | `--expo` | 50–65% | |
-| nivel centru | `--expo --sky` | 15–50% | |
-
-Pragurile de serie sunt cele mai puțin calibrate din fișier: vin dintr-o singură sesiune
-reală. Recalibrează-le când ai una despre care ești sigur.
-
----
-
-## Coduri de ieșire
-
-| cod | înseamnă |
-|---|---|
-| 0 | `OK` / `PERFECT` / `BUN` — utilizabil ca atare |
-| 1 | eroare, sau intrare nepotrivită pentru modul cerut (câmp prea larg, fișier care nu e flat brut la `--expo`) |
-| 2 | `SUSPECT` / `ACCEPTABIL` / `NEDETERMINAT` |
-| 3 | `PROBLEMA` / `REFA` |
-
-Severitatea e monotonă, deci „orice diferit de 0" înseamnă „nu e curat, uită-te".
-`--histeq` n-are verdict: 0 înseamnă doar că a scris poza, 1 că n-a putut. La fel
-`--smooth`: 0 înseamnă că a scris flat-ul netezit și hărțile, 1 că a refuzat intrarea
-(raw, cub de culoare) sau n-a putut scrie; cu `--scale auto`, 2 înseamnă că n-a scris
-nimic fiindcă nu e nimic de netezit sau scara e nedeterminată. `--synthetic`: 0 a scris
-flatul, 1 a refuzat referința sau n-a putut afla focala, diafragma ori crop-ul, 2
-obiectivul nu s-a putut alege (niciunul sau prea multe — lista e tipărită). `--lenses` iese
-mereu cu 0. `--against` iese ca structura, pe verdictul *diferenței*. Structura cu `--raw`
-sau `--lens` iese pe verdictul combinat — cel mai rău dintre cele cinci teste și adâncimea
-vignetării față de profil.
-
----
-
-## Opțiuni
-
-```
-flatcheck <flat.fit>                     # structură
-flatcheck <flat.fit> --raw <flat.NEF>    # structură + vignetarea față de profilul obiectivului din raw
-flatcheck <light.fit> --light            # end-to-end, un cadru
-flatcheck <folder/> --light              # end-to-end pe toată seria
-flatcheck <flat_brut.fit> --expo         # expunere
-flatcheck <flat_brut.NEF> --expo         # idem, direct pe raw de aparat
-flatcheck <sky_flat.fit> --expo --sky    # expunere pentru flats pe cer
-flatcheck <flat.NEF> --histeq            # vederea „Histogram" din Siril, pe canale
-flatcheck <flat.NEF> --histeq --rainbow  # la fel, în culorile false din Siril (un strat: mozaicul sau canalul)
-flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fără textură, praf, pete
-flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului
-flatcheck --lenses [--lens <text>]       # obiectivele cu profil (Adobe de pe disc, lensfun/ de lângă exe);
-                                         # focale, diafragme, distanțe și numărul de profile sub fiecare, pe o listă de cel mult 40
-flatcheck <A.fit> --against <B.fit>      # cât și cum diferă două flaturi
-
-  -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; la --histeq e poza
-                           egalizată; --smooth mai scrie una lângă ea, cu sufixul -after)
-  --rainbow                poza egalizată în culorile false din Siril, magenta = cel mai jos,
-                           roșu = cel mai sus (--histeq; singur e eroare)
-  --sat <white>            nivel de saturație, dacă auto-detecția greșește (--expo)
-  --black <nivel>          nivel black (--expo)
-  --pattern <tipar>        ce fișiere ia din folder (implicit pp_light_*.fit)
-  --fov <grade>            diagonala câmpului, dacă headerul nu o dă (--light)
-  --scale <px>|auto        scara de netezire, în pixeli de senzor (--smooth; implicit 300);
-                           'auto' o propune din master și netezește la ea, sau iese cu 2
-  --lens <text>            obiectivul, după cuvinte din nume / producător / montură (--synthetic, --lenses;
-                           la structură compară vignetarea masterului cu toate obiectivele care se potrivesc)
-  --raw <fișier>           un raw de lângă master (structură): diafragma și obiectivul se citesc din el
-  --source adobe|lensfun   doar una din surse
-  --focal <mm>, --fstop <f>, --crop <factor>   ce nu se poate citi din referință (--synthetic, structură cu --lens)
-  --profiles <folder>      de unde se iau profilele, în locul mașinii: .lcp oriunde în el,
-                           lensfun/ dedesubt (așa rulează și testele)
-  --lang en|ro             limba textelor: en engleză (implicit), ro română; merge și --lang=ro
-```
-
-Flagurile pot veni oriunde: `flatcheck --expo f.fit` și `flatcheck f.fit --expo` sunt
-echivalente. Un `--lang` cu altă valoare decât `en` sau `ro`, sau fără valoare, oprește
-rularea cu o eroare în engleză și codul 1. `--pattern` acceptă `*` și `?`; clasele de caractere (`[abc]`) sunt tratate
-literal.
-
-Fiecare rulare tipărește versiunea pe prima linie și copyright-ul pe a doua — inclusiv
-`--help` și rulările eșuate — ca un raport copiat undeva să spună singur ce l-a produs.
-
----
-
-## Ce invalidează masterul
-
-Curățare de senzor. Altă diafragmă. Filtru sau inel schimbat. Lovitură serioasă la
-obiectiv.
-
-**Nu** invalidează: timpul, rotația camerei pe cer, sesiuni diferite, temperatura, ISO-ul
-lights-urilor.
-
----
-
-## Ieșire PNG
-
-O hartă divergentă albastru → alb → roșu, cu albul fixat la **1.0** și intervalul scalat
-la percentilele 1/99 plus 10% padding. Fixarea la 1.0 e validă pentru toți apelanții:
-reziduul de structură e `img/model ≈ 1`, hărțile din `--smooth` sunt centrate pe 1 (ce s-a
-scos, și reziduul flat-ului netezit), iar harta din `--light` e `1 + radial/a`.
-
-Spre deosebire de versiunea Python nu există figură cu 4 panouri, doar hărțile de mai sus.
-Cifrele din consolă sunt aceleași; harta există ca să vezi *forma* unei probleme —
-gradient orizontal, vertical, diagonal.
-
-### Scara culorilor
-
-Scara automată întinde culoarea pe intervalul **propriu al fiecărei imagini**, deci roșu
-plin nu înseamnă nimic anume: măsurat pe două mastere ale aceluiași obiectiv, roșu plin era
-`+3 %` pe unul și `+10 %` pe altul. Două hărți pe scara automată se pot compara **doar prin
-formă**, nu prin intensitate.
-
-De aceea **în fereastră** harta se poate pune pe o scară fixă, dintr-un rând de butoane:
-`±2 %`, `±10 %`, `±20 %` — chiar granițele scării de reziduu — plus `auto`, utilă ca să
-vezi *forma* pe un master aproape perfect, unde `±2` e deja prea grosier. Implicit e
-**`±10 %`**, banda în care se așteaptă să trăiască un flat normal, ca două sesiuni să se
-compare dintr-o privire fără să apeși nimic.
-
-Plafonul și banda nu sunt însă același lucru, și merită știut când citești culoarea:
-plafonul e abaterea unui *pixel* față de model, banda e o amplitudine *vârf-la-vârf*. O
-pată unilaterală de +10 % atinge plafonul de 10 % chiar la granița benzii `BUN`; un
-gradient de 10 % merge de la −5 % la +5 %, deci ajunge doar la jumătatea lui, și saturează
-abia la 20 %, adică la `REFA`. Măsurat: la un gradient de 10 % harta are capetele la
-−4.9 / +4.8 %. Nu există un plafon corect pentru amândouă, așa că se explică aici, nu se
-schimbă cifrele.
-
-Sub fiecare hartă stă o **legendă** cu capetele reale ale scării afișate, de exemplu
-`albastru = -10.0 %   alb = 0 (exact pe model)   rosu = +10.0 %`. Pe `auto` arată cele două
-capete calculate, care sunt de obicei asimetrice — exact ce nu se putea vedea înainte.
-
-**Fișierele scrise pe disc sunt mereu pe scara automată**, oricare buton e apăsat: atât
-`-o` din consolă, cât și `flatcheck.png` salvat de fereastră. Cele două aplicații scriu
-astfel același fișier pentru același master, iar butoanele rămân un ajutor de privit.
-
-### Ce înseamnă formele
-
-Harta e imaginea împărțită la modelul radial, deci tot ce era simetric radial a fost scos:
-**ce a rămas nu poate fi vignetare**. Citește întâi cifrele, care spun *cât*, și abia apoi
-forma, care spune *de ce*. Aceeași listă e și în fereastră, sub hartă, la „Cum citesc harta".
-
-| formă | ce a însemnat |
-|---|---|
-| pete fără direcție | Abateri mici, fără o axă preferată. Semnătura difuzorului plus zgomotul cerului. Background extraction le scoate fără efort. |
-| dipol (o parte albastră, cealaltă roșie) | Un gradient, deci o direcție; se potrivește cu `inclinare`. Sursă neuniformă, lumină ambientală, sau un obstacol întins asimetric peste obiectiv. Dacă e fix în lume (cerul) sau pe aparat (difuzorul, parasolarul) un singur master nu poate spune; o a doua sesiune cu același obiectiv poate. |
-| cercuri sau arce concentrice | Un inel centrat pe senzor **nu poate** rămâne în hartă — modelul radial îl absoarbe prin construcție. Deci dacă vezi unul, e centrat în altă parte: ceva rotund din fața obiectivului e în afara axei, sau lumina nu e difuză. **Nu s-a văzut încă pe un master real:** inelele care apăreau pe mastere cu gradient mare erau un artefact al modelului radial, corectat între timp — vezi mai jos. |
-| pată locală într-un colț sau la o margine | Light leak: vizor, montură, latura difuzorului. E fixă pe aparat, deci revine în fiecare sesiune până i se găsește cauza. |
-| pată rotundă în centru | Iluminare contaminată simetric față de axă: un panou prea aproape, backlight-ul unui monitor. Când e chiar centrată, **nu poate apărea pe hartă** și nu o vede niciun test — modelul radial o absoarbe întreagă, exact ca vignetarea; măsurat, o pată de 10% în centru lasă harta goală și toate cifrele sub 0.1%. Singura ei urmă e cifra de vignetare, care crește. Se vede doar când e puțin descentrată, și atunci ca o semilună, nu ca un disc. Nicio rotație nu o scoate; contra-testul e distanța — un set la 30 cm, unul la 60. |
-| granulație fină peste tot | Zgomot, nu structură: prea puține cadre sau expunere prea joasă. Nu e nimic de reparat la sursă, doar de stivuit mai mult. |
-
-### Cine decide: cifrele sau harta
-
-Cele două jumătăți ale ecranului nu au același rol, deși arată ca două vederi ale
-aceluiași lucru.
-
-- **Cât de mult** — decid **cifrele**. „Reziduu după modelul radial" e chiar măsura a cât
-  din cadru nu se explică printr-o funcție pur radială, pe scara de reziduu. Sub 2% nu
-  contează ce formă are; între 2 și 10% background extraction scoate ce rămâne, oricare ar
-  fi forma. **Verdictul nu depinde niciodată de ce vezi în hartă.**
-- **Ce fel** — aici intră ochiul, dar nu de la zero. Forma spune ce să schimbi la ședința
-  următoare, nu dacă flat-ul e bun. Și cifrele fac o parte din treabă înainte: dacă
-  `inclinare` e aproape de reziduu, e un gradient, și harta spune în ce direcție; dacă
-  `pata maximă` e mult peste reziduu, e ceva compact — o scurgere mică,
-  condens — și `pete locale` spune unde; iar dacă a apărut atenționarea de praf, întrebarea
-  nu mai e dacă flat-ul e bun, ci pentru ce îl folosești: sesiunea ale cărei lights au
-  aceeași pată, sau biblioteca. Ce rămâne pentru ochi e tabelul de mai sus.
-
-Aceeași explicație e în fereastră, sub verdictul din tabul Structură.
-
-### O capcană care a fost reparată
-
-Profilul radial se ia din **rasterul simetrizat la 180°**, adică din media dintre master
-și rotitul lui, nu direct din master. Reziduul rămâne `img/model`, deci gradientul se vede
-în continuare.
-
-Motivul: dincolo de cercul înscris, un inel de rază constantă nu mai e un inel întreg,
-sunt arce parțiale. Pe un cadru cu gradient, distribuția pixelilor din arcele alea e
-bimodală — un capăt întunecat, celălalt luminos — iar mediana cade în golul dintre cele
-două moduri, deci sare de la un inel la altul. Modelul moștenea salturile și harta le
-desena drept **cercuri concentrice plus o margine dură pe cercul înscris, pe un cadru care
-nu conținea niciuna.** Reprodus pe un cadru sintetic care e doar vignetare netedă ori un
-gradient de 11%.
-
-Cifrele de verdict nu erau afectate — reziduul se măsura pe atunci doar în cercul înscris,
-unde mediana era deja exactă — dar harta e singurul loc din care se citește o *formă*, iar
-ea mințea. Dacă ai hărți salvate dinainte cu inele pe ele, ăsta era motivul.
-
-Capcana are și o a doua față, pe care simetrizarea nu o atinge: simetrizarea scoate doar
-partea *impară* (gradientul). Un termen *par* și neradial — o șa, adică colțurile în perechi
-diagonale, sau o cădere mai abruptă pe o axă decât pe cealaltă — trece prin ea neatins, iar
-mediana pe arcele parțiale de dincolo de cercul înscris îl absorbea în profil. Rezultatul:
-o creastă exact pe cercul înscris și doi lobi cu margini dure, pe un flat care nu conținea
-nicio margine. Așa arată *cerul* la un câmp de 70°: bolta e curbată în cadru, mai tare pe
-direcția apusului decât perpendicular, și rotația la 180° nu poate anula un termen par.
-Găsit pe un master de cer cu Tokina la 20 mm, reprodus pe un sintetic neted cu aceiași
-coeficienți. De atunci, pe inelele parțiale profilul se ia după ce se împarte termenul 2θ
-estimat robust pe inel (pe medianele sectoarelor, deci o pată compactă nu intră în el) și
-netezit pe inelele vecine; în cercul înscris nimic nu s-a schimbat. Pe masterele curate
-cifrele s-au mișcat cu sub 0.3 puncte; un master de monitor cu pete își arată acum în
-reziduu structura pară pe care mediana o ascundea parțial în profil.
-
-Odată modelul valid până în colț, restricția reziduului la cercul înscris a rămas fără
-motiv, și a fost scoasă: pe un cadru 3:2 cercul acoperă 53 % din dale, colțurile — unde
-gradientul e cel mai mare și unde stau scurgerile de lumină — nu se vedeau deloc, iar
-același gradient citea 6.5 % dacă mergea pe axa lungă și 9.7 % pe cea scurtă. Pe tot cadrul
-citește 10.4 / 10.6. Dacă ai rapoarte vechi, reziduul de acolo e mai mic decât ce iese
-acum pe același master; cifra veche subestima.
-
----
-
-## Aplicația cu ferestre
-
-Pe lângă `flatcheck.exe` există `FlatCheck.Wpf.exe`, care face **exact aceleași măsurători**
-pe un folder întreg, cu taburi în loc de rulări.
-
-Nu e o reimplementare: amândouă aplicațiile stau peste aceeași bibliotecă, `FlatCheck.Core`,
-și trec prin același lanț (`Runs/`). Cifrele sunt aceleași prin construcție, nu prin grijă —
-iar raportul pe care fereastra îl salvează pe disc e produs de același cod care scrie în
-consolă, comparat caracter cu caracter de un test.
-
-### Cum se folosește
-
-Îi dai **un folder**: directorul de lucru al sesiunii din Siril, cel cu subfolderele
-`flats/`, `darks/`, `biases/`, `lights/` și `process/` sau `masters/`. Se poate alege din fereastră sau da
-ca argument:
+The window, on a Siril session folder (the one with `flats/`, `lights/` and `process/` or
+`masters/`):
 
 ```bash
 FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"
 ```
 
-Imediat ce folderul e ales pornesc singure **structura** și **testul end-to-end**, cu ecran
-de așteptare (și, în fundal, preumplerea tabului Sintetic, care nu scrie nimic). Rulează una după
-alta, nu în paralel, și nici o analiză pornită cu un clic (Expunere, Histogram, Netezire,
-Sintetic, analiza din Split) nu rulează lângă ele sau lângă alta: toate trec printr-o singură
-poartă, una la rând. Măsurat pe masterele de 24 MP: o singură analiză ajunge la 0.7-1.25 GB de
-memorie, două deodată la 1.3-2.2 GB. Un clic făcut în timpul analizelor de la deschidere, sau
-în timpul altui clic, așteaptă rândul, iar ecranul de așteptare spune că așteaptă.
+It runs the structure test on the master flat and the end-to-end test on the calibrated lights by
+itself. The console answers one question per run:
 
-Masterul de flat, `pp_flat_stacked.fit`, se caută în **două locuri**, fiindcă scripturile
-Siril îl lasă în două: `process/` (scripturile din depozitul de scripturi, ca
-`OSC_Preprocessing_WithoutDark.ssf`) și `masters/` (scripturile din instalarea Siril 1.4,
-ca `OSC_Preprocessing.ssf`). Ambele merg. Dacă există în amândouă, se ia **cel mai nou** și
-tabul Structura arată un avertisment cu ambele căi — două mastere înseamnă două rulări de
-preprocesare, posibil din două seturi de flat-uri, și trebuie să știi pe care îl vezi.
-`process/` în sine nu e obligatoriu: un folder cu masterul în `masters/` și fără cadre
-rulează structura, iar tabul End-to-end spune singur că n-are serie.
+```bash
+flatcheck process/pp_flat_stacked.fit                           # the structure of the master
+flatcheck process/pp_flat_stacked.fit --raw flats/DSC_0001.NEF  # ... and its vignetting against the lens profile
+flatcheck process/ --light                                      # does the flat correct the lights
+flatcheck flats/DSC_0060.NEF --expo                             # is a raw flat exposed right
+```
 
-Dacă nu găsește masterul în niciunul din cele două locuri, aplicația nu pornește pe
-folderul acela și spune ce e de făcut — să rulezi scriptul de preprocesare din Siril.
-Fișierul acela e intrarea modului de structură, prin convenție.
+Every run prints a report and exits with a code that follows its verdict (see "Exit codes"); most
+modes also write a map, `flatcheck.png` unless `-o` names another file.
 
-#### Rularea scriptului din aplicație
+## Which file to give it
 
-Pe același ecran e un buton **Rulează în Siril**, care rulează scriptul fără să deschizi
-Siril: pornește `siril-cli.exe` din instalarea ta, pe folderul sesiunii, cu scriptul ales
-dintr-o listă. Lista e cea din meniul de scripturi al lui Siril — fișierele `.ssf` bifate în
-*Preferințe › Scripturi* plus cele din folderele de scripturi de acolo, citite din
-`config.1.4.ini` — iar propus e **`OSC_Preprocessing_WithoutDark.ssf`**, din depozitul de
-scripturi pe care Siril îl descarcă — scriptul autorului, pentru un aparat fără darks.
-`OSC_Preprocessing.ssf` din instalare merge la fel de bine: acela lasă masterul în
-`masters/`, unde aplicația îl caută și ea. Aplicația nu aduce niciun script cu ea și nu
-modifică niciunul; ce rulează e exact fișierul pe care l-ar rula Siril.
+The most likely cause of a wrong result is not in the code; it is the file chosen.
 
-Setările tale de Siril (`config.1.4.ini`) rămân neatinse: `siril-cli` își rescrie fișierul de
-setări la sfârșitul fiecărui script, iar o salvare eșuată îl poate șterge — măsurat, între 5 și
-10 la sută din rulări pe calculatorul autorului, și așa s-au pierdut odată toate setările lui
-Siril. De aceea aplicația îi dă lui `siril-cli`, cu `-i`, o copie a lor într-un folder
-temporar al rulării (`%TEMP%\FlatCheck\siril-…`), șters la sfârșit; pe ale tale doar le
-citește. Siril lucrează deci cu aceleași setări, dar nimic din rulare nu se întoarce în ele.
-Două urmări vizibile: Siril nu mai pornește în ultimul folder rulat din aplicație, iar în log
-poate apărea uneori „Could not save the settings in …\siril.ini" — e despre copie și nu
-schimbă nimic. Dacă setările nu se pot citi (de exemplu chiar când Siril le salvează), rularea
-nu pornește, mesajul spune ce fișier, și apeși din nou.
+| mode | wants |
+|---|---|
+| structure (default) | the **calibrated** master flat: `pp_flat_stacked.fit`, in `process/` or in `masters/` depending on the Siril script |
+| `--light` | a light **calibrated with the flat**, **without background extraction**, **not registered**; better, the folder of them |
+| `--expo` | a **single raw, uncalibrated** flat, preferably the camera's own raw file (`.NEF`) |
 
-Se deschide o fereastră cu ieșirea lui Siril în timp real, ca panoul lui de log: comanda
-curentă (*comanda 7 din 20*, cu textul ei întreg, fiindcă Siril tipărește doar verbul), bara
-de progres a operației în curs, și liniile de log. Liniile de progres — trei sferturi din ce
-scrie Siril — devin bara, nu text. La sfârșit fereastra spune dacă scriptul a reușit sau la
-ce comandă s-a oprit, iar când o închizi folderul se redeschide și analiza pornește pe ce a
-produs. **Oprește** omoară procesul; ce a apucat să scrie rămâne în `process/`, iar o rulare
-nouă suprascrie tot — verificat: scriptul rulat a doua oară peste un `process/` complet sau
-parțial reface fiecare fișier și iese cu 0.
+Siril 1.4 writes the master as **float**, divided by 65535, so the `median / max ADU` line reads
+like `0.0143 / 0.0190 (normalised float 0..1)`. The file is not empty: every metric is a ratio,
+so the scale does not matter.
 
-Trei lucruri pot ține butonul blocat, și ecranul spune care: `siril-cli.exe` negăsit (se
-caută prin intrarea de instalare din registru, apoi în `Program Files\Siril\bin`), niciun
-script `.ssf` în configurarea Siril, sau un subfolder de intrare lipsă ori gol — scriptul
-ales e citit dinainte și folderele în care intră (`biases/`, `flats/`, `lights/` pentru
-WithoutDark) trebuie să existe și să aibă fișiere, altfel Siril s-ar opri la a treia linie.
-Dacă Siril e deschis apare un avertisment, nu un blocaj: două procese care scriu în același
-`process/` strică fișierele, dar aplicația nu poate ști pe ce folder lucrează celălalt.
+Siril's `pp_` prefix means "preprocessed", that is calibrated. An uncalibrated stack still holds a
+pedestal of ~150-600 ADU, which flattens the profile and under-reports the vignetting by ~1 %,
+and **every test will still say all is well**, because the profile stays radially symmetric; only
+its amplitude is wrong. It cannot be detected, only avoided.
 
-Butonul **Despre** din bara de sus (sau **F1**) deschide o fereastră cu versiunea,
-copyright-ul, nota de licență și de garanție — același text pe care consola îl tipărește la
-`--help` — și lista componentelor terțe, cu licența fiecăreia și link la proiect. E acolo
-și din obligație, nu doar din politețe: GPLv3 cere ca un program cu interfață să-și arate
-singur notița, iar LGPL-ul sub care e luat LibRaw cere ca notița bibliotecii să apară
-lângă a noastră. Un `.exe` copiat singur n-are fișierele `LICENSE` și
-`THIRD-PARTY-NOTICES.md` lângă el, deci fereastra e singurul loc în care notițele
-călătoresc garantat cu programul.
+Accepted formats: FITS (`.fit`, `.fits`, `.fts`; BITPIX 8, 16, 32, -32 and -64; mono, or a
+colour cube, which is averaged over its planes) and camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`,
+`.dng`, `.raf`, `.pef`), read undebayered through LibRaw, with the black and white levels the
+camera wrote. On a raw, `--expo` uses those exact levels instead of guessing them from the
+frame's maximum.
 
-### Cele șapte taburi
+**ISO does not matter.** Change nothing for ISO. Every metric is a ratio
+(`log2(centre / corner)`, `(max - min) / mean`, `image / model`) and ISO is a scale factor, so it
+cancels out of all of them.
 
-| tab | ce face | când rulează |
+## The idea
+
+For a photographic lens with no optical train behind it, a *correct* flat is by construction a
+**purely radial** function centred on the optical axis. Vignetting is rotationally symmetric, and
+dust at f/2 is below the threshold (measured: the visible dust shadow on a Nikkor 35 master at
+f/2.8 is 0.31 %, against a threshold of 2 %).
+
+So any deviation from radial symmetry **is not vignetting; it is error**: an uneven light source,
+a light leak, a tilted camera, ambient light, a diffusing sheet too close to the lens.
+
+A good flat does not mean "it looks flat". It means "its deviation from radial symmetry is below
+the noise". That is a figure, and it can be measured.
+
+The radial model and the asymmetry are computed around **the centre of the sensor**, not around
+the fitted peak of the illumination: fitting the centre would absorb exactly the linear gradient
+being looked for, and the test would cancel itself. The radial profile is taken from the frame
+averaged with its own 180-degree rotation, which removes a gradient before the profile is drawn;
+and beyond the inscribed circle, where the rings are only arcs, the even non-radial part (such as
+a saddle of the sky, measured from three quarters of that circle's radius outward) is divided out
+before a ring's median is taken. Neither can then leave rings in the model that the flat does not
+have (`docs/design/radial-model-even-term.md` tells how this was found).
+
+## The six modes
+
+### 1. Structure (default)
+
+```bash
+flatcheck process/pp_flat_stacked.fit     # or masters/pp_flat_stacked.fit, depending on the Siril script
+```
+
+Runs on the final master. It reports three figures as information, with no verdict (under
+`INFORMATIVE (not tests)`), then five tests of deviation from radial symmetry, and writes a
+residual map.
+
+The information:
+
+- **vignetting to corner**: the depth of the vignetting, in stops, `log2(centre / corner)`;
+- **illum. centre offset**: how far the illumination peak sits from the sensor's centre. It is
+  not a test, and not on the scale below: see "The residual scale";
+- **local spots (dust etc.)**: the deepest compact spot; see below.
+
+The five tests:
+
+| test | what it measures |
+|---|---|
+| spread of the 4 corners | the four 5 % corner boxes against each other |
+| max azimuthal asymmetry | the 12 sectors of each ring against each other, inside the inscribed circle |
+| residual (radial model) | how much of the frame a purely radial model does not explain, over the whole frame, corners included: **the most important** |
+| tilt (gradient) | the peak-to-peak amplitude of the linear gradient across the frame |
+| worst spot (one tile) | the most deviant tile of the whole frame: a compact defect that the residual clips as an extreme |
+
+All five share one scale, and the verdict is the worst of them (see "The residual scale").
+
+#### Dust: for the session or for the library
+
+The informative figure **local spots** is the deepest compact spot left after the large-scale
+structure is subtracted, with its position in the analysis raster. A gradient does not enter it;
+a dust shadow, a ring of condensation or a small leak enters whole.
+
+**The sign is the diagnosis**, and the report writes it in words beside the figure:
+
+| sign | means | typical causes |
 |---|---|---|
-| **Structura** | modul 1 pe `pp_flat_stacked.fit` din `masters/` sau `process/` | la deschiderea folderului |
-| **End to end** | modul 2 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
-| **Expunere** | modul 3 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
-| **Histogram** | modul 4 pe masterul sesiunii, pe flat-ul netezit de lângă el (când există) sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
-| **Netezire** | modul 5 pe masterul sesiunii; scrie `pp_flat_stacked_smoothed.fit` lângă el | la buton, niciodată singur — scrie un fișier |
-| **Sintetic** | modul 6: alege obiectivul din profilele Adobe de pe disc și din baza lensfun de lângă program, scrie `pp_flat_stacked_synthetic.fit` lângă master și îl compară cu masterul (`--against`) | la buton; doar preumplerea rulează singură |
-| **Split** | împarte flat-urile în 2 sau 4 grupuri, rulează scriptul Siril pe fiecare într-o sesiune temporară și pune masterele grupurilor lângă masterul întreg: cele cinci teste, vignetarea față de profil, hărțile una lângă alta; scrie `Split result.txt` și `flatcheck-split.png` în folderul sesiunii | la buton, niciodată singur — copiază gigaocteți și rulează Siril de N ori |
+| negative, `(darker)` | the spot is darker than what surrounds it | dust on the sensor or on a filter, condensation, an obstruction |
+| positive, `(brighter)` | the spot is brighter | a light leak, a reflection |
 
-**Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
-fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,
-atenționarea de praf sub verdict când e cazul, fiecare rând cu descrierea lui sub el — plus
-harta reziduală. Sub teste stă și **vignetarea față de profilul obiectivului**: când în
-`flats/` e un raw, rularea e cea a consolei cu `--raw` pe primul dintre ele (obiectivul după
-ID-ul din raw, diafragma din el, crop-ul din baza lensfun după `INSTRUME`), cu un rând pe
-profil, rândul care dă verdictul îngroșat, scara adâncimii ca tabel de patru benzi în stopuri
-(aceeași scară de reziduu, tradusă, nu un prag nou) cu banda verdictului marcată, și
-verdictul rulării — cel mai rău dintre formă și adâncime — în pastila de sus, cu cele două
-părți scrise sub ea. Fără raw, cardul spune de ce nu s-a putut compara și raportul rămâne cel
-simplu; un raw care nu spune nimic despre obiectiv (aparat pe telescop sau pe un obiectiv fără
-contacte: focală 0, fără ID, fără gamă) e numit ca atare, cu ce-i lipsește, nu ca „niciun raw",
-iar comparația se face numind obiectivul în tabul Sintetic sau în consolă cu `--lens`, `--focal`
-și `--fstop`. Salvează în folderul
-ales:
+Above the 2 % threshold the report prints a **warning**, not a verdict, because the answer
+depends on what the flat is for: a spot fixed to the camera is *right* for the session whose
+lights have the same spot, and *wrong* for a library flat, since by its next use the dust will
+have moved. Below the threshold the figure is information only. Look at its position on the map
+before you decide.
 
-- **`Test result.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
-  raportul, linia hărții;
-- `flatcheck.png` — harta pe scara automată, aceiași octeți pe care i-ar scrie consola.
+Worth knowing before you act on it: the figure finds what is *compact*, but it also catches the
+edge of a large structure that is steeper than the window the local background is taken from.
+Measured on the author's two Nikkor 35 masters at f/2.8: on the ISO 400 one the extreme is a
+vertical stripe along the left edge (-0.44 %), not a round spot, and on the ISO 800 one it sits in
+the top-right corner (+0.36 %), the same kind of thing. Both stay at a fifth of the threshold, so
+nothing lit up; but if you ever see the warning, check first whether the shape on the map is
+round. Only round is dust.
 
-Harta de pe ecran are butoanele de scară și legenda descrise la [Scara
-culorilor](#scara-culorilor), plus ghidul de forme sub ea. Fișierul rămâne pe `auto`
-indiferent ce buton e apăsat, deci se potrivește cu chipul `auto`, nu neapărat cu ce vezi.
+#### What structure cannot see
 
-**End to end** rulează pe toată seria și își umple tabelul pe măsură ce cadrele sunt gata —
-32 de cadre iau vreo două minute, iar un ecran gol tot timpul ăla ar părea blocat. Poate
-ieși legitim `INAPLICABIL`: pe un câmp mai larg de ~40 de grade diagonală cerul și
-vignetarea au aceeași formă, deci nu se produce nicio cifră. **Nu e o eroare** — vezi
-secțiunea despre când merge `--light`. Pe date ca astea flat-ul se judecă în tabul Structura,
-care nu implică cerul.
+A spot that is **round and centred exactly on the axis** (a panel too close, the backlight of a
+monitor the lens was centred on) is absorbed whole by the radial model, exactly like vignetting:
+measured, a 10 % spot in the centre leaves every figure under 0.1 % and the map empty. Its only
+trace is the vignetting figure, which grows. It shows only when it is slightly off-centre, and
+then as a crescent, not a disc. No rotation removes it; the counter-test is distance: one set of
+flats at 30 cm, one at 60.
 
-Tabul se explică singur, pe loc, nu într-un ghid pliat: sub fiecare din cele patru cifre ale
-sintezei pe serie stă un rând care spune ce e cifra și cum se judecă (rândul rămâne în
-coloana etichetei, nu ajunge sub valoare); capul de tabel explică fiecare coloană la trecerea
-mouse-ului; iar sub hartă și legenda ei, un paragraf spune ce e poza. Pragurile din texte
-sunt citite din `Th`, nu rescrise. Textele (`SessionMessages.Light*Note` și `Light*Tip`) sunt
-în oglindă cu lista de mai jos — dacă reformulezi aici, du-te și acolo.
+What this mode gives is an **upper bound** of the flat's error, not the error: it measures the
+sum of a part fixed to the camera (harmless) and a part fixed in the world (harmful), and one
+master does not hold the information that separates them (see "The residual scale"). It is still
+the test to start with, because it is the only one that needs nothing more to be photographed.
 
-| unde | ce spune |
+#### The sixth test: the vignetting against the lens's profile
+
+The five tests measure deviations from radial symmetry, so they are **blind to a radial
+excess**. A tablet master (Tokina at 20 mm f/2.8, four orientations 90 degrees apart) came out
+PERFECT on all five with 1.26 stops of vignetting, where the two profile databases give 0.66 to
+0.92 for that lens. The excess was the panel's angular fall-off, made radial by the rotation;
+more rotations do not help. The tool's only outside reference is **the lens's published
+profile** (Adobe's on the machine, lensfun's beside the program; see mode 6), and this is the
+comparison:
+
+```bash
+flatcheck process/pp_flat_stacked.fit --raw flats/DSC_0001.NEF            # the lens and the aperture from the raw
+flatcheck process/pp_flat_stacked.fit --lens "Tokina 11-20" --fstop 2.8   # or by name
+```
+
+The candidate lenses come from what the raw says about its lens: its name as the camera wrote it,
+matched letter for letter against the profiles' names, and the lens ID (Nikon's on a Nikon, the
+maker's on Canon, Sony and Pentax). The name's matches are the candidates when there are any, the
+ID's otherwise, narrowed by the focal range and the aperture the raw gives and by the camera's
+mount. With `--lens`, the candidates are the lenses that match every word of the text, as in
+mode 6. For each candidate, the profile nearest in focal length and aperture is built as a raster
+at the analysis size, and its vignetting is measured with **exactly the master's operator**: the
+median of the 5 % corner boxes against the centre.
+
+The difference in stops, master minus profile, goes through the same arithmetic as `--against`:
+`2^|D| - 1` is the error it leaves in the corner of a light calibrated with the master, read on
+the residual scale, so under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, above
+that REDO. **The comparison's verdict is the nearest profile's**, not the worst one's: the two
+databases differ from each other by ~0.2 stops on the same lens, and a master that matches one of
+them is not wrong. The run's verdict is the worse of the shape (the five tests) and the depth, and
+the exit code follows it.
+
+**Two scales for one quantity.** The error in the corner of the calibrated light is exactly what
+`--light` measures too, directly in the light, with its thresholds of 2 % OK and 5 % PROBLEM.
+Here the same error sits on the residual scale, where 10 % is still GOOD, because the reference
+is another one: the published profile, and the two databases differ by 0.2 stops, that is 15 %
+in the corner, three times `--light`'s PROBLEM line. A verdict finer than its reference would be
+invented precision. So the report shows both: under the depth scale it prints the corner error,
+what `--light` would read from it, and the reference's own uncertainty. At an excess of 0.10
+stops, the case of paper sheets on a tablet, that is 7 % in the corner: GOOD on this scale and
+PROBLEM on `--light`'s. Read both before you decide to reshoot, and remember that `--light` itself
+refuses a field wider than 40 degrees.
+
+**The sign is the diagnosis.** Plus means the master falls toward the corner more than the
+model: the source falls off with the angle, a panel too close or without a real diffuser (matte
+sheets do not diffuse). Minus means the source fills the corners: the dome of the sky, ambient
+light, a reflection in the lens hood. More rotations do not help, because the excess turns with
+the camera or is symmetrised by the rotation.
+
+Measured on the author's library (D3300, `--raw` with the first raw of `flats/`; recorded on
+2026-09-18, re-measured unchanged on 2026-10-26, `docs/validation.md`):
+
+| master | vignetting (stops) | nearest profile | difference | depth verdict |
+|---|---|---|---|---|
+| Tokina 20 mm f/2.8, tablet + 7 matte covers | 1.26 | lensfun 0.91 | +0.34 | REDO |
+| Tokina 20 mm f/2.8, tablet + 15 covers | 1.24 | lensfun 0.91 | +0.33 | REDO |
+| Tokina 20 mm f/2.8, sky, no diffuser | 0.27 | Adobe 0.66 | -0.39 | REDO |
+| Tokina 20 mm f/2.8, monitor, diffuser close | 0.85 | lensfun 0.85 | 0.00 | PERFECT |
+| Tokina 20 mm f/2.8, on the monitor | 0.78 | lensfun 0.85 | -0.07 | GOOD |
+| Nikkor 35 DX f/2.8, sky (ISO 400 / 800) | 0.63 / 0.62 | Adobe 0.52 | +0.11 / +0.10 | GOOD |
+| Samyang 135 f/2, sky (ISO 400 / 1600) | 0.61 / 0.60 | Nikkor 135 f/2 DC 0.50 | +0.11 / +0.10 | GOOD |
+| Samyang 135 f/2.8, sky | 0.15 | lensfun Samyang 0.14 | +0.01 | PERFECT |
+
+What it cannot know: the profile is the model of the lens, not your copy of it, and it is
+achromatic; the master is the 2x2 mean of the mosaic. **A manual lens** (the Samyang) carries no
+lens ID that any profile knows; then the candidates are the lenses of the mount whose name states
+exactly the range in the raw (135 mm f/2.0), and the report says the list may hold another lens of
+the same range: read your lens's row. With no raw beside the master and no `--lens` there is no
+comparison: the block says why, and the verdict stays the five tests'. A raw that says nothing
+about its lens (a camera on a telescope, or a lens without contacts: no lens ID, no name, no
+focal range) is named as such, and the report says what to give: `--lens <text>`, plus `--focal`
+and `--fstop` for whichever is unknown too.
+
+### 2. End to end: `--light`
+
+```bash
+flatcheck process/pp_light_00001.fit --light    # one frame
+flatcheck process/ --light                      # the whole series (recommended)
+```
+
+The only mode that closes the loop; the structure tests are proxies for it. **But it does not work
+on all data**: see "When `--light` works and when it does not", which matters.
+
+It estimates the local background (the 15th percentile of each tile, robust to stars and
+nebulosity) and fits, all at once:
+
+```
+background = a + b·X + c·Y + d·R² + e·R⁴
+```
+
+The plane absorbs the light-pollution gradient; the radial terms catch the residual vignetting,
+that is the flat's error. Fitting both at once is what lets the test work under a polluted sky:
+the two have different shapes, so they separate. Four rounds of one-sided sigma clipping reject
+the tiles with nebulosity (a contaminant only adds signal).
+
+**The sign is the diagnosis:**
+
+- **positive**: the background *falls* toward the edges, **under-correction**. Another aperture
+  for the flats than for the lights, or a contaminated flat.
+- **negative**: the background *rises* toward the edges, **over-correction**. Almost certainly
+  flat-darks missing or wrong: you divide by a flat that still holds an offset.
+
+> **Without darks**, the lights *must* get a bias; otherwise their offset is divided by the flat
+> and amplified radially into the corners. In Siril: `-bias=...` at `calibrate`. The biases in
+> `biases/` must be at the **same ISO** as the lights.
+
+#### Run it on the folder, not on one frame
+
+The radial component of a frame is the sum of two things: the flat's error, which is **the same on
+every frame by construction** (the same master was divided out of each), and a radial term of the
+sky, which changes during the session.
+
+On a real session of 32 frames over 81 minutes, the figure swept smoothly from +3.13 %
+through -19.20 % to +35.73 %, with only 1.36 points between consecutive frames. Whatever moves
+like that is sky, not flat.
+
+Given a folder, it runs on every frame that matches the pattern (`pp_light_*.fit` by default),
+prints a table row per frame as it goes, and averages. **But it gives a verdict only when the
+mean means something**, under three conditions:
+
+| condition | threshold | why |
+|---|---|---|
+| number of frames | at least 5 | below that, a mean means nothing |
+| error of the mean (`σ/√n`) | under 2.00 points | above even the OK threshold, the series does not resolve the flat to the precision the thresholds speak at |
+| correlation with the sky gradient, in absolute value | under 0.70 | if the "flat error" follows the sky, what is measured is the sky |
+
+The correlation is checked only when the sky gradient really varies over the series, by 10
+points or more. On a clean session where it stays constant, the correlation is noise and would
+reject good data.
+
+If a condition fails, the verdict is **UNDETERMINED** and the report says which and why. A
+reasoned "I don't know" is more useful than a number that looks confident.
+
+The default pattern leaves out `r_pp_light_*`: registered frames are transformed geometrically,
+so the flat's error, fixed to the sensor, is moved off the centre the radial model is fitted
+around. Use `--pattern` for another naming convention.
+
+### 3. Exposure: `--expo`
+
+```bash
+flatcheck DSC_0060.NEF --expo                            # the recommended way
+flatcheck DSC_0060.NEF --expo --sky                      # a sky flat
+flatcheck raw_flat.fit --expo                            # a raw FITS from Siril
+flatcheck raw_flat.fit --expo --sat 4095 --black 150     # FITS only, when the scale is guessed wrong
+```
+
+Runs on a **single raw flat**, not on the master: stacking normalises and erases the level. It
+splits the frame into its 4 Bayer positions and takes the median of each; if `max/min > 1.15` it
+treats the file as CFA and uses the brightest channel (it clips first, so it is the limiting one).
+
+**The channels are named by colour, but only when the file says which is which.** On a raw the
+order comes from LibRaw; on a FITS, from the `BAYERPAT` card Siril writes at Conversion. The
+report then writes `R  (CFA[0,0])`, `G1 (CFA[0,1])` and so on. `BAYERPAT` describes the sensor
+read from the top down, but Siril writes the rows bottom-up (`ROWORDER = 'BOTTOM-UP'`), and on an
+even height that shifts the mosaic's phase by one row: on such a file `RGGB` reads as `GBRG`, so
+`R` lands at `CFA[1,0]`. The tool makes the shift itself, as Siril does when it debayers. With no
+source, the positions stay anonymous, `CFA[y,x]`. Nothing is guessed: the order differs from camera
+to camera (RGGB is the most common, but GBRG, GRBG and BGGR exist), and a label on the wrong
+channel would look measured. A D3300 reads `RGGB`. For the verdict it does not matter which is
+which anyway: the limiting channel is the brightest, whatever its colour.
+
+**The figure that decides is the median of the central 20 % window, not the global median.** A
+flat has a wide distribution by definition (that *is* the vignetting), so the global median is
+pulled down by the corners. Expose by it and you overexpose until the centre clips, exactly where
+the vignetting signal is highest.
+
+> The camera's histogram, or ViewNX's, shows the **processed** image (debayered, white-balanced,
+> gamma-encoded), which pushes the peaks to the right: that is why a frame looks "at the limit"
+> when its raw data sit at ~40 %. For a histogram of the real raw data: Siril, or the window's
+> Exposure tab.
+
+**On a raw nothing is guessed:** the camera writes both the saturation and the black level into
+the file, the mode uses them, and the report says `source: libraw (exact)`. On a D3300 at 12 bits:
+white 4095, black 150.
+
+**On a FITS**, where the scale is gone, the saturation is detected from the frame's maximum, and
+`--sat` / `--black` are there for when it guesses wrong. To learn the exact white, shoot one frame
+overexposed on purpose: its maximum *is* the saturation. (On a raw you do not need to.)
+
+`--sat` and `--black` beat the file, so they stay a way out on a raw too. One real reason: LibRaw
+reports `maximum = 4095` for the D3300, but the sensor is no longer linear above ~3827. The
+difference is not cosmetic: on the same frame, 50.3 % against 53.9 %.
+
+**Sanity check:** the mode refuses the file if the central level is below 1.0 (already calibrated
+or normalised) or if the four CFA positions are almost identical (the file is debayered). It
+catches exactly the mistake "I opened the NEF in Siril and pressed Save".
+
+#### If you really need a raw FITS
+
+`--expo` no longer needs one: give it the NEF. If you need the FITS for another reason, **do not**
+open the NEF and Save, which debayers and normalises it. Use Siril's **Conversion** tab: add the
+NEFs, Convert. The result keeps the raw CFA mosaic at the original ADU scale. The mode works on
+FITS for mono astro cameras too, which write FITS natively and have no raw file at all.
+
+#### `--sky`, for sky flats
+
+For flats on the blue-hour sky a modest level is **right**: the sky darkens continuously and is
+full of faint stars, and the master's SNR comes from the *number* of frames, not from pushing one
+frame to 55 %. Without `--sky`, a sky flat at 22 % would be reported, wrongly, as underexposed.
+The bands of both are under "Thresholds".
+
+### 4. Histogram equalisation: `--histeq`
+
+```bash
+flatcheck flats/DSC_0060.NEF --histeq -o picture.png
+```
+
+Not a test, and no verdict. It is **Siril 1.4.4's "Histogram" display**, redone: the image passed
+through its own distribution function, so that every grey level gets the same number of pixels.
+On a flat, whose distribution is narrow against the file's scale, the curve is steep exactly over
+the vignetting's range, and everything that is not uniform comes out at maximum contrast,
+including what does not show at all on the linear image. Measured on a synthetic frame with 5 %
+vignetting: a ripple of 0.3 % is a third of a grey level on the linear display and about fifteen
+levels equalised.
+
+What it does, as Siril does (read from its source, `image_display.c` and `histogram.c`):
+
+- a histogram of 65536 bins **per channel**, leaving out the pixels equal to zero;
+- the transfer table is the cumulative distribution times 255, rounded as `round_to_BYTE` does;
+- on a CFA frame the four Bayer positions are equalised **each on its own distribution**, like the
+  layers of a debayered image in Siril. The console writes the RGB composite: R from the red
+  position, G the mean of the two greens, B from the blue one, chosen by colour, not by position,
+  so the order comes from the file and is never guessed; with no order, the mean of the four, in
+  grey.
+
+What differs: the bins span the channel's own `[min, max]`, not 0..65535, because a raster can be
+at any scale (0..4095, 0..65535, 0..1); on integer data the mapping is the same, on float it is
+finer. The equalisation runs at full resolution, then the 8-bit result is shrunk to ~1500 px on
+the long side, by the same rule as the analysis raster.
+
+**What the picture cannot tell: the amplitude.** Every grey level gets the same number of pixels
+however close their values were, so a ripple of 0.5 % and a gradient of 10 % with the same shape
+come out the same, and a perfect flat shows its own noise at maximum contrast. The picture says
+**what shape** the thing the structure mode measures has; the figures are there. It exits with 0
+once the picture is written; the report is information only.
+
+It takes any file the tool reads: a camera raw or a FITS, a single frame or a master. On a master
+(float, 0..1, with the CFA mosaic intact as Siril writes it) it works the same, and what shows is
+what was left after stacking.
+
+**False colours: `--rainbow`.** Beside its "Histogram" display Siril has a *colour map* button: the
+equalised layer, already 8-bit, goes through a table of 256 hues (`make_index_for_rainbow` in its
+source: the hue runs from 300 degrees at level 0 to 0 degrees at level 255, saturation and value 1).
+So **magenta is the lowest level**, then blue, cyan, green, yellow, and **red the highest**; level 0
+is not black. Bands of one colour are contours of equal rank, and the shape of the vignetting
+(round, off-centre, square) reads at a glance where the grey picture shows a diffuse blur. The
+colours are ranks, not values: the amplitude is still gone.
+
+```bash
+flatcheck flats/DSC_0060.NEF --histeq --rainbow -o picture.png
+```
+
+The table applies to **one layer**: the console writes the mosaic on a CFA frame and the channel on
+mono, shrunk first and coloured after, so every pixel of the file is one level of the table, and
+the report prints the legend. The RGB composite is never coloured: in Siril the RGB view takes one
+byte from the colour of each layer, and where the channels have different shapes that makes colours
+outside the palette, which say nothing (measured on the Samyang's NEF, 2026-10-26). `--rainbow`
+without `--histeq` is a command-line error, exit 1. In the window, the **False colours** chip beside
+the views does the same on Mosaic, on a channel and on mono, and is greyed out on RGB.
+
+### 5. Smoothing: `--smooth`
+
+```bash
+flatcheck process/pp_flat_stacked.fit --smooth process/pp_flat_stacked_smoothed.fit
+flatcheck process/pp_flat_stacked.fit --smooth smoothed.fit --scale 150
+```
+
+Not a test, and no verdict. It writes **a second master**: the same flat, with everything smooth
+kept and everything else removed: the diffuser's texture, the dust shadows, the compact spots, the
+noise. It is meant for a flat shot through a material laid on a monitor, whose texture reaches the
+lights as a blanket of cells a few per cent deep.
+
+**Why not a synthetic radial flat.** A purely radial model would remove the texture, but also
+everything the lens does besides vignetting: on a Tokina at 20 mm the four corners differ from each
+other by 6-16 %, exactly the case where a radial model corrects worse than the flat it replaces.
+Smoothing keeps the uneven corners, the gradient, the wide blotches: everything smooth at the
+chosen scale.
+
+**What it does**, on each Bayer position separately (on mono, on the whole frame):
+
+1. the median of tiles of ~150 sensor px, keeping the partial tiles at the edges;
+2. at each tile, a local quadratic fit over the neighbouring tiles, weighted by a Gaussian of
+   sigma = the scale (300 sensor px by default);
+3. robustly: the tiles that deviate from the local fit by more than 2.5 MAD *and* more than 2 % of
+   the level (dust, spots, the deepest cells) no longer weigh in anyone's fit;
+4. at each pixel, the bilinear mean of the predictions of the four tiles around it.
+
+There is no radial model, on purpose: two variants that had one failed on the real masters. A global
+polynomial does not follow the medium-scale structure every master has (a monitor's blotches at
+1000-1500 px, an off-centre ring), and a model on rings **puts rings into the file**: beyond the
+inscribed circle the median of a ring jumps from one ring to the next, and a local field of 150 px
+cannot make up for it. The smoothing above knows of no centre, so it cannot make rings.
+
+**What it reports** is *what it removed*, because that is the only figure by which you can decide
+whether the file can be trusted: p1 / p99 per pixel, the large-scale structure (p95 - p5 over the
+tiles) and the most deviant tile of the ratio `original / smoothed`, the deepest spot, and the
+structure battery on the input and on the output, side by side. When the most deviant tile
+reaches 2 %, the report warns that something of large scale was removed too (deep dust, a spot, or
+a real structure narrower than the scale) and leaves the decision to you.
+
+Measured on five real masters (the Nikkor 35 DX on the sky at two ISOs, the Tokina 20 with the
+diffuser close to the lens and on the monitor, the Samyang 135 on an LCD), at 300 px: every verdict
+and vignetting depth stays the same; the five tests move by less than half a point; the component
+removed is 0.12-0.39 % on the four clean masters (pixel noise plus the dust) and 3.7 % on the
+textured one, where the compact spot falls from +6.19 % to +0.62 % and the texture in the file from
+±3 % to ±0.3 %. On a synthetic frame with a known truth the method's error is under 0.2 % over the
+whole frame, corners included.
+
+**What it does not know.** What is the lens's and what is the source's: a monitor's blotches, the
+sky's gradient, a panel's uneven corners stay, because they are smooth; nothing here separates
+them. And what it removes can be wanted: a dust shadow is right for the session whose lights have it
+too, and wrong in a library flat. A real structure of ~300 px (the Nikkor's off-centre ring,
+0.3-0.5 %) is partly taken at 300 px and stays at 150 px; the scale is the only knob. What is left
+of the cells is fundamental: a random field with a correlation length of 300 px passes through a
+300 px kernel at ~30 % in RMS.
+
+**The file** keeps the input's type (16-bit stays 16-bit; anything else is written as 32-bit
+float, so a float master keeps its values) and the input's header card by card (`BAYERPAT`,
+`STACKCNT`, `DATE-OBS`), plus two `HISTORY` lines. Nothing is renormalised. Siril's scripts name
+`pp_flat_stacked` explicitly, so they do not pick up the smoothed file by themselves: rename it in
+place of the master (keep the original) or give it to `calibrate` with `-flat=`. The mode refuses a
+raw (a single, uncalibrated frame: for a raw there is `--expo`) and a colour cube (the reader would
+average it into one raster).
+
+**A check you can make yourself:** smooth two masters of the same lens and compare them with
+`--against`; what is left should be a smooth, low-order field. Whether the smoothed flat really
+corrects better only `--light` can say, on calibrated lights, and it refuses a field wider than 40
+degrees.
+
+#### Choosing the scale, and `--scale auto`
+
+The scale must sit between the size of what you want removed and the size of the smallest real
+structure you want kept. Both can be read from the master, and `--scale auto` reads them for you:
+
+1. **The input's fine texture**: the structured part of the component under ~128 sensor px, with
+   the pixel noise subtracted. Under 0.20 % there is nothing to smooth and the tool runs nothing:
+   on the real masters, those without texture read 0.04-0.06 %, the one with the diffuser on the
+   monitor 0.69 %.
+2. Otherwise, **one smoothing per step** (150 / 300 / 600 px, ~15 s in all on 24 MP) and two
+   figures per step: the texture left in the file (under 0.05 % it is gone), and how much the
+   azimuthal asymmetry and the tilt *fell*. Those are the two tests the texture does not touch, so a
+   fall of more than 0.5 points there is real structure leaving.
+3. **The smallest step** at which the texture is gone and that guard stays quiet. On the master with
+   the diffuser on the monitor: 150 leaves 0.09 % of texture, 300 leaves 0.02 % with the guard at
+   0.00 / -0.01, so 300. At 600 the guard catches the Nikkor's real ring (asymmetry -0.79) and the
+   monitor's blotches on the Tokina (-0.80).
+
+Three answers. `PROPOSED SCALE`: the smoothing runs at it and writes the file (exit 0).
+`NOTHING TO SMOOTH`, and `UNDETERMINED` (the texture and the real structure have the same size):
+nothing is written and the exit code is **2**, not an error but "read before you decide". The
+rule **proposes, it does not decide**: it does not know what is the lens's and what is the
+source's (an LCD's hot spot looks like a ring of the lens), and it is blind to a real structure
+that sits only in the corners, outside the inscribed circle. Its thresholds rest on five masters;
+one with a faint texture, 0.15-0.25 %, falls near the first.
+
+By hand, the criteria are the same: look at the map of what was removed at ±2 % (only cells and
+dust is right; a large smooth shape means the scale is too large) and at the before / after table
+("worst spot" and the residual fall when the texture leaves, but the asymmetry and the tilt must
+not move).
+
+### 6. Synthetic flat: `--synthetic`, `--lenses`, `--against`
+
+```bash
+flatcheck --lenses --lens "Tokina 11-20"                         # which lenses have a profile
+flatcheck process/pp_flat_stacked.fit --synthetic process/pp_flat_stacked_synthetic.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
+flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_synthetic.fit   # how far the master is from the model
+```
+
+Not a test, and no verdict. It writes **a radial flat from the lens's published vignetting
+profile**: the model of the lens, not a measurement of your copy. It is there for when no light
+source gives the real depth of the vignetting. Measured on the Tokina at 20 mm f/2.8: the sky gives
+0.27 stops in the corner (the dome brightens toward the horizon all around the zenith and fills the
+corners), a monitor up close 0.78-0.85 (the panel's angular fall-off), and the two public databases
+0.66 (Adobe) and 0.83 (lensfun). A synthetic flat has no source in it, so neither the sky's
+curvature nor the panel's fall-off.
+
+**Two sources of profiles, one list.**
+
+- **Adobe (`.lcp`)**, read from the disk where Lightroom, Camera Raw or the free DNG Converter
+  installed them: `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` and
+  `%APPDATA%\Adobe\CameraRaw\LensProfiles` (where Camera Raw and the DNG Converter put them), then
+  `C:\Program Files\Adobe\<application>\Resources\LensProfiles\1.0` (the copy Lightroom Classic and
+  Lightroom keep inside their own program folder). A file present in two folders is read once, from
+  the first. They are neither copied nor redistributed; without Adobe, this half of the list is
+  empty. There is one file per lens and mount, with a profile per focal length, aperture and
+  distance. The model, from Adobe's "Adobe Camera Model" document: `V = 1 + a1·r² + a2·r⁴ + a3·r⁶`,
+  with r in units of the focal length (the distance in mm divided by the focal length in mm), the
+  same for every channel.
+- **lensfun**, the database (CC BY-SA 3.0) that ships with the tool, in the `lensfun/` folder beside
+  the executable. Its `pa` model (Hugin's) is the same polynomial, with r normalised to the
+  half-diagonal of a 36x24 frame divided by the crop of the camera it was calibrated on. That is why
+  lensfun needs your camera's crop, which it takes from its own camera database by `INSTRUME`, or
+  from `--crop`. The Adobe model uses your crop too, for the frame's physical width (36 / crop);
+  without it, it takes the sensor Adobe calibrated the profile on, and says so.
+
+A profile calibrated on another format than yours is recomputed through millimetres and holds up
+to the corner of its calibration sensor; beyond it the polynomial extrapolates, and above 10 % the
+report says it is a LARGE extrapolation. Then take a profile calibrated on your format: Adobe keeps
+files per body, such as "NIKON D750 (lens)", which the program prefers when the reference frame
+names that body. The lensfun camera database has 1053 bodies; for one that is missing, give `--crop`
+one of the six nominal crops (full frame 1.0, APS-C 1.5, APS-C Canon 1.6, APS-H 1.3, Micro 4/3 2.0,
+1" 2.7), or 36 divided by the sensor's width in mm.
+
+**Updating lensfun:** download the XML files from
+<https://github.com/lensfun/lensfun/tree/master/data/db>, replace those in the `lensfun/` folder and
+restart. `lensfun/LENSFUN-VERSION.txt` says which commit the copy is from and when;
+`lensfun/update-lensfun.py`, in the repository, does the same in one command.
+
+**Choosing the lens and the profile.** The lens is chosen by text: `--lens` looks for every word in
+the name, the maker, the mount and, for lensfun, the calibration format; `--source adobe|lensfun`
+keeps one source. The profile is the **nearest**, not interpolated: the nearest focal length, then
+the nearest aperture in stops, then the farthest distance; the report says what was asked and what
+was used. A lensfun entry written at 10 m and at 1000 m with the same coefficients is a single
+measurement at a distance nobody wrote down (that is how lensfun marks "unknown"), and the report
+says `distance unspecified`, not `infinity`. On the Nikkor 35 f/1.8G DX the entry calibrated on
+APS-C has the shape of Adobe's profile at 0.36 m, not of the one at 1.5 m (a wall up close, most
+likely), and this lens's vignetting drops a lot at close focus.
+
+The focal length comes from `FOCALLEN` or from the raw; the aperture only from the raw (a Siril
+FITS carries none) or from `--fstop`. The same lens on two mounts (Adobe has a file per mount) is
+chosen by the camera in `INSTRUME`; when several lenses still remain, they are listed and the exit
+code is 2.
+
+**A focal length or an aperture the lens has no profile for is not refused.** The nearest profile
+is taken (500 mm f/1.0 on the Nikkor 35 f/1.8 ends at 35 mm f/1.8), and the report says so under
+`profile used`, with a `WARNING`: what was asked, what was taken, what the lens has, and that the
+depth written is the profile's, not that of the values asked. The threshold is 1 mm or 5 % on the
+focal length and half a stop on the aperture; Adobe's grid is in whole stops, so any request inside
+the lens's range passes without a word, and only those outside it are flagged. The same sentence
+appears in the structure mode's vignetting table when the raw's focal length or aperture falls far
+from a lens's profiles.
+
+**A lensfun lens can be in the list twice**, with the same name and mount: the database holds it
+once for every body someone calibrated it on, and the calibration format stands beside the mount
+(`Nikon F AF, calibrated on APS-C 1.528` and `..., calibrated on full frame 1`). They are two
+different profiles, not a duplicate: on the Nikkor 35 f/1.8G DX the entry calibrated on APS-C gives
+0.19 stops in the corner at f/2.8, the one calibrated on a D780 0.51, and Adobe 0.61; both enter the
+structure mode's vignetting table. The name alone matches both (exit 2, with the list); add the
+format's word (`--lens "Nikkor 35mm f/1.8G full"`) to choose one.
+
+**What it reports:** the depth written, in per cent of the axis and in stops, at four points: the
+corner (the corner test's 5 % box), the long edge, the short edge, and half the half-diagonal,
+exactly the points at which the real masters were compared with the databases. On the Tokina at
+20 mm f/2.8 on a D3300: Adobe 0.67 / 0.51 / 0.31 / 0.28 stops, lensfun 0.85 / 0.56 / 0.26 / 0.24 (on
+a D3300 the corner falls at r = 1.06, beyond the calibration sensor, and the report says so).
+
+**What it does not hold**, as the report says too: the chromatic part of the fall-off (on the sky
+master R falls ~25 % more than B), the shading specific to the body, the dust, any non-radial
+structure, and your copy of the lens. The two databases differ from each other by ~0.2 stops in the
+corner on the same lens; ask no more precision of it. The file is float, at the reference frame's
+size, with its header copied (`BAYERPAT` included, so Siril takes it as a CFA master) and `HISTORY`
+lines naming the profile used; 1.0 on the axis, nothing renormalised.
+
+**`--against`** is the test that closes the loop: the structure battery on each of the two flats,
+each normalised to a median of 1, **and** on their ratio, in a table of three columns, A, B and
+A / B, with the vignetting in stops, the illumination offset, the local spot and the five tests. In the
+ratio's column the figures are about the difference: the vignetting is the **depth difference in
+stops** (positive: A falls more toward the corner), the five tests say whether the difference is
+radial or has a shape, and the map shows it. **The difference's verdict has two parts**, the shape
+(the five tests on the ratio) and the depth, and is the worse of them. The depth gets no new
+threshold: a difference of D stops leaves in the corner of a light calibrated with the wrong flat an
+error of `2^|D| - 1`, which goes through the same residual scale: under 0.03 stops PERFECT, under
+0.14 GOOD, under 0.26 ACCEPTABLE, above that REDO. Up to ACCEPTABLE, under 0.26 stops, the
+difference cannot be told apart from the model's own uncertainty, since the two profile databases
+differ by ~0.2 stops on the same lens.
+The vignetting row is the only one with a verdict in the difference's column; on the five tests the
+verdict stays on each flat, the shape of the difference being the one above. Two correct flats of
+the same lens give PERFECT and 0.00 stops.
+
+It works between any two flats (real against synthetic, two diffuser thicknesses, two sources), so
+it is also the convergence test for a diffuser: when the sky and the monitor, through the same
+diffuser, give the same figure against the model, the source has left the measurement. Measured on
+the Tokina: the monitor up close against the Adobe synthetic +0.19 stops, the sky without a
+diffuser -0.39, the Adobe synthetic against the lensfun one -0.18, with the shape PERFECT (figures
+of 2026-09-18, with the camera's crop in the Adobe model).
+
+**When to use it.** The synthetic flat beats a contaminated sky flat by half a stop and is at least
+even with a monitor's; it lacks the chromatic part and the body's shading. A thick diffuser,
+converged in thickness and between two sources, stays better, and the synthetic flat is the
+reference you validate it against.
+
+## When `--light` works and when it does not
+
+The mode splits the background into a light-pollution plane plus radial terms, the flat's error.
+The split holds **as long as the light-pollution dome is roughly linear across the frame**. On a
+wide field the dome *curves inside the frame*, and the radially symmetric part of that curvature
+has exactly the shape of vignetting. Two things with the same shape cannot be separated by a fit,
+however well written. **It is not a limitation of the tool, it is a geometric degeneracy.**
+
+That is why the tool **refuses** to answer beyond a ~40-degree diagonal, instead of giving a bad
+answer.
+
+The conditions, most important first:
+
+1. **A narrow field.** Under ~20 degrees of diagonal it is safe; above ~40 it cannot be done. On
+   APS-C that means from ~100 mm up. A telescope is practically always fine.
+2. **The target high in the sky.** The gradient grows steeply and non-linearly toward the horizon.
+3. **A decent sky**, preferably with the town outside the frame.
+4. **A target that does not fill the frame.** On the core of the Milky Way, the "background" the
+   tool measures is not background, it is galaxy.
+
+The field is deduced from the FITS header, in layers, the most trusted first: the `--fov` you give,
+then the scale of a plate solve (`CDELT1` / `CD1_1`), then `XPIXSZ` with `FOCALLEN`, then `FOCALLEN`
+alone. The last layer is the case of a DSLR through Siril, which writes no `XPIXSZ`: there the real
+field cannot be computed, so the largest plausible sensor (full frame) is assumed and the focal
+length decides (from 120 mm fine, under 60 mm refused, a warning in between), conservative by
+construction. On a smaller sensor, give the real field with `--fov <degrees>`.
+
+**If the header says nothing, the test runs**, and prints a line saying it could not check. Unknown
+means unchecked, not suspect.
+
+**A concrete counter-example.** The Tokina at 20 mm on a D3300 covers ~70 degrees of diagonal. On a
+real Milky Way session with that setup, the correlation between the radial component reported and
+the sky gradient came out **-0.94** (R² = 0.88): 88 % of what the tool reported as "flat" was
+explained by the sky. On data like these the flat is judged on its own, by the master's structure
+tests, which do not involve the sky at all.
+
+## The residual scale
+
+The five deviation tests of the structure mode (the corner spread, the azimuthal asymmetry, the
+residual after the radial model, the tilt and the worst spot) measure *the same thing* from
+different angles: how much of the frame a purely radial function does not explain. All five are
+amplitudes in per cent, so they share one scale, not one threshold:
+
+| band | verdict | means |
+|---|---|---|
+| under 2 % | `PERFECT` | perfect quality |
+| 2-10 % | `GOOD` | usable; background extraction removes what is left |
+| 10-20 % | `ACCEPTABLE` | usable, but confirm with `--light` before a hard stretch |
+| over 20 % | `REDO` | redo the flats |
+
+The most important is **the residual after the radial model**: it measures directly how much of the
+frame a purely radial model does not explain, over the whole frame, corners included. The corners,
+the azimuthal asymmetry and the tilt are partial views of the same deviation: the corners catch it
+only where the four boxes sit, the azimuthal test only inside the inscribed circle, the tilt only
+the part that is a plane. **The worst spot** complements the residual, which drops 5 % of the tiles
+at each end so as not to measure noise: a *compact* defect (a small leak, a condensation spot)
+therefore vanishes from it, however deep. Measured: a finger-sized +10 % spot in a corner gave a
+residual of 0.04 % and the verdict PERFECT, with the spot plain to see on the map; the worst spot
+reads 9.3 % on it.
+
+**It is an upper bound of the flat's error, not the error.** It measures the sum of two things with
+opposite consequences: a part fixed to the **camera** (the optics, which divide out of the lights
+correctly, so harmless) and a part fixed in the **world** (the illumination, which does not repeat,
+so harmful). On one master the two cannot be separated; the information is simply not there. Only a
+second session with the same lens separates them: what comes back identical is the camera's.
+
+That is why a lens with genuinely non-radial vignetting shows up here as an "error" without being
+one. Measured on the author's library: a Nikkor 35 DX master has 4.00 % of corner spread, of which
+only ~1.3 % was the sky; the rest survived a 180-degree rotation, so it is fixed to the camera.
+
+The illumination centre's offset is **not** on this scale, and not a test: it appears under
+`INFORMATIVE (not tests)`, with no verdict. It measures a position, and that position is the ratio
+of the gradient to the curvature, so it is neither a fraction nor scale-invariant. With the same
+11 % gradient held fixed, the offset rises from 2.4 % on a lens with 2 stops of vignetting to 57 %
+on one with 0.08 stops, and below that the illumination peak leaves the frame. When it was a test,
+the figure then dropped abruptly to 0.00 %: on the flattest lenses, the larger the defect, the
+cleaner the report looked. Now a peak outside the frame reads `undetermined`. The tilt measures the
+same defect as an amplitude, which is what the scale asks for, and still catches a real
+decentring of the optical axis, weighted by what it actually costs.
+
+## Thresholds
+
+They are **empirical rules of thumb, not physical constants**: a starting point, to calibrate on a
+setup you are sure of. The verdict thresholds are all in `FlatCheck.Core/Thresholds.cs`; a few
+tolerances sit beside their code: whether a frame is CFA (1.15), the lens and sensor-format
+matching (a quarter stop on the aperture, 5 % on a crop), and when an extrapolation is large
+(10 %).
+
+| metric | mode | threshold |
+|---|---|---|
+| the five deviation tests | structure | the residual scale: 2 / 10 / 20 % |
+| local spots (dust) | structure | 2 %: a warning, never a vote |
+| vignetting against the lens profile | structure with `--raw` / `--lens`, `--against` | 0.03 / 0.14 / 0.26 stops: the residual scale, through the corner error |
+| a request far from the profile used | `--synthetic`, structure with a profile | 1 mm or 5 % on the focal length, half a stop on the aperture: a warning |
+| radial component, in absolute value | `--light` | under 2 % OK, under 5 % SUSPECT, above PROBLEM |
+| diagonal field | `--light` | under 20 degrees fine, up to 40 a warning, above refused |
+| focal length alone, as on full frame | `--light` | from 120 mm fine, under 60 mm refused, a warning between |
+| sky gradient | `--light` | above 40 % flagged as large; never a condition |
+| frames in the series | `--light` on a folder | at least 5 |
+| error of the mean | `--light` on a folder | under 2.00 points |
+| correlation with the sky gradient | `--light` on a folder | under 0.70, checked when the gradient spans 10 points or more |
+| centre level, panel | `--expo` | OK 50-65 %; ACCEPTABLE, but rather low 30-50 %, rather high 65-80 %; TOO LOW under 30 %, TOO HIGH above 80 % |
+| centre level, sky | `--expo --sky` | OK 15-50 %; rather high, but acceptable 50-60 %; TOO HIGH above 60 %, TOO LOW under 15 % |
+| clipping in the centre | `--expo` | more than 0.05 % of the window at 98 % of white or above: TOO HIGH, whatever the level |
+| fine texture of the master | `--smooth --scale auto` | under 0.20 % nothing to smooth; under 0.05 % gone |
+| fall of the asymmetry or the tilt | `--smooth --scale auto` | above 0.5 points: real structure leaving |
+| most deviant tile removed | `--smooth` | 2 %: a warning |
+
+The thresholds of the series are the least calibrated of all: they come from a single real session.
+Recalibrate them when you have one you are sure of.
+
+## Exit codes
+
+| code | means |
 |---|---|
-| componenta radială, medie | media coloanei radial, cifra pe care se dă verdictul, odată ce seria are cel puțin 5 cadre; sub 2 % OK, peste 5 % problemă, suspect între; semnul e diagnosticul (pozitiv: fondul cade spre margini, sub-corecție; negativ: crește, supra-corecție) |
-| împrăștiere (min .. max) | extremele coloanei; o medie aproape de zero nu înseamnă nimic când cadrele baleiază de departe sub ea până departe peste ea — ce baleiază așa e cerul, flat-ul e același în fiecare cadru |
-| eroarea mediei | σ/√n pe coloana radial; peste 2.00 puncte seria nu rezolvă flat-ul la precizia pragurilor și verdictul e nedeterminat |
-| corelație cu gradientul de cer | Pearson între coloana radial și coloana cer; o „eroare de flat" care urmărește cerul e cer, peste 0.70 în valoare absolută verdictul e nedeterminat; se verifică doar când gradientul variază cu cel puțin 10 puncte peste serie |
-| cadru (hover) | lights-urile calibrate din `process/`, în ordinea numelui, cele care se potrivesc cu `pp_light_*.fit`; cadrele înregistrate (`r_pp_light_*`) sunt lăsate deoparte, înregistrarea mută vignetarea din centrul senzorului |
-| radial (hover) | componenta radială a fondului cadrului, în procente din nivelul la centru, cu semn; un cadru conține și cerul din clipa lui, deci contează sinteza, nu un rând |
-| cer (hover) | gradientul de cer absorbit de plan, în procente din fond; informativ, niciodată o condiție, peste 40 % consola îl marchează ca mare; dacă se mișcă de la un rând la altul, cerul s-a mișcat în sesiune |
-| tile-uri (hover) | tile-urile păstrate în fit din total, după patru runde de clipping unilateral care scot nebulozitatea; puține păstrate înseamnă un fit cu mai puțin pe ce să stea |
-| harta (sub ea) | harta radială medie a seriei: termenul radial fitat al fiecărui cadru (R² și R⁴), desenat la mărimea cadrului și mediat pixel cu pixel; nicio stea, nicio nebuloasă, doar forma modelului; alb = fără componentă radială, colțuri albastre = fondul cade spre margini (sub-corecție), colțuri roșii = crește (supra-corecție); scara e intervalul propriu al hărții, deci o culoare tare poate fi o cifră mică |
+| 0 | `OK` / `PERFECT` / `GOOD`: usable as it is |
+| 1 | an error, or an input that does not suit the mode (a field too wide for `--light`, a file that is not a raw flat for `--expo`) |
+| 2 | `SUSPECT` / `ACCEPTABLE` / `UNDETERMINED`, and `--expo`'s "acceptable, but" bands |
+| 3 | `PROBLEM` / `REDO`, and `--expo`'s TOO LOW and TOO HIGH |
 
-**Expunere** listează din `flats/` **doar raw-uri de aparat** (`.nef`, `.cr2`, `.cr3`,
-`.arw`, `.dng`, `.raf`, `.pef`). Modul are nevoie de mozaicul CFA intact și de scala ADU originală,
-iar pe un raw white și black se citesc exact din fișier în loc să fie ghicite din maxim.
-Comutatorul „Sky" schimbă pragurile și recalculează pe loc.
+The severity is monotonic, so "anything but 0" means "not clean, look". The modes without a verdict:
 
-Tabul desenează și **câte o histogramă pe canal**, pe aceeași axă procentuală pe care stau
-toate cifrele lui, cu banda țintă, dunga de clipping și mediana centrului trase peste. Sub
-ele, un paragraf dedus din rezultat spune cum e expus fișierul ăsta anume: cine decide, cât
-mai e până la saturație, și de ce curba lată **nu** înseamnă subexpunere. Desenul explică;
-verdictul rămâne mediana ferestrei centrale a canalului celui mai luminos și atât.
+- `--histeq`: 0 when the picture was written, 1 when it could not be.
+- `--smooth`: 0 when it wrote the smoothed flat and the maps, 1 when it refused the input (a raw, a
+  colour cube) or could not write; with `--scale auto`, 2 when it wrote nothing because there is
+  nothing to smooth or the scale is undetermined.
+- `--synthetic`: 0 when it wrote the flat, 1 when it refused the reference or could not learn the
+  focal length, the aperture or the crop, 2 when the lens could not be chosen (none, or too many:
+  the list is printed).
+- `--lenses`: always 0.
 
-> Tabelul de mai jos e în oglindă cu ghidul pliat „Cum citesc histogramele" din fereastră
-> (`SessionMessages.HistogramGuideRows`). Nu există test care să lege cele două — dacă
-> reformulezi într-un loc, treci și prin celălalt.
+`--against` exits like the structure mode, on the verdict of the *difference*. Structure with
+`--raw` or `--lens` exits on the combined verdict: the worse of the five tests and the depth against
+the profile.
 
-| ce vezi | ce înseamnă |
+## Options
+
+```
+flatcheck <flat.fit>                       # structure
+flatcheck <flat.fit> --raw <flat.NEF>      # structure + the vignetting against the profile of the lens named in the raw
+flatcheck <light.fit> --light              # end to end, one frame
+flatcheck <folder/> --light                # end to end on the whole series
+flatcheck <raw_flat.fit> --expo            # exposure
+flatcheck <raw_flat.NEF> --expo            # the same, directly on a camera raw
+flatcheck <sky_flat.NEF> --expo --sky      # exposure for sky flats
+flatcheck <flat.NEF> --histeq              # Siril's "Histogram" view, per channel
+flatcheck <flat.NEF> --histeq --rainbow    # the same in Siril's false colours (one layer: the mosaic or the channel)
+flatcheck <flat.fit> --smooth <smoothed.fit>                          # a smoothed flat: no texture, dust or spots
+flatcheck <reference.fit> --synthetic <synthetic.fit> --lens <text>   # a synthetic flat from the lens profile
+flatcheck --lenses [--lens <text>]         # the lenses with a profile (Adobe on the disk, lensfun/ beside the exe);
+                                           # their focal lengths, apertures, distances and number of profiles, on a list of at most 40
+flatcheck <A.fit> --against <B.fit>        # how much and how two flats differ
+
+  -o, --out <file.png>     the output map (default flatcheck.png; with --histeq the equalised
+                           picture; --smooth writes a second one beside it, suffix -after)
+  --sky                    the thresholds for sky flats (--expo)
+  --sat <white>            the saturation level, when the auto-detection is wrong (--expo)
+  --black <level>          the black level (--expo)
+  --rainbow                the equalised picture in Siril's false colours, magenta = lowest,
+                           red = highest (--histeq; alone it is an error)
+  --pattern <pattern>      which files of a folder it takes (--light; default pp_light_*.fit)
+  --fov <degrees>          the field's diagonal, when the header does not give it (--light)
+  --scale <px>|auto        the smoothing scale, in sensor pixels (--smooth; default 300);
+                           'auto' proposes it from the master and smooths at it, or exits with 2
+  --lens <text>            the lens, by words of its name / maker / mount (--synthetic, --lenses;
+                           for structure, compares the master's vignetting with every lens that matches)
+  --raw <file>             a raw beside the master (structure): the aperture and the lens are read from it
+  --source adobe|lensfun   one of the two sources only (--synthetic, --lenses, structure with --lens/--raw)
+  --focal <mm>, --fstop <f>, --crop <factor>   what cannot be read from the reference
+                           (--synthetic, structure with --lens/--raw)
+  --profiles <folder>      where to take the profiles from instead of the machine: any .lcp under it,
+                           lensfun/ below it (the tests run so; --synthetic, --lenses,
+                           structure with --lens/--raw)
+  --lang en|ro             the language of the texts: en English (default), ro Romanian; --lang=ro works too
+  -h, --help               the usage and the licence notice
+```
+
+A flag may come anywhere: `flatcheck --expo f.fit` and `flatcheck f.fit --expo` are the same. The
+modes exclude each other; given two, the first in the order `--lenses`, `--synthetic`, `--against`,
+`--smooth`, `--histeq`, `--expo`, `--light` runs. A `--lang` with a value other than `en` or `ro`, or
+with none, stops the run with an English error and exit 1. `--pattern` takes `*` and `?`; character
+classes (`[abc]`) are taken literally.
+
+Every run prints the version on its first line and the copyright on the second, `--help` and failed
+runs included, so a report copied somewhere says what produced it.
+
+## What invalidates a master
+
+Cleaning the sensor. Another aperture. A filter or a ring changed. A serious knock to the lens.
+
+It is **not** invalidated by time, by the camera's rotation on the sky, by different sessions, by
+temperature, or by the ISO of the lights.
+
+## The map
+
+A diverging blue → white → red map, with white pinned at **1.0** and the range scaled to the 1st
+and 99th percentiles plus 10 % of padding. Pinning white at 1.0 holds for every mode that writes one:
+the structure residual is `image / model ≈ 1`, the maps of `--smooth` are centred on 1 (what was
+removed, and the smoothed flat's residual), and the map of `--light` is `1 + radial / a`. The figures
+are in the report; the map is there so you see the *shape* of a problem: a gradient, horizontal,
+vertical or diagonal, a spot, an edge.
+
+### The colour scale
+
+The automatic scale stretches the colours over **each image's own range**, so full red means nothing
+in particular: measured on two masters of the same lens, full red was `+3 %` on one and `+10 %` on
+the other. Two maps on the automatic scale compare **by shape only**, not by intensity.
+
+That is why **in the window** a map can be put on a fixed scale, with a row of chips: `+/-2 %`,
+`+/-10 %` and `+/-20 %`, the very bounds of the residual scale, plus `auto`, useful to see the
+*shape* on an almost perfect master, where ±2 % is already too coarse. The default is
+**`+/-10 %`**, the band a normal flat is expected to live in, so two sessions compare at a glance
+without pressing anything.
+
+The cap and the band are not the same thing, though, and it is worth knowing when you read a colour:
+the cap is the deviation of one *pixel* from the model, the band is a *peak-to-peak* amplitude. A
+one-sided +10 % spot reaches the 10 % cap right at the edge of the GOOD band; a 10 % gradient runs
+from -5 % to +5 %, so it reaches only half of it, and saturates only at 20 %, at REDO. Measured: with
+a 10 % gradient the map's ends are at -4.9 / +4.8 %. No cap is right for both, so it is explained
+here and the figures are not changed.
+
+Under every map stands a **legend** with the real ends of the scale shown, for example
+`blue = -10.0 %   white = 0 (exactly on the model)   red = +10.0 %`. On `auto` it shows the two ends
+computed, which are usually asymmetric.
+
+**The files written to disk are always on the automatic scale**, whichever chip is pressed: the
+console's `-o` as well as the `flatcheck.png` the window saves. So the two applications write the
+same file for the same master, and the chips stay an aid to looking.
+
+### What the shapes mean
+
+The map is the image divided by the radial model, so everything that was radially symmetric has
+been removed: **what is left cannot be vignetting**. Read the figures first, which say *how much*,
+and only then the shape, which says *why*. The same list is in the window, under the map, in
+"How to read the map".
+
+| shape | what it meant |
 |---|---|
-| două curbe pe fiecare canal | cea palidă și lată e tot canalul; cea plină și îngustă e fereastra centrală de 20%, chiar cea din care se ia verdictul. Fiecare e scalată la propriul vârf, deci **înălțimile** nu se compară — pozițiile se compară. |
-| linia verticală | mediana ferestrei centrale, singura cifră care decide. Pe canalul cel mai luminos e chiar numărul din pastila de verdict. |
-| banda verde | ținta, din exact aceleași praguri ca verdictul. Se mută când bifezi „Sky". |
-| benzile galbene și roșii | aceeași scară mai departe. Pe cer nu există galben în stânga: acolo ținta începe chiar de la pragul de prea-jos. |
-| dunga roșie din dreapta | 98–100% din white, unde analizorul numără pixelii saturați. Orice masă a curbei pline acolo înseamnă PREA SUS, oricât de cuminte ar fi mediana. |
-| de ce curba palidă e mult mai lată | aia **e** vignetarea, nu subexpunere: colțurile unui flat sunt mai întunecate prin construcție. Dacă expui după ea, clipezi centrul. |
-| de ce canalele au vârfuri diferite | filtrele Bayer lasă să treacă cantități diferite din lumina sursei. Pe un panou cald poate conduce R, pe cer la ora albastră de obicei B. Unealta nu face balans de alb — tocmai asta e ideea. |
-| ce **nu** e | histograma de pe aparat. Aia e a JPEG-ului procesat (debayer + WB + gama) și stă mult mai la dreapta. |
-| comutatorul de deasupra desenelor | alege la ce te uiți: datele brute, pe care le măsoară unealta, sau previzualizarea pe care aparatul a înglobat-o în raw, chiar imaginea din care și-a calculat histograma de pe ecran. Numai vederea brută are bandă țintă. Pe cealaltă nu e nicio țintă și nici n-ar putea fi: ar însemna să expui după ecran. |
-| de ce ecranul e mult mai la dreapta | gama plus curba de ton, pe care nicio setare din aparat nu le scoate. O curbă compresivă întinde cel mai tare nivelurile de jos și de mijloc, adică exact unde stă un flat. Pe aparatele măsurate, ecranul s-a saturat înaintea senzorului cu o treime de stop până la un stop, deci e o alarmă într-un singur sens, nu un instrument de măsură. |
+| blotches with no direction | Small deviations, with no preferred axis: the diffuser's signature plus the noise of the sky. Background extraction removes them without effort; the figures decide whether they can be ignored. |
+| a dipole (one side blue, the other red) | A gradient, so a direction; it matches "tilt". An uneven source, ambient light, or an obstruction lying asymmetrically over the lens. Whether it is fixed in the world (the sky) or to the camera (the diffuser, the lens hood) one master cannot say; a second session with the same lens can. |
+| concentric circles or arcs | A ring centred on the sensor can NOT stay in the map: the radial model absorbs it by construction. So if you see one, it is centred elsewhere: something round in front of the lens is off the axis, or the light is not diffuse. It has not been seen yet on a real master; the rings that once appeared on masters with a large gradient were an artefact of the radial model, corrected since. |
+| a local spot in a corner or at an edge | A light leak: the viewfinder, the mount, the diffuser's side. It is fixed to the camera, so it comes back in every session until its cause is found. |
+| a round spot in the centre | Illumination contaminated symmetrically about the axis: a panel too close, a monitor's backlight. When it is exactly centred it can NOT appear on the map, and no test sees it: the radial model absorbs all of it, exactly like vignetting; measured, a 10 % spot in the centre leaves the map empty and every figure under 0.1 %. Its only trace is the vignetting figure, which grows. It shows only when it is slightly off-centre, and then as a crescent, not a disc. No rotation removes it; the counter-test is distance: one set at 30 cm, one at 60. |
+| fine grain everywhere | Noise, not structure: too few frames or too low an exposure. The figures stay small; there is nothing to fix at the source, only more to stack. |
 
-**Ce a arătat aparatul.** Comutatorul de deasupra desenelor trece de la datele brute la
-previzualizarea JPEG înglobată în raw, decodată din fișier. Sub desene, un tabel pune cele
-două cifre cap la cap pe fiecare canal, centru cu centru. Măsurat pe două flat-uri de cer
-din bibliotecă, canalul albastru:
+### Who decides: the figures or the map
 
-| fișier | senzor (raw) | ecranul aparatului | vârf pe ecran |
+The figures and the map do not play the same role, although they look like two views of the same
+thing.
+
+- **How much: the figures decide, not the map.** "Residual after the radial model" is the very
+  measure of how much of the frame a purely radial function does not explain, on the residual
+  scale. Under 2 % it does not matter what shape it has; between 2 and 10 % background extraction
+  removes what is left, whatever the shape. **The verdict never depends on what you see on the
+  map.**
+- **What kind: here the eye comes in, but not from scratch.** The shape says what to change at the
+  next session, not whether the flat is good. And the figures do part of the work before you look:
+  if "tilt" is close to the residual, it is a gradient, and the map says in which direction; if
+  "worst spot" is far above the residual, it is something compact (a small leak, condensation), and
+  "local spots" says where; and if the dust warning appeared, the question is no longer whether the
+  flat is good but what you use it for: the session whose lights have the same spot, or the
+  library. What is left for the eye is the table above.
+
+The same explanation is in the window, under the Structure tab's verdict.
+
+## The window
+
+`FlatCheck.Wpf.exe` makes **exactly the same measurements** as `flatcheck.exe`, on a whole session
+folder, with tabs instead of runs. Both applications sit on the same library, `FlatCheck.Core`, and
+go through the same chain of calls, so the figures are the same by construction, not by care; the
+report the window saves on disk is produced by the code that writes the console's, and a test
+compares the two character by character.
+
+### How to use it
+
+Give it **a folder**: the working directory of a Siril session, the one with the subfolders
+`flats/`, `darks/`, `biases/`, `lights/`, and `process/` or `masters/`. Choose it in the window
+(**Choose folder...**), or give it on the command line, with `--lang` before or after it:
+
+```bash
+FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"
+FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida" --lang ro
+```
+
+As soon as the folder is chosen, the **structure** test and the **end-to-end** test start by
+themselves, behind a waiting screen (and, in the background, the Synthetic tab's prefill, which
+writes nothing). They run one after the other, not in parallel, and no analysis started by a click
+(Exposure, Histogram, Smoothing, Synthetic, the Split's analysis) runs beside them or beside
+another: every one passes through a single gate, one at a time. Measured on 24 MP masters: one
+analysis takes 0.7-1.25 GB of memory, two at once 1.3-2.2 GB. A click made during the opening
+analyses, or during another click's run, waits for its turn, and the waiting screen says what it is
+waiting for.
+
+The master flat, `pp_flat_stacked.fit`, is looked for in **two places**, because Siril's scripts
+leave it in two: `process/` (the scripts from Siril's scripts repository, such as
+`OSC_Preprocessing_WithoutDark.ssf`) and `masters/` (the scripts installed with Siril 1.4, such as
+`OSC_Preprocessing.ssf`). Both work. If it is in both, the **newest** is taken, and the Structure tab
+shows a warning with both paths: two masters mean two preprocessing runs, possibly of two sets of
+flats, and you need to know which one you are looking at. `process/` itself is not required: a
+folder with the master in `masters/` and no frames runs the structure test, and the End to end tab
+says it has no series.
+
+If the master is in neither place, the window does not open the folder and says what to do: run the
+preprocessing script in Siril. That file is the structure mode's input, by convention.
+
+#### Running the Siril script from the window
+
+On that same screen a **Run in Siril** button runs the script without opening Siril: it starts
+`siril-cli.exe` from your installation on the session folder, with the script chosen from a list.
+The list is the one in Siril's own script menu (the `.ssf` files ticked in *Preferences › Scripts*,
+plus those in the script folders set there, read from `config.1.4.ini`), and the one proposed is
+**`OSC_Preprocessing_WithoutDark.ssf`**, from the scripts repository Siril downloads: the author's
+script, for a camera without darks. `OSC_Preprocessing.ssf` from the installation works as well: it
+leaves the master in `masters/`, where the window looks too. The window brings no script with it and
+changes none; what runs is exactly the file Siril would run.
+
+Your Siril settings (`config.1.4.ini`) stay untouched. `siril-cli` rewrites its settings file at the
+end of every script, and a failed save can delete it: measured, in 5 to 10 per cent of the runs on
+the author's computer, and that is how all of Siril's settings were once lost. So the window gives
+`siril-cli`, with `-i`, a copy of them in a temporary folder of the run (`%TEMP%\FlatCheck\siril-…`),
+deleted at the end; yours are only read. Siril works with the same settings, but nothing from the
+run flows back into them. Two visible consequences: Siril no longer starts in the last folder run
+from the window, and its log may sometimes say `Could not save the settings in …\siril.ini`, which
+is about the copy and changes nothing. If the settings cannot be read (for example while Siril is
+saving them), the run does not start, the message names the file, and you press again.
+
+A window opens with Siril's output, live, like Siril's own log panel: the current command
+(`command 7 of 20:` with its whole text, because Siril prints only the verb), the progress bar of
+the operation under way, and the log lines. The progress lines, three quarters of what Siril writes,
+become the bar, not text. At the end the window says whether the script succeeded or at which
+command it stopped. When it succeeded, closing the window opens the folder again and the analysis
+starts on what the script produced; after a failure the folder stays as it was. **Stop** kills the
+process; what it had written stays in `process/`, and a new
+run overwrites everything (checked: the script run a second time over a complete or a partial
+`process/` remakes every file and exits with 0).
+
+Three things can keep the button disabled, and the screen says which: `siril-cli.exe` not found
+(looked for through the installation's entry in the registry, then in `Program Files\Siril\bin`), no
+`.ssf` script in Siril's configuration, or an input subfolder missing or empty. The chosen script is
+read beforehand, and the folders it enters (`biases/`, `flats/` and `lights/` for WithoutDark) must
+exist and hold files, otherwise Siril would stop at its third line. If Siril itself is open, a
+warning shows, not a block: two processes writing into the same `process/` spoil its files, but the
+window cannot know which folder the other one is working on.
+
+#### About
+
+The **About** button in the top bar (or **F1**) opens a window with the version, the copyright, the
+licence and warranty notice (the text the console prints at `--help`) and the list of third-party
+components, each with its licence and a link to its project. It is there by obligation, not only by
+courtesy: GPLv3 asks a program with an interface to show its notice itself, and the LGPL under which
+LibRaw is taken asks for the library's notice to appear beside the program's. An `.exe` copied alone
+has no `LICENSE` and no `THIRD-PARTY-NOTICES.md` beside it, so the window is the one place where the
+notices surely travel with the program.
+
+### The seven tabs
+
+| tab | what it does | when it runs |
+|---|---|---|
+| **Structure** | mode 1 on `pp_flat_stacked.fit` from `masters/` or `process/` | when the folder opens |
+| **End to end** | mode 2 on the whole `pp_light_*.fit` series in `process/` | when the folder opens |
+| **Exposure** | mode 3 on a raw from `flats/` | when chosen, and when the **Sky flat** switch changes |
+| **Histogram** | mode 4 on the session's master, on the smoothed flat beside it (when there is one) or on a frame from `flats/`, raw or FITS | when chosen; changing the view recomputes nothing |
+| **Smoothing** | mode 5 on the session's master; writes `pp_flat_stacked_smoothed.fit` beside it | on its button, never by itself: it writes a file |
+| **Synthetic** | mode 6: chooses the lens from the Adobe profiles on the disk and the lensfun database beside the program, writes `pp_flat_stacked_synthetic.fit` beside the master and compares it with the master (`--against`) | on its button; only the prefill runs by itself |
+| **Split** | splits the flats into 2 or 4 groups, runs the Siril script on each in a temporary session and puts the groups' masters beside the whole master: the five tests, the vignetting against the profile, the maps side by side; writes `Split result.txt` and `flatcheck-split.png` in the session folder | on its button, never by itself: it copies gigabytes and runs Siril N times |
+
+With `--lang ro` the tabs read Structura, End to end, Expunere, Histogram, Netezire, Sintetic and
+Split.
+
+### Structure
+
+It shows the console's figures: the five deviation tests with each one's verdict, the residual scale
+with the current band marked, the informative rows with no verdict, the dust warning under the
+verdict when there is one, each row with its description under it; plus the residual map.
+
+Under the tests stands **the vignetting against the lens's profile**. When `flats/` holds a raw, the
+run is the console's with `--raw` on the first of them (the lens and the aperture from the raw, the
+crop from the lensfun database by `INSTRUME`): one row per profile, the row that gives the verdict in
+bold, the depth scale as a table of four bands in stops (the same residual scale, translated, not a
+new threshold) with the verdict's band marked, and the run's verdict, the worse of shape and depth,
+in the pill at the top, with its two parts written under it. With no raw, the card says why nothing
+could be compared, and the report stays the plain one. A raw that says nothing about the lens (a
+camera on a telescope, or a lens without contacts: focal length 0, no ID, no name, no range) is named
+as such, with what it lacks, not as a missing raw; the comparison is then made by naming the lens in
+the Synthetic tab, or in the console with `--lens`, `--focal` and `--fstop`.
+
+It saves in the session folder:
+
+- **`Test result.txt`**: the console's output, identical: the version banner, the copyright, the
+  report, the map's line;
+- **`flatcheck.png`**: the map on the automatic scale, the same bytes the console would write.
+
+The map on screen has the scale chips and the legend described under "The colour scale", plus the
+shape guide under it. The file stays on the automatic scale whichever chip is pressed, so it matches
+the `auto` chip, not necessarily what you see.
+
+### End to end
+
+It runs on the whole series and fills its table as the frames are done: 32 frames take about two
+minutes, and a blank screen for all that time would look frozen. It may legitimately come out
+`NOT APPLICABLE`: on a field wider than ~40 degrees of diagonal the sky and the vignetting have the
+same shape, so no figure is produced. **That is not an error**: see "When `--light` works and when it
+does not". On such data the flat is judged in the Structure tab, which does not involve the sky.
+
+The tab explains itself in place, not in a folded guide: under each of the four figures of the series
+summary a line says what the figure is and how it is judged; each column header of the frames table
+explains its column when the mouse is over it; and under the map and its legend a paragraph says what
+the picture is. They say:
+
+| where | what it says |
+|---|---|
+| radial component, mean | The mean of the radial column: the figure the verdict is given on, once the series has at least 5 frames. Under 2 % it is OK, above 5 % a problem, suspect in between. The sign is the diagnosis: positive, the background falls toward the edges (under-correction: another aperture at the flats than at the lights, or a contaminated flat); negative, it rises (over-correction: almost always flat-darks missing or wrong). |
+| spread (min .. max) | The smallest and the largest value in the radial column. A mean near zero means nothing when the frames sweep from far below it to far above: what sweeps like that is the sky, not the flat, which is the same in every frame. |
+| error of the mean | The standard deviation of the radial column divided by the square root of the frame count: how tightly the series pins the mean down. Above 2.00 points the series does not resolve the flat to the precision the thresholds speak at, and the verdict is undetermined. |
+| correlation with the sky gradient | Pearson's correlation between the radial column and the sky column. A "flat error" that follows the sky is sky: above 0.70 in absolute value the verdict is undetermined. It is checked only when the sky gradient varies by at least 10 points over the series; on a constant sky the correlation is noise and would reject good data. |
+| frame (column) | The calibrated lights of `process/`, in file-name order, those matching `pp_light_*.fit`: the frames Siril wrote after dividing the flat out, before registration. Registered frames (`r_pp_light_*`) are left out: registration shifts the vignetting off the sensor's centre. |
+| radial (column) | The radial component of this frame's background, in per cent of its level at the centre, with its sign. One frame holds the sky of its moment too, so it is the series summary that counts, not a row. |
+| sky (column) | The sky gradient the fit absorbed in its plane, in per cent of the background: light pollution, the Moon, the frame's tilt toward the horizon. Information, never a condition; above 40 % the console flags it as large. If it moves from row to row, the sky moved during the session. |
+| tiles (column) | The tiles kept in the fit out of all the frame's tiles, after four rounds of one-sided clipping threw out those with nebulosity or other bright structure. Few kept tiles mean a fit with less to stand on. |
+| the map (under it) | The series' mean radial map: for every frame the radial part of the fitted background (the R² and R⁴ terms), drawn at the frame's size, then averaged pixel by pixel. No star, no nebula, only the shape of the model. White is a background with no radial component; blue corners, one that falls toward the edges (under-correction); red corners, one that rises (over-correction). The colour scale is the map's own range, so a strong colour can still be a small figure. |
+
+### Exposure
+
+The Exposure tab lists from `flats/` **camera raws only** (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`,
+`.raf`, `.pef`): the mode needs the CFA mosaic intact and the original ADU scale, and on a raw the
+white and black levels are read exactly from the file instead of being guessed from the maximum. The
+**Sky flat** switch changes the thresholds and recomputes at once.
+
+The tab also draws **one histogram per channel**, on the same percentage axis all its figures sit on,
+with the target band, the clipping stripe and the centre's median drawn over them. Under them, a
+paragraph derived from the result says how this particular file is exposed: what decides, how far it
+is from saturation, and why the wide curve does **not** mean underexposure. The drawing explains; the
+verdict stays the median of the central window of the brightest channel, and nothing else.
+
+The window's guide "How to read the histograms" says:
+
+| what you see | what it means |
+|---|---|
+| two curves on each channel | The pale, wide one is the whole channel; the solid, narrow one is the central window of 20 %, the very one the verdict is taken from. Each is scaled to its own peak, so the HEIGHTS are not compared with each other; the positions are. |
+| the vertical line | The median of the central window, the one figure that decides. On the brightest channel it is the very number in the verdict pill above. |
+| the green band | The target, from exactly the same thresholds as the verdict. It moves when you tick **Sky flat**: a sky flat MUST sit lower, because the sky fades continuously and the SNR comes from the number of frames. |
+| the yellow and red bands | The same scale further on: yellow "acceptable, but", red too low or too high. On the sky there is no yellow on the left: there the target starts right at the too-low threshold. |
+| the red stripe on the right | 98-100 % of white: there the analyser counts the saturated pixels. Any mass of the solid curve in that stripe means TOO HIGH, however well-behaved the median: there the vignetting information is lost, exactly where the signal is highest. |
+| why the pale curve is much wider | That is the vignetting, not underexposure: the corners of a flat ARE darker by construction, and the distance between the two peaks is just how deep it is. If you expose by the wide curve, you clip the centre and lose exactly what you measure. |
+| why the channels peak in different places | The Bayer filters pass different amounts of the source's light. On a warm panel R may lead, on the sky at the blue hour usually B. The brightest clips first, so it is the limiting one. The tool does no white balance; that is exactly the point. |
+| what this drawing is NOT | It is not the camera's histogram. That one is the processed JPEG's (debayer, white balance, gamma) and sits much further right. That is why a frame that looks "at the limit" on the camera's screen can be at 40 % in raw data. |
+| the switch above the drawings | It chooses what you look at: the raw data, which the tool measures, or the preview the camera embedded in the raw, the very image from which it computed its on-screen histogram. Only the raw view has the target band, because only it says something about the light on the sensor. On the other there is no target, nor could there be: it would mean exposing by the screen. The table under the drawings puts the two figures side by side, on each channel. |
+| why the screen is much further right | Gamma plus the tone curve, which no camera setting removes: a JPEG is gamma-encoded by definition. A compressive curve stretches the low and middle levels the most, which is exactly where a flat sits. And on the cameras measured here the screen saturated before the sensor, by a third of a stop up to a stop: so it is a one-way alarm ("not touching" is a guarantee, "touching" is no information), not a measuring instrument. |
+
+**What the camera showed.** The switch above the drawings goes from the raw data to the JPEG preview
+the camera embedded in the raw, decoded from the file. Under the drawings, a table puts the two
+figures side by side for each channel, centre against centre. Measured on two sky flats from the
+library, the blue channel:
+
+| file | sensor (raw) | camera's screen | peak on the screen |
 |---|---|---|---|
 | Nikkor 35 DX, ISO 800 | 29.0 % | 81.2 % | 84.7 % |
-| Samyang f/2.0, ISO 1600 | 32.1 % | 98.0 % | 100.0 %, cu pixeli la 255 |
+| Samyang f/2.0, ISO 1600 | 32.1 % | 98.0 % | 100.0 %, with pixels at 255 |
 
-Al doilea arăta ars pe aparat și avea 1.6 stopuri de rezervă în fișier. Diferența nu e o
-constantă de ținut minte: pe aparatul măsurat e maximă pe la raw 25 %, chiar unde stă un
-flat, și se strânge spre saturație. Pe vederea din previzualizare **nu există bandă
-țintă**, iar verdictul nu se uită la ea deloc. Vederea lipsește, cu explicație, pe un FITS
-sau pe un raw fără previzualizare decodabilă.
+The second looked burnt out on the camera and had 1.6 stops to spare in the file. The difference is
+not a constant to remember: on the camera measured it is largest around 25 % raw, right where a flat
+sits, and it narrows toward saturation. The preview view has **no target band**, and the verdict does
+not look at it at all. On a raw that carries no preview it can decode, the switch is disabled and the
+tab says why.
 
-**Histogram** listează în stânga **masterul pe prima poziție**, marcat `MASTER`; sub el,
-**când există, `pp_flat_stacked_smoothed.fit`**, marcat `NETEZIT` — fișierul scris de tabul
-Netezire, exact pe calea pe care o scrie acela, nu orice stivă din folder; și apoi cadrele
-din `flats/` — raw de aparat **și** FITS, fiindcă pentru egalizare un flat trecut prin
-Conversion e la fel de bun ca NEF-ul. Un click egalizează fișierul; alt click egalizează
-altul, iar dacă primul încă se calcula, e abandonat — lista rămâne apăsabilă, ecranul de
-așteptare acoperă doar poza. Nimic nu rulează singur la deschidere: masterul de 24 MP îl
-citește deja tabul Structura atunci.
+### Histogram
 
-Rândul `NETEZIT` **apare și singur**, în timpul sesiunii, de îndată ce butonul din Netezire
-a scris fișierul; ce era ales în listă rămâne ales și nimic nu se recalculează — cu o
-excepție: dacă pe ecran era chiar flat-ul netezit și acesta a fost rescris, poza se reface,
-altfel ar arăta octeți care nu mai există pe disc. Sub poza netezitului stă o notă a lui:
-o formă care se vede pe master și lipsește de aici a fost scoasă de netezire; una care se
-vede pe amândouă e netedă la scara aleasă și a rămas. Și, egalizarea fiind pe ranguri, ce a
-rămas pe netezit, oricât de mic în amplitudine, iese la contrast maxim — un netezit care
-pare mai *zgomotos* decât masterul e poza așteptată, nu un defect.
+The Histogram tab lists **the master first**, marked `MASTER`; under it, **when it exists,
+`pp_flat_stacked_smoothed.fit`**, marked `SMOOTHED` (the file the Smoothing tab writes, exactly at the
+path it writes it, not any stack in the folder); then the frames of `flats/`, camera raws **and**
+FITS, because for an equalisation a flat converted by Siril is as good as the NEF. A click equalises
+a file; another click equalises another, and if the first was still computing it is abandoned: the
+list stays clickable, and the waiting screen covers only the picture. Nothing runs by itself when the
+folder opens: the Structure tab is already reading the 24 MP master then.
 
-Masterul e acolo pentru o singură întrebare: **s-au mediat imperfecțiunile văzute pe
-cadrele individuale?** O formă care se vede pe un cadru și lipsește de pe master a fost
-trecătoare — un nor, o umbră, o pâlpâire — și s-a mediat. Una care se vede pe amândouă e
-fixă pe montaj, și pe ea o măsoară cifrele din Structura. Egalizarea fiind pe ranguri,
-zgomotul mai mic al masterului face o formă comună să pară acolo mai *clară*, nu mai slabă.
+The `SMOOTHED` row **also appears by itself** during the session, as soon as the Smoothing tab has
+written the file; what was selected stays selected and nothing is recomputed, with one exception: if
+the smoothed flat itself was on screen and was rewritten, the picture is redone, since it would
+otherwise show bytes that are no longer on the disk. Under the smoothed flat's picture stands a note:
+a shape that shows on the master and is missing here was removed by the smoothing; one that shows on
+both is smooth at the chosen scale and stayed. And because the equalisation goes by ranks, what is
+left on the smoothed flat, however small its amplitude, comes out at maximum contrast: a smoothed
+flat that looks *noisier* than the master is the expected picture, not a defect.
 
-Deasupra pozei stau vederile, pe un cadru CFA: `Mozaic` (implicit — tot mozaicul egalizat
-ca un singur strat, literal ce arată Siril pe un raw deschis nedebayerizat, deci vederea
-din care s-au citit tipare până acum), `RGB` (cele patru poziții egalizate fiecare pe
-repartiția ei, în culorile lor, cu mai mult contrast) și câte un gri pe poziție (`R`, `G1`,
-`G2`, `B`, sau `CFA[y,x]` când fișierul nu spune ordinea). Pe un cadru mono e o singură
-vedere și nu apar chipuri. Comutarea nu recitește nimic. Tabul nu salvează niciun fișier;
-consola scrie compozitul, micșorat.
+The master is there for one question: **were the imperfections seen on the single frames averaged
+out?** A shape that shows on a frame and is missing from the master was transient (a cloud, a shadow,
+a flicker) and was averaged out. One that shows on both is fixed to the setup, and that is what the
+Structure tab's figures measure. Because the equalisation goes by ranks, the master's lower noise
+makes a shared shape look *clearer* there, not weaker.
 
-Poza din fereastră e **la rezoluția senzorului**, nu micșorată ca PNG-ul consolei: se
-arată direct din raster, fără encodare. Stă într-un viewport de 520 px, potrivită
-întreagă la început, cu zoom și deplasare: rotița mărește în jurul cursorului (fără niciun
-modificator, ca în Siril; pagina se derulează cu rotița în afara pozei), tragerea cu
-mouse-ul deplasează când poza depășește viewport-ul (cursorul devine mână), dublu click
-comută între potrivit și 100 %, iar butoanele `−`, `+`, `potrivit`, `100 %` fac același
-lucru. La 100 % un pixel de pe ecran e un pixel de
-senzor; pe `Mozaic` se vede tabla de șah R/G/B a mozaicului, exact ca în Siril la 100 %.
-Peste 100 % pixelii se desenează ca pătrate, sub 100 % neteziți. „Potrivit" nu mărește
-niciodată peste 100 %: o poză mai mică decât viewport-ul se arată la mărimea ei. Zoom-ul se
-păstrează când schimbi vederea și se resetează când schimbi fișierul.
+Above the picture stand the views, on a CFA frame: `Mosaic`, the default (the whole mosaic equalised
+as one layer, literally what Siril shows on a raw opened undebayered); `RGB` (the four positions
+equalised each on its own distribution, in their colours, with more contrast); and one grey view per
+position (`R`, `G1`, `G2`, `B`, or `CFA[y,x]` when the file does not say the order). A mono frame has
+a single view and no chips. Switching views rereads nothing. The tab saves no file; the console
+writes the composite, shrunk.
 
-> Tabelul de mai jos e în oglindă cu ghidul pliat „Cum citesc poza egalizată" din fereastră
-> (`SessionMessages.HistEqGuideRows`). Nu există test care să lege cele două — dacă
-> reformulezi într-un loc, treci și prin celălalt.
+The picture in the window is **at the sensor's resolution**, not shrunk like the console's PNG: it is
+shown straight from the raster, with no encoding. It sits in a 520 px viewport, fitted whole at first,
+with zoom and pan: the wheel zooms around the cursor (with no modifier key, as in Siril; outside the
+picture the wheel scrolls the page), dragging pans when the picture is larger than the viewport (the
+cursor becomes a hand), a double click switches between fit and 100 %, and the buttons `−`, `+`,
+`fit` and `100 %` do the same. At 100 % one screen pixel is one sensor pixel; on `Mosaic` the mosaic's
+R/G/B checkerboard shows, as in Siril at 100 %. Above 100 % the pixels are drawn as squares, below
+100 % smoothed. Fit never zooms above 100 %: a picture smaller than the viewport is shown at its own
+size. The zoom is kept when you change the view and reset when you change the file.
 
-| ce vezi | ce înseamnă |
+The window's guide "How to read the equalised picture" says:
+
+| what you see | what it means |
 |---|---|
-| de ce un flat curat arată zgomotos | egalizarea întinde *orice* distribuție pe 0..255, și a unui cadru fără nicio structură. Atunci ce rămâne de întins e zgomotul. Granulație fină peste tot înseamnă „n-are altceva de arătat". |
-| de ce nu se poate citi cât de mare e o formă | fiecare nivel de gri primește același număr de pixeli, indiferent cât de apropiate erau valorile. O undă de 0.5 % și un gradient de 10 % cu aceeași formă ies identic. Amplitudinea e în tabul Structura. |
-| vederea Mozaic (implicită) | tot mozaicul ca un singur strat — Siril pe un raw nedebayerizat, de asta e prima. Trei culori în aceeași histogramă, deci la 100 % se vede tabla de șah; micșorată, se mediază. |
-| vederea RGB | cele patru poziții, fiecare egalizată separat și pusă în culoarea ei, cu mai mult contrast decât mozaicul. O nuanță uniformă nu înseamnă nimic; o nuanță care *variază* pe cadru înseamnă că un canal are altă formă decât celelalte — o sursă cu gradient de culoare, o scurgere colorată. |
-| vederile pe canal | aceeași poză, un singur canal, în gri. Ca să vezi dacă o formă e în toate canalele sau doar într-unul. |
-| chipul Culori false | tabelul rainbow din Siril peste vederea de pe ecran: de la magenta la nivelul cel mai jos, prin albastru, cyan, verde și galben, până la roșu la cel mai sus. Benzile de o culoare sunt contururi de rang egal, deci *forma* vignetării se citește dintr-o privire. Culorile sunt ranguri, nu valori. Doar pe un strat — Mozaic, un canal, mono — niciodată pe RGB, unde chipul e dezactivat. Rămâne bifat la schimbarea vederii sau a fișierului. |
-| zoom și deplasare | rotiță, tragere cu mouse-ul, dublu click; pagina se derulează cu rotița în afara pozei. La 100 % un pixel de pe ecran e un pixel de senzor. Se păstrează la schimbarea vederii, se resetează la schimbarea fișierului. |
-| masterul față de un cadru | vezi paragraful de mai sus: ce lipsește de pe master s-a mediat, ce e pe amândouă e fix pe montaj. |
-| unde e cifra | în tabul Structura. Poza spune ce *formă* are ce măsoară ea. |
+| why a clean flat looks noisy | The equalisation stretches ANY distribution over 0..255, even that of a frame with no structure at all. Then what is left to stretch is the noise, and it reaches maximum contrast. Fine grain everywhere means "it has nothing else to show". |
+| why the size of a shape cannot be read | Every grey level gets the same number of pixels, however close their values were. A ripple of 0.5 % and a gradient of 10 % with the same shape come out identical. The amplitude is in the Structure tab, not here. |
+| the Mosaic view (the default) | The whole mosaic equalised as a single layer: literally what Siril shows on a raw opened undebayered, as it opens it by default; that is why it comes first. The three colours are three populations in the same histogram, so at 100 % the mosaic's checkerboard shows, as in Siril; shrunk, it averages out. |
+| the RGB view | The four Bayer positions, each equalised on its own distribution and put in its colour: Siril on a debayered image. It has more contrast than the mosaic, because each channel is stretched over its whole range. A uniform tint means nothing; a tint that VARIES across the frame means one channel has another shape than the others: a source with a colour gradient, a coloured light leak. |
+| the per-channel views | The same picture, a single channel, in grey. Useful when the composite is hard to read, or to see whether a shape is in every channel or only in one. |
+| the False colours chip | Siril's rainbow table over the view on screen: the hue runs from magenta at the lowest level through blue, cyan, green and yellow to red at the highest, so bands of one colour are contours of equal rank and the SHAPE of the vignetting (round, off-centre, square) reads at a glance. The colours are ranks, not values: the amplitude is still gone. It applies to one layer (Mosaic, a channel, mono), never to the RGB view, where the chip is greyed out. It stays on when you change the view or the file. |
+| zoom and pan | The wheel zooms around the cursor, dragging with the mouse pans, a double click switches between fit and 100 %. The page scrolls with the wheel outside the picture. At 100 % one screen pixel is one sensor pixel: the picture is at full resolution, not shrunk. The zoom is kept when you change the view and reset when you change the file. |
+| the master against a frame | The master is the stack of the frames under it. A shape that shows on a frame and is missing from the master was transient and was averaged out; one that shows on both is fixed to the setup, and that is what the Structure tab's figures measure. |
+| where the figure is | In the Structure tab: the residual after the radial model, the corners, the tilt, the worst spot. The picture here says WHAT SHAPE the thing they measure has. |
 
-**Netezire** e modul 5 pe masterul sesiunii, și singurul tab care **nu rulează singur**:
-scrie un fișier de ~96 MB lângă master, și un fișier nu se produce fiindcă s-a deschis un
-folder. Ghidul stă deschis deasupra butonului, fiindcă e precondiția lui; sub el, trei
-chipuri de scară (150 / 300 / 600 px, implicit 300), butonul „Propune scara" — care
-rulează regula de mai sus (`--scale auto`), arată tabelul treptelor și bifează chipul
-propus, fără să scrie nimic — și butonul „Netezește și salvează".
-Butonul așteaptă lanțul de la deschidere — structura citește același master de 24 MP — și
-întreabă înainte să suprascrie un fișier netezit existent; un „nu" lasă cifrele pe ecran
-și fișierul vechi pe disc, și spune asta.
+### Smoothing
 
-După rulare: cifrele despre *ce s-a scos*, atenționarea galbenă când s-a scos și ceva de
-scară mare, bateria de structură **înainte** și **după** (aceleași rânduri ca în tabul
-Structura, cu verdictul fiecăreia), și în dreapta două hărți în spatele unui comutator —
-`original / netezit`, adică exact ce a plecat, și reziduul flat-ului netezit după propriul
-model radial, adică ce face obiectivul odată textura plecată. Scara hărții pornește la
-±2 %, nu la ±10 % ca la celelalte taburi: ce se scoate e mic, și la 10 % harta ar fi albă.
+Mode 5 on the session's master. Like Split, the tab **never runs by itself**: it writes a file of
+~96 MB beside the master, and a file is not produced because a folder was opened. Its guide stands
+open above the button, because it is the button's precondition; it says what mode 5 says above. Under
+it are three scale chips (150 / 300 / 600 px, 300 by default), the **Propose a scale** button, which
+runs the rule of `--scale auto`, shows the table of the steps and ticks the chip proposed, writing
+nothing, and the **Smooth and save** button. That button waits for the opening analyses (the structure
+test reads the same 24 MP master) and asks before it overwrites an existing smoothed file; a "no"
+leaves the figures on screen and the old file on the disk, and says so.
 
-Fișierul netezit **nu devine masterul sesiunii**: numele lui nu e printre cele două căi pe
-care le caută aplicația, deci tabul Structura măsoară în continuare masterul fotografiat
-și arată textura pentru care a fost nevoie de netezire. **Apare în tabul Histogram**, ca rând
-propriu sub master, marcat `NETEZIT`, imediat ce a fost scris — ca să se vadă, unul lângă
-altul, ce a scos netezirea și ce a lăsat.
+After the run: the figures of *what was removed*, the yellow warning when something of large scale was
+removed too, the structure battery **before** and **after** (the Structure tab's rows, each with its
+verdict), and on the right two maps behind a switch: `original / smoothed`, exactly what left, and the
+smoothed flat's residual after its own radial model, what the lens does once the texture is gone. The
+maps' scale starts at ±2 %, not at ±10 % as on the other tabs: what is removed is small, and at 10 % the
+map would be white.
 
-> Ghidul pliat „Ce face netezirea" (`SessionMessages.SmoothGuideRows`) e în oglindă cu
-> secțiunea „5. Netezire" de mai sus; nu există test care să lege cele două.
+The smoothed file **does not become the session's master**: its name is not one of the two paths the
+window looks for, so the Structure tab still measures the master photographed and still shows the
+texture that made the smoothing necessary. It **appears in the Histogram tab** as a row of its own,
+under the master, marked `SMOOTHED`, as soon as it is written, so what the smoothing removed and what it
+left can be seen side by side.
 
-**Sintetic** e modul 6. Lista de obiective vine din amândouă sursele, cu un chip `Adobe`
-sau `lensfun` pe fiecare rând și montura în dreapta — la lensfun și formatul pe care a fost
-calibrat profilul, fiindcă același obiectiv poate fi de două ori în bază, calibrat pe două
-formate (vezi mai sus); se caută după text, fiecare cuvânt trebuie să apară, formatul
-inclusiv. Sub fiecare rând stau **focalele, diafragmele și distanțele** profilelor lui, cu
-numărul lor — exact ce tipărește `--lenses` — dar numai când lista are cel mult 40 de
-rânduri, fiindcă detaliile unui obiectiv Adobe cer citirea fișierului lui; pe o listă mai
-lungă rândurile rămân goale și o notă sub listă spune să scrii un text. Focala, diafragma
-și crop-ul sunt **preumplute** din fișiere — focala și
-aparatul din headerul masterului (doar headerul, fără cei 96 MB), diafragma și obiectivul
-dintr-un raw din `flats/`, când există: numele obiectivului așa cum l-a scris aparatul (un
-Canon sau un Sony îl scrie, un Nikon cu sticlă de altă marcă și un Pentax nu), ID-ul
-obiectivului scris de aparat (al lui Nikon pe un Nikon, al producătorului pe celelalte monturi
-— Canon, Sony, Pentax) **și gama lui** (focala minimă și maximă, deschiderea maximă) din
-MakerNote. Numele, când există, e cheia: se potrivește literă cu literă cu numele din profile,
-și e singura pe Sony E, ale cărui profile Adobe nu poartă ID. Fără nume, ID-ul singur nu
-ajunge — 139 e și Tokina 11-20 f/2.8, și Nikkor 18-200 f/3.5-5.6, și Sigma 18-35 f/1.8 — așa
-că obiectivele al căror nume contrazice gama sunt scoase, iar obiectivele lensfun ale aceluiași
-producător cu aceeași gamă intră și ele (lensfun nu poartă ID-uri); rămâne unul, e ales; rămân
-mai multe (cele două generații Adobe ale Tokinei 11-20 și cele două intrări lensfun), lista se
-restrânge la ele și alegi tu, iar nota de sub câmpuri spune ce a citit din raw — sau că raw-ul
-nu spune nimic despre obiectiv (niciun ID, niciun nume, nicio gamă: un telescop sau un obiectiv fără
-contacte), caz în care diafragma rămâne goală și scrii tu focala și diafragma și alegi
-obiectivul. Sub câmpuri
-stau **chip-urile de tip de senzor** — full frame, APS-C, APS-C Canon, APS-H, Micro 4/3,
-1" — care arată formatul valorii din câmp: se aprinde cel mai apropiat (în 5 %), deci
-1.523 din baza lensfun aprinde APS-C 1.5, iar nota de sub câmp spune mereu de unde e
-crop-ul și ce format e („crop 1.523 din baza lensfun (Nikon D3300) — format APS-C"). Un chip
-apăsat pune crop-ul lui nominal în câmp, pentru un aparat pe care baza nu-l are; o valoare
-tastată aprinde chip-ul ei, iar una fără format (1.15) le lasă stinse și nota o spune. **La
-alegerea unui obiectiv** apare, sub câmpuri, potrivirea profilului cu senzorul tău: pe ce
-format a fost calibrat, ce format ai, și ce urmează — același format; alt format, cu raza
-recalculată prin milimetri; colțul tău în interiorul profilului, extrapolare mică sau MARE.
-Tot acolo, în galben, **avertismentul de nepotrivire** când focala sau diafragma din câmp e
-departe de orice profil al obiectivului (vezi mai sus): se recalculează la fiecare tastă, și
-după scriere aceeași propoziție stă sub „profil folosit".
-Aceeași propoziție o tipărește consola la „format" și o arată tabul sub adâncimile scrise.
-Pentru Tokina
-alegerea nu contează: atx-i 11-20 F2.8 CF (2020) e AT-X 11-20 F2.8 PRO DX (2015) cu altă
-carcasă, cele două fișiere Adobe au parametri de vignetare identici byte cu byte, iar
-intrările lensfun, calibrate pe exemplare AT-X, se aplică și lui. Câmpurile rămân editabile; ce scrii bate ce s-a citit. Panoul „Profilele: de unde vin și cum se actualizează" e **pliat
-implicit**: spune unde caută profilele Adobe, ce copie lensfun folosește (folderul,
-commit-ul, data) și cum se înlocuiește. „Scrie flat sintetic" așteaptă lanțul de la
-deschidere, întreabă înainte să suprascrie, arată adâncimea scrisă în cele patru puncte
-**și pornește singur comparația cu masterul** — `--against` pe master și pe fișierul abia
-scris: verdictul diferenței (forma și adâncimea, cel mai rău dintre ele) și tabelul cu trei
-coloane — masterul, sinteticul, diferența — pentru vignetare (cu verdictul adâncimii),
-offset, pata locală și cele cinci teste, fiecare rând cu eticheta și nota lui în stânga și
-cele trei valori strânse în dreapta, plus harta, pe scară comutabilă. Cele patru adâncimi
-scrise poartă și ele câte o notă: ce punct e și cu ce se compară. „Compară cu masterul" rulează
-aceeași comparație separat, pentru un fișier sintetic scris altă dată. Fișierul nu devine masterul sesiunii, ca și cel netezit.
+### Synthetic
 
-**Split** e pentru flat-urile trase în grupuri rotite — 15 + 15 la 180°, sau 4 x 10 la
-90° — ca să vezi ce a anulat rotația și ce nu. Alegi în câte părți (2 sau 4; numărul de
-cadre din `flats/` trebuie să se împartă exact, altfel butonul spune de ce nu), alegi
-scriptul Siril din aceeași listă ca pe cardul de problemă (`OSC_Preprocessing_WithoutDark.ssf`
-propus) și apeși „Start Split". Pentru fiecare parte se construiește o sesiune temporară în
-`%TEMP%\FlatCheck\split-<data-ora>\part-<i>\`: fiecare folder în care intră scriptul
-(`biases/`, `darks/`) întreg — niciodată `process/` sau `masters/`, care sunt ce scrie
-Siril — **cel mult două** cadre din `lights/` (primele după nume — atât cât să meargă
-scriptul până la capăt; lights-urile nu contează pentru masterul de flat) și felia ei de
-`flats/`, blocuri consecutive în ordinea
-numelor de fișier (un `readme.txt` din `flats/` nu e cadru). Scriptul rulează în fiecare, una
-după alta — fiecare pe copia ei a setărilor lui Siril, ca pe cardul de problemă — cu faza, o
-bară pe tot fluxul, log-ul lui Siril și butonul „Oprește" pe tab;
-apoi masterele părților și masterul întreg trec prin aceeași analiză de structură ca tabul
-Structura, cu raw-ul din `flats/` pentru profil.
+Mode 6.
 
-Rezultatul e un **tabel cu o coloană pe parte, una pentru întreg și una pentru profil**:
-cele cinci teste, fiecare celulă cu valoarea și pastila verdictului imediat după ea; vignetarea
-în stopuri; **câte un rând pe profil** — toate profilele pe care le arată și tabul
-Structura, Adobe și lensfun — cu diferența fiecărei coloane față de el și verdictul ei, și
-în coloana `profil vignetare` adâncimea pe care o prezice el; rândul profilului de referință e marcat; și pe ultimul
-rând verdictul fiecărei coloane, cel mai rău dintre formă și adâncimea față de profilul de
-referință (nu față de profilul propriu al coloanei, ca rândurile să vorbească despre același
-profil). Profilul de referință e **cel mai apropiat profil al întregului,
-același pe toate coloanele** — „cel mai apropiat" se alege pe fiecare master în parte, iar pe
-prima sesiune reală partea 1 și întregul aleseseră profile diferite; un tabel cu altă
-referință pe coloană n-ar compara nimic. Sub tabel, hărțile reziduale una lângă alta, pe
-scară comutabilă. Se salvează în folderul sesiunii `Split result.txt` (bannerul de versiune,
-data și ora, tabelul, ce înseamnă) și `flatcheck-split.png` — părțile de la stânga la
-dreapta, apoi întregul, **pe o singură scară de culoare** (cea automată peste toate
-hărțile deodată), fiecare cu eticheta ei și cu versiunea, data și capetele scării pe rândul
-de titlu, desenate cu un font bitmap propriu, fără vreo dependență.
+- **The list of lenses** comes from both sources, with an `Adobe` or `lensfun` chip on each row and the
+  mount on the right; for lensfun, also the format the profile was calibrated on, because the same lens
+  can be in the database twice, calibrated on two formats (see mode 6). It is searched by text: every
+  word must appear, the format included. Under each row stand **the focal lengths, apertures and
+  distances** of its profiles, with their count, exactly what `--lenses` prints, but only when the list
+  has at most 40 rows, because an Adobe lens's details need its file read; on a longer list the rows
+  stay bare and a note under the list says to type a text.
+- **The focal length, the aperture and the crop are prefilled** from the files: the focal length and
+  the camera from the master's header (the header only, not the 96 MB), the aperture and the lens from
+  a raw in `flats/`, when there is one. From the raw it reads the lens's name as the camera wrote it (a
+  Canon or a Sony writes it; the Nikon and the Pentax measured write none, whatever the lens), the lens
+  ID the camera wrote (Nikon's on a Nikon, the maker's on Canon, Sony and Pentax) **and the lens's range**
+  (the shortest and longest focal length, the widest aperture) from the MakerNote. The name, when there
+  is one, is the key: it is matched letter for letter against the profiles' names, and it is the only
+  key on Sony E, whose Adobe profiles carry no ID. Without a name, the ID alone is not enough (139 is
+  the Tokina 11-20 f/2.8, the Nikkor 18-200 f/3.5-5.6 and the Sigma 18-35 f/1.8 alike), so the lenses
+  whose name contradicts the range are dropped, and the lensfun lenses of the same maker with the same
+  range join (lensfun carries no IDs). One left, it is chosen; several left (the Tokina 11-20's two
+  Adobe generations and its two lensfun entries), the list narrows to them and you choose. The note
+  under the fields says what was read from the raw, or that the raw says nothing about the lens (no ID,
+  no name, no range: a telescope or a lens without contacts); then the aperture stays empty, and you
+  type the focal length and the aperture and choose the lens.
+- **The sensor-format chips** under the fields (full frame, APS-C, APS-C Canon, APS-H, Micro 4/3, 1")
+  show the format of the value in the box: the nearest lights up, within 5 %, so 1.523 from the lensfun
+  database lights APS-C 1.5, and the note under the box always says where the crop comes from and what
+  format it is (`crop 1.523 from the lensfun database (Nikon D3300) - format APS-C`). A chip pressed puts
+  its nominal crop in the box, for a camera the database does not have; a typed value lights its chip,
+  and one with no format (1.15) leaves them all off, and the note says so.
+- **When a lens is chosen**, how its profile fits your sensor appears under the fields: the format it
+  was calibrated on, yours, and what follows (the same format; another format, with the radius
+  recomputed through millimetres; your corner inside the profile, a small extrapolation or a LARGE one).
+  The console prints the same sentence at `format`, and the tab shows it again under the depths
+  written. There too, in yellow, stands **the mismatch warning** when the focal length or the aperture
+  in the box is far from every profile of the lens (see mode 6); it is recomputed at every key, and
+  after writing the same sentence stands under `profile used`.
+- **For the Tokina the choice does not matter**: the atx-i 11-20 F2.8 CF (2020) is the AT-X 11-20 F2.8
+  PRO DX (2015) in another housing, the two Adobe files have byte-identical vignetting parameters, and
+  the lensfun entries, calibrated on AT-X copies, apply to it too.
+- **The fields stay editable**; what you type beats what was read.
+- The panel **The profiles: where they come from and how they are updated** is folded by default: it
+  says where the Adobe profiles are looked for, which lensfun copy is used (the folder, the commit, the
+  date) and how it is replaced.
+- **Write synthetic flat** waits for the opening analyses, asks before it overwrites, shows the depth
+  written at the four points, **and starts the comparison with the master by itself**: `--against` on
+  the master and the file just written, with the difference's verdict (shape and depth, the worse of
+  them) and the table of three columns (the master, the synthetic flat, the difference) for the
+  vignetting (with the depth verdict), the offset, the local spot and the five tests, each row with its
+  label and its note on the left and the three values together on the right; plus the map, on a
+  switchable scale. The four depths written carry a note each: which point it is and what it is
+  compared with.
+- **Compare with the master** runs the same comparison on its own, for a synthetic file written
+  earlier.
+- The file does not become the session's master, any more than the smoothed one does.
 
-Sesiunea originală e **doar citită**: nimic din ea nu se mută sau se șterge; se scriu doar
-cele două fișiere de mai sus, suprascrise fără întrebare, ca `Test result.txt`.
-Folderul temporar se șterge după analiză și la „Oprește" (și când alegi alt folder, sau
-închizi fereastra în timpul rulării — te întreabă, oprește Siril, șterge, apoi se închide);
-după un eșec (Siril iese cu cod nenul, sau scriptul nu lasă master) rămâne, cu calea pe
-ecran, ca să vezi de ce. Masterele
-părților nu se păstrează: masterul întreg e cel bun, iar raportul ține toate cifrele lor.
-Sub numărul de cadre, tabul spune **cât loc pe disc** cere împărțirea aleasă: copiile
-exact, din mărimile fișierelor, și ce va scrie Siril în `process/`, estimat dintr-un model
-pe octeți per pixel măsurat pe 2026-09-28 (un cadru convertit 2 B/px, unul calibrat sau
-stivuit 4 B/px, un light calibrat sau înregistrat 12 B/px; pe un sfert de sesiune modelul
-dă 4.6 GB față de 4.35 GB măsurați), plus cât e liber pe discul lui `%TEMP%`, în unitățile
-lui Explorer (1 GB = 1024³), ca cifra să fie cea de acolo. Timpul nu se estimează: depinde de
-Siril și de mașină. Ca ordin de mărime, 40 de flats în 4 părți au
-însemnat ~3 GB copiate, ~17 GB de `process/` temporar și ~3 minute de Siril.
-Ce e mare pe părți și mic pe întreg e ce a anulat rotația — la 180° partea impară
-(gradientul), la 90° și șaua; ce au părțile în comun cu întregul e fix pe aparat sau radial,
-și nicio rotație nu-l scoate. O parte are mai puține cadre, deci mai mult zgomot: cifrele
-fine (pata maximă) ies mai mari pe părți și fără să însemne un defect.
+### Split
 
-### Ce nu face
+The Split tab is for flats shot in rotated groups (15 + 15 at 180 degrees, or 4 x 10 at 90 degrees), to
+see what the rotation cancelled and what it did not.
 
-Nu înlocuiește consola: n-are `--fov`, `--sat`, `--black`, `--pattern`, nici coduri de
-ieșire. Pentru scripting și pentru cazurile în care trebuie să spui uneltei ceva ce headerul
-nu zice — un câmp pe care headerul nu-l dă, o scală ADU greșit ghicită — `flatcheck.exe`
-rămâne unealta.
+- Choose the number of parts (2 or 4; the number of frames in `flats/` must divide exactly, otherwise
+  the button says why not), choose the Siril script from the same list as on the problem card
+  (`OSC_Preprocessing_WithoutDark.ssf` proposed), and press **Start Split**.
+- For each part a temporary session is built in `%TEMP%\FlatCheck\split-<date-time>\part-<i>\`: every
+  folder the script enters (`biases/`, `darks/`), whole, but never `process/` or `masters/`, which are
+  what Siril writes; **at most two** frames of `lights/` (the first by name: enough for the script to
+  run to its end, since the lights do not count for the flat master); and the part's slice of `flats/`,
+  consecutive blocks in file-name order (a `readme.txt` in `flats/` is not a frame).
+- The script runs in each part, one after the other, each on its own copy of Siril's settings as on the
+  problem card, with the phase, one progress bar over the whole flow, Siril's log and a **Stop** button
+  on the tab. Then the parts' masters and the whole master go through the same structure analysis as
+  the Structure tab, with the raw of `flats/` for the profile.
 
----
+The result is **a table with one column per part, one for the whole and one for the profile**: the five
+tests, each cell with its value and its verdict pill right after it; the vignetting in stops; **one row
+per profile** (every profile the Structure tab shows, Adobe and lensfun), with each column's difference
+from it and its verdict, and in the `vignetting profile` column the depth that profile predicts; the
+reference profile's row marked; and, on the last row, each column's verdict, the worse of its shape and
+its depth against the reference profile (not against the column's own nearest profile, so that the
+rows speak of the same profile). The reference profile is **the whole's nearest profile, the same for
+every column**: "nearest" is chosen on each master separately, and on the first real session part 1
+and the whole had chosen different profiles; a table with another reference per column would compare
+nothing. Under the table stand the residual maps, side by side, on a switchable scale.
 
-## Build, rulare, teste
+In the session folder it saves `Split result.txt` (the version banner, the date and time, the table,
+what it means) and `flatcheck-split.png`: the parts from left to right, then the whole, **on one colour
+scale** (the automatic one, over all the maps at once), each with its label, and with the version, the
+date and the scale's ends on the title row, drawn with a bitmap font of its own, with no dependency.
 
-Soluția are patru proiecte:
+The original session is **only read**: nothing in it is moved or deleted, and only the two files above
+are written, overwritten without a question, like `Test result.txt`. The temporary folder is deleted
+after the analysis and on **Stop** (and when you choose another folder, or close the window during the
+run: it asks, stops Siril, deletes, then closes). After a failure (Siril exits with a non-zero code, or
+the script leaves no master) it is kept, with its path on screen, so you can see why. The parts'
+masters are not kept: the whole master is the one that counts, and the report holds all their figures.
 
-| proiect | ce e |
+Under the frame count, the tab says **how much disk space** the chosen split needs: the copies exactly,
+from the files' sizes, and what Siril will write into `process/`, estimated from a bytes-per-pixel
+model measured on 2026-09-28 (a converted frame 2 B/px, a calibrated or stacked one 4 B/px, a
+calibrated or registered light 12 B/px; on a quarter of a session the model gives 4.6 GB against 4.35 GB
+measured), plus the free space on the drive of `%TEMP%`, in Explorer's units (1 GB = 1024³ bytes), so
+the figure is the one Explorer shows. Time is not estimated: it depends on Siril and on the machine. As
+an order of magnitude, 40 flats in 4 parts meant ~3 GB copied, ~17 GB of temporary `process/` and ~3
+minutes of Siril.
+
+What is large on the parts and small on the whole is what the rotation cancelled: at 180 degrees the
+odd part (the gradient), at 90 degrees the saddle too. What the parts share with the whole is fixed to
+the camera, or radial, and no rotation removes it. A part has fewer frames, so more noise: the fine
+figures (the worst spot) come out larger on the parts without meaning a defect.
+
+### What the window does not do
+
+It does not replace the console: it has no `--fov`, `--sat`, `--black` or `--pattern`, and no exit
+codes. For scripting, and for when the tool must be told what the header does not say (a field the
+header does not give, an ADU scale guessed wrong), `flatcheck.exe` stays the tool.
+
+## Development
+
+The solution has five projects:
+
+| project | what it is |
 |---|---|
-| `FlatCheck.Core` | nucleul: citire, analiză, rapoarte, PNG. Nicio interfață. |
-| `FlatCheck` | aplicația de consolă, `flatcheck.exe` |
-| `FlatCheck.Wpf` | aplicația cu ferestre, `FlatCheck.Wpf.exe` |
-| `FlatCheck.Tests`, `FlatCheck.Wpf.Tests` | testele |
+| `FlatCheck.Core` | the core: reading, analysis, reports, maps; no interface |
+| `FlatCheck` | the console, `flatcheck.exe` |
+| `FlatCheck.Wpf` | the window, `FlatCheck.Wpf.exe` |
+| `FlatCheck.Tests` | the tests of the core and the console |
+| `FlatCheck.Wpf.Tests` | the tests of the window |
 
 ```bash
 dotnet build FlatCheck.sln -c Release
+dotnet test FlatCheck.sln -c Release --filter "Category!=Validation"
 ```
 
-> **Pe Linux, soluția întreagă nu se mai construiește**, fiindcă `FlatCheck.Wpf` țintește
-> `net8.0-windows`. Consola rămâne portabilă dacă îi construiești proiectul direct:
-> `dotnet build FlatCheck/FlatCheck.csproj -c Release`.
+The whole solution builds on Windows only, because `FlatCheck.Wpf` targets `net8.0-windows`. The
+console alone builds wherever the SDK of `global.json` runs:
+`dotnet build FlatCheck/FlatCheck.csproj -c Release`. Camera raws need LibRaw's native libraries,
+which come for win-x64 and linux-x64 (publish with `-r linux-x64` for Linux); on any other platform
+only FITS files are read.
+
+The two publishes `scripts/release.ps1` runs (`kit.json` lists them):
 
 ```bash
 dotnet publish FlatCheck/FlatCheck.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-```
-
-Cele două flaguri de la urmă contează de când se citește raw: libraw vine ca DLL-uri
-native (`raw_r`, `jpeg8`, `lcms2`, `zlib1`, ~2.1 MB), iar fără `IncludeNativeLibrariesForSelfExtract`
-ele rămân fișiere separate lângă executabil. Cu ele, `flatcheck.exe` redevine ce a fost
-mereu: **un singur fișier de copiat**.
-
-Dacă totuși le pierzi — ai copiat doar `.exe`-ul dintr-un publish obișnuit — modurile pe
-FITS merg mai departe neschimbate, iar un fișier raw e refuzat cu un mesaj care spune ce
-lipsește. Nu există cale prin care lipsa lor să producă cifre greșite.
-
-Pentru Linux, `-r linux-x64` (pachetul runtime e deja referit). Alte platforme — arm64,
-macOS — n-au binare libraw în pachetele astea, deci acolo merge doar FITS-ul.
-
-**Folderul `lensfun/` merge lângă exe**: build-ul și publish-ul îl copiază singure lângă
-`flatcheck.exe` și `FlatCheck.Wpf.exe`, iar unealta citește `lensfun/*.xml` de lângă
-propriul executabil. E jumătatea lensfun a listei de obiective din modul 6; fără folder
-totul merge, doar lista are numai profilele Adobe de pe mașină (dacă există) și spune ce
-folder a căutat. Când copiezi binarul, copiază și folderul.
-
-Aplicația cu ferestre se publică la fel, fără `PublishSingleFile` (WPF nu se împachetează
-la fel de curat într-un singur fișier):
-
-```bash
 dotnet publish FlatCheck.Wpf/FlatCheck.Wpf.csproj -c Release -r win-x64 --self-contained
 ```
 
-```bash
-dotnet test FlatCheck.sln
-```
+The last two flags of the first keep `flatcheck.exe` a single file to copy: LibRaw comes as native DLLs
+(`raw_r`, `jpeg8`, `lcms2`, `zlib1`, ~2.1 MB), and without `IncludeNativeLibrariesForSelfExtract` they
+stay separate files beside the executable. If they get lost (only the `.exe` of a plain publish copied),
+the FITS modes work unchanged and a raw is refused with a message naming what is missing; there is no
+path by which their absence produces wrong figures. The window is published without `PublishSingleFile`,
+which WPF does not pack as cleanly. Both builds and both publishes put `lensfun/` beside the executable.
 
-Testele golden fixează textul de consolă al fiecărui mod. Când schimbi ieșirea **intenționat**,
-reaprobă-le și **citește diff-ul** — toată valoarea lor e acolo:
-
-```bash
-FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests
-```
-
-### Golden-urile de paritate
-
-Până pe 2026-09-26 `flatcheck.py` a fost oracolul numeric: `crosscheck.py` rula amândouă
-implementările pe aceiași octeți, în 43 de scenarii, și compara fiecare cifră. În acea zi cele
-două erau de acord pe toate cele 43 (0 diferențe numerice), prototipul a fost înghețat la 2.2.0
-și cele 43 de scenarii au devenit `FlatCheck.Tests/Golden/parity_*.txt`, rulate de
-`ParityGoldenTests` în gate (39 azi: cele patru ale modului `--ratio` au plecat cu el pe
-2026-10-26). Spre deosebire de celelalte golden-uri, acestea poartă cifre
-confirmate de o implementare independentă; o re-aprobare acolo e o decizie luată doar pe C#,
-și se citește ca atare. De aceea comanda de mai sus le lasă neatinse: se recapturează separat,
-cu `--filter ParityGoldenTests`, numai după ce schimbarea a fost aprobată, iar schimbarea se
-notează la divergențele din `docs/design/python-parity.md`. După o schimbare de formulă se
-rulează `/validate` pe masterele reale.
-
-Cele două fișiere Python rămân în repo ca istorie și nu se mai întrețin. Cine vrea totuși
-comparația de mână, cât timp ieșirea prototipului înghețat mai spune ceva:
+The gate is `scripts/verify.ps1`, about 3 minutes: the files shared with the starter kit, the test data
+manifest, the decision records and the design notes, then restore, the `dotnet format` check, a build
+with warnings as errors, and every test but the validation ones. The git hooks run it before every
+commit and every merge that touches FlatCheck.
 
 ```bash
-FLATCHECK_DUMP_FIXTURES=/tmp/xc dotnet test FlatCheck.sln --filter DumpsFixtures
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
+
+The golden files, `FlatCheck.Tests/Golden/*.txt`, pin the console's text of every mode, in both
+languages. After an intended change of the output, regenerate them and read the diff, which is where
+their value is:
 
 ```bash
-python crosscheck.py /tmp/xc
+FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"
 ```
 
-Dependințe pentru Python: `numpy`, `astropy`, `matplotlib`, opțional `rawpy` pentru NEF.
+The 39 `parity_*.txt` among them hold the figures the Python prototype confirmed before it was frozen;
+they are recaptured only after the owner's approval. The figures measured on the real masters
+(`docs/validation.md`) come from the validation tests, outside the gate because they take minutes:
+`dotnet test FlatCheck.sln -c Release --filter "Category=Validation"`, with `FLATCHECK_TESTDATA_LARGE`
+naming the masters' folder.
 
-### Dezvoltare: gate-ul, documentația și Claude Code
+Where the rest is written:
 
-Din 2026-09-25 proiectul urmează procesul din `ClaudeCodeStarterKit` (folderul de lângă acesta în
-repo-ul `photo`; ghidul cu motivația fiecărei piese e `GHID.md` acolo). Pe scurt, ce e impus
-mecanic:
+- `CLAUDE.md` and `.claude/rules/kit/process.md`: the project's rules and those of the process it
+  follows, from the starter kit in the `ClaudeCodeStarterKit` folder beside this one;
+- `docs/requirements.md`: the behaviour, with the IDs the tests carry;
+- `docs/decisions/`: the decisions, one record each, with the alternatives rejected;
+- `docs/design/`: how each area works and why, indexed by `docs/design/README.md`;
+- `docs/validation.md`: the figures measured on the real masters;
+- `CHANGELOG.md`: the changes, version by version.
 
-- **`scripts/verify.ps1` e gate-ul**: scripturile identice cu ale kit-ului, manifestul datelor
-  de test, antetele ADR-urilor (`check-decisions.ps1`), notele de design (`check-design.ps1`:
-  fiecare e în index, își numește fișierele prin căi în propoziția `Covers:`, și fiecare cale
-  există în git), restore,
-  `dotnet format` (doar verifică), build cu avertismentele ca erori, toate testele în afară de
-  cele de validare.
-  Cam 3 minute. Îl rulează hook-ul git `pre-commit` de la rădăcina repo-ului la orice commit care
-  atinge FlatCheck, hook-ul git `pre-merge-commit` la orice merge fără conflicte care aduce
-  schimbări în FlatCheck, hook-ul Claude Code înainte de orice `git commit` al modelului, și
-  `scripts/release.ps1`. Fără el verde nu intră niciun commit și niciun merge; `--no-verify`
-  e interzis.
+`flatcheck.py` is the Python prototype FlatCheck was ported from, frozen at 2.2.0 since 2026-09-26 and
+no longer maintained; it stays as prior art, beside `crosscheck.py`, its comparison tool. Its
+intentional differences from the C# are listed in `docs/design/python-parity.md`.
 
-  ```bash
-  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
-  ```
+## Licence
 
-- **O linie în `CHANGELOG.md`**, sub `[Unreleased]`, doar pentru o schimbare care contează
-  pentru cine citește istoricul versiunilor; un follow-up de code review sau o schimbare doar în
-  teste nu primește. E judecată, nu gate: niciun hook nu o verifică la commit (ADR 0053).
-- **Mesajul de commit** e o singură linie, în engleză, de cel mult 100 de caractere; hook-ul git
-  `commit-msg` refuză altceva.
-- **`scripts/`, `.claude/skills/`, `.claude/agents/` și `.claude/rules/kit/` sunt ale
-  kit-ului**, byte cu byte, la fel cheile de proces din `.claude/settings.json`, și nu se
-  editează aici: un bug sau o funcție nouă se face în kit și `scripts/sync.ps1` o copiază în
-  fiecare proiect. Ce e specific FlatCheck ca valori (soluția, folderele de cod și de teste,
-  filtrul de teste, datele de test, cele două ținte de publish, ce mai poate citi auditorul) e
-  în `kit.json`; pașii pe care FlatCheck îi adaugă la skill-uri sunt în `docs/skills.md`. Pasul
-  0 al gate-ului e roșu la orice diferență față de kit.
-- **Comportamentul e în `docs/requirements.md`**, cu ID-uri `R-NNN` purtate în numele testelor
-  (`R012_Structure_PrintsTheScale...`); `RepoInvariantTests` cere ca fiecare cerință
-  `implemented` să aibă un test cu ID-ul ei și invers.
-- **Deciziile sunt în `docs/decisions/`**, un ADR per decizie, cu alternativele respinse; cele
-  luate înainte de 2026-09-25 au fost scrise retroactiv din notele de proiectare.
-- **Cifrele de acceptanță pe masterele reale** sunt în `docs/validation.json`, citit de
-  `ValidationTests` (`--filter "Category=Validation"`, nu în gate, minute); fișierele stau în
-  `E:\Photografie\Astro\Flats and Darks`, numite în `FlatCheck.Tests/testdata/manifest.json`
-  cu hash SHA-256, iar `FLATCHECK_TESTDATA_LARGE` arată la folderul lor. `docs/validation.md`
-  spune de unde vine fiecare cifră.
-- **Explicațiile din spatele codului** sunt în `docs/design/` (au fost `CLAUDE.md` până în
-  2026-09-25; `CLAUDE.md` ține acum doar regulile proiectului; cele de proces sunt ale kit-ului, în
-  `.claude/rules/kit/process.md`), cu indexul în `docs/design/README.md`. Fiecare notă spune
-  într-o propoziție `Covers:` ce fișiere descrie și se schimbă odată cu ele; la `/wrap-up`,
-  `scripts/check-design.ps1 -Since main`, rulat în worktree-ul task-ului, arată notele atinse
-  de branch, ca să fie recitite.
-- **Versiunea** o crește omul, în `Directory.Build.props`, oricând, și per feature. Un release se
-  face pe `main`, cu `scripts/release.ps1 -Version X.Y.Z`, care rulează gate-ul, păstrează
-  versiunea pusă deja de om (sau o scrie, dacă e mai mare), închide secțiunea din CHANGELOG și
-  publică în `artifacts/X.Y.Z/` (consola ca fișier unic, fereastra separat); refuză o versiune
-  deja publicată sau sub cea din `Directory.Build.props`. Commit-ul și tag-ul `flatcheck-vX.Y.Z`
-  rămân ai omului.
-- În Claude Code: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`,
-  din `.claude/skills/`; hook-urile din `.claude/settings.json` nu lasă o tură să se încheie cu
-  cod editat și neverificat.
-
----
-
-## Diferențe față de versiunea Python
-
-Prototipul e înghețat la 2.2.0 (vezi mai sus), deci lista de mai jos descrie un fișier care nu
-se mai mișcă. Diferențele erau intenționate, nu scăpări:
-
-- **`--histeq` există doar în C#.** N-are paritate în `flatcheck.py` și niciun scenariu în
-  `crosscheck.py`, prin decizie: nu produce nicio cifră de comparat.
-- **`--smooth` există doar în C#**, din același motiv: produce un fișier, nu o cifră.
-  Metoda a fost aleasă și validată cu un prototip numpy pe cinci mastere reale, iar
-  portul C# reproduce prototipul la a doua zecimală; prototipul n-a fost păstrat.
-- **`--synthetic`, `--lenses` și `--against` există doar în C#.** Primele două produc un
-  fișier și o listă; `--against` e bateria de structură, deja verificată, pe un raport.
-- **Structura cu `--raw` / `--lens` există doar în C#**: comparația cu profilele citește
-  cataloagele Adobe și lensfun, pe care prototipul nu le avea. Fără cele două flaguri ieșirea e
-  identică, și cele 15 golden-uri de paritate de structură (`parity_structure_*.txt`) o fixează.
-- **Fără figură cu 4 panouri** — doar harta reziduală PNG.
-- Fără citire EXIF, deci fără sugestii de timp de expunere. (Raw-ul se citește, dar din el
-  se iau doar pixelii și scala ADU, nu și timpul de expunere.)
-- Linia de sursă a scalei scrie `libraw (exact)` acolo unde Python scrie `rawpy (exact)`.
-  E aceeași bibliotecă; numele diferă fiindcă `rawpy` e ambalajul de Python al ei. Din
-  același motiv, pe un raw linia cu ordinea canalelor scrie `din libraw` față de
-  `din rawpy`. Pe FITS amândouă citesc `BAYERPAT`, deci acolo linia e identică.
-- Fără histograme pe canal și fără comparația cu previzualizarea aparatului — sunt doar în
-  fereastră. În consolă un paragraf despre forma unei curbe pe care consola n-o desenează
-  n-ar avea ce căuta. Versiunea Python nu citește deloc previzualizarea înglobată în raw.
-- `Percentile` pe o listă goală întoarce 0 în loc să arunce.
-- Interpretarea din `--light` scrie diagnosticul cu majuscule („Fondul CADE/CREȘTE spre
-  margini") față de minusculele din Python. Semnul *e* diagnosticul, deci accentul e
-  deliberat.
-- Pe un cadru **perfect constant**, C#-ul are o gardă `|det| < 1e-15` la fitarea centrului
-  și cade pe centrul senzorului, raportând 0.00% și OK. Python n-are garda, `np.linalg.solve`
-  nu aruncă pe o matrice doar *numeric* singulară, și raportează un vârf fals cu 6.35%
-  offset. **C#-ul e cel corect**; nu „repara" garda ca să se potrivească.
-
----
-
-## Licență
-
-flatcheck — diagnostic cantitativ pentru flat frames de astrofoto.
+FlatCheck, a quantitative diagnostic for astrophotography flat frames.
 Copyright (C) 2026 Tudor Carean
 
-Acest program este software liber: îl poți redistribui și/sau modifica în termenii
-**GNU General Public License v3** publicată de Free Software Foundation, fie versiunea 3
-a licenței, fie (la alegerea ta) orice versiune ulterioară.
+This program is free software: you can redistribute it and/or modify it under the terms of the
+**GNU General Public License v3** as published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
 
-Programul e distribuit în speranța că va fi util, dar **FĂRĂ NICIO GARANȚIE** — fără
-măcar garanția implicită de VANDABILITATE sau POTRIVIRE PENTRU UN SCOP ANUME. Vezi GNU
-General Public License pentru detalii.
+This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**; without
+even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+Public License for more details.
 
-Textul complet al licenței e în fișierul [LICENSE](LICENSE); îl găsești și la
-<https://www.gnu.org/licenses/gpl-3.0.html>. Aceeași notă, pe scurt, apare și la
-`flatcheck --help` și în fereastra **Despre** a aplicației cu ferestre; copyright-ul se
-tipărește la fiecare rulare, sub versiune.
+The full text of the licence is in the [LICENSE](LICENSE) file, and at
+<https://www.gnu.org/licenses/gpl-3.0.html>. The same notice, in short, is printed by `flatcheck --help`
+and shown in the window's **About**; the copyright is printed on every run, under the version.
 
-### Componente terțe
+### Third-party components
 
-Unealta leagă trei componente scrise de alții și livrează o bază de date a altora, toate
-compatibile cu GPLv3:
+The tool links three components written by others and ships a database made by others, all
+compatible with GPLv3:
 
-| componentă | rol | licență |
+| component | role | licence |
 |---|---|---|
-| Sdcb.LibRaw | ambalajul C# peste libraw | MIT |
-| LibRaw (DLL-urile native) | citirea fișierelor raw de aparat | LGPL-2.1 (opțiunea aleasă din dubla LGPL-2.1 / CDDL-1.0) |
-| SixLabors.ImageSharp 3.1.x | decodarea previzualizării JPEG din raw | Six Labors Split License 1.0, care acordă termenii Apache 2.0 proiectelor open source. Fixat pe 3.1.x fiindcă de la 4.0 pachetul cere o cheie de licență la compilare, pe Release ca eroare. |
-| baza de date lensfun (folderul `lensfun/`) | profilele de vignetare pentru flatul sintetic; date, nu cod, copiate neschimbate | CC BY-SA 3.0 |
+| Sdcb.LibRaw | the C# wrapper over LibRaw | MIT |
+| LibRaw (the native DLLs) | reading camera raw files | LGPL-2.1 (the option chosen of LibRaw's dual LGPL-2.1 / CDDL-1.0) |
+| SixLabors.ImageSharp 3.1.x | decoding the JPEG preview a raw carries | Six Labors Split License 1.0, which grants open-source projects the terms of Apache 2.0. Pinned to 3.1.x because from 4.0 the package asks for a licence key at compile time, an error on Release builds. |
+| the lensfun database (the `lensfun/` folder) | the vignetting profiles of mode 6 and of the structure's profile comparison; data, not code, copied unchanged | CC BY-SA 3.0 |
 
-Profilele Adobe (.lcp) nu sunt o componentă: se citesc de pe mașină, de unde le-a pus
-Adobe, și nu se copiază nicăieri.
+Adobe's profiles (`.lcp`) are not a component: they are read on the machine, where Adobe put them, and
+copied nowhere.
 
-Cititorul FITS, encoderul PNG, toate calculele și toate pragurile sunt scrise de mână.
+The FITS reader, the PNG encoder, every computation and every threshold are written by hand.
 
-Motivele pentru care fiecare licență e compatibilă — inclusiv de ce LibRaw se ia sub LGPL
-și nu sub CDDL — sunt în [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Aceeași listă,
-cu notița de copyright a fiecărei componente, o arată și fereastra **Despre**.
+Why each licence is compatible, including why LibRaw is taken under the LGPL and not the CDDL, is in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The window's **About** shows the same list, with each
+component's copyright notice.

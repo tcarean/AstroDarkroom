@@ -78,6 +78,12 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
   paragraph (one line in every structure scenario), the REFA advice (two lines, in
   `parity_structure_band_refa`), the too-wide refusal and the series' closing paragraph (two
   lines each). Every figure is unchanged. A C#-only call, like the rest.
+- The note under the illumination offset said, until 2026-10-26, that past a threshold the offset
+  "cade inapoi spre 0", which is what it did before the vertex guard of ADR 0014; since that guard
+  the row reads `nedeterminat` once the peak leaves the frame, and the note now says so ("iar cand
+  varful iese din cadru e nedeterminat", R-013). The 15 `parity_structure_*.txt` were recaptured,
+  with the owner's yes, for that one line each; every figure is unchanged. A C#-only call, like
+  the rest.
 - The goldens run in Romanian, the language the prototype spoke; the console's default is
   English since the same date, and `EnglishOutputTests` checks that each parity scenario prints
   the same numbers in English.

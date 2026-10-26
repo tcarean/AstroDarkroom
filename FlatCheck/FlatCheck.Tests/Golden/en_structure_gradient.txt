@@ -11,7 +11,7 @@ Copyright (C) 2026 Tudor Carean
         illumination peak = (142, 128)  vs  sensor centre = (128, 128)
         It is the ratio of the gradient to the curvature, so it is not scale-invariant: on a
         lens with almost no vignetting it grows a lot without the error growing,
-        and beyond a threshold it falls back toward 0. The amplitude is given by "tilt".
+        and once the peak leaves the frame it reads undetermined. The amplitude is given by "tilt".
     local spots (dust etc.) : +0.13 % (brighter) at (16, 10)
         The deepest compact spot, after the large-scale structure is removed.
         The sign says which kind: minus = darker than its surroundings (dust,

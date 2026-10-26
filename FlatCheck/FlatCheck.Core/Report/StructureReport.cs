@@ -524,13 +524,13 @@ namespace FlatCheck
             {
                 w.WriteLine("        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un");
                 w.WriteLine("        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,");
-                w.WriteLine("        iar peste un prag cade inapoi spre 0. Amplitudinea o da \"inclinare\".");
+                w.WriteLine("        iar cand varful iese din cadru e nedeterminat. Amplitudinea o da \"inclinare\".");
             }
             else
             {
                 w.WriteLine("        It is the ratio of the gradient to the curvature, so it is not scale-invariant: on a");
                 w.WriteLine("        lens with almost no vignetting it grows a lot without the error growing,");
-                w.WriteLine("        and beyond a threshold it falls back toward 0. The amplitude is given by \"tilt\".");
+                w.WriteLine("        and once the peak leaves the frame it reads undetermined. The amplitude is given by \"tilt\".");
             }
             w.WriteLine(T($"    local spots (dust etc.) : {LocalSpotValue(r)}",
                           $"    pete locale (praf etc.) : {LocalSpotValue(r)}"));

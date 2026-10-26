@@ -23,7 +23,7 @@ It is not an image processor and it never decides what a shape on a map is.
 - Run: `dotnet run --project FlatCheck -- <file.fit> [--light | --expo | --histeq | ...]`;
   the flag may come before or after the path (R-003). Window: `dotnet run --project FlatCheck.Wpf -- <session folder>`
 - Golden console texts, after an intended output change (the rule "Golden files"):
-  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests`; the 39
+  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter "GoldenOutputTests|EnglishOutputTests"`; the 39
   parity goldens only after the owner's yes: `... --filter ParityGoldenTests`
 - Window renders as PNGs without running it: `FLATCHECK_DUMP_SCREENS=<dir> dotnet test FlatCheck.Wpf.Tests --filter WindowSmokeTests`
 - Figures on the real masters (minutes, not in the gate): `/validate`, or
@@ -60,7 +60,7 @@ It is not an image processor and it never decides what a shape on a map is.
   ADR 0049; the kit's ADR 0028).
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
   + `.json` - figures on the real masters. `docs/design/` - the explanations, per area, read on
-  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, Romanian.
+  demand. `docs/plans/` - approved plans. `README.md` - the user guide, English.
 - The process rules are the kit's, in `.claude/rules/kit/process.md`; FlatCheck's own are in this
   file. The reasons behind the process are in `GHID.md` in the kit folder `ClaudeCodeStarterKit`
   beside this project in the `photo` repository (for people, not loaded).
@@ -73,8 +73,9 @@ a kit rule names it.
 
 - **Golden files** (extends the kit's rule "No test edited to pass", the kit's ADR 0033). The
   golden files are the console snapshots `FlatCheck.Tests/Golden/*.txt`, regenerated with
-  `FLATCHECK_UPDATE_GOLDEN=1` and `--filter GoldenOutputTests`, which leaves the parity goldens
-  alone. The 39 `Golden/parity_*.txt` captured on 2026-09-26 carry the figures the Python
+  `FLATCHECK_UPDATE_GOLDEN=1` and `--filter "GoldenOutputTests|EnglishOutputTests"` (the second
+  writes the English `en_*.txt`), which leaves the parity goldens alone. The 39
+  `Golden/parity_*.txt` captured on 2026-09-26 carry the figures the Python
   prototype confirmed before it froze (`docs/design/python-parity.md` lists them and the one
   divergence): they are the goldens with confirmed figures. Any line that changes there is a
   finding; only after the owner's yes are they recaptured, with `--filter ParityGoldenTests`,
@@ -89,14 +90,16 @@ a kit rule names it.
 - **Discuss before designing** (extends the kit's rule "Two readings"). Every design, not only a
   choice with more than one reasonable answer, goes to the owner first: the measured facts, the
   decisions to take and a recommendation; then wait (the owner's standing instruction).
-- **Languages** (varies the kit's rule "Languages", ADR 0006, ADR 0060, ADR 0062). English in
-  everything the model reads or writes about the process: docs, tests of invariants, scripts,
-  commits, CHANGELOG. What the user sees is in English and Romanian, chosen by `--lang`
+- **Languages** (varies the kit's rule "Languages", ADR 0006, ADR 0060, ADR 0062, ADR 0069).
+  English in everything the model reads or writes about the process: docs, tests of invariants,
+  scripts, commits, CHANGELOG. What the user sees is in English and Romanian, chosen by `--lang`
   (English by default): every text a `T("english", "romana")` pair where it is composed, the
   Romanian without diacritics, a printed verdict through `VerdictWords.Of` (in XAML, a label
   is `{l:T En='...', Ro='...'}` and a pill's text goes through `VerdictToWord`). The files
-  written have English names in both. `README.md` stays Romanian. Every comment is English,
-  in C#, XAML, csproj and the tests; output quoted in a comment stays as the user sees it.
+  written have English names in both. `README.md` is English and holds the user guide only; the
+  process, the parity goldens and the history stay in `CLAUDE.md` and `docs/`.
+  `THIRD-PARTY-NOTICES.md` is English too. Every comment is English, in C#, XAML, csproj and the
+  tests; output quoted in a comment stays as the user sees it.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in
   a view-model or the console.

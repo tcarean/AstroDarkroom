@@ -11,7 +11,7 @@ Copyright (C) 2026 Tudor Carean
         varf iluminare = (150, 192)  vs  centru senzor = (128, 192)
         E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
         obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
-        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
+        iar cand varful iese din cadru e nedeterminat. Amplitudinea o da "inclinare".
     pete locale (praf etc.) : -0.02 % (mai intunecat) la (28, 28)
         Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
         Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
