@@ -232,6 +232,20 @@ public class SeriesTests
         Assert.All(s.Swamping!.SelectMany(x => x), c => Assert.True(c.SwampingRatio > 3, $"{c.Name} ratio {c.SwampingRatio}"));
     }
 
+    /// <summary>A channel name with a comma in it, the CFA[row,col] of a mosaic of unknown order, is quoted: every CSV row keeps the header's cell count (R-028).</summary>
+    [Fact]
+    public void R028_AChannelNameWithACommaIsQuotedSoEveryRowHasTheHeadersCells()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList(), bayer: false);
+        SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
+
+        string[] csv = SeriesOutputs.Csv(r).Split('\n');
+        string[] head = CsvCells(csv[0]);
+        Assert.Equal("CFA[0,0]", CsvCells(csv[1])[Array.IndexOf(head, "ch0_name")]);
+        Assert.Equal("CFA[1,1]", CsvCells(csv[1])[Array.IndexOf(head, "ch3_name")]);
+        Assert.All(csv.Where(l => l.Length > 0), l => Assert.Equal(head.Length, CsvCells(l).Length));
+    }
+
     [Fact]
     public void R028_TheOutputsAreWrittenWhereAskedAndNeverIntoLights()
     {

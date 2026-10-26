@@ -34,6 +34,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   flipped against the lights as it is against the raws, while FITS lights are stored as the
   solve is. The flip now applies to raw lights only; the raw sessions read as before
   (R-038, R-050; ADR 0023).
+- The CSV of a session whose lights are a mosaic of unknown Bayer order (Siril's calibrated
+  `pp_light_*.fit`, for one) had four cells more than its header on every row: the channel
+  names `CFA[0,0]` to `CFA[1,1]` were written bare, comma and all. A channel name with a
+  comma is now quoted (R-028).
 
 - A FITS light whose data is shorter than its header says (a copy cut mid-transfer) crashed
   `lightscheck --frame N` and was listed with `Index was outside the bounds of the array.`;

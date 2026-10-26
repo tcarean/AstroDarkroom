@@ -272,5 +272,6 @@ and never the tables.
 
 The report prints the session header shared with the inventory, then the sections the
 owner's hand report had, in the same order, with every verdict followed by its numbers. The
-CSV holds every figure per frame with the invariant culture; the rejected list is the file
+CSV holds every figure per frame with the invariant culture, a bare text cell quoted only when
+a comma or a quote inside it would break the row (`Cell`); the rejected list is the file
 names of the bad and unreadable frames, one per line, for Siril's sequence selection by hand.
