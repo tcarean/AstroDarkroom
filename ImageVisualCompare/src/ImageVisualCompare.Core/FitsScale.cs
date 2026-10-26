@@ -107,16 +107,30 @@ public static class FitsScale
     public static byte ToByte(double value, double fullScale) => Level(value * ToSixteenBits(fullScale));
 
     /// <summary>
-    /// Converts a value already brought to 0 to 65535 into a level: rounded to a 16-bit sample,
-    /// then the high byte, which is what WIC keeps of one (measured on all 65536 values). NaN,
-    /// which Siril leaves behind after some float operations, is black.
+    /// Converts a value already brought to 0 to 65535 into a level: rounded to a 16-bit sample
+    /// (<see cref="SixteenBit"/>), then the high byte, which is what WIC keeps of one (measured
+    /// on all 65536 values). NaN, which Siril leaves behind after some float operations, is
+    /// black.
     /// </summary>
     /// <param name="sixteenBit">
     /// The value on the 0 to 65535 scale; anything below 0, and NaN, is black, anything from
     /// 65535 up is white.
     /// </param>
     /// <returns>The level, 0 to 255.</returns>
-    public static byte Level(double sixteenBit)
+    public static byte Level(double sixteenBit) => (byte)(SixteenBit(sixteenBit) >> 8);
+
+    /// <summary>
+    /// Rounds a value already brought to 0 to 65535 to the 16-bit sample it is: the value a
+    /// 16-bit PNG of the same image would hold, which the linear level is the high byte of and
+    /// the histogram of R-111 is counted on. Siril quantises a float the same way for its
+    /// "Histogram" display, <c>round(v × 65535)</c>.
+    /// </summary>
+    /// <param name="sixteenBit">
+    /// The value on the 0 to 65535 scale; anything below 0, and NaN, is 0, anything from 65535
+    /// up is 65535.
+    /// </param>
+    /// <returns>The sample, 0 to 65535.</returns>
+    public static ushort SixteenBit(double sixteenBit)
     {
         if (!(sixteenBit > 0))
         {
@@ -125,9 +139,9 @@ public static class FitsScale
 
         if (sixteenBit >= SixteenBitMax)
         {
-            return 255;
+            return (ushort)SixteenBitMax;
         }
 
-        return (byte)((int)(sixteenBit + 0.5) >> 8);
+        return (ushort)(int)(sixteenBit + 0.5);
     }
 }

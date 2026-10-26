@@ -242,6 +242,8 @@ public class ImagePairLoaderTests : IDisposable
 
         public int LoadCount { get; private set; }
 
+        public List<DisplayMode> Modes { get; } = [];
+
         public int MaxConcurrentLoads { get; private set; }
 
         public ImageInfo Probe(string path)
@@ -250,7 +252,8 @@ public class ImagePairLoaderTests : IDisposable
             return ProbeCount == 1 ? first : second;
         }
 
-        public async Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default)
+        public async Task<LoadedImage> LoadAsync(
+            string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default)
         {
             int running = Interlocked.Increment(ref _concurrentLoads);
             MaxConcurrentLoads = Math.Max(MaxConcurrentLoads, running);
@@ -262,7 +265,8 @@ public class ImagePairLoaderTests : IDisposable
             ImageInfo info = LoadCount == 1 ? first : second;
             var bitmap = BitmapSource.Create(1, 1, 96, 96, PixelFormats.Bgra32, null, new byte[4], 4);
             bitmap.Freeze();
-            return new LoadedImage(info, bitmap);
+            Modes.Add(mode);
+            return new LoadedImage(info, bitmap, mode);
         }
     }
 
@@ -276,5 +280,32 @@ public class ImagePairLoaderTests : IDisposable
         public List<ImageLoadProgress> Reported { get; } = [];
 
         public void Report(ImageLoadProgress value) => Reported.Add(value);
+    }
+
+    [Fact]
+    public async Task R110_TheModeReachesBothLoads_WhenBothFilesAreShownAsStored()
+    {
+        var stored = new ImageInfo("a.fit", 4, 4, 32, ColorChannels.Rgb, IsFloat: true, ShownAsStored: true);
+        var loader = new RecordingLoader(stored, stored);
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).LoadAsync("a.fit", "b.fit", mode: DisplayMode.FalseColours);
+
+        Assert.Equal([DisplayMode.FalseColours, DisplayMode.FalseColours], loader.Modes);
+        Assert.Equal(DisplayMode.FalseColours, result.Pair!.Mode);
+        Assert.True(result.Pair.AllowsDisplayModes);
+    }
+
+    [Fact]
+    public async Task R110_APairWithOneFileNotShownAsStored_IsLinearWhateverIsAsked()
+    {
+        var stored = new ImageInfo("a.fit", 4, 4, 32, ColorChannels.Rgb, IsFloat: true, ShownAsStored: true);
+        var png = new ImageInfo("b.png", 4, 4, 16, ColorChannels.Rgb);
+        var loader = new RecordingLoader(stored, png);
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).LoadAsync("a.fit", "b.png", mode: DisplayMode.Histogram);
+
+        Assert.Equal([DisplayMode.Linear, DisplayMode.Linear], loader.Modes);
+        Assert.Equal(DisplayMode.Linear, result.Pair!.Mode);
+        Assert.False(result.Pair.AllowsDisplayModes);
     }
 }

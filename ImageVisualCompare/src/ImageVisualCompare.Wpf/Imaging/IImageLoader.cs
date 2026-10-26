@@ -23,7 +23,12 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// <summary>An image that has been decoded and normalised, ready to hand to the UI.</summary>
 /// <param name="Info">What the file actually turned out to be, for the status bar.</param>
 /// <param name="Bitmap">Frozen Bgra32 pixels, safe to use from any thread.</param>
-public sealed record LoadedImage(ImageInfo Info, BitmapSource Bitmap);
+/// <param name="Mode">
+/// The display mode the pixels were rendered in: the one asked for when the file is shown as
+/// stored (<see cref="ImageInfo.ShownAsStored"/>), <see cref="DisplayMode.Linear"/> for any
+/// other file, whatever was asked (R-110).
+/// </param>
+public sealed record LoadedImage(ImageInfo Info, BitmapSource Bitmap, DisplayMode Mode = DisplayMode.Linear);
 
 /// <summary>
 /// The seam between the application and whatever decodes image files.
@@ -56,10 +61,16 @@ public interface IImageLoader
     /// <see cref="Probe"/> does.
     /// </summary>
     /// <param name="path">The file; what it holds, not its name, says what it is.</param>
+    /// <param name="mode">
+    /// How the samples become pixels (ADR 0040). Honoured for a file shown as stored, a FITS or
+    /// a float TIFF; any other file is decoded <see cref="DisplayMode.Linear"/>, and the result
+    /// says which (<see cref="LoadedImage.Mode"/>).
+    /// </param>
     /// <param name="cancellationToken">
     /// Stops the load where the decoder can stop; a stopped load throws
     /// <see cref="OperationCanceledException"/>.
     /// </param>
     /// <returns>The pixels, frozen Bgra32 whatever the file held, and what the file was.</returns>
-    Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default);
+    Task<LoadedImage> LoadAsync(
+        string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default);
 }

@@ -68,8 +68,8 @@ public sealed record FitsImageLayout(
     /// Set only once the samples have been seen, for a float file that was not in 0 to 1.
     /// </param>
     /// <returns>
-    /// The image's size, |BITPIX| as its bits, gray for one plane or RGB for three, and whether
-    /// it is float.
+    /// The image's size, |BITPIX| as its bits, gray for one plane or RGB for three, whether it
+    /// is float, and that it is shown as stored.
     /// </returns>
     public ImageInfo Describe(string path, string? valueRange = null) => new(
         path,
@@ -78,7 +78,8 @@ public sealed record FitsImageLayout(
         BitsPerChannel,
         Planes == 3 ? ColorChannels.Rgb : ColorChannels.Gray,
         IsFloat,
-        valueRange);
+        valueRange,
+        ShownAsStored: true);
 }
 
 /// <summary>

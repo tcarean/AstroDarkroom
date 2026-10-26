@@ -91,6 +91,48 @@
         </Setter>
     </Style>
 
+    <!-- A toolbar button that stays lit while its mode is on (R-114): the accent border and the
+         hover background, so the mode in use reads at a glance. Its own template rather than
+         ToolButton's, since a ToggleButton is not a Button and cannot be based on one. -->
+    <Style x:Key="ToolToggleButton" TargetType="ToggleButton">
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="MinWidth" Value="34" />
+        <Setter Property="Height" Value="26" />
+        <Setter Property="Margin" Value="3,0" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="BorderBrush" Value="{StaticResource ChromeBorderBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border x:Name="Chrome"
+                            Background="{StaticResource ChromeBrush}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="4">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource ChromeHoverBrush}" />
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentFillBrush}" />
+                            <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Roomier than a toolbar button, because a dialog is read before it is clicked. The
          default button carries the accent border so the keyboard answer is visible. -->
     <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">

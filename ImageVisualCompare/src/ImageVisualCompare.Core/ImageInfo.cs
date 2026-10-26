@@ -53,6 +53,11 @@ public enum ColorChannels
 /// (<see cref="FitsScale.SixteenBitRange"/>). Known only once the samples have been read, so
 /// null after a probe, and null for every other file.
 /// </param>
+/// <param name="ShownAsStored">
+/// True when the samples are shown as stored by the project's own level rule, a FITS (ADR
+/// 0029) or a float TIFF (ADR 0035): the files whose display mode can be other than linear
+/// (R-110). Known from the probe on. Not a format: what the loader does with the file.
+/// </param>
 public sealed record ImageInfo(
     string Path,
     int PixelWidth,
@@ -60,7 +65,8 @@ public sealed record ImageInfo(
     int BitsPerChannel,
     ColorChannels Channels,
     bool IsFloat = false,
-    string? ValueRange = null)
+    string? ValueRange = null,
+    bool ShownAsStored = false)
 {
     public string FileName => System.IO.Path.GetFileName(Path);
 

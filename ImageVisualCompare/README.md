@@ -75,8 +75,8 @@ in an `IMAGE` extension.
 
 - **The values are shown as stored, with no stretch.** A processed FITS looks exactly like its
   16-bit PNG or TIFF export, level for level, so the two compare fairly. A linear stack, not
-  stretched, shows almost black: that is correct, it is what the file holds. Stretch it in Siril
-  and save it if you want to see it.
+  stretched, shows almost black: that is correct, it is what the file holds. To see what is in
+  it anyway, there are the two display modes below.
 - **The rows are the way up Siril shows them.** The first row in the file is the bottom of the
   image, whatever `ROWORDER` in the header says: Siril reads that keyword only to debayer, never
   to display, and files that say `TOP-DOWN` over rows written bottom-up exist.
@@ -89,6 +89,30 @@ in an `IMAGE` extension.
   a generic error; the same for a damaged header, a file cut short or an image too large to show.
   A raw frame with a Bayer matrix opens, but shows as the gray mosaic it is: it is not
   debayered.
+
+### Histogram and false colours
+
+For a pair whose two files are both FITS or float TIFF (the files shown "as stored"), there
+are two display modes besides the linear one, both copied from Siril 1.4.4, to see in a linear
+stack what the eye cannot: a one-level gradient, a patch, a band.
+
+- **`Histogram`** (the toolbar button, `Histogramă` in Romanian, or the `H` key) is Siril's
+  "Histogram" display mode: histogram equalisation, each channel on its own histogram, with
+  65 536 bins on the 16-bit value. Every grey level on the screen receives the same number of
+  pixels, so a tiny difference in the data becomes many grey steps on the screen. Amplitude is
+  destroyed by construction: a 0.5 % and a 10 % difference of the same shape look the same.
+  Pixels at 0 stay 0.
+- **`False colours`** (the button, `Culori false`, or the `F` key) is Siril's "rainbow" table
+  over one layer equalised as above: the hue runs from magenta (level 0) through blue, cyan,
+  green and yellow to red (level 255). The layer is the mean of the three planes of an RGB
+  FITS, or the plane itself of a gray one; Siril never colours the RGB composite, and neither
+  does this program.
+
+A switch decodes both files again in the new mode (a second or two on a 23 MP stack, with no
+memory kept beyond the pair) and keeps the zoom, the position and the line where they were;
+press the same button or key again to go back to linear. The mode stays for the next pair when
+that one allows it too. On a pair with a PNG or an integer TIFF the buttons are disabled and the
+keys do nothing: 8-bit levels are not equalised.
 
 ### Float TIFF
 
@@ -161,11 +185,13 @@ the one the Romanian interface shows.
 | fit the whole image | `Ctrl+0`, or the `Fit` button (`Încadrează`) |
 | actual size | `Ctrl+1`, or the `100%` button; about the centre of the view |
 | jump to another area | click or drag in the minimap, bottom left |
+| histogram (FITS, float TIFF) | `H`, or the `Histogram` button (`HistogramÄ`); once more goes back to linear |
+| false colours (FITS, float TIFF) | `F`, or the `False colours` button (`Culori false`); once more goes back to linear |
 | open another pair | `Ctrl+O`, or the `Open…` button (`Deschide…`); not while a pair is opening |
 
 The keyboard shortcuts work while the comparison area has the keyboard focus. It takes the focus
 when a pair loads and at any click in it; a click on a toolbar button takes the focus to that
-button, so click the image again before using the keys. `Ctrl+O` works wherever the focus is.
+button, so click the image again before using the keys. `Ctrl+O`, `H` and `F` work wherever the focus is.
 The arrows move the line in device-independent pixels, like everything about the line: at 100 %
 Windows scaling that is one screen pixel, at 150 % the line moves 1.5 screen pixels, or 15 with
 `Shift`.
@@ -217,6 +243,12 @@ For a FITS, as for a float TIFF, the format is the depth and the planes of the f
 `A 32-bit float RGB` or `B 16-bit gray`. The values read are still the 0–255 levels on the
 screen, not the float values of the file.
 
+In the histogram mode the first part ends with `Â· Histogram` (`Â· HistogramÄ`), and the values read
+are the equalised levels on the screen, not the file's: press `H` again to read those. In false
+colours it ends with `Â· False colours` (`Â· Culori false`), and the readout is one number per
+image, `A 143`, `B 141`: the equalised level the colour under the cursor stands for, not the
+colour's own RGB.
+
 When the pair needed padding, the first part names the canvas and each image's own size:
 `5938 × 3888 padded  ·  A 5938 × 3888  ·  B 5554 × 3888  ·  A 16-bit RGB  ·  B 8-bit RGB`. The
 canvas alone would be half the truth, since one of the images does not have that size.
@@ -238,8 +270,10 @@ A pair of 21 MP images takes about 170 MB once decoded: each image becomes 4 byt
 memory; after several zoom levels it settles on a plateau of about 570 MB private and 300 MB
 resident, which is bounded, not a leak: going through the zoom levels again does not raise it.
 While another pair opens, the current one stays on screen, so both are in memory during the
-load; as soon as the new one is decoded, the old one is released explicitly, before the new one
-is shown, and from then on only one is held.
+load; as soon as the new one is shown and rendered once, the old one is released explicitly, and from
+then on only one is held. The order matters: the surface keeps the old bitmaps in its render
+content until the new ones are first rendered, so a release before that frees nothing (measured
+on 2026-10-26). The same holds for a switch between linear, histogram and false colours.
 
 Decoding two 16-bit files of 100 to 130 MB takes about three seconds.
 

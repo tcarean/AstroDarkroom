@@ -34,6 +34,18 @@ public sealed record ImagePair(LoadedImage Before, LoadedImage After, PadPlan Pa
 
     public int PixelHeight => Pad.Height;
 
+    /// <summary>
+    /// The display mode both images were rendered in: the one asked for when the pair allows
+    /// it, <see cref="DisplayMode.Linear"/> otherwise (R-110).
+    /// </summary>
+    public DisplayMode Mode => Before.Mode;
+
+    /// <summary>
+    /// True when both files are shown as stored, so that <see cref="DisplayMode.Histogram"/> and
+    /// <see cref="DisplayMode.FalseColours"/> can be asked for (R-110).
+    /// </summary>
+    public bool AllowsDisplayModes => Before.Info.ShownAsStored && After.Info.ShownAsStored;
+
     /// <summary>Combined footprint of both Bgra32 buffers, in bytes.</summary>
     public long DisplayBytes => Before.Info.DisplayBytes + After.Info.DisplayBytes;
 }
@@ -95,6 +107,11 @@ public sealed class ImagePairLoader(IImageLoader loader)
     /// implementation has to marshal. Leaving it null means a mismatched pair is refused
     /// outright, which is the right default for anything without a user attached.
     /// </param>
+    /// <param name="mode">
+    /// How the samples become pixels (ADR 0040): asked of both loads when both files are shown
+    /// as stored, and <see cref="DisplayMode.Linear"/> otherwise, whatever was asked; the pair
+    /// says which (<see cref="ImagePair.Mode"/>, R-110).
+    /// </param>
     /// <param name="cancellationToken">
     /// Looked at as each probe and each decode starts, and inside a decode that can stop; a
     /// stopped load throws <see cref="OperationCanceledException"/> rather than returning a
@@ -113,6 +130,7 @@ public sealed class ImagePairLoader(IImageLoader loader)
         string afterPath,
         IProgress<ImageLoadProgress>? progress = null,
         Func<PadRequest, Task<bool>>? confirmPadding = null,
+        DisplayMode mode = DisplayMode.Linear,
         CancellationToken cancellationToken = default)
     {
         string currentPath = beforePath;
@@ -150,13 +168,21 @@ public sealed class ImagePairLoader(IImageLoader loader)
             // decodes at once would double, did not hold when measured on 2026-09-08: WIC streams
             // each conversion with no spike above the finished bitmap (docs/design/imaging.md).
             // Decoding both at once has not been measured.
+            // A mode other than linear needs both files shown as stored (R-110); for any other
+            // pair the loaders would render linear anyway, and asking them so keeps the pair's
+            // own mode true to what is on screen.
+            if (!beforeInfo.ShownAsStored || !afterInfo.ShownAsStored)
+            {
+                mode = DisplayMode.Linear;
+            }
+
             currentPath = beforePath;
             progress?.Report(new ImageLoadProgress(0, beforeInfo.FileName));
-            LoadedImage before = await loader.LoadAsync(beforePath, cancellationToken).ConfigureAwait(false);
+            LoadedImage before = await loader.LoadAsync(beforePath, mode, cancellationToken).ConfigureAwait(false);
 
             currentPath = afterPath;
             progress?.Report(new ImageLoadProgress(0.5, afterInfo.FileName));
-            LoadedImage after = await loader.LoadAsync(afterPath, cancellationToken).ConfigureAwait(false);
+            LoadedImage after = await loader.LoadAsync(afterPath, mode, cancellationToken).ConfigureAwait(false);
 
             progress?.Report(new ImageLoadProgress(1, null));
             return ImagePairLoadResult.Success(new ImagePair(before, after, pad));

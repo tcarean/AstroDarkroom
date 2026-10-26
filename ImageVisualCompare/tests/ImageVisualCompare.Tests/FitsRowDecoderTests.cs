@@ -170,4 +170,50 @@ public class FitsRowDecoderTests
 
         Assert.Equal("FITS: the file ends before the image data does.", ex.Message);
     }
+
+    /// <summary>One row of every plane, as sixteen-bit samples, on the full scale of the type.</summary>
+    private static ushort[] PlanesRow(byte[] file, int fileRow)
+    {
+        var stream = new MemoryStream(file);
+        FitsImageLayout layout = FitsHeader.ReadLayout(stream);
+        var decoder = new FitsRowDecoder(layout, stream, FitsScale.FullScale(layout.BitPix));
+        ushort[] row = new ushort[decoder.RowSamples];
+        decoder.ReadFileRow(fileRow, row);
+        return row;
+    }
+
+    [Theory]
+    [InlineData(8, 255.0, 65535)]
+    [InlineData(8, 1.0, 257)]
+    [InlineData(16, 32767.0, 32767)]
+    [InlineData(32, 2147483647.0, 32767)]
+    [InlineData(-32, 0.5, 32768)]
+    [InlineData(-32, 0.25, 16384)]
+    [InlineData(-64, 1.0, 65535)]
+    public void R111_ReadPlaneRow_GivesTheSixteenBitSampleOfEachType(int bitPix, double stored, int expected)
+    {
+        Assert.Equal(expected, PlanesRow(FitsFixture.Image(bitPix, 1, 1, 1, [stored]), 0)[0]);
+    }
+
+    [Fact]
+    public void R111_ReadFileRow_LaysThePlanesOutOneAfterAnother_RedFirst()
+    {
+        // 2 x 1, three planes: red 1, 0.5; green 0.25, 0; blue 0, 1.
+        byte[] file = FitsFixture.Image(-32, 2, 1, 3, [1, 0.5, 0.25, 0, 0, 1]);
+
+        Assert.Equal([65535, 32768, 16384, 0, 0, 65535], PlanesRow(file, 0));
+    }
+
+    [Fact]
+    public void R111_ReadPlaneRow_CountsTheSamplesAboveTheThreshold()
+    {
+        byte[] file = FitsFixture.Image(-32, 3, 1, 1, [0.5, 2.5, 3]);
+        var stream = new MemoryStream(file);
+        FitsImageLayout layout = FitsHeader.ReadLayout(stream);
+        var decoder = new FitsRowDecoder(layout, stream, 1);
+
+        decoder.ReadPlaneRow(0, 0, new ushort[3]);
+
+        Assert.Equal(2, decoder.SamplesAboveThreshold);
+    }
 }

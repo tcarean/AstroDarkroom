@@ -76,7 +76,12 @@ public class ValidationTests(ITestOutputHelper output)
             return;
         }
 
-        Dictionary<string, object> measured = Measure(before, after);
+        // The display mode the pair is loaded in, linear unless the case says otherwise (ADR 0040).
+        DisplayMode mode = c.TryGetProperty("mode", out JsonElement m)
+            ? Enum.Parse<DisplayMode>(m.GetString()!)
+            : DisplayMode.Linear;
+
+        Dictionary<string, object> measured = Measure(before, after, mode);
 
         string line = id + " " + JsonSerializer.Serialize(measured, Readable);
         output.WriteLine("MEASURED " + line);
@@ -143,7 +148,7 @@ public class ValidationTests(ITestOutputHelper output)
     }
 
     /// <summary>Every figure a case may guard, named by what it describes; see docs/validation.md.</summary>
-    private static Dictionary<string, object> Measure(string beforePath, string afterPath)
+    private static Dictionary<string, object> Measure(string beforePath, string afterPath, DisplayMode mode)
     {
         var figures = new Dictionary<string, object>(StringComparer.Ordinal);
         var loader = new RoutingImageLoader();
@@ -164,7 +169,7 @@ public class ValidationTests(ITestOutputHelper output)
         MemoryHousekeeping.ReleaseImageBuffers();
         long baseline = MemoryHousekeeping.Snapshot().PrivateBytes;
 
-        LoadAndDescribe(loader, beforePath, afterPath, baseline, figures);
+        LoadAndDescribe(loader, beforePath, afterPath, mode, baseline, figures);
 
         // LoadAndDescribe has returned, so nothing references the pair any more.
         MemoryHousekeeping.ReleaseImageBuffers();
@@ -179,14 +184,14 @@ public class ValidationTests(ITestOutputHelper output)
     /// </summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void LoadAndDescribe(
-        IImageLoader loader, string beforePath, string afterPath, long baseline, Dictionary<string, object> figures)
+        IImageLoader loader, string beforePath, string afterPath, DisplayMode mode, long baseline, Dictionary<string, object> figures)
     {
         var stopwatch = Stopwatch.StartNew();
 
         // ImagePairLoader awaits with ConfigureAwait(false) throughout and the answer is already
         // complete, so waiting for it here cannot deadlock.
         ImagePairLoadResult result = new ImagePairLoader(loader)
-            .LoadAsync(beforePath, afterPath, progress: null, confirmPadding: _ => Task.FromResult(true))
+            .LoadAsync(beforePath, afterPath, progress: null, confirmPadding: _ => Task.FromResult(true), mode)
             .GetAwaiter()
             .GetResult();
         stopwatch.Stop();
@@ -195,6 +200,7 @@ public class ValidationTests(ITestOutputHelper output)
         figures["load.success"] = result.IsSuccess;
         if (result.Pair is { } pair)
         {
+            figures["load.mode"] = pair.Mode.ToString();
             figures["load.displayBytes"] = pair.DisplayBytes;
             figures["load.beforeIsBgra32"] = pair.Before.Bitmap.Format == PixelFormats.Bgra32;
             figures["load.afterIsBgra32"] = pair.After.Bitmap.Format == PixelFormats.Bgra32;

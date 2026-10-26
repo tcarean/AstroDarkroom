@@ -20,9 +20,10 @@ using System.Buffers.Binary;
 namespace ImageVisualCompare.Core;
 
 /// <summary>
-/// Turns the samples of a FITS image into Bgra32, one row at a time. FITS stores one whole
-/// plane after another, so a row of the image is read from as many places as there are
-/// planes; the image is never held as floats, only the row in hand is.
+/// Turns the samples of a FITS image into sixteen-bit rows, one row at a time, and through a
+/// <see cref="DisplayRenderer"/> into Bgra32. FITS stores one whole plane after another, so a
+/// row of the image is read from as many places as there are planes; the image is never held
+/// as floats, only the row in hand is.
 /// </summary>
 /// <param name="layout">Where the image's samples are in the file and how they are stored.</param>
 /// <param name="stream">Seekable, and left where the last row read ended.</param>
@@ -31,6 +32,8 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
 {
     private readonly byte[] _row = new byte[layout.Width * layout.BytesPerSample];
     private readonly double _toSixteenBits = FitsScale.ToSixteenBits(fullScale);
+    private ushort[]? _planesRow;
+    private DisplayRenderer? _linear;
 
     /// <summary>
     /// How many float samples among the rows read so far are finite and above
@@ -39,10 +42,32 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
     /// </summary>
     public long SamplesAboveThreshold { get; private set; }
 
+    /// <summary>How many samples a row of every plane holds: the planes times the width.</summary>
+    public int RowSamples => layout.Planes * layout.Width;
+
+    /// <summary>
+    /// Reads one row of every plane, as the file numbers the rows, 0 first in the file, into
+    /// <paramref name="planesRow"/>: the planes one after another in the file's order, red,
+    /// green, blue, the width in samples each, as <see cref="DisplayRenderer"/> takes them.
+    /// Where the row belongs in the image is <see cref="FitsImageLayout.DisplayRow"/>.
+    /// </summary>
+    /// <param name="fileRow">
+    /// The row's place in the file, from 0 to the layout's height less one.
+    /// </param>
+    /// <param name="planesRow">Receives <see cref="RowSamples"/> sixteen-bit samples.</param>
+    /// <exception cref="EndOfStreamException">The file ends before the row does.</exception>
+    public void ReadFileRow(int fileRow, Span<ushort> planesRow)
+    {
+        for (int plane = 0; plane < layout.Planes; plane++)
+        {
+            ReadPlaneRow(fileRow, plane, planesRow.Slice(plane * layout.Width, layout.Width));
+        }
+    }
+
     /// <summary>
     /// Reads one row as the file numbers them, 0 first in the file, into
-    /// <paramref name="bgra"/>, four bytes a pixel. Where the row belongs in the image is
-    /// <see cref="FitsImageLayout.DisplayRow"/>.
+    /// <paramref name="bgra"/>, four bytes a pixel, in the linear display. Where the row belongs
+    /// in the image is <see cref="FitsImageLayout.DisplayRow"/>.
     /// </summary>
     /// <param name="fileRow">
     /// The row's place in the file, from 0 to the layout's height less one.
@@ -54,37 +79,40 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
     /// <exception cref="EndOfStreamException">The file ends before the row does.</exception>
     public void ReadFileRow(int fileRow, Span<byte> bgra)
     {
-        for (int plane = 0; plane < layout.Planes; plane++)
-        {
-            stream.Position = layout.DataOffset + (plane * layout.PlaneBytes) + ((long)fileRow * _row.Length);
-            if (stream.ReadAtLeast(_row, _row.Length, throwOnEndOfStream: false) < _row.Length)
-            {
-                throw new EndOfStreamException(UiText.Current.FitsDataEndsEarly);
-            }
-
-            // Red, green, blue in the file; blue, green, red in the bitmap.
-            Convert(bgra, channel: layout.Planes == 3 ? 2 - plane : 0);
-        }
-
-        for (int x = 0; x < layout.Width; x++)
-        {
-            if (layout.Planes == 1)
-            {
-                bgra[(x * 4) + 1] = bgra[x * 4];
-                bgra[(x * 4) + 2] = bgra[x * 4];
-            }
-
-            bgra[(x * 4) + 3] = 255;
-        }
+        _planesRow ??= new ushort[RowSamples];
+        _linear ??= new DisplayRenderer(DisplayMode.Linear, layout.Width, layout.Planes);
+        ReadFileRow(fileRow, _planesRow);
+        _linear.Render(_planesRow, bgra);
     }
 
     /// <summary>
-    /// The row in hand into one channel. One loop per sample type, so that nothing is decided
-    /// per sample: an image of 23 megapixels in three planes passes here 69 million times.
+    /// Reads one row of one plane into sixteen-bit samples: each value after BZERO and BSCALE,
+    /// brought to 0 to 65535 by the full scale and rounded (<see cref="FitsScale.SixteenBit"/>).
     /// </summary>
-    /// <param name="bgra">The row being built, four bytes a pixel.</param>
-    /// <param name="channel">The byte of each pixel to write: 0 blue, 1 green, 2 red.</param>
-    private void Convert(Span<byte> bgra, int channel)
+    /// <param name="fileRow">
+    /// The row's place in the file, from 0 to the layout's height less one.
+    /// </param>
+    /// <param name="plane">The plane, 0 to the layout's planes less one; 0 is red.</param>
+    /// <param name="sixteenBit">Receives the layout's width in samples.</param>
+    /// <exception cref="EndOfStreamException">The file ends before the row does.</exception>
+    public void ReadPlaneRow(int fileRow, int plane, Span<ushort> sixteenBit)
+    {
+        stream.Position = layout.DataOffset + (plane * layout.PlaneBytes) + ((long)fileRow * _row.Length);
+        if (stream.ReadAtLeast(_row, _row.Length, throwOnEndOfStream: false) < _row.Length)
+        {
+            throw new EndOfStreamException(UiText.Current.FitsDataEndsEarly);
+        }
+
+        Convert(sixteenBit);
+    }
+
+    /// <summary>
+    /// The row in hand into sixteen-bit samples. One loop per sample type, so that nothing is
+    /// decided per sample: an image of 23 megapixels in three planes passes here 69 million
+    /// times.
+    /// </summary>
+    /// <param name="sixteenBit">Receives the layout's width in samples.</param>
+    private void Convert(Span<ushort> sixteenBit)
     {
         ReadOnlySpan<byte> row = _row;
         int width = layout.Width;
@@ -98,7 +126,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
             case 8:
                 for (int x = 0; x < width; x++)
                 {
-                    bgra[(x * 4) + channel] = FitsScale.Level((zero + (scale * row[x])) * toSixteenBits);
+                    sixteenBit[x] = FitsScale.SixteenBit((zero + (scale * row[x])) * toSixteenBits);
                 }
 
                 break;
@@ -107,7 +135,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
                 for (int x = 0; x < width; x++)
                 {
                     short stored = BinaryPrimitives.ReadInt16BigEndian(row.Slice(x * 2, 2));
-                    bgra[(x * 4) + channel] = FitsScale.Level((zero + (scale * stored)) * toSixteenBits);
+                    sixteenBit[x] = FitsScale.SixteenBit((zero + (scale * stored)) * toSixteenBits);
                 }
 
                 break;
@@ -116,7 +144,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
                 for (int x = 0; x < width; x++)
                 {
                     int stored = BinaryPrimitives.ReadInt32BigEndian(row.Slice(x * 4, 4));
-                    bgra[(x * 4) + channel] = FitsScale.Level((zero + (scale * stored)) * toSixteenBits);
+                    sixteenBit[x] = FitsScale.SixteenBit((zero + (scale * stored)) * toSixteenBits);
                 }
 
                 break;
@@ -126,7 +154,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
                 {
                     double value = zero + (scale * BinaryPrimitives.ReadSingleBigEndian(row.Slice(x * 4, 4)));
                     above += FitsScale.IsAboveThreshold(value) ? 1 : 0;
-                    bgra[(x * 4) + channel] = FitsScale.Level(value * toSixteenBits);
+                    sixteenBit[x] = FitsScale.SixteenBit(value * toSixteenBits);
                 }
 
                 break;
@@ -136,7 +164,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
                 {
                     double value = zero + (scale * BinaryPrimitives.ReadDoubleBigEndian(row.Slice(x * 8, 8)));
                     above += FitsScale.IsAboveThreshold(value) ? 1 : 0;
-                    bgra[(x * 4) + channel] = FitsScale.Level(value * toSixteenBits);
+                    sixteenBit[x] = FitsScale.SixteenBit(value * toSixteenBits);
                 }
 
                 break;

@@ -8,6 +8,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- Two display modes for a pair of FITS or float TIFF files, the files shown as stored:
+  `Histogram` equalises each channel on its own histogram as Siril 1.4.4's "Histogram" display
+  does, and `False colours` shows one layer, the mean of the planes, through Siril's rainbow
+  colour map. The toolbar buttons `Histogram` and `False colours`, or the keys `H` and `F`,
+  switch; the pair is decoded again in the new mode with the zoom, the pan and the divider
+  kept, the status bar names the mode, and in false colours the readout shows the level a
+  colour stands for. A pair with a PNG or an integer TIFF stays linear and the buttons are
+  disabled (R-110 to R-114, ADR 0040).
+
 - The interface is in English or in Romanian, chosen on the command line with `--lang=ro` (or
   `--lang ro`); without it the interface is English, and a language it does not have is said in
   a message before the interface comes up in English. Numbers read the same in both
