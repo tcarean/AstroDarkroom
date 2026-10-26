@@ -17,14 +17,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MainWindow: the suite's banner, one card per app of the catalogue with its "Deschide"
-     button, and the bottom bar with "Despre". Everything shown comes from AppRow, built from
-     the core; the window's own code starts the process the core planned. -->
+<!-- MainWindow: the suite's banner, one card per app of the catalogue with its open button,
+     and the bottom bar with the language selector and the about button. Everything shown comes
+     from AppRow, built from the core; the labels are assigned by the code behind in the current
+     language (Relabel), so no user text is written here; the window's own code starts the
+     process the core planned. -->
 
 <Window x:Class="AstroDarkroom.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:AstroDarkroom.Wpf"
+        xmlns:core="clr-namespace:AstroDarkroom.Core;assembly=AstroDarkroom.Core"
         Title="Astro Darkroom" Width="680" SizeToContent="Height"
         Icon="/AstroDarkroom;component/Icon/astrodarkroom.ico"
         MinWidth="520" ResizeMode="CanMinimize"
@@ -55,8 +58,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                RenderOptions.BitmapScalingMode="HighQuality" />
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
           <TextBlock x:Name="Banner" FontSize="16" FontWeight="SemiBold" />
-          <TextBlock x:Name="Subtitle" Style="{StaticResource Muted}" Margin="0,2,0,0"
-                     Text="Uneltele de astrofoto, in ordinea in care se folosesc. Deschide una din randul ei." />
+          <TextBlock x:Name="Subtitle" Style="{StaticResource Muted}" Margin="0,2,0,0" />
         </StackPanel>
       </Grid>
     </Border>
@@ -82,7 +84,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </StackPanel>
               <!-- ShowOnDisabled: the reason an app cannot start is the one thing a disabled
                    button must still tell. -->
-              <Button Grid.Column="1" Content="Deschide" MinWidth="104" VerticalAlignment="Center"
+              <Button Grid.Column="1" Content="{Binding OpenLabel}" MinWidth="104" VerticalAlignment="Center"
                       IsEnabled="{Binding IsAvailable}" ToolTip="{Binding ButtonHint}"
                       ToolTipService.ShowOnDisabled="True" Click="OpenApp" />
             </Grid>
@@ -98,10 +100,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <TextBlock x:Name="FolderLine" Grid.Column="0" Style="{StaticResource Faint}" VerticalAlignment="Center"
                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-        <Button Grid.Column="1" Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)" />
+        <!-- The language selector (R-006): each language named in itself, so a user finds
+             theirs whatever the current language; the choice is remembered (R-007). -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
+          <RadioButton x:Name="EnglishChoice" Style="{StaticResource LanguageChoice}" Content="English"
+                       GroupName="Language" Tag="{x:Static core:UiLanguage.English}" Checked="LanguageChecked" />
+          <RadioButton x:Name="RomanianChoice" Style="{StaticResource LanguageChoice}" Content="Romana" Margin="4,0,0,0"
+                       GroupName="Language" Tag="{x:Static core:UiLanguage.Romanian}" Checked="LanguageChecked" />
+        </StackPanel>
+        <Button x:Name="AboutButton" Grid.Column="2" Command="Help" />
       </Grid>
     </Border>
   </Grid>

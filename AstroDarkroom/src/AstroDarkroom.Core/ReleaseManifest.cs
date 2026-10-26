@@ -104,12 +104,12 @@ public static class ReleaseManifest
     }
 
     /// <summary>
-    /// A string property.
+    /// A string property; the one tolerant read of a key this file and the language setting share.
     /// </summary>
-    /// <param name="element">The object to read from.</param>
+    /// <param name="element">The object to read from; a JSON object.</param>
     /// <param name="name">The property name.</param>
     /// <returns>Its text, or "" when it is missing or not a string.</returns>
-    private static string Text(JsonElement element, string name)
+    internal static string Text(JsonElement element, string name)
         => element.TryGetProperty(name, out JsonElement value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? "" : "";
 
     /// <summary>

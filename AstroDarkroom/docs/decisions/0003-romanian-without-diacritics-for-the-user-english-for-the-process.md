@@ -1,7 +1,7 @@
 # 0003. Romanian without diacritics for the user, English for the process and the code
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; Romanian as the only language of what the user sees superseded by 0006
 
 ## Context
 

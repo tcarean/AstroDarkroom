@@ -15,26 +15,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using AstroDarkroom.Core;
 
 namespace AstroDarkroom.Wpf;
 
-/// <summary>The application: it opens the main window on the folder the executable runs from.</summary>
+/// <summary>
+/// The application: it sets the interface language from the remembered setting, then opens the
+/// main window on the folder the executable runs from.
+/// </summary>
 public partial class App : Application
 {
     /// <summary>The icon, the same resource as Icon= in the windows' XAML and the executable's own.</summary>
     internal static readonly Uri IconSource = new("pack://application:,,,/AstroDarkroom;component/Icon/astrodarkroom.ico");
 
     /// <summary>
-    /// Opens the main window on the suite folder, the launcher's own base directory (R-002).
+    /// Reads the language the last run chose (R-007), English when there is none, then opens
+    /// the main window on the suite folder, the launcher's own base directory (R-002).
     /// </summary>
     /// <param name="e">The start-up arguments; not read, the launcher takes none.</param>
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        MainWindow window = new(new SuiteFolder(AppContext.BaseDirectory));
+        string settingsPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AstroDarkroom", "settings.json");
+        Ui.Default = LanguageSetting.TryRead(settingsPath) ?? Ui.StartupDefault;
+        MainWindow window = new(new SuiteFolder(AppContext.BaseDirectory), settingsPath);
         MainWindow = window;
         window.Show();
     }

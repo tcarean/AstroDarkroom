@@ -28,6 +28,13 @@ al carui executabil lipseste din folder e dezactivat si spune ce fisier lipseste
 "modificari nelansate" cand componenta a fost impachetata cu schimbari pe care propria ei
 versiune nu le-a prins inca.
 
+Lansatorul vorbeste engleza sau romana: cele doua butoane **English** / **Romana** din bara de
+jos schimba toate textele pe loc, fara repornire. La prima pornire e in engleza, ca uneltele;
+alegerea se tine minte in `%LOCALAPPDATA%\AstroDarkroom\settings.json` (`{"language":"ro"}`)
+si se aplica la urmatoarea pornire. O unealta deschisa din lansator porneste in limba
+lansatorului (primeste `--lang=ro` sau `--lang=en`); pornita direct din folder, porneste in
+engleza, cum spune README-ul ei.
+
 `release.json`, in acelasi folder, spune acelasi lucru in forma citibila de programe: versiunea
 suitei, data, commit-ul, si pentru fiecare componenta versiunea, commit-ul si daca are
 modificari nelansate.
