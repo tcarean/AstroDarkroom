@@ -1,7 +1,7 @@
 # 0048. The interface speaks English or Romanian, chosen by `--lang`, each text a pair where it is used
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; README.md Romanian only superseded by 0050
 Supersedes: 0005 in part (the user-visible texts are no longer Romanian only)
 
 ## Context

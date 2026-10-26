@@ -26,8 +26,8 @@ are in `kit.json`, not here.
 - At step 6: numeric code is `Input/`, `Analysis/`, `Report/`, `Parameters.cs` and
   `Thresholds.cs` (the rule "Formula changes re-validate"). The golden files are regenerated with
   `APA_UPDATE_GOLDEN=1` (the rule "Golden files", the kit's ADR 0033).
-- At step 8: `README.md` is in Romanian, with diacritics; its "Consola" section lists every
-  console flag and its "Fereastra" section every tab.
+- At step 8: `README.md` is in English (ADR 0050); its "The console" section lists every
+  console flag and its "The window" section every tab.
 
 ## /wrap-up
 
@@ -53,7 +53,7 @@ are in `kit.json`, not here.
   figure on the reference image gets noticed.
 - At step 5: the console is published as the single copyable `AstroPhotoAnalyzer.exe` under
   `console/` and the window under `wpf/`; the tag is `astrophotoanalyzer-vX.Y.Z`.
-- At step 7: the README's "Compilare" section names the publish commands; `artifacts/` is what
+- At step 7: the README's "Building" section names the publish commands; `artifacts/` is what
   they produce.
 
 ## /mutate

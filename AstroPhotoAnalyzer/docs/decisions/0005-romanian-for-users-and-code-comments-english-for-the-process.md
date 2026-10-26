@@ -1,7 +1,7 @@
 # 0005. Romanian for what the user sees and for the code comments; English for the process files
 
 Date: 2026-10-02
-Status: accepted 2026-10-02; Romanian comments in the C# files superseded by the kit's ADR 0035 (the code's files translated by 2026-10-24); the Romanian comments of the tests and of the XAML and project files superseded by 0047; Romanian as the only language of what the user sees superseded by 0048
+Status: accepted 2026-10-02; Romanian comments in the C# files superseded by the kit's ADR 0035 (the code's files translated by 2026-10-24); the Romanian comments of the tests and of the XAML and project files superseded by 0047; Romanian as the only language of what the user sees superseded by 0048; THIRD-PARTY-NOTICES.md in Romanian superseded by 0050
 
 ## Context
 
