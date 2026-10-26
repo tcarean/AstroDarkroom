@@ -23,8 +23,8 @@ namespace AstroDarkroom.Core;
 /// </summary>
 /// <param name="FileName">The full path of the executable to start.</param>
 /// <param name="WorkingDirectory">The folder to start it in: the suite folder, where its own files are.</param>
-/// <param name="Arguments">The arguments, one per entry: the launcher's language as <c>--lang=ro</c> or <c>--lang=en</c> (R-008).</param>
-public sealed record LaunchPlan(string FileName, string WorkingDirectory, IReadOnlyList<string> Arguments);
+/// <param name="Arguments">The command line after the executable: the launcher's language as <c>--lang=ro</c> or <c>--lang=en</c>, one token (R-008). A string, so the record keeps its value equality.</param>
+public sealed record LaunchPlan(string FileName, string WorkingDirectory, string Arguments);
 
 /// <summary>Plans the start of an app from the suite folder (R-003).</summary>
 public static class Launcher
@@ -46,6 +46,6 @@ public static class Launcher
             throw new InvalidOperationException(location.Reason);
         }
 
-        return new LaunchPlan(location.Path, folder.BaseDirectory, ["--lang=" + Ui.Code(Ui.Current)]);
+        return new LaunchPlan(location.Path, folder.BaseDirectory, "--lang=" + Ui.Code(Ui.Current));
     }
 }

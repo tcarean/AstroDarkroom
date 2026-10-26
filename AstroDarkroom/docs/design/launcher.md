@@ -25,9 +25,11 @@ languages and the live switch are ADR 0006.
   text goes through. `Ui.Code` and `Ui.TryParse` map a language to `en`/`ro` and back, for the
   setting file and the `--lang=` argument.
 - `LanguageSetting.TryRead(path)` and `Write(path, language)` are the one remembered setting:
-  `{"language":"ro"}`, parsed like `release.json` (no model binding, a type check per key),
-  null for anything it cannot read, a failed write swallowed. The core knows no path; the
-  window gives it `%LOCALAPPDATA%\AstroDarkroom\settings.json`.
+  `{"language":"ro"}`, read through `ReleaseManifest.Text`, the same tolerant key read as
+  `release.json` (no model binding, a type check on the value), null for anything it cannot
+  read. The write goes to `settings.json.tmp` and then replaces the file in one `File.Move`,
+  so an interruption leaves the last good file; a failed write is swallowed. The core knows no
+  path; the window gives it `%LOCALAPPDATA%\AstroDarkroom\settings.json`.
 - `SuiteApp` is one app: its folder name in the repository (also its name in `release.json`),
   its title (the component's name), its description in one language and its window exe. The
   suite ships windows only, so there is no console field (ADR 0002). `AppCatalogue.Apps` is
@@ -43,10 +45,10 @@ languages and the live switch are ADR 0006.
   there. `ManifestPath` is `release.json` in the same folder.
 - `Launcher.Plan(app, folder)` turns an available location into a `LaunchPlan`: the exe's full
   path, the base directory as working directory, so a component finds its own files (the
-  shared desktop runtime, `lensfun/`, `LICENSE`) where it expects them, and the arguments, one
-  entry, `--lang=` plus the code of `Ui.Current`, the one-token form every component's window
-  accepts. An unavailable app throws `InvalidOperationException` with the reason; the core
-  never calls `Process.Start`.
+  shared desktop runtime, `lensfun/`, `LICENSE`) where it expects them, and the arguments as one
+  string, `--lang=` plus the code of `Ui.Current`, the one-token form every component's window
+  accepts (a string rather than a list keeps the record's value equality). An unavailable app
+  throws `InvalidOperationException` with the reason; the core never calls `Process.Start`.
 - `ReleaseManifest.TryRead(path)` parses the file `scripts/release.ps1` writes
   (`name`, `version`, `date`, `commit`, `components[]` with `name`, `version`, `commit`,
   `unreleased`, `clean`) with `System.Text.Json` and no model binding: every key is read with
@@ -83,7 +85,7 @@ languages and the live switch are ADR 0006.
   language equal to `Ui.Default` and so changes nothing; a click sets `Ui.Default`, writes the
   setting and calls `Relabel()`, so every text and every row changes at once.
 - `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `UseShellExecute`, the plan's
-  working directory and its arguments through `ArgumentList`, disposing the returned handle at
+  working directory and its arguments string, disposing the returned handle at
   once (the started app is not affected). The bottom line shows the base directory without its
   trailing separator. `Win32Exception` (Windows refused the start) and
   `InvalidOperationException` (the file went away) end in a message box with the row's title.

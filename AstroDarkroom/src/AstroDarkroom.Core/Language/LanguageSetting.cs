@@ -47,11 +47,7 @@ public static class LanguageSetting
 
             using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
             JsonElement root = doc.RootElement;
-            return root.ValueKind == JsonValueKind.Object
-                   && root.TryGetProperty(Key, out JsonElement code)
-                   && code.ValueKind == JsonValueKind.String
-                ? Ui.TryParse(code.GetString())
-                : null;
+            return root.ValueKind == JsonValueKind.Object ? Ui.TryParse(ReleaseManifest.Text(root, Key)) : null;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
@@ -60,8 +56,10 @@ public static class LanguageSetting
     }
 
     /// <summary>
-    /// Writes the language to the file, creating its folder; a write that fails for IO or
-    /// access is ignored, so the choice holds for the run and is asked again at the next.
+    /// Writes the language to the file, creating its folder: the text goes to a temporary file
+    /// beside it, which then replaces the file in one move, so an interrupted write leaves the
+    /// last good file and never a truncated one. A write that fails for IO or access is
+    /// ignored, so the choice holds for the run and is asked again at the next.
     /// </summary>
     /// <param name="path">The file's full path.</param>
     /// <param name="language">The language to remember.</param>
@@ -75,7 +73,9 @@ public static class LanguageSetting
                 Directory.CreateDirectory(dir);
             }
 
-            File.WriteAllText(path, JsonSerializer.Serialize(new Dictionary<string, string> { [Key] = Ui.Code(language) }));
+            string temp = path + ".tmp";
+            File.WriteAllText(temp, JsonSerializer.Serialize(new Dictionary<string, string> { [Key] = Ui.Code(language) }));
+            File.Move(temp, path, overwrite: true);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

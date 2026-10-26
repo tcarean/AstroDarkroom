@@ -113,6 +113,7 @@ public class LanguageTests
         string path = ws.PathTo("settings.json");
         LanguageSetting.Write(path, UiLanguage.Romanian);
         Assert.Equal("""{"language":"ro"}""", File.ReadAllText(path).Trim());
+        Assert.False(File.Exists(path + ".tmp"));   // the temporary file of the atomic write is gone
 
         Assert.Equal(UiLanguage.English, LanguageSetting.TryRead(ws.Write("en.json", """{ "language": "en" }""")));
         Assert.Equal(UiLanguage.Romanian, LanguageSetting.TryRead(ws.Write("upper.json", """{ "language": "RO" }""")));
@@ -149,10 +150,11 @@ public class LanguageTests
 
         LaunchPlan romanian = Launcher.Plan(App("LightsCheck"), folder);
         Assert.Equal(exe, romanian.FileName);
-        Assert.Equal(["--lang=ro"], romanian.Arguments);
+        Assert.Equal("--lang=ro", romanian.Arguments);
+        Assert.Equal(new LaunchPlan(exe, ws.Root, "--lang=ro"), romanian);   // the record keeps its value equality
 
         using IDisposable scope = Ui.Use(UiLanguage.English);
         LaunchPlan english = Launcher.Plan(App("LightsCheck"), folder);
-        Assert.Equal(["--lang=en"], english.Arguments);
+        Assert.Equal("--lang=en", english.Arguments);
     }
 }

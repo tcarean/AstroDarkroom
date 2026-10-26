@@ -152,3 +152,7 @@ ones are in R-006.
   text read back in both languages, the setting file read, the launcher restarted, and
   FlatCheck opened from a row with `--lang=ro` on its command line. The folder was restored
   afterwards.
+- After `/code-review`, in a second commit: the setting is written through a temporary file
+  and one move; `LaunchPlan.Arguments` is a string, not a list, so the record keeps its value
+  equality; the CLAUDE.md rule names its single-literal exceptions; `LanguageSetting` reads
+  its key through `ReleaseManifest.Text`; `Ui.Default` is written in full in the window.

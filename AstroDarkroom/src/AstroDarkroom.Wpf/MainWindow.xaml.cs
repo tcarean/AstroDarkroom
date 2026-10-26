@@ -56,7 +56,7 @@ public partial class MainWindow : Window
         Banner.Text = VersionInfo.Banner;
         // Checking the current language fires LanguageChecked, which sees no change and does
         // nothing; from here on the selector fires only for the user's clicks.
-        (Current == UiLanguage.Romanian ? RomanianChoice : EnglishChoice).IsChecked = true;
+        (Ui.Current == UiLanguage.Romanian ? RomanianChoice : EnglishChoice).IsChecked = true;
         Relabel();
     }
 
@@ -92,12 +92,12 @@ public partial class MainWindow : Window
     /// <param name="e">The check; not read.</param>
     private void LanguageChecked(object sender, RoutedEventArgs e)
     {
-        if (sender is not RadioButton { Tag: UiLanguage language } || language == Default)
+        if (sender is not RadioButton { Tag: UiLanguage language } || language == Ui.Default)
         {
             return;
         }
 
-        Default = language;
+        Ui.Default = language;
         LanguageSetting.Write(_settingsPath, language);
         Relabel();
     }
@@ -119,14 +119,13 @@ public partial class MainWindow : Window
         try
         {
             LaunchPlan plan = Launcher.Plan(row.App, _folder);
-            ProcessStartInfo start = new(plan.FileName) { UseShellExecute = true, WorkingDirectory = plan.WorkingDirectory };
-            foreach (string argument in plan.Arguments)
-            {
-                start.ArgumentList.Add(argument);
-            }
-
             // The Process object is only a handle to the started app; disposing it does not touch the app.
-            using Process? started = Process.Start(start);
+            using Process? started = Process.Start(new ProcessStartInfo(plan.FileName)
+            {
+                UseShellExecute = true,
+                WorkingDirectory = plan.WorkingDirectory,
+                Arguments = plan.Arguments,
+            });
         }
         catch (InvalidOperationException ex)
         {

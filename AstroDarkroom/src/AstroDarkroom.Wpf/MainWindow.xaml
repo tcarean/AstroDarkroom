@@ -106,7 +106,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
         <!-- The language selector (R-006): each language named in itself, so a user finds
              theirs whatever the current language; the choice is remembered (R-007). -->
-        <StackPanel x:Name="LanguagePanel" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
           <RadioButton x:Name="EnglishChoice" Style="{StaticResource LanguageChoice}" Content="English"
                        GroupName="Language" Tag="{x:Static core:UiLanguage.English}" Checked="LanguageChecked" />
           <RadioButton x:Name="RomanianChoice" Style="{StaticResource LanguageChoice}" Content="Romana" Margin="4,0,0,0"

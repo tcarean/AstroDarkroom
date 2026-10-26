@@ -73,8 +73,10 @@ varies a kit rule names it.
   suite is one entry, one catalogue line and that test run.
 - **Two interface languages, English everywhere else** (varies the kit's rule "Languages",
   ADRs 0003 and 0006). Every text the user sees is a pair `T("english", "romana")` where it is
-  composed, the Romanian without diacritics, never a single literal; the window switches
-  between the two live and remembers the choice. `README.md` is Romanian. Code, comments,
+  composed, the Romanian without diacritics, never a single literal; the only single literals
+  are the product name `Astro Darkroom`, the language selector's own labels (each language
+  named in itself) and symbols such as `?`. The window switches between the two live and
+  remembers the choice. `README.md` is Romanian. Code, comments,
   tests, docs, commits and the CHANGELOG are English; the Romanian wordings and the tests and
   docs that quote them are the one exception. Never leave a file in two languages otherwise.
 - **Same .NET and same packages across the suite.** Every component targets .NET 8 and a
