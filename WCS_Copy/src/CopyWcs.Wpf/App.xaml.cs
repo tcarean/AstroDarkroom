@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // App.xaml.cs - the application's start, after DarksCheck's and FlatCheck's: the language from
-// --lang before the first view and the invariant number culture by hand (R-034).
+// --lang before the first view, the invariant number culture by hand, and the two files from the
+// command line (R-034), so a shortcut or a "send to" can open the window on a pair.
 
 using System.Globalization;
 using System.Windows;
@@ -44,8 +45,9 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Sets the invariant number culture, shows <see cref="CopyWcs.Wpf.MainWindow"/> and says a
-    /// <c>--lang</c> value it did not understand.
+    /// Sets the invariant number culture, shows <see cref="CopyWcs.Wpf.MainWindow"/>, says a
+    /// <c>--lang</c> value it did not understand, and fills the boxes from the first two
+    /// command-line arguments that are existing files.
     /// </summary>
     /// <param name="e">The startup arguments; <c>e.Args</c> are the command-line arguments.</param>
     protected override void OnStartup(StartupEventArgs e)
@@ -63,6 +65,9 @@ public partial class App : Application
         {
             MessageBox.Show(window, LanguageArgument.BadValueMessage(_unknownLanguage), "CopyWcs", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+
+        (string? source, string? dest) = FilesFromArgs(e.Args);
+        window.Start(source, dest);
     }
 
     /// <summary>
@@ -94,4 +99,39 @@ public partial class App : Application
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
     }
 
+    /// <summary>
+    /// The first two arguments that are existing files, in their order, a <c>--lang</c> and its
+    /// value left out (R-034); anything else is ignored, so a wrong argument never stops the
+    /// window from opening.
+    /// </summary>
+    /// <param name="args">The command-line arguments; null is allowed and treated as none.</param>
+    /// <returns>The source and the destination, each as given, or null when no argument names
+    /// an existing file for it.</returns>
+    internal static (string? Source, string? Dest) FilesFromArgs(string[]? args)
+    {
+        if (args is null)
+        {
+            return (null, null);
+        }
+
+        string? source = null;
+        foreach (string a in LanguageArgument.Extract(args).Rest)
+        {
+            if (string.IsNullOrWhiteSpace(a) || !File.Exists(a))
+            {
+                continue;
+            }
+
+            if (source is null)
+            {
+                source = a;
+            }
+            else
+            {
+                return (source, a);
+            }
+        }
+
+        return (source, null);
+    }
 }

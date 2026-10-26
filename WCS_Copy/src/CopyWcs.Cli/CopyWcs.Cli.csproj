@@ -15,5 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\CopyWcs.Core\CopyWcs.Core.csproj" />
     <InternalsVisibleTo Include="CopyWcs.Tests" />
+    <!-- The window's tests compare the window with the console, run in process. -->
+    <InternalsVisibleTo Include="CopyWcs.Wpf.Tests" />
   </ItemGroup>
 </Project>

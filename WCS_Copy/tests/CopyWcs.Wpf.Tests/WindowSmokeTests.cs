@@ -78,7 +78,13 @@ public class WindowSmokeTests
         el.Arrange(new Rect(0, 0, w, h));
         el.UpdateLayout();
 
+        // The window's background first: the content alone renders on transparency, where the
+        // anti-aliased labels come out dim in the dumped PNG.
+        System.Windows.Shapes.Rectangle background = new() { Width = w, Height = h, Fill = new SolidColorBrush(Color.FromRgb(0x1B, 0x1B, 0x1D)) };
+        background.Measure(new Size(w, h));
+        background.Arrange(new Rect(0, 0, w, h));
         RenderTargetBitmap bmp = new(w, h, 96, 96, PixelFormats.Pbgra32);
+        bmp.Render(background);
         bmp.Render(el);
 
         Assert.Equal(w, bmp.PixelWidth);
@@ -110,5 +116,53 @@ public class WindowSmokeTests
             Render((FrameworkElement)w.Content, name: "window-empty");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
             Assert.Equal(Color.FromRgb(0x1B, 0x1B, 0x1D), Assert.IsType<SolidColorBrush>(w.Background).Color);
+        });
+
+    /// <summary>The files from the command line fill the boxes, either one alone too (R-034).</summary>
+    [Fact]
+    public void R034_StartFillsTheBoxesWithTheFilesGiven()
+        => _sta.Invoke(() =>
+        {
+            using WindowFixture f = new();
+            MainViewModel vm = new();
+            MainWindow w = new(vm);
+
+            w.Start(f.Source, f.Dest);
+            Assert.Equal(f.Source, vm.Source);
+            Assert.Equal(f.Dest, vm.Dest);
+            Assert.True(vm.CanPreview);
+
+            MainViewModel one = new();
+            new MainWindow(one).Start(null, f.Dest);
+            Assert.Equal("", one.Source);
+            Assert.Equal(f.Dest, one.Dest);
+            Assert.False(one.CanPreview);
+        });
+
+    /// <summary>The window with an outcome of every kind drawn: the refusal, the warning, the cards and the closing lines (R-037).</summary>
+    [Fact]
+    public void R037_TheOutcomeCardRendersEveryKindWithNoBindingError()
+        => _sta.Invoke(() =>
+        {
+            using WindowFixture f = new(destWidth: 200);
+            using BindingErrors errors = new();
+            MainViewModel vm = new() { Source = f.Source, Dest = f.Dest };
+            MainWindow w = new(vm);
+
+            vm.Preview();
+            Assert.True(vm.HasError);
+            Render((FrameworkElement)w.Content, name: "window-refused");
+
+            vm.Force = true;
+            vm.Preview();
+            Assert.True(vm.HasWarnings);
+            Assert.True(vm.HasCards);
+            Render((FrameworkElement)w.Content, name: "window-preview");
+
+            vm.Copy();
+            Assert.True(vm.HasNotes);
+            Render((FrameworkElement)w.Content, name: "window-copied");
+
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 }
