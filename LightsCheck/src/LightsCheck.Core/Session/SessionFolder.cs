@@ -39,6 +39,12 @@ internal sealed class SessionFolder
     internal IReadOnlyList<string> Biases { get; }
 
     /// <summary>
+    /// Whether the lights are camera raws, read top-down, as against FITS files, read in the
+    /// order Siril stores them; <see cref="FramesIn"/> never mixes the two (R-038, ADR 0023).
+    /// </summary>
+    internal bool LightsAreRaws => Lights.Count > 0 && RawReader.IsRawPath(Lights[0]);
+
+    /// <summary>
     /// The frames of darks/, listed so the report can say whether Siril will subtract the sensor's
     /// pattern; none is ever read.
     /// </summary>

@@ -633,8 +633,9 @@ internal static class SeriesAnalyzer
         }
 
         // The mount's move behind each dither (R-038): the pointing moved by minus the stars'
-        // shift, and Siril's solved FITS has its rows flipped against the raws, so the WCS is
-        // applied to (-StepX, +StepY) (ADR 0013). Without a WCS, the magnitudes along the axes.
+        // shift, in the lights' pixels; the WCS reverses y itself when the lights are raws,
+        // whose rows run the other way from Siril's solved FITS (ADR 0013, ADR 0023). Without a
+        // WCS, the magnitudes along the axes.
         MountMove?[] moves = new MountMove?[n];
         for (int i = 0; i < n; i++)
         {
@@ -645,7 +646,7 @@ internal static class SeriesAnalyzer
 
             if (wcs is not null)
             {
-                (double raDeg, double decDeg) = wcs.SkyOffsetDeg(-sx, sy);
+                (double raDeg, double decDeg) = wcs.PointingOffsetDeg(-sx, -sy);
                 moves[i] = new MountMove(raDeg / wcs.RaScaleDeg, decDeg / wcs.DecScaleDeg, true);
             }
             else if (ra == Axis.Y)
@@ -667,7 +668,7 @@ internal static class SeriesAnalyzer
         {
             if (wcs is not null)
             {
-                (double raDeg, double decDeg) = wcs.SkyOffsetDeg(-sdx, sdy);
+                (double raDeg, double decDeg) = wcs.PointingOffsetDeg(-sdx, -sdy);
                 starDrift = new StarDrift(-raDeg / wcs.RaScaleDeg, -decDeg / wcs.DecScaleDeg, true);
             }
             else if (ra == Axis.Y)

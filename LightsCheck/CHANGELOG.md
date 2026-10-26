@@ -28,6 +28,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A session read from FITS lights (a folder with no raws, for example Siril's `pp_light_*.fit`)
+  had the sense its y axis feeds the wrong way round in the dithering cells, the CSV's
+  `move_ra_px` / `move_dec_px`, the star drift and the polar handedness: the solved FITS was
+  flipped against the lights as it is against the raws, while FITS lights are stored as the
+  solve is. The flip now applies to raw lights only; the raw sessions read as before
+  (R-038, R-050; ADR 0023).
+
 - A FITS light whose data is shorter than its header says (a copy cut mid-transfer) crashed
   `lightscheck --frame N` and was listed with `Index was outside the bounds of the array.`;
   the reader now refuses it with `FITS: data cut short: ...` (`FITS: date trunchiate: ...` with
