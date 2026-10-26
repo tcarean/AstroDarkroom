@@ -74,8 +74,8 @@ namespace AstroPhotoAnalyzer
         {
             new ThirdPartyComponent(
                 Name: "SixLabors.ImageSharp",
-                Role: Tr.Pick("reading TIFF/PNG/JPEG and encoding the JPEGs of the compression table",
-                             "citirea TIFF/PNG/JPEG si encodarea JPEG pentru tabelul de compresie"),
+                Role: Tr.Pick("reading TIFF/PNG/JPEG, and encoding the JPEGs and the 8-bit LZW TIFF of the compression table",
+                             "citirea TIFF/PNG/JPEG si encodarea JPEG si a TIFF-ului 8-bit LZW pentru tabelul de compresie"),
                 Licence: Tr.Pick("Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software)",
                                 "Six Labors Split License 1.0 (termenii Apache 2.0 pentru software open source)"),
                 Copyright: "Copyright (c) Six Labors",
@@ -83,8 +83,8 @@ namespace AstroPhotoAnalyzer
                 Packages: new[] { "SixLabors.ImageSharp" }),
             new ThirdPartyComponent(
                 Name: "Wacton.Unicolour",
-                Role: Tr.Pick("evaluating the tables of a printer ICC profile, from which the paper's Dmax is read",
-                             "evaluarea tabelelor unui profil ICC de imprimanta, din care se citeste Dmax-ul hartiei"),
+                Role: Tr.Pick("evaluating the tables of a printer ICC profile, for the paper's Dmax and for the share outside the paper gamut in the Curves tab",
+                             "evaluarea tabelelor unui profil ICC de imprimanta, pentru Dmax-ul hartiei si pentru partea din afara gamutului hartiei din tabul Curbe"),
                 Licence: "MIT",
                 Copyright: "Copyright (c) 2022-2026 William Acton",
                 Url: "https://github.com/waacton/Unicolour",

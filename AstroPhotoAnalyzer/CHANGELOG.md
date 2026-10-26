@@ -22,7 +22,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   window's English labels and `Report.txt`, gives every console option with its default and how
   the background is judged, and keeps the developer notes to pointers into `CLAUDE.md` and
   `docs/`; the notices name the gamut figure among Unicolour's uses and list
-  `xunit.runner.visualstudio` among the test packages (ADR 0050).
+  `xunit.runner.visualstudio` among the test packages (ADR 0050). The About window's list of
+  components names them too: Unicolour's gamut figure and ImageSharp's 8-bit TIFF.
 
 ### Fixed
 

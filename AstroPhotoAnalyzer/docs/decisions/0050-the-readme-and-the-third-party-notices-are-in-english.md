@@ -59,6 +59,6 @@ both files are English.
 - The repository's front page says which tools' READMEs are in Romanian.
 - The README quotes the reference image's report (the verdict and the first section of
   `de_printat.png` with the defaults); a change of that output changes the quote with it.
-- The About window's role texts (`ThirdParty.cs`) still name only the Dmax for Unicolour and only
-  the JPEGs for ImageSharp's encoding; the README and the notices name the gamut figure and the
-  8-bit TIFF too.
+- The About window's role texts (`ThirdParty.cs`), which named only the Dmax for Unicolour and
+  only the JPEGs for ImageSharp's encoding, name the gamut figure and the 8-bit TIFF too, in both
+  languages, like the README and the notices.
