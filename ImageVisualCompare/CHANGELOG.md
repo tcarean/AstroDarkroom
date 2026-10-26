@@ -55,6 +55,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   stays on the thumbnail at the far edge (R-041, R-042).
 - `100%` is one image pixel per physical pixel on every monitor, also on one scaled differently
   from the main display: the application declares per-monitor DPI awareness (R-022, ADR 0034).
+- A click on a toolbar button (`−`, `+`, `Fit`, `100%`, `Open…`, `About`) no longer keeps the
+  keyboard focus: `+`, `−`, the arrows, `Ctrl+0` and `Ctrl+1` work right after it, without a
+  click on the image (R-063, ADR 0042).
 
 ### Internal
 

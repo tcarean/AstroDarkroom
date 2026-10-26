@@ -17,6 +17,7 @@
 
 using System.IO;
 using System.Windows;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -83,6 +84,12 @@ public partial class MainWindow : Window
         OpenButton.Click += async (_, _) => await OpenPairAsync();
         AboutButton.Click += (_, _) =>
             MessageDialog.Show(this, UiText.Current.AboutTitle(VersionInfo.Banner), VersionInfo.About);
+
+        // Every button is focusable, so a click leaves the keyboard focus on it and the
+        // surface's shortcuts would go nowhere until the image is clicked again. One handler on
+        // the panel, reached after the clicked button's own, hands the focus back (R-063, ADR
+        // 0042).
+        Toolbar.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler((_, _) => Compare.Focus()));
 
         Title = VersionInfo.Banner;
         StatusLegal.Text = $"{VersionInfo.Banner} · {VersionInfo.Copyright}";

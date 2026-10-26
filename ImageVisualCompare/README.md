@@ -164,8 +164,8 @@ the one the Romanian interface shows.
 | open another pair | `Ctrl+O`, or the `Open…` button (`Deschide…`); not while a pair is opening |
 
 The keyboard shortcuts work while the comparison area has the keyboard focus. It takes the focus
-when a pair loads and at any click in it; a click on a toolbar button takes the focus to that
-button, so click the image again before using the keys. `Ctrl+O` works wherever the focus is.
+when a pair loads and at any click in it, and gets it back after a click on a toolbar button, so
+the keys work right after `Fit`, `100%`, `+` or `−`. `Ctrl+O` works wherever the focus is.
 The arrows move the line in device-independent pixels, like everything about the line: at 100 %
 Windows scaling that is one screen pixel, at 150 % the line moves 1.5 screen pixels, or 15 with
 `Shift`.
