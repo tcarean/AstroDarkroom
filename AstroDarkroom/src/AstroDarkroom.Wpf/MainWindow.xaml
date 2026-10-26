@@ -59,6 +59,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
           <TextBlock x:Name="Banner" FontSize="16" FontWeight="SemiBold" />
           <TextBlock x:Name="Subtitle" Style="{StaticResource Muted}" Margin="0,2,0,0" />
+          <!-- What the suite needs on the machine, in one line (R-009); the details are in About. -->
+          <TextBlock x:Name="PrerequisitesLine" Style="{StaticResource Faint}" Margin="0,4,0,0" />
         </StackPanel>
       </Grid>
     </Border>
@@ -76,11 +78,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
                 <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" />
                 <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0" Text="{Binding Description}" />
-                <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                  <TextBlock Style="{StaticResource Faint}" Text="{Binding VersionHint}" />
-                  <TextBlock Style="{StaticResource Faint}" Margin="10,0,0,0" Foreground="{StaticResource WarnBr}"
-                             Text="{Binding UnreleasedHint}" />
-                </StackPanel>
+                <TextBlock Style="{StaticResource Faint}" Margin="0,5,0,0" Text="{Binding VersionHint}" />
               </StackPanel>
               <!-- ShowOnDisabled: the reason an app cannot start is the one thing a disabled
                    button must still tell. -->
@@ -104,13 +102,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Grid.ColumnDefinitions>
         <TextBlock x:Name="FolderLine" Grid.Column="0" Style="{StaticResource Faint}" VerticalAlignment="Center"
                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-        <!-- The language selector (R-006): each language named in itself, so a user finds
-             theirs whatever the current language; the choice is remembered (R-007). -->
+        <!-- The language selector (R-006): each language named in itself, with its flag drawn
+             in App.xaml (ADR 0007), so a user finds theirs whatever the current language; the
+             choice is remembered (R-007). The TextBlocks drop the implicit style so they take
+             the button's Foreground, which the style changes when checked. -->
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0">
-          <RadioButton x:Name="EnglishChoice" Style="{StaticResource LanguageChoice}" Content="English"
-                       GroupName="Language" Tag="{x:Static core:UiLanguage.English}" Checked="LanguageChecked" />
-          <RadioButton x:Name="RomanianChoice" Style="{StaticResource LanguageChoice}" Content="Romana" Margin="4,0,0,0"
-                       GroupName="Language" Tag="{x:Static core:UiLanguage.Romanian}" Checked="LanguageChecked" />
+          <RadioButton x:Name="EnglishChoice" Style="{StaticResource LanguageChoice}"
+                       GroupName="Language" Tag="{x:Static core:UiLanguage.English}" Checked="LanguageChecked">
+            <StackPanel Orientation="Horizontal">
+              <Image Source="{StaticResource FlagEnglish}" Style="{StaticResource Flag}" />
+              <TextBlock Style="{x:Null}" Text="English" VerticalAlignment="Center" />
+            </StackPanel>
+          </RadioButton>
+          <RadioButton x:Name="RomanianChoice" Style="{StaticResource LanguageChoice}" Margin="4,0,0,0"
+                       GroupName="Language" Tag="{x:Static core:UiLanguage.Romanian}" Checked="LanguageChecked">
+            <StackPanel Orientation="Horizontal">
+              <Image Source="{StaticResource FlagRomanian}" Style="{StaticResource Flag}" />
+              <TextBlock Style="{x:Null}" Text="Romana" VerticalAlignment="Center" />
+            </StackPanel>
+          </RadioButton>
         </StackPanel>
         <Button x:Name="AboutButton" Grid.Column="2" Command="Help" />
       </Grid>

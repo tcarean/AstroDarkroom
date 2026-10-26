@@ -19,7 +19,7 @@ using AstroDarkroom.Core;
 
 namespace AstroDarkroom.Tests;
 
-/// <summary>R-006 to R-008: the two languages, the remembered setting, the tool's language.</summary>
+/// <summary>R-006 to R-009: the two languages, the remembered setting, the tool's language, the prerequisites texts.</summary>
 public class LanguageTests
 {
     private static SuiteApp App(string folder) => AppCatalogue.Apps.Single(a => a.Folder == folder);
@@ -156,5 +156,39 @@ public class LanguageTests
         using IDisposable scope = Ui.Use(UiLanguage.English);
         LaunchPlan english = Launcher.Plan(App("LightsCheck"), folder);
         Assert.Equal("--lang=en", english.Arguments);
+    }
+
+    [Fact]
+    public void R009_ThePrerequisites_NameSirilAndTheAdobeProfilesInBothLanguages()
+    {
+        string romanianSummary = Prerequisites.Summary;
+        string[] romanian = Prerequisites.Details.ToArray();
+        Assert.StartsWith("Uneltele citesc folderul unei sesiuni Siril", romanianSummary, StringComparison.Ordinal);
+        Assert.Equal(3, romanian.Length);
+        Assert.StartsWith("Siril 1.4.4 sau mai nou instalat", romanian[1], StringComparison.Ordinal);
+
+        using IDisposable scope = Ui.Use(UiLanguage.English);
+        string englishSummary = Prerequisites.Summary;
+        string[] english = Prerequisites.Details.ToArray();
+        Assert.StartsWith("The tools read a Siril session folder", englishSummary, StringComparison.Ordinal);
+        Assert.Equal(3, english.Length);
+        Assert.StartsWith("Siril 1.4.4 or newer installed", english[1], StringComparison.Ordinal);
+
+        // Each wording is its own text, not the other language's left in place.
+        Assert.NotEqual(romanianSummary, englishSummary);
+        Assert.All(english.Zip(romanian), pair => Assert.NotEqual(pair.First, pair.Second));
+
+        // The facts every reader must find, whatever the language: the folder structure, the
+        // version, the optional profiles and the programs that bring them.
+        foreach (string whole in new[] { string.Join('\n', romanian), string.Join('\n', english) })
+        {
+            foreach (string fact in new[] { "lights/", "darks/", "flats/", "biases/", "process/", "Siril 1.4.4", "siril-cli", "FlatCheck", "Adobe", "Lightroom", "Camera Raw", "DNG Converter", "lensfun" })
+            {
+                Assert.Contains(fact, whole, StringComparison.Ordinal);
+            }
+        }
+
+        Assert.Contains("Siril 1.4.4", romanianSummary, StringComparison.Ordinal);
+        Assert.Contains("Siril 1.4.4", englishSummary, StringComparison.Ordinal);
     }
 }
