@@ -240,6 +240,38 @@
       "sha256": "28c8a193ab0e9e697b7e26153e83f707fde8a682a564e4156085e05fc21eab73",
       "source": "first raw of Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/flats",
       "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samples/raw.pixls.us/Canon - EOS 7D Mark II - RAW (3-2).cr2",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "b9f71c56adb6e2861e6653efb312fb5cc88ba4aa17fa809c6a18b8db044360c3",
+      "source": "raw.pixls.us sample 1064, CC0, Canon EOS 7D Mark II with the EF 50mm f/1.4 USM (the site's name with : as -)",
+      "demonstrates": "V-041: the lens ID 198 and the name on a Canon (R-108)"
+    },
+    {
+      "name": "Samples/raw.pixls.us/Canon - EOS 6D - RAW.CR2",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "360842779d08fe4805b4a2fe4979f06fdc6da982c85c3acb181f25bcf4c9f536",
+      "source": "raw.pixls.us sample 799, CC0, Canon EOS 6D with the EF 85mm f/1.8 USM",
+      "demonstrates": "V-042: the lens ID 155 and the name on a second Canon body (R-108)"
+    },
+    {
+      "name": "Samples/raw.pixls.us/Sony - ILCE-7M3 - 14bit compressed (3-2).ARW",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "250784580ea527442c09004417bb0eead484f2bf3ee8f9121a776ac65bb50d0f",
+      "source": "raw.pixls.us sample 2414, CC0, Sony ILCE-7M3 with the FE 16-35mm F2.8 GM",
+      "demonstrates": "V-043: the E-mount type 32831 no profile carries and the name that identifies the lens (R-108)"
+    },
+    {
+      "name": "Samples/raw.pixls.us/Pentax - K-70 - 14bit (3-2).PEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "1d64c6aa71680642ba8f00b6f6105df3e66a4534e631f422fbf3316273c4408c",
+      "source": "raw.pixls.us sample 1141, CC0, Pentax K-70 with the smc PENTAX-DA 18-135mm",
+      "demonstrates": "V-044: the ID pair 8 215 as 2263, no name, no range, and the .pef extension (R-108, R-004)"
     }
   ]
 }

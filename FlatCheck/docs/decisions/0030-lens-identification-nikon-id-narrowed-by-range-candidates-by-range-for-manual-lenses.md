@@ -1,7 +1,7 @@
 # 0030. The lens is identified by the Nikon ID narrowed by the MakerNote range, by range alone for manual lenses, in one shared LensIdentification
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the Nikon-only lens ID and the ID as the one key superseded by 0067 (the ID read by mount on every make, the camera's name of the lens as the first key)
 
 ## Context
 

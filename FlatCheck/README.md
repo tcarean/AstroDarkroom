@@ -60,7 +60,7 @@ de ~150-600 ADU care aplatizează profilul și subraportează vignetarea cu ~1% 
 amplitudinea e greșită. Nu e detectabil, doar evitabil.
 
 Formate acceptate: FITS (`.fit` / `.fits` / `.fts`), BITPIX 8/16/32/-32/-64, mono sau
-color, **și raw de aparat** (`.nef` / `.cr2` / `.cr3` / `.arw` / `.dng` / `.raf`). Raw-ul
+color, **și raw de aparat** (`.nef` / `.cr2` / `.cr3` / `.arw` / `.dng` / `.raf` / `.pef`). Raw-ul
 se citește prin libraw — exact biblioteca din spatele lui `rawpy`, cel folosit de
 versiunea Python — deci cifrele ies identice, nu doar apropiate.
 
@@ -169,7 +169,8 @@ flatcheck process/pp_flat_stacked.fit --raw flats/DSC_0001.NEF     # obiectivul 
 flatcheck process/pp_flat_stacked.fit --lens "Tokina 11-20" --fstop 2.8   # sau după nume
 ```
 
-Pentru fiecare obiectiv candidat (după ID-ul Nikon din raw, restrâns pe gama din
+Pentru fiecare obiectiv candidat (după numele obiectivului scris de aparat în raw sau, când
+lipsește, după ID-ul obiectivului — al lui Nikon, Canon, Sony sau Pentax —, restrâns pe gama din
 MakerNote și pe montura aparatului; sau după textul din `--lens`), profilul cel mai
 apropiat de focală și diafragmă se construiește ca raster la mărimea rasterului de analiză
 și i se măsoară vignetarea cu **exact operatorul masterului** (mediana cutiilor de colț de
@@ -1198,7 +1199,7 @@ sunt citite din `Th`, nu rescrise. Textele (`SessionMessages.Light*Note` și `Li
 | harta (sub ea) | harta radială medie a seriei: termenul radial fitat al fiecărui cadru (R² și R⁴), desenat la mărimea cadrului și mediat pixel cu pixel; nicio stea, nicio nebuloasă, doar forma modelului; alb = fără componentă radială, colțuri albastre = fondul cade spre margini (sub-corecție), colțuri roșii = crește (supra-corecție); scara e intervalul propriu al hărții, deci o culoare tare poate fi o cifră mică |
 
 **Expunere** listează din `flats/` **doar raw-uri de aparat** (`.nef`, `.cr2`, `.cr3`,
-`.arw`, `.dng`, `.raf`). Modul are nevoie de mozaicul CFA intact și de scala ADU originală,
+`.arw`, `.dng`, `.raf`, `.pef`). Modul are nevoie de mozaicul CFA intact și de scala ADU originală,
 iar pe un raw white și black se citesc exact din fișier în loc să fie ghicite din maxim.
 Comutatorul „Sky" schimbă pragurile și recalculează pe loc.
 
@@ -1338,14 +1339,18 @@ rânduri, fiindcă detaliile unui obiectiv Adobe cer citirea fișierului lui; pe
 lungă rândurile rămân goale și o notă sub listă spune să scrii un text. Focala, diafragma
 și crop-ul sunt **preumplute** din fișiere — focala și
 aparatul din headerul masterului (doar headerul, fără cei 96 MB), diafragma și obiectivul
-dintr-un raw din `flats/`, când există: ID-ul Nikon al obiectivului **și gama lui** (focala
-minimă și maximă, deschiderea maximă) din MakerNote. ID-ul singur nu ajunge — 139 e și
-Tokina 11-20 f/2.8, și Nikkor 18-200 f/3.5-5.6, și Sigma 18-35 f/1.8 — așa că obiectivele
-al căror nume contrazice gama sunt scoase, iar obiectivele lensfun ale aceluiași producător
-cu aceeași gamă intră și ele (lensfun nu poartă ID-uri Nikon); rămâne unul, e ales; rămân
+dintr-un raw din `flats/`, când există: numele obiectivului așa cum l-a scris aparatul (un
+Canon sau un Sony îl scrie, un Nikon cu sticlă de altă marcă și un Pentax nu), ID-ul
+obiectivului scris de aparat (al lui Nikon pe un Nikon, al producătorului pe celelalte monturi
+— Canon, Sony, Pentax) **și gama lui** (focala minimă și maximă, deschiderea maximă) din
+MakerNote. Numele, când există, e cheia: se potrivește literă cu literă cu numele din profile,
+și e singura pe Sony E, ale cărui profile Adobe nu poartă ID. Fără nume, ID-ul singur nu
+ajunge — 139 e și Tokina 11-20 f/2.8, și Nikkor 18-200 f/3.5-5.6, și Sigma 18-35 f/1.8 — așa
+că obiectivele al căror nume contrazice gama sunt scoase, iar obiectivele lensfun ale aceluiași
+producător cu aceeași gamă intră și ele (lensfun nu poartă ID-uri); rămâne unul, e ales; rămân
 mai multe (cele două generații Adobe ale Tokinei 11-20 și cele două intrări lensfun), lista se
 restrânge la ele și alegi tu, iar nota de sub câmpuri spune ce a citit din raw — sau că raw-ul
-nu spune nimic despre obiectiv (niciun ID, nicio gamă: un telescop sau un obiectiv fără
+nu spune nimic despre obiectiv (niciun ID, niciun nume, nicio gamă: un telescop sau un obiectiv fără
 contacte), caz în care diafragma rămâne goală și scrii tu focala și diafragma și alegi
 obiectivul. Sub câmpuri
 stau **chip-urile de tip de senzor** — full frame, APS-C, APS-C Canon, APS-H, Micro 4/3,

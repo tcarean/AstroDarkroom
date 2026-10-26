@@ -194,11 +194,115 @@ internal static class LensProfileTestData
 </lensdatabase>";
 
     /// <summary>
+    /// One Adobe profile of one lens, with the identity tags as the installed files carry them
+    /// (measured 2026-10-26 on the files for the four raw.pixls.us samples, R-108):
+    /// <paramref name="lensTag"/> is <c>stCamera:Lens</c>, the camera's own LensModel string;
+    /// <paramref name="prettyName"/> is <c>stCamera:LensPrettyName</c>; <paramref name="lensId"/>
+    /// is <c>stCamera:LensID</c> as written - a number, Pentax's two numbers, or null for none, as
+    /// on every Sony E file.
+    /// </summary>
+    internal static string LcpOneProfile(string make, string prettyName, string lensTag, string? lensId, string sff, string focal, string? camera = null)
+    {
+        string id = lensId == null ? "" : $@" stCamera:LensID=""{lensId}""";
+        return $@"<x:xmpmeta xmlns:x=""adobe:ns:meta/"">
+ <rdf:RDF xmlns:rdf=""http://www.w3.org/1999/02/22-rdf-syntax-ns#"">
+  <rdf:Description rdf:about="""" xmlns:photoshop=""http://ns.adobe.com/photoshop/1.0/"" xmlns:stCamera=""http://ns.adobe.com/photoshop/1.0/camera-profile"">
+   <photoshop:CameraProfiles>
+    <rdf:Seq>
+     <rdf:li>
+      <rdf:Description stCamera:Make=""{make}"" stCamera:CameraRawProfile=""True""{id}
+       stCamera:Lens=""{lensTag}"" stCamera:CameraPrettyName=""{camera ?? make}"" stCamera:LensPrettyName=""{prettyName}""
+       stCamera:SensorFormatFactor=""{sff}"" stCamera:FocalLength=""{focal}"" stCamera:FocusDistance=""10000"" stCamera:ApertureValue=""4"">
+      <stCamera:PerspectiveModel>
+       <rdf:Description stCamera:Version=""2"">
+       <stCamera:VignetteModel stCamera:VignetteModelParam1=""-0.289055"" stCamera:VignetteModelParam2=""-0.962432"" stCamera:VignetteModelParam3=""0.750297""/>
+       </rdf:Description>
+      </stCamera:PerspectiveModel>
+      </rdf:Description>
+     </rdf:li>
+    </rdf:Seq>
+   </photoshop:CameraProfiles>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>";
+    }
+
+    /// <summary>The Pentax lens of the K-70 sample, as Adobe names it (the lensfun twin spells it without the brackets).</summary>
+    internal const string PentaxDa18135 = "smc PENTAX-DA 18-135mm F3.5-5.6 ED AL[IF] DC WR";
+
+    /// <summary>
+    /// The other mounts of the four raw.pixls.us samples (R-018, R-108): the cameras with their
+    /// crops, the Canon EF 50 f/1.4 USM, the Sony FE 16-35 GM beside its A-mount twin of the same
+    /// range (the name must tell them apart, the range cannot), and the Pentax DA 18-135 spelled
+    /// as lensfun spells it, so only a letters-and-digits comparison equates it with Adobe's.
+    /// </summary>
+    internal const string LensfunOtherMountsXml = @"<!DOCTYPE lensdatabase SYSTEM ""lensfun-database.dtd"">
+<lensdatabase version=""2"">
+    <camera>
+        <maker>Canon</maker>
+        <model>Canon EOS 7D Mark II</model>
+        <mount>Canon EF</mount>
+        <cropfactor>1.6</cropfactor>
+    </camera>
+    <camera>
+        <maker>Sony</maker>
+        <model>Sony ILCE-7M3</model>
+        <mount>Sony E</mount>
+        <cropfactor>1.0</cropfactor>
+    </camera>
+    <camera>
+        <maker>Pentax</maker>
+        <model>Pentax K-70</model>
+        <mount>Pentax KAF3</mount>
+        <cropfactor>1.534</cropfactor>
+    </camera>
+    <lens>
+        <maker>Canon</maker>
+        <model>Canon EF 50mm f/1.4 USM</model>
+        <mount>Canon EF</mount>
+        <cropfactor>1.0</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""50"" aperture=""1.4"" distance=""1000"" k1=""-0.9000"" k2=""0.1000"" k3=""-0.0500""/>
+            <vignetting model=""pa"" focal=""50"" aperture=""4"" distance=""1000"" k1=""-0.2000"" k2=""0.0500"" k3=""-0.0200""/>
+        </calibration>
+    </lens>
+    <lens>
+        <maker>Sony</maker>
+        <model>FE 16-35mm f/2.8 GM</model>
+        <mount>Sony E</mount>
+        <cropfactor>1.0</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""16"" aperture=""2.8"" distance=""1000"" k1=""-1.2000"" k2=""0.3000"" k3=""-0.1000""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""4"" distance=""1000"" k1=""-0.4000"" k2=""0.0500"" k3=""-0.0200""/>
+        </calibration>
+    </lens>
+    <lens>
+        <maker>Sony</maker>
+        <model>Sony 16-35mm f/2.8 ZA SSM</model>
+        <mount>Sony Alpha</mount>
+        <cropfactor>1.0</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""16"" aperture=""2.8"" distance=""1000"" k1=""-1.1000"" k2=""0.2000"" k3=""-0.0800""/>
+        </calibration>
+    </lens>
+    <lens>
+        <maker>Pentax</maker>
+        <model>smc Pentax-DA 18-135mm f/3.5-5.6 ED AL IF DC WR</model>
+        <mount>Pentax KAF3</mount>
+        <cropfactor>1.5</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""18"" aperture=""3.5"" distance=""1000"" k1=""-0.7000"" k2=""0.2000"" k3=""-0.0600""/>
+            <vignetting model=""pa"" focal=""18"" aperture=""5.6"" distance=""1000"" k1=""-0.3000"" k2=""0.0500"" k3=""-0.0100""/>
+        </calibration>
+    </lens>
+</lensdatabase>";
+
+    /// <summary>
     /// A profiles folder as --profiles expects it: an .lcp anywhere in it, and lensfun/ beneath.
     /// With <paramref name="tokinaOnTwoFormats"/> the lensfun half also carries the Tokina's
     /// full-frame calibration, so the same lens is listed twice, once per calibration format.
     /// </summary>
-    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false)
+    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false)
     {
         string dir = Path.Combine(ws.Dir, "profiles");
         Directory.CreateDirectory(Path.Combine(dir, "Tokina"));
@@ -208,13 +312,34 @@ internal static class LensProfileTestData
         File.WriteAllText(Path.Combine(dir, "lensfun", "slr-tokina.xml"), LensfunXml);
         if (tokinaOnTwoFormats)
             File.WriteAllText(Path.Combine(dir, "lensfun", "slr-tokina-ff.xml"), LensfunTokinaFullFrameXml);
+        if (otherMounts)
+        {
+            // The file names follow Adobe's "<Camera> (<Lens>) - RAW.lcp"; the tags inside are the
+            // measured ones (docs/plans/2026-10-26-identify-the-lens-on-every-mount.md).
+            Directory.CreateDirectory(Path.Combine(dir, "Canon"));
+            Directory.CreateDirectory(Path.Combine(dir, "Sony"));
+            Directory.CreateDirectory(Path.Combine(dir, "Pentax"));
+            File.WriteAllText(Path.Combine(dir, "Canon", "Canon EOS-1Ds Mark III (Canon EF 50mm f1.4 USM) - RAW.lcp"),
+                LcpOneProfile("Canon", "Canon EF 50mm f/1.4 USM", "EF50mm f/1.4 USM", "198", "0.995542", "50", camera: "Canon EOS-1Ds Mark III"));
+            // Canon's lens type 198 is also what the Zeiss ZE lenses report; Adobe's files for them
+            // carry 198 in AlternateLensIDs, and their names ("Milvus 1.4_25 ZE") give no range
+            File.WriteAllText(Path.Combine(dir, "Canon", "Canon (Zeiss Milvus 1.4_25 ZE) - RAW.lcp"),
+                LcpOneProfile("Canon", "Zeiss Milvus 1.4_25 ZE", "Milvus 1.4/25 ZE", "198", "1", "25", camera: "Canon"));
+            File.WriteAllText(Path.Combine(dir, "Sony", "SONY (Sony FE 16-35mm F2.8 GM) - RAW.lcp"),
+                LcpOneProfile("SONY", "Sony FE 16-35mm F2.8 GM", "FE 16-35mm F2.8 GM", null, "1", "16", camera: "Sony"));
+            File.WriteAllText(Path.Combine(dir, "Sony", "SONY (Sony 16-35mm F2.8 ZA SSM) - RAW.lcp"),
+                LcpOneProfile("SONY", "Sony 16-35mm F2.8 ZA SSM", "16-35mm F2.8 ZA SSM", "54", "1", "16", camera: "Sony"));
+            File.WriteAllText(Path.Combine(dir, "Pentax", $"PENTAX ({PentaxDa18135}) - RAW.lcp"),
+                LcpOneProfile("PENTAX", PentaxDa18135, PentaxDa18135, "8 215", "1.5", "18"));
+            File.WriteAllText(Path.Combine(dir, "lensfun", "other-mounts.xml"), LensfunOtherMountsXml);
+        }
         File.WriteAllText(Path.Combine(dir, "lensfun", "LENSFUN-VERSION.txt"), "lensfun database snapshot\nupstream commit: test\n");
         return dir;
     }
 
-    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false)
+    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false)
     {
-        string dir = ProfilesDir(ws, tokinaOnTwoFormats);
+        string dir = ProfilesDir(ws, tokinaOnTwoFormats, otherMounts);
         return ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
     }
 }

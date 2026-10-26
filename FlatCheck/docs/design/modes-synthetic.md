@@ -48,11 +48,13 @@ profile list so the sentence can state the range.
 by the reference frame's camera maker word (`INSTRUME` / libraw) and an exact name match
 beats partial ones; what still ties is listed and the exit code is 2. Focal from `FOCALLEN`
 or libraw, f-stop from libraw only (Siril writes no f-number) or `--fstop`; `LoadedFrame`
-carries `FocalMm`, `FNumber`, `Camera`, `NikonLensId` for it, filled by both readers
-(`FitsReader.LoadHeader` reads the header alone, for the window's prefill on a 96 MB
-master). Identifying the lens from the raw's Nikon ID and MakerNote range, why the ID alone
-is not enough, and what the window does with several survivors (`OfferCandidates`) are
-ADR 0030.
+carries `FocalMm`, `FNumber`, `Camera`, `LensId`, `LensMount`, `LensName` and the lens's range
+for it, filled by both readers (`FitsReader.LoadHeader` reads the header alone, for the
+window's prefill on a 96 MB master). Identifying the lens from the raw's ID and MakerNote
+range, why the ID alone is not enough, and what the window does with several survivors
+(`OfferCandidates`) are ADR 0030; the ID read by mount and the camera's name of the lens as
+the first key, on Canon, Sony and Pentax too, are ADR 0067 (the mechanics in
+`lens-profiles.md`, section 5).
 
 **The file and the list.** Output: float, 1.0 on the axis, the reference frame's cards
 minus the structural ones (`BAYERPAT` included, so Siril takes it as a CFA master),

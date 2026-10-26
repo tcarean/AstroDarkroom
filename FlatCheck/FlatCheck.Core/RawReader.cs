@@ -58,10 +58,12 @@ namespace FlatCheck
         // FITS crash when the DLLs are missing. Measured, not assumed; pinned by RawReaderTests.
         static readonly IReadOnlyDictionary<string, string> NoHeader = new Dictionary<string, string>();
 
-        // The same extensions as in flatcheck.py. Only the NEF is tested on real data; the rest
-        // work as well as libraw knows them, which is also what rawpy does.
+        // The six extensions of flatcheck.py, plus .pef (Pentax, 2026-10-26: a K-70 sample read
+        // fine through libraw and was refused by this list alone, R-108). Only the NEF, a CR2, an
+        // ARW and a PEF are tested on real data; the rest work as well as libraw knows them,
+        // which is also what rawpy does.
         static readonly string[] Extensions =
-        { ".nef", ".cr2", ".cr3", ".arw", ".dng", ".raf" };
+        { ".nef", ".cr2", ".cr3", ".arw", ".dng", ".raf", ".pef" };
 
         /// <summary>
         /// The extensions recognised as camera raws, exposed because not only the reader needs
@@ -72,7 +74,7 @@ namespace FlatCheck
 
         /// <summary>The dispatch gate: decided ONLY on the extension, as in flatcheck.py.</summary>
         /// <param name="path">The file's path; null or empty allowed.</param>
-        /// <returns>True for one of the six raw extensions, any case.</returns>
+        /// <returns>True for one of the seven raw extensions, any case.</returns>
         internal static bool IsRawPath(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
@@ -141,19 +143,9 @@ namespace FlatCheck
         {
             using RawContext ctx = RawContext.OpenFile(path);
             LibRawData d = Marshal.PtrToStructure<LibRawData>(ctx.UnsafeGetHandle());
-            var (focalMm, fNumber, cameraName, nikonLensId, lensMin, lensMax, lensAp) = ShootingInfo(ctx, d.RawData.IParams);
-            return new LoadedFrame
-            {
-                Image = null,
-                Header = NoHeader,
-                FocalMm = focalMm,
-                FNumber = fNumber,
-                Camera = cameraName,
-                NikonLensId = nikonLensId,
-                LensMinFocalMm = lensMin,
-                LensMaxFocalMm = lensMax,
-                LensMaxAperture = lensAp,
-            };
+            var frame = new LoadedFrame { Image = null, Header = NoHeader };
+            FillShootingInfo(ctx, d.RawData.IParams, frame);
+            return frame;
         }
 
         /// <summary>
@@ -255,10 +247,9 @@ namespace FlatCheck
 
             // What the raw knows about the shot, for the synthetic flat. On a D3300 with a lens
             // of another make libraw does not give the lens's NAME, but it gives the Nikon ID
-            // (139 for the Tokina 11-20), which the Adobe profiles carry in AlternateLensIDs.
-            var (focalMm, fNumber, cameraName, nikonLensId, lensMin, lensMax, lensAp) = ShootingInfo(ctx, ip);
-
-            return new LoadedFrame
+            // (139 for the Tokina 11-20), which the Adobe profiles carry in AlternateLensIDs; a
+            // Canon or a Sony gives the name too, a Pentax the maker's ID alone (R-108).
+            var frame = new LoadedFrame
             {
                 Image = img,
                 // An empty header, not an absent one: the --light suitability guard reads it as
@@ -267,54 +258,136 @@ namespace FlatCheck
                 Scale = new ExposureScale(white, black, "libraw (exact)"),
                 Cfa = cfa,
                 Preview = preview,
-                FocalMm = focalMm,
-                FNumber = fNumber,
-                Camera = cameraName,
-                NikonLensId = nikonLensId,
-                LensMinFocalMm = lensMin,
-                LensMaxFocalMm = lensMax,
-                LensMaxAperture = lensAp,
+            };
+            FillShootingInfo(ctx, ip, frame);
+            return frame;
+        }
+
+        /// <summary>
+        /// Fills <paramref name="frame"/> with what libraw knows about the shot: the focal length,
+        /// the aperture, the camera ("make model", the make once) and the lens - its ID and mount
+        /// (<see cref="LensIdOf"/>, <see cref="MountLabel"/>), its name (<c>LensInfo.Lens</c>, the
+        /// EXIF LensModel: empty on a D3300 with third-party glass and on a Pentax K-70, "EF50mm
+        /// f/1.4 USM" on a Canon, "FE 16-35mm F2.8 GM" on a Sony) and its range
+        /// (<see cref="RangeOf"/>). Each stays null when libraw gives zero or empty. libraw types
+        /// in locals only, as everywhere in this file; a failure in the lens block leaves the lens
+        /// fields null and the rest as read. Measured 2026-10-26 (R-108).
+        /// </summary>
+        /// <param name="ctx">The open libraw context.</param>
+        /// <param name="ip">The image parameters, for the make and model.</param>
+        /// <param name="frame">The frame to fill; its shot and lens fields are overwritten.</param>
+        static void FillShootingInfo(RawContext ctx, LibRawImageParams ip, LoadedFrame frame)
+        {
+            LibRawImageOtherParams other = ctx.ImageOtherParams;
+            frame.FocalMm = other.FocalLength > 0 ? other.FocalLength : null;
+            frame.FNumber = other.Aperture > 0 ? other.Aperture : null;
+            string make = (ip.Make ?? "").Trim(), model = (ip.Model ?? "").Trim();
+            frame.Camera = model.Length == 0 ? null : model.StartsWith(make, StringComparison.OrdinalIgnoreCase) || make.Length == 0 ? model : make + " " + model;
+            try
+            {
+                LibRawLensInfo li = ctx.LensInfo;
+                LibRawLensMakerNotes notes = li.MakerNotes;
+                frame.LensId = LensIdOf(li.Nikon.LensIDNumber, notes.LensID, notes.CameraMount);
+                frame.LensMount = MountLabel(notes.CameraMount);
+                string name = (li.Lens ?? "").Trim();
+                frame.LensName = name.Length == 0 ? null : name;
+                (frame.LensMinFocalMm, frame.LensMaxFocalMm, frame.LensMaxAperture) =
+                    RangeOf(notes.MinFocal, notes.MaxFocal, notes.MaxAperture4MinFocal, notes.MaxAperture, li.MinFocal, li.MaxFocal, li.MaxAperture4MinFocal);
+            }
+            catch (Exception)
+            {
+                frame.LensId = null;
+                frame.LensMount = null;
+                frame.LensName = null;
+                frame.LensMinFocalMm = frame.LensMaxFocalMm = frame.LensMaxAperture = null;
+            }
+        }
+
+        /// <summary>
+        /// The lens ID a raw carries, whichever the mount (R-108): Nikon's own <c>LensIDNumber</c>
+        /// when it is above 0 (74 for a lens without CPU, 139 for the Tokina 11-20); otherwise the
+        /// MakerNote's <c>LensID</c>, which libraw fills with the maker's lens type on Canon (198 =
+        /// EF 50mm f/1.4 USM), Sony (32831 = FE 16-35mm F2.8 GM) and Pentax (its two bytes as
+        /// a*256+b: 2263 = 8 215), taken only when the MakerNote names a mount that is not Nikon's
+        /// and the value is above 0 and fits 31 bits. On a Nikon body that field holds the 8-byte
+        /// LensData signature (5356031691206446338 on a D3300), never an ID, and with an unknown
+        /// mount nothing is taken. Measured 2026-10-26 on a D3300 and on the four raw.pixls.us
+        /// samples of docs/validation.md.
+        /// </summary>
+        /// <param name="nikonLensIdNumber">libraw's <c>LensInfo.Nikon.LensIDNumber</c>; 0 when none.</param>
+        /// <param name="makerNoteLensId">libraw's <c>LensInfo.MakerNotes.LensID</c>; 0 when none.</param>
+        /// <param name="mountCode">libraw's <c>LensInfo.MakerNotes.CameraMount</c>, a value of its
+        /// camera-mounts enumeration; 0 when unknown.</param>
+        /// <returns>The lens ID, or null when the raw gives none.</returns>
+        internal static long? LensIdOf(long nikonLensIdNumber, ulong makerNoteLensId, int mountCode)
+        {
+            if (nikonLensIdNumber > 0) return nikonLensIdNumber;
+            var mount = (CameraMount)mountCode;
+            bool nikon = mount == CameraMount.NikonF || mount == CameraMount.NikonZ || mount == CameraMount.NikonCx;
+            if (mount == CameraMount.Unknown || nikon) return null;
+            return makerNoteLensId > 0 && makerNoteLensId <= int.MaxValue ? (long)makerNoteLensId : null;
+        }
+
+        /// <summary>
+        /// The camera's mount as libraw names it, for the reports: "Nikon F", "Canon EF", "Sony E",
+        /// "Pentax K" and the other mounts spelled out below; libraw's own enumeration name for a
+        /// mount this table does not spell; null for an unknown mount (0) or a value libraw does
+        /// not define.
+        /// </summary>
+        /// <param name="mountCode">libraw's <c>LensInfo.MakerNotes.CameraMount</c>; 0 when unknown.</param>
+        /// <returns>The mount's label, or null.</returns>
+        internal static string MountLabel(int mountCode)
+        {
+            var mount = (CameraMount)mountCode;
+            return mount switch
+            {
+                CameraMount.Unknown => null,
+                CameraMount.NikonF => "Nikon F",
+                CameraMount.NikonZ => "Nikon Z",
+                CameraMount.NikonCx => "Nikon 1",
+                CameraMount.CanonEf => "Canon EF",
+                CameraMount.CanonEfS => "Canon EF-S",
+                CameraMount.CanonEfM => "Canon EF-M",
+                CameraMount.CanonRf => "Canon RF",
+                CameraMount.SonyE => "Sony E",
+                CameraMount.MinoltaA => "Sony A",
+                CameraMount.PentaxK => "Pentax K",
+                CameraMount.Pentax645 => "Pentax 645",
+                CameraMount.PentaxQ => "Pentax Q",
+                CameraMount.FujiX => "Fujifilm X",
+                CameraMount.FujiGf => "Fujifilm G",
+                CameraMount.Mft => "Micro 4/3",
+                CameraMount.Ft => "Four Thirds",
+                CameraMount.LeicaM => "Leica M",
+                CameraMount.LeicaSl => "Leica L",
+                CameraMount.SamsungNx => "Samsung NX",
+                _ => Enum.IsDefined(typeof(CameraMount), mount) ? mount.ToString() : null,
             };
         }
 
         /// <summary>
-        /// The focal length, aperture, camera name, Nikon lens ID and the lens's range (minimum
-        /// / maximum focal length, maximum aperture at the minimum focal length), each null when
-        /// libraw gives them zero or empty. Locals only, as everywhere in this file.
-        ///
-        /// The range comes from LensInfo.MakerNotes, not from the top fields of LensInfo: on a
-        /// D3300 with the Tokina 11-20, the top MinFocal / MaxFocal are 0, while MakerNotes gives
-        /// 11, 20 and 2.8 (LensData from the Nikon MakerNote, decoded by libraw). Measured, not
-        /// assumed.
+        /// The lens's range from libraw, each part null when every source gives 0: the minimum and
+        /// maximum focal length from the MakerNote, else from the top of <c>LensInfo</c> (a D3300
+        /// fills the MakerNote only, a Canon or a Sony both, a Pentax K-70 neither); the maximum
+        /// aperture from the MakerNote's <c>MaxAperture4MinFocal</c>, else its <c>MaxAperture</c>
+        /// (a Canon writes 0 and 1.414 for the EF 50 f/1.4), else the top field. Measured
+        /// 2026-10-26 (R-108).
         /// </summary>
-        /// <param name="ctx">The open libraw context.</param>
-        /// <param name="ip">The image parameters, for the make and model.</param>
-        /// <returns>
-        /// The focal length (mm), the f-number, the camera ("make model", the make once), the
-        /// Nikon lens ID, and the lens's minimum and maximum focal length (mm) and maximum
-        /// aperture; each null when unknown.
-        /// </returns>
-        static (double? FocalMm, double? FNumber, string Camera, long? NikonLensId, double? LensMinFocal, double? LensMaxFocal, double? LensMaxAperture)
-            ShootingInfo(RawContext ctx, LibRawImageParams ip)
+        /// <param name="notesMin">The MakerNote's minimum focal length, mm; 0 when none.</param>
+        /// <param name="notesMax">The MakerNote's maximum focal length, mm; 0 when none.</param>
+        /// <param name="notesAp4Min">The MakerNote's maximum aperture at the minimum focal length, an f-number; 0 when none.</param>
+        /// <param name="notesMaxAp">The MakerNote's maximum aperture, an f-number; 0 when none.</param>
+        /// <param name="topMin">The top-level minimum focal length, mm; 0 when none.</param>
+        /// <param name="topMax">The top-level maximum focal length, mm; 0 when none.</param>
+        /// <param name="topAp4Min">The top-level maximum aperture at the minimum focal length; 0 when none.</param>
+        /// <returns>The minimum and maximum focal length (mm) and the maximum aperture, each null when unknown.</returns>
+        internal static (double? Min, double? Max, double? Aperture) RangeOf(double notesMin, double notesMax, double notesAp4Min, double notesMaxAp,
+                                                                           double topMin, double topMax, double topAp4Min)
         {
-            LibRawImageOtherParams other = ctx.ImageOtherParams;
-            double? focal = other.FocalLength > 0 ? other.FocalLength : null;
-            double? fnum = other.Aperture > 0 ? other.Aperture : null;
-            string make = (ip.Make ?? "").Trim(), model = (ip.Model ?? "").Trim();
-            string camera = model.Length == 0 ? null : model.StartsWith(make, StringComparison.OrdinalIgnoreCase) || make.Length == 0 ? model : make + " " + model;
-            long? lensId = null;
-            double? lensMin = null, lensMax = null, lensAp = null;
-            try
-            {
-                long id = ctx.LensInfo.Nikon.LensIDNumber;
-                if (id > 0) lensId = id;
-                var notes = ctx.LensInfo.MakerNotes;
-                if (notes.MinFocal > 0) lensMin = notes.MinFocal;
-                if (notes.MaxFocal > 0) lensMax = notes.MaxFocal;
-                if (notes.MaxAperture4MinFocal > 0) lensAp = notes.MaxAperture4MinFocal;
-            }
-            catch (Exception) { lensId = null; lensMin = lensMax = lensAp = null; }
-            return (focal, fnum, camera, lensId, lensMin, lensMax, lensAp);
+            double? min = notesMin > 0 ? notesMin : topMin > 0 ? topMin : null;
+            double? max = notesMax > 0 ? notesMax : topMax > 0 ? topMax : null;
+            double? ap = notesAp4Min > 0 ? notesAp4Min : notesMaxAp > 0 ? notesMaxAp : topAp4Min > 0 ? topAp4Min : null;
+            return (min, max, ap);
         }
 
         /// <summary>

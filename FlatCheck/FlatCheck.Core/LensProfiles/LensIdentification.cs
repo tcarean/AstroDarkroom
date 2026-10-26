@@ -69,8 +69,8 @@ namespace FlatCheck
         /// </summary>
         internal string RawName;
         /// <summary>
-        /// The lenses the raw points at: the Nikon ID narrowed by range and mount. Empty without a
-        /// raw or without an ID.
+        /// The lenses the raw points at: its lens ID and its lens name, narrowed by range and
+        /// mount (R-018). Empty without a raw, or with one that gives neither an ID nor a name.
         /// </summary>
         internal IReadOnlyList<LensChoice> Candidates = Array.Empty<LensChoice>();
         /// <summary>
@@ -89,7 +89,16 @@ namespace FlatCheck
         /// </summary>
         internal bool CandidatesByRangeOnly;
 
-        internal bool HasRawLensId => Raw?.NikonLensId != null;
+        internal bool HasRawLensId => Raw?.LensId != null;
+
+        /// <summary>
+        /// True when the raw names its lens (EXIF LensModel: a Canon or a Sony does; a D3300 with
+        /// third-party glass and a Pentax K-70 do not).
+        /// </summary>
+        internal bool HasRawLensName => !string.IsNullOrWhiteSpace(Raw?.LensName);
+
+        /// <summary>True when the raw says which lens it is, by ID or by name (R-108).</summary>
+        internal bool RawNamesLens => HasRawLensId || HasRawLensName;
 
         /// <summary>
         /// True when the raw gives a whole range: the minimum and maximum focal length and the
@@ -98,16 +107,18 @@ namespace FlatCheck
         internal bool HasRawLensRange => Raw?.LensMinFocalMm != null && Raw.LensMaxFocalMm != null && Raw.LensMaxAperture != null;
 
         /// <summary>
-        /// True when a raw was read and it says nothing about the lens: neither a lens ID nor a
-        /// focal range. What a camera on a telescope, or on a lens without contacts, writes (a
-        /// Canon EOS 40D: focal length 0, aperture 0, lens ID 0). A manual lens on a Nikon is not
-        /// this case: the body writes ID 74 and the range from its menu. False without a raw.
+        /// True when a raw was read and it says nothing about the lens: neither a lens ID, nor a
+        /// lens name, nor a focal range. What a camera on a telescope, or on a lens without
+        /// contacts, writes (a Canon EOS 40D: focal length 0, aperture 0, lens ID 0, no name). A
+        /// manual lens on a Nikon is not this case: the body writes ID 74 and the range from its
+        /// menu. False without a raw.
         /// </summary>
-        internal bool RawSaysNoLens => Raw != null && !HasRawLensId && !HasRawLensRange;
+        internal bool RawSaysNoLens => Raw != null && !RawNamesLens && !HasRawLensRange;
 
         /// <summary>
-        /// "ID-ul Nikon 139 din raw (11-20 mm f/2.8)", or, when the ID gave nothing, the range
-        /// alone.
+        /// "the lens ID 139 from the raw (Nikon F, 11-20 mm f/2.8)", "the lens "EF50mm f/1.4 USM"
+        /// (ID 198) from the raw (Canon EF, 50 mm f/1.4)", or, when neither the ID nor the name
+        /// gave anything, the range alone (R-108).
         /// </summary>
         internal string RawLensLabel => CandidatesByRangeOnly ? SyntheticReport.RawRangeLabel(Raw) : SyntheticReport.RawLensLabel(Raw);
     }
@@ -185,11 +196,11 @@ namespace FlatCheck
             }
 
             // The lens: from the raw beside, or from the reference when it is itself a raw.
-            id.Raw = raw?.NikonLensId != null ? raw
-                   : reference?.NikonLensId != null ? reference
+            id.Raw = NamesLens(raw) ? raw
+                   : NamesLens(reference) ? reference
                    : raw ?? (referenceIsRaw ? reference : null);
             id.RawName = rawName;
-            if (id.Raw?.NikonLensId != null && sources != null)
+            if (id.RawNamesLens && sources != null)
             {
                 var hits = CandidatesFromRaw(sources.Catalog, id.Raw);
                 // The same lens exists on several mounts (Adobe: one file per mount). When the
@@ -204,7 +215,7 @@ namespace FlatCheck
                 }
                 id.Candidates = PreferCamera(hits, id.Camera);
             }
-            // The ID gave nothing (or there is none), but the raw gives the range: the lenses of
+            // The ID and the name gave nothing (or there are none), but the raw gives the range: the lenses of
             // the camera's mount whose name says exactly that range. Only with the camera known -
             // "135 mm f/2.0" on every mount would be a list, not an identification.
             if (id.Candidates.Count == 0 && id.HasRawLensRange && sources != null && !string.IsNullOrEmpty(id.Camera))
@@ -249,26 +260,83 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The lenses the raw points at by itself: those with its Nikon ID (in the files of the
-        /// camera's mount), minus those whose name contradicts the range in the MakerNote - and,
-        /// because only the Adobe profiles carry Nikon IDs, the lensfun lenses of the same makers
-        /// whose range does not contradict the raw. Without them the narrowed list shows only the
-        /// Adobe half, and the user asked where the Tokina from lensfun had gone. Empty without an
-        /// ID.
+        /// True when the frame says which lens made it, by ID or by name; false for null.
+        /// </summary>
+        /// <param name="f">The frame; null allowed.</param>
+        /// <returns>Whether it carries a lens ID or a lens name.</returns>
+        static bool NamesLens(LoadedFrame f) => f != null && (f.LensId != null || !string.IsNullOrWhiteSpace(f.LensName));
+
+        /// <summary>
+        /// The lenses the raw points at by itself (R-018): those whose name is the raw's lens name
+        /// letter for letter (<see cref="LensCatalog.ByLensName"/>) when there are any, otherwise
+        /// those that carry its lens ID (<see cref="LensCatalog.ByLensId"/>, in the files of the
+        /// camera's mount), minus those whose name contradicts the range the raw gives. The name
+        /// wins because an ID is shared: Canon's 198 is the EF 50mm f/1.4 USM and three Zeiss ZE
+        /// lenses whose names ("Milvus 1.4_25 ZE") no range can read, and every RF lens is 61182;
+        /// the ID is the key only where the camera writes no name or the name is in no file. When
+        /// the raw gives no name - a Nikon, a Pentax, an older Canon - the lensfun lenses join,
+        /// since only the Adobe files carry IDs and the user asked where the Tokina from lensfun
+        /// had gone: those of the same makers as the hits whose name does not contradict the
+        /// range (the raw's or, when the raw gives none, the one every hit's name agrees on,
+        /// <see cref="AgreedRange"/>), and those whose name is letter for letter a hit's name or
+        /// alias (Adobe's "smc PENTAX-DA 18-135mm ... AL[IF] DC WR" is lensfun's "smc Pentax-DA
+        /// 18-135mm ... AL IF DC WR", under the maker Pentax while the Adobe stub's maker is its
+        /// first word, "smc"). When the name decided, it already found the lensfun entry, and a
+        /// join by range would pull another lens of the same range (the A-mount 16-35 f/2.8
+        /// beside the FE). Adobe first, then lensfun, by name. Empty without an ID and a name.
         /// </summary>
         /// <param name="cat">The lens catalogue.</param>
         /// <param name="f">The raw; null allowed.</param>
-        /// <returns>The Adobe lenses with the ID, then the lensfun lenses of their
-        /// makers.</returns>
+        /// <returns>The lenses matched by name and ID, then the lensfun lenses that join them.</returns>
         internal static IReadOnlyList<LensChoice> CandidatesFromRaw(LensCatalog cat, LoadedFrame f)
         {
-            if (f?.NikonLensId == null) return Array.Empty<LensChoice>();
+            if (!NamesLens(f)) return Array.Empty<LensChoice>();
             string hint = f.Camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            var byId = LensCatalog.Narrow(cat.ByLensId(f.NikonLensId.Value, hint), f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
-            if (byId.Count == 0) return byId;
-            var makers = new HashSet<string>(byId.Select(l => l.Maker), StringComparer.OrdinalIgnoreCase);
-            var lensfun = cat.Lenses.Where(l => l.Source == ProfileSource.Lensfun && makers.Contains(l.Maker)).ToList();
-            return byId.Concat(LensCatalog.Narrow(lensfun, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture)).ToList();
+            bool named = !string.IsNullOrWhiteSpace(f.LensName);
+            IReadOnlyList<LensChoice> byKey = named ? cat.ByLensName(f.LensName, hint) : Array.Empty<LensChoice>();
+            bool nameDecided = byKey.Count > 0;
+            if (!nameDecided && f.LensId != null) byKey = cat.ByLensId(f.LensId.Value, hint);
+            var hits = LensCatalog.Narrow(byKey, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
+            if (hits.Count == 0 || nameDecided) return Ordered(hits);
+
+            var makers = new HashSet<string>(hits.Select(l => l.Maker), StringComparer.OrdinalIgnoreCase);
+            var names = new HashSet<string>(hits.SelectMany(h => cat.ProfilesOf(h).SelectMany(p => p.Aliases).Append(h.Name)).Select(LensCatalog.Letters));
+            bool rawHasRange = f.LensMinFocalMm != null || f.LensMaxFocalMm != null || f.LensMaxAperture != null;
+            var (min, max, ap) = rawHasRange ? (f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture) : AgreedRange(hits);
+            var lensfun = cat.Lenses.Where(l => l.Source == ProfileSource.Lensfun).ToList();
+            IEnumerable<LensChoice> byRange = min == null && max == null && ap == null
+                ? Array.Empty<LensChoice>()
+                : LensCatalog.Narrow(lensfun.Where(l => makers.Contains(l.Maker)).ToList(), min, max, ap);
+            IEnumerable<LensChoice> byName = cat.Profiles
+                .Where(p => p.Lens.Source == ProfileSource.Lensfun
+                            && (names.Contains(LensCatalog.Letters(p.Lens.Name)) || p.Aliases.Any(a => names.Contains(LensCatalog.Letters(a)))))
+                .Select(p => p.Lens);
+            return Ordered(hits.Concat(byRange).Concat(byName).Distinct().ToList());
+        }
+
+        /// <summary>The candidates in the lists' order: Adobe before lensfun, then by name and mount.</summary>
+        /// <param name="lenses">The candidates.</param>
+        /// <returns>The same lenses, ordered.</returns>
+        static IReadOnlyList<LensChoice> Ordered(IEnumerable<LensChoice> lenses)
+            => lenses.OrderBy(l => l.Source).ThenBy(l => l.Name).ThenBy(l => l.Mount).ToList();
+
+        /// <summary>
+        /// The range every hit's name states, when they all state the same complete one (focal
+        /// ends within LensSpec's tolerance, aperture within its quarter stop); three nulls
+        /// otherwise. It stands in for a raw that gives no range (a Pentax K-70), so that the
+        /// lensfun join by maker stays as narrow as on a raw that does.
+        /// </summary>
+        /// <param name="hits">The lenses matched by ID or name.</param>
+        /// <returns>The agreed range, or three nulls.</returns>
+        static (double? Min, double? Max, double? Aperture) AgreedRange(IReadOnlyList<LensChoice> hits)
+        {
+            var specs = hits.Select(h => LensSpec.Parse(h.Name)).ToList();
+            if (specs.Count == 0 || specs.Any(s => !s.MinFocalMm.HasValue || !s.MaxFocalMm.HasValue || !s.MaxAperture.HasValue))
+                return (null, null, null);
+            LensSpec first = specs[0];
+            return specs.All(s => !s.Contradicts(first.MinFocalMm, first.MaxFocalMm, first.MaxAperture))
+                ? (first.MinFocalMm, first.MaxFocalMm, first.MaxAperture)
+                : (null, null, null);
         }
 
         /// <summary>
@@ -284,16 +352,11 @@ namespace FlatCheck
         internal static IReadOnlyList<LensChoice> PreferCamera(IReadOnlyList<LensChoice> hits, string camera)
         {
             if (hits == null || hits.Count < 2) return hits;
-            string wanted = Letters(camera);
+            string wanted = LensCatalog.Letters(camera);
             if (wanted.Length == 0) return hits;
-            var own = hits.Where(h => Letters(h.Mount).Contains(wanted)).ToList();
+            var own = hits.Where(h => LensCatalog.Letters(h.Mount).Contains(wanted)).ToList();
             return own.Count > 0 ? own : hits;
         }
-
-        /// <summary>A name with only its letters and digits, upper-cased, for matching.</summary>
-        /// <param name="s">The name; null gives an empty string.</param>
-        /// <returns>The normalised name.</returns>
-        static string Letters(string s) => new string((s ?? "").Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
 
         /// <summary>
         /// The first raw of a list of frames, or null: the rule "the raw beside the master", once,

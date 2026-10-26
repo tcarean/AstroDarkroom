@@ -36,7 +36,7 @@ public class SplitRunTests
         FocalMm = 20,
         FNumber = 2.8,
         Camera = "NIKON D3300",
-        NikonLensId = 139,
+        LensId = 139,
         LensMinFocalMm = 11,
         LensMaxFocalMm = 20,
         LensMaxAperture = 2.8,

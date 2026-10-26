@@ -39,6 +39,7 @@ public class RawReaderTests
     [InlineData("x.arw")]
     [InlineData("x.dng")]
     [InlineData("x.raf")]
+    [InlineData("x.pef")]                                  // Pentax, added 2026-10-26 (R-004, R-108); flatcheck.py never had it
     public void RecognisesTheRawExtensionsFlatcheckPyAccepts(string path)
         => Assert.True(Reader.Handles(path));
 
@@ -201,7 +202,9 @@ public class RawReaderTests
         Assert.Equal(full.FocalMm, info.FocalMm);
         Assert.Equal(full.FNumber, info.FNumber);
         Assert.Equal(full.Camera, info.Camera);
-        Assert.Equal(full.NikonLensId, info.NikonLensId);
+        Assert.Equal(full.LensId, info.LensId);
+        Assert.Equal(full.LensMount, info.LensMount);
+        Assert.Equal(full.LensName, info.LensName);
         Assert.Equal(full.LensMinFocalMm, info.LensMinFocalMm);
         Assert.Equal(full.LensMaxFocalMm, info.LensMaxFocalMm);
         Assert.Equal(full.LensMaxAperture, info.LensMaxAperture);

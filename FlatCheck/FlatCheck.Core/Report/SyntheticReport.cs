@@ -309,8 +309,8 @@ namespace FlatCheck
         // ---------------------------------------------------------------- refusals
 
         /// <summary>
-        /// "IMG_7290.CR2 says nothing about the lens (no lens ID, no focal range): a telescope, or
-        /// a lens without contacts" - a raw that was read and carries no lens (R-106). One
+        /// "IMG_7290.CR2 says nothing about the lens (no lens ID, no lens name, no focal range): a
+        /// telescope, or a lens without contacts" - a raw that was read and carries no lens (R-106). One
         /// sentence for the Structure report's gap, the Structure tab's card and the Synthetic
         /// tab's prefill note.
         /// </summary>
@@ -318,36 +318,60 @@ namespace FlatCheck
         /// which gives "the raw".</param>
         /// <returns>The sentence, without a remedy.</returns>
         internal static string RawWithoutLensNote(string rawName)
-            => T($"{rawName ?? "the raw"} says nothing about the lens (no lens ID, no focal range): a telescope, or a lens without contacts",
-                 $"{rawName ?? "raw-ul"} nu spune nimic despre obiectiv (niciun ID de obiectiv, nicio gama de focale): un telescop, sau un obiectiv fara contacte");
+            => T($"{rawName ?? "the raw"} says nothing about the lens (no lens ID, no lens name, no focal range): a telescope, or a lens without contacts",
+                 $"{rawName ?? "raw-ul"} nu spune nimic despre obiectiv (niciun ID de obiectiv, niciun nume de obiectiv, nicio gama de focale): un telescop, sau un obiectiv fara contacte");
 
         /// <summary>
-        /// "ID-ul Nikon 139 din raw (11-20 mm f/2.8)" - what the raw said about the lens.
+        /// What the raw said about its lens, as it said it (R-108): "the lens "EF50mm f/1.4 USM"
+        /// (ID 198) from the raw (Canon EF, 50 mm f/1.4)", "the lens "FE 16-35mm F2.8 GM" from the
+        /// raw (Sony E, 16-35 mm f/2.8)", "the lens ID 2263 from the raw (Pentax K)", "the lens ID
+        /// 139 from the raw (11-20 mm f/2.8)" when the mount is unknown; no parenthesis when
+        /// neither the mount nor the range is known.
         /// </summary>
-        /// <param name="f">The loaded raw; null or without a Nikon lens ID gives a
-        /// placeholder.</param>
-        /// <returns>The lens ID and the range read from the raw.</returns>
+        /// <param name="f">The loaded raw; null, or one with neither a lens ID nor a lens name,
+        /// gives a placeholder.</param>
+        /// <returns>The lens's name and ID, with the mount and the range read from the raw.</returns>
         internal static string RawLensLabel(LoadedFrame f)
         {
-            if (f?.NikonLensId == null) return T("(lens ID)", "(ID obiectiv)");
-            string range = LensSpec.Describe(f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
-            return T($"the Nikon ID {f.NikonLensId.Value} from the raw", $"ID-ul Nikon {f.NikonLensId.Value} din raw")
-                 + (range.Length > 0 ? $" ({range})" : "");
+            bool id = f?.LensId != null, named = !string.IsNullOrWhiteSpace(f?.LensName);
+            if (!id && !named) return T("(lens ID)", "(ID obiectiv)");
+            string tail = RawLensTail(f);
+            if (named && id)
+                return T($"the lens \"{f.LensName}\" (ID {f.LensId.Value}) from the raw", $"obiectivul \"{f.LensName}\" (ID {f.LensId.Value}) din raw") + tail;
+            if (named)
+                return T($"the lens \"{f.LensName}\" from the raw", $"obiectivul \"{f.LensName}\" din raw") + tail;
+            return T($"the lens ID {f.LensId.Value} from the raw", $"ID-ul obiectivului {f.LensId.Value} din raw") + tail;
         }
 
         /// <summary>
-        /// "gama 135 mm f/2.0 din raw (ID-ul Nikon 74 nu se potriveste cu niciun profil)" - the
-        /// candidates by range alone.
+        /// " (Canon EF, 50 mm f/1.4)": the mount and the range the raw gives, whichever are known;
+        /// "" when neither is.
+        /// </summary>
+        /// <param name="f">The loaded raw.</param>
+        /// <returns>The parenthesis with its leading space, or "".</returns>
+        static string RawLensTail(LoadedFrame f)
+        {
+            string range = LensSpec.Describe(f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
+            string tail = string.Join(", ", new[] { f.LensMount, range }.Where(p => !string.IsNullOrEmpty(p)));
+            return tail.Length > 0 ? $" ({tail})" : "";
+        }
+
+        /// <summary>
+        /// "the range 135 mm f/2.0 from the raw (the lens ID 74 matches no profile)" - the
+        /// candidates by range alone, and why the ID or the name did not decide.
         /// </summary>
         /// <param name="f">The loaded raw; null allowed.</param>
-        /// <returns>The range read from the raw, and why the ID did not decide.</returns>
+        /// <returns>The range read from the raw, and why the ID or the name did not decide.</returns>
         internal static string RawRangeLabel(LoadedFrame f)
         {
             string range = LensSpec.Describe(f?.LensMinFocalMm, f?.LensMaxFocalMm, f?.LensMaxAperture);
-            string id = f?.NikonLensId != null
-                ? T($" (the Nikon ID {f.NikonLensId.Value} matches no profile)", $" (ID-ul Nikon {f.NikonLensId.Value} nu se potriveste cu niciun profil)")
+            bool id = f?.LensId != null, named = !string.IsNullOrWhiteSpace(f?.LensName);
+            string why = named && id
+                ? T($" (the lens \"{f.LensName}\", ID {f.LensId.Value}, matches no profile)", $" (obiectivul \"{f.LensName}\", ID {f.LensId.Value}, nu se potriveste cu niciun profil)")
+                : named ? T($" (the lens \"{f.LensName}\" matches no profile)", $" (obiectivul \"{f.LensName}\" nu se potriveste cu niciun profil)")
+                : id ? T($" (the lens ID {f.LensId.Value} matches no profile)", $" (ID-ul obiectivului {f.LensId.Value} nu se potriveste cu niciun profil)")
                 : T(" (no lens ID)", " (fara ID de obiectiv)");
-            return T($"the range {range} from the raw", $"gama {range} din raw") + id;
+            return T($"the range {range} from the raw", $"gama {range} din raw") + why;
         }
 
         /// <summary>The refusal when no lens was given.</summary>

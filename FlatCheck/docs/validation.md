@@ -135,6 +135,26 @@ saddle; and the -0.39 stops against the profile are identical on every column, t
 excess no rotation touches. The whole's row agrees with V-010 and V-025. Shared colour scale
 -11.4 / +12.7 %.
 
+### The lens of four raws of other makes (V-041 to V-044, measured 2026-10-26)
+
+Not a kind of `validation.json`: the figures are libraw's lens metadata, not a run's, and
+`RawSampleTests` (trait `Category=Validation`) holds them as its theory rows and prints what it
+read. The files are CC0 samples of raw.pixls.us, downloaded 2026-10-26 with the owner's approval,
+their SHA-256 identical to the site's, kept under `Samples/raw.pixls.us/` in the large folder with
+the site's file names (`:` written `-`), listed in the manifest. They are what ADR 0067 was
+designed on; `LensMountTests` fabricates frames with the same values for the gate.
+
+| ID | File (raw.pixls.us sample) | Camera | `LensId` | `LensMount` | `LensName` | range (mm, mm, f) | focal / f-number |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| V-041 | `Canon - EOS 7D Mark II - RAW (3-2).cr2` (1064) | Canon EOS 7D Mark II | 198 | Canon EF | `EF50mm f/1.4 USM` | 50 / 50 / 1.414 (from `MaxAperture`) | 50 / 4 |
+| V-042 | `Canon - EOS 6D - RAW.CR2` (799) | Canon EOS 6D | 155 | Canon EF | `EF85mm f/1.8 USM` | 85 / 85 / 1.834 | 85 / 5.6 |
+| V-043 | `Sony - ILCE-7M3 - 14bit compressed (3-2).ARW` (2414) | Sony ILCE-7M3 | 32831 (in no Adobe file) | Sony E | `FE 16-35mm F2.8 GM` | 16 / 35 / 2.8 | 32 / 4 |
+| V-044 | `Pentax - K-70 - 14bit (3-2).PEF` (1141) | Pentax K-70 | 2263 (Adobe's `8 215`) | Pentax K | none | none | 18 / 5.6 |
+
+Run 2026-10-26 (`FLATCHECK_TESTDATA_LARGE` on the masters' folder, `--filter RawSampleTests`):
+4 passed. The console's identification on the same files is quoted in
+`docs/design/lens-profiles.md`, section 10.
+
 ## Not automated
 
 Figures that exist in the design notes but have no case here, and why:
@@ -160,6 +180,9 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 `FLATCHECK_VALIDATION_DUMP` when that is set; that is how the expected values were first filled.
 
 ## History
+
+- 2026-10-26: V-041 to V-044 added, the lens metadata of four raws of other makes (ADR 0067); no
+  figure of V-001 to V-040 touched, no formula moved.
 
 - 2026-09-28: the Split tab's two real runs recorded above as dated measurements (no JSON
   case; the part masters are transient). No formula moved; the 40 cases were re-measured at

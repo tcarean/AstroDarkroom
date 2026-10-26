@@ -8,6 +8,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The lens is identified from a raw of any make, not only a Nikon (R-018, R-108, ADR 0067): the
+  maker's lens ID is read by mount (Nikon's own field on a Nikon body, the MakerNote's on Canon,
+  Sony, Pentax and the rest; Adobe's two-number Pentax IDs read as libraw does), and the lens's
+  name as the camera wrote it (EXIF LensModel) is the first key where the camera writes one, the
+  only one for a Sony E lens, whose Adobe files carry no ID. The reports say `the lens "EF50mm
+  f/1.4 USM" (ID 198) from the raw (Canon EF, 50 mm f/1.4)` where they said `the Nikon ID 139`.
+  Measured on four CC0 samples of raw.pixls.us, kept as validation data (V-041 to V-044).
 - Lightroom Classic's and Lightroom's own lens-profile folders,
   `C:\Program Files\Adobe\<app>\Resources\LensProfiles\1.0`, are read too, after the two Camera
   Raw folders (R-107, ADR 0066): a Lightroom-only installation now fills the Adobe half of the
@@ -96,6 +103,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `.pef` (Pentax) is a raw extension: a PEF was refused as a FITS that "does not begin with
+  SIMPLE" while libraw read it without trouble (R-004, ADR 0067). A Canon raw with an EF lens no
+  longer reads as a raw that says nothing about the lens.
 - A raw beside the master that says nothing about the lens (a camera on a telescope or on a
   lens without contacts: focal length 0, no lens ID, no focal range, as a Canon EOS 40D session
   wrote) is named as such, with what it lacks and what to give (`--lens <text>`, plus `--focal`

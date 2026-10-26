@@ -106,9 +106,9 @@ namespace FlatCheck
                 string lens = Prop("Lens");
                 if (lens != null && lens != lensName) aliases.Add(lens);
                 var ids = new List<long>();
-                if (long.TryParse(Prop("LensID"), NumberStyles.Integer, CultureInfo.InvariantCulture, out long id0)) ids.Add(id0);
+                if (ParseLensId(Prop("LensID")) is long id0) ids.Add(id0);
                 foreach (XElement e in holder.Descendants(St + "AlternateLensIDs").Descendants(Rdf + "li"))
-                    if (long.TryParse(e.Value.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out long id)) ids.Add(id);
+                    if (ParseLensId(e.Value) is long id) ids.Add(id);
 
                 var model = new VignettingModel(VignettingModelKind.Adobe, coeffs, table.Count >= 2 ? table : null,
                     focal.Value, sff,
@@ -121,6 +121,28 @@ namespace FlatCheck
                     aliases.Distinct().ToList(), ids.Distinct().ToList(), focal.Value, fStop, distance, model, file));
             }
             return result;
+        }
+
+        /// <summary>
+        /// A <c>stCamera:LensID</c> or <c>AlternateLensIDs</c> entry as one number: one integer as
+        /// it is (Canon's 198, Nikon's 139); two integers of a byte each, Pentax's form ("8 215"),
+        /// as a*256+b, the number libraw builds from the same two bytes (2263, measured on a K-70,
+        /// R-108). Anything else is null, so an entry this reader does not understand drops out
+        /// instead of matching a wrong lens.
+        /// </summary>
+        /// <param name="text">The entry's text; null or blank gives null.</param>
+        /// <returns>The lens ID, or null.</returns>
+        internal static long? ParseLensId(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            string[] parts = text.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+                return long.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out long one) ? one : null;
+            if (parts.Length == 2
+                && int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out int a) && a >= 0 && a <= 255
+                && int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int b) && b >= 0 && b <= 255)
+                return a * 256 + b;
+            return null;
         }
 
         /// <summary>

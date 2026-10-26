@@ -482,7 +482,7 @@ namespace FlatCheck.Wpf
                     }
                     else { CropNote = SessionMessages.SyntheticCropUnknown(id.Camera); _cropUnknown = true; }
                 }
-                if (id.HasRawLensId && SelectedLens == null)
+                if (id.RawNamesLens && SelectedLens == null)
                 {
                     string note = OfferCandidates(id.Candidates, id.RawLensLabel);
                     if (note != null) notes.Add(note);

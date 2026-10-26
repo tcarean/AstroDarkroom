@@ -68,9 +68,9 @@ a library extraction and not a copy is ADR 0011.
     right answer per format, not errors - a raw has no FITS header, a FITS has neither an
     ADU scale nor a preview, and either may be silent about the mosaic order. Since the
     synthetic flat it also carries what the file knows about the shot - `FocalMm`,
-    `FNumber`, `Camera`, `NikonLensId` - null where the format is silent (a Siril FITS has
-    no f-number; a D3300 raw with third-party glass has no lens name but has the Nikon
-    lens ID). Nothing below it knows where the pixels came from, and that is what keeps the
+    `FNumber`, `Camera`, `LensId`, `LensMount`, `LensName` - null where the format is silent
+    (a Siril FITS has no f-number; a D3300 raw with third-party glass has no lens name but
+    has the Nikon lens ID; a Canon has both, a Pentax the ID alone, ADR 0067). Nothing below it knows where the pixels came from, and that is what keeps the
     two formats from growing separate behaviour. `LoadInfo(path)` is the same dispatch
     **without pixels**: `Image` null, the shot fields filled - on a FITS from the header
     alone, on a raw from libraw's metadata at `OpenFile`, before `Unpack` (measured: tens of

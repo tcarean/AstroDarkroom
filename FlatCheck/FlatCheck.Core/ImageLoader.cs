@@ -24,7 +24,7 @@
 // difference in behaviour between the formats will appear silently.
 //
 // It mirrors load_image_with_header of flatcheck.py, including the choice NOT to validate the
-// extension: anything other than the six raw extensions goes to the FITS reader and fails there
+// extension: anything other than the seven raw extensions goes to the FITS reader and fails there
 // as a parse error (see docs/design/known-issues.md, point 2).
 
 using System.Collections.Generic;
@@ -66,14 +66,36 @@ namespace FlatCheck
         /// <summary>
         /// What the file knows about the shot, for the synthetic flat: the focal length
         /// (FOCALLEN on a FITS, libraw on a raw), the aperture (raw only - Siril does not write
-        /// the f-number), the camera's name (INSTRUME / libraw) and the Nikon lens ID (raw only;
-        /// it is what the Adobe profiles carry too, in LensID / AlternateLensIDs). Null when the
-        /// file is silent - the same principle as for Scale.
+        /// the f-number) and the camera's name (INSTRUME / libraw). Null when the file is silent
+        /// - the same principle as for Scale.
         /// </summary>
         internal double? FocalMm;
         internal double? FNumber;
         internal string Camera;
-        internal long? NikonLensId;
+
+        /// <summary>
+        /// The lens ID the raw carries, whichever the mount (raw only, R-108): Nikon's
+        /// LensIDNumber on a Nikon body (139 for the Tokina 11-20, 74 for a lens without CPU), the
+        /// MakerNote's LensID elsewhere - Canon's lens type (198 = EF 50mm f/1.4 USM), Sony's
+        /// (32831 = FE 16-35mm F2.8 GM, which no Adobe file carries), Pentax's two bytes as a*256+b
+        /// (2263 = 8 215). It is what the Adobe profiles carry in LensID / AlternateLensIDs on the
+        /// mounts that have one. Null when the file gives none.
+        /// </summary>
+        internal long? LensId;
+
+        /// <summary>
+        /// The camera's mount as libraw names it - "Nikon F", "Canon EF", "Sony E", "Pentax K" -
+        /// so the reports can say whose number the ID is; null when unknown (a FITS, always).
+        /// </summary>
+        internal string LensMount;
+
+        /// <summary>
+        /// The lens's name as the camera wrote it (EXIF LensModel: "EF50mm f/1.4 USM", "FE 16-35mm
+        /// F2.8 GM"), the same string the Adobe profiles carry as stCamera:Lens and the second key
+        /// of the identification (R-018). Null when the file has none: a D3300 with third-party
+        /// glass, a Pentax K-70, every FITS.
+        /// </summary>
+        internal string LensName;
 
         /// <summary>
         /// The lens's range from the raw's MakerNote, as libraw decodes it: the minimum and
