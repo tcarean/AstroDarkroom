@@ -63,6 +63,19 @@ have their own style, `ToolToggleButton` in `Theme.xaml`, a copy of `ToolButton`
 with an `IsChecked` trigger, since a `ToggleButton` is not a `Button` and cannot be based on
 one.
 
+## The focus after a toolbar click
+
+Every toolbar button, the two toggles included, is a `ButtonBase` and focusable, so a click
+takes the keyboard focus from the comparison surface, and the surface's shortcuts (R-063)
+would reach the button instead. `MainWindow` adds one handler for `ButtonBase.ClickEvent` on
+the toolbar's panel, `Toolbar`; the event bubbles, so the handler runs after the clicked
+button's own, and it calls `Compare.Focus()`. By then `About`'s dialog has closed and
+`Open…`'s file dialogs have been answered; a load that follows, an open or a mode switch,
+focuses the surface once more when the pair is shown (`ShowPair`). The buttons stay focusable:
+`Tab` still reaches them, and the dialog buttons share the style (ADR 0042). `MainWindowTests`
+clicks each button but `About` on the WPF test thread and reads the window's logical focus, the
+part of `Focus()` that works without a window handle (ADR 0032).
+
 ## The icon
 
 `Assets/make-icon.ps1` draws the curtain of ADR 0030 with WPF's own drawing classes, from

@@ -17,6 +17,7 @@
 
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
@@ -27,11 +28,42 @@ using ImageVisualCompare.Wpf.Services;
 namespace ImageVisualCompare.Tests;
 
 /// <summary>
-/// The main window's open flow on the WPF test thread (ADR 0032), with dialogs and a loader of
-/// the test's own: the window is built, never shown, and driven through its Open button.
+/// The main window's open flow and toolbar on the WPF test thread (ADR 0032), with dialogs and
+/// a loader of the test's own: the window is built, never shown, and driven through its buttons.
 /// </summary>
 public class MainWindowTests
 {
+    // About is left out: its click opens a modal dialog, which a never-shown window cannot.
+    [Theory]
+    [InlineData("ZoomOutButton")]
+    [InlineData("ZoomInButton")]
+    [InlineData("FitButton")]
+    [InlineData("ActualSizeButton")]
+    [InlineData("HistogramButton")]
+    [InlineData("FalseColoursButton")]
+    [InlineData("OpenButton")]
+    public async Task R063_AToolbarClick_HandsTheFocusBackToTheComparisonSurface(string buttonName)
+    {
+        object? surface = null;
+        object? focused = null;
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(new CountingDialogs(), new ImagePairLoader(new StalledLoader()));
+            var button = (ButtonBase)window.FindName(buttonName)!;
+
+            button.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+
+            // The window has no handle, so the keyboard focus cannot move (ADR 0032); what
+            // Focus() leaves behind here is the logical focus of the window's scope, which the
+            // keyboard focus follows in the running application.
+            surface = window.Compare;
+            focused = FocusManager.GetFocusedElement(window);
+        });
+
+        Assert.Same(surface, focused);
+    }
+
     [Fact]
     public async Task R006_ASecondOpenWhileAPairLoads_AsksForNothing()
     {

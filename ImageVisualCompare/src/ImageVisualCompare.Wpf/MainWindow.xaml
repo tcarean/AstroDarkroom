@@ -27,7 +27,7 @@
                            HorizontalAlignment="Left"
                            TextTrimming="CharacterEllipsis" />
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <StackPanel x:Name="Toolbar" Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock x:Name="NavigationLabel" Style="{StaticResource ToolLabel}" />
                     <Button x:Name="ZoomOutButton" Style="{StaticResource ToolButton}" Content="−" />
                     <TextBlock x:Name="ZoomLabel"
