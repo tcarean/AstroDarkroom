@@ -18,27 +18,54 @@
 namespace CopyWcs;
 
 /// <summary>
-/// The console, testable in process: the banner, the options, the copy run of the core and
-/// the printing of its outcome, with the exit code.
+/// The console, testable in process: the banner, the language, the options, the copy run of
+/// the core and the printing of its outcome, with the exit code.
 /// </summary>
 internal static class CopyWcsCli
 {
     /// <summary>
-    /// Runs the console once: prints the banner and the copyright, parses the options, runs the
-    /// copy and prints what happened.
+    /// Runs the console once: prints the banner and the copyright, reads <c>--lang</c>, parses
+    /// the options, runs the copy and prints what happened.
     /// </summary>
     /// <param name="args">The command line without the executable; not null.</param>
     /// <param name="stdout">Receives the banner, the copyright, the usage, the warnings and the result lines.</param>
-    /// <param name="stderr">Receives the one line of a parse error or a refusal.</param>
-    /// <returns>0 on success or a dry run, 1 when the copy was refused, 2 on a usage error.</returns>
+    /// <param name="stderr">Receives the one line of a bad <c>--lang</c>, a parse error or a refusal.</param>
+    /// <returns>0 on success or a dry run, 1 when the copy was refused or <c>--lang</c> names no language, 2 on a usage error.</returns>
     internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
     {
+        ArgumentNullException.ThrowIfNull(args);
+        ArgumentNullException.ThrowIfNull(stdout);
+        ArgumentNullException.ThrowIfNull(stderr);
+
         // The version, on the first line of every run, --help and the errors included, so that
         // a pasted output says on its own which version produced it. Under it, the copyright
         // notice GPLv3 asks for (see LICENSE).
         stdout.WriteLine(VersionInfo.Banner);
         stdout.WriteLine(LicenseInfo.Copyright);
 
+        // --lang first, so the usage and every error after it are in the language (R-020); a
+        // value it does not know is said in English (R-022). With no --lang the run keeps the
+        // process's language, English (Ui.Default, R-021).
+        var lang = LanguageArgument.Extract(args);
+        if (lang.BadValue is not null)
+        {
+            stderr.WriteLine("ERROR: " + LanguageArgument.BadValueMessage(lang.BadValue));
+            return 1;
+        }
+
+        using (lang.Language is UiLanguage chosen ? Ui.Use(chosen) : null)
+        {
+            return RunInLanguage(lang.Rest, stdout, stderr);
+        }
+    }
+
+    /// <summary>The console after the banner and <c>--lang</c>: the options, the run, the printing.</summary>
+    /// <param name="args">The arguments without <c>--lang</c> and its value; not null.</param>
+    /// <param name="stdout">Receives the usage, the warnings and the result lines.</param>
+    /// <param name="stderr">Receives the one line of a parse error or a refusal.</param>
+    /// <returns>0 on success or a dry run, 1 when the copy was refused, 2 on a usage error.</returns>
+    private static int RunInLanguage(string[] args, TextWriter stdout, TextWriter stderr)
+    {
         Options opt;
         try
         {

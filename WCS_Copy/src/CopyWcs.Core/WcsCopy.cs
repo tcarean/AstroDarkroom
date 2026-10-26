@@ -19,6 +19,8 @@
 // the pixel grid, selects the cards, lists or copies them, and returns what happened as lines
 // already worded, so that each application only prints or shows them (ADR 0001, ADR 0007).
 
+using static CopyWcs.Ui;
+
 namespace CopyWcs;
 
 /// <summary>What a copy run is asked to do.</summary>
@@ -91,7 +93,8 @@ internal static class WcsCopy
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            return Refused($"Nu pot citi sursa '{request.Source}': {ex.Message}", warnings);
+            return Refused(T($"Cannot read the source '{request.Source}': {ex.Message}",
+                $"Nu pot citi sursa '{request.Source}': {ex.Message}"), warnings);
         }
 
         FitsHeader dest;
@@ -101,7 +104,8 @@ internal static class WcsCopy
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            return Refused($"Nu pot citi destinatia '{request.Dest}': {ex.Message}", warnings);
+            return Refused(T($"Cannot read the destination '{request.Dest}': {ex.Message}",
+                $"Nu pot citi destinatia '{request.Dest}': {ex.Message}"), warnings);
         }
 
         // The WCS holds only on the same pixel grid.
@@ -109,25 +113,29 @@ internal static class WcsCopy
         var dstDim = (dest.GetInt("NAXIS1"), dest.GetInt("NAXIS2"));
         if (srcDim != dstDim)
         {
-            var msg = $"Dimensiuni diferite: sursa ({srcDim.Item1}, {srcDim.Item2}) " +
-                      $"vs destinatie ({dstDim.Item1}, {dstDim.Item2}).";
+            var msg = T(
+                $"Different dimensions: source ({srcDim.Item1}, {srcDim.Item2}) vs destination ({dstDim.Item1}, {dstDim.Item2}).",
+                $"Dimensiuni diferite: sursa ({srcDim.Item1}, {srcDim.Item2}) vs destinatie ({dstDim.Item1}, {dstDim.Item2}).");
             if (!request.Force)
             {
-                return Refused(msg + " WCS-ul ar fi gresit. Foloseste --force daca stii ce faci.", warnings);
+                return Refused(msg + T(" The WCS would be wrong. Use --force if you know what you are doing.",
+                    " WCS-ul ar fi gresit. Foloseste --force daca stii ce faci."), warnings);
             }
 
-            warnings.Add($"ATENTIE: {msg} Continui oricum (--force).");
+            warnings.Add(T($"WARNING: {msg} Continuing anyway (--force).", $"ATENTIE: {msg} Continui oricum (--force)."));
         }
 
         if (!source.Contains("CTYPE1"))
         {
-            warnings.Add("ATENTIE: sursa nu pare plate-solved (lipseste CTYPE1).");
+            warnings.Add(T("WARNING: the source does not look plate-solved (CTYPE1 is missing).",
+                "ATENTIE: sursa nu pare plate-solved (lipseste CTYPE1)."));
         }
 
         var present = WcsMetadataKeys.SelectKeysToCopy(source, request.IncludeOptical);
         if (present.Count == 0)
         {
-            return Refused("Nicio cheie relevanta gasita in sursa. Nimic de copiat.", warnings);
+            return Refused(T("No relevant key found in the source. Nothing to copy.",
+                "Nicio cheie relevanta gasita in sursa. Nimic de copiat."), warnings);
         }
 
         var cards = present.Select(k => source.GetCard(k)!).ToList();
@@ -135,7 +143,7 @@ internal static class WcsCopy
         if (request.DryRun)
         {
             return new WcsCopyOutcome(WcsCopyKind.Previewed, null, warnings, cards, null,
-                [$"Chei care ar fi copiate ({cards.Count}):"]);
+                [T($"Keys that would be copied ({cards.Count}):", $"Chei care ar fi copiate ({cards.Count}):")]);
         }
 
         // The raw 80-byte card is copied, not a reparsed value: that keeps the source's
@@ -145,7 +153,9 @@ internal static class WcsCopy
             dest.SetCard(k, source.GetCard(k)!);
         }
 
-        dest.AddHistory("WCS copiat din " + Path.GetFileName(request.Source));
+        // The card is data other programs read, not interface text: English in both languages
+        // (ADR 0004).
+        dest.AddHistory("WCS copied from " + Path.GetFileName(request.Source));
 
         var target = request.Output ?? request.Dest;
         try
@@ -154,14 +164,16 @@ internal static class WcsCopy
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return Refused($"Eroare la scriere: {ex.Message}", warnings);
+            return Refused(T($"Write error: {ex.Message}", $"Eroare la scriere: {ex.Message}"), warnings);
         }
 
         return new WcsCopyOutcome(WcsCopyKind.Copied, null, warnings, cards, target,
         [
-            $"Copiate {cards.Count} chei in {target}.",
-            "Verifica vizual adnotarea: daca imaginea a fost oglindita/flip-uita " +
-            "pe parcursul procesarii, WCS-ul copiat va fi gresit fara sa dea eroare.",
+            T($"Copied {cards.Count} keys into {target}.", $"Copiate {cards.Count} chei in {target}."),
+            T("Check the annotation by eye: if the image was mirrored or flipped during processing, " +
+              "the copied WCS will be wrong without any error.",
+              "Verifica vizual adnotarea: daca imaginea a fost oglindita/flip-uita " +
+              "pe parcursul procesarii, WCS-ul copiat va fi gresit fara sa dea eroare."),
         ]);
     }
 

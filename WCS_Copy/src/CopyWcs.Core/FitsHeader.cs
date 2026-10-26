@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Text;
+using static CopyWcs.Ui;
 
 namespace CopyWcs;
 
@@ -51,7 +52,8 @@ internal sealed class FitsHeader
             var read = ReadFully(stream, block);
             if (read < BlockSize)
             {
-                throw new InvalidDataException("Fisier trunchiat sau nu este FITS valid (cardul END lipseste).");
+                throw new InvalidDataException(T("Truncated file, or not a valid FITS (the END card is missing).",
+                    "Fisier trunchiat sau nu este FITS valid (cardul END lipseste)."));
             }
 
             consumed += BlockSize;
@@ -70,7 +72,8 @@ internal sealed class FitsHeader
 
         if (h._cards.Count == 0 || KeywordOf(h._cards[0]) != "SIMPLE")
         {
-            throw new InvalidDataException("Fisierul nu incepe cu SIMPLE - nu pare FITS.");
+            throw new InvalidDataException(T("The file does not begin with SIMPLE - it does not look like FITS.",
+                "Fisierul nu incepe cu SIMPLE - nu pare FITS."));
         }
 
         h._dataOffset = consumed;
