@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The core: the FITS header engine, the key lists, the copy run and its texts, the version
+       and the copyright read from the assembly. No Console, no UI, no entry point: a compile
+       boundary (the kit's ADR 0002; ADR 0001). The version and the copyright come from
+       Directory.Build.props, the same in every assembly. -->
+  <PropertyGroup>
+    <RootNamespace>CopyWcs</RootNamespace>
+    <!-- Numbers are formatted and parsed with the invariant culture whatever the Windows
+         culture: a FITS card holds "1.5", never "1,5". -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- The core stays internal: its consumers are in this repository and compile with it. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="copywcs" />
+    <InternalsVisibleTo Include="CopyWcs.Tests" />
+  </ItemGroup>
+</Project>

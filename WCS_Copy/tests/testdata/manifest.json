@@ -1,0 +1,4 @@
+{
+  "$comment": "Every test data file, in repo or outside it. 'location' is 'repo' (under fixtures/) or 'large' (under the folder COPYWCS_TESTDATA_LARGE names, git-ignored). scripts/check-testdata.ps1 verifies presence and SHA-256 of every entry; a 'large' entry that is missing is a warning locally and an error in CI only when 'requiredInCi' is true. Every FITS the tests read is built in memory by FitsTestData; the one fixture is the header of a real Siril plate solve (ADR 0005).",
+  "files": []
+}

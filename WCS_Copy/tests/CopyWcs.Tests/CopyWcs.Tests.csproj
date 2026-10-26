@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>CopyWcs.Tests</RootNamespace>
+    <!-- CA1707: underscores in test names are the convention here, not a defect. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <!-- The test host is the executable at run time, not copywcs.exe: without the switch the
+         cards the tests format would take the machine's culture. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CopyWcs.Core\CopyWcs.Core.csproj" />
+    <ProjectReference Include="..\..\src\CopyWcs.Cli\CopyWcs.Cli.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Small fixtures and the acceptance figures travel with the test binaries, so a test
+         never depends on the working directory. -->
+    <Content Include="..\testdata\fixtures\**" LinkBase="testdata\fixtures" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\testdata\manifest.json" Link="testdata\manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\docs\validation.json" Link="docs\validation.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\docs\requirements.md" Link="docs\requirements.md" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\Directory.Build.props" Link="Directory.Build.props" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
