@@ -156,13 +156,13 @@ namespace FlatCheck
         internal static string Caveat()
             => T("the smoothed file keeps EVERYTHING that is smooth in the master and removes everything that is not. It does not know\n"
                  + "what is the lens's and what is the source's: a monitor's blotches, the sky's gradient or\n"
-                 + "a panel's uneven corners stay, because they are smooth; only --ratio separates them.\n"
+                 + "a panel's uneven corners stay, because they are smooth; nothing here separates them.\n"
                  + "What it removes - texture, dust, compact spots - can also be wanted: a dust shadow\n"
                  + "is right for the session whose lights have it too. A real structure narrower\n"
                  + "than the scale (~300 px) is partly taken; the scale is the only knob.",
                  "fisierul netezit pastreaza TOT ce e neted in master si scoate tot ce nu e. Nu stie\n"
                  + "ce e al obiectivului si ce e al sursei: petele unui monitor, gradientul cerului sau\n"
-                 + "colturile inegale ale unui panou raman, fiindca sunt netede; doar --ratio le desparte.\n"
+                 + "colturile inegale ale unui panou raman, fiindca sunt netede; nimic de aici nu le desparte.\n"
                  + "Ce scoate - textura, praful, petele compacte - poate fi si ceva dorit: o umbra de\n"
                  + "praf e corecta pentru sesiunea ale carei lights o au si ele. O structura reala mai\n"
                  + "ingusta decat scara (~300 px) e luata partial; scara e singurul buton.");

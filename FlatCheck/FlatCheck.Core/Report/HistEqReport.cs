@@ -172,13 +172,13 @@ namespace FlatCheck
             => T("The smoothed flat is the master above with the texture, the dust and the compact spots "
                  + "removed. A shape that shows on the master and is missing here was removed by the "
                  + "smoothing; one that shows on both is smooth at the chosen scale and stayed - "
-                 + "lens or source, the picture does not say; --ratio does. The equalisation being by ranks, "
+                 + "lens or source, the picture does not say. The equalisation being by ranks, "
                  + "what is left on the smoothed one, however small in amplitude, comes out at maximum contrast: a "
                  + "smoothed flat that looks NOISIER than the master is the expected picture, not a defect.",
                  "Flat-ul netezit e masterul de deasupra cu textura, praful si petele compacte "
                  + "scoase. O forma care se vede pe master si lipseste de aici a fost scoasa de "
                  + "netezire; una care se vede pe amandoua e neteda la scara aleasa si a ramas - "
-                 + "obiectiv sau sursa, poza nu spune; --ratio spune. Egalizarea fiind pe ranguri, "
+                 + "obiectiv sau sursa, poza nu spune. Egalizarea fiind pe ranguri, "
                  + "ce a ramas pe netezit, oricat de mic in amplitudine, iese la contrast maxim: un "
                  + "netezit care pare mai ZGOMOTOS decat masterul e poza asteptata, nu un defect.");
 

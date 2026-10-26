@@ -38,16 +38,16 @@ Copyright (C) 2026 Tudor Carean
     cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
     erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
     (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
-    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    nu se reproduce); un singur master nu le desparte. Imprastierea colturilor,
     asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
     "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
     mica, o pata de condens - pe care reziduul il taie ca extrema.
 
   VERDICT: REFA
     Abatere prea mare de la simetria radiala => sursa neuniforma, light
-    leak, camera inclinata, sau ambient. NU e vignetare. Inainte sa refaci,
-    ruleaza --ratio pe doua stive rotite: daca abaterea e fixa pe aparat,
-    flat-ul e corect. Altfel refa flat-urile. Vezi harta pentru forma problemei.
+    leak, camera inclinata, sau ambient. NU e vignetare. Cifra e o limita
+    superioara: o optica ea insasi descentrata apare si ea aici, si partea aceea
+    nu e eroare de flat. Altfel refa flat-urile; vezi harta pentru forma problemei.
 
     -> harta salvata: <TMP>/structure_band_refa.png
 

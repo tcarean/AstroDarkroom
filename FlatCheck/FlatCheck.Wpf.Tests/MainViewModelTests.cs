@@ -40,72 +40,15 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// The Ratio tab does not compute at opening, however many masters the folder holds, and
-    /// that is a decision: the mode asks for two stacks from TWO orientations, that is from two
-    /// sessions, so from two folders. What a single folder can propose are individual frames,
-    /// from which comes a result that is confident and false.
-    /// </summary>
-    [Fact]
-    public async Task RatioWaitsForTwoExplicitChoices()
-    {
-        using var f = new SessionFixture()
-            .WithFlatMaster().WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
-        var vm = new MainViewModel();
-
-        await vm.OpenAsync(f.Root);
-
-        Assert.False(vm.Ratio.HasResult);
-        Assert.Null(vm.Ratio.FileA);
-        Assert.Null(vm.Ratio.FileB);
-    }
-
-    /// <summary>
-    /// The chain really holds the gate the Ratio tab takes, through OpenAsync: held open at the
-    /// profile catalog (the Structure run awaits it before the master), a pair picked meanwhile
-    /// does not finish until the chain does. R082_APickDuringTheOpeningChainWaitsForIt holds the
-    /// gate itself; this one checks the wiring.
-    /// </summary>
-    [Fact]
-    public async Task R082_OpeningPassesTheGateToTheRatioTabSoAPickWaitsForTheChain()
-    {
-        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF")
-                                          .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
-        using var ws = new TempWorkspace();
-        using var hold = new ManualResetEventSlim(false);
-        var sources = LensProfileTestData.Sources(ws);
-        var vm = new MainViewModel(null, null, null,
-            locateProfiles: () => { hold.Wait(); return sources; },
-            loadInfo: path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
-
-        Task open = vm.OpenAsync(f.Root);   // stops at the catalog, which the test holds
-        vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
-        vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
-        Task pick = vm.Ratio.Pending;
-
-        Assert.NotSame(pick, await Task.WhenAny(pick, Task.Delay(1000)));
-        Assert.True(vm.IsRunning);
-        Assert.False(vm.Ratio.HasResult);
-
-        hold.Set();
-        await open;
-        await pick;
-
-        Assert.True(vm.Structure.HasResult);
-        Assert.True(vm.Ratio.HasResult);
-        Assert.Contains("pp_flat_stacked_B.fit", vm.Ratio.Report);
-    }
-
-    /// <summary>
     /// The opening chain holds the gate from the structure run to the end of the series, and
-    /// every tab a click runs takes the same gate: a Histogram pick, an Expo pick and a Ratio
-    /// pair made while the chain is held open at the profile catalog all wait, and all finish
-    /// once the chain does (ADR 0061).
+    /// every tab a click runs takes the same gate: a Histogram pick and an Expo pick made while
+    /// the chain is held open at the profile catalog both wait, and both finish once the chain
+    /// does (ADR 0061).
     /// </summary>
     [Fact]
     public async Task R081_TheOpeningChainHoldsTheGateEveryClickRunTakes()
     {
-        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF")
-                                          .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF");
         string raw = f.WriteAnalysableRawFlat("flat.fit");
         using var ws = new TempWorkspace();
         using var hold = new ManualResetEventSlim(false);
@@ -119,29 +62,24 @@ public class MainViewModelTests
         Task histEq = vm.HistEq.Pending;
         vm.Exposure.Selected = raw;
         Task expo = vm.Exposure.RecomputeAsync();
-        vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
-        vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
-        Task ratio = vm.Ratio.Pending;
 
-        Task any = Task.WhenAny(histEq, expo, ratio);
+        Task any = Task.WhenAny(histEq, expo);
         Assert.NotSame(any, await Task.WhenAny(any, Task.Delay(1000)));
         Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.HistEq.BusyMessage);
         Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.Exposure.BusyMessage);
-        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.Ratio.BusyMessage);
 
         hold.Set();
         await open;
-        await Task.WhenAll(histEq, expo, ratio);
+        await Task.WhenAll(histEq, expo);
 
         Assert.True(vm.Structure.HasResult);
         Assert.True(vm.HistEq.HasResult);
         Assert.True(vm.Exposure.HasResult);
-        Assert.True(vm.Ratio.HasResult);
     }
 
     /// <summary>
     /// The chain itself waits for the gate: a folder opened while another run still holds it (a
-    /// Ratio run of the previous folder, which does not stop mid-computation) starts its
+    /// click-run of the previous folder, which does not stop mid-computation) starts its
     /// structure run only when that run lets go.
     /// </summary>
     [Fact]
@@ -592,7 +530,6 @@ public class MainViewModelTests
 
         Assert.False(vm.Structure.HasResult);
         Assert.False(vm.Light.HasResult);
-        Assert.False(vm.Ratio.HasResult);
         Assert.Empty(vm.Exposure.Files);
     }
 

@@ -56,7 +56,7 @@ first. V-045, V-046.
 ## The review (2026-10-26)
 
 The owner asked for an independent review before the merge. Its ten findings and what was done
-are in ADR 0067's consequences; the Nikon question was settled by measuring the owner's Nikkor
+are in ADR 0068's consequences; the Nikon question was settled by measuring the owner's Nikkor
 35 DX raw (no name written, V-047). The change from "name hits ∪ ID hits" to "the name decides
 where it matches" was reported to the owner at the first wrap-up, with the Zeiss ZE measurement;
 the owner's answer is recorded below when given.
@@ -93,6 +93,6 @@ the owner's answer is recorded below when given.
    `LensIdentification` (the predicates, the union, the lensfun join by name), the labels in
    `SyntheticReport`, the predicate in `StructureReport`, `VignettingComparer` and the Synthetic
    tab's prefill.
-5. ADR 0067 (0030 superseded in part), CHANGELOG, `lens-profiles.md`, `modes-synthetic.md`,
+5. ADR 0068 (0030 superseded in part), CHANGELOG, `lens-profiles.md`, `modes-synthetic.md`,
    `code-map.md`, `README.md`, `validation.md` + manifest.
 6. Gate, commit, merge proposal. No formula moved, no golden gives a raw: no golden should change.

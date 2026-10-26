@@ -15,20 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// TabViewModel.cs - what the eight tabs have in common.
+// TabViewModel.cs - what the seven tabs have in common.
 //
 // They all do the same thing: show a waiting screen, compute on another thread, then show either
-// results or an explanation. That state - busy / result / error - lives here, once, so the eight
-// do not end up with eight ways of failing. The Split tab is the one exception to the waiting
+// results or an explanation. That state - busy / result / error - lives here, once, so the seven
+// do not end up with seven ways of failing. The Split tab is the one exception to the waiting
 // screen: it keeps its own running state, so its log stays visible, and uses the result, the
 // error and the progress (Progress, ProgressKnown, for its own bar), not RunGuardedAsync.
 //
 // SUPERSEDED RUNS. The histogram tab leaves its list clickable while it computes, so a second
 // run can start over the first. RunGuardedAsync numbers its runs and lets only the latest one
 // close the state: a superseded run does not turn off the waiting screen (the new one owns it),
-// shows no error and does not clear the result. The Ratio tab overlaps the same way on a quick
-// re-choice. For the other tabs, which never overlap runs, the check is always true and changes
-// nothing.
+// shows no error and does not clear the result. For the other tabs, which never overlap runs,
+// the check is always true and changes nothing.
 //
 // WHY these classes ARE PUBLIC, when the rest of the application is internal: the WPF binding
 // reads public properties through reflection. The consequence is useful, not only bureaucratic -

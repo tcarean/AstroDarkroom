@@ -18,7 +18,7 @@
 // HeavyRunGate.cs - the one gate every heavy run of the window takes (ADR 0061).
 //
 // Measured on 2026-10-25 on the 24 MP masters: one run alone peaks at 0.7-1.25 GB of working
-// set, and two at once add up (Light series + Ratio 2.2 GB). The "sequential, not parallel" rule
+// set, and two at once add up (Light series + the two-master run of the time, 2.2 GB). The "sequential, not parallel" rule
 // of MainViewModel used to be kept per tab, through a seam that waited for the opening chain, so
 // two click-runs could still overlap, and the Expo and Histogram tabs did not wait at all. This
 // gate is the rule itself: the opening chain takes it once, every click-run takes it around its

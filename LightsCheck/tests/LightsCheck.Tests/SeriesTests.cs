@@ -232,6 +232,20 @@ public class SeriesTests
         Assert.All(s.Swamping!.SelectMany(x => x), c => Assert.True(c.SwampingRatio > 3, $"{c.Name} ratio {c.SwampingRatio}"));
     }
 
+    /// <summary>A channel name with a comma in it, the CFA[row,col] of a mosaic of unknown order, is quoted: every CSV row keeps the header's cell count (R-028).</summary>
+    [Fact]
+    public void R028_AChannelNameWithACommaIsQuotedSoEveryRowHasTheHeadersCells()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(3).ToList(), bayer: false);
+        SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
+
+        string[] csv = SeriesOutputs.Csv(r).Split('\n');
+        string[] head = CsvCells(csv[0]);
+        Assert.Equal("CFA[0,0]", CsvCells(csv[1])[Array.IndexOf(head, "ch0_name")]);
+        Assert.Equal("CFA[1,1]", CsvCells(csv[1])[Array.IndexOf(head, "ch3_name")]);
+        Assert.All(csv.Where(l => l.Length > 0), l => Assert.Equal(head.Length, CsvCells(l).Length));
+    }
+
     [Fact]
     public void R028_TheOutputsAreWrittenWhereAskedAndNeverIntoLights()
     {
@@ -388,12 +402,14 @@ public class SeriesTests
     public void R038_TheFrameTableAndTheCsvCarryTheMoveOnTheSky()
     {
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        // The fixture's lights are FITS, read as the solve is, so the solve's y column is the
+        // Veil matrix mirrored: the senses below are those of the raw session (ADR 0023).
         string[] wcs =
         [
             FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
             FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
-            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-0.99999"),
-            FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "0.0037"),
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "0.99999"),
+            FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "-0.0037"),
         ];
         File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
         SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
@@ -452,12 +468,13 @@ public class SeriesTests
         Assert.Contains("--nord sus|jos", help, StringComparison.Ordinal);
 
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        // The fixture's lights are FITS: the Veil solve with its y column mirrored (ADR 0023).
         string[] wcs =
         [
             FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
             FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
-            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-0.99999"),
-            FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "0.0037"),
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "0.99999"),
+            FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "-0.0037"),
         ];
         File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
         (_, string stdout, _) = Cli.Run(s.Root, "--threads", "2");
@@ -547,7 +564,8 @@ public class SeriesTests
             FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
             FitsTestData.Card("CRVAL1", "314.43"), FitsTestData.Card("CRVAL2", "30.0"),
             FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
-            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-1"), FitsTestData.Card("PC2_1", "1"), FitsTestData.Card("PC2_2", "0.0037"),
+            // The y column mirrored: FITS lights are read as the solve is (ADR 0023).
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "1"), FitsTestData.Card("PC2_1", "1"), FitsTestData.Card("PC2_2", "-0.0037"),
         ];
         using SessionFixture shortRun = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
         File.WriteAllBytes(Path.Combine(shortRun.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));

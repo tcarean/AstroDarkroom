@@ -93,10 +93,10 @@ namespace FlatCheck
             w.WriteLine(T("\n  THE TEST DOES NOT APPLY TO THESE FRAMES", "\n  TESTUL NU SE APLICA PE CADRELE ASTEA"));
             foreach (string line in DegeneracyLines()) w.WriteLine("    " + line);
             w.WriteLine("    " + NotALimitation);
-            w.WriteLine(T("\n    For a wide-field setup, the test that answers is the 180-degree",
-                          "\n    Pentru un setup cu camp larg, testul care raspunde e rotatia la 180 de"));
-            w.WriteLine(T("    rotation (--ratio): it validates the flat without involving the sky at all.",
-                          "    grade (--ratio): valideaza flat-ul fara sa implice cerul deloc."));
+            w.WriteLine(T("\n    On a wide-field setup the flat has to be judged on its own: the structure",
+                          "\n    Pe un setup cu camp larg flat-ul se judeca singur: testele de structura"));
+            w.WriteLine(T("    tests of the master, which do not involve the sky at all.",
+                          "    ale masterului, care nu implica cerul deloc."));
             if (JudgedOnTheFocalLengthAlone(s))
             {
                 w.WriteLine("\n    " + FocalOnlyLines[0]);
@@ -261,7 +261,7 @@ namespace FlatCheck
         // ------------------------------------------------------------ for the window
         // The same field line, warning and refusal as WriteSuitability and WriteTooWide, in the
         // window's layout: no column padding, paragraphs instead of indented lines, and the
-        // Ratio tab named where the console names --ratio.
+        // Structure tab named where the console names the structure tests.
 
         /// <summary>The field covered, for the window's card: the console's value
         /// (<see cref="FieldValue"/>), unpadded.</summary>
@@ -292,8 +292,8 @@ namespace FlatCheck
         }
 
         /// <summary>Why the test does not apply on a field wider than
-        /// <see cref="Th.LightFovMax"/>, for the window: the geometric degeneracy, the Ratio
-        /// tab as the test that answers and, when the field was judged from the focal length
+        /// <see cref="Th.LightFovMax"/>, for the window: the geometric degeneracy, the Structure
+        /// tab as what is left to judge the flat on and, when the field was judged from the focal length
         /// alone, the console's note that the decision assumed the largest plausible sensor -
         /// without its <c>--fov</c> way out, which the window has no control for.</summary>
         /// <param name="s">The suitability check's answer, of level TooWide.</param>
@@ -301,10 +301,10 @@ namespace FlatCheck
         /// alone.</returns>
         internal static string TooWideText(SuitabilityResult s)
             => string.Join(" ", DegeneracyLines()) + "\n\n" + NotALimitation + "\n\n"
-             + T("On a wide-field setup, the test that answers is the one in the Ratio tab: "
-                 + "the 180-degree rotation validates the flat without involving the sky at all.",
-                 "Pe un setup cu camp larg, testul care raspunde e cel din tabul Ratio: "
-                 + "rotatia la 180 de grade valideaza flat-ul fara sa implice cerul deloc.")
+             + T("On a wide-field setup the flat has to be judged on its own, on the Structure tab: "
+                 + "the structure tests of the master do not involve the sky at all.",
+                 "Pe un setup cu camp larg flat-ul se judeca singur, in tabul Structura: "
+                 + "testele de structura ale masterului nu implica cerul deloc.")
              + (JudgedOnTheFocalLengthAlone(s) ? "\n\n" + string.Join(" ", FocalOnlyLines) : "");
     }
 }

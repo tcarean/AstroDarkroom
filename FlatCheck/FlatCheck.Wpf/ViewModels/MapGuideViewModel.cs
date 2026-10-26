@@ -23,21 +23,21 @@
 // counter-test separates the cases. So no figure is computed here and no threshold compared:
 // the text comes whole from SessionMessages.
 //
-// WHY IT IS A CLASS AND NOT THREE PROPERTIES ON EACH TAB: Structure and Ratio both show the same
-// guide, and TabViewModel is not the place - the exposure tab has no map, so it has nothing to
-// do with it.
+// WHY IT IS A CLASS AND NOT THREE PROPERTIES ON THE TAB: the guide belongs to the residual map,
+// not to a tab, and TabViewModel is not the place - the exposure tab has no map, so it has
+// nothing to do with it.
 //
 // INSTANCE properties, though the text is constant: {Binding} resolves through the DataContext
 // and does not see static properties - a binding to one would have rendered empty, exactly as
-// the Ratio tab's documentation did.
+// the Ratio tab's documentation once did (ADR 0033).
 
 using System.Collections.Generic;
 using System.Linq;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>The collapsible guide under the residual map, on the Structure and Ratio
-    /// tabs: an intro and one row per shape, the text from
+    /// <summary>The collapsible guide under the residual map, on the Structure
+    /// tab: an intro and one row per shape, the text from
     /// <see cref="SessionMessages"/>.</summary>
     public sealed class MapGuideViewModel : ObservableObject
     {

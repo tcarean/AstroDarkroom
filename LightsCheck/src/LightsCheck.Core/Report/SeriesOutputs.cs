@@ -88,7 +88,9 @@ internal static class SeriesOutputs
     /// <returns>
     /// The header row and one row per frame, each ended by "\n"; a figure that is missing or NaN
     /// is an empty cell; the file name, the reasons, the arrows and the error are quoted, the
-    /// class, the channel names and the trail axis are written bare.
+    /// class, the channel names and the trail axis are written bare unless one holds a comma
+    /// (the CFA[row,col] channel name of a mosaic of unknown order), in which case it is
+    /// quoted, so that every row keeps the header's cells (R-028).
     /// </returns>
     internal static string Csv(SeriesResult r)
     {
@@ -109,17 +111,17 @@ internal static class SeriesOutputs
             [
                 f.Info.Index.ToString(inv), Q(f.Info.FileName), f.Info.Timestamp?.ToString("yyyy-MM-ddTHH:mm:ss", inv) ?? "",
                 N(f.Info.ExposureSeconds), N(f.Info.Iso), N(f.Info.FNumber), N(f.Info.FocalMm),
-                SeriesReport.ClassWord(r.Series.Classes[i]), Q(SeriesReport.Reasons(r.Series.Flags[i])),
+                Cell(SeriesReport.ClassWord(r.Series.Classes[i])), Q(SeriesReport.Reasons(r.Series.Flags[i])),
                 N(r.Cadence.PauseSeconds[i]), N(r.Dither.Step[i]), N(r.Dither.StepX[i]), N(r.Dither.StepY[i]),
                 N(g?.Dx), N(g?.Dy), N(g?.RotationDeg), g is null ? "" : g.Matches.ToString(inv), N(g?.Rms),
                 m is null ? "" : m.Detected.ToString(inv), m is null ? "" : m.DetectedBright.ToString(inv), m is null ? "" : m.SaturatedStars.ToString(inv), m is null ? "" : m.Shapes.Count.ToString(inv),
-                N(m?.FwhmMedian), N(m?.FwhmP90), N(m?.Centre.Fwhm), N(m?.Mid.Fwhm), N(m?.Edge.Fwhm), N(m?.ElongationMedian), N(m?.ElongationP90), N(m?.ElongatedFraction), N(m?.AngleDeg), N(m?.AngleCoherence), TrailWord(trail?.On ?? TrailAxis.Unknown), N(m?.Halo),
+                N(m?.FwhmMedian), N(m?.FwhmP90), N(m?.Centre.Fwhm), N(m?.Mid.Fwhm), N(m?.Edge.Fwhm), N(m?.ElongationMedian), N(m?.ElongationP90), N(m?.ElongatedFraction), N(m?.AngleDeg), N(m?.AngleCoherence), Cell(TrailWord(trail?.On ?? TrailAxis.Unknown)), N(m?.Halo),
                 N(m?.BackgroundMedian), N(m?.BackgroundCentre), N(m?.BackgroundMin), N(m?.BackgroundMax), N(m?.NoiseSigma),
             ];
             for (int c = 0; c < 4; c++)
             {
                 ChannelLevel? ch = m is not null && c < m.Channels.Count ? m.Channels[c] : null;
-                cells.Add(ch?.Name ?? "");
+                cells.Add(Cell(ch?.Name ?? ""));
                 cells.Add(N(ch?.Median));
                 cells.Add(ch is null ? "" : ch.Saturated.ToString(inv));
                 cells.Add(N(ch?.HighPassSigma));
@@ -153,6 +155,14 @@ internal static class SeriesOutputs
     /// <param name="s">The text; not null.</param>
     /// <returns>The text in double quotes, each quote inside it doubled.</returns>
     private static string Q(string s) => "\"" + s.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+
+    /// <summary>
+    /// A text cell written bare when it can be, quoted when a comma, a quote or a line break
+    /// inside it would break the row (R-028).
+    /// </summary>
+    /// <param name="s">The text; not null.</param>
+    /// <returns>The text as it is, or through <see cref="Q"/> when it holds a comma, a quote or a line break.</returns>
+    private static string Cell(string s) => s.IndexOfAny([',', '"', '\n', '\r']) >= 0 ? Q(s) : s;
 
     /// <summary>
     /// The `trail_on` cell: the axis word without the preposition, empty when unknown (R-033).

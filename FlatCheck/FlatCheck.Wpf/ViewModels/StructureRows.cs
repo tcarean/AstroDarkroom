@@ -18,14 +18,13 @@
 // StructureRows.cs - the five test rows of the structure battery, built once for the three tabs
 // that show them.
 //
-// WHY IT EXISTS. The Structure, Ratio and Netezire tabs show THE SAME battery - Ratio runs it on
-// the combined master (A+B)/2, Netezire on the master before and after smoothing, but the figures,
-// the labels and the verdicts are the same, because it is literally the same analyzer. (The
-// informative rows go to Structure and Ratio.) Before this file each tab composed them by itself:
-// Structure from an ItemsControl over MetricRow, Ratio from five Grid blocks hand-written in XAML,
-// with the labels as literals. The consequence was exactly what could be expected - when
-// Structure got descriptions under every row, Ratio was left without, and when the fifth test
-// appeared it had to be added in two places.
+// WHY IT EXISTS. The Structure and Netezire tabs show THE SAME battery - Netezire on the master
+// before and after smoothing - and the figures, the labels and the verdicts are the same, because
+// it is literally the same analyzer. (The informative rows go to Structure.) Before this file
+// each tab composed them by itself: Structure from an ItemsControl over MetricRow, the Ratio tab
+// of the time from five Grid blocks hand-written in XAML, with the labels as literals. The
+// consequence was exactly what could be expected - when Structure got descriptions under every
+// row, Ratio was left without, and when the fifth test appeared it had to be added in two places.
 //
 // So the rows are built here, and the tabs only show them. The text is still not written here:
 // the labels belong to the rows, but the explanations come from StructureReport.TestNote, in the
@@ -96,9 +95,9 @@ namespace FlatCheck.Wpf
         /// the illumination centre, the local spots. No verdict, so no pill.
         ///
         /// Everything the console prints under "INFORMATIV" in WriteBody, MINUS the line of ADU
-        /// levels - that one sits in the structure mode's header, not in the body, because on the
-        /// Ratio mode's combined master (normalised to median 1) it would mean nothing. That is
-        /// why the levels stay in StructureTabViewModel, and the rows here go to both tabs.
+        /// levels - that one sits in the structure mode's header, not in the body, because on a
+        /// raster normalised to median 1 it would mean nothing. That is why the levels stay in
+        /// StructureTabViewModel, apart from the rows built here.
         /// </summary>
         /// <param name="r">The structure result.</param>
         /// <returns>Three rows without a verdict: vignetting in stops, the centre offset in
@@ -141,6 +140,6 @@ namespace FlatCheck.Wpf
         /// measurement.</summary>
         /// <param name="v">The value, in percent.</param>
         /// <returns>The value with two decimals and " %", or "n/a".</returns>
-        internal static string Pct(double v) => double.IsNaN(v) ? "n/a" : $"{v:F2} %";
+        static string Pct(double v) => double.IsNaN(v) ? "n/a" : $"{v:F2} %";
     }
 }

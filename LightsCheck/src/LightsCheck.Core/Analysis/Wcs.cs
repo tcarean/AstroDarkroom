@@ -36,7 +36,12 @@ namespace LightsCheck.Core;
 /// <param name="DecDeg">
 /// The declination of the reference pixel, in degrees; null when the header did not carry it.
 /// </param>
-internal sealed record Wcs(double Cdelt1, double Cdelt2, double Pc11, double Pc12, double Pc21, double Pc22, double? DecDeg = null)
+/// <param name="FramesFlipped">
+/// Whether the lights' rows run the other way from the solved FITS's: true for camera raws,
+/// read top-down while Siril stores its FITS bottom-up (ADR 0013); false for FITS lights,
+/// stored as the solve is and read in the same file order (ADR 0023).
+/// </param>
+internal sealed record Wcs(double Cdelt1, double Cdelt2, double Pc11, double Pc12, double Pc21, double Pc22, double? DecDeg = null, bool FramesFlipped = true)
 {
     /// <summary>
     /// The image axis RA runs along: the one that dominates the RA row of the matrix.
@@ -46,19 +51,35 @@ internal sealed record Wcs(double Cdelt1, double Cdelt2, double Pc11, double Pc1
     /// <summary>
     /// The handedness of the pixel frame against the sky: +1 or -1, the sign of the determinant
     /// of the map from a star's pixel shift (X, Y) to its motion on the sky (east, north)
-    /// through <see cref="SkyOffsetDeg"/> with Siril's flip (ADR 0013). A mirrored frame reads a
-    /// rotation on the sky with the opposite sign, so the sign of a rotation the sky geometry
-    /// predicts is multiplied by this before it is compared with the registration's (R-050).
+    /// through <see cref="PointingOffsetDeg"/>, the lights' flip included (ADR 0013, ADR 0023).
+    /// A mirrored frame reads a rotation on the sky with the opposite sign, so the sign of a
+    /// rotation the sky geometry predicts is multiplied by this before it is compared with the
+    /// registration's (R-050).
     /// </summary>
     internal int Handedness
     {
         get
         {
-            (double ra1, double dec1) = SkyOffsetDeg(-1, 0);
-            (double ra2, double dec2) = SkyOffsetDeg(0, 1);
+            (double ra1, double dec1) = PointingOffsetDeg(-1, 0);
+            (double ra2, double dec2) = PointingOffsetDeg(0, -1);
             return Math.Sign(ra1 * dec2 - dec1 * ra2);
         }
     }
+
+    /// <summary>
+    /// The change of RA (scaled by cos DEC) and of DEC, in degrees, for a displacement of the
+    /// pointing given in the lights' own pixels: <see cref="SkyOffsetDeg"/> with the y term
+    /// reversed when the lights' rows run the other way from the solve's
+    /// (<see cref="FramesFlipped"/>, the raws' case).
+    /// </summary>
+    /// <param name="dx">The pointing's displacement along the lights' x, in pixels.</param>
+    /// <param name="dy">The pointing's displacement along the lights' y, in pixels, row 0 first.</param>
+    /// <returns>
+    /// The change of RA times cos DEC and the change of DEC, in degrees, signed as the WCS's world
+    /// axes.
+    /// </returns>
+    internal (double RaDeg, double DecDeg) PointingOffsetDeg(double dx, double dy)
+        => SkyOffsetDeg(dx, FramesFlipped ? -dy : dy);
 
     /// <summary>
     /// Degrees per pixel along RA: the scale times the length of the matrix row, so a CD matrix

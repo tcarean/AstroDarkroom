@@ -98,7 +98,6 @@ public class WindowLanguageTests
             using var f = new SessionFixture()
                 .WithFlatMaster()
                 .WithSmoothedMaster()
-                .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit")
                 .WithLightSeries(6)
                 .WithRawFlats("DSC_0101.NEF", "DSC_0102.NEF");
             using var broken = new SessionFixture().WithProcess();
@@ -110,15 +109,11 @@ public class WindowLanguageTests
             await _sta.InvokeAsync(async () =>
             {
                 await vm.OpenAsync(f.Root);
-                vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
-                vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
-                await vm.Ratio.RecomputeAsync();
                 await vm.Synthetic.Pending;
                 await problem.OpenAsync(broken.Root);
 
                 vm.Structure.MapGuide.IsExpanded = true;
                 vm.Structure.HowToRead.IsExpanded = true;
-                vm.Ratio.MapGuide.IsExpanded = true;
                 vm.Exposure.HistogramGuide.IsExpanded = true;
                 vm.HistEq.Guide.IsExpanded = true;
                 vm.Smooth.Guide.IsExpanded = true;
@@ -129,7 +124,6 @@ public class WindowLanguageTests
                     ("en-window", new MainWindow { DataContext = vm }),
                     ("en-problem", new MainWindow { DataContext = problem }),
                     ("en-structure", new StructureView { DataContext = vm.Structure }),
-                    ("en-ratio", new RatioView { DataContext = vm.Ratio }),
                     ("en-end-to-end", new LightView { DataContext = vm.Light }),
                     ("en-exposure", new ExposureView { DataContext = vm.Exposure }),
                     ("en-histogram", new HistEqView { DataContext = vm.HistEq }),
@@ -143,7 +137,7 @@ public class WindowLanguageTests
                 }
             });
 
-            Assert.True(vm.Structure.HasResult && vm.Ratio.HasResult && vm.Light.HasResult);
+            Assert.True(vm.Structure.HasResult && vm.Light.HasResult);
             Assert.True(problem.HasProblem);
             foreach (string tab in new[] { "Structure", "Exposure", "Smoothing", "Synthetic" })
                 Assert.Contains(tab, texts);
@@ -204,16 +198,12 @@ public class WindowLanguageTests
                 var splitVm = new SplitTabViewModel();
                 splitVm.Populate(split);
 
-                var ratio = new RatioTabViewModel();
-                ratio.Choose(isA: true, path: @"C:\somewhere\picture.jpg");
-
                 foreach (var (name, view) in new (string, FrameworkElement)[]
                 {
                     ("en-exposure-result", new ExposureView { DataContext = exposure }),
                     ("en-histogram-result", new HistEqView { DataContext = histeq }),
                     ("en-smoothing-result", new SmoothView { DataContext = smooth }),
                     ("en-split-result", new SplitView { DataContext = splitVm }),
-                    ("en-ratio-error", new RatioView { DataContext = ratio }),
                     ("en-about", new AboutWindow()),
                 })
                 {
@@ -222,7 +212,6 @@ public class WindowLanguageTests
                 }
 
                 Assert.True(exposure.HasResult && histeq.HasResult && smooth.HasResult && splitVm.HasResult);
-                Assert.True(ratio.HasError);
             });
 
             Assert.Contains("Mosaic", texts);

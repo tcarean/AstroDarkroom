@@ -146,12 +146,13 @@ public class LanguageTests
         Assert.DoesNotContain("--est ", help, StringComparison.Ordinal);
 
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        // The fixture's lights are FITS: the Veil solve with its y column mirrored (ADR 0023).
         string[] wcs =
         [
             FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
             FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
-            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-0.99999"),
-            FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "0.0037"),
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "0.99999"),
+            FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "-0.0037"),
         ];
         File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
         (_, string english, _) = Cli.Run(s.Root, "--threads", "2", "--east", "left", "--north", "down");

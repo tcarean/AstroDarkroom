@@ -11,7 +11,7 @@ Copyright (C) 2026 Tudor Carean
     that came out would be the sky, not the flat.
     It is not a limitation of the tool, it is a geometric degeneracy.
 
-    For a wide-field setup, the test that answers is the 180-degree
-    rotation (--ratio): it validates the flat without involving the sky at all.
+    On a wide-field setup the flat has to be judged on its own: the structure
+    tests of the master, which do not involve the sky at all.
 
 [exit 1]

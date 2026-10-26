@@ -145,7 +145,7 @@ public class WindowSmokeTests
         });
 
     /// <summary>
-    /// The window and its eight tabs: Structura, Ratio and End to end with real results in
+    /// The window and its seven tabs: Structura and End to end with real results in
     /// them, the others in their opening state (their results are rendered by the tests
     /// below). An empty tab would render even with half of its templates wrong - only with
     /// data are all the bindings reached.
@@ -156,7 +156,6 @@ public class WindowSmokeTests
         using var f = new SessionFixture()
             .WithFlatMaster()
             .WithSmoothedMaster()      // the NETEZIT row and the line moved under it, in the histogram list
-            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit")
             .WithLightSeries(6)
             .WithRawFlats("DSC_0101.NEF", "DSC_0102.NEF");
 
@@ -168,19 +167,8 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
 
-            // The Ratio tab starts empty - rendered that way, because that is the state the
-            // user sees when opening the window, and it has its own bindings (the
-            // documentation).
-            Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio-gol");
-
-            // ...and only then with a result, after the two explicit choices.
-            vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
-            vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
-            await vm.Ratio.RecomputeAsync();
-
             Render(new MainWindow { DataContext = vm }, 1360, 820, "fereastra");
             Render(new StructureView { DataContext = vm.Structure }, name: "tab-structura");
-            Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio");
             Render(new LightView { DataContext = vm.Light }, name: "tab-end-to-end");
             Render(new ExposureView { DataContext = vm.Exposure }, name: "tab-expunere");
             Render(new HistEqView { DataContext = vm.HistEq }, name: "tab-histeq-gol");
@@ -198,9 +186,7 @@ public class WindowSmokeTests
             // suite exists to catch.
             vm.Structure.MapGuide.IsExpanded = true;
             vm.Structure.HowToRead.IsExpanded = true;
-            vm.Ratio.MapGuide.IsExpanded = true;
             Render(new StructureView { DataContext = vm.Structure }, name: "tab-structura-ghid");
-            Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio-ghid");
 
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
@@ -208,7 +194,6 @@ public class WindowSmokeTests
         // and they really had something to render
         Assert.True(vm.Structure.HasResult);
         Assert.True(vm.Light.HasResult);
-        Assert.True(vm.Ratio.HasResult);
         Assert.Equal(2, vm.Exposure.Files.Count);
         Assert.Equal(4, vm.HistEq.Files.Count);    // master, smoothed, two frames
         Assert.True(vm.Smooth.CanRun);

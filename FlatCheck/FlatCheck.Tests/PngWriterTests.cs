@@ -183,7 +183,7 @@ public class PngWriterTests
     /// The CRC table used to be filled lazily, with the field assigned BEFORE the fill:
     /// a second thread arriving in that window read a table of zeros and wrote a wrong
     /// CRC, i.e. a corrupt PNG. Reproduced with 8 threads: 5261 wrong CRCs in 2000
-    /// rounds. The window can hit it - the Ratio tab encodes while Structure still runs.
+    /// rounds. The window can hit it - a scale chip re-encodes a map while Structure still runs.
     /// The table is now a static readonly built whole; this pins that many threads
     /// encoding at once all produce the serial bytes, CRCs included.
     /// </summary>

@@ -38,7 +38,7 @@ Copyright (C) 2026 Tudor Carean
     cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
     erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
     (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
-    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    nu se reproduce); un singur master nu le desparte. Imprastierea colturilor,
     asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
     "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
     mica, o pata de condens - pe care reziduul il taie ca extrema.
@@ -59,7 +59,7 @@ Copyright (C) 2026 Tudor Carean
     5 % PROBLEMA), care masoara aceeasi marime direct in light, ar fi PROBLEMA.
     Referinta insasi difera cu 0.2 stopuri = 15 % intre bazele de profile,
     deci verdictul adancimii nu poate fi mai fin de atat si ramane pe scara de reziduu.
-    Diferenta e RADIALA, deci invizibila celor cinci teste, hartii si modului --ratio: e singurul
+    Diferenta e RADIALA, deci invizibila celor cinci teste si hartii: e singurul
     loc unde se vede o sursa care cade cu unghiul (plus) sau umple colturile (minus). Profilul e
     modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.
 
@@ -71,7 +71,7 @@ Copyright (C) 2026 Tudor Carean
     unghiul - un panou (monitor, tableta) prea aproape sau fara un difuzor adevarat; foile
     mate nu difuzeaza. Ajuta un difuzor lambertian (acril opal, un teanc gros de hartie
     alba) sau un perete alb luminat din lateral; nu ajuta mai multe rotatii.
-    Excesul e radial, deci cele cinci teste si --ratio nu-l vad; nu-l va scoate nici background
+    Excesul e radial, deci cele cinci teste nu-l vad; nu-l va scoate nici background
     extraction. Refa flat-urile.
 
     -> harta salvata: <TMP>/out.png

@@ -1,4 +1,4 @@
-# 0067. The lens is identified on every mount: the maker's ID by mount, the camera's name of the lens as a second key, Pentax pairs as libraw reads them
+# 0068. The lens is identified on every mount: the maker's ID by mount, the camera's name of the lens as a second key, Pentax pairs as libraw reads them
 
 Date: 2026-10-26
 Status: accepted 2026-10-26

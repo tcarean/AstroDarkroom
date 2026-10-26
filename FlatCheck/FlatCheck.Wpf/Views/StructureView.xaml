@@ -235,9 +235,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="{l:T En='RESIDUAL MAP', Ro='HARTA REZIDUALA'}" />
 
-        <!-- The colour scale. The GroupName must differ from the one in the Ratio tab: WPF
-             groups RadioButtons by name in the whole window, so a shared name would make the
-             chips here uncheck the chips there. -->
+        <!-- The colour scale. The GroupName must be unique in the window: WPF groups
+             RadioButtons by name in the whole window, so a name shared with another tab would
+             make the chips here uncheck the chips there. -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
           <TextBlock Style="{StaticResource Faint}" Text="{l:T En='scale:', Ro='scara:'}" Margin="0,0,10,0"
                      VerticalAlignment="Center" />

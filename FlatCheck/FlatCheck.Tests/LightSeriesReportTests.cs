@@ -136,8 +136,8 @@ public class LightSeriesReportTests
         Assert.Contains("Media NU se poate citi ca eroare de flat", text);
         Assert.Contains("eroarea mediei", text);
         Assert.Contains("urmareste gradientul de cer", text);
-        // and points to the test that really answers on such data
-        Assert.Contains("--ratio", text);
+        // and says what is left to judge the flat on, on such data
+        Assert.Contains("testele de structura", text);
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ public class LightSeriesReportTests
 
     /// <summary>
     /// The window's reasons are the console's, joined into paragraphs and capitalised, and close
-    /// on the Ratio tab where the console names --ratio; its correlation figure is the
+    /// on the Structure tab where the console names the structure tests; its correlation figure is the
     /// console's "nu se aplica" when the sky gradient does not vary.
     /// </summary>
     [Fact]
@@ -198,8 +198,7 @@ public class LightSeriesReportTests
 
         Assert.StartsWith($"Eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK ({Th.LightRadOk:F2}), ", reasons);
         Assert.Contains("Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din fiecare.", reasons);
-        Assert.Contains("tabul Ratio", reasons);
-        Assert.DoesNotContain("--ratio", reasons);
+        Assert.Contains("tabul Structura", reasons);
         Assert.StartsWith("nu se aplica (gradientul variaza doar", LightSeriesReport.CorrelationValue(r));
     }
 }

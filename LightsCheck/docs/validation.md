@@ -95,6 +95,10 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-10-26: the solve's flip against the lights became the raws' alone (ADR 0023); all 13
+  cases re-run on the two sessions, 13 passed, no figure moved, as expected for sessions of
+  raws, whose mapping is unchanged. The FITS copy of the Veil session the ADR measured is a
+  temporary folder, not a case.
 - 2026-10-25: after the move to .NET 8 (ADR 0017), all 13 cases re-run on the net8 build with
   `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 13, Passed: 13, Total
   time: 8.8582 Minutes`; no figure moved.

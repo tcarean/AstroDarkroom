@@ -141,7 +141,7 @@ Not a kind of `validation.json`: the figures are libraw's lens metadata, not a r
 `RawSampleTests` (trait `Category=Validation`) holds them as its theory rows and prints what it
 read. The files are CC0 samples of raw.pixls.us, downloaded 2026-10-26 with the owner's approval,
 their SHA-256 identical to the site's, kept under `Samples/raw.pixls.us/` in the large folder with
-the site's file names (`:` written `-`), listed in the manifest. They are what ADR 0067 was
+the site's file names (`:` written `-`), listed in the manifest. They are what ADR 0068 was
 designed on; `LensMountTests` fabricates frames with the same values for the gate.
 
 | ID | File (raw.pixls.us sample) | Camera | `LensId` | `LensMount` | `LensName` | range (mm, mm, f) | focal / f-number |
@@ -167,8 +167,6 @@ Figures that exist in the design notes but have no case here, and why:
   through -19.20 % to +35.73 %, correlation -0.94): a 32-frame run of 24 MP lights, and the
   frames are not in the manifest. The figures are in `modes-light.md`; the behaviour is pinned
   by the synthetic series goldens.
-- The `--ratio` figure 4.02 % computed from two 15-frame stacks against 4.00 % measured on the
-  30-frame master (`modes-ratio.md`): the per-orientation stacks are not kept as files.
 - The per-orientation numpy analyses of the flat sources (`flat-sources.md`): benches, not the
   tool.
 
@@ -186,7 +184,7 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 ## History
 
 - 2026-10-26: V-041 to V-048 added, the lens metadata of six raws of other makes and two of the
-  owner's Nikon raws (ADR 0067); no
+  owner's Nikon raws (ADR 0068); no
   figure of V-001 to V-040 touched, no formula moved.
 
 - 2026-09-28: the Split tab's two real runs recorded above as dated measurements (no JSON

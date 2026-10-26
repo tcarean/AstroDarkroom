@@ -162,6 +162,22 @@ public class SeriesAnalyzerTests
         Assert.Equal("RA 4 px → E, DEC 20 px ↑ N", SeriesReport.MoveCell(new MountMove(4.0, 20.0, true), ArrowKeys.Default));
     }
 
+    /// <summary>FITS lights are stored as the solve is, so the same step reads the sense its y feeds the other way round, and the handedness with it (R-038, ADR 0023).</summary>
+    [Fact]
+    public void R038_FitsLightsAreNotFlippedAgainstTheSolve()
+    {
+        AnalyzedFrame[] frames = [Frame(1, Measurement(3.0, 1.1, 10000, 120)), Frame(2, Measurement(3.0, 1.1, 10000, 120))];
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        DitherAnalysis d = DitherAnalyzer.Analyze([0, 128.2], [0, -142.2], c.PauseSeconds);
+        Wcs fits = VeilWcs with { FramesFlipped = false };
+
+        MountMove m = Assert.IsType<MountMove>(SeriesAnalyzer.Analyze(frames, c, d, null, fits).MountMoves[1]);
+        Assert.Equal(142.2, m.RaPx, 1.0);      // RA runs along Y on this solve: east, where the raws read west
+        Assert.Equal(-128.2, m.DecPx, 1.0);    // DEC runs along X: south, as for the raws
+        Assert.Equal(-VeilWcs.Handedness, fits.Handedness);
+        Assert.True(VeilWcs.FramesFlipped);    // the default is the raws' case, the measured one
+    }
+
     /// <summary>The arrows are symbols, right is east and up is north by default, and the setting swaps them (R-040, ADR 0014).</summary>
     [Fact]
     public void R040_TheArrowsAreSymbolsFromTheKeysAndRightIsEastByDefault()

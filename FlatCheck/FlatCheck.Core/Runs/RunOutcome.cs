@@ -42,7 +42,7 @@
 namespace FlatCheck
 {
     /// <summary>
-    /// The result of a mode that always produces an answer: structure, the A/B ratio,
+    /// The result of a mode that always produces an answer: structure, `--against`,
     /// exposure. These modes cannot refuse their input - at most they give a bad verdict,
     /// which is still an answer.
     /// </summary>
@@ -59,26 +59,14 @@ namespace FlatCheck
         /// </summary>
         internal readonly byte[] Png;
 
-        /// <summary>
-        /// A second map, when the mode produces two, null otherwise. Only the attribution mode:
-        /// it splits the master into two components, and each has a different shape to show -
-        /// the residual of the camera-fixed part (which matches the verdict) and the A/B ratio
-        /// (which shows the shape of the external gradient). The window toggles between them;
-        /// the console writes both.
-        /// </summary>
-        internal readonly byte[] SecondaryPng;
-
-        /// <summary>Bundles a run's result with its encoded maps.</summary>
+        /// <summary>Bundles a run's result with its encoded map.</summary>
         /// <param name="result">The analyzer's record; not null.</param>
         /// <param name="png">The residual map as PNG bytes, or null when the mode draws
         /// none.</param>
-        /// <param name="secondaryPng">The second map as PNG bytes (the ratio mode's A/B), or
-        /// null.</param>
-        internal RunOutcome(TResult result, byte[] png, byte[] secondaryPng = null)
+        internal RunOutcome(TResult result, byte[] png)
         {
             Result = result;
             Png = png;
-            SecondaryPng = secondaryPng;
         }
     }
 }

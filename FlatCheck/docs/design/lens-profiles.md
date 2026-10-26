@@ -209,7 +209,7 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   the generic mount file ("NIKON CORPORATION (lens)"), because Adobe keeps per-body files
   with the body's SFF and Lightroom takes those; still several → refusal with the list,
   exit 2. No text + a raw that names its lens → `LensIdentification.CandidatesFromRaw` (ADR
-  0067): `LensCatalog.ByLensName` first, the raw's `LensName` (EXIF LensModel) letter for
+  0068): `LensCatalog.ByLensName` first, the raw's `LensName` (EXIF LensModel) letter for
   letter (`LensCatalog.Letters`: letters and digits, upper-cased) against each lens's name and
   aliases, the maker allowed in front, with the camera's maker word as the parse hint; when
   that finds nothing, or the raw has no name, `ByLensId` with the raw's `LensId`; then
@@ -422,7 +422,7 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   catalog are ADR 0028's context. Beyond them: 801 of the Adobe files lack the ` - RAW`
   suffix and 638 carry no parentheses; `lensfun/update-lensfun.py` refreshes `data/db` and
   rewrites `LENSFUN-VERSION.txt`.
-- **The lens on four raws of other makes, 2026-10-26** (the measurement behind ADR 0067; the
+- **The lens on four raws of other makes, 2026-10-26** (the measurement behind ADR 0068; the
   files are the CC0 samples 1064, 799, 2414 and 1141 of raw.pixls.us, kept as V-041 to V-044,
   read with `Sdcb.LibRaw` 0.21.1.7 through a reflection dump of every `LensInfo` field; the
   owner's D3300 raw beside them). `Nikon.LensIDNumber`: 74 on the D3300, 0 on the rest.
@@ -457,7 +457,7 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   the lensfun table for the ILCE-7M3) and the Pentax from 18 mm f/5.6 (crop 1.534, K-70). The
   first implementation took name hits ∪ ID hits and listed six lenses on the 7D Mark II: the
   three Zeiss ZE files that share 198 survived the narrowing because "Milvus 1.4_25 ZE" gives
-  no range; hence the name wins where it matches (ADR 0067).
+  no range; hence the name wins where it matches (ADR 0068).
 - **The owner's D3300 with the Nikkor 35 DX and with the Tokina, 2026-10-26** (V-047, V-048,
   after the review asked whether a Nikon body writes a name for a lens with CPU): `LensInfo.Lens`
   empty on both, `Nikon.LensIDNumber` 159 and 139, `MakerNotes.LensID` 11482002309166440710 and
@@ -553,7 +553,7 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
   2026-10-26) gets `SyntheticReport.RawWithoutLensNote` in `Identify`'s notes, which the
   Synthetic tab shows under its fields, and the gap `RawWithoutLens` in the comparison (ADR
   0065). Since 2026-10-26 the lens ID is read by mount and the camera's name of the lens is the
-  first key (ADR 0067, section 10), so a Canon with an EF lens is identified, not reported as a
+  first key (ADR 0068, section 10), so a Canon with an EF lens is identified, not reported as a
   raw that says nothing; a raw with an ID or a name is never this case.
 
 **Measured** (corner, stops; "nearest" is the profile that gives the verdict):

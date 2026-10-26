@@ -29,7 +29,7 @@ namespace FlatCheck
 {
     /// <summary>
     /// The verdict thresholds, as named constants: the residual scale, the smoothing,
-    /// --ratio, --light and its series, the profile tolerances and the exposure bands. Percent
+    /// --light and its series, the profile tolerances and the exposure bands. Percent
     /// unless the name says otherwise.
     /// </summary>
     static class Th
@@ -95,9 +95,6 @@ namespace FlatCheck
         // spots on the Tokina by 0.80. The corners, the residual and the maximum spot can NOT be
         // the guard: they drop when the texture leaves (1.47 points on the maximum spot).
         public const double SmoothScaleLoss = 0.5;
-
-        // --- 180 rotation ---
-        public const double RatioOk = 1.0, RatioBad = 3.0;
 
         // --- end-to-end ---
         public const double LightRadOk = 2.0, LightRadBad = 5.0;

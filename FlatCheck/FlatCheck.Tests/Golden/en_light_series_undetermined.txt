@@ -31,8 +31,8 @@ Copyright (C) 2026 Tudor Carean
 
     The flat is the same on every frame by construction - it was divided out of
     each one. So everything that moves during the series is sky, not flat.
-    On data like these the answer comes from the 180 rotation test (--ratio), which
-    validates the flat without involving the sky at all. See the README, the section
+    On data like these the flat has to be judged on its own, on the structure tests
+    of the master, which do not involve the sky at all. See the README, the section
     on when --light can be used.
 
     -> map saved: <TMP>/out.png

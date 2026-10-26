@@ -8,7 +8,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
-- The lens is identified from a raw of any make, not only a Nikon (R-018, R-108, ADR 0067): the
+- The lens is identified from a raw of any make, not only a Nikon (R-018, R-108, ADR 0068): the
   maker's lens ID is read by mount (Nikon's own field on a Nikon body, the MakerNote's on Canon,
   Sony, Pentax and the rest; Adobe's two-number Pentax IDs read as libraw does), and the lens's
   name as the camera wrote it (EXIF LensModel) is the first key where the camera writes one, the
@@ -106,7 +106,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 ### Fixed
 
 - `.pef` (Pentax) is a raw extension: a PEF was refused as a FITS that "does not begin with
-  SIMPLE" while libraw read it without trouble (R-004, ADR 0067). A Canon raw with an EF lens no
+  SIMPLE" while libraw read it without trouble (R-004, ADR 0068). A Canon raw with an EF lens no
   longer reads as a raw that says nothing about the lens.
 - A raw beside the master that says nothing about the lens (a camera on a telescope or on a
   lens without contacts: focal length 0, no lens ID, no focal range, as a Canon EOS 40D session
@@ -134,6 +134,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the run does not start and the message names the file.
 
 ### Removed
+
+- The `--ratio` mode and the window's Ratio tab (R-020 and R-082 dropped, ADR 0067): the
+  attribution by 180-degree rotation needed two masters from two rotated sittings, an input the
+  workflow never produced, so the tab stayed empty and the flag unused. `--ratio` is now an
+  unknown option, no `-world` map is written, and the sentences of the other modes that sent
+  the reader to `--ratio` say instead what one master can and cannot tell apart. The four
+  `--ratio` parity goldens are gone and 17 others were recaptured for those sentences, with the
+  owner's yes; no figure moved. Removing a documented flag is a breaking change by SemVer.
 
 - `scripts/crosscheck.ps1`, its permission line in `.claude/settings.json`, and the two tests
   that tied `__version__` and `__copyright__` in `flatcheck.py` to the C#.

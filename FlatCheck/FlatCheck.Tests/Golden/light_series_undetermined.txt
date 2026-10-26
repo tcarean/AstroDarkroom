@@ -31,8 +31,8 @@ Copyright (C) 2026 Tudor Carean
 
     Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din
     fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat.
-    Pe date ca astea raspunsul il da testul de rotatie 180 (--ratio), care
-    valideaza flat-ul fara sa implice cerul deloc. Vezi README, sectiunea
+    Pe date ca astea flat-ul se judeca singur, pe testele de structura ale
+    masterului, care nu implica cerul deloc. Vezi README, sectiunea
     despre cand se poate folosi --light.
 
     -> harta salvata: <TMP>/out.png

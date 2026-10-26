@@ -11,6 +11,6 @@ Copyright (C) 2026 Tudor Carean
     ar iesi ar fi cerul, nu flat-ul.
     Nu e o limitare a uneltei, e o degenerare geometrica.
 
-    Pentru un setup cu camp larg, testul care raspunde e rotatia la 180 de
-    grade (--ratio): valideaza flat-ul fara sa implice cerul deloc.
+    Pe un setup cu camp larg flat-ul se judeca singur: testele de structura
+    ale masterului, care nu implica cerul deloc.
 
