@@ -91,7 +91,7 @@ internal static class WcsCopy
         {
             source = FitsHeader.ReadPrimary(request.Source);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         {
             return Refused(T($"Cannot read the source '{request.Source}': {ex.Message}",
                 $"Nu pot citi sursa '{request.Source}': {ex.Message}"), warnings);
@@ -102,7 +102,7 @@ internal static class WcsCopy
         {
             dest = FitsHeader.ReadPrimary(request.Dest);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         {
             return Refused(T($"Cannot read the destination '{request.Dest}': {ex.Message}",
                 $"Nu pot citi destinatia '{request.Dest}': {ex.Message}"), warnings);
@@ -162,7 +162,7 @@ internal static class WcsCopy
         {
             dest.WriteWithDataFrom(request.Dest, target);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
         {
             return Refused(T($"Write error: {ex.Message}", $"Eroare la scriere: {ex.Message}"), warnings);
         }

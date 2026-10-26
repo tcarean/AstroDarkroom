@@ -131,6 +131,7 @@ public class LanguageTests
     [
         "ATENTIE", "Nu pot", "Chei care", "Copiate", "Dimensiuni", "Nicio cheie", "Eroare",
         "sursa", "destinatie", "Sunt necesare", "Optiune", "Verifica vizual", "optiuni",
+        "Fisier", "trunchiat", "nu pare FITS", "nu incepe",
     ];
 
     public static IEnumerable<object[]> Scenarios()
@@ -139,6 +140,9 @@ public class LanguageTests
         yield return ["bad-args"];
         yield return ["unknown-option"];
         yield return ["source-missing"];
+        yield return ["dest-missing"];
+        yield return ["source-not-fits"];
+        yield return ["source-truncated"];
         yield return ["mismatch"];
         yield return ["mismatch-forced"];
         yield return ["no-ctype1"];
@@ -180,6 +184,9 @@ public class LanguageTests
         var noCtype = FitsTestData.PlateSolvedCards();
         noCtype.RemoveAll(c => c.StartsWith("CTYPE1", StringComparison.Ordinal));
         var noCtypePath = ws.WriteFile("noctype.fit", FitsTestData.MinimalFitsFile(noCtype, data));
+        // A header whose first card is not SIMPLE (R-015), and a file cut inside its first block.
+        var notFits = ws.WriteFile("notfits.fit", FitsTestData.MinimalFitsFile([FitsTestData.Card("BITPIX", "16"), FitsTestData.Card("NAXIS", "0")]));
+        var truncated = ws.WriteFile("truncated.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), data)[..100]);
 
         string[] args = scenario switch
         {
@@ -187,6 +194,9 @@ public class LanguageTests
             "bad-args" => ["only-one.fit"],
             "unknown-option" => [source, dest, "--bogus"],
             "source-missing" => [ws.FilePath("missing.fit"), dest],
+            "dest-missing" => [source, ws.FilePath("missing.fit")],
+            "source-not-fits" => [notFits, dest],
+            "source-truncated" => [truncated, dest],
             "mismatch" => [source, wide],
             "mismatch-forced" => [source, wide, "--force", "-o", ws.FilePath("forced.fit")],
             "no-ctype1" => [noCtypePath, dest, "--dry-run"],

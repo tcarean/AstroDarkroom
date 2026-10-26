@@ -36,7 +36,7 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
 
 `WriteWithDataFrom(dataSource, target)` writes the cards, `END`, spaces to the next 2880-byte
 boundary, then copies `dataSource` from `_dataOffset` to its end. The header may have grown
-past its original number of blocks (a copy adds up to 72 cards and a HISTORY card), so the
+past its original number of blocks (a copy adds up to 47 fixed keys, the SIP coefficients and a HISTORY card; 72 on V-001), so the
 file cannot be patched in place: when `target` is `dataSource` itself, the output goes to
 `target + ".tmp"` and `File.Move(temp, target, overwrite: true)` replaces the original at the
 end (R-012, R-013). On a failure before the move, the original is untouched and the `.tmp`

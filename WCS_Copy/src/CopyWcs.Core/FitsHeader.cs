@@ -42,7 +42,9 @@ internal sealed class FitsHeader
     /// <param name="path">The file's path.</param>
     /// <returns>The header, with the data offset remembered for <see cref="WriteWithDataFrom"/>.</returns>
     /// <exception cref="InvalidDataException">The file does not begin with SIMPLE, or ends before an END card.</exception>
-    /// <exception cref="IOException">The file cannot be opened or read.</exception>
+    /// <exception cref="IOException">The file cannot be opened or read (missing, a folder in the path missing, locked).</exception>
+    /// <exception cref="UnauthorizedAccessException">The path is a directory, or the file cannot be read by this user.</exception>
+    /// <exception cref="ArgumentException">The path is empty or blank.</exception>
     public static FitsHeader ReadPrimary(string path)
     {
         using var fs = File.OpenRead(path);
@@ -227,6 +229,8 @@ internal sealed class FitsHeader
     /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from.</param>
     /// <param name="target">The file to write; the same path as <paramref name="dataSource"/> for an in-place rewrite.</param>
     /// <exception cref="IOException">The target cannot be created or written.</exception>
+    /// <exception cref="UnauthorizedAccessException">The target, or the original of an in-place rewrite, cannot be replaced by this user.</exception>
+    /// <exception cref="ArgumentException">A path is empty or blank.</exception>
     public void WriteWithDataFrom(string dataSource, string target)
     {
         var inPlace = Path.GetFullPath(dataSource) == Path.GetFullPath(target);

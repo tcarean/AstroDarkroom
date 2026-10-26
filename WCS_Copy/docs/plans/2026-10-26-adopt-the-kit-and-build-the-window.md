@@ -463,6 +463,22 @@ title bar, made anew at every open. `AboutTests` as DarksCheck's (R-035).
   `--lang` line and the HISTORY card; 87 tests before, 125 after (9 `WcsCopyTests`, 20
   `LanguageTests` cases, 2 `ValidationTests`, 6 `RepoInvariantTests`, 1 renamed).
 
+- **The review (a subagent, 2026-10-26) found one regression and six precision items, all
+  fixed in a seventh commit.** The regression: the catch filters that replaced `main`'s
+  `catch (Exception)` left out `ArgumentException`, so an empty or blank path (`copywcs ""
+  dest.fit`, `-o ""`) crashed the process with a stack trace where `main` refused it with one
+  line and exit 1; `ArgumentException` joined the three filters, with four tests first
+  (`R004_Blank*`, `R014_BlankOutputPath*`). The rest: R-023 now also runs a missing
+  destination, a non-FITS source and a truncated source, and its Romanian word list has the
+  reader's words; R-003 and `Options.Parse`'s doc no longer say `-h` works "wherever it is"
+  (an unknown option before it is still a usage error, as on `main`); the design note's "up to
+  72 cards" became the real bound (47 fixed keys plus the SIP coefficients); the two
+  `Regex.Matches(...).Count` became `Regex.Count` (CA1875 under SDK 10, outside the pin);
+  `InvariantGlobalization` left the core csproj (no effect in a library); the reader's and the
+  writer's XML docs list `UnauthorizedAccessException` and `ArgumentException`. Noted and
+  left as it was on `main`: `-o` naming the destination in another letter case is not seen as
+  in place and fails with a sharing violation, exit 1.
+
 ### Task 2
 
 (filled at its wrap-up)

@@ -108,7 +108,7 @@ public class VersionTests
         var stdout = new StringWriter();
         CopyWcsCli.Run(["--help"], stdout, new StringWriter());
 
-        var count = Regex.Matches(stdout.ToString(), Regex.Escape(VersionInfo.Banner)).Count;
+        var count = Regex.Count(stdout.ToString(), Regex.Escape(VersionInfo.Banner));
         Assert.Equal(1, count);
     }
 

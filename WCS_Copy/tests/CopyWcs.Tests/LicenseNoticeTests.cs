@@ -95,7 +95,7 @@ public class LicenseNoticeTests
         var stdout = new StringWriter();
         CopyWcsCli.Run(["--help"], stdout, new StringWriter());
 
-        var count = Regex.Matches(stdout.ToString(), Regex.Escape(LicenseInfo.Copyright)).Count;
+        var count = Regex.Count(stdout.ToString(), Regex.Escape(LicenseInfo.Copyright));
         Assert.Equal(1, count);
     }
 

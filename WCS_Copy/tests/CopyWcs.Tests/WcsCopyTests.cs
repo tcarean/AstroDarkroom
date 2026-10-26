@@ -183,4 +183,46 @@ public class WcsCopyTests
         Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
+
+    /// <summary>A path that is empty or blank (an unset shell variable) is a refusal like any other unreadable file, not a crash.</summary>
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void R004_BlankSourcePath_IsRefusedNotThrown(string source)
+    {
+        using var ws = new TempWorkspace();
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith($"Nu pot citi sursa '{source}'", outcome.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R004_BlankDestinationPath_IsRefusedNotThrown()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+
+        var outcome = WcsCopy.Run(Request(source, ""));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Nu pot citi destinatia ''", outcome.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R014_BlankOutputPath_IsRefusedWithTheWriteLine()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards());
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        var outcome = WcsCopy.Run(Request(source, dest, ""));
+
+        Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+        Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
+        Assert.Equal(destBytes, File.ReadAllBytes(dest));
+    }
 }

@@ -45,7 +45,7 @@ internal sealed class Options
 
     /// <summary>
     /// Parses the arguments: two positional paths, the source then the destination, and the
-    /// flags in any position. <c>-h</c> stops the parsing at once, whatever came before.
+    /// flags in any position. <c>-h</c> stops the parsing once the parser reaches it.
     /// </summary>
     /// <param name="args">The arguments, without <c>--lang</c> and its value; not null.</param>
     /// <returns>The options.</returns>
