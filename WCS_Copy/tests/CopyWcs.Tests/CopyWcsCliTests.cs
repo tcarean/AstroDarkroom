@@ -28,7 +28,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_SuccessfulInPlaceCopy_UpdatesDestReturnsZeroPreservesPixelData()
+    public void R012_Run_SuccessfulInPlaceCopy_UpdatesDestReturnsZeroPreservesPixelData()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(400);
@@ -49,7 +49,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_SuccessfulCopyViaOutputOption_WritesNewFileLeavesOriginalDestUntouched()
+    public void R012_Run_SuccessfulCopyViaOutputOption_WritesNewFileLeavesOriginalDestUntouched()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(400);
@@ -69,7 +69,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_CopiedCards_AreByteIdenticalToSourceNotJustValueEqual()
+    public void R010_Run_CopiedCards_AreByteIdenticalToSourceNotJustValueEqual()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(100);
@@ -85,7 +85,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_DimensionMismatchWithoutForce_ReturnsOneWritesNothing()
+    public void R005_Run_DimensionMismatchWithoutForce_ReturnsOneWritesNothing()
     {
         using var ws = new TempWorkspace();
         var sourcePath = ws.WriteFile("source.fit",
@@ -101,7 +101,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_DimensionMismatchWithForce_WarnsButSucceeds()
+    public void R005_Run_DimensionMismatchWithForce_WarnsButSucceeds()
     {
         using var ws = new TempWorkspace();
         var sourcePath = ws.WriteFile("source.fit",
@@ -117,7 +117,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_SourceMissingCtype1_PrintsWarningButContinues()
+    public void R006_Run_SourceMissingCtype1_PrintsWarningButContinues()
     {
         using var ws = new TempWorkspace();
         var sourceCards = new List<string>
@@ -138,7 +138,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_DryRun_ListsCardsAndLeavesDestByteForByteUnchanged()
+    public void R009_Run_DryRun_ListsCardsAndLeavesDestByteForByteUnchanged()
     {
         using var ws = new TempWorkspace();
         var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
@@ -154,7 +154,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_NoOpticalFlag_OmitsOpticalKeysKeepsWcsKeys()
+    public void R007_Run_NoOpticalFlag_OmitsOpticalKeysKeepsWcsKeys()
     {
         using var ws = new TempWorkspace();
         var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
@@ -169,7 +169,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_WithoutNoOpticalFlag_IncludesOpticalKeys()
+    public void R007_Run_WithoutNoOpticalFlag_IncludesOpticalKeys()
     {
         using var ws = new TempWorkspace();
         var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
@@ -183,7 +183,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_SourceFileMissing_ReturnsOneWithReadErrorOnStderr()
+    public void R004_Run_SourceFileMissing_ReturnsOneWithReadErrorOnStderr()
     {
         using var ws = new TempWorkspace();
         var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
@@ -196,7 +196,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_DestFileMissing_ReturnsOneWithReadErrorOnStderr()
+    public void R004_Run_DestFileMissing_ReturnsOneWithReadErrorOnStderr()
     {
         using var ws = new TempWorkspace();
         var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
@@ -209,7 +209,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_NoRelevantKeysInSource_ReturnsOneWritesNothing()
+    public void R008_Run_NoRelevantKeysInSource_ReturnsOneWritesNothing()
     {
         using var ws = new TempWorkspace();
         var minimalCards = new List<string>
@@ -230,7 +230,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_WriteTargetInNonExistentDirectory_ReturnsOneWithWriteErrorOnStderr()
+    public void R014_Run_WriteTargetInNonExistentDirectory_ReturnsOneWithWriteErrorOnStderr()
     {
         using var ws = new TempWorkspace();
         var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
@@ -244,7 +244,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_BadArguments_ReturnsTwoUsageOnStdoutErrorOnStderr()
+    public void R002_Run_BadArguments_ReturnsTwoUsageOnStdoutErrorOnStderr()
     {
         var result = Run("only-one-arg");
 
@@ -254,7 +254,7 @@ public class CopyWcsCliTests
     }
 
     [Fact]
-    public void Run_HelpFlag_ReturnsZeroUsageOnStdoutNoStderrContent()
+    public void R003_Run_HelpFlag_ReturnsZeroUsageOnStdoutNoStderrContent()
     {
         var result = Run("-h");
 

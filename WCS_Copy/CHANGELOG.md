@@ -5,6 +5,22 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Added
+
+- `--lang en|ro`: the console speaks English or Romanian, chosen on the command line, English
+  when the option is absent (ADR 0004); `--lang` anywhere, `--lang=ro` too, a value that is
+  not `en` or `ro` refused with exit 1.
+- `README.md`, the user documentation, in English (ADR 0006).
+- One validation case, V-001: the keys the tool selects from the header of a real Siril 1.4.4
+  plate solve of the Veil session of 2026-10-06, kept as a fixture in the repo (ADR 0005).
+
+### Changed
+
+- The texts are English by default; the Romanian wordings are unchanged under `--lang ro`,
+  the usage gaining its `--lang` line.
+- The `HISTORY` card written into the destination reads `WCS copied from <file>` in both
+  languages, where it read `WCS copiat din <file>` (ADR 0004).
+
 ### Internal
 
 - The project adopted the ClaudeCodeStarterKit process (ADR 0001): the gate `scripts/verify.ps1`,

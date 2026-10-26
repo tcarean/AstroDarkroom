@@ -63,7 +63,7 @@ public class LicenseNoticeTests
     }
 
     [Fact]
-    public void EveryRunPrintsTheCopyrightOnTheSecondLine()
+    public void R001_EveryRunPrintsTheCopyrightOnTheSecondLine()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(400);
@@ -105,7 +105,7 @@ public class LicenseNoticeTests
     /// --help, and points from there at the full text.
     /// </summary>
     [Fact]
-    public void HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
+    public void R003_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
     {
         var help = string.Join("\n", Lines("--help"));
 

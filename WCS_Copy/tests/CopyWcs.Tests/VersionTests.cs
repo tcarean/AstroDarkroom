@@ -76,7 +76,7 @@ public class VersionTests
     }
 
     [Fact]
-    public void EveryRunPrintsTheBannerOnTheFirstLine()
+    public void R001_EveryRunPrintsTheBannerOnTheFirstLine()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(400);

@@ -45,7 +45,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void ReadFrom_MissingSimpleAsFirstCard_Throws()
+    public void R015_ReadFrom_MissingSimpleAsFirstCard_Throws()
     {
         var bytes = FitsTestData.HeaderBlock(new[]
         {
@@ -57,7 +57,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void ReadFrom_EmptyHeaderJustEnd_Throws()
+    public void R015_ReadFrom_EmptyHeaderJustEnd_Throws()
     {
         var bytes = FitsTestData.HeaderBlock(Array.Empty<string>());
 
@@ -65,7 +65,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void ReadFrom_TruncatedShortStream_Throws()
+    public void R015_ReadFrom_TruncatedShortStream_Throws()
     {
         // A single card, far under one 2880-byte block, and no END.
         var bytes = FitsTestData.RawBytes(new[] { FitsTestData.Card("SIMPLE", "T") });
@@ -74,7 +74,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void ReadFrom_ExactBlockMultipleButNoEnd_Throws()
+    public void R015_ReadFrom_ExactBlockMultipleButNoEnd_Throws()
     {
         // Exactly 36 cards (= 2880 bytes, one full block), no END anywhere:
         // the first block reads fine, but looking for the next block hits EOF.
@@ -209,7 +209,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void AddHistory_TextExactly72Chars_FillsCardWithNoPadding()
+    public void R011_AddHistory_TextExactly72Chars_FillsCardWithNoPadding()
     {
         var header = ReadHeader();
         var text = new string('x', 72);
@@ -220,7 +220,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void AddHistory_TextLongerThan72Chars_TruncatesBody()
+    public void R011_AddHistory_TextLongerThan72Chars_TruncatesBody()
     {
         var header = ReadHeader();
 
@@ -230,7 +230,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void AddHistory_TextShorterThan72Chars_PadsWithSpaces()
+    public void R011_AddHistory_TextShorterThan72Chars_PadsWithSpaces()
     {
         var header = ReadHeader();
 
@@ -249,7 +249,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void WriteWithDataFrom_NewOutputFile_HeaderWrittenAndDataBytesPreserved()
+    public void R013_WriteWithDataFrom_NewOutputFile_HeaderWrittenAndDataBytesPreserved()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(500);
@@ -270,7 +270,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void WriteWithDataFrom_InPlaceOverwrite_NoLeftoverTempFileAndDataPreserved()
+    public void R012_WriteWithDataFrom_InPlaceOverwrite_NoLeftoverTempFileAndDataPreserved()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(300);
@@ -291,7 +291,7 @@ public class FitsHeaderTests
     }
 
     [Fact]
-    public void WriteWithDataFrom_HeaderGrowsPastOriginalBlockCount_PadsCorrectlyAndPreservesData()
+    public void R013_WriteWithDataFrom_HeaderGrowsPastOriginalBlockCount_PadsCorrectlyAndPreservesData()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(200);

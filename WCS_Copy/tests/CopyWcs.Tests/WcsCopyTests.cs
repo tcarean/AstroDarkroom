@@ -30,7 +30,7 @@ public class WcsCopyTests
         => new(source, dest, output, includeOptical, force, dryRun);
 
     [Fact]
-    public void Run_SourceMissing_IsRefusedWithTheReadLineAndNoWarning()
+    public void R004_Run_SourceMissing_IsRefusedWithTheReadLineAndNoWarning()
     {
         using var ws = new TempWorkspace();
         var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
@@ -46,7 +46,7 @@ public class WcsCopyTests
     }
 
     [Fact]
-    public void Run_DimensionMismatchWithoutForce_IsRefusedAndWritesNothing()
+    public void R005_Run_DimensionMismatchWithoutForce_IsRefusedAndWritesNothing()
     {
         using var ws = new TempWorkspace();
         var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(100, 80)));
@@ -63,7 +63,7 @@ public class WcsCopyTests
     }
 
     [Fact]
-    public void Run_DimensionMismatchWithForce_CopiesWithOneWarning()
+    public void R005_Run_DimensionMismatchWithForce_CopiesWithOneWarning()
     {
         using var ws = new TempWorkspace();
         var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(100, 80)));
@@ -79,7 +79,7 @@ public class WcsCopyTests
     }
 
     [Fact]
-    public void Run_SourceWithoutCtype1_WarnsBeforeTheOutcome()
+    public void R006_Run_SourceWithoutCtype1_WarnsBeforeTheOutcome()
     {
         using var ws = new TempWorkspace();
         var cards = FitsTestData.PlateSolvedCards();
@@ -95,7 +95,7 @@ public class WcsCopyTests
     }
 
     [Fact]
-    public void Run_DryRun_ListsTheRawCardsAndWritesNothing()
+    public void R009_Run_DryRun_ListsTheRawCardsAndWritesNothing()
     {
         using var ws = new TempWorkspace();
         var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
@@ -117,7 +117,7 @@ public class WcsCopyTests
     }
 
     [Fact]
-    public void Run_NoOptical_LeavesTheOpticalCardsOut()
+    public void R007_Run_NoOptical_LeavesTheOpticalCardsOut()
     {
         using var ws = new TempWorkspace();
         var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
@@ -132,7 +132,7 @@ public class WcsCopyTests
     }
 
     [Fact]
-    public void Run_NoRelevantKey_IsRefusedAndWritesNothing()
+    public void R008_Run_NoRelevantKey_IsRefusedAndWritesNothing()
     {
         using var ws = new TempWorkspace();
         var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
@@ -147,7 +147,7 @@ public class WcsCopyTests
     }
 
     [Fact]
-    public void Run_Copy_WritesTheTargetAndEndsWithTheCountAndTheReminder()
+    public void R012_Run_Copy_WritesTheTargetAndEndsWithTheCountAndTheReminder()
     {
         using var ws = new TempWorkspace();
         var data = FitsTestData.DeterministicData(400);
@@ -170,7 +170,7 @@ public class WcsCopyTests
     }
 
     [Fact]
-    public void Run_WriteFailure_IsRefusedWithTheWriteLine()
+    public void R014_Run_WriteFailure_IsRefusedWithTheWriteLine()
     {
         using var ws = new TempWorkspace();
         var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));

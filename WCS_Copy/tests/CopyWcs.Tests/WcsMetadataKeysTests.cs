@@ -27,7 +27,7 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
-    public void SelectKeysToCopy_StandardWcsKeyPresent_Included()
+    public void R007_SelectKeysToCopy_StandardWcsKeyPresent_Included()
     {
         var header = Header(FitsTestData.Card("CTYPE1", "'RA---TAN'"));
 
@@ -37,7 +37,7 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
-    public void SelectKeysToCopy_StandardWcsKeyAbsent_Excluded()
+    public void R007_SelectKeysToCopy_StandardWcsKeyAbsent_Excluded()
     {
         var header = Header();
 
@@ -51,7 +51,7 @@ public class WcsMetadataKeysTests
     [InlineData("B_1_1")]
     [InlineData("AP_2_0")]
     [InlineData("BP_0_3")]
-    public void SelectKeysToCopy_SipCoefficientPresent_MatchedAndIncluded(string sipKey)
+    public void R007_SelectKeysToCopy_SipCoefficientPresent_MatchedAndIncluded(string sipKey)
     {
         var header = Header(FitsTestData.Card(sipKey, "1.0e-05"));
 
@@ -61,7 +61,7 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
-    public void SelectKeysToCopy_StandardMatrixKeyIncluded_ViaLiteralListNotSipRegex()
+    public void R007_SelectKeysToCopy_StandardMatrixKeyIncluded_ViaLiteralListNotSipRegex()
     {
         // CD1_1 is a standard WCS key, included through WcsKeys; the SIP regex should not
         // add it a second time.
@@ -73,7 +73,7 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
-    public void SelectKeysToCopy_UnrelatedKeyResemblingSipPattern_NotMatched()
+    public void R007_SelectKeysToCopy_UnrelatedKeyResemblingSipPattern_NotMatched()
     {
         // "ABC_1_2" does not start with one of the SIP prefixes (A, B, AP, BP followed directly by "_").
         var header = Header(FitsTestData.Card("ABC_1_2", "1.0"));
@@ -84,7 +84,7 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
-    public void SelectKeysToCopy_OpticalKeyIncludedOnlyWhenIncludeOpticalTrue()
+    public void R007_SelectKeysToCopy_OpticalKeyIncludedOnlyWhenIncludeOpticalTrue()
     {
         var header = Header(FitsTestData.Card("TELESCOP", "'My Scope'"));
 
@@ -96,7 +96,7 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
-    public void SelectKeysToCopy_NoRelevantKeysInSource_ReturnsEmptyList()
+    public void R007_SelectKeysToCopy_NoRelevantKeysInSource_ReturnsEmptyList()
     {
         var header = Header(FitsTestData.Card("UNRELATED", "'x'"));
 
@@ -106,7 +106,7 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
-    public void SelectKeysToCopy_ResultHasNoDuplicates()
+    public void R007_SelectKeysToCopy_ResultHasNoDuplicates()
     {
         var header = Header(
             FitsTestData.Card("CTYPE1", "'RA---TAN'"),

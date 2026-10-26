@@ -436,7 +436,36 @@ title bar, made anew at every open. `AboutTests` as DarksCheck's (R-035).
 
 ## What deviated
 
-(filled at each task's wrap-up: task 1 first, task 2 under it)
+### Task 1 (2026-10-26, branch `claude/Adopt-the-kit-and-split-the-core`, six commits)
+
+- **The validation fixture is the session's solved stack, not a `pp_light` solve.** The four
+  `pp_light_000NN.fit` files DitherCalculator names turned out unsolved on disk (27 cards, no
+  `CTYPE1`): the solves of 2026-10-12 were run on private copies. A scan of
+  `E:\Photografie\Astro` found 150 solved FITS files, none with a `SITE*` key; the fixture is
+  the header of `Veil\2026-10-06-3h\result_final.fit`, Siril 1.4.4, 3 blocks, 8640 bytes
+  (ADR 0005). V-001: 72 keys with the optical ones, 61 without, 5601 x 3692.
+- **CA1305 and CA1310 were not silenced by `NoWarn`**: `InvariantGlobalization` in the test
+  csproj, which the console has too, switches both analyzers off truthfully (ADR 0002).
+- **The language tests were named `R020_` to `R023_` in commit 3**, before their rows were
+  written in commit 6; the rows and the tests say the same thing, and `RepoInvariantTests`
+  arrived with the rows.
+- **The kit's `.gitignore` was added in commit 1** (the plan did not list it): without it the
+  `.verify-stamp` the gate writes was staged.
+- **R-023 compares figures with the temporary folder's path removed**, since the folder names
+  differ between the two runs and carry digits.
+- **Two Romanian test file names** (`nu-exista.fit`, `nici-asta.fit`) were translated with the
+  comments; the plan named only comments and assertion messages.
+- Commit 1 also prefixed nothing and renamed only the three tests the move broke
+  (`...FromTheBuildProps`); the `R###` prefixes came in commit 6 as planned.
+- The `docs/skills.md` sections were filled (new texts, V-001, the release's one target,
+  what `/mutate` would need); the plan said "the kit's empty sections".
+- Nothing else deviated: the console's Romanian output is byte-identical except `--help`'s
+  `--lang` line and the HISTORY card; 87 tests before, 125 after (9 `WcsCopyTests`, 20
+  `LanguageTests` cases, 2 `ValidationTests`, 6 `RepoInvariantTests`, 1 renamed).
+
+### Task 2
+
+(filled at its wrap-up)
 
 ## Appendix A: the ADRs
 

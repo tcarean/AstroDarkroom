@@ -29,7 +29,7 @@ public class OptionsTests
     }
 
     [Fact]
-    public void Parse_NoPositionalArgs_Throws()
+    public void R002_Parse_NoPositionalArgs_Throws()
     {
         Assert.Throws<ArgumentException>(() => Options.Parse(Array.Empty<string>()));
     }
@@ -47,7 +47,7 @@ public class OptionsTests
     }
 
     [Fact]
-    public void Parse_UnknownFlag_Throws()
+    public void R002_Parse_UnknownFlag_Throws()
     {
         Assert.Throws<ArgumentException>(() => Options.Parse(["src.fit", "dest.fit", "--bogus"]));
     }
@@ -55,7 +55,7 @@ public class OptionsTests
     [Theory]
     [InlineData("-o")]
     [InlineData("--output")]
-    public void Parse_OutputFlagMissingValue_Throws(string flag)
+    public void R002_Parse_OutputFlagMissingValue_Throws(string flag)
     {
         Assert.Throws<ArgumentException>(() => Options.Parse(new[] { "src.fit", "dest.fit", flag }));
     }
