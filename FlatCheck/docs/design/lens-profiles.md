@@ -172,6 +172,17 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   `ByLensId(id, hint)`, which parses in parallel only the stubs whose mount or maker contains
   the hint (the camera's first word). Aliases therefore enter `Search` only after a file was
   parsed.
+- **The folders** (`ProfileLocator`, ADR 0028 and ADR 0065): `DefaultAdobeDirectories` is the
+  Camera Raw folder under ProgramData, the user's under `%APPDATA%`, then
+  `AdobeAppDirectories(Program Files\Adobe)`, the `Resources\LensProfiles\1.0` of every
+  application folder that has one, in ordinal order (Lightroom CC before Lightroom Classic);
+  `Program Files (x86)` is not searched. `Locate` walks the folders in that order and keeps a
+  `HashSet` of each file's path relative to its own search folder, compared without case: a
+  relative name seen before is counted in `AdobeFilesDuplicate` and skipped before a stub is
+  made, so `ProfilesOf` concatenates one file per lens, not one per folder. The two Camera Raw
+  roots are one level apart (`...\1.0` against `...\LensProfiles`), so a user's own profile
+  under `%APPDATA%` never collides with an installed one by that rule, which is what one wants:
+  it is theirs. `--profiles <dir>` replaces the whole list.
 - **Search**: every word of the text must appear in name + maker + mount (+ known
   aliases), case-insensitive; empty text lists everything; `--source` restricts.
 - **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the
@@ -386,6 +397,19 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   catalog are ADR 0028's context. Beyond them: 801 of the Adobe files lack the ` - RAW`
   suffix and 638 carry no parentheses; `lensfun/update-lensfun.py` refreshes `data/db` and
   rewrites `LENSFUN-VERSION.txt`.
+- **The three Adobe folders on the author's machine, 2026-10-26** (the measurement behind ADR
+  0065): `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` holds 3531 files (446 MB, folder
+  created 2026-04-16 by the DNG Converter 18.3, newest file 2026-06-04); `Adobe Lightroom
+  Classic\Resources\LensProfiles\1.0` and `Adobe Lightroom CC\...\1.0` hold 3633 each (451 MB,
+  newest 2026-09-29, Lightroom Classic 15.6), identical to each other by name. Every ProgramData
+  name exists in Lightroom's folder and 200 sampled common files hash identically; the 102
+  Lightroom-only files are newer bodies (iPhone 18 Pro and the like). The Samyang 135, Tokina
+  11-20 and Nikkor 35 DX have the same files in both (6, 4, 5). Files sit two to four levels
+  deep under `1.0` (1980 / 1550 / 1 in ProgramData). Enumerating one folder by name takes
+  about 0.5 s (`Directory.EnumerateFiles`, PowerShell, warm or cold). `--lenses` before and
+  after the change (Release build, warm): 2998 lenses from 3531 files in 1.5 s became 3070
+  from 3633 with 7164 duplicates skipped in 1.6 s, and the Tokina 11-20 rows kept their 105
+  profiles; the first cold start after the build took 11 s.
 - libraw on a D3300 NEF with the Tokina (`DSC_0001.NEF` of the 2026-09-16 sky session,
   dumped by reflection over `RawContext.LensInfo`): `Lens` and `LensMake` empty,
   `ImageOtherParams.FocalLength` 20, `Aperture` 2.8, `LensInfo.Nikon.LensIDNumber` 139,

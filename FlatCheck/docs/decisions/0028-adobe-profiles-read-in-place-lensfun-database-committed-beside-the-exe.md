@@ -1,7 +1,7 @@
 # 0028. Adobe profiles are read in place and never copied; the lensfun database is committed whole and shipped beside the exe
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the two Adobe folders superseded by 0065 (Lightroom's own folders are read too, each relative name once)
 
 ## Context
 
