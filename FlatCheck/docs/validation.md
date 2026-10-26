@@ -183,6 +183,10 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 ## History
 
+- 2026-10-26: re-measured at the wrap-up of the lens-on-every-mount task after its merge (876782d):
+  48 cases (V-001 to V-040 and the eight raw rows) passed, no drift, 6.9 min; `Analysis/` and
+  `Report/` were touched only in the lens identification and its wording.
+
 - 2026-10-26: V-041 to V-048 added, the lens metadata of six raws of other makes and two of the
   owner's Nikon raws (ADR 0068); no
   figure of V-001 to V-040 touched, no formula moved.

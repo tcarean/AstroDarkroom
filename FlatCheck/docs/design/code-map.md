@@ -76,7 +76,7 @@ a library extraction and not a copy is ADR 0011.
     alone, on a raw from libraw's metadata at `OpenFile`, before `Unpack` (measured: tens of
     milliseconds, not seconds). It is what the lens identification (ADR 0030) and the
     Sintetic tab's prefill read, so neither decodes 24 MP for an f-number.
-  - `RawReader.cs` - the only file that names a libraw type, loaded lazily, `ShootingInfo`
+  - `RawReader.cs` - the only file that names a libraw type, loaded lazily, `FillShootingInfo`
     reading its fields as locals: ADR 0009. `IsRawPath` is the extension gate; `RawExtensions`
     exposes the same list to the WPF app's `flats/` filter, so a camera the reader learns is a
     camera the list offers.
