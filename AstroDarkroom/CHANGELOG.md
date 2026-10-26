@@ -8,6 +8,11 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Added
 
+- The launcher says what the suite needs (R-009, ADR 0007): one line under the title and a
+  "Cerinte" / "Requirements" card in "Despre" with the Siril session folder, Siril 1.4.4 or
+  newer, and, optional for FlatCheck, Adobe's lens profiles with the programs that install
+  them; the same in `README.md`.
+- The language buttons carry their flag, drawn as vectors (ADR 0007).
 - The launcher speaks English or Romanian (R-006..R-008, ADR 0006): two buttons in the bottom
   bar switch every text at once, English at a first start, the choice remembered in
   `%LOCALAPPDATA%\AstroDarkroom\settings.json`; a tool opened from the launcher starts in the
@@ -28,3 +33,8 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
   Drive, with its link and SHA-256 in a table, and the command that checks the hash (ADR 0005).
 - The project, started from `ClaudeCodeStarterKit` on 2026-10-25 as the launcher and the
   release of the Astro Darkroom suite (ADR 0001).
+
+### Changed
+
+- The "unreleased changes" note is no longer shown, in the rows or in "Despre";
+  `release.json` keeps its `unreleased` key (ADR 0007).

@@ -162,5 +162,67 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Setter.Value>
       </Setter>
     </Style>
+
+    <!-- The flags on the language buttons (ADR 0007), drawn as vectors: Windows renders the
+         emoji flags as two letters, and a bitmap would blur at every DPI. Both are drawn at
+         their official proportions and shown 13 px high, aliased, so the stripes stay crisp.
+         The United States flag for English: thirteen stripes and the blue canton, the stars
+         as a grid of dots that reads as the lighter field they are at this size. -->
+    <DrawingImage x:Key="FlagEnglish">
+      <DrawingImage.Drawing>
+        <DrawingGroup>
+          <GeometryDrawing Brush="#FFFFFF" Geometry="M0,0 H19 V10 H0 Z" />
+          <GeometryDrawing Brush="#B22234"
+                           Geometry="M0,0 H19 V0.769 H0 Z M0,1.538 H19 V2.308 H0 Z M0,3.077 H19 V3.846 H0 Z M0,4.615 H19 V5.385 H0 Z M0,6.154 H19 V6.923 H0 Z M0,7.692 H19 V8.462 H0 Z M0,9.231 H19 V10 H0 Z" />
+          <GeometryDrawing Brush="#3C3B6E" Geometry="M0,0 H7.6 V5.385 H0 Z" />
+          <GeometryDrawing Brush="#FFFFFF">
+            <GeometryDrawing.Geometry>
+              <GeometryGroup>
+                <EllipseGeometry Center="0.76,0.67" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="2.28,0.67" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="3.8,0.67" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="5.32,0.67" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="6.84,0.67" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="0.76,2.02" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="2.28,2.02" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="3.8,2.02" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="5.32,2.02" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="6.84,2.02" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="0.76,3.37" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="2.28,3.37" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="3.8,3.37" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="5.32,3.37" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="6.84,3.37" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="0.76,4.71" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="2.28,4.71" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="3.8,4.71" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="5.32,4.71" RadiusX="0.3" RadiusY="0.3" />
+                <EllipseGeometry Center="6.84,4.71" RadiusX="0.3" RadiusY="0.3" />
+              </GeometryGroup>
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingGroup>
+      </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <!-- The Romanian tricolour: cobalt blue, chrome yellow, vermilion, 2:3. -->
+    <DrawingImage x:Key="FlagRomanian">
+      <DrawingImage.Drawing>
+        <DrawingGroup>
+          <GeometryDrawing Brush="#002B7F" Geometry="M0,0 H5 V10 H0 Z" />
+          <GeometryDrawing Brush="#FCD116" Geometry="M5,0 H10 V10 H5 Z" />
+          <GeometryDrawing Brush="#CE1126" Geometry="M10,0 H15 V10 H10 Z" />
+        </DrawingGroup>
+      </DrawingImage.Drawing>
+    </DrawingImage>
+
+    <Style x:Key="Flag" TargetType="Image">
+      <Setter Property="Height" Value="13" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="Margin" Value="0,0,7,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="SnapsToDevicePixels" Value="True" />
+      <Setter Property="RenderOptions.EdgeMode" Value="Aliased" />
+    </Style>
   </Application.Resources>
 </Application>

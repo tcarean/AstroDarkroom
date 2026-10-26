@@ -24,12 +24,11 @@ singur folder cu toate executabilele unul langa altul, runtime-ul .NET 8 inclus 
 instalat nimic), si `AstroDarkroom.exe`, lansatorul: o fereastra cu un rand pentru fiecare
 unealta (titlu, descriere, versiunea ei) si un buton **Deschide**. Un rand
 al carui executabil lipseste din folder e dezactivat si spune ce fisier lipseste. **Despre**
-(F1) arata versiunea suitei, data ei, licenta si versiunea fiecarei componente, cu mentiunea
-"modificari nelansate" cand componenta a fost impachetata cu schimbari pe care propria ei
-versiune nu le-a prins inca.
+(F1) arata versiunea suitei, data ei, licenta, cerintele de mai jos si versiunea fiecarei
+componente.
 
-Lansatorul vorbeste engleza sau romana: cele doua butoane **English** / **Romana** din bara de
-jos schimba toate textele pe loc, fara repornire. La prima pornire e in engleza, ca uneltele;
+Lansatorul vorbeste engleza sau romana: cele doua butoane cu steag, **English** / **Romana**,
+din bara de jos schimba toate textele pe loc, fara repornire. La prima pornire e in engleza, ca uneltele;
 alegerea se tine minte in `%LOCALAPPDATA%\AstroDarkroom\settings.json` (`{"language":"ro"}`)
 si se aplica la urmatoarea pornire. O unealta deschisa din lansator porneste in limba
 lansatorului (primeste `--lang=ro` sau `--lang=en`); pornita direct din folder, porneste in
@@ -40,6 +39,27 @@ suitei, data, commit-ul, si pentru fiecare componenta versiunea, commit-ul si da
 modificari nelansate.
 
 Executabilele nu sunt semnate: pe alt calculator, SmartScreen intreaba la prima pornire.
+
+## Cerinte
+
+Lansatorul nu verifica nimic din cele de mai jos; le spune (o linie sub titlu, detaliile in
+**Despre**) fiindca uneltele le asteapta:
+
+- **Folderul unei sesiuni Siril**: folderul unei nopti cu `lights/`, `darks/`, `flats/` si
+  `biases/` cum le aseaza Siril, si rezultatele scripturilor lui in `process/` (sau `masters/`,
+  dupa script). DarksCheck, FlatCheck si LightsCheck deschid acel folder; ImageVisualCompare si
+  AstroPhotoAnalyzer deschid fisierele exportate din Siril. Fiecare README spune exact ce
+  cauta unealta in el.
+- **Siril 1.4.4 sau mai nou instalat** (<https://siril.org>): masterele si stack-urile pe care
+  le verifica uneltele ies din scripturile lui, iar FlatCheck ruleaza scriptul de preprocesare
+  prin `siril-cli.exe` din instalarea ta (cu o copie privata a setarilor tale, pe care nu le
+  atinge). Cifrele uneltelor au fost masurate pe 1.4.4.
+- **Optional, pentru FlatCheck: profilele de obiective Adobe** (`.lcp`), citite de pe
+  calculator din `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` si
+  `%APPDATA%\Adobe\CameraRaw\LensProfiles` cand le-a instalat un program Adobe: Lightroom,
+  Photoshop cu Camera Raw, sau Adobe DNG Converter, care e gratuit si le aduce singur. Fara
+  ele, FlatCheck foloseste baza lensfun livrata cu el in folderul `lensfun/`; cu ele, flatul
+  sintetic si comparatia de vignetare au si profilul Adobe al obiectivului tau.
 
 ## Descarcare
 

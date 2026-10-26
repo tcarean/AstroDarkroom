@@ -17,10 +17,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- AboutWindow: the icon, the banner, the copyright, the GPLv3 notice (section 5(d)), the
-     suite's date and the version of every component bundled, from release.json. Modal; Enter
-     and Esc close it. Every text is assigned by the code behind in the current language; the
-     product name is the same in both. -->
+<!-- AboutWindow: the icon, the banner, the copyright, the GPLv3 notice (section 5(d)), what
+     the suite needs on the machine (R-009), the suite's date and the version of every
+     component bundled, from release.json. Modal; Enter and Esc close it. Every text is
+     assigned by the code behind in the current language; the product name is the same in
+     both. -->
 
 <Window x:Class="AstroDarkroom.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -55,6 +56,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </StackPanel>
     </Border>
 
+    <!-- What the suite needs on the machine (R-009): three paragraphs from the core. -->
+    <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+      <StackPanel>
+        <TextBlock x:Name="PrerequisitesHeading" Style="{StaticResource Heading}" />
+        <ItemsControl x:Name="PrerequisitesList" Focusable="False">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,6" Text="{Binding Mode=OneWay}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
+
     <Border Style="{StaticResource Card}" Margin="0,12,0,0">
       <StackPanel>
         <TextBlock x:Name="ComponentsHeading" Style="{StaticResource Heading}" />
@@ -65,13 +80,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="200" />
-                  <ColumnDefinition Width="90" />
                   <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="{Binding Name, Mode=OneWay}" />
                 <TextBlock Grid.Column="1" FontFamily="{StaticResource MonoFont}" Text="{Binding Version, Mode=OneWay}" />
-                <TextBlock Grid.Column="2" Style="{StaticResource Faint}" Foreground="{StaticResource WarnBr}"
-                           Text="{Binding Note, Mode=OneWay}" />
               </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>

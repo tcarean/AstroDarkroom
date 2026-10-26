@@ -26,14 +26,14 @@ namespace AstroDarkroom.Wpf;
 /// </summary>
 /// <param name="Name">The component's folder name.</param>
 /// <param name="Version">Its version as release.json records it, or "?" when unknown.</param>
-/// <param name="Note">"unreleased changes", in the current language, when it was bundled with unreleased changes; else "".</param>
-public sealed record ComponentLine(string Name, string Version, string Note);
+public sealed record ComponentLine(string Name, string Version);
 
 /// <summary>
 /// The about window: the banner, the copyright, the disclaimer of warranty GPLv3 section 5(d)
-/// asks for, the suite's date and each component's version, all from the core and from
-/// release.json, worded in the language current when it opens (R-006); it is modal and made
-/// anew at every open, so it never has to switch.
+/// asks for, what the suite needs on the machine (R-009), the suite's date and each
+/// component's version, all from the core and from release.json, worded in the language
+/// current when it opens (R-006); it is modal and made anew at every open, so it never has to
+/// switch. The unreleased flag of release.json is not shown (ADR 0007).
 /// </summary>
 public partial class AboutWindow : Window
 {
@@ -54,6 +54,8 @@ public partial class AboutWindow : Window
         Copyright.Text = VersionInfo.Copyright;
         LicenceHeading.Text = T("LICENCE", "LICENTA");
         Warranty.Text = LicenseInfo.Warranty;
+        PrerequisitesHeading.Text = T("REQUIREMENTS", "CERINTE");
+        PrerequisitesList.ItemsSource = Prerequisites.Details;
         ComponentsHeading.Text = T("COMPONENTS", "COMPONENTE");
         CloseButton.Content = T("Close", "Inchide");
         // The list the file gives, without the launcher's own entry; a file that names no
@@ -63,7 +65,7 @@ public partial class AboutWindow : Window
             ? []
             : release.Components
                 .Where(c => c.Name != release.Name)
-                .Select(c => new ComponentLine(c.Name, c.Version.Length > 0 ? c.Version : "?", c.Unreleased ? T("unreleased changes", "modificari nelansate") : ""))
+                .Select(c => new ComponentLine(c.Name, c.Version.Length > 0 ? c.Version : "?"))
                 .ToList();
         bool known = listed.Count > 0;
         ReleaseLine.Text = known && release is { Date.Length: > 0 }
@@ -76,7 +78,7 @@ public partial class AboutWindow : Window
                     "Fara un release.json cu componente langa program: versiunile componentelor nu se cunosc.");
         Components.ItemsSource = known
             ? listed
-            : AppCatalogue.Apps.Select(a => new ComponentLine(a.Folder, "?", "")).ToList();
+            : AppCatalogue.Apps.Select(a => new ComponentLine(a.Folder, "?")).ToList();
     }
 
     /// <summary>Closes the window.</summary>
