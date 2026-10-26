@@ -69,8 +69,8 @@ without a source is recorded as unsourced). Then:
 - the goldens: `Golden/help.txt` changes; a golden scenario on the new medium if its Dmax opens
   a case the others do not;
 - the docs: `console.md`, "Parameters" (the Dmax row), `input.md` (the paper-black list), the
-  `Run` line of `CLAUDE.md`, and `README.md` (the window paragraph and "Consola", the options
-  line);
+  `Run` line of `CLAUDE.md`, and `README.md` (the media of "What it needs" and the `--medium`
+  row of "The console");
 - `/validate` if the default medium or its Dmax changed: the cases that run on the default move,
   V-005 on every figure and V-002 if its verdict does; V-001 and V-004 name their paper (`dmax`
   2.0) and stay (the rule "Formula changes re-validate").

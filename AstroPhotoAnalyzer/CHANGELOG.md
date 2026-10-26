@@ -15,6 +15,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   codes are the same in both languages; the Romanian texts are unchanged, with `--lang ro`
   (R-150 to R-154; ADR 0048).
 
+### Changed
+
+- `README.md`, the user documentation, and `THIRD-PARTY-NOTICES.md` are in English, the language
+  the interface starts in, both checked against the current behaviour. The README quotes the
+  window's English labels and `Report.txt`, gives every console option with its default and how
+  the background is judged, and keeps the developer notes to pointers into `CLAUDE.md` and
+  `docs/`; the notices name the gamut figure among Unicolour's uses and list
+  `xunit.runner.visualstudio` among the test packages (ADR 0050). The About window's list of
+  components names them too: Unicolour's gamut figure and ImageSharp's 8-bit TIFF.
+
 ### Fixed
 
 - A FITS is read the way up Siril shows it, whatever its `ROWORDER` says: the file's first row

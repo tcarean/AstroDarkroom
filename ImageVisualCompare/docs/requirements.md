@@ -27,8 +27,8 @@ Rules for entries:
   `docs/validation.md`: `de_printat.png` and `de_printat_PRINT_preview_16bit.tif` (both
   5938 × 3888, 16-bit RGB), and `de_printat_50x35_TIFF8.tif` (5554 × 3888, 8-bit RGB).
 
-The user documentation of the same behaviour, in Romanian, is `README.md` (ADR 0025); the
-explanations behind each row are in `docs/design/` and `docs/decisions/`.
+The user documentation of the same behaviour, in English, is `README.md` (ADR 0025, ADR 0041);
+the explanations behind each row are in `docs/design/` and `docs/decisions/`.
 
 ## Opening a pair
 

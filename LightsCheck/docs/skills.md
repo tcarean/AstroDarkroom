@@ -23,7 +23,8 @@ Values (the solution, the folders, the publish list, what the auditor may also r
 - At step 6: numeric code is `Imaging/Stats.cs`, `Analysis/` and `Report/` (the rule "Measured
   on the sessions"). The golden files are regenerated with `LIGHTSCHECK_UPDATE_GOLDEN=1` and
   `--filter GoldenOutputTests`.
-- At step 8: `README.md` is in Romanian and names every console option.
+- At step 8: `README.md` is in English, quotes the English output and names every console
+  option.
 
 ## /wrap-up
 

@@ -31,6 +31,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (or gray, RGBA) and shown as stored, as a FITS of the same samples is, with the same 0..1 or
   0..65535 rule. WIC's own conversion showed it about 73 levels brighter, and reported the RGB
   ones as `96-bit` (R-090, R-091, ADR 0035).
+- `README.md`, the user documentation, is in English, the language the interface starts in, and
+  was checked against the current behaviour: it no longer says the two images must have the
+  same size, gives the memory at fit and after zooming, and now covers cancelling an open
+  dialog, the scrollbars, the zoom stops, the 8-bit readout and where the keyboard focus goes;
+  its section for developers is cut to pointers into `CLAUDE.md` and `docs/` (ADR 0041).
 
 ### Fixed
 

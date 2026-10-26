@@ -20,8 +20,9 @@ are in `kit.json`, not here.
   change in `Controls/` or `MainWindow` is not done until the application was launched on the
   real pair and a screenshot looked at (the rule "Run the application"; ADR 0026).
 - At step 6: numeric code is `src/ImageVisualCompare.Core/` and `src/ImageVisualCompare.Wpf/Imaging/`.
-- At step 8: `README.md` is in Romanian, with diacritics; its "Controale" table lists every
-  input and its "Ce îți arată bara de stare" section every readout.
+- At step 8: `README.md` is in English and quotes the English interface, with the Romanian
+  name in parentheses where a reader of the Romanian one needs it (ADR 0041); its "Controls"
+  table lists every input and its "The status bar" section every readout.
 
 ## /wrap-up
 
@@ -48,7 +49,7 @@ are in `kit.json`, not here.
 
 - At step 5: the application is published self-contained for win-x64 into `artifacts/X.Y.Z/`
   itself; the tag is `imagevisualcompare-vX.Y.Z`.
-- At step 7: the README's "Compilare" section names the build and test commands; `artifacts/`
+- At step 7: the README's "Building" section names the build and test commands; `artifacts/`
   is what a release produces.
 
 ## /mutate

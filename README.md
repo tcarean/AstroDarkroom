@@ -132,9 +132,9 @@ every text at once, and the choice is remembered; a tool opened from the launche
 launcher's language. Started on its own, a tool speaks English, or Romanian with `--lang ro`.
 
 Each tool has its own folder in this repository, with its sources, its tests and its
-documentation: the user guide is the folder's `README.md`, in English for DarksCheck and in
-Romanian for the other four; the requirements, the decisions and the validation figures are in
-its `docs/`, in English.
+documentation: the user guide is the folder's `README.md`, in English for LightsCheck,
+AstroPhotoAnalyzer, ImageVisualCompare and DarksCheck and in Romanian for FlatCheck; the
+requirements, the decisions and the validation figures are in its `docs/`, in English.
 
 ## The tools
 
@@ -198,8 +198,8 @@ profile of the paper on its printer), the colour cast and gradient, the largest 
 real detail supports, and how much denoise the print version needs. Each recommendation comes
 with its number and its threshold. With a plate-solved FITS (a WCS in its header) it finds the
 catalogued dark nebulae in the frame, by name, and judges the dust against the sky around them.
-It writes one file, and only when asked: from its **Curves** tab, a new FITS with a suggested
-contrast curve; the input is never touched.
+Besides its report, it writes one file, and only when asked: from its **Curves** tab, a new FITS
+with a suggested contrast curve; the input is never touched.
 
 ## What the tools need
 

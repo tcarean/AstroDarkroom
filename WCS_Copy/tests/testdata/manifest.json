@@ -1,0 +1,12 @@
+{
+  "$comment": "Every test data file, in repo or outside it. 'location' is 'repo' (under fixtures/) or 'large' (under the folder COPYWCS_TESTDATA_LARGE names, git-ignored). scripts/check-testdata.ps1 verifies presence and SHA-256 of every entry; a 'large' entry that is missing is a warning locally and an error in CI only when 'requiredInCi' is true. Every FITS the tests build themselves comes from FitsTestData; the one fixture is the header of a real Siril plate solve (ADR 0005).",
+  "files": [
+    {
+      "name": "veil-2026-10-06-siril-1.4.4-solve.fit",
+      "location": "repo",
+      "sha256": "0e08c495848853f25963da93dc900192f69efe24d280cda7d5e325b08b7415bb",
+      "source": "the three header blocks (8640 bytes, no image) of E:\\Photografie\\Astro\\Veil\\2026-10-06-3h\\result_final.fit, the owner's Siril 1.4.4 stack of the Veil session of 2026-10-06, plate-solved with SIP; cut on 2026-10-26",
+      "demonstrates": "V-001 (R-007, R-024): the keys the tool selects from a real Siril solve"
+    }
+  ]
+}

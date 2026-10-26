@@ -20,9 +20,9 @@ namespace ImageVisualCompare.Core;
 /// <summary>
 /// Every text the application shows, in English and in Romanian (R-101, ADR 0038). Each member
 /// gives both wordings in one call, English first, so that a text cannot exist in one language
-/// only and the two are read side by side. The Romanian follows the words of the README, the
-/// user documentation: the divider is "linia", the canvas "pânza", and the user is "tu". Numbers
-/// are put in as they are, the same in both languages.
+/// only and the two are read side by side. The Romanian keeps the words the user documentation
+/// used while it was in Romanian (ADR 0041): the divider is "linia", the canvas "pânza", and the
+/// user is "tu". Numbers are put in as they are, the same in both languages.
 /// </summary>
 public sealed class UiText
 {
@@ -281,7 +281,7 @@ public sealed class UiText
         };
 
         // English puts the depth first ("16-bit RGB"); Romanian names the channels and then
-        // what they are stored on ("RGB pe 16 biți"), as the README says "PNG pe 16 biți".
+        // what they are stored on ("RGB pe 16 biți"), as Romanian says "PNG pe 16 biți".
         string englishDepth = isFloat ? $"{bits}-bit float" : $"{bits}-bit";
         string romanianDepth = Bits(bits);
         string romanianFloat = isFloat ? "float " : string.Empty;

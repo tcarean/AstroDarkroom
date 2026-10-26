@@ -1,0 +1,68 @@
+# The copy run, the console and the language
+
+**Covers:** `src/CopyWcs.Core/WcsCopy.cs`, `src/CopyWcs.Core/Language/Ui.cs`,
+`src/CopyWcs.Core/Language/LanguageArgument.cs`, `src/CopyWcs.Core/VersionInfo.cs`,
+`src/CopyWcs.Core/LicenseInfo.cs`, `src/CopyWcs.Cli/Program.cs`, `src/CopyWcs.Cli/CopyWcsCli.cs`
+and `src/CopyWcs.Cli/Options.cs`.
+
+How a copy runs in the core, how the console drives it and prints it, and how the texts pick
+their language. The header engine the run calls is in `fits-header.md`; the window, when it
+exists, has its own note.
+
+## The run (`WcsCopy`)
+
+`WcsCopy.Run(WcsCopyRequest)` is the one sequence both applications call (ADR 0001). The
+request is the six things the console's options say: source, destination, output or in
+place, optical keys or not, force, dry run. The outcome is a record of lines already worded:
+
+| Field | What it holds | Who prints it |
+| --- | --- | --- |
+| `Kind` | `Copied`, `Previewed` or `Refused` | decides the exit code: 0, 0, 1 |
+| `Error` | the one line of a refusal, else null | stderr |
+| `Warnings` | the `WARNING:` lines, in order; forced mismatch, missing `CTYPE1` | stdout, before anything else |
+| `Cards` | the raw 80-character cards selected, in the source's order | the preview, indented and trimmed |
+| `Target` | the file written, else null | nothing; the window may use it |
+| `Notes` | the preview's heading, or the count copied and the flip reminder | stdout, last |
+
+The sequence: read the source, read the destination (each read failure is a refusal naming
+which file and why, R-004; the reader's own messages of R-015 travel in it); compare
+`NAXIS1`/`NAXIS2` (a refusal, or a warning under force, R-005); warn on a missing `CTYPE1`
+(R-006); select the keys (R-007; none is a refusal, R-008); on a dry run return the cards and
+the heading (R-009); else set each card verbatim, append the HISTORY card, write through the
+header engine (a write failure is a refusal, R-014) and return the count and the reminder
+(R-012). The warnings raised before a refusal stay in the outcome, so the console prints
+them before the error, as it did before the split. The core composes every sentence about
+the copy; an application adds nothing to them.
+
+## The console (`CopyWcsCli`, `Options`, `Program`)
+
+`Program.Main` is a one-line shim to `CopyWcsCli.Run(args, stdout, stderr)`, which the tests
+drive with string writers. `Run` prints the banner and the copyright first (R-001), then takes
+`--lang` out of the arguments (below), then parses `Options`: two positional paths, the flags
+in any position, `-h` stopping the parse at once; a parse error is one line on stderr, the
+usage on stdout and exit 2 (R-002); `--help` is the usage and exit 0 (R-003). The usage is
+written whole per language because its columns are aligned by hand; the warranty paragraph
+of GPLv3 section 5(d) follows it, there and not under the banner so that it does not weigh on
+every run. Then the run, and the printing of the outcome as the table above says. Exit codes:
+0 success or preview, 1 refused or a bad `--lang`, 2 usage.
+
+## The language (`Ui`, `LanguageArgument`)
+
+FlatCheck's mechanism (ADR 0004): `Ui.T(en, ro)` returns the wording of `Ui.Current`, which is
+the innermost open `Ui.Use(language)` scope on the current flow (an `AsyncLocal`, so parallel
+tests each keep their own) or `Ui.Default`, English at start-up. `LanguageArgument.Extract`
+removes every `--lang x` and `--lang=x` from the arguments, case-insensitive, the last one
+counting, and returns the language, a bad value if any, and the rest; the console refuses a
+bad value in English with exit 1 (R-022) and runs the rest inside `Ui.Use(chosen)` when one
+was given (R-020, R-021). The test assembly sets `Ui.Default` to Romanian once
+(`RomanianByDefault`), so the tests written before the English interface assert the Romanian
+wordings unchanged, and `LanguageTests` opens English scopes or passes `--lang en`.
+
+## The banner and the copyright (`VersionInfo`, `LicenseInfo`)
+
+`<Version>` and `<Copyright>` in `Directory.Build.props` (ADR 0003) become
+`AssemblyInformationalVersion` and `AssemblyCopyright`; `VersionInfo.Value` reads the first,
+cuts any `+commit` suffix and yields `1.0.0`, and `Banner` is `copywcs ` plus it;
+`LicenseInfo.Copyright` reads the second, with a literal fallback for an assembly built
+without the attribute. `VersionTests` and `LicenseNoticeTests` bind the file and the
+assembly, and check lines 1 and 2 of every run, failed runs included.
