@@ -309,6 +309,108 @@ public class LensProfileReaderTests
         Assert.False(s.LensfunPresent);
         Assert.Empty(s.Catalog.Lenses);
     }
+
+    /// <summary>
+    /// Lightroom's folder repeats the DNG Converter's files under the same relative names: the
+    /// second copy is skipped (whatever its case), so the lens is listed once and its profiles
+    /// come from the first folder; a file only the second folder has is still found.
+    /// </summary>
+    [Fact]
+    public void R107_Locate_ReadsTheSameRelativeNameOnceFromTheFirstFolder()
+    {
+        using var ws = new TempWorkspace();
+        string first = Path.Combine(ws.Dir, "first");
+        string second = Path.Combine(ws.Dir, "second");
+        Directory.CreateDirectory(Path.Combine(first, "Tokina"));
+        Directory.CreateDirectory(Path.Combine(second, "TOKINA"));
+        const string nikon = "NIKON CORPORATION (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp";
+        File.WriteAllText(Path.Combine(first, "Tokina", nikon), LensProfileTestData.Lcp());
+        // The copy is not even XML: were it read, the lens would have no profiles.
+        File.WriteAllText(Path.Combine(second, "TOKINA", nikon), "not the profile");
+        File.WriteAllText(Path.Combine(second, "TOKINA", "Canon (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp"), LensProfileTestData.Lcp(make: "Canon"));
+        // The same name at another depth (the user's folder is searched one level above
+        // Adobe's 1.0) is another file, kept: the relative path is the key, not the name.
+        Directory.CreateDirectory(Path.Combine(second, "1.0", "Tokina"));
+        File.WriteAllText(Path.Combine(second, "1.0", "Tokina", nikon), LensProfileTestData.Lcp());
+
+        var s = ProfileLocator.Locate(new[] { first, second }, Path.Combine(ws.Dir, "no-lensfun"));
+
+        Assert.Equal(3, s.AdobeFiles);
+        Assert.Equal(1, s.AdobeFilesDuplicate);
+        Assert.Equal(0, s.AdobeFilesSkipped);
+        var lenses = s.Catalog.Lenses;
+        Assert.Equal(2, lenses.Count);
+        Assert.Equal(new[] { "Canon", "NIKON CORPORATION" }, lenses.Select(l => l.Mount).OrderBy(m => m, StringComparer.Ordinal));
+        var nikonLens = lenses.Single(l => l.Mount == "NIKON CORPORATION");
+        var profiles = s.Catalog.ProfilesOf(nikonLens);
+        // The fixture's three entries from the first folder and three from the deeper copy;
+        // nothing from the garbage copy, which was never read.
+        Assert.Equal(new[] { 18.0, 18.0, 20.0, 20.0, 20.0, 20.0 }, profiles.Select(p => p.FocalMm));
+    }
+
+    /// <summary>
+    /// The Program Files half of the default list: only the applications that carry a
+    /// Resources\LensProfiles\1.0 folder, in ordinal order; a missing root gives none.
+    /// </summary>
+    [Fact]
+    public void R107_AdobeAppDirectories_AreTheExistingProfileFoldersInOrdinalOrder()
+    {
+        using var ws = new TempWorkspace();
+        string root = Path.Combine(ws.Dir, "Adobe");
+        string classic = Path.Combine(root, "Adobe Lightroom Classic", "Resources", "LensProfiles", "1.0");
+        string cc = Path.Combine(root, "Adobe Lightroom CC", "Resources", "LensProfiles", "1.0");
+        Directory.CreateDirectory(classic);
+        Directory.CreateDirectory(cc);
+        Directory.CreateDirectory(Path.Combine(root, "Adobe DNG Converter"));                 // no profiles inside
+        Directory.CreateDirectory(Path.Combine(root, "Adobe Photoshop", "Resources"));         // nor here
+
+        Assert.Equal(new[] { cc, classic }, ProfileLocator.AdobeAppDirectories(root));
+        Assert.Empty(ProfileLocator.AdobeAppDirectories(Path.Combine(ws.Dir, "missing")));
+        Assert.Empty(ProfileLocator.AdobeAppDirectories(null));
+    }
+
+    /// <summary>
+    /// The default order: the Camera Raw folder, the user's, then the Program Files
+    /// applications, every one of those an existing Resources\LensProfiles\1.0 under Program
+    /// Files\Adobe (whatever this machine has installed). Windows only: the folders are Adobe's
+    /// Windows layout.
+    /// </summary>
+    [Fact]
+    public void R107_DefaultAdobeDirectories_StartWithCameraRawThenTheProgramFilesApps()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var dirs = ProfileLocator.DefaultAdobeDirectories();
+        Assert.Equal(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Adobe", "CameraRaw", "LensProfiles", "1.0"), dirs[0]);
+        Assert.Equal(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Adobe", "CameraRaw", "LensProfiles"), dirs[1]);
+        string adobe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Adobe") + Path.DirectorySeparatorChar;
+        var apps = dirs.Skip(2).ToList();
+        Assert.All(apps, d =>
+        {
+            Assert.StartsWith(adobe, d, StringComparison.Ordinal);
+            Assert.EndsWith(Path.Combine("Resources", "LensProfiles", "1.0"), d, StringComparison.Ordinal);
+            Assert.True(Directory.Exists(d), d);
+        });
+        Assert.Equal(apps.OrderBy(d => d, StringComparer.Ordinal), apps);
+    }
+
+    /// <summary>The summary names the skipped copies only when there are any, in both languages.</summary>
+    [Fact]
+    public void R107_SourcesSummary_NamesTheDuplicatesSkippedOnlyWhenThereAreAny()
+    {
+        static ProfileSources Sources(int duplicates)
+            => new(new[] { "x" }, 10, 0, duplicates, "lf", false, null, LensCatalog.Empty, LensfunData.Empty);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains("10 files (7164 duplicates skipped)", SyntheticReport.SourcesSummary(Sources(7164)));
+            Assert.DoesNotContain("duplicate", SyntheticReport.SourcesSummary(Sources(0)));
+            Assert.Contains("a file present in two folders is read once, from the first", SyntheticReport.AdobeWhere(Sources(0)));
+        }
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            Assert.Contains("10 fisiere (7164 duplicate sarite)", SyntheticReport.SourcesSummary(Sources(7164)));
+            Assert.Contains("un fisier prezent in doua foldere se citeste o data, din primul", SyntheticReport.AdobeWhere(Sources(0)));
+        }
+    }
 }
 
 public class LensCatalogTests

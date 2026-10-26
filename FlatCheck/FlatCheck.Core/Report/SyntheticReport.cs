@@ -418,6 +418,7 @@ namespace FlatCheck
         internal static string SourcesSummary(ProfileSources s)
             => T($"    Adobe  : {s.AdobeLenses} lenses from {s.AdobeFiles} files", $"    Adobe  : {s.AdobeLenses} obiective din {s.AdobeFiles} fisiere")
              + (s.AdobeFilesSkipped > 0 ? T($" ({s.AdobeFilesSkipped} skipped)", $" ({s.AdobeFilesSkipped} sarite)") : "")
+             + (s.AdobeFilesDuplicate > 0 ? T($" ({s.AdobeFilesDuplicate} duplicates skipped)", $" ({s.AdobeFilesDuplicate} duplicate sarite)") : "")
              + (s.AdobeFiles == 0 ? T(" - no profile found in ", " - niciun profil gasit in ") + string.Join(" / ", s.AdobeDirectories) : "") + "\n"
              + T($"    lensfun: {s.LensfunLenses} lenses from {s.LensfunDirectory}", $"    lensfun: {s.LensfunLenses} obiective din {s.LensfunDirectory}")
              + (s.LensfunPresent ? "" : T(" - the folder is missing or empty", " - folderul lipseste sau e gol"));
@@ -503,8 +504,8 @@ namespace FlatCheck
             => T("The Adobe profiles (.lcp) are installed by Lightroom, Camera Raw or DNG Converter (free) in:\n",
                  "Profilele Adobe (.lcp) le instaleaza Lightroom, Camera Raw sau DNG Converter (gratuit) in:\n")
              + string.Join("\n", s.AdobeDirectories.Select(d => "  " + d)) + "\n"
-             + T("They are read from there at start-up; they are not copied and not redistributed. Without Adobe, this half of the list is empty.",
-                 "Se citesc de acolo la pornire; nu se copiaza si nu se redistribuie. Fara Adobe, jumatatea asta a listei e goala.");
+             + T("They are read from there at start-up; a file present in two folders is read once, from the first. They are not copied and not redistributed. Without Adobe, this half of the list is empty.",
+                 "Se citesc de acolo la pornire; un fisier prezent in doua foldere se citeste o data, din primul. Nu se copiaza si nu se redistribuie. Fara Adobe, jumatatea asta a listei e goala.");
 
         /// <summary>Where the lensfun database is and how to update it.</summary>
         /// <param name="s">The profile sources, with the lensfun folder and version.</param>

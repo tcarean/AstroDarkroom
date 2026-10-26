@@ -594,8 +594,11 @@ n-are nicio sursă în el, deci nici curbura cerului, nici căderea panoului.
 
 - **Adobe (.lcp)**, citite de pe disc dacă Lightroom, Camera Raw sau DNG Converter (gratuit)
   le-a instalat: `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` și
-  `%APPDATA%\Adobe\CameraRaw\LensProfiles`. Nu se copiază și nu se redistribuie; fără
-  Adobe, jumătatea asta a listei e goală. Un fișier per obiectiv și montură, cu un profil
+  `%APPDATA%\Adobe\CameraRaw\LensProfiles` (unde le pun Camera Raw și DNG Converter), apoi
+  `C:\Program Files\Adobe\<aplicație>\Resources\LensProfiles\1.0` (copia proprie a lui
+  Lightroom Classic și a lui Lightroom); un fișier prezent în două foldere se citește o
+  dată, din primul. Nu se copiază și nu se redistribuie; fără Adobe, jumătatea asta a listei
+  e goală. Un fișier per obiectiv și montură, cu un profil
   per (focală, diafragmă, distanță). Modelul, din documentul „Adobe Camera Model":
   `V = 1 + a1·r² + a2·r⁴ + a3·r⁶`, cu r în unități de focală (distanța în mm împărțită la
   focala în mm), același pentru toate canalele.

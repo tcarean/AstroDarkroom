@@ -139,8 +139,9 @@ Copyright (C) the lensfun contributors.
 ## Profilele Adobe (.lcp) - nu sunt o componentă livrată
 
 Flatul sintetic citește și profilele de obiectiv ale Adobe, dacă Lightroom, Camera Raw sau
-DNG Converter le-a instalat pe mașină (`C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0`
-și `%APPDATA%\Adobe\CameraRaw\LensProfiles`). **Nu se copiază, nu se înglobează și nu se
+DNG Converter le-a instalat pe mașină (`C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0`,
+`%APPDATA%\Adobe\CameraRaw\LensProfiles` și `C:\Program Files\Adobe\<aplicație>\Resources\LensProfiles\1.0`,
+copia proprie a lui Lightroom). **Nu se copiază, nu se înglobează și nu se
 redistribuie**: sunt ale Adobe, se citesc de unde le-a pus Adobe, și fără ele jumătatea
 Adobe a listei e goală. De aceea nu apar în lista din „Despre" - nu e nimic al lor în
 program - dar sunt menționate aici, ca următorul cititor să nu le adauge.

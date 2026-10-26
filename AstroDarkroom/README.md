@@ -56,10 +56,11 @@ details under **About**) because the tools expect them:
   `siril-cli.exe` from your installation (with a private copy of your settings, which it never
   touches). The tools' figures were measured on 1.4.4.
 - **Optional, for FlatCheck: Adobe's lens profiles** (`.lcp`), read from
-  `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` and `%APPDATA%\Adobe\CameraRaw\LensProfiles`.
-  The free Adobe DNG Converter installs them there, and so does Camera Raw with Photoshop;
-  Lightroom Classic and Lightroom keep their own copy inside their program folders, which
-  FlatCheck does not read. Without the profiles, FlatCheck uses the lensfun database it ships in
+  `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` and `%APPDATA%\Adobe\CameraRaw\LensProfiles`,
+  where the free Adobe DNG Converter and Camera Raw with Photoshop put them, and from
+  `C:\Program Files\Adobe\<app>\Resources\LensProfiles\1.0`, the copy Lightroom Classic and
+  Lightroom keep inside their program folders; a file present in two folders is read once.
+  Without the profiles, FlatCheck uses the lensfun database it ships in
   its `lensfun/` folder; with them, the synthetic flat and the vignetting comparison also have
   Adobe's profile of your lens.
 

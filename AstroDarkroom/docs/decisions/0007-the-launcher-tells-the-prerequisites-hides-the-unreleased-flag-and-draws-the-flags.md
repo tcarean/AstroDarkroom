@@ -24,6 +24,9 @@ Converter as the programs that do, and falls back to the lensfun database it shi
 program folders, which FlatCheck does not read; of the three, only the DNG Converter and Camera
 Raw install them where FlatCheck reads them. ADR 0008 records the measurement. The third
 paragraph of `Prerequisites.Details` was written from FlatCheck's README and names Lightroom.)
+(Restated 2026-10-26: FlatCheck reads Lightroom's own folders too since its ADR 0066, each file
+once, so all three programs install them where FlatCheck reads them and the paragraph naming
+Lightroom is right.)
 
 Asked in this session, the owner chose: the **United States flag** for English (over the
 Union Jack and the cross of St George); the prerequisites **in "Despre" and in `README.md`,
