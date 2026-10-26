@@ -41,3 +41,11 @@ there is a user standing there to tell. Clamping silently is for the registry, w
 is not.
 
 See ADR 0027.
+
+Silently towards the user, not towards the log: `Load` writes one line with every setting it
+ended up with, the names of the values that were missing or unreadable and fell back, and each
+number the clamp changed (`<name> <read> -> <kept>`); a key the account may not read says so in
+the same line. `Save` writes the settings it wrote. The three `Read*` helpers add a value's name
+to the list of fallbacks as they fall back; the clamps are found by comparing the two numbers
+before and after `Normalize`. `StartupRegistrar`, which shares the key, writes a line when it
+registers the Run entry, when it repairs its path, and when the registry refuses (ADR 0037).

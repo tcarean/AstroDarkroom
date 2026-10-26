@@ -1,0 +1,18 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+== EGALIZARE DE HISTOGRAMA (vederea "Histogram" din Siril) ==
+fisier:     <TMP>/raw_bayerpat.fit
+cadru:      512 x 512, CFA (ordine RGGB, din BAYERPAT)
+afisare:    256 x 256 (nemicsorat), 65536 cosuri pe canal, culori false (tabelul rainbow din Siril)
+
+canal      interval intrare               niveluri folosite
+  R          11594 .. 21080                 256 / 256
+  G1         18760 .. 34000                 256 / 256
+  G2         18760 .. 34000                 256 / 256
+  B          9033 .. 16320                  256 / 256
+
+LEGENDA: culori false, tabelul rainbow din Siril pe un singur strat: magenta e nivelul cel mai jos, apoi albastru, cyan, verde, galben, iar rosu cel mai sus; culorile sunt ranguri, nu valori.
+INFORMATIV: modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform - nu si cat de mare e: fiecare nivel de gri primeste acelasi numar de pixeli, deci o unda de 0.5 % si un gradient de 10 % ies la fel, iar un flat perfect isi arata propriul zgomot la contrast maxim. Cifrele sunt in modul de structura.
+
+    -> harta salvata: <TMP>/out.png
+

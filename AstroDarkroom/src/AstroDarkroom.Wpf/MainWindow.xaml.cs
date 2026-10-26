@@ -70,6 +70,7 @@ public partial class MainWindow : Window
         Subtitle.Text = T(
             "The astrophotography tools, in the order they are used. Open one from its row.",
             "Uneltele de astrofoto, in ordinea in care se folosesc. Deschide una din randul ei.");
+        PrerequisitesLine.Text = Prerequisites.Summary;
         // BaseDirectory ends with a separator; shown without it, so no backslash dangles before the dash.
         string shownFolder = Path.TrimEndingDirectorySeparator(_folder.BaseDirectory);
         FolderLine.Text = _release is { Date.Length: > 0 } r

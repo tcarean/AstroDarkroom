@@ -36,8 +36,8 @@ zip; it is not a sixth analysis tool and never changes a component.
 ## Layout
 
 - `src/AstroDarkroom.Core/` - the catalogue of the apps, where each is in the suite folder,
-  the plan of a start, the reading of `release.json`, the version and the licence texts. No
-  Console, no UI, no entry point: a compile boundary.
+  the plan of a start, the reading of `release.json`, the version, the licence and the
+  prerequisites texts. No Console, no UI, no entry point: a compile boundary.
 - `src/AstroDarkroom.Wpf/` - the window, `AstroDarkroom.exe`: one row per app with its button,
   and the "Despre" window. A thin adapter over the core (ADR 0001); it has no test project.
 - `tests/AstroDarkroom.Tests/` - the requirement tests (`R###_...`), the suite checks

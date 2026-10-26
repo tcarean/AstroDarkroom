@@ -463,6 +463,41 @@ public class RunsTests
         Assert.Single(run.Result.Channels);
     }
 
+    /// <summary>
+    /// With --rainbow the console writes a one-layer view in Siril's false colours: the
+    /// Mosaic on a CFA frame, the channel on mono, SHRUNK FIRST and coloured after, so every
+    /// pixel of the file is a level of the table applied to the shrunk grey raster. The report
+    /// says so, and the plain picture is not what is returned.
+    /// </summary>
+    [Fact]
+    public void R104_TheConsoleColoursTheShrunkMosaicOnCfaAndTheChannelOnMono()
+    {
+        using var ws = new TempWorkspace();
+        var text = new StringWriter();
+
+        var cfa = HistEqRun.Execute(WriteCfaFlat(ws), text, rainbow: true);
+        var mono = HistEqRun.Execute(WriteFlat(ws), new StringWriter(), rainbow: true);
+
+        Assert.Equal(HistEqRun.EncodeRainbow(cfa.Result), cfa.Png);
+        Assert.NotEqual(HistEqRun.EncodeComposite(cfa.Result), cfa.Png);
+        Assert.Contains("culori false", text.ToString());
+        Assert.Contains("magenta", text.ToString());
+
+        var d = PngDecoder.Decode(cfa.Png);
+        Assert.Equal((cfa.Result.W, cfa.Result.H), (d.Width, d.Height));
+        byte[] expected = RainbowLut.Colour(cfa.Result.Mosaic);
+        foreach (var (x, y) in new[] { (0, 0), (3, 3), (cfa.Result.W / 2, cfa.Result.H / 2), (cfa.Result.W - 1, cfa.Result.H - 1) })
+        {
+            int i = (y * cfa.Result.W + x) * 3;
+            Assert.Equal((expected[i], expected[i + 1], expected[i + 2]), d.At(x, y));
+        }
+
+        var m = PngDecoder.Decode(mono.Png);
+        byte[] expectedMono = RainbowLut.Colour(mono.Result.Channels[0].Equalised);
+        int c = (mono.Result.H / 2 * mono.Result.W + mono.Result.W / 2) * 3;
+        Assert.Equal((expectedMono[c], expectedMono[c + 1], expectedMono[c + 2]), m.At(mono.Result.W / 2, mono.Result.H / 2));
+    }
+
     [Fact]
     public void TheBannerIsTheFirstTwoLinesAndCarriesVersionAndCopyright()
     {

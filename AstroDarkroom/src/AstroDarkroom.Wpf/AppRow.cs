@@ -50,7 +50,4 @@ public sealed record AppRow(SuiteApp App, AppLocation Location, ComponentInfo? C
     public string VersionHint => Component is { Version.Length: > 0 } c
         ? T("version ", "versiunea ") + c.Version
         : T("version unknown", "versiune necunoscuta");
-
-    /// <summary>"unreleased changes" when release.json says the component was bundled with changes its version does not name yet; else "".</summary>
-    public string UnreleasedHint => Component is { Unreleased: true } ? T("unreleased changes", "modificari nelansate") : "";
 }

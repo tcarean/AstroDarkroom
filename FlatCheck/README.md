@@ -446,6 +446,28 @@ Acceptă orice fișier pe care îl citește unealta: raw de aparat sau FITS, cad
 sau master. Pe un master (float, 0..1, cu mozaic CFA intact cum îl scrie Siril) merge la
 fel; ce se vede acolo e ce a rămas după stivuire.
 
+**Culori false — `--rainbow`.** Siril are, lângă afișarea „Histogram", butonul de *color
+map*: stratul egalizat, deja pe 8 biți, trece printr-un tabel de 256 de nuanțe
+(`make_index_for_rainbow` din sursa lui: nuanța merge de la 300° la nivelul 0 până la 0° la
+nivelul 255, saturație și valoare 1). Deci **magenta e nivelul cel mai jos**, apoi albastru,
+cyan, verde, galben, iar **roșu cel mai sus**; nivelul 0 nu e negru. Benzile de o culoare sunt
+contururi de rang egal, și forma vignetării — rotundă, descentrată, pătrată — se citește
+dintr-o privire acolo unde în gri e o pată difuză. Culorile sunt ranguri, nu valori:
+amplitudinea tot lipsește.
+
+```bash
+flatcheck flats/DSC_0060.NEF --histeq --rainbow -o poza.png
+```
+
+Tabelul se aplică **pe un singur strat**: consola scrie mozaicul pe un cadru CFA și canalul pe
+mono, micșorat întâi și colorat după, astfel încât fiecare pixel din fișier e un nivel din
+tabel; raportul tipărește legenda. Compozitul RGB nu se colorează niciodată — în Siril tabul
+RGB ia câte un octet din culoarea fiecărui strat, și unde canalele au forme diferite ies
+culori din afara paletei, din care nu se mai citește nimic (măsurat pe NEF-ul Samyang,
+2026-10-26). `--rainbow` fără `--histeq` e eroare de linie de comandă, cod 1. În fereastră,
+chipul **Culori false** de lângă vederi face același lucru pe Mozaic, pe un canal și pe mono,
+și e dezactivat pe RGB.
+
 ---
 
 ### 6. Netezire — `--smooth`
@@ -818,6 +840,7 @@ flatcheck <flat_brut.fit> --expo         # expunere
 flatcheck <flat_brut.NEF> --expo         # idem, direct pe raw de aparat
 flatcheck <sky_flat.fit> --expo --sky    # expunere pentru flats pe cer
 flatcheck <flat.NEF> --histeq            # vederea „Histogram" din Siril, pe canale
+flatcheck <flat.NEF> --histeq --rainbow  # la fel, în culorile false din Siril (un strat: mozaicul sau canalul)
 flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fără textură, praf, pete
 flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului
 flatcheck --lenses [--lens <text>]       # obiectivele cu profil (Adobe de pe disc, lensfun/ de lângă exe);
@@ -827,6 +850,8 @@ flatcheck <A.fit> --against <B.fit>      # cât și cum diferă două flaturi
   -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; --ratio mai scrie
                            una lângă ea, cu sufixul -world; la --histeq e poza egalizată;
                            --smooth mai scrie una cu sufixul -after)
+  --rainbow                poza egalizată în culorile false din Siril, magenta = cel mai jos,
+                           roșu = cel mai sus (--histeq; singur e eroare)
   --sat <white>            nivel de saturație, dacă auto-detecția greșește (--expo)
   --black <nivel>          nivel black (--expo)
   --pattern <tipar>        ce fișiere ia din folder (implicit pp_light_*.fit)
@@ -1246,6 +1271,7 @@ păstrează când schimbi vederea și se resetează când schimbi fișierul.
 | vederea Mozaic (implicită) | tot mozaicul ca un singur strat — Siril pe un raw nedebayerizat, de asta e prima. Trei culori în aceeași histogramă, deci la 100 % se vede tabla de șah; micșorată, se mediază. |
 | vederea RGB | cele patru poziții, fiecare egalizată separat și pusă în culoarea ei, cu mai mult contrast decât mozaicul. O nuanță uniformă nu înseamnă nimic; o nuanță care *variază* pe cadru înseamnă că un canal are altă formă decât celelalte — o sursă cu gradient de culoare, o scurgere colorată. |
 | vederile pe canal | aceeași poză, un singur canal, în gri. Ca să vezi dacă o formă e în toate canalele sau doar într-unul. |
+| chipul Culori false | tabelul rainbow din Siril peste vederea de pe ecran: de la magenta la nivelul cel mai jos, prin albastru, cyan, verde și galben, până la roșu la cel mai sus. Benzile de o culoare sunt contururi de rang egal, deci *forma* vignetării se citește dintr-o privire. Culorile sunt ranguri, nu valori. Doar pe un strat — Mozaic, un canal, mono — niciodată pe RGB, unde chipul e dezactivat. Rămâne bifat la schimbarea vederii sau a fișierului. |
 | zoom și deplasare | rotiță, tragere cu mouse-ul, dublu click; pagina se derulează cu rotița în afara pozei. La 100 % un pixel de pe ecran e un pixel de senzor. Se păstrează la schimbarea vederii, se resetează la schimbarea fișierului. |
 | masterul față de un cadru | vezi paragraful de mai sus: ce lipsește de pe master s-a mediat, ce e pe amândouă e fix pe montaj. |
 | unde e cifra | în tabul Structura. Poza spune ce *formă* are ce măsoară ea. |

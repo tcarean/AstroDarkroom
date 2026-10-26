@@ -114,6 +114,28 @@ public class OptionsTests
         Assert.True(o.Sky);
     }
 
+    [Fact]
+    public void R104_RainbowFlag_IsRecognisedWithHisteq()
+    {
+        var o = Options.Parse(new[] { "--rainbow", "flat.fit", "--histeq" });
+
+        Assert.Null(o.Error);
+        Assert.True(o.Histeq);
+        Assert.True(o.Rainbow);
+        Assert.False(Options.Parse(new[] { "flat.fit", "--histeq" }).Rainbow);
+    }
+
+    /// <summary>A modifier of one mode's picture: alone it is a typo, not a silent plain picture.</summary>
+    [Fact]
+    public void R104_RainbowWithoutHisteq_IsAnError()
+    {
+        var o = Options.Parse(new[] { "flat.fit", "--rainbow" });
+
+        Assert.NotNull(o.Error);
+        Assert.Contains("--rainbow", o.Error);
+        Assert.Contains("--histeq", o.Error);
+    }
+
     [Theory]
     [InlineData("-o")]
     [InlineData("--out")]

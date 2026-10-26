@@ -73,9 +73,19 @@ public sealed class ReminderCoordinator : IDisposable
     private readonly IClock _clock;
     private readonly TimeSpan _debounce;
     private readonly TimeSpan _activityRefresh;
+    private readonly IDecisionLog _log;
 
     private DateTimeOffset? _lastShownAt;
     private DateTimeOffset? _lastActivityReadAt;
+
+    /// <summary>
+    /// When the periodic reminder now due was first held back, and for what; <c>null</c> while
+    /// nothing is held. Only for the log: one line when the hold starts or its reason changes,
+    /// one with the total when the reminder finally appears (R-112).
+    /// </summary>
+    private DateTimeOffset? _heldSince;
+    private ReminderSuppression _heldReason;
+
     private bool _started;
     private bool _disposed;
 
@@ -104,6 +114,9 @@ public sealed class ReminderCoordinator : IDisposable
     /// How often the activity monitor is read on ticks when no reminder is due; <c>null</c> is
     /// <see cref="DefaultActivityRefresh"/>.
     /// </param>
+    /// <param name="log">
+    /// Where each decision is written, one line each (R-112); <c>null</c> keeps none.
+    /// </param>
     public ReminderCoordinator(
         ISessionMonitor monitor,
         IReminderPresenter presenter,
@@ -112,7 +125,8 @@ public sealed class ReminderCoordinator : IDisposable
         IActivityMonitor? activity = null,
         IClock? clock = null,
         TimeSpan? debounce = null,
-        TimeSpan? activityRefresh = null)
+        TimeSpan? activityRefresh = null,
+        IDecisionLog? log = null)
     {
         ArgumentNullException.ThrowIfNull(monitor);
         ArgumentNullException.ThrowIfNull(presenter);
@@ -126,6 +140,7 @@ public sealed class ReminderCoordinator : IDisposable
         _clock = clock ?? SystemClock.Instance;
         _debounce = debounce ?? DefaultDebounce;
         _activityRefresh = activityRefresh ?? DefaultActivityRefresh;
+        _log = log ?? NullDecisionLog.Instance;
         _schedule = new IntervalSchedule(settings);
     }
 
@@ -206,9 +221,11 @@ public sealed class ReminderCoordinator : IDisposable
         // tooltip on the next tick rather than up to a refresh interval later.
         Suppression = ReminderSuppression.None;
         _lastActivityReadAt = null;
+        ClearHold();
 
         SyncTimer();
         CountdownChanged?.Invoke(this, EventArgs.Empty);
+        _log.Write(DecisionLog.SettingsApplied(Settings));
     }
 
     /// <summary>
@@ -246,12 +263,14 @@ public sealed class ReminderCoordinator : IDisposable
         // about the schedule, and letting either of them skip this would leave a deadline
         // set before a lock that may have lasted hours.
         _schedule.Resume(_clock.UtcNow);
+        _log.Write(DecisionLog.Unlocked);
 
         // Cleared here rather than further down, because every path out of this method has
         // just been given a whole fresh interval: whatever was being waited on is gone, and
         // the branches below return early often enough that clearing it in each would be a
         // rule kept in four places. It is set again a few lines down if the user is busy.
         Suppression = ReminderSuppression.None;
+        ClearHold();
 
         SyncTimer();
         CountdownChanged?.Invoke(this, EventArgs.Empty);
@@ -264,18 +283,21 @@ public sealed class ReminderCoordinator : IDisposable
         // the registry to find out whether it would have been held back.
         if (!Settings.UnlockEnabled)
         {
+            _log.Write(DecisionLog.UnlockSkippedOff());
             return;
         }
 
         if (_presenter.IsShowing)
         {
             _presenter.BringToFront();
+            _log.Write(DecisionLog.BroughtToFront(ReminderKind.Unlock));
             return;
         }
 
         var now = _clock.UtcNow;
         if (_lastShownAt is { } last && now - last < _debounce)
         {
+            _log.Write(DecisionLog.UnlockSkippedRecent(now - last));
             return;
         }
 
@@ -283,8 +305,10 @@ public sealed class ReminderCoordinator : IDisposable
         // registry. You can lock the workstation with a call still running -- the meeting
         // carries on without you -- and without this the reminder would land on top of it the
         // moment you came back, which is the exact thing the setting exists to prevent.
-        if (Evaluate() is not ReminderSuppression.None)
+        if (Evaluate() is var reason and not ReminderSuppression.None)
         {
+            _log.Write(DecisionLog.UnlockSkipped(reason));
+
             // Skipped, not postponed. With the periodic reminder off there is no countdown,
             // so no tick reads the monitor again: a reason kept here would stay in the
             // tooltip after the call, for a reminder that is not being held back.
@@ -300,6 +324,7 @@ public sealed class ReminderCoordinator : IDisposable
 
         _lastShownAt = now;
         _presenter.Show(Settings.UnlockMessage);
+        _log.Write(DecisionLog.ReminderShown(ReminderKind.Unlock, Settings.UnlockMessage));
     }
 
     /// <summary>
@@ -309,12 +334,14 @@ public sealed class ReminderCoordinator : IDisposable
     internal void HandleLock()
     {
         _schedule.Suspend();
+        _log.Write(DecisionLog.Locked);
 
         // Nothing is read behind a lock -- the timer is stopped -- so the stamp is cleared to
         // make the first tick after the unlock take a fresh reading rather than trust one
         // from before the lock.
         Suppression = ReminderSuppression.None;
         _lastActivityReadAt = null;
+        ClearHold();
         SyncTimer();
         CountdownChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -336,12 +363,23 @@ public sealed class ReminderCoordinator : IDisposable
             // elapsed interval, and once per retry while a reminder is held back. Asking on
             // every tick would read the registry once a second to answer a question that only
             // matters in the instant a window would otherwise open.
-            if (Evaluate() is not ReminderSuppression.None)
+            if (Evaluate() is var reason and not ReminderSuppression.None)
             {
                 // TryConsumeDue re-armed a whole interval as it said yes; this overwrites it
                 // with the much shorter retry gap, so the next look comes in seconds rather
                 // than in half an hour.
                 _schedule.Postpone(now, Settings.RetryInterval);
+
+                // One line when the hold starts and one per change of reason, not one per
+                // retry: a long call would otherwise write the same line every 20 seconds.
+                if (_heldSince is null || reason != _heldReason)
+                {
+                    _log.Write(DecisionLog.HeldBack(reason, Settings.RetryInterval));
+                }
+
+                _heldSince ??= now;
+                _heldReason = reason;
+
                 CountdownChanged?.Invoke(this, EventArgs.Empty);
                 return;
             }
@@ -356,18 +394,43 @@ public sealed class ReminderCoordinator : IDisposable
             if (_presenter.IsShowing)
             {
                 _presenter.BringToFront();
+                _log.Write(_heldSince is { } heldSinceRaise
+                    ? DecisionLog.BroughtToFrontAfterHold(now - heldSinceRaise)
+                    : DecisionLog.BroughtToFront(ReminderKind.Periodic));
             }
             else
             {
                 _presenter.Show(Settings.PeriodicMessage);
+                _log.Write(_heldSince is { } heldSince
+                    ? DecisionLog.ShownAfterHold(now - heldSince, Settings.PeriodicMessage)
+                    : DecisionLog.ReminderShown(ReminderKind.Periodic, Settings.PeriodicMessage));
             }
+
+            ClearHold();
         }
         else
         {
+            // A clock moved back restarted the countdown inside TryConsumeDue (R-025): the
+            // postponement that was running is over, so the hold the log tracks is too.
+            if (_schedule.JumpRestartedCountdown)
+            {
+                ClearHold();
+            }
+
             RefreshSuppression(now);
         }
 
         CountdownChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Forgets a hold the log was tracking: the reminder appeared, or the countdown it belonged
+    /// to was restarted or suspended.
+    /// </summary>
+    private void ClearHold()
+    {
+        _heldSince = null;
+        _heldReason = ReminderSuppression.None;
     }
 
     /// <summary>

@@ -3,7 +3,8 @@
 **Covers:** `src/AstroDarkroom.Core/SuiteApp.cs`, `src/AstroDarkroom.Core/AppCatalogue.cs`,
 `src/AstroDarkroom.Core/SuiteFolder.cs`, `src/AstroDarkroom.Core/Launcher.cs`,
 `src/AstroDarkroom.Core/ReleaseManifest.cs`, `src/AstroDarkroom.Core/LicenseInfo.cs`,
-`src/AstroDarkroom.Core/Version.cs`, `src/AstroDarkroom.Core/Language/Ui.cs`,
+`src/AstroDarkroom.Core/Prerequisites.cs`, `src/AstroDarkroom.Core/Version.cs`,
+`src/AstroDarkroom.Core/Language/Ui.cs`,
 `src/AstroDarkroom.Core/Language/LanguageSetting.cs`, `src/AstroDarkroom.Wpf/App.xaml.cs`,
 `src/AstroDarkroom.Wpf/AppRow.cs`, `src/AstroDarkroom.Wpf/MainWindow.xaml.cs`,
 `src/AstroDarkroom.Wpf/AboutWindow.xaml.cs` and `Icon/make_icon.py`.
@@ -60,6 +61,10 @@ languages and the live switch are ADR 0006.
   writes from `Directory.Build.props`; `Banner` is `"Astro Darkroom " + Value`. `LicenseInfo`
   holds the warranty paragraph, a pair picked at each read, and the licence URL for the about
   window.
+- `Prerequisites` holds what the suite needs on the machine, as texts only (R-009, ADR 0007):
+  `Summary`, one line for the main window, and `Details`, three paragraphs for the about
+  window (the Siril session folder, Siril 1.4.4 or newer, the optional Adobe lens profiles for
+  FlatCheck), each a pair picked at each read. The core checks nothing of it.
 
 ## The window
 
@@ -69,19 +74,24 @@ languages and the live switch are ADR 0006.
   `App.LargestIconFrame` picks the widest frame of the `.ico` for the two logos, since the
   first frame of an icon is not reliably the largest.
 - `MainWindow` reads `release.json` once. The XAML carries no user text: `Relabel()` assigns
-  every label (the subtitle, the folder line, the selector's tooltip, the about button and its
-  tooltip) through `T` and builds one `AppRow` per catalogue app: the app, its `AppLocation`,
-  its `ComponentInfo` or null. The row's properties are the strings the XAML binds
-  (`OpenLabel`, `VersionHint` as `version X` / `versiunea X` or `version unknown` / `versiune
-  necunoscuta`, `UnreleasedHint` as `unreleased changes` / `modificari nelansate` or empty,
-  `ButtonHint` as the exe or the reason), picked at the row's build, and `IsAvailable`, which
+  every label (the subtitle, the prerequisites line under it from `Prerequisites.Summary`, the
+  folder line, the selector's tooltip, the about button and its tooltip) through `T` and
+  builds one `AppRow` per catalogue app: the app, its `AppLocation`, its `ComponentInfo` or
+  null. The row's properties are the strings the XAML binds (`OpenLabel`, `VersionHint` as
+  `version X` / `versiunea X` or `version unknown` / `versiune necunoscuta`, `ButtonHint` as
+  the exe or the reason), picked at the row's build, and `IsAvailable`, which
   enables the button. The button's tooltip is shown on a disabled button too
   (`ToolTipService.ShowOnDisabled`), since the reason is the one thing a disabled row must
   tell. The window does not watch the folder: a file that appears or goes away is seen at the
   next relabel, or at the click, where a missing file becomes a message box instead of a crash.
 - The selector is two `RadioButton`s in the `LanguageChoice` style of `App.xaml` (the buttons'
   look, the checked one on the accent border), `English` and `Romana`, each with its language
-  in its `Tag`. The constructor checks the current one, which fires `LanguageChecked` for a
+  in its `Tag`. Each button's content is a horizontal panel: its flag, an `Image` in the `Flag`
+  style of `App.xaml` over the `FlagEnglish` or `FlagRomanian` `DrawingImage` (vector drawings
+  at the flags' proportions, 13 px high, aliased so the stripes stay crisp, the US stars a grid
+  of dots), then its name in a `TextBlock` with `Style="{x:Null}"`, so the text takes the
+  button's `Foreground` instead of the implicit style's and dims and lights with the check
+  (ADR 0007). The constructor checks the current one, which fires `LanguageChecked` for a
   language equal to `Ui.Default` and so changes nothing; a click sets `Ui.Default`, writes the
   setting and calls `Relabel()`, so every text and every row changes at once.
 - `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `UseShellExecute`, the plan's
@@ -91,12 +101,13 @@ languages and the live switch are ADR 0006.
   `InvalidOperationException` (the file went away) end in a message box with the row's title.
 - `AboutWindow` takes the `ReleaseInfo` the main window read and words itself once, in its
   constructor, in the language of that moment (it is modal and made anew at every open): the
-  title, the tagline, the headings, the banner, the copyright, the warranty, the release line
+  title, the tagline, the headings, the banner, the copyright, the warranty, the prerequisites
+  card (an `ItemsControl` of `Muted` paragraphs over `Prerequisites.Details`), the release line
   and the component list from `release.json` without the launcher's own entry (`Name` equal to
-  the release's `name`), each as a `ComponentLine` with `?` for an unknown version and the
-  unreleased note. Without a file, or with one that names no component, the list is the
-  catalogue with `?` and the line says the versions are unknown. Enter and Esc close it
-  (`IsDefault` and `IsCancel` on one button).
+  the release's `name`), each as a `ComponentLine` with `?` for an unknown version; the
+  `unreleased` flag of the file is not shown (ADR 0007). Without a file, or with one that
+  names no component, the list is the catalogue with `?` and the line says the versions are
+  unknown. Enter and Esc close it (`IsDefault` and `IsCancel` on one button).
 - The palette and the button, tooltip and card styles are in `App.xaml`, the same colours as
   LightsCheck's dark theme reduced to what two windows need. Both windows darken their title
   bar on `SourceInitialized`, when the handle exists, through `DarkTitleBar`, a copy of

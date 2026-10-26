@@ -17,6 +17,7 @@
 
 using System.Globalization;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using MindfulnessReminder.Core;
@@ -83,6 +84,9 @@ public partial class App : WpfApplication
     /// </summary>
     private int _crashReported;
 
+    /// <summary>The decision log of the tray copy; <c>null</c> in <c>--preview</c> and <c>--detect</c>.</summary>
+    private FileDecisionLog? _log;
+
     /// <summary>
     /// Runs <c>--preview</c> or <c>--detect</c> when one is given; each quits when it is done.
     /// Otherwise claims the single-instance mutex, so that a second copy quits at once, and
@@ -118,10 +122,16 @@ public partial class App : WpfApplication
 
         // Only the tray copy is worth bringing back: Windows starts it again, with --restarted,
         // after a crash or a hang once it has run for a minute (R-100, ADR 0036).
-        if (ApplicationRestart.ShouldRegister(e.Args))
-        {
-            RestartRegistration.Register();
-        }
+        var registration = ApplicationRestart.ShouldRegister(e.Args) ? RestartRegistration.Register() : 0;
+
+        // The log exists from here on: --preview and --detect returned above and write nothing
+        // (R-110). Its first line says what this copy is and what Windows will do for it.
+        _log = new FileDecisionLog(LogFolder());
+        _log.Write(DecisionLog.Started(
+            VersionInfo.Banner,
+            RuntimeInformation.FrameworkDescription,
+            e.Args,
+            registration));
 
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
@@ -139,7 +149,7 @@ public partial class App : WpfApplication
         var registry = new WindowsRegistryStore();
         var autoStart = new RegistryAutoStartManager(registry, AutoStartValueName, ResolveExecutablePath());
 
-        _settingsStore = new RegistrySettingsStore(registry);
+        _settingsStore = new RegistrySettingsStore(registry, _log);
 
         _tray = new TrayIconHost(autoStart);
         _tray.ExitRequested += (_, _) => Shutdown();
@@ -151,11 +161,12 @@ public partial class App : WpfApplication
             new WpfReminderPresenter(Dispatcher),
             new DispatcherPeriodicTimer(Dispatcher, ReminderCoordinator.DefaultTickInterval),
             _settingsStore.Load(),
-            new WindowsActivityMonitor());
+            new WindowsActivityMonitor(),
+            log: _log);
         _coordinator.CountdownChanged += (_, _) => UpdateTooltip();
         _coordinator.Start();
 
-        if (new StartupRegistrar(registry, autoStart).EnsureRegisteredOnFirstRun())
+        if (new StartupRegistrar(registry, autoStart, _log).EnsureRegisteredOnFirstRun())
         {
             _tray.ShowBalloon(
                 VersionInfo.Name,
@@ -408,6 +419,19 @@ public partial class App : WpfApplication
     }
 
     /// <summary>
+    /// Names the decision log's folder: <c>MindfulnessReminder</c> under the user's local
+    /// application data (R-110). When Windows cannot name that folder, the result is empty and
+    /// the log writes nowhere, rather than into the working directory.
+    /// </summary>
+    /// <returns>The folder's full path, or an empty string.</returns>
+    private static string LogFolder()
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        return localAppData.Length == 0 ? string.Empty : Path.Combine(localAppData, "MindfulnessReminder");
+    }
+
+    /// <summary>
     /// Finds the path to record for auto-start. <see cref="Environment.ProcessPath"/> is the
     /// right answer for a normal launch (single-file publish and "dotnet run" included); when
     /// the app is started through the shared host, as "dotnet MindfulnessReminder.dll", it
@@ -468,6 +492,10 @@ public partial class App : WpfApplication
         catch (Exception)
         {
         }
+
+        // Written before the dialog, so the file has it even if nobody reads the dialog; the
+        // log swallows its own failures, so this cannot get in the way of the fail-fast (R-114).
+        _log?.Write(DecisionLog.Crashed(text));
 
         MessageBox.Show(
             text,

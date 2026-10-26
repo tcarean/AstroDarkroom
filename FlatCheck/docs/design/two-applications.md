@@ -27,7 +27,7 @@ a path of its own. What differs is only what each application does with the thre
 | smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_smoothed.fit` beside the master, on a button, after asking about an existing file |
 | synthetic flat | written to `--synthetic <path>`, the lens from `--lens` text; `--against` compares two files | written to `pp_flat_stacked_synthetic.fit` beside the master, the lens from a searchable list, focal / f-stop / crop prefilled from the master's header and a raw in `flats/`; the comparison against the file follows the write by itself, and "Compara cu masterul" runs it alone on a file written earlier |
 | result | exit code | coloured verdict |
-| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale`, `--lens`, `--raw`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the smoothing scale (three chips), the lens list, its three prefilled fields and the sensor-format chips behind the crop; the Structure tab's profile comparison takes the first raw in `flats/` by itself |
+| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--rainbow`, `--scale`, `--lens`, `--raw`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the false colours (a checkbox on the Histogram tab, ADR 0063), the smoothing scale (three chips), the lens list, its three prefilled fields and the sensor-format chips behind the crop; the Structure tab's profile comparison takes the first raw in `flats/` by itself |
 
 The console keeps the options because it is the scriptable one (ADR 0033); `--fov` and
 `--sat` exist for telling the tool something the header does not say, and adding them to the
@@ -167,7 +167,8 @@ preselected and not run at open, the smoothed master as a third kind of row (chi
   Ratio tab overlaps the same way on a quick re-choice, and the other tabs never overlap runs,
   so for them nothing changes. `TabViewModelTests` pins it with a stub tab. Each view is a
   bitmap made on the UI thread straight from the full-resolution raster (`RasterBitmaps`), with
-  no PNG in between, and cached per chip.
+  no PNG in between, and cached per chip and per state of the false-colours checkbox
+  (`modes-histeq.md`, "The false colours").
 
 **The Netezire tab runs on a button and never on open**, waits for the gate, writes
 after the numbers are on screen, asks about an existing file, and its output never becomes the

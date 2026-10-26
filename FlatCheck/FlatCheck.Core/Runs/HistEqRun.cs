@@ -17,10 +17,12 @@
 
 // HistEqRun.cs - mode 5 end to end: file -> equalised rasters + text + PNG.
 //
-// Png is the composite, the only view the console writes. The others - one grey per position
-// and the mosaic - are encoded by the window on demand, through the two functions below, and
-// cached per chip: they are up to five images of 1500x1000, and encoding them all in advance is
-// exactly the problem the map cache exists for.
+// Png is the composite, the only view the console writes - or, with --rainbow, the one-layer
+// view (the mosaic on CFA, the channel on mono) in Siril's false colours, shrunk first and
+// coloured after. The others - one grey per position and the mosaic - are encoded by the
+// window on demand, through the functions below, and cached per chip: they are up to five
+// images of 1500x1000, and encoding them all in advance is exactly the problem the map cache
+// exists for.
 // RunOutcome.SecondaryPng stays null here.
 
 using System.IO;
@@ -34,18 +36,34 @@ namespace FlatCheck
     internal static class HistEqRun
     {
         /// <summary>
-        /// Loads the file, equalises it, writes the report and encodes the composite. Throws
-        /// what <see cref="ImageLoader.Load"/> throws on an unreadable file.
+        /// Loads the file, equalises it, writes the report and encodes the picture: the
+        /// composite, or with <paramref name="rainbow"/> the one-layer view in false colours.
+        /// Throws what <see cref="ImageLoader.Load"/> throws on an unreadable file.
         /// </summary>
         /// <param name="path">A raw or a FITS file.</param>
         /// <param name="report">Where the report's text is written.</param>
-        /// <returns>The equalised rasters and the composite as PNG; no second map.</returns>
-        internal static RunOutcome<HistEqResult> Execute(string path, TextWriter report)
+        /// <param name="rainbow">True for <c>--rainbow</c>: the picture is
+        /// <see cref="EncodeRainbow"/> and the report carries the legend.</param>
+        /// <returns>The equalised rasters and the picture as PNG; no second map.</returns>
+        internal static RunOutcome<HistEqResult> Execute(string path, TextWriter report, bool rainbow = false)
         {
             LoadedFrame f = ImageLoader.Load(path);
             var r = HistEqAnalyzer.Analyze(f.Image, f.Cfa);
-            HistEqReport.Write(r, path, report);
-            return new RunOutcome<HistEqResult>(r, EncodeComposite(r));
+            HistEqReport.Write(r, path, report, rainbow);
+            return new RunOutcome<HistEqResult>(r, rainbow ? EncodeRainbow(r) : EncodeComposite(r));
+        }
+
+        /// <summary>
+        /// Encodes the one-layer view in Siril's false colours: the mosaic on a CFA frame, the
+        /// channel on mono, the SHRUNK raster coloured, so every pixel of the file is a level of
+        /// <see cref="RainbowLut.Table"/> (ADR 0063).
+        /// </summary>
+        /// <param name="r">An equalisation result.</param>
+        /// <returns>The coloured view as RGB PNG bytes, at the shrunk size.</returns>
+        internal static byte[] EncodeRainbow(HistEqResult r)
+        {
+            var (grey, w, h) = r.OneLayer(full: false);
+            return PngWriter.Encode(RainbowLut.Colour(grey), w, h);
         }
 
         /// <summary>Encodes the composite view, RGB on a CFA frame of known order.</summary>

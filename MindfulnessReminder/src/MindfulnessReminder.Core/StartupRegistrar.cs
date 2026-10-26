@@ -33,19 +33,24 @@ public sealed class StartupRegistrar
 
     private readonly IRegistryStore _registry;
     private readonly IAutoStartManager _autoStart;
+    private readonly IDecisionLog _log;
 
     /// <summary>A registrar that keeps its marker under <see cref="SettingsKeyPath"/>.</summary>
     /// <param name="registry">The per-user registry, which holds the marker.</param>
     /// <param name="autoStart">
     /// The auto-start entry to register on the first run and repair after it.
     /// </param>
-    public StartupRegistrar(IRegistryStore registry, IAutoStartManager autoStart)
+    /// <param name="log">
+    /// Where a registration, a repair or a refusal is written (R-113); <c>null</c> keeps none.
+    /// </param>
+    public StartupRegistrar(IRegistryStore registry, IAutoStartManager autoStart, IDecisionLog? log = null)
     {
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(autoStart);
 
         _registry = registry;
         _autoStart = autoStart;
+        _log = log ?? NullDecisionLog.Instance;
     }
 
     /// <summary>
@@ -71,7 +76,11 @@ public sealed class StartupRegistrar
             // The repair reads the Run value before anything is written, so an entry this
             // account may not read stops the run here, rather than reading as no entry below
             // and being overwritten.
-            _autoStart.RepairPathIfNeeded();
+            if (_autoStart.RepairPathIfNeeded())
+            {
+                _log.Write(DecisionLog.AutoStartRepaired(_autoStart.Command));
+            }
+
             if (!firstRun)
             {
                 return false;
@@ -90,6 +99,7 @@ public sealed class StartupRegistrar
             undoOnRefusal = true;
             _autoStart.Enable();
             _registry.SetString(SettingsKeyPath, RegisteredMarkerValueName, "1");
+            _log.Write(DecisionLog.AutoStartRegistered(_autoStart.Command));
             return true;
         }
         catch (Exception ex) when (IsRefusal(ex))
@@ -105,6 +115,7 @@ public sealed class StartupRegistrar
                 TryDisable();
             }
 
+            _log.Write(DecisionLog.AutoStartRefused(ex));
             return false;
         }
     }

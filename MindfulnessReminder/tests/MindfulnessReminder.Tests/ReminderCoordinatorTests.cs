@@ -26,6 +26,7 @@ public class ReminderCoordinatorTests
     private readonly FakeTimer _timer = new();
     private readonly FakeActivityMonitor _activity = new();
     private readonly MutableClock _clock = new(new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero));
+    private readonly FakeDecisionLog _log = new();
 
     private ReminderCoordinator CreateCoordinator(
         TimeSpan? debounce = null,
@@ -38,7 +39,8 @@ public class ReminderCoordinatorTests
             _activity,
             _clock,
             debounce ?? ReminderCoordinator.DefaultDebounce,
-            ReminderCoordinator.DefaultActivityRefresh);
+            ReminderCoordinator.DefaultActivityRefresh,
+            _log);
 
     [Fact]
     public void R010_Start_starts_the_monitor()
@@ -995,6 +997,286 @@ public class ReminderCoordinatorTests
         _timer.RaiseTick();
 
         Assert.Equal(ReminderSuppression.MicrophoneInUse, coordinator.Suppression);
+    }
+
+    // ----- R-112: the decision log -----
+
+    [Fact]
+    public void R112_An_unlock_logs_the_event_and_the_reminder_it_shows()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(["Workstation unlocked", "Unlock reminder shown: Ground yourself"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_lock_logs_one_line()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _monitor.RaiseLocked();
+
+        Assert.Equal(["Workstation locked"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_periodic_reminder_falling_due_logs_what_it_shows()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(["Periodic reminder shown: Ground yourself"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_An_unlock_with_the_unlock_reminder_off_logs_the_skip()
+    {
+        using var coordinator = CreateCoordinator(settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(["Workstation unlocked", "Unlock reminder skipped: switched off"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_debounced_unlock_logs_how_long_ago_the_last_one_was_shown()
+    {
+        using var coordinator = CreateCoordinator(TimeSpan.FromSeconds(2));
+        coordinator.Start();
+        _monitor.RaiseUnlocked();
+        _presenter.SimulateClosed();
+        _log.Clear();
+
+        _clock.Advance(TimeSpan.FromSeconds(1));
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(["Workstation unlocked", "Unlock reminder skipped: one shown 1 s ago"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_An_unlock_during_a_call_logs_the_reason()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(["Workstation unlocked", "Unlock reminder skipped: microphone or camera in use"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_An_unlock_while_a_window_is_open_logs_that_it_was_brought_to_front()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _presenter.SimulateShown();
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(["Workstation unlocked", "Unlock reminder: window already open, brought to front"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_periodic_reminder_due_while_a_window_is_open_logs_the_same()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _presenter.SimulateShown();
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(["Periodic reminder: window already open, brought to front"], _log.Lines);
+    }
+
+    /// <summary>
+    /// The example of R-112: due at 10:00:00 during a call that ends at 10:47:05, looked at
+    /// every 20 s, shown at 10:47:20. One line when it is first held back, none for the
+    /// retries, one when it finally appears, with the time held back rounded up.
+    /// </summary>
+    [Fact]
+    public void R112_A_held_back_periodic_reminder_logs_once_when_held_and_once_when_shown()
+    {
+        using var coordinator = CreateCoordinator(settings: ReminderSettings.Default with { IntervalMinutes = 60 });
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(TimeSpan.FromMinutes(60));
+        _timer.RaiseTick();
+
+        for (var i = 0; i < 141; i++)
+        {
+            _clock.Advance(TimeSpan.FromSeconds(20));
+            _timer.RaiseTick();
+        }
+
+        Assert.Equal(["Periodic reminder held back: microphone or camera in use, looking again every 20 s"], _log.Lines);
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _clock.Advance(TimeSpan.FromSeconds(20));
+        _timer.RaiseTick();
+
+        Assert.Equal(
+            [
+                "Periodic reminder held back: microphone or camera in use, looking again every 20 s",
+                "Periodic reminder shown after 48 min held back: Ground yourself",
+            ],
+            _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_change_of_reason_while_held_back_logs_again()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { Foreground = ForegroundState.FullScreen };
+        _clock.Advance(TimeSpan.FromSeconds(20));
+        _timer.RaiseTick();
+
+        Assert.Equal(
+            [
+                "Periodic reminder held back: microphone or camera in use, looking again every 20 s",
+                "Periodic reminder held back: full screen, looking again every 20 s",
+            ],
+            _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_hold_that_ends_on_an_open_window_logs_its_total_with_the_raise()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _presenter.SimulateShown();
+        _clock.Advance(TimeSpan.FromMinutes(3));
+        _timer.RaiseTick();
+
+        Assert.Equal("Periodic reminder: window already open, brought to front after 3 min held back", _log.Lines[^1]);
+    }
+
+    /// <summary>
+    /// An unlock restarts the countdown (R-024), so the postponement it was waiting on is gone:
+    /// the reminder that falls due a whole interval later was not held back, and a new hold is
+    /// a first one again.
+    /// </summary>
+    [Fact]
+    public void R112_An_unlock_ends_a_hold_so_the_next_reminder_is_logged_as_a_plain_one()
+    {
+        using var coordinator = CreateCoordinator(settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _monitor.RaiseUnlocked();
+        _log.Clear();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(["Periodic reminder shown: Ground yourself"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_hold_that_outlasts_a_lock_and_an_unlock_is_logged_again_as_a_new_one()
+    {
+        using var coordinator = CreateCoordinator(settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _monitor.RaiseLocked();
+        _monitor.RaiseUnlocked();
+        _log.Clear();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(["Periodic reminder held back: microphone or camera in use, looking again every 20 s"], _log.Lines);
+    }
+
+    /// <summary>
+    /// A clock moved back during a hold restarts the countdown inside the schedule (R-025); the
+    /// log must not carry the old hold into the reminder that falls due a whole interval later.
+    /// </summary>
+    [Fact]
+    public void R112_A_clock_moved_back_during_a_hold_ends_the_hold_in_the_log()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _clock.Advance(TimeSpan.FromHours(-1));
+        _timer.RaiseTick();
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _log.Clear();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(["Periodic reminder shown: Ground yourself"], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_A_short_hold_reads_as_one_minute()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _clock.Advance(TimeSpan.FromSeconds(20));
+        _timer.RaiseTick();
+
+        Assert.Equal("Periodic reminder shown after 1 min held back: Ground yourself", _log.Lines[^1]);
+    }
+
+    [Fact]
+    public void R112_Applying_settings_logs_their_summary()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        coordinator.ApplySettings(ReminderSettings.Default with { IntervalMinutes = 45 });
+
+        Assert.Equal(["Settings applied: " + DecisionLog.Summary(ReminderSettings.Default with { IntervalMinutes = 45 })], _log.Lines);
+    }
+
+    [Fact]
+    public void R112_Idle_ticks_log_nothing_even_when_they_read_the_monitor()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        for (var i = 0; i < 25; i++)
+        {
+            _clock.Advance(TimeSpan.FromSeconds(1));
+            _timer.RaiseTick();
+        }
+
+        Assert.True(_activity.ReadCount > 0);
+        Assert.Empty(_log.Lines);
     }
 
     private sealed class FakeSessionMonitor : ISessionMonitor
