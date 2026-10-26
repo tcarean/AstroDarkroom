@@ -66,6 +66,11 @@
     point of each decision; the coordinator remembers when a hold began so that a held-back
     reminder gets one line at the start, one per change of reason and one, with the total, when
     it appears (ADR 0037).
+  - `FileDecisionLog.cs` — the decision log as a file, in the folder App gives it: stamps each
+    text with `DecisionLog.FormatLine`, appends, moves the file to `log.1.txt` once it is past
+    the cap (a move that fails is let go and the line is written anyway), and swallows every
+    error, so a log can never take the tray down. In Core so the tests run it against a temp
+    folder (ADR 0037).
   - `WindowPlacement.cs`, `Version.cs`, `LicenseInfo.cs`, `AutoStartStatus.cs`.
 - `src/MindfulnessReminder.App/` — `net8.0-windows`, `WinExe`, `AssemblyName` is
   `MindfulnessReminder`, so the binary is `MindfulnessReminder.exe`. A **thin adapter layer**:
@@ -75,18 +80,16 @@
     main window. Also holds the single-instance mutex, the restart registration right after
     it, the crash dialog (`CrashReport.Format`, then the tray icon hidden, then
     `Environment.FailFast`, never `Shutdown`: ADR 0036), the `--restarted` balloon, the
-    decision log (created right after the mutex, its first line written after the restart
-    registration, handed to the store, the coordinator and the registrar, and given the crash
-    text before the dialog: ADR 0037), the lifetimes of the Settings and About windows (both
+    decision log (created right after the mutex with the folder `LogFolder` names under
+    `%LOCALAPPDATA%`, its first line written after the restart registration, handed to the
+    store, the coordinator and the registrar, and given the crash text before the dialog:
+    ADR 0037), the lifetimes of the Settings and About windows (both
     modeless and single-instance; `TrayIconHost` only raises the request), and `--preview` /
     `--detect` — both of which run BEFORE the mutex is claimed, so they work alongside the copy
     already in the tray and write no log.
   - `RestartRegistration.cs` — the one P/Invoke that registers the executable with Windows for
     a restart after a crash; it returns the HRESULT for the log's start line and nothing acts
     on it.
-  - `FileDecisionLog.cs` — the decision log as a file, `%LOCALAPPDATA%\MindfulnessReminder\log.txt`:
-    stamps each text with `DecisionLog.FormatLine`, appends, moves the file to `log.1.txt` once
-    it is past the cap, and swallows every error, so a log can never take the tray down.
   - `TrayIconHost.cs` — the icon and its four-item menu.
   - `BreakWindow.xaml(.cs)` — the reminder; takes its message in the constructor and has no
     text of its own. `SettingsWindow.xaml(.cs)` — the settings.

@@ -159,3 +159,14 @@ Left to the owner (see the wrap-up report): 7, moving `FileDecisionLog` to Core 
 folder injected so the rotation and the swallow rules get tests (a disagreement with ADR
 0037's placement); 12, a save writes `Settings saved` and `Settings applied` back to back; 13,
 a message normalized on reading leaves no trace in the `Settings loaded` line.
+
+## Writer moved to Core (2026-10-26)
+
+On the owner's word, review finding 7 was taken: `FileDecisionLog` moved from App to Core with
+the folder injected (`FileDecisionLog(string folder)`, empty meaning nowhere), App names the
+folder in `App.LogFolder()`, and `FileDecisionLogTests` (eight `R110_` tests on a temp folder)
+pin the stamped line, the UTF-8 file without a byte order mark, the rotation strictly past the
+cap, the replaced `log.1.txt`, a rotation that fails with the line still written, a folder that
+cannot be created, an empty folder, and the null checks. ADR 0037's Decision, Alternatives and
+Consequences were amended before the merge (the ADR was not yet on `main`). Findings 12 and 13
+stay as they were.

@@ -126,7 +126,7 @@ public partial class App : WpfApplication
 
         // The log exists from here on: --preview and --detect returned above and write nothing
         // (R-110). Its first line says what this copy is and what Windows will do for it.
-        _log = new FileDecisionLog();
+        _log = new FileDecisionLog(LogFolder());
         _log.Write(DecisionLog.Started(
             VersionInfo.Banner,
             RuntimeInformation.FrameworkDescription,
@@ -416,6 +416,19 @@ public partial class App : WpfApplication
 
         _tooltip = text;
         _tray?.SetTooltip(text);
+    }
+
+    /// <summary>
+    /// Names the decision log's folder: <c>MindfulnessReminder</c> under the user's local
+    /// application data (R-110). When Windows cannot name that folder, the result is empty and
+    /// the log writes nowhere, rather than into the working directory.
+    /// </summary>
+    /// <returns>The folder's full path, or an empty string.</returns>
+    private static string LogFolder()
+    {
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+        return localAppData.Length == 0 ? string.Empty : Path.Combine(localAppData, "MindfulnessReminder");
     }
 
     /// <summary>

@@ -15,48 +15,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.IO;
-using MindfulnessReminder.Core;
-
-namespace MindfulnessReminder.App;
+namespace MindfulnessReminder.Core;
 
 /// <summary>
-/// The decision log as a file: <c>log.txt</c> in <c>%LOCALAPPDATA%\MindfulnessReminder\</c>,
-/// one stamped line per event, rotated once to <c>log.1.txt</c> past
+/// The decision log as a file: <see cref="FileName"/> in the folder it is given, one stamped
+/// line per event, rotated once to <see cref="RotatedFileName"/> past
 /// <see cref="DecisionLog.MaxBytes"/> (R-110; ADR 0037). Every failure is swallowed: a log must
-/// never take the tray down.
+/// never take the tray down. App names the folder, <c>%LOCALAPPDATA%\MindfulnessReminder</c>;
+/// the rules live here so the tests can run them against a folder of their own.
 /// </summary>
-internal sealed class FileDecisionLog : IDecisionLog
+public sealed class FileDecisionLog : IDecisionLog
 {
-    /// <summary>The folder under the local application data, the one the README names.</summary>
-    private const string FolderName = "MindfulnessReminder";
-
     /// <summary>The file being written.</summary>
-    private const string FileName = "log.txt";
+    public const string FileName = "log.txt";
 
     /// <summary>Where the file goes when it is rotated, replacing the previous one.</summary>
-    private const string RotatedFileName = "log.1.txt";
+    public const string RotatedFileName = "log.1.txt";
 
     private readonly string _folder;
     private readonly string _path;
     private readonly string _rotatedPath;
 
-    /// <summary>
-    /// A log writing under the current user's local application data. When Windows cannot name
-    /// that folder, the log writes nowhere rather than into the working directory.
-    /// </summary>
-    public FileDecisionLog()
+    /// <summary>A log writing into <paramref name="folder"/>, created on the first write.</summary>
+    /// <param name="folder">
+    /// The folder of the two files; not null. Empty means there is nowhere to write (Windows
+    /// could not name the profile folder), and every write is dropped.
+    /// </param>
+    public FileDecisionLog(string folder)
     {
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        ArgumentNullException.ThrowIfNull(folder);
 
-        _folder = localAppData.Length == 0 ? string.Empty : Path.Combine(localAppData, FolderName);
-        _path = Path.Combine(_folder, FileName);
-        _rotatedPath = Path.Combine(_folder, RotatedFileName);
+        _folder = folder;
+        _path = Path.Combine(folder, FileName);
+        _rotatedPath = Path.Combine(folder, RotatedFileName);
     }
 
     /// <inheritdoc/>
     public void Write(string text)
     {
+        ArgumentNullException.ThrowIfNull(text);
+
         if (_folder.Length == 0)
         {
             return;
@@ -66,6 +64,9 @@ internal sealed class FileDecisionLog : IDecisionLog
         {
             Directory.CreateDirectory(_folder);
             Rotate();
+
+            // Stamped with the local clock, read directly: the time is for the owner's eyes,
+            // in the owner's time, and no rule depends on it (ADR 0037).
             File.AppendAllText(_path, DecisionLog.FormatLine(DateTimeOffset.Now, text) + Environment.NewLine);
         }
         catch (Exception)

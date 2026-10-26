@@ -26,9 +26,10 @@ The tray copy keeps a decision log: `log.txt` in `%LOCALAPPDATA%\MindfulnessRemi
 line per event with the local time, capped at 262 144 bytes by one rotation to `log.1.txt`
 (R-110). Core decides what is an event and renders every line (`DecisionLog`, `IDecisionLog`
 as the seam, raised from `ReminderCoordinator`, `RegistrySettingsStore`, `StartupRegistrar` and
-the crash path: R-111 to R-114); App has one adapter, `FileDecisionLog`, which appends, rotates
-and swallows every I/O error. The log is always on; the file is read in a text editor, and
-nothing in the tray menu or About points at it.
+the crash path: R-111 to R-114). The writer, `FileDecisionLog`, is in Core as well, given its
+folder by App, so that the rotation and the swallow rule run in the tests against a folder of
+their own; it appends, rotates and swallows every I/O error. The log is always on; the file is
+read in a text editor, and nothing in the tray menu or About points at it.
 
 ## Alternatives rejected
 
@@ -52,14 +53,24 @@ nothing in the tray menu or About points at it.
   tests pin.
 - **The messages left out of the settings summary.** The point of the line is to see exactly
   what the application read; the two texts are the user's own, in the user's own file.
+- **The writer in App, as an adapter.** That is where it was first put, "the one piece checked
+  only by a tray start". The code review of the same day found two defects in it that a test
+  with a temp folder catches at once: a rotation that failed silenced the log for as long as
+  `log.1.txt` stayed locked, and an unnamed profile folder sent the log into the working
+  directory. It has no UI dependency, so the project's rule "logic in Core, adapters in App"
+  settled it: the writer is in Core with the folder injected, and App only names the folder.
 
 ## Consequences
 
 - A complaint about a reminder can be answered from the file: when the unlock arrived, what the
   coordinator decided and why, what the settings were. The start line says which runtime a copy
   ran on and whether Windows will restart it, two facts the 2026-10-26 diagnosis had to dig out.
-- Every line is a pure function or a decision on fakes, tested in Core (R-110 to R-114);
-  `FileDecisionLog` is the one piece checked only by a tray start (ADR 0008).
+- Every line is a pure function or a decision on fakes, tested in Core (R-110 to R-114), and so
+  is the file: `FileDecisionLog` runs in the tests against a temp folder (the line, the cap, a
+  replaced `log.1.txt`, a rotation that fails, a folder that cannot be created, an empty
+  folder). What only a tray start checks is the folder App names and the wiring (ADR 0008).
+  The writer reads `DateTimeOffset.Now` directly, the one Core type that reads a clock without
+  `IClock`: the stamp is for the owner's eyes, in the owner's time, and no rule depends on it.
 - `ReminderCoordinator`, `RegistrySettingsStore` and `StartupRegistrar` take an optional
   `IDecisionLog` and default to a null log, so no existing caller or test changes;
   `IAutoStartManager` gains `Command`, which `RegistryAutoStartManager` already had.
