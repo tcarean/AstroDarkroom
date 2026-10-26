@@ -49,7 +49,7 @@ dictionary and lands in the guard's `Unknown` layer - runs, with a note (ADR 002
 
 Dispatch order in `FlatCheckCli.Run` is `--lenses` → `--synthetic` → `--against` →
 `--smooth` → `--histeq` → `--expo` → `--light` → structure (default; `--ratio` sat between
-`--expo` and `--light` until its removal, ADR 0065). The
+`--expo` and `--light` until its removal, ADR 0067). The
 modes are mutually exclusive; the first match wins (R-003; the mechanics of the chain are
 "Dispatch in FlatCheckCli.Run" in `process.md`). The WPF app has no dispatch: each tab is one
 mode.

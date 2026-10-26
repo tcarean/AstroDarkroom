@@ -1,4 +1,4 @@
-# 0065. The --ratio mode and the Ratio tab are removed; one master is what the tool judges
+# 0067. The --ratio mode and the Ratio tab are removed; one master is what the tool judges
 
 Date: 2026-10-26
 Status: accepted 2026-10-26

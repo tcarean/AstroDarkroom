@@ -67,7 +67,7 @@ its complement: the residual trims extremes, the worst tile *is* the extreme.
 `Stats.Severity` spans both ladders (`OK`/`PERFECT` = 0, `BUN` = 1, `SUSPECT`/`ACCEPTABIL` = 2,
 `PROBLEMA`/`REFA` = 3), and the exit code is derived across all modes. Only `--light` speaks
 `OK`/`SUSPECT`/`PROBLEMA` (the `--ratio` mode's informative label on `Th.RatioOk/Bad` left with
-the mode, ADR 0065).
+the mode, ADR 0067).
 
 ## Exit codes
 

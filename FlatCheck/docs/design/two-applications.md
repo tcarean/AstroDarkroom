@@ -133,7 +133,7 @@ ADRs do not spell out:
   `MainWindow.OnClosing` wait below.
 
 **Every tab takes the one open folder.** The Ratio tab, which took two files chosen by hand
-from two other folders, left with its mode on 2026-10-26 (ADR 0065; ADR 0033 holds what it
+from two other folders, left with its mode on 2026-10-26 (ADR 0067; ADR 0033 holds what it
 was). One mechanic it taught stays everywhere: a tab's constant texts are instance properties,
 because `{Binding}` resolves through the DataContext and never sees a static one.
 

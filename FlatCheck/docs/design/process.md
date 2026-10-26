@@ -275,7 +275,7 @@ figure on a real master).
 each hold an explicit list of invocations, one `Assert.Equal` per mode; the copyright one adds a
 `--smooth` refusal, `--help` and a missing file. A new mode is one more line in each, with the
 arguments it needs to reach its report. Since 2026-09-27 the lists cover every mode (eight
-since `--ratio` left, ADR 0065): structure, `--light`, `--expo`, `--histeq`, `--smooth` (fixed scale and `auto`),
+since `--ratio` left, ADR 0067): structure, `--light`, `--expo`, `--histeq`, `--smooth` (fixed scale and `auto`),
 `--synthetic`, `--lenses` and `--against` (the last three with an empty `--profiles` folder,
 which is enough for the banner: it is written before the options are parsed).
 

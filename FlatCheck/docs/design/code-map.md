@@ -104,7 +104,7 @@ a library extraction and not a copy is ADR 0011.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
     `Divide`, `Symmetrise` (the mean of a raster and its 180° rotation, which is what the
     radial model is fed - see `RadialModel` under "Shared pipeline" in `pipeline.md`). `CropCentred` and `Rotate180`, which only the `--ratio` mode used, left with it
-    (ADR 0065); `LargeScalePtp` keeps its top-left grid for parity (ADR 0016). `TileMedians` is the third grid, for
+    (ADR 0067); `LargeScalePtp` keeps its top-left grid for parity (ADR 0016). `TileMedians` is the third grid, for
     `--smooth` only: tile *medians*, **partial last row and column kept**, and the real
     centre of every tile returned - a partial 8-px tile fitted one full tile from its
     neighbour put a 0.8 % error band along the edge of the synthetic; with real centres the
@@ -363,7 +363,7 @@ a library extraction and not a copy is ADR 0011.
     between the rows would drown the figures.
 
     The builder exists because the battery was once composed twice (the Ratio tab of the
-    time, ADR 0033, removed by ADR 0065: five hand-written `Grid` blocks with the labels as
+    time, ADR 0033, removed by ADR 0067: five hand-written `Grid` blocks with the labels as
     literals), and the second copy kept falling behind the first. Every tab that shows the
     battery renders `StructureRows.Tests(result)` through the shared `MetricRowTemplate`.
     Structure keeps its `ObservableCollection` because `MainViewModel.OpenAsync` cancels
@@ -734,7 +734,7 @@ unconditionally).
 | `Png` | the residual map, already encoded; null when the mode has no map (`--expo`) |
 
 A mode with two maps (`--smooth`) has an outcome type of its own with its `SecondaryPng`;
-`RunOutcome` carries one map since the `--ratio` mode left (ADR 0065).
+`RunOutcome` carries one map since the `--ratio` mode left (ADR 0067).
 
 | Run and signature | Returns | `Png` |
 | --- | --- | --- |

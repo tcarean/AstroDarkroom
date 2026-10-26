@@ -111,7 +111,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Removed
 
-- The `--ratio` mode and the window's Ratio tab (R-020 and R-082 dropped, ADR 0065): the
+- The `--ratio` mode and the window's Ratio tab (R-020 and R-082 dropped, ADR 0067): the
   attribution by 180-degree rotation needed two masters from two rotated sittings, an input the
   workflow never produced, so the tab stayed empty and the flag unused. `--ratio` is now an
   unknown option, no `-world` map is written, and the sentences of the other modes that sent

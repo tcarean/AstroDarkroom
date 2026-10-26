@@ -38,7 +38,7 @@ pointed at `/validate`); CLAUDE.md "Layout" says the same in one line. The mecha
 ## Coverage of the 39 scenarios
 
 Kept whole on purpose (ADR 0047), 43 until the four `--ratio` scenarios left with the mode on
-2026-10-26 (ADR 0065): 15 structure, 11 `--light` (three of them series folders), 13 `--expo`.
+2026-10-26 (ADR 0067): 15 structure, 11 `--light` (three of them series folders), 13 `--expo`.
 Across them: all four residual bands (`grad_bun`, `grad`,
 `grad_refa`, plus the clean field), both gradient directions and a diagonal, an inverted
 (over-corrected) field, a pure sky plane, a constant frame, mild and heavy vignetting, an offset
@@ -71,7 +71,7 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
 - The second map of `--ratio` was named `-world.png` from 2026-10-25 (ADR 0062; Python wrote
   `-lume.png`): the four `parity_ratio_*.txt` were recaptured, with the owner's yes, for that
   one line each, the map's path; every figure was unchanged. A C#-only call, like the rest.
-- The `--ratio` mode was removed on 2026-10-26 (ADR 0065): the four `parity_ratio_*.txt` were
+- The `--ratio` mode was removed on 2026-10-26 (ADR 0067): the four `parity_ratio_*.txt` were
   deleted, and the 17 parity goldens whose text recommended `--ratio` as the next test (the 15
   structure scenarios, `parity_light_too_wide_field`, `parity_light_series_sweeping`) were
   recaptured, with the owner's yes, for those sentences alone: the "why the residual matters"

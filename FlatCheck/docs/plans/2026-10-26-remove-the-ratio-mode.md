@@ -34,7 +34,7 @@ Measured facts from the survey:
 2. Requirements `R-020` and `R-082` go to status `dropped` (the file's own rule: an ID is never
    reused; a dropped requirement keeps its ID). The R-020/R-082 tests are deleted, so
    `RepoInvariantTests` stays green.
-3. New ADR `0065-the-ratio-mode-is-removed.md`: supersedes ADR 0019 whole and ADR 0033 in part
+3. New ADR `0067-the-ratio-mode-is-removed.md`: supersedes ADR 0019 whole and ADR 0033 in part
    (the Ratio tab). Both old ADRs change only their Status line (the kit's ADR 0024).
    `docs/design/modes-ratio.md` is deleted with the decision it explains.
 4. Wording of the sentences that pointed at the mode (my recommendation; same meaning in both
@@ -113,10 +113,10 @@ plan as `docs/plans/2026-10-26-remove-the-ratio-mode.md`.
 ### 6. Documentation
 
 - `docs/requirements.md`: R-020 and R-082 `dropped` (text kept, prefixed "Dropped 2026-10-26, ADR
-  0065"); edit R-003 (dispatch order), R-006 and R-103 (second map: only `-after`), R-081 (list of
+  0067"); edit R-003 (dispatch order), R-006 and R-103 (second map: only `-after`), R-081 (list of
   click-started runs), R-083 (the Ratio-tab wording), R-098 (43 → 39 scenarios, no `--ratio`), the
   "Mode 2" heading.
-- `docs/decisions/0065-the-ratio-mode-is-removed.md`; Status lines of 0019 and 0033.
+- `docs/decisions/0067-the-ratio-mode-is-removed.md`; Status lines of 0019 and 0033.
 - `docs/design/`: delete `modes-ratio.md`; its row in `README.md`; `code-map.md` (the analyzer,
   report, run, result table, `RunOutcome` table, the tab), `two-applications.md` (input/map rows, the
   "one exception" paragraph, the gate list), `pipeline.md` (dispatch order, "The seven modes" → six),

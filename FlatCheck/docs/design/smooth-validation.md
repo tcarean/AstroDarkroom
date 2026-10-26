@@ -171,7 +171,7 @@ unchanged. The removed component, `Prepare(input) / Prepare(smoothed)`:
 ADR 0026 records the limit: everything smooth stays, the lens's or the source's (the monitor's
 blotches, a sky flat's gradient, a non-uniform source's corner inequality), because the pixels
 do not say which it is, and nothing in the tool separates the two since the `--ratio` mode
-left (ADR 0065). The mode removes texture, dust
+left (ADR 0067). The mode removes texture, dust
 and blotches; it does not remove illumination.
 
 

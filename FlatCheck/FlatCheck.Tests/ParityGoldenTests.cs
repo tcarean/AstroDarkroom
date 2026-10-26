@@ -25,7 +25,7 @@ namespace FlatCheck.Tests;
 /// Until 2026-09-26 crosscheck.py ran flatcheck.py and the console over the same synthetic
 /// FITS (<see cref="ParityFixtures"/>) and compared every number; on that day the two agreed
 /// on all 43 scenarios (0 numeric differences, ADR 0047), and the prototype was frozen; the
-/// four --ratio scenarios left with the mode on 2026-10-26 (ADR 0065). The
+/// four --ratio scenarios left with the mode on 2026-10-26 (ADR 0067). The
 /// texts in Golden/parity_*.txt were captured from the console on that day, so they carry the
 /// numbers the independent implementation confirmed. That is what makes them different from
 /// the main set in <see cref="GoldenOutputTests"/>, which pins behaviour without confirming
