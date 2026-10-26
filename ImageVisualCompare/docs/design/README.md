@@ -9,7 +9,7 @@ Until 2026-10-02 these notes were sections of `CLAUDE.md` ("Structure", "Invaria
 imaging dependency", "Memory, measured", "Testing", "Versioning", "Licensing"); they were moved
 here unchanged (ADR 0001), with a pointer to the decision record after each paragraph that
 became one. The behaviour the notes describe is also stated, with IDs, in `../requirements.md`,
-and for the user, in Romanian, in the project's `README.md`. Where a row, a note and an ADR were
+and for the user, in English, in the project's `README.md`. Where a row, a note and an ADR were
 written from the same paragraph, the three still say it in their own words; cutting the notes
 down to what neither a row nor an ADR says is a task of its own.
 

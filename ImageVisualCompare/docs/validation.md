@@ -99,7 +99,7 @@ formats, the canvas, the load) was the same in both runs.
 A load costs its two Bgra32 buffers and about 4 MB more, and the release gives all of it back,
 as the 2026-09-08 figures below found: there, 173 MB private after the load and 12 MB after the
 release, about 161 MB for two buffers of 80.4 MB each. The decode of V-001, two files of 103 and
-130 MB, matches the README's "~2,7 secunde" for two files of about 108 MB.
+130 MB, matches the 2.7 s that R-080 gives for two files of about 108 MB.
 
 ## The figures of 2026-09-08
 
