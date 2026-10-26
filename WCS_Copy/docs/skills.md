@@ -21,6 +21,11 @@ Values, not prose, go in `kit.json` (the solution, the folders, the publish list
   `OptionsTests`.
 - A new key in `WcsMetadataKeys` changes V-001: re-measure it with the console's `--dry-run`
   on the fixture and record the change in `docs/validation.md` before `validation.json`.
+- A new text of the window is a `{l:T En='...', Ro='...'}` pair in XAML or a `T(...)` pair in
+  the view-model, never a sentence about the copy (ADR 0007); its Romanian word joins the
+  list in `tests/CopyWcs.Wpf.Tests/WindowSmokeTests.cs`, so `R036_` keeps the English pass
+  clean. A behaviour of the window gets its row in the block R-030 to R-039 and its test in
+  `MainViewModelTests` (against the console) or `WindowSmokeTests` (the rendering).
 
 ## /wrap-up
 
@@ -35,8 +40,8 @@ Values, not prose, go in `kit.json` (the solution, the folders, the publish list
 
 ## /release
 
-- The console is the one publish target until the window exists; the release folder's
-  `console/` holds `copywcs.exe` self-contained, single-file, win-x64.
+- Two publish targets: the release folder's `console/` holds `copywcs.exe` and `wpf/` holds
+  `CopyWcs.Wpf.exe` with `LICENSE` beside it, both self-contained, single-file, win-x64.
 
 ## /mutate
 

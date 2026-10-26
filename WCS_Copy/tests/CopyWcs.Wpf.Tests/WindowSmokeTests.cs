@@ -17,7 +17,9 @@
 
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -33,11 +35,101 @@ namespace CopyWcs.Wpf.Tests;
 /// DarksCheck's (ADR 0007).
 /// </summary>
 [Collection("window")]
-public class WindowSmokeTests
+public partial class WindowSmokeTests
 {
     private readonly StaFixture _sta;
 
     public WindowSmokeTests(StaFixture sta) => _sta = sta;
+
+    // Words that only the Romanian texts hold, the console's (LanguageTests) and the window's
+    // own (R-036); the paths of the fixture are temp folders named CopyWcsTests_ plus random
+    // letters, so none of these can come from them.
+    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Copiate|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un)\b", RegexOptions.CultureInvariant)]
+    private static partial Regex RomanianWord();
+
+    /// <summary>Every text a rendered tree shows: the text blocks (the buttons' and the check boxes' labels become ones), and the hints as strings.</summary>
+    private static IEnumerable<string> TextsOf(DependencyObject root)
+    {
+        foreach (DependencyObject d in Descendants(root))
+        {
+            if (d is TextBlock t && !string.IsNullOrEmpty(t.Text))
+            {
+                yield return t.Text;
+            }
+
+            if (d is FrameworkElement fe && fe.ToolTip is string tip)
+            {
+                yield return tip;
+            }
+        }
+    }
+
+    private static IEnumerable<DependencyObject> Descendants(DependencyObject d)
+    {
+        int n = VisualTreeHelper.GetChildrenCount(d);
+        for (int i = 0; i < n; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(d, i);
+            yield return child;
+            foreach (DependencyObject grandchild in Descendants(child))
+            {
+                yield return grandchild;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Both windows in English, with an outcome that has a refusal heading, a warning, the
+    /// preview's heading and the cards: no Romanian word is left anywhere (R-036); and in
+    /// Romanian the buttons read as R-036 says.
+    /// </summary>
+    [Fact]
+    public void R036_BothWindowsRenderInEnglishWithNoRomanianWordAndInRomanian()
+        => _sta.Invoke(() =>
+        {
+            using WindowFixture f = new(destWidth: 200);
+            List<string> english;
+            using (Ui.Use(UiLanguage.English))
+            {
+                using BindingErrors errors = new();
+                MainViewModel vm = new() { Source = f.Source, Dest = f.Dest, Force = true };
+                vm.Preview();
+                Assert.True(vm.HasWarnings && vm.HasCards);
+                FrameworkElement window = (FrameworkElement)new MainWindow(vm).Content;
+                Render(window, name: "window-en");
+                english = TextsOf(window).ToList();
+                vm.Force = false;
+                vm.Preview();
+                Assert.True(vm.HasError);
+                Render(window);
+                english.AddRange(TextsOf(window));
+
+                AboutWindow about = new();
+                Render((FrameworkElement)about.Content, 560, 420, "about-en");
+                english.Add(about.Title);
+                english.AddRange(TextsOf((FrameworkElement)about.Content));
+                Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+            }
+
+            Assert.Contains("Preview", english);
+            Assert.Contains("Copy", english);
+            Assert.Contains("About", english);
+            Assert.Contains("Refused", english);
+            Assert.Contains("Source: 100 x 80, plate-solved", english);
+            List<string> romanian = english.Where(t => RomanianWord().IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
+            Assert.True(romanian.Count == 0, "Romanian left in the English window:\n" + string.Join("\n", romanian));
+
+            // the assembly's default, Romanian: the same elements, the other wording
+            MainViewModel ro = new() { Source = f.Source, Dest = f.Dest };
+            FrameworkElement roWindow = (FrameworkElement)new MainWindow(ro).Content;
+            Render(roWindow, name: "window-ro");
+            List<string> texts = TextsOf(roWindow).ToList();
+            Assert.Contains("Previzualizare", texts);
+            Assert.Contains("Copiaza", texts);
+            Assert.Contains("Despre", texts);
+            Assert.Contains("Sursa: 100 x 80, plate-solved", texts);
+            Assert.DoesNotContain("Preview", texts);
+        });
 
     /// <summary>Catches the binding errors WPF otherwise writes only to the debugger's output.</summary>
     internal sealed class BindingErrors : IDisposable
