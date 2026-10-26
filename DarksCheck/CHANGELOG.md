@@ -8,6 +8,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- `README.md`, the user guide, and `THIRD-PARTY-NOTICES.md` are in English (ADR 0022). The
+  README is rewritten against the current behaviour: the English labels and verdict words,
+  examples cut from English runs on the real sessions, the latest measured timings, where to
+  get the programs and what they need.
+
 - The files `--out` and the window's `Scrie fisierele...` write are named in English in both
   languages: `darkscheck-report.txt` and `darkscheck-map-dark.png`, `-map-bias.png`,
   `-map-dark-minus-bias.png` (they were `darkscheck-raport.txt` and `darkscheck-harta-*.png`)

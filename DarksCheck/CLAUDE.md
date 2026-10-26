@@ -62,7 +62,7 @@ modifies, moves or writes anything into the frames' folders.
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs.
   `docs/validation.md` + `.json` - figures on the real sessions. `docs/design/` - the
   explanations, per area, read on demand. `docs/plans/` - approved plans. `README.md` - the
-  user documentation, Romanian.
+  user documentation, English (ADR 0022).
 - `kit.json` - what the kit's scripts, skills and agent need to know about DarksCheck.
   `docs/skills.md` - DarksCheck's additions to the kit's skills. `scripts/`, `.claude/skills/`,
   `.claude/agents/`, `.claude/rules/kit/` and the process keys of `.claude/settings.json` are
@@ -97,13 +97,14 @@ varies a kit rule names it.
   `Thresholds.cs` included, re-runs `/validate` on them before the task ends, with the drift
   table pasted; a figure that moves changes only the owner's way (the kit's rule "No test
   edited to pass"), and an ADR that states the old value gets a dated note.
-- **Languages** (varies the kit's rule "Languages", ADRs 0005 and 0021). English in everything
-  the model reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, and
-  every comment in every file, the copied ones included (ADR 0019). What the user sees in the
-  console and the window (texts, `--help`, labels, the reports) is in English and Romanian,
-  chosen by `--lang`: each text a `T("english", "romana")` pair where it is composed, a
-  `{l:T En='...', Ro='...'}` pair in XAML, the Romanian without diacritics (ADR 0021). Romanian
-  only in `README.md` and `THIRD-PARTY-NOTICES.md`. Never leave any other file in two languages.
+- **Languages** (varies the kit's rule "Languages", ADRs 0005, 0021 and 0022). English in
+  everything the model reads or writes: docs, tests, scripts, commits, CHANGELOG, `README.md`
+  and `THIRD-PARTY-NOTICES.md` (ADR 0022), and every comment in every file, the copied ones
+  included (ADR 0019). What the user sees in the console and the window (texts, `--help`,
+  labels, the reports) is in English and Romanian, chosen by `--lang`: each text a
+  `T("english", "romana")` pair where it is composed, a `{l:T En='...', Ro='...'}` pair in XAML,
+  the Romanian without diacritics (ADR 0021). Those Romanian wordings, and the tests and docs
+  that quote them, are the one exception; never leave a file in two languages otherwise.
 - **Copied files stay copies** (ADR 0003). A file under `src/DarksCheck.Core/Imaging/` is
   not improved here: a fix goes to its source (LightsCheck, or FlatCheck through it) first,
   then the copy is refreshed. `RawReader.cs` and `ImageLoader.cs` carry LightsCheck's
