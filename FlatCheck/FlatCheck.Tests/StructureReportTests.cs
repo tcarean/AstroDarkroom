@@ -544,6 +544,47 @@ public class StructureReportTests
         Assert.Equal("PERFECT", o.Verdict);
     }
 
+    /// <summary>
+    /// The Canon EOS 40D session of 2026-10-26: the raw is there and is read, but carries no lens
+    /// (focal length 0, aperture 0, lens ID 0). The gap names the file and what is missing, and
+    /// asks for the lens by name plus the aperture, which the master does not carry either; the
+    /// focal length is known from FOCALLEN, so it is not asked for.
+    /// </summary>
+    [Fact]
+    public void R106_ARawThatCarriesNoLensIsSaidSoNotAsMissing()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = Result(FitsTestData.Radial(512, 512));
+        var noLens = new LoadedFrame { Header = new Dictionary<string, string>(), Camera = "Canon EOS 40D" };
+        var query = new StructureQuery { Sources = sources, RawPath = "IMG_7290.CR2", LoadInfo = _ => noLens };
+
+        StructureOutcome o = StructureRun.Compare(r, MasterFrame(), query);
+        var w = new StringWriter();
+        StructureReport.Write(o, "x.fit", w);
+        string gap = StructureReport.GapText(o);
+
+        Assert.Equal(ComparisonGap.RawWithoutLens, o.Profiles.Gap);
+        Assert.Null(o.RawError);
+        Assert.StartsWith("IMG_7290.CR2 nu spune nimic despre obiectiv", gap);
+        Assert.Contains("telescop", gap);
+        Assert.Contains("--lens <text>", gap);
+        Assert.Contains("--fstop <f>", gap);
+        Assert.DoesNotContain("--focal", gap);                     // FOCALLEN 20 is in the master
+        Assert.DoesNotContain("niciun raw langa master", gap);
+        Assert.Contains("nu se poate compara: " + gap, w.ToString());
+        Assert.Equal("PERFECT", o.Verdict);
+
+        // Without FOCALLEN the focal length is asked for too, in one sentence with the aperture.
+        var bare = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" } };
+        string both = StructureReport.GapText(StructureRun.Compare(r, bare, query));
+        Assert.Contains("--focal <mm> si --fstop <f>", both);
+
+        // The raw as the reference itself (the console on a CR2): no name, so "raw-ul".
+        string self = StructureReport.GapText(StructureRun.Compare(r, noLens, new StructureQuery { Sources = sources }));
+        Assert.StartsWith("raw-ul nu spune nimic despre obiectiv", self);
+    }
+
     [Fact]
     public void EveryGapHasWordsAndNoneOfThemUsesDiacritics()
     {

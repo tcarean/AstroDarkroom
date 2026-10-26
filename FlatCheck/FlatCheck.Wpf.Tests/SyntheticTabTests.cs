@@ -76,6 +76,29 @@ public class SyntheticTabTests
         }
     }
 
+    /// <summary>
+    /// A raw in flats/ that carries no lens (a Canon on a telescope) leaves the aperture empty,
+    /// offers no candidate, and the note under the fields says why (R-106): before, the fields
+    /// stayed empty without a word.
+    /// </summary>
+    [Fact]
+    public async Task ARawThatCarriesNoLensLeavesTheFStopEmptyAndSaysWhy()
+    {
+        using var f = Fixture().WithRawFlats("IMG_7290.CR2");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var noLens = new LoadedFrame { Header = new Dictionary<string, string>(), Camera = "Canon EOS 40D" };
+        var vm = new SyntheticTabViewModel(null, () => sources, path => RawReader.IsRawPath(path) ? noLens : ImageLoader.LoadInfo(path));
+        vm.Attach(f.Session, CancellationToken.None);
+        await vm.Pending;
+
+        Assert.Equal("20", vm.FocalText);                            // FOCALLEN, as before
+        Assert.Equal("", vm.FStopText);
+        Assert.Null(vm.SelectedLens);
+        Assert.Contains("IMG_7290.CR2 nu spune nimic despre obiectiv", vm.PrefillNote);
+        Assert.Contains("telescop", vm.PrefillNote);
+    }
+
     [Fact]
     public async Task SearchFiltersTheListOnEveryWord_AndKeepsTheSelectionWhenItSurvives()
     {

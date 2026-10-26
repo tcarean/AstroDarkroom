@@ -309,6 +309,19 @@ namespace FlatCheck
         // ---------------------------------------------------------------- refusals
 
         /// <summary>
+        /// "IMG_7290.CR2 says nothing about the lens (no lens ID, no focal range): a telescope, or
+        /// a lens without contacts" - a raw that was read and carries no lens (R-106). One
+        /// sentence for the Structure report's gap, the Structure tab's card and the Synthetic
+        /// tab's prefill note.
+        /// </summary>
+        /// <param name="rawName">The raw's file name; null when the raw is the reference itself,
+        /// which gives "the raw".</param>
+        /// <returns>The sentence, without a remedy.</returns>
+        internal static string RawWithoutLensNote(string rawName)
+            => T($"{rawName ?? "the raw"} says nothing about the lens (no lens ID, no focal range): a telescope, or a lens without contacts",
+                 $"{rawName ?? "raw-ul"} nu spune nimic despre obiectiv (niciun ID de obiectiv, nicio gama de focale): un telescop, sau un obiectiv fara contacte");
+
+        /// <summary>
         /// "ID-ul Nikon 139 din raw (11-20 mm f/2.8)" - what the raw said about the lens.
         /// </summary>
         /// <param name="f">The loaded raw; null or without a Nikon lens ID gives a
