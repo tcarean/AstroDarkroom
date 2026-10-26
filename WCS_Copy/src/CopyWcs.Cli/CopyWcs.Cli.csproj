@@ -6,6 +6,8 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>CopyWcs</RootNamespace>
     <AssemblyName>copywcs</AssemblyName>
+    <!-- The same icon as the window's, so Explorer shows one tool (ADR 0007). -->
+    <ApplicationIcon>..\..\Icon\copywcs.ico</ApplicationIcon>
     <!-- Read from copywcs.runtimeconfig.json at run time: the console formats numbers with
          "." whatever the Windows culture. -->
     <InvariantGlobalization>true</InvariantGlobalization>

@@ -12,6 +12,8 @@
   <!-- The core stays internal: its consumers are in this repository and compile with it. -->
   <ItemGroup>
     <InternalsVisibleTo Include="copywcs" />
+    <InternalsVisibleTo Include="CopyWcs.Wpf" />
     <InternalsVisibleTo Include="CopyWcs.Tests" />
+    <InternalsVisibleTo Include="CopyWcs.Wpf.Tests" />
   </ItemGroup>
 </Project>
