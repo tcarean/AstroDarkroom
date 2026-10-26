@@ -441,7 +441,7 @@ public class CurveTests
         Assert.Equal(pngBytes, File.ReadAllBytes(png));
         var header = FitsReader.ReadImageHeader(outPng);
         Assert.Equal(-32, FitsReader.HInt(header.Header, "BITPIX", 0));
-        Assert.False(header.BottomUp);
+        Assert.Equal("BOTTOM-UP", FitsReader.HStr(header.Header, "ROWORDER", ""));
         Raster backPng = ImageLoader.Load(outPng), wantPng = c.Apply(ap.Raster);
         Assert.Equal(wantPng.W, backPng.W);
         Assert.Equal(3, backPng.Planes.Length);
@@ -535,6 +535,35 @@ public class CurveTests
         Assert.Single(back.Planes);
         for (int i = 0; i < want.Planes[0].Length; i++)
             Assert.InRange(Math.Abs(back.Planes[0][i] - want.Planes[0][i]), 0, 1.0 / 65535 + 1e-7);
+    }
+
+    [Fact]
+    public void R145_AFreshFitsIsWrittenBottomUpSoThatSirilShowsItTheRightWayUp()
+    {
+        // Siril puts the file's first row at the bottom whatever ROWORDER says (ADR 0049): a
+        // FITS made from a PNG carries the PNG's bottom row first and its top row last.
+        using var ws = new TempWorkspace();
+        var ramp = new Raster(48, 48, 3);
+        for (int y = 0; y < 48; y++)
+            for (int x = 0; x < 48; x++)
+                for (int p = 0; p < 3; p++) ramp.Set(p, y, x, 0.06f + 0.74f * y / 47);
+        string png = ImageFiles.SavePng16Rgb(ramp, ws.PathTo("ramp.png"));
+        AnalysisResult a = AnalysisRun.Execute(png, Scenes.OnBuiltForPaper());
+        ToneCurve c = Curve(Earlier);
+        string target = ws.PathTo("ramp.fit");
+
+        CurveExport.Save(a, new CurveSuggestion { Name = "Blanda", Curve = c }, target);
+
+        byte[] saved = File.ReadAllBytes(target);
+        int endCard = 0;
+        while (System.Text.Encoding.ASCII.GetString(saved, endCard * 80, 8).TrimEnd() != "END") endCard++;
+        int data = (endCard * 80 / 2880 + 1) * 2880;
+        float first = BitConverter.ToSingle(saved.Skip(data).Take(4).Reverse().ToArray(), 0);
+        float lastRow = BitConverter.ToSingle(saved.Skip(data + 47 * 48 * 4).Take(4).Reverse().ToArray(), 0);
+        Raster want = c.Apply(a.Raster);
+        Assert.Equal(want.At(0, 47, 0), first, 5);      // the file starts with the image's bottom row
+        Assert.Equal(want.At(0, 0, 0), lastRow, 5);     // and ends its first plane with the top row
+        Assert.Equal("BOTTOM-UP", FitsReader.HStr(FitsReader.ReadImageHeader(target).Header, "ROWORDER", ""));
     }
 
     [Fact]

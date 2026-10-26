@@ -20,7 +20,7 @@ namespace AstroPhotoAnalyzer.Tests;
 /// <summary>R-027: a TIFF or PNG borrows the WCS of a FITS of the same size through --wcs.</summary>
 public class WcsBorrowTests
 {
-    static byte[] WcsFits(int w, int h)
+    static byte[] WcsFits(int w, int h, string? rowOrder = "BOTTOM-UP")
     {
         var cards = new List<string>
         {
@@ -28,8 +28,8 @@ public class WcsBorrowTests
             FitsTestData.Card("CRPIX1", (w / 2.0).ToString("R")), FitsTestData.Card("CRPIX2", (h / 2.0).ToString("R")),
             FitsTestData.Card("CRVAL1", "263.27"), FitsTestData.Card("CRVAL2", "-25.70"),
             FitsTestData.Card("CDELT1", "-0.01158"), FitsTestData.Card("CDELT2", "0.01158"),
-            FitsTestData.StringCard("ROWORDER", "BOTTOM-UP"),
         };
+        if (rowOrder != null) cards.Add(FitsTestData.StringCard("ROWORDER", rowOrder));
         return FitsTestData.Build(w, h, 3, (x, y, p) => 0.2, bitpix: -32, extraCards: cards);
     }
 
@@ -60,6 +60,22 @@ public class WcsBorrowTests
         var centre = wcs.PixelToSky(255.5, 255.5);
         Assert.Equal(263.27, centre.Ra, 1);
         Assert.Equal(-25.70, centre.Dec, 1);
+    }
+
+    [Fact]
+    public void R027_TheLentWcsIsFlippedWhateverTheFitsRowOrderSays()
+    {
+        // The borrowing PNG is Siril's display of the FITS, the file's first row at the bottom
+        // whatever ROWORDER says (ADR 0049).
+        using var ws = new TempWorkspace();
+        Raster r = SyntheticRasters.Flat(512, 512, 0.2f);
+        r.Source = new SourceInfo { Path = "poza.png", Format = "PNG" };
+
+        Wcs noKeyword = AnalysisRun.BorrowWcs(ws.WriteFile("plain.fit", WcsFits(512, 512, rowOrder: null)), r);
+        Wcs topDown = AnalysisRun.BorrowWcs(ws.WriteFile("lying.fit", WcsFits(512, 512, rowOrder: "TOP-DOWN")), r);
+
+        Assert.True(noKeyword.RowsFlipped);
+        Assert.True(topDown.RowsFlipped);
     }
 
     [Fact]

@@ -105,6 +105,9 @@ Două butoane sub imagine:
   fi formatul de intrare. Dintr-un FITS se păstrează toate cartelele antetului (WCS, expunere,
   instrument) și codarea datelor, și se adaugă linii `HISTORY` cu varianta și punctele curbei;
   dintr-un PNG sau TIFF iese un FITS float pe 32 de biți, fără profilul ICC al sursei.
+  Orientarea e cea din Siril, la citire și la scriere: un FITS e citit cu prima linie din
+  fișier jos, cum îl arată Siril orice ar spune `ROWORDER` din antet, iar FITS-ul nou e scris
+  la fel, cu `ROWORDER = 'BOTTOM-UP'`, ca Siril să-l arate exact cum a fost analizat.
   Imaginea de intrare nu se modifică niciodată, iar salvarea peste ea e refuzată. E singurul
   fișier-imagine pe care îl scrie unealta.
 

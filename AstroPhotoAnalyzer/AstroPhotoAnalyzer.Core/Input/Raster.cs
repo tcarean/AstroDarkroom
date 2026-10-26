@@ -145,7 +145,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// A remark of the reader's that the report shows as it is: for example that float values
-        /// were clipped to [0, 1], or that the rows were flipped by ROWORDER. Null when there was
+        /// were clipped to [0, 1], or that a TOP-DOWN row order was ignored. Null when there was
         /// nothing to say.
         /// </summary>
         internal string Note { get; init; }

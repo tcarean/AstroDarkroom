@@ -25,11 +25,12 @@
 // takes its path without a WCS.
 //
 // THE PIXEL CONVENTION. FITS counts from 1, with row 1 at the BOTTOM; the raster counts from 0,
-// with row 0 at the TOP, and the reader flips the rows on ROWORDER = BOTTOM-UP. A WCS always
-// applies in the FITS convention, so between the two sits a line of conversion that depends on
-// the flip: y_fits = H - y_raster when the rows were flipped, y + 1 when not. Every coordinate
-// here is in raster pixels, the centre of pixel (0, 0) being (0, 0); the conversion is inside,
-// once.
+// with row 0 at the TOP, and the reader always flips the rows, as Siril shows every FITS
+// whatever its ROWORDER says (ADR 0049). A WCS always applies in the FITS convention, so
+// between the two sits a line of conversion that depends on the flip: y_fits = H - y_raster on
+// a flipped raster (every one the reader makes), y + 1 on one that is not (tests only). Every
+// coordinate here is in raster pixels, the centre of pixel (0, 0) being (0, 0); the conversion
+// is inside, once.
 
 using System;
 using System.Collections.Generic;
@@ -59,7 +60,8 @@ namespace AstroPhotoAnalyzer
         internal int H { get; init; }
 
         /// <summary>
-        /// The raster's rows are flipped relative to the FITS (ROWORDER = BOTTOM-UP).
+        /// The raster's rows are flipped relative to the FITS: true for every raster the reader
+        /// makes (ADR 0049), false only in tests.
         /// </summary>
         internal bool RowsFlipped { get; init; }
 
@@ -79,7 +81,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="w">The raster's width, in pixels.</param>
         /// <param name="h2">The raster's height, in pixels.</param>
         /// <param name="rowsFlipped">
-        /// Whether the raster's rows were flipped from the file's (ROWORDER = BOTTOM-UP).
+        /// Whether the raster's rows were flipped from the file's: true for every raster the
+        /// reader makes (ADR 0049).
         /// </param>
         /// <returns>
         /// The WCS; null when there is none to read, or its linear part is singular.
