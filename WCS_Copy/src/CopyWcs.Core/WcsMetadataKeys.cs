@@ -19,9 +19,10 @@ using System.Text.RegularExpressions;
 
 namespace CopyWcs;
 
+/// <summary>Which keys a copy takes from the source: the WCS, the SIP coefficients and the optical metadata (R-007).</summary>
 internal static class WcsMetadataKeys
 {
-    // Cheile care descriu solutia astrometrica propriu-zisa.
+    /// <summary>The keys that describe the astrometric solution itself.</summary>
     internal static readonly string[] WcsKeys =
     {
         "WCSAXES", "CTYPE1", "CTYPE2", "CUNIT1", "CUNIT2",
@@ -34,8 +35,10 @@ internal static class WcsMetadataKeys
         "PLTSOLVD"
     };
 
-    // Metadate optice / de observatie. Fara FOCALLEN si XPIXSZ un re-solve
-    // ulterior nu are scara de pornire, deci merita copiate si ele.
+    /// <summary>
+    /// The optical and observation metadata. Without FOCALLEN and XPIXSZ a later re-solve has
+    /// no starting scale, so they are worth copying too.
+    /// </summary>
     internal static readonly string[] OpticalKeys =
     {
         "FOCALLEN", "FOCAL", "XPIXSZ", "YPIXSZ", "XBINNING", "YBINNING",
@@ -43,12 +46,22 @@ internal static class WcsMetadataKeys
         "SITELAT", "SITELONG", "SITEELEV", "DATE-OBS", "INSTRUME", "TELESCOP"
     };
 
-    // Coeficientii SIP au nume variabile: A_0_2, B_1_1, AP_2_0 etc.
+    /// <summary>The SIP coefficients have variable names: A_0_2, B_1_1, AP_2_0 and so on.</summary>
     private static readonly Regex SipCoefficient =
         new(@"^(A|B|AP|BP)_\d+_\d+$", RegexOptions.Compiled);
 
+    /// <summary>
+    /// The keys to copy: every WCS key, every SIP coefficient the source has, and the optical
+    /// keys when asked; only those present in the source, each once, in the order of the lists
+    /// (the SIP coefficients in the source's order, between the two).
+    /// </summary>
+    /// <param name="source">The header the keys come from.</param>
+    /// <param name="includeOptical">True to add <see cref="OpticalKeys"/>.</param>
+    /// <returns>The keys present in the source, without duplicates.</returns>
     internal static List<string> SelectKeysToCopy(FitsHeader source, bool includeOptical)
     {
+        ArgumentNullException.ThrowIfNull(source);
+
         var wanted = new List<string>(WcsKeys);
         wanted.AddRange(source.Keywords.Where(k => SipCoefficient.IsMatch(k)));
         if (includeOptical)

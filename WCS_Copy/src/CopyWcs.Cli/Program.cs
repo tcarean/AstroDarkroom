@@ -18,11 +18,14 @@
 namespace CopyWcs;
 
 /// <summary>
-/// Copiaza metadatele WCS (plate solving) si datele optice dintr-un FITS in altul.
-/// Fara dependinte externe: headerul FITS e ASCII simplu, carduri de 80 de bytes
-/// grupate in blocuri de 2880.
+/// The entry point of <c>copywcs.exe</c>: copies the WCS (plate solving) metadata and the
+/// optical data from one FITS into another. A one-line shim to <see cref="CopyWcsCli.Run"/>,
+/// which the tests drive in process.
 /// </summary>
 internal static class Program
 {
+    /// <summary>Runs the console on the real standard streams.</summary>
+    /// <param name="args">The command line without the executable.</param>
+    /// <returns>The exit code: 0 on success, 1 when the copy was refused, 2 on a usage error.</returns>
     private static int Main(string[] args) => CopyWcsCli.Run(args, Console.Out, Console.Error);
 }

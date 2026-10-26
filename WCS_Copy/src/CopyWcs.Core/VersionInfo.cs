@@ -15,31 +15,36 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// VersionInfo.cs - versiunea uneltei, citita din assembly.
+// VersionInfo.cs - the tool's version, read from the assembly.
 //
-// SURSA DE ADEVAR e <Version> din CopyWcs.csproj. Nu hardcoda nimic aici: MSBuild
-// transforma <Version> in AssemblyInformationalVersion, iar de acolo o citim. Asa exista
-// un singur loc de schimbat.
+// THE SOURCE OF TRUTH is <Version> in Directory.Build.props (ADR 0003). Hardcode nothing
+// here: MSBuild turns <Version> into AssemblyInformationalVersion, and that is read back. So
+// there is one place to change.
 //
-// Se incrementeaza MANUAL la fiecare feature/fix - vezi "Versioning" din CLAUDE.md.
+// The owner bumps it by hand, per feature or fix (the kit's rule "Version and year are the
+// owner's").
 
 using System.Reflection;
 
 namespace CopyWcs;
 
+/// <summary>The version and the banner, both read out of the assembly.</summary>
 internal static class VersionInfo
 {
+    /// <summary>The version as <c>Directory.Build.props</c> states it, "1.0.0"; "0.0.0" when the assembly carries none.</summary>
     internal static string Value { get; } = Read();
 
-    /// <summary>Numele si versiunea, exact cum apar pe prima linie a fiecarei rulari.</summary>
+    /// <summary>The name and the version, exactly as they appear on the first line of every run (R-001).</summary>
     internal static string Banner => "copywcs " + Value;
 
+    /// <summary>Reads the version from the assembly's attributes.</summary>
+    /// <returns>The informational version without any source suffix, or "0.0.0".</returns>
     private static string Read()
     {
         var asm = typeof(VersionInfo).Assembly;
 
-        // InformationalVersion vine direct din <Version> si pastreaza forma "1.0.0".
-        // AssemblyVersion ar da "1.0.0.0", care nu e ce vrem sa aratam.
+        // InformationalVersion comes straight from <Version> and keeps the form "1.0.0".
+        // AssemblyVersion would give "1.0.0.0", which is not what is shown.
         var v = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
                 ?? asm.GetName().Version?.ToString();
         if (string.IsNullOrWhiteSpace(v))
@@ -47,7 +52,7 @@ internal static class VersionInfo
             return "0.0.0";
         }
 
-        // Unele build-uri lipesc metadata de sursa: "1.0.0+9a8b7c6". Taie de la '+'.
+        // Some builds append the source metadata: "1.0.0+9a8b7c6". Cut at the '+'.
         var plus = v.IndexOf('+');
         return plus >= 0 ? v[..plus] : v;
     }

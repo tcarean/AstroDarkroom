@@ -15,28 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LicenseInfo.cs - notita de copyright, citita din assembly.
+// LicenseInfo.cs - the copyright notice, read from the assembly.
 //
-// SURSA DE ADEVAR e <Copyright> din CopyWcs.csproj. Nu hardcoda nimic aici: MSBuild
-// transforma <Copyright> in AssemblyCopyrightAttribute, iar de acolo o citim. Asa exista
-// un singur loc de schimbat.
+// THE SOURCE OF TRUTH is <Copyright> in Directory.Build.props (ADR 0003). Hardcode nothing
+// here: MSBuild turns <Copyright> into AssemblyCopyrightAttribute, and that is read back. So
+// there is one place to change.
 
 using System.Reflection;
 
 namespace CopyWcs;
 
+/// <summary>The copyright line, read out of the assembly.</summary>
 internal static class LicenseInfo
 {
     /// <summary>
-    /// Notita de copyright, pe linia a doua a fiecarei rulari - sub banner-ul de versiune
-    /// (vezi <see cref="VersionInfo"/>). Programul e GPLv3 (vezi
-    /// LICENSE), iar licenta cere ca fiecare copie sa poarte notita; o iesire copiata
-    /// undeva spune atunci singura a cui e unealta. Vine din csproj (&lt;Copyright&gt;) -
-    /// nu o hardcoda aici; literalul de mai jos e doar plasa de siguranta pentru cazul
-    /// in care atributul lipseste din assembly.
+    /// The copyright notice, on the second line of every run, under the version banner (see
+    /// <see cref="VersionInfo"/>; R-001). The program is GPLv3 (see LICENSE), and the licence
+    /// asks that every copy carry the notice; a pasted output then says on its own whose tool
+    /// it is. It comes from <c>Directory.Build.props</c>; the literal in <see cref="Read"/> is
+    /// only a safety net for an assembly built without the attribute.
     /// </summary>
     internal static string Copyright { get; } = Read();
 
+    /// <summary>Reads the copyright from the assembly's attribute.</summary>
+    /// <returns>The attribute's text, or the fallback literal when the assembly has none.</returns>
     private static string Read()
     {
         var c = typeof(LicenseInfo).Assembly
