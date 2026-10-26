@@ -38,14 +38,14 @@ Every place that writes a text reads `UiText.Current` when it writes it, not bef
   `FileDialogService`'s titles and filter; `VersionInfo.About`, a computed property for that
   reason.
 
-The Romanian follows the README, the user documentation: the divider is "linia", the canvas
-"pânza", the user "tu". The format puts the channels first and the depth after "pe", as the
-README writes "PNG pe 16 biți"; `Bits` adds the "de" Romanian puts after a number whose last two
-digits are 0 or 20 to 99 ("32 de biți"). Left as they are in both: numbers, file names, `A` and
-`B`, `100%`, `×`, `—`, FITS keywords, `vs`, the name `Image Visual Compare`, and the licence
-itself, which stays the English `LICENSE` file; the About notice that points to it is
-translated. The messages of Windows and .NET (a codec's failure, a missing file) come in their
-own language.
+The Romanian keeps the words the user documentation used while it was in Romanian (ADR 0041):
+the divider is "linia", the canvas "pânza", the user "tu". The format puts the channels first
+and the depth after "pe", as that README wrote "PNG pe 16 biți"; `Bits` adds the "de" Romanian
+puts after a number whose last two digits are 0 or 20 to 99 ("32 de biți"). Left as they are in
+both: numbers, file names, `A` and `B`, `100%`, `×`, `—`, FITS keywords, `vs`, the name
+`Image Visual Compare`, and the licence itself, which stays the English `LICENSE` file; the
+About notice that points to it is translated. The messages of Windows and .NET (a codec's
+failure, a missing file) come in their own language.
 
 A new text is a new member of `UiText` in both languages, never a literal where it is shown.
 

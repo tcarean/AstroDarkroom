@@ -63,7 +63,7 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
   0028).
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
   + `.json` - figures on the real pair. `docs/design/` - the explanations, per area, read on
-  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, Romanian.
+  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, English (ADR 0041).
 - The process rules are the kit's, in `.claude/rules/kit/process.md`; this project's own are in
   this file. The reasons behind the process are in `GHID.md` in the kit folder
   `ClaudeCodeStarterKit` beside this project in the `photo` repository (for people, not loaded).
@@ -121,8 +121,9 @@ or varies a kit rule names it.
   `LicenseHeaderTests` fails otherwise, and its project list is explicit, so adding a project
   is a decision (ADR 0024).
 - **User documentation lives in `README.md`, and only there.** Code comments explain why the
-  code is the way it is; the README explains how to use the tool, in Romanian; `docs/` explains
-  what it does and how, for whoever maintains it (ADR 0025).
+  code is the way it is; the README explains how to use the tool, in English, quoting the
+  English interface (ADR 0041); `docs/` explains what it does and how, for whoever maintains it
+  (ADR 0025).
 
 ## Workflow
 

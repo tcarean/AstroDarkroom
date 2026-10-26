@@ -1,7 +1,7 @@
 # 0006. English everywhere, as the kit's rule "Languages" says; three Romanian-commented files are translated
 
 Date: 2026-10-02
-Status: accepted 2026-10-02; no rule in `CLAUDE.md` varies the kit's rule "Languages" superseded by 0038
+Status: accepted 2026-10-02; no rule in `CLAUDE.md` varies the kit's rule "Languages" superseded by 0038; README.md stays Romanian superseded by 0041
 
 ## Context
 

@@ -1,271 +1,327 @@
 # ImageVisualCompare
 
-Comparator vizual pentru două imagini de aceeași dimensiune, cu o linie verticală care se
-trage stânga-dreapta: în stânga liniei vezi prima imagine, în dreapta a doua, în același
-loc și la același zoom. Făcut pentru a compara două variante ale aceleiași procesări astro
-— înainte și după extracția stelelor, două setări de background extraction, două stretch-uri.
+A before/after slider for two versions of the same astrophotography image: image A left of a
+vertical line you drag, image B right of it, both at the same zoom and the same position, with
+the RGB of the pixel under the cursor read from both. It is made for two versions of one
+processing, such as before and after star removal, two background extractions or two
+stretches, and to show a difference of one or two levels in a dark field, where the eye cannot
+see it.
 
-Aplicație WPF pe .NET 8, Windows, x64, **fără nicio dependință NuGet**. Decodarea se face
-prin WIC, codecul din Windows pe care îl folosește WPF oricum; fișierele FITS, pe care WIC nu
-le știe, sunt citite de un cititor propriu, tot fără dependințe.
+A Windows application (Windows 10 or 11, x64, .NET 8) with **no NuGet package**: PNG and TIFF
+are decoded by WIC, the Windows codec that WPF uses anyway, and FITS, which WIC does not read, by
+the project's own reader. It only reads: it never writes, moves or changes a file.
 
-Totul e întunecat, indiferent de tema sistemului — fereastra, bara de titlu și casetele de
-mesaj — fiindcă un chrome luminos în jurul unei imagini astro strică percepția a ce e cu
-adevărat întunecat în poză. Singura excepție e dialogul de deschidere fișiere: ăla e dialogul
-comun Windows și urmează tema sistemului, nu a aplicației.
+Everything on screen is dark, whatever the Windows theme: the window, its title bar and its
+messages, because a bright frame around an astro image spoils the judgement of what is really
+dark in it. The one exception is the Windows dialog that opens the files, which follows the
+system theme.
 
-> **Documentația de utilizator stă aici, în acest fișier.** Nu o duplica în comentarii.
+ImageVisualCompare is one of the five tools of Astro Darkroom. The repository's front page, the
+[`README.md`](../README.md) at its root, describes the suite and how to build it, and the
+suite's launcher opens this tool in the launcher's language.
 
 ---
 
-## Ce fișiere îi dai
+## What files it opens
 
-PNG sau TIFF, orice adâncime de biți și orice combinație de canale pe care WIC le poate
-citi: 8 sau 16 biți pe canal, RGB, RGBA, grayscale, paletizat, și TIFF cu valori float pe 32
-de biți (vezi „TIFF float" mai jos). Și FITS, cu ce e scris mai jos la „Fișiere FITS". Totul
-se normalizează la Bgra32 la încărcare, iar formatul real e afișat în bara de stare ca să știi
-mereu ce ai deschis; singurul loc în care codul întreabă ce format are fișierul e cel al
-valorilor float dintr-un TIFF.
+**PNG and TIFF** in any pixel format WIC reads: 8 or 16 bits per channel, RGB, RGBA, gray or
+indexed, and TIFF of 32-bit float samples (see "Float TIFF" below). **FITS**, as "FITS files"
+below says. Every image is converted to 8 bits per channel when it loads, the levels the screen
+shows; the status bar says what each file really was, so you always know what you opened. Once
+loaded, a file is not kept locked: you can export over it while it is on screen, then open it
+again.
 
-Adâncimea de biți și numărul de canale *pot* să difere între cele două — poți compara un PNG
-pe 16 biți cu un TIFF pe 8 biți fără probleme.
+The two may differ in bit depth and channels: a 16-bit PNG against an 8-bit TIFF is a normal
+pair. Only their pixel dimensions are compared.
 
-**Dacă dimensiunile în pixeli diferă, ești întrebat înainte să se încarce ceva.** Mesajul arată
-ambele rezoluții și dimensiunea pânzei comune (maximul pe fiecare axă). Dacă accepți, cele două
-se compară pe acea pânză, fiecare ancorată în colțul din stânga-sus, iar restul rămâne negru —
-imaginea mai îngustă are negru în dreapta, cea mai scundă are negru dedesubt. Dacă refuzi, se
-redeschide selectorul de fișiere.
+A "32-bit" export from Siril reaches the disk as a PNG of **16 bits per channel** (48 bpp),
+since PNG has no 32-bit mode. The status bar says `16-bit RGB`, and Windows says "bit depth 48".
 
-Fișierele de pe disc nu sunt atinse, și nici pixelii din memorie: negrul e fundalul peste care
-se desenează oricum ambele imagini, nu o copie mai mare a lor. Citirea RGB din bara de stare
-arată `—` acolo unde o imagine nu ajunge, deci se vede imediat că ești în zona de padding și
-nu într-o zonă neagră din poză.
+**When the pixel dimensions differ, you are asked before anything is decoded**, in the dialog
+`Images have different sizes`. It names both sizes and the common canvas, the larger size on
+each axis:
 
-**Un fișier care nu poate fi citit** (lipsă, blocat, stricat, într-un format pe care nu-l
-citește niciun codec instalat, sau prea mare ca să fie decodat) dă un mesaj cu numele lui și
-motivul, apoi se redeschid dialogurile. Aplicația nu se închide.
+```
+The two images have different dimensions.
+A: de_printat.png — 5938 × 3888
+B: de_printat_50x35_TIFF8.tif — 5554 × 3888
 
-Un export „32 bit" din Siril ajunge pe disc ca PNG pe **16 biți pe canal** (48 bpp), fiindcă
-formatul PNG nu are un mod pe 32 de biți. Windows raportează corect „bit depth 48".
+Both can be padded with black to 5938 × 3888,
+anchored top-left, and compared on that canvas.
+The image files themselves are not modified.
 
-### Fișiere FITS
+Continue?
+```
 
-Poți deschide direct și fișiere FITS (`.fit`, `.fits`, `.fts`), ca imagine A, ca imagine B sau
-ca amândouă, inclusiv un FITS față în față cu un PNG sau un TIFF. Se citesc întregi pe 8, 16 și
-32 de biți și float pe 32 și 64 de biți, cu un plan (afișat gri) sau cu trei (RGB). Fișierul e
-recunoscut după conținut, nu după extensie.
+`Yes` compares the two on that canvas, each anchored at its top-left corner, with black where an
+image does not reach: the narrower one has black on its right, the shorter one below it. `No`,
+`Escape` or closing the question brings the open dialogs back. Neither the files nor the pixels
+in memory are touched: the black is the backdrop both images are drawn over anyway, not a larger
+copy of them. The pixel readout says `—` where an image does not reach, so the padding never
+passes for a black area of the picture.
 
-- **Valorile se afișează așa cum sunt în fișier, fără niciun stretch.** Un FITS deja procesat
-  arată exact ca exportul lui PNG sau TIFF pe 16 biți, nivel cu nivel, deci îl poți compara
-  cinstit cu exportul. Un stack liniar, nestretch-uit, apare aproape negru: e corect, așa e
-  el. Stretch-uiește-l în Siril și salvează-l dacă vrei să-l vezi.
-- **Orientarea e cea din Siril.** Prima linie din fișier e jos, cum o arată Siril, orice ar
-  spune `ROWORDER` din antet: Siril folosește acest cuvânt-cheie doar la demozaicare, nu la
-  afișare, iar un fișier care spune `TOP-DOWN` peste date scrise de jos în sus există.
-- **Float în 0..1 sau în 0..65535.** Siril scrie float între 0 și 1. Dacă mai mult de 1% din
-  valorile din fișier trec de 2, fișierul e citit ca fiind între 0 și 65535, iar bara de stare
-  o spune: `32-bit float RGB (0..65535)`. Câțiva pixeli fierbinți peste 2 nu schimbă scara.
-  Valorile negative și NaN devin negru, cele peste maxim devin alb.
-- **Ce nu se citește:** FITS comprimat (tile-compressed, `.fz`), cuburi cu alt număr de
-  planuri decât 1 sau 3, întregi pe 64 de biți. Primești un mesaj care spune care dintre ele
-  e, nu o eroare generică; la fel pentru un antet stricat sau o imagine prea mare ca să fie
-  afișată. Un cadru brut cu matrice Bayer se deschide, dar apare ca mozaicul
-  gri care este: nu se face debayer.
+**A file that cannot be read** (missing, locked, damaged, in a format no installed codec reads,
+or too large to decode) gives a message with its name and the reason, such as
+`Could not read broken.png.` followed by the codec's own words, in the dialog
+`Cannot compare these files`; then the open dialogs come back. The application does not close.
 
-### TIFF float
+### FITS files
 
-Un TIFF cu valori float pe 32 de biți, cum sunt exporturile „32 bit" din GraXpert și din
-Siril, e citit ca un FITS cu aceleași valori: bara de stare spune `32-bit float RGB` (sau
-`gray`, `RGBA`), iar valorile se afișează așa cum sunt în fișier, fără stretch, între 0 și 1
-sau între 0 și 65535, după aceeași regulă ca la FITS. Conversia proprie a Windows le-ar fi
-arătat mult mai luminoase, în medie cu ~73 de niveluri din 255 pe exporturile GraXpert: stack-ul
-pe 16 biți de dinainte de GraXpert și rezultatul float de după ar fi părut unul de două ori mai
-luminos decât celălalt, deși în date nu e așa.
+FITS files (`.fit`, `.fits`, `.fts`) open as image A, as image B or as both, against each other
+or against a PNG or a TIFF. Integers of 8, 16 and 32 bits and floats of 32 and 64 bits are read,
+with one plane, shown gray, or three, shown as RGB. A file is known to be FITS by its first
+bytes, not by its extension, and the image shown is the first one in it, in the primary unit or
+in an `IMAGE` extension.
 
-## Cum o pornești
+- **The values are shown as stored, with no stretch.** A processed FITS looks exactly like its
+  16-bit PNG or TIFF export, level for level, so the two compare fairly. A linear stack, not
+  stretched, shows almost black: that is correct, it is what the file holds. Stretch it in Siril
+  and save it if you want to see it.
+- **The rows are the way up Siril shows them.** The first row in the file is the bottom of the
+  image, whatever `ROWORDER` in the header says: Siril reads that keyword only to debayer, never
+  to display, and files that say `TOP-DOWN` over rows written bottom-up exist.
+- **Floats in 0..1 or in 0..65535.** Siril writes floats between 0 and 1. If more than 1 % of
+  the samples in the file are above 2, the file is read as 0 to 65535, and the status bar says
+  so: `32-bit float RGB (0..65535)`. A few hot pixels above 2 do not change the scale. Negative
+  values and NaN show black, values above the top white.
+- **What is not read:** a compressed FITS (tile-compressed, `.fz`), 64-bit integers, an image
+  with other than 2 or 3 axes, or a cube of other than 1 or 3 planes. The message says which, not
+  a generic error; the same for a damaged header, a file cut short or an image too large to show.
+  A raw frame with a Bayer matrix opens, but shows as the gray mosaic it is: it is not
+  debayered.
 
-Fără argumente, cere cele două fișiere prin două dialoguri succesive. Al doilea dialog se
-deschide direct în folderul primului.
+### Float TIFF
 
-Cu două căi ca argumente, sare peste dialoguri:
+A TIFF of 32-bit float samples, as the "32 bit" exports of GraXpert and Siril are, is read like a
+FITS of the same values: the status bar says `32-bit float RGB` (or `gray`, `RGBA`), and the
+values are shown as stored, with no stretch, between 0 and 1 or between 0 and 65535 by the same
+rule as a FITS. Windows' own conversion would have shown them much brighter, by 73 levels of 255
+on average on two GraXpert exports: the 16-bit stack from before GraXpert and its float result
+would have looked one twice as bright as the other, which the data is not. Only 32-bit float
+samples are read this way: a TIFF of 16-bit (half) or 64-bit floats is left to Windows' own
+conversion, as every file was before, which shows float samples brighter than stored.
 
-```bash
+## Starting it
+
+Without arguments, it asks for the two files in two open dialogs, one after the other:
+`Select image A  —  shown left of the divider`, then
+`Select image B  —  shown right of the divider`. They show PNG, TIFF and FITS files; their list
+of file types also offers each kind alone, and `All files`. The second dialog opens in the
+folder of the first file. The first opens where Windows chooses, and at a later `Open…` in the
+folder of the last image A.
+
+Cancelling either dialog closes the application when no pair is on screen yet; with a pair on
+screen, that pair stays.
+
+With two paths as arguments, it skips the dialogs:
+
+```
 ImageVisualCompare.Wpf.exe "A.png" "B.png"
 ```
 
-Prima cale e imaginea afișată în stânga liniei, a doua cea din dreapta. Dacă una dintre
-căi nu există, pornește normal și întreabă prin dialoguri.
+The first path is the image shown left of the line, the second the one shown right of it. With a
+single path, or a path that does not exist, it starts normally and asks through the dialogs; a
+third path is ignored. The two paths are used once: `Ctrl+O` and `Open…` always go through the
+dialogs.
 
-Fereastra pornește maximizată, ca zoom-ul „fit" să fie calculat de la început pe tot ecranul.
+The window starts maximised, so the first fit is worked out on the whole screen. While a pair
+loads, an overlay shows the progress (`Opening…`, `Decoding <file name>…`, `Almost there…`); the
+two files are decoded one after the other. Every new pair appears at fit, with the line in the
+middle.
 
-### Limba interfeței
+### The interface language
 
-Interfața e în engleză sau în română. Limba o alegi din linia de comandă, cu `--lang`:
+The interface is in English or in Romanian, chosen on the command line with `--lang`:
 
-```bash
+```
 ImageVisualCompare.Wpf.exe --lang=ro "A.png" "B.png"
 ```
 
-Merge și `--lang ro`, cu spațiu, și poate sta oriunde printre argumente; nu contează literele
-mari sau mici. Fără `--lang`, interfața e în engleză. Dacă limba nu e una pe care aplicația o
-are (`--lang=de`) sau lipsește (`--lang=`), primești întâi un mesaj, apoi interfața pornește în
-engleză.
+`--lang ro`, with a space, works too, and the option can stand anywhere among the arguments, in
+capitals or not. Without `--lang` the interface is English. A language the application does not
+have (`--lang=de`), or none (`--lang=`), shows a message first; then the interface starts in
+English. Opened from the Astro Darkroom launcher, the tool starts in the launcher's language.
 
-Se traduc toate textele: butoanele, titlurile, bara de stare, mesajele și întrebările. Numerele
-arată la fel în ambele limbi (`5938 × 3888`, `152%`, `560 MB`), iar mesajele care vin de la
-Windows, cum e motivul pentru care un codec n-a putut citi un fișier, sunt în limba sistemului.
-În tabelele de mai jos, numele din paranteză e cel din interfața în română.
+Every text is translated: the buttons, the titles, the status bar, the messages and the
+questions, the titles and the file types of the open dialogs. Numbers read the same in both
+languages (`5938 × 3888`, `152%`, `560 MB`), and the reason Windows or .NET gives for a failure,
+such as why a codec could not read a file, is not translated. Below, a name in parentheses is
+the one the Romanian interface shows.
 
-## Controale
+## Controls
 
-| acțiune | cum |
-|---|---|
-| mută linia | trage de linie (oriunde pe ea) sau de mâner |
-| mută linia fin | `←` / `→` cu 1 px, `Shift+←` / `Shift+→` cu 10 px |
-| pan | trage cu mouse-ul oriunde în afara liniei |
-| zoom | rotița, ancorat în cursor (și `Ctrl` + rotița, la fel) |
-| scroll orizontal | `Shift` + rotița |
-| zoom pe trepte | `+` / `−`, sau butoanele din toolbar |
-| încadrează tot | `Ctrl+0`, sau butonul `Fit` (`Încadrează`) |
-| mărime reală | `Ctrl+1`, sau butonul `100%` |
-| sari în altă zonă | click sau drag în minimap-ul din stânga-jos |
-| deschide altă pereche | `Ctrl+O`, sau butonul `Open…` (`Deschide…`; nu în timpul unei încărcări) |
+| action | how |
+| --- | --- |
+| move the line | drag it, anywhere along its height, or drag its handle |
+| move the line finely | `←` / `→` by 1 pixel, `Shift+←` / `Shift+→` by 10 |
+| pan | drag anywhere off the line, or use the scrollbars |
+| zoom | the mouse wheel, 15 % a notch, anchored at the cursor; `Ctrl` + wheel does the same |
+| pan sideways | `Shift` + wheel |
+| zoom by steps | the `+` and `-` keys, on the main keyboard or the keypad, or the toolbar's `+` and `−`; about the centre of the view |
+| fit the whole image | `Ctrl+0`, or the `Fit` button (`Încadrează`) |
+| actual size | `Ctrl+1`, or the `100%` button; about the centre of the view |
+| jump to another area | click or drag in the minimap, bottom left |
+| open another pair | `Ctrl+O`, or the `Open…` button (`Deschide…`); not while a pair is opening |
 
-Scurtăturile de tastatură merg când suprafața de comparație are focus; îl primește singură
-după încărcare, și îl recapătă la orice click pe imagine. Pasul săgeților e în pixeli
-logici, ca tot ce ține de linie: la scalarea Windows de 100% e un pixel de ecran, la 150%
-linia se mută cu 1,5 pixeli de ecran, respectiv 15 cu `Shift`.
+The keyboard shortcuts work while the comparison area has the keyboard focus. It takes the focus
+when a pair loads and at any click in it; a click on a toolbar button takes the focus to that
+button, so click the image again before using the keys. `Ctrl+O` works wherever the focus is.
+The arrows move the line in device-independent pixels, like everything about the line: at 100 %
+Windows scaling that is one screen pixel, at 150 % the line moves 1.5 screen pixels, or 15 with
+`Shift`.
 
-**Zoom-ul e limitat în jos la încadrarea completă** — sub asta ai doar o miniatură pierdută
-pe un fundal gol. Excepție: o imagine mai mică decât fereastra poate coborî până la 100%,
-altfel n-ai putea-o vedea la rezoluția ei. În sus limita e 1600%.
+The line belongs to the window, not to the images: zooming and panning move both images under it
+and leave it where it is. When the window is resized, the line keeps its share of the width and
+the point at the centre of the view stays at the centre. Every new pair puts the line back in
+the middle.
 
-**„100%" înseamnă un pixel de imagine peste un pixel fizic de ecran**, nu peste un pixel
-logic. Pe un ecran cu scalare Windows la 125% sau 150% diferența contează, iar la
-pixel peeping vrei varianta onestă. Ține pe orice monitor, și când monitoarele au scalări
-diferite: aplicația urmărește scalarea monitorului pe care e fereastra. Peste 400% se trece
-automat pe nearest-neighbour, ca să vezi pixelii reali, nu interpolare.
+**The zoom stops at the fit**, where the whole image is visible: below it you would only get a
+thumbnail lost on an empty background. The exception is an image smaller than the window, which
+can go down to 100 %, or you could not see it at its own resolution. The top is 1600 %. The
+steps of `+` and `−` are 2, 3, 5, 8, 12.5, 17, 25, 33, 50, 67, 100, 150, 200, 300, 400, 600,
+800, 1200 and 1600 %.
 
-## Ce îți arată bara de stare
+**`100%` puts one image pixel on one physical screen pixel**, not on one device-independent
+pixel. On a screen scaled to 125 % or 150 % the difference matters, and for pixel peeping you
+want the honest one. It holds on every monitor, also when the monitors are scaled differently:
+the application follows the scaling of the monitor its window is on. From 400 % up the images
+are drawn nearest-neighbour, so you see the real pixels as squares, not an interpolation.
+
+## What the window shows
+
+The toolbar names the pair, `A   vs   B` with the two file names. On its right, after the label
+`Navigation` (`Navigare`), come the buttons `−` and `+` around the zoom in percent, then `Fit`,
+`100%`, `Open…` and `About` (`Despre`). The title bar names the pair too, followed by the
+program's name and version. The zoom is also shown in a badge at the top right of the comparison
+area.
+
+The minimap, bottom left, is a thumbnail of the whole canvas, drawn from image A, with a
+rectangle around the part on screen; the rectangle disappears when the whole image is visible.
+A scrollbar appears over the image on an axis it overflows, without taking room from it.
+
+### The status bar
 
 ```
-5794 × 3637 · A 16-bit RGB · B 16-bit RGB    2617, 1839    A  35  35  36    B  35  35  35    managed 2 MB, process 560 MB
+5794 × 3637  ·  A 16-bit RGB  ·  B 16-bit RGB    2617, 1839    A  35  35  36    B  35  35  35    managed 2 MB, process 560 MB
 ```
 
-Dimensiunea perechii și formatul real al fiecărui fișier, coordonata pixelului de sub cursor,
-și **valorile RGB din ambele imagini în acel pixel**. Ultima parte e adesea singurul mod de a
-vedea o diferență: pe un fundal întunecat, o diferență de una-două unități din 255 e complet
-invizibilă cu ochiul, dar se citește imediat în cifre.
+From the left: the size of the pair and the real format of each file; the coordinate of the
+pixel under the cursor; **the RGB of that pixel in both images**; the memory. The pixel values
+are often the only way to see a difference: on a dark background, a difference of one or two
+levels out of 255 is invisible to the eye and plain in the numbers. They are the 0–255 levels on
+the screen; off the image the three readouts are empty. A 16-bit file is shown, and read, at 8
+bits, the high byte of each value, so a difference of less than 256 out of 65 536 may not show
+in the readout at all.
 
-Pentru un FITS, ca și pentru un TIFF float, formatul arată adâncimea și planurile din fișier,
-de exemplu `A 32-bit float RGB` sau `B 16-bit gray`. Valorile RGB citite sunt tot cele 0–255
-de pe ecran, nu valorile float din fișier.
+For a FITS, as for a float TIFF, the format is the depth and the planes of the file, such as
+`A 32-bit float RGB` or `B 16-bit gray`. The values read are still the 0–255 levels on the
+screen, not the float values of the file.
 
-Când perechea a avut nevoie de padding, prima parte devine `600 × 400 padded · A 600 × 300 ·
-B 400 × 400`: dimensiunea pânzei singură ar fi o jumătate de adevăr, fiindcă niciuna dintre
-imagini nu are dimensiunea aceea.
+When the pair needed padding, the first part names the canvas and each image's own size:
+`5938 × 3888 padded  ·  A 5938 × 3888  ·  B 5554 × 3888  ·  A 16-bit RGB  ·  B 8-bit RGB`. The
+canvas alone would be half the truth, since one of the images does not have that size.
 
-În interfața în română, aceeași bară arată `A RGB pe 16 biți` (sau `gri float pe 32 de biți`,
-`RGB float pe 32 de biți (0..65535)`), `memorie .NET 2 MB, proces 560 MB`, iar la padding
-`pânză 600 × 400 · A 600 × 300 · B 400 × 400`.
+`managed` is the memory .NET manages and `process` the process's private memory, in megabytes,
+read every 2 seconds. After them comes a hint,
+`wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open`, cut short
+when the window narrows; on the right, always, the version and the copyright (there is no
+`--version` option). `About` shows the licence notice.
 
-În dreapta barei de stare stau permanent versiunea și copyright-ul. Butonul `About` (`Despre`)
-din toolbar arată nota completă de licență.
+In the Romanian interface the same bar reads `A RGB pe 16 biți` (or `gri float pe 32 de biți`,
+`RGB float pe 32 de biți (0..65535)`) and `memorie .NET 2 MB, proces 560 MB`, and a padded pair
+starts with `pânză 5938 × 3888`.
 
-## Memorie
+## Memory and speed
 
-O pereche de 21 MP pe 16 biți ocupă ~170 MB după decodare (fiecare imagine devine Bgra32,
-adică 84 MB, indiferent cât avea pe disc). Cu randarea WPF pornită, procesul se așază pe un
-platou de ~570 MB memorie privată și ~300 MB rezidenți. Platoul e mărginit, nu o scurgere —
-plimbarea prin nivele de zoom nu îl mai crește. La deschiderea unei perechi noi, cea veche
-rămâne pe ecran cât timp se decodează noua, deci în timpul încărcării stau amândouă în
-memorie; imediat ce noua e gata, cea veche e eliberată explicit, înainte ca noua să fie
-afișată, și de acolo rămâne una singură.
+A pair of 21 MP images takes about 170 MB once decoded: each image becomes 4 bytes a pixel, about
+80 MB at 21 MP, whatever it took on disk. Drawn at fit, the process holds about 280 MB of private
+memory; after several zoom levels it settles on a plateau of about 570 MB private and 300 MB
+resident, which is bounded, not a leak: going through the zoom levels again does not raise it.
+While another pair opens, the current one stays on screen, so both are in memory during the
+load; as soon as the new one is decoded, the old one is released explicitly, before the new one
+is shown, and from then on only one is held.
 
-Decodarea a două fișiere de ~108 MB durează ~2,7 secunde, cu bară de progres.
+Decoding two 16-bit files of 100 to 130 MB takes about three seconds.
 
-## Compilare
+## What it does not do (yet)
 
-Cere .NET SDK 9.0.3xx pe Windows (`global.json`); proiectele țintesc .NET 8.
-
-```bash
-dotnet build ImageVisualCompare.sln -c Release
-```
-
-```bash
-dotnet test ImageVisualCompare.sln
-```
-
-Gate-ul complet, cel pe care îl rulează hook-ul `pre-commit`, e `scripts/verify.ps1` (vezi mai
-jos).
-
-### Dezvoltare: gate-ul, documentația și Claude Code
-
-Din 2026-10-02 proiectul urmează procesul din `ClaudeCodeStarterKit` (folderul de lângă acesta
-în repo-ul `photo`; ghidul cu motivația fiecărei piese e `GHID.md` acolo), la fel ca FlatCheck
-și AstroPhotoAnalyzer. Pe scurt, ce e impus mecanic:
-
-- **`scripts/verify.ps1` e gate-ul**: scripturile identice cu ale kit-ului, manifestul datelor
-  de test, antetele ADR-urilor, notele de design (fiecare în index, cu fișierele ei numite în
-  propoziția `Covers:`), restore, `dotnet format` (doar verifică), build cu avertismentele ca
-  erori, toate testele în afară de cele de validare. Cam 20 de secunde. Îl rulează hook-ul git
-  `pre-commit` de la rădăcina repo-ului la orice commit care atinge proiectul, hook-ul
-  `pre-merge-commit` la orice merge fără conflicte, hook-ul Claude Code înainte de orice
-  `git commit` al modelului, și `scripts/release.ps1`. Fără el verde nu intră niciun commit.
-
-  ```bash
-  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
-  ```
-
-- **Mesajul de commit** e o singură linie, în engleză, de cel mult 100 de caractere.
-- **`scripts/`, `.claude/skills/`, `.claude/agents/` și `.claude/rules/kit/` sunt ale
-  kit-ului**, byte cu byte, și nu se editează aici; ce e specific proiectului ca valori e în
-  `kit.json`, pașii pe care îi adaugă la skill-uri sunt în `docs/skills.md`.
-- **Comportamentul e în `docs/requirements.md`**, cu ID-uri `R-NNN` purtate în numele testelor;
-  `RepoInvariantTests` cere ca fiecare cerință `implemented` să aibă un test cu ID-ul ei și
-  invers. Vechiul `CLAUDE.md` a fost împărțit pe 2026-10-02 în cerințe, decizii și note de
-  design; nimic nu s-a pierdut, s-a mutat.
-- **Deciziile sunt în `docs/decisions/`**, un ADR per decizie, cu alternativele respinse; cele
-  luate înainte de 2026-10-02 (cele zece invariante din vechiul `CLAUDE.md`, printre altele) au
-  fost scrise retroactiv.
-- **Cifrele pe o pereche reală** (exporturi de 23 MP ale aceleiași imagini, care nu sunt în
-  repo) sunt în `docs/validation.json`, citit de `ValidationTests` (`--filter
-  "Category=Validation"`, nu în gate); copiile stau în `tests/testdata/large/`, ignorat de git,
-  iar `tests/testdata/manifest.json` le ține hash-urile. `docs/validation.md` spune de unde vine
-  fiecare cifră, lângă măsurătorile de memorie din 2026-09-08.
-- **Explicațiile din spatele codului** sunt în `docs/design/`, cu indexul în
-  `docs/design/README.md`; `CLAUDE.md` ține doar regulile proiectului, cele de proces sunt ale
-  kit-ului, în `.claude/rules/kit/process.md`.
-- **Versiunea** o crește omul, în `Directory.Build.props` (mutată acolo din csproj pe
-  2026-10-02). Un release se face pe `main`, cu `scripts/release.ps1 -Version X.Y.Z`, care
-  rulează gate-ul, închide secțiunea din CHANGELOG și publică aplicația în `artifacts/X.Y.Z/`.
-  Commit-ul și tag-ul rămân ai omului.
-- În Claude Code: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`.
-
-## Ce nu face (încă)
-
-- Fără mod diferență (`|A−B|` amplificat). Ar cere păstrarea masterelor pe 16 biți, adică
-  încă ~250 MB.
-- Fără toggle A/B pe tastă.
-- Fără drag&drop peste fereastră.
-- Nu reține poziția ferestrei sau ultimul folder între sesiuni.
+- No difference mode (`|A−B|` amplified): it would need the full-depth data kept beside the
+  displayed images, about 250 MB more for a 21 MP pair at 16 bits.
+- No key that flips the whole view between A and B.
+- No drag and drop onto the window.
+- The tool itself remembers nothing between runs, neither the last pair nor the language; the
+  Astro Darkroom launcher remembers its own language and passes it on.
 
 ---
 
-## Licență
+## Building
 
-Image Visual Compare — comparator vizual pentru două imagini de aceeași dimensiune.
+On Windows, with the .NET 9 SDK, version 9.0.318 or a later 9.0.3xx patch (`global.json`); the
+projects target .NET 8, and Visual Studio is not needed. From this folder:
+
+```
+dotnet build ImageVisualCompare.sln -c Release
+```
+
+```
+dotnet run --project src/ImageVisualCompare.Wpf -c Release -- --lang=ro "A.png" "B.png"
+```
+
+```
+dotnet test ImageVisualCompare.sln -c Release --filter "Category!=Validation"
+```
+
+A release publishes the application self-contained, with the .NET 8 runtime inside and `LICENSE`
+beside `ImageVisualCompare.Wpf.exe`, into `artifacts/X.Y.Z/`. The same folder, without a release
+and without changing a tracked file:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version X.Y.Z -PublishOnly
+```
+
+It empties `artifacts/X.Y.Z/` first, and writes `release.json` there beside the program, with the
+version, the date and the commit it was built from. `X.Y.Z` names the folder; the version the
+application shows is `<Version>` in `Directory.Build.props`, so passing that number keeps the
+two the same.
+
+## For developers
+
+The project follows the process of `ClaudeCodeStarterKit`, the folder beside this one, and is
+maintained with Claude Code. Its rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`;
+the behaviour, with the IDs the tests carry, in `docs/requirements.md`; the decisions in
+`docs/decisions/`; how the code works, area by area, in `docs/design/` (its `README.md` is the
+index); the figures measured on the author's files of one 23 MP frame, three exports and two
+FITS stacks, in `docs/validation.md`; the changes in `CHANGELOG.md`. How to use the tool is
+written here and nowhere else (ADR 0025).
+
+Every commit passes the gate first: the kit's checks, the format check, a build with warnings as
+errors and every test but the validation ones, in about 20 seconds:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
+```
+
+The version is `<Version>` in `Directory.Build.props` and changes only at the owner's word. A
+release is cut on `main` with `scripts/release.ps1 -Version X.Y.Z`; the owner commits it and
+tags it `imagevisualcompare-vX.Y.Z`.
+
+---
+
+## Licence
+
+Image Visual Compare, a before/after slider for two versions of the same image.
+
 Copyright (C) 2026 Tudor Carean
 
-Acest program este software liber: îl poți redistribui și/sau modifica în termenii
-**GNU General Public License v3** publicată de Free Software Foundation, fie versiunea 3
-a licenței, fie (la alegerea ta) orice versiune ulterioară.
+This program is free software: you can redistribute it and/or modify it under the terms of the
+**GNU General Public License** as published by the Free Software Foundation, either **version 3**
+of the License, or (at your option) any later version.
 
-Programul e distribuit în speranța că va fi util, dar **FĂRĂ NICIO GARANȚIE** — fără
-măcar garanția implicită de VANDABILITATE sau POTRIVIRE PENTRU UN SCOP ANUME. Vezi GNU
-General Public License pentru detalii.
+This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**;
+without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+the GNU General Public License for more details.
 
-Textul complet al licenței e în fișierul [LICENSE](LICENSE), care stă și lângă program, în
-folderul în care e compilat sau publicat; îl găsești și la
-<https://www.gnu.org/licenses/gpl-3.0.html>. Aceeași notă, pe scurt, apare la butonul
-`About`; versiunea și copyright-ul stau permanent în bara de stare.
+The full text of the licence is in the [LICENSE](LICENSE) file, which also sits next to the
+program in the folder it is built or published into, and at
+<https://www.gnu.org/licenses/gpl-3.0.html>. The `About` button shows the same notice, short;
+the version and the copyright are always on the status bar.
