@@ -25,6 +25,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   cells follow the run's language (R-028, ADR 0022).
 - The Frames tab's `dithering` tooltip named the old default arrows (left = east); it now points
   at the EAST and NORTH selectors.
+- `README.md`, the user guide, is in English: it quotes the English output, the default, and is
+  brought up to date with the program, its examples run again on the Veil session (ADR 0024).
 
 ### Fixed
 

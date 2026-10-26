@@ -132,8 +132,9 @@ every text at once, and the choice is remembered; a tool opened from the launche
 launcher's language. Started on its own, a tool speaks English, or Romanian with `--lang ro`.
 
 Each tool has its own folder in this repository, with its sources, its tests and its
-documentation: the user guide is the folder's `README.md`, in Romanian; the requirements, the
-decisions and the validation figures are in its `docs/`, in English.
+documentation: the user guide is the folder's `README.md`, in English for LightsCheck and in
+Romanian for the other four; the requirements, the decisions and the validation figures are in
+its `docs/`, in English.
 
 ## The tools
 
