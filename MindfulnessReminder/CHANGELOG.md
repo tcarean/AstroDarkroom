@@ -6,6 +6,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-26
+
 ### Added
 
 - The tray copy registers with Windows for an automatic restart: after a crash or a hang of a

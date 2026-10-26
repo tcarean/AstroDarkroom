@@ -9,7 +9,7 @@
          into AssemblyInformationalVersion, which is where VersionInfo.Value reads it from
          and what Windows shows as the .exe's file version - so this is the only place to
          change it. See "Versioning" in README.md (ADR 0011; the kit's ADR 0029). -->
-    <Version>1.4.0</Version>
+    <Version>1.5.0</Version>
 
     <!-- Copyright and licence, for every project in the solution at once. <Copyright>
          ends up in AssemblyCopyrightAttribute, which is where LicenseInfo.Copyright
