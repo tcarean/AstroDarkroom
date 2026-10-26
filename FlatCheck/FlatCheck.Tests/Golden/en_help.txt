@@ -10,6 +10,7 @@ Usage:
   flatcheck <raw_flat.fit> --expo         # the same, on a raw FITS from Siril
   flatcheck <sky_flat.NEF> --expo --sky   # exposure for sky flats
   flatcheck <flat.NEF> --histeq -o <picture.png>   # Siril's "Histogram" view, per channel
+  flatcheck <flat.NEF> --histeq --rainbow -o <picture.png>   # the same in Siril's false colours (one layer)
   flatcheck <flat.fit> --smooth <smoothed.fit>     # smoothed flat: no texture, dust or spots
   flatcheck <reference.fit> --synthetic <synthetic.fit> --lens <text>   # synthetic flat from the lens profile
   flatcheck --lenses [--lens <text>]      # the lenses with a vignetting profile (Adobe on disk, lensfun/ beside the exe)
@@ -34,6 +35,8 @@ because there the sky and the vignetting have the same shape. See README.md.
 
 --histeq is a picture, not a test: every grey level gets the same number of pixels,
 so it shows the shape of what is not uniform, not how large it is. Exits with 0 once written.
+--rainbow colours that picture with Siril's rainbow table (magenta = lowest level, red = highest):
+the mosaic on a CFA frame, the channel on mono. The colours are ranks, not values.
 
 --smooth writes a second master that keeps everything smooth and removes the diffuser's
 texture, the dust and the spots. It gives no verdict; it reports WHAT IT REMOVED, and writes the map

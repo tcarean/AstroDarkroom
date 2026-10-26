@@ -81,7 +81,7 @@ tests and documents; this section is that list, in the order the work goes.
 
 - `Options` is an `internal sealed class` of plain `internal` fields: no properties, no
   setters, no builder. One field per flag (`Image`, `Ratio`, `Light`, `Expo`, `Sky`, `Histeq`,
-  `Smooth`, `ScalePx`, `ScaleAuto`, `Synthetic`, `Lens`, `Source`, `Focal`, `FStop`, `Crop`,
+  `Rainbow`, `Smooth`, `ScalePx`, `ScaleAuto`, `Synthetic`, `Lens`, `Source`, `Focal`, `FStop`, `Crop`,
   `Profiles`, `Lenses`, `Against`, `Raw`, `OutPng`, `Sat`, `Black`, `Pattern`, `Fov`), plus
   `Help` and `Error`. A flag with a value is a `string` or a nullable number (`double?`), so
   "not given" is `null` and never a sentinel; a switch is a `bool`. Defaults are field

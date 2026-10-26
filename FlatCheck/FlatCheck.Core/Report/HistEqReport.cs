@@ -39,21 +39,38 @@ namespace FlatCheck
         /// <param name="r">The equalised result.</param>
         /// <param name="path">The file's path, as the report prints it.</param>
         /// <param name="w">Where to write.</param>
-        internal static void Write(HistEqResult r, string path, TextWriter w)
+        /// <param name="rainbow">True when the picture written is in false colours: the display
+        /// line says so and the legend is printed.</param>
+        internal static void Write(HistEqResult r, string path, TextWriter w, bool rainbow = false)
         {
             w.WriteLine(T("== HISTOGRAM EQUALISATION (Siril's \"Histogram\" view) ==",
                           "== EGALIZARE DE HISTOGRAMA (vederea \"Histogram\" din Siril) =="));
             w.WriteLine(T($"file:       {path}", $"fisier:     {path}"));
             w.WriteLine(T($"frame:      {FrameLine(r)}", $"cadru:      {FrameLine(r)}"));
-            w.WriteLine(T($"display:    {DisplayLine(r)}", $"afisare:    {DisplayLine(r)}"));
+            w.WriteLine(T($"display:    {DisplayLine(r, rainbow)}", $"afisare:    {DisplayLine(r, rainbow)}"));
             w.WriteLine();
             w.WriteLine(T("channel    input range                    levels used",
                           "canal      interval intrare               niveluri folosite"));
             for (int i = 0; i < r.Channels.Length; i++)
                 w.WriteLine("  " + ChannelLine(r, i));
             w.WriteLine();
+            if (rainbow)
+                w.WriteLine(T("LEGEND: ", "LEGENDA: ") + RainbowLegend());
             w.WriteLine(T("INFORMATIVE: ", "INFORMATIV: ") + Caveat());
         }
+
+        /// <summary>
+        /// The legend of the false colours, under the picture and in the report: which end of
+        /// Siril's table is which, and that the RGB view is not coloured (ADR 0063).
+        /// </summary>
+        /// <returns>One sentence, in the run's language.</returns>
+        internal static string RainbowLegend()
+            => T("false colours, Siril's rainbow table on one layer: magenta is the lowest level, then "
+                 + "blue, cyan, green, yellow, and red the highest; the colours are ranks, not values. The "
+                 + "RGB view keeps its own colours - the table applies to one layer only.",
+                 "culori false, tabelul rainbow din Siril pe un singur strat: magenta e nivelul cel mai jos, apoi "
+                 + "albastru, cyan, verde, galben, iar rosu cel mai sus; culorile sunt ranguri, nu valori. "
+                 + "Vederea RGB isi pastreaza culorile ei - tabelul se aplica pe un singur strat.");
 
         /// <summary>
         /// "6000 x 4000, CFA (ordine RGGB, din libraw)" / "..., CFA (ordine necunoscuta)" / "...,
@@ -71,16 +88,23 @@ namespace FlatCheck
             return $"{r.SourceW} x {r.SourceH}, {kind}";
         }
 
-        /// <summary>"1500 x 1000 (bloc 2x2 pe canal), 65536 cosuri pe canal".</summary>
+        /// <summary>
+        /// "1500 x 1000 (bloc 2x2 pe canal), 65536 cosuri pe canal", plus ", culori false
+        /// (tabelul rainbow din Siril)" when the picture is coloured.
+        /// </summary>
         /// <param name="r">The equalised result.</param>
-        /// <returns>The shrunk size, the block and the bin count.</returns>
-        internal static string DisplayLine(HistEqResult r)
+        /// <param name="rainbow">True when the picture written is in false colours.</param>
+        /// <returns>The shrunk size, the block, the bin count and, when coloured, the table.</returns>
+        internal static string DisplayLine(HistEqResult r, bool rainbow = false)
         {
             string shrink = r.Shrink > 1
                 ? T($"{r.Shrink}x{r.Shrink} block per channel", $"bloc {r.Shrink}x{r.Shrink} pe canal")
                 : T("not shrunk", "nemicsorat");
-            return T($"{r.W} x {r.H} ({shrink}), {HistEqLut.Bins} bins per channel",
-                     $"{r.W} x {r.H} ({shrink}), {HistEqLut.Bins} cosuri pe canal");
+            string colours = rainbow
+                ? T(", false colours (Siril's rainbow table)", ", culori false (tabelul rainbow din Siril)")
+                : "";
+            return T($"{r.W} x {r.H} ({shrink}), {HistEqLut.Bins} bins per channel{colours}",
+                     $"{r.W} x {r.H} ({shrink}), {HistEqLut.Bins} cosuri pe canal{colours}");
         }
 
         /// <summary>

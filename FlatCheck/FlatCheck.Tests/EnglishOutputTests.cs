@@ -40,7 +40,7 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
     {
         "structure_clean", "structure_gradient", "structure_reshoot", "ratio_world", "ratio_camera",
         "light_undercorrected", "light_rejected_wide_field", "light_series_conclusive", "light_series_undetermined",
-        "histeq_cfa", "histeq_mono", "expo_cfa", "expo_cfa_bayerpat", "expo_cfa_sky", "expo_rejects_debayered",
+        "histeq_cfa", "histeq_mono", "histeq_rainbow", "expo_cfa", "expo_cfa_bayerpat", "expo_cfa_sky", "expo_rejects_debayered",
         "expo_manual_scale", "help", "smooth_clean", "smooth_textured", "smooth_refuses_cube", "smooth_auto_proposed",
         "smooth_auto_no_texture", "structure_with_profiles", "structure_lens_no_fstop", "synthetic_written",
         "synthetic_lensfun", "synthetic_far_request", "synthetic_ambiguous", "lenses", "against_radial",
@@ -85,6 +85,7 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
                     "--light", "--fov", "10", "-o", Out() };
             case "histeq_cfa": return new[] { Bayer("raw_bayerpat.fit"), "--histeq", "-o", Out() };
             case "histeq_mono": return new[] { Flat(ws, "flat.fit", radial), "--histeq", "-o", Out() };
+            case "histeq_rainbow": return new[] { Bayer("raw_bayerpat.fit"), "--histeq", "--rainbow", "-o", Out() };
             case "expo_cfa": return new[] { Cfa("raw.fit"), "--expo" };
             case "expo_cfa_bayerpat": return new[] { Bayer("raw_bayerpat.fit"), "--expo" };
             case "expo_cfa_sky": return new[] { Cfa("raw.fit"), "--expo", "--sky" };

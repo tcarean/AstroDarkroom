@@ -415,6 +415,12 @@ public class WindowSmokeTests
             vm.View.Options.First(o => o.Label == "G1").IsSelected = true;
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-canal");
 
+            // the false colours: the chip on, the legend under the picture (R-104)
+            vm.View.Rainbow = true;
+            Render(new HistEqView { DataContext = vm }, name: "tab-histeq-rainbow");
+            Assert.NotEqual("", vm.Legend);
+            vm.View.Rainbow = false;
+
             // the zoom: 100 % and a large factor, with the panning control in play
             vm.Zoom.Actual.Execute(null);
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-100");

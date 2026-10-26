@@ -437,6 +437,33 @@ public class GoldenOutputTests
         AssertGolden("histeq_mono", output);
     }
 
+    /// <summary>
+    /// --rainbow writes the Mosaic view in Siril's false colours: the file is the channels'
+    /// size, every pixel is a level of the table (one channel at 255, one at 0, since
+    /// saturation and value are 1), and the report carries the display line and the legend.
+    /// </summary>
+    [Fact]
+    public void R104_Histeq_Rainbow_WritesTheColouredMosaic()
+    {
+        using var ws = new TempWorkspace();
+        var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
+        string f = ws.WriteFile("raw_bayerpat.fit", FitsTestData.BuildFits(
+            Size, Size, scene, extraCards: FitsTestData.BayerCards("RGGB")));
+        string png = ws.PathTo("out.png");
+
+        var (output, exit) = RunCli(ws, f, "--histeq", "--rainbow", "-o", png);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("culori false", output);
+        Assert.Contains("magenta", output);
+        var d = PngDecoder.Decode(File.ReadAllBytes(png));
+        Assert.Equal((Size / 2, Size / 2), (d.Width, d.Height));
+        var (r, g, b) = d.At(Size / 4, Size / 4);
+        Assert.Equal(255, Math.Max(r, Math.Max(g, b)));
+        Assert.Equal(0, Math.Min(r, Math.Min(g, b)));
+        AssertGolden("histeq_rainbow", output);
+    }
+
     /// <summary>The folder check runs before dispatch, so it holds for the new flag too.</summary>
     [Fact]
     public void Histeq_OnAFolder_IsRefusedLikeEveryModeButLight()

@@ -358,7 +358,8 @@ a library extraction and not a copy is ADR 0011.
     whether that is the user's sensor - `SyntheticReport.FormatMatch` (ADR 0029).
     `HistEqViewViewModel` is the fourth, on the Histogram tab, and the only one
     whose option list depends on the result (six chips on a CFA frame, `Mozaic` first and
-    default, one on mono). `ImageZoomViewModel` beside it holds the zoom *state* - fit or
+    default, one on mono); it also holds the false-colours checkbox (`Rainbow`,
+    `RainbowAvailable`; ADR 0063). `ImageZoomViewModel` beside it holds the zoom *state* - fit or
     a factor, plus the effective factor the control writes back - so a test can drive it
     and the tab can reset it on a new file (and deliberately not on a chip change).
     `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
@@ -684,6 +685,8 @@ from the FITS headers).
 | `IsRaw` | bool | `!(LevelTooLow || LooksDebayered)` | |
 
 **`HistEqResult`** (`HistEqAnalyzer.cs`, mode `--histeq`). No verdict, no vote: a picture.
+`RainbowLut`, in the same file, is Siril's false-colour table, applied on demand to a one-layer
+raster and never stored in the result (ADR 0063).
 
 | Member | Unit | Meaning |
 | --- | --- | --- |

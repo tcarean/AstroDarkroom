@@ -2,10 +2,11 @@
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
 > CLAUDE.md nor a decision record says (ADR 0051): what Siril does, how `HistEqLut` mirrors it,
-> the two resolutions and the measured cost are ADR 0025; this note keeps the mechanics and the
-> reading of the picture. **Covers:** `Analysis/HistEqAnalyzer.cs` (`HistEqLut` by pointer, the
-> shrink and the channels in full), `Report/HistEqReport.cs`, `Runs/HistEqRun.cs`; the Siril
-> source it mirrors is quoted in `siril-histeq-source.md`.
+> the two resolutions and the measured cost are ADR 0025; the false colours are ADR 0063; this
+> note keeps the mechanics and the reading of the picture. **Covers:**
+> `Analysis/HistEqAnalyzer.cs` (`HistEqLut` and `RainbowLut` by pointer, the shrink and the
+> channels in full), `Report/HistEqReport.cs`, `Runs/HistEqRun.cs`; the Siril source it mirrors
+> is quoted in `siril-histeq-source.md`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -48,3 +49,35 @@ fainter (`HistEqReport.MasterVersusFrame()`).
 611 MB and `--expo` 3.2 s / 1.1 GB against the 2-3 s ADR 0025 records for this mode; loading
 dominates. The console's PNG is several times the residual map's size because equalised noise
 compresses badly.
+
+### The false colours (`--rainbow`, the "False colours" chip; ADR 0063)
+
+`RainbowLut` is Siril's 256-entry table, built once (`Table`, 768 bytes) and applied by
+`Colour(grey)` to a one-layer 8-bit raster, three bytes per pixel in the layout
+`PngWriter.Encode` and `RasterBitmaps.Rgb` take. Nothing coloured lives in `HistEqResult`:
+the console colours the shrunk raster in `HistEqRun.EncodeRainbow` (the `Mosaic` on CFA, the
+channel on mono), the window the full one in `HistEqTabViewModel.RefreshImage`, cached per
+(view, coloured) beside the grey bitmaps. The chip's state is `HistEqViewViewModel.Rainbow`;
+`RainbowAvailable` is false on the RGB composite, where the chip is disabled and the bitmap
+stays the plain composite while the legend still says why. The legend and the display line
+come from `HistEqReport` (`RainbowLegend`, `DisplayLine(r, rainbow)`), never from the
+view-model.
+
+**What the picture shows.** Bands of one hue are contours of equal rank, so the shape of the
+vignetting reads at a glance: on the Tokina tablet-and-paper master a rounded square, on the
+Samyang sky master round rings slightly off-centre (measured 2026-10-26, the pictures in ADR
+0063's context). The colours are ranks: the amplitude is as gone as in grey.
+
+**The shrunk mosaic uses the middle of the table only.** The console's picture on a CFA frame
+is the mosaic shrunk by `2k`: each block averages the ranks of three colour populations, and
+since the red population sits low in the single-layer histogram and the greens high, no block
+reaches 0 or 255. On the Tokina master the file runs from blue to yellow (157 of 256 colours
+used), not from magenta to red; the shape is as readable, the ends of the palette are not
+there. At 100 % in the window the mosaic shows the chequerboard in the full palette; a
+channel view is full-range in both.
+
+**Cost, measured on the Samyang 24 MP master** (Release, the view-model path, 2026-10-26):
+load and equalise 1.8 s with a 764 MB peak; the grey Mosaic bitmap takes the peak to 795 MB;
+colouring the Mosaic 62 ms and 868 MB (the 72 MB raster plus the bitmap); a channel 19 ms;
+with the Mosaic and all four channels coloured and cached, 958 MB. The cache is cleared on a
+new file, so that is the ceiling per file.

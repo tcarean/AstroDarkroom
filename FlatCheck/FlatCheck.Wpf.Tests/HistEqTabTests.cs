@@ -288,6 +288,69 @@ public class HistEqTabTests
     }
 
     /// <summary>
+    /// The "False colours" chip colours the one-layer views (Mosaic, a channel) through the
+    /// core's table, never the RGB composite, where it is unavailable and the plain picture
+    /// stays; the legend is shown while the chip is on. The coloured bitmaps are cached like the
+    /// grey ones, the chip survives a new file, and Reset clears it (ADR 0063).
+    /// </summary>
+    [Fact]
+    public async Task R104_TheFalseColoursChipColoursOneLayerViewsAndNotTheComposite()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
+        var vm = Attached(f);
+        vm.Selected = vm.Files[1];
+        await vm.RecomputeAsync();
+        var grey = (BitmapSource)vm.Image!;
+        Assert.False(vm.View.Rainbow);
+        Assert.True(vm.View.RainbowAvailable);
+        Assert.Equal("", vm.Legend);
+
+        vm.View.Rainbow = true;
+        var mosaic = (BitmapSource)vm.Image!;
+        Assert.NotSame(grey, mosaic);
+        Assert.Equal(PixelFormats.Rgb24, mosaic.Format);
+        Assert.Equal((grey.PixelWidth, grey.PixelHeight), (mosaic.PixelWidth, mosaic.PixelHeight));
+        Assert.Equal(HistEqReport.RainbowLegend(), vm.Legend);
+        // the first pixel is the table at the grey's first level: one channel 255, one 0
+        var px = new byte[3];
+        mosaic.CopyPixels(new System.Windows.Int32Rect(0, 0, 1, 1), px, 3, 0);
+        Assert.Equal(255, px.Max());
+        Assert.Equal(0, px.Min());
+
+        vm.View.Options.First(o => o.Label == "R").IsSelected = true;
+        var red = (BitmapSource)vm.Image!;
+        Assert.True(vm.View.RainbowAvailable);
+        Assert.Equal(PixelFormats.Rgb24, red.Format);
+        Assert.Equal((grey.PixelWidth / 2, grey.PixelHeight / 2), (red.PixelWidth, red.PixelHeight));
+
+        vm.View.Options.First(o => o.Label == "RGB").IsSelected = true;
+        Assert.False(vm.View.RainbowAvailable);
+        Assert.True(vm.View.Rainbow);                 // the choice is kept, only not applied
+        ImageSource rgbWhileOn = vm.Image!;
+        Assert.Equal(HistEqReport.RainbowLegend(), vm.Legend);
+        vm.View.Rainbow = false;
+        Assert.Same(rgbWhileOn, vm.Image);            // the plain composite either way
+        Assert.Equal("", vm.Legend);
+        vm.View.Rainbow = true;
+
+        vm.View.Options.First(o => o.Label == "Mozaic").IsSelected = true;
+        Assert.Same(mosaic, vm.Image);                // from the cache
+        vm.View.Rainbow = false;
+        Assert.Same(grey, vm.Image);
+
+        // a new file keeps the chip; Reset clears it
+        vm.View.Rainbow = true;
+        vm.Selected = vm.Files[0];
+        await vm.RecomputeAsync();
+        Assert.True(vm.View.Rainbow);
+        Assert.Equal(PixelFormats.Rgb24, ((BitmapSource)vm.Image!).Format);
+        vm.Reset();
+        Assert.False(vm.View.Rainbow);
+        Assert.Equal("", vm.Legend);
+    }
+
+    /// <summary>
     /// REQUIREMENT: a click on another file during a computation does not wait - it replaces
     /// it. Whichever of the two runs ends first, the last choice stays on the screen.
     /// </summary>

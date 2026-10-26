@@ -74,12 +74,15 @@ namespace FlatCheck.Wpf
         string _frame = "";
         string _channels = "";
         string _masterNote = "";
+        string _legend = "";
 
         /// <summary>The last result, so the views can be switched without re-reading the
         /// file.</summary>
         HistEqResult _last;
 
-        readonly Dictionary<HistEqViewOption, ImageSource> _cache = new();
+        /// <summary>One bitmap per view, grey and in false colours, made on first use. The
+        /// coloured mosaic of a 24 MP frame is 72 MB (ADR 0063 records the measured peak).</summary>
+        readonly Dictionary<(HistEqViewOption Option, bool Rainbow), ImageSource> _cache = new();
 
         /// <summary>An empty tab, listening to its view switch.</summary>
         public HistEqTabViewModel()
@@ -111,6 +114,10 @@ namespace FlatCheck.Wpf
 
         /// <summary>What the view on screen is and at what size.</summary>
         public string Caption { get => _caption; private set => Set(ref _caption, value); }
+
+        /// <summary>The legend of the false colours while the chip is on, from the core; ""
+        /// otherwise. On the RGB view it is the sentence that says the view is not coloured.</summary>
+        public string Legend { get => _legend; private set => Set(ref _legend, value); }
 
         /// <summary>What CANNOT be read from the picture. An instance property: {Binding} does
         /// not see a static one.</summary>
@@ -284,26 +291,34 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>Shows the chosen view's bitmap, made from the kept result on first use and
-        /// cached per chip, with its caption; nothing before a result.</summary>
+        /// cached per chip and colour, with its caption; nothing before a result. The false
+        /// colours apply to a one-layer view only (the core's table); the RGB composite stays
+        /// as it is with the chip on (ADR 0063).</summary>
         void RefreshImage()
         {
             HistEqResult r = _last;
             HistEqViewOption option = View.Selected;
             if (r == null || option == null) return;
 
-            if (!_cache.TryGetValue(option, out ImageSource bitmap))
+            bool coloured = View.Rainbow && View.RainbowAvailable;
+            if (!_cache.TryGetValue((option, coloured), out ImageSource bitmap))
             {
-                bitmap = option.Kind switch
+                bitmap = (option.Kind, coloured) switch
                 {
-                    HistEqViewKind.Channel => RasterBitmaps.Grey(r.Channels[option.Index].Full, r.FullW, r.FullH),
-                    HistEqViewKind.Mosaic => RasterBitmaps.Grey(r.MosaicFull, r.SourceW, r.SourceH),
+                    (HistEqViewKind.Channel, false) => RasterBitmaps.Grey(r.Channels[option.Index].Full, r.FullW, r.FullH),
+                    (HistEqViewKind.Channel, true) => RasterBitmaps.Rgb(RainbowLut.Colour(r.Channels[option.Index].Full), r.FullW, r.FullH),
+                    (HistEqViewKind.Mosaic, false) => RasterBitmaps.Grey(r.MosaicFull, r.SourceW, r.SourceH),
+                    (HistEqViewKind.Mosaic, true) => RasterBitmaps.Rgb(RainbowLut.Colour(r.MosaicFull), r.SourceW, r.SourceH),
+                    // the mono frame: its composite is the one grey channel three times
+                    (_, true) => RasterBitmaps.Rgb(RainbowLut.Colour(r.Channels[0].Full), r.FullW, r.FullH),
                     _ => RasterBitmaps.Rgb(r.CompositeFullRgb, r.FullW, r.FullH),
                 };
-                _cache[option] = bitmap;
+                _cache[(option, coloured)] = bitmap;
             }
 
             Image = bitmap;
             Caption = HistEqReport.ViewCaption(r, option.Key);
+            Legend = View.Rainbow ? HistEqReport.RainbowLegend() : "";
         }
 
         /// <inheritdoc/>
@@ -322,7 +337,9 @@ namespace FlatCheck.Wpf
             _cache.Clear();
             Image = null;
             Zoom.Reset();
+            View.Rainbow = false;      // after _last = null: the Changed it raises finds nothing to redraw
             Caption = "";
+            Legend = "";
             Frame = "";
             Channels = "";
             MasterNote = "";

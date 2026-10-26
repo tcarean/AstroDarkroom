@@ -45,9 +45,11 @@ namespace FlatCheck
         internal bool Expo;
         internal bool Sky;
 
-        // Mode 5: Siril's "Histogram" view. It has no verdict and no options of its own; -o
-        // is where the picture is written.
+        // Mode 5: Siril's "Histogram" view. It has no verdict; -o is where the picture is
+        // written, and --rainbow colours it with Siril's false-colour table (the one-layer
+        // view, ADR 0063). --rainbow alone is an error: it modifies this mode's picture only.
         internal bool Histeq;
+        internal bool Rainbow;
 
         // Mode 6: the smoothed flat. The value is the PATH of the FITS file to write -
         // explicit, with no default name: a mode that writes 96 MB beside the master must be
@@ -95,7 +97,7 @@ namespace FlatCheck
         internal string Error;
 
         static readonly HashSet<string> BoolFlags = new()
-        { "--light", "--expo", "--sky", "--histeq", "--lenses", "-h", "--help" };
+        { "--light", "--expo", "--sky", "--histeq", "--rainbow", "--lenses", "-h", "--help" };
 
         static readonly HashSet<string> ValueFlags = new()
         { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale",
@@ -128,6 +130,7 @@ namespace FlatCheck
                     else if (a == "--expo") o.Expo = true;
                     else if (a == "--sky") o.Sky = true;
                     else if (a == "--histeq") o.Histeq = true;
+                    else if (a == "--rainbow") o.Rainbow = true;
                     else if (a == "--lenses") o.Lenses = true;
                     continue;
                 }
@@ -220,6 +223,11 @@ namespace FlatCheck
                 return o.Fail(T("--smooth cannot write over the input file; give another path", "--smooth nu poate scrie peste fisierul de intrare; da alta cale"));
             if (o.Synthetic != null && SamePath(o.Synthetic, o.Image))
                 return o.Fail(T("--synthetic cannot write over the reference frame; give another path", "--synthetic nu poate scrie peste cadrul de referinta; da alta cale"));
+
+            // --rainbow modifies the --histeq picture and nothing else: alone it is a typo, and
+            // a plain picture written in silence would hide it (R-104).
+            if (o.Rainbow && !o.Histeq)
+                return o.Fail(T("--rainbow goes with --histeq: it colours that mode's picture", "--rainbow merge cu --histeq: coloreaza poza acelui mod"));
 
             // --sat 0 would make rng = 0 and every percentage would come out NaN/infinite
             double black = o.Black ?? 0.0;

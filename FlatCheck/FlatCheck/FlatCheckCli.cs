@@ -267,7 +267,7 @@ namespace FlatCheck
         /// <returns>Always 0.</returns>
         static int RunHisteq(Options o, TextWriter w)
         {
-            var run = HistEqRun.Execute(o.Image, w);
+            var run = HistEqRun.Execute(o.Image, w, o.Rainbow);
             SaveMap(o.OutPng, run.Png, w);
             return 0;
         }
@@ -436,6 +436,7 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <raw_flat.fit> --expo         # the same, on a raw FITS from Siril");
             w.WriteLine("  flatcheck <sky_flat.NEF> --expo --sky   # exposure for sky flats");
             w.WriteLine("  flatcheck <flat.NEF> --histeq -o <picture.png>   # Siril's \"Histogram\" view, per channel");
+            w.WriteLine("  flatcheck <flat.NEF> --histeq --rainbow -o <picture.png>   # the same in Siril's false colours (one layer)");
             w.WriteLine("  flatcheck <flat.fit> --smooth <smoothed.fit>     # smoothed flat: no texture, dust or spots");
             w.WriteLine("  flatcheck <reference.fit> --synthetic <synthetic.fit> --lens <text>   # synthetic flat from the lens profile");
             w.WriteLine("  flatcheck --lenses [--lens <text>]      # the lenses with a vignetting profile (Adobe on disk, lensfun/ beside the exe)");
@@ -460,6 +461,8 @@ namespace FlatCheck
             w.WriteLine();
             w.WriteLine("--histeq is a picture, not a test: every grey level gets the same number of pixels,");
             w.WriteLine("so it shows the shape of what is not uniform, not how large it is. Exits with 0 once written.");
+            w.WriteLine("--rainbow colours that picture with Siril's rainbow table (magenta = lowest level, red = highest):");
+            w.WriteLine("the mosaic on a CFA frame, the channel on mono. The colours are ranks, not values.");
             w.WriteLine();
             w.WriteLine("--smooth writes a second master that keeps everything smooth and removes the diffuser's");
             w.WriteLine("texture, the dust and the spots. It gives no verdict; it reports WHAT IT REMOVED, and writes the map");
@@ -485,6 +488,7 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <flat_brut.fit> --expo        # idem, pe un FITS brut din Siril");
             w.WriteLine("  flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer");
             w.WriteLine("  flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea \"Histogram\" din Siril, pe canale");
+            w.WriteLine("  flatcheck <flat.NEF> --histeq --rainbow -o <poza.png>   # la fel, in culorile false din Siril (un strat)");
             w.WriteLine("  flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fara textura, praf, pete");
             w.WriteLine("  flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului");
             w.WriteLine("  flatcheck --lenses [--lens <text>]      # obiectivele cu profil de vignetare (Adobe de pe disc, lensfun/ de langa exe)");
@@ -509,6 +513,8 @@ namespace FlatCheck
             w.WriteLine();
             w.WriteLine("--histeq e o poza, nu un test: fiecare nivel de gri primeste acelasi numar de pixeli,");
             w.WriteLine("deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.");
+            w.WriteLine("--rainbow coloreaza poza cu tabelul rainbow din Siril (magenta = nivelul cel mai jos, rosu = cel mai sus):");
+            w.WriteLine("mozaicul pe un cadru CFA, canalul pe mono. Culorile sunt ranguri, nu valori.");
             w.WriteLine();
             w.WriteLine("--smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura");
             w.WriteLine("difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta");

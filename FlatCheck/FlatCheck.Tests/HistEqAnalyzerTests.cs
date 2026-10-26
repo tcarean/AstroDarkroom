@@ -76,6 +76,46 @@ public class HistEqAnalyzerTests
     public void RoundToByte_IsSirilsRoundToByte(double x, byte expected)
         => Assert.Equal(expected, HistEqLut.RoundToByte(x));
 
+    // ---------------------------------------------------------------- the rainbow table
+
+    /// <summary>
+    /// Hand-computed against Siril 1.4.4's make_index_for_rainbow + hsv_to_rgb: the hue runs
+    /// from 300 degrees at level 0 down to 0 at level 255, saturation and value 1, integer
+    /// sectors, round_to_BYTE. Level 0 is magenta, not black; the in-between levels pin the
+    /// sector arithmetic (1 -> 250,0,255; 64 -> 0,65,255; 128 -> 0,255,125; 254 -> 255,5,0).
+    /// </summary>
+    [Theory]
+    [InlineData(0, 255, 0, 255)]
+    [InlineData(1, 250, 0, 255)]
+    [InlineData(51, 0, 0, 255)]
+    [InlineData(64, 0, 65, 255)]
+    [InlineData(102, 0, 255, 255)]
+    [InlineData(128, 0, 255, 125)]
+    [InlineData(153, 0, 255, 0)]
+    [InlineData(204, 255, 255, 0)]
+    [InlineData(254, 255, 5, 0)]
+    [InlineData(255, 255, 0, 0)]
+    public void R104_TheRainbowTableIsSirils(int level, byte r, byte g, byte b)
+    {
+        Assert.Equal((r, g, b), RainbowLut.Of(level));
+        Assert.Equal(new[] { r, g, b }, RainbowLut.Table.Skip(level * 3).Take(3));
+    }
+
+    /// <summary>
+    /// Colouring is the table at every pixel, three bytes per pixel in RGB order: a 256-level
+    /// ramp comes out as the table itself, and a few picked levels land where they should.
+    /// </summary>
+    [Fact]
+    public void R104_AColouredRasterIsTheTableAtEveryPixel()
+    {
+        byte[] ramp = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
+
+        Assert.Equal(RainbowLut.Table, RainbowLut.Colour(ramp));
+        Assert.Equal(768, RainbowLut.Table.Length);
+        Assert.Equal(new byte[] { 255, 0, 255, 255, 0, 0, 0, 0, 255 },
+                     RainbowLut.Colour(new byte[] { 0, 255, 51 }));
+    }
+
     /// <summary>A uniform distribution equalises to itself: the ramp comes out linear.</summary>
     [Fact]
     public void AUniformRampComesOutAsALinearRamp()

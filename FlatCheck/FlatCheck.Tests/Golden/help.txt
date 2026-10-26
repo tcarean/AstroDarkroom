@@ -10,6 +10,7 @@ Utilizare:
   flatcheck <flat_brut.fit> --expo        # idem, pe un FITS brut din Siril
   flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer
   flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea "Histogram" din Siril, pe canale
+  flatcheck <flat.NEF> --histeq --rainbow -o <poza.png>   # la fel, in culorile false din Siril (un strat)
   flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fara textura, praf, pete
   flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului
   flatcheck --lenses [--lens <text>]      # obiectivele cu profil de vignetare (Adobe de pe disc, lensfun/ de langa exe)
@@ -34,6 +35,8 @@ fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.
 
 --histeq e o poza, nu un test: fiecare nivel de gri primeste acelasi numar de pixeli,
 deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.
+--rainbow coloreaza poza cu tabelul rainbow din Siril (magenta = nivelul cel mai jos, rosu = cel mai sus):
+mozaicul pe un cadru CFA, canalul pe mono. Culorile sunt ranguri, nu valori.
 
 --smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura
 difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta

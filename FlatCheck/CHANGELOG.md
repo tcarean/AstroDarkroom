@@ -8,6 +8,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- False colours for the `--histeq` picture, after Siril 1.4.4's rainbow table (R-104, ADR
+  0063): `--rainbow` beside `--histeq` writes the mosaic (or the mono channel) coloured from
+  magenta at the lowest level to red at the highest, and prints the legend; the window's
+  Histogram tab gets a "False colours" chip beside the view chips, on the Mosaic, the channel
+  and the mono views, never on RGB. The colours are ranks, not values. `--rainbow` without
+  `--histeq` is an error.
 - The console speaks English or Romanian, chosen by `--lang en|ro` (or `--lang=ro`), anywhere
   on the line; English when it is not given (R-100, ADR 0062). The usage, the parse errors, the
   reports, the verdict words (`REDO` for `REFA`, `GOOD` for `BUN`...), the refusals and the

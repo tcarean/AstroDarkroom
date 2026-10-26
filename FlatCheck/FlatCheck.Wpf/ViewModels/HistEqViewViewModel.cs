@@ -87,6 +87,7 @@ namespace FlatCheck.Wpf
     {
         IReadOnlyList<HistEqViewOption> _options = Array.Empty<HistEqViewOption>();
         HistEqViewOption _selected;
+        bool _rainbow;
 
         /// <summary>
         /// The list is REPLACED on every run, not cleared and refilled - the same reason as
@@ -108,6 +109,24 @@ namespace FlatCheck.Wpf
 
         /// <summary>A single chip has nothing to switch, so the row is not shown.</summary>
         public bool IsVisible => _options.Count > 1;
+
+        /// <summary>
+        /// The "False colours" chip: Siril's rainbow table over the one-layer views. Off by
+        /// default, kept across rebuilds (a new file) and view changes; a change raises
+        /// <see cref="Changed"/>, and the tab decides what it applies to (ADR 0063).
+        /// </summary>
+        public bool Rainbow
+        {
+            get => _rainbow;
+            set { if (Set(ref _rainbow, value)) Changed?.Invoke(); }
+        }
+
+        /// <summary>
+        /// Whether the chosen view is one layer the table can colour: the mosaic, a position,
+        /// or the mono frame. False on the RGB composite, where the chip is disabled.
+        /// </summary>
+        public bool RainbowAvailable
+            => _selected != null && (_selected.Kind != HistEqViewKind.Composite || _selected.Key == "mono");
 
         /// <summary>The view changed: the tab re-encodes from the result it holds.</summary>
         internal event Action Changed;
@@ -143,6 +162,7 @@ namespace FlatCheck.Wpf
             _selected = pick;
             pick.IsSelected = true;
             Raise(nameof(Selected));
+            Raise(nameof(RainbowAvailable));
         }
 
         /// <summary>Makes the option the chosen one, unticks the others and raises
@@ -160,6 +180,7 @@ namespace FlatCheck.Wpf
                 if (!ReferenceEquals(o, option)) o.Unselect();
 
             Selected = option;
+            Raise(nameof(RainbowAvailable));
             Changed?.Invoke();
         }
     }
