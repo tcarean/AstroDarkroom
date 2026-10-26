@@ -593,6 +593,34 @@ public class DarkSeriesTests
     }
 
     [Fact]
+    public void R080_TheFirstParagraphSaysWhenTheCameraIsNotInTheTable()
+    {
+        // a camera the table does not know (ADR 0023): the electroni row says so, and now the first paragraph too
+        using SessionFixture canon = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, Camera = "Canon EOS 6D" });
+        DarkSeriesResult r = Run(canon);
+        Assert.Equal("necunoscut pentru Canon EOS 6D: cat valoreaza 1 ADU in electroni nu e in tabelul aplicatiei", ScaleReport.Rows(r).Single(x => x.Label == "electroni").Value);
+        Assert.EndsWith(" Aparatul Canon EOS 6D nu e in tabelul aplicatiei, deci nicio cifra de aici nu e data in electroni, iar full well-ul si zgomotul de citire din sursa lipsesc.", ScaleReport.Paragraphs(r)[0], StringComparison.Ordinal);
+        Assert.Equal("NEMASURAT: fara bias-uri", ScaleReport.Rows(r).Single(x => x.Label == "zgomot de citire").Value);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.EndsWith(" Canon EOS 6D is not in the application's table, so no figure of this section is given in electrons, and the source's full well and read noise are missing.", ScaleReport.Paragraphs(r)[0], StringComparison.Ordinal);
+        }
+
+        // no readable dark names the camera
+        using SessionFixture unnamed = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, Camera = null });
+        DarkSeriesResult r2 = Run(unnamed);
+        Assert.EndsWith(" Cadrele nu spun aparatul, deci nicio cifra de aici nu e data in electroni, iar full well-ul si zgomotul de citire din sursa lipsesc.", ScaleReport.Paragraphs(r2)[0], StringComparison.Ordinal);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Contains(" The frames do not name the camera, so no figure", ScaleReport.Paragraphs(r2)[0], StringComparison.Ordinal);
+        }
+
+        // the D3300 gets no such sentence
+        using SessionFixture nikon = new SessionFixture().WithDarkSeries(4, Plain);
+        Assert.EndsWith("pentru ca zgomotul amesteca treptele.", ScaleReport.Paragraphs(Run(nikon))[0], StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R029_ASeriesThatDidNotWarmLeavesTheSplitUnmeasured()
     {
         // the same constant edge, the hot pixels at the same amplitude in every frame: the ratios span only their noise

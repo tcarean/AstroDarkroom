@@ -28,7 +28,7 @@ is not part of the suite: build it from this folder, as "Building" says below.
 What it needs: Windows 10 or 11, x64, and memory: a session of 20 darks, 30 biases and 32 lights
 of 24 MP takes up to 6 GB. The published executables are self-contained, so there is nothing
 else to install, no .NET and no Siril. It reads camera raws (`.nef`, `.cr2`, `.cr3`,
-`.arw`, `.dng`, `.raf`) through LibRaw, and FITS files. Its thresholds and figures were measured
+`.arw`, `.dng`, `.raf`, `.pef`) through LibRaw, and FITS files. Its thresholds and figures were measured
 on a Nikon D3300 only, and the electrons of the ADU scale are known for the D3300 alone.
 
 ## The folder you give it
@@ -344,7 +344,9 @@ The electrons come from a published source, not from a measurement of the progra
 photonstophotos.net (Bill Claff), from the DxOMark curves, for the Nikon D3300 (gain 2.07 e-/ADU
 at ISO 400 and 0.53 at ISO 1600, full well 34446 e-, QE 56 %), with the source's warning that its
 method overestimates the gain on small sensors. For another camera the row reads
-`unknown for <camera>`.
+`unknown for <camera>`, and the first paragraph ends by saying that the camera is not in the
+application's table, so no figure of the section is in electrons and the source's full well and
+read noise are missing.
 
 ### Comparing with a partner: `--against`
 

@@ -36,10 +36,14 @@ namespace DarksCheck.Core;
 /// or null.
 /// </param>
 /// <param name="PixelSizeUm">The pixel pitch in micrometres, or null.</param>
-/// <param name="NikonLensId">The Nikon lens ID from the maker notes, or null.</param>
-/// <param name="LensMinFocalMm">The lens's shortest focal length in mm, from the maker notes, or
+/// <param name="LensId">The lens ID as the raw carries it, whichever the mount (Nikon's own
+/// number on a Nikon body, the maker's lens type elsewhere; ADR 0023), or null.</param>
+/// <param name="LensMount">The camera's mount as libraw names it (`Nikon F`, `Canon EF`), or
 /// null.</param>
-/// <param name="LensMaxFocalMm">The lens's longest focal length in mm, from the maker notes, or
+/// <param name="LensName">The lens's name as the camera wrote it (EXIF LensModel), or null.</param>
+/// <param name="LensMinFocalMm">The lens's shortest focal length in mm, from libraw, or
+/// null.</param>
+/// <param name="LensMaxFocalMm">The lens's longest focal length in mm, from libraw, or
 /// null.</param>
 /// <param name="LensMaxAperture">The lens's widest aperture (f-number) at its shortest focal
 /// length, or null.</param>
@@ -55,7 +59,9 @@ internal sealed record FrameInfo(
     double? Iso,
     DateTime? Timestamp,
     double? PixelSizeUm,
-    long? NikonLensId,
+    long? LensId,
+    string? LensMount,
+    string? LensName,
     double? LensMinFocalMm,
     double? LensMaxFocalMm,
     double? LensMaxAperture,
@@ -74,7 +80,7 @@ internal sealed record FrameInfo(
     {
         ArgumentNullException.ThrowIfNull(f);
         return new FrameInfo(index, path, f.Camera, f.FocalMm, f.FNumber, f.ExposureSeconds, f.Iso,
-            f.Timestamp, f.PixelSizeUm, f.NikonLensId, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
+            f.Timestamp, f.PixelSizeUm, f.LensId, f.LensMount, f.LensName, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
     }
 
     /// <summary>
@@ -94,7 +100,7 @@ internal sealed record FrameInfo(
             // header, not an error; for a frame that is one nothing can be said about (ADR 0003).
             if (FitsReader.IsFitsPath(path) && f.Header.Count == 0)
             {
-                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
+                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
             }
 
             return From(index, path, f);
@@ -103,7 +109,7 @@ internal sealed record FrameInfo(
         {
             // Anything the file makes the readers throw, libraw's own exception type included,
             // is this frame's error, never the run's: the other frames are still listed.
-            return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, e.Message);
+            return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, e.Message);
         }
     }
 }

@@ -6,6 +6,19 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Added
+
+- `.pef` (Pentax) is a raw extension, and the lens of a raw of any make is read as FlatCheck
+  reads it since its ADR 0068 (R-002, R-008, ADR 0023): the maker's lens ID by mount (Nikon's
+  own field on a Nikon body, the MakerNote's on Canon, Sony, Pentax and the rest), the mount's
+  name, the lens's name as the camera wrote it and its range. The frames' metadata carry
+  `LensId`, `LensMount` and `LensName` where they carried the Nikon ID alone; nothing prints
+  them yet.
+
+- The first paragraph of `ADU SCALE EXPLAINED` says when the camera is not in the application's
+  table, so no figure of the section is in electrons and the source's full well and read noise
+  are missing (R-080, ADR 0023); until now only the `electrons` row said so.
+
 ### Changed
 
 - `README.md`, the user guide, and `THIRD-PARTY-NOTICES.md` are in English (ADR 0022). The

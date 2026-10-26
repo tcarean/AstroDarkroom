@@ -34,6 +34,9 @@ internal sealed class SyntheticDark
     internal IReadOnlyList<(int X, int Y, double Adu)> Hot { get; init; } = [];
     internal Func<int, int, double>? Extra { get; init; }
 
+    /// <summary>The INSTRUME card; null leaves it out, as a FITS that does not name its camera.</summary>
+    internal string? Camera { get; init; } = "NIKON D3300";
+
     /// <summary>Five hot pixels, one per level of <c>Th.HotLevelsAdu</c>: 15, 30, 60, 150 and 600 ADU above the pedestal.</summary>
     internal static readonly IReadOnlyList<(int X, int Y, double Adu)> OnePerLevel = [(10, 10, 15), (21, 20, 30), (30, 31, 60), (41, 41, 150), (50, 50, 600)];
 
@@ -57,7 +60,7 @@ internal sealed class SyntheticDark
             field[y * Width + x] += adu * HotFactor;
         }
 
-        string[] cards = [.. SessionFixture.Cards(start, exposure, iso), .. FitsTestData.BayerCards("RGGB")];
+        string[] cards = [.. SessionFixture.Cards(start, exposure, iso, Camera), .. FitsTestData.BayerCards("RGGB")];
         return FitsTestData.BuildFits(Width, Height, (x, y) => Math.Clamp(Math.Round(Pedestal + field[y * Width + x] + (Extra?.Invoke(x, y) ?? 0)), 0, 65535), bitpix: 16, extraCards: cards);
     }
 }
