@@ -243,10 +243,15 @@ downloads. It gives `siril-cli` a private copy of your Siril settings, so your o
 FlatCheck compares the vignetting of a master flat with the lens's published profile, and its
 Synthetic tab builds a flat from that profile. It ships with one source of profiles, the lensfun
 database (the `lensfun\` folder beside its executable). It also reads Adobe's lens profiles,
-`.lcp` files, when an Adobe program has installed them in one of the two folders Camera Raw uses:
+`.lcp` files, when an Adobe program has installed them in one of these folders:
 
-- `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0`, Adobe's own profiles;
-- `%APPDATA%\Adobe\CameraRaw\LensProfiles`, the profiles you add yourself.
+- `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0`, Adobe's own profiles as Camera Raw and the
+  DNG Converter install them;
+- `%APPDATA%\Adobe\CameraRaw\LensProfiles`, the profiles you add yourself;
+- `C:\Program Files\Adobe\<app>\Resources\LensProfiles\1.0`, the copy Lightroom Classic and
+  Lightroom keep inside their own program folder.
+
+A file present in two of them is read once.
 
 Installing them is recommended but optional. Without them everything works, and the list of
 lenses holds the lensfun profiles only; with them, the vignetting check and the synthetic flat
@@ -256,7 +261,7 @@ also have Adobe's profile of your lens. The Adobe programs that bring the profil
 | --- | --- | --- |
 | [Adobe DNG Converter](https://helpx.adobe.com/camera-raw/using/adobe-dng-converter.html) | free | yes |
 | Adobe Camera Raw, the raw plug-in installed with Photoshop | subscription | yes |
-| Adobe Lightroom Classic, Adobe Lightroom | subscription | no: each keeps its copy inside its own program folder, such as `C:\Program Files\Adobe\Adobe Lightroom Classic\Resources\LensProfiles\1.0`, which FlatCheck does not read |
+| Adobe Lightroom Classic, Adobe Lightroom | subscription | yes: each keeps its copy inside its own program folder, such as `C:\Program Files\Adobe\Adobe Lightroom Classic\Resources\LensProfiles\1.0`, which FlatCheck reads |
 
 The simplest way is the free Adobe DNG Converter: install it once and the profiles stay where
 FlatCheck finds them; you never need to run the converter itself. FlatCheck only reads the
