@@ -59,6 +59,11 @@
 // grey, and the "mosaic" - the whole frame equalised as a single layer, that is literally Siril
 // on an undebayered file, the way it opens a raw by default. On mono, a single view.
 //
+// THE FALSE COLOURS. Siril's color-map toggle (RainbowLut) is a 256-entry hue table applied to
+// the equalised 8-bit layer, after the LUT. It is applied to a one-layer raster only - the
+// mosaic, a position, the mono frame - on demand: the console colours the shrunk raster, the
+// window the whole one; nothing coloured is kept in the result (ADR 0063).
+//
 // TWO RESOLUTIONS. Every raster exists both whole (Full, MosaicFull, CompositeFullRgb),
 // for the window, which shows it directly as a bitmap - at 100 % a screen pixel is a
 // sensor pixel - and shrunk by Img.Prepare's rule, for the console's PNG and
@@ -168,6 +173,19 @@ namespace FlatCheck
         internal byte[] MosaicFull;
 
         internal int ChannelCount => Channels.Length;
+
+        /// <summary>
+        /// The raster the false colours go on when no channel is chosen: the mosaic on a CFA
+        /// frame (the whole frame as one layer, Siril on an undebayered file), the one channel
+        /// on mono. The console writes it shrunk, the window shows it whole; both ask here, so
+        /// the rule lives once (ADR 0063).
+        /// </summary>
+        /// <param name="full">True for the full-resolution raster, false for the shrunk one.</param>
+        /// <returns>The grey raster and its width and height.</returns>
+        internal (byte[] Grey, int W, int H) OneLayer(bool full)
+            => IsCfa
+                ? (full ? (MosaicFull, SourceW, SourceH) : (Mosaic, W, H))
+                : (full ? (Channels[0].Full, FullW, FullH) : (Channels[0].Equalised, W, H));
     }
 
     /// <summary>
@@ -272,6 +290,81 @@ namespace FlatCheck
                 lut.Table[i] = RoundToByte(cum / n * 255.0);
             }
             return lut;
+        }
+    }
+
+    /// <summary>
+    /// Siril 1.4.4's false-colour table (<c>make_index_for_rainbow</c> and <c>hsv_to_rgb</c>
+    /// in its source, quoted in docs/design/siril-histeq-source.md): 256 levels, the hue from
+    /// 300 degrees at level 0 down to 0 at level 255, saturation and value 1, so level 0 is
+    /// magenta, 51 blue, 102 cyan, 153 green, 204 yellow and 255 red. It colours an equalised
+    /// one-layer raster, after the equalisation; never the RGB composite (ADR 0063).
+    /// </summary>
+    internal static class RainbowLut
+    {
+        /// <summary>The table: 768 bytes, R, G, B of level 0, then of level 1, and so on.</summary>
+        internal static readonly byte[] Table = Build();
+
+        /// <summary>Builds the table level by level, exactly as Siril's loop does.</summary>
+        /// <returns>768 bytes, R, G, B per level.</returns>
+        static byte[] Build()
+        {
+            var t = new byte[256 * 3];
+            const double off = 300.0 / 360.0;   // Siril: "Arbitrary: we want h from 300 to 0 deg"
+            for (int i = 0; i < 256; i++)
+            {
+                double h = off - i * (off / 255.0);
+                var (r, g, b) = HsvToRgb(h, 1.0, 1.0);
+                t[i * 3] = HistEqLut.RoundToByte(r * 255.0);
+                t[i * 3 + 1] = HistEqLut.RoundToByte(g * 255.0);
+                t[i * 3 + 2] = HistEqLut.RoundToByte(b * 255.0);
+            }
+            return t;
+        }
+
+        /// <summary>
+        /// Siril's <c>hsv_to_rgb</c> (src/algos/colors.c): six integer sectors with the usual
+        /// p, q, t; the sector is the truncated hue, as in the C.
+        /// </summary>
+        /// <param name="h">The hue as a fraction of a turn, 0..1; 1 wraps to 0.</param>
+        /// <param name="s">The saturation, 0..1.</param>
+        /// <param name="v">The value, 0..1.</param>
+        /// <returns>R, G and B, each 0..1.</returns>
+        static (double R, double G, double B) HsvToRgb(double h, double s, double v)
+        {
+            if (h >= 1.0) h -= 1.0;
+            h *= 6.0;
+            int i = (int)h;
+            double f = h - i;
+            double p = v * (1.0 - s);
+            double q = v * (1.0 - s * f);
+            double t = v * (1.0 - s * (1.0 - f));
+            return i switch
+            {
+                0 => (v, t, p),
+                1 => (q, v, p),
+                2 => (p, v, t),
+                3 => (p, q, v),
+                4 => (t, p, v),
+                _ => (v, p, q),
+            };
+        }
+
+        /// <summary>Colours a grey raster through the table, pixel by pixel.</summary>
+        /// <param name="grey">Grey levels, row by row.</param>
+        /// <returns>Three bytes per pixel, R, G, B, in the same order: the layout
+        /// <see cref="PngWriter.Encode"/> and the window's RGB bitmap take.</returns>
+        internal static byte[] Colour(byte[] grey)
+        {
+            var rgb = new byte[grey.Length * 3];
+            for (int i = 0, o = 0; i < grey.Length; i++, o += 3)
+            {
+                int k = grey[i] * 3;
+                rgb[o] = Table[k];
+                rgb[o + 1] = Table[k + 1];
+                rgb[o + 2] = Table[k + 2];
+            }
+            return rgb;
         }
     }
 

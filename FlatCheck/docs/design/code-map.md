@@ -358,7 +358,8 @@ a library extraction and not a copy is ADR 0011.
     whether that is the user's sensor - `SyntheticReport.FormatMatch` (ADR 0029).
     `HistEqViewViewModel` is the fourth, on the Histogram tab, and the only one
     whose option list depends on the result (six chips on a CFA frame, `Mozaic` first and
-    default, one on mono). `ImageZoomViewModel` beside it holds the zoom *state* - fit or
+    default, one on mono); it also holds the false-colours checkbox (`Rainbow`,
+    `RainbowAvailable` = the chosen option's `IsOneLayer`; ADR 0063). `ImageZoomViewModel` beside it holds the zoom *state* - fit or
     a factor, plus the effective factor the control writes back - so a test can drive it
     and the tab can reset it on a new file (and deliberately not on a chip change).
     `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
@@ -684,12 +685,15 @@ from the FITS headers).
 | `IsRaw` | bool | `!(LevelTooLow || LooksDebayered)` | |
 
 **`HistEqResult`** (`HistEqAnalyzer.cs`, mode `--histeq`). No verdict, no vote: a picture.
+`RainbowLut`, in the same file, is Siril's false-colour table, applied on demand to a one-layer
+raster and never stored in the result (ADR 0063).
 
 | Member | Unit | Meaning |
 | --- | --- | --- |
 | `IsCfa`, `CfaSpread`, `Cfa` | as in `ExposureResult` | |
 | `SourceH`, `SourceW` | sensor pixels | the input frame |
 | `Shrink` | factor; 1 = not shrunk | how much each channel was reduced for the console's PNG |
+| `OneLayer(full)` | grey raster, width, height | the mosaic on CFA, the channel on mono: what the false colours go on when no channel is chosen, shrunk for the console or whole for the window (ADR 0063) |
 | `Channels` | `HistEqChannel[]`, 4 on CFA, 1 on mono | per channel: `Position`, `Label`, `Colour`; `H`, `W` and `Equalised` (shrunk grey raster, bytes); `FullH`, `FullW` and `Full` (full-resolution grey raster the window shows); `Min`, `Max` (input range of the non-zero pixels, file units); `NonZero` (pixel count in the histogram); `LevelsUsed` (of the 256 output levels) |
 | `H`, `W` | shrunk pixels | common size of every shrunk view |
 | `CompositeRgb` | bytes, `H * W * 3` | RGB on a CFA with known order, triplicated grey otherwise |

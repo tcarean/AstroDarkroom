@@ -701,6 +701,22 @@ namespace FlatCheck.Wpf
                "Aceeasi poza, un singur canal, in gri. Utile cand compozitul e greu de citit "
              + "sau cand vrei sa vezi daca o forma e in toate canalele sau doar intr-unul.")),
 
+            (T("the False colours chip",
+               "chipul Culori false"),
+             T("Siril's rainbow table over the view on screen: the hue runs from magenta at the lowest "
+             + "level through blue, cyan, green and yellow to red at the highest, so bands of one "
+             + "colour are contours of equal rank and the SHAPE of the vignetting - round, off-centre, "
+             + "square - reads at a glance. The colours are ranks, not values: the amplitude is still "
+             + "gone. It applies to one layer - Mosaic, a channel, mono - never to the RGB view, where "
+             + "the chip is greyed out. The chip stays on when you change the view or the file.",
+               "Tabelul rainbow din Siril peste vederea de pe ecran: nuanta merge de la magenta la nivelul "
+             + "cel mai jos, prin albastru, cyan, verde si galben, pana la rosu la cel mai sus, deci "
+             + "benzile de o culoare sunt contururi de rang egal si FORMA vignetarii - rotunda, "
+             + "descentrata, patrata - se citeste dintr-o privire. Culorile sunt ranguri, nu valori: "
+             + "amplitudinea tot lipseste. Se aplica pe un singur strat - Mozaic, un canal, mono - "
+             + "niciodata pe vederea RGB, unde chipul e dezactivat. Chipul ramane bifat cand schimbi "
+             + "vederea sau fisierul.")),
+
             (T("zoom and pan",
                "zoom si deplasare"),
              T("The wheel zooms around the cursor, dragging with the mouse pans, "

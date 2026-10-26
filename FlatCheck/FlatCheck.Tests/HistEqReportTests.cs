@@ -92,6 +92,40 @@ public class HistEqReportTests
         Assert.NotEqual(HistEqReport.MasterVersusFrame(), s);
     }
 
+    /// <summary>
+    /// With false colours the display line says so and the legend follows the table's order:
+    /// magenta first, red last. Without them neither appears.
+    /// </summary>
+    [Fact]
+    public void R104_WithFalseColoursTheDisplayLineAndTheLegendSaySo()
+    {
+        var r = HistEqAnalyzer.Analyze(TestImages.FlatCfa(32, 32, 1000), null);
+        var w = new StringWriter();
+
+        HistEqReport.Write(r, "raw.fit", w, rainbow: true);
+        string text = w.ToString();
+        string legend = HistEqReport.RainbowLegend();
+
+        Assert.Contains("culori false", HistEqReport.DisplayLine(r, rainbow: true));
+        Assert.DoesNotContain("culori false", HistEqReport.DisplayLine(r, rainbow: false));
+        Assert.Contains("culori false", text);
+        Assert.Contains(legend, text);
+        Assert.DoesNotContain(legend, Written(r));
+        Assert.True(legend.IndexOf("magenta") < legend.IndexOf("rosu"), legend);
+        // the RGB sentence is the window's alone: the console writes one layer and has no RGB view
+        Assert.DoesNotContain("RGB", legend);
+        Assert.DoesNotContain(HistEqReport.RainbowNotOnRgb(), text);
+        Assert.Contains("RGB", HistEqReport.RainbowNotOnRgb());
+        Assert.NotEqual(legend, HistEqReport.RainbowNotOnRgb());
+        using (Ui.Use(UiLanguage.English))
+        {
+            string en = HistEqReport.RainbowLegend();
+            Assert.True(en.IndexOf("magenta") < en.IndexOf("red"), en);
+            Assert.Contains("false colours", HistEqReport.DisplayLine(r, rainbow: true));
+            Assert.Contains("RGB", HistEqReport.RainbowNotOnRgb());
+        }
+    }
+
     [Fact]
     public void AnAllZeroChannelIsReportedAsSuch()
     {
