@@ -9,7 +9,7 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 ### Changed
 
 - The READMEs say that FlatCheck reads Lightroom Classic's and Lightroom's own profile folders
-  too (FlatCheck ADR 0065): the root README's Lightroom row says "yes" and names
+  too (FlatCheck ADR 0066): the root README's Lightroom row says "yes" and names
   `C:\Program Files\Adobe\<app>\Resources\LensProfiles\1.0`.
 
 ### Added

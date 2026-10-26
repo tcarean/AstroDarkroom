@@ -1,4 +1,4 @@
-# 0065. Lightroom's own lens-profile folders are read too, each relative name once, first folder wins
+# 0066. Lightroom's own lens-profile folders are read too, each relative name once, first folder wins
 
 Date: 2026-10-26
 Status: accepted 2026-10-26

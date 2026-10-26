@@ -316,7 +316,7 @@ public class LensProfileReaderTests
     /// come from the first folder; a file only the second folder has is still found.
     /// </summary>
     [Fact]
-    public void R106_Locate_ReadsTheSameRelativeNameOnceFromTheFirstFolder()
+    public void R107_Locate_ReadsTheSameRelativeNameOnceFromTheFirstFolder()
     {
         using var ws = new TempWorkspace();
         string first = Path.Combine(ws.Dir, "first");
@@ -353,7 +353,7 @@ public class LensProfileReaderTests
     /// Resources\LensProfiles\1.0 folder, in ordinal order; a missing root gives none.
     /// </summary>
     [Fact]
-    public void R106_AdobeAppDirectories_AreTheExistingProfileFoldersInOrdinalOrder()
+    public void R107_AdobeAppDirectories_AreTheExistingProfileFoldersInOrdinalOrder()
     {
         using var ws = new TempWorkspace();
         string root = Path.Combine(ws.Dir, "Adobe");
@@ -376,7 +376,7 @@ public class LensProfileReaderTests
     /// Windows layout.
     /// </summary>
     [Fact]
-    public void R106_DefaultAdobeDirectories_StartWithCameraRawThenTheProgramFilesApps()
+    public void R107_DefaultAdobeDirectories_StartWithCameraRawThenTheProgramFilesApps()
     {
         if (!OperatingSystem.IsWindows()) return;
         var dirs = ProfileLocator.DefaultAdobeDirectories();
@@ -395,7 +395,7 @@ public class LensProfileReaderTests
 
     /// <summary>The summary names the skipped copies only when there are any, in both languages.</summary>
     [Fact]
-    public void R106_SourcesSummary_NamesTheDuplicatesSkippedOnlyWhenThereAreAny()
+    public void R107_SourcesSummary_NamesTheDuplicatesSkippedOnlyWhenThereAreAny()
     {
         static ProfileSources Sources(int duplicates)
             => new(new[] { "x" }, 10, 0, duplicates, "lf", false, null, LensCatalog.Empty, LensfunData.Empty);

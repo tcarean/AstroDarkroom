@@ -10,7 +10,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - Lightroom Classic's and Lightroom's own lens-profile folders,
   `C:\Program Files\Adobe\<app>\Resources\LensProfiles\1.0`, are read too, after the two Camera
-  Raw folders (R-106, ADR 0065): a Lightroom-only installation now fills the Adobe half of the
+  Raw folders (R-107, ADR 0066): a Lightroom-only installation now fills the Adobe half of the
   list, and the 102 files (72 lenses) Lightroom has beyond the DNG Converter's are listed. A file
   present in two folders is read once, from the first; the sources summary says how many
   copies were skipped.

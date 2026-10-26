@@ -172,7 +172,7 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   `ByLensId(id, hint)`, which parses in parallel only the stubs whose mount or maker contains
   the hint (the camera's first word). Aliases therefore enter `Search` only after a file was
   parsed.
-- **The folders** (`ProfileLocator`, ADR 0028 and ADR 0065): `DefaultAdobeDirectories` is the
+- **The folders** (`ProfileLocator`, ADR 0028 and ADR 0066): `DefaultAdobeDirectories` is the
   Camera Raw folder under ProgramData, the user's under `%APPDATA%`, then
   `AdobeAppDirectories(Program Files\Adobe)`, the `Resources\LensProfiles\1.0` of every
   application folder that has one, in ordinal order (Lightroom CC before Lightroom Classic);
@@ -403,7 +403,7 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   suffix and 638 carry no parentheses; `lensfun/update-lensfun.py` refreshes `data/db` and
   rewrites `LENSFUN-VERSION.txt`.
 - **The three Adobe folders on the author's machine, 2026-10-26** (the measurement behind ADR
-  0065): `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` holds 3531 files (446 MB, folder
+  0066): `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` holds 3531 files (446 MB, folder
   created 2026-04-16 by the DNG Converter 18.3, newest file 2026-06-04); `Adobe Lightroom
   Classic\Resources\LensProfiles\1.0` and `Adobe Lightroom CC\...\1.0` hold 3633 each (451 MB,
   newest 2026-09-29, Lightroom Classic 15.6), identical to each other by name. Every ProgramData

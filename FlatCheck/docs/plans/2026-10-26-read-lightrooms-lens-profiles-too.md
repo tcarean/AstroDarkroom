@@ -18,24 +18,24 @@ parse every common profile twice.
 
 The owner chose option (b): read the Program Files folders too, dedupe by relative name, correct
 the texts in FlatCheck and AstroDarkroom, flip the root README row to "yes". The Bitbucket README
-is on `main` (7647a8f), so the row flips in this branch. The decision is ADR 0065.
+is on `main` (7647a8f), so the row flips in this branch. The decision is ADR 0066.
 
 ## 1. FlatCheck, the behaviour (requirement first, then test, then code)
 
-- `docs/requirements.md`: R-070 names the third folder; new R-106 for the order, the first-wins
+- `docs/requirements.md`: R-070 names the third folder; new R-107 for the order, the first-wins
   rule by relative name without case, the counts and the summary text.
-- `FlatCheck.Tests/LensProfileTests.cs`: `R106_Locate_ReadsTheSameRelativeNameOnceFromTheFirstFolder`
+- `FlatCheck.Tests/LensProfileTests.cs`: `R107_Locate_ReadsTheSameRelativeNameOnceFromTheFirstFolder`
   (two folders, the same relative name differing by case, the copy not even XML, one file only in
-  the second), `R106_AdobeAppDirectories_AreTheExistingProfileFoldersInOrdinalOrder` (a fake
-  Program Files tree), `R106_DefaultAdobeDirectories_StartWithCameraRawThenTheProgramFilesApps`
-  (this machine, Windows only), `R106_SourcesSummary_NamesTheDuplicatesSkippedOnlyWhenThereAreAny`
+  the second), `R107_AdobeAppDirectories_AreTheExistingProfileFoldersInOrdinalOrder` (a fake
+  Program Files tree), `R107_DefaultAdobeDirectories_StartWithCameraRawThenTheProgramFilesApps`
+  (this machine, Windows only), `R107_SourcesSummary_NamesTheDuplicatesSkippedOnlyWhenThereAreAny`
   (both languages). The goldens run with `--profiles <one dir>` and do not move.
 - `FlatCheck.Core/LensProfiles/ProfileLocator.cs`: `AdobeAppDirectories(root)`,
   `DefaultAdobeDirectories` extended, `Locate` with the `HashSet` of relative paths,
   `ProfileSources.AdobeFilesDuplicate`.
 - `FlatCheck.Core/Report/SyntheticReport.cs`: `SourcesSummary` and `AdobeWhere` texts in both
   languages. `StructureReport.cs` stays. The window shows them unchanged.
-- Docs: ADR 0065 (ADR 0028's Status points at it), `docs/design/lens-profiles.md` §5 and §10,
+- Docs: ADR 0066 (ADR 0028's Status points at it), `docs/design/lens-profiles.md` §5 and §10,
   `README.md` mode 7, `THIRD-PARTY-NOTICES.md`, `CHANGELOG.md`. No formula moved: no `/validate`.
 
 ## 2. AstroDarkroom
@@ -43,7 +43,7 @@ is on `main` (7647a8f), so the row flips in this branch. The decision is ADR 006
 - `README.md`, the Adobe bullet: the three folders, and "Lightroom keeps its own copy ... not
   read" dropped. `Prerequisites.cs`, R-009 and `LanguageTests` already name Lightroom and stay.
 - ADR 0008: dated `(Restated 2026-10-26: ...)` notes on the measurement sentence and on the
-  rejected alternative, pointing at FlatCheck ADR 0065 (the kit's ADR 0024: a supporting reason
+  rejected alternative, pointing at FlatCheck ADR 0066 (the kit's ADR 0024: a supporting reason
   that no longer holds while the decision stands gets a note, not a superseding ADR). The plan
   as approved named an ADR 0010; the kit's rule picks the note.
 - `CHANGELOG.md` Changed line.
@@ -57,7 +57,7 @@ is on `main` (7647a8f), so the row flips in this branch. The decision is ADR 006
 
 ## Verification
 
-- The R106 tests, then the FlatCheck gate (goldens unchanged) and AstroDarkroom's gate on its
+- The R107 tests, then the FlatCheck gate (goldens unchanged) and AstroDarkroom's gate on its
   commit; `scripts/check-design.ps1 -Since main`.
 - `flatcheck --lenses` on the owner's machine, Release build, before and after:
 

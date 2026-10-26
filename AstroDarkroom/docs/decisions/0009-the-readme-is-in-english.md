@@ -35,4 +35,4 @@ follow the English headings. The five tools' READMEs stay in Romanian, and the f
 so. The "Requirements" section names the Adobe programs as ADR 0008 measured them (Lightroom's
 copy is not read), while the launcher's own text still names Lightroom (ADR 0007's note); that
 correction is the owner's to decide. (Restated 2026-10-26: FlatCheck reads Lightroom's folders
-since its ADR 0065; both texts name Lightroom and both are right, nothing left to correct.)
+since its ADR 0066; both texts name Lightroom and both are right, nothing left to correct.)

@@ -17,7 +17,7 @@
 
 // The only file in LensProfiles/ that looks at the machine: where the Adobe profiles are (Camera
 // Raw and the free DNG Converter put them in the CameraRaw folders; Lightroom Classic and
-// Lightroom keep their own copy inside their program folder, ADR 0065; a file present in two
+// Lightroom keep their own copy inside their program folder, ADR 0066; a file present in two
 // folders is read once, from the first) and where the copy of the lensfun database is (the
 // lensfun/ folder beside the exe, shipped with the tool). The reading itself is in LcpReader /
 // LensfunReader, pure, so that the tests run on XML they write.
@@ -99,7 +99,7 @@ namespace FlatCheck
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             if (!string.IsNullOrEmpty(appData))
                 dirs.Add(Path.Combine(appData, "Adobe", "CameraRaw", "LensProfiles"));
-            // Lightroom is 64-bit only, so Program Files (x86) is not searched (ADR 0065); in the
+            // Lightroom is 64-bit only, so Program Files (x86) is not searched (ADR 0066); in the
             // win-x64 build ProgramFiles is the 64-bit folder (a 32-bit process would get the x86 one).
             string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
             if (!string.IsNullOrEmpty(programFiles))
@@ -111,7 +111,7 @@ namespace FlatCheck
         /// The profile folder of every Adobe application installed under
         /// <paramref name="adobeRoot"/> that has one: Lightroom Classic and Lightroom keep their
         /// own copy in <c>Resources\LensProfiles\1.0</c> inside their program folder (measured
-        /// 2026-10-26, ADR 0065).
+        /// 2026-10-26, ADR 0066).
         /// </summary>
         /// <param name="adobeRoot">The folder holding the Adobe applications, normally
         /// <c>C:\Program Files\Adobe</c>; null, missing or unreadable gives none.</param>
@@ -157,7 +157,7 @@ namespace FlatCheck
             // Adobe: only the file names - 3531 on the author's machine, 36 s to parse them all.
             // A name that does not have the expected form is parsed on the spot, so that it is
             // not missing. Lightroom's folder repeats the DNG Converter's files under the same
-            // relative names (ADR 0065): the catalogue would list and parse each twice otherwise.
+            // relative names (ADR 0066): the catalogue would list and parse each twice otherwise.
             var profiles = new List<LensProfile>();
             var stubs = new List<AdobeProfileFile>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
