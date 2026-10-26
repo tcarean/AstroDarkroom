@@ -453,7 +453,7 @@ namespace FlatCheck
             w.WriteLine("                         profiles - by name, or by the ID in the raw beside the master; the verdict includes them)");
             w.WriteLine("            --lang en|ro (the language of every text: en English, the default; ro Romanian)");
             w.WriteLine();
-            w.WriteLine("Accepted: FITS (.fit/.fits/.fts) and camera raw (.nef/.cr2/.cr3/.arw/.dng/.raf).");
+            w.WriteLine("Accepted: FITS (.fit/.fits/.fts) and camera raw (.nef/.cr2/.cr3/.arw/.dng/.raf/.pef).");
             w.WriteLine("On a raw, --expo takes the exact white and black levels from the file instead of guessing them from the maximum.");
             w.WriteLine();
             w.WriteLine("--light does not work on everything: beyond a ~40-degree diagonal it refuses to answer,");
@@ -505,7 +505,7 @@ namespace FlatCheck
             w.WriteLine("                         obiectivului - dupa nume, sau dupa ID-ul din raw-ul de langa master; verdictul le cuprinde)");
             w.WriteLine("            --lang en|ro (limba tuturor textelor: en engleza, implicit; ro romana)");
             w.WriteLine();
-            w.WriteLine("Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).");
+            w.WriteLine("Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf/.pef).");
             w.WriteLine("Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.");
             w.WriteLine();
             w.WriteLine("--light nu merge pe orice: peste ~40 de grade diagonala refuza sa raspunda,");

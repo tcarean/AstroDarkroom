@@ -431,7 +431,7 @@ public class SyntheticTabTests
             // one candidate is simply selected
             note = vm.OfferCandidates(new[] { both[0] }, "ID-ul obiectivului 139 din raw (11-20 mm f/2.8)");
             Assert.Equal(both[0], vm.SelectedLens?.Choice);
-            Assert.StartsWith("obiectivul dupa ID-ul obiectivului 139", note);
+            Assert.StartsWith("ales: ID-ul obiectivului 139", note);
             Assert.Null(vm.OfferCandidates(Array.Empty<LensChoice>(), "x"));
         }
     }

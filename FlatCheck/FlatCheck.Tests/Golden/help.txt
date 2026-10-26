@@ -27,7 +27,7 @@ Utilizare:
                          obiectivului - dupa nume, sau dupa ID-ul din raw-ul de langa master; verdictul le cuprinde)
             --lang en|ro (limba tuturor textelor: en engleza, implicit; ro romana)
 
-Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).
+Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf/.pef).
 Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.
 
 --light nu merge pe orice: peste ~40 de grade diagonala refuza sa raspunda,

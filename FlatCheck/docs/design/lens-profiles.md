@@ -277,7 +277,8 @@ fits 31 bits; on a Nikon that field holds the LensData signature), the mount's n
 (`MountLabel`, libraw's enumeration spelled "Nikon F", "Canon EF", "Canon RF", "Sony E",
 "Pentax K"), the name (`LensInfo.Lens` trimmed) and
 the range (`RangeOf`: the MakerNote's `MinFocal` / `MaxFocal` else the top fields;
-`MaxAperture4MinFocal`, else `MaxAperture`, else the top field; zero means null). The
+`MaxAperture4MinFocal` from the MakerNote else the top field, else the MakerNote's
+`MaxAperture` on a prime or a shot at the short end only; zero means null). The
 measured values behind each rule are in section 10.
 `FitsReader.LoadHeader(path)` reads only the 2880-byte header blocks, for the window's
 prefill on a 96 MB master.
@@ -457,6 +458,12 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   first implementation took name hits ∪ ID hits and listed six lenses on the 7D Mark II: the
   three Zeiss ZE files that share 198 survived the narrowing because "Milvus 1.4_25 ZE" gives
   no range; hence the name wins where it matches (ADR 0067).
+- **The owner's D3300 with the Nikkor 35 DX and with the Tokina, 2026-10-26** (V-047, V-048,
+  after the review asked whether a Nikon body writes a name for a lens with CPU): `LensInfo.Lens`
+  empty on both, `Nikon.LensIDNumber` 159 and 139, `MakerNotes.LensID` 11482002309166440710 and
+  10036302762685531398 (signatures), the MakerNote range 35 / 35 / 1.8 and 11 / 20 / 2.8,
+  `LensFeaturesPre` "AF", suffix "G". The name key never runs on a Nikon; the two lensfun
+  calibrations of the Nikkor 35 join by maker and range as before.
 - **Canon RF, 2026-10-26** (two more CC0 samples, V-045 the EOS R6 4659 with the RF 70-200mm
   F2.8 L IS USM, V-046 the EOS R5 Mark II 7884, APS-C crop CRAW, with the RF 135mm F1.8 L IS USM;
   libraw 0.21.1 knows the R, RP, R3, R5, R6, R7 and R10 and opened the R5 Mark II anyway as
@@ -464,7 +471,9 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   while all 79 Adobe RF files on the machine carry `stCamera:LensID` 61182 (and 64 profiles 39),
   so the ID matches nothing; `LensInfo.Lens` `RF70-200mm F2.8 L IS USM` and `RF135mm F1.8 L IS
   USM`, equal to the files' `stCamera:Lens`. `MakerNotes.MaxAperture4MinFocal` 0 and
-  `MaxAperture` 2.828 / 1.834, as on the EF bodies. `MakerNotes.LensMount` 6 (Canon RF) on both;
+  `MaxAperture` 2.828 / 1.834, as on the EF bodies; the R6 was shot at 200 mm, so its 2.828 is
+  not taken as the short end's aperture (`RangeOf`) and the lens is read as 70-200 mm, aperture
+  unknown. `MakerNotes.LensMount` 6 (Canon RF) on both;
   `CameraMount` 6 on the R6 and 5 (Canon EF) on the R5 Mark II, libraw's guess for a body it does
   not know, which is why the label takes the lens's mount first. Without `--lens` the R6 writes
   straight from its one Adobe file (lensfun's RF 70-200 F2.8 has no vignetting calibration, so it

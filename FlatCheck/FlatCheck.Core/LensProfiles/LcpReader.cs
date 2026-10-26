@@ -103,8 +103,13 @@ namespace FlatCheck
                 string lensName = Prop("LensPrettyName") ?? Prop("Lens") ?? "?";
                 string mount = Prop("CameraPrettyName") ?? make;
                 var aliases = holder.Descendants(St + "AlternateLensNames").Descendants(Rdf + "li").Select(e => e.Value.Trim()).ToList();
+                // The pretty name and stCamera:Lens both go in the aliases: a lazily parsed file is
+                // listed under the name its FILE name spells, so the name read from the raw is set
+                // against the aliases (LensCatalog.ByLensName), and LensPrettyName may differ from
+                // the file name in more than letters.
                 string lens = Prop("Lens");
-                if (lens != null && lens != lensName) aliases.Add(lens);
+                if (lensName != "?") aliases.Add(lensName);
+                if (lens != null) aliases.Add(lens);
                 var ids = new List<long>();
                 if (ParseLensId(Prop("LensID")) is long id0) ids.Add(id0);
                 foreach (XElement e in holder.Descendants(St + "AlternateLensIDs").Descendants(Rdf + "li"))

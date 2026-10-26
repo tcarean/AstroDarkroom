@@ -268,9 +268,10 @@ namespace FlatCheck
 
         /// <summary>
         /// The lenses the raw points at by itself (R-018): those whose name is the raw's lens name
-        /// letter for letter (<see cref="LensCatalog.ByLensName"/>) when there are any, otherwise
-        /// those that carry its lens ID (<see cref="LensCatalog.ByLensId"/>, in the files of the
-        /// camera's mount), minus those whose name contradicts the range the raw gives. The name
+        /// letter for letter (<see cref="LensCatalog.ByLensName"/>) when any of them survives the
+        /// range the raw gives, otherwise those that carry its lens ID
+        /// (<see cref="LensCatalog.ByLensId"/>, in the files of the camera's mount), minus those
+        /// whose name contradicts that range. The name
         /// wins because an ID is shared: Canon's 198 is the EF 50mm f/1.4 USM and three Zeiss ZE
         /// lenses whose names ("Milvus 1.4_25 ZE") no range can read, and every RF lens is 61182;
         /// the ID is the key only where the camera writes no name or the name is in no file. When
@@ -292,11 +293,18 @@ namespace FlatCheck
         {
             if (!NamesLens(f)) return Array.Empty<LensChoice>();
             string hint = f.Camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            bool named = !string.IsNullOrWhiteSpace(f.LensName);
-            IReadOnlyList<LensChoice> byKey = named ? cat.ByLensName(f.LensName, hint) : Array.Empty<LensChoice>();
-            bool nameDecided = byKey.Count > 0;
-            if (!nameDecided && f.LensId != null) byKey = cat.ByLensId(f.LensId.Value, hint);
-            var hits = LensCatalog.Narrow(byKey, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
+            // The name decides only when a hit of it survives the range: a name hit the range
+            // contradicts (a body that writes a lens type's name for a lens of another make) must
+            // not hide the ID, which may carry the right file in AlternateLensIDs.
+            IReadOnlyList<LensChoice> hits = Array.Empty<LensChoice>();
+            bool nameDecided = false;
+            if (!string.IsNullOrWhiteSpace(f.LensName))
+            {
+                hits = LensCatalog.Narrow(cat.ByLensName(f.LensName, hint), f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
+                nameDecided = hits.Count > 0;
+            }
+            if (!nameDecided && f.LensId != null)
+                hits = LensCatalog.Narrow(cat.ByLensId(f.LensId.Value, hint), f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
             if (hits.Count == 0 || nameDecided) return Ordered(hits);
 
             var makers = new HashSet<string>(hits.Select(l => l.Maker), StringComparer.OrdinalIgnoreCase);

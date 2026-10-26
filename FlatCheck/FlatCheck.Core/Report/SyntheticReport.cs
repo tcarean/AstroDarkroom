@@ -391,15 +391,16 @@ namespace FlatCheck
                  "\nIncearca alt text, sau --lenses <text> ca sa vezi ce e in lista.");
 
         /// <summary>
-        /// The refusal when several lenses match the text; the first 20 are listed.
+        /// The refusal when several lenses match; the first 20 are listed.
         /// </summary>
-        /// <param name="text">The --lens text, as given.</param>
+        /// <param name="what">What matched them, ready to print: the --lens text in quotes, or
+        /// the raw's lens label as it stands.</param>
         /// <param name="hits">The lenses that match.</param>
         /// <returns>Lines joined by '\n'.</returns>
-        internal static string Ambiguous(string text, IReadOnlyList<LensChoice> hits)
-            => T($"SYNTHETIC FLAT: \"{text}\" matches {hits.Count} lenses; choose one with a longer text"
+        internal static string Ambiguous(string what, IReadOnlyList<LensChoice> hits)
+            => T($"SYNTHETIC FLAT: {what} matches {hits.Count} lenses; choose one with a longer text"
                  + " (or --source adobe|lensfun):\n",
-                 $"FLAT SINTETIC: \"{text}\" se potriveste cu {hits.Count} obiective; alege unul cu un text mai lung"
+                 $"FLAT SINTETIC: {what} se potriveste cu {hits.Count} obiective; alege unul cu un text mai lung"
                  + " (sau --source adobe|lensfun):\n")
              + string.Join("\n", hits.Take(20).Select(h => "    " + h))
              + (hits.Count > 20 ? T($"\n    ... and {hits.Count - 20} more", $"\n    ... si inca {hits.Count - 20}") : "");

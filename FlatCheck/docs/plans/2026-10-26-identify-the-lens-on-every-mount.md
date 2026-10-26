@@ -53,6 +53,14 @@ LensModel string (`RF70-200mm F2.8 L IS USM`), equal to Adobe's `stCamera:Lens`;
 know. So RF is identified by the name path as it stands; the mount label takes the lens's mount
 first. V-045, V-046.
 
+## The review (2026-10-26)
+
+The owner asked for an independent review before the merge. Its ten findings and what was done
+are in ADR 0067's consequences; the Nikon question was settled by measuring the owner's Nikkor
+35 DX raw (no name written, V-047). The change from "name hits ∪ ID hits" to "the name decides
+where it matches" was reported to the owner at the first wrap-up, with the Zeiss ZE measurement;
+the owner's answer is recorded below when given.
+
 ## Decisions (the owner took the recommendation on every point)
 
 1. The ID by mount: `Nikon.LensIDNumber` when above 0; otherwise `MakerNotes.LensID` when the

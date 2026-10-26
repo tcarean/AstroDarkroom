@@ -235,6 +235,36 @@ public class LensMountTests
         Assert.Equal(1.534, id.Crop!.Value, 3);
     }
 
+    /// <summary>
+    /// A name hit the range contradicts does not hide the ID: a body that writes the name of the
+    /// lens type it recognised for a lens of another make gives the EF 50's name with the other
+    /// lens's range; the EF 50 drops, and the ID (198, which the Zeiss ZE files carry) decides.
+    /// </summary>
+    [Fact]
+    public void R018_ANameHitTheRangeContradictsFallsBackToTheId()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, otherMounts: true);
+        var raw = CanonRaw();
+        raw.LensMinFocalMm = raw.LensMaxFocalMm = 25;              // the EF 50's name, a 25 mm lens's range
+
+        ShotIdentity id = LensIdentification.Identify(raw, null, sources);
+
+        Assert.NotEmpty(id.Candidates);
+        Assert.All(id.Candidates, c => Assert.DoesNotContain("50mm", c.Name));
+        Assert.Contains(id.Candidates, c => c.Name == "Zeiss Milvus 1.4_25 ZE");
+        Assert.False(id.CandidatesByRangeOnly);
+    }
+
+    [Fact]
+    public void R108_TheMountIsTheLenssAndTheCamerasOnlyWhenTheLenssIsUnknown()
+    {
+        Assert.Equal(6, RawReader.MountOf(6, 5));                 // the R5 Mark II read by an older libraw
+        Assert.Equal(5, RawReader.MountOf(5, 5));
+        Assert.Equal(5, RawReader.MountOf(0, 5));
+        Assert.Equal(0, RawReader.MountOf(0, 0));
+    }
+
     [Fact]
     public void R108_TheLensIdComesFromNikonsFieldOnANikonAndFromTheMakerNoteElsewhere()
     {
@@ -262,23 +292,33 @@ public class LensMountTests
     [InlineData(33, "Pentax K")]
     [InlineData(13, "Fujifilm X")]
     [InlineData(10, "Micro 4/3")]
+    [InlineData(16, "Hasselblad XCD")]
+    [InlineData(2, null)]                                          // "C", a mount the table does not spell: no programming name leaks
+    [InlineData(45, null)]                                         // libraw's sentinel
+    [InlineData(999, null)]
     [InlineData(0, null)]
     public void R108_TheMountIsNamedAsLibrawNamesIt(int code, string? label)
         => Assert.Equal(label, RawReader.MountLabel(code));
 
     [Fact]
-    public void R108_TheRangeFallsBackToMaxApertureThenToTheTopFields()
+    public void R108_TheRangeFallsBackToTheTopFields_AndToMaxApertureOnlyAtTheShortEnd()
     {
-        // Canon: the MakerNote's MaxAperture4MinFocal is 0, MaxAperture 1.414
-        Assert.Equal<(double?, double?, double?)>((50.0, 50.0, 1.4142135), RawReader.RangeOf(50, 50, 0, 1.4142135, 50, 50, 0));
+        // Canon prime: the MakerNote's MaxAperture4MinFocal is 0, MaxAperture 1.414
+        Assert.Equal<(double?, double?, double?)>((50.0, 50.0, 1.4142135), RawReader.RangeOf(50, 50, 0, 1.4142135, 50, 50, 0, 50));
+        // Canon zoom shot at the long end: MaxAperture is the aperture THERE, not the name's; not taken
+        Assert.Equal<(double?, double?, double?)>((18.0, 135.0, null), RawReader.RangeOf(18, 135, 0, 5.6, 18, 135, 0, 135));
+        // the same zoom at its short end: the two apertures coincide, so it is taken
+        Assert.Equal<(double?, double?, double?)>((18.0, 135.0, 3.5), RawReader.RangeOf(18, 135, 0, 3.5, 18, 135, 0, 18));
+        // a constant-aperture zoom at the long end is still not taken: nothing says it is constant
+        Assert.Equal<(double?, double?, double?)>((70.0, 200.0, null), RawReader.RangeOf(70, 200, 0, 2.828427, 70, 200, 0, 200));
         // Nikon: the MakerNote alone, the top fields 0
-        Assert.Equal<(double?, double?, double?)>((135.0, 135.0, 2.0), RawReader.RangeOf(135, 135, 2, 0, 0, 0, 0));
+        Assert.Equal<(double?, double?, double?)>((135.0, 135.0, 2.0), RawReader.RangeOf(135, 135, 2, 0, 0, 0, 0, 135));
         // Sony: both filled, the MakerNote first
-        Assert.Equal<(double?, double?, double?)>((16.0, 35.0, 2.8), RawReader.RangeOf(16, 35, 2.8, 0, 16, 35, 2.8));
+        Assert.Equal<(double?, double?, double?)>((16.0, 35.0, 2.8), RawReader.RangeOf(16, 35, 2.8, 0, 16, 35, 2.8, 32));
         // Pentax: nothing anywhere
-        Assert.Equal<(double?, double?, double?)>((null, null, null), RawReader.RangeOf(0, 0, 0, 0, 0, 0, 0));
+        Assert.Equal<(double?, double?, double?)>((null, null, null), RawReader.RangeOf(0, 0, 0, 0, 0, 0, 0, 18));
         // only the top fields
-        Assert.Equal<(double?, double?, double?)>((24.0, 70.0, 2.8), RawReader.RangeOf(0, 0, 0, 0, 24, 70, 2.8));
+        Assert.Equal<(double?, double?, double?)>((24.0, 70.0, 2.8), RawReader.RangeOf(0, 0, 0, 0, 24, 70, 2.8, 50));
     }
 
     [Fact]

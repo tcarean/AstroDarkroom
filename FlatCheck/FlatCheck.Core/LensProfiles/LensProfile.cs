@@ -216,7 +216,7 @@ namespace FlatCheck
         /// <summary>A profile.</summary>
         /// <param name="lens">The lens it belongs to.</param>
         /// <param name="aliases">The lens's other names; null for none.</param>
-        /// <param name="lensIds">The Nikon lens IDs it carries (Adobe); null for none.</param>
+        /// <param name="lensIds">The lens IDs it carries (Adobe; the maker's, R-108); null for none.</param>
         /// <param name="focalMm">The focal length, in mm.</param>
         /// <param name="fStop">The f-number.</param>
         /// <param name="distanceM">The focus distance in metres; NaN when not given.</param>

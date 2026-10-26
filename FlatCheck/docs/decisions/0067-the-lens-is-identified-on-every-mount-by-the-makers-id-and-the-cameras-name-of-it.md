@@ -40,6 +40,9 @@ in `docs/plans/2026-10-26-identify-the-lens-on-every-mount.md`:
   `stCamera:Lens`. On the R5 Mark II, a body newer than libraw 0.21.1 (named `EOS R5m2`),
   `MakerNotes.CameraMount` said Canon EF (5) while `LensMount` said Canon RF (6); on the five
   known bodies the two agree.
+- The owner's D3300 with the Nikkor 35 DX, a lens with CPU (V-047): `LensInfo.Lens` empty too,
+  `Nikon.LensIDNumber` 159, `MakerNotes.LensID` another signature; so a Nikon body writes no name
+  for any lens measured, and the name key never runs there.
 
 ## Decision
 
@@ -52,8 +55,10 @@ in `docs/plans/2026-10-26-identify-the-lens-on-every-mount.md`:
   value; one integer as before; anything else dropped.
 - **The name as a second key** (`LensCatalog.ByLensName`, `LensIdentification.CandidatesFromRaw`):
   the raw's name matched letter for letter (letters and digits, upper-cased) against each lens's
-  name and aliases, the lens's maker allowed in front. The name's matches are the candidates when
-  there are any, the ID's otherwise, narrowed by range as before. The recommendation the owner took
+  name and aliases, the lens's maker allowed in front. The name's matches, narrowed by range, are
+  the candidates when any survives; the ID's, narrowed the same way, otherwise (a name hit the
+  range contradicts must not hide an ID whose files carry the right lens in `AlternateLensIDs`,
+  the reviewer's case of 2026-10-26). The recommendation the owner took
   said "name hits ∪ ID hits"; the first run on the Canon sample listed six lenses, the EF 50 twice
   and three Zeiss ZE (Milvus 1.4/25, 1.4/35, Otus 1.4/100), whose Adobe files carry 198 in
   `AlternateLensIDs` because the Zeiss ZE lenses report Canon's type 198, and whose names
@@ -64,8 +69,13 @@ in `docs/plans/2026-10-26-identify-the-lens-on-every-mount.md`:
   the raw gives none (`AgreedRange`), and a lensfun lens whose name is letter for letter a hit's
   name or alias joins too. On the name path no join by range: it would pull another lens of the
   same range (the A-mount 16-35 f/2.8 beside the FE).
-- **The range on Canon** (`RawReader.RangeOf`): `MaxAperture4MinFocal`, else `MaxAperture`, else the
-  top field; the focal ends from the MakerNote, else the top fields.
+- **The range on Canon** (`RawReader.RangeOf`): `MaxAperture4MinFocal` from the MakerNote, else
+  the top field, else the MakerNote's `MaxAperture` only on a prime or when the shot's focal length
+  is the lens's shortest: Canon's field is the maximum aperture at the current focal length, and
+  the names state the short end's; a variable-aperture zoom at its long end was not measured, so
+  there the aperture stays unknown and only the focal ends narrow (the R6 sample, a 70-200 f/2.8
+  at 200 mm, is read as 70-200 mm with no aperture). The focal ends from the MakerNote, else the
+  top fields.
 - **The words** (`SyntheticReport.RawLensLabel`): the lens as the raw gave it, with the mount and
   the range in one parenthesis: `the lens "EF50mm f/1.4 USM" (ID 198) from the raw (Canon EF, 50 mm
   f/1.4)`, `the lens ID 2263 from the raw (Pentax K)`; "the Nikon ID" is gone from every text. A raw
@@ -98,7 +108,15 @@ in `docs/plans/2026-10-26-identify-the-lens-on-every-mount.md`:
 
 - `LoadedFrame.LensId`, `LensMount`, `LensName`; `ShotIdentity.HasRawLensName`, `RawNamesLens`;
   `LensCatalog.ByLensName`, `Letters` (moved from `LensIdentification`); `RawReader.LensIdOf`,
-  `MountLabel`, `RangeOf`, `FillShootingInfo`; `LcpReader.ParseLensId`.
+  `MountOf`, `MountLabel`, `RangeOf`, `FillShootingInfo`; `LcpReader.ParseLensId`, and the LCP
+  pretty name and `stCamera:Lens` both in a profile's aliases, so a lazily listed Adobe file is
+  found by either spelling.
+- An independent review of the branch (2026-10-26, a subagent with a clean context) found the
+  name hiding the ID when its hits fail the range, the `MaxAperture` fallback read as the
+  short-end aperture, the Nikon-with-a-named-lens case unmeasured, `.pef` missing from the help
+  and window texts, "the lens by the lens ..." and nested quotes in two composed sentences, the
+  pretty name unreachable on a lazily listed file, programming names in `MountLabel`, and the
+  mount choice untested; all taken, the Nikon case settled by measuring the owner's Nikkor raw.
 - Guards: `LensMountTests` (R018, R108: a fabricated frame per make with the measured values, the
   pair parsing, the rule per mount, the labels in both languages), `VignettingComparisonTests`
   (the gap), `RawReaderTests` (`.pef`), `RawSampleTests` (`Category=Validation`: the four files

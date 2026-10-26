@@ -59,9 +59,9 @@ namespace FlatCheck
         static readonly IReadOnlyDictionary<string, string> NoHeader = new Dictionary<string, string>();
 
         // The six extensions of flatcheck.py, plus .pef (Pentax, 2026-10-26: a K-70 sample read
-        // fine through libraw and was refused by this list alone, R-108). Only the NEF, a CR2, an
-        // ARW and a PEF are tested on real data; the rest work as well as libraw knows them,
-        // which is also what rawpy does.
+        // fine through libraw and was refused by this list alone, R-108). Only the NEF, CR2, CR3,
+        // ARW and PEF are tested on real data (the masters and docs/validation.md V-041 to V-048);
+        // the rest work as well as libraw knows them, which is also what rawpy does.
         static readonly string[] Extensions =
         { ".nef", ".cr2", ".cr3", ".arw", ".dng", ".raf", ".pef" };
 
@@ -292,13 +292,14 @@ namespace FlatCheck
                 // The lens's mount, and the camera's only when the lens's is unknown: the two agree
                 // on every known body measured, and on a body newer than libraw (an EOS R5 Mark II
                 // read by 0.21.1) CameraMount said Canon EF while LensMount said Canon RF, rightly.
-                int mount = notes.LensMount != 0 ? notes.LensMount : notes.CameraMount;
+                int mount = MountOf(notes.LensMount, notes.CameraMount);
                 frame.LensId = LensIdOf(li.Nikon.LensIDNumber, notes.LensID, mount);
                 frame.LensMount = MountLabel(mount);
                 string name = (li.Lens ?? "").Trim();
                 frame.LensName = name.Length == 0 ? null : name;
                 (frame.LensMinFocalMm, frame.LensMaxFocalMm, frame.LensMaxAperture) =
-                    RangeOf(notes.MinFocal, notes.MaxFocal, notes.MaxAperture4MinFocal, notes.MaxAperture, li.MinFocal, li.MaxFocal, li.MaxAperture4MinFocal);
+                    RangeOf(notes.MinFocal, notes.MaxFocal, notes.MaxAperture4MinFocal, notes.MaxAperture, li.MinFocal, li.MaxFocal, li.MaxAperture4MinFocal,
+                            other.FocalLength);
             }
             catch (Exception)
             {
@@ -336,9 +337,9 @@ namespace FlatCheck
 
         /// <summary>
         /// The camera's mount as libraw names it, for the reports: "Nikon F", "Canon EF", "Sony E",
-        /// "Pentax K" and the other mounts spelled out below; libraw's own enumeration name for a
-        /// mount this table does not spell; null for an unknown mount (0) or a value libraw does
-        /// not define.
+        /// "Pentax K" and the other mounts spelled out below; null for an unknown mount (0), for a
+        /// mount this table does not spell and for a value libraw does not define - a programming
+        /// name ("HasselbladXcd") is not a label, and the parenthesis then carries the range alone.
         /// </summary>
         /// <param name="mountCode">libraw's <c>LensInfo.MakerNotes.LensMount</c> (the camera's when
         /// the lens's is 0); 0 when unknown.</param>
@@ -368,17 +369,35 @@ namespace FlatCheck
                 CameraMount.LeicaM => "Leica M",
                 CameraMount.LeicaSl => "Leica L",
                 CameraMount.SamsungNx => "Samsung NX",
-                _ => Enum.IsDefined(typeof(CameraMount), mount) ? mount.ToString() : null,
+                CameraMount.HasselbladXcd => "Hasselblad XCD",
+                CameraMount.LeicaTl => "Leica TL",
+                CameraMount.FujiGx => "Fujifilm GX",
+                _ => null,
             };
         }
+
+        /// <summary>
+        /// The mount the lens fields are read for: the lens's, and the camera's only when the lens's
+        /// is unknown (0). The two agree on every known body measured; on a body newer than libraw
+        /// (an EOS R5 Mark II read by 0.21.1) the camera's said Canon EF while the lens's said
+        /// Canon RF, rightly (R-108).
+        /// </summary>
+        /// <param name="lensMount">libraw's <c>LensInfo.MakerNotes.LensMount</c>; 0 when unknown.</param>
+        /// <param name="cameraMount">libraw's <c>LensInfo.MakerNotes.CameraMount</c>; 0 when unknown.</param>
+        /// <returns>The mount code to use; 0 when both are unknown.</returns>
+        internal static int MountOf(int lensMount, int cameraMount) => lensMount != 0 ? lensMount : cameraMount;
 
         /// <summary>
         /// The lens's range from libraw, each part null when every source gives 0: the minimum and
         /// maximum focal length from the MakerNote, else from the top of <c>LensInfo</c> (a D3300
         /// fills the MakerNote only, a Canon or a Sony both, a Pentax K-70 neither); the maximum
-        /// aperture from the MakerNote's <c>MaxAperture4MinFocal</c>, else its <c>MaxAperture</c>
-        /// (a Canon writes 0 and 1.414 for the EF 50 f/1.4), else the top field. Measured
-        /// 2026-10-26 (R-108).
+        /// aperture from the MakerNote's <c>MaxAperture4MinFocal</c>, else the top field, else the
+        /// MakerNote's <c>MaxAperture</c> - but that one only when it is the aperture at the short
+        /// end: on a prime (a Canon writes 0 and 1.414 for the EF 50 f/1.4, 2.828 for the RF
+        /// 70-200 f/2.8 at 200 mm) or when the shot's focal length is the lens's shortest. Canon's
+        /// field is the maximum aperture at the CURRENT focal length, and on a variable-aperture
+        /// zoom at its long end it would contradict every name that states the short end's; no
+        /// such raw was measured, so it is not taken. Measured 2026-10-26 (R-108).
         /// </summary>
         /// <param name="notesMin">The MakerNote's minimum focal length, mm; 0 when none.</param>
         /// <param name="notesMax">The MakerNote's maximum focal length, mm; 0 when none.</param>
@@ -387,13 +406,19 @@ namespace FlatCheck
         /// <param name="topMin">The top-level minimum focal length, mm; 0 when none.</param>
         /// <param name="topMax">The top-level maximum focal length, mm; 0 when none.</param>
         /// <param name="topAp4Min">The top-level maximum aperture at the minimum focal length; 0 when none.</param>
+        /// <param name="currentFocal">The shot's focal length, mm (libraw's <c>FocalLength</c>); 0 when unknown.</param>
         /// <returns>The minimum and maximum focal length (mm) and the maximum aperture, each null when unknown.</returns>
         internal static (double? Min, double? Max, double? Aperture) RangeOf(double notesMin, double notesMax, double notesAp4Min, double notesMaxAp,
-                                                                           double topMin, double topMax, double topAp4Min)
+                                                                           double topMin, double topMax, double topAp4Min, double currentFocal)
         {
             double? min = notesMin > 0 ? notesMin : topMin > 0 ? topMin : null;
             double? max = notesMax > 0 ? notesMax : topMax > 0 ? topMax : null;
-            double? ap = notesAp4Min > 0 ? notesAp4Min : notesMaxAp > 0 ? notesMaxAp : topAp4Min > 0 ? topAp4Min : null;
+            bool atShortEnd = min.HasValue && max.HasValue
+                && (LensSpec.Close(min.Value, max.Value) || (currentFocal > 0 && LensSpec.Close(currentFocal, min.Value)));
+            double? ap = notesAp4Min > 0 ? notesAp4Min
+                       : topAp4Min > 0 ? topAp4Min
+                       : notesMaxAp > 0 && atShortEnd ? notesMaxAp
+                       : null;
             return (min, max, ap);
         }
 
