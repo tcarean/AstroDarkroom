@@ -35,6 +35,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis" />
   </Window.Resources>
+  <Window.CommandBindings>
+    <CommandBinding Command="Help" Executed="ShowAboutCommand" />
+  </Window.CommandBindings>
   <Grid Margin="20,16,20,16">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto" />
@@ -101,6 +104,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="16,0,0,0">
         <Button MinWidth="110" IsEnabled="{Binding CanPreview}" Content="{l:T En='Preview', Ro='Previzualizare'}" Click="Preview" />
         <Button Margin="8,0,0,0" MinWidth="96" IsEnabled="{Binding CanCopy}" Content="{l:T En='Copy', Ro='Copiaza'}" Click="CopyCards" />
+        <Button Margin="20,0,0,0" MinWidth="88" Content="{l:T En='About', Ro='Despre'}" Click="ShowAbout" />
       </StackPanel>
     </Grid>
 

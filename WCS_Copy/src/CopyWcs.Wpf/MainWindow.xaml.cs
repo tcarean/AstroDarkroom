@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Windows;
+using System.Windows.Input;
 using Microsoft.Win32;
 using static CopyWcs.Ui;
 
@@ -126,6 +127,16 @@ public partial class MainWindow : Window
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
     private void CopyCards(object sender, RoutedEventArgs e) => _vm.Copy();
+
+    /// <summary>The About button: the About window, modal, over this one (R-035).</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
+    private void ShowAbout(object sender, RoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
+
+    /// <summary>F1: the same About window.</summary>
+    /// <param name="sender">The command's source.</param>
+    /// <param name="e">The executed command.</param>
+    private void ShowAboutCommand(object sender, ExecutedRoutedEventArgs e) => ShowAbout(sender, e);
 
     /// <summary>An open-file dialog for FITS files, starting in the folder of a path when it has one.</summary>
     /// <param name="title">The dialog's title, in the run's language.</param>

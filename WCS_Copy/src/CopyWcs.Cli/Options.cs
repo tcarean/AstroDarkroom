@@ -135,13 +135,7 @@ internal sealed class Options
                 """);
 
             writer.WriteLine();
-            writer.WriteLine("""
-                Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
-                vandabilitate sau potrivire pentru un scop anume. E software liber:
-                il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea
-                ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,
-                sau la <https://www.gnu.org/licenses/gpl-3.0.html>.
-                """);
+            PrintWarranty(writer);
             return;
         }
 
@@ -160,12 +154,16 @@ internal sealed class Options
             """);
 
         writer.WriteLine();
-        writer.WriteLine("""
-            This program comes with ABSOLUTELY NO WARRANTY, not even the implied
-            warranty of merchantability or fitness for a particular purpose. It is
-            free software: you may redistribute and modify it under the terms of
-            the GPLv3 (or, at your option, any later version). The full text is in
-            the LICENSE file, or at <https://www.gnu.org/licenses/gpl-3.0.html>.
-            """);
+        PrintWarranty(writer);
+    }
+
+    /// <summary>The warranty paragraph, the core's lines in the run's language, one per line (ADR 0007).</summary>
+    /// <param name="writer">Where the lines go; stdout.</param>
+    private static void PrintWarranty(TextWriter writer)
+    {
+        foreach (var line in LicenseInfo.WarrantyLines)
+        {
+            writer.WriteLine(line);
+        }
     }
 }

@@ -139,6 +139,27 @@ public class WindowSmokeTests
             Assert.False(one.CanPreview);
         });
 
+    /// <summary>
+    /// The About window: its own XAML, the icon through a decoder and a link bound to a
+    /// property, all of which compile with a wrong name (R-035, R-037).
+    /// </summary>
+    [Fact]
+    public void R035_TheAboutWindowLoadsAndRenders()
+        => _sta.Invoke(() =>
+        {
+            using BindingErrors errors = new();
+            AboutWindow about = new();
+
+            // The content, not the window: an unshown Window renders transparent, while the
+            // root panel inherits the DataContext and goes through the same bindings.
+            Render((FrameworkElement)about.Content, 560, 420, "about");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+
+            BitmapSource logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);
+            Assert.Equal(256, logo.PixelWidth);
+            Assert.Equal("Despre CopyWcs", about.Title);
+        });
+
     /// <summary>The window with an outcome of every kind drawn: the refusal, the warning, the cards and the closing lines (R-037).</summary>
     [Fact]
     public void R037_TheOutcomeCardRendersEveryKindWithNoBindingError()

@@ -15,19 +15,51 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LicenseInfo.cs - the copyright notice, read from the assembly.
+// LicenseInfo.cs - the copyright notice, read from the assembly, and the warranty paragraph.
 //
-// THE SOURCE OF TRUTH is <Copyright> in Directory.Build.props (ADR 0003). Hardcode nothing
-// here: MSBuild turns <Copyright> into AssemblyCopyrightAttribute, and that is read back. So
-// there is one place to change.
+// THE SOURCE OF TRUTH for the copyright is <Copyright> in Directory.Build.props (ADR 0003).
+// Hardcode nothing here: MSBuild turns <Copyright> into AssemblyCopyrightAttribute, and that is
+// read back. So there is one place to change. The warranty paragraph GPLv3 section 5(d) asks
+// for lives here too, so that --help and the About window say the same words (ADR 0007).
 
 using System.Reflection;
 
 namespace CopyWcs;
 
-/// <summary>The copyright line, read out of the assembly.</summary>
+/// <summary>The copyright line, read out of the assembly, and the warranty paragraph.</summary>
 internal static class LicenseInfo
 {
+    /// <summary>Where the full text of the licence is, besides the LICENSE file.</summary>
+    internal const string LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html";
+
+    private static readonly string[] WarrantyEnglish =
+    [
+        "This program comes with ABSOLUTELY NO WARRANTY, not even the implied",
+        "warranty of merchantability or fitness for a particular purpose. It is",
+        "free software: you may redistribute and modify it under the terms of",
+        "the GPLv3 (or, at your option, any later version). The full text is in",
+        "the LICENSE file, or at <" + LicenseUrl + ">.",
+    ];
+
+    private static readonly string[] WarrantyRomanian =
+    [
+        "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
+        "vandabilitate sau potrivire pentru un scop anume. E software liber:",
+        "il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea",
+        "ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,",
+        "sau la <" + LicenseUrl + ">.",
+    ];
+
+    /// <summary>
+    /// The disclaimer of warranty and the terms (GPLv3 section 5(d)), as the five lines the
+    /// console prints under the usage (R-003), in the run's language.
+    /// </summary>
+    internal static IReadOnlyList<string> WarrantyLines
+        => Ui.Current == UiLanguage.Romanian ? WarrantyRomanian : WarrantyEnglish;
+
+    /// <summary>The same disclaimer as one paragraph, the lines joined by a space, for the About window (R-035).</summary>
+    internal static string Warranty => string.Join(" ", WarrantyLines);
+
     /// <summary>
     /// The copyright notice, on the second line of every run, under the version banner (see
     /// <see cref="VersionInfo"/>; R-001). The program is GPLv3 (see LICENSE), and the licence
