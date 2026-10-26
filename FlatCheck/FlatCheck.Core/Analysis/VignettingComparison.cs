@@ -68,6 +68,11 @@ namespace FlatCheck
         /// No raw beside the master (or as a reference), so no lens ID - and no --lens.
         /// </summary>
         NoRaw,
+        /// <summary>
+        /// A raw was read, but it says nothing about the lens: neither a lens ID nor a focal
+        /// range, what a camera on a telescope or on a lens without contacts writes (R-106).
+        /// </summary>
+        RawWithoutLens,
         /// <summary>The raw has an ID, but no lens in the catalog matches it.</summary>
         NoLensMatch,
         /// <summary>
@@ -214,8 +219,9 @@ namespace FlatCheck
         /// default the identity's candidates: what the raw indicated), each through the profile
         /// nearest to the focal length and the aperture. The gap is the first that applies, in
         /// this order: an empty <paramref name="catalog"/> gives NoProfiles; no lens to compare
-        /// gives NoLensMatch when the raw had a lens ID, NoRaw otherwise; a null catalog then gives
-        /// NoProfiles; then NoFocal, NoFStop, and NoCrop or NoLensMatch when no row was made.
+        /// gives NoLensMatch when the raw had a lens ID, RawWithoutLens when a raw was read but
+        /// says nothing about the lens, NoRaw otherwise; a null catalog then gives NoProfiles;
+        /// then NoFocal, NoFStop, and NoCrop or NoLensMatch when no row was made.
         /// </summary>
         /// <param name="master">The master's structure result; its VignetteStops is
         /// compared.</param>
@@ -232,12 +238,16 @@ namespace FlatCheck
             lenses ??= shot?.Candidates ?? Array.Empty<LensChoice>();
             double masterStops = master.VignetteStops;
             // An empty catalog is the deepest reason; an unknown one (null) is not a reason, so
-            // without a raw it says "no raw", which is what the person can fix.
+            // without a raw it says "no raw", which is what the person can fix. A raw that was
+            // read and carries no lens is not "no raw": the person would look for a file that is
+            // there (the Canon EOS 40D session of 2026-10-26, 17 raws in flats/).
             if (catalog != null && catalog.Lenses.Count == 0)
                 return new VignettingComparison(masterStops, shot, null, ComparisonGap.NoProfiles, null);
             if (lenses.Count == 0)
                 return new VignettingComparison(masterStops, shot, null,
-                    shot != null && shot.HasRawLensId ? ComparisonGap.NoLensMatch : ComparisonGap.NoRaw, null);
+                    shot != null && shot.HasRawLensId ? ComparisonGap.NoLensMatch
+                    : shot != null && shot.RawSaysNoLens ? ComparisonGap.RawWithoutLens
+                    : ComparisonGap.NoRaw, null);
             if (catalog == null)
                 return new VignettingComparison(masterStops, shot, null, ComparisonGap.NoProfiles, null);
             if (shot?.FocalMm == null)

@@ -76,6 +76,9 @@ library figures of 2026-09-18 and the guards. ADR 0030 holds how the lens is ide
   under `--against`'s depth line, glued to the scale note on the Structure tab and to the
   verdict detail on the Sintetic tab.
 - `ComparisonGap` names the reason when nothing can be compared: no profiles on the machine,
-  no raw and no `--lens`, an ID nothing matches, no focal, no f-stop (Siril writes none), or
+  no raw and no `--lens`, a raw that was read but says nothing about the lens (`RawWithoutLens`,
+  `ShotIdentity.RawSaysNoLens`: no lens ID and no focal range, a camera on a telescope; ADR
+  0065, named with the file and the remedy, `StructureReport.RawWithoutLensRemedy` asking only
+  for what is still unknown), an ID nothing matches, no focal, no f-stop (Siril writes none), or
   lensfun-only profiles without a crop. Unknown is not a refusal, the `--light` rule.
 - `--help` moved when the flags were added, and was re-approved.

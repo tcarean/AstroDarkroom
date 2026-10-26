@@ -519,6 +519,28 @@ public class StructureTabTests
         Assert.DoesNotContain(StructureReport.ProfilesHeading, vm.Report);   // the report stays the console's plain one
     }
 
+    /// <summary>
+    /// A raw in flats/ that carries no lens (a Canon on a telescope: focal length 0, no ID) is
+    /// named on the card with what it lacks, never as a missing raw (R-106).
+    /// </summary>
+    [Fact]
+    public async Task ARawThatCarriesNoLensIsNamedOnTheCard()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("IMG_7290.CR2");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var noLens = new LoadedFrame { Header = new Dictionary<string, string>(), Camera = "Canon EOS 40D" };
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? noLens : ImageLoader.LoadInfo(path));
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasProfileRows);
+        Assert.StartsWith("Nu se poate compara: IMG_7290.CR2 nu spune nimic despre obiectiv", vm.ProfileGap);
+        Assert.Contains("telescop", vm.ProfileGap);
+        Assert.DoesNotContain("niciun raw langa master", vm.ProfileGap);
+    }
+
     [Fact]
     public async Task ResetClearsTheProfileComparisonToo()
     {

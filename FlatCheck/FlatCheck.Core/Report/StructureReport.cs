@@ -349,6 +349,23 @@ namespace FlatCheck
                  + "modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.");
 
         /// <summary>Why it could not compare, in words.</summary>
+        /// <summary>
+        /// "Give --lens &lt;text&gt; with --focal &lt;mm&gt; and --fstop &lt;f&gt;" - what the console
+        /// needs once the raw has said nothing: the lens by name, and whichever of the focal
+        /// length (FOCALLEN may carry it) and the aperture (Siril never writes it) is unknown too.
+        /// </summary>
+        /// <param name="shot">The shot's identity, for what is still unknown; null asks for
+        /// all three.</param>
+        /// <returns>The remedy sentence, without a final full stop.</returns>
+        internal static string RawWithoutLensRemedy(ShotIdentity shot)
+        {
+            var missing = new List<string>();
+            if (shot?.FocalMm == null) missing.Add("--focal <mm>");
+            if (shot?.FStop == null) missing.Add("--fstop <f>");
+            string with = missing.Count == 0 ? "" : T(" with ", " cu ") + string.Join(T(" and ", " si "), missing);
+            return T("Give --lens <text>", "Da --lens <text>") + with;
+        }
+
         /// <param name="o">The run, with a comparison that was not made.</param>
         /// <returns>The reason, with the option that fixes it; "" for None.</returns>
         internal static string GapText(StructureOutcome o)
@@ -366,6 +383,8 @@ namespace FlatCheck
                             $"raw-ul de langa master nu s-a putut citi ({o.RawError}), deci nu se stie obiectivul")
                         : T("no raw beside the master (in flats/), so no lens ID; a FITS does not say which lens made it. Give --lens <text> or --raw <file>",
                             "niciun raw langa master (in flats/), deci niciun ID de obiectiv; un FITS nu spune ce obiectiv l-a facut. Da --lens <text> sau --raw <fisier>");
+                case ComparisonGap.RawWithoutLens:
+                    return SyntheticReport.RawWithoutLensNote(shot?.RawName) + ". " + RawWithoutLensRemedy(shot);
                 case ComparisonGap.NoLensMatch:
                     return shot != null && shot.HasRawLensId
                         ? T($"{shot.RawLensLabel}: no lens in the catalog matches it (by ID and range). Give --lens <text>",

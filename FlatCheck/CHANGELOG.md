@@ -90,6 +90,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A raw beside the master that says nothing about the lens (a camera on a telescope or on a
+  lens without contacts: focal length 0, no lens ID, no focal range, as a Canon EOS 40D session
+  wrote) is named as such, with what it lacks and what to give (`--lens <text>`, plus `--focal`
+  and `--fstop` when those are unknown too), instead of `no raw beside the master (in flats/)`
+  with the raws in plain sight; the Structure tab's card says the same, and the Synthetic tab's
+  prefill note says why the aperture stayed empty (R-106, ADR 0065).
 - A FITS whose data area is shorter than its header declares (a copy cut mid-transfer) is
   refused with `FITS: data cut short: the header announces <n> bytes of pixels, the file holds
   only <m>.` and exit 1, instead of an `IndexOutOfRangeException` out of the reader's sample

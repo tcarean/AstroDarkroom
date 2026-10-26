@@ -98,6 +98,14 @@ namespace FlatCheck
         internal bool HasRawLensRange => Raw?.LensMinFocalMm != null && Raw.LensMaxFocalMm != null && Raw.LensMaxAperture != null;
 
         /// <summary>
+        /// True when a raw was read and it says nothing about the lens: neither a lens ID nor a
+        /// focal range. What a camera on a telescope, or on a lens without contacts, writes (a
+        /// Canon EOS 40D: focal length 0, aperture 0, lens ID 0). A manual lens on a Nikon is not
+        /// this case: the body writes ID 74 and the range from its menu. False without a raw.
+        /// </summary>
+        internal bool RawSaysNoLens => Raw != null && !HasRawLensId && !HasRawLensRange;
+
+        /// <summary>
         /// "ID-ul Nikon 139 din raw (11-20 mm f/2.8)", or, when the ID gave nothing, the range
         /// alone.
         /// </summary>
@@ -208,6 +216,9 @@ namespace FlatCheck
                     id.CandidatesByRangeOnly = true;
                 }
             }
+            // A raw that says nothing about the lens is said so here, once, so that the Synthetic
+            // tab's note and the Structure report's gap tell the same thing (R-106).
+            if (id.RawSaysNoLens) notes.Add(SyntheticReport.RawWithoutLensNote(rawName));
             id.Notes = notes;
             return id;
         }

@@ -437,6 +437,13 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
   how much the reference is the distance test (the same sheets with the lens 2-3 cm off them;
   the lens's vignetting does not depend on distance, the panel's angular excess does), which
   is the owner's to run.
+- A raw that was read and carries neither a lens ID nor a range (`ShotIdentity.RawSaysNoLens`;
+  a Canon EOS 40D on a telescope writes focal length 0, aperture 0, lens ID 0, measured
+  2026-10-26) gets `SyntheticReport.RawWithoutLensNote` in `Identify`'s notes, which the
+  Synthetic tab shows under its fields, and the gap `RawWithoutLens` in the comparison (ADR
+  0065). The lens ID is still read from `LensInfo.Nikon.LensIDNumber` only; on a Canon with an
+  electronic lens libraw fills `LensInfo.MakerNotes.LensID` with the maker's number, which
+  Adobe's Canon files carry as `stCamera:LensID` - unmeasured, no such raw on the machine.
 
 **Measured** (corner, stops; "nearest" is the profile that gives the verdict):
 
