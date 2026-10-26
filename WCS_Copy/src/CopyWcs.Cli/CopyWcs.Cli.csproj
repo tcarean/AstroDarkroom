@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The console, copywcs.exe: options, dispatch, exit code, printing. Everything that reads,
+       selects or writes a card is in CopyWcs.Core; CopyWcsCli.Run(args, stdout, stderr) is what
+       the tests drive, and Main is a one-line shim to it. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>CopyWcs</RootNamespace>
+    <AssemblyName>copywcs</AssemblyName>
+    <!-- Read from copywcs.runtimeconfig.json at run time: the console formats numbers with
+         "." whatever the Windows culture. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CopyWcs.Core\CopyWcs.Core.csproj" />
+    <InternalsVisibleTo Include="CopyWcs.Tests" />
+  </ItemGroup>
+</Project>

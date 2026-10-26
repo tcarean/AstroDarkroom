@@ -1,0 +1,11 @@
+<Project>
+  <!-- Central Package Management: every package version lives here, once. The kit's rule
+       "Packages": no new package without asking, and every package gets a one-line "why".
+       The tool itself has no package: the FITS header is read and written by hand (ADR 0001). -->
+  <ItemGroup>
+    <!-- Test host and runner, at the kit's versions (ADR 0002). -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>
