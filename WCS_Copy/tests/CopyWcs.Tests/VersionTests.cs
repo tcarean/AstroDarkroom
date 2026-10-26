@@ -21,10 +21,10 @@ using System.Text.RegularExpressions;
 namespace CopyWcs.Tests;
 
 /// <summary>
-/// Versiunea se incrementeaza manual, iar sursa de adevar e <c>&lt;Version&gt;</c> din
-/// csproj - <see cref="VersionInfo"/> o citeste din assembly, nu o hardcodeaza. Testele
-/// astea verifica plumbing-ul ala, si ca banner-ul chiar apare pe prima linie a fiecarei
-/// rulari: altfel o iesire copiata undeva nu mai spune ce versiune a produs-o.
+/// The version is bumped by hand, and the source of truth is <c>&lt;Version&gt;</c> in
+/// Directory.Build.props; <see cref="VersionInfo"/> reads it from the assembly, never hardcodes it. These
+/// tests check that plumbing, and that the banner really appears on the first line of every
+/// run: otherwise a pasted output no longer says which version produced it.
 /// </summary>
 public class VersionTests
 {
@@ -47,8 +47,8 @@ public class VersionTests
     }
 
     /// <summary>
-    /// Verifica plumbing-ul csproj -> assembly -> VersionInfo. Daca cineva scoate
-    /// &lt;Version&gt; sau MSBuild inceteaza sa mai propage InformationalVersion, aici se vede.
+    /// Checks the plumbing Directory.Build.props -> assembly -> VersionInfo. If someone removes
+    /// &lt;Version&gt; or MSBuild stops propagating InformationalVersion, it shows here.
     /// </summary>
     [Fact]
     public void TheVersionComesFromTheBuildProps()
@@ -61,7 +61,7 @@ public class VersionTests
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Value);
     }
 
-    /// <summary>Nu trebuie sa ramana "1.0.0.0" sau "1.0.0+abc123" din assembly.</summary>
+    /// <summary>Neither "1.0.0.0" nor "1.0.0+abc123" from the assembly may remain.</summary>
     [Fact]
     public void TheVersionIsNotTheFourPartOrSourceTaggedForm()
     {
@@ -90,14 +90,14 @@ public class VersionTests
         Assert.Equal(VersionInfo.Banner, FirstLine("--help"));
     }
 
-    /// <summary>Si o rulare care esueaza spune ce versiune a esuat.</summary>
+    /// <summary>A failed run too says which version failed.</summary>
     [Fact]
     public void AFailedRunStillPrintsTheBanner()
     {
         using var ws = new TempWorkspace();
 
         Assert.Equal(VersionInfo.Banner,
-            FirstLine(ws.FilePath("nu-exista.fit"), ws.FilePath("nici-asta.fit")));
+            FirstLine(ws.FilePath("missing.fit"), ws.FilePath("also-missing.fit")));
         Assert.Equal(VersionInfo.Banner, FirstLine("--optiune-inventata"));
         Assert.Equal(VersionInfo.Banner, FirstLine("un-singur-argument"));
     }
@@ -113,8 +113,8 @@ public class VersionTests
     }
 
     /// <summary>
-    /// Nu exista --version: banner-ul de la fiecare rulare il face redundant, si un flag
-    /// in plus ar fi inca o cale de iesire de intretinut. Ramane optiune necunoscuta.
+    /// There is no --version: the banner on every run makes it redundant, and one more flag
+    /// would be one more exit path to maintain. It stays an unknown option.
     /// </summary>
     [Fact]
     public void ThereIsNoVersionFlag()

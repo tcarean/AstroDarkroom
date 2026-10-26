@@ -21,11 +21,11 @@ using System.Text.RegularExpressions;
 namespace CopyWcs.Tests;
 
 /// <summary>
-/// GPLv3 vrea ca notita de copyright sa se vada la fiecare rulare, si ca un program care
-/// afiseaza notite legale sa afiseze si lipsa garantiei (sectiunea 5(d)). Testele astea
-/// tin cele doua promisiuni: a doua linie a oricarei rulari e copyright-ul, iar --help
-/// poarta disclaimerul si trimite la textul complet. Si leaga sursa de adevar: sirul vine
-/// din &lt;Copyright&gt; din csproj, nu dintr-un literal ramas prin cod.
+/// GPLv3 wants the copyright notice shown on every run, and a program that displays
+/// legal notices to display the lack of warranty too (section 5(d)). These tests keep
+/// the two promises: the second line of any run is the copyright, and --help carries
+/// the disclaimer and points at the full text. They also bind the source of truth: the
+/// string comes from &lt;Copyright&gt; in Directory.Build.props, not from a literal left in the code.
 /// </summary>
 public class LicenseNoticeTests
 {
@@ -42,8 +42,8 @@ public class LicenseNoticeTests
     private static string SecondLine(params string[] args) => Lines(args)[1];
 
     /// <summary>
-    /// Verifica plumbing-ul csproj -> assembly -> LicenseInfo. Daca cineva scoate
-    /// &lt;Copyright&gt;, ramane fallback-ul din cod - si aici se vede.
+    /// Checks the plumbing Directory.Build.props -> assembly -> LicenseInfo. If someone removes
+    /// &lt;Copyright&gt;, the fallback in the code is what remains, and it shows here.
     /// </summary>
     [Fact]
     public void TheCopyrightComesFromTheBuildProps()
@@ -77,14 +77,14 @@ public class LicenseNoticeTests
         Assert.Equal(LicenseInfo.Copyright, SecondLine("--help"));
     }
 
-    /// <summary>Si o rulare care esueaza spune a cui e unealta care a esuat.</summary>
+    /// <summary>A failed run too says whose tool failed.</summary>
     [Fact]
     public void AFailedRunStillPrintsTheCopyright()
     {
         using var ws = new TempWorkspace();
 
         Assert.Equal(LicenseInfo.Copyright,
-            SecondLine(ws.FilePath("nu-exista.fit"), ws.FilePath("nici-asta.fit")));
+            SecondLine(ws.FilePath("missing.fit"), ws.FilePath("also-missing.fit")));
         Assert.Equal(LicenseInfo.Copyright, SecondLine("--optiune-inventata"));
         Assert.Equal(LicenseInfo.Copyright, SecondLine("un-singur-argument"));
     }
@@ -100,9 +100,9 @@ public class LicenseNoticeTests
     }
 
     /// <summary>
-    /// GPLv3 sectiunea 5(d): un program care afiseaza notite legale trebuie sa afiseze si
-    /// lipsa garantiei. Nu se poate pune sub banner - ar ingrosa fiecare rulare - deci
-    /// sta in --help, si de acolo trimite la textul complet.
+    /// GPLv3 section 5(d): a program that displays legal notices must display the lack of
+    /// warranty too. It cannot go under the banner, it would bloat every run, so it sits in
+    /// --help, and points from there at the full text.
     /// </summary>
     [Fact]
     public void HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
@@ -115,7 +115,7 @@ public class LicenseNoticeTests
         Assert.Contains("gnu.org/licenses/gpl-3.0.html", help);
     }
 
-    /// <summary>Disclaimerul apare si cand usage-ul e tiparit din cauza unei erori.</summary>
+    /// <summary>The disclaimer appears too when the usage is printed because of an error.</summary>
     [Fact]
     public void UsagePrintedAfterABadArgumentAlsoCarriesTheDisclaimer()
     {

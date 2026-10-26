@@ -63,8 +63,8 @@ public class WcsMetadataKeysTests
     [Fact]
     public void SelectKeysToCopy_StandardMatrixKeyIncluded_ViaLiteralListNotSipRegex()
     {
-        // CD1_1 e o cheie WCS standard, inclusa prin WcsKeys - regex-ul SIP nu ar trebui
-        // sa o mai adauge o a doua oara.
+        // CD1_1 is a standard WCS key, included through WcsKeys; the SIP regex should not
+        // add it a second time.
         var header = Header(FitsTestData.Card("CD1_1", "1.0"));
 
         var selected = WcsMetadataKeys.SelectKeysToCopy(header, includeOptical: false);
@@ -75,7 +75,7 @@ public class WcsMetadataKeysTests
     [Fact]
     public void SelectKeysToCopy_UnrelatedKeyResemblingSipPattern_NotMatched()
     {
-        // "ABC_1_2" nu incepe cu unul din prefixele SIP (A, B, AP, BP urmate direct de "_").
+        // "ABC_1_2" does not start with one of the SIP prefixes (A, B, AP, BP followed directly by "_").
         var header = Header(FitsTestData.Card("ABC_1_2", "1.0"));
 
         var selected = WcsMetadataKeys.SelectKeysToCopy(header, includeOptical: false);

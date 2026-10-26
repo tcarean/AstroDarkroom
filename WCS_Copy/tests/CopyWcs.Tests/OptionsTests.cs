@@ -73,7 +73,7 @@ public class OptionsTests
     [Fact]
     public void Parse_OutputValueLooksLikeAFlag_ConsumedVerbatimAsFilename()
     {
-        // Comportament existent: valoarea de dupa -o e consumata ca atare, chiar daca incepe cu '-'.
+        // Existing behaviour: the value after -o is taken as it is, even when it starts with '-'.
         var opt = Options.Parse(["src.fit", "dest.fit", "-o", "-x"]);
 
         Assert.Equal("-x", opt.Output);
@@ -116,7 +116,7 @@ public class OptionsTests
     [Fact]
     public void Parse_HelpFlag_ShortCircuitsBeforeOtherValidation()
     {
-        // Fara -h, un singur argument pozitional ar arunca - dar -h se intoarce imediat.
+        // Without -h a single positional argument would throw, but -h returns at once.
         var opt = Options.Parse(["-h", "only-one-arg"]);
 
         Assert.True(opt.ShowHelp);
@@ -128,7 +128,7 @@ public class OptionsTests
         var opt = Options.Parse(["src.fit", "-h", "dest.fit"]);
 
         Assert.True(opt.ShowHelp);
-        // Source/Dest se asigneaza doar dupa bucla; -h iese din bucla mai devreme, deci raman "".
+        // Source and Dest are assigned only after the loop; -h leaves the loop earlier, so they stay "".
         Assert.Equal("", opt.Source);
         Assert.Equal("", opt.Dest);
     }

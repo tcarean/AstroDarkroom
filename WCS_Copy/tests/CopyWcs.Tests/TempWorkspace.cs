@@ -17,7 +17,7 @@
 
 namespace CopyWcs.Tests;
 
-/// <summary>Director temporar unic per test, sters recursiv la Dispose (xUnit ruleaza claselele in paralel).</summary>
+/// <summary>A temporary folder unique per test, deleted recursively at Dispose (xUnit runs the classes in parallel).</summary>
 internal sealed class TempWorkspace : IDisposable
 {
     public string Dir { get; }

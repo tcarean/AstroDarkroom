@@ -67,7 +67,7 @@ public class FitsHeaderTests
     [Fact]
     public void ReadFrom_TruncatedShortStream_Throws()
     {
-        // Un singur card, mult sub un bloc de 2880 - si fara END.
+        // A single card, far under one 2880-byte block, and no END.
         var bytes = FitsTestData.RawBytes(new[] { FitsTestData.Card("SIMPLE", "T") });
 
         Assert.Throws<InvalidDataException>(() => FitsHeader.ReadFrom(new MemoryStream(bytes)));
@@ -76,8 +76,8 @@ public class FitsHeaderTests
     [Fact]
     public void ReadFrom_ExactBlockMultipleButNoEnd_Throws()
     {
-        // Exact 36 de carduri (= 2880 bytes, un bloc plin), fara END niciunde:
-        // primul bloc se citeste cu succes, dar cautarea urmatorului bloc da EOF.
+        // Exactly 36 cards (= 2880 bytes, one full block), no END anywhere:
+        // the first block reads fine, but looking for the next block hits EOF.
         var cards = Enumerable.Range(0, 36).Select(i => FitsTestData.Card($"KEY{i:00}", i.ToString()));
         var bytes = FitsTestData.RawBytes(cards);
         Assert.Equal(2880, bytes.Length);
@@ -152,7 +152,7 @@ public class FitsHeaderTests
     [Fact]
     public void GetInt_CardWithNoEqualsSign_ReturnsNegativeOne()
     {
-        // Cardurile HISTORY/COMMENT nu au '=' pe coloana 9.
+        // HISTORY and COMMENT cards have no '=' in column 9.
         var header = ReadHeader(FitsTestData.Pad("HISTORY something happened"));
 
         Assert.Equal(-1, header.GetInt("HISTORY"));
@@ -299,7 +299,7 @@ public class FitsHeaderTests
             new[] { FitsTestData.Card("SIMPLE", "T") }, data));
 
         var header = FitsHeader.ReadPrimary(path);
-        // SIMPLE + 40 chei > 36/bloc -> headerul trebuie sa creasca la 2 blocuri.
+        // SIMPLE + 40 keys > 36 per block: the header must grow to 2 blocks.
         for (var i = 0; i < 40; i++)
         {
             header.SetCard($"KEY{i:00}", FitsTestData.Card($"KEY{i:00}", i.ToString()));
@@ -316,7 +316,7 @@ public class FitsHeaderTests
         Assert.Equal(data, bytes[^data.Length..]);
     }
 
-    /// <summary>Stream fals care returneaza doar cateva bytes pe apel, ca sa verifice ca ReadFrom nu presupune ca un singur Read() umple bufferul.</summary>
+    /// <summary>A fake stream that returns only a few bytes per call, to check that ReadFrom does not assume one Read() fills the buffer.</summary>
     private sealed class DribbleStream : Stream
     {
         private readonly MemoryStream _inner;

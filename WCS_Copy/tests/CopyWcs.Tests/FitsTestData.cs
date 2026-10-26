@@ -20,9 +20,9 @@ using System.Text;
 namespace CopyWcs.Tests;
 
 /// <summary>
-/// Construieste carduri si fisiere FITS sintetice pentru teste. Foloseste propriile
-/// constante 80/2880 (nu cele din FitsHeader) ca o constanta gresita in productie
-/// sa fie prinsa de teste, nu confirmata de ele.
+/// Builds synthetic FITS cards and files for the tests. It uses its own 80/2880
+/// constants (not FitsHeader's), so that a wrong constant in production is caught by
+/// the tests, not confirmed by them.
 /// </summary>
 internal static class FitsTestData
 {
@@ -43,10 +43,10 @@ internal static class FitsTestData
     public static string Pad(string card) =>
         card.Length >= CardSize ? card[..CardSize] : card.PadRight(CardSize);
 
-    /// <summary>Cardul fara padding la 80 - util pentru a testa padding/trunchiere explicit.</summary>
+    /// <summary>The card without padding to 80, to test the padding and the cut explicitly.</summary>
     public static string UnpaddedCard(string keyword, string value) => $"{keyword,-8}= {value}";
 
-    /// <summary>Carduri padate la 80, concatenate, FARA card END si fara padding la 2880.</summary>
+    /// <summary>Cards padded to 80 and concatenated, WITHOUT an END card and without padding to 2880.</summary>
     public static byte[] RawBytes(IEnumerable<string> cards)
     {
         using var ms = new MemoryStream();
@@ -101,7 +101,7 @@ internal static class FitsTestData
         return data;
     }
 
-    /// <summary>Header minimal plate-solved: WCS standard, un coeficient SIP si chei optice.</summary>
+    /// <summary>A minimal plate-solved header: standard WCS, one SIP coefficient and optical keys.</summary>
     public static List<string> PlateSolvedCards(int naxis1 = 100, int naxis2 = 80) => new()
     {
         Card("SIMPLE", "T"),
@@ -126,7 +126,7 @@ internal static class FitsTestData
         Card("TELESCOP", "'My Scope'"),
     };
 
-    /// <summary>Header de imagine procesata: fara WCS, aceleasi dimensiuni ca sursa implicita.</summary>
+    /// <summary>A processed image's header: no WCS, the same dimensions as the default source.</summary>
     public static List<string> ProcessedCards(int naxis1 = 100, int naxis2 = 80) => new()
     {
         Card("SIMPLE", "T"),
