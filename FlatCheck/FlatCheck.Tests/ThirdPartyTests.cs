@@ -58,11 +58,11 @@ public class ThirdPartyTests
 
         foreach (string p in linked)
             Assert.True(claimed.Count(c => c == p) == 1,
-                $"pachetul {p} din FlatCheck.Core.csproj nu e revendicat de exact o componenta din ThirdParty.Components");
+                $"the package {p} of FlatCheck.Core.csproj is not claimed by exactly one component of ThirdParty.Components");
 
         foreach (string p in claimed)
             Assert.True(linked.Contains(p),
-                $"ThirdParty.Components revendica pachetul {p}, care nu mai e in FlatCheck.Core.csproj");
+                $"ThirdParty.Components claims the package {p}, which is no longer in FlatCheck.Core.csproj");
     }
 
     /// <summary>
@@ -78,9 +78,12 @@ public class ThirdPartyTests
             .Select(m => m.Groups[1].Value)
             .ToArray();
 
-        foreach (var c in ThirdParty.Components)
-            Assert.True(headings.Any(h => h.Contains(c.Name)),
-                $"THIRD-PARTY-NOTICES.md nu are un heading pentru {c.Name}");
+        // The notices file is English (ADR 0069), so the names are taken in English: the test
+        // assemblies default to Romanian, where the data component is "lensfun (baza de date)".
+        using (Ui.Use(UiLanguage.English))
+            foreach (var c in ThirdParty.Components)
+                Assert.True(headings.Any(h => h.Contains(c.Name)),
+                    $"THIRD-PARTY-NOTICES.md has no heading for {c.Name}");
     }
 
     /// <summary>What the screen shows cannot be empty: name, role, license, copyright, and
@@ -118,7 +121,7 @@ public class ThirdPartyTests
         Assert.Contains("github.com/lensfun", lf.Url);
 
         string folder = Path.Combine(RepoDir(), ProfileLocator.LensfunFolderName);
-        Assert.True(File.Exists(Path.Combine(folder, "LICENSE.txt")), "lensfun/LICENSE.txt lipseste");
+        Assert.True(File.Exists(Path.Combine(folder, "LICENSE.txt")), "lensfun/LICENSE.txt is missing");
         string version = File.ReadAllText(Path.Combine(folder, ProfileLocator.LensfunVersionFile));
         Assert.Contains("upstream commit:", version);
         Assert.Contains("CC BY-SA", version + File.ReadAllText(Path.Combine(folder, "LICENSE.txt")));

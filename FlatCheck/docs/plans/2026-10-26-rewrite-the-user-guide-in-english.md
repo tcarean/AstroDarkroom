@@ -121,3 +121,23 @@ the README rewrites have landed. No version bump.
   window's map-guide sentence "The rotation test is just as blind to it" are stale; R-081 says the
   window saves its report "beside the master", the code saves it in the session folder; the
   repository's front page still lists the Ratio tab and calls every tool's guide Romanian.
+
+## Extension: the third-party notices (2026-10-26)
+
+The owner took the proposed follow-up "Translate FlatCheck's third-party notices to English" into
+this session ("Do it here"). It went on this branch, as a second commit, because the branch was not
+merged yet and a branch cut from `main` would have clashed with ADR 0069 and `CLAUDE.md`.
+
+- `THIRD-PARTY-NOTICES.md` translated whole, every legal argument kept. Three facts brought up to
+  date on the way: the ImageSharp version is pinned in `Directory.Packages.props` (not in the
+  `PackageReference`, since central package management), the lensfun and Adobe profiles serve the
+  structure mode's comparison too, and the test packages are listed in full, their licences read
+  from the packages' own `.nuspec` (xunit and xunit.runner.visualstudio Apache-2.0,
+  Microsoft.NET.Test.Sdk and coverlet.collector MIT).
+- `R095_EveryComponentHasAnEntryInTheNoticesFile` looked for each component's name in the headings
+  under the test assemblies' Romanian default, so an English lensfun heading would have failed it.
+  The owner chose the recommended fix: the check runs under `Ui.Use(UiLanguage.English)`. The four
+  Romanian failure messages of `ThirdPartyTests` were put into English with it (the question said
+  three; there were four).
+- ADR 0069 now covers the notices too; `CLAUDE.md`'s rule "Languages" and the CHANGELOG line say
+  so.

@@ -1,4 +1,4 @@
-# 0069. The README is English and holds the user guide only
+# 0069. The README and the third-party notices are English; the README holds the user guide only
 
 Date: 2026-10-26
 Status: accepted 2026-10-26
@@ -19,6 +19,12 @@ and relevant, chose to keep it a user guide only, and to start once the lens-ide
 (ADR 0068) was merged. The 48 validation cases were re-measured on that merge, all passing, so the
 figures the README quotes stand.
 
+`THIRD-PARTY-NOTICES.md`, which the README and the window's About text send the reader to, was then
+the last user document in Romanian; the owner had it translated in the same task. One test stood
+in the way: `R095_EveryComponentHasAnEntryInTheNoticesFile` looks for each component's name in the
+file's headings, and the test assemblies default to Romanian, where the data component is named
+"lensfun (baza de date)".
+
 ## Decision
 
 `README.md` is English, in one file with no Romanian copy, in the British spelling of the code's
@@ -30,6 +36,9 @@ defects stay in `CLAUDE.md`, `docs/design/` and the decision records. The README
 mirror the window's guides carry the window's own English wording. It has no anchor links: sections
 are named in quotes, because Bitbucket and other renderers build different anchors.
 
+`THIRD-PARTY-NOTICES.md` is English too, with every legal argument kept, and the R-095 test takes
+the components' names in English, the language of the file (the owner's choice, 2026-10-26).
+
 ## Alternatives rejected
 
 - **Keep the Romanian README and add an English one.** Two files of about a thousand lines, kept in
@@ -38,6 +47,8 @@ are named in quotes, because Bitbucket and other renderers build different ancho
   files keep them better than the README did.
 - **Drop the tables that mirror the window's guides.** The window explains itself, but a reader on
   Bitbucket, or of the map the console writes, has no window; the owner kept them.
+- **Keep the lensfun heading of the notices in Romanian, so the test stays as it was.** One Romanian
+  heading in an English file, kept only for the test's default language.
 
 ## Consequences
 
@@ -45,6 +56,9 @@ are named in quotes, because Bitbucket and other renderers build different ancho
   design notes that name the README say it is English and name its English sections ("Options",
   "Development", "Third-party components"), and so do the comments of `SessionMessages.cs` that
   point at the tables the window's guides mirror.
-- A user-visible change edits the README in English; the Romanian texts live in the interface only.
+- A user-visible change edits the README in English, and a new package its entry in the notices in
+  English; the Romanian texts live in the interface only.
+- `ThirdPartyTests` speaks English, its failure messages included; a heading of the notices must
+  contain the component's English name.
 - The front page of the repository belongs to AstroDarkroom; what it says of each tool's guide is
   changed there, not here.

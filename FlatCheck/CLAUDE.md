@@ -96,8 +96,9 @@ a kit rule names it.
   Romanian without diacritics, a printed verdict through `VerdictWords.Of` (in XAML, a label
   is `{l:T En='...', Ro='...'}` and a pill's text goes through `VerdictToWord`). The files
   written have English names in both. `README.md` is English and holds the user guide only; the
-  process, the parity goldens and the history stay in `CLAUDE.md` and `docs/`. Every comment is
-  English, in C#, XAML, csproj and the tests; output quoted in a comment stays as the user sees it.
+  process, the parity goldens and the history stay in `CLAUDE.md` and `docs/`.
+  `THIRD-PARTY-NOTICES.md` is English too. Every comment is English, in C#, XAML, csproj and the
+  tests; output quoted in a comment stays as the user sees it.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in
   a view-model or the console.

@@ -68,6 +68,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   mount) and holds only what a user needs: the development process, the parity goldens and the
   differences from the Python prototype are left to `CLAUDE.md` and `docs/`, which already hold
   them. The Romanian README is gone; the interface keeps its Romanian with `--lang ro`.
+  `THIRD-PARTY-NOTICES.md` is in English too, its legal arguments unchanged; its table of test
+  packages now lists all four (`xunit.runner.visualstudio` and `coverlet.collector` were missing).
 - The second maps the console writes have English names in both languages (R-103): `--ratio`
   writes `<name>-world.png` (was `-lume`), `--smooth` writes `<name>-after.png` (was `-dupa`).
 - The files the window writes have English names in both languages (R-101): `Test result.txt`
