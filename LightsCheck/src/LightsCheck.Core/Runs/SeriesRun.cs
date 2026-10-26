@@ -215,7 +215,9 @@ internal static class SeriesRun
         double? scale = focal is double fm && fm > 0 ? 206.265 * pixel / fm : null;
 
         IReadOnlyList<ReadNoise>? readNoise = ReadNoise(session, cancel);
-        Wcs? wcs = ReadWcs(session.Root);
+        // Raws are read top-down against Siril's bottom-up solve; FITS lights are stored as the
+        // solve is (ADR 0023).
+        Wcs? wcs = ReadWcs(session.Root) is Wcs solve ? solve with { FramesFlipped = session.LightsAreRaws } : null;
         SeriesAnalysis series = SeriesAnalyzer.Analyze(frames, cadence, dither, readNoise, wcs, scale);
 
         return new SeriesResult(session, frames, cadence, dither, series, pattern, pixel, pixelSource, scale, refIndex + 1, options.Arrows ?? ArrowKeys.Default);

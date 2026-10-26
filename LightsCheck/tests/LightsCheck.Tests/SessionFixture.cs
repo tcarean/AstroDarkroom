@@ -108,7 +108,7 @@ internal sealed class SessionFixture : IDisposable
     /// of the grid (the positions stay those of the reference, so the frame still registers),
     /// the three backgrounds scaled by BackgroundFactor.
     /// </summary>
-    internal static byte[] StarLight(DateTime start, double exposure, SeriesFrame frame, int seed, bool sensorPattern = false)
+    internal static byte[] StarLight(DateTime start, double exposure, SeriesFrame frame, int seed, bool sensorPattern = false, bool bayer = true)
     {
         SyntheticFrame f = new SyntheticFrame
         {
@@ -136,7 +136,9 @@ internal sealed class SessionFixture : IDisposable
         }
 
         Func<int, int, double> px = f.Pixel();
-        string[] cards = [.. Cards(start, exposure), .. FitsTestData.BayerCards("RGGB")];
+        // Without the Bayer cards the frame is a mosaic of unknown order: its channels are
+        // named CFA[row,col] (R-028's quoting case).
+        string[] cards = bayer ? [.. Cards(start, exposure), .. FitsTestData.BayerCards("RGGB")] : Cards(start, exposure);
         return FitsTestData.BuildFits(f.Width, f.Height, px, bitpix: 16, extraCards: cards);
     }
 
@@ -144,15 +146,16 @@ internal sealed class SessionFixture : IDisposable
     /// A series with a known dither pattern: one frame per entry, shifted by (Dx, Dy) px,
     /// trailed when Elongation is above 1, started PauseSeconds after the previous frame's end.
     /// </summary>
-    internal SessionFixture WithStarSeries(IReadOnlyList<(double Dx, double Dy, double Elongation, double PauseSeconds)> frames, double exposure = 120, int biases = 0, int darks = 0, bool sensorPattern = false) =>
-        WithStarSeries(frames.Select(f => new SeriesFrame(f.Dx, f.Dy, f.Elongation, f.PauseSeconds)).ToList(), exposure, biases, darks, sensorPattern);
+    internal SessionFixture WithStarSeries(IReadOnlyList<(double Dx, double Dy, double Elongation, double PauseSeconds)> frames, double exposure = 120, int biases = 0, int darks = 0, bool sensorPattern = false, bool bayer = true) =>
+        WithStarSeries(frames.Select(f => new SeriesFrame(f.Dx, f.Dy, f.Elongation, f.PauseSeconds)).ToList(), exposure, biases, darks, sensorPattern, bayer);
 
     /// <summary>
     /// The same series from <see cref="SeriesFrame"/> entries, which can also vary the FWHM,
     /// the star count and the background; with <paramref name="sensorPattern"/> every light
-    /// carries the same warm and hot pixels (<see cref="SensorPattern"/>), as a sensor does.
+    /// carries the same warm and hot pixels (<see cref="SensorPattern"/>), as a sensor does;
+    /// without <paramref name="bayer"/> the lights carry no Bayer cards.
     /// </summary>
-    internal SessionFixture WithStarSeries(IReadOnlyList<SeriesFrame> frames, double exposure = 120, int biases = 0, int darks = 0, bool sensorPattern = false)
+    internal SessionFixture WithStarSeries(IReadOnlyList<SeriesFrame> frames, double exposure = 120, int biases = 0, int darks = 0, bool sensorPattern = false, bool bayer = true)
     {
         Directory.CreateDirectory(LightsDir);
         DateTime t = FirstStart;
@@ -163,7 +166,7 @@ internal sealed class SessionFixture : IDisposable
                 t = t.AddSeconds(exposure + frames[i].PauseSeconds);
             }
 
-            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, exposure, frames[i], i, sensorPattern));
+            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, exposure, frames[i], i, sensorPattern, bayer));
         }
 
         if (biases > 0)

@@ -1,7 +1,7 @@
 # 0013. A dither's move on the sky comes from the WCS with Siril's rows flipped; the arrow words are SynScan's default keys
 
 Date: 2026-10-09
-Status: accepted 2026-10-09; the SynScan default keys and the no-input choice superseded by 0014
+Status: accepted 2026-10-09; the SynScan default keys and the no-input choice superseded by 0014; the flip applied to every session superseded by 0023
 
 ## Context
 

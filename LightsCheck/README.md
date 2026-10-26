@@ -137,7 +137,9 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
   SynScan e aceea, de exemplu `RA 15 px ← V, DEC 12 px ↓ S`: sageata apasata, apoi sensul pe
   cer (E/V, N/S). Sensul vine din `result.fit` plate-solvat (Siril scrie FITS-ul cu randurile
   de jos in sus fata de raw, si programul tine cont de asta; verificat pe sesiunea Veil cu plate
-  solve pe doua cadre brute); fara el ramane doar `RA 15 px, DEC 12 px`. Care sageata muta
+  solve pe doua cadre brute; o sesiune din FITS-uri, de exemplu `pp_light_*.fit` copiate din
+  `process/`, e citita in aceeasi ordine ca plate solve-ul, si sensurile ies aceleasi ca din
+  raw-uri); fara el ramane doar `RA 15 px, DEC 12 px`. Care sageata muta
   montura spre est si care spre nord depinde de setarile aplicatiei SynScan: implicit `→` est
   (deci `←` vest) si `↑` nord (deci `↓` sud); le schimbi cu `--est stanga|dreapta` si
   `--nord sus|jos` (sau, in engleza, `--east left|right` si `--north up|down`; ambele forme

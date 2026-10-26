@@ -115,9 +115,10 @@ analyzer sums the moves' RA components (R-038) minus the drift over each move's 
 slews proper, and subtracts their convergence, `-Wcs.Handedness x tan d x` the net arc, from
 the total rotation before dividing by the span; the drift's own projection stays in, since the
 bound reads the whole tracking rotation as the alignment's. `Wcs.Handedness` is the sign of
-the determinant of the pixel-to-sky map, which a mirrored frame flips together with the
-registration's rotation sign. The rate is read only over `Th.PolarRotationMinHours` of
-registered span: the per-frame rotation still scatters by about 10" and a short run would
+the determinant of the pixel-to-sky map through `PointingOffsetDeg`, the lights' flip
+included, which a mirrored frame flips together with the registration's rotation sign. The
+rate is read only over `Th.PolarRotationMinHours` of registered span: the per-frame rotation
+still scatters by about 10" and a short run would
 read that as arcminutes per hour. The same reading bounds the RA drift the alignment can
 explain at the rotation rate times `tan d` (`PolarRaDriftMaxArcsecPerMin`); on Veil 1.3 of
 the 5.8 "/min, the rest being the tracking, which these frames cannot separate (ADR 0016).
@@ -196,10 +197,13 @@ The solved FITS is read whole by `SeriesRun.ReadWcs` into a `Wcs` (`CDELT` and t
 matrix, or the `CD` matrix with unit scales, the matrix then holding the scale); `RaAxis` is
 the old rule on the matrix, `RaScaleDeg` and `DecScaleDeg` are each scale times the length of
 its matrix row, so both forms give the same pixels. Each move (R-019) then gets a `MountMove`
-(R-038): the pointing moved by minus the stars' shift, and because Siril writes its FITS rows
-bottom-up while the raws are read top-down, the WCS is applied to `(-StepX, +StepY)`, giving
-degrees of RA (scaled by cos DEC, as the matrix is) and DEC, each divided by its own scale
-into pixels, positive east and north (ADR 0013, measured on Veil with two plate-solved raws). Without a WCS but with the axis from the trails, the move
+(R-038): the pointing moved by minus the stars' shift, `(-StepX, -StepY)` in the lights'
+pixels, handed to `Wcs.PointingOffsetDeg`, which reverses y when `FramesFlipped` is set:
+`SeriesRun` sets it from `SessionFolder.LightsAreRaws`, since camera raws are read top-down
+while Siril writes its FITS rows bottom-up, and FITS lights are read in the order the solve
+is (ADR 0013, measured on Veil with two plate-solved raws; ADR 0023, the same session's
+`pp_light_*.fit`). The result is degrees of RA (scaled by cos DEC, as the matrix is) and DEC,
+each divided by its own scale into pixels, positive east and north. Without a WCS but with the axis from the trails, the move
 keeps the magnitudes along the two axes with `Signed` false; without an axis it is null, as
 is every non-move.
 
@@ -269,5 +273,6 @@ and never the tables.
 
 The report prints the session header shared with the inventory, then the sections the
 owner's hand report had, in the same order, with every verdict followed by its numbers. The
-CSV holds every figure per frame with the invariant culture; the rejected list is the file
+CSV holds every figure per frame with the invariant culture, a bare text cell quoted only when
+a comma or a quote inside it would break the row (`Cell`); the rejected list is the file
 names of the bad and unreadable frames, one per line, for Siril's sequence selection by hand.

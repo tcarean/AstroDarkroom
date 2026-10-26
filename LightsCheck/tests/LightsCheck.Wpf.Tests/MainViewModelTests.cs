@@ -570,12 +570,13 @@ public class MainViewModelTests
             Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Down), again.Options.Arrows);
 
             using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+            // The fixture's lights are FITS: the Veil solve with its y column mirrored (ADR 0023).
             string[] wcs =
             [
                 FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
                 FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
-                FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-0.99999"),
-                FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "0.0037"),
+                FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "0.99999"),
+                FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "-0.0037"),
             ];
             File.WriteAllBytes(Path.Combine(f.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
             await again.OpenAsync(f.Root);
