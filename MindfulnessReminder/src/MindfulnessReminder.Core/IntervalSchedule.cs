@@ -139,6 +139,13 @@ public sealed class IntervalSchedule
     }
 
     /// <summary>
+    /// Whether the last <see cref="TryConsumeDue"/> found the clock moved back and started the
+    /// countdown over. A postponement in progress ended with it, which the caller's log needs to
+    /// know (R-112); the next time the reminder is held back is a first time again.
+    /// </summary>
+    public bool JumpRestartedCountdown { get; private set; }
+
+    /// <summary>
     /// Asks whether the deadline has passed, and re-arms as it says yes -- so a caller that
     /// cannot act on it, because a reminder is already on screen, still leaves the schedule
     /// in a sane state rather than a deadline stuck in the past that fires on every tick.
@@ -153,6 +160,8 @@ public sealed class IntervalSchedule
     /// </returns>
     public bool TryConsumeDue(DateTimeOffset now)
     {
+        JumpRestartedCountdown = false;
+
         if (_dueAt is not { } due)
         {
             return false;
@@ -165,6 +174,7 @@ public sealed class IntervalSchedule
         if (due - now > _armedSpan)
         {
             Restart(now);
+            JumpRestartedCountdown = true;
             return false;
         }
 

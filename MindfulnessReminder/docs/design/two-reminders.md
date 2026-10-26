@@ -34,6 +34,12 @@ appear would have been held back.
 
 See ADR 0021 for this paragraph and the two above it.
 
+Every way out of `HandleUnlock` leaves a line in the decision log, after the `Workstation
+unlocked` line itself: skipped because the switch is off, raised because a window is open,
+skipped within the debounce (with how long ago the last one was shown), skipped for a pause
+(with the reason), or shown (with the message). So an unlock that showed nothing can be
+explained from the file (ADR 0037).
+
 **The coordinator picks the text, the presenter draws it.** `IReminderPresenter.Show` takes
 the message, because the coordinator is the one thing that knows which reminder this is.
 `BringToFront` takes nothing: a window already open -- or already in its 600 ms queue --

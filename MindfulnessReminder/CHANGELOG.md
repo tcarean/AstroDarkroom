@@ -12,6 +12,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   copy that has run for at least a minute, Windows starts it again, and the new copy says so
   in a balloon, `Restarted after an error. The details are in the Windows Application log.`
   (R-100, R-102; ADR 0036).
+- A decision log: `%LOCALAPPDATA%\MindfulnessReminder\log.txt`, one timestamped line per
+  decision (the start with the runtime and whether Windows will restart the copy, each lock and
+  unlock, each reminder shown, skipped or held back and why, the settings read and saved with
+  what fell back to a default, the auto-start entry registered or repaired, the crash text),
+  capped at 256 KB with one rotation to `log.1.txt`; a write that fails is dropped, never
+  reported (R-110 to R-114; ADR 0037).
 
 ### Changed
 

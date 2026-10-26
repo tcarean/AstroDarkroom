@@ -51,13 +51,19 @@ public sealed class RegistrySettingsStore : ISettingsStore
     public const string PeriodicMessageValueName = "PeriodicMessage";
 
     private readonly IRegistryStore _registry;
+    private readonly IDecisionLog _log;
 
     /// <summary>A store that keeps the settings under <see cref="KeyPath"/>.</summary>
     /// <param name="registry">The per-user registry to read and write.</param>
-    public RegistrySettingsStore(IRegistryStore registry)
+    /// <param name="log">
+    /// Where each load and save is written, with what fell back or was clamped (R-113);
+    /// <c>null</c> keeps none.
+    /// </param>
+    public RegistrySettingsStore(IRegistryStore registry, IDecisionLog? log = null)
     {
         ArgumentNullException.ThrowIfNull(registry);
         _registry = registry;
+        _log = log ?? NullDecisionLog.Instance;
     }
 
     /// <inheritdoc/>
@@ -71,37 +77,48 @@ public sealed class RegistrySettingsStore : ISettingsStore
         {
             // A key this account may not read (a policy, security software) is no more a
             // reason to fail to start than a missing one: the defaults stand.
+            _log.Write(DecisionLog.SettingsLoaded(ReminderSettings.Default, [], [], refused: true));
             return ReminderSettings.Default;
         }
     }
 
     /// <summary>
     /// Reads the eight values, each falling back to its default when absent or unparseable,
-    /// and normalizes the result. A registry error is left for <see cref="Load"/> to catch.
+    /// normalizes the result, and writes to the log what fell back and what was clamped. A
+    /// registry error is left for <see cref="Load"/> to catch.
     /// </summary>
     /// <returns>The settings as stored, normalized.</returns>
     private ReminderSettings Read()
     {
         var defaults = ReminderSettings.Default;
+        var fallbacks = new List<string>();
 
-        var enabled = ReadFlag(EnabledValueName, defaults.PeriodicEnabled);
-        var minutes = ReadNumber(IntervalValueName, ReminderSettings.DefaultIntervalMinutes);
+        var enabled = ReadFlag(EnabledValueName, defaults.PeriodicEnabled, fallbacks);
+        var minutes = ReadNumber(IntervalValueName, ReminderSettings.DefaultIntervalMinutes, fallbacks);
 
         // Normalize rather than reject: an out-of-range value still says what was wanted, and
         // clamping is what stops a hand-edited 0 from becoming a reminder on every tick. The
         // messages go through the same door: a missing one is a build that never wrote it,
         // an empty one is a wiped value, and both land on the default text.
-        return new ReminderSettings(enabled, minutes)
+        var read = new ReminderSettings(enabled, minutes)
         {
-            UnlockEnabled = ReadFlag(UnlockEnabledValueName, defaults.UnlockEnabled),
-            UnlockMessage = ReadText(UnlockMessageValueName, defaults.UnlockMessage),
-            PeriodicMessage = ReadText(PeriodicMessageValueName, defaults.PeriodicMessage),
+            UnlockEnabled = ReadFlag(UnlockEnabledValueName, defaults.UnlockEnabled, fallbacks),
+            UnlockMessage = ReadText(UnlockMessageValueName, defaults.UnlockMessage, fallbacks),
+            PeriodicMessage = ReadText(PeriodicMessageValueName, defaults.PeriodicMessage, fallbacks),
             PauseWhileMicrophoneInUse =
-                ReadFlag(PauseMicrophoneValueName, defaults.PauseWhileMicrophoneInUse),
+                ReadFlag(PauseMicrophoneValueName, defaults.PauseWhileMicrophoneInUse, fallbacks),
             PauseWhileFullScreen =
-                ReadFlag(PauseFullScreenValueName, defaults.PauseWhileFullScreen),
-            RetrySeconds = ReadNumber(RetryValueName, ReminderSettings.DefaultRetrySeconds),
-        }.Normalize();
+                ReadFlag(PauseFullScreenValueName, defaults.PauseWhileFullScreen, fallbacks),
+            RetrySeconds = ReadNumber(RetryValueName, ReminderSettings.DefaultRetrySeconds, fallbacks),
+        };
+        var settings = read.Normalize();
+
+        var clamps = new List<string>();
+        AddClamp(clamps, IntervalValueName, read.IntervalMinutes, settings.IntervalMinutes);
+        AddClamp(clamps, RetryValueName, read.RetrySeconds, settings.RetrySeconds);
+
+        _log.Write(DecisionLog.SettingsLoaded(settings, fallbacks, clamps, refused: false));
+        return settings;
     }
 
     /// <inheritdoc/>
@@ -119,6 +136,8 @@ public sealed class RegistrySettingsStore : ISettingsStore
         WriteFlag(PauseMicrophoneValueName, normalized.PauseWhileMicrophoneInUse);
         WriteFlag(PauseFullScreenValueName, normalized.PauseWhileFullScreen);
         WriteNumber(RetryValueName, normalized.RetrySeconds);
+
+        _log.Write(DecisionLog.SettingsSaved(normalized));
     }
 
     /// <summary>
@@ -129,17 +148,24 @@ public sealed class RegistrySettingsStore : ISettingsStore
     /// </summary>
     /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
     /// <param name="fallback">What an absent or unrecognised value reads as.</param>
+    /// <param name="fallbacks">Gets the value's name added when the fallback is used.</param>
     /// <returns>
     /// <c>false</c> for "0", <c>true</c> for "1", and <paramref name="fallback"/> for anything
     /// else.
     /// </returns>
-    private bool ReadFlag(string valueName, bool fallback)
-        => _registry.GetString(KeyPath, valueName) switch
+    private bool ReadFlag(string valueName, bool fallback, List<string> fallbacks)
+    {
+        switch (_registry.GetString(KeyPath, valueName))
         {
-            "0" => false,
-            "1" => true,
-            _ => fallback,
-        };
+            case "0":
+                return false;
+            case "1":
+                return true;
+            default:
+                fallbacks.Add(valueName);
+                return fallback;
+        }
+    }
 
     /// <summary>
     /// Reads a message.
@@ -151,12 +177,21 @@ public sealed class RegistrySettingsStore : ISettingsStore
     /// </summary>
     /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
     /// <param name="fallback">What a missing or non-string value reads as.</param>
+    /// <param name="fallbacks">Gets the value's name added when the fallback is used.</param>
     /// <returns>
     /// The text as <see cref="IRegistryStore.GetString"/> returns it, not yet normalized, or
     /// <paramref name="fallback"/>.
     /// </returns>
-    private string ReadText(string valueName, string fallback)
-        => _registry.GetString(KeyPath, valueName) ?? fallback;
+    private string ReadText(string valueName, string fallback, List<string> fallbacks)
+    {
+        if (_registry.GetString(KeyPath, valueName) is { } text)
+        {
+            return text;
+        }
+
+        fallbacks.Add(valueName);
+        return fallback;
+    }
 
     /// <summary>
     /// Reads a whole number, stored as an invariant-culture string. Its range is left to
@@ -164,15 +199,37 @@ public sealed class RegistrySettingsStore : ISettingsStore
     /// </summary>
     /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
     /// <param name="fallback">What an absent or unparseable value reads as.</param>
+    /// <param name="fallbacks">Gets the value's name added when the fallback is used.</param>
     /// <returns>The number as stored, or <paramref name="fallback"/>.</returns>
-    private int ReadNumber(string valueName, int fallback)
-        => int.TryParse(
-            _registry.GetString(KeyPath, valueName),
-            NumberStyles.Integer,
-            CultureInfo.InvariantCulture,
-            out var parsed)
-            ? parsed
-            : fallback;
+    private int ReadNumber(string valueName, int fallback, List<string> fallbacks)
+    {
+        if (int.TryParse(
+                _registry.GetString(KeyPath, valueName),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var parsed))
+        {
+            return parsed;
+        }
+
+        fallbacks.Add(valueName);
+        return fallback;
+    }
+
+    /// <summary>Records a number the clamp changed, for the log line (R-113).</summary>
+    /// <param name="clamps">The list of clamp texts, <c>&lt;name&gt; &lt;read&gt; -&gt; &lt;kept&gt;</c>.</param>
+    /// <param name="valueName">The value's name.</param>
+    /// <param name="read">The number as stored.</param>
+    /// <param name="kept">The number after <see cref="ReminderSettings.Normalize"/>.</param>
+    private static void AddClamp(List<string> clamps, string valueName, int read, int kept)
+    {
+        if (read != kept)
+        {
+            clamps.Add(
+                valueName + " " + read.ToString(CultureInfo.InvariantCulture)
+                + " -> " + kept.ToString(CultureInfo.InvariantCulture));
+        }
+    }
 
     /// <summary>Writes a switch as "1" or "0".</summary>
     /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
