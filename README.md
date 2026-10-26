@@ -22,7 +22,7 @@ certutil -hashfile AstroDarkroom-X.Y.Z-win-x64.zip SHA256
 
 The executables are not signed, so on a new computer Windows SmartScreen asks before the first
 start. Older versions, each with its hash, are listed in
-[AstroDarkroom/README.md](AstroDarkroom/README.md), section "Descarcare" (in Romanian).
+[AstroDarkroom/README.md](AstroDarkroom/README.md), section "Download".
 
 [TOC]
 

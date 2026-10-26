@@ -36,12 +36,12 @@ their program folders, which FlatCheck does not read.
   FlatCheck, Adobe's lens profiles with the programs that put them where FlatCheck reads them),
   the licence and the repository's other folders.
 - At a release, `/release` proposes the new row for both READMEs: a new first row of this
-  project's "Descarcare" table and the only row of the root's "Download" table, in one commit of
+  project's "Download" table and the only row of the root's "Download" table, in one commit of
   the two files that the owner makes on `main` (`docs/skills.md`, step 7).
 
 ## Alternatives rejected
 
-- **A root README that only points to this project's "Descarcare" section.** ADR 0005 left that
+- **A root README that only points to this project's "Download" section.** ADR 0005 left that
   open; the owner asked for the link itself at the top of the front page.
 - **The root README in Romanian, like the tools' READMEs.** The owner asked for English; the
   kit's rule "Languages" allows a README in Romanian but does not require it.

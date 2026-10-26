@@ -43,7 +43,7 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   `artifacts/`. The tag is `astrodarkroom-vX.Y.Z`.
 - At step 7: the owner uploads the zip to their Google Drive by hand and shares it as "Anyone
   with the link"; nothing here uploads it or asks for Drive access (ADR 0005). With the link
-  the owner gives, propose a new first row of the table under `## Descarcare` in `README.md`,
+  the owner gives, propose a new first row of the table under `## Download` in `README.md`,
   and the same row as the only row of the table under `## Download` in the repository's root
   `README.md` (`../README.md`, the Bitbucket front page, ADR 0008), replacing the row there:
   the version, the release date, the link, and the hash from the zip's `.sha256`. Read the hash
