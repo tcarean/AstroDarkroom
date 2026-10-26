@@ -6,8 +6,8 @@
 and `src/CopyWcs.Cli/Options.cs`.
 
 How a copy runs in the core, how the console drives it and prints it, and how the texts pick
-their language. The header engine the run calls is in `fits-header.md`; the window, when it
-exists, has its own note.
+their language. The header engine the run calls is in `fits-header.md`; the window, which
+calls the same run and shows the same outcome, is in `window.md`.
 
 ## The run (`WcsCopy`)
 
@@ -21,7 +21,7 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 | `Error` | the one line of a refusal, else null | stderr |
 | `Warnings` | the `WARNING:` lines, in order; forced mismatch, missing `CTYPE1` | stdout, before anything else |
 | `Cards` | the raw 80-character cards selected, in the source's order | the preview, indented and trimmed |
-| `Target` | the file written, else null | nothing; the window may use it |
+| `Target` | the file written, else null | nothing; the window reads the destination's facts again after a copy |
 | `Notes` | the preview's heading, or the count copied and the flip reminder | stdout, last |
 
 The sequence: read the source, read the destination (each read failure is a refusal naming
@@ -58,7 +58,7 @@ was given (R-020, R-021). The test assembly sets `Ui.Default` to Romanian once
 (`RomanianByDefault`), so the tests written before the English interface assert the Romanian
 wordings unchanged, and `LanguageTests` opens English scopes or passes `--lang en`.
 
-## The banner and the copyright (`VersionInfo`, `LicenseInfo`)
+## The banner, the copyright and the warranty (`VersionInfo`, `LicenseInfo`)
 
 `<Version>` and `<Copyright>` in `Directory.Build.props` (ADR 0003) become
 `AssemblyInformationalVersion` and `AssemblyCopyright`; `VersionInfo.Value` reads the first,
@@ -66,3 +66,9 @@ cuts any `+commit` suffix and yields `1.0.0`, and `Banner` is `copywcs ` plus it
 `LicenseInfo.Copyright` reads the second, with a literal fallback for an assembly built
 without the attribute. `VersionTests` and `LicenseNoticeTests` bind the file and the
 assembly, and check lines 1 and 2 of every run, failed runs included.
+
+The warranty paragraph of GPLv3 section 5(d) is `LicenseInfo.WarrantyLines`: the five lines
+of each language, wrapped by hand, picked by `Ui.Current`; `Options.PrintUsage` writes them
+one per line under the usage, and `LicenseInfo.Warranty` joins them with a space for the
+About window (ADR 0007), so the two applications cannot disagree about the licence.
+`LicenseInfo.LicenseUrl` is the one place the licence's address is written.

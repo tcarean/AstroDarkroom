@@ -39,6 +39,8 @@
                     <Button x:Name="ZoomInButton" Style="{StaticResource ToolButton}" Content="+" />
                     <Button x:Name="FitButton" Style="{StaticResource ToolButton}" Margin="12,0,3,0" />
                     <Button x:Name="ActualSizeButton" Style="{StaticResource ToolButton}" Content="100%" />
+                    <ToggleButton x:Name="HistogramButton" Style="{StaticResource ToolToggleButton}" Margin="12,0,3,0" IsEnabled="False" />
+                    <ToggleButton x:Name="FalseColoursButton" Style="{StaticResource ToolToggleButton}" IsEnabled="False" />
                     <Button x:Name="OpenButton" Style="{StaticResource ToolButton}" Margin="12,0,3,0" />
                     <Button x:Name="AboutButton" Style="{StaticResource ToolButton}" />
                 </StackPanel>

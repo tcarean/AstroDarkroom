@@ -25,7 +25,8 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// <summary>
 /// Reads FITS, which WIC has no codec for, with the project's own reader in Core, and arrives
 /// where <see cref="WicImageLoader"/> does: a frozen Bgra32 bitmap and what the file was. The
-/// values are shown as they are stored, with no stretch (ADR 0029).
+/// values are shown as they are stored, with no stretch (ADR 0029), or through the display mode
+/// asked for (ADR 0040).
 /// </summary>
 public sealed class FitsImageLoader : IImageLoader
 {
@@ -46,6 +47,7 @@ public sealed class FitsImageLoader : IImageLoader
 
     /// <summary>Decodes a FITS on a background thread, as <see cref="Load"/> does.</summary>
     /// <param name="path">The file.</param>
+    /// <param name="mode">How the samples become pixels; every mode is honoured.</param>
     /// <param name="cancellationToken">
     /// Looked at before the decode starts and before each row; a stopped load throws
     /// <see cref="OperationCanceledException"/>.
@@ -53,41 +55,65 @@ public sealed class FitsImageLoader : IImageLoader
     /// <returns>
     /// The bitmap, and what the file was, with the range its values were read in.
     /// </returns>
-    public Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default) =>
-        Task.Run(() => Load(path, cancellationToken), cancellationToken);
+    public Task<LoadedImage> LoadAsync(
+        string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default) =>
+        Task.Run(() => Load(path, mode, cancellationToken), cancellationToken);
 
     /// <summary>
-    /// Decodes a FITS on the calling thread into a frozen Bgra32 bitmap, the values as stored.
-    /// A file this program cannot show throws as <see cref="FitsHeader.ReadLayout"/> does, and
-    /// so does an image too large for a bitmap.
+    /// Decodes a FITS on the calling thread into a frozen Bgra32 bitmap, the values as stored
+    /// and rendered in the mode asked for. A file this program cannot show throws as
+    /// <see cref="FitsHeader.ReadLayout"/> does, and so does an image too large for a bitmap.
     /// </summary>
     /// <param name="path">The file.</param>
+    /// <param name="mode">How the samples become pixels; every mode is honoured.</param>
     /// <param name="cancellationToken">
     /// Looked at before each row; a stopped load throws <see cref="OperationCanceledException"/>.
     /// </param>
     /// <returns>
     /// The bitmap, and what the file was, with the range its values were read in.
     /// </returns>
-    public LoadedImage Load(string path, CancellationToken cancellationToken = default)
+    public LoadedImage Load(string path, DisplayMode mode = DisplayMode.Linear, CancellationToken cancellationToken = default)
     {
         using FileStream stream = OpenRead(path);
         FitsImageLayout layout = FitsHeader.ReadLayout(stream);
 
         WriteableBitmap bitmap = CreateBitmap(layout);
-        long above = Decode(layout, stream, bitmap, FitsScale.FullScale(layout.BitPix), cancellationToken);
+        var renderer = new DisplayRenderer(mode, layout.Width, layout.Planes);
+        double fullScale = FitsScale.FullScale(layout.BitPix);
+        long samples = (long)layout.Width * layout.Height * layout.Planes;
+        string? valueRange = null;
 
         // Whether a float file counts in 0 to 1 or in 0 to 65535 is known only once every
         // sample has been seen. The rare file that turns out to be the second pays for a
-        // second pass; holding the floats to avoid it would cost every file 277 MB.
-        string? valueRange = null;
-        if (FitsScale.IsRescaled(layout.BitPix, above, (long)layout.Width * layout.Height * layout.Planes))
+        // second pass; holding the floats to avoid it would cost every file 277 MB. A mode
+        // that equalises needs every sample before any pixel too, so it counts first and
+        // renders after, and the rescaled file counts twice.
+        if (renderer.NeedsCount)
         {
-            Decode(layout, stream, bitmap, FitsScale.FullScale(layout.BitPix, rescaled: true), cancellationToken);
-            valueRange = FitsScale.SixteenBitRange;
+            long above = Pass(layout, stream, renderer, fullScale, bitmap: null, cancellationToken);
+            if (FitsScale.IsRescaled(layout.BitPix, above, samples))
+            {
+                fullScale = FitsScale.FullScale(layout.BitPix, rescaled: true);
+                valueRange = FitsScale.SixteenBitRange;
+                renderer.ClearCounts();
+                Pass(layout, stream, renderer, fullScale, bitmap: null, cancellationToken);
+            }
+
+            renderer.Prepare();
+            Pass(layout, stream, renderer, fullScale, bitmap, cancellationToken);
+        }
+        else
+        {
+            long above = Pass(layout, stream, renderer, fullScale, bitmap, cancellationToken);
+            if (FitsScale.IsRescaled(layout.BitPix, above, samples))
+            {
+                Pass(layout, stream, renderer, FitsScale.FullScale(layout.BitPix, rescaled: true), bitmap, cancellationToken);
+                valueRange = FitsScale.SixteenBitRange;
+            }
         }
 
         bitmap.Freeze();
-        return new LoadedImage(layout.Describe(path, valueRange), bitmap);
+        return new LoadedImage(layout.Describe(path, valueRange), bitmap, mode);
     }
 
     /// <summary>
@@ -100,26 +126,37 @@ public sealed class FitsImageLoader : IImageLoader
         Bitmaps.Create(layout.Width, layout.Height, fits: true);
 
     /// <summary>
-    /// Writes every row into the bitmap, in the order of the file, each where it belongs in the
-    /// image.
+    /// One pass over every row, in the order of the file: each row read as sixteen-bit samples
+    /// and either counted towards the renderer's histograms or rendered into the bitmap, where
+    /// it belongs in the image.
     /// </summary>
     /// <param name="layout">Where the image's samples are and how they are stored.</param>
     /// <param name="stream">The open file; each row is read from where it is.</param>
-    /// <param name="bitmap">Receives the rows: the image's size, Bgra32, not yet frozen.</param>
+    /// <param name="renderer">Counts or renders the rows, in the mode asked for.</param>
     /// <param name="fullScale">
     /// The value shown as white (<see cref="FitsScale.FullScale"/>).
     /// </param>
+    /// <param name="bitmap">
+    /// Receives the rows, the image's size, Bgra32, not yet frozen; null for a pass that only
+    /// counts.
+    /// </param>
     /// <param name="cancellationToken">
-    /// Looked at before each row; a stopped decode throws <see cref="OperationCanceledException"/>.
+    /// Looked at before each row; a stopped pass throws <see cref="OperationCanceledException"/>.
     /// </param>
     /// <returns>
     /// How many float samples were above <see cref="FitsScale.RescaleThreshold"/>; 0 for an
     /// integer file.
     /// </returns>
-    private static long Decode(
-        FitsImageLayout layout, Stream stream, WriteableBitmap bitmap, double fullScale, CancellationToken cancellationToken)
+    private static long Pass(
+        FitsImageLayout layout,
+        Stream stream,
+        DisplayRenderer renderer,
+        double fullScale,
+        WriteableBitmap? bitmap,
+        CancellationToken cancellationToken)
     {
         var decoder = new FitsRowDecoder(layout, stream, fullScale);
+        ushort[] planesRow = new ushort[decoder.RowSamples];
         int stride = layout.Width * 4;
         byte[] row = new byte[stride];
 
@@ -127,8 +164,16 @@ public sealed class FitsImageLoader : IImageLoader
         for (int fileRow = 0; fileRow < layout.Height; fileRow++)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            decoder.ReadFileRow(fileRow, row);
-            bitmap.WritePixels(new Int32Rect(0, layout.DisplayRow(fileRow), layout.Width, 1), row, stride, 0);
+            decoder.ReadFileRow(fileRow, planesRow);
+            if (bitmap is null)
+            {
+                renderer.Count(planesRow);
+            }
+            else
+            {
+                renderer.Render(planesRow, row);
+                bitmap.WritePixels(new Int32Rect(0, layout.DisplayRow(fileRow), layout.Width, 1), row, stride, 0);
+            }
         }
 
         return decoder.SamplesAboveThreshold;

@@ -18,7 +18,7 @@ Rules for entries:
 - Error behaviour and the exit code are requirements too.
 
 The explanations behind each row (why this way, what was measured) are in `docs/design/` and
-`docs/decisions/`; the user documentation of the same behaviour, in Romanian, is `README.md`.
+`docs/decisions/`; the user documentation of the same behaviour, in English, is `README.md`.
 The nine checks of the plan (`docs/plans/2026-10-11-build-darkscheck.md`) map to the areas:
 check 1 is the console contract and inventory block below; checks 2 to 8 take the blocks from
 R-020; check 9 and the index take the blocks from R-050; the window is the block from R-070.

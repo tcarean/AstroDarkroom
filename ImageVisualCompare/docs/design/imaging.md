@@ -13,6 +13,11 @@
 > `src/ImageVisualCompare.Core/FitsScale.cs`,
 > `src/ImageVisualCompare.Core/FitsRowDecoder.cs`,
 > `src/ImageVisualCompare.Core/FloatSamples.cs`,
+> `src/ImageVisualCompare.Core/DisplayMode.cs`,
+> `src/ImageVisualCompare.Core/DisplayRenderer.cs`,
+> `src/ImageVisualCompare.Core/SampleHistogram.cs`,
+> `src/ImageVisualCompare.Core/LevelLookup.cs`,
+> `src/ImageVisualCompare.Core/RainbowTable.cs`,
 > `src/ImageVisualCompare.Core/ImagePairValidator.cs`,
 > and, for the padding, `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`.
@@ -73,16 +78,18 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
    is capped at the standard's 999, and an image's width is capped so that a row of its
    samples fits one array. The first version had none of this, and a negative axis sent the
    walk back to the header it had just read, for ever.
-3. `FitsRowDecoder.ReadFileRow` fills one Bgra32 row. FITS is plane-sequential (all of red,
-   then all of green, then all of blue), so the row is read from one place per plane; the
-   decoder seeks, reads `Width` samples into its one row buffer, and `Convert` writes each
-   through `FitsScale.Level` into the channel the plane is, in one loop per sample type so
-   that nothing is decided per sample. For float files it also counts the finite samples
-   above `FitsScale.RescaleThreshold`. The stream has no buffer of its own
+3. `FitsRowDecoder.ReadFileRow` fills one row of 16-bit samples, the planes one after another.
+   FITS is plane-sequential (all of red, then all of green, then all of blue), so the row is
+   read from one place per plane (`ReadPlaneRow`); the decoder seeks, reads `Width` samples
+   into its one row buffer, and `Convert` writes each through `FitsScale.SixteenBit`, in one
+   loop per sample type so that nothing is decided per sample. For float files it also counts
+   the finite samples above `FitsScale.RescaleThreshold`. The stream has no buffer of its own
    (`FitsImageLoader.OpenRead`): each read is a whole row, and a buffer would be filled past
-   the row and thrown away at the next seek.
+   the row and thrown away at the next seek. The overload that fills a Bgra32 row is the same
+   read followed by the linear renderer, for the tests and for anything that wants levels.
 4. `FitsImageLoader.Load` walks the rows in the order of the file, so the disk is read
-   forwards three times over, and writes each into a `WriteableBitmap` at
+   forwards three times over (`Pass`), each row through a `DisplayRenderer` of the mode asked
+   for (the section "Display modes" below) into a `WriteableBitmap` at
    `FitsImageLayout.DisplayRow`, counted from the bottom, which is the one place the row order
    is applied; the cancellation token is checked at every row. Then it asks
    `FitsScale.IsRescaled` about the count: more
@@ -90,11 +97,48 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
    so far is wrong (nearly all white), and the same loop runs again with 65 535 as the full
    scale. Then `Freeze`. A size WPF makes no bitmap of becomes the too-large message here.
 
-`FitsScale.Level` is the one place a value becomes a level: the value, already multiplied to
-count in 0 to 65 535 (`ToSixteenBits`, one multiplication a sample instead of a division),
-is clamped, rounded to a 16-bit sample, and its high byte kept. The last step is WIC's own
-reduction of a 16-bit sample, measured, and it is what makes a FITS and its 16-bit export
-agree to the level; `FitsScaleTests` walks all 65 536 values on each scale a file can have.
+`FitsScale.SixteenBit` is the one place a value becomes a sample: the value, already multiplied
+to count in 0 to 65 535 (`ToSixteenBits`, one multiplication a sample instead of a division),
+is clamped and rounded to a 16-bit sample, the one a 16-bit PNG of the image would hold;
+`FitsScale.Level` is its high byte. The last step is WIC's own reduction of a 16-bit sample,
+measured, and it is what makes a FITS and its 16-bit export agree to the level;
+`FitsScaleTests` walks all 65 536 values on each scale a file can have.
+
+## Display modes
+
+Added on 2026-10-26 (ADR 0040). Between the 16-bit row and the Bgra32 row stands
+`DisplayRenderer`, built per load for a `DisplayMode`, a width and a plane count, and used the
+same way by both loaders:
+
+- `Linear` renders at once: `RenderLinear` takes the high byte of each sample by a shift
+  (through the 64 KB table of `LevelLookup.Linear` the same load took 0.67 s instead of 0.53 s,
+  the table being larger than the first-level cache), the blue plane first in the pixel, alpha
+  255, a single plane on all three channels. The loaders then do what they did before the
+  modes existed: one pass, and a second one on the rescaled file.
+- `Histogram` and `FalseColours` need every sample before any pixel (`NeedsCount`). The
+  loader makes a counting pass, `Count` on each row, and when `FitsScale.IsRescaled` says the
+  file counts to 65 535 it clears the counts and counts again on that scale; then `Prepare`
+  builds the lookups and a rendering pass writes the bitmap. Three passes over the file at
+  most, two as a rule: 1.1 to 1.2 s against 0.5 s for the linear load of `result_3813s.fit`.
+- `SampleHistogram` is Siril's histogram of one layer: 65 536 bins on the 16-bit value, bin 0
+  counted and then zeroed (cheaper than a test per sample), its samples still in `Pixels`.
+  `LevelLookup.Equalising` is Siril's remap: `index[0] = 0`, `index[i]` the cumulative count
+  through bin `i` over the pixels, times 255, rounded as Siril's `round_to_BYTE` rounds
+  (`RoundToByte`, halves up, capped). In `Histogram` there is one histogram and one lookup per
+  plane, as Siril remaps each layer on its own histogram and composites the RGB view after.
+- `FalseColours` has one histogram, of the layer `Layer` makes: the plane of a gray image, or
+  the mean of the three 16-bit planes rounded to the nearest, `(r + g + b + 1) / 3`; the
+  equalised level then goes through `RainbowTable.WriteBgra`. The table is Siril's
+  `make_index_for_rainbow` with its `hsv_to_rgb`, built once: a hue from 300° at level 0 to 0°
+  at level 255, saturation and value 1, so level 0 is magenta and not black. `LevelOf` is its
+  inverse, for the readout, and is total because the 256 colours are distinct.
+
+`WicImageLoader.Pass` is the same shape over the float bands: `FloatSamples.ToSixteenBit` lays a
+row out plane-major as the FITS decoder does, and the renderer counts or renders it. Which
+files can take a mode is `ImageInfo.ShownAsStored`, set by `FitsImageLayout.Describe` and by
+`WicImageLoader.Describe` for float samples, so `ImagePairLoader` knows from the two probes
+whether to ask the mode of the loads or fall back to `Linear`; `LoadedImage.Mode` says what
+was applied, and the pair reports it as `ImagePair.Mode`.
 
 What a FITS costs, on `result_3813s.fit` (5938 x 3888, three float planes, 277 MB on disk):
 about 0.6 s with the file in the cache (1.1 to 1.2 s for the first load of a process), +89.7
@@ -120,11 +164,13 @@ it, and shows its format as "Default" with 96 bits.
 `LoadFloat` has WIC convert the frame to `Gray32Float`, `Rgb128Float` or `Rgba128Float`, which
 copies the values: on two GraXpert exports, 6016 × 4016, its `Rgb128Float` floats equal the ones
 read straight from the file bit for bit, all 72 480 768 samples of each (2026-10-22). `Decode`
-then copies a band of rows at a time, at most 8 MB of floats, into
-`FloatSamples.ToBgra32` in Core, which puts each sample through `FitsScale.Level` as
-`FitsRowDecoder` does and counts the samples `FitsScale.IsAboveThreshold` takes. Then, as for a
-FITS, `FitsScale.IsRescaled` decides whether the image counts to 65 535, and if it does the
-bands are decoded again on that scale. A size WPF makes no bitmap of is the too-large message.
+then copies a band of rows at a time, at most 8 MB of floats (`Pass`), into
+`FloatSamples.ToSixteenBit` in Core, which puts each sample through `FitsScale.SixteenBit` as
+`FitsRowDecoder` does and counts the samples `FitsScale.IsAboveThreshold` takes, and the
+`DisplayRenderer` of the mode asked for turns the row into Bgra32. Then, as for a FITS,
+`FitsScale.IsRescaled` decides whether the image counts to 65 535, and if it does the bands
+are decoded again on that scale; a mode that counts first counts them again and renders after,
+three passes in all. A size WPF makes no bitmap of is the too-large message.
 
 ## Memory, measured
 

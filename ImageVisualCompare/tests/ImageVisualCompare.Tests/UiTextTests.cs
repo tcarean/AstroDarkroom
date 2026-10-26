@@ -234,7 +234,7 @@ ot-here.png"]);
             Assert.Equal("Deschide…", window.OpenButton.Content);
             Assert.Equal("Despre", window.AboutButton.Content);
             Assert.Equal(
-                "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide",
+                "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false",
                 window.HintText.Text);
             Assert.Equal(VersionInfo.Banner, window.Title);
         });

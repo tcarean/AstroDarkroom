@@ -14,6 +14,19 @@
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
 
+`CompareView.SetPair` shows a new pair: the sources, the pixel sizes, the backdrops, the
+content size, zoom to fit, the divider reset, the thumbnail. `ReplacePair` (ADR 0040) shows the
+same files decoded again in another display mode: the two sources, their pixel sizes and the
+thumbnail change, nothing else is touched, so `Viewport` and `DividerModel` keep the zoom, the
+pan and the line where they were (R-113); the canvas is the same size because the files are.
+Either way the two `Image` elements keep the outgoing bitmaps in their render content until
+the next render pass, whatever their `Source` says: measured in the application on the real
+FITS pair (2026-10-26), a forced collection run before that pass freed nothing, and the
+process carried the outgoing pair, about 270 MB with the render thread's copies, until the
+next switch or open. That is why `MainWindow.ShowPair` lets one render pass through
+(`Dispatcher.Invoke` at `Render` priority) after the incoming pair is on the surface and
+releases the outgoing one only then (ADR 0040, which restates ADR 0016's order).
+
 ## Invariants
 
 These are the things that will bite a future change. Each one has already cost time.

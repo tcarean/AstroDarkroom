@@ -159,17 +159,27 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Takes the pair off the surface, so that nothing here refers to its bitmaps any more, and
-    /// empties the viewport.
+    /// Puts another rendering of the pair on screen in place of the one shown, the same files in
+    /// another display mode (R-113): the two bitmaps and the minimap's thumbnail change, the
+    /// zoom, the pan and the divider stay where they are. The canvas is the same size, since the
+    /// files are the same.
     /// </summary>
-    public void Clear()
+    /// <param name="pair">The pair decoded again, both images frozen Bgra32.</param>
+    public void ReplacePair(ImagePair pair)
     {
-        BeforeImage.Source = null;
-        AfterImage.Source = null;
-        BeforeBackdrop.Visibility = Visibility.Collapsed;
-        AfterBackdrop.Visibility = Visibility.Collapsed;
-        Minimap.Hide();
-        Viewport.SetContentSize(0, 0);
+        ArgumentNullException.ThrowIfNull(pair);
+
+        BeforeImage.Source = pair.Before.Bitmap;
+        AfterImage.Source = pair.After.Bitmap;
+        SetPixelSize(BeforeImage, pair.Before.Info.PixelWidth, pair.Before.Info.PixelHeight);
+        SetPixelSize(AfterImage, pair.After.Info.PixelWidth, pair.After.Info.PixelHeight);
+
+        Minimap.Show(
+            CreateThumbnail(pair.Before.Bitmap, pair.PixelWidth, pair.PixelHeight, ThumbnailMaxWidth, ThumbnailMaxHeight),
+            pair.PixelWidth,
+            pair.PixelHeight,
+            Viewport);
+
         Sync();
     }
 

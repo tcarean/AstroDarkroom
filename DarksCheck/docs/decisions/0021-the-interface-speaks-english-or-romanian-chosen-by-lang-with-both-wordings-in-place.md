@@ -1,7 +1,7 @@
 # 0021. The interface speaks English or Romanian, chosen by `--lang`, with both wordings in place
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; the README in Romanian only superseded by 0022
 Supersedes: 0005 in part (Romanian as the only language of what the user sees)
 
 ## Context

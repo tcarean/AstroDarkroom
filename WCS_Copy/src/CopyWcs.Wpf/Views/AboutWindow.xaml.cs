@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// Copied from DarksCheck (which copied LightsCheck); a fix goes there first (ADR 0007).
+
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Navigation;
+
+namespace CopyWcs.Wpf;
+
+/// <summary>
+/// The About window: the icon, the version, the copyright and the GPLv3 notice, all from
+/// <see cref="AboutViewModel"/> (R-035).
+/// </summary>
+public partial class AboutWindow : Window
+{
+    /// <summary>
+    /// The window over a new <see cref="AboutViewModel"/>, with the icon's largest frame as its
+    /// logo and the dark title bar once it has a handle.
+    /// </summary>
+    public AboutWindow()
+    {
+        InitializeComponent();
+        DataContext = new AboutViewModel();
+        Logo.Source = AppIcon.Largest();
+        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+    }
+
+    /// <summary>
+    /// Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.
+    /// A refused start is ignored: the link stays on screen to be copied by hand.
+    /// </summary>
+    /// <param name="sender">The hyperlink.</param>
+    /// <param name="e">The navigation request; marked handled.</param>
+    private void OpenLink(object sender, RequestNavigateEventArgs e)
+    {
+        e.Handled = true;
+        try
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+        }
+    }
+
+    /// <summary>The close button: closes the window.</summary>
+    /// <param name="sender">The button.</param>
+    /// <param name="e">The click.</param>
+    private void CloseClick(object sender, RoutedEventArgs e) => Close();
+}

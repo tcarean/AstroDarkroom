@@ -47,18 +47,34 @@ Both ways in, `OnPreviewKeyDown` and the button's `Click`, go through it. `MainW
 clicks the button twice on the WPF test thread, with dialogs and a loader of its own given
 through the internal constructor (ADR 0032).
 
+A switch of display mode (ADR 0040) is the same kind of load and goes through the same field:
+`ToggleModeAsync`, reached from the two `ToggleButton`s of the toolbar and from `H` and `F` in
+`OnPreviewKeyDown`, returns at once while `_opening` is set, with no pair shown, or on a pair
+whose files are not both shown as stored (`ImagePair.AllowsDisplayModes`). Otherwise it loads
+the files of the pair on screen again (`_selection`, kept from the last open) through
+`LoadWithOverlayAsync` with the mode asked for and the padding answered yes, and
+`ShowPair(pair, keepView: true)` hands the new bitmaps to `CompareView.ReplacePair` instead of
+`SetPair`; for a switch as for an open, the outgoing pair is released after one render pass
+has put the incoming one on screen (`rendering.md`). `_mode` is always what the pair says it was
+rendered in, so a pair the loader fell back to linear on leaves both toggles unchecked and
+disabled; the pair line of the status bar ends with the mode's name, and the readout gives, in
+false colours, the level `RainbowTable.LevelOf` finds for the pixel's colour. The two toggles
+have their own style, `ToolToggleButton` in `Theme.xaml`, a copy of `ToolButton`'s template
+with an `IsChecked` trigger, since a `ToggleButton` is not a `Button` and cannot be based on
+one.
+
 ## The focus after a toolbar click
 
-Every toolbar button is a `Button` in the `ToolButton` style and focusable, as a `Button` is,
-so a click takes the keyboard focus from the comparison surface, and the surface's shortcuts
-(R-063) would reach the button instead. `MainWindow` adds one handler for
-`ButtonBase.ClickEvent` on the toolbar's panel, `Toolbar`; the event bubbles, so the handler
-runs after the clicked button's own, and it calls `Compare.Focus()`. By then `About`'s dialog
-has closed and `Open…`'s file dialogs have been answered; a load that follows focuses the
-surface once more when the pair is shown (`ShowPair`). The buttons stay focusable: `Tab` still
-reaches them, and the dialog buttons share the style (ADR 0042). `MainWindowTests` clicks each
-button but `About` on the WPF test thread and reads the window's logical focus, the part of
-`Focus()` that works without a window handle (ADR 0032).
+Every toolbar button, the two toggles included, is a `ButtonBase` and focusable, so a click
+takes the keyboard focus from the comparison surface, and the surface's shortcuts (R-063)
+would reach the button instead. `MainWindow` adds one handler for `ButtonBase.ClickEvent` on
+the toolbar's panel, `Toolbar`; the event bubbles, so the handler runs after the clicked
+button's own, and it calls `Compare.Focus()`. By then `About`'s dialog has closed and
+`Open…`'s file dialogs have been answered; a load that follows, an open or a mode switch,
+focuses the surface once more when the pair is shown (`ShowPair`). The buttons stay focusable:
+`Tab` still reaches them, and the dialog buttons share the style (ADR 0042). `MainWindowTests`
+clicks each button but `About` on the WPF test thread and reads the window's logical focus, the
+part of `Focus()` that works without a window handle (ADR 0032).
 
 ## The icon
 

@@ -37,7 +37,8 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
 - `src/ImageVisualCompare.Core/` - `net8.0`, no UI framework reference: zoom and pan
   (`Viewport.cs`, `ZoomLadder.cs`), the divider (`DividerModel.cs`), the canvas of a pair
   (`ImagePairValidator.cs`), what a file turned out to be (`ImageInfo.cs`), the FITS reader
-  (`FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs`), a float TIFF's samples shown as a
+  (`FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs`), the display modes (`DisplayMode.cs`,
+  `DisplayRenderer.cs`, `SampleHistogram.cs`, `LevelLookup.cs`, `RainbowTable.cs`; ADR 0040), a float TIFF's samples shown as a
   FITS's (`FloatSamples.cs`), and the layout
   records the controls assign without arithmetic of their own (`RenderPlan.cs`,
   `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `Geometry.cs`, `PointD.cs`),

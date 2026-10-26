@@ -39,6 +39,8 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _memoryTimer = new() { Interval = TimeSpan.FromSeconds(2) };
 
     private ImagePair? _pair;
+    private ImagePairSelection? _selection;
+    private DisplayMode _mode;
     private string? _lastDirectory;
     private bool _opening;
 
@@ -70,6 +72,8 @@ public partial class MainWindow : Window
         UiText text = UiText.Current;
         NavigationLabel.Text = text.Navigation;
         FitButton.Content = text.Fit;
+        HistogramButton.Content = text.Histogram;
+        FalseColoursButton.Content = text.FalseColours;
         OpenButton.Content = text.Open;
         AboutButton.Content = text.About;
         HintText.Text = text.Hint;
@@ -81,6 +85,8 @@ public partial class MainWindow : Window
         ZoomOutButton.Click += (_, _) => Compare.ZoomOut();
         FitButton.Click += (_, _) => Compare.ZoomToFit();
         ActualSizeButton.Click += (_, _) => Compare.ZoomToActualSize();
+        HistogramButton.Click += async (_, _) => await ToggleModeAsync(DisplayMode.Histogram);
+        FalseColoursButton.Click += async (_, _) => await ToggleModeAsync(DisplayMode.FalseColours);
         OpenButton.Click += async (_, _) => await OpenPairAsync();
         AboutButton.Click += (_, _) =>
             MessageDialog.Show(this, UiText.Current.AboutTitle(VersionInfo.Banner), VersionInfo.About);
@@ -121,11 +127,12 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Opens another pair on Ctrl+O, wherever the focus is; while a pair is being opened it
-    /// does nothing (<see cref="OpenPairAsync"/>).
+    /// Opens another pair on Ctrl+O, and switches the display mode on H and F (R-114), wherever
+    /// the focus is; while a pair is being opened or switched they do nothing
+    /// (<see cref="OpenPairAsync"/>, <see cref="ToggleModeAsync"/>).
     /// </summary>
     /// <param name="sender">The window itself; not read.</param>
-    /// <param name="e">The key; marked handled when it is Ctrl+O.</param>
+    /// <param name="e">The key; marked handled when it is one of the three.</param>
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.O && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
@@ -133,6 +140,77 @@ public partial class MainWindow : Window
             e.Handled = true;
             await OpenPairAsync();
         }
+        else if (e.Key is Key.H or Key.F && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            e.Handled = true;
+            await ToggleModeAsync(e.Key == Key.H ? DisplayMode.Histogram : DisplayMode.FalseColours);
+        }
+    }
+
+    /// <summary>
+    /// Switches the pair on screen into a display mode, or back to linear when that mode is
+    /// already shown (R-114): the same two files are decoded again in the new mode behind the
+    /// overlay, and take the place of the old bitmaps under the unchanged zoom, pan and divider
+    /// (R-113). Nothing happens while a pair is being opened or switched, with no pair shown,
+    /// or on a pair that allows no other mode than linear (R-110).
+    /// </summary>
+    /// <param name="mode">The mode asked for, <see cref="DisplayMode.Histogram"/> or <see cref="DisplayMode.FalseColours"/>.</param>
+    internal async Task ToggleModeAsync(DisplayMode mode)
+    {
+        // A ToggleButton flips its own IsChecked before it raises Click, so whatever way this
+        // returns, a refusal or a failed switch included, the two toggles are put back in step
+        // with the mode that is on screen (the code review of 2026-10-26).
+        try
+        {
+            if (_opening || _pair is null || _selection is null || !_pair.AllowsDisplayModes)
+            {
+                return;
+            }
+
+            DisplayMode target = _mode == mode ? DisplayMode.Linear : mode;
+            ImagePair shown = _pair;
+
+            _opening = true;
+            try
+            {
+                // The padding was agreed when the pair was opened; the same two files need no
+                // second question (R-113).
+                ImagePairLoadResult result = await LoadWithOverlayAsync(_selection, target, _ => Task.FromResult(true));
+
+                if (result.IsSuccess)
+                {
+                    // The same files have the same canvas; should one have changed on disk in
+                    // between, the view is not worth keeping over a wrong canvas.
+                    ImagePair pair = result.Pair!;
+                    ShowPair(pair, keepView: pair.PixelWidth == shown.PixelWidth && pair.PixelHeight == shown.PixelHeight);
+                }
+                else if (!result.WasDeclined)
+                {
+                    MessageDialog.Show(this, UiText.Current.CannotCompareTitle, result.Error!);
+                }
+            }
+            finally
+            {
+                _opening = false;
+            }
+        }
+        finally
+        {
+            SyncModeButtons();
+        }
+    }
+
+    /// <summary>
+    /// Puts the two display-mode toggles in step with the pair on screen: enabled when it allows
+    /// the modes, and lit for the mode it is shown in (R-114).
+    /// </summary>
+    private void SyncModeButtons()
+    {
+        bool allowed = _pair?.AllowsDisplayModes == true;
+        HistogramButton.IsEnabled = allowed;
+        FalseColoursButton.IsEnabled = allowed;
+        HistogramButton.IsChecked = _mode == DisplayMode.Histogram;
+        FalseColoursButton.IsChecked = _mode == DisplayMode.FalseColours;
     }
 
     /// <summary>
@@ -176,10 +254,13 @@ public partial class MainWindow : Window
 
                 _lastDirectory = Path.GetDirectoryName(selection.BeforePath);
 
-                ImagePairLoadResult result = await LoadWithOverlayAsync(selection);
+                // The mode in use holds for the next pair when that pair allows it (R-113); the
+                // loader falls back to linear when it does not.
+                ImagePairLoadResult result = await LoadWithOverlayAsync(selection, _mode, ConfirmPaddingAsync);
 
                 if (result.IsSuccess)
                 {
+                    _selection = selection;
                     ShowPair(result.Pair!);
                     return;
                 }
@@ -203,8 +284,14 @@ public partial class MainWindow : Window
     /// down again whatever happens.
     /// </summary>
     /// <param name="selection">The two files.</param>
+    /// <param name="mode">The display mode asked of the loader (R-110).</param>
+    /// <param name="confirmPadding">
+    /// The padding question, when the two differ in size: <see cref="ConfirmPaddingAsync"/> for
+    /// an open, an answer of yes for a switch of mode on a pair already shown.
+    /// </param>
     /// <returns>The loader's result: the pair, a failure with its message, or declined.</returns>
-    private async Task<ImagePairLoadResult> LoadWithOverlayAsync(ImagePairSelection selection)
+    private async Task<ImagePairLoadResult> LoadWithOverlayAsync(
+        ImagePairSelection selection, DisplayMode mode, Func<PadRequest, Task<bool>> confirmPadding)
     {
         LoadingOverlay.Visibility = Visibility.Visible;
         LoadingBar.Value = 0;
@@ -219,7 +306,7 @@ public partial class MainWindow : Window
         try
         {
             return await _loader.LoadAsync(
-                selection.BeforePath, selection.AfterPath, progress, ConfirmPaddingAsync);
+                selection.BeforePath, selection.AfterPath, progress, confirmPadding, mode);
         }
         finally
         {
@@ -257,21 +344,41 @@ public partial class MainWindow : Window
     /// and fills the title, the toolbar and the status bar.
     /// </summary>
     /// <param name="pair">The pair just loaded.</param>
-    private void ShowPair(ImagePair pair)
+    /// <param name="keepView">
+    /// True for the same files in another display mode: the zoom, the pan and the divider stay
+    /// (R-113); false for a new pair, shown zoomed to fit with the divider in the middle.
+    /// </param>
+    private void ShowPair(ImagePair pair, bool keepView = false)
     {
-        if (_pair is not null)
-        {
-            // The incoming pair was decoded while the outgoing one stayed on screen, so both are
-            // resident up to here. Drop the outgoing one before the incoming one is shown, so
-            // that from here on only one is.
-            _pair = null;
-            Compare.Clear();
-            MemoryHousekeeping.ReleaseImageBuffers();
-        }
+        bool replacing = _pair is not null;
 
         _pair = pair;
-        Compare.SetPair(pair);
+        _mode = pair.Mode;
+        SyncModeButtons();
+
+        if (keepView)
+        {
+            Compare.ReplacePair(pair);
+        }
+        else
+        {
+            Compare.SetPair(pair);
+        }
+
         Compare.Focus();
+
+        if (replacing)
+        {
+            // The incoming pair was decoded while the outgoing one stayed on screen, so both are
+            // resident up to here. The surface's images keep the outgoing bitmaps in their
+            // render content until the next render pass, which comes after this method: a
+            // collection before it finds them referenced and frees nothing, and the process
+            // then carries two pairs until the next open (measured in the application on the
+            // real pair, 2026-10-26, ADR 0040). So one render pass is let through here, which
+            // also puts the incoming pair on screen, and only then is the outgoing one released.
+            Dispatcher.Invoke(static () => { }, DispatcherPriority.Render);
+            MemoryHousekeeping.ReleaseImageBuffers();
+        }
 
         Title = $"{pair.Before.Info.FileName}  vs  {pair.After.Info.FileName}  —  {VersionInfo.Banner}";
         ToolbarTitle.Text = $"{pair.Before.Info.FileName}   vs   {pair.After.Info.FileName}";
@@ -281,8 +388,10 @@ public partial class MainWindow : Window
             ? $"{UiText.Current.PaddedCanvas(pair.Pad.Dimensions)}  ·  A {pair.Before.Info.Dimensions}  ·  B {pair.After.Info.Dimensions}"
             : pair.Before.Info.Dimensions;
 
+        // The mode is named only when it is not the linear one (R-114).
+        string modeSuffix = UiText.Current.ModeName(_mode) is { } name ? $"  ·  {name}" : string.Empty;
         StatusPair.Text =
-            $"{dimensions}  ·  A {pair.Before.Info.FormatDescription}  ·  B {pair.After.Info.FormatDescription}";
+            $"{dimensions}  ·  A {pair.Before.Info.FormatDescription}  ·  B {pair.After.Info.FormatDescription}{modeSuffix}";
 
         UpdateZoomReadout();
         StatusMemory.Text = MemoryHousekeeping.Snapshot().Describe();
@@ -315,19 +424,21 @@ public partial class MainWindow : Window
         int y = (int)content.Y;
 
         StatusCursor.Text = $"{x}, {y}";
-        StatusBefore.Text = $"A {Describe(_pair.Before.Bitmap, x, y)}";
-        StatusAfter.Text = $"B {Describe(_pair.After.Bitmap, x, y)}";
+        StatusBefore.Text = $"A {Describe(_pair.Before.Bitmap, x, y, _mode)}";
+        StatusAfter.Text = $"B {Describe(_pair.After.Bitmap, x, y, _mode)}";
     }
 
     /// <summary>Reads one pixel of an image for the readout.</summary>
     /// <param name="bitmap">The image, Bgra32 as every loaded image is.</param>
     /// <param name="x">The pixel's column, in image pixels.</param>
     /// <param name="y">The pixel's row, in image pixels.</param>
+    /// <param name="mode">The display mode the bitmap was rendered in.</param>
     /// <returns>
-    /// Its red, green and blue, 0 to 255, each three wide; a dash when the pixel is outside this
-    /// image, in the padding of the smaller one.
+    /// Its red, green and blue, 0 to 255, each three wide; in <see cref="DisplayMode.FalseColours"/>
+    /// the one level its colour stands for (R-114); a dash when the pixel is outside this image,
+    /// in the padding of the smaller one.
     /// </returns>
-    private static string Describe(BitmapSource bitmap, int x, int y)
+    private static string Describe(BitmapSource bitmap, int x, int y, DisplayMode mode)
     {
         if (x < 0 || y < 0 || x >= bitmap.PixelWidth || y >= bitmap.PixelHeight)
         {
@@ -338,6 +449,14 @@ public partial class MainWindow : Window
         // order regardless of what the file on disk was.
         byte[] pixel = new byte[4];
         bitmap.CopyPixels(new Int32Rect(x, y, 1, 1), pixel, 4, 0);
+
+        // A false-colour pixel is the table's colour of one level; the level is what the user
+        // reads, the colour's bytes say nothing. Every pixel of such a bitmap is in the table.
+        if (mode == DisplayMode.FalseColours && RainbowTable.LevelOf(pixel[2], pixel[1], pixel[0]) is { } level)
+        {
+            return $"{level,3}";
+        }
+
         return $"{pixel[2],3} {pixel[1],3} {pixel[0],3}";
     }
 }

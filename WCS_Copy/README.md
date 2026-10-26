@@ -63,11 +63,30 @@ Without `-o` the destination is rewritten in place: the new header is written to
 file beside it and moved over the original at the end, so a failure leaves the original as
 it was.
 
+## The window
+
+`CopyWcs.Wpf.exe [--lang en|ro] [<solved.fit> [<destination.fit>]]` opens the same tool as a
+window: dark, one page. Pick the plate-solved source and the destination (or pass them on the
+command line: the first two arguments that are existing files fill the boxes, so a shortcut
+or "Send to" works), choose whether to write into the destination or into a new file, keep or
+drop the optical metadata, allow or refuse different dimensions, then **Preview** or **Copy**.
+Under each file box the window shows what it read from the header (`Source: 5601 x 3692,
+plate-solved`, `Destination: 5601 x 3692`); after a copy the destination reads `already
+plate-solved`.
+
+The window computes nothing of its own: Preview lists exactly the cards `copywcs --dry-run`
+would print, Copy writes exactly the bytes the console writes, and a refusal or a warning is
+shown with the console's words (a refused copy writes nothing). **About** (or F1) shows the
+version, the copyright and the GPLv3 notice. The window is Windows-only; the console builds
+anywhere.
+
 ## The two languages
 
-The texts are English unless `--lang ro` asks for Romanian (written without diacritics). The
-`HISTORY` card written into the file is English in both languages: it is data other programs
-read, not interface text. Numbers never change with the language.
+The texts are English unless `--lang ro` asks for Romanian (written without diacritics), in
+the console and in the window alike; a `--lang` value that is not `en` or `ro` stops the
+console with exit 1 and opens the window in English with a message saying so. The `HISTORY`
+card written into the file is English in both languages: it is data other programs read, not
+interface text. Numbers never change with the language.
 
 ## Building from the checkout
 
@@ -78,8 +97,10 @@ dotnet build CopyWcs.sln -c Release
 dotnet test CopyWcs.sln -c Release
 ```
 
-The console is `src/CopyWcs.Cli/bin/Release/net8.0/copywcs.exe`. The development process
-(requirements with IDs, decisions, the gate) is described in `CLAUDE.md` and `docs/`.
+The console is `src/CopyWcs.Cli/bin/Release/net8.0/copywcs.exe`, the window
+`src/CopyWcs.Wpf/bin/Release/net8.0-windows/CopyWcs.Wpf.exe`, with `LICENSE` beside it. The
+development process (requirements with IDs, decisions, the gate) is described in `CLAUDE.md`
+and `docs/`.
 
 ## Licence
 

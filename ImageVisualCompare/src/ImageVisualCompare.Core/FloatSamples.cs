@@ -19,14 +19,71 @@ namespace ImageVisualCompare.Core;
 
 /// <summary>
 /// Turns the floating-point samples of an image that is not a FITS, as WIC hands them over for a
-/// float TIFF, into Bgra32 levels the way a float FITS is shown: as stored, through
-/// <see cref="FitsScale"/> (ADR 0035).
+/// float TIFF, into the sixteen-bit rows a FITS's samples become, and from there into Bgra32
+/// levels the way a float FITS is shown: as stored, through <see cref="FitsScale"/> (ADR 0035,
+/// ADR 0040).
 /// </summary>
 public static class FloatSamples
 {
     /// <summary>
-    /// Converts one row of float samples to Bgra32: each channel at the level
-    /// <see cref="FitsScale.Level"/> gives the sample on the full scale, and alpha 255.
+    /// Converts one row of float samples to sixteen-bit samples laid out as
+    /// <see cref="DisplayRenderer"/> takes them: the planes one after another, red, green,
+    /// blue, or the single gray plane, each sample <see cref="FitsScale.SixteenBit"/> of its
+    /// value on the full scale.
+    /// </summary>
+    /// <param name="samples">
+    /// The row: one float a pixel when <paramref name="gray"/>, otherwise four, red, green, blue
+    /// and a fourth that is not read (WIC's alpha or padding).
+    /// </param>
+    /// <param name="gray">True for one sample a pixel.</param>
+    /// <param name="planesRow">
+    /// Receives the width in samples when <paramref name="gray"/>, otherwise three times the
+    /// width, the red plane first.
+    /// </param>
+    /// <param name="fullScale">
+    /// The value shown as white, above 0: 1, or 65535 for an image read as 0 to 65535
+    /// (<see cref="FitsScale.FullScale"/>).
+    /// </param>
+    /// <returns>
+    /// How many of the row's red, green and blue samples, or gray ones, count towards the
+    /// rescale (<see cref="FitsScale.IsAboveThreshold"/>).
+    /// </returns>
+    public static long ToSixteenBit(ReadOnlySpan<float> samples, bool gray, Span<ushort> planesRow, double fullScale)
+    {
+        double toSixteenBits = FitsScale.ToSixteenBits(fullScale);
+        long above = 0;
+
+        if (gray)
+        {
+            for (int x = 0; x < samples.Length; x++)
+            {
+                planesRow[x] = FitsScale.SixteenBit(samples[x] * toSixteenBits);
+                above += FitsScale.IsAboveThreshold(samples[x]) ? 1 : 0;
+            }
+
+            return above;
+        }
+
+        int width = samples.Length / 4;
+        for (int x = 0; x < width; x++)
+        {
+            for (int channel = 0; channel < 3; channel++)
+            {
+                float value = samples[(x * 4) + channel];
+                planesRow[(channel * width) + x] = FitsScale.SixteenBit(value * toSixteenBits);
+                above += FitsScale.IsAboveThreshold(value) ? 1 : 0;
+            }
+        }
+
+        return above;
+    }
+
+    /// <summary>
+    /// Converts one row of float samples to Bgra32 in the linear display: each channel at the
+    /// level <see cref="FitsScale.Level"/> gives the sample on the full scale, and alpha 255.
+    /// The loaders go through <see cref="ToSixteenBit"/> and a <see cref="DisplayRenderer"/>
+    /// of their own; this is the one-call form the R-091 tests pin the levels through, and it
+    /// allocates a row and a renderer per call.
     /// </summary>
     /// <param name="samples">
     /// The row: one float a pixel when <paramref name="gray"/>, otherwise four, red, green, blue
@@ -46,35 +103,11 @@ public static class FloatSamples
     /// </returns>
     public static long ToBgra32(ReadOnlySpan<float> samples, bool gray, Span<byte> bgra, double fullScale)
     {
-        double toSixteenBits = FitsScale.ToSixteenBits(fullScale);
-        int perPixel = gray ? 1 : 4;
-        long above = 0;
-
-        for (int pixel = 0; pixel < samples.Length / perPixel; pixel++)
-        {
-            ReadOnlySpan<float> source = samples.Slice(pixel * perPixel, perPixel);
-            Span<byte> target = bgra.Slice(pixel * 4, 4);
-            if (gray)
-            {
-                byte level = FitsScale.Level(source[0] * toSixteenBits);
-                target[0] = level;
-                target[1] = level;
-                target[2] = level;
-                above += FitsScale.IsAboveThreshold(source[0]) ? 1 : 0;
-            }
-            else
-            {
-                // Bgra32 puts blue first; the samples come red first.
-                for (int channel = 0; channel < 3; channel++)
-                {
-                    target[2 - channel] = FitsScale.Level(source[channel] * toSixteenBits);
-                    above += FitsScale.IsAboveThreshold(source[channel]) ? 1 : 0;
-                }
-            }
-
-            target[3] = 255;
-        }
-
+        int width = gray ? samples.Length : samples.Length / 4;
+        int planes = gray ? 1 : 3;
+        var planesRow = new ushort[width * planes];
+        long above = ToSixteenBit(samples, gray, planesRow, fullScale);
+        new DisplayRenderer(DisplayMode.Linear, width, planes).Render(planesRow, bgra);
         return above;
     }
 }

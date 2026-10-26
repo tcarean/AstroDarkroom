@@ -93,7 +93,7 @@ public class FitsImageLoaderTests : IDisposable
         using var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
 
-        Assert.Throws<OperationCanceledException>(() => _loader.Load(path, cancelled.Token));
+        Assert.Throws<OperationCanceledException>(() => _loader.Load(path, cancellationToken: cancelled.Token));
     }
 
     [Fact]
@@ -299,5 +299,93 @@ public class FitsImageLoaderTests : IDisposable
         Assert.Equal(
             "Could not read catalogue.fits." + Environment.NewLine + "FITS: no image found in the file.",
             result.Error);
+    }
+
+    [Fact]
+    public void R110_AFits_IsShownAsStored_FromTheProbeOn()
+    {
+        string path = _images.WriteBytes("stored.fit", FitsFixture.Image(16, 1, 1, 1, [7]));
+
+        Assert.True(_loader.Probe(path).ShownAsStored);
+        Assert.True(_loader.Load(path).Info.ShownAsStored);
+        Assert.Equal(DisplayMode.Linear, _loader.Load(path).Mode);
+    }
+
+    [Fact]
+    public void R111_InHistogramMode_EachPlaneIsEqualisedOnItsOwnHistogram()
+    {
+        // 4 x 1, three planes of 16-bit samples: red 1, 2, 2, 3 (64, 191, 191, 255); green all 3
+        // (255); blue 0, 0, 0, 9 (0, 0, 0, 64). The levels are R-111's example per channel.
+        byte[] file = FitsFixture.Image(16, 4, 1, 3, [1, 2, 2, 3, 3, 3, 3, 3, 0, 0, 0, 9]);
+        string path = _images.WriteBytes("histogram.fit", file);
+
+        LoadedImage loaded = _loader.Load(path, DisplayMode.Histogram);
+
+        Assert.Equal(
+            [0, 255, 64, 255, 0, 255, 191, 255, 0, 255, 191, 255, 64, 255, 255, 255],
+            Pixels(loaded.Bitmap));
+        Assert.Equal(DisplayMode.Histogram, loaded.Mode);
+        Assert.True(loaded.Bitmap.IsFrozen);
+    }
+
+    [Fact]
+    public void R111_InHistogramMode_AFloatFileThatCountsTo65535_IsCountedOnThatScale()
+    {
+        // Every sample above 2, so the file counts to 65535 (R-016): the 16-bit values are then
+        // 10, 20, 20, 30, which equalise as 1, 2, 2, 3 do; read as 0 to 1 they would all be 65535.
+        byte[] file = FitsFixture.Image(-32, 4, 1, 1, [10, 20, 20, 30]);
+        string path = _images.WriteBytes("rescaled.fit", file);
+
+        LoadedImage loaded = _loader.Load(path, DisplayMode.Histogram);
+
+        Assert.Equal([64, 64, 64, 255, 191, 191, 191, 255, 191, 191, 191, 255, 255, 255, 255, 255], Pixels(loaded.Bitmap));
+        Assert.Equal("32-bit float gray (0..65535)", loaded.Info.FormatDescription);
+    }
+
+    [Fact]
+    public void R111_InHistogramMode_TheRowsAreStillBottomUp()
+    {
+        // 1 x 2, one plane: the first row of the file, 1, is the bottom row; the second, 3, the
+        // top. Equalised: 1 -> 128, 3 -> 255.
+        string path = _images.WriteBytes("rows.fit", FitsFixture.Image(16, 1, 2, 1, [1, 3]));
+
+        LoadedImage loaded = _loader.Load(path, DisplayMode.Histogram);
+
+        Assert.Equal([255, 255, 255, 255, 128, 128, 128, 255], Pixels(loaded.Bitmap));
+    }
+
+    [Fact]
+    public void R112_InFalseColours_AGrayFile_IsColouredByItsEqualisedLevel()
+    {
+        string path = _images.WriteBytes("rainbow.fit", FitsFixture.Image(16, 4, 1, 1, [1, 2, 2, 3]));
+
+        LoadedImage loaded = _loader.Load(path, DisplayMode.FalseColours);
+        byte[] pixels = Pixels(loaded.Bitmap);
+
+        Assert.Equal(Bgra(64), pixels[..4]);
+        Assert.Equal(Bgra(191), pixels[4..8]);
+        Assert.Equal(Bgra(255), pixels[12..16]);
+        Assert.Equal(DisplayMode.FalseColours, loaded.Mode);
+    }
+
+    [Fact]
+    public void R112_InFalseColours_AnRgbFile_IsColouredByTheMeanOfItsPlanes()
+    {
+        // Means 1, 2, 3, 3 (the rounding of R-112), equalised 64, 128, 255, 255.
+        byte[] file = FitsFixture.Image(16, 4, 1, 3, [1, 2, 2, 3, 1, 2, 3, 3, 1, 3, 3, 3]);
+        string path = _images.WriteBytes("rainbow-rgb.fit", file);
+
+        byte[] pixels = Pixels(_loader.Load(path, DisplayMode.FalseColours).Bitmap);
+
+        Assert.Equal(Bgra(64), pixels[..4]);
+        Assert.Equal(Bgra(128), pixels[4..8]);
+        Assert.Equal(Bgra(255), pixels[8..12]);
+    }
+
+    /// <summary>The rainbow colour of a level as a Bgra32 pixel.</summary>
+    private static byte[] Bgra(byte level)
+    {
+        (byte r, byte g, byte b) = RainbowTable.Colour(level);
+        return [b, g, r, 255];
     }
 }

@@ -32,7 +32,10 @@ The rule "Two interface languages, English everywhere else" in `CLAUDE.md` names
 alone as bilingual; for this file the kit's rule "Languages" now holds as written. The section
 names in `docs/skills.md` (step 7 of `/release`), in `CHANGELOG.md` and in ADRs 0005 and 0007
 follow the English headings. The five tools' READMEs stay in Romanian, and the front page says
-so. The "Requirements" section names the Adobe programs as ADR 0008 measured them (Lightroom's
+so. (Restated 2026-10-26: a tool's README goes English by an ADR of its own, as LightsCheck's did
+by its ADR 0024, AstroPhotoAnalyzer's by its ADR 0050, ImageVisualCompare's by its ADR 0041 and
+DarksCheck's by its ADR 0022; the front page names the tools whose README is in English.) The
+"Requirements" section names the Adobe programs as ADR 0008 measured them (Lightroom's
 copy is not read), while the launcher's own text still names Lightroom (ADR 0007's note); that
 correction is the owner's to decide. (Restated 2026-10-26: FlatCheck reads Lightroom's folders
 since its ADR 0066; both texts name Lightroom and both are right, nothing left to correct.)

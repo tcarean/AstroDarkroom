@@ -23,4 +23,5 @@ the same task as the code it covers.
 | Area | Note | Read before editing |
 | --- | --- | --- |
 | The FITS header engine: cards, blocks, the data offset, the in-place write; the key lists and the SIP pattern | `fits-header.md` | `FitsHeader.cs`, `WcsMetadataKeys.cs`, anything about what is copied or how a file is written (R-007, R-010 to R-015) |
-| The copy run and its outcome, the console's options, printing and exit codes, the interface language and `--lang`, the banner and the copyright | `run-and-console.md` | `WcsCopy.cs`, anything in `src/CopyWcs.Core/Language/` or `src/CopyWcs.Cli/`, `VersionInfo.cs`, `LicenseInfo.cs`, any console option, message or exit code (R-001 to R-009, R-020 to R-023) |
+| The copy run and its outcome, the console's options, printing and exit codes, the interface language and `--lang`, the banner, the copyright and the warranty paragraph | `run-and-console.md` | `WcsCopy.cs`, anything in `src/CopyWcs.Core/Language/` or `src/CopyWcs.Cli/`, `VersionInfo.cs`, `LicenseInfo.cs`, any console option, message or exit code (R-001 to R-009, R-020 to R-023) |
+| The window: the view-model's three things, the window's shape, the About window, the command line, the theme, the icon, the tests | `window.md` | anything in `src/CopyWcs.Wpf/` or `tests/CopyWcs.Wpf.Tests/`, `Icon/make_icon.py`, any behaviour of R-030 to R-037 |
