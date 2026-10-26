@@ -15,6 +15,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   codes are the same in both languages; the Romanian texts are unchanged, with `--lang ro`
   (R-150 to R-154; ADR 0048).
 
+### Changed
+
+- `README.md`, the user documentation, is in English, the language the interface starts in,
+  rewritten against the current behaviour: the window's English labels, `Report.txt`, every
+  console option with its default, how the background is judged, and the developer notes cut to
+  pointers into `CLAUDE.md` and `docs/` (ADR 0050). `THIRD-PARTY-NOTICES.md` stays Romanian.
+
 ### Fixed
 
 - A FITS is read the way up Siril shows it, whatever its `ROWORDER` says: the file's first row

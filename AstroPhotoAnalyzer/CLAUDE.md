@@ -67,7 +67,7 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   `.claude/settings.json` are the kit's, the same here (ADR 0002; the kit's ADRs 0017, 0018, 0028).
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
   + `.json` - figures on the reference image. `docs/design/` - the explanations, per area, read on
-  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, Romanian.
+  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, English (ADR 0050).
 - The process rules are the kit's, in `.claude/rules/kit/process.md`; this project's own are in
   this file. The reasons behind the process are in `GHID.md` in the kit folder
   `ClaudeCodeStarterKit` beside this project in the `photo` repository (for people, not loaded).
@@ -94,16 +94,17 @@ or varies a kit rule names it.
   plate-solved FITS `starless_rbf0.5_stretch0.17.fit` (ADR 0025); a claim about a measurement
   on a real image comes with the pasted output, and the synthetic scenes of `Scenes.cs` are no
   substitute for it.
-- **Languages** (varies the kit's rule "Languages", ADR 0005, ADR 0047, ADR 0048). English in
+- **Languages** (varies the kit's rule "Languages", ADRs 0005, 0047, 0048 and 0050). English in
   everything the model reads or writes about the process: docs, tests, scripts, commits,
   CHANGELOG, and every comment in every file, a comment added to any file included: C# (`//`,
   `///`), XAML, csproj and props (`<!-- -->`), Python and configuration (`#`). What the user
   sees (CLI text, `--help`, window labels and texts, the report) is in two languages, chosen by
   `--lang en|ro`, English by default: every such text is a pair written where it is used,
   `Tr.Pick(english, romanian)` in C# and `{local:T En='...', Ro='...'}` in XAML, the two changed
-  together, the Romanian without diacritics (`docs/design/language.md`). `README.md` and
-  `THIRD-PARTY-NOTICES.md` stay Romanian, with diacritics. Output quoted inside a comment or a
-  test stays as the user sees it. Never leave a file in two languages, the pairs apart.
+  together, the Romanian without diacritics (`docs/design/language.md`). `README.md`, the user
+  documentation, is English; `THIRD-PARTY-NOTICES.md` stays Romanian, with diacritics. Output
+  quoted inside a comment or a test stays as the user sees it. Never leave a file in two
+  languages, the pairs apart.
 - **Computed only in the core.** Nothing is computed outside `AstroPhotoAnalyzer.Core`: a new
   number, threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`,
   never in a view-model or the console (ADR 0007).
