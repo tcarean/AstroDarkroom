@@ -25,7 +25,9 @@ below the repository's root. On the owner's computer,
 `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` holds 3,531 `.lcp` files written by the Adobe
 DNG Converter (the folder dates from its installation, the newest profile from its build), while
 Lightroom Classic and Lightroom keep their own 3,633 profiles in `Resources\LensProfiles` inside
-their program folders, which FlatCheck does not read.
+their program folders, which FlatCheck does not read. (Restated 2026-10-26: FlatCheck reads
+those folders too since its ADR 0065, each file once; the root README's Lightroom row says
+"yes" and names the folder.)
 
 ## Decision
 
@@ -47,7 +49,9 @@ their program folders, which FlatCheck does not read.
   kit's rule "Languages" allows a README in Romanian but does not require it.
 - **Naming Lightroom among the programs that bring the profiles FlatCheck reads**, as
   FlatCheck's README does. Measured above: Lightroom's profiles stay inside its program folder,
-  so the root README lists it with "no" and recommends the free DNG Converter.
+  so the root README lists it with "no" and recommends the free DNG Converter. (Restated
+  2026-10-26: Lightroom is named with "yes" since FlatCheck's ADR 0065 reads its folder; the
+  DNG Converter stays the recommendation for a reader without an Adobe subscription.)
 - **A test that the two READMEs carry the same latest row.** The root README belongs to no kit
   project, so no gate reads it; the release step writes both rows from the same `.sha256`.
 
