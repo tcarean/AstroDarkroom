@@ -131,6 +131,60 @@ public class LensMountTests
         Assert.Equal(3, LensIdentification.Identify(strangeName, null, sources).Candidates.Count);
     }
 
+    /// <summary>
+    /// Canon EOS R with the RF 28mm F2.8 STM. On an RF body libraw's LensID is Canon's RF lens
+    /// type (313 for this lens, 266 for the RF 70-200 F2.8 on the R6 sample, 303 for the RF 135
+    /// on the R5 Mark II sample, measured 2026-10-26), while every Adobe RF file carries 61182,
+    /// Canon's generic EF-side type: the ID matches nothing, and the name (the LensModel string
+    /// every RF body writes) is the only key. The range is the EF-like one libraw builds.
+    /// </summary>
+    static LoadedFrame CanonRfRaw() => new LoadedFrame
+    {
+        Header = new Dictionary<string, string>(),
+        FocalMm = 28,
+        FNumber = 2.8,
+        Camera = "Canon EOS R",
+        LensId = 313,
+        LensMount = "Canon RF",
+        LensName = "RF28mm F2.8 STM",
+        LensMinFocalMm = 28,
+        LensMaxFocalMm = 28,
+        LensMaxAperture = 2.8,
+    };
+
+    [Fact]
+    public void R018_ACanonRfRawIsIdentifiedByItsName_TheRfIdsMatchNoProfile()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, otherMounts: true);
+
+        ShotIdentity id = LensIdentification.Identify(CanonRfRaw(), null, sources);
+
+        Assert.Equal(2, id.Candidates.Count);
+        Assert.Contains(id.Candidates, c => c.Source == ProfileSource.Adobe && c.Name == "Canon RF 28mm F2.8 STM");
+        Assert.Contains(id.Candidates, c => c.Source == ProfileSource.Lensfun && c.Name == "Canon RF 28mm F2.8 STM");
+        Assert.All(id.Candidates, c => Assert.DoesNotContain("50mm", c.Name));
+        Assert.Equal("obiectivul \"RF28mm F2.8 STM\" (ID 313) din raw (Canon RF, 28 mm f/2.8)", id.RawLensLabel);
+
+        // without the name the ID finds nothing (Canon's RF type is in no Adobe file) and the range
+        // alone names the candidates, flagged as such; the generic 61182 the files carry would name
+        // the whole RF line (both fixtures) if a raw ever gave it
+        var noName = CanonRfRaw();
+        noName.LensName = null;
+        ShotIdentity byRange = LensIdentification.Identify(noName, null, sources);
+        Assert.True(byRange.CandidatesByRangeOnly);
+        Assert.All(byRange.Candidates, c => Assert.Contains("28mm", c.Name));
+        noName.LensMinFocalMm = noName.LensMaxFocalMm = noName.LensMaxAperture = null;
+        Assert.Empty(LensIdentification.Identify(noName, null, sources).Candidates);
+        var generic = CanonRfRaw();
+        generic.LensName = null;
+        generic.LensId = 61182;
+        generic.LensMinFocalMm = generic.LensMaxFocalMm = generic.LensMaxAperture = null;
+        ShotIdentity byGenericId = LensIdentification.Identify(generic, null, sources);
+        Assert.Equal(2, byGenericId.Candidates.Count(c => c.Source == ProfileSource.Adobe));
+        Assert.Contains(byGenericId.Candidates, c => c.Name == "Canon RF 50mm F1.8 STM");
+    }
+
     [Fact]
     public void R018_ASonyERawIsIdentifiedByItsNameAlone_TheRangeDoesNotPullTheAMountTwin()
     {

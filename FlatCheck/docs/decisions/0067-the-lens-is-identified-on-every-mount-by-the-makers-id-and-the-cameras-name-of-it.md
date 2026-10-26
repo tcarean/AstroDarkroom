@@ -32,14 +32,22 @@ in `docs/plans/2026-10-26-identify-the-lens-on-every-mount.md`:
   `stCamera:Lens` is the camera's LensModel string on every make.
 - `.pef` was not among the raw extensions: the K-70 sample read "the file does not begin with
   SIMPLE", while libraw opened it without trouble.
+- Canon RF, measured the same day on two more CC0 samples (V-045, V-046) after the owner asked
+  whether RF could be fixed: on an RF body libraw's `MakerNotes.LensID` is Canon's RF lens type
+  (266 for the RF 70-200mm F2.8 L IS USM, 303 for the RF 135mm F1.8 L IS USM), not the generic
+  61182 that every Adobe RF file carries, so by ID an RF lens matches nothing; `LensInfo.Lens` is
+  the LensModel string every RF body writes (`RF70-200mm F2.8 L IS USM`), equal to Adobe's
+  `stCamera:Lens`. On the R5 Mark II, a body newer than libraw 0.21.1 (named `EOS R5m2`),
+  `MakerNotes.CameraMount` said Canon EF (5) while `LensMount` said Canon RF (6); on the five
+  known bodies the two agree.
 
 ## Decision
 
 - **The ID by mount** (`RawReader.LensIdOf`): `Nikon.LensIDNumber` when above 0; otherwise
   `MakerNotes.LensID` when the MakerNote names a mount other than Nikon's and the value is above 0
   and fits 31 bits; with an unknown mount nothing. `LoadedFrame.NikonLensId` becomes `LensId`,
-  beside `LensMount` (libraw's mount name, `RawReader.MountLabel`) and `LensName` (`LensInfo.Lens`
-  trimmed).
+  beside `LensMount` (libraw's mount name, `RawReader.MountLabel`, of the lens's mount, or the
+  camera's when the lens's is unknown) and `LensName` (`LensInfo.Lens` trimmed).
 - **Pentax pairs** (`LcpReader.ParseLensId`): two integers of a byte each read as a·256 + b, libraw's
   value; one integer as before; anything else dropped.
 - **The name as a second key** (`LensCatalog.ByLensName`, `LensIdentification.CandidatesFromRaw`):
@@ -64,6 +72,10 @@ in `docs/plans/2026-10-26-identify-the-lens-on-every-mount.md`:
   with a name or an ID is never a raw without a lens (`ShotIdentity.RawNamesLens`, R-106's sentence
   names the missing name too).
 - **`.pef`** joins the raw extensions. `.orf`, `.rw2` and the rest wait for a measured file.
+- **Canon RF needs nothing more**: the name path identifies the RF lens (the R6 sample resolves
+  to its one Adobe file without `--lens`, the R5 Mark II to the Adobe file and the lensfun
+  entry), and the ID path cannot, since libraw's RF type is in no profile and the profiles'
+  61182 is in no raw.
 
 ## Alternatives rejected
 
@@ -96,5 +108,5 @@ in `docs/plans/2026-10-26-identify-the-lens-on-every-mount.md`:
   file and its lensfun entry (two of them for the EF 50 f/1.4, calibrated on two formats) and asks
   for `--source` (recorded in `docs/design/lens-profiles.md`, section 10).
 - Open: the Adobe stub's name spells `f1.4` where the file says `f/1.4`, so a `--lens` text with the
-  bar misses the Adobe half (seen on the Canon; not this task); Canon RF lenses all carry 61182, so
-  on them the name decides alone (unmeasured, no RF raw).
+  bar misses the Adobe half (seen on the Canon; not this task). An RF body without a LensModel
+  would have no lens for FlatCheck, since the RF type matches no profile; none is known.

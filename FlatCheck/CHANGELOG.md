@@ -14,7 +14,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   name as the camera wrote it (EXIF LensModel) is the first key where the camera writes one, the
   only one for a Sony E lens, whose Adobe files carry no ID. The reports say `the lens "EF50mm
   f/1.4 USM" (ID 198) from the raw (Canon EF, 50 mm f/1.4)` where they said `the Nikon ID 139`.
-  Measured on four CC0 samples of raw.pixls.us, kept as validation data (V-041 to V-044).
+  On a Canon RF body the name is the key by itself, since libraw's RF lens type is in no
+  Adobe file. Measured on six CC0 samples of raw.pixls.us, kept as validation data (V-041 to
+  V-046).
 - Lightroom Classic's and Lightroom's own lens-profile folders,
   `C:\Program Files\Adobe\<app>\Resources\LensProfiles\1.0`, are read too, after the two Camera
   Raw folders (R-107, ADR 0066): a Lightroom-only installation now fills the Adobe half of the

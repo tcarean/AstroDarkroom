@@ -271,10 +271,11 @@ lens chosen (exit 2), no focal / f-stop / crop (exit 1).
 `LensMinFocalMm`, `LensMaxFocalMm`, `LensMaxAperture`: `FitsReader` from `FOCALLEN` /
 `INSTRUME`, `RawReader.FillShootingInfo` from libraw's `ImageOtherParams` (`FocalLength`,
 `Aperture`), `IParams.Make/Model` and `LensInfo`: the ID by mount (`RawReader.LensIdOf`:
-`Nikon.LensIDNumber` when above 0, else `MakerNotes.LensID` when `MakerNotes.CameraMount` is
-a known mount other than Nikon's and the value is above 0 and fits 31 bits; on a Nikon that
-field holds the LensData signature), the mount's name (`MountLabel`, libraw's enumeration
-spelled "Nikon F", "Canon EF", "Sony E", "Pentax K"), the name (`LensInfo.Lens` trimmed) and
+`Nikon.LensIDNumber` when above 0, else `MakerNotes.LensID` when the mount, `MakerNotes.LensMount`
+or the camera's when that is 0, is a known one other than Nikon's and the value is above 0 and
+fits 31 bits; on a Nikon that field holds the LensData signature), the mount's name
+(`MountLabel`, libraw's enumeration spelled "Nikon F", "Canon EF", "Canon RF", "Sony E",
+"Pentax K"), the name (`LensInfo.Lens` trimmed) and
 the range (`RangeOf`: the MakerNote's `MinFocal` / `MaxFocal` else the top fields;
 `MaxAperture4MinFocal`, else `MaxAperture`, else the top field; zero means null). The
 measured values behind each rule are in section 10.
@@ -456,6 +457,24 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   first implementation took name hits ∪ ID hits and listed six lenses on the 7D Mark II: the
   three Zeiss ZE files that share 198 survived the narrowing because "Milvus 1.4_25 ZE" gives
   no range; hence the name wins where it matches (ADR 0067).
+- **Canon RF, 2026-10-26** (two more CC0 samples, V-045 the EOS R6 4659 with the RF 70-200mm
+  F2.8 L IS USM, V-046 the EOS R5 Mark II 7884, APS-C crop CRAW, with the RF 135mm F1.8 L IS USM;
+  libraw 0.21.1 knows the R, RP, R3, R5, R6, R7 and R10 and opened the R5 Mark II anyway as
+  "EOS R5m2"). `MakerNotes.LensID` 266 and 303, Canon's RF lens types (exiftool's `RFLensType`),
+  while all 79 Adobe RF files on the machine carry `stCamera:LensID` 61182 (and 64 profiles 39),
+  so the ID matches nothing; `LensInfo.Lens` `RF70-200mm F2.8 L IS USM` and `RF135mm F1.8 L IS
+  USM`, equal to the files' `stCamera:Lens`. `MakerNotes.MaxAperture4MinFocal` 0 and
+  `MaxAperture` 2.828 / 1.834, as on the EF bodies. `MakerNotes.LensMount` 6 (Canon RF) on both;
+  `CameraMount` 6 on the R6 and 5 (Canon EF) on the R5 Mark II, libraw's guess for a body it does
+  not know, which is why the label takes the lens's mount first. Without `--lens` the R6 writes
+  straight from its one Adobe file (lensfun's RF 70-200 F2.8 has no vignetting calibration, so it
+  is not in the list) and the R5 Mark II lists the Adobe file and the lensfun entry:
+
+  ```
+  Canon EOS R6:          lens: Canon RF 70-200mm F2.8 L IS USM [Canon] source: Adobe; crop 1 (lensfun database, Canon EOS R6)
+  Canon EOS R5 Mark II:  "the lens "RF135mm F1.8 L IS USM" (ID 303) from the raw (Canon RF, 135 mm f/1.8)" matches 2 lenses
+                         Canon RF 135mm F1.8 L IS USM [Canon] (Adobe), Canon RF 135mm F1.8L IS USM [Canon RF, calibrated on full frame 1] (lensfun)
+  ```
 - **The three Adobe folders on the author's machine, 2026-10-26** (the measurement behind ADR
   0066): `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` holds 3531 files (446 MB, folder
   created 2026-04-16 by the DNG Converter 18.3, newest file 2026-06-04); `Adobe Lightroom

@@ -135,7 +135,7 @@ saddle; and the -0.39 stops against the profile are identical on every column, t
 excess no rotation touches. The whole's row agrees with V-010 and V-025. Shared colour scale
 -11.4 / +12.7 %.
 
-### The lens of four raws of other makes (V-041 to V-044, measured 2026-10-26)
+### The lens of six raws of other makes (V-041 to V-046, measured 2026-10-26)
 
 Not a kind of `validation.json`: the figures are libraw's lens metadata, not a run's, and
 `RawSampleTests` (trait `Category=Validation`) holds them as its theory rows and prints what it
@@ -150,9 +150,11 @@ designed on; `LensMountTests` fabricates frames with the same values for the gat
 | V-042 | `Canon - EOS 6D - RAW.CR2` (799) | Canon EOS 6D | 155 | Canon EF | `EF85mm f/1.8 USM` | 85 / 85 / 1.834 | 85 / 5.6 |
 | V-043 | `Sony - ILCE-7M3 - 14bit compressed (3-2).ARW` (2414) | Sony ILCE-7M3 | 32831 (in no Adobe file) | Sony E | `FE 16-35mm F2.8 GM` | 16 / 35 / 2.8 | 32 / 4 |
 | V-044 | `Pentax - K-70 - 14bit (3-2).PEF` (1141) | Pentax K-70 | 2263 (Adobe's `8 215`) | Pentax K | none | none | 18 / 5.6 |
+| V-045 | `Canon - EOS R6 - 3-2.CR3` (4659) | Canon EOS R6 | 266 (Canon's RF type; the Adobe RF files carry 61182) | Canon RF | `RF70-200mm F2.8 L IS USM` | 70 / 200 / 2.828 (from `MaxAperture`) | 200 / 25 |
+| V-046 | `Canon - EOS R5 Mark II - CRAW (3-2).CR3` (7884) | Canon EOS R5m2 (libraw 0.21.1 is older than the body) | 303 | Canon RF (the lens's mount; the camera's read Canon EF) | `RF135mm F1.8 L IS USM` | 135 / 135 / 1.834 | 135 / 3.2 |
 
 Run 2026-10-26 (`FLATCHECK_TESTDATA_LARGE` on the masters' folder, `--filter RawSampleTests`):
-4 passed. The console's identification on the same files is quoted in
+6 passed. The console's identification on the same files is quoted in
 `docs/design/lens-profiles.md`, section 10.
 
 ## Not automated
@@ -181,7 +183,7 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 ## History
 
-- 2026-10-26: V-041 to V-044 added, the lens metadata of four raws of other makes (ADR 0067); no
+- 2026-10-26: V-041 to V-046 added, the lens metadata of six raws of other makes (ADR 0067); no
   figure of V-001 to V-040 touched, no formula moved.
 
 - 2026-09-28: the Split tab's two real runs recorded above as dated measurements (no JSON

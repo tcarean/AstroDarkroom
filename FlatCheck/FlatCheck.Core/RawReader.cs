@@ -266,9 +266,11 @@ namespace FlatCheck
         /// <summary>
         /// Fills <paramref name="frame"/> with what libraw knows about the shot: the focal length,
         /// the aperture, the camera ("make model", the make once) and the lens - its ID and mount
-        /// (<see cref="LensIdOf"/>, <see cref="MountLabel"/>), its name (<c>LensInfo.Lens</c>, the
-        /// EXIF LensModel: empty on a D3300 with third-party glass and on a Pentax K-70, "EF50mm
-        /// f/1.4 USM" on a Canon, "FE 16-35mm F2.8 GM" on a Sony) and its range
+        /// (<see cref="LensIdOf"/>, <see cref="MountLabel"/>; on a Canon RF body libraw's ID is
+        /// Canon's RF lens type, 266 for the RF 70-200 F2.8, which no Adobe file carries, so there
+        /// the name is the key), its name (<c>LensInfo.Lens</c>, the EXIF LensModel: empty on a
+        /// D3300 with third-party glass and on a Pentax K-70, "EF50mm f/1.4 USM" on a Canon, "FE
+        /// 16-35mm F2.8 GM" on a Sony, "RF70-200mm F2.8 L IS USM" on an EOS R6) and its range
         /// (<see cref="RangeOf"/>). Each stays null when libraw gives zero or empty. libraw types
         /// in locals only, as everywhere in this file; a failure in the lens block leaves the lens
         /// fields null and the rest as read. Measured 2026-10-26 (R-108).
@@ -287,8 +289,12 @@ namespace FlatCheck
             {
                 LibRawLensInfo li = ctx.LensInfo;
                 LibRawLensMakerNotes notes = li.MakerNotes;
-                frame.LensId = LensIdOf(li.Nikon.LensIDNumber, notes.LensID, notes.CameraMount);
-                frame.LensMount = MountLabel(notes.CameraMount);
+                // The lens's mount, and the camera's only when the lens's is unknown: the two agree
+                // on every known body measured, and on a body newer than libraw (an EOS R5 Mark II
+                // read by 0.21.1) CameraMount said Canon EF while LensMount said Canon RF, rightly.
+                int mount = notes.LensMount != 0 ? notes.LensMount : notes.CameraMount;
+                frame.LensId = LensIdOf(li.Nikon.LensIDNumber, notes.LensID, mount);
+                frame.LensMount = MountLabel(mount);
                 string name = (li.Lens ?? "").Trim();
                 frame.LensName = name.Length == 0 ? null : name;
                 (frame.LensMinFocalMm, frame.LensMaxFocalMm, frame.LensMaxAperture) =
@@ -316,8 +322,8 @@ namespace FlatCheck
         /// </summary>
         /// <param name="nikonLensIdNumber">libraw's <c>LensInfo.Nikon.LensIDNumber</c>; 0 when none.</param>
         /// <param name="makerNoteLensId">libraw's <c>LensInfo.MakerNotes.LensID</c>; 0 when none.</param>
-        /// <param name="mountCode">libraw's <c>LensInfo.MakerNotes.CameraMount</c>, a value of its
-        /// camera-mounts enumeration; 0 when unknown.</param>
+        /// <param name="mountCode">libraw's <c>LensInfo.MakerNotes.LensMount</c> (the camera's
+        /// when the lens's is 0), a value of its camera-mounts enumeration; 0 when unknown.</param>
         /// <returns>The lens ID, or null when the raw gives none.</returns>
         internal static long? LensIdOf(long nikonLensIdNumber, ulong makerNoteLensId, int mountCode)
         {
@@ -334,7 +340,8 @@ namespace FlatCheck
         /// mount this table does not spell; null for an unknown mount (0) or a value libraw does
         /// not define.
         /// </summary>
-        /// <param name="mountCode">libraw's <c>LensInfo.MakerNotes.CameraMount</c>; 0 when unknown.</param>
+        /// <param name="mountCode">libraw's <c>LensInfo.MakerNotes.LensMount</c> (the camera's when
+        /// the lens's is 0); 0 when unknown.</param>
         /// <returns>The mount's label, or null.</returns>
         internal static string MountLabel(int mountCode)
         {

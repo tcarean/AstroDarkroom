@@ -266,6 +266,21 @@ internal static class LensProfileTestData
             <vignetting model=""pa"" focal=""50"" aperture=""4"" distance=""1000"" k1=""-0.2000"" k2=""0.0500"" k3=""-0.0200""/>
         </calibration>
     </lens>
+    <camera>
+        <maker>Canon</maker>
+        <model>Canon EOS R</model>
+        <mount>Canon RF</mount>
+        <cropfactor>1.0</cropfactor>
+    </camera>
+    <lens>
+        <maker>Canon</maker>
+        <model>Canon RF 28mm F2.8 STM</model>
+        <mount>Canon RF</mount>
+        <cropfactor>1.0</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""28"" aperture=""2.8"" distance=""1000"" k1=""-1.0000"" k2=""0.2000"" k3=""-0.0800""/>
+        </calibration>
+    </lens>
     <lens>
         <maker>Sony</maker>
         <model>FE 16-35mm f/2.8 GM</model>
@@ -325,6 +340,12 @@ internal static class LensProfileTestData
             // carry 198 in AlternateLensIDs, and their names ("Milvus 1.4_25 ZE") give no range
             File.WriteAllText(Path.Combine(dir, "Canon", "Canon (Zeiss Milvus 1.4_25 ZE) - RAW.lcp"),
                 LcpOneProfile("Canon", "Zeiss Milvus 1.4_25 ZE", "Milvus 1.4/25 ZE", "198", "1", "25", camera: "Canon"));
+            // Every RF lens carries 61182 (11300 profiles on the owner's machine, 2026-10-26); the
+            // names are the camera's LensModel strings, as on the EF files
+            File.WriteAllText(Path.Combine(dir, "Canon", "Canon (Canon RF 28mm F2.8 STM) - RAW.lcp"),
+                LcpOneProfile("Canon", "Canon RF 28mm F2.8 STM", "RF28mm F2.8 STM", "61182", "1", "28", camera: "Canon EOS R5"));
+            File.WriteAllText(Path.Combine(dir, "Canon", "Canon (Canon RF 50mm F1.8 STM) - RAW.lcp"),
+                LcpOneProfile("Canon", "Canon RF 50mm F1.8 STM", "RF50mm F1.8 STM", "61182", "1", "50", camera: "Canon EOS R5"));
             File.WriteAllText(Path.Combine(dir, "Sony", "SONY (Sony FE 16-35mm F2.8 GM) - RAW.lcp"),
                 LcpOneProfile("SONY", "Sony FE 16-35mm F2.8 GM", "FE 16-35mm F2.8 GM", null, "1", "16", camera: "Sony"));
             File.WriteAllText(Path.Combine(dir, "Sony", "SONY (Sony 16-35mm F2.8 ZA SSM) - RAW.lcp"),

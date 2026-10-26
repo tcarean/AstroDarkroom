@@ -272,6 +272,22 @@
       "sha256": "1d64c6aa71680642ba8f00b6f6105df3e66a4534e631f422fbf3316273c4408c",
       "source": "raw.pixls.us sample 1141, CC0, Pentax K-70 with the smc PENTAX-DA 18-135mm",
       "demonstrates": "V-044: the ID pair 8 215 as 2263, no name, no range, and the .pef extension (R-108, R-004)"
+    },
+    {
+      "name": "Samples/raw.pixls.us/Canon - EOS R6 - 3-2.CR3",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "74abb0a113d075ad9887a058082f40dd2a938c4813a08474d82356f11a027778",
+      "source": "raw.pixls.us sample 4659, CC0, Canon EOS R6 with the RF 70-200mm F2.8 L IS USM",
+      "demonstrates": "V-045: on an RF body libraw's lens ID is Canon's RF type (266), in no Adobe file; the name identifies the lens (R-108)"
+    },
+    {
+      "name": "Samples/raw.pixls.us/Canon - EOS R5 Mark II - CRAW (3-2).CR3",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "6a597497776a6abbfab8fcf12d0086ac7a3f8afea2879d61accf6bbf48d357d7",
+      "source": "raw.pixls.us sample 7884, CC0, Canon EOS R5 Mark II (APS-C crop CRAW) with the RF 135mm F1.8 L IS USM",
+      "demonstrates": "V-046: a body newer than libraw 0.21.1 still gives the name and the RF type 303; the lens's mount, not the camera's, says Canon RF (R-108)"
     }
   ]
 }

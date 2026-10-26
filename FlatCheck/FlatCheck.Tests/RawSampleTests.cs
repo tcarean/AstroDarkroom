@@ -21,8 +21,8 @@ using Xunit.Abstractions;
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// What libraw says about the lens of the four CC0 raw.pixls.us samples kept as validation data
-/// (docs/validation.md, V-041 to V-044; the files and their hashes are in testdata/manifest.json,
+/// What libraw says about the lens of the six CC0 raw.pixls.us samples kept as validation data
+/// (docs/validation.md, V-041 to V-046; the files and their hashes are in testdata/manifest.json,
 /// under FLATCHECK_TESTDATA_LARGE). The values were measured on 2026-10-26 with the project's
 /// package; <see cref="LensMountTests"/> fabricates frames with the same values, so the gate needs
 /// no raw. Not in the gate: trait Category=Validation. A file absent on this machine returns early
@@ -41,6 +41,10 @@ public class RawSampleTests
         new object?[] { "V-042", "Samples/raw.pixls.us/Canon - EOS 6D - RAW.CR2", "Canon EOS 6D", 155L, "Canon EF", "EF85mm f/1.8 USM", 85.0, 85.0, 1.8340081, 85.0, 5.6 },
         new object?[] { "V-043", "Samples/raw.pixls.us/Sony - ILCE-7M3 - 14bit compressed (3-2).ARW", "Sony ILCE-7M3", 32831L, "Sony E", "FE 16-35mm F2.8 GM", 16.0, 35.0, 2.8, 32.0, 4.0 },
         new object?[] { "V-044", "Samples/raw.pixls.us/Pentax - K-70 - 14bit (3-2).PEF", "Pentax K-70", 2263L, "Pentax K", null, null, null, null, 18.0, 5.6 },
+        // RF: libraw's ID is Canon's RF lens type, not the 61182 of the Adobe files; the name decides
+        new object?[] { "V-045", "Samples/raw.pixls.us/Canon - EOS R6 - 3-2.CR3", "Canon EOS R6", 266L, "Canon RF", "RF70-200mm F2.8 L IS USM", 70.0, 200.0, 2.828427, 200.0, 25.0 },
+        // a body newer than libraw 0.21.1 (named "EOS R5m2"): CameraMount says Canon EF, LensMount Canon RF
+        new object?[] { "V-046", "Samples/raw.pixls.us/Canon - EOS R5 Mark II - CRAW (3-2).CR3", "Canon EOS R5m2", 303L, "Canon RF", "RF135mm F1.8 L IS USM", 135.0, 135.0, 1.8340081, 135.0, 3.2 },
     };
 
     [Theory]

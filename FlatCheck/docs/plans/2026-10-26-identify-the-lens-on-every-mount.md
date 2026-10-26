@@ -43,6 +43,16 @@ not begin with SIMPLE`, because `.pef` was not a raw extension. With `--lens` gi
 of the chain worked on all three (crop 1 for the ILCE-7M3 and 1.534 for the K-70 from the lensfun
 table).
 
+## Canon RF, measured after the owner's question (2026-10-26)
+
+Two more CC0 samples, approved the same day: EOS R6 (4659, RF 70-200mm F2.8 L IS USM) and EOS R5
+Mark II (7884, APS-C crop CRAW, RF 135mm F1.8 L IS USM). libraw's `MakerNotes.LensID` is Canon's
+RF lens type (266, 303), not the 61182 every Adobe RF file carries; `LensInfo.Lens` is the
+LensModel string (`RF70-200mm F2.8 L IS USM`), equal to Adobe's `stCamera:Lens`; `LensMount` 6
+(Canon RF) on both, `CameraMount` 5 (Canon EF) on the R5 Mark II, a body libraw 0.21.1 does not
+know. So RF is identified by the name path as it stands; the mount label takes the lens's mount
+first. V-045, V-046.
+
 ## Decisions (the owner took the recommendation on every point)
 
 1. The ID by mount: `Nikon.LensIDNumber` when above 0; otherwise `MakerNotes.LensID` when the
