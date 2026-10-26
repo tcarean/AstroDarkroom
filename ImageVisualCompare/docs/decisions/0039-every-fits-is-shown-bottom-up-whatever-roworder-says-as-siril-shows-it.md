@@ -49,8 +49,9 @@ the display the tool is compared against; the keyword is left to the programs th
 
 - A genuine top-down file, as camera drivers write them (SharpCap writes `TOP-DOWN`), shows
   upside down: exactly as Siril shows it, so the two sides of the divider still agree with
-  the reference display. AstroPhotoAnalyzer's reader, top-down unless `BOTTOM-UP`, now differs
-  from this one by design.
+  the reference display. AstroPhotoAnalyzer's reader, top-down unless `BOTTOM-UP`, already
+  differed from this one for a file without the keyword (ADR 0029); it now differs for a
+  `TOP-DOWN` file too, by design.
 - Guards: `R017_TheFirstRowOfTheFile_IsTheBottomRowWhateverRowOrderSays` in `FitsHeaderTests`
   and in `FitsImageLoaderTests`, the three values of the keyword each; R015 in
   `FitsImageLoaderTests` writes the same samples as a 16-bit PNG and as a FITS with mirrored

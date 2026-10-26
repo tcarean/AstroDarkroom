@@ -9,8 +9,8 @@ The owner reported on 2026-10-26 that `starless_gradremoved_syqon_studio_in_cc_s
 shows upside down against Siril. Its header says `ROWORDER = 'TOP-DOWN'` while its data is
 stored bottom-up like its siblings', and Siril 1.4.4 ignores the keyword on display (measured
 through `siril-cli`; the figures are in ADR 0039). ADR 0029's row order was built on the
-premise that Siril obeys the keyword; the owner, put the new fact and three options, chose to
-ignore `ROWORDER` as Siril does.
+premise that Siril obeys the keyword; the owner, shown the new fact and three options, chose
+to ignore `ROWORDER` as Siril does.
 
 ## Steps
 
