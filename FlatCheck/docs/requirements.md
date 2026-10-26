@@ -138,4 +138,6 @@ The explanations behind each row (why this way, what was measured) are in `docs/
 
 ## Dropped
 
-None yet. Move rows here with status `dropped` and one line saying why.
+A dropped row stays in its area with status `dropped`, its text prefixed by the date and the
+ADR that dropped it, so the behaviour it once promised can still be read in context: R-020 and
+R-082 (2026-10-26, ADR 0065).

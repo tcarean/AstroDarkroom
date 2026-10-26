@@ -45,8 +45,8 @@ no figure (`python-parity.md`).
 - **Keep the recommendations of the other reports as they were.** A report that sends the
   reader to a mode the tool no longer has is wrong on its face; the recapture of 17 confirmed
   goldens for text lines only is the smaller cost.
-- **Keep `Img.Rotate180` for the symmetry test.** Its one test, `Symmetrise_OutputIsExactly
-  InvariantUnderRotation`, states the invariant directly on the pixels; a helper kept for one
+- **Keep `Img.Rotate180` for the symmetry test.** Its one test,
+  `Symmetrise_OutputIsExactlyInvariantUnderRotation`, states the invariant directly on the pixels; a helper kept for one
   test is dead code with a test.
 - **Replace the mode's advice with a second-session comparison.** The check that actually
   caught the 11 % case of ADR 0019 (the same camera-fixed signature on two sessions with the
@@ -59,6 +59,10 @@ no figure (`python-parity.md`).
 - `--ratio` is an unknown option, exit 1; `--help` lists six modes in both languages
   (`help.txt`, `en_help.txt`).
 - The window has seven tabs; `WindowSmokeTests` renders them all.
+- The README, the user documentation, numbers the six modes consecutively (1 to 6). The
+  requirements keep their ID blocks, and the design notes and the code's header comments
+  keep the original mode numbers with mode 2 marked removed: a "mode N" in the English
+  docs is the historical number, a "modul N" in the README the current one.
 - The light-leak row of the map guide no longer attributes the spot to the camera by rotation;
   it says the leak is camera-fixed and comes back every session until its cause is found.
 - `docs/design/modes-ratio.md` is deleted; `code-map.md`, `two-applications.md`,

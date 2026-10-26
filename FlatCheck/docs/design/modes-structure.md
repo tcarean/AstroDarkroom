@@ -48,7 +48,8 @@ tile reads 9.3 % on it and never carries a gradient. Pinned by
 `ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`.
 
 What the mode gives is an **upper bound** on the flat error, not the error (ADR 0015: the sum
-of a camera-fixed part and a world-fixed part, which one master cannot separate; mode 2 does).
+of a camera-fixed part and a world-fixed part, which one master cannot separate; nothing in
+the tool does since the `--ratio` mode left, ADR 0065).
 The bound is still the right thing to run first, because it is the only test that costs no
 extra shooting.
 

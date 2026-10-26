@@ -75,16 +75,18 @@ public class StructureReportTests
     /// The figures are an upper bound: a camera-fixed part (an axis off the sensor
     /// centre, a lens with genuinely non-radial vignetting) lands in REFA too, without
     /// being a flat error. Measured: an axis decentred by 5 % of the width gives REFA on a
-    /// flat that corrects perfectly. So the advice must say so beside "reshoot".
+    /// flat that corrects perfectly. So the advice must say so BEFORE "reshoot".
     /// </summary>
     [Fact]
-    public void TheReshootAdviceSaysTheFigureIsAnUpperBound()
+    public void TheReshootAdviceSaysTheFigureIsAnUpperBoundBeforeReshooting()
     {
         string advice = StructureReport.Advice("REFA");
 
-        Assert.Contains("Refa flat-urile", advice);
-        Assert.Contains("limita superioara", advice);
+        // The console breaks the line after "limita".
+        Assert.Contains("Cifra e o limita", advice);
         Assert.Contains("nu e eroare de flat", advice);
+        Assert.True(advice.IndexOf("Cifra e o limita") < advice.IndexOf("refa flat-urile"),
+            "the upper-bound caveat should come before the instruction to reshoot");
     }
 
     // ---------------------------------------------------------------- local spots

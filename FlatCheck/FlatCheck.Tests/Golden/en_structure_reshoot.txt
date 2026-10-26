@@ -45,9 +45,9 @@ Copyright (C) 2026 Tudor Carean
 
   VERDICT: REDO
     Too large a deviation from radial symmetry => an uneven source, a light
-    leak, a tilted camera, or ambient light. It is NOT vignetting. Redo the flats;
-    see the map for the shape of the problem. The figure is an upper bound: an
-    optic that is itself off-centre shows here too, and that part is not a flat error.
+    leak, a tilted camera, or ambient light. It is NOT vignetting. The figure is an
+    upper bound: an optic that is itself off-centre shows here too, and that part
+    is not a flat error. Otherwise redo the flats; see the map for the shape of the problem.
 
     -> map saved: <TMP>/out.png
 

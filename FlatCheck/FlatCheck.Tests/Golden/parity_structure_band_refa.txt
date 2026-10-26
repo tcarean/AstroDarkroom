@@ -45,9 +45,9 @@ Copyright (C) 2026 Tudor Carean
 
   VERDICT: REFA
     Abatere prea mare de la simetria radiala => sursa neuniforma, light
-    leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile; vezi
-    harta pentru forma problemei. Cifra e o limita superioara: o optica ea insasi
-    descentrata apare si ea aici, si partea aceea nu e eroare de flat.
+    leak, camera inclinata, sau ambient. NU e vignetare. Cifra e o limita
+    superioara: o optica ea insasi descentrata apare si ea aici, si partea aceea
+    nu e eroare de flat. Altfel refa flat-urile; vezi harta pentru forma problemei.
 
     -> harta salvata: <TMP>/structure_band_refa.png
 

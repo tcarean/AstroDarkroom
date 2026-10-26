@@ -13,8 +13,8 @@ propriu (prin `ZLibStream` din BCL), iar pentru fișierele raw de aparat — lib
 pur managed pentru asta. .NET 8. Binarul se numește `flatcheck.exe` și, publicat ca
 `PublishSingleFile`, se copiază oriunde ca până acum.
 
-Există și o **aplicație cu ferestre**, `FlatCheck.Wpf.exe`, care rulează aceleași cinci
-moduri pe un folder de sesiune Siril, în cinci taburi. Nu e o a doua implementare: stă
+Există și o **aplicație cu ferestre**, `FlatCheck.Wpf.exe`, care rulează aceleași șase
+moduri pe un folder de sesiune Siril, în șapte taburi. Nu e o a doua implementare: stă
 peste același nucleu (`FlatCheck.Core`) și produce aceleași cifre și același raport.
 Vezi [„Aplicația cu ferestre"](#aplicația-cu-ferestre).
 
@@ -1220,7 +1220,7 @@ propriu sub master, marcat `NETEZIT`, imediat ce a fost scris — ca să se vad�
 altul, ce a scos netezirea și ce a lăsat.
 
 > Ghidul pliat „Ce face netezirea" (`SessionMessages.SmoothGuideRows`) e în oglindă cu
-> secțiunea „6. Netezire" de mai sus; nu există test care să lege cele două.
+> secțiunea „5. Netezire" de mai sus; nu există test care să lege cele două.
 
 **Sintetic** e modul 6. Lista de obiective vine din amândouă sursele, cu un chip `Adobe`
 sau `lensfun` pe fiecare rând și montura în dreapta — la lensfun și formatul pe care a fost

@@ -857,13 +857,13 @@ namespace FlatCheck
             // corrects perfectly.
             _ => T(
                 "Too large a deviation from radial symmetry => an uneven source, a light\n"
-              + "leak, a tilted camera, or ambient light. It is NOT vignetting. Redo the flats;\n"
-              + "see the map for the shape of the problem. The figure is an upper bound: an\n"
-              + "optic that is itself off-centre shows here too, and that part is not a flat error.",
+              + "leak, a tilted camera, or ambient light. It is NOT vignetting. The figure is an\n"
+              + "upper bound: an optic that is itself off-centre shows here too, and that part\n"
+              + "is not a flat error. Otherwise redo the flats; see the map for the shape of the problem.",
                 "Abatere prea mare de la simetria radiala => sursa neuniforma, light\n"
-              + "leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile; vezi\n"
-              + "harta pentru forma problemei. Cifra e o limita superioara: o optica ea insasi\n"
-              + "descentrata apare si ea aici, si partea aceea nu e eroare de flat."),
+              + "leak, camera inclinata, sau ambient. NU e vignetare. Cifra e o limita\n"
+              + "superioara: o optica ea insasi descentrata apare si ea aici, si partea aceea\n"
+              + "nu e eroare de flat. Altfel refa flat-urile; vezi harta pentru forma problemei."),
         };
 
         /// <summary>Writes the advice of a verdict, indented.</summary>

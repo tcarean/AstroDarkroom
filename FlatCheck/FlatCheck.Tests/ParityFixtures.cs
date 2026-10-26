@@ -18,7 +18,7 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// The synthetic FITS files of the 43 parity scenarios: the exact bytes the Python
+/// The synthetic FITS files of the parity scenarios (39 since ADR 0065): the exact bytes the Python
 /// prototype and the C# were compared on until 2026-09-26, when the cross-check was
 /// retired and the prototype frozen at 2.2.0 (ADR 0047). <see cref="ParityGoldenTests"/>
 /// runs the console over them and pins the text; <see cref="CrossCheckFixtures"/> can

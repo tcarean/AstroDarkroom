@@ -186,7 +186,7 @@ median had partly hidden in the profile. No verdict changed. Golden files moved 
 
 ```bash
 flatcheck "E:\Photografie\Astro\Flats and Darks\Tokina\ISO400\f2.8-sky-no-difuser\process\pp_flat_stacked.fit" -o sky.png
-dotnet test FlatCheck.sln --filter ParityGoldenTests   # the 43 parity goldens, in the gate
+dotnet test FlatCheck.sln --filter ParityGoldenTests   # the 39 parity goldens, in the gate
 ```
 
 Expected on the sky master: corners 10.28 %, azimuthal 7.25 %, residual 10.06 %, tilt 0.49 %,

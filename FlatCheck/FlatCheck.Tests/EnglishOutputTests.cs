@@ -26,7 +26,7 @@ namespace FlatCheck.Tests;
 /// <c>--lang en</c>, pinned as <c>Golden/en_*.txt</c> - the place where the English wording is
 /// read and reviewed - and each is checked against the same run in Romanian: the same exit code
 /// and the same numbers, the same number of times, so a translation cannot move a figure. The
-/// 43 parity scenarios get the number check too, without goldens of their own. The Romanian
+/// 39 parity scenarios get the number check too, without goldens of their own. The Romanian
 /// goldens stay the reference for the figures.
 /// </summary>
 public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>

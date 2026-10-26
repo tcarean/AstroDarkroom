@@ -161,8 +161,8 @@ string or an exit code:
   line of the outcome's `Refusal` goes to stderr with the `ERROR: ` prefix), 2 "read this
   before deciding" (`--scale auto` with nothing to propose, `--synthetic` with an ambiguous
   lens).
-- Secondary map paths are derived from `-o` by suffix (`WorldMapPath` → `-world`,
-  `AfterMapPath` → `-after`, the same in both languages; R-006, R-103), never by a second flag.
+- Secondary map paths are derived from `-o` by suffix (`AfterMapPath` → `-after`, the same
+  in both languages; R-006, R-103), never by a second flag.
 
 Nothing in these methods computes: a run method that needs a number or a sentence gets it from
 a `Runs/` outcome (the rule "Computed only in the core").
@@ -223,7 +223,7 @@ The procedure:
 
    The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests` form in
    CLAUDE.md is the same thing from a POSIX shell. The variable rewrites **every** golden file
-   the filter selects, not only the new one; without the filter it would rewrite the 43 parity
+   the filter selects, not only the new one; without the filter it would rewrite the 39 parity
    goldens too.
 3. `git status`: the only change under `Golden/` must be the new untracked file. A modified
    existing file is an output change you did not mean, or one you did mean and must now
@@ -238,7 +238,7 @@ The procedure:
 ### Adding a parity golden scenario
 
 When it is required: the rule "Formula changes re-validate" and `/new-feature` step 2. A **new** scenario is required when a
-change opens a numeric path the 43 existing scenarios do not exercise: a new band or branch of a
+change opens a numeric path the 39 existing scenarios do not exercise: a new band or branch of a
 metric, a new input shape (size, BITPIX, a header card), a new option that changes a number.
 `--histeq`, `--smooth` and mode 7 produce a picture, a file or a list and get no scenario; their
 goldens are in `GoldenOutputTests`. `python-parity.md` lists the current coverage and where the
@@ -261,11 +261,11 @@ A scenario has two halves that must agree on the file name:
 
 Then capture the one new file with `FLATCHECK_UPDATE_GOLDEN=1 dotnet test --filter
 ParityGoldenTests`, read it, and check `git status` shows only the new `parity_*.txt`. A capture
-that also rewrote one of the 43 originals is a finding for the owner (the rule "Golden files"):
+that also rewrote one of the 39 originals is a finding for the owner (the rule "Golden files"):
 put that file back with `git checkout -- <file>` and ask; a scenario added after 2026-09-26 is
 judged like any golden. Bump the count in
-`TheTableHasTheFortyThreeScenariosOfTheCrossCheckAndNoTwoShareAGolden`, in R-098 and in
-`python-parity.md`. Unlike the 43 originals, a new scenario's numbers were never confirmed by a
+`TheTableHasTheThirtyNineScenariosLeftOfTheCrossCheckAndNoTwoShareAGolden`, in R-098 and in
+`python-parity.md`. Unlike the 39 originals, a new scenario's numbers were never confirmed by a
 second implementation; its comment says what confirms them (a unit test, a hand calculation, a
 figure on a real master).
 

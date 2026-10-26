@@ -140,6 +140,6 @@ namespace FlatCheck.Wpf
         /// measurement.</summary>
         /// <param name="v">The value, in percent.</param>
         /// <returns>The value with two decimals and " %", or "n/a".</returns>
-        internal static string Pct(double v) => double.IsNaN(v) ? "n/a" : $"{v:F2} %";
+        static string Pct(double v) => double.IsNaN(v) ? "n/a" : $"{v:F2} %";
     }
 }

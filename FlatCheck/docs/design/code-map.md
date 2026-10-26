@@ -103,10 +103,8 @@ a library extraction and not a copy is ADR 0011.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
     `Divide`, `Symmetrise` (the mean of a raster and its 180° rotation, which is what the
-    radial model is fed - see `RadialModel` under "Shared pipeline" in `pipeline.md`), and
-    for the attribution mode `CropCentred` + `Rotate180`, which exist because that mode is
-    the only one that compares a raster with its own 180° rotation; why `LargeScalePtp`
-    deliberately does not use them is ADR 0016. `TileMedians` is the third grid, for
+    radial model is fed - see `RadialModel` under "Shared pipeline" in `pipeline.md`). `CropCentred` and `Rotate180`, which only the `--ratio` mode used, left with it
+    (ADR 0065); `LargeScalePtp` keeps its top-left grid for parity (ADR 0016). `TileMedians` is the third grid, for
     `--smooth` only: tile *medians*, **partial last row and column kept**, and the real
     centre of every tile returned - a partial 8-px tile fitted one full tile from its
     neighbour put a 0.8 % error band along the edge of the synthetic; with real centres the
@@ -288,7 +286,7 @@ a library extraction and not a copy is ADR 0011.
     "Conventions").
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map(s) to
     disk, and the exit code. All output goes through the injected `TextWriter`, never
-    `Console` directly. `WorldMapPath` lives here rather than in the core (ADR 0011).
+    `Console` directly. `AfterMapPath` lives here rather than in the core (ADR 0011).
   - `Options.cs` - CLI parsing.
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See `two-applications.md`.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
