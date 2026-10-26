@@ -48,16 +48,29 @@
   - `RegistryRefusal.cs` — which exceptions count as Windows refusing a registry read or
     write, so the settings store, auto-start and the tray item all treat the same ones as a
     refusal rather than an error.
+  - `CommandLineSwitches.cs` — the three switches (`--preview`, `--detect`, `--restarted`) and
+    the two ways of finding one in the arguments, so App parses and Core decides on the same
+    strings.
+  - `ApplicationRestart.cs` — the values handed to `RegisterApplicationRestart` (the command
+    line `--restarted`, `RESTART_NO_REBOOT`) and the two decisions around them: which start
+    registers (the tray copy, never `--preview` or `--detect`) and which start is a restart,
+    so the tray can say so (ADR 0036).
+  - `CrashReport.cs` — the crash dialog's text as a pure function: type, message when there is
+    one, the file a load failure names, the inner exceptions, the banner (ADR 0036).
   - `WindowPlacement.cs`, `Version.cs`, `LicenseInfo.cs`, `AutoStartStatus.cs`.
 - `src/MindfulnessReminder.App/` — `net8.0-windows`, `WinExe`, `AssemblyName` is
   `MindfulnessReminder`, so the binary is `MindfulnessReminder.exe`. A **thin adapter layer**:
   every file here is either a window or a Windows API behind a Core interface. Nothing here
   decides anything, which is why none of it is unit-tested.
   - `App.xaml.cs` — composition root. `ShutdownMode` is `OnExplicitShutdown`; there is no
-    main window. Also holds the single-instance mutex, the crash dialog, the lifetimes of the
-    Settings and About windows (both modeless and single-instance; `TrayIconHost` only raises
-    the request), and `--preview` / `--detect` — both of which run BEFORE the mutex is
-    claimed, so they work alongside the copy already in the tray.
+    main window. Also holds the single-instance mutex, the restart registration right after
+    it, the crash dialog (`CrashReport.Format`, then the tray icon hidden, then
+    `Environment.FailFast`, never `Shutdown`: ADR 0036), the `--restarted` balloon, the
+    lifetimes of the Settings and About windows (both modeless and single-instance;
+    `TrayIconHost` only raises the request), and `--preview` / `--detect` — both of which run
+    BEFORE the mutex is claimed, so they work alongside the copy already in the tray.
+  - `RestartRegistration.cs` — the one P/Invoke that registers the executable with Windows for
+    a restart after a crash; it ignores the HRESULT.
   - `TrayIconHost.cs` — the icon and its four-item menu.
   - `BreakWindow.xaml(.cs)` — the reminder; takes its message in the constructor and has no
     text of its own. `SettingsWindow.xaml(.cs)` — the settings.

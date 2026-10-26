@@ -6,7 +6,27 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Added
+
+- The tray copy registers with Windows for an automatic restart: after a crash or a hang of a
+  copy that has run for at least a minute, Windows starts it again, and the new copy says so
+  in a balloon, `Restarted after an error. The details are in the Windows Application log.`
+  (R-100, R-102; ADR 0036).
+
+### Changed
+
+- The "Mindfulness Reminder stopped" dialog names the error's type, its message, the file a
+  load failure could not find, and each inner error, above the banner (R-101), and the
+  application then ends through a fail-fast, which puts the same text and the stack in the
+  Windows Application log and lets Windows restart it (R-076; ADR 0036).
+
 ### Fixed
+
+- A .NET or Visual Studio update that removes the runtime under the running copy no longer
+  leaves it dead for the day: on 2026-10-26 the first reminder window failed on a missing
+  assembly, the dialog showed an empty message, and its `OK` crashed a second time inside WPF's
+  shutdown; the dialog now names the missing file and the copy comes back on the new runtime
+  (R-076, R-100; ADR 0036).
 
 - With the periodic reminder off, an unlock during a call no longer leaves the tray tooltip
   saying "paused" after the call has ended (R-060).

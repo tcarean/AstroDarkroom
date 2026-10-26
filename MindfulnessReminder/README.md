@@ -26,6 +26,14 @@ application. Each of the two reminders has its own switch and its own message in
 - Since 1.3.0 the **Settings**, **About** and tray-menu surfaces are dark. The reminder itself
   is not, and that is deliberate: a dark rectangle appearing over dark work is easy to miss,
   and being seen is the whole point of it.
+- Comes back after an error. If the tray copy crashes after running for at least a minute,
+  Windows starts it again, as long as Windows Error Reporting is on, which it is by default,
+  and the new copy shows a balloon, `Restarted after an error. The
+  details are in the Windows Application log.` The dialog that appears first names the error
+  and, when a file could not be loaded, which one; the same text and the stack land in Event
+  Viewer, under Windows Logs, Application, source `.NET Runtime`, event 1025. This is what a
+  .NET or Visual Studio update needs: one removed the runtime under the running copy on
+  2026-10-26, and the copy died on its next reminder.
 
 ## Two reminders, two messages
 
@@ -186,6 +194,7 @@ alongside the copy already in the tray. Anything over ten minutes is clamped to 
 | Reminder text | fixed-size window, text scaled down only when it must | A 50-character message can wrap to one more line than fits above the Close button; shrinking it keeps the window the same size and in the same place, and a `Viewbox` that only scales down leaves every shorter message, the default included, exactly as it was |
 | Dark theme | the settings window, About and the tray menu, not the reminder | The three you go to on purpose are dark; the reminder stays a pale card, because a dark rectangle appearing over dark work is easy to miss and the point of it is to be seen. Written by hand -- control templates for WPF, a `ToolStripRenderer` for the menu -- so it costs no package |
 | About | a window, not a `MessageBox` | A Win32 dialog cannot be themed, and a white About box opening out of a dark tray menu reads as a different program. Being a window is also what lets it carry the app icon |
+| After a crash | `RegisterApplicationRestart` at start, `Environment.FailFast` after the dialog | Windows restarts a registered process that crashed after a minute of running, and only then, so a copy broken at start cannot loop. A clean exit after the dialog would not count as a crash and nothing would come back; WPF's own shutdown path loads assemblies, and once failed inside the crash handler itself when the runtime had been updated underneath |
 
 ## Layout
 
@@ -290,7 +299,7 @@ user can actually see it:
 |---|---|
 | tray tooltip | `Mindfulness Reminder 1.4.0 - next in 12 min` -- hovering the icon says which build is running, and when the next reminder is due |
 | **About** | the banner on the first line, the copyright on the second, the licence notice below |
-| crash dialog | the error, then the banner, so a screenshot of it says which version broke |
+| crash dialog | the error's type and message, the file it could not load, each inner error, then the banner, so a screenshot of it says which version broke and on what |
 
 The version lives in exactly one place: `<Version>` in [Directory.Build.props](Directory.Build.props),
 next to `<Copyright>`. `src/MindfulnessReminder.Core/Version.cs` does **not** hardcode it --
