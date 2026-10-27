@@ -704,11 +704,13 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 Row(Tr.Pick("Stars measured", "Stele masurate"), Fmt.Int(s.Count),
                     s.Insufficient ? Tr.Pick($"too few for a FWHM (minimum {minStars})", $"prea putine pentru FWHM (minim {minStars})") : null,
-                    Tr.Pick("How many stars passed the filters: an unsaturated local peak, with a minimum amplitude against the background around it, "
+                    Tr.Pick("How many stars passed the filters: an unsaturated local peak, with a minimum amplitude against the background around it "
+                        + $"and at least {Fmt.F0(Thresholds.StarMinSnr)} times that background's noise (the grain of a stretched sky is not a star), "
                         + $"with a width between {Fmt.F1(Thresholds.StarFwhmMin)} and {Fmt.F0(Thresholds.StarFwhmMax)} px on both axes. "
                         + "They are searched for on the reference channel (green; the only channel in mono). "
                         + $"Under {minStars} stars, the global FWHM is not reliable and is not reported.",
-                        "Cate stele au trecut de filtre: un varf local nesaturat, cu amplitudine minima fata de fundalul din jurul lui, "
+                        "Cate stele au trecut de filtre: un varf local nesaturat, cu amplitudine minima fata de fundalul din jurul lui "
+                        + $"si de cel putin {Fmt.F0(Thresholds.StarMinSnr)} ori zgomotul acelui fundal (granulatia unui cer intins nu e stea), "
                         + $"cu latimea intre {Fmt.F1(Thresholds.StarFwhmMin)} si {Fmt.F0(Thresholds.StarFwhmMax)} px pe ambele axe. "
                         + "Se cauta pe canalul de referinta (verdele; singurul canal la mono). "
                         + $"Sub {minStars} de stele, FWHM-ul global nu e de incredere si nu se raporteaza.")),
