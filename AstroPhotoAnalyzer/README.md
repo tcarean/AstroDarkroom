@@ -85,7 +85,7 @@ where one applies, the threshold they are judged by.
 | Tab | What it shows |
 | --- | --- |
 | **Report** | The decisions, in the report's order, each with its verdict chip and its "because:" line; the whole text report behind a check box. |
-| **Tones** | The L\* histogram, with paper black as a red line and the visibility threshold L\* 15 as a dashed yellow one; the tonal figures, the background level among them; the background simulation, with a **Preview** button on every row; under it, the definition of the dust and the sky used on this file, a red line when the file has no WCS, the **Dust / sky map** button and the table of catalogued clouds; the tab's landmarks in level and in L\*; how to read the tab. |
+| **Tones** | The L\* histogram, with paper black as a red line and the visibility threshold L\* 15 as a dashed yellow one; the tonal figures, the background level among them; the background simulation, with a **Preview** button on every row; under it, the definition of the dust and the sky used on this file, a red line when the file has no WCS and the **Dust / sky map** button; the tab's landmarks in level and in L\*; how to read the tab. |
 | **Export** | The JPEG table, with what its columns mean; the size of the 8-bit TIFF; the 16 to 8 bit rounding; the shadow-lift stress test; the plateau, how wide the flat steps of the 8-bit sky would print. |
 | **Resolution** | The stars' FWHM, in the centre and in the four corners, and the real detail it leaves; the table of print sizes; the scale of dpi against viewing distance. |
 | **Colour** | The background colour, R / G / B, with its cast; the four corners and the four edges against it, a flagged one marked "! coloured" or "! neutral"; how to read them. |
@@ -104,10 +104,11 @@ nothing and show what the analysis decided. Esc closes them.
   colour, with its share of the patches and its definition in the legend, the image's own
   thresholds and, for the dust and the sky, the L\* the verdict took; the classes are those of
   "How the background is judged" below. With a WCS it circles the catalogued clouds and writes
-  the names of the darkest 15 on the image; the list beside it names them all, each with its L\*
-  and its level. Every layer has its check box, so do the clouds (disabled without a WCS), and
-  the list of clouds has **All** / **None** and a check box per cloud. It is made for checking
-  the classes by eye on your own images.
+  the names of the darkest 15 on the image; the list beside it names them all, each with its L\*,
+  its target and its patch count, the one place the window lists the clouds. Every layer has
+  its check box, so do the clouds (disabled without a WCS), and the list of clouds has **All** /
+  **None** and a check box per cloud. It is made for checking the classes by eye on your own
+  images.
 - **Preview**, on a row of the simulation, shows the image lifted to that row's background level
   (the "as is" row included), with the pixels under paper black and those under L\* 15 coloured,
   each layer with its check box.

@@ -76,7 +76,6 @@ public class OverlayWindowTests
         Assert.StartsWith("praful = ", noWcs.Definition);
         Assert.Contains(" (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei", noWcs.Definition);
         Assert.Equal(TonesTabViewModel.NoWcsSentence, noWcs.NoWcsWarning);
-        Assert.Empty(noWcs.CloudRows);
         Assert.StartsWith("tinta exacta a prafului pe negru:", noWcs.ExactLine);
         Assert.Equal($"Imaginea la tinta randului, cu ce e sub negrul hartiei si sub L* {Thresholds.LowSeparationLstar:0} vopsit", noWcs.PreviewTooltip);
         Assert.Contains($"grila {new Parameters().SimulationTargets.Min():0.00}..{new Parameters().SimulationTargets.Max():0.00}", string.Join(" ", noWcs.Guide.Select(g => g.Text)));
@@ -87,13 +86,12 @@ public class OverlayWindowTests
 
         Assert.StartsWith("praful = percentila 25 % a dalelor de praf (", withWcs.Definition);
         Assert.Null(withWcs.NoWcsWarning);
-        Assert.Contains(withWcs.CloudRows, s => s.StartsWith("LDN "));
-        Assert.Equal(ReportWriter.CloudHeader, withWcs.CloudRows[0]);
+        // The clouds' rows are the map window's list (R-130), not a table on the tab.
+        Assert.Null(typeof(TonesTabViewModel).GetProperty("CloudRows"));
 
         var inside = new TonesTabViewModel();
         inside.Populate(Result(Ldn42Scene()));
         Assert.Contains("(cadrul e in intregime in banda)", inside.Definition);
-        Assert.Contains(inside.CloudRows, s => s.StartsWith("LDN 42 (B78)"));
 
         MapViewModel? requested = null;
         withWcs.MapRequested += m => requested = m;
