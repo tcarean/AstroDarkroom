@@ -240,32 +240,43 @@ namespace AstroPhotoAnalyzer
             }
 
             // The COLOURED deviations, each with its own recommendation: light pollution, the
-            // horizon, a tinted gradient - things to correct on linear data.
-            foreach (EdgeRegion e in b.FlaggedRegions.Where(x => x.Coloured))
+            // horizon, a tinted gradient - things to correct on linear data. An edge flagged
+            // with the same colour as a flagged corner beside it, and less than it, is that
+            // corner's glow reaching along the edge (ADR 0058): one phenomenon, one line, the
+            // edge named as the corner's extension and its figures in the "because".
+            var folded = new Dictionary<EdgeRegion, EdgeRegion>();
+            foreach (EdgeRegion corner in b.Regions.Where(x => x.Flagged && x.Coloured).Take(4))
+                foreach (EdgeRegion edge in Adjacent(b.Regions, corner))
+                    if (edge.Flagged && edge.Coloured && !folded.ContainsKey(edge)
+                        && ColourOf(edge) == ColourOf(corner) && edge.MaxAbsDelta < corner.MaxAbsDelta)
+                        folded[edge] = corner;
+            foreach (EdgeRegion e in b.FlaggedRegions.Where(x => x.Coloured && !folded.ContainsKey(x)))
             {
                 string deltas = $"R {Fmt.S1(e.Deltas[0])}, G {Fmt.S1(e.Deltas[1])}, B {Fmt.S1(e.Deltas[2])}";
-                double grad = Thresholds.CornerGradientLevels;
                 // A region UNDER the sky on every channel is a darkening, not a glow: dust at the
                 // frame's edge, or vignetting and a flattening's edge left over. Its colour says
                 // which channel is missing most; the advice is the eye's, not GraXpert's by
                 // default. The exception is the bottom band, where the horizon sits (ADR 0014):
                 // red over blue there is the horizon's signature, brighter or not.
-                bool warm = e.Deltas[0] > e.Deltas[2] + grad, cool = e.Deltas[2] > e.Deltas[0] + grad;
+                bool warm = ColourOf(e) == RegionColour.Warm, cool = ColourOf(e) == RegionColour.Cool;
                 bool darker = e.Deltas.Max() < 0 && !(e.AtBottom && warm);
+                var extensions = folded.Where(kv => kv.Value == e).Select(kv => kv.Key).ToList();
+                string extended = extensions.Count == 0 ? "" : Tr.Pick(", reaching along the ", ", intins si pe ") + string.Join(Tr.Pick(" and the ", " si pe "), extensions.Select(x => x.Name));
+                string extendedBecause = string.Concat(extensions.Select(x => $"; {x.Name}: R {Fmt.S1(x.Deltas[0])}, G {Fmt.S1(x.Deltas[1])}, B {Fmt.S1(x.Deltas[2])}"));
                 string kind = darker
                     ? (warm ? Tr.Pick("darker and browner than the sky (the blue missing most)", "mai intunecat si mai brun decat cerul (albastrul lipseste cel mai mult)")
                         : cool ? Tr.Pick("darker and bluer than the sky (the red missing most)", "mai intunecat si mai albastru decat cerul (rosul lipseste cel mai mult)")
                         : Tr.Pick("darker than the sky, with a colour of its own", "mai intunecat decat cerul, cu o culoare a lui"))
                     : (warm ? (e.AtBottom ? Tr.Pick("warm (horizon glow / light pollution)", "cald (lumina de orizont / poluare)") : Tr.Pick("warm (reddish)", "cald (rosiatic)"))
                         : cool ? Tr.Pick("cool (bluish)", "rece (albastrui)")
-                        : e.Deltas[1] > (e.Deltas[0] + e.Deltas[2]) / 2 ? Tr.Pick("greenish", "verzui") : Tr.Pick("of another colour than the background", "cu alta culoare decat fundalul"));
+                        : ColourOf(e) == RegionColour.Greenish ? Tr.Pick("greenish", "verzui") : Tr.Pick("of another colour than the background", "cu alta culoare decat fundalul"));
                 string advice = darker
                     ? Tr.Pick("Dust at the edge of the frame, or a gradient left over (vignetting, the edge of the flattening): check in Preview; a gradient is corrected on the linear data (GraXpert), dust is the object.", "Praf la marginea cadrului, sau un rest de gradient (vinietare, marginea aplatizarii): verifica in Preview; un gradient se corecteaza pe liniar (GraXpert), praful e obiectul.")
                     : Tr.Pick("Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.", "Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.");
                 o.Add(new Recommendation(Topic.Colour, Verdict.Attention,
-                    $"{Cap(e.Name)}: {kind}. {advice}",
-                    Tr.Pick($"against the background, {(e.OnSkyPixels ? "on the region's sky pixels" : $"on every pixel of the region (sky {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} levels (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move differently",
-                        $"fata de fundal, {(e.OnSkyPixels ? "pe pixelii de cer ai regiunii" : $"pe toti pixelii regiunii (cer {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca diferit")));
+                    $"{Cap(e.Name)}: {kind}{extended}. {advice}",
+                    Tr.Pick($"against the background, {(e.OnSkyPixels ? "on the region's sky pixels" : $"on every pixel of the region (sky {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} levels (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move differently{extendedBecause}",
+                        $"fata de fundal, {(e.OnSkyPixels ? "pe pixelii de cer ai regiunii" : $"pe toti pixelii regiunii (cer {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca diferit{extendedBecause}")));
             }
 
             // The NEUTRAL deviations, all in a single note: an edge brighter by the same amount on
@@ -285,6 +296,51 @@ namespace AstroPhotoAnalyzer
                             + "cel mai probabil obiectul insusi, nu un gradient - verifica in Preview inainte sa corectezi ceva."),
                     Tr.Pick($"against the background, in levels: {list} (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move together", $"fata de fundal, in niveluri: {list} (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca impreuna")));
             }
+        }
+
+        /// <summary>The colour of a region's departure, by its deltas alone (R-093).</summary>
+        enum RegionColour
+        {
+            /// <summary>Red over blue by more than <see cref="Thresholds.CornerGradientLevels"/>.</summary>
+            Warm,
+
+            /// <summary>Blue over red by more than the same.</summary>
+            Cool,
+
+            /// <summary>Neither, and green over the mean of red and blue.</summary>
+            Greenish,
+
+            /// <summary>Neither, and green under that mean.</summary>
+            Other,
+        }
+
+        /// <summary>The colour of a region's departure, used to name it and to match an edge with a corner.</summary>
+        /// <param name="e">The region, on colour (three deltas).</param>
+        /// <returns>Warm, Cool, Greenish or Other.</returns>
+        static RegionColour ColourOf(EdgeRegion e)
+        {
+            double grad = Thresholds.CornerGradientLevels;
+            return e.Deltas[0] > e.Deltas[2] + grad ? RegionColour.Warm
+                : e.Deltas[2] > e.Deltas[0] + grad ? RegionColour.Cool
+                : e.Deltas[1] > (e.Deltas[0] + e.Deltas[2]) / 2 ? RegionColour.Greenish : RegionColour.Other;
+        }
+
+        /// <summary>
+        /// The two edges that touch a corner: the top or the bottom edge and the left or the
+        /// right one. The regions come in the analyzer's order, the four corners (top-left,
+        /// top-right, bottom-left, bottom-right) then the four edges (top, bottom, left, right);
+        /// a list with a region left out (a frame too small for one) pairs nothing.
+        /// </summary>
+        /// <param name="regions">The eight regions, in the analyzer's order.</param>
+        /// <param name="corner">One of the first four.</param>
+        /// <returns>The two edges beside the corner, or none.</returns>
+        static IEnumerable<EdgeRegion> Adjacent(IReadOnlyList<EdgeRegion> regions, EdgeRegion corner)
+        {
+            int i = -1;
+            for (int k = 0; k < regions.Count; k++) if (regions[k] == corner) i = k;
+            if (regions.Count != 8 || i < 0 || i > 3) yield break;
+            yield return regions[i < 2 ? 4 : 5];          // the top edge for the upper corners, the bottom for the lower
+            yield return regions[i % 2 == 0 ? 6 : 7];     // the left edge for the left corners, the right for the right
         }
 
         /// <summary>

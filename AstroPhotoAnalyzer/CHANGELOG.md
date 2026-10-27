@@ -64,6 +64,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   as dust at the frame's edge or a gradient left over, to check in Preview; on the bottom row,
   where the horizon sits, red over blue keeps the horizon's name, and elsewhere a brightening
   that is red over blue is "warm (reddish)" (R-093).
+- An edge flagged with the colour of the corner beside it, and less than it, is no longer a
+  line of its own: the corner's line says the glow reaches along that edge, with the edge's
+  figures in its "because"; an edge without such a corner keeps its line (R-093; ADR 0058).
 - A starless image no longer reports thousands of stars and a false resolution: a star must
   stand 12 times the local noise over its surroundings (`StarMinSnr`), so the grain of the
   stretched sky, which the absolute floor let through (6297 "stars" at 2.38 px on the starless
