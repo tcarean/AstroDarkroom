@@ -12,10 +12,10 @@
 
 **Layout** (`MainWindow.xaml`): top bar (banner, image path, "Deschide imagine...",
 "Salveaza raportul...", "Despre" = F1, and under the three buttons a fixed two-line place for
-`SaveMessage` / `SaveError`, as the Curbe tab has for its own save); left column `ParameterFields` card with
+`SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
-Preview, Curbe; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
+Preview, Editare Curbe; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
 sky; Tonuri measures its *level* (`BackgroundMedian`, "Nivelul fundalului") and Culoare
 its *colour* (`BackgroundResult.Levels`, "Culoarea fundalului"), and every label, row
 and appendix says which of the two it shows. Starts maximised. A file from

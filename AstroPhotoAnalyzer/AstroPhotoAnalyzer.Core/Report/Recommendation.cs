@@ -46,7 +46,7 @@ namespace AstroPhotoAnalyzer
     }
 
     /// <summary>
-    /// A recommendation of the report or of the Curbe tab: its section, its verdict, what to do
+    /// A recommendation of the report or of the Editare Curbe tab: its section, its verdict, what to do
     /// and why (ADR 0011).
     /// </summary>
     internal sealed record Recommendation

@@ -33,7 +33,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Builds the window over a new view-model, asks for the dark title bar once there is a
-        /// handle, and subscribes to the requests of the Tonuri and Curbe tabs.
+        /// handle, and subscribes to the requests of the Tonuri and Editare Curbe tabs.
         /// </summary>
         public MainWindow()
         {
@@ -44,7 +44,7 @@ namespace AstroPhotoAnalyzer.Wpf
             // window opens. Non-modal, maximised, as many as the user wants.
             _vm.Tones.MapRequested += m => new MapWindow { Owner = this, DataContext = m }.Show();
             _vm.Tones.PreviewRequested += p => new PreviewWindow { Owner = this, DataContext = p }.Show();
-            // The Curbe tab (R-146, R-147): the curve window, the save dialog and the arrow keys.
+            // The Editare Curbe tab (R-146, R-147): the curve window, the save dialog and the arrow keys.
             _vm.Curves.CurveRequested += c => new CurveWindow { Owner = this, DataContext = c }.Show();
             _vm.Curves.SaveRequested += SaveCurve;
             PreviewKeyDown += GalleryKeys;
@@ -108,7 +108,7 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// The Left and Right arrows browse the gallery while the Curbe tab is the one selected
+        /// The Left and Right arrows browse the gallery while the Editare Curbe tab is the one selected
         /// (R-146). They are caught at the window, before the TabControl, which would otherwise
         /// use them to change the tab; in a text box they stay the box's.
         /// </summary>

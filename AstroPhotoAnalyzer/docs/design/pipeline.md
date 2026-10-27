@@ -63,7 +63,7 @@ reading ~3 s, JPEG ~5 s.
 ### The second run (`Runs/CurveRun.cs`, ADR 0032)
 
 `CurveRun.Execute(AnalysisResult, CurvePurpose, maxWidth, maxHeight)` is not a stage of the
-chain: it runs when the owner presses `Calculeaza` in the Curbe tab, on the result the chain
+chain: the window runs it after the analysis, and again on `Calculeaza` in the Editare Curbe tab (ADR 0051), on the result the chain
 already produced (the raster, the patch map of the simulation, the noise, the parameters), and
 the console never calls it. Order: the tonal subsample; the class names of the map's path
 (`CurveSet.Method`, `Labels`) and the five class levels as they are

@@ -47,7 +47,7 @@ namespace AstroPhotoAnalyzer
     /// <summary>
     /// Everything one analysis produced: the inputs, every result, the recommendations and the
     /// report body. The console prints its body; the window fills its tabs from it and keeps it
-    /// for the Curbe tab.
+    /// for the Editare Curbe tab.
     /// </summary>
     internal sealed class AnalysisResult
     {
