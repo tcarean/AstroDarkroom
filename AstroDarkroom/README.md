@@ -25,8 +25,8 @@ later ([LICENSE](LICENSE)).
 A zip, `AstroDarkroom-X.Y.Z-win-x64.zip`, with a `.sha256` file beside it. Unzipped, it is one
 folder with every executable side by side and the .NET 8 runtime included (nothing to install),
 and `AstroDarkroom.exe`, the launcher: a window with one row per tool (its icon, title,
-description and version) and an **Open** button. A row whose executable is missing from the folder is disabled
-and names the missing file. **About** (F1) shows the suite's version, its date, the licence, the
+description and version) and an **Open** button. A row whose executable is missing from the
+folder is disabled and names the missing file. **About** (F1) shows the suite's version, its date, the licence, the
 requirements below and the version of every component.
 
 The launcher speaks English or Romanian: the two buttons with a flag in the bottom bar,

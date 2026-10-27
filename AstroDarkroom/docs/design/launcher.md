@@ -76,8 +76,8 @@ languages and the live switch are ADR 0006.
 - `App.OnStartup` reads the setting file into `Ui.Default` (English when it gives none), makes
   one `SuiteFolder` from `AppContext.BaseDirectory`, the folder the executable runs from, and
   opens `MainWindow` on it and on the setting's path. Nothing is read from the command line.
-- `Icons` is the `.ico` resources of `Icon/`: `Source(fileName)` is the pack URI and
-  `LargestFrame(fileName)` the widest frame of that file, decoded once and kept in a
+- `Icons` is the `.ico` resources of `Icon/`: `LargestFrame(fileName)` is the widest frame
+  of that file (its pack URI from the private `Source`), decoded once and kept in a
   dictionary (the rows are rebuilt at every change of language), since the first frame of an
   icon is not reliably the largest; `Icons.Launcher` names the launcher's own, for the two
   logos.
@@ -135,7 +135,8 @@ supersampling: a red-brown rounded square (the safelight) and a white star with 
 and, from 32 px up, four spikes; at 24 px and below the spikes would fall under a pixel, so the
 core is drawn larger instead. The `.ico` is committed; the script runs only when the drawing
 changes. The csproj uses the file as `ApplicationIcon`, and every `.ico` of the folder as a
-`Resource` under `Icon/`, which the windows' `Icon=` and `Icons.Source` name.
+`Resource` under `Icon/`: the windows' `Icon=` names the launcher's by its pack path in XAML,
+and `Icons.Source` builds the same URI for the frames `LargestFrame` decodes.
 
 The other six files are the components' own icons, copied under their file names and never
 drawn here; the catalogue names each (`SuiteApp.Icon`) and `SuiteTests` keeps every copy

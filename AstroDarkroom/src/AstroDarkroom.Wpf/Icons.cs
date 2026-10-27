@@ -31,10 +31,10 @@ internal static class Icons
 
     private static readonly Dictionary<string, BitmapSource> Frames = new(StringComparer.Ordinal);
 
-    /// <summary>The pack URI of a file of Icon/, built into the assembly as a resource.</summary>
+    /// <summary>The pack URI of a file of Icon/, built into the assembly as a resource; the windows' Icon= names the same path in XAML.</summary>
     /// <param name="fileName">The file's name in Icon/ ("darkscheck.ico").</param>
     /// <returns>The resource's URI.</returns>
-    internal static Uri Source(string fileName) => new("pack://application:,,,/AstroDarkroom;component/Icon/" + fileName);
+    private static Uri Source(string fileName) => new("pack://application:,,,/AstroDarkroom;component/Icon/" + fileName);
 
     /// <summary>
     /// The icon's frame with the most pixels, which WPF scales down to where it is shown; the

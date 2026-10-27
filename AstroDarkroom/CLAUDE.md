@@ -41,7 +41,8 @@ zip; it is not a seventh analysis tool and never changes a component.
 - `src/AstroDarkroom.Wpf/` - the window, `AstroDarkroom.exe`: one row per app with its button,
   and the "Despre" window. A thin adapter over the core (ADR 0001); it has no test project.
 - `tests/AstroDarkroom.Tests/` - the requirement tests (`R###_...`), the suite checks
-  (`SuiteTests`: the catalogue against `kit.json`, the components' frameworks and packages),
+  (`SuiteTests`: the catalogue against `kit.json`, the components' frameworks and packages,
+  the icon copies against the components' files, R-010),
   repo rules (`RepoInvariantTests`, `LicenseHeaderTests`, `VersionTests`). `tests/testdata/`
   holds only the manifest.
 - `Icon/` - the launcher's icon, drawn per size by `make_icon.py`, and a copy of each
