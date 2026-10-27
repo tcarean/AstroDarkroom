@@ -27,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -113,10 +114,27 @@ namespace FlatCheck
         /// <returns>The outcome and the residual map as PNG.</returns>
         internal static RunOutcome<StructureOutcome> Execute(string path, TextWriter report, StructureQuery query = null)
         {
-            StructureOutcome o = Analyze(path, query);
+            RunClock clock = RunClock.Start(Log, "structure", path + Describe(query));
+            StructureOutcome o = AnalyzeTimed(path, query, clock);
             StructureReport.Write(o, path, report);
-            return new RunOutcome<StructureOutcome>(o, PngWriter.EncodeResidualMap(o.Structure.Residual));
+            clock.Lap("report");
+            byte[] png = PngWriter.EncodeResidualMap(o.Structure.Residual);
+            clock.Lap("map");
+            clock.Done("verdict=" + o.Verdict);
+            return new RunOutcome<StructureOutcome>(o, png);
         }
+
+        /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(StructureRun));
+
+        /// <summary>A query's options for the run's first line; empty without one.</summary>
+        /// <param name="query">The query, or null.</param>
+        /// <returns>The text, with a leading space when not empty.</returns>
+        static string Describe(StructureQuery query)
+            => query == null ? ""
+             : " raw=" + LogText.Str(query.RawPath) + " lens=" + LogText.Str(query.LensText)
+             + " source=" + (query.Source.HasValue ? query.Source.Value.ToString() : "both")
+             + " focal=" + LogText.Num(query.Focal) + " fstop=" + LogText.Num(query.FStop) + " crop=" + LogText.Num(query.Crop);
 
         /// <summary>
         /// The first half of Execute, without the report and without the map: loads, analyses
@@ -128,11 +146,26 @@ namespace FlatCheck
         /// too.</param>
         /// <returns>The outcome; its <see cref="StructureOutcome.Profiles"/> is null without
         /// a query.</returns>
-        internal static StructureOutcome Analyze(string path, StructureQuery query = null)
+        internal static StructureOutcome Analyze(string path, StructureQuery query = null) => AnalyzeTimed(path, query, null);
+
+        /// <summary><see cref="Analyze"/>, timing its stages on
+        /// <paramref name="clock"/> when there is one.</summary>
+        /// <param name="path">The master flat: a FITS or a camera raw.</param>
+        /// <param name="query">Null = the structure only; otherwise the comparison
+        /// too.</param>
+        /// <param name="clock">The run's clock, or null.</param>
+        /// <returns>The outcome, as <see cref="Analyze"/>.</returns>
+        static StructureOutcome AnalyzeTimed(string path, StructureQuery query, RunClock clock)
         {
             LoadedFrame f = ImageLoader.Load(path);
+            clock?.Lap("load");
             var r = StructureAnalyzer.Analyze(f.Image);
-            return query == null ? new StructureOutcome(r, null, null, null) : Compare(r, f, query);
+            clock?.Lap("analyze");
+            if (Log.IsDebugEnabled) Log.Debug("structure of " + path + ": " + LogText.Structure(r));
+            if (query == null) return new StructureOutcome(r, null, null, null);
+            StructureOutcome o = Compare(r, f, query);
+            clock?.Lap("compare");
+            return o;
         }
 
         /// <summary>
@@ -156,6 +189,7 @@ namespace FlatCheck
                 try { raw = query.LoadInfo(query.RawPath); }
                 catch (Exception e)
                 {
+                    Log.Warn(e, "the raw beside the master, " + query.RawPath + ", could not be read; the identification goes on without it");
                     rawError = T($"{Path.GetFileName(query.RawPath)} could not be read: {e.Message}",
                                  $"{Path.GetFileName(query.RawPath)} nu s-a putut citi: {e.Message}");
                 }
@@ -166,6 +200,8 @@ namespace FlatCheck
                 ? (query.Source.HasValue ? shot.Candidates.Where(c => c.Source == query.Source.Value).ToList() : shot.Candidates)
                 : SyntheticRun.MatchLenses(query.LensText, query.Source, query.Sources, shot);
             var cmp = VignettingComparer.Analyze(r, shot, query.Sources?.Catalog, lenses);
+            if (Log.IsDebugEnabled)
+                Log.Debug("lenses compared " + LogText.List(lenses?.Select(l => l.Key)) + ": " + LogText.Comparison(cmp));
             return new StructureOutcome(r, cmp, shot, rawError);
         }
     }

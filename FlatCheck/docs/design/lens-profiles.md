@@ -145,7 +145,7 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   libraw's value, and an entry of any other shape is dropped; `stCamera:Lens`, the camera's own
   LensModel string, enters the aliases). Entries without a vignette model (fisheye
   files) are skipped; a file that is not XML throws, and the catalog swallows that per
-  file. `Make`/`CameraPrettyName` becomes the mount label ("NIKON CORPORATION"),
+  file, with a Warn line in the diagnostic log (`logging.md`). `Make`/`CameraPrettyName` becomes the mount label ("NIKON CORPORATION"),
   `LensPrettyName` the name, the first word of it the maker.
 - **lensfun** (`LensfunReader.ReadXml`): `<camera>` (maker, model + `lang` aliases, mount,
   cropfactor) and `<lens>` (same, plus `<calibration><vignetting model="pa" .../>`);
@@ -190,7 +190,7 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   wins. The enumeration of one folder is lazy: an exception part-way (a subfolder without list
   rights) is caught per folder, the files found before it stay, the rest of that folder is
   lost, and the next folder is searched; `AdobeAppDirectories` swallows the same for the
-  Program Files root. `--profiles <dir>` replaces the whole list.
+  Program Files root. Each such loss is a Warn line in the diagnostic log (`logging.md`). `--profiles <dir>` replaces the whole list.
 - **Search**: every word of the text must appear in name + maker + mount (+ known
   aliases), case-insensitive; empty text lists everything; `--source` restricts.
 - **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the

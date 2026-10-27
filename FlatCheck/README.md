@@ -1363,6 +1363,39 @@ It does not replace the console: it has no `--fov`, `--sat`, `--black` or `--pat
 codes. For scripting, and for when the tool must be told what the header does not say (a field the
 header does not give, an ADU scale guessed wrong), `flatcheck.exe` stays the tool.
 
+## Logs
+
+Both programs keep a log of what they did, for the day something goes wrong. To report a
+problem, attach the whole `log` folder: it holds what is needed to see what happened.
+
+**Where it is.** In a folder named `log` beside the program: `log\flatcheck.log` beside
+`flatcheck.exe`, `log\FlatCheck.Wpf.log` beside `FlatCheck.Wpf.exe`. When that folder cannot be
+written (a program under Program Files, a read-only drive), the log goes to
+`%LOCALAPPDATA%\FlatCheck\log` instead, and its first line says so. Past 1 MB a file is left and
+the next one is started (`flatcheck_01.log`, `flatcheck_02.log`, ...); the five most recent files
+are kept and the older ones deleted, so the folder never holds more than 5 MB per program. Two
+windows open at the same time write into the same file, each line marked with its process.
+
+**What is in it.** One line per event, in English whatever `--lang` says, numbers with a point:
+at the start the version, the command line, the Windows and .NET versions and the folders; every
+file read, with its size, its dimensions and what its header or the camera says (camera, lens,
+focal length, aperture); for each run its options, the figures behind the verdict, the verdict and
+the time each stage took; the lens profiles found and the lenses that matched; every file
+written; in the window, the session opened, each tab's run and the buttons pressed, and the whole
+output of a Siril run; every error with its technical details, those the program works around
+without a word included; at the end the exit code and the time taken. It holds the paths of
+your files and the figures measured on them, not their pixels.
+
+**How much.** The environment variable `FLATCHECK_LOG` sets the level:
+
+```
+set FLATCHECK_LOG=trace
+```
+
+`debug`, the default, writes everything above; `trace` adds every FITS header card and Siril's
+progress lines; `info`, `warn` and `error` write less and less; `off` writes nothing and creates
+no folder.
+
 ## Development
 
 The solution has five projects:
@@ -1456,7 +1489,7 @@ and shown in the window's **About**; the copyright is printed on every run, unde
 
 ### Third-party components
 
-The tool links three components written by others and ships a database made by others, all
+The tool links four components written by others and ships a database made by others, all
 compatible with GPLv3:
 
 | component | role | licence |
@@ -1464,6 +1497,7 @@ compatible with GPLv3:
 | Sdcb.LibRaw | the C# wrapper over LibRaw | MIT |
 | LibRaw (the native DLLs) | reading camera raw files | LGPL-2.1 (the option chosen of LibRaw's dual LGPL-2.1 / CDDL-1.0) |
 | SixLabors.ImageSharp 3.1.x | decoding the JPEG preview a raw carries | Six Labors Split License 1.0, which grants open-source projects the terms of Apache 2.0. Pinned to 3.1.x because from 4.0 the package asks for a licence key at compile time, an error on Release builds. |
+| NLog and NLog.Targets.AtomicFile 6.2.x | writing the diagnostic log (see "Logs"), two windows into one file | BSD-3-Clause |
 | the lensfun database (the `lensfun/` folder) | the vignetting profiles of mode 6 and of the structure's profile comparison; data, not code, copied unchanged | CC BY-SA 3.0 |
 
 Adobe's profiles (`.lcp`) are not a component: they are read on the machine, where Adobe put them, and

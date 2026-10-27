@@ -118,12 +118,22 @@ namespace FlatCheck
             string refusal = Refusal(f, path);
             if (refusal != null)
             {
+                Log.Info("smooth refused " + path + ": " + RefusalKind(f));
                 report.WriteLine();
                 report.WriteLine(refusal);
                 return new SmoothRunOutcome(null, null, null, null, refusal);
             }
             return Execute(f, path, scalePx, report);
         }
+
+        /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(SmoothRun));
+
+        /// <summary>Why a frame is refused, in English, for the log.</summary>
+        /// <param name="f">A frame <see cref="Refusal"/> refused.</param>
+        /// <returns>The reason.</returns>
+        static string RefusalKind(LoadedFrame f)
+            => f.Cards.Count == 0 ? "a raw, which has no FITS cards to write back" : "a cube of " + LogText.Int(f.Planes) + " planes";
 
         /// <summary>
         /// The scale proposal: loads, refuses what Execute refuses too, otherwise runs the
@@ -136,16 +146,23 @@ namespace FlatCheck
         /// <returns>The proposal with the loaded frame, or the refusal.</returns>
         internal static SmoothAdviceOutcome Advise(string path, TextWriter report)
         {
+            RunClock clock = RunClock.Start(Log, "smooth advice", path);
             LoadedFrame f = ImageLoader.Load(path);
+            clock.Lap("load");
             string refusal = Refusal(f, path);
             if (refusal != null)
             {
                 report.WriteLine();
                 report.WriteLine(refusal);
+                clock.Done("refused: " + RefusalKind(f));
                 return new SmoothAdviceOutcome(null, null, refusal);
             }
             SmoothScaleAdvice a = SmoothScaleAdvisor.Advise(f.Image);
+            clock.Lap("advise");
+            if (Log.IsDebugEnabled) Log.Debug("advice on " + path + ": " + LogText.Advice(a));
             SmoothReport.WriteAdvice(a, path, report);
+            clock.Lap("report");
+            clock.Done("advice=" + a.Kind + " scalePx=" + LogText.Num(a.ScalePx));
             return new SmoothAdviceOutcome(a, f, null);
         }
 
@@ -171,12 +188,16 @@ namespace FlatCheck
         /// <returns>The smoothing with its two maps.</returns>
         internal static SmoothRunOutcome Execute(LoadedFrame f, string path, double scalePx, TextWriter report)
         {
+            RunClock clock = RunClock.Start(Log, "smooth", path + " scalePx=" + LogText.Num(scalePx));
             var r = SmoothAnalyzer.Analyze(f.Image, scalePx);
+            clock.Lap("analyze");
+            if (Log.IsDebugEnabled) Log.Debug("smoothing of " + path + ": " + LogText.Smooth(r));
             SmoothReport.Write(r, path, report);
-            return new SmoothRunOutcome(r, f,
-                PngWriter.EncodeResidualMap(r.Removed),
-                PngWriter.EncodeResidualMap(r.After.Residual),
-                null);
+            clock.Lap("report");
+            byte[] removed = PngWriter.EncodeResidualMap(r.Removed), after = PngWriter.EncodeResidualMap(r.After.Residual);
+            clock.Lap("maps");
+            clock.Done("removedFlagged=" + LogText.Yes(r.RemovedFlagged) + " after=" + r.After.Verdict);
+            return new SmoothRunOutcome(r, f, removed, after, null);
         }
 
         /// <summary>

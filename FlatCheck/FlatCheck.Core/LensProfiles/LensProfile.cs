@@ -39,6 +39,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -325,6 +326,9 @@ namespace FlatCheck
     /// <summary>All the profiles found, from anywhere, and the questions put to the list.</summary>
     internal sealed class LensCatalog
     {
+        /// <summary>The diagnostic log: the Adobe files that could not be read.</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(LensCatalog));
+
         /// <summary>
         /// The parsed profiles: all the lensfun ones, plus the Adobe ones given already parsed
         /// (tests).
@@ -394,7 +398,12 @@ namespace FlatCheck
             => _parsed.GetOrAdd(f.Path, path =>
             {
                 try { return LcpReader.Read(path).Select(p => p.WithLens(f.Lens)).ToList(); }
-                catch (Exception) { return Array.Empty<LensProfile>(); }   // a broken file is not ours; the list goes on
+                catch (Exception e)
+                {
+                    // A broken file is not ours; the list goes on, and the log says which.
+                    Log.Warn(e, "the Adobe profile " + path + " could not be read; its lens has no profile");
+                    return Array.Empty<LensProfile>();
+                }
             });
 
         /// <summary>

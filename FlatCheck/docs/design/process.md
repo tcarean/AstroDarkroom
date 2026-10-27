@@ -13,8 +13,8 @@
 
 ## Conventions
 
-The rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the two packages, the hand-rolled
-FITS and PNG and the standard of evidence a third package would have to meet are ADR 0008 and
+The rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the packages, the hand-rolled
+FITS and PNG and the standard of evidence a further package would have to meet are ADR 0008 and
 `dependencies.md`. One reason with no other home:
 
 - **User-facing documentation lives in `README.md`, and only there.** Do not restate the
@@ -71,8 +71,9 @@ the render does not (ADR 0037: the PNGs are for eyes, never a golden).
 > with `ParityFixtures.cs`, the mode lists in `FlatCheck.Tests/VersionTests.cs`, and
 > the "Options" section of `README.md`.
 
-The console is three files, and that is the point: `Program.cs` is a one-line shim (`Main`
-calls `FlatCheckCli.Run(args, Console.Out, Console.Error)`), `Options.cs` parses, and
+The console is three files, and that is the point: `Program.cs` is a shim (`Main` calls
+`FlatCheckCli.Run(args, Console.Out, Console.Error)` between the diagnostic log's first and last
+lines, `logging.md`), `Options.cs` parses, and
 `FlatCheckCli.cs` dispatches and turns a verdict into an exit code. Everything else is
 `FlatCheck.Core/Runs/`. A new flag or a new mode touches those files plus a fixed list of
 tests and documents; this section is that list, in the order the work goes.

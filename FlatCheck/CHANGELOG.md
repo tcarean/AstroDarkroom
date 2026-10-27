@@ -8,6 +8,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A diagnostic log, for bug reports (R-109 to R-111, ADR 0070): each application writes
+  `log\flatcheck.log` or `log\FlatCheck.Wpf.log` beside its executable (or under
+  `%LOCALAPPDATA%\FlatCheck\log` when that folder cannot be written), at most 5 files of 1 MiB
+  each, rolled by NLog. It holds the arguments, the machine and the runtime, every file read, each
+  run's inputs, figures, verdict and stage times, the lens profiles and candidates, every file
+  written, the window's session, tab runs and actions, siril-cli's output, and every exception with
+  its stack, those the program recovers from included. English whatever `--lang` says; nothing
+  more on stdout or stderr. `FLATCHECK_LOG=off|error|warn|info|debug|trace` sets the level, Debug
+  by default.
 - The lens is identified from a raw of any make, not only a Nikon (R-018, R-108, ADR 0068): the
   maker's lens ID is read by mount (Nikon's own field on a Nikon body, the MakerNote's on Canon,
   Sony, Pentax and the rest; Adobe's two-number Pentax IDs read as libraw does), and the lens's
@@ -162,6 +171,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- NLog 6.2.2 is the fifth third-party component, with its `NLog.Targets.AtomicFile` package so two
+  windows writing one log lose no line (BSD-3-Clause, R-112, ADR 0070); the core logs at its seams
+  and never in `Analysis/` or `Report/`, and every test runs every log line on its path.
 - The build writes the XML documentation file in all five projects, so the gate's compiler
   fails a malformed comment, a tag naming no parameter or an unresolved `cref`; CS1591 stays
   muted and no publish ships the files (ADR 0059). The 34 errors it found on `main` are fixed.

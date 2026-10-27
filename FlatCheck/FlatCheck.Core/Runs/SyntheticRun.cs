@@ -219,21 +219,31 @@ namespace FlatCheck
         internal static SyntheticRunOutcome Execute(LoadedFrame f, string referencePath, SyntheticRequest req, ProfileSources sources,
                                                     double? focal, double? fstop, double? crop, TextWriter report)
         {
+            RunClock clock = RunClock.Start(Log, "synthetic", referencePath + " " + LogText.Request(req)
+                                                   + " given focal=" + LogText.Num(focal) + " fstop=" + LogText.Num(fstop) + " crop=" + LogText.Num(crop));
             string refusal = f.Planes > 1 ? SyntheticReport.RefusalCube(referencePath, f.Planes) : null;
+            string why = refusal != null ? "a cube of " + LogText.Int(f.Planes) + " planes" : null;   // the log's words
             bool choice = false;
             // A single identification for the choice and the completion: ByLensId parses the
             // mount's Adobe files, and that is not something to do twice.
             ShotIdentity id = LensIdentification.Identify(f, null, sources, focal, fstop, crop);
+            clock.Lap("identify");
             // The window gives the lens already chosen from the list (req.Lens); the console
             // looks it up from the text.
             if (refusal == null && req.Lens == null)
             {
                 refusal = ChooseLens(req, sources, f, id);
                 choice = refusal != null;
+                if (choice) why = "no lens or more than one matches";
             }
-            refusal ??= Complete(req, id, req.Lens.Source == ProfileSource.Lensfun);
+            if (refusal == null)
+            {
+                refusal = Complete(req, id, req.Lens.Source == ProfileSource.Lensfun);
+                if (refusal != null) why = "the focal length, the f-number or the crop cannot be found";
+            }
             if (refusal != null)
             {
+                clock.Done("refused: " + why + "; " + LogText.Request(req));
                 report.WriteLine();
                 report.WriteLine(refusal);
                 return new SyntheticRunOutcome(null, req, f, refusal, choice);
@@ -242,9 +252,17 @@ namespace FlatCheck
             LensProfile profile = LensCatalog.Nearest(all, req.FocalMm, req.FStop);
             var r = SyntheticFlatBuilder.Build(profile, f.Image.W, f.Image.H, req.CameraCrop);
             r.LensProfiles = all;
+            clock.Lap("build");
+            if (Log.IsDebugEnabled) Log.Debug("synthetic flat for " + referencePath + ": " + LogText.Request(req) + "; " + LogText.Synthetic(r));
             SyntheticReport.Write(r, req, referencePath, report);
+            clock.Lap("report");
+            clock.Done("built from " + LogText.Profile(profile));
             return new SyntheticRunOutcome(r, req, f, null);
         }
+
+        /// <summary>The diagnostic log: the run's lines, the lens chosen and the flat built
+        /// (R-110).</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(SyntheticRun));
 
         /// <summary>The HISTORY lines: the version, the lens and profile, the model, the
         /// reference file.</summary>

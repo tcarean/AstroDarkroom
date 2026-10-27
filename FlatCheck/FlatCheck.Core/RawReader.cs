@@ -40,6 +40,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using NLog;
 using Sdcb.LibRaw;
 using Sdcb.LibRaw.Natives;
 using static FlatCheck.Ui;
@@ -57,6 +58,11 @@ namespace FlatCheck
         // bodies, by contrast, only at JIT. A value-type field from libraw would make a run on a
         // FITS crash when the DLLs are missing. Measured, not assumed; pinned by RawReaderTests.
         static readonly IReadOnlyDictionary<string, string> NoHeader = new Dictionary<string, string>();
+
+        /// <summary>The diagnostic log: what libraw gave, and the failures this reader
+        /// recovers from (R-110). An NLog type, not a libraw one, so the rule above
+        /// holds.</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(RawReader));
 
         // The six extensions of flatcheck.py, plus .pef (Pentax, 2026-10-26: a K-70 sample read
         // fine through libraw and was refused by this list alone, R-108). Only the NEF, CR2, CR3,
@@ -260,6 +266,14 @@ namespace FlatCheck
                 Preview = preview,
             };
             FillShootingInfo(ctx, ip, frame);
+            if (Log.IsDebugEnabled)
+                Log.Debug("libraw on " + path + ": visible " + LogText.Int(w) + "x" + LogText.Int(h)
+                          + " of " + LogText.Int(s.RawWidth) + "x" + LogText.Int(s.RawHeight)
+                          + " margins top=" + LogText.Int(s.TopMargin) + " left=" + LogText.Int(s.LeftMargin)
+                          + " filters=0x" + ip.Filters.ToString("X8", System.Globalization.CultureInfo.InvariantCulture)
+                          + " cdesc=" + LogText.Str(ip.Cdesc) + " maximum=" + LogText.Num(white)
+                          + " black=" + LogText.Num(c.Black) + " cblack=" + LogText.List(blacks.ConvertAll(b => LogText.Num(b - c.Black)))
+                          + " thumbnails=" + LogText.Int(d.ThumbnailList.ThumbCount));
             return frame;
         }
 
@@ -301,8 +315,9 @@ namespace FlatCheck
                     RangeOf(notes.MinFocal, notes.MaxFocal, notes.MaxAperture4MinFocal, notes.MaxAperture, li.MinFocal, li.MaxFocal, li.MaxAperture4MinFocal,
                             other.FocalLength);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Warn(e, "the raw's lens block could not be read; the lens stays unknown");
                 frame.LensId = null;
                 frame.LensMount = null;
                 frame.LensName = null;
@@ -478,8 +493,9 @@ namespace FlatCheck
                 // Rule 3: what is left, if libraw gives it as a decoded bitmap.
                 return bestOther >= 0 ? Export(ctx, bestOther, list.ThumbList[bestOther].Flip) : null;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Warn(e, "the raw's preview could not be captured; the frame goes on without one");
                 return null;
             }
         }

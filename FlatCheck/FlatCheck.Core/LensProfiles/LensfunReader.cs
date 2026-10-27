@@ -30,6 +30,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using NLog;
 
 namespace FlatCheck
 {
@@ -93,6 +94,9 @@ namespace FlatCheck
     /// <summary>Reads the lensfun database's XML files.</summary>
     internal static class LensfunReader
     {
+        /// <summary>The diagnostic log: the files that could not be read.</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(LensfunReader));
+
         /// <summary>
         /// Every .xml file of a folder, in name order; a file that does not parse is skipped.
         /// </summary>
@@ -108,7 +112,12 @@ namespace FlatCheck
             {
                 LensfunData d;
                 try { d = ReadXml(File.ReadAllText(f), f); }
-                catch (Exception) { continue; }   // a broken file does not stop the list; it is someone else's
+                catch (Exception e)
+                {
+                    // A broken file does not stop the list; it is someone else's. The log says which.
+                    Log.Warn(e, "the lensfun file " + f + " could not be read; its lenses are left out");
+                    continue;
+                }
                 profiles.AddRange(d.Profiles);
                 cameras.AddRange(d.Cameras);
             }

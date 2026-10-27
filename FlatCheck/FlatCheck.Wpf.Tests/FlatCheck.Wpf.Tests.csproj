@@ -52,6 +52,10 @@
          encoder, so that the exposure tab can be tested with the switch on without any real
          raw. -->
     <Compile Include="..\FlatCheck.Tests\TestImages.cs" Link="Shared\TestImages.cs" />
+    <!-- LogCapture configures the diagnostic log for the whole test assembly and lets a test
+         read its own lines (ADR 0070); one copy, so both assemblies render every log line the
+         same way. -->
+    <Compile Include="..\FlatCheck.Tests\LogCapture.cs" Link="Shared\LogCapture.cs" />
   </ItemGroup>
 
 </Project>

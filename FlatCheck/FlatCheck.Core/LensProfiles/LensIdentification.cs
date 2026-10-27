@@ -36,6 +36,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -231,8 +232,12 @@ namespace FlatCheck
             // tab's note and the Structure report's gap tell the same thing (R-106).
             if (id.RawSaysNoLens) notes.Add(SyntheticReport.RawWithoutLensNote(rawName));
             id.Notes = notes;
+            if (Log.IsDebugEnabled) Log.Debug("identified " + LogText.Shot(id));
             return id;
         }
+
+        /// <summary>The diagnostic log: what each identification concluded (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(LensIdentification));
 
         /// <summary>
         /// The lenses on the camera's mount whose name says exactly the raw's range: both ends of

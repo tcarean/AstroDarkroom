@@ -18,6 +18,7 @@
 // LightRun.cs - mode 3 on a single frame, end to end.
 
 using System.IO;
+using NLog;
 
 namespace FlatCheck
 {
@@ -72,21 +73,34 @@ namespace FlatCheck
         /// <returns>The check, and the figures with the map unless the run refused.</returns>
         internal static LightRunOutcome Execute(string path, double? fov, TextWriter report)
         {
+            RunClock clock = RunClock.Start(Log, "light", path + " fov=" + LogText.Num(fov));
             LoadedFrame f = ImageLoader.Load(path);
+            clock.Lap("load");
 
             // The guard BEFORE any computation. On a field too wide the figure would mean
             // nothing, so it is not produced at all, rather than produced and explained
             // underneath - a printed number is believed, however many brackets you add.
             var s = LightSuitability.Check(f.Header, fov);
+            if (Log.IsDebugEnabled) Log.Debug("field of " + path + ": " + LogText.Suitability(s));
             if (!s.CanRun)
             {
                 LightReport.WriteTooWide(s, path, report);
+                clock.Done("refused: the field is too wide");
                 return new LightRunOutcome(s, null, null);
             }
 
             var r = LightAnalyzer.Analyze(f.Image);
+            clock.Lap("analyze");
+            if (Log.IsDebugEnabled) Log.Debug("fit of " + path + ": " + LogText.Light(r));
             LightReport.Write(r, s, path, report);
-            return new LightRunOutcome(s, r, PngWriter.EncodeResidualMap(r.RadialMap));
+            clock.Lap("report");
+            byte[] png = PngWriter.EncodeResidualMap(r.RadialMap);
+            clock.Lap("map");
+            clock.Done("verdict=" + r.Verdict);
+            return new LightRunOutcome(s, r, png);
         }
+
+        /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(LightRun));
     }
 }

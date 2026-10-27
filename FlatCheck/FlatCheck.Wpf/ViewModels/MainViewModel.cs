@@ -32,6 +32,7 @@
 // new ones. The cancellation is caught between frames, so it answers in under a second.
 
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -191,6 +192,8 @@ namespace FlatCheck.Wpf
 
             var session = new SirilSession(folder);
             SessionProblem problem = session.Check();
+            Log.Info("session " + folder + ": " + (problem == SessionProblem.None ? "usable" : "refused, " + problem));
+            if (Log.IsDebugEnabled) Log.Debug("session " + folder + ": " + Describe(session, problem));
             if (problem != SessionProblem.None)
             {
                 _session = null;
@@ -233,6 +236,27 @@ namespace FlatCheck.Wpf
             {
                 IsRunning = false;
             }
+        }
+
+        /// <summary>The diagnostic log of the window's own flow (R-110).</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Window");
+
+        /// <summary>
+        /// What a session folder holds, in one English line for the log: the master found (and
+        /// an older one ignored), the counts of flats, raw flats and lights, the raw the lens is
+        /// read from. Reads the disk; called only at <c>Debug</c>.
+        /// </summary>
+        /// <param name="session">The session.</param>
+        /// <param name="problem">What its check found.</param>
+        /// <returns>The text.</returns>
+        static string Describe(SirilSession session, SessionProblem problem)
+        {
+            if (problem == SessionProblem.NoFolder) return "the folder does not exist";
+            FlatMasterLookup master = session.FindFlatMaster();
+            return "master=" + LogText.Str(master.Path) + (master.Ambiguous ? " (an older one ignored: " + master.Other + ")" : "")
+                 + " flats=" + LogText.Int(session.FlatFrames().Count) + " rawFlats=" + LogText.Int(session.RawFlats().Count)
+                 + " lights=" + LogText.Int(session.LightSeries().Count) + " referenceRaw=" + LogText.Str(session.ReferenceRawPath)
+                 + " process=" + LogText.Yes(Directory.Exists(session.ProcessDir)) + " masters=" + LogText.Yes(Directory.Exists(session.MastersDir));
         }
 
         /// <summary>The opening chain, one after the other: Structure, then the end-to-end

@@ -39,7 +39,9 @@
 // output (--lenses always exits 0).
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -72,6 +74,7 @@ namespace FlatCheck
             LanguageArgument lang = LanguageArgument.Extract(args);
             if (lang.BadValue != null)
             {
+                Log.Warn("refused: " + LanguageArgument.BadValueMessage(lang.BadValue));
                 stderr.WriteLine("ERROR: " + LanguageArgument.BadValueMessage(lang.BadValue));
                 return 1;
             }
@@ -92,11 +95,14 @@ namespace FlatCheck
             Options o = Options.Parse(args);
             if (o.Help)
             {
+                Log.Info("mode=help");
                 WriteUsage(stdout);
                 return 0;
             }
             if (o.Error != null)
             {
+                // The message is the one the user saw, in the run's language.
+                Log.Warn("refused the arguments: " + o.Error);
                 stderr.WriteLine(ErrorPrefix + o.Error);
                 return 1;
             }
@@ -105,6 +111,7 @@ namespace FlatCheck
             // other modes work on a master or on a given frame.
             if (Directory.Exists(o.Image) && !o.Light)
             {
+                Log.Warn("refused: " + o.Image + " is a folder, and only --light takes one");
                 stderr.WriteLine(ErrorPrefix + T(
                     "a folder can be given only with --light, for the run on a series. "
                     + "The other modes expect a file.",
@@ -113,6 +120,7 @@ namespace FlatCheck
                 return 1;
             }
 
+            Log.Info("mode=" + ModeOf(o) + " input=" + LogText.Str(o.Image) + " lang=" + (Ui.Current == UiLanguage.Romanian ? "ro" : "en") + Describe(o));
             int code;
             try
             {
@@ -127,6 +135,9 @@ namespace FlatCheck
             }
             catch (Exception e)
             {
+                // stderr keeps its one line; the type, the stack and the inner exceptions go to
+                // the log (R-110).
+                Log.Error(e, "run failed: mode=" + ModeOf(o));
                 stderr.WriteLine(ErrorPrefix + e.Message);
                 return 1;
             }
@@ -136,6 +147,51 @@ namespace FlatCheck
 
         /// <summary>The prefix of every error line on stderr, in the run's language.</summary>
         static string ErrorPrefix => T("ERROR: ", "EROARE: ");
+
+        /// <summary>The diagnostic log: the mode chosen, the refusals, the failures with
+        /// their stack, the files written (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger("Cli");
+
+        /// <summary>The mode the dispatch below picks, by the same order (R-003).</summary>
+        /// <param name="o">The parsed options.</param>
+        /// <returns>The mode's name in the log.</returns>
+        static string ModeOf(Options o)
+            => o.Lenses ? "lenses"
+             : o.Synthetic != null ? "synthetic"
+             : o.Against != null ? "against"
+             : o.Smooth != null ? "smooth"
+             : o.Histeq ? "histeq"
+             : o.Expo ? "expo"
+             : o.Light ? (Directory.Exists(o.Image) ? "light series" : "light")
+             : "structure";
+
+        /// <summary>The map's path, then the options that differ from their defaults, for the
+        /// mode's line.</summary>
+        /// <param name="o">The parsed options.</param>
+        /// <returns>The text, with a leading space.</returns>
+        static string Describe(Options o)
+        {
+            var parts = new List<string> { "out=" + o.OutPng };
+            void Add(string name, string value) { if (value != null) parts.Add(name + "=" + value); }
+            Add("raw", o.Raw);
+            Add("lens", o.Lens);
+            Add("source", o.Source?.ToString());
+            Add("focal", o.Focal.HasValue ? LogText.Num(o.Focal) : null);
+            Add("fstop", o.FStop.HasValue ? LogText.Num(o.FStop) : null);
+            Add("crop", o.Crop.HasValue ? LogText.Num(o.Crop) : null);
+            Add("profiles", o.Profiles);
+            Add("sat", o.Sat.HasValue ? LogText.Num(o.Sat) : null);
+            Add("black", o.Black.HasValue ? LogText.Num(o.Black) : null);
+            Add("sky", o.Sky ? "yes" : null);
+            Add("fov", o.Fov.HasValue ? LogText.Num(o.Fov) : null);
+            Add("pattern", o.Light ? o.Pattern : null);
+            Add("smooth", o.Smooth);
+            Add("scale", o.Smooth == null ? null : o.ScaleAuto ? "auto" : LogText.Num(o.ScalePx));
+            Add("synthetic", o.Synthetic);
+            Add("against", o.Against);
+            Add("rainbow", o.Rainbow ? "yes" : null);
+            return " " + string.Join(" ", parts);
+        }
 
         /// <summary>
         /// The input refusal, in the core's vocabulary. It exits with 1, the same category as
@@ -266,7 +322,11 @@ namespace FlatCheck
                     err.WriteLine(ErrorPrefix + advice.Refusal.Split('\n')[0]);
                     return 1;
                 }
-                if (advice.Advice.Kind != SmoothAdviceKind.Proposed) return 2;
+                if (advice.Advice.Kind != SmoothAdviceKind.Proposed)
+                {
+                    Log.Info("no scale proposed (" + advice.Advice.Kind + "); nothing written, exit 2");
+                    return 2;
+                }
                 run = SmoothRun.Execute(advice.Frame, o.Image, advice.Advice.ScalePx, w);
             }
             else
@@ -280,6 +340,7 @@ namespace FlatCheck
             }
             using (var fs = new FileStream(o.Smooth, FileMode.Create, FileAccess.Write))
                 SmoothRun.WriteFits(run, o.Image, fs);
+            Log.Info("wrote " + o.Smooth + " (" + LogText.FileKiB(o.Smooth) + ")");
             w.WriteLine(SmoothReport.SavedLine(o.Smooth));
             SaveMap(o.OutPng, run.Png, w);
             SaveMap(AfterMapPath(o.OutPng), run.SecondaryPng, w);
@@ -333,6 +394,7 @@ namespace FlatCheck
             }
             using (var fs = new FileStream(o.Synthetic, FileMode.Create, FileAccess.Write))
                 SyntheticRun.WriteFits(run, o.Image, fs);
+            Log.Info("wrote " + o.Synthetic + " (" + LogText.FileKiB(o.Synthetic) + ")");
             w.WriteLine(SyntheticReport.SavedLine(o.Synthetic));
             return 0;
         }
@@ -369,6 +431,7 @@ namespace FlatCheck
         static void SaveMap(string path, byte[] png, TextWriter w)
         {
             File.WriteAllBytes(path, png);
+            Log.Info("wrote " + path + " (" + LogText.KiB(png.Length) + ")");
             RunReport.WriteMapSaved(path, w);
         }
 

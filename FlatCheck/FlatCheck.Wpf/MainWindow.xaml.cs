@@ -95,6 +95,7 @@ namespace FlatCheck.Wpf
 
             var answer = MessageBox.Show(this, SessionMessages.SplitCloseQuestion(), "FlatCheck",
                 MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            Log.Info("closing during a split: the user answered " + answer);
             if (answer != MessageBoxResult.Yes) return;
 
             _closeAfterSplit = true;
@@ -111,7 +112,13 @@ namespace FlatCheck.Wpf
         /// <param name="sender">The window.</param>
         /// <param name="e">The command.</param>
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
-            => new AboutWindow { Owner = this }.ShowDialog();
+        {
+            Log.Info("About opened");
+            new AboutWindow { Owner = this }.ShowDialog();
+        }
+
+        /// <summary>The diagnostic log of the user's actions in the main window (R-110).</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Window");
 
         /// <summary>
         /// The button on the problem screen: starts the chosen script in siril-cli, modal, with
@@ -125,6 +132,8 @@ namespace FlatCheck.Wpf
         {
             PreprocessViewModel p = _vm.Preprocess;
             p.Refresh();
+            Log.Info("Siril run asked: script=" + LogText.Str(p.SelectedPath) + " siril-cli=" + LogText.Str(p.CliPath)
+                     + " canRun=" + LogText.Yes(p.CanRun) + " blocked=" + LogText.Yes(p.HasBlocker));
             if (p.CanRun == false) return;
 
             string folder = _vm.Folder;
@@ -132,6 +141,7 @@ namespace FlatCheck.Wpf
             var window = new SirilRunWindow(run, SirilScriptRun.For(p.CliPath, folder, p.SelectedPath)) { Owner = this };
             window.ShowDialog();
 
+            Log.Info("Siril run window closed: succeeded=" + (run.Succeeded?.ToString() ?? "not run"));
             if (run.Succeeded == true) _ = _vm.ReopenAsync();
         }
 
@@ -144,7 +154,9 @@ namespace FlatCheck.Wpf
                 Multiselect = false,
             };
 
-            if (dlg.ShowDialog(this) == true) _ = _vm.OpenAsync(dlg.FolderName);
+            bool chosen = dlg.ShowDialog(this) == true;
+            Log.Info("folder dialog: " + (chosen ? "chose " + dlg.FolderName : "cancelled"));
+            if (chosen) _ = _vm.OpenAsync(dlg.FolderName);
         }
     }
 }

@@ -58,11 +58,22 @@ namespace FlatCheck
             string path, double? sat, double? black, bool sky, TextWriter report,
             bool withPreview = false)
         {
+            RunClock clock = RunClock.Start(Log, "expo", path + " sat=" + LogText.Num(sat) + " black=" + LogText.Num(black)
+                                                   + " sky=" + LogText.Yes(sky) + " preview=" + LogText.Yes(withPreview));
             LoadedFrame f = ImageLoader.Load(path);
+            clock.Lap("load");
             PreviewImage preview = withPreview ? PreviewReader.Decode(f.Preview) : null;
+            if (withPreview) clock.Lap("preview");
             var r = ExposureAnalyzer.Analyze(f.Image, sat, black, sky, f.Scale, f.Cfa, preview);
+            clock.Lap("analyze");
+            if (Log.IsDebugEnabled) Log.Debug("exposure of " + path + ": " + LogText.Exposure(r));
             ExposureReport.Write(r, path, report);
+            clock.Lap("report");
+            clock.Done("verdict=" + r.Verdict);
             return new RunOutcome<ExposureResult>(r, null);
         }
+
+        /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(ExposureRun));
     }
 }

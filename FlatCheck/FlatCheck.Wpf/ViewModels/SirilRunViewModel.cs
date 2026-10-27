@@ -89,9 +89,16 @@ namespace FlatCheck.Wpf
         static string ReadScript(string path)
         {
             try { return File.ReadAllText(path); }
-            catch (IOException) { return ""; }
-            catch (UnauthorizedAccessException) { return ""; }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                RunLog.Warn(e, "the script " + path + " could not be read; its commands are not listed");
+                return "";
+            }
         }
+
+        /// <summary>The diagnostic log of the Siril runs: start, every line siril-cli prints,
+        /// the end (R-110). Not <c>Log</c>, which is the text the window shows.</summary>
+        static readonly NLog.Logger RunLog = NLog.LogManager.GetLogger("Siril");
 
         public string Title => SessionMessages.RunWindowTitle();
         public string ScriptName { get; }
@@ -167,10 +174,13 @@ namespace FlatCheck.Wpf
             _cts = new CancellationTokenSource();
             IsRunning = true;
             Outcome = "";
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            RunLog.Info("run started: script=" + ScriptPath + " folder=" + Folder + " commands=" + LogText.Int(_commands.Count));
 
             try
             {
                 int code = await runner(OnLine, _cts.Token).ConfigureAwait(true);
+                RunLog.Info("run ended with code " + LogText.Int(code) + " after " + Seconds(clock) + " at " + CurrentCommand());
                 Succeeded = code == 0;
                 Outcome = code == 0
                     ? SessionMessages.RunSucceeded()
@@ -178,11 +188,13 @@ namespace FlatCheck.Wpf
             }
             catch (OperationCanceledException)
             {
+                RunLog.Info("run cancelled after " + Seconds(clock) + " at " + CurrentCommand());
                 Succeeded = false;
                 Outcome = SessionMessages.RunCancelled();
             }
             catch (Exception e)
             {
+                RunLog.Error(e, "siril-cli could not be started or read; the window says so");
                 Succeeded = false;
                 Outcome = SessionMessages.RunStartFailed(TabViewModel.Describe(e));
             }
@@ -195,6 +207,19 @@ namespace FlatCheck.Wpf
             }
         }
 
+        /// <summary>The elapsed time in seconds, one decimal, for the log.</summary>
+        /// <param name="clock">The run's clock.</param>
+        /// <returns>The text.</returns>
+        static string Seconds(System.Diagnostics.Stopwatch clock)
+            => clock.Elapsed.TotalSeconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + " s";
+
+        /// <summary>The command running, by number and as the script writes it, for the
+        /// log.</summary>
+        /// <returns>The text.</returns>
+        string CurrentCommand()
+            => "command " + LogText.Int(_commandIndex) + " of " + LogText.Int(_commands.Count)
+             + (_commandIndex >= 1 && _commandIndex <= _commands.Count ? ": " + _commands[_commandIndex - 1] : "");
+
         /// <summary>Kills the process. No effect when nothing is running.</summary>
         public void Cancel()
         {
@@ -206,6 +231,9 @@ namespace FlatCheck.Wpf
         internal void OnLine(string raw)
         {
             SirilLogLine line = SirilLogLine.Parse(raw);
+            // Every line in the log, the progress ones (most of the output) only at Trace.
+            if (line.Kind == SirilLineKind.Progress) RunLog.Trace("siril: " + raw);
+            else RunLog.Debug("siril: " + raw);
             if (line.Kind == SirilLineKind.Other) return;
 
             OnUi(() => Apply(line));
