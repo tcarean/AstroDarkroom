@@ -182,6 +182,98 @@ public class FitsReaderTests
         Assert.Equal(999, img.At(0, 0), 6);
     }
 
+    /// <summary>
+    /// R-008: a file that does not begin with the SIMPLE card is refused by both reads with the
+    /// same message, before any card is parsed: an empty file, one shorter than a keyword, 100
+    /// bytes of zeros, 100 of spaces, a whole block whose first card is NAXIS, a text file
+    /// (FlatCheck's ADR 0057, taken 2026-10-27, ADR 0027). Until then the metadata read answered
+    /// with an empty header and FrameInfo.Read guessed. <c>fill</c> is the byte the rest of the
+    /// file is padded with: 0 or a space.
+    /// </summary>
+    [Theory]
+    [InlineData("", 0, 32)]
+    [InlineData("SIMP", 4, 32)]
+    [InlineData("", 100, 0)]
+    [InlineData("", 100, 32)]
+    [InlineData("NAXIS   =                    2", 2880, 32)]
+    [InlineData("this is not a FITS file", 4096, 32)]
+    public void R008_BothReadsRefuseAFileThatDoesNotBeginWithSimple(string start, int length, int fill)
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("bad.fit", Padded(start, length, (byte)fill));
+
+        var info = Assert.Throws<InvalidDataException>(() => ImageLoader.LoadInfo(path));
+        var full = Assert.Throws<InvalidDataException>(() => ImageLoader.Load(path));
+
+        Assert.Contains("SIMPLE", info.Message, StringComparison.Ordinal);
+        Assert.Equal(info.Message, full.Message);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("FITS: the file does not begin with SIMPLE.", Assert.Throws<InvalidDataException>(() => ImageLoader.LoadInfo(path)).Message);
+        }
+
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            Assert.Equal("FITS: fisierul nu incepe cu SIMPLE.", Assert.Throws<InvalidDataException>(() => ImageLoader.LoadInfo(path)).Message);
+        }
+    }
+
+    /// <summary>
+    /// R-008: a header that begins with SIMPLE but ends before END is refused by both reads
+    /// too, with the full load's message; the metadata read used to answer it with the cards
+    /// of the whole blocks before the cut. Shorter than one block, and exactly one block
+    /// without END.
+    /// </summary>
+    [Theory]
+    [InlineData(100)]
+    [InlineData(2880)]
+    public void R008_BothReadsRefuseAHeaderCutBeforeEnd(int length)
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("cut.fit", Padded(FitsTestData.Card("SIMPLE", "T"), length));
+
+        var info = Assert.Throws<InvalidDataException>(() => ImageLoader.LoadInfo(path));
+        var full = Assert.Throws<InvalidDataException>(() => ImageLoader.Load(path));
+
+        Assert.Contains("incomplet", info.Message, StringComparison.Ordinal);
+        Assert.Equal(info.Message, full.Message);
+    }
+
+    /// <summary>
+    /// R-008: the inventory's record carries the reader's own message for a .fit that is not a
+    /// FITS, not a guess from an empty header; a readable FITS still reads.
+    /// </summary>
+    [Fact]
+    public void R008_TheFrameRecordCarriesTheReadersMessageForANonFits()
+    {
+        using var ws = new TempWorkspace();
+        string bad = ws.WriteFile("bad.fit", new byte[100]);
+        string good = ws.WriteFile("good.fit", FitsTestData.BuildFits(8, 8, (x, y) => 100));
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("FITS: the file does not begin with SIMPLE.", FrameInfo.Read(1, bad).Error);
+        }
+
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            Assert.Equal("FITS: fisierul nu incepe cu SIMPLE.", FrameInfo.Read(1, bad).Error);
+        }
+
+        Assert.Null(FrameInfo.Read(2, good).Error);
+    }
+
+    /// <summary>
+    /// <paramref name="start"/> in ASCII, then <paramref name="fill"/> bytes (spaces unless said
+    /// otherwise), <paramref name="length"/> bytes in all.
+    /// </summary>
+    private static byte[] Padded(string start, int length, byte fill = (byte)' ')
+    {
+        byte[] bytes = Enumerable.Repeat(fill, length).ToArray();
+        System.Text.Encoding.ASCII.GetBytes(start, 0, Math.Min(start.Length, length), bytes, 0);
+        return bytes;
+    }
+
     [Fact]
     public void Load_ThrowsOnATruncatedFile()
     {

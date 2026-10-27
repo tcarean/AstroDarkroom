@@ -52,11 +52,16 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
 - Taken later from FlatCheck: the cut-data check of `LoadFull` (FlatCheck's R-009, 469da9b,
   ADR 0021). Before the sample loop of every HDU, a data area shorter than `NAXISn` x
   `|BITPIX| / 8` throws `InvalidDataException` with both byte counts (`DataCut`); the padding
-  to 2880 bytes is not required. FlatCheck's FITS-magic check is not taken (ADR 0018, ADR 0021).
-- Taken later from FlatCheck: the English/Romanian wordings of `FitsReader`'s four messages
-  (FlatCheck's 55e959c, ADR 0022), word for word, through `using static LightsCheck.Core.Ui`;
-  FlatCheck holds the incomplete-header message in a `HeaderIncomplete` property, the copy writes
-  the same `T(...)` inline where it throws, so a recopy shows that one difference.
+  to 2880 bytes is not required.
+- Taken later from FlatCheck: the FITS-magic check of its ADR 0057 (R-008, ADR 0027). One
+  keyword reader, `KeyOf`, and one check, `RequireSimple`, serve both reads: `LoadHeader` runs
+  it on the first block read and refuses a block shorter than 2880 bytes (`HeaderIncomplete`),
+  `LoadFull` runs it on the whole file before the header loop. A file whose first 8 bytes are
+  not the keyword `SIMPLE`, an empty file included, throws `InvalidDataException` with
+  `NotSimple`; a header that ends before `END` throws `HeaderIncomplete`; the two reads refuse
+  the same files with the same words, so no caller recognises a bad file by an empty header.
+- Taken later from FlatCheck: the English/Romanian wordings of `FitsReader`'s messages
+  (FlatCheck's 55e959c, ADR 0022), word for word, through `using static LightsCheck.Core.Ui`.
   `RawReader`'s messages are paired here, in FlatCheck's English where FlatCheck has the same
   message.
 - Taken later from FlatCheck, directly into the adapted copies (ADR 0025, R-065): the lens hunk

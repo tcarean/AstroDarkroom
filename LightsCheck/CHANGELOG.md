@@ -43,6 +43,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A `.fit` whose header begins with `SIMPLE` but ends before `END` was read as a FITS with the
+  cards found so far; it is now refused with `FITS: incomplete header.`, by the inventory's
+  metadata read and the full load alike, and a file that does not begin with `SIMPLE` is
+  refused by both with `FITS: the file does not begin with SIMPLE.` (FlatCheck's check, R-008,
+  ADR 0027). The inventory's row for such a file reads that message where it read `not a FITS
+  file (it does not begin with SIMPLE)`.
 - A session read from FITS lights (a folder with no raws, for example Siril's `pp_light_*.fit`)
   had the sense its y axis feeds the wrong way round in the dithering cells, the CSV's
   `move_ra_px` / `move_dec_px`, the star drift and the polar handedness: the solved FITS was

@@ -15,8 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using static LightsCheck.Core.Ui;
-
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -117,23 +115,14 @@ internal sealed record FrameInfo(
     /// <param name="path">The frame's file, a camera raw or a FITS.</param>
     /// <returns>
     /// The frame's metadata, or a record with every shot field null and <see cref="Error"/> set
-    /// when the file cannot be read, or has a FITS extension and an empty header (a file that does
-    /// not begin with SIMPLE, as a rule).
+    /// when the file cannot be read; a `.fit` that is not a FITS is refused by the reader itself
+    /// (`FITS: the file does not begin with SIMPLE.`, R-008), so no guess is made here.
     /// </returns>
     internal static FrameInfo Read(int index, string path)
     {
         try
         {
-            LoadedFrame f = ImageLoader.LoadInfo(path);
-
-            // The FITS reader does not check SIMPLE: a FITS-named file whose header gives no card
-            // (as a rule, a file that is not a FITS) is a frame nothing can be said about.
-            if (FitsReader.IsFitsPath(path) && f.Header.Count == 0)
-            {
-                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
-            }
-
-            return From(index, path, f);
+            return From(index, path, ImageLoader.LoadInfo(path));
         }
         catch (Exception e)
         {
