@@ -437,11 +437,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <StackPanel Grid.Column="1">
         <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
         <!-- The "because" may carry the core's ** marks around a figure that must catch the eye;
-             Emphasis.Text appends it after the label, those parts in bold. -->
+             Emphasis owns the block's inlines: the label, then the text with those parts in bold. -->
         <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" TextWrapping="Wrap"
-                   local:Emphasis.Text="{Binding Because, Mode=OneWay}">
-          <Run Text="{local:T En='because: ', Ro='fiindca: '}" FontWeight="SemiBold" />
-        </TextBlock>
+                   local:Emphasis.Label="{local:T En='because: ', Ro='fiindca: '}"
+                   local:Emphasis.Text="{Binding Because, Mode=OneWay}" />
       </StackPanel>
     </Grid>
   </DataTemplate>

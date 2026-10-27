@@ -16,9 +16,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Emphasis.cs - a text with Fmt.Strong marks ("**...**", the core's one piece of markup) shown
-// with those parts in bold. The report's "because" lines carry the marks where a figure must
-// catch the eye (the share of the frame with a visible plateau and its threshold); the text
-// report strips them (Fmt.Plain), the Raport tab renders them through this property.
+// with those parts in bold, after an optional label. The report's "because" lines carry the
+// marks where a figure must catch the eye (the share of the frame with a visible plateau and its
+// threshold); the text report strips them (Fmt.Plain), the Raport tab renders them through these
+// properties. The block's inlines are owned here, label included: a XAML attribute is applied
+// before the element's content, so a label given as content would land after the text.
+using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -26,18 +30,32 @@ using System.Windows.Documents;
 namespace AstroPhotoAnalyzer.Wpf
 {
     /// <summary>
-    /// The attached property <c>Emphasis.Text</c> for a <see cref="TextBlock"/>: the text with
-    /// the parts between <c>**</c> marks in bold, appended after the inlines the XAML gave the
-    /// block (a label such as "because: "), which stay.
+    /// The attached properties <c>Emphasis.Label</c> and <c>Emphasis.Text</c> for a
+    /// <see cref="TextBlock"/>: the block's inlines become the label, semi-bold, then the text
+    /// with the parts between <c>**</c> marks in bold.
     /// </summary>
     internal static class Emphasis
     {
         /// <summary>The mark that opens and closes an emphasised part, as the core writes it.</summary>
         internal const string Mark = "**";
 
+        /// <summary>The attached property: the label before the text ("because: "), semi-bold; null or empty for none.</summary>
+        public static readonly DependencyProperty LabelProperty = DependencyProperty.RegisterAttached(
+            "Label", typeof(string), typeof(Emphasis), new PropertyMetadata(null, OnChanged));
+
         /// <summary>The attached property: the text with <c>**</c> marks.</summary>
         public static readonly DependencyProperty TextProperty = DependencyProperty.RegisterAttached(
-            "Text", typeof(string), typeof(Emphasis), new PropertyMetadata(null, OnTextChanged));
+            "Text", typeof(string), typeof(Emphasis), new PropertyMetadata(null, OnChanged));
+
+        /// <summary>Reads the attached label.</summary>
+        /// <param name="block">The text block.</param>
+        /// <returns>The label, or null.</returns>
+        public static string GetLabel(TextBlock block) => (string)block.GetValue(LabelProperty);
+
+        /// <summary>Sets the attached label.</summary>
+        /// <param name="block">The text block.</param>
+        /// <param name="value">The label; null or empty for none.</param>
+        public static void SetLabel(TextBlock block, string value) => block.SetValue(LabelProperty, value);
 
         /// <summary>Reads the attached text.</summary>
         /// <param name="block">The text block.</param>
@@ -46,20 +64,22 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>Sets the attached text.</summary>
         /// <param name="block">The text block.</param>
-        /// <param name="value">The text with <c>**</c> marks; null clears the appended runs.</param>
+        /// <param name="value">The text with <c>**</c> marks; null clears the text's runs.</param>
         public static void SetText(TextBlock block, string value) => block.SetValue(TextProperty, value);
 
         /// <summary>
-        /// Rebuilds the appended runs: every inline after the first one the XAML gave is
-        /// removed, then the text's parts are added, bold between the marks.
+        /// Rebuilds the block's inlines from both properties: the label's run, then the text's
+        /// runs, bold between the marks.
         /// </summary>
         /// <param name="d">The text block.</param>
-        /// <param name="e">The change; the new value is the text.</param>
-        static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        /// <param name="e">The change; either property.</param>
+        static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not TextBlock block) return;
-            while (block.Inlines.Count > 1) block.Inlines.Remove(block.Inlines.LastInline);
-            foreach (Inline inline in Parse(e.NewValue as string)) block.Inlines.Add(inline);
+            block.Inlines.Clear();
+            string label = GetLabel(block);
+            if (!string.IsNullOrEmpty(label)) block.Inlines.Add(new Run(label) { FontWeight = FontWeights.SemiBold });
+            foreach (Inline inline in Parse(GetText(block))) block.Inlines.Add(inline);
         }
 
         /// <summary>
@@ -70,14 +90,14 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <returns>The runs, in order.</returns>
         internal static Inline[] Parse(string text)
         {
-            var runs = new System.Collections.Generic.List<Inline>();
+            var runs = new List<Inline>();
             if (string.IsNullOrEmpty(text)) return runs.ToArray();
             int at = 0;
             while (at < text.Length)
             {
-                int open = text.IndexOf(Mark, at, System.StringComparison.Ordinal);
+                int open = text.IndexOf(Mark, at, StringComparison.Ordinal);
                 if (open < 0) { runs.Add(new Run(text.Substring(at))); break; }
-                int close = text.IndexOf(Mark, open + Mark.Length, System.StringComparison.Ordinal);
+                int close = text.IndexOf(Mark, open + Mark.Length, StringComparison.Ordinal);
                 if (close < 0) { runs.Add(new Run(text.Substring(at))); break; }
                 if (open > at) runs.Add(new Run(text.Substring(at, open - at)));
                 runs.Add(new Bold(new Run(text.Substring(open + Mark.Length, close - open - Mark.Length))));

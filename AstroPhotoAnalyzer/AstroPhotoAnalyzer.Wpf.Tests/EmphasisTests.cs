@@ -36,13 +36,16 @@ public class EmphasisTests
 
         _sta.Invoke(() =>
         {
+            // The text is set before the label, as a XAML attribute order may do: the label still
+            // comes first, because the block's inlines are rebuilt from both properties.
             var block = new TextBlock();
-            block.Inlines.Add(new Run("fiindca: "));
             Emphasis.SetText(block, marked);
+            Emphasis.SetLabel(block, "fiindca: ");
 
             Inline[] inlines = block.Inlines.ToArray();
             Assert.Equal(6, inlines.Length);
             Assert.Equal("fiindca: ", ((Run)inlines[0]).Text);
+            Assert.Equal(System.Windows.FontWeights.SemiBold, inlines[0].FontWeight);
             Assert.Equal("pe ", ((Run)inlines[1]).Text);
             Assert.Equal("0.20 %", ((Run)((Bold)inlines[2]).Inlines.FirstInline).Text);
             Assert.Equal(" din cadru (prag ", ((Run)inlines[3]).Text);

@@ -139,10 +139,12 @@ window show the save dialog with the core's proposed name, then `Save(path)` cal
 control points (label, input, output at three decimals, the class's L\* before and after) and
 two `CurveCanvas` charts, the whole curve and the shadows up to `CurveShadowChartFactor`
 times the band's input, where the dust and the sky sit and the whole chart shows nothing.
-`Presentation/Emphasis.cs` is the attached property `Emphasis.Text` of the Raport tab's
-"fiindca" block (`Theme/Dark.xaml`, `RecommendationRowTemplate`): it appends the `Because`
-after the label run, the parts between the core's `**` marks (`Fmt.Strong`) as `Bold`, an
-unclosed mark kept as text. `Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
+`Presentation/Emphasis.cs` holds the attached properties `Emphasis.Label` and `Emphasis.Text`
+of the Raport tab's "fiindca" block (`Theme/Dark.xaml`, `RecommendationRowTemplate`): the
+block's inlines are rebuilt from both, the label semi-bold and then the `Because`, the parts
+between the core's `**` marks (`Fmt.Strong`) as `Bold`, an unclosed mark kept as text; the
+label is a property and not content because a XAML attribute is applied before the content,
+which put the label after the text. `Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
 the diagonal, the sampled curve, the control points, a dotted vertical with a rotated label
 per class; the output axis ends at the largest value drawn. Not modal, not maximised, Esc
 closes it.
