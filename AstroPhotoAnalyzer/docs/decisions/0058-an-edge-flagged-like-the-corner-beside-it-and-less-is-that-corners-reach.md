@@ -2,6 +2,7 @@
 
 Date: 2026-10-27
 Status: accepted 2026-10-27
+Supersedes: 0018 in part (one line per flagged coloured region)
 
 ## Context
 

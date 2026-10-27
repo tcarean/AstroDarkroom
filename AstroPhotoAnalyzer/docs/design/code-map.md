@@ -25,7 +25,7 @@ AstroPhotoAnalyzer.Core/
   Input/Raster.cs                      Raster, SourceInfo
   Input/RasterOps.cs                   subsample, crop, gamma, levels, L* plane, linear guard
   Input/LiftTable.cs                   the two linearisers: exact, or lifted with a gamma through one 16-bit table (ADR 0035)
-  Input/ColorMath.cs                   sRGB, luminance, L*, paper black
+  Input/ColorMath.cs                   sRGB, luminance, L*, L*a*b*, paper black
   Input/Stats.cs                       percentiles (numpy), robust sigma, Otsu, SeededRandom
   Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, IccPaperBlack.cs (the Dmax of a printer profile, R-028), ImageLoader.cs,
         FitsWriter.cs (the saved FITS with a curve applied, R-145), AtomicFile.cs (a file written whole or not at all, R-005, R-145)
@@ -43,7 +43,7 @@ AstroPhotoAnalyzer.Core/
   Report/Recommendation.cs             Verdict, Topic, Recommendation, VerdictText
   Report/Recommendations.cs            the rules
   Report/ReportWriter.cs               the text
-  Report/Fmt.cs                        invariant number formatting
+  Report/Fmt.cs                        invariant number formatting; the ** marks of a because (ADR 0063)
   Report/RunReport.cs                  banner, warranty
   Report/CurveTexts.cs                 the Editare Curbe tab's sentences and the HISTORY text
   Runs/AnalysisRun.cs                  the chain, AnalysisResult, RefusedImageException

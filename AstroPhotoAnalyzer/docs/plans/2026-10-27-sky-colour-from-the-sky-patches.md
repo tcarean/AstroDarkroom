@@ -79,3 +79,18 @@ supersedes the colour part of ADR 0014.
   departure (the reference image's top-left, +6.5 / +5.0 / +8.8 against the sky), but a horizon
   glow bright enough to be classed nebula would vanish from the regions with it. To measure
   before deciding.
+
+## Deviations
+
+Noted at the wrap-up of 2026-10-27.
+
+- Step 6 named the README's Colour row "if it names the reference": it did not, and was left; the
+  wrap-up added how the colour is judged to the README instead.
+- The branch went past this plan at the owner's word, the same day: the "Not in this task" item
+  became ADR 0056 (its own plan, `2026-10-27-edge-regions-on-sky-patches.md`); the cast became a
+  chroma in L*a*b* (ADR 0057, `2026-10-27-cast-on-lab-chroma.md`); after looking at the window,
+  a region darker than the sky became a darkening with the bottom row keeping the horizon's name
+  (recorded in ADR 0056), and an edge flagged like the corner beside it became that corner's
+  reach (ADR 0058); after a question on the banding warning, where the plateau was measured
+  (ADR 0059). Those three had no plan file: each was measured and settled in chat, its ADR
+  holding the figures.

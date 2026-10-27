@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 Status: accepted 2026-10-27
-Supersedes: 0055 in part (the regions)
+Supersedes: 0055 in part (the regions); 0018 in part (the names and the advice of a region darker than the sky)
 
 ## Context
 

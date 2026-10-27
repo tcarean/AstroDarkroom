@@ -10,7 +10,7 @@
 
 `Recommendation(Topic, Verdict, Text, Because)`; the constructor refuses an empty
 `Because`. A `Because` may hold `Fmt.Strong(part)`, `**part**`, the core's one piece of
-markup, for a figure the eye must catch; `ReportWriter` and `CurveTexts.EvidenceRows` (the
+markup, for a figure the eye must catch (ADR 0063); `ReportWriter` and `CurveTexts.EvidenceRows` (the
 curves tab's paper checks) write it through `Fmt.Plain`, which strips the marks, and the
 window's Raport tab renders them bold (`Emphasis`). Verdicts are monotone `Ok < Attention < Problem`; a section's verdict is its
 maximum, the overall verdict the maximum of all. Topics in decision order: Format,

@@ -1,7 +1,7 @@
 # 0018. An edge region that departs in colour is a problem to fix; one that brightens neutrally is the object
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the names and the advice of a region darker than the sky superseded by 0056; one line per flagged coloured region superseded by 0058
 
 ## Context
 
