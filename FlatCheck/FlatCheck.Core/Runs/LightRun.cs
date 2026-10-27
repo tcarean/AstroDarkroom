@@ -64,7 +64,7 @@ namespace FlatCheck
         /// <summary>
         /// Loads the light, checks its field of view (<see cref="LightSuitability.Check"/>)
         /// and, when the field allows it, fits it and writes the report; on a refusal writes
-        /// only the refusal. Throws what <see cref="ImageLoader.Load"/> throws.
+        /// only the refusal. Throws what <see cref="ImageLoader.Load(string)"/> throws.
         /// </summary>
         /// <param name="path">A calibrated, unregistered light.</param>
         /// <param name="fov">The diagonal field in degrees given with <c>--fov</c>, or null

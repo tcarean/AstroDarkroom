@@ -34,10 +34,6 @@ using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
-    /// <summary>
-    /// The console's command line, parsed: the input file, the mode flags and their values,
-    /// or the error that stopped the parse.
-    /// </summary>
     /// <summary>The mode a command line asks for, by R-003's precedence: the first of these
     /// whose flag is set wins, from <see cref="Lenses"/> down to <see cref="Structure"/>, the
     /// default without a flag.</summary>
@@ -61,6 +57,10 @@ namespace FlatCheck
         Lenses,
     }
 
+    /// <summary>
+    /// The console's command line, parsed: the input file, the mode flags and their values,
+    /// or the error that stopped the parse.
+    /// </summary>
     internal sealed class Options
     {
         /// <summary>The diagnostic log: the paths that could not be normalised (R-110).</summary>

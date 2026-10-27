@@ -825,9 +825,11 @@ The severity is monotonic, so "anything but 0" means "not clean, look". The mode
 - `--smooth`: 0 when it wrote the smoothed flat and the maps, 1 when it refused the input (a raw, a
   colour cube) or could not write; with `--scale auto`, 2 when it wrote nothing because there is
   nothing to smooth or the scale is undetermined.
-- `--synthetic`: 0 when it wrote the flat, 1 when it refused the reference or could not learn the
-  focal length, the aperture or the crop, 2 when the lens could not be chosen (none, or too many:
-  the list is printed).
+- `--synthetic`: 0 when it wrote the flat, 1 when it refused the reference, could not learn the
+  focal length, the aperture or the crop, or the lens chosen has no vignetting profile (Adobe ships
+  files for some lenses with only their distortion or colour measured; they are in the list, and
+  are refused when chosen), 2 when the lens could not be chosen (none, or too many: the list is
+  printed).
 - `--lenses`: always 0.
 
 `--against` exits like the structure mode, on the verdict of the *difference*. Structure with
@@ -1003,6 +1005,10 @@ says it has no series.
 
 If the master is in neither place, the window does not open the folder and says what to do: run the
 preprocessing script in Siril. That file is the structure mode's input, by convention.
+
+If the folder is there but one of its folders cannot be read (permissions that deny listing it, a
+link to a drive that is gone), the window says so in a card, with the folder and the system's
+message, instead of opening empty tabs; the details are in the log (see "Logs").
 
 #### Running the Siril script from the window
 

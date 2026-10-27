@@ -102,7 +102,7 @@ namespace FlatCheck
     {
         /// <summary>
         /// Analyses the master (<see cref="Analyze"/>), writes the report and encodes the
-        /// residual map. Throws what <see cref="ImageLoader.Load"/> throws.
+        /// residual map. Throws what <see cref="ImageLoader.Load(string)"/> throws.
         /// </summary>
         /// <param name="path">The master flat to analyze: a FITS or a camera raw.</param>
         /// <param name="report">

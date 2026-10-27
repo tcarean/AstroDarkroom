@@ -82,7 +82,7 @@ namespace FlatCheck
         /// <summary>
         /// Finds the series, checks the first frame's field of view, then loads, analyses and
         /// reports each frame in turn and writes the synthesis. Throws when no file matches
-        /// the pattern, and what <see cref="ImageLoader.Load"/> throws on a frame it cannot
+        /// the pattern, and what <see cref="ImageLoader.Load(string)"/> throws on a frame it cannot
         /// read; an <see cref="OperationCanceledException"/> when <paramref name="ct"/> is
         /// cancelled between frames.
         /// </summary>

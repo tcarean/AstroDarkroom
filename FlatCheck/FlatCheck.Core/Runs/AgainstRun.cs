@@ -49,9 +49,9 @@
 // at the top does not say.
 
 using System;
-using NLog;
 using System.Collections.Generic;
 using System.IO;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -367,7 +367,7 @@ namespace FlatCheck
         /// <summary>
         /// Loads both files, compares them (<see cref="AgainstAnalyzer.Analyze"/>), writes the
         /// report and encodes the ratio's residual map. Throws what
-        /// <see cref="ImageLoader.Load"/> or the analyzer throws.
+        /// <see cref="ImageLoader.Load(string)"/> or the analyzer throws.
         /// </summary>
         /// <param name="pathA">The first flat (A in the table).</param>
         /// <param name="pathB">The second flat (B).</param>

@@ -25,10 +25,10 @@
 // light, which is ugly, not serious. That is why nothing here throws.
 
 using System;
-using NLog;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using NLog;
 
 namespace FlatCheck.Wpf
 {

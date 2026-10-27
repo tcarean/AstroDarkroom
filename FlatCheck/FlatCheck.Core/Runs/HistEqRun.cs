@@ -38,7 +38,7 @@ namespace FlatCheck
         /// <summary>
         /// Loads the file, equalises it, writes the report and encodes the picture: the
         /// composite, or with <paramref name="rainbow"/> the one-layer view in false colours.
-        /// Throws what <see cref="ImageLoader.Load"/> throws on an unreadable file.
+        /// Throws what <see cref="ImageLoader.Load(string)"/> throws on an unreadable file.
         /// </summary>
         /// <param name="path">A raw or a FITS file.</param>
         /// <param name="report">Where the report's text is written.</param>

@@ -294,7 +294,7 @@ public class MainViewModelTests
     /// with it (the review of 2026-10-27, A1). The folder is made unlistable with a deny rule.
     /// </summary>
     [Fact]
-    public async Task AnUnlistableProcessFolderStillGetsTheMissingMasterCard()
+    public async Task R080_AnUnlistableProcessFolderStillGetsTheMissingMasterCard()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var f = new SessionFixture().WithFlats().WithProcess();
@@ -316,7 +316,7 @@ public class MainViewModelTests
     /// window swallowed it and the tabs stayed empty (the review of 2026-10-27, A2).
     /// </summary>
     [Fact]
-    public async Task AnUnlistableFlatsFolderGivesACardAndAnErrorLine_NotEmptyTabs()
+    public async Task R080_AnUnlistableFlatsFolderGivesACardAndAnErrorLine_NotEmptyTabs()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var f = new SessionFixture().WithFlatMaster().WithFlats();

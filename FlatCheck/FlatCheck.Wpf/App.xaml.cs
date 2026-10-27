@@ -23,10 +23,10 @@
 // same folder fifty times.
 
 using System;
-using NLog;
 using System.Globalization;
 using System.IO;
 using System.Windows;
+using NLog;
 
 namespace FlatCheck.Wpf
 {

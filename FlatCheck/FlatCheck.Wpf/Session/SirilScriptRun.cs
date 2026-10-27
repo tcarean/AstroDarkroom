@@ -50,13 +50,13 @@
 // failure of the script, and it is not one.
 
 using System;
-using NLog;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NLog;
 
 namespace FlatCheck.Wpf
 {

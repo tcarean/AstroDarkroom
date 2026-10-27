@@ -291,7 +291,8 @@ a library extraction and not a copy is ADR 0011.
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map(s) to
     disk, and the exit code. All output goes through the injected `TextWriter`, never
     `Console` directly. `AfterMapPath` lives here rather than in the core (ADR 0011).
-  - `Options.cs` - CLI parsing.
+  - `Options.cs` - CLI parsing, and the mode the flags ask for (`Options.Mode`, decided once
+    by R-003's precedence; the dispatch and the log both read it, `process.md`).
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See `two-applications.md`.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
     master and where it may be, ADR 0034; which are raw flats; `SmoothedMasterPath` and `SyntheticMasterPath`, the two files the
@@ -421,6 +422,8 @@ a library extraction and not a copy is ADR 0011.
   - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
     templates; why the converters and the `ToolTip` style live there is ADR 0037.
   - `Interop/DarkTitleBar.cs` - the one P/Invoke: Windows draws the title bar, not WPF.
+  - `Loggers.cs` - the names of the window's loggers in the diagnostic log (`logging.md`);
+    each tab logs under `Window.<Tab>`, given by `TabViewModel`.
 - `FlatCheck.Tests/` - xUnit tests for the core and the console, reaching them via
   `InternalsVisibleTo`.
 - `FlatCheck.Wpf.Tests/` - xUnit tests for the window app, `net8.0-windows`. Separate

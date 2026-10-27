@@ -33,11 +33,11 @@
 
 using System;
 using System.Collections.Generic;
-using NLog;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NLog;
 
 namespace FlatCheck.Wpf
 {

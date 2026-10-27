@@ -127,12 +127,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   reason and exit 1, where it failed with `ERROR: Object reference not set to an instance of an
   object.` (R-071, ADR 0071). The window shows the same refusal.
 - The window: a session folder with a subfolder the user cannot list (a deny rule, a broken
-  junction) shows a card naming the folder and the error instead of seven empty tabs, and a
-  folder without a master keeps its "flat master is missing" card (R-080, R-110).
+  junction) shows a card naming the folder and the error instead of seven empty tabs (R-080).
 - A subfolder of an Adobe profile folder without list rights loses its own files only; before,
   the whole root's 3500 profiles were left out (R-107, ADR 0066 corrected).
-- The About window counts the linked components from the list, four since NLog, where it
-  still said three.
 - The note under the illumination offset in the structure report no longer says the offset falls
   back toward 0 past a threshold: since ADR 0014 the row reads `undetermined` / `nedeterminat` once
   the peak leaves the frame, and the note now says so (R-013). Every structure golden changes in

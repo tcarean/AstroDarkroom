@@ -33,10 +33,10 @@
 // deletes only the temp root this class built.
 
 using System;
-using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 
 namespace FlatCheck.Wpf
 {

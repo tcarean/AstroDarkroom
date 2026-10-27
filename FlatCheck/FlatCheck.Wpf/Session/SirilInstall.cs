@@ -34,10 +34,10 @@
 // one that touches the machine.
 
 using System;
-using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 
 namespace FlatCheck.Wpf
 {

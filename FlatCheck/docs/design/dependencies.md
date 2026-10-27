@@ -34,7 +34,11 @@ figures against `rawpy`, and the lazy loading with its guard
 spell out: `RawReader`'s type is loaded on every run, FITS included, because `ImageLoader`
 asks it `Handles`, and that is harmless only because method bodies are resolved at JIT time,
 so `Decode` costs nothing until a raw is opened; fields are resolved when the type loads,
-which is why `RawReader` holds no field of a libraw type, reference or value.
+which is why `RawReader` holds no field of a libraw type, reference or value. A lambda that
+captures a libraw value is such a field under another name, in a compiler-generated nested
+class, so `Decode` copies what its log line needs into a `double` before the lambda; the
+guard walks the nested types and the fields' generic arguments for that reason (the review of
+2026-10-27).
 
 ### `SixLabors.ImageSharp`
 

@@ -186,3 +186,61 @@ new `0071`, `docs/design/{logging,lens-profiles,dependencies,process,thresholds,
   without `BAYERPAT` and `grep` reading the log as text; the A14 measurement with the scratch
   console; a `--smooth` refusal's start and done lines.
 - No formula moved: `/validate` not needed.
+
+## Outcome and deviations (2026-10-27)
+
+Implemented as planned, on `claude/Fix-the-diagnostic-log-review-findings`, in four commits
+(A1 to A6; A7 to A16; B; C and D together, since D1's `Options.Mode` and C7's note of it, and
+C8's lines and D's helpers, share files) and a wrap-up commit (the design notes, R-080, the
+README, ADR 0072, this section). Every finding was verified on the code first: none was wrong; A13 and D2
+were partly right; A15 was a false comment as stated. What differs from the plan, and why:
+
+- **ADR 0072 written at wrap-up.** The plan named only ADR 0071 (A3); the other choices the
+  owner made in chat with a "why" (A2, A6 with D7, A9, A14 with A16, D1, C8, D11) are a
+  decision under the kit's rule "Decisions", so they have their ADR, with the rejected options.
+- **R-080 extended at wrap-up.** The card for a folder that cannot be read is a window session
+  rule, so R-080 now names it and the two window tests of A1 and A2 carry its ID; the plan had
+  put the behaviour under R-110 only.
+- **By hand, in the real window** (2026-10-27, the worktree's Release build, a scratch session
+  with its master in `process/` and `flats/` denied to the user): the card "The folder could not
+  be read" with the folder, the system's message and the hint, and in `FlatCheck.Wpf.log`
+  `Window session ...: usable`, then `ERROR ... the opening failed; the card shows the message`
+  with `System.UnauthorizedAccessException` and its stack through `SirilSession.RawFlats`,
+  `ExposureTabViewModel.Attach` and `MainViewModel.OpenAsync`, then `Process exit 0`.
+- **By hand, the console** (same build): `--synthetic --lens "Canon RF 100-400mm F5.6-8 IS USM +
+  EXTENDER RF2x"` on the author's Adobe folder printed the new refusal and exited 1, with
+  `LensCatalog ... holds no vignetting profile` and `synthetic done refused: the lens has no
+  vignetting profile` in the log; `--expo` on a CFA without `BAYERPAT` logged
+  `channels=[0:CFA[0,0]=...` and the file held no NUL byte; `--smooth` on a cube logged
+  `smooth start` and `smooth done refused: a cube of 3 planes in 27 ms (load 26 ms)`.
+
+- **D4 kept `Captured.Logger`.** The plan said it was never read; the per-tab loggers of A6
+  made it the thing the window's tests assert on, so only the nested captures went.
+- **A11 times the first frame's load twice over**: as its own `load` stage, and inside the
+  first frame's line, so that line reads like the others'.
+- **D10's three enumerations of `flats/`** became one: `Describe` reads the raw flats and the
+  reference raw off the one list, as the session itself does.
+- **The dated ADR notes open `## Alternatives rejected`** of ADR 0066 and ADR 0070, each quoting
+  the Decision's sentence it corrects: the kit's ADR 0024 puts a note on Decision text right
+  after that section (precedents: the kit's ADR 0016, APA's ADR 0005), and
+  `check-decisions.ps1` refuses one inside it.
+- **`R-109 to R-111` became `R-109 to R-112`** in the code, the tests, the CHANGELOG and the
+  package notice; the previous plan keeps its own text (history).
+- **A clean build at wrap-up found CS0419** (`dotnet build --no-incremental -warnaserror`):
+  eight crefs to `ImageLoader.Load` had become ambiguous when D10 gave it a second overload,
+  and the gate's incremental build had not shown it. They name `Load(string)` since the
+  wrap-up commit; 97808e8 alone does not build clean.
+- **Two CHANGELOG lines were left out at wrap-up**: the About window's "three components" and
+  the card lost to the Debug line were never in a release (both came with the unreleased log),
+  so they are not fixes a reader of the version history can meet.
+- **Measured (A14)**, 2026-10-27, a scratch console beside an `NLog.config` naming an unknown
+  target with `throwConfigExceptions="true"`: with the logger in a static field,
+  `TypeInitializationException` / `NLogConfigurationException: Failed loading NLog
+  configuration ... unknown type-alias: 'NoSuchTargetType'` before `Main`'s body; with the
+  logger fetched on use after the configuration is set, `ok, the tool would run`.
+- **Found on the way, not fixed (outside the task):** `ExposureTabTests.PickingAnotherFileRecomputes`
+  failed once in the commit gate and passed in every other run. Setting `Selected` starts a run
+  nobody awaits and `RecomputeAsync` starts a second one on the same file; a superseded run
+  still writes its figures (`Populate` runs inside the guarded work, which the generation check
+  does not cover), so under load the bright file's late run can overwrite the dim file's
+  `Centre`. A race in the view-model as much as in the test; proposed as a task of its own.

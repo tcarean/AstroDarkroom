@@ -1,14 +1,17 @@
 # The diagnostic log
 
-> Added 2026-10-27 with ADR 0070; the review fixes of 2026-10-27 (ADR 0071 for the lens
-> without a profile). **Covers:** `FlatCheck.Core/Logging/LogSetup.cs`,
+> Added 2026-10-27 with ADR 0070; the review fixes of 2026-10-27 (ADR 0072, and ADR 0071 for
+> the lens without a profile). **Covers:** `FlatCheck.Core/Logging/LogSetup.cs`,
 > `FlatCheck.Core/Logging/LogText.cs`, `FlatCheck.Core/Logging/RunClock.cs`,
 > `FlatCheck/Program.cs`, `FlatCheck.Wpf/App.xaml.cs`, `FlatCheck.Wpf/Loggers.cs`,
 > `FlatCheck.Tests/LogCapture.cs`, `FlatCheck.Tests/LoggingTests.cs`,
-> `FlatCheck.Wpf.Tests/WindowLoggingTests.cs`, and the log lines of the seams the table below
+> `FlatCheck.Tests/UnlistableFolder.cs`, `FlatCheck.Wpf.Tests/WindowLoggingTests.cs`, and the
+> log lines of the seams the table below
 > lists. A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains. The decisions and the figures (the target, the counts,
-> the levels, the words, the Fatal line written once) are ADR 0070's; this note is the mechanics.
+> the levels, the words, the Fatal line written once) are ADR 0070's, and the review's choices
+> (refusals, a run that throws, the log never stopping the tool) ADR 0072's; this note is the
+> mechanics.
 
 ## How the parts fit
 

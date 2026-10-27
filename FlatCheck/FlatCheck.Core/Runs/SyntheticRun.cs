@@ -22,10 +22,10 @@
 // --smooth. The refusals are text, as in the other runs, and do not throw.
 
 using System;
-using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -193,7 +193,7 @@ namespace FlatCheck
 
         /// <summary>
         /// Loads the reference frame and runs the chain on it. Throws what
-        /// <see cref="ImageLoader.Load"/> throws; the refusals are returned, not thrown.
+        /// <see cref="ImageLoader.Load(string)"/> throws; the refusals are returned, not thrown.
         /// </summary>
         /// <param name="referencePath">The frame whose size and cards the synthetic flat takes
         /// (normally the master).</param>

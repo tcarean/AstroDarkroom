@@ -31,13 +31,13 @@
 // reopened and Check() says whether the master appeared.
 
 using System;
-using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf

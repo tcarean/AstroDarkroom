@@ -106,7 +106,7 @@ namespace FlatCheck
         /// <summary>
         /// Loads the file and, unless it is refused, smooths it at the given scale and writes
         /// the report; on a refusal writes only the refusal's text. Writes no file
-        /// (<see cref="WriteFits"/> does). Throws what <see cref="ImageLoader.Load"/> throws.
+        /// (<see cref="WriteFits"/> does). Throws what <see cref="ImageLoader.Load(string)"/> throws.
         /// </summary>
         /// <param name="path">A FITS master.</param>
         /// <param name="scalePx">The smoothing scale, the kernel's sigma in sensor pixels
@@ -144,7 +144,7 @@ namespace FlatCheck
         /// The scale proposal: loads, refuses what Execute refuses too, otherwise runs the
         /// advisor and writes its table. The frame stays in the result, so a smoothing at the
         /// proposed scale starts without a second read of the 96 MB file. Throws what
-        /// <see cref="ImageLoader.Load"/> throws.
+        /// <see cref="ImageLoader.Load(string)"/> throws.
         /// </summary>
         /// <param name="path">A FITS master.</param>
         /// <param name="report">Where the advice's table is written.</param>

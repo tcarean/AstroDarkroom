@@ -29,10 +29,10 @@
 // each column would compare nothing.
 
 using System;
-using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
