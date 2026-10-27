@@ -1,7 +1,7 @@
 # 0002. The suite is one flat self-contained folder of the five windows on .NET 8, built from main as it is
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; the count of five windows superseded by 0010
 
 ## Context
 

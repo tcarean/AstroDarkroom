@@ -1,6 +1,6 @@
 # Astro Darkroom
 
-The five astrophotography tools of this repository in one download, with a launcher that lists
+The six astrophotography tools of this repository in one download, with a launcher that lists
 them and starts them:
 
 | Tool | What it does | Window |
@@ -9,15 +9,16 @@ them and starts them:
 | FlatCheck | checks the flats of a lens | `FlatCheck.Wpf.exe` |
 | LightsCheck | checks the lights of a session: focus, trailing, dithering, drift | `LightsCheck.Wpf.exe` |
 | ImageVisualCompare | compares two versions of the same processing, pixel by pixel | `ImageVisualCompare.Wpf.exe` |
+| CopyWcs | copies the plate solve of one FITS into another | `CopyWcs.Wpf.exe` |
 | AstroPhotoAnalyzer | checks a final image before printing | `AstroPhotoAnalyzer.Wpf.exe` |
 
 The suite holds the windows only. The consoles (`darkscheck.exe`, `flatcheck.exe`,
-`lightscheck.exe`, `AstroPhotoAnalyzer.exe`) stay in each tool's own release: their base runtime
-and the windows' desktop runtime carry three DLLs with the same names and different contents, so
-they cannot share one folder (ADR 0002). Each tool's user documentation is the `README.md` of its
-folder, and the repository's front page, the `README.md` at its root, describes every tool and
-how to build the whole suite from a checkout. All of them are GPLv3 or later
-([LICENSE](LICENSE)).
+`lightscheck.exe`, `copywcs.exe`, `AstroPhotoAnalyzer.exe`) stay in each tool's own release:
+their base runtime and the windows' desktop runtime carry three DLLs with the same names and
+different contents, so they cannot share one folder (ADR 0002). Each tool's user documentation
+is the `README.md` of its folder, and the repository's front page, the `README.md` at its root,
+describes every tool and how to build the whole suite from a checkout. All of them are GPLv3 or
+later ([LICENSE](LICENSE)).
 
 ## What you get
 
@@ -49,8 +50,8 @@ details under **About**) because the tools expect them:
 - **A Siril session folder**: the folder of one night with `lights/`, `darks/`, `flats/` and
   `biases/` as Siril lays them out, and the results of its scripts in `process/` (or `masters/`,
   depending on the script). DarksCheck, FlatCheck and LightsCheck open that folder;
-  ImageVisualCompare and AstroPhotoAnalyzer open the files exported from Siril. Each tool's
-  README says exactly what the tool looks for in it.
+  ImageVisualCompare, CopyWcs and AstroPhotoAnalyzer open the files exported from Siril. Each
+  tool's README says exactly what the tool looks for in it.
 - **Siril 1.4.4 or newer, installed** (<https://siril.org>): the masters and the stacks the
   tools check come out of its scripts, and FlatCheck runs the preprocessing script through
   `siril-cli.exe` from your installation (with a private copy of your settings, which it never
@@ -86,7 +87,7 @@ during the download or is not the published one.
 From Claude Code, in the `AstroDarkroom` folder of the main checkout, on `main`, with every
 folder clean: `/release`. The script (`scripts/release.ps1`) checks, writes the version into
 `Directory.Build.props` and the dated section into `CHANGELOG.md`, publishes the launcher and
-the windows of the five components, as they are on `main`, into `artifacts/X.Y.Z/` (a file that
+the windows of the six components, as they are on `main`, into `artifacts/X.Y.Z/` (a file that
 two publishes would write with different contents stops the release), and writes
 `release.json` and the zip with its `.sha256` into `artifacts/`. The owner makes the commit and
 the tag `astrodarkroom-vX.Y.Z`, as the skill proposes them. The zip is uploaded to Google Drive
