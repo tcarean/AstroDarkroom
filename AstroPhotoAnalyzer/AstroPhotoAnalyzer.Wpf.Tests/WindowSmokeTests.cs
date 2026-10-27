@@ -132,12 +132,18 @@ public class WindowSmokeTests
             var window = new MainWindow(WindowSettings.Read(settingsPath));
             Assert.Equal("Zeta baryta - Dmax 1.52 (negrul la L* 20.0 fata de albul hartiei)", ((MainViewModel)window.DataContext).Parameters.ProfileText);
             Render(ContentOf(window), name: "fereastra-profil");
-            Assert.NotNull(window.FindName("ClearProfileButton"));
+            Assert.Equal(Visibility.Visible, ((Button)window.FindName("ClearProfileButton")).Visibility);
 
             File.Delete(baryta);
             var gone = new MainWindow(WindowSettings.Read(settingsPath));
             Assert.True(((MainViewModel)gone.DataContext).Parameters.ProfileIsProblem);
             Render(ContentOf(gone), name: "fereastra-profil-lipsa");
+            Assert.Equal(Visibility.Visible, ((Button)gone.FindName("ClearProfileButton")).Visibility);
+
+            // Without a profile the button is not there to press.
+            var none = new MainWindow();
+            Render(ContentOf(none));
+            Assert.Equal(Visibility.Collapsed, ((Button)none.FindName("ClearProfileButton")).Visibility);
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });

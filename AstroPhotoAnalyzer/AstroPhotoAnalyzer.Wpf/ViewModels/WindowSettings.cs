@@ -55,7 +55,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Reads the settings of a file: missing, not readable, not a JSON object, without the
-        /// key, or with a value that is not a string all mean no profile, never an exception.
+        /// key, or with a value that is not a string or is blank all mean no profile, never an
+        /// exception.
         /// </summary>
         /// <param name="path">The file's full path; it need not exist; null remembers nothing.</param>
         /// <returns>The settings, bound to that path for the writes to come.</returns>
@@ -67,9 +68,12 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (!File.Exists(path)) return settings;
                 using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(path));
+                // A blank path (a hand edit) is no profile: the core would show an empty name
+                // with the system's complaint about an empty path.
                 if (doc.RootElement.ValueKind == JsonValueKind.Object
                     && doc.RootElement.TryGetProperty(IccProfileKey, out JsonElement value)
-                    && value.ValueKind == JsonValueKind.String)
+                    && value.ValueKind == JsonValueKind.String
+                    && !string.IsNullOrWhiteSpace(value.GetString()))
                     settings.IccProfilePath = value.GetString();
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)

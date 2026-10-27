@@ -100,6 +100,14 @@ public class ProfileBarTests
         Assert.Equal(2, busy);   // one run: busy up, busy down
         await vm.ClearProfile();
         Assert.Equal(2, busy);
+
+        // While a run lasts (the buttons are disabled then) a choice changes nothing at all.
+        Task run = vm.ChooseProfile(baryta);
+        Assert.True(vm.IsBusy);
+        await vm.ClearProfile();
+        Assert.True(vm.Parameters.HasProfile);
+        await run;
+        Assert.Equal(4, busy);
     }
 
     /// <summary>Without an image the choice is kept for the first run and nothing runs now.</summary>
@@ -194,6 +202,7 @@ public class ProfileBarTests
         Assert.Null(WindowSettings.Read(ws.WriteFile("array.json", Encoding.ASCII.GetBytes("[1, 2]"))).IccProfilePath);
         Assert.Null(WindowSettings.Read(ws.WriteFile("other.json", Encoding.ASCII.GetBytes("{\"language\": \"ro\"}"))).IccProfilePath);
         Assert.Null(WindowSettings.Read(ws.WriteFile("number.json", Encoding.ASCII.GetBytes("{\"iccProfile\": 7}"))).IccProfilePath);
+        Assert.Null(WindowSettings.Read(ws.WriteFile("blank.json", Encoding.ASCII.GetBytes("{\"iccProfile\": \"  \"}"))).IccProfilePath);
         Assert.Null(WindowSettings.Read(null).IccProfilePath);
 
         // A settings path under a file, where no folder can be made: the choice holds for the

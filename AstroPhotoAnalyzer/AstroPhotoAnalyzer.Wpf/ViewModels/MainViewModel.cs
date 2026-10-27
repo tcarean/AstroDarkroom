@@ -178,17 +178,22 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="profile">The row chosen; null, or one that could not be read, changes nothing.</param>
         /// <returns>The run, or a completed task when nothing runs.</returns>
         internal Task ChooseProfile(IccProfileRow profile)
-            => Parameters.UseProfile(profile) ? RunAsync() : Task.CompletedTask;
+        {
+            // The buttons are disabled while a run lasts; a caller that reaches here anyway
+            // changes nothing, rather than changing the fields with no run to show them.
+            if (IsBusy) return Task.CompletedTask;
+            return Parameters.UseProfile(profile) ? RunAsync() : Task.CompletedTask;
+        }
 
         /// <summary>
         /// "Scoate" in the top bar (R-155): the profile is dropped, the medium's Dmax is back in
         /// the field, and the analysis runs again by itself on the open image. Nothing happens
-        /// without a profile.
+        /// without a profile, or while a run lasts.
         /// </summary>
         /// <returns>The run, or a completed task when nothing runs.</returns>
         internal Task ClearProfile()
         {
-            if (!Parameters.HasProfile) return Task.CompletedTask;
+            if (IsBusy || !Parameters.HasProfile) return Task.CompletedTask;
             Parameters.ClearProfile();
             return RunAsync();
         }
