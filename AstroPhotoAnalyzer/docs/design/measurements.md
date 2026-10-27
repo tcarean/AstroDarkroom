@@ -205,21 +205,33 @@ a tile have zero candidates.
 
 ### E1/E2 - `BackgroundAnalyzer` - sky colour, and edge regions against it
 
-On the stride-3 subsample. Luminance = mean of the planes. **Background** = pixels whose
-luminance is `<=` the 25th percentile (computed over the whole subsample), excluding the
-bottom 25 % of rows (the horizon). `Levels` = per-plane medians x 255. On colour:
-`GreenExcess` = G - (R+B)/2, `RedMinusBlue`; `HasCast` when either exceeds
-`CastWarnLevels` (1.0). `<=` and not `<` because a flat synthetic sky puts every pixel
-exactly at the percentile.
+**Background** (E1) = the sky's colour: on the subsample the dust map was built on (stride
+4), the pixels of the patches whose class is `Sky` (R-044, `DustMap.Classes`) that lie above
+the bottom 25 % of rows (the horizon); `Levels` = their per-plane medians x 255, and `Source`
+says which tier gave them: `SkyPatches`; `AllPatches` when no sky patch lies above the band
+(every patch there); `WholeFrame` as a guard the grid never reaches (it keeps at least one
+patch). `AnalysisRun` passes the simulation's map; the one-argument overload builds a map
+without the catalogue for the tests. Before ADR 0055 the reference was the darkest quarter of
+the pixels by luminance, which on a frame the Great Rift crosses is the dust, brown, so that
+every sky edge read "bluer than the background". On colour: `Lab`, the colour in CIE L*a*b*
+(`ColorMath.LabOfSrgb`, D65 with the sRGB matrix's row sums as the white, so that a grey is
+exactly neutral), `Chroma` = sqrt(a*^2 + b*^2), and `HasCast` when the chroma exceeds
+`CastWarnChroma` (3.0; ADR 0057); `GreenExcess` = G - (R+B)/2 and `RedMinusBlue` are figures
+that name the cast's direction, the larger of the two giving the name (`Recommendations`).
 
-**Regions**: four corners (15 % of height x 20 % of width) and four edges (the same bands
-between the corners). Each `EdgeRegion` has per-plane medians (`Levels`), `Deltas` =
-region - background per plane, `MaxAbsDelta`, `Flagged` (> `CornerGradientLevels` = 3),
-and `Coloured`: spread (max delta - min delta) > 3 **and** > `CornerColourSpreadRatio`
-(0.5) x mean |delta| - the channels move differently. The distinction came from the
-reference image: the horizon corner is +9.4 / +1.7 / -9.9 (coloured, light pollution);
-the corner the Milky Way enters is +11 / +10 / +16 (neutral, the object). On mono there
-is one plane and `Coloured` is always false.
+**Regions** (E2), on the same subsample as the map: four corners (15 % of height x 20 % of
+width) and four edges (the same bands between the corners). Each `EdgeRegion` has per-plane
+medians (`Levels`), taken on the region's sky pixels (`ClassAt` reads the map's class of each
+sample) when they are at least `RegionSkyMinFraction` (0.25) of it (`OnSkyPixels`,
+`SkyFraction`) and on every pixel otherwise, with `PixelsNote` for the row (ADR 0056); `Deltas`
+= region - background per plane, `MaxAbsDelta`, `Flagged` (> `CornerGradientLevels` = 3), and
+`Coloured`: spread (max delta - min delta) > 3 **and** > `CornerColourSpreadRatio` (0.5) x mean
+|delta| - the channels move differently. The distinction came from the reference image against
+the darkest quarter: the horizon corner +9.4 / +1.7 / -9.9 (coloured, light pollution), the
+corner the Milky Way enters +11 / +10 / +16 (neutral, the object). Against the sky patches, on
+their own sky pixels, they read +4.1 / -4.0 / -17.1 (coloured) and +4.2 / +2.9 / +5.6 (neutral;
+on every pixel the band made it +6.5 / +5.1 / +8.7, coloured). On mono there is one plane and
+`Coloured` is always false.
 
 ### D1/D2 - `StarAnalyzer` - the real resolution
 
@@ -320,7 +332,15 @@ and mean < 70 levels (`PlateauTile*` - the strict criterion of the other accepta
 script). On each, the 8-bit quantised values: changes of value per row, averaged;
 plateau = 64 / (1 + changes). `PlateauPx` = mean over tiles (NaN without tiles);
 `PlateauMmAt(dpi)` = PlateauPx x 25.4 / dpi; `PlateauVisibleAt(dpi)` when >
-`PlateauVisibleMm` (1.0).
+`PlateauVisibleMm` (1.0). `PlateauFramePct` = 100 x tiles accepted / positions tried (the draws
+are uniform, so it estimates the share of the frame that is clean sky by the strict
+criterion); `PlateauSigmaLsb` = the median over the tiles of `NoiseAnalyzer.SigmaLsb`. The
+two say where the plateau was measured: a tile with real noise of about 1 LSB or more spans
+over 6 levels (the range of its 4096 samples is about 7 sigma; the clean-sky scene at 1.0 LSB
+yields no tile) and fails the range criterion, so on an AI-denoised frame the plateau's tiles are
+the patches the denoiser wiped (the owner's 2026-08-12 core at Syqon 0.75: 11 tiles, 0.2 %
+of the frame, sigma 0.01, against a noise median of 0.82 on 313 smooth tiles), and the mean
+plateau is not comparable across denoise strengths (see `known-limitations.md`).
 
 **C2 rounding** (when the source has more than 8 bits): |v x 255 - round(v x 255)| on all
 planes at stride 2 -> `RoundingMeanAbs`, `RoundingMax`, `RoundingP999` (from a 1000-bin
@@ -455,7 +475,8 @@ by digit.
   pixel sits exactly at the percentile and a strict `<` selects nothing. Real data ties
   too, but little: on the 16-bit reference image 68 pixels, and the acceptance numbers are
   unaffected; on 8-bit data the choice moves the cast by a level (the reference image's 8-bit
-  version: +2.0 with `<=`, +1.0 with `<`), ADR 0014's correction of 2026-10-23.
+  version: +2.0 with `<=`, +1.0 with `<`), ADR 0014's correction of 2026-10-23. Moot since
+  ADR 0055: the colour comes from the sky patches, and no percentile cut remains.
 - **Corner regions are compared per channel, not by luminance.** The reference image's
   horizon corner has the sky's luminance (R +9, B -10); a luminance test would miss it.
 

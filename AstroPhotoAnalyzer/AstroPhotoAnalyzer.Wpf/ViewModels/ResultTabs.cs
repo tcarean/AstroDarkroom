@@ -572,16 +572,20 @@ namespace AstroPhotoAnalyzer.Wpf
                 + "of neighbouring pixels with exactly the same value are. A noiseless sky quantized to 8 bits makes wide steps; the residual noise breaks them, "
                 + "like a natural dither. The plateau in pixels, times the pixel pitch at the reference row's dpi, gives the length of the step on "
                 + $"paper: over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm it is a visible contour, a banding risk - 16 bits if the lab accepts it, "
-                + "or dither at the export. n/a when no clean sky tiles are found.",
+                + "or dither at the export. n/a when no clean sky tiles are found. The tiles' share of the frame and the noise left on them say where the plateau "
+                + "was measured: on an AI-denoised frame the only tiles clean enough can be a few patches the denoiser wiped, while the noise section's median, "
+                + "taken on other tiles, chosen with a looser criterion, says the sky is fine; the two speak of different places.",
                 $"Pe pana la {Fmt.Int(Thresholds.PlateauTileCount)} de dale de cer curat (interval sub {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} niveluri "
                 + $"si medie sub {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, ca sa nu prinda nucleul) se masoara, pe 8 biti, cat de lungi sunt sirurile "
                 + "de pixeli vecini cu exact aceeasi valoare. Un cer fara zgomot cuantizat la 8 biti face trepte late; zgomotul rezidual le sparge, "
                 + "ca un dither natural. Palierul in pixeli, inmultit cu pasul pixelului la dpi-ul randului de referinta, da lungimea treptei pe "
                 + $"hartie: peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm e un contur vizibil, risc de banding - 16 biti daca laboratorul accepta, "
-                + "sau dither la export. n/a cand nu se gasesc dale de cer curat.");
+                + "sau dither la export. n/a cand nu se gasesc dale de cer curat. Partea din cadru a dalelor si zgomotul ramas pe ele spun unde s-a masurat "
+                + "palierul: pe un cadru cu denoise AI, singurele dale destul de curate pot fi cateva petice sterse de denoise, in timp ce mediana sectiunii de zgomot, "
+                + "luata pe alte dale, alese cu un criteriu mai larg, spune ca cerul e bine; cele doua vorbesc despre locuri diferite.");
             rows.Add(q.PlateauKnown
                 ? Row(Tr.Pick("Plateau on the quantized sky", "Palier pe cerul cuantizat"), $"{Fmt.F1(q.PlateauPx)} px",
-                    Tr.Pick($"over {q.PlateauTiles} tiles", $"pe {q.PlateauTiles} dale")
+                    Tr.Pick($"over {q.PlateauTiles} tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, noise left sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB", $"pe {q.PlateauTiles} dale, {Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB")
                     + (r.Size.ReferenceRow != null ? Tr.Pick($"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm at {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi", $"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm la {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi") : ""), plateauDesc)
                 : Row(Tr.Pick("Plateau on the quantized sky", "Palier pe cerul cuantizat"), "n/a", Tr.Pick("no clean sky tiles", "fara dale de cer curat"), plateauDesc));
             Rows = rows;
@@ -794,20 +798,20 @@ namespace AstroPhotoAnalyzer.Wpf
         internal override void Populate(AnalysisResult r)
         {
             BackgroundResult b = r.Background;
-            string cast = Fmt.F1(Thresholds.CastWarnLevels);
+            string cast = Fmt.F1(Thresholds.CastWarnChroma);
             var rows = new List<MetricRow>
             {
                 Row(b.ColorApplicable
                         ? Tr.Pick("Background colour, R / G / B (0..255)", "Culoarea fundalului, R / G / B (0..255)")
                         : Tr.Pick("Background, one channel (0..255)", "Fundalul, un singur canal (0..255)"),
                     string.Join(" / ", b.Levels.Select(Fmt.F1)),
-                    description: Tr.Pick($"The median on each channel of the darkest {Fraction(Thresholds.BackgroundDarkestFraction)} of the image, by lightness, "
-                        + $"without the bottom band of {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % of the height, where the horizon and its pollution lie. "
+                    description: Tr.Pick("The median on each channel of the pixels of the sky patches, the class the Background tab calls sky (the band, the dust and the nebulae left out), "
+                        + $"without the bottom band of {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % of the height, where the horizon and its pollution lie; here: {b.SourceText}. "
                         + "It is the \"clean\" sky: the cast below and the edges in the next table are judged against it. "
                         + "It is not the same number as the background level in the Tones tab, which is the median over the whole frame: that one says how high the sky is, "
                         + "this one what colour it has.",
-                        $"Mediana pe fiecare canal a celui mai intunecat {Fraction(Thresholds.BackgroundDarkestFraction)} din imagine, dupa luminozitate, "
-                        + $"fara banda de jos de {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % din inaltime, unde stau orizontul si poluarea lui. "
+                        "Mediana pe fiecare canal a pixelilor din dalele de cer, clasa pe care tabul Fundal o numeste cer (fara banda, praf si nebuloase), "
+                        + $"fara banda de jos de {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % din inaltime, unde stau orizontul si poluarea lui; aici: {b.SourceText}. "
                         + "E cerul \"curat\": fata de el se judeca tenta de mai jos si marginile din tabelul urmator. "
                         + "Nu e acelasi numar cu nivelul fundalului din tabul Tonuri, care e mediana pe tot cadrul: acela spune cat de sus e cerul, "
                         + "acesta ce culoare are.")),
@@ -815,28 +819,38 @@ namespace AstroPhotoAnalyzer.Wpf
             if (b.ColorApplicable)
             {
                 string levels = Tr.Pick(" levels", " niveluri");
-                rows.Add(Row("G - (R+B)/2", Fmt.S1(b.GreenExcess) + levels,
-                    b.GreenExcess > Thresholds.CastWarnLevels ? Tr.Pick("green cast", "tenta verde") : b.GreenExcess < -Thresholds.CastWarnLevels ? Tr.Pick("magenta cast", "tenta magenta") : null,
-                    Tr.Pick("How far green is over the mean of red and blue, in levels: positive = a green cast, negative = magenta. "
-                        + "A neutral sky has no excess of green; such a cast comes from the sensor or the calibration, not from the object. "
-                        + "On screen, with the background dark, it does not show; on paper, with the background raised to clear paper black, it shows. "
-                        + $"Over {cast} levels, either way: to neutralize before printing (SCNR / Background Neutralization in Siril).",
-                        "Cat e verdele peste media rosului si albastrului, in niveluri: pozitiv = tenta verde, negativ = magenta. "
-                        + "Un cer neutru nu are exces de verde; o astfel de tenta vine de la senzor sau de la calibrare, nu de la obiect. "
-                        + "Pe ecran, cu fundalul intunecat, nu se vede; pe hartie, cu fundalul ridicat ca sa treaca de negrul hartiei, se vede. "
-                        + $"Peste {cast} niveluri, in oricare sens: de neutralizat inainte de print (SCNR / Background Neutralization in Siril).")));
-                rows.Add(Row("R - B", Fmt.S1(b.RedMinusBlue) + levels,
-                    b.RedMinusBlue > Thresholds.CastWarnLevels ? Tr.Pick("warm cast", "tenta calda") : b.RedMinusBlue < -Thresholds.CastWarnLevels ? Tr.Pick("cool cast", "tenta rece") : null,
-                    Tr.Pick("Red minus blue, in levels: positive = a warm cast (horizon glow, urban light pollution), negative = a cool, bluish cast. "
-                        + $"The same threshold, {cast} levels. Together with the row above it describes the background colour completely: "
-                        + "a neutral background has both close to zero.",
-                        "Rosu minus albastru, in niveluri: pozitiv = tenta calda (lumina de orizont, poluare urbana), negativ = tenta rece, albastruie. "
-                        + $"Acelasi prag, {cast} niveluri. Impreuna cu randul de mai sus descrie complet culoarea fundalului: "
-                        + "un fundal neutru le are pe amandoua aproape de zero.")));
+                bool greenLarger = Math.Abs(b.GreenExcess) >= Math.Abs(b.RedMinusBlue);
+                string castName = !b.HasCast ? null
+                    : greenLarger ? (b.GreenExcess > 0 ? Tr.Pick("green cast", "tenta verde") : Tr.Pick("magenta cast", "tenta magenta"))
+                    : (b.RedMinusBlue > 0 ? Tr.Pick("warm cast", "tenta calda") : Tr.Pick("cool cast", "tenta rece"));
+                rows.Add(Row(Tr.Pick("Chroma in L*a*b* (a*, b*)", "Croma in L*a*b* (a*, b*)"), $"{Fmt.F1(b.Chroma)} ({Fmt.S1(b.Lab.A)}, {Fmt.S1(b.Lab.B)})",
+                    castName,
+                    Tr.Pick("How far the background colour sits from a grey of the same lightness, in CIE L*a*b*: sqrt(a*^2 + b*^2), with a* negative towards green and "
+                        + "positive towards magenta, b* negative towards blue and positive towards yellow. It is the size of the cast in the unit the eye works in: "
+                        + "about 2 is the smallest difference seen beside a grey, and on paper, where the only reference is the white far above, a sky's cast begins to read at 3 to 5. "
+                        + "A gamma lift of the background keeps the channels' ratio and barely moves the chroma, so a cast does not grow when the sky is raised for print. "
+                        + $"Over {cast}: to neutralize before printing (SCNR / Background Neutralization in Siril). The two rows below name its direction.",
+                        "Cat de departe sta culoarea fundalului de un gri de aceeasi luminozitate, in CIE L*a*b*: sqrt(a*^2 + b*^2), cu a* negativ spre verde si "
+                        + "pozitiv spre magenta, b* negativ spre albastru si pozitiv spre galben. E marimea tentei in unitatea in care lucreaza ochiul: "
+                        + "cam 2 e cea mai mica diferenta vazuta langa un gri, iar pe hartie, unde singura referinta e albul de mult mai sus, o tenta a cerului incepe sa se citeasca pe la 3-5. "
+                        + "O ridicare gamma a fundalului pastreaza raportul canalelor si abia misca croma, deci o tenta nu creste cand cerul e ridicat pentru print. "
+                        + $"Peste {cast}: de neutralizat inainte de print (SCNR / Background Neutralization in Siril). Cele doua randuri de mai jos ii spun directia.")));
+                rows.Add(Row("G - (R+B)/2", Fmt.S1(b.GreenExcess) + levels, null,
+                    Tr.Pick("How far green is over the mean of red and blue, in levels: positive = towards green, negative = towards magenta. "
+                        + "A figure for the direction of the cast, not a verdict: the chroma above decides. "
+                        + "A neutral sky has no excess of green; a green one comes from the airglow or the calibration, not from the object.",
+                        "Cat e verdele peste media rosului si albastrului, in niveluri: pozitiv = spre verde, negativ = spre magenta. "
+                        + "O cifra pentru directia tentei, nu un verdict: decide croma de mai sus. "
+                        + "Un cer neutru nu are exces de verde; unul verde vine de la airglow sau de la calibrare, nu de la obiect.")));
+                rows.Add(Row("R - B", Fmt.S1(b.RedMinusBlue) + levels, null,
+                    Tr.Pick("Red minus blue, in levels: positive = towards warm (horizon glow, urban light pollution), negative = towards cool, bluish. "
+                        + "Together with the row above it names the cast: the larger of the two gives it its name.",
+                        "Rosu minus albastru, in niveluri: pozitiv = spre cald (lumina de orizont, poluare urbana), negativ = spre rece, albastrui. "
+                        + "Impreuna cu randul de mai sus da numele tentei: cel mai mare dintre cele doua o numeste.")));
             }
             Rows = rows;
             RegionRows = b.Regions.Select(e =>
-                $"{e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}"
+                $"{e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{e.PixelsNote}"
                 + (!e.Flagged ? "" : !b.ColorApplicable ? "  !" : e.Coloured ? Tr.Pick("  ! coloured", "  ! colorat") : Tr.Pick("  ! neutral", "  ! neutru"))).ToList();
             Guide = GuideParagraphs();
             HasResult = true;
@@ -865,18 +879,24 @@ namespace AstroPhotoAnalyzer.Wpf
                     Lead = Tr.Pick("The regions.", "Regiunile."),
                     Text = Tr.Pick($"Four corners, each {Fmt.F0(Thresholds.EdgeRegionHeightFraction * 100)} % of the height x "
                         + $"{Fmt.F0(Thresholds.EdgeRegionWidthFraction * 100)} % of the width, and four sides: bands of the same thickness along the middle of "
-                        + "each side, between the corners. For each, the medians per channel (R / G / B, 0..255), then the delta.",
+                        + "each side, between the corners. For each, the medians per channel (R / G / B, 0..255), then the delta. "
+                        + "The medians are taken on the region's sky pixels alone, the patches the Background tab calls sky, so that the Milky Way or a dust lane "
+                        + $"entering a corner does not pass for a gradient of the sky; a region with under {Fmt.F0(Thresholds.RegionSkyMinFraction * 100)} % of sky "
+                        + "is measured on every pixel instead, and its row says so, so that a glow bright enough to be classed nebula cannot leave with the object.",
                         $"Patru colturi, fiecare de {Fmt.F0(Thresholds.EdgeRegionHeightFraction * 100)} % din inaltime x "
                         + $"{Fmt.F0(Thresholds.EdgeRegionWidthFraction * 100)} % din latime, si patru laturi: benzi de aceeasi grosime pe mijlocul "
-                        + "fiecarei laturi, intre colturi. Pentru fiecare, medianele pe canal (R / G / B, 0..255), apoi delta."),
+                        + "fiecarei laturi, intre colturi. Pentru fiecare, medianele pe canal (R / G / B, 0..255), apoi delta. "
+                        + "Medianele se iau doar pe pixelii de cer ai regiunii, dalele pe care tabul Fundal le numeste cer, ca Calea Lactee sau o banda de praf "
+                        + $"care intra intr-un colt sa nu treaca drept gradient al cerului; o regiune cu sub {Fmt.F0(Thresholds.RegionSkyMinFraction * 100)} % cer "
+                        + "se masoara pe toti pixelii, si randul ei o spune, ca o lumina destul de puternica sa fie clasata nebuloasa sa nu plece odata cu obiectul."),
                 },
                 new GuideParagraph
                 {
                     Lead = "Delta.",
-                    Text = Tr.Pick("The region minus the background colour above, on each channel, in levels. Zero means an edge identical with the clean sky. "
-                        + $"It is almost always positive, because the background is already the darkest {Fraction(Thresholds.BackgroundDarkestFraction)} of the image.",
-                        "Regiune minus culoarea fundalului de mai sus, pe fiecare canal, in niveluri. Zero inseamna margine identica cu cerul curat. "
-                        + $"E aproape intotdeauna pozitiva, fiindca fundalul e deja cel mai intunecat {Fraction(Thresholds.BackgroundDarkestFraction)} al imaginii."),
+                    Text = Tr.Pick("The region minus the background colour above, on each channel, in levels. Zero means an edge identical with the clean sky; "
+                        + "positive, an edge brighter than it (the object entering, or a glow); negative, darker (dust, or vignetting left over).",
+                        "Regiune minus culoarea fundalului de mai sus, pe fiecare canal, in niveluri. Zero inseamna margine identica cu cerul curat; "
+                        + "pozitiv, margine mai luminoasa decat el (obiectul care intra, sau o lumina); negativ, mai intunecata (praf, sau vinietare ramasa)."),
                 },
                 new GuideParagraph
                 {
@@ -893,14 +913,14 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "and stays at Ok, with the advice to look in Preview before you correct anything. If they move differently (the difference between "
                         + $"the channels over {grad} levels and over {Fmt.F0(Thresholds.CornerColourSpreadRatio * 100)} % of the mean departure), it is a gradient with a colour: "
                         + "horizon glow, light pollution - to correct on the linear data (GraXpert), not with a local curve on the stretched image. "
-                        + "On the reference image: the horizon corner +9.4 / +1.7 / -9.9 is coloured; the corner the Milky Way enters, "
-                        + "+11 / +10 / +16, is neutral.",
+                        + "On the reference image: the horizon corner +4.1 / -4.0 / -17.1 is coloured; the corner the Milky Way enters, "
+                        + "+4.2 / +2.9 / +5.6 on its sky pixels, is neutral (on every pixel it would read +6.5 / +5.1 / +8.7, bluer than the sky, and pass for coloured).",
                         "Daca cele trei delta se misca impreuna, marginea e cel mai probabil obiectul insusi (Calea Lactee care intra in colt) "
                         + "si ramane la Ok, cu indemnul sa te uiti in Preview inainte sa corectezi ceva. Daca se misca diferit (diferenta dintre "
                         + $"canale peste {grad} niveluri si peste {Fmt.F0(Thresholds.CornerColourSpreadRatio * 100)} % din abaterea medie), e un gradient cu culoare: "
                         + "lumina de orizont, poluare - de corectat pe liniar (GraXpert), nu cu o curba locala pe imaginea stretch-uita. "
-                        + "Pe imaginea de referinta: coltul de orizont +9.4 / +1.7 / -9.9 e colorat; coltul in care intra Calea Lactee, "
-                        + "+11 / +10 / +16, e neutru."),
+                        + "Pe imaginea de referinta: coltul de orizont +4.1 / -4.0 / -17.1 e colorat; coltul in care intra Calea Lactee, "
+                        + "+4.2 / +2.9 / +5.6 pe pixelii lui de cer, e neutru (pe toti pixelii ar citi +6.5 / +5.1 / +8.7, mai albastru decat cerul, si ar trece drept colorat)."),
                 },
                 new GuideParagraph
                 {
@@ -992,10 +1012,10 @@ namespace AstroPhotoAnalyzer.Wpf
                     Image = RasterBitmaps.Whole(RasterOps.Gamma(small, primary.Gamma), side),
                     Note = Tr.Pick("a gamma curve on every channel; on screen it looks flat - the paper brings it back", "curba gamma pe toate canalele; pe ecran pare plata - hartia o aduce inapoi"),
                     Check = Tr.Pick("Beside the whole frame: what appears when the sky rises. Not the flatness - the paper's Dmax brings it back - but the cast "
-                        + $"(a cast of over {Fmt.F1(Thresholds.CastWarnLevels)} levels becomes visible here), the gradient, and whether the faint "
+                        + $"(a cast with a chroma over {Fmt.F1(Thresholds.CastWarnChroma)} in L*a*b* reads here), the gradient, and whether the faint "
                         + "nebulosity stays separate from the sky. Read it as if the darkest tone were paper black.",
                         "Alaturi de cadrul intreg: ce apare cand cerul urca. Nu platitudinea - Dmax-ul hartiei o aduce inapoi - ci dominanta "
-                        + $"(o tenta de peste {Fmt.F1(Thresholds.CastWarnLevels)} niveluri devine vizibila aici), gradientul, si daca nebulozitatea "
+                        + $"(o tenta cu croma peste {Fmt.F1(Thresholds.CastWarnChroma)} in L*a*b* se citeste aici), gradientul, si daca nebulozitatea "
                         + "slaba ramane separata de cer. Citeste-o ca si cum cel mai inchis ton ar fi negrul hartiei."),
                 });
             }

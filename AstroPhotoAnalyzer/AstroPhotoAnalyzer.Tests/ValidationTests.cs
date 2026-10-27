@@ -336,6 +336,10 @@ public class ValidationTests
         {
             f["background.greenExcess"] = R(b.GreenExcess);
             f["background.redMinusBlue"] = R(b.RedMinusBlue);
+            f["background.lab.l"] = R(b.Lab.L);
+            f["background.lab.a"] = R(b.Lab.A);
+            f["background.lab.b"] = R(b.Lab.B);
+            f["background.chroma"] = R(b.Chroma);
         }
         f["background.hasCast"] = b.HasCast;
         foreach (EdgeRegion e in b.Regions)
@@ -381,7 +385,9 @@ public class ValidationTests
 
         QuantizationResult q = a.Quantization;
         f["quantization.plateauTiles"] = q.PlateauTiles;
+        f["quantization.plateauFramePct"] = R(q.PlateauFramePct);
         f["quantization.plateauPx"] = R(q.PlateauPx);
+        f["quantization.plateauSigmaLsb"] = R(q.PlateauSigmaLsb);
         if (q.Applicable)
         {
             f["quantization.roundingMeanAbs"] = R(q.RoundingMeanAbs);

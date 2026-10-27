@@ -100,6 +100,33 @@ namespace AstroPhotoAnalyzer
             => LstarOfY(Luminance(SrgbToLinear(r), SrgbToLinear(g), SrgbToLinear(b)));
 
         /// <summary>
+        /// The CIE L*a*b* of an sRGB pixel, D65: the sRGB matrix to XYZ, the white taken as the
+        /// matrix's own row sums (0.9505, 1, 1.0890; the standard's 0.95047 and 1.08883 differ in
+        /// the fourth decimal and would give a grey an a* of 0.01), the cube root with the
+        /// standard's linear segment under 0.008856. a* is negative towards green and positive
+        /// towards magenta, b* negative towards blue and positive towards yellow; a grey has
+        /// both at exactly 0.
+        /// </summary>
+        /// <param name="r">The encoded red, 0..1.</param>
+        /// <param name="g">The encoded green, 0..1.</param>
+        /// <param name="b">The encoded blue, 0..1.</param>
+        /// <returns>L* (0..100), a* and b*.</returns>
+        internal static (double L, double A, double B) LabOfSrgb(double r, double g, double b)
+        {
+            double rl = SrgbToLinear(r), gl = SrgbToLinear(g), bl = SrgbToLinear(b);
+            double x = (0.4124 * rl + 0.3576 * gl + 0.1805 * bl) / 0.9505;
+            double y = 0.2126 * rl + 0.7152 * gl + 0.0722 * bl;
+            double z = (0.0193 * rl + 0.1192 * gl + 0.9505 * bl) / 1.0890;
+            double fx = LabF(x), fy = LabF(y), fz = LabF(z);
+            return (116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz));
+        }
+
+        /// <summary>The L*a*b* companding function: the cube root, linear under 0.008856.</summary>
+        /// <param name="t">A tristimulus value relative to the white, 0..1.</param>
+        /// <returns>f(t), 4/29..1.</returns>
+        static double LabF(double t) => t > 0.008856 ? Math.Cbrt(t) : 7.787 * t + 16.0 / 116;
+
+        /// <summary>
         /// The blackest black a medium with the given maximum density can render: the
         /// reflectance 10^-Dmax, in L*. Gloss baryta (Dmax 2.4) -> L* ~3.6; matte canvas (1.5)
         /// -> ~21; a C-print under acrylic (2.2) -> ~6. Everything under this threshold in the

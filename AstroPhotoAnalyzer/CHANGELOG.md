@@ -24,6 +24,21 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The background colour of section 3, the reference of the cast and of the eight edge regions,
+  is the colour of the sky patches above the bottom band (the class the background section
+  calls sky), no longer the darkest quarter of the frame: on a Milky Way core the darkest
+  quarter is the Great Rift's dust, brown, and every sky edge came out "cool" against it, six
+  false gradients on a GraXpert-flattened frame. Appendix E and the Colour tab say which pixels
+  gave the colour (R-060, R-061; ADR 0055).
+- Each edge region is measured on its own sky pixels, so that the Milky Way or a dust lane
+  entering a corner no longer passes for a coloured gradient; a region with under 25 % of sky
+  is measured on every pixel, and its row and its "because" say so (R-061; ADR 0056).
+- A cast is a sky colour whose chroma in CIE L*a*b*, sqrt(a*^2 + b*^2), passes 3, the size of
+  the cast in the unit the eye works in, instead of an excess of one level of green or of red
+  over blue, which flagged four of the five real images, a photometrically calibrated frame
+  neutral to the eye among them; the two level figures stay and name the cast's direction. The
+  "because", Appendix E and the Colour tab give L*, a*, b* and the chroma (R-060, R-093; ADR
+  0057).
 - The Curbe tab is called Editare Curbe (`Curves Editing` in English), and its gallery of
   suggested curves is computed right after the analysis, without pressing `Calculeaza`, so it
   is there when the tab is opened; the button computes it again at the tab's current size
@@ -44,6 +59,21 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- An edge region darker than the sky on every channel was called "warm (horizon glow / light
+  pollution)"; it is now named a darkening, browner or bluer by the channel missing most, read
+  as dust at the frame's edge or a gradient left over, to check in Preview; on the bottom row,
+  where the horizon sits, red over blue keeps the horizon's name, and elsewhere a brightening
+  that is red over blue is "warm (reddish)" (R-093).
+- An edge flagged with the colour of the corner beside it, and less than it, is no longer a
+  line of its own: the corner's line says the glow reaches along that edge, with the edge's
+  figures in its "because"; an edge without such a corner keeps its line (R-093; ADR 0058).
+- The banding line of section 1 says where the 8-bit plateau was measured: on how many clean
+  tiles, what share of the frame they are and what noise the denoise left on them; Appendix C
+  and the Export tab's plateau row carry the same figures. On an AI-denoised frame those tiles
+  can be a few patches the denoiser wiped while the denoise section's median is in target, and
+  the two no longer read as a contradiction (R-080, R-091; ADR 0059).
+- The denoise line's "because" always gives the share of the smooth tiles under 0.5 LSB, not
+  only when the median is under it (R-095).
 - A starless image no longer reports thousands of stars and a false resolution: a star must
   stand 12 times the local noise over its surroundings (`StarMinSnr`), so the grain of the
   stretched sky, which the absolute floor let through (6297 "stars" at 2.38 px on the starless

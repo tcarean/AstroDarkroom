@@ -33,6 +33,13 @@ flagged region "! colorat" or "! neutru"; the report keeps "!".
 
 - On the reference image exactly the two warm regions the conversation had found remain
   Attention: the bottom-right corner and the bottom edge.
+  (Restated 2026-10-27: those figures were against the darkest quarter. Against the sky
+  patches of ADR 0055 the two warm regions remain, the horizon corner at +4.6 / -3.6 / -17.0,
+  and the top-left corner, where the band enters, reads +6.5 / +5.0 / +8.8 on every pixel:
+  bluer than the sky, coloured by this rule, where it read +11 / +10 / +16, neutral, against the
+  dust; on its sky pixels alone, ADR 0056, it reads +4.2 / +2.9 / +5.6, neutral again. The rule
+  stands; the measurements are in `docs/plans/2026-10-27-sky-colour-from-the-sky-patches.md`
+  and `docs/plans/2026-10-27-edge-regions-on-sky-patches.md`.)
 - A neutral brightening at the edge cannot be told from the object by the tool
   (`known-limitations.md`).
 - Guards: `BackgroundAnalyzerTests`, `RecommendationsTests`, the golden files, validation case

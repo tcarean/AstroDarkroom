@@ -46,6 +46,26 @@ public class QuantizationAnalyzerTests
     }
 
     [Fact]
+    public void R080_ThePlateauSaysItsTilesShareOfTheFrameAndTheNoiseLeftOnThem()
+    {
+        // A flat sky with half a level of noise: every draw is a clean tile, so the share is the
+        // whole frame, and the noise left on the tiles is the noise added. A noiseless ramp: the
+        // same share, and no noise left. A frame of structure: no tile, share 0, sigma unknown.
+        var noisy = QuantizationAnalyzer.Analyze(SyntheticRasters.AddNoise(SyntheticRasters.Flat(256, 256, 0.10f), 0.5 / 255, 4));
+        Assert.Equal(100.0, noisy.PlateauFramePct, 1);
+        Assert.InRange(noisy.PlateauSigmaLsb, 0.4, 0.6);
+
+        var ramp = QuantizationAnalyzer.Analyze(SyntheticRasters.Ramp(256, 256, 0.10f, 0.11f));
+        Assert.Equal(100.0, ramp.PlateauFramePct, 1);
+        Assert.InRange(ramp.PlateauSigmaLsb, 0.0, 0.05);
+
+        var none = QuantizationAnalyzer.Analyze(SyntheticRasters.Flat(256, 256, 0.6f));
+        Assert.Equal(0, none.PlateauTiles);
+        Assert.Equal(0.0, none.PlateauFramePct);
+        Assert.True(double.IsNaN(none.PlateauSigmaLsb));
+    }
+
+    [Fact]
     public void ABrightOrStructuredImageHasNoPlateauTiles()
     {
         // A mean over 70 levels: not sky, not measured.

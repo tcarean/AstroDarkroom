@@ -106,9 +106,9 @@ scenario from the conversation), version 1.0.0, 11 seconds on the whole 23 MP.
 | q100 samples with error > 2, mean level | 3.03 %, 31 | 1.2 %, 31 | encoder difference; same location (dark sky) |
 | TIFF 8-bit LZW size | 20.1 MB (ImageMagick, crop) | 20.7 MB (ImageSharp, horizontal predictor, full) | without the predictor ImageSharp gave 38.6 MB |
 | star FWHM median (Q1, Q3), count | 3.00 (2.69, 3.61), 193 | 3.13 (2.87, 3.49), 7166 | hand: 20 000 random candidates above 3 x mean; tool: every candidate above mean + min amplitude |
-| background R / G / B | 19.2 / 20.6 / 18.9 | 19.2 / 20.6 / 18.9 | identical |
-| G - (R+B)/2; R - B | +1.58; +0.31 | +1.6; +0.3 | |
-| bottom-right corner R / G / B | 28.6 / 22.3 / 9.0 | 28.6 / 22.3 / 8.9 | |
+| background R / G / B | 19.2 / 20.6 / 18.9 | 24.0 / 25.9 / 25.9 (19.2 / 20.6 / 18.9 before ADR 0055) | identical on the darkest quarter; since ADR 0055 the tool takes the sky patches, which the conversation did not have |
+| G - (R+B)/2; R - B | +1.58; +0.31 | +0.9; -1.9 (+1.6; +0.3 before ADR 0055) | figures only since ADR 0057: the verdict is the chroma's, 1.0 (L* 9.0, a* -0.9, b* -0.3), no cast |
+| bottom-right corner R / G / B | 28.6 / 22.3 / 9.0 | 28.1 / 21.9 / 8.8 on its sky pixels, stride 4 (28.6 / 22.3 / 8.9 on every pixel, stride 3, before ADR 0056) | the levels; the deltas are +4.1 / -4.0 / -17.1 against the sky patches (ADR 0055, ADR 0056), +9.4 / +1.7 / -9.9 against the darkest quarter |
 | crop to 50:35 | 5554 x 3888, 192 px per side | 5554 x 3888, 192 px, 6.5 % | identical |
 | 70 cm row | 215 dpi, star 0.35 mm, point from 1.2 m (full frame, FWHM 3.0) | 202 dpi, 0.39 mm, 1.36 m (the crop, FWHM 3.13) | consistent |
 
@@ -119,8 +119,11 @@ dust is under it). Send TIFF 8-bit LZW; if only JPEG, q100 and never below (q95 
 error 27). No visible banding on 8 bits (plateau 0.34 mm at 202 dpi). Background too low
 for baryta - 45.6 % under paper black - re-stretch from linear to 0.19 (0.17 since ADR 0025,
 the lowest grid row that puts the darkest 1 % of the patches on paper black). Green cast of
-+1.6 on the background. Warm bottom-right corner (R +9.4, B -9.9) and warm bottom edge:
-horizon glow, fix on linear or keep as composition. Recommended 70 x 49 cm at 1.5 m; the
++1.6 on the background (since ADR 0055, against the sky patches: +0.9 of green and -1.9 of
+red minus blue, a cool cast under the level rule; since ADR 0057 the chroma, 1.0, says no
+cast at all). Warm bottom-right corner (R +9.4, B -9.9; +4.1 / -4.0 / -17.1
+against the sky patches, on the corner's own sky pixels) and warm bottom edge: horizon glow,
+fix on linear or keep as composition. Recommended 70 x 49 cm at 1.5 m; the
 50:35 target cuts 192 px per side. Denoise pressed hard for print: sigma 0.45, target
 0.8-1.5, and after the re-stretch it becomes ~0.61 (0.57 at 0.17). Keep the 16-bit master: 46
 levels missing from 8 bits after a shadow lift, none from 16.
@@ -132,7 +135,11 @@ levels missing from 8 bits after a shadow lift, none from 16.
   the top-left corner (+11 / +10 / +16). The rule now separates coloured departures
   (channels move differently: light pollution, horizon glow - Attention) from neutral
   ones (channels move together: most likely the object - informative). On this image that
-  leaves exactly the two warm regions the conversation had found.
+  leaves exactly the two warm regions the conversation had found. (Restated 2026-10-27,
+  ADR 0055: those deltas were against the darkest quarter; against the sky patches the two
+  warm regions remain, and the top-left corner, +6.5 / +5.0 / +8.8 on every pixel, is coloured
+  too, the band being bluer than the sky; on its own sky pixels, ADR 0056, it is +4.2 / +2.9 / +5.6
+  and neutral again, as is the top edge, +3.9 / +3.2 / +3.8.)
 - **FWHM in the centre region reads 4.27 px** against 2.8-3.3 in the corners: the core is
   nebulosity, stars there sit on a bright, structured base and the border median
   overestimates it. The corner/centre ratio (0.77) is therefore not a sharpness statement
@@ -193,6 +200,56 @@ exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), and the image passes as it
 LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6, LDN 559 at 4.7.
 
 ## History
+
+- 2026-10-27 (R-080, R-091, R-095: where the plateau is measured): `quantization.plateauFramePct`
+  (tiles accepted over positions tried, in percent) and `quantization.plateauSigmaLsb` (the median noise on the
+  plateau's tiles) recorded for every analysis case; no existing figure moved. On the reference image
+  the 20 tiles are 0.4 % of the frame at sigma 0.32 LSB (V-001). The golden console texts move on the
+  banding line's "because", on Appendix C's plateau line and on the denoise line's "because", which
+  now always carries the share of smooth tiles under 0.5 LSB.
+
+- 2026-10-27 (ADR 0057, a cast is a sky chroma over 3 in L*a*b*;
+  `docs/plans/2026-10-27-cast-on-lab-chroma.md`, its table): the owner asked whether the +2.2
+  levels of green on his photometrically calibrated core were a cast; in L*a*b* that sky sits
+  at chroma 1.8, under what an eye reads on paper. `background.hasCast` V-001 true -> false
+  (chroma 1.0), V-004 true -> false (2.0), V-010 true -> false (1.4); V-013 stays true (4.8).
+  `background.lab.l`, `.a`, `.b` and `background.chroma` recorded for the four colour cases.
+  No other figure moved; the golden console texts move on the dark scene's cast, now "The
+  background is neutral" at chroma 1.7, and on the colour's `Because` and Appendix E line,
+  which carry the chroma, a* and b*.
+
+- 2026-10-27 (ADR 0056, each edge region on its own sky pixels, a quarter of sky as the floor;
+  `docs/plans/2026-10-27-edge-regions-on-sky-patches.md`, its measurement table): the regions
+  move to the map's subsample (stride 4) and take their medians on their sky pixels, so every
+  `background.region.*.levels` figure of V-001, V-004, V-010 and V-013 moves by tenths of a
+  level (V-001's bottom-right corner 28.5992 / 22.2724 / 8.928 -> 28.1051 / 21.8949 / 8.8249),
+  and three verdicts change: V-001's top-left corner, where the band enters, `coloured` true ->
+  false (+4.2 / +2.9 / +5.6, neutral); V-004's top edge, which the band crosses, `coloured`
+  true -> false; V-013's left edge `flagged` true -> false (+2.8 / +1.4 / +1.8). The background
+  levels and the cast do not move, nor any other case; the golden console texts move on the
+  regions' levels by a tenth and on the dark scene's warm corner, measured on every pixel
+  (sky 14 %), whose row and `Because` now say so.
+
+- 2026-10-27 (ADR 0055, the sky's colour from the sky patches, not the darkest quarter;
+  `docs/plans/2026-10-27-sky-colour-from-the-sky-patches.md`, its measurement table): on the
+  owner's 2026-08-12 core the darkest quarter was the Great Rift's dust and six of the eight
+  edge regions read "cool" against it; the reference is now the per-channel median of the sky
+  patches above the bottom band. Every moved figure is a `background.*` figure; no region's
+  levels moved (they stay on the stride-3 subsample). V-001: levels 19.1868 / 20.6109 / 18.8716
+  -> 23.9883 / 25.8599 / 25.8949, `greenExcess` 1.5817 -> 0.9183, `redMinusBlue` 0.3152 ->
+  -1.9066 (`hasCast` stays true, now for the cool side); the top-right, bottom-left, left and
+  right regions no longer flagged, the top-left now coloured. V-004: 31.2973 / 34.2517 / 24.8858
+  -> 40.9349 / 43.4004 / 41.0771, `greenExcess` 6.1601 -> 2.3944, `redMinusBlue` 6.4114 ->
+  -0.1422; the top-left, top-right, left and right regions now neutral, the top edge now
+  coloured. V-010: 19.8302 / 18.4731 / 18.5251 -> 26.35 / 23.7603 / 23.3184, `greenExcess`
+  -0.7046 -> -1.0739, `redMinusBlue` 1.305 -> 3.0316; five regions no longer flagged, the
+  bottom-left, top-left (no longer flagged) and left now coloured. V-013: 8.8172 / 21.2517 /
+  14.6799 -> 19.018 / 26.9556 / 23.5689, `greenExcess` 9.5031 -> 5.6621, `redMinusBlue`
+  -5.8627 -> -4.5509; six regions no longer flagged, the top-right now coloured, the bottom
+  and left now neutral. No other case moved. The golden console texts moved on every scene's
+  section 3 and Appendix E: the levels (the darkest quarter of a noisy flat sky sat 0.4 to 1
+  level under its median), the deltas, and the new "from the sky patches above the bottom
+  band" suffix.
 
 - 2026-10-27 (ADR 0054, a star is at least 12 local sigmas over its base;
   `docs/plans/2026-10-27-reject-noise-grain-as-stars.md`, its drift table): the owner found

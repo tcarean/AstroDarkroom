@@ -83,14 +83,25 @@
   14, a bias of the estimator older than ADR 0054. The frames measured so far have stars of 2 to
   5 px, where it is nil.
 - The half-max estimator overestimates a sampled Gaussian by ~2.5 %.
-- On an 8-bit file the background's levels (the per-channel medians of the darkest quarter, R-060)
-  are whole levels, so a cast near `CastWarnLevels` (1 level) depends on the tie rule of the
-  darkest-quarter cut: `<=` keeps the pixels that sit exactly at the 25th percentile and `<`
-  drops them, +2.0 against +1.0 levels of green on the reference image's 8-bit version, either
-  side of the threshold. The code keeps `<=`, as ADR 0014 decided (its correction of 2026-10-23
-  records the ties); on the 16-bit version no printed figure moves.
+- On an 8-bit file the background's levels (the per-channel medians of the sky patches, R-060)
+  are whole levels, so the chroma of the sky colour moves by up to about 0.7 (one level of a
+  channel at a sky of level 20 to 60) between the 8-bit and the 16-bit version of the same
+  image, and a cast near `CastWarnChroma` (3) can fall either side of it.
+- The cast is the sky's colour against a grey; a sky that is physically green (airglow) or
+  yellow (pollution) after a star-based calibration reads as a cast when its chroma passes 3,
+  whether or not the owner wants it neutral.
 - Neutral edge brightening cannot be told from the object; it is reported as
-  informative and left to the eye.
+  informative and left to the eye. A region is measured on its sky pixels so that the object's
+  own colour does not pass for a gradient (ADR 0056), which leaves two limits: a region the
+  object fills to over three quarters is measured on every pixel, and the object's colour then
+  counts; and sky classed sky that is darker or browner than the frame's, the Rift's diffuse
+  foot in the top-left corner of the 2026-08-12 core (-5.4 / -4.5 / -8.7 on its sky pixels),
+  reads as a coloured departure that only the eye can tell from a residual gradient.
+- A horizon glow bright enough to be classed nebula over a region leaves that region's sky
+  pixels; the quarter floor keeps it in view when it fills the region, and its blue deficit on
+  the remaining sky kept the flag on every measured image, but its magnitude is the sky
+  pixels' (the plate-solved FITS's bottom edge +1.4 / -4.0 / -5.0 where every pixel gave
+  +12.3 / -0.9 / -12.1).
 - JPEG numbers are ImageSharp's encoder's; another encoder will differ by tenths of a
   level at q100.
 - Colour is measured as sRGB; other profiles are only named.
@@ -100,6 +111,14 @@
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
   not measured natively.
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.
+- The plateau is the mean over whichever tiles pass the strict criterion, so it is not
+  comparable across denoise strengths and can hide the worst tiles: on the owner's
+  2026-08-12 core at Syqon 1, 26 % of the frame passes and the mean is 4.7 px ("no visible
+  banding") while 2 % of the tiles are flat over all 64 px; at 0.75 and 0.5 only the patches
+  the denoiser wiped pass (0.2 % of the frame) and their plateau is 15 and 40 px. The report
+  now says on how many tiles, what share of the frame and with what noise left the plateau
+  was measured (ADR 0059); a share-of-flat-tiles or percentile statistic is the open question
+  that ADR records.
 - The suggested curves (ADR 0032) are one recipe: the segment slopes come from one curve the
   owner liked on one image, and no point ever goes under its input, so a frame whose peaks are
   already at or over 0.92 of the scale gets no suggestion, only the reason (ADR 0033); the

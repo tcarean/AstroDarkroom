@@ -19,7 +19,7 @@ VERDICT: CAUTION
 
 3. The background colour and the gradients  [OK]
    - The background is neutral.
-     because: background R 63.0 G 63.0 B 63.0; G - (R+B)/2 = 0.0, R - B = 0.0 levels
+     because: background R 63.8 G 63.7 B 63.8: chroma 0.0 (a* 0.0, b* 0.0; threshold 3.0); G - (R+B)/2 = 0.0, R - B = 0.0 levels
 
 4. The size of the print  [CAUTION]
    ! From the natural distance the stars are slight discs at every size - the image is soft for its resolution; the smallest (40 x 40 cm) minimizes the effect. Give the viewing distance, so that it is judged on that.
@@ -27,7 +27,7 @@ VERDICT: CAUTION
 
 5. Denoise for the print version  [OK]
    - The residual noise is exactly where it should be for print.
-     because: median sigma 1.00 LSB on 37 smooth tiles (10 % 0.99, minimum 0.97); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.20 the noise shrinks by ~0.93 x (the slope of the curve at the background), to ~0.93 LSB
+     because: median sigma 1.00 LSB on 37 smooth tiles (10 % 0.99, minimum 0.97; under 0.5 LSB, 0.0 % of the tiles); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.20 the noise shrinks by ~0.93 x (the slope of the curve at the background), to ~0.93 LSB
 
 6. Warnings  [OK]
    (nothing to report)
@@ -84,15 +84,15 @@ Appendix D. Resolution and size
     and the test does not tell the sizes apart - the wall chooses; give a viewing distance to tell them apart
 
 Appendix E. Background colour
-  background colour, R / G / B (0..255): 63.0 / 63.0 / 63.0; G - (R+B)/2 = 0.0; R - B = 0.0
-  upper-left corner  63.7 / 63.8 / 63.7     delta +0.7 / +0.7 / +0.6
-  upper-right corner 63.8 / 63.8 / 63.7     delta +0.8 / +0.7 / +0.7
-  lower-left corner  63.7 / 63.7 / 63.7     delta +0.7 / +0.7 / +0.7
-  lower-right corner 63.7 / 63.8 / 63.8     delta +0.7 / +0.8 / +0.8
-  top edge           63.8 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.8
-  bottom edge        63.7 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.7
-  left edge          63.8 / 63.8 / 63.8     delta +0.8 / +0.7 / +0.8
-  right edge         63.8 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.7
+  background colour, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; L* 27.0, a* 0.0, b* 0.0, chroma 0.0; from the sky patches above the bottom band
+  upper-left corner  63.6 / 63.8 / 63.8     delta -0.1 / 0.0 / +0.1
+  upper-right corner 63.7 / 63.7 / 63.7     delta -0.1 / 0.0 / -0.1
+  lower-left corner  63.8 / 63.9 / 63.7     delta +0.1 / +0.1 / -0.1
+  lower-right corner 63.7 / 63.7 / 63.8     delta 0.0 / 0.0 / 0.0
+  top edge           63.8 / 63.8 / 63.8     delta 0.0 / 0.0 / 0.0
+  bottom edge        63.8 / 63.8 / 63.8     delta 0.0 / 0.0 / 0.0
+  left edge          63.8 / 63.7 / 63.8     delta 0.0 / 0.0 / 0.0
+  right edge         63.8 / 63.7 / 63.7     delta 0.0 / 0.0 / 0.0
 
 Appendix F. Parameters
   medium canvas, Dmax 1.5; widths 40, 60, 80 cm; passepartout 7 cm, frame 3 cm

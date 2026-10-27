@@ -291,7 +291,6 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal const int TonalStride = 4;
         internal const int PercentileStride = 2;
-        internal const int BackgroundStride = 3;
 
         // ------------------------------------------------------------ noise
 
@@ -484,12 +483,9 @@ namespace AstroPhotoAnalyzer
 
         // ------------------------------------------------------------ background
 
-        /// <summary>The background = the darkest this many pixels (a fraction) ...</summary>
-        internal const double BackgroundDarkestFraction = 0.25;
-
         /// <summary>
-        /// ... without the bottom band (a fraction of the height), where the horizon and its
-        /// pollution sit.
+        /// The background's colour = the sky patches of R-044 (ADR 0055) without the bottom band
+        /// (a fraction of the height), where the horizon and its pollution sit.
         /// </summary>
         internal const double BackgroundExcludeBottomFraction = 0.25;
 
@@ -502,9 +498,30 @@ namespace AstroPhotoAnalyzer
         internal const double EdgeRegionWidthFraction = 0.20;
 
         /// <summary>
-        /// A cast of over this many levels on the background shows once the background is lifted.
+        /// An edge region is measured on its sky pixels alone (the patches R-044 calls sky) when
+        /// they are at least this share of it; under it, on every pixel, and the row says so
+        /// (ADR 0056). Measured on 2026-10-27 on five real images: the lowest sky share of a
+        /// region was 41 %, the bottom edge of the two Milky Way cores, where the horizon glow
+        /// and the Rift's foot are classed band, dust and bright cloud; the glow's blue deficit
+        /// kept the flag on the sky pixels there. A quarter leaves room under that and keeps a
+        /// glow bright enough to be classed nebula over most of a region from vanishing with it.
         /// </summary>
-        internal const double CastWarnLevels = 1.0;
+        internal const double RegionSkyMinFraction = 0.25;
+
+        /// <summary>
+        /// A cast is a sky colour farther than this from a grey of the same lightness, in CIE
+        /// L*a*b* chroma (sqrt(a*^2 + b*^2)), ADR 0057. Two is about the smallest difference an
+        /// eye sees beside a grey reference (2.3 is the usual figure); on a print the only
+        /// reference is the paper's white, far away in lightness, and a sky's cast begins to
+        /// read at 3 to 5. Measured on 2026-10-27 on the five real images' sky colours (ADR
+        /// 0055): 1.0 (the reference image), 1.4 (Rosetta), 1.8 (the 2026-08-12 core, calibrated
+        /// photometrically and neutral to the eye), 2.0 (the plate-solved FITS), 4.8 (the Veil,
+        /// plainly green). The rule before it, an excess of 1 level of green or of red over blue
+        /// (a* 0.7 at any sky level), flagged four of the five; a gamma lift keeps the channels'
+        /// ratio, so the cast does not grow with the background as that rule assumed (the
+        /// 2026-08-12 sky lifted to L* 25 stays at chroma 2.0).
+        /// </summary>
+        internal const double CastWarnChroma = 3.0;
 
         /// <summary>
         /// A corner this many levels over the background is a residual gradient or horizon glow.
@@ -514,10 +531,13 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// A departure is COLOURED if the difference between the channels (max - min of the
         /// delta) exceeds CornerGradientLevels and exceeds this fraction of the mean absolute
-        /// departure. Measured on the reference image: the horizon corner has R +9, B -10
-        /// (coloured, pollution); the corner the Milky Way enters has +11 / +10 / +16 (neutral -
-        /// it is the object, not a gradient). A rule that mistakes the object for the defect is
-        /// wrong more often than it is useful, so neutral = informative, coloured = attention.
+        /// departure. Measured on the reference image against the darkest quarter (ADR 0014):
+        /// the horizon corner had R +9, B -10 (coloured, pollution); the corner the Milky Way
+        /// enters +11 / +10 / +16 (neutral - it is the object, not a gradient). A rule that
+        /// mistakes the object for the defect is wrong more often than it is useful, so neutral =
+        /// informative, coloured = attention. Against the sky patches (ADR 0055), each region on
+        /// its own sky pixels (ADR 0056), the same corners read +4.1 / -4.0 / -17.1 (coloured)
+        /// and +4.2 / +2.9 / +5.6 (neutral: the band's own, bluer, pixels no longer count).
         /// </summary>
         internal const double CornerColourSpreadRatio = 0.5;
 

@@ -1,7 +1,7 @@
 # 0014. The sky's level is the frame's median; its colour is the darkest quarter above the horizon band, per channel
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the colour superseded by 0055
 
 ## Context
 

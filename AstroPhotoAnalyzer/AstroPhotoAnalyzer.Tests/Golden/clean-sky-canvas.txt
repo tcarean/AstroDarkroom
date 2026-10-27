@@ -19,7 +19,7 @@ VERDICT: ATENTIE
 
 3. Culoarea fundalului si gradientele  [OK]
    - Fundalul e neutru.
-     fiindca: fundal R 63.0 G 63.0 B 63.0; G - (R+B)/2 = 0.0, R - B = 0.0 niveluri
+     fiindca: fundal R 63.8 G 63.7 B 63.8: croma 0.0 (a* 0.0, b* 0.0; prag 3.0); G - (R+B)/2 = 0.0, R - B = 0.0 niveluri
 
 4. Marimea printului  [ATENTIE]
    ! De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica (40 x 40 cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea.
@@ -27,7 +27,7 @@ VERDICT: ATENTIE
 
 5. Denoise pentru versiunea de print  [OK]
    - Zgomotul rezidual e exact unde trebuie pentru print.
-     fiindca: sigma median 1.00 LSB pe 37 dale netede (10 % 0.99, minim 0.97); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.20 zgomotul scade de ~0.93 x (panta curbei la fundal), la ~0.93 LSB
+     fiindca: sigma median 1.00 LSB pe 37 dale netede (10 % 0.99, minim 0.97; sub 0.5 LSB, 0.0 % din dale); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.20 zgomotul scade de ~0.93 x (panta curbei la fundal), la ~0.93 LSB
 
 6. Avertismente  [OK]
    (nimic de semnalat)
@@ -84,15 +84,15 @@ Anexa D. Rezolutie si marime
     si testul nu desparte marimile - o alege peretele; da o distanta de privire ca sa le desparta
 
 Anexa E. Culoarea fundalului
-  culoarea fundalului, R / G / B (0..255): 63.0 / 63.0 / 63.0; G - (R+B)/2 = 0.0; R - B = 0.0
-  colt stanga-sus    63.7 / 63.8 / 63.7     delta +0.7 / +0.7 / +0.6
-  colt dreapta-sus   63.8 / 63.8 / 63.7     delta +0.8 / +0.7 / +0.7
-  colt stanga-jos    63.7 / 63.7 / 63.7     delta +0.7 / +0.7 / +0.7
-  colt dreapta-jos   63.7 / 63.8 / 63.8     delta +0.7 / +0.8 / +0.8
-  latura de sus      63.8 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.8
-  latura de jos      63.7 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.7
-  latura stanga      63.8 / 63.8 / 63.8     delta +0.8 / +0.7 / +0.8
-  latura dreapta     63.8 / 63.8 / 63.8     delta +0.7 / +0.7 / +0.7
+  culoarea fundalului, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; L* 27.0, a* 0.0, b* 0.0, croma 0.0; de pe dalele de cer de deasupra benzii de jos
+  colt stanga-sus    63.6 / 63.8 / 63.8     delta -0.1 / 0.0 / +0.1
+  colt dreapta-sus   63.7 / 63.7 / 63.7     delta -0.1 / 0.0 / -0.1
+  colt stanga-jos    63.8 / 63.9 / 63.7     delta +0.1 / +0.1 / -0.1
+  colt dreapta-jos   63.7 / 63.7 / 63.8     delta 0.0 / 0.0 / 0.0
+  latura de sus      63.8 / 63.8 / 63.8     delta 0.0 / 0.0 / 0.0
+  latura de jos      63.8 / 63.8 / 63.8     delta 0.0 / 0.0 / 0.0
+  latura stanga      63.8 / 63.7 / 63.8     delta 0.0 / 0.0 / 0.0
+  latura dreapta     63.8 / 63.7 / 63.7     delta 0.0 / 0.0 / 0.0
 
 Anexa F. Parametri
   mediu canvas, Dmax 1.5; latimi 40, 60, 80 cm; passepartout 7 cm, rama 3 cm

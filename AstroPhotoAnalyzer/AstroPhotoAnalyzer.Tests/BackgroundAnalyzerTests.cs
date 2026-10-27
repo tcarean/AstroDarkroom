@@ -36,14 +36,37 @@ public class BackgroundAnalyzerTests
     }
 
     [Fact]
-    public void AGreenTintOfTwoLevelsIsMeasuredAsSuch()
+    public void R060_ATwoLevelGreenTintIsMeasuredButIsNoCast()
     {
+        // Two levels of green at level 20 sit at a* -1.4, a chroma of 1.7: under what an eye
+        // reads on paper (ADR 0057). The level figures still say which way it leans.
         var r = SyntheticRasters.Flat(120, 120, Sky, Sky + 2f / 255, Sky);
         var b = BackgroundAnalyzer.Analyze(r);
 
         Assert.Equal(2.0, b.GreenExcess, 3);
         Assert.Equal(0, b.RedMinusBlue, 3);
+        Assert.True(b.Lab.A < -1 && b.Lab.A > -2, "a* " + b.Lab.A);
+        Assert.True(b.Chroma > 1 && b.Chroma < Thresholds.CastWarnChroma, "chroma " + b.Chroma);
+        Assert.False(b.HasCast);
+    }
+
+    [Fact]
+    public void R060_AFiveLevelGreenTintIsACast()
+    {
+        var r = SyntheticRasters.Flat(120, 120, Sky, Sky + 5f / 255, Sky);
+        var b = BackgroundAnalyzer.Analyze(r);
+
+        Assert.Equal(5.0, b.GreenExcess, 3);
+        Assert.True(b.Lab.A < -3, "a* " + b.Lab.A);
+        Assert.True(b.Chroma > Thresholds.CastWarnChroma, "chroma " + b.Chroma);
         Assert.True(b.HasCast);
+    }
+
+    [Fact]
+    public void R060_AGreyHasNoChromaAndMonoNone()
+    {
+        Assert.Equal(0, BackgroundAnalyzer.Analyze(SyntheticRasters.Flat(120, 120, Sky)).Chroma, 6);
+        Assert.Equal(0, BackgroundAnalyzer.Analyze(SyntheticRasters.Flat(120, 120, Sky, planes: 1)).Chroma, 6);
     }
 
     [Fact]
@@ -81,8 +104,10 @@ public class BackgroundAnalyzerTests
     }
 
     /// <summary>
-    /// The corner the Milky Way enters (the reference image: +11 / +10 / +16) is a NEUTRAL
-    /// deviation - the channels rise together. It is flagged, but not as a gradient.
+    /// A corner brightened by the same amount on every channel is a NEUTRAL deviation - the
+    /// channels rise together. It is flagged, but not as a gradient. On this flat scene the
+    /// brightening is classed nebula and fills the corner, so the region is measured on every
+    /// pixel (under the quarter of sky, R-061).
     /// </summary>
     [Fact]
     public void ANeutralBrighteningIsFlaggedButNotColoured()
@@ -120,12 +145,124 @@ public class BackgroundAnalyzerTests
     }
 
     [Fact]
-    public void TheBackgroundIsTheDarkestQuarterNotTheAverage()
+    public void TheBackgroundIsTheSkyNotTheObject()
     {
-        // A bright core over half the image must not enter the "background".
-        var r = SyntheticRasters.From(120, 120, 3, (x, y, p) => x < 60 ? Sky : 0.6f);
+        // A bright core over a third of the image must not enter the "background".
+        var r = SyntheticRasters.From(320, 320, 3, (x, y, p) => x >= 96 && x < 192 ? 0.6f : Sky);
         var b = BackgroundAnalyzer.Analyze(r);
 
+        Assert.Equal(SkyColourSource.SkyPatches, b.Source);
         Assert.All(b.Levels, l => Assert.Equal(Sky * 255, l, 2));
+    }
+
+    /// <summary>
+    /// The case of the 2026-08-12 core (ADR 0055): a brown dust lane, darker than the sky, is
+    /// the darkest part of the frame, and the sky's colour must still be the sky's, not the
+    /// lane's - against the lane every sky edge read "bluer than the background".
+    /// </summary>
+    static Raster SkyWithABrownLane(Func<int, int, int, float?>? over = null)
+        => SyntheticRasters.From(320, 320, 3, (x, y, p) =>
+        {
+            float? o = over?.Invoke(x, y, p);
+            if (o.HasValue) return o.Value;
+            bool lane = x >= 128 && x < 192;
+            if (!lane) return Sky;
+            return p == 0 ? Sky - 8f / 255 : p == 1 ? Sky - 7f / 255 : Sky - 12f / 255;
+        });
+
+    [Fact]
+    public void R060_TheSkyColourIsTheSkyPatchesNotTheDarkestQuarter()
+    {
+        var b = BackgroundAnalyzer.Analyze(SkyWithABrownLane());
+
+        Assert.Equal(SkyColourSource.SkyPatches, b.Source);
+        Assert.All(b.Levels, l => Assert.Equal(Sky * 255, l, 2));
+        Assert.False(b.HasCast);
+        Assert.Equal("dalele de cer de deasupra benzii de jos", b.SourceText);
+    }
+
+    [Fact]
+    public void R060_WithoutASkyPatchAboveTheBandEveryPatchThereIsTheReference()
+    {
+        Raster r = SkyWithABrownLane();
+        DustMap map = DustAnalyzer.Build(r.W, r.H, null, DustAnalyzer.PatchLstars(RasterOps.Subsample(r, Thresholds.TonalStride)));
+        Array.Fill(map.Classes, PatchClass.Band);
+        var b = BackgroundAnalyzer.Analyze(r, map);
+
+        // Every patch above the band: the lane is a fifth of the width, so the medians are
+        // still the sky's.
+        Assert.Equal(SkyColourSource.AllPatches, b.Source);
+        Assert.All(b.Levels, l => Assert.Equal(Sky * 255, l, 2));
+        Assert.Equal("toate dalele de deasupra benzii de jos (nicio dala de cer acolo)", b.SourceText);
+    }
+
+    [Fact]
+    public void R060_AFrameSmallerThanAPatchStillHasASkyPatch()
+    {
+        // The map keeps a grid of at least one patch, however small the frame (its side shrinks
+        // to the frame), so the sky patches are never missing for want of size.
+        var b = BackgroundAnalyzer.Analyze(SyntheticRasters.Flat(20, 20, Sky, Sky + 2f / 255, Sky));
+
+        Assert.Equal(SkyColourSource.SkyPatches, b.Source);
+        Assert.Equal(2.0, b.GreenExcess, 3);
+    }
+
+    /// <summary>
+    /// A brown lane over the top edge, x 64..192 of a region that spans x 64..256: the lane's
+    /// patches are dust, a third of the region is sky, and the medians come from that third.
+    /// </summary>
+    static Raster SkyWithALaneOnTheTopEdge(int laneRight)
+        => SyntheticRasters.From(320, 320, 3, (x, y, p) =>
+        {
+            bool lane = y < 48 && x >= 64 && x < laneRight;
+            if (!lane) return Sky;
+            return p == 0 ? Sky - 8f / 255 : p == 1 ? Sky - 7f / 255 : Sky - 12f / 255;
+        });
+
+    [Fact]
+    public void R061_ARegionIsMeasuredOnItsSkyPixelsWhenTheyAreAQuarterOrMore()
+    {
+        var b = BackgroundAnalyzer.Analyze(SkyWithALaneOnTheTopEdge(192));
+
+        EdgeRegion top = b.Regions.Single(x => x.Name == "latura de sus");
+        Assert.True(top.OnSkyPixels);
+        Assert.Equal(1 / 3.0, top.SkyFraction, 0.05);
+        Assert.All(top.Deltas, d => Assert.Equal(0, d, 1));
+        Assert.False(top.Flagged);
+        Assert.Equal("", top.PixelsNote);
+    }
+
+    [Fact]
+    public void R061_ARegionWithUnderAQuarterOfSkyIsMeasuredOnEveryPixelAndSaysSo()
+    {
+        // The lane covers x 64..224 of the region, to a patch's edge (a patch half covered is
+        // dust too): a sixth of it is sky, under the quarter, so the lane itself is the region's
+        // median and the brown departure is reported as coloured.
+        var b = BackgroundAnalyzer.Analyze(SkyWithALaneOnTheTopEdge(224));
+
+        EdgeRegion top = b.Regions.Single(x => x.Name == "latura de sus");
+        Assert.False(top.OnSkyPixels);
+        Assert.Equal(1 / 6.0, top.SkyFraction, 0.05);
+        Assert.Equal(-8, top.Deltas[0], 0);
+        Assert.Equal(-12, top.Deltas[2], 0);
+        Assert.True(top.Flagged);
+        Assert.True(top.Coloured);
+        Assert.Equal("  (cer 17 %: toti pixelii)", top.PixelsNote);
+    }
+
+    [Fact]
+    public void R061_SkyEdgesBesideADustLaneAreNotFlaggedButAWarmCornerStillIs()
+    {
+        // The lane crosses the top and bottom edges; the sky edges read 0 against the sky, and
+        // the horizon corner (R +10, B -8, bottom right) keeps its warning.
+        Raster r = SkyWithABrownLane((x, y, p) => y >= 272 && x >= 256
+            ? (p == 0 ? Sky + 10f / 255 : p == 2 ? Sky - 8f / 255 : Sky)
+            : null);
+        var b = BackgroundAnalyzer.Analyze(r);
+
+        var flagged = Assert.Single(b.FlaggedRegions);
+        Assert.Equal("colt dreapta-jos", flagged.Name);
+        Assert.True(flagged.Coloured);
+        Assert.All(b.Regions.Where(x => x.Name != "colt dreapta-jos"), x => Assert.True(x.MaxAbsDelta < 1, x.Name + " " + x.MaxAbsDelta));
     }
 }

@@ -13,17 +13,17 @@ VERDICT: PROBLEMA
    - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.1 MB).
      fiindca: eroare medie 0.58, maxima 3.5 niveluri; 0.4 % din esantioane cu eroare > 2, la nivelul mediu 28 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
    ! Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export.
-     fiindca: palier de 2.2 px = 2.13 mm la 26 dpi, peste 1.0 mm
+     fiindca: palier de 2.2 px = 2.13 mm la 26 dpi, peste 1.0 mm; pe 120 dale curate, 8.3 % din cadru, unde zgomotul ramas e sigma 0.30 LSB
 
 2. Fundalul si hartia  [PROBLEMA]
    !! Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru. Re-stretch din liniar la fundal 0.16 (simulat: praful la L* 11.7, cerul la L* 15.9; exact pe negru la 0.135).
      fiindca: praful (percentila 25 % a dalelor de praf (cu 0.5 L* sub cerul modelat (4 sigma ale cerului); 5.5 % din cadru); cadrul e in intregime in banda) la L* 4.8; cei mai intunecati: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; negrul hartiei L* 9.0 la Dmax 2.0; cerul (mediana dalelor de cer (clase relative la cerul modelat)) la L* 7.2; nivelul fundalului 0.089; praful ajunge pe negrul hartiei de la Dmax 2.28; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch; pragul de vizibilitate L* 15, sub el 83.9 % din pixeli
 
 3. Culoarea fundalului si gradientele  [ATENTIE]
-   ! Tenta verde pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - la fundal ridicat se va vedea.
-     fiindca: fundal R 20.0 G 22.0 B 20.0; G - (R+B)/2 = +2.0, R - B = 0.0 niveluri (prag 1.0)
+   - Fundalul e neutru.
+     fiindca: fundal R 20.4 G 22.4 B 20.4: croma 1.7 (a* -1.4, b* +1.0; prag 3.0); G - (R+B)/2 = +2.0, R - B = 0.0 niveluri
    ! Colt dreapta-jos: cald (lumina de orizont / poluare). Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.
-     fiindca: fata de fundal: R +10.4, G +0.4, B -7.6 niveluri (prag 3.0); canalele se misca diferit
+     fiindca: fata de fundal, pe toti pixelii regiunii (cer 14 %): R +9.9, G 0.0, B -8.0 niveluri (prag 3.0); canalele se misca diferit
 
 4. Marimea printului  [ATENTIE]
    ! De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica (50 x 50 cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea.
@@ -31,7 +31,7 @@ VERDICT: PROBLEMA
 
 5. Denoise pentru versiunea de print  [ATENTIE]
    ! Denoise-ul e apasat tare pentru print: zgomotul nu mai dither-eaza cuantizarea. Pentru versiunea de print, o valoare mai mica pastreaza textura si stelele slabe.
-     fiindca: sigma median 0.30 LSB pe 38 dale netede (10 % 0.30, minim 0.29); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.16 zgomotul creste de ~1.36 x (panta curbei la fundal), la ~0.41 LSB; sub 0.5 LSB, 100.0 % din dale
+     fiindca: sigma median 0.30 LSB pe 38 dale netede (10 % 0.30, minim 0.29; sub 0.5 LSB, 100.0 % din dale); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.16 zgomotul creste de ~1.36 x (panta curbei la fundal), la ~0.41 LSB
 
 6. Avertismente  [ATENTIE]
    ! Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic.
@@ -89,7 +89,7 @@ Anexa C. Export
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
   rotunjire 16 -> 8: medie 0.262, maxim 0.500, p99.9 0.499 niveluri
   stres shadow-lift (gamma 1.9), niveluri 8..120: din 16 biti 75 folosite / 0 lipsa; din 8 biti 52 folosite / 24 lipsa
-  palier pe cerul cuantizat: 2.2 px pe 120 dale
+  palier pe cerul cuantizat: 2.2 px pe 120 dale (8.3 % din cadru, zgomot ramas sigma 0.30 LSB)
 
 Anexa D. Rezolutie si marime
   stele: 64 masurate; FWHM median 3.06 px, Q1 3.05, Q3 3.08; detaliu real ~167 px pe latime
@@ -106,15 +106,15 @@ Anexa D. Rezolutie si marime
     si testul nu desparte marimile - o alege peretele; da o distanta de privire ca sa le desparta
 
 Anexa E. Culoarea fundalului
-  culoarea fundalului, R / G / B (0..255): 20.0 / 22.0 / 20.0; G - (R+B)/2 = +2.0; R - B = 0.0
-  colt stanga-sus    20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
-  colt dreapta-sus   20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
-  colt stanga-jos    20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
-  colt dreapta-jos   30.4 / 22.4 / 12.4     delta +10.4 / +0.4 / -7.6  !
-  latura de sus      19.9 / 21.9 / 19.9     delta -0.1 / -0.1 / -0.2
-  latura de jos      20.5 / 22.5 / 20.5     delta +0.5 / +0.5 / +0.5
-  latura stanga      20.6 / 22.6 / 20.6     delta +0.6 / +0.6 / +0.5
-  latura dreapta     20.6 / 22.6 / 20.6     delta +0.6 / +0.5 / +0.5
+  culoarea fundalului, R / G / B (0..255): 20.4 / 22.4 / 20.4; G - (R+B)/2 = +2.0; R - B = 0.0; L* 7.2, a* -1.4, b* +1.0, croma 1.7; de pe dalele de cer de deasupra benzii de jos
+  colt stanga-sus    20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
+  colt dreapta-sus   20.4 / 22.3 / 20.4     delta 0.0 / -0.1 / 0.0
+  colt stanga-jos    20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
+  colt dreapta-jos   30.4 / 22.4 / 12.4     delta +9.9 / 0.0 / -8.0  (cer 14 %: toti pixelii)  !
+  latura de sus      20.2 / 22.1 / 20.1     delta -0.3 / -0.3 / -0.3
+  latura de jos      20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
+  latura stanga      20.5 / 22.5 / 20.5     delta 0.0 / +0.1 / +0.1
+  latura dreapta     20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
 
 Anexa F. Parametri
   mediu baryta, Dmax 2.0 (explicit); latimi 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm
