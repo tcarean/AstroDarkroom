@@ -184,20 +184,23 @@ public class FitsReaderTests
 
     /// <summary>
     /// R-008: a file that does not begin with the SIMPLE card is refused by both reads with the
-    /// same message, before any card is parsed: an empty file, one shorter than a keyword, zeros,
-    /// a whole block whose first card is NAXIS (FlatCheck's ADR 0057, taken 2026-10-27, ADR 0027).
-    /// Until then the metadata read answered with an empty header and FrameInfo.Read guessed.
+    /// same message, before any card is parsed: an empty file, one shorter than a keyword, 100
+    /// bytes of zeros, 100 of spaces, a whole block whose first card is NAXIS, a text file
+    /// (FlatCheck's ADR 0057, taken 2026-10-27, ADR 0027). Until then the metadata read answered
+    /// with an empty header and FrameInfo.Read guessed. <c>fill</c> is the byte the rest of the
+    /// file is padded with: 0 or a space.
     /// </summary>
     [Theory]
-    [InlineData("", 0)]
-    [InlineData("SIMP", 4)]
-    [InlineData("", 100)]
-    [InlineData("NAXIS   =                    2", 2880)]
-    [InlineData("ÿØÿà JFIF", 4096)]
-    public void R008_BothReadsRefuseAFileThatDoesNotBeginWithSimple(string start, int length)
+    [InlineData("", 0, 32)]
+    [InlineData("SIMP", 4, 32)]
+    [InlineData("", 100, 0)]
+    [InlineData("", 100, 32)]
+    [InlineData("NAXIS   =                    2", 2880, 32)]
+    [InlineData("this is not a FITS file", 4096, 32)]
+    public void R008_BothReadsRefuseAFileThatDoesNotBeginWithSimple(string start, int length, int fill)
     {
         using var ws = new TempWorkspace();
-        string path = ws.WriteFile("bad.fit", Padded(start, length));
+        string path = ws.WriteFile("bad.fit", Padded(start, length, (byte)fill));
 
         var info = Assert.Throws<InvalidDataException>(() => ImageLoader.LoadInfo(path));
         var full = Assert.Throws<InvalidDataException>(() => ImageLoader.Load(path));
@@ -261,11 +264,12 @@ public class FitsReaderTests
     }
 
     /// <summary>
-    /// <paramref name="start"/> in ASCII, then spaces, <paramref name="length"/> bytes in all.
+    /// <paramref name="start"/> in ASCII, then <paramref name="fill"/> bytes (spaces unless said
+    /// otherwise), <paramref name="length"/> bytes in all.
     /// </summary>
-    private static byte[] Padded(string start, int length)
+    private static byte[] Padded(string start, int length, byte fill = (byte)' ')
     {
-        byte[] bytes = Enumerable.Repeat((byte)' ', length).ToArray();
+        byte[] bytes = Enumerable.Repeat(fill, length).ToArray();
         System.Text.Encoding.ASCII.GetBytes(start, 0, Math.Min(start.Length, length), bytes, 0);
         return bytes;
     }

@@ -1,7 +1,7 @@
 # 0025. The raw copies take FlatCheck's lens-on-every-mount hunk, with LightsCheck's comments; the inventory names the lens as the raw gave it
 
 Date: 2026-10-27
-Status: accepted 2026-10-27
+Status: accepted 2026-10-27; the SIMPLE check left out superseded by 0027
 Supersedes: 0003 in part (`LoadedFrame.NikonLensId`; `.pef` not an extension)
 
 ## Context

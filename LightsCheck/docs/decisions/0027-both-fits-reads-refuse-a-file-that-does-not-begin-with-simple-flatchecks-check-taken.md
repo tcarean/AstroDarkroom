@@ -2,7 +2,7 @@
 
 Date: 2026-10-27
 Status: accepted 2026-10-27
-Supersedes: 0018 in part (the SIMPLE check left for a task of its own); 0021 in part (the same)
+Supersedes: 0018 in part (the SIMPLE check left for a task of its own); 0021 in part (the same); 0025 in part (the SIMPLE check left out)
 
 ## Context
 
@@ -47,7 +47,7 @@ a 2D image found`. The owner asked on 2026-10-27, after an explanation of the ga
 - `FitsReader.NotSimple`, `HeaderIncomplete`, `KeyOf`, `RequireSimple`; `LoadHeader` and
   `LoadFull` refuse the same files with the same words; `FrameInfo.Read` is a plain try.
 - R-008 is `implemented`: `FitsReaderTests` (`R008_`) refuse an empty file, 4 bytes, 100 bytes
-  of zeros, a block starting with `NAXIS` and a JPEG-like head with the SIMPLE message, in both
+  of zeros, 100 of spaces, a block starting with `NAXIS` and a text file with the SIMPLE message, in both
   languages, from both reads; 100 bytes after `SIMPLE` and one block without `END` with the
   incomplete-header message; the frame record carries the reader's message.
 - The inventory's error row for a junk `.fit` reads `error: FITS: the file does not begin with

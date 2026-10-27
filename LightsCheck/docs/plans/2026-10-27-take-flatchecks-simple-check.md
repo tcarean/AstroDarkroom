@@ -42,5 +42,10 @@ no `/validate`.
   (`DSC_0009.fit`), whose full load used to fail on the block length (`incomplete header`) and
   now fails on the magic first (`does not begin with SIMPLE`), as FlatCheck's R-008 example
   says; its two rows per language changed with the inventory's one. Six lines, all this change.
+- An independent review (a subagent with a clean context, 2026-10-27) found no code fault and
+  five documentation slips, all taken: ADR 0025 also stated the check as left out and was not
+  superseded; `imaging.md` still said the incomplete-header message was inline; the test's
+  "zeros" row was spaces (a zeros row added) and its "JPEG-like" row was ASCII question marks
+  (now a text file); ADR 0021's note had been rewritten in place (restored, a second note added).
 - The tests and the code were written in one pass and the suite was not run red in between;
   the three `R008_` tests assert messages and refusals no earlier code produced.

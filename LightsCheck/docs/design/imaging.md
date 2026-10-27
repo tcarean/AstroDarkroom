@@ -60,10 +60,8 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   not the keyword `SIMPLE`, an empty file included, throws `InvalidDataException` with
   `NotSimple`; a header that ends before `END` throws `HeaderIncomplete`; the two reads refuse
   the same files with the same words, so no caller recognises a bad file by an empty header.
-- Taken later from FlatCheck: the English/Romanian wordings of `FitsReader`'s four messages
-  (FlatCheck's 55e959c, ADR 0022), word for word, through `using static LightsCheck.Core.Ui`;
-  FlatCheck holds the incomplete-header message in a `HeaderIncomplete` property, the copy writes
-  the same `T(...)` inline where it throws, so a recopy shows that one difference.
+- Taken later from FlatCheck: the English/Romanian wordings of `FitsReader`'s messages
+  (FlatCheck's 55e959c, ADR 0022), word for word, through `using static LightsCheck.Core.Ui`.
   `RawReader`'s messages are paired here, in FlatCheck's English where FlatCheck has the same
   message.
 - Taken later from FlatCheck, directly into the adapted copies (ADR 0025, R-065): the lens hunk
