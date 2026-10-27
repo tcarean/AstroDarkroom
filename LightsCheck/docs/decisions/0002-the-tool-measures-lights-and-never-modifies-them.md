@@ -1,7 +1,7 @@
 # 0002. The tool measures lights, lists what to leave out, and never modifies a frame
 
 Date: 2026-10-09
-Status: accepted 2026-10-09
+Status: accepted 2026-10-09; the D3300's 3.92 um as the default pixel size superseded by 0026
 
 ## Context
 

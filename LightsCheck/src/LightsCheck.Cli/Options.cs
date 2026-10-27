@@ -35,7 +35,7 @@ internal sealed class Options
     internal bool Inventory { get; private set; }
     internal string? Out { get; private set; }
     internal int Threads { get; private set; }
-    internal double PixelSizeUm { get; private set; } = SeriesOptions.D3300PixelUm;
+    internal double? PixelSizeUm { get; private set; }
     internal ArrowKeys Arrows { get; private set; } = ArrowKeys.Default;
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }

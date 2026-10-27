@@ -109,7 +109,7 @@ public class SessionFolderTests
             Frame(1, SessionFixture.FirstStart, 120),
             Frame(2, SessionFixture.FirstStart.AddSeconds(150), 120),
             Frame(3, SessionFixture.FirstStart.AddSeconds(271), 120),
-            new FrameInfo(4, "x", null, null, null, null, null, null, null, null, null, null, null, "stricat"),
+            new FrameInfo(4, "x", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, "stricat"),
             Frame(5, SessionFixture.FirstStart.AddSeconds(600), 60),
         ];
         Cadence c = CadenceAnalyzer.Analyze(frames);
@@ -125,12 +125,12 @@ public class SessionFolderTests
     [Fact]
     public void R006_NoTimedFrameMeansNoIntervalAndZeroDuty()
     {
-        Cadence c = CadenceAnalyzer.Analyze([new FrameInfo(1, "x", null, null, null, null, null, null, null, null, null, null, null, null)]);
+        Cadence c = CadenceAnalyzer.Analyze([new FrameInfo(1, "x", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null)]);
         Assert.Null(c.Start);
         Assert.Equal(0, c.DutyPct);
         Assert.Equal([null], c.PauseSeconds);
     }
 
     private static FrameInfo Frame(int index, DateTime t, double exposure) =>
-        new(index, $"DSC_{index:0000}.NEF", "NIKON D3300", 135, 2.8, exposure, 1600, t, null, 74, null, null, null, null);
+        new(index, $"DSC_{index:0000}.NEF", "NIKON D3300", 135, 2.8, exposure, 1600, t, null, 202, 6016, 4016, 74, "Nikon F", null, null, null, null, null);
 }
