@@ -7,7 +7,7 @@
       "requiredInCi": false,
       "sha256": "490774dc90d723c831dff4a0b5e36e51b3579f602a1483b5b13560c29b21e9d4",
       "source": "the owner's finished Milky Way core (E:/Photografie/Claude/de_printat.png, 103 387 067 bytes), exported from Siril; the image the tool was built to measure",
-      "demonstrates": "docs/validation.json V-001 to V-003"
+      "demonstrates": "docs/validation.json V-001 to V-003; StarPairTests (Category=Validation): at least 4000 stars kept (ADR 0051)"
     },
     {
       "name": "starless_rbf0.5_stretch0.17.fit",
@@ -15,7 +15,7 @@
       "requiredInCi": false,
       "sha256": "c155924d95acf8725e0f4c729820e09b905462c2dd787831005442bdcb86bf2a",
       "source": "the owner's plate-solved, starless, VeraLux-stretched FITS of the same Milky Way core (E:/Photografie/Astro/Milkyway-Core/2026-08-12-Smida/Processed_With_1mmPTFE_Flats/CropAndPlateSolve/RBF0.5/preview/, 270 869 760 bytes, 5837 x 3867, Siril 1.4.4 with a TAN-SIP WCS); the image ADR 0025 was measured on",
-      "demonstrates": "docs/validation.json V-004: the dust and the sky from the WCS and the LDN catalogue"
+      "demonstrates": "docs/validation.json V-004: the dust and the sky from the WCS and the LDN catalogue; StarPairTests (Category=Validation): under 20 stars (ADR 0051)"
     },
     {
       "name": "Hahnemuhle PRBaryta.icm",
@@ -39,15 +39,15 @@
       "requiredInCi": false,
       "sha256": "c59b9370a033d1ed6312d953f4f3609af92405c82dce3e71e3e58b1cbcacf792",
       "source": "the owner's starless Rosetta nebula, stretched in Siril, 3551 x 2422, three float planes, 103 210 560 bytes, no WCS; added 2026-10-06 as the deep-sky frame the sky-relative classes were designed on (ADR 0033)",
-      "demonstrates": "docs/validation.json V-010 and V-011: the classes relative to the modelled sky, the dust from the darkest sky, the curves anchored on those classes"
+      "demonstrates": "docs/validation.json V-010 and V-011: the classes relative to the modelled sky, the dust from the darkest sky, the curves anchored on those classes; StarPairTests (Category=Validation): under 20 stars, and the starless half of the Rosetta pair (ADR 0051)"
     },
     {
       "name": "Orion_with_WCS.fit",
       "location": "large",
       "requiredInCi": false,
       "sha256": "830e9ef1af554dccc3213d5e5a0c47356e41cdb45b56e58b5aca9460c93bb063",
-      "source": "the owner's Orion nebula with the Running Man, stretched in Siril, 1564 x 2302, three float planes, 43 214 400 bytes, with a WCS far from the galactic plane; added 2026-10-06 as the frame whose peaks are already over the curves' target (ADR 0033)",
-      "demonstrates": "docs/validation.json V-012: no curve suggested, the reason naming the peaks and the target"
+      "source": "the owner's starless Orion nebula with the Running Man (the starless export of Orion_WithStars_and_WCS.fit, at another size), stretched in Siril, 1564 x 2302, three float planes, 43 214 400 bytes, with a WCS far from the galactic plane; added 2026-10-06 as the frame whose peaks are already over the curves' target (ADR 0033)",
+      "demonstrates": "docs/validation.json V-012: no curve suggested, the reason naming the peaks and the target; StarPairTests (Category=Validation): under 20 stars (ADR 0051)"
     },
     {
       "name": "Veil_Starless.fit",
@@ -55,7 +55,7 @@
       "requiredInCi": false,
       "sha256": "c72b96970a4e232b73bcea14821697187ab141d1b9c840d0ec43fcaac99cddac",
       "source": "the owner's starless Veil nebula, stretched in Siril, 5601 x 3692, three float planes, 248 158 080 bytes, with a WCS inside the galactic band (b -14.6 to -3.6 over a 9.6 x 6.4 degree field); added 2026-10-11 as the deep-sky frame the band path mistook for a Milky Way landscape (ADR 0037)",
-      "demonstrates": "docs/validation.json V-013 and V-014: the sky path taken on a frame narrower than the band, with the reason naming its span; the curves anchored on the nebula's classes"
+      "demonstrates": "docs/validation.json V-013 and V-014: the sky path taken on a frame narrower than the band, with the reason naming its span; the curves anchored on the nebula's classes; StarPairTests (Category=Validation): under 20 stars (ADR 0051)"
     },
     {
       "name": "Rosetta_withStars_no_WCS.fit",

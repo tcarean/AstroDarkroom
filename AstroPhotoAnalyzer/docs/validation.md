@@ -167,7 +167,7 @@ reproduce, to the last decimal the record printed, the "tool" column of the tabl
 wherever ADR 0025 did not change the rule: the means and the shares below 32 and 64, the
 percentiles, the L\* figures, the noise (128 smooth tiles, median 0.45 LSB), the plateau
 (2.68 px from 20 tiles), the rounding, the stress test, the JPEG and TIFF sizes and errors, the
-stars (7163 since ADR 0041; 7166 before it, median 3.133 px, centre 4.27 px), the background colour and the bottom-right
+stars (7163 from ADR 0041 to ADR 0051, 7166 before, 6274 since, with the median 3.133 px then 3.107 and the centre 4.27 then 4.24), the background colour and the bottom-right
 corner, the crop and the 70 cm row on 50:35, and the 70 cm recommended at 1.5 m.
 
 One figure does not. The natural ratio, the distance from which a star is a point over the
@@ -200,10 +200,12 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   the absolute amplitude floor let through and which V-004 had recorded on 2026-10-02 without
   comment. Every moved figure is a star figure or one derived from the FWHM. V-001: `stars.count`
   7163 -> 6274, `fwhmMedian` 3.1332 -> 3.1065 (Q1 2.8685 -> 2.8512, Q3 3.4899 -> 3.4209), the
-  centre 4.2709 -> 4.2387, the rows 70 to 100 cm `minDistanceM` (1.2736 -> 1.2628 at 70);
-  `cornerToCenterRatio` 0.7744 -> 0.7822 and `naturalRatio` 1.0148 -> 1.0062 within tolerance.
-  V-002: the same FWHM, the rows 60 to 100 cm `minDistanceM` (the 70 cm row's point from 1.3617
-  -> 1.3501 m). V-004: 6297 -> 5, V-010: 2858 -> 1, V-013: 22 485 -> 1, each with every FWHM,
+  centre 4.2709 -> 4.2387 and the four corners by under 0.01, `cornerToCenterRatio` 0.7744 ->
+  0.7822, `naturalRatio` 1.0148 -> 1.0062, every row's `starMm` (0.3694 -> 0.3662 at 70 cm) and
+  `minDistanceM` (1.2736 -> 1.2628 at 70), the figures within the 0.01 tolerance recorded too, so
+  that the file holds what the tool measures (the second review of 2026-10-27). V-002: the same
+  FWHM, `naturalRatio` 1.0624 -> 1.0533, every row's `starMm` and `minDistanceM` (the 70 cm row's
+  point from 1.3617 -> 1.3501 m). V-004: 6297 -> 5, V-010: 2858 -> 1, V-013: 22 485 -> 1, each with every FWHM,
   region, `starMm` and `minDistanceM` figure to `n/a` and the size table on the dpi rule of R-074
   (the reference row 100 -> 80 cm on V-004, 100 -> 70 on V-013; V-010's 50 cm row passes). No
   other case moved; the golden console texts did not move (the raw deviation about the border

@@ -106,10 +106,10 @@ with-stars files are **added to `testdata/manifest.json`** with their hashes.
 |---|---|---|---|
 | V-001 | `stars.count` | 7163 | 6274 |
 | V-001 | `stars.fwhmMedian` / `Q1` / `Q3` | 3.1332 / 2.8685 / 3.4899 | 3.1065 / 2.8512 / 3.4209 |
-| V-001 | centre region FWHM | 4.2709 | 4.2387 |
-| V-001 | `size.row70..row100.minDistanceM` | 1.2736 .. 1.8195 | 1.2628 .. 1.804 |
-| V-001 | `cornerToCenterRatio`, `naturalRatio` (within tolerance) | 0.7744, 1.0148 | 0.7822, 1.0062 |
-| V-002 | `stars.fwhmMedian`; `size.row60..row100.minDistanceM` | 3.1332; 1.1672 .. 1.9453 | 3.1065; 1.1572 .. 1.9287 |
+| V-001 | centre region FWHM; the four corners | 4.2709; 2.82 / 3.3074 / 2.927 / 3.168 | 4.2387; 2.8176 / 3.3157 / 2.9218 / 3.1643 |
+| V-001 | `cornerToCenterRatio`, `naturalRatio` | 0.7744, 1.0148 | 0.7822, 1.0062 |
+| V-001 | `size.row50..row100.starMm` / `minDistanceM` | 0.2638 .. 0.5277 / 0.9097 .. 1.8195 | 0.2616 .. 0.5232 / 0.902 .. 1.804 |
+| V-002 | `stars.fwhmMedian`; `naturalRatio`; `size.row50..row100.starMm` / `minDistanceM` | 3.1332; 1.0624; 0.2821 .. 0.5641 / 0.9726 .. 1.9453 | 3.1065; 1.0533; 0.2797 .. 0.5593 / 0.9643 .. 1.9287 |
 | V-004 | `stars.count` | 6297 | 5 |
 | V-004 | every FWHM, region, ratio, `starMm`, `minDistanceM` | figures of the grain | `n/a` (R-074) |
 | V-004 | `size.referenceWidthCm`; rows 90 and 100 `pointAtViewingDistance` | 100; true | 80 (the dpi rule); false |
@@ -120,7 +120,7 @@ with-stars files are **added to `testdata/manifest.json`** with their hashes.
 | V-013 | every FWHM, region, ratio, `starMm`, `minDistanceM` | figures of the grain | `n/a` (R-074) |
 | V-013 | `size.referenceWidthCm`; rows 80 to 100 `pointAtViewingDistance` | 100; true | 70 (the dpi rule); false |
 
-V-003, V-005 to V-009, V-011, V-012 and V-014: no figure moved. The golden console texts did not
+Every differing figure of these cases is recorded, the ones within the 0.01 tolerance included (the second review of 2026-10-27). V-003, V-005 to V-009, V-011, V-012 and V-014: no figure moved. The golden console texts did not
 move. The first form of the clause, the deviation about the raw border median, had cost the
 DarkSky golden scene 14 of its 64 stars (the nebula's slope read as noise) and V-001 1747 stars
 instead of 889; the owner chose the plane the same day (ADR 0051).

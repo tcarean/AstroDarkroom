@@ -109,8 +109,9 @@ table above, and the plane over the raw deviation the same day, on the DarkSky s
   floor. The star figures of V-001, V-004, V-010 and V-013 move; the drift is in the plan
   `docs/plans/2026-10-27-reject-noise-grain-as-stars.md` and in `docs/validation.md`.
 - The FWHM is the bright stars' (12 sigmas and over); faint stars are not counted, and the count
-  on a frame with stars drops by a quarter to a third. The median moves by hundredths of a pixel
-  on the reference image.
+  drops by an eighth on the reference image (7163 to 6274) and on Andromeda (3526 to 3116), and
+  by two thirds on Orion (3901 to 1389), where the grain was most of the count. The median moves
+  by hundredths of a pixel on the reference image.
 - A frame whose stars all sit on strongly textured nebulosity (a large local sigma) may lose them
   and fall to R-074; the report says so with the count.
 - Guards: `R070_NoiseGrainIsNotAStar`, `R070_StarsOverGrainAreStillMeasured`,
@@ -119,5 +120,6 @@ table above, and the plane over the raw deviation the same day, on the DarkSky s
   well under a twelfth of the amplitude) in `StarAnalyzerTests`; on the real frames,
   `StarPairTests` (Category=Validation): every starless frame `Insufficient`, every frame with
   stars kept, and at least 99 % of the stars kept on the Rosetta frame with stars sit where the
-  starless frame is lower by at least 0.02 at the peak (the grain differs by under 0.005 on
-  96.9 % of the pixels; the labelling above used half the amplitude, which the test cannot see).
+  starless frame is lower at the peak by at least half of `StarMinAmplitude16` (0.023, half the
+  smallest amplitude a kept star can have; the grain differs by under 0.005 on 96.9 % of the
+  pixels; the labelling above used half of each star's own amplitude, which the test cannot see).

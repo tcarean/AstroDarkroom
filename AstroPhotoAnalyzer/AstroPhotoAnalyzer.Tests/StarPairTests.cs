@@ -79,8 +79,8 @@ public class StarPairTests
     /// <summary>
     /// The Rosetta pair is pixel-aligned (measured 2026-10-27: the best shift is 0,0 and 96.9 %
     /// of the pixels differ by under 0.005): a star kept on the frame with stars is a star when
-    /// the frame without them is at least 0.02 lower at its peak; grain is where the two frames
-    /// agree.
+    /// the frame without them is lower at its peak by at least half of StarMinAmplitude16, half
+    /// the smallest amplitude a kept star can have (0.023); grain is where the two frames agree.
     /// </summary>
     [Fact]
     public void R070_OnTheRosettaPairTheKeptStarsAreInTheDifference()
@@ -96,7 +96,8 @@ public class StarPairTests
         Raster a = ImageLoader.Load(with), b = ImageLoader.Load(without);
         Assert.Equal((a.W, a.H), (b.W, b.H));
         StarResult s = StarAnalyzer.Analyze(a);
-        int inDifference = s.Stars.Count(st => a.Reference[st.Y * a.W + st.X] - b.Reference[st.Y * b.W + st.X] >= 0.02f);
+        float atLeast = (float)(Thresholds.StarMinAmplitude16 / 65535 / 2);
+        int inDifference = s.Stars.Count(st => a.Reference[st.Y * a.W + st.X] - b.Reference[st.Y * b.W + st.X] >= atLeast);
         _out.WriteLine($"Rosetta with stars: {s.Count} kept, {inDifference} in the difference image");
 
         Assert.False(s.Insufficient);

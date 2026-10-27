@@ -55,8 +55,9 @@ public class StarAnalyzerTests
     /// <summary>
     /// The grain of a noisy sky is not a star (ADR 0051): on a flat sky with Gaussian noise of
     /// sigma 0.02 the window maxima stand about 3 sigmas over the border median, past the
-    /// absolute floor of 3000/65535, and before the sigma clause well over 20 of them passed as
-    /// stars on a 600 x 600 frame; a star must be StarMinSnr sigmas over its base.
+    /// absolute floor of 3000/65535, and without the sigma clause 429 of them pass as stars on
+    /// this 600 x 600 frame (measured 2026-10-27 with StarMinSnr set to 0); a star must be
+    /// StarMinSnr sigmas over its base.
     /// </summary>
     [Fact]
     public void R070_NoiseGrainIsNotAStar()
@@ -85,15 +86,14 @@ public class StarAnalyzerTests
     /// <summary>
     /// The sigma is measured about a plane fitted to the border, so a star on a nebula's slope is
     /// judged against the grain and not the slope (ADR 0051): the DarkSky scene's nebula (0.4
-    /// over 60 px) carries the 64 stars of 0.3 over 0.3 LSB of noise; the raw deviation about the
-    /// border median read the slope as a sigma of about 0.03 and kept 50 of them.
+    /// over 60 px) carries its 64 stars of 0.3 over 0.3 LSB of noise; the raw deviation about the
+    /// border median read the slope as a sigma of about 0.03 and kept 50 of them. The scene
+    /// itself is analysed, so an edit of it reaches this test.
     /// </summary>
     [Fact]
     public void R070_StarsOnANebulasSlopeAreKept()
     {
-        Raster r = SyntheticRasters.From(512, 512, 3, (x, y, p) =>
-            0.08f + (float)(0.4 * Math.Exp(-((x - 256) * (x - 256) + (y - 256) * (y - 256)) / (2 * 60.0 * 60.0))));
-        var s = StarAnalyzer.Analyze(SyntheticRasters.AddNoise(Scenes.WithStars(r), 0.3 / 255, 21));
+        var s = StarAnalyzer.Analyze(Scenes.DarkSky());
 
         Assert.InRange(s.Count, 60, 70);
         Assert.InRange(s.FwhmMedian, 2.95, 3.2);
