@@ -87,12 +87,17 @@
   are whole levels, so a cast near `CastWarnLevels` (1 level) can fall either side of the
   threshold between the 8-bit and the 16-bit version of the same image.
 - Neutral edge brightening cannot be told from the object; it is reported as
-  informative and left to the eye. Nor can a coloured one when the object's own colour differs
-  from the sky's: the Milky Way band is bluer than the sky, and the corner it enters on the
-  reference image reads +6.5 / +5.0 / +8.8 against the sky patches, coloured by ADR 0018's
-  rule, as a bluish gradient would (ADR 0055). The band's edges on the 2026-08-12 core stay
-  within 2.3 levels of the sky, and the Rift's dust in its top-left corner, darker and warmer,
-  is flagged coloured too.
+  informative and left to the eye. A region is measured on its sky pixels so that the object's
+  own colour does not pass for a gradient (ADR 0056), which leaves two limits: a region the
+  object fills to over three quarters is measured on every pixel, and the object's colour then
+  counts; and sky classed sky that is darker or browner than the frame's, the Rift's diffuse
+  foot in the top-left corner of the 2026-08-12 core (-5.4 / -4.5 / -8.7 on its sky pixels),
+  reads as a coloured departure that only the eye can tell from a residual gradient.
+- A horizon glow bright enough to be classed nebula over a region leaves that region's sky
+  pixels; the quarter floor keeps it in view when it fills the region, and its blue deficit on
+  the remaining sky kept the flag on every measured image, but its magnitude is the sky
+  pixels' (the plate-solved FITS's bottom edge +1.4 / -4.0 / -5.0 where every pixel gave
+  +12.3 / -0.9 / -12.1).
 - JPEG numbers are ImageSharp's encoder's; another encoder will differ by tenths of a
   level at q100.
 - Colour is measured as sRGB; other profiles are only named.

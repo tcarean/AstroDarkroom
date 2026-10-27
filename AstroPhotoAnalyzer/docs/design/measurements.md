@@ -216,17 +216,19 @@ the pixels by luminance, which on a frame the Great Rift crosses is the dust, br
 every sky edge read "bluer than the background". On colour: `GreenExcess` = G - (R+B)/2,
 `RedMinusBlue`; `HasCast` when either exceeds `CastWarnLevels` (1.0).
 
-**Regions** (E2), on the stride-3 subsample: four corners (15 % of height x 20 % of width)
-and four edges (the same bands between the corners). Each `EdgeRegion` has per-plane medians
-(`Levels`), `Deltas` = region - background per plane, `MaxAbsDelta`, `Flagged`
-(> `CornerGradientLevels` = 3), and `Coloured`: spread (max delta - min delta) > 3 **and**
-> `CornerColourSpreadRatio` (0.5) x mean |delta| - the channels move differently. The
-distinction came from the reference image against the darkest quarter: the horizon corner
-+9.4 / +1.7 / -9.9 (coloured, light pollution), the corner the Milky Way enters +11 / +10 / +16
-(neutral, the object). Against the sky patches (ADR 0055) they read +4.6 / -3.6 / -17.0 and
-+6.5 / +5.0 / +8.8: the band is bluer than the sky and that corner is coloured too, while
-the top edge the band crosses, +7.0 / +5.1 / +6.4, stays neutral. On mono there is one plane
-and `Coloured` is always false.
+**Regions** (E2), on the same subsample as the map: four corners (15 % of height x 20 % of
+width) and four edges (the same bands between the corners). Each `EdgeRegion` has per-plane
+medians (`Levels`), taken on the region's sky pixels (`ClassAt` reads the map's class of each
+sample) when they are at least `RegionSkyMinFraction` (0.25) of it (`OnSkyPixels`,
+`SkyFraction`) and on every pixel otherwise, with `PixelsNote` for the row (ADR 0056); `Deltas`
+= region - background per plane, `MaxAbsDelta`, `Flagged` (> `CornerGradientLevels` = 3), and
+`Coloured`: spread (max delta - min delta) > 3 **and** > `CornerColourSpreadRatio` (0.5) x mean
+|delta| - the channels move differently. The distinction came from the reference image against
+the darkest quarter: the horizon corner +9.4 / +1.7 / -9.9 (coloured, light pollution), the
+corner the Milky Way enters +11 / +10 / +16 (neutral, the object). Against the sky patches, on
+their own sky pixels, they read +4.1 / -4.0 / -17.1 (coloured) and +4.2 / +2.9 / +5.6 (neutral;
+on every pixel the band made it +6.5 / +5.1 / +8.7, coloured). On mono there is one plane and
+`Coloured` is always false.
 
 ### D1/D2 - `StarAnalyzer` - the real resolution
 

@@ -491,7 +491,7 @@ namespace AstroPhotoAnalyzer
                 + (b.ColorApplicable ? $"; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}; R - B = {Fmt.S1(b.RedMinusBlue)}" : "")
                 + $"; {Tr.Pick("from", "de pe")} {b.SourceText}");
             foreach (EdgeRegion e in b.Regions)
-                w.WriteLine($"  {e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{(e.Flagged ? "  !" : "")}");
+                w.WriteLine($"  {e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{e.PixelsNote}{(e.Flagged ? "  !" : "")}");
         }
 
         /// <summary>

@@ -81,9 +81,10 @@ public class BackgroundAnalyzerTests
     }
 
     /// <summary>
-    /// The band entering a corner by the same amount on every channel (the reference image's
-    /// top edge reads +7.0 / +5.1 / +6.4 against the sky) is a NEUTRAL deviation - the channels
-    /// rise together. It is flagged, but not as a gradient.
+    /// A corner brightened by the same amount on every channel is a NEUTRAL deviation - the
+    /// channels rise together. It is flagged, but not as a gradient. On this flat scene the
+    /// brightening is classed nebula and fills the corner, so the region is measured on every
+    /// pixel (under the quarter of sky, R-061).
     /// </summary>
     [Fact]
     public void ANeutralBrighteningIsFlaggedButNotColoured()
@@ -181,6 +182,49 @@ public class BackgroundAnalyzerTests
 
         Assert.Equal(SkyColourSource.SkyPatches, b.Source);
         Assert.Equal(2.0, b.GreenExcess, 3);
+    }
+
+    /// <summary>
+    /// A brown lane over the top edge, x 64..192 of a region that spans x 64..256: the lane's
+    /// patches are dust, a third of the region is sky, and the medians come from that third.
+    /// </summary>
+    static Raster SkyWithALaneOnTheTopEdge(int laneRight)
+        => SyntheticRasters.From(320, 320, 3, (x, y, p) =>
+        {
+            bool lane = y < 48 && x >= 64 && x < laneRight;
+            if (!lane) return Sky;
+            return p == 0 ? Sky - 8f / 255 : p == 1 ? Sky - 7f / 255 : Sky - 12f / 255;
+        });
+
+    [Fact]
+    public void R061_ARegionIsMeasuredOnItsSkyPixelsWhenTheyAreAQuarterOrMore()
+    {
+        var b = BackgroundAnalyzer.Analyze(SkyWithALaneOnTheTopEdge(192));
+
+        EdgeRegion top = b.Regions.Single(x => x.Name == "latura de sus");
+        Assert.True(top.OnSkyPixels);
+        Assert.Equal(1 / 3.0, top.SkyFraction, 0.05);
+        Assert.All(top.Deltas, d => Assert.Equal(0, d, 1));
+        Assert.False(top.Flagged);
+        Assert.Equal("", top.PixelsNote);
+    }
+
+    [Fact]
+    public void R061_ARegionWithUnderAQuarterOfSkyIsMeasuredOnEveryPixelAndSaysSo()
+    {
+        // The lane covers x 64..224 of the region, to a patch's edge (a patch half covered is
+        // dust too): a sixth of it is sky, under the quarter, so the lane itself is the region's
+        // median and the brown departure is reported as coloured.
+        var b = BackgroundAnalyzer.Analyze(SkyWithALaneOnTheTopEdge(224));
+
+        EdgeRegion top = b.Regions.Single(x => x.Name == "latura de sus");
+        Assert.False(top.OnSkyPixels);
+        Assert.Equal(1 / 6.0, top.SkyFraction, 0.05);
+        Assert.Equal(-8, top.Deltas[0], 0);
+        Assert.Equal(-12, top.Deltas[2], 0);
+        Assert.True(top.Flagged);
+        Assert.True(top.Coloured);
+        Assert.Equal("  (cer 17 %: toti pixelii)", top.PixelsNote);
     }
 
     [Fact]

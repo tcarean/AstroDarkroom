@@ -52,11 +52,35 @@ namespace AstroPhotoAnalyzer
         internal int W { get; init; }
         internal int H { get; init; }
 
-        /// <summary>The region's medians, in levels 0..255, on each plane.</summary>
+        /// <summary>
+        /// The region's medians, in levels 0..255, on each plane: of its sky pixels when
+        /// <see cref="OnSkyPixels"/>, of every pixel otherwise.
+        /// </summary>
         internal IReadOnlyList<double> Levels { get; init; }
 
         /// <summary>Region minus background, on each plane, in levels.</summary>
         internal IReadOnlyList<double> Deltas { get; init; }
+
+        /// <summary>
+        /// The share of the region's pixels that lie in sky patches (R-044), 0..1.
+        /// </summary>
+        internal double SkyFraction { get; init; }
+
+        /// <summary>
+        /// Were the medians taken on the sky pixels alone (the band, the dust and the nebulae
+        /// left out)? False when <see cref="SkyFraction"/> is under
+        /// <see cref="Thresholds.RegionSkyMinFraction"/>: then every pixel counts, so that a
+        /// glow bright enough to be classed nebula cannot leave the region with the object.
+        /// </summary>
+        internal bool OnSkyPixels { get; init; }
+
+        /// <summary>
+        /// What the report and the window append to the region's row when it was measured on
+        /// every pixel: the sky share and the fact; empty otherwise.
+        /// </summary>
+        internal string PixelsNote => OnSkyPixels
+            ? ""
+            : Tr.Pick($"  (sky {Fmt.F0(SkyFraction * 100)} %: every pixel)", $"  (cer {Fmt.F0(SkyFraction * 100)} %: toti pixelii)");
 
         internal double MaxAbsDelta => Deltas.Max(d => Math.Abs(d));
         internal bool Flagged => MaxAbsDelta > Thresholds.CornerGradientLevels;
@@ -151,7 +175,7 @@ namespace AstroPhotoAnalyzer
         /// <paramref name="map"/> that lie above the bottom
         /// <see cref="Thresholds.BackgroundExcludeBottomFraction"/> of the rows (of every patch
         /// there when none is sky, of every pixel when the frame holds no patch); then the eight
-        /// edge regions, on the subsample at <see cref="Thresholds.BackgroundStride"/>, against it.
+        /// edge regions, on the same subsample and each on its own sky pixels, against it.
         /// </summary>
         /// <param name="full">The image, 0..1.</param>
         /// <param name="map">
@@ -163,9 +187,11 @@ namespace AstroPhotoAnalyzer
         /// </returns>
         internal static BackgroundResult Analyze(Raster full, DustMap map)
         {
-            Raster s = RasterOps.Subsample(full, Thresholds.BackgroundStride);
+            // The map's own subsample, so that its grid can be read on it: the stride-3
+            // subsample of the acceptance script went with ADR 0056.
+            Raster s = RasterOps.Subsample(full, map.Stride);
             int planes = s.Planes.Length;
-            (double[] bg, SkyColourSource source) = SkyColour(full, map);
+            (double[] bg, SkyColourSource source) = SkyColour(s, map);
 
             bool color = planes == 3;
             return new BackgroundResult
@@ -175,8 +201,22 @@ namespace AstroPhotoAnalyzer
                 ColorApplicable = color,
                 GreenExcess = color ? bg[1] - (bg[0] + bg[2]) / 2 : 0,
                 RedMinusBlue = color ? bg[0] - bg[2] : 0,
-                Regions = Regions(s, bg),
+                Regions = Regions(s, map, bg),
             };
+        }
+
+        /// <summary>
+        /// The class of the patch a sample of the map's subsample lies in; None past the last
+        /// whole patch (the grid drops the partial patches at the right and bottom edges).
+        /// </summary>
+        /// <param name="map">The classes of R-044 on the image as it is.</param>
+        /// <param name="x">The sample's column on the map's subsample.</param>
+        /// <param name="y">The sample's row on the map's subsample.</param>
+        /// <returns>The patch's class, or None when the sample belongs to no patch.</returns>
+        static PatchClass ClassAt(DustMap map, int x, int y)
+        {
+            int bx = x / map.Side, by = y / map.Side;
+            return bx < map.Cols && by < map.Rows ? map.Classes[by * map.Cols + bx] : PatchClass.None;
         }
 
         /// <summary>
@@ -184,32 +224,27 @@ namespace AstroPhotoAnalyzer
         /// sky patches above the bottom band, then, when there is none, of every patch there,
         /// then of the whole frame.
         /// </summary>
-        /// <param name="full">The image, 0..1.</param>
+        /// <param name="sub">The image's subsample at the map's stride, 0..1.</param>
         /// <param name="map">The classes of R-044 on the image as it is.</param>
         /// <returns>The medians x 255 on each plane, and which pixels gave them.</returns>
-        static (double[] Levels, SkyColourSource Source) SkyColour(Raster full, DustMap map)
+        static (double[] Levels, SkyColourSource Source) SkyColour(Raster sub, DustMap map)
         {
-            Raster sub = RasterOps.Subsample(full, map.Stride);
             int planes = sub.Planes.Length;
             int rowLimit = (int)(sub.H * (1 - Thresholds.BackgroundExcludeBottomFraction));
 
-            // The grid drops the partial patches at the right and bottom edges, so a sample past
-            // the last whole patch belongs to no patch and to no tier but the whole frame.
+            // A sample past the last whole patch belongs to no patch and to no tier but the
+            // whole frame.
             var sky = new List<int>();
             var grid = new List<int>();
             for (int y = 0; y < rowLimit; y++)
-            {
-                int by = y / map.Side;
-                if (by >= map.Rows) break;
                 for (int x = 0; x < sub.W; x++)
                 {
-                    int bx = x / map.Side;
-                    if (bx >= map.Cols) break;
+                    PatchClass c = ClassAt(map, x, y);
+                    if (c == PatchClass.None) continue;
                     int i = y * sub.W + x;
                     grid.Add(i);
-                    if (map.Classes[by * map.Cols + bx] == PatchClass.Sky) sky.Add(i);
+                    if (c == PatchClass.Sky) sky.Add(i);
                 }
-            }
 
             List<int> picked;
             SkyColourSource source;
@@ -228,16 +263,19 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The eight edge regions of the subsample, each with its medians and its departure from
-        /// the background; a region with no width or no height is left out.
+        /// The eight edge regions of the subsample, each with its medians, on its sky pixels when
+        /// they are at least <see cref="Thresholds.RegionSkyMinFraction"/> of it and on every
+        /// pixel otherwise (ADR 0056), and its departure from the background; a region with no
+        /// width or no height is left out.
         /// </summary>
-        /// <param name="s">The subsample, 0..1.</param>
+        /// <param name="s">The image's subsample at the map's stride, 0..1.</param>
+        /// <param name="map">The classes of R-044 on the image as it is.</param>
         /// <param name="bg">The background's level on each plane, 0..255.</param>
         /// <returns>
         /// The regions: the four corners (top-left, top-right, bottom-left, bottom-right), then
         /// the four sides (top, bottom, left, right).
         /// </returns>
-        static IReadOnlyList<EdgeRegion> Regions(Raster s, double[] bg)
+        static IReadOnlyList<EdgeRegion> Regions(Raster s, DustMap map, double[] bg)
         {
             // The corner: 15 % of the height x 20 % of the width (the script's region). The side:
             // a band of the same thickness, along the middle of the side, between the corners.
@@ -258,19 +296,44 @@ namespace AstroPhotoAnalyzer
             foreach (var d in defs)
             {
                 if (d.W <= 0 || d.H <= 0) continue;
+
+                // The region's sky pixels: the object entering a corner (the band, a dust lane)
+                // must not pass for a gradient of the sky. Under the floor, every pixel: a glow
+                // bright enough to be classed nebula would otherwise leave with the object.
+                var sky = new List<int>();
+                for (int y = d.Y0; y < d.Y0 + d.H; y++)
+                    for (int x = d.X0; x < d.X0 + d.W; x++)
+                        if (ClassAt(map, x, y) == PatchClass.Sky) sky.Add(y * s.W + x);
+                double skyFraction = sky.Count / (double)(d.W * d.H);
+                bool onSky = skyFraction >= Thresholds.RegionSkyMinFraction;
+
                 var levels = new double[s.Planes.Length];
                 var deltas = new double[s.Planes.Length];
-                var buf = new float[d.W * d.H];
+                var buf = new float[onSky ? sky.Count : d.W * d.H];
                 for (int p = 0; p < s.Planes.Length; p++)
                 {
                     int k = 0;
-                    for (int y = d.Y0; y < d.Y0 + d.H; y++)
-                        for (int x = d.X0; x < d.X0 + d.W; x++)
-                            buf[k++] = s.Planes[p][y * s.W + x];
+                    if (onSky)
+                        foreach (int i in sky) buf[k++] = s.Planes[p][i];
+                    else
+                        for (int y = d.Y0; y < d.Y0 + d.H; y++)
+                            for (int x = d.X0; x < d.X0 + d.W; x++)
+                                buf[k++] = s.Planes[p][y * s.W + x];
                     levels[p] = Stats.Median(buf) * 255;
                     deltas[p] = levels[p] - bg[p];
                 }
-                list.Add(new EdgeRegion { Name = d.Name, X0 = d.X0, Y0 = d.Y0, W = d.W, H = d.H, Levels = levels, Deltas = deltas });
+                list.Add(new EdgeRegion
+                {
+                    Name = d.Name,
+                    X0 = d.X0,
+                    Y0 = d.Y0,
+                    W = d.W,
+                    H = d.H,
+                    Levels = levels,
+                    Deltas = deltas,
+                    SkyFraction = skyFraction,
+                    OnSkyPixels = onSky,
+                });
             }
             return list;
         }

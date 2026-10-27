@@ -1,7 +1,7 @@
 # 0055. The sky's colour is the median of the sky patches above the horizon band, not of the darkest quarter
 
 Date: 2026-10-27
-Status: accepted 2026-10-27
+Status: accepted 2026-10-27; the regions superseded by 0056
 Supersedes: 0014 in part (the colour)
 
 ## Context
@@ -48,9 +48,10 @@ tie rule of ADR 0014 no longer applies to anything.
 - **The sky patches over all rows.** Within a level of the chosen reference on every image; the
   horizon glow of the reference image sits in those rows at the sky's luminance, classed sky,
   and would enter the reference it is judged against.
-- **Measure each region on its own sky patches.** Not measured; it would also keep the band
+- **Measure each region on its own sky patches.** Not measured here; it would also keep the band
   entering a corner from reading as coloured, but a horizon glow bright enough to be classed
-  nebula would leave the regions with it. Left for a task of its own.
+  nebula would leave the regions with it. Measured the same day and adopted, with a floor, by
+  ADR 0056.
 
 ## Consequences
 
@@ -58,7 +59,8 @@ tie rule of ADR 0014 no longer applies to anything.
   remain; on the reference image the two warm regions remain and the top-left corner, where the
   band enters, now reads +6.5 / +5.0 / +8.8, coloured by ADR 0018's rule (bluer than the sky),
   where against the dust it read +11 / +10 / +16, neutral. The band is bluer than the sky; the
-  rule cannot tell it from a bluish gradient (`known-limitations.md`).
+  rule cannot tell it from a bluish gradient while the band's pixels count (ADR 0056 leaves them
+  out).
 - The reference image's green excess falls from +1.6 to +0.9 levels, under `CastWarnLevels`,
   but red minus blue goes from +0.3 to -1.9: its cast is now a cool one. The new core keeps a
   green one, +2.2.

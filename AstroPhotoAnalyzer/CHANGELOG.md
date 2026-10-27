@@ -30,6 +30,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   quarter is the Great Rift's dust, brown, and every sky edge came out "cool" against it, six
   false gradients on a GraXpert-flattened frame. Appendix E and the Colour tab say which pixels
   gave the colour (R-060, R-061; ADR 0055).
+- Each edge region is measured on its own sky pixels, so that the Milky Way or a dust lane
+  entering a corner no longer passes for a coloured gradient; a region with under 25 % of sky
+  is measured on every pixel, and its row and its "because" say so (R-061; ADR 0056).
 - The Curbe tab is called Editare Curbe (`Curves Editing` in English), and its gallery of
   suggested curves is computed right after the analysis, without pressing `Calculeaza`, so it
   is there when the tab is opened; the button computes it again at the tab's current size

@@ -836,7 +836,7 @@ namespace AstroPhotoAnalyzer.Wpf
             }
             Rows = rows;
             RegionRows = b.Regions.Select(e =>
-                $"{e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}"
+                $"{e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{e.PixelsNote}"
                 + (!e.Flagged ? "" : !b.ColorApplicable ? "  !" : e.Coloured ? Tr.Pick("  ! coloured", "  ! colorat") : Tr.Pick("  ! neutral", "  ! neutru"))).ToList();
             Guide = GuideParagraphs();
             HasResult = true;
@@ -865,10 +865,16 @@ namespace AstroPhotoAnalyzer.Wpf
                     Lead = Tr.Pick("The regions.", "Regiunile."),
                     Text = Tr.Pick($"Four corners, each {Fmt.F0(Thresholds.EdgeRegionHeightFraction * 100)} % of the height x "
                         + $"{Fmt.F0(Thresholds.EdgeRegionWidthFraction * 100)} % of the width, and four sides: bands of the same thickness along the middle of "
-                        + "each side, between the corners. For each, the medians per channel (R / G / B, 0..255), then the delta.",
+                        + "each side, between the corners. For each, the medians per channel (R / G / B, 0..255), then the delta. "
+                        + "The medians are taken on the region's sky pixels alone, the patches the Background tab calls sky, so that the Milky Way or a dust lane "
+                        + $"entering a corner does not pass for a gradient of the sky; a region with under {Fmt.F0(Thresholds.RegionSkyMinFraction * 100)} % of sky "
+                        + "is measured on every pixel instead, and its row says so, so that a glow bright enough to be classed nebula cannot leave with the object.",
                         $"Patru colturi, fiecare de {Fmt.F0(Thresholds.EdgeRegionHeightFraction * 100)} % din inaltime x "
                         + $"{Fmt.F0(Thresholds.EdgeRegionWidthFraction * 100)} % din latime, si patru laturi: benzi de aceeasi grosime pe mijlocul "
-                        + "fiecarei laturi, intre colturi. Pentru fiecare, medianele pe canal (R / G / B, 0..255), apoi delta."),
+                        + "fiecarei laturi, intre colturi. Pentru fiecare, medianele pe canal (R / G / B, 0..255), apoi delta. "
+                        + "Medianele se iau doar pe pixelii de cer ai regiunii, dalele pe care tabul Fundal le numeste cer, ca Calea Lactee sau o banda de praf "
+                        + $"care intra intr-un colt sa nu treaca drept gradient al cerului; o regiune cu sub {Fmt.F0(Thresholds.RegionSkyMinFraction * 100)} % cer "
+                        + "se masoara pe toti pixelii, si randul ei o spune, ca o lumina destul de puternica sa fie clasata nebuloasa sa nu plece odata cu obiectul."),
                 },
                 new GuideParagraph
                 {
@@ -893,16 +899,14 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "and stays at Ok, with the advice to look in Preview before you correct anything. If they move differently (the difference between "
                         + $"the channels over {grad} levels and over {Fmt.F0(Thresholds.CornerColourSpreadRatio * 100)} % of the mean departure), it is a gradient with a colour: "
                         + "horizon glow, light pollution - to correct on the linear data (GraXpert), not with a local curve on the stretched image. "
-                        + "On the reference image: the horizon corner +4.6 / -3.6 / -17.0 is coloured; the top edge, where the Milky Way band crosses, "
-                        + "+7.0 / +5.1 / +6.4, is neutral; the corner the band enters, +6.5 / +5.0 / +8.8, is bluer than the sky and reads coloured too: "
-                        + "the rule cannot tell the band's own colour from a bluish gradient, so look in Preview.",
+                        + "On the reference image: the horizon corner +4.1 / -4.0 / -17.1 is coloured; the corner the Milky Way enters, "
+                        + "+4.2 / +2.9 / +5.6 on its sky pixels, is neutral (on every pixel it would read +6.5 / +5.1 / +8.7, bluer than the sky, and pass for coloured).",
                         "Daca cele trei delta se misca impreuna, marginea e cel mai probabil obiectul insusi (Calea Lactee care intra in colt) "
                         + "si ramane la Ok, cu indemnul sa te uiti in Preview inainte sa corectezi ceva. Daca se misca diferit (diferenta dintre "
                         + $"canale peste {grad} niveluri si peste {Fmt.F0(Thresholds.CornerColourSpreadRatio * 100)} % din abaterea medie), e un gradient cu culoare: "
                         + "lumina de orizont, poluare - de corectat pe liniar (GraXpert), nu cu o curba locala pe imaginea stretch-uita. "
-                        + "Pe imaginea de referinta: coltul de orizont +4.6 / -3.6 / -17.0 e colorat; latura de sus, pe unde trece banda Caii Lactee, "
-                        + "+7.0 / +5.1 / +6.4, e neutra; coltul in care intra banda, +6.5 / +5.0 / +8.8, e mai albastru decat cerul si iese tot colorat: "
-                        + "regula nu poate deosebi culoarea benzii de un gradient albastrui, asa ca uita-te in Preview."),
+                        + "Pe imaginea de referinta: coltul de orizont +4.1 / -4.0 / -17.1 e colorat; coltul in care intra Calea Lactee, "
+                        + "+4.2 / +2.9 / +5.6 pe pixelii lui de cer, e neutru (pe toti pixelii ar citi +6.5 / +5.1 / +8.7, mai albastru decat cerul, si ar trece drept colorat)."),
                 },
                 new GuideParagraph
                 {

@@ -291,7 +291,6 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal const int TonalStride = 4;
         internal const int PercentileStride = 2;
-        internal const int BackgroundStride = 3;
 
         // ------------------------------------------------------------ noise
 
@@ -499,6 +498,17 @@ namespace AstroPhotoAnalyzer
         internal const double EdgeRegionWidthFraction = 0.20;
 
         /// <summary>
+        /// An edge region is measured on its sky pixels alone (the patches R-044 calls sky) when
+        /// they are at least this share of it; under it, on every pixel, and the row says so
+        /// (ADR 0056). Measured on 2026-10-27 on five real images: the lowest sky share of a
+        /// region was 41 %, the bottom edge of the two Milky Way cores, where the horizon glow
+        /// and the Rift's foot are classed band, dust and bright cloud; the glow's blue deficit
+        /// kept the flag on the sky pixels there. A quarter leaves room under that and keeps a
+        /// glow bright enough to be classed nebula over most of a region from vanishing with it.
+        /// </summary>
+        internal const double RegionSkyMinFraction = 0.25;
+
+        /// <summary>
         /// A cast of over this many levels on the background shows once the background is lifted.
         /// </summary>
         internal const double CastWarnLevels = 1.0;
@@ -515,9 +525,9 @@ namespace AstroPhotoAnalyzer
         /// the horizon corner had R +9, B -10 (coloured, pollution); the corner the Milky Way
         /// enters +11 / +10 / +16 (neutral - it is the object, not a gradient). A rule that
         /// mistakes the object for the defect is wrong more often than it is useful, so neutral =
-        /// informative, coloured = attention. Against the sky patches (ADR 0055) the same corners
-        /// read +4.6 / -3.6 / -17.0 and +6.5 / +5.0 / +8.8: the band is bluer than the sky, and
-        /// the rule now reads that corner as coloured too (known-limitations.md).
+        /// informative, coloured = attention. Against the sky patches (ADR 0055), each region on
+        /// its own sky pixels (ADR 0056), the same corners read +4.1 / -4.0 / -17.1 (coloured)
+        /// and +4.2 / +2.9 / +5.6 (neutral: the band's own, bluer, pixels no longer count).
         /// </summary>
         internal const double CornerColourSpreadRatio = 0.5;
 

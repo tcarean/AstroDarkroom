@@ -23,7 +23,7 @@ VERDICT: PROBLEMA
    ! Tenta verde pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - la fundal ridicat se va vedea.
      fiindca: fundal R 20.4 G 22.4 B 20.4; G - (R+B)/2 = +2.0, R - B = 0.0 niveluri (prag 1.0)
    ! Colt dreapta-jos: cald (lumina de orizont / poluare). Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.
-     fiindca: fata de fundal: R +10.0, G -0.1, B -8.0 niveluri (prag 3.0); canalele se misca diferit
+     fiindca: fata de fundal, pe toti pixelii regiunii (cer 14 %): R +9.9, G 0.0, B -8.0 niveluri (prag 3.0); canalele se misca diferit
 
 4. Marimea printului  [ATENTIE]
    ! De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica (50 x 50 cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea.
@@ -108,13 +108,13 @@ Anexa D. Rezolutie si marime
 Anexa E. Culoarea fundalului
   culoarea fundalului, R / G / B (0..255): 20.4 / 22.4 / 20.4; G - (R+B)/2 = +2.0; R - B = 0.0; de pe dalele de cer de deasupra benzii de jos
   colt stanga-sus    20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
-  colt dreapta-sus   20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
+  colt dreapta-sus   20.4 / 22.3 / 20.4     delta 0.0 / -0.1 / 0.0
   colt stanga-jos    20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
-  colt dreapta-jos   30.4 / 22.4 / 12.4     delta +10.0 / -0.1 / -8.0  !
-  latura de sus      19.9 / 21.9 / 19.9     delta -0.5 / -0.5 / -0.6
+  colt dreapta-jos   30.4 / 22.4 / 12.4     delta +9.9 / 0.0 / -8.0  (cer 14 %: toti pixelii)  !
+  latura de sus      20.2 / 22.1 / 20.1     delta -0.3 / -0.3 / -0.3
   latura de jos      20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
-  latura stanga      20.6 / 22.6 / 20.6     delta +0.1 / +0.1 / +0.1
-  latura dreapta     20.6 / 22.6 / 20.6     delta +0.1 / +0.1 / +0.1
+  latura stanga      20.5 / 22.5 / 20.5     delta 0.0 / +0.1 / +0.1
+  latura dreapta     20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
 
 Anexa F. Parametri
   mediu baryta, Dmax 2.0 (explicit); latimi 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm

@@ -40,7 +40,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `DmaxSensitivityStep` | 0.1 | the two neighbouring Dmax values Anexa B gives the exact target at (about 0.02 of target per 0.1) |
 | `PreviewMaxSide` | 1600 | longest side of the map and preview windows' image |
 | `ScreenBackgroundLo` / `ScreenBackgroundHi` / `PrintBackgroundLo` / `PrintBackgroundHi` | 0.05 / 0.10 / 0.15 / 0.25 | where a screen image's sky sits and where a print's should; rules of thumb for the window's help text only, no rule reads them |
-| `TonalStride` / `PercentileStride` / `BackgroundStride` | 4 / 2 / 3 | subsampling steps of the acceptance scripts |
+| `TonalStride` / `PercentileStride` | 4 / 2 | subsampling steps of the acceptance scripts; the background colour and the edge regions use the map's, `TonalStride` (`BackgroundStride`, 3, went with ADR 0056) |
 | `NoiseTileSize` / `NoiseTileCandidates` | 64 / 400 | |
 | `NoiseTileMaxRangeLevels` | 6000/257 = 23.3 | smooth-tile range for noise |
 | `NoiseMinTiles` | 10 | fewer: insufficient |
@@ -57,6 +57,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `JpegQualities` | 100, 95, 90 | |
 | `BackgroundExcludeBottomFraction` | 0.25 | the sky's colour leaves out the bottom band, where the horizon sits; it is taken on the sky patches of R-044 (ADR 0055; `BackgroundDarkestFraction`, the darkest quarter, went with it) |
 | `EdgeRegionHeightFraction` / `EdgeRegionWidthFraction` | 0.15 / 0.20 | corner = this much of the height x this much of the width; the edges are bands of the same thickness |
+| `RegionSkyMinFraction` | 0.25 | a region is measured on its sky pixels alone from this share of sky; under it on every pixel, and the row says so; the lowest share on five real images was 41 % (ADR 0056) |
 | `CastWarnLevels` / `CornerGradientLevels` / `CornerColourSpreadRatio` | 1.0 / 3.0 / 0.5 | |
 | `ScreenPixelMm` | 0.25 | a common monitor's pixel pitch (96-110 ppi); a presumption about the screen, for the Preview tab's step-back rule |
 | `AcuityMmAt1m` / `ViewingDistanceFactor` / `OversizeCm` / `ReferenceDpi` | 0.29 / 1.5 / 100 / 300 | 1.5 x the diagonal sits between the perspective-correct 1 x and the gallery 2 x (~37 degrees subtended); a presumption about the viewer, not a measurement |

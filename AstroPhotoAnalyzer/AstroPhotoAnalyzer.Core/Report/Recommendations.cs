@@ -250,7 +250,8 @@ namespace AstroPhotoAnalyzer
                     : e.Deltas[1] > (e.Deltas[0] + e.Deltas[2]) / 2 ? Tr.Pick("greenish", "verzui") : Tr.Pick("of another colour than the background", "cu alta culoare decat fundalul");
                 o.Add(new Recommendation(Topic.Colour, Verdict.Attention,
                     Tr.Pick($"{Cap(e.Name)}: {kind}. Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.", $"{Cap(e.Name)}: {kind}. Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita."),
-                    Tr.Pick($"against the background: {deltas} levels (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move differently", $"fata de fundal: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca diferit")));
+                    Tr.Pick($"against the background, {(e.OnSkyPixels ? "on the region's sky pixels" : $"on every pixel of the region (sky {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} levels (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move differently",
+                        $"fata de fundal, {(e.OnSkyPixels ? "pe pixelii de cer ai regiunii" : $"pe toti pixelii regiunii (cer {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca diferit")));
             }
 
             // The NEUTRAL deviations, all in a single note: an edge brighter by the same amount on
