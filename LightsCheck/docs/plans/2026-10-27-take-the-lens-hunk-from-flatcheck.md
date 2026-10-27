@@ -99,6 +99,15 @@ Measured today in `E:\Photografie\Code`:
      and no FITS carries XPIXSZ, `--pixel` overriding as now, the report's pixel source naming it;
      A later if 0.3 % ever matters. The owner decides; nothing of this is implemented here.
 
+6. **Option C, chosen by the owner on 2026-10-27 after step 5** ("mergem pe optiunea C"), a second
+   commit on the same branch: `SeriesOptions.PixelSizeUm` nullable (null = none typed, console
+   and window alike, the window's field blank by default); `LoadedFrame` and `FrameInfo` carry
+   `FocalLength35Mm`, `WidthPx`, `HeightPx` from libraw; `Analysis/PixelPitch.cs` derives the
+   pitch from the diagonal (`FromCrop`) and chooses the source (`Choose`: XPIXSZ, typed, raw,
+   3.92); the `scale` line names the source; R-066, ADR 0026; tests on fabricated `FrameInfo`s
+   (`PixelPitchTests`); `/validate` run afterwards, the drift table pasted, the moved figures
+   left to the owner.
+
 ## Verification
 
 `scripts/verify.ps1` green in the worktree (never in the main checkout); the new tests red before

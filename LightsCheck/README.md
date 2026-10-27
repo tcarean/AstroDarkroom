@@ -64,9 +64,11 @@ lightscheck --help
 - `--out DIR`: also writes the report, a CSV with every figure and the list of the frames to
   reject into DIR.
 - `--threads N`: how many frames are measured in parallel; half the cores by default.
-- `--pixel UM`: the pixel size in microns, used when the files do not carry it (a raw never does,
-  a FITS may, in `XPIXSZ`); 3.92 by default, the D3300's. With the focal length of the files it
-  gives the scale in "/px.
+- `--pixel UM`: the pixel size in microns. Without it, the files' `XPIXSZ` when a FITS carries
+  it; else the size the raw implies, from the 35 mm-equivalent focal length the camera writes
+  and the mosaic's size (4.00 on a D3300 at 135 mm); else 3.92, the D3300's spec. The `scale`
+  line of the report says which was used. With the focal length of the files it gives the scale
+  in "/px.
 - `--east left|right` and `--north up|down`: the SynScan arrows that move the mount east and
   north, for the `dithering` column (below); right and up by default. Their Romanian forms,
   `--est stanga|dreapta` and `--nord sus|jos`, work too, in either language.
@@ -326,8 +328,8 @@ The analysis starts by itself, the same as `lightscheck <folder>`, with a progre
   on the Summary tab.
 - **Report**: the console's text, the same to the byte.
 
-The top bar holds the inputs, read when a folder is opened: `PIXEL (um)`, the pixel size when the
-files do not carry it (3.92 for the D3300); `THREADS`, how many frames are measured in parallel
+The top bar holds the inputs, read when a folder is opened: `PIXEL (um)`, the pixel size, blank
+by default, when the files' `XPIXSZ` or the raw's own figure decide, as for `--pixel`; `THREADS`, how many frames are measured in parallel
 (empty = half the cores); and `EAST` and `NORTH`, the SynScan arrows that move the mount east and
 north (`→` and `↑` by default), remembered between starts in
 `%LOCALAPPDATA%\LightsCheck\settings.json`, the only thing the program keeps there.

@@ -127,6 +127,10 @@ public class RawReaderTests
         Assert.Equal(f.LensId, info.LensId);
         Assert.Equal(f.LensMount, info.LensMount);
         Assert.Equal(f.LensName, info.LensName);
+        // The size and the 35 mm-equivalent focal length are known from the open alone (R-066).
+        Assert.Equal(f.Image.W, info.Width);
+        Assert.Equal(f.Image.H, info.Height);
+        Assert.Equal(f.FocalLength35Mm, info.FocalLength35Mm);
     }
 
     // The four rules below are FlatCheck's lens hunk (its R-108; here R-065, ADR 0025), pinned on

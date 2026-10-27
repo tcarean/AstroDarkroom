@@ -13,8 +13,12 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   fallback for anything unclaimed. `LoadedFrame` is what every reader returns: the `Img`
   (null for a metadata-only load), the FITS header (empty, not null, for a raw), the exact
   `AduScale` (null for a FITS), the `CfaPattern` (null when the file is silent), and the shot
-  fields: focal length, f-number, camera, exposure, ISO, time of capture, pixel size, and the
-  lens as the raw gives it: `LensId`, `LensMount`, `LensName` and the range.
+  fields: focal length, f-number, camera, exposure, ISO, time of capture, pixel size, the
+  raw's 35 mm-equivalent focal length (`FocalLength35Mm`, libraw's
+  `LensInfo.FocalLengthIn35mmFormat`) and visible size (`Width`, `Height`, from libraw's sizes
+  at the open, before any decode; 0 on a FITS), which `PixelPitch` turns into a pixel size
+  (`series-analysis.md`, R-066), and the lens as the raw gives it: `LensId`, `LensMount`,
+  `LensName` and the range.
 - `RawReader` reads the visible CFA mosaic at the original ADU scale through libraw, with the
   black level as the median of the four channel blacks, the white as `color.maximum`, the
   colour order from `filters` and `cdesc` evaluated at the visible origin, and the shot

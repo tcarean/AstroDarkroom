@@ -89,6 +89,21 @@ namespace LightsCheck.Core
         internal double? PixelSizeUm;
 
         /// <summary>
+        /// The 35 mm-equivalent focal length the camera wrote (EXIF FocalLengthIn35mmFilm, through
+        /// libraw's LensInfo), in mm, an integer: 202 for 135 mm on a D3300. Raw only; null when
+        /// the file gives none or 0. With the shot's focal length and the mosaic's size it gives
+        /// the pixel size (PixelPitch.FromCrop, R-066).
+        /// </summary>
+        internal double? FocalLength35Mm;
+
+        /// <summary>
+        /// The visible mosaic's width and height in pixels, as libraw reports them before any
+        /// decode (6016 x 4016 on a D3300); 0 when unknown (a FITS, whose size is its Img's).
+        /// </summary>
+        internal int Width;
+        internal int Height;
+
+        /// <summary>
         /// The lens ID the raw carries, whichever the mount (raw only; R-065, FlatCheck's R-108):
         /// Nikon's LensIDNumber on a Nikon body (74 for a lens without CPU, 139 for the Tokina
         /// 11-20), the MakerNote's LensID elsewhere - Canon's lens type (198 = EF 50mm f/1.4 USM),

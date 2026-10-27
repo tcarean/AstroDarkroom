@@ -23,16 +23,22 @@ namespace LightsCheck.Core;
 /// What a run of the whole series takes from the user: the pixel size when the files do not say
 /// it, the parallelism.
 /// </summary>
-/// <param name="PixelSizeUm">The pixel size in microns, used when no file carries XPIXSZ.</param>
+/// <param name="PixelSizeUm">
+/// The pixel size in microns the user typed; null when none was typed, and then the run takes
+/// the files' XPIXSZ, else the raw's own figure, else <see cref="D3300PixelUm"/> (R-066).
+/// </param>
 /// <param name="Threads">
 /// How many frames are measured at once; 0 or less means half the processors, at least one.
 /// </param>
 /// <param name="Arrows">
 /// Which SynScan arrows move east and north; null means <see cref="ArrowKeys.Default"/>.
 /// </param>
-internal sealed record SeriesOptions(double PixelSizeUm = SeriesOptions.D3300PixelUm, int Threads = 0, ArrowKeys? Arrows = null)
+internal sealed record SeriesOptions(double? PixelSizeUm = null, int Threads = 0, ArrowKeys? Arrows = null)
 {
-    /// <summary>The Nikon D3300's pixel pitch: 23.5 mm over 6000 pixels.</summary>
+    /// <summary>
+    /// The Nikon D3300's pixel pitch, 23.5 mm over 6000 pixels: the last fallback, when no file
+    /// says the pixel size, none was typed and no raw gives a 35 mm-equivalent focal length.
+    /// </summary>
     internal const double D3300PixelUm = 3.92;
 
     /// <summary>
@@ -207,10 +213,16 @@ internal static class SeriesRun
         SensorPattern pattern = PatternAnalyzer.Analyze(crops, frames.Select(f => f.Measurement?.Channels).ToList(), dither);
         Array.Clear(crops);
 
-        // The pixel scale: the file's pixel size when it says it, else the option's.
-        double? filePixel = infos.Select(f => f.PixelSizeUm).FirstOrDefault(p => p is not null);
-        double pixel = filePixel ?? options.PixelSizeUm;
-        string pixelSource = filePixel is not null ? T("from the file (XPIXSZ)", "din fisier (XPIXSZ)") : T("entered", "introdus");
+        // The pixel scale: the files' XPIXSZ, else the typed size, else the raw's own, else the
+        // D3300's (R-066); the words are the report's, the choice is PixelPitch's.
+        (double pixel, PixelPitchSource source) = PixelPitch.Choose(infos, options.PixelSizeUm);
+        string pixelSource = source switch
+        {
+            PixelPitchSource.File => T("from the file (XPIXSZ)", "din fisier (XPIXSZ)"),
+            PixelPitchSource.Entered => T("entered", "introdus"),
+            PixelPitchSource.Raw => T("from the raw (35 mm-equivalent focal length)", "din raw (focala echivalenta 35 mm)"),
+            _ => T("default, Nikon D3300", "implicit, Nikon D3300"),
+        };
         double? focal = infos.Select(f => f.FocalMm).FirstOrDefault(f => f is not null);
         double? scale = focal is double fm && fm > 0 ? 206.265 * pixel / fm : null;
 

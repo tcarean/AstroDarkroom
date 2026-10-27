@@ -28,7 +28,7 @@ public class InventoryReportTests
 {
     private static FrameInfo Frame(string camera, double? focal, double? fNumber, long? lensId, string? mount, string? name,
                                    double? min = null, double? max = null, double? aperture = null)
-        => new(1, "lights/x.raw", camera, focal, fNumber, 120.2, 1600, SessionFixture.FirstStart, null, lensId, mount, name, min, max, aperture, null);
+        => new(1, "lights/x.raw", camera, focal, fNumber, 120.2, 1600, SessionFixture.FirstStart, null, null, null, null, lensId, mount, name, min, max, aperture, null);
 
     /// <summary>The text after "lens :" (or "obiectiv :") in the header written for one frame.</summary>
     private static string LensLine(FrameInfo frame)

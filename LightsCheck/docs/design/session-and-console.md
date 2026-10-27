@@ -29,9 +29,10 @@ here writes.
 ## The metadata of a frame (`FrameInfo`)
 
 One record per light, with its 1-based `Index`, its path, the shot fields (camera, focal
-length, f-number, exposure, ISO, timestamp, pixel size, the lens's ID, mount and name as the
-raw gives them (R-065, `imaging.md`) and the lens's own focal range and maximum aperture, all
-nullable) and an `Error`. `FrameInfo.Read(index, path)`
+length, f-number, exposure, ISO, timestamp, pixel size, the raw's 35 mm-equivalent focal
+length and visible size (R-066), the lens's ID, mount and name as the raw gives them (R-065,
+`imaging.md`) and the lens's own focal range and maximum aperture, all nullable) and an
+`Error`. `FrameInfo.Read(index, path)`
 never throws: it calls `ImageLoader.LoadInfo` (the metadata without the pixels,
 `imaging.md`), turns any exception into the record's `Error` (libraw's own type no longer
 reaches it: `RawReader` wraps it into `InvalidDataException` naming the file, ADR 0019),
@@ -88,8 +89,9 @@ wins and is a sentence in the run's language naming the argument: an option with
 a pixel size that is not a finite positive number (`SeriesOptions.PixelSizeIsValid`, the check
 the window shares), an arrow word that is not one of the two, an
 unknown option (anything else starting with `-`), a second folder, a missing folder,
-`--inventory` with `--frame`. The pixel size defaults to `SeriesOptions.D3300PixelUm` (3.92
-um), the thread count to 0, which `SeriesRun` reads as half the cores, and the arrow keys to
+`--inventory` with `--frame`. The pixel size is null unless `--pixel` was given (the run then
+reads it from the files or the raws, `series-analysis.md`, R-066), the thread count defaults to
+0, which `SeriesRun` reads as half the cores, and the arrow keys to
 `ArrowKeys.Default` (right east, up north), each option replacing one key of the record.
 
 `Program.Run(args, stdout, stderr)` is the whole console, called by `Main` with the real

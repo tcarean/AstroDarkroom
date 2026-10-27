@@ -26,6 +26,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   Romanian output as it was.
 - The inventory's `lens` line reads `ID 74 (Nikon F)` where it read `Nikon ID 74`: the ID is
   no longer Nikon's alone, so the mount says whose number it is (R-065).
+- The pixel size, when no file carries `XPIXSZ` and none is typed, comes from the raw itself:
+  the 35 mm-equivalent focal length the camera writes, over the shot's focal length, over the
+  mosaic's diagonal (4.00 um on the D3300 at 135 mm, 3.99 at 20 mm); the D3300's 3.92 is used
+  only when the raw gives no such figure. `--pixel` and the window's field, blank by default,
+  still override it; the `scale` line names the source (R-066, ADR 0026). On the Veil session the
+  scale reads 6.11 "/px instead of 5.99, so every arcsecond figure grows by 1.9 %.
 - The files of `--out` and of "Write the files..." are named in English in both languages:
   `lightscheck-report.txt`, `lightscheck-frames.csv`, `lightscheck-rejected.txt` (they were
   `lightscheck-raport.txt`, `lightscheck-cadre.csv`, `lightscheck-respinse.txt`); the CSV's text

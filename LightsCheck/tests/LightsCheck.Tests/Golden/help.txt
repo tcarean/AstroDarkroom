@@ -14,7 +14,8 @@ Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [-
   --out DIR     scrie in DIR raportul, un CSV cu toate cifrele si lista de respins
                 (lightscheck-report.txt, lightscheck-frames.csv, lightscheck-rejected.txt).
   --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).
-  --pixel UM    marimea pixelului in microni, cand fisierele n-o spun (implicit 3.92, Nikon D3300).
+  --pixel UM    marimea pixelului in microni; fara ea, XPIXSZ din fisiere, apoi focala echivalenta
+                35 mm din raw, apoi 3.92 (Nikon D3300).
   --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit dreapta); cealalta e vest.
   --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.
   --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.

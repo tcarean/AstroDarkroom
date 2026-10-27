@@ -132,7 +132,9 @@ namespace LightsCheck.Core
         {
             using RawContext ctx = Open(path);
             LibRawData d = Marshal.PtrToStructure<LibRawData>(ctx.UnsafeGetHandle());
-            var f = new LoadedFrame { Image = null, Header = NoHeader };
+            // The visible size is known from the open alone, before any decode (R-066).
+            LibRawImageSizes s = d.RawData.Sizes;
+            var f = new LoadedFrame { Image = null, Header = NoHeader, Width = s.Width, Height = s.Height };
             FillShootingInfo(f, ctx, d.RawData.IParams);
             return f;
         }
@@ -249,6 +251,8 @@ namespace LightsCheck.Core
                 Header = NoHeader,
                 Scale = new AduScale(white, black, "libraw (exact)"),
                 Cfa = cfa,
+                Width = w,
+                Height = h,
             };
             FillShootingInfo(f, ctx, ip);
             return f;
@@ -259,10 +263,12 @@ namespace LightsCheck.Core
         /// f-number, camera name, exposure, ISO, time of capture, and the lens - its ID and mount
         /// (<see cref="LensIdOf"/>, <see cref="MountLabel"/>), its name (LensInfo.Lens, the EXIF
         /// LensModel: empty on a D3300, "EF50mm f/1.4 USM" on a Canon) and its range
-        /// (<see cref="RangeOf"/>), all for the inventory's lens line. Each stays null when
-        /// libraw gives zero or empty. libraw types in locals only, as everywhere in this file; a
-        /// failure in the lens block leaves the lens fields null and the rest as read. The lens
-        /// block is FlatCheck's hunk of 2026-10-26 (its R-108; here R-065, ADR 0025).
+        /// (<see cref="RangeOf"/>), all for the inventory's lens line, and the 35 mm-equivalent
+        /// focal length (LensInfo.FocalLengthIn35mmFormat, 202 for 135 mm on a D3300), which with
+        /// the mosaic's size gives the pixel size (R-066). Each stays null when libraw gives zero
+        /// or empty. libraw types in locals only, as everywhere in this file; a failure in the lens
+        /// block leaves the lens fields null and the rest as read. The lens block is FlatCheck's
+        /// hunk of 2026-10-26 (its R-108; here R-065, ADR 0025).
         ///
         /// The time is libraw's time_t: EXIF DateTimeOriginal run through mktime on this
         /// machine, so converting it back through the local zone gives the wall-clock the camera
@@ -294,6 +300,7 @@ namespace LightsCheck.Core
             {
                 LibRawLensInfo li = ctx.LensInfo;
                 LibRawLensMakerNotes notes = li.MakerNotes;
+                f.FocalLength35Mm = li.FocalLengthIn35mmFormat > 0 ? li.FocalLengthIn35mmFormat : null;
                 // The lens's mount, and the camera's only when the lens's is unknown: the two agree
                 // on every known body FlatCheck measured, and on a body newer than libraw (an EOS
                 // R5 Mark II read by 0.21.1) CameraMount said Canon EF while LensMount said Canon
@@ -309,6 +316,7 @@ namespace LightsCheck.Core
             }
             catch (Exception)
             {
+                f.FocalLength35Mm = null;
                 f.LensId = null;
                 f.LensMount = null;
                 f.LensName = null;

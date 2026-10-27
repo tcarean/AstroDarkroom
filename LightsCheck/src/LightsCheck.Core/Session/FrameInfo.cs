@@ -44,6 +44,12 @@ namespace LightsCheck.Core;
 /// <param name="PixelSizeUm">
 /// The pixel size in microns (XPIXSZ on a FITS; a raw does not say it); null when unknown.
 /// </param>
+/// <param name="FocalLength35Mm">
+/// The 35 mm-equivalent focal length the camera wrote, in mm (a raw only; R-066); null when
+/// unknown.
+/// </param>
+/// <param name="WidthPx">The visible mosaic's width in pixels (a raw only); null when unknown.</param>
+/// <param name="HeightPx">The visible mosaic's height in pixels (a raw only); null when unknown.</param>
 /// <param name="LensId">
 /// The lens ID as the raw carries it, whichever the mount (Nikon's own number on a Nikon body,
 /// the maker's lens type elsewhere; R-065); null when absent.
@@ -76,6 +82,9 @@ internal sealed record FrameInfo(
     double? Iso,
     DateTime? Timestamp,
     double? PixelSizeUm,
+    double? FocalLength35Mm,
+    int? WidthPx,
+    int? HeightPx,
     long? LensId,
     string? LensMount,
     string? LensName,
@@ -97,7 +106,8 @@ internal sealed record FrameInfo(
     {
         ArgumentNullException.ThrowIfNull(f);
         return new FrameInfo(index, path, f.Camera, f.FocalMm, f.FNumber, f.ExposureSeconds, f.Iso,
-            f.Timestamp, f.PixelSizeUm, f.LensId, f.LensMount, f.LensName, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
+            f.Timestamp, f.PixelSizeUm, f.FocalLength35Mm, f.Width > 0 ? f.Width : null, f.Height > 0 ? f.Height : null,
+            f.LensId, f.LensMount, f.LensName, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
     }
 
     /// <summary>
@@ -120,7 +130,7 @@ internal sealed record FrameInfo(
             // (as a rule, a file that is not a FITS) is a frame nothing can be said about.
             if (FitsReader.IsFitsPath(path) && f.Header.Count == 0)
             {
-                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
+                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
             }
 
             return From(index, path, f);
@@ -129,7 +139,7 @@ internal sealed record FrameInfo(
         {
             // Anything the file makes the readers throw, libraw's own exception type included,
             // is this frame's error, never the run's: the other frames are still listed.
-            return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, e.Message);
+            return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, e.Message);
         }
     }
 }
