@@ -6,8 +6,10 @@
 `src/AstroDarkroom.Core/Prerequisites.cs`, `src/AstroDarkroom.Core/Version.cs`,
 `src/AstroDarkroom.Core/Language/Ui.cs`,
 `src/AstroDarkroom.Core/Language/LanguageSetting.cs`, `src/AstroDarkroom.Wpf/App.xaml.cs`,
-`src/AstroDarkroom.Wpf/AppRow.cs`, `src/AstroDarkroom.Wpf/MainWindow.xaml.cs`,
-`src/AstroDarkroom.Wpf/AboutWindow.xaml.cs` and `Icon/make_icon.py`.
+`src/AstroDarkroom.Wpf/Icons.cs`, `src/AstroDarkroom.Wpf/AppRow.cs`,
+`src/AstroDarkroom.Wpf/MainWindow.xaml.cs`,
+`src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`, `Icon/make_icon.py` and the icon files in
+`Icon/`.
 
 The launcher is two layers: a core that answers three questions about a folder (which apps
 exist, which of them are there, how to start one), reads two files (`release.json`, the
@@ -32,15 +34,17 @@ languages and the live switch are ADR 0006.
   so an interruption leaves the last good file; a failed write is swallowed. The core knows no
   path; the window gives it `%LOCALAPPDATA%\AstroDarkroom\settings.json`.
 - `SuiteApp` is one app: its folder name in the repository (also its name in `release.json`),
-  its title (the component's name), its description in one language and its window exe. The
-  suite ships windows only, so there is no console field (ADR 0002). `AppCatalogue.Apps` is
+  its title (the component's name), its description in one language, its window exe and the
+  file name of its icon in `Icon/` (R-010). The suite ships windows only, so there is no
+  console field (ADR 0002). `AppCatalogue.Apps` is
   the fixed list of six, in workflow order (darks, flats, lights, the processed pair, the
   plate solve put back into the processed image, the print; ADR 0010), in the language of
   `Ui.Current`: `Build` makes the list once per language when the type loads, each
   description a `T(en, ro)` pair, and `Apps` picks the list. The exe names are the
   components' `AssemblyName` plus `.exe`; `SuiteTests` reads the components' project files to
   keep them so, reads `kit.json` to keep the list equal to the set of components the release
-  bundles, and refuses an entry whose project is a console.
+  bundles, refuses an entry whose project is a console, and compares each icon copy's bytes
+  with the component's `ApplicationIcon` file (ADR 0011).
 - `SuiteFolder` is one base directory. `Locate(app)` combines it with the window exe and asks
   `File.Exists`; the result, `AppLocation`, carries the path either way, so a row can say what
   file it would start, and the reason `<exe> is missing` / `Lipseste <exe>` when it is not
@@ -72,15 +76,21 @@ languages and the live switch are ADR 0006.
 - `App.OnStartup` reads the setting file into `Ui.Default` (English when it gives none), makes
   one `SuiteFolder` from `AppContext.BaseDirectory`, the folder the executable runs from, and
   opens `MainWindow` on it and on the setting's path. Nothing is read from the command line.
-  `App.LargestIconFrame` picks the widest frame of the `.ico` for the two logos, since the
-  first frame of an icon is not reliably the largest.
+- `Icons` is the `.ico` resources of `Icon/`: `Source(fileName)` is the pack URI and
+  `LargestFrame(fileName)` the widest frame of that file, decoded once and kept in a
+  dictionary (the rows are rebuilt at every change of language), since the first frame of an
+  icon is not reliably the largest; `Icons.Launcher` names the launcher's own, for the two
+  logos.
 - `MainWindow` reads `release.json` once. The XAML carries no user text: `Relabel()` assigns
   every label (the subtitle, the prerequisites line under it from `Prerequisites.Summary`, the
   folder line, the selector's tooltip, the about button and its tooltip) through `T` and
   builds one `AppRow` per catalogue app: the app, its `AppLocation`, its `ComponentInfo` or
   null. The row's properties are the strings the XAML binds (`OpenLabel`, `VersionHint` as
   `version X` / `versiunea X` or `version unknown` / `versiune necunoscuta`, `ButtonHint` as
-  the exe or the reason), picked at the row's build, and `IsAvailable`, which
+  the exe or the reason), picked at the row's build, `Icon`, the app's icon through
+  `Icons.LargestFrame`, which the card's first column shows at 40 px with a `DataTrigger`
+  that dims it to the disabled button's opacity when the app is missing (R-010, ADR 0011),
+  and `IsAvailable`, which
   enables the button. The button's tooltip is shown on a disabled button too
   (`ToolTipService.ShowOnDisabled`), since the reason is the one thing a disabled row must
   tell. The window does not watch the folder: a file that appears or goes away is seen at the
@@ -118,11 +128,16 @@ languages and the live switch are ADR 0006.
   the Windows 10 builds before 20H1; a Windows without either keeps the light bar (ADR 0004).
   Message boxes are the system's and keep its bar.
 
-## The icon
+## The icons
 
 `Icon/make_icon.py` draws `astrodarkroom.ico` at eight sizes on a 110-unit grid with 8x
 supersampling: a red-brown rounded square (the safelight) and a white star with a halo, a core
 and, from 32 px up, four spikes; at 24 px and below the spikes would fall under a pixel, so the
 core is drawn larger instead. The `.ico` is committed; the script runs only when the drawing
-changes. The csproj uses the file as `ApplicationIcon` and as a `Resource`, which the windows'
-`Icon=` and `App.IconSource` name.
+changes. The csproj uses the file as `ApplicationIcon`, and every `.ico` of the folder as a
+`Resource` under `Icon/`, which the windows' `Icon=` and `Icons.Source` name.
+
+The other six files are the components' own icons, copied under their file names and never
+drawn here; the catalogue names each (`SuiteApp.Icon`) and `SuiteTests` keeps every copy
+byte-equal to the component's `ApplicationIcon` (R-010, ADR 0011). When a component redraws
+its icon, the gate here goes red until the new file is copied over the old copy.

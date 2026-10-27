@@ -46,7 +46,7 @@ public partial class AboutWindow : Window
         InitializeComponent();
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         Title = T("About Astro Darkroom", "Despre Astro Darkroom");
-        Logo.Source = App.LargestIconFrame();
+        Logo.Source = Icons.LargestFrame(Icons.Launcher);
         Tagline.Text = T(
             "The launcher and the shared package of the astrophotography tools.",
             "Lansatorul si pachetul comun al uneltelor de astrofoto.");

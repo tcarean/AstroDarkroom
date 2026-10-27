@@ -22,4 +22,4 @@ the same task as the code it covers.
 
 | Area | Note | Read before editing |
 | --- | --- | --- |
-| The launcher: the catalogue, where an app is, the plan of a start, `release.json`, the two windows and the icon | `launcher.md` | anything in `src/AstroDarkroom.Core/` or `src/AstroDarkroom.Wpf/`, `Icon/make_icon.py`, any text the window shows, in either language |
+| The launcher: the catalogue, where an app is, the plan of a start, `release.json`, the two windows and the icons | `launcher.md` | anything in `src/AstroDarkroom.Core/` or `src/AstroDarkroom.Wpf/`, anything in `Icon/`, any text the window shows, in either language |
