@@ -168,6 +168,30 @@ public class RecommendationsTests
     }
 
     [Fact]
+    public void R091_TheBandingLineSaysWhereThePlateauWasMeasured()
+    {
+        // The dark scene's plateau is measured on 120 clean tiles: the because names the tiles,
+        // their share of the frame and the noise left on them, so that the reader can tell it
+        // apart from the denoise section's median, taken on other tiles.
+        var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
+
+        Recommendation banding = Assert.Single(Of(a, Topic.Format), r => r.Text.StartsWith("Risc de banding"));
+        Assert.Contains("; pe 120 dale curate, ", banding.Because);
+        Assert.Matches(@" din cadru, unde zgomotul ramas e sigma \d+\.\d\d LSB$", banding.Because);
+    }
+
+    [Fact]
+    public void R095_TheDenoiseBecauseAlwaysTellsTheShareOfTilesUnderTheBandingSigma()
+    {
+        // On a clean sky no tile is under 0.5 LSB, and the because says so all the same.
+        var a = Run(Scenes.CleanSky());
+
+        Recommendation denoise = Assert.Single(Of(a, Topic.Denoise));
+        Assert.Equal(Verdict.Ok, denoise.Verdict);
+        Assert.Contains("; sub 0.5 LSB, 0.0 % din dale)", denoise.Because);
+    }
+
+    [Fact]
     public void R093_MonoHasNoColourToJudge()
     {
         var a = Run(Scenes.MonoSky());

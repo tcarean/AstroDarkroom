@@ -27,7 +27,7 @@ VERDICT: CAUTION
 
 5. Denoise for the print version  [OK]
    - The residual noise is exactly where it should be for print.
-     because: median sigma 1.05 LSB on 123 smooth tiles (10 % 1.03, minimum 1.02); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.15 the noise shrinks by ~0.82 x (the slope of the curve at the background), to ~0.86 LSB
+     because: median sigma 1.05 LSB on 123 smooth tiles (10 % 1.03, minimum 1.02; under 0.5 LSB, 0.0 % of the tiles); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.15 the noise shrinks by ~0.82 x (the slope of the curve at the background), to ~0.86 LSB
 
 6. Warnings  [CAUTION]
    ! No ICC profile: the lab will assume sRGB. Export with the sRGB profile embedded, so that nobody assumes anything.

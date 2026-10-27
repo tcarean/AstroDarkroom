@@ -201,6 +201,13 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-10-27 (R-080, R-091, R-095: where the plateau is measured): `quantization.plateauFramePct`
+  (tiles accepted over positions tried, in percent) and `quantization.plateauSigmaLsb` (the median noise on the
+  plateau's tiles) recorded for every analysis case; no existing figure moved. On the reference image
+  the 20 tiles are 0.4 % of the frame at sigma 0.32 LSB (V-001). The golden console texts move on the
+  banding line's "because", on Appendix C's plateau line and on the denoise line's "because", which
+  now always carries the share of smooth tiles under 0.5 LSB.
+
 - 2026-10-27 (ADR 0057, a cast is a sky chroma over 3 in L*a*b*;
   `docs/plans/2026-10-27-cast-on-lab-chroma.md`, its table): the owner asked whether the +2.2
   levels of green on his photometrically calibrated core were a cast; in L*a*b* that sky sits

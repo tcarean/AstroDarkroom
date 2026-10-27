@@ -33,6 +33,7 @@
 // read the 8-bit path alone and gave both).
 
 using System;
+using System.Collections.Generic;
 
 namespace AstroPhotoAnalyzer
 {
@@ -43,6 +44,22 @@ namespace AstroPhotoAnalyzer
     internal sealed record QuantizationResult
     {
         internal int PlateauTiles { get; init; }
+
+        /// <summary>
+        /// The share of the frame the plateau's tiles stand for, in percent (0..100, as
+        /// <see cref="NoiseResult.PctTilesBelowBanding"/>): the tiles accepted over the random
+        /// positions tried (the draws are uniform over the frame), so a frame whose clean sky is a
+        /// few wiped patches reads as a few tenths of a percent. 0 without tiles.
+        /// </summary>
+        internal double PlateauFramePct { get; init; }
+
+        /// <summary>
+        /// The residual noise on the plateau's tiles, the median of their sigmas in 8-bit LSB
+        /// (<see cref="NoiseAnalyzer.SigmaLsb"/>): what the denoise left where the plateau is
+        /// measured, usually far under the noise section's median, since a tile with real noise
+        /// does not pass the plateau's range criterion. NaN without tiles.
+        /// </summary>
+        internal double PlateauSigmaLsb { get; init; }
 
         /// <summary>
         /// The mean length of the runs of identical values, in pixels; NaN without tiles.
@@ -96,14 +113,16 @@ namespace AstroPhotoAnalyzer
         /// <returns>The result; C2 and C4 at 0 where they do not apply.</returns>
         internal static QuantizationResult Analyze(Raster r)
         {
-            var (tiles, plateau) = Plateau(r);
+            var (tiles, pct, plateau, sigma) = Plateau(r);
             bool applicable = r.Source == null || r.Source.IsFloat || r.Source.BitDepth > 8;
             var (mean, max, p999) = applicable ? Rounding(r) : (0, 0, 0);
             var (u16, m16, u8, m8) = applicable ? Stress(r) : (0, 0, 0, 0);
             return new QuantizationResult
             {
                 PlateauTiles = tiles,
+                PlateauFramePct = pct,
                 PlateauPx = plateau,
+                PlateauSigmaLsb = sigma,
                 Applicable = applicable,
                 RoundingMeanAbs = mean,
                 RoundingMax = max,
@@ -123,23 +142,26 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="r">The image, 0..1; its reference plane is read.</param>
         /// <returns>
-        /// The tiles accepted and the mean plateau, in pixels; NaN without a tile, and 0 and NaN
+        /// The tiles accepted, their share of the frame in percent (accepted over tried), the mean
+        /// plateau in pixels and the median of the tiles' noise sigmas in LSB; NaN without a tile, and 0 and NaN
         /// on a raster not larger than a tile.
         /// </returns>
-        static (int Tiles, double PlateauPx) Plateau(Raster r)
+        static (int Tiles, double FramePct, double PlateauPx, double SigmaLsb) Plateau(Raster r)
         {
             int size = Thresholds.NoiseTileSize;
-            if (r.H <= size || r.W <= size) return (0, double.NaN);
+            if (r.H <= size || r.W <= size) return (0, 0, double.NaN, double.NaN);
             float[] g = r.Reference;
             var rng = new SeededRandom(Thresholds.PlateauSeed);
             float maxRange = (float)(Thresholds.PlateauTileMaxRangeLevels / 255.0);
             float maxMean = (float)(Thresholds.PlateauTileMaxMeanLevels / 255.0);
 
-            double sum = 0; int tiles = 0;
-            for (int attempt = 0; attempt < Thresholds.PlateauMaxAttempts && tiles < Thresholds.PlateauTileCount; attempt++)
+            double sum = 0; int tiles = 0, attempts = 0;
+            var sigmas = new List<float>();
+            for (; attempts < Thresholds.PlateauMaxAttempts && tiles < Thresholds.PlateauTileCount; attempts++)
             {
                 int y0 = rng.Next(r.H - size), x0 = rng.Next(r.W - size);
                 if (!Accept(g, r.W, x0, y0, size, maxRange, maxMean)) continue;
+                sigmas.Add((float)NoiseAnalyzer.SigmaLsb(g, r.W, x0, y0, size));
 
                 // Changes of value along each row, on the quantised sky; averaged over the rows.
                 double changes = 0;
@@ -156,7 +178,7 @@ namespace AstroPhotoAnalyzer
                 sum += size / (1 + changes / size);
                 tiles++;
             }
-            return (tiles, tiles == 0 ? double.NaN : sum / tiles);
+            return (tiles, attempts == 0 ? 0 : 100.0 * tiles / attempts, tiles == 0 ? double.NaN : sum / tiles, tiles == 0 ? double.NaN : Stats.Median(sigmas.ToArray()));
         }
 
         /// <summary>

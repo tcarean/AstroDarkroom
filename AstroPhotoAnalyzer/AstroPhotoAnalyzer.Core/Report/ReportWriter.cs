@@ -401,7 +401,7 @@ namespace AstroPhotoAnalyzer
                                     $"  stres shadow-lift (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), niveluri {Thresholds.ShadowLiftLevelLo}..{Thresholds.ShadowLiftLevelHi}: din 16 biti {q.LevelsUsedFrom16} folosite / {q.MissingFrom16} lipsa; din 8 biti {q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa"));
             }
             w.WriteLine(q.PlateauKnown
-                ? Tr.Pick($"  plateau on the quantized sky: {Fmt.F1(q.PlateauPx)} px over {q.PlateauTiles} tiles", $"  palier pe cerul cuantizat: {Fmt.F1(q.PlateauPx)} px pe {q.PlateauTiles} dale")
+                ? Tr.Pick($"  plateau on the quantized sky: {Fmt.F1(q.PlateauPx)} px over {q.PlateauTiles} tiles ({Fmt.Pct(q.PlateauFramePct)} of the frame, noise left sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB)", $"  palier pe cerul cuantizat: {Fmt.F1(q.PlateauPx)} px pe {q.PlateauTiles} dale ({Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB)")
                 : Tr.Pick($"  plateau: no clean sky tiles ({q.PlateauTiles})", $"  palier: fara dale de cer curat ({q.PlateauTiles})"));
         }
 

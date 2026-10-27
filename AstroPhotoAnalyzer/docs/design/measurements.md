@@ -332,7 +332,15 @@ and mean < 70 levels (`PlateauTile*` - the strict criterion of the other accepta
 script). On each, the 8-bit quantised values: changes of value per row, averaged;
 plateau = 64 / (1 + changes). `PlateauPx` = mean over tiles (NaN without tiles);
 `PlateauMmAt(dpi)` = PlateauPx x 25.4 / dpi; `PlateauVisibleAt(dpi)` when >
-`PlateauVisibleMm` (1.0).
+`PlateauVisibleMm` (1.0). `PlateauFramePct` = 100 x tiles accepted / positions tried (the draws
+are uniform, so it estimates the share of the frame that is clean sky by the strict
+criterion); `PlateauSigmaLsb` = the median over the tiles of `NoiseAnalyzer.SigmaLsb`. The
+two say where the plateau was measured: a tile with real noise of about 1 LSB or more spans
+over 6 levels (the range of its 4096 samples is about 7 sigma; the clean-sky scene at 1.0 LSB
+yields no tile) and fails the range criterion, so on an AI-denoised frame the plateau's tiles are
+the patches the denoiser wiped (the owner's 2026-08-12 core at Syqon 0.75: 11 tiles, 0.2 %
+of the frame, sigma 0.01, against a noise median of 0.82 on 313 smooth tiles), and the mean
+plateau is not comparable across denoise strengths (see `known-limitations.md`).
 
 **C2 rounding** (when the source has more than 8 bits): |v x 255 - round(v x 255)| on all
 planes at stride 2 -> `RoundingMeanAbs`, `RoundingMax`, `RoundingP999` (from a 1000-bin

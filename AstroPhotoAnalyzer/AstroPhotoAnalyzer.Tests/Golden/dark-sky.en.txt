@@ -13,7 +13,7 @@ VERDICT: PROBLEM
    - If the lab accepts only JPEG: q100, 4:4:4 (0.1 MB).
      because: mean error 0.58, max 3.5 levels; 0.4 % of the samples with an error > 2, at a mean level of 28 (in the dark sky, where JPEG does worst)
    ! Banding risk at 8 bits: send 16-bit if the lab accepts it, or add dither at the export.
-     because: a plateau of 2.2 px = 2.13 mm at 26 dpi, over 1.0 mm
+     because: a plateau of 2.2 px = 2.13 mm at 26 dpi, over 1.0 mm; on 120 clean tiles, 8.3 % of the frame, where the noise left is sigma 0.30 LSB
 
 2. The background and the paper  [PROBLEM]
    !! The sky is under paper black: the sky and the dust would print as the SAME black. Re-stretch from linear to a background of 0.16 (simulated: the dust at L* 11.7, the sky at L* 15.9; exactly on black at 0.135).
@@ -33,7 +33,7 @@ VERDICT: PROBLEM
 
 5. Denoise for the print version  [CAUTION]
    ! Denoise is set too strong for print: the noise no longer dithers the quantization. For the print version, a lower setting keeps the texture and the faint stars.
-     because: median sigma 0.30 LSB on 38 smooth tiles (10 % 0.30, minimum 0.29); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.16 the noise grows by ~1.36 x (the slope of the curve at the background), to ~0.41 LSB; under 0.5 LSB, 100.0 % of the tiles
+     because: median sigma 0.30 LSB on 38 smooth tiles (10 % 0.30, minimum 0.29; under 0.5 LSB, 100.0 % of the tiles); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.16 the noise grows by ~1.36 x (the slope of the curve at the background), to ~0.41 LSB
 
 6. Warnings  [CAUTION]
    ! Keep the 16-bit master: any later edit (a reframing, a retouch, another print) starts from it, not from the print file.
@@ -77,7 +77,7 @@ Appendix C. Export
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
   16 -> 8 rounding: mean 0.262, max 0.498, p99.9 0.498 levels
   shadow-lift stress (gamma 1.9), levels 8..120: from 16 bits 75 used / 0 missing; from 8 bits 52 used / 24 missing
-  plateau on the quantized sky: 2.2 px over 120 tiles
+  plateau on the quantized sky: 2.2 px over 120 tiles (8.3 % of the frame, noise left sigma 0.30 LSB)
 
 Appendix D. Resolution and size
   stars: 64 measured; median FWHM 3.06 px, Q1 3.05, Q3 3.08; real detail ~167 px across the width

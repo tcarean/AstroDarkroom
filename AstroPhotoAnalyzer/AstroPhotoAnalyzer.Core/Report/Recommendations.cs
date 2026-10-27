@@ -94,14 +94,20 @@ namespace AstroPhotoAnalyzer
             if (q.PlateauKnown && size != null)
             {
                 double mm = q.PlateauMmAt(size.Dpi);
+                // Where the plateau was measured: on an AI-denoised frame the only tiles clean
+                // enough are the patches the denoiser wiped, a few tenths of a percent of the
+                // frame at a sigma near zero, while the noise section's median says the sky is
+                // fine. The reader must see that the two speak of different places.
+                string where = Tr.Pick($"; on {q.PlateauTiles} clean tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, where the noise left is sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB",
+                    $"; pe {q.PlateauTiles} dale curate, {Fmt.Pct(q.PlateauFramePct)} din cadru, unde zgomotul ramas e sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB");
                 if (q.PlateauVisibleAt(size.Dpi))
                     o.Add(new Recommendation(Topic.Format, Verdict.Attention,
                         Tr.Pick("Banding risk at 8 bits: send 16-bit if the lab accepts it, or add dither at the export.", "Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export."),
-                        Tr.Pick($"a plateau of {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm at {Fmt.F0(size.Dpi)} dpi, over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm", $"palier de {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm la {Fmt.F0(size.Dpi)} dpi, peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm")));
+                        Tr.Pick($"a plateau of {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm at {Fmt.F0(size.Dpi)} dpi, over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm", $"palier de {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm la {Fmt.F0(size.Dpi)} dpi, peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm") + where));
                 else
                     o.Add(new Recommendation(Topic.Format, Verdict.Ok,
                         Tr.Pick("No visible banding at 8 bits: the residual noise dithers the quantization.", "Fara banding vizibil pe 8 biti: zgomotul rezidual dither-eaza cuantizarea."),
-                        Tr.Pick($"a plateau of {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm at {Fmt.F0(size.Dpi)} dpi, under {Fmt.F1(Thresholds.PlateauVisibleMm)} mm", $"palier de {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm la {Fmt.F0(size.Dpi)} dpi, sub {Fmt.F1(Thresholds.PlateauVisibleMm)} mm")));
+                        Tr.Pick($"a plateau of {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm at {Fmt.F0(size.Dpi)} dpi, under {Fmt.F1(Thresholds.PlateauVisibleMm)} mm", $"palier de {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm la {Fmt.F0(size.Dpi)} dpi, sub {Fmt.F1(Thresholds.PlateauVisibleMm)} mm") + where));
             }
             else if (r.Noise.BandingRisk)
                 o.Add(new Recommendation(Topic.Format, Verdict.Attention,
@@ -475,12 +481,16 @@ namespace AstroPhotoAnalyzer
                 double slope = row.Gamma * Math.Pow(bg, row.Gamma - 1);
                 after = Tr.Pick($"; after the re-stretch to {Fmt.Level(row.Target)} the noise {(slope >= 1 ? "grows" : "shrinks")} by ~{Fmt.F2(slope)} x (the slope of the curve at the background), to ~{Fmt.F2(n.SigmaMedianLsb * slope)} LSB", $"; dupa re-stretch la {Fmt.Level(row.Target)} zgomotul {(slope >= 1 ? "creste" : "scade")} de ~{Fmt.F2(slope)} x (panta curbei la fundal), la ~{Fmt.F2(n.SigmaMedianLsb * slope)} LSB");
             }
-            string because = Tr.Pick($"median sigma {Fmt.F2(n.SigmaMedianLsb)} LSB on {n.SmoothTiles} smooth tiles (10 % {Fmt.F2(n.Sigma10thLsb)}, minimum {Fmt.F2(n.SigmaMinLsb)}); {target}{after}", $"sigma median {Fmt.F2(n.SigmaMedianLsb)} LSB pe {n.SmoothTiles} dale netede (10 % {Fmt.F2(n.Sigma10thLsb)}, minim {Fmt.F2(n.SigmaMinLsb)}); {target}{after}");
+            // The share of the smooth tiles under the banding sigma is always told: an AI denoiser
+            // can leave the median where it should be and still wipe a tail of tiles, where the
+            // 8-bit plateau of section 1 is then measured.
+            string because = Tr.Pick($"median sigma {Fmt.F2(n.SigmaMedianLsb)} LSB on {n.SmoothTiles} smooth tiles (10 % {Fmt.F2(n.Sigma10thLsb)}, minimum {Fmt.F2(n.SigmaMinLsb)}; under {Fmt.F1(Thresholds.NoiseBandingLsb)} LSB, {Fmt.Pct(n.PctTilesBelowBanding)} of the tiles); {target}{after}",
+                $"sigma median {Fmt.F2(n.SigmaMedianLsb)} LSB pe {n.SmoothTiles} dale netede (10 % {Fmt.F2(n.Sigma10thLsb)}, minim {Fmt.F2(n.SigmaMinLsb)}; sub {Fmt.F1(Thresholds.NoiseBandingLsb)} LSB, {Fmt.Pct(n.PctTilesBelowBanding)} din dale); {target}{after}");
 
             if (n.BandingRisk)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
                     Tr.Pick("Denoise is set too strong for print: the noise no longer dithers the quantization. For the print version, a lower setting keeps the texture and the faint stars.", "Denoise-ul e apasat tare pentru print: zgomotul nu mai dither-eaza cuantizarea. Pentru versiunea de print, o valoare mai mica pastreaza textura si stelele slabe."),
-                    because + Tr.Pick($"; under {Fmt.F1(Thresholds.NoiseBandingLsb)} LSB, {Fmt.Pct(n.PctTilesBelowBanding)} of the tiles", $"; sub {Fmt.F1(Thresholds.NoiseBandingLsb)} LSB, {Fmt.Pct(n.PctTilesBelowBanding)} din dale")));
+                    because));
             else if (n.UnderDenoised)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
                     Tr.Pick("Noise visible at 100 % on screen; on paper, at the sizes of the table, it does not show - denoise only if you also want a clean screen version.", "Zgomot vizibil la 100 % pe ecran; pe hartie, la marimile din tabel, nu se vede - denoise doar daca vrei si versiunea de ecran curata."),

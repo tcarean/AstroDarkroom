@@ -67,6 +67,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - An edge flagged with the colour of the corner beside it, and less than it, is no longer a
   line of its own: the corner's line says the glow reaches along that edge, with the edge's
   figures in its "because"; an edge without such a corner keeps its line (R-093; ADR 0058).
+- The banding line of section 1 says where the 8-bit plateau was measured: on how many clean
+  tiles, what share of the frame they are and what noise the denoise left on them; Appendix C
+  and the Export tab's plateau row carry the same figures. On an AI-denoised frame those tiles
+  can be a few patches the denoiser wiped while the denoise section's median is in target, and
+  the two no longer read as a contradiction (R-080, R-091; ADR 0059).
+- The denoise line's "because" always gives the share of the smooth tiles under 0.5 LSB, not
+  only when the median is under it (R-095).
 - A starless image no longer reports thousands of stars and a false resolution: a star must
   stand 12 times the local noise over its surroundings (`StarMinSnr`), so the grain of the
   stretched sky, which the absolute floor let through (6297 "stars" at 2.38 px on the starless

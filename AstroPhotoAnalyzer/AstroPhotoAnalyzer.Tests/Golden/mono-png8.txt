@@ -27,7 +27,7 @@ VERDICT: ATENTIE
 
 5. Denoise pentru versiunea de print  [OK]
    - Zgomotul rezidual e exact unde trebuie pentru print.
-     fiindca: sigma median 1.05 LSB pe 123 dale netede (10 % 1.03, minim 1.02); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.15 zgomotul scade de ~0.82 x (panta curbei la fundal), la ~0.86 LSB
+     fiindca: sigma median 1.05 LSB pe 123 dale netede (10 % 1.03, minim 1.02; sub 0.5 LSB, 0.0 % din dale); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.15 zgomotul scade de ~0.82 x (panta curbei la fundal), la ~0.86 LSB
 
 6. Avertismente  [ATENTIE]
    ! Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic.

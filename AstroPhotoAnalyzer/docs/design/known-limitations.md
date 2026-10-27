@@ -111,6 +111,14 @@
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
   not measured natively.
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.
+- The plateau is the mean over whichever tiles pass the strict criterion, so it is not
+  comparable across denoise strengths and can hide the worst tiles: on the owner's
+  2026-08-12 core at Syqon 1, 26 % of the frame passes and the mean is 4.7 px ("no visible
+  banding") while 2 % of the tiles are flat over all 64 px; at 0.75 and 0.5 only the patches
+  the denoiser wiped pass (0.2 % of the frame) and their plateau is 15 and 40 px. The report
+  now says on how many tiles, what share of the frame and with what noise left the plateau
+  was measured (ADR 0059); a share-of-flat-tiles or percentile statistic is the open question
+  that ADR records.
 - The suggested curves (ADR 0032) are one recipe: the segment slopes come from one curve the
   owner liked on one image, and no point ever goes under its input, so a frame whose peaks are
   already at or over 0.92 of the scale gets no suggestion, only the reason (ADR 0033); the

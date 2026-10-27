@@ -572,16 +572,20 @@ namespace AstroPhotoAnalyzer.Wpf
                 + "of neighbouring pixels with exactly the same value are. A noiseless sky quantized to 8 bits makes wide steps; the residual noise breaks them, "
                 + "like a natural dither. The plateau in pixels, times the pixel pitch at the reference row's dpi, gives the length of the step on "
                 + $"paper: over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm it is a visible contour, a banding risk - 16 bits if the lab accepts it, "
-                + "or dither at the export. n/a when no clean sky tiles are found.",
+                + "or dither at the export. n/a when no clean sky tiles are found. The tiles' share of the frame and the noise left on them say where the plateau "
+                + "was measured: on an AI-denoised frame the only tiles clean enough can be a few patches the denoiser wiped, while the noise section's median, "
+                + "taken on other tiles, chosen with a looser criterion, says the sky is fine; the two speak of different places.",
                 $"Pe pana la {Fmt.Int(Thresholds.PlateauTileCount)} de dale de cer curat (interval sub {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} niveluri "
                 + $"si medie sub {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, ca sa nu prinda nucleul) se masoara, pe 8 biti, cat de lungi sunt sirurile "
                 + "de pixeli vecini cu exact aceeasi valoare. Un cer fara zgomot cuantizat la 8 biti face trepte late; zgomotul rezidual le sparge, "
                 + "ca un dither natural. Palierul in pixeli, inmultit cu pasul pixelului la dpi-ul randului de referinta, da lungimea treptei pe "
                 + $"hartie: peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm e un contur vizibil, risc de banding - 16 biti daca laboratorul accepta, "
-                + "sau dither la export. n/a cand nu se gasesc dale de cer curat.");
+                + "sau dither la export. n/a cand nu se gasesc dale de cer curat. Partea din cadru a dalelor si zgomotul ramas pe ele spun unde s-a masurat "
+                + "palierul: pe un cadru cu denoise AI, singurele dale destul de curate pot fi cateva petice sterse de denoise, in timp ce mediana sectiunii de zgomot, "
+                + "luata pe alte dale, alese cu un criteriu mai larg, spune ca cerul e bine; cele doua vorbesc despre locuri diferite.");
             rows.Add(q.PlateauKnown
                 ? Row(Tr.Pick("Plateau on the quantized sky", "Palier pe cerul cuantizat"), $"{Fmt.F1(q.PlateauPx)} px",
-                    Tr.Pick($"over {q.PlateauTiles} tiles", $"pe {q.PlateauTiles} dale")
+                    Tr.Pick($"over {q.PlateauTiles} tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, noise left sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB", $"pe {q.PlateauTiles} dale, {Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB")
                     + (r.Size.ReferenceRow != null ? Tr.Pick($"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm at {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi", $"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm la {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi") : ""), plateauDesc)
                 : Row(Tr.Pick("Plateau on the quantized sky", "Palier pe cerul cuantizat"), "n/a", Tr.Pick("no clean sky tiles", "fara dale de cer curat"), plateauDesc));
             Rows = rows;

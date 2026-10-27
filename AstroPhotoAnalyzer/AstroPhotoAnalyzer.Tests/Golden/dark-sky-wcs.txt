@@ -13,7 +13,7 @@ VERDICT: PROBLEMA
    - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.1 MB).
      fiindca: eroare medie 0.58, maxima 3.5 niveluri; 0.4 % din esantioane cu eroare > 2, la nivelul mediu 28 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
    ! Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export.
-     fiindca: palier de 2.2 px = 2.13 mm la 26 dpi, peste 1.0 mm
+     fiindca: palier de 2.2 px = 2.13 mm la 26 dpi, peste 1.0 mm; pe 120 dale curate, 8.3 % din cadru, unde zgomotul ramas e sigma 0.30 LSB
 
 2. Fundalul si hartia  [PROBLEMA]
    !! Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru. Re-stretch din liniar la fundal 0.16 (simulat: praful la L* 11.7, cerul la L* 15.9; exact pe negru la 0.135).
@@ -31,7 +31,7 @@ VERDICT: PROBLEMA
 
 5. Denoise pentru versiunea de print  [ATENTIE]
    ! Denoise-ul e apasat tare pentru print: zgomotul nu mai dither-eaza cuantizarea. Pentru versiunea de print, o valoare mai mica pastreaza textura si stelele slabe.
-     fiindca: sigma median 0.30 LSB pe 38 dale netede (10 % 0.30, minim 0.29); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.16 zgomotul creste de ~1.36 x (panta curbei la fundal), la ~0.41 LSB; sub 0.5 LSB, 100.0 % din dale
+     fiindca: sigma median 0.30 LSB pe 38 dale netede (10 % 0.30, minim 0.29; sub 0.5 LSB, 100.0 % din dale); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.16 zgomotul creste de ~1.36 x (panta curbei la fundal), la ~0.41 LSB
 
 6. Avertismente  [ATENTIE]
    ! Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic.
@@ -89,7 +89,7 @@ Anexa C. Export
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
   rotunjire 16 -> 8: medie 0.262, maxim 0.500, p99.9 0.499 niveluri
   stres shadow-lift (gamma 1.9), niveluri 8..120: din 16 biti 75 folosite / 0 lipsa; din 8 biti 52 folosite / 24 lipsa
-  palier pe cerul cuantizat: 2.2 px pe 120 dale
+  palier pe cerul cuantizat: 2.2 px pe 120 dale (8.3 % din cadru, zgomot ramas sigma 0.30 LSB)
 
 Anexa D. Rezolutie si marime
   stele: 64 masurate; FWHM median 3.06 px, Q1 3.05, Q3 3.08; detaliu real ~167 px pe latime

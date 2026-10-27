@@ -27,7 +27,7 @@ VERDICT: CAUTION
 
 5. Denoise for the print version  [OK]
    - The residual noise is exactly where it should be for print.
-     because: median sigma 1.00 LSB on 37 smooth tiles (10 % 0.99, minimum 0.97); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.20 the noise shrinks by ~0.93 x (the slope of the curve at the background), to ~0.93 LSB
+     because: median sigma 1.00 LSB on 37 smooth tiles (10 % 0.99, minimum 0.97; under 0.5 LSB, 0.0 % of the tiles); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.20 the noise shrinks by ~0.93 x (the slope of the curve at the background), to ~0.93 LSB
 
 6. Warnings  [OK]
    (nothing to report)
