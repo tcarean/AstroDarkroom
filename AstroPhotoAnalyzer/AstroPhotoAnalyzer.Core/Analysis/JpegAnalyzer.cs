@@ -31,6 +31,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Tiff;
@@ -71,6 +72,15 @@ namespace AstroPhotoAnalyzer
     internal sealed record JpegResult
     {
         internal IReadOnlyList<JpegRow> Rows { get; init; }
+
+        /// <summary>
+        /// The highest quality under 100 whose maximum error passes
+        /// <see cref="Thresholds.JpegMaxErrorReject"/>: the row the Export tab names, with its
+        /// maximum error, as the evidence for "do not go below q100" (ADR 0061); null when every
+        /// quality under 100 is acceptable.
+        /// </summary>
+        internal JpegRow HighestFailingBelow100 => Rows.Where(x => x.Quality < 100 && !x.Acceptable).OrderByDescending(x => x.Quality).FirstOrDefault();
+
         internal long Tiff8LzwBytes { get; init; }
         internal double Tiff8LzwMegabytes => Tiff8LzwBytes / 1048576.0;
     }

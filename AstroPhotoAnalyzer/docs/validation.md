@@ -116,7 +116,9 @@ scenario from the conversation), version 1.0.0, 11 seconds on the whole 23 MP.
 
 Verdict PROBLEMA (ATENTIE since ADR 0025: the sky at L\* 9.3 is above paper black and only the
 dust is under it). Send TIFF 8-bit LZW; if only JPEG, q100 and never below (q95 max
-error 27). No visible banding on 8 bits (plateau 0.34 mm at 202 dpi). Background too low
+error 27; since ADR 0061 a fact of the Export tab, not a line of the report). No visible banding
+on 8 bits (plateau 0.34 mm at 202 dpi; since ADR 0060 the verdict is the share of the frame with
+a visible step, 0.00 %). Background too low
 for baryta - 45.6 % under paper black - re-stretch from linear to 0.19 (0.17 since ADR 0025,
 the lowest grid row that puts the darkest 1 % of the patches on paper black). Green cast of
 +1.6 on the background (since ADR 0055, against the sky patches: +0.9 of green and -1.9 of
@@ -126,7 +128,8 @@ against the sky patches, on the corner's own sky pixels) and warm bottom edge: h
 fix on linear or keep as composition. Recommended 70 x 49 cm at 1.5 m; the
 50:35 target cuts 192 px per side. Denoise pressed hard for print: sigma 0.45, target
 0.8-1.5, and after the re-stretch it becomes ~0.61 (0.57 at 0.17). Keep the 16-bit master: 46
-levels missing from 8 bits after a shadow lift, none from 16.
+levels missing from 8 bits after a shadow lift, none from 16 (since ADR 0061 a mark of the Export
+tab's stress row, not a warning).
 
 ### What the real image taught the tool
 
@@ -200,6 +203,17 @@ exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), and the image passes as it
 LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6, LDN 559 at 4.7.
 
 ## History
+
+- 2026-10-27 (ADR 0060, the banding verdict on the share of the frame with a visible plateau,
+  every one of 5000 positions tried; `docs/plans/2026-10-27-plateau-share-of-flat-tiles.md`, its
+  table): `quantization.plateauPositions` (5000) and
+  `quantization.plateauVisibleFramePctAtReference` (0 on every analysis case: the reference
+  image's 20 clean tiles hold no step over 1 mm at its reference dpi, the FITS frames have no
+  clean tile) recorded; no existing figure moved, V-001's 20 tiles and 2.6796 px included, since
+  5000 positions were already what found them. The golden console texts move on the dark
+  scene, whose plateau is now measured on every clean tile among 5000 positions (419, 8.4 % of
+  the frame) and whose banding line carries the share (8.38 %) and the threshold (0.10 %), and
+  on Appendix C's plateau line.
 
 - 2026-10-27 (R-080, R-091, R-095: where the plateau is measured): `quantization.plateauFramePct`
   (tiles accepted over positions tried, in percent) and `quantization.plateauSigmaLsb` (the median noise on the

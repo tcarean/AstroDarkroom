@@ -100,4 +100,21 @@ public class JpegAnalyzerTests
         var row = Assert.Single(j.Rows);
         Assert.Equal(80, row.Quality);
     }
+
+    /// <summary>
+    /// The row the Export tab names as the evidence for "do not go below q100" (ADR 0061) is the
+    /// highest quality under 100 whose maximum error fails, whatever the order of the rows; q100
+    /// itself is never named, and with no failing quality under 100 none is.
+    /// </summary>
+    [Fact]
+    public void R114_TheNamedQualityIsTheHighestUnder100ThatFails()
+    {
+        static JpegResult Of(params (int Quality, double MaxError)[] rows)
+            => new() { Rows = rows.Select(x => new JpegRow { Quality = x.Quality, MaxError = x.MaxError }).ToArray() };
+
+        Assert.Equal(95, Of((100, 4.5), (95, 25.3), (90, 32.4)).HighestFailingBelow100.Quality);
+        Assert.Equal(95, Of((90, 32.4), (95, 25.3), (100, 4.5)).HighestFailingBelow100.Quality);
+        Assert.Equal(90, Of((100, 4.5), (95, 8.0), (90, 12.0)).HighestFailingBelow100.Quality);
+        Assert.Null(Of((100, 12.0), (95, 8.0), (90, 9.0)).HighestFailingBelow100);
+    }
 }

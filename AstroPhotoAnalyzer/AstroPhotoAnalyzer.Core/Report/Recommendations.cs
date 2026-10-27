@@ -56,8 +56,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Section 1, the format to send: the 8-bit LZW TIFF (with the rounding on a source over 8
-        /// bits), JPEG q100 when the lab accepts only JPEG and the advice not to go below it, and
-        /// the banding risk, from the plateau at the reference row's dpi or from the noise alone.
+        /// bits), JPEG q100 when the lab accepts only JPEG (the qualities under it that fail are a
+        /// fact of the Export tab, ADR 0061), and the banding risk, from the share of the frame
+        /// with a visible plateau at the reference row's dpi (ADR 0060) or from the noise alone.
         /// </summary>
         /// <param name="r">The analysis.</param>
         /// <param name="o">The list the recommendations are added to.</param>
@@ -84,30 +85,33 @@ namespace AstroPhotoAnalyzer
                     Tr.Pick($"mean error {Fmt.F2(q100.MeanAbsError)}, max {Fmt.F1(q100.MaxError)} levels; {Fmt.Pct(q100.PctOverThreshold)} of the samples with an error > {Fmt.F0(Thresholds.JpegErrorCountLevels)}, at a mean level of {Fmt.F0(q100.MeanLevelOverThreshold)}", $"eroare medie {Fmt.F2(q100.MeanAbsError)}, maxima {Fmt.F1(q100.MaxError)} niveluri; {Fmt.Pct(q100.PctOverThreshold)} din esantioane cu eroare > {Fmt.F0(Thresholds.JpegErrorCountLevels)}, la nivelul mediu {Fmt.F0(q100.MeanLevelOverThreshold)}")
                     + (q100.PctOverThreshold > 0 && q100.MeanLevelOverThreshold < Thresholds.DarkLevelB ? Tr.Pick(" (in the dark sky, where JPEG does worst)", " (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)") : "")));
 
-                JpegRow worst = r.Jpeg.Rows.Where(x => x.Quality < 100 && !x.Acceptable).OrderByDescending(x => x.Quality).FirstOrDefault();
-                if (worst != null)
-                    o.Add(new Recommendation(Topic.Format, Verdict.Attention,
-                        Tr.Pick("Do not go below q100.", $"Nu cobori sub q100."),
-                        Tr.Pick($"q{worst.Quality} has a max error of {Fmt.F1(worst.MaxError)} levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}), on the stars and on the edges", $"q{worst.Quality} are eroare maxima {Fmt.F1(worst.MaxError)} niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}), pe stele si pe muchii")));
+                // The qualities under 100 that fail are a fact of the Export tab, not a warning
+                // here (ADR 0061): the lab gets the TIFF of the first line.
             }
 
             if (q.PlateauKnown && size != null)
             {
-                double mm = q.PlateauMmAt(size.Dpi);
-                // Where the plateau was measured: on an AI-denoised frame the only tiles clean
-                // enough are the patches the denoiser wiped, a few tenths of a percent of the
-                // frame at a sigma near zero, while the noise section's median says the sky is
-                // fine. The reader must see that the two speak of different places.
-                string where = Tr.Pick($"; on {q.PlateauTiles} clean tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, where the noise left is sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB",
-                    $"; pe {q.PlateauTiles} dale curate, {Fmt.Pct(q.PlateauFramePct)} din cadru, unde zgomotul ramas e sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB");
+                // The verdict is the share of the frame in clean tiles whose plateau passes the
+                // visible length at the print's dpi (ADR 0060); the mean plateau is the typical
+                // step, told for information. Where it was measured matters: on an AI-denoised
+                // frame the only tiles clean enough are the patches the denoiser wiped, a few
+                // tenths of a percent of the frame at a sigma near zero, while the noise section's
+                // median says the sky is fine. The reader must see that the two speak of
+                // different places.
+                double flat = q.PlateauVisibleFramePctAt(size.Dpi);
+                string share = Fmt.Strong(Fmt.F2(flat) + " %"), limit = Fmt.Strong(Fmt.F2(Thresholds.PlateauFlatFrameWarnPct) + " %");
+                string steps = Tr.Pick($"flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm at {Fmt.F0(size.Dpi)} dpi on {share} of the frame (threshold {limit})",
+                    $"trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm la {Fmt.F0(size.Dpi)} dpi pe {share} din cadru (prag {limit})");
+                string where = Tr.Pick($"; the typical plateau on the {q.PlateauTiles} clean tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, is {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, with the noise left at sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB",
+                    $"; palierul tipic pe cele {q.PlateauTiles} dale curate, {Fmt.Pct(q.PlateauFramePct)} din cadru, e {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, cu zgomotul ramas la sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB");
                 if (q.PlateauVisibleAt(size.Dpi))
                     o.Add(new Recommendation(Topic.Format, Verdict.Attention,
                         Tr.Pick("Banding risk at 8 bits: send 16-bit if the lab accepts it, or add dither at the export.", "Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export."),
-                        Tr.Pick($"a plateau of {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm at {Fmt.F0(size.Dpi)} dpi, over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm", $"palier de {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm la {Fmt.F0(size.Dpi)} dpi, peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm") + where));
+                        steps + where));
                 else
                     o.Add(new Recommendation(Topic.Format, Verdict.Ok,
-                        Tr.Pick("No visible banding at 8 bits: the residual noise dithers the quantization.", "Fara banding vizibil pe 8 biti: zgomotul rezidual dither-eaza cuantizarea."),
-                        Tr.Pick($"a plateau of {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm at {Fmt.F0(size.Dpi)} dpi, under {Fmt.F1(Thresholds.PlateauVisibleMm)} mm", $"palier de {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm la {Fmt.F0(size.Dpi)} dpi, sub {Fmt.F1(Thresholds.PlateauVisibleMm)} mm") + where));
+                        Tr.Pick("No visible banding at 8 bits: flat steps on too little of the frame to show.", "Fara banding vizibil pe 8 biti: trepte plate pe prea putin din cadru ca sa se vada."),
+                        steps + where));
             }
             else if (r.Noise.BandingRisk)
                 o.Add(new Recommendation(Topic.Format, Verdict.Attention,
@@ -407,7 +411,7 @@ namespace AstroPhotoAnalyzer
                             + (ps.DistanceIsExplicit ? "" : " Give the viewing distance, so that the threshold is the physical one, not the convention."),
                             $"Fara stele rezolutia reala nu se masoara; se judeca doar grila de pixeli: {rule}, si {reach}. E o limita a fisierului, nu a detaliului - o nebuloasa moale poate cere mult mai putin - deci nu se recomanda o marime."
                             + (ps.DistanceIsExplicit ? "" : " Da distanta de privire ca pragul sa fie cel fizic, nu conventia.")),
-                    Tr.Pick($"{st.Count} stars measured (minimum {Thresholds.StarMinCount}); at {Fmt.F0(row.WidthCm)} cm the pixel pitch is {Fmt.F2(row.PitchMm)} mm, invisible from {Fmt.F2(row.PixelDistanceM)} m; {threshold}", $"{st.Count} stele masurate (minim {Thresholds.StarMinCount}); la {Fmt.F0(row.WidthCm)} cm pasul pixelului e {Fmt.F2(row.PitchMm)} mm, invizibil de la {Fmt.F2(row.PixelDistanceM)} m; {threshold}")));
+                    Tr.Pick($"{st.Count} stars measured, {Fmt.F1(st.DensityPerMp)} per megapixel (minimum {Thresholds.StarMinCount} and {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel); at {Fmt.F0(row.WidthCm)} cm the pixel pitch is {Fmt.F2(row.PitchMm)} mm, invisible from {Fmt.F2(row.PixelDistanceM)} m; {threshold}", $"{st.Count} stele masurate, {Fmt.F1(st.DensityPerMp)} pe megapixel (minim {Thresholds.StarMinCount} si {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel); la {Fmt.F0(row.WidthCm)} cm pasul pixelului e {Fmt.F2(row.PitchMm)} mm, invizibil de la {Fmt.F2(row.PixelDistanceM)} m; {threshold}")));
             }
             else if (ps.DistanceIsExplicit)
             {
@@ -505,7 +509,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Section 6, the warnings: an 8-bit file in disguise, no ICC profile or one that is not
-        /// sRGB, the 16-bit master to keep, and the reader's note.
+        /// sRGB, and the reader's note (the 16-bit master to keep is a fact of the Export tab,
+        /// ADR 0061).
         /// </summary>
         /// <param name="r">The analysis.</param>
         /// <param name="o">The list the recommendations are added to.</param>
@@ -528,10 +533,8 @@ namespace AstroPhotoAnalyzer
                     Tr.Pick($"The profile is not sRGB ({f.IccDescription}): tell the lab, and know that the L* measurements here assume sRGB.", $"Profilul nu e sRGB ({f.IccDescription}): spune-i laboratorului, si stii ca masuratorile de L* de aici presupun sRGB."),
                     Tr.Pick("the profile's name does not contain 'sRGB'", "numele profilului nu contine 'sRGB'")));
 
-            if (r.Quantization.Keep16BitMaster)
-                o.Add(new Recommendation(Topic.Warnings, Verdict.Attention,
-                    Tr.Pick("Keep the 16-bit master: any later edit (a reframing, a retouch, another print) starts from it, not from the print file.", "Pastreaza master-ul de 16 biti: orice editare ulterioara (recadrare, retus, alt print) pleaca din el, nu din fisierul de tipar."),
-                    Tr.Pick($"after a shadow-lift (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), from 8 bits {r.Quantization.MissingFrom8} shadow levels are missing ({r.Quantization.LevelsUsedFrom8} used), from 16 {r.Quantization.MissingFrom16} ({r.Quantization.LevelsUsedFrom16} used); threshold {Thresholds.MissingLevelsWarn}", $"dupa un shadow-lift (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}) din 8 biti lipsesc {r.Quantization.MissingFrom8} niveluri din umbre ({r.Quantization.LevelsUsedFrom8} folosite), din 16 lipsesc {r.Quantization.MissingFrom16} ({r.Quantization.LevelsUsedFrom16} folosite); prag {Thresholds.MissingLevelsWarn}")));
+            // Keeping the 16-bit master is a fact of the Export tab's stress test, not a warning
+            // here (ADR 0061).
 
             if (f.ReaderNote != null)
                 o.Add(new Recommendation(Topic.Warnings, Verdict.Ok, Tr.Pick("Note from reading the file: ", "Nota cititorului: ") + f.ReaderNote + ".", Tr.Pick("an observation made while reading the file", "observatie la citirea fisierului")));

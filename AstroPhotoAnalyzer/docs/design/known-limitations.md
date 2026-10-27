@@ -76,7 +76,7 @@
 - A star under 12 local sigmas is not counted (ADR 0054): the FWHM is the bright stars', and a
   frame whose stars all sit on strongly textured nebulosity, where the border's sigma is the
   texture left after a plane is taken out, may fall to the dpi rule of R-074 with a count under
-  20; the report says so. A smooth slope is not texture: the plane removes it.
+  20, or under 10 per megapixel (ADR 0062); the report says so. A smooth slope is not texture: the plane removes it.
 - A wide star lays its own wings on the window border, which the plane cannot take out: it does
   not reject itself (all 64 synthetic stars kept at FWHM 12, 13 and 14, `R070_AWideStarDoesNotRejectItself`),
   but the wings lift the border median, its base, so it reads narrower: 12.50 px at 13, 13.19 at
@@ -111,14 +111,10 @@
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
   not measured natively.
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.
-- The plateau is the mean over whichever tiles pass the strict criterion, so it is not
-  comparable across denoise strengths and can hide the worst tiles: on the owner's
-  2026-08-12 core at Syqon 1, 26 % of the frame passes and the mean is 4.7 px ("no visible
-  banding") while 2 % of the tiles are flat over all 64 px; at 0.75 and 0.5 only the patches
-  the denoiser wiped pass (0.2 % of the frame) and their plateau is 15 and 40 px. The report
-  now says on how many tiles, what share of the frame and with what noise left the plateau
-  was measured (ADR 0059); a share-of-flat-tiles or percentile statistic is the open question
-  that ADR records.
+- The banding verdict counts tiles of 64 px: a flat patch smaller than a tile, or one that
+  no whole tile falls inside, is not seen; and the share is estimated from 5000 random
+  positions, so a share near the 0.1 % threshold (about five tiles) can fall either side of
+  it between two images that differ by one patch (ADR 0060).
 - The suggested curves (ADR 0032) are one recipe: the segment slopes come from one curve the
   owner liked on one image, and no point ever goes under its input, so a frame whose peaks are
   already at or over 0.92 of the scale gets no suggestion, only the reason (ADR 0033); the

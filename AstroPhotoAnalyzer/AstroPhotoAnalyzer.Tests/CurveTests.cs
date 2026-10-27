@@ -719,4 +719,19 @@ public class CurveTests
         Assert.False(File.Exists(missing));
         Assert.Empty(Directory.GetFiles(ws.Dir).Where(f => !f.EndsWith("in.fit")));
     }
+
+    /// <summary>
+    /// A paper check whose because carries Fmt.Strong's marks shows them stripped on the curves
+    /// tab's evidence rows, as the text report does (R-112): only the Raport tab renders them.
+    /// </summary>
+    [Fact]
+    public void R112_TheCurvesEvidenceStripsTheMarksOfAPaperCheck()
+    {
+        CurveSuggestion s = Suggest(Band()).Suggestions[0];
+        var marked = new Recommendation(Topic.Background, Verdict.Attention, "verificare", "pe " + Fmt.Strong("0.20 %") + " din cadru");
+        s = s with { Evidence = s.Evidence with { PaperChecks = new[] { marked } } };
+
+        (string Text, bool Warning) row = Assert.Single(CurveTexts.EvidenceRows(s), r => r.Warning);
+        Assert.Equal("! verificare (fiindca: pe 0.20 % din cadru)", row.Text);
+    }
 }

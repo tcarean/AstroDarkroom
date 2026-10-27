@@ -91,6 +91,20 @@ namespace AstroPhotoAnalyzer
         /// <returns>The percentage followed by " %", or "n/a %" for NaN.</returns>
         internal static string Pct(double v) => F1(v) + " %";
 
+        /// <summary>
+        /// The core's one piece of markup: a part of a "because" that must catch the eye, between
+        /// <c>**</c> marks. The window's Raport tab shows it in bold; the text report and the curves
+        /// tab's evidence rows strip the marks with <see cref="Plain"/>.
+        /// </summary>
+        /// <param name="s">The part to emphasise, without marks of its own.</param>
+        /// <returns>The part between <c>**</c> marks.</returns>
+        internal static string Strong(string s) => "**" + s + "**";
+
+        /// <summary>The text without the <c>**</c> marks of <see cref="Strong"/>.</summary>
+        /// <param name="s">A text, possibly marked; null gives null.</param>
+        /// <returns>The same text with every <c>**</c> removed.</returns>
+        internal static string Plain(string s) => s?.Replace("**", "");
+
         /// <summary>A size in megabytes with one decimal: "45.6 MB".</summary>
         /// <param name="v">The size, in MB; NaN allowed.</param>
         /// <returns>The size followed by " MB", or "n/a MB" for NaN.</returns>

@@ -518,7 +518,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 .Concat(r.Jpeg.Rows.Select(j =>
                     $"q{j.Quality,-3}         {Fmt.Mb(j.Megabytes),8}   {Fmt.F3(j.MeanAbsError),9}   {Fmt.F1(j.MaxError),7}   {Fmt.F2(j.P99),4}   {Fmt.F2(j.P999),5}   {Fmt.Pct(j.PctOverThreshold),7}   {Fmt.F0(j.MeanLevelOverThreshold),11}"))
                 .ToList();
-            JpegGuide = JpegGuideParagraphs();
+            JpegGuide = JpegGuideParagraphs(r.Jpeg);
 
             // The descriptions: what the row measures, with the thresholds from Thresholds, not
             // typed in.
@@ -567,39 +567,54 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "(recadrare, retus, alt print) pleaca din el, nu din fisierul de 8 biti. Cat timp laboratorul printeaza fisierul asa cum e, "
                         + "8 biti ajung; testul e despre ce ramane pentru mai tarziu.")));
             }
-            string plateauDesc = Tr.Pick($"On up to {Fmt.Int(Thresholds.PlateauTileCount)} clean sky tiles (a range under {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} levels "
-                + $"and a mean under {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, so as not to catch the core) it is measured, at 8 bits, how long the runs "
+            string plateauDesc = Tr.Pick($"At each of {Fmt.Int(Thresholds.PlateauPositions)} random positions a tile is kept when it is clean sky (a range under {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} levels "
+                + $"and a mean under {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, so as not to catch the core), and on each tile kept it is measured, at 8 bits, how long the runs "
                 + "of neighbouring pixels with exactly the same value are. A noiseless sky quantized to 8 bits makes wide steps; the residual noise breaks them, "
-                + "like a natural dither. The plateau in pixels, times the pixel pitch at the reference row's dpi, gives the length of the step on "
-                + $"paper: over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm it is a visible contour, a banding risk - 16 bits if the lab accepts it, "
-                + "or dither at the export. n/a when no clean sky tiles are found. The tiles' share of the frame and the noise left on them say where the plateau "
+                + "like a natural dither. A tile's plateau in pixels, times the pixel pitch at the reference row's dpi, is the length of its step on paper: "
+                + $"over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm it is a visible contour. The verdict is the share of the frame in such tiles (tiles over the positions tried): "
+                + $"over {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} % it is a banding risk - 16 bits if the lab accepts it, or dither at the export. The plateau shown is the mean over the clean tiles, "
+                + "the typical step, for information: it cannot decide, because on a heavily denoised frame the many ordinary tiles drown the few fully flat ones. "
+                + "n/a when no clean sky tiles are found. The tiles' share of the frame and the noise left on them say where the plateau "
                 + "was measured: on an AI-denoised frame the only tiles clean enough can be a few patches the denoiser wiped, while the noise section's median, "
                 + "taken on other tiles, chosen with a looser criterion, says the sky is fine; the two speak of different places.",
-                $"Pe pana la {Fmt.Int(Thresholds.PlateauTileCount)} de dale de cer curat (interval sub {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} niveluri "
-                + $"si medie sub {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, ca sa nu prinda nucleul) se masoara, pe 8 biti, cat de lungi sunt sirurile "
+                $"La fiecare dintre cele {Fmt.Int(Thresholds.PlateauPositions)} de pozitii aleatoare se pastreaza dala daca e cer curat (interval sub {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} niveluri "
+                + $"si medie sub {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, ca sa nu prinda nucleul), si pe fiecare dala pastrata se masoara, pe 8 biti, cat de lungi sunt sirurile "
                 + "de pixeli vecini cu exact aceeasi valoare. Un cer fara zgomot cuantizat la 8 biti face trepte late; zgomotul rezidual le sparge, "
-                + "ca un dither natural. Palierul in pixeli, inmultit cu pasul pixelului la dpi-ul randului de referinta, da lungimea treptei pe "
-                + $"hartie: peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm e un contur vizibil, risc de banding - 16 biti daca laboratorul accepta, "
-                + "sau dither la export. n/a cand nu se gasesc dale de cer curat. Partea din cadru a dalelor si zgomotul ramas pe ele spun unde s-a masurat "
+                + "ca un dither natural. Palierul unei dale in pixeli, inmultit cu pasul pixelului la dpi-ul randului de referinta, e lungimea treptei ei pe hartie: "
+                + $"peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm e un contur vizibil. Verdictul e partea din cadru ocupata de astfel de dale (dale raportate la pozitiile incercate): "
+                + $"peste {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} % e risc de banding - 16 biti daca laboratorul accepta, sau dither la export. Palierul afisat e media pe dalele curate, "
+                + "treapta tipica, informativ: nu poate decide, pentru ca pe un cadru cu denoise tare multele dale obisnuite le ineaca pe cele cateva complet plate. "
+                + "n/a cand nu se gasesc dale de cer curat. Partea din cadru a dalelor si zgomotul ramas pe ele spun unde s-a masurat "
                 + "palierul: pe un cadru cu denoise AI, singurele dale destul de curate pot fi cateva petice sterse de denoise, in timp ce mediana sectiunii de zgomot, "
                 + "luata pe alte dale, alese cu un criteriu mai larg, spune ca cerul e bine; cele doua vorbesc despre locuri diferite.");
             rows.Add(q.PlateauKnown
                 ? Row(Tr.Pick("Plateau on the quantized sky", "Palier pe cerul cuantizat"), $"{Fmt.F1(q.PlateauPx)} px",
                     Tr.Pick($"over {q.PlateauTiles} tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, noise left sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB", $"pe {q.PlateauTiles} dale, {Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB")
-                    + (r.Size.ReferenceRow != null ? Tr.Pick($"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm at {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi", $"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm la {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi") : ""), plateauDesc)
+                    + (r.Size.ReferenceRow != null
+                        ? Tr.Pick($"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm at {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi; flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm on {Fmt.F2(q.PlateauVisibleFramePctAt(r.Size.ReferenceRow.Dpi))} % of the frame (threshold {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)",
+                            $"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm la {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi; trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm pe {Fmt.F2(q.PlateauVisibleFramePctAt(r.Size.ReferenceRow.Dpi))} % din cadru (prag {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)")
+                        : ""), plateauDesc)
                 : Row(Tr.Pick("Plateau on the quantized sky", "Palier pe cerul cuantizat"), "n/a", Tr.Pick("no clean sky tiles", "fara dale de cer curat"), plateauDesc));
             Rows = rows;
             HasResult = true;
         }
 
         /// <summary>
-        /// The text under the JPEG table: explanation, not diagnosis - it does not depend on the
-        /// image, only on the thresholds.
+        /// The text under the JPEG table: explanation, not diagnosis. It depends on the thresholds,
+        /// and on the image only through the core's <c>JpegResult.HighestFailingBelow100</c>: the
+        /// "what is recommended" paragraph states that row with its maximum error, the report's
+        /// former warning (ADR 0061); the view-model selects and decides nothing.
         /// </summary>
+        /// <param name="jpeg">The JPEG measurement, for the quality under 100 that fails, if any.</param>
         /// <returns>The five paragraphs.</returns>
-        static IReadOnlyList<GuideParagraph> JpegGuideParagraphs()
+        static IReadOnlyList<GuideParagraph> JpegGuideParagraphs(JpegResult jpeg)
         {
             string count = Fmt.F0(Thresholds.JpegErrorCountLevels);
+            // The evidence for "do not go below q100", once a warning of the report (ADR 0061): the
+            // highest quality under 100 that fails the maximum-error threshold, named with its figure.
+            JpegRow failing = jpeg.HighestFailingBelow100;
+            string failingEn = failing == null ? "" : $" Here q{failing.Quality} reaches a maximum error of {Fmt.F1(failing.MaxError)} levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below q100.";
+            string failingRo = failing == null ? "" : $" Aici q{failing.Quality} ajunge la o eroare maxima de {Fmt.F1(failing.MaxError)} niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub q100.";
             return new[]
             {
                 new GuideParagraph
@@ -648,9 +663,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Lead = Tr.Pick("What is recommended.", "Ce se recomanda."),
                     Text = Tr.Pick("An 8-bit LZW TIFF. If the lab accepts only JPEG: q100, 4:4:4. Under q100 the maximum error jumps on the stars and the edges, "
-                        + "and the size gained does not matter for a print.",
+                        + "and the size gained does not matter for a print." + failingEn,
                         "TIFF 8-bit LZW. Daca laboratorul accepta doar JPEG: q100, 4:4:4. Sub q100 eroarea maxima sare pe stele si pe muchii, "
-                        + "iar castigul de marime nu conteaza pentru un print."),
+                        + "iar castigul de marime nu conteaza pentru un print." + failingRo),
                 },
             };
         }
@@ -697,17 +712,19 @@ namespace AstroPhotoAnalyzer.Wpf
             var rows = new List<MetricRow>
             {
                 Row(Tr.Pick("Stars measured", "Stele masurate"), Fmt.Int(s.Count),
-                    s.Insufficient ? Tr.Pick($"too few for a FWHM (minimum {minStars})", $"prea putine pentru FWHM (minim {minStars})") : null,
+                    s.Insufficient ? Tr.Pick($"{Fmt.F1(s.DensityPerMp)} per megapixel: too few for a FWHM (minimum {minStars}, {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel)", $"{Fmt.F1(s.DensityPerMp)} pe megapixel: prea putine pentru FWHM (minim {minStars}, {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel)") : null,
                     Tr.Pick("How many stars passed the filters: an unsaturated local peak, with a minimum amplitude against the background around it "
                         + $"and at least {Fmt.F0(Thresholds.StarMinSnr)} times that background's noise (the grain of a stretched sky is not a star), "
                         + $"with a width between {Fmt.F1(Thresholds.StarFwhmMin)} and {Fmt.F0(Thresholds.StarFwhmMax)} px on both axes. "
                         + "They are searched for on the reference channel (green; the only channel in mono). "
-                        + $"Under {minStars} stars, the global FWHM is not reliable and is not reported.",
+                        + $"Under {minStars} stars, or under {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel of the frame (a starless frame keeps a few dozen soft blobs after a denoise, "
+                        + "which a count alone would take for stars), the global FWHM is not reliable and is not reported.",
                         "Cate stele au trecut de filtre: un varf local nesaturat, cu amplitudine minima fata de fundalul din jurul lui "
                         + $"si de cel putin {Fmt.F0(Thresholds.StarMinSnr)} ori zgomotul acelui fundal (granulatia unui cer intins nu e stea), "
                         + $"cu latimea intre {Fmt.F1(Thresholds.StarFwhmMin)} si {Fmt.F0(Thresholds.StarFwhmMax)} px pe ambele axe. "
                         + "Se cauta pe canalul de referinta (verdele; singurul canal la mono). "
-                        + $"Sub {minStars} de stele, FWHM-ul global nu e de incredere si nu se raporteaza.")),
+                        + $"Sub {minStars} de stele, sau sub {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel de cadru (un cadru fara stele pastreaza dupa denoise cateva zeci de pete moi, "
+                        + "pe care un numar singur le-ar lua drept stele), FWHM-ul global nu e de incredere si nu se raporteaza.")),
                 Row(Tr.Pick("Median FWHM (Q1 / Q3)", "FWHM median (Q1 / Q3)"), s.Insufficient ? "n/a" : $"{Fmt.F2(s.FwhmMedian)} px ({Fmt.F2(s.FwhmQ1)} / {Fmt.F2(s.FwhmQ3)})",
                     description: fwhmDesc),
                 Row(Tr.Pick("Real detail across the width", "Detaliu real pe latime"), ps.FwhmKnown ? $"~{Fmt.F0(ps.EffectiveDetailPx)} px" : "n/a",

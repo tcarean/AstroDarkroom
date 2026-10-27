@@ -23,7 +23,7 @@ VERDICT: ATENTIE
 
 4. Marimea printului  [ATENTIE]
    ! Fara stele rezolutia reala nu se masoara; se judeca doar grila de pixeli: fara distanta data se cere conventia de 180 dpi (grila invizibila de la ~0.5 m, cand te apropii), si nici cea mai mica latime din lista (50 x 50 cm, 15 dpi) nu atinge pragul. E o limita a fisierului, nu a detaliului - o nebuloasa moale poate cere mult mai putin - deci nu se recomanda o marime. Da distanta de privire ca pragul sa fie cel fizic, nu conventia.
-     fiindca: 16 stele masurate (minim 20); la 50 cm pasul pixelului e 1.67 mm, invizibil de la 5.75 m; prag 180 dpi (conventie: pas 0.14 mm, invizibil de la 0.49 m)
+     fiindca: 16 stele masurate, 177.8 pe megapixel (minim 20 si 10 pe megapixel); la 50 cm pasul pixelului e 1.67 mm, invizibil de la 5.75 m; prag 180 dpi (conventie: pas 0.14 mm, invizibil de la 0.49 m)
 
 5. Denoise pentru versiunea de print  [OK]
    - Zgomotul rezidual e exact unde trebuie pentru print.
@@ -69,10 +69,10 @@ Anexa C. Export
   q100           0.0 MB       0.084       1.0   1.00    1.00     0.0 %             0
   q95            0.0 MB       0.680       4.0   2.00    3.00     0.8 %            65
   q90            0.0 MB       0.765       7.0   3.00    4.00     1.5 %            66
-  palier: fara dale de cer curat (0)
+  palier: fara dale de cer curat (0 din 5000 pozitii)
 
 Anexa D. Rezolutie si marime
-  stele: 16 masurate - prea putine pentru FWHM
+  stele: 16 masurate, 177.8 pe megapixel - prea putine pentru FWHM
   regiuni: centru 3.09 px (6); colt stanga-sus n/a (1); colt dreapta-sus n/a (1); colt stanga-jos n/a (0); colt dreapta-jos n/a (0)
   marimi pentru 300 x 300 px:
   latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm

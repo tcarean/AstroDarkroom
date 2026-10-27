@@ -99,7 +99,7 @@ public class CurvesTabTests
         CurveSuggestion core = CurveRun.Execute(result, CurvePurpose.Print, 800, 500).Suggestions[0];
         Assert.NotEmpty(core.Evidence.PaperChecks);
         Assert.Equal(tab.Current.Evidence, tab.Current.EvidenceRows.Select(r => r.Text).ToArray());
-        Assert.Equal(core.Evidence.PaperChecks.Select(c => $"! {c.Text} (fiindca: {c.Because})").ToArray(),
+        Assert.Equal(core.Evidence.PaperChecks.Select(c => $"! {c.Text} (fiindca: {Fmt.Plain(c.Because)})").ToArray(),
             tab.Current.EvidenceRows.Where(r => r.IsWarning).Select(r => r.Text).ToArray());
 
         tab.IsScreen = true;

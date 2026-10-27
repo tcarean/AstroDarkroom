@@ -44,15 +44,17 @@ All empirical, most from the reference image. Change one, change its comment.
 | `NoiseTileSize` / `NoiseTileCandidates` | 64 / 400 | |
 | `NoiseTileMaxRangeLevels` | 6000/257 = 23.3 | smooth-tile range for noise |
 | `NoiseMinTiles` | 10 | fewer: insufficient |
-| `PlateauTileMaxRangeLevels` / `PlateauTileMaxMeanLevels` / `PlateauTileCount` / `PlateauSeed` / `PlateauMaxAttempts` | 6 / 70 / 120 / 1 / 5000 | strict tiles for the plateau |
+| `PlateauTileMaxRangeLevels` / `PlateauTileMaxMeanLevels` / `PlateauSeed` / `PlateauPositions` | 6 / 70 / 1 / 5000 | strict tiles for the plateau, at every one of the positions (`PlateauTileCount`, 120, and `PlateauMaxAttempts` went with ADR 0060) |
 | `NoiseBandingLsb` / `NoisePrintLoLsb` / `NoisePrintHiLsb` / `NoiseUnderDenoisedLsb` | 0.5 / 0.8 / 1.5 / 2.0 | sigma bands |
-| `PlateauVisibleMm` | 1.0 | a plateau longer than this on paper is a contour |
+| `PlateauVisibleMm` | 1.0 | a tile's plateau longer than this on paper is a contour |
+| `PlateauFlatFrameWarnPct` | 0.1 | a banding risk when the tiles with a contour are more than this share of the frame, in percent: about five tiles on 23 MP, 4 cm2 on an 80 cm print; 0.00 % on the reference image, 0.18 / 0.24 / 0.44 % on the owner's core at Syqon 0.5 / 0.75 / 1 (ADR 0060) |
 | `JpegMaxErrorReject` / `JpegErrorCountLevels` / `JpegOverThresholdWarnPct` | 10 / 2 / 5 | q100 gets Attention above this percentage of samples over `JpegErrorCountLevels` even when its max error is acceptable |
 | `ShadowLiftGamma` / `ShadowLiftLevelLo` / `ShadowLiftLevelHi` / `MissingLevelsWarn` | 1.9 / 8 / 120 / 20 | stress test |
 | `StarWindow` / `StarMinAmplitude16` / `StarMaxPeak16` / `StarCandidateAboveMean16` | 25 / 3000 / 60000 / 3000 | in 16-bit units |
 | `StarMinSnr` | 12 | the amplitude over the border's robust sigma about a fitted plane; the grain peaks at 3 to 4 (ADR 0054) |
 | `StarFwhmMin` / `StarFwhmMax` | 0.8 / 15 | accepted widths |
 | `CornerSoftRatio` / `RegionFraction` / `CenterFraction` / `StarMinCount` / `RegionMinStars` | 1.4 / 0.2 / 0.4 / 20 / 5 | |
+| `StarMinPerMegapixel` | 10 | stars per megapixel under which the FWHM is not trusted, beside the count: real fields at 76 to 332, the strongest Syqon denoise of a starless core at 2.1 (ADR 0062) |
 | `FallbackMinDpi` | 180 | pixel-grid floor without stars and without a distance: 0.14 mm pitch, invisible from ~0.5 m (lab convention 150-200); with a distance the floor is 25.4 / (0.29 x d) |
 | `JpegQualities` | 100, 95, 90 | |
 | `BackgroundExcludeBottomFraction` | 0.25 | the sky's colour leaves out the bottom band, where the horizon sits; it is taken on the sky patches of R-044 (ADR 0055; `BackgroundDarkestFraction`, the darkest quarter, went with it) |

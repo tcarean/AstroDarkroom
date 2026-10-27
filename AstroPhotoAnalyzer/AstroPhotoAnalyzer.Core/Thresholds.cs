@@ -313,14 +313,37 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The PLATEAU's tiles (stage 3): range under 6 levels and mean under 70 - clean sky,
-        /// without the core - up to 120 tiles from seed 1. They are the other acceptance script's
-        /// criteria; on the reference image 20 tiles pass in PlateauMaxAttempts tries, and give
-        /// 2.68 px (V-001).
+        /// without the core - at every one of PlateauPositions random positions from seed 1
+        /// (ADR 0060; until then up to 120 tiles). They are the other acceptance script's
+        /// criteria; on the reference image 20 of the 5000 positions pass, and give 2.68 px
+        /// (V-001).
         /// </summary>
         internal const double PlateauTileMaxRangeLevels = 6;
         internal const double PlateauTileMaxMeanLevels = 70;
-        internal const int PlateauTileCount = 120;
         internal const int PlateauSeed = 1;
+
+        /// <summary>
+        /// How many random positions the plateau tries, every one of them: the share of the frame
+        /// a count of tiles stands for is that count over this (the draws are uniform), so the
+        /// shares have the same precision on every image (ADR 0060). 5000 positions of 64 px are
+        /// about 90 % of a 23 MP frame's area, drawn with replacement.
+        /// </summary>
+        internal const int PlateauPositions = 5000;
+
+        /// <summary>
+        /// The banding verdict (ADR 0060): a risk when the clean tiles whose plateau is longer
+        /// than PlateauVisibleMm at the print's dpi are more than this share of the frame, in
+        /// percent. A tenth of a percent is about five tiles of 64 px on a 23 MP frame, 4 cm2 on
+        /// an 80 cm print: a contour is a contour wherever the eye lands, and the cure (16 bits,
+        /// or dither at the export) is cheap. Measured on 2026-10-27 over the whole grid: the
+        /// reference image 0.00 % (25 clean tiles, none over 1 mm at 202 dpi); the owner's
+        /// 2026-08-12 core denoised by Syqon at 0.5 / 0.75 / 1: 0.18 / 0.24 / 0.44 % at 185 dpi,
+        /// the share growing with the denoise while the mean plateau (43 / 16 / 4.7 px) shrank,
+        /// which is why the mean no longer decides; the four FITS frames of the validation cases
+        /// (the plate-solved core, whose sky keeps a noise of 2.0 LSB, Rosetta, Orion, the Veil):
+        /// no clean tile at all.
+        /// </summary>
+        internal const double PlateauFlatFrameWarnPct = 0.1;
 
         /// <summary>
         /// Under this sigma (in 8-bit LSB) the noise no longer dithers the quantization: a risk of
@@ -341,7 +364,8 @@ namespace AstroPhotoAnalyzer
         // ------------------------------------------------------------ export
 
         /// <summary>
-        /// A plateau of identical values longer than this, on paper, is a visible contour.
+        /// A plateau of identical values longer than this, on paper, is a visible contour: a tile
+        /// whose plateau passes it at the print's dpi counts towards PlateauFlatFrameWarnPct.
         /// </summary>
         internal const double PlateauVisibleMm = 1.0;
 
@@ -456,13 +480,19 @@ namespace AstroPhotoAnalyzer
         /// <summary>Under this many measured stars the global FWHM is not to be trusted.</summary>
         internal const int StarMinCount = 20;
 
+        /// <summary>
+        /// Under this many measured stars per megapixel of the frame the FWHM is not to be
+        /// trusted either (ADR 0062): a count alone cannot tell a few dozen soft blobs a denoiser
+        /// left on a starless 23 MP frame from as many stars on a small crop. Measured on
+        /// 2026-10-27: frames with stars at 76 (Rosetta), 136 (Orion), 272 (the reference
+        /// image) and 332 (Andromeda) per megapixel; the owner's 2026-08-12 core denoised by
+        /// Syqon at its strongest, starless, at 2.1 (48 blobs of median FWHM 6.98 px, which gave
+        /// a "real detail" of 836 px across the width), and every other starless frame under 1.
+        /// </summary>
+        internal const double StarMinPerMegapixel = 10;
+
         /// <summary>Under this many stars in a region, its FWHM is not reported.</summary>
         internal const int RegionMinStars = 5;
-
-        /// <summary>
-        /// How many candidates are tried for the plateau's tiles before giving up.
-        /// </summary>
-        internal const int PlateauMaxAttempts = 5000;
 
         /// <summary>
         /// Without a FWHM (too few stars) the detail is not measured, only the pixel grid: the

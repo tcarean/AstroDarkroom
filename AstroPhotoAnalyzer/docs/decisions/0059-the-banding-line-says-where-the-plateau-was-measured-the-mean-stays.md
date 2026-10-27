@@ -1,7 +1,7 @@
 # 0059. The banding line says where the plateau was measured; the plateau stays the mean, its statistic an open question
 
 Date: 2026-10-27
-Status: accepted 2026-10-27
+Status: accepted 2026-10-27; the plateau's statistic superseded by 0060
 
 ## Context
 
