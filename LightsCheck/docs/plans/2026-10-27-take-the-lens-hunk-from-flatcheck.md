@@ -106,7 +106,9 @@ Measured today in `E:\Photografie\Code`:
    pitch from the diagonal (`FromCrop`) and chooses the source (`Choose`: XPIXSZ, typed, raw,
    3.92); the `scale` line names the source; R-066, ADR 0026; tests on fabricated `FrameInfo`s
    (`PixelPitchTests`); `/validate` run afterwards, the drift table pasted, the moved figures
-   left to the owner.
+   left to the owner. Run on 2026-10-27: 12 of 13 passed, V-010's median move cell moved from
+   79.6" to 81.2" (the scale alone); the owner said to record it, and `docs/validation.md`'s
+   history line of that day holds the figures.
 
 ## Verification
 
