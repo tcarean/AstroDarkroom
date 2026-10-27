@@ -786,7 +786,7 @@ internal static class DarkReport
             parts.Add(T(
                 $"constant light in every frame: {Signed(c.LightAdu, 2)} {eq} (±{F(c.ErrorAdu, 2)}) on the {SideName(c.Side)} side against the centre, not in the bias: a light leak (eyepiece, mount)",
                 $"lumina constanta in toate cadrele: {Signed(c.LightAdu, 2)} {eq} (±{F(c.ErrorAdu, 2)}) pe latura de {SideName(c.Side)} fata de centru, nu e in bias: scurgere de lumina (ocular, montura)")
-                + (against.Length == 0 ? "" : T("; that is ", "; adica ") + against));
+                + (against.Length == 0 ? "" : T("; that is, ", "; adica ") + against));
         }
 
         if (Math.Abs(l.OffsetAdu) > Th.LeakAdu)
