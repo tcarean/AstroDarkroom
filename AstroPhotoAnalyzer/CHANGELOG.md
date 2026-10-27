@@ -59,6 +59,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- An edge region darker than the sky on every channel was called "warm (horizon glow / light
+  pollution)"; it is now named a darkening, browner or bluer by the channel missing most, read
+  as dust at the frame's edge or a gradient left over, to check in Preview (R-093).
 - A starless image no longer reports thousands of stars and a false resolution: a star must
   stand 12 times the local noise over its surroundings (`StarMinSnr`), so the grain of the
   stretched sky, which the absolute floor let through (6297 "stars" at 2.38 px on the starless

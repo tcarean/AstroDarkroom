@@ -244,11 +244,23 @@ namespace AstroPhotoAnalyzer
             foreach (EdgeRegion e in b.FlaggedRegions.Where(x => x.Coloured))
             {
                 string deltas = $"R {Fmt.S1(e.Deltas[0])}, G {Fmt.S1(e.Deltas[1])}, B {Fmt.S1(e.Deltas[2])}";
-                string kind = e.Deltas[0] > e.Deltas[2] + Thresholds.CornerGradientLevels ? Tr.Pick("warm (horizon glow / light pollution)", "cald (lumina de orizont / poluare)")
-                    : e.Deltas[2] > e.Deltas[0] + Thresholds.CornerGradientLevels ? Tr.Pick("cool (bluish)", "rece (albastrui)")
-                    : e.Deltas[1] > (e.Deltas[0] + e.Deltas[2]) / 2 ? Tr.Pick("greenish", "verzui") : Tr.Pick("of another colour than the background", "cu alta culoare decat fundalul");
+                double grad = Thresholds.CornerGradientLevels;
+                // A region UNDER the sky on average is a darkening, not a glow: dust at the frame's
+                // edge, or vignetting and a flattening's edge left over. Its colour says which
+                // channel is missing most; the advice is the eye's, not GraXpert's by default.
+                bool darker = e.Deltas.Average() < 0;
+                string kind = darker
+                    ? (e.Deltas[2] < e.Deltas[0] - grad ? Tr.Pick("darker and browner than the sky (the blue missing most)", "mai intunecat si mai brun decat cerul (albastrul lipseste cel mai mult)")
+                        : e.Deltas[0] < e.Deltas[2] - grad ? Tr.Pick("darker and bluer than the sky (the red missing most)", "mai intunecat si mai albastru decat cerul (rosul lipseste cel mai mult)")
+                        : Tr.Pick("darker than the sky, with a colour of its own", "mai intunecat decat cerul, cu o culoare a lui"))
+                    : (e.Deltas[0] > e.Deltas[2] + grad ? Tr.Pick("warm (horizon glow / light pollution)", "cald (lumina de orizont / poluare)")
+                        : e.Deltas[2] > e.Deltas[0] + grad ? Tr.Pick("cool (bluish)", "rece (albastrui)")
+                        : e.Deltas[1] > (e.Deltas[0] + e.Deltas[2]) / 2 ? Tr.Pick("greenish", "verzui") : Tr.Pick("of another colour than the background", "cu alta culoare decat fundalul"));
+                string advice = darker
+                    ? Tr.Pick("Dust at the edge of the frame, or a gradient left over (vignetting, the edge of the flattening): check in Preview; a gradient is corrected on the linear data (GraXpert), dust is the object.", "Praf la marginea cadrului, sau un rest de gradient (vinietare, marginea aplatizarii): verifica in Preview; un gradient se corecteaza pe liniar (GraXpert), praful e obiectul.")
+                    : Tr.Pick("Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.", "Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.");
                 o.Add(new Recommendation(Topic.Colour, Verdict.Attention,
-                    Tr.Pick($"{Cap(e.Name)}: {kind}. Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.", $"{Cap(e.Name)}: {kind}. Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita."),
+                    $"{Cap(e.Name)}: {kind}. {advice}",
                     Tr.Pick($"against the background, {(e.OnSkyPixels ? "on the region's sky pixels" : $"on every pixel of the region (sky {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} levels (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move differently",
                         $"fata de fundal, {(e.OnSkyPixels ? "pe pixelii de cer ai regiunii" : $"pe toti pixelii regiunii (cer {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca diferit")));
             }

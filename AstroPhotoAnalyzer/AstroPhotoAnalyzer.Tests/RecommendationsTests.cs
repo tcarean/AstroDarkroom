@@ -101,6 +101,24 @@ public class RecommendationsTests
     }
 
     [Fact]
+    public void R093_ACornerDarkerThanTheSkyIsNamedADarkeningNotAGlow()
+    {
+        // The top-left corner of the 2026-08-12 core, in miniature: brown, under the sky on
+        // every channel, the blue missing most. Its patches are dust, so the region is measured
+        // on every pixel; the departure is coloured, and the words must say "darker", not
+        // "horizon glow".
+        const float sky = 0.14f;
+        Raster r = SyntheticRasters.From(320, 320, 3, (x, y, p) =>
+            y < 48 && x < 64 ? (p == 0 ? sky - 8f / 255 : p == 1 ? sky - 7f / 255 : sky - 12f / 255) : sky);
+        var a = Run(r);
+
+        Recommendation corner = Assert.Single(Of(a, Topic.Colour), x => x.Verdict == Verdict.Attention);
+        Assert.StartsWith("Colt stanga-sus: mai intunecat si mai brun decat cerul (albastrul lipseste cel mai mult). Praf la marginea cadrului", corner.Text);
+        Assert.DoesNotContain("orizont", corner.Text);
+        Assert.Contains("R -8.0, G -7.0, B -12.0", corner.Because);
+    }
+
+    [Fact]
     public void R093_MonoHasNoColourToJudge()
     {
         var a = Run(Scenes.MonoSky());
