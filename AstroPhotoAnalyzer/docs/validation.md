@@ -116,7 +116,9 @@ scenario from the conversation), version 1.0.0, 11 seconds on the whole 23 MP.
 
 Verdict PROBLEMA (ATENTIE since ADR 0025: the sky at L\* 9.3 is above paper black and only the
 dust is under it). Send TIFF 8-bit LZW; if only JPEG, q100 and never below (q95 max
-error 27). No visible banding on 8 bits (plateau 0.34 mm at 202 dpi). Background too low
+error 27; since ADR 0061 a fact of the Export tab, not a line of the report). No visible banding
+on 8 bits (plateau 0.34 mm at 202 dpi; since ADR 0060 the verdict is the share of the frame with
+a visible step, 0.00 %). Background too low
 for baryta - 45.6 % under paper black - re-stretch from linear to 0.19 (0.17 since ADR 0025,
 the lowest grid row that puts the darkest 1 % of the patches on paper black). Green cast of
 +1.6 on the background (since ADR 0055, against the sky patches: +0.9 of green and -1.9 of
@@ -126,7 +128,8 @@ against the sky patches, on the corner's own sky pixels) and warm bottom edge: h
 fix on linear or keep as composition. Recommended 70 x 49 cm at 1.5 m; the
 50:35 target cuts 192 px per side. Denoise pressed hard for print: sigma 0.45, target
 0.8-1.5, and after the re-stretch it becomes ~0.61 (0.57 at 0.17). Keep the 16-bit master: 46
-levels missing from 8 bits after a shadow lift, none from 16.
+levels missing from 8 bits after a shadow lift, none from 16 (since ADR 0061 a mark of the Export
+tab's stress row, not a warning).
 
 ### What the real image taught the tool
 

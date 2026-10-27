@@ -567,8 +567,8 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "(recadrare, retus, alt print) pleaca din el, nu din fisierul de 8 biti. Cat timp laboratorul printeaza fisierul asa cum e, "
                         + "8 biti ajung; testul e despre ce ramane pentru mai tarziu.")));
             }
-            string plateauDesc = Tr.Pick($"At every one of {Fmt.Int(Thresholds.PlateauPositions)} random positions, the clean sky tiles (a range under {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} levels "
-                + $"and a mean under {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, so as not to catch the core) and, on each, at 8 bits, how long the runs "
+            string plateauDesc = Tr.Pick($"At each of {Fmt.Int(Thresholds.PlateauPositions)} random positions a tile is kept when it is clean sky (a range under {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} levels "
+                + $"and a mean under {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, so as not to catch the core), and on each tile kept it is measured, at 8 bits, how long the runs "
                 + "of neighbouring pixels with exactly the same value are. A noiseless sky quantized to 8 bits makes wide steps; the residual noise breaks them, "
                 + "like a natural dither. A tile's plateau in pixels, times the pixel pitch at the reference row's dpi, is the length of its step on paper: "
                 + $"over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm it is a visible contour. The verdict is the share of the frame in such tiles (tiles over the positions tried): "
@@ -577,8 +577,8 @@ namespace AstroPhotoAnalyzer.Wpf
                 + "n/a when no clean sky tiles are found. The tiles' share of the frame and the noise left on them say where the plateau "
                 + "was measured: on an AI-denoised frame the only tiles clean enough can be a few patches the denoiser wiped, while the noise section's median, "
                 + "taken on other tiles, chosen with a looser criterion, says the sky is fine; the two speak of different places.",
-                $"La fiecare dintre cele {Fmt.Int(Thresholds.PlateauPositions)} de pozitii aleatoare, dalele de cer curat (interval sub {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} niveluri "
-                + $"si medie sub {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, ca sa nu prinda nucleul) si, pe fiecare, pe 8 biti, cat de lungi sunt sirurile "
+                $"La fiecare dintre cele {Fmt.Int(Thresholds.PlateauPositions)} de pozitii aleatoare se pastreaza dala daca e cer curat (interval sub {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} niveluri "
+                + $"si medie sub {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, ca sa nu prinda nucleul), si pe fiecare dala pastrata se masoara, pe 8 biti, cat de lungi sunt sirurile "
                 + "de pixeli vecini cu exact aceeasi valoare. Un cer fara zgomot cuantizat la 8 biti face trepte late; zgomotul rezidual le sparge, "
                 + "ca un dither natural. Palierul unei dale in pixeli, inmultit cu pasul pixelului la dpi-ul randului de referinta, e lungimea treptei ei pe hartie: "
                 + $"peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm e un contur vizibil. Verdictul e partea din cadru ocupata de astfel de dale (dale raportate la pozitiile incercate): "
@@ -600,8 +600,10 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// The text under the JPEG table: explanation, not diagnosis - it does not depend on the
-        /// image, only on the thresholds.
+        /// The text under the JPEG table: explanation, not diagnosis. It depends on the thresholds,
+        /// and on the image only through the core's <c>JpegResult.HighestFailingBelow100</c>: the
+        /// "what is recommended" paragraph states that row with its maximum error, the report's
+        /// former warning (ADR 0061); the view-model selects and decides nothing.
         /// </summary>
         /// <param name="jpeg">The JPEG measurement, for the quality under 100 that fails, if any.</param>
         /// <returns>The five paragraphs.</returns>

@@ -84,7 +84,9 @@ Give the viewing distance when you know it. Left empty, it is 1.5 x the diagonal
 and no size is recommended: a star's size on paper and that distance both grow with the print, so
 the test answers the same at every size, and the report only says up to which width the image is
 equally sharp from its natural distance. A starless image has no stars to measure: its sizes are
-judged by the dpi alone (180 dpi without a distance). A star must stand 12 times the local noise
+judged by the dpi alone (180 dpi without a distance). An image counts as starless with fewer than
+20 stars, or fewer than 10 per megapixel: a strong denoise can leave a few dozen soft blobs on a
+starless frame, too few to judge the detail by. A star must stand 12 times the local noise
 over its surroundings, so the grain of a stretched sky is not counted as one; faint stars are
 left out with it, and the resolution is the bright stars'.
 
@@ -95,7 +97,7 @@ where one applies, the threshold they are judged by.
 | --- | --- |
 | **Report** | The decisions, in the report's order, each with its verdict chip and its "because:" line; the whole text report behind a check box. |
 | **Tones** | The L\* histogram, with paper black as a red line and the visibility threshold L\* 15 as a dashed yellow one; the tonal figures, the background level among them; the background simulation, with a **Preview** button on every row; under it, the definition of the dust and the sky used on this file, a red line when the file has no WCS and the **Dust / sky map** button; the tab's landmarks in level and in L\*; how to read the tab. |
-| **Export** | The JPEG table, with what its columns mean; the size of the 8-bit TIFF; the 16 to 8 bit rounding; the shadow-lift stress test; the plateau, how wide the flat steps of the 8-bit sky would print. |
+| **Export** | The JPEG table, with what its columns mean and, when a quality under 100 spoils the stars and the edges, which one and by how much; the size of the 8-bit TIFF; the 16 to 8 bit rounding; the shadow-lift stress test, marked when the 16-bit master is worth keeping; the plateau, how wide the flat steps of the 8-bit sky would print and on what share of the frame, which decides the banding risk. |
 | **Resolution** | The stars' FWHM, in the centre and in the four corners, and the real detail it leaves; the table of print sizes; the scale of dpi against viewing distance. |
 | **Colour** | The background colour, R / G / B, with its cast; the four corners and the four edges against it, a flagged one marked "! coloured" or "! neutral"; how to read them. |
 | **Preview** | The centre at 100 % and 200 %, the four corners at 100 %, the whole frame, the print simulation (at the extra target background, or else at the recommended one, when it is not the image as it is) and, when the target ratio cuts, the crop, each with what to look for in it; the rule of screen against paper, with the step back computed for this image. |
@@ -219,15 +221,13 @@ reference image, `de_printat.png`, a 23 MP Milky Way frame analysed with the def
 ```
 VERDICT: CAUTION
 
-1. The format to send  [CAUTION]
+1. The format to send  [OK]
    - Send an 8-bit LZW TIFF (20.7 MB). The 16 -> 8 bit conversion is pure rounding, not a loss.
      because: mean rounding error 0.25, max 0.50 levels (half a level is the most possible)
    - If the lab accepts only JPEG: q100, 4:4:4 (12.5 MB).
      because: mean error 0.60, max 4.5 levels; 1.2 % of the samples with an error > 2, at a mean level of 31 (in the dark sky, where JPEG does worst)
-   ! Do not go below q100.
-     because: q95 has a max error of 27.0 levels (threshold 10), on the stars and on the edges
-   - No visible banding at 8 bits: the residual noise dithers the quantization.
-     because: a plateau of 2.7 px = 0.45 mm at 151 dpi, under 1.0 mm
+   - No visible banding at 8 bits: flat steps on too little of the frame to show.
+     because: flat steps over 1.0 mm at 151 dpi on 0.00 % of the frame (threshold 0.10 %); the typical plateau on the 20 clean tiles, 0.4 % of the frame, is 2.7 px = 0.45 mm, with the noise left at sigma 0.32 LSB
 ```
 
 ## How the background is judged

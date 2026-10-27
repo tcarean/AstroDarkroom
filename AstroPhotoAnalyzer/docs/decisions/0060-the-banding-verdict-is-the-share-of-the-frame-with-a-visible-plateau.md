@@ -15,7 +15,8 @@ denoised by Syqon at 0.5, 0.75 and 1, the share of the frame in tiles whose plat
 43, 16 and 4.7 px, and the 90th percentile too, 49, 27 and 5.8 px: at Syqon 1, 25 % of the
 frame passes the strict criterion and the many ordinary tiles drown the few dozen fully flat
 ones, so the mean cleared the strongest denoise and warned on the lighter two. On the reference
-image 25 tiles pass, none over 1 mm at 202 dpi; on the four undenoised FITS frames no tile
+image 25 tiles pass, none over 1 mm at 202 dpi; on the four FITS frames of the validation cases
+(the plate-solved core, whose sky keeps a noise of 2.0 LSB, Rosetta, Orion, the Veil) no tile
 passes at all. The share is the one statistic that orders the three strengths the way the eye
 and the denoise section do. The old sampling stopped at 120 accepted tiles, so on a frame where
 most tiles pass it had seen about 460 positions, and a share estimated from it would have been
@@ -48,8 +49,8 @@ Under the threshold the line is Ok and gives the share all the same.
 ## Consequences
 
 - On the owner's core all three Syqon strengths warn, 0.18, 0.24 and 0.44 % of the frame,
-  the strongest now rightly; the reference image stays clear (0.00 %); the undenoised FITS
-  frames still have no plateau and fall back to the noise's banding rule.
+  the strongest now rightly; the reference image stays clear (0.00 %); the four FITS frames
+  still have no plateau and fall back to the noise's banding rule.
 - The dark scene's goldens move: its plateau is measured on every clean tile among 5000
   positions, not the first 120, and the line carries the share and the threshold. V-001's
   figures do not move (20 tiles were all that 5000 positions found before, too);

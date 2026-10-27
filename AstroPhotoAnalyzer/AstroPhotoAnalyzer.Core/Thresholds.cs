@@ -339,8 +339,9 @@ namespace AstroPhotoAnalyzer
         /// reference image 0.00 % (25 clean tiles, none over 1 mm at 202 dpi); the owner's
         /// 2026-08-12 core denoised by Syqon at 0.5 / 0.75 / 1: 0.18 / 0.24 / 0.44 % at 185 dpi,
         /// the share growing with the denoise while the mean plateau (43 / 16 / 4.7 px) shrank,
-        /// which is why the mean no longer decides; the four undenoised FITS frames: no clean
-        /// tile at all.
+        /// which is why the mean no longer decides; the four FITS frames of the validation cases
+        /// (the plate-solved core, whose sky keeps a noise of 2.0 LSB, Rosetta, Orion, the Veil):
+        /// no clean tile at all.
         /// </summary>
         internal const double PlateauFlatFrameWarnPct = 0.1;
 

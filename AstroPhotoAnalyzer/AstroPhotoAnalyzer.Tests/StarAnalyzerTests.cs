@@ -59,6 +59,15 @@ public class StarAnalyzerTests
     /// this 600 x 600 frame (measured 2026-10-27 with StarMinSnr set to 0); a star must be
     /// StarMinSnr sigmas over its base.
     /// </summary>
+    [Fact]
+    public void R070_NoiseGrainIsNotAStar()
+    {
+        var s = StarAnalyzer.Analyze(SyntheticRasters.AddNoise(SyntheticRasters.Flat(600, 600, 0.2f), 0.02, 7));
+
+        Assert.True(s.Insufficient, $"{s.Count} grain bumps passed as stars");
+        Assert.True(double.IsNaN(s.FwhmMedian));
+    }
+
     /// <summary>
     /// Thirty stars pass the count floor, but on a 2000 x 2000 frame they are 7.5 per
     /// megapixel, under the density floor: a starless frame on which a denoise left a few dozen
@@ -77,15 +86,6 @@ public class StarAnalyzerTests
         Assert.InRange(dense.Count, 25, 30);
         Assert.InRange(dense.DensityPerMp, 25.0, 30.0);
         Assert.False(dense.Insufficient);
-    }
-
-    [Fact]
-    public void R070_NoiseGrainIsNotAStar()
-    {
-        var s = StarAnalyzer.Analyze(SyntheticRasters.AddNoise(SyntheticRasters.Flat(600, 600, 0.2f), 0.02, 7));
-
-        Assert.True(s.Insufficient, $"{s.Count} grain bumps passed as stars");
-        Assert.True(double.IsNaN(s.FwhmMedian));
     }
 
     /// <summary>

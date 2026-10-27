@@ -173,7 +173,7 @@ namespace AstroPhotoAnalyzer
         /// positions from <see cref="Thresholds.PlateauSeed"/>, the strict tiles, and on each the
         /// mean run length of identical 8-bit values along the rows.
         /// </summary>
-        /// <param name="r">The image, 0..1.</param>
+        /// <param name="r">The image, 0..1; its reference plane is read.</param>
         /// <returns>
         /// The tiles accepted, the positions tried (0 on a frame no larger than a tile), the
         /// mean plateau in pixels and the median of the tiles' noise sigmas in LSB (both NaN

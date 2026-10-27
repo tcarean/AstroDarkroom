@@ -171,7 +171,10 @@ namespace AstroPhotoAnalyzer
         /// <param name="pixelH">The height that prints, in pixels.</param>
         /// <param name="fwhmPx">
         /// The median FWHM, in pixels; NaN, 0 or less when there is none: StarAnalyzer gives NaN
-        /// under <see cref="Thresholds.StarMinCount"/> stars, so 1 to 19 stars count as none.
+        /// when the stars are too few (<see cref="StarResult.Insufficient"/>: under
+        /// <see cref="Thresholds.StarMinCount"/>, or under
+        /// <see cref="Thresholds.StarMinPerMegapixel"/> per megapixel, ADR 0062), so such stars
+        /// count as none.
         /// </param>
         /// <param name="p">
         /// The run's parameters: the candidate widths, the viewing distance, the passepartout and

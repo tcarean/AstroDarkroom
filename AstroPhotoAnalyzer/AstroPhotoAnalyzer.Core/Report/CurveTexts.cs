@@ -266,7 +266,7 @@ namespace AstroPhotoAnalyzer
             CurveEvidence e = s.Evidence;
             var o = new List<(string, bool)>();
             foreach (string line in Plain(s)) o.Add((line, false));
-            foreach (Recommendation r in e.PaperChecks) o.Add(($"! {r.Text} ({Tr.Pick("because", "fiindca")}: {r.Because})", true));
+            foreach (Recommendation r in e.PaperChecks) o.Add(($"! {r.Text} ({Tr.Pick("because", "fiindca")}: {Fmt.Plain(r.Because)})", true));
             if (e.Gamut != null)
             {
                 o.Add((GamutLine(e.Labels, Tr.Pick($"outside the paper gamut (the chroma moved by over {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), before", $"in afara gamutului hartiei (croma mutata cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), inainte"), e.GamutBefore), false));

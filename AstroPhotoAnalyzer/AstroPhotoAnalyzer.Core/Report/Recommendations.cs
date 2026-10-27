@@ -56,8 +56,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Section 1, the format to send: the 8-bit LZW TIFF (with the rounding on a source over 8
-        /// bits), JPEG q100 when the lab accepts only JPEG and the advice not to go below it, and
-        /// the banding risk, from the plateau at the reference row's dpi or from the noise alone.
+        /// bits), JPEG q100 when the lab accepts only JPEG (the qualities under it that fail are a
+        /// fact of the Export tab, ADR 0061), and the banding risk, from the share of the frame
+        /// with a visible plateau at the reference row's dpi (ADR 0060) or from the noise alone.
         /// </summary>
         /// <param name="r">The analysis.</param>
         /// <param name="o">The list the recommendations are added to.</param>
@@ -508,7 +509,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Section 6, the warnings: an 8-bit file in disguise, no ICC profile or one that is not
-        /// sRGB, the 16-bit master to keep, and the reader's note.
+        /// sRGB, and the reader's note (the 16-bit master to keep is a fact of the Export tab,
+        /// ADR 0061).
         /// </summary>
         /// <param name="r">The analysis.</param>
         /// <param name="o">The list the recommendations are added to.</param>

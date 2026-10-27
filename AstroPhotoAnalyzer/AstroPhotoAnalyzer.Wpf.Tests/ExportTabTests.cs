@@ -26,22 +26,35 @@ public class ExportTabTests
     [Fact]
     public void R114_TheExportTabCarriesTheQ100FloorAndThe16BitMasterAsFacts()
     {
-        // The two facts the report no longer warns about (ADR 0061): the stress test's 8-bit row
-        // marked when the master should be kept, and the "what is recommended" paragraph naming
-        // the highest quality under 100 that fails, with its figure, when there is one.
+        // The two facts the report no longer warns about (ADR 0061). The dark scene loses levels
+        // from 8 bits, so the stress test's 8-bit row is marked; its JPEG qualities under 100 all
+        // stay within the threshold (q90 at 7.3 levels), so no floor is named.
         AnalysisResult result = Result(Scenes.DarkSky());
+        Assert.True(result.Quantization.Keep16BitMaster);
+        Assert.Null(result.Jpeg.HighestFailingBelow100);
         var export = new ExportTabViewModel();
         export.Populate(result);
 
         MetricRow from8 = Assert.Single(export.Rows, x => x.Label == "... din 8 biti");
-        Assert.True(result.Quantization.Keep16BitMaster);
         Assert.Equal("pastreaza master-ul de 16 biti", from8.Note);
-
         GuideParagraph recommended = Assert.Single(export.JpegGuide, p => p.Lead == "Ce se recomanda.");
-        JpegRow floor = result.Jpeg.HighestFailingBelow100;
-        if (floor == null)
-            Assert.DoesNotContain("nu cobori sub q100", recommended.Text);
-        else
-            Assert.EndsWith($"Aici q{floor.Quality} ajunge la o eroare maxima de {Fmt.F1(floor.MaxError)} niveluri (prag 10): nu cobori sub q100.", recommended.Text);
+        Assert.DoesNotContain("nu cobori sub q100", recommended.Text);
+
+        // The same analysis with the JPEG figures of a real frame (the owner's 2026-08-12 core:
+        // q95 at 25.3 levels, q90 at 32.4): the paragraph names q95, the highest that fails.
+        result.Jpeg = new JpegResult
+        {
+            Rows = new[]
+            {
+                new JpegRow { Quality = 100, MaxError = 4.5 },
+                new JpegRow { Quality = 95, MaxError = 25.3 },
+                new JpegRow { Quality = 90, MaxError = 32.4 },
+            },
+            Tiff8LzwBytes = result.Jpeg.Tiff8LzwBytes,
+        };
+        export.Populate(result);
+
+        recommended = Assert.Single(export.JpegGuide, p => p.Lead == "Ce se recomanda.");
+        Assert.EndsWith($" Aici q95 ajunge la o eroare maxima de 25.3 niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub q100.", recommended.Text);
     }
 }

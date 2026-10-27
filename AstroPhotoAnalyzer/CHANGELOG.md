@@ -31,7 +31,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   precision on every image. On a core denoised by Syqon at 0.5, 0.75 and 1 the share grows
   with the denoise (0.18, 0.24, 0.44 % of the frame) while the mean plateau shrank and would
   have cleared the strongest one (R-080, R-091; ADR 0060). In the window's Raport tab the
-  share and the threshold are in bold; the text report is unchanged (R-112).
+  share and the threshold are in bold; the text report shows the same figures without the
+  marks (R-112).
 - "Do not go below q100" and "Keep the 16-bit master" are no longer warnings of the report:
   they are facts of the Export tab, which names the highest JPEG quality that fails with its
   maximum error and marks the stress test's 8-bit row; the report's sections 1 and 6 are Ok

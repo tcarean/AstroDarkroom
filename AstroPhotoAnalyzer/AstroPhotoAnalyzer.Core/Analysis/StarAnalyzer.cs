@@ -164,9 +164,11 @@ namespace AstroPhotoAnalyzer
         /// <see cref="Thresholds.StarWindow"/> / 2 pixels left out.
         /// </param>
         /// <returns>
-        /// The stars, the FWHM median and quartiles (NaN under
-        /// <see cref="Thresholds.StarMinCount"/> stars), the regions and the corner-to-centre
-        /// ratio.
+        /// The stars, the frame's area in megapixels, the FWHM median and quartiles (NaN when the
+        /// stars are too few, <see cref="StarResult.Insufficient"/>: under
+        /// <see cref="Thresholds.StarMinCount"/>, or under
+        /// <see cref="Thresholds.StarMinPerMegapixel"/> per megapixel), the regions and the
+        /// corner-to-centre ratio.
         /// </returns>
         internal static StarResult Analyze(Raster r)
         {
