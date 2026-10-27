@@ -247,8 +247,8 @@ namespace AstroPhotoAnalyzer
         internal const double SkyDarkestFraction = 0.01;
 
         /// <summary>
-        /// How many clouds, from the darkest, the report names (Anexa B and the "fiindca"); the
-        /// window shows them all.
+        /// How many clouds, from the darkest, the report names (Anexa B and the "fiindca") and the
+        /// map window labels on the image; its list shows them all.
         /// </summary>
         internal const int DustCloudReportRows = 15;
 

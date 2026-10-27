@@ -157,8 +157,10 @@ public class OverlayWindowTests
         Assert.True(ldn42.IsVisible);
         Assert.InRange(ldn42.CentreX, 252, 259);
         Assert.Equal(WcsFixtures.Ldn42RadiusPx, ldn42.Radius, 0);
+        Assert.StartsWith("LDN 42 (B78)", ldn42.Caption);
         Assert.Contains("L* 3.6", ldn42.Caption);
         Assert.Contains("tinta 0.", ldn42.Caption);
+        Assert.Contains(" dale)", ldn42.Caption);
         Assert.Equal(ldn42.CentreX - ldn42.Radius, ldn42.Left);
         Assert.Equal(2 * ldn42.Radius, ldn42.Diameter);
 

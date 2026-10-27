@@ -11,7 +11,7 @@ it reaches black (ADR 0025). The report prints the darkest `DustCloudReportRows`
 Appendix B. The window showed the rows twice: the Tonuri tab, under the simulation and the
 `Dust / sky map` button, repeated the report's mono table with every row, and the map window
 listed the same clouds beside its check boxes, each caption carrying the same name, L\*, target
-and patch count (R-130). On a wide field of the band the tab's table ran to dozens of rows
+and patch count (R-130). On the reference FITS the tab's table ran to 114 rows (V-004)
 between the simulation and the level-L\* ladder, and said nothing the map's list did not. On
 2026-10-27 the owner asked for the tab's table to go and the map's list to stay ("Vreau sa scoti
 de pe pagina de tonuri tabelul cu norii. O sa ramana doar in fereastra cu dust/sky map").
@@ -38,5 +38,5 @@ and target. The console report is unchanged: it has no map, so its table stays.
   carries its name, L\*, target and patch count. `R113_TheTabStatesTheDefinitionWarnsWithoutAWcsAndOffersTheMap`
   asserts the view-model has no `CloudRows`; `R130_TheMapCarriesTheFiveLayersTheCloudsAndTheirCaptions`
   asserts the captions.
-- `ReportWriter.CloudHeader` and `CloudLine` serve the report alone.
+- `ReportWriter.CloudHeader` and `CloudLine` serve the report and its tests alone.
 - The README's Tones row and map paragraph say where the clouds are listed.

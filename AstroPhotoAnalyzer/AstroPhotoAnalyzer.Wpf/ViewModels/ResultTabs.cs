@@ -426,7 +426,7 @@ namespace AstroPhotoAnalyzer.Wpf
                         + $"On either path, the sky's L* is the median of the sky patches, and the dust's L* is the darkest extended area: the {Fmt.F0(Thresholds.DustClassFraction * 100)} % percentile of the dust patches "
                         + $"when the class holds at least {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % of the patches (under that they are cores or artefacts), or the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of the sky patches, "
                         + "whichever of the two is darker. "
-                        + $"The \"Dust / sky map\" button shows the classes on the image and, from the Lynds catalogue, the clouds by name: each one with at least {Thresholds.DustCloudMinPatches} patches, with its L* and the target at which it reaches black.",
+                        + $"The \"Dust / sky map\" button shows the classes on the image and, from the Lynds catalogue, the clouds by name: each one with at least {Thresholds.DustCloudMinPatches} patches, listed with its L* and the target at which it reaches black, the darkest {Thresholds.DustCloudReportRows} labelled on the image.",
                         $"Imaginea se imparte in dale de {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, fiecare cu L*-ul luminantei ei medii: "
                         + "ce integreaza ochiul pe o pata de hartie, nu un pixel. Dalele se impart in cinci clase, relativ, nu dupa un prag fix, pe una din doua cai. "
                         + "Cu un FITS plate-solved (WCS in antet, sau imprumutat cu campul \"WCS din FITS\") si cu Calea Lactee in cadru: banda e latitudinea galactica |b| sub "
@@ -440,7 +440,7 @@ namespace AstroPhotoAnalyzer.Wpf
                         + $"Pe orice cale, L*-ul cerului e mediana dalelor de cer, iar L*-ul prafului e zona intinsa cea mai intunecata: percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf "
                         + $"cand clasa are cel putin {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale (sub atat sunt nuclee sau artefacte), sau cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al dalelor de cer, "
                         + "care din doua e mai intunecata. "
-                        + $"Butonul \"Harta praf / cer\" arata clasele pe imagine si, din catalogul Lynds, norii pe nume: fiecare cu cel putin {Thresholds.DustCloudMinPatches} dale, cu L*-ul lui si tinta la care ajunge el pe negru."),
+                        + $"Butonul \"Harta praf / cer\" arata clasele pe imagine si, din catalogul Lynds, norii pe nume: fiecare cu cel putin {Thresholds.DustCloudMinPatches} dale, in lista cu L*-ul lui si tinta la care ajunge el pe negru, cei mai intunecati {Thresholds.DustCloudReportRows} etichetati pe imagine."),
                 },
                 new GuideParagraph
                 {
