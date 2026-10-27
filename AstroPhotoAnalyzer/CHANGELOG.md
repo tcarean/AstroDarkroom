@@ -33,6 +33,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - Each edge region is measured on its own sky pixels, so that the Milky Way or a dust lane
   entering a corner no longer passes for a coloured gradient; a region with under 25 % of sky
   is measured on every pixel, and its row and its "because" say so (R-061; ADR 0056).
+- A cast is a sky colour whose chroma in CIE L*a*b*, sqrt(a*^2 + b*^2), passes 3, the size of
+  the cast in the unit the eye works in, instead of an excess of one level of green or of red
+  over blue, which flagged four of the five real images, a photometrically calibrated frame
+  neutral to the eye among them; the two level figures stay and name the cast's direction. The
+  "because", Appendix E and the Colour tab give L*, a*, b* and the chroma (R-060, R-093; ADR
+  0057).
 - The Curbe tab is called Editare Curbe (`Curves Editing` in English), and its gallery of
   suggested curves is computed right after the analysis, without pressing `Calculeaza`, so it
   is there when the tab is opened; the button computes it again at the tab's current size

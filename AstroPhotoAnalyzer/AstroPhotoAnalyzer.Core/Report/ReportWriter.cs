@@ -488,7 +488,7 @@ namespace AstroPhotoAnalyzer
                 ? Tr.Pick("background colour, R / G / B (0..255)", "culoarea fundalului, R / G / B (0..255)")
                 : Tr.Pick("the background, one channel (0..255)", "fundalul, un singur canal (0..255)");
             w.WriteLine($"  {levels}: {string.Join(" / ", b.Levels.Select(Fmt.F1))}"
-                + (b.ColorApplicable ? $"; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}; R - B = {Fmt.S1(b.RedMinusBlue)}" : "")
+                + (b.ColorApplicable ? $"; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}; R - B = {Fmt.S1(b.RedMinusBlue)}; L* {Fmt.F1(b.Lab.L)}, a* {Fmt.S1(b.Lab.A)}, b* {Fmt.S1(b.Lab.B)}, {Tr.Pick("chroma", "croma")} {Fmt.F1(b.Chroma)}" : "")
                 + $"; {Tr.Pick("from", "de pe")} {b.SourceText}");
             foreach (EdgeRegion e in b.Regions)
                 w.WriteLine($"  {e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{e.PixelsNote}{(e.Flagged ? "  !" : "")}");

@@ -58,7 +58,8 @@ All empirical, most from the reference image. Change one, change its comment.
 | `BackgroundExcludeBottomFraction` | 0.25 | the sky's colour leaves out the bottom band, where the horizon sits; it is taken on the sky patches of R-044 (ADR 0055; `BackgroundDarkestFraction`, the darkest quarter, went with it) |
 | `EdgeRegionHeightFraction` / `EdgeRegionWidthFraction` | 0.15 / 0.20 | corner = this much of the height x this much of the width; the edges are bands of the same thickness |
 | `RegionSkyMinFraction` | 0.25 | a region is measured on its sky pixels alone from this share of sky; under it on every pixel, and the row says so; the lowest share on five real images was 41 % (ADR 0056) |
-| `CastWarnLevels` / `CornerGradientLevels` / `CornerColourSpreadRatio` | 1.0 / 3.0 / 0.5 | |
+| `CastWarnChroma` | 3.0 | a cast is a sky colour whose L*a*b* chroma passes this; about 1 is the smallest difference seen beside a grey, 3 to 5 where a sky's cast reads on paper; the five real images sit at 1.0, 1.4, 1.8, 2.0 and 4.8 (ADR 0057; `CastWarnLevels`, 1.0 level, went with it) |
+| `CornerGradientLevels` / `CornerColourSpreadRatio` | 3.0 / 0.5 | |
 | `ScreenPixelMm` | 0.25 | a common monitor's pixel pitch (96-110 ppi); a presumption about the screen, for the Preview tab's step-back rule |
 | `AcuityMmAt1m` / `ViewingDistanceFactor` / `OversizeCm` / `ReferenceDpi` | 0.29 / 1.5 / 100 / 300 | 1.5 x the diagonal sits between the perspective-correct 1 x and the gallery 2 x (~37 degrees subtended); a presumption about the viewer, not a measurement |
 | `NaturalDistanceTolerance` | 1.15 | allowance on the natural distance (the verdict is size-independent there) |

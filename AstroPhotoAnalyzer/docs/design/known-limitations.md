@@ -84,8 +84,12 @@
   5 px, where it is nil.
 - The half-max estimator overestimates a sampled Gaussian by ~2.5 %.
 - On an 8-bit file the background's levels (the per-channel medians of the sky patches, R-060)
-  are whole levels, so a cast near `CastWarnLevels` (1 level) can fall either side of the
-  threshold between the 8-bit and the 16-bit version of the same image.
+  are whole levels, so the chroma of the sky colour moves by up to about 0.7 (one level of a
+  channel at a sky of level 20 to 60) between the 8-bit and the 16-bit version of the same
+  image, and a cast near `CastWarnChroma` (3) can fall either side of it.
+- The cast is the sky's colour against a grey; a sky that is physically green (airglow) or
+  yellow (pollution) after a star-based calibration reads as a cast when its chroma passes 3,
+  whether or not the owner wants it neutral.
 - Neutral edge brightening cannot be told from the object; it is reported as
   informative and left to the eye. A region is measured on its sky pixels so that the object's
   own colour does not pass for a gradient (ADR 0056), which leaves two limits: a region the

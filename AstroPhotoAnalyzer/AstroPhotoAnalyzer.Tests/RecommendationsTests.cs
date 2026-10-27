@@ -44,7 +44,9 @@ public class RecommendationsTests
 
         Assert.Equal(Verdict.Problem, a.Overall);
         Assert.Contains(Of(a, Topic.Background), r => r.Verdict == Verdict.Problem && r.Text.Contains("Re-stretch"));
-        Assert.Contains(Of(a, Topic.Colour), r => r.Verdict == Verdict.Attention && r.Text.Contains("Tenta verde"));
+        // The scene's two levels of green are a chroma of 1.7, no cast since ADR 0057, as on
+        // the real image (1.0); the cast itself is tested on R093_AFiveLevelGreenSkyIsACast.
+        Assert.Contains(Of(a, Topic.Colour), r => r.Verdict == Verdict.Ok && r.Text.Contains("Fundalul e neutru") && r.Because.Contains("croma 1."));
         Assert.Contains(Of(a, Topic.Colour), r => r.Verdict == Verdict.Attention && r.Text.StartsWith("Colt dreapta-jos"));
         Assert.Contains(Of(a, Topic.Size), r => r.Verdict == Verdict.Attention && r.Text.Contains("decupaj"));
         Assert.Contains(Of(a, Topic.Denoise), r => r.Verdict == Verdict.Attention && r.Text.Contains("apasat tare"));
@@ -83,6 +85,19 @@ public class RecommendationsTests
         var a = Run(r);
 
         Assert.Contains(Of(a, Topic.Warnings), x => x.Text.Contains("ProPhoto RGB"));
+    }
+
+    [Fact]
+    public void R093_AFiveLevelGreenSkyIsACastNamedByItsDirection()
+    {
+        // A flat sky at 0.14 with five levels of green: a* -3.5, b* +2.5, chroma 4.3, so an
+        // Attention named green by the larger of the two level figures (ADR 0057).
+        var a = Run(SyntheticRasters.Flat(256, 256, 0.14f, 0.14f + 5f / 255, 0.14f));
+
+        Recommendation cast = Assert.Single(Of(a, Topic.Colour), r => r.Verdict == Verdict.Attention);
+        Assert.StartsWith("Tenta verde pe fundal", cast.Text);
+        Assert.Contains("croma 4.3 (a* -3.5, b* +2.5; prag 3.0, depasit)", cast.Because);
+        Assert.Contains("G - (R+B)/2 = +5.0", cast.Because);
     }
 
     [Fact]

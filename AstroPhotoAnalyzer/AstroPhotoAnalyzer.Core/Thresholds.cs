@@ -509,9 +509,19 @@ namespace AstroPhotoAnalyzer
         internal const double RegionSkyMinFraction = 0.25;
 
         /// <summary>
-        /// A cast of over this many levels on the background shows once the background is lifted.
+        /// A cast is a sky colour farther than this from a grey of the same lightness, in CIE
+        /// L*a*b* chroma (sqrt(a*^2 + b*^2)), ADR 0057. Two is about the smallest difference an
+        /// eye sees beside a grey reference (2.3 is the usual figure); on a print the only
+        /// reference is the paper's white, far away in lightness, and a sky's cast begins to
+        /// read at 3 to 5. Measured on 2026-10-27 on the five real images' sky colours (ADR
+        /// 0055): 1.0 (the reference image), 1.4 (Rosetta), 1.8 (the 2026-08-12 core, calibrated
+        /// photometrically and neutral to the eye), 2.0 (the plate-solved FITS), 4.8 (the Veil,
+        /// plainly green). The rule before it, an excess of 1 level of green or of red over blue
+        /// (a* 0.7 at any sky level), flagged four of the five; a gamma lift keeps the channels'
+        /// ratio, so the cast does not grow with the background as that rule assumed (the
+        /// 2026-08-12 sky lifted to L* 25 stays at chroma 2.0).
         /// </summary>
-        internal const double CastWarnLevels = 1.0;
+        internal const double CastWarnChroma = 3.0;
 
         /// <summary>
         /// A corner this many levels over the background is a residual gradient or horizon glow.

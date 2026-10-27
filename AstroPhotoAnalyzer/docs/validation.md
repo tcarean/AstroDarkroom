@@ -107,7 +107,7 @@ scenario from the conversation), version 1.0.0, 11 seconds on the whole 23 MP.
 | TIFF 8-bit LZW size | 20.1 MB (ImageMagick, crop) | 20.7 MB (ImageSharp, horizontal predictor, full) | without the predictor ImageSharp gave 38.6 MB |
 | star FWHM median (Q1, Q3), count | 3.00 (2.69, 3.61), 193 | 3.13 (2.87, 3.49), 7166 | hand: 20 000 random candidates above 3 x mean; tool: every candidate above mean + min amplitude |
 | background R / G / B | 19.2 / 20.6 / 18.9 | 24.0 / 25.9 / 25.9 (19.2 / 20.6 / 18.9 before ADR 0055) | identical on the darkest quarter; since ADR 0055 the tool takes the sky patches, which the conversation did not have |
-| G - (R+B)/2; R - B | +1.58; +0.31 | +0.9; -1.9 (+1.6; +0.3 before ADR 0055) | |
+| G - (R+B)/2; R - B | +1.58; +0.31 | +0.9; -1.9 (+1.6; +0.3 before ADR 0055) | figures only since ADR 0057: the verdict is the chroma's, 1.0 (L* 9.0, a* -0.9, b* -0.3), no cast |
 | bottom-right corner R / G / B | 28.6 / 22.3 / 9.0 | 28.1 / 21.9 / 8.8 on its sky pixels, stride 4 (28.6 / 22.3 / 8.9 on every pixel, stride 3, before ADR 0056) | the levels; the deltas are +4.1 / -4.0 / -17.1 against the sky patches (ADR 0055, ADR 0056), +9.4 / +1.7 / -9.9 against the darkest quarter |
 | crop to 50:35 | 5554 x 3888, 192 px per side | 5554 x 3888, 192 px, 6.5 % | identical |
 | 70 cm row | 215 dpi, star 0.35 mm, point from 1.2 m (full frame, FWHM 3.0) | 202 dpi, 0.39 mm, 1.36 m (the crop, FWHM 3.13) | consistent |
@@ -120,7 +120,8 @@ error 27). No visible banding on 8 bits (plateau 0.34 mm at 202 dpi). Background
 for baryta - 45.6 % under paper black - re-stretch from linear to 0.19 (0.17 since ADR 0025,
 the lowest grid row that puts the darkest 1 % of the patches on paper black). Green cast of
 +1.6 on the background (since ADR 0055, against the sky patches: +0.9 of green and -1.9 of
-red minus blue, a cool cast). Warm bottom-right corner (R +9.4, B -9.9; +4.1 / -4.0 / -17.1
+red minus blue, a cool cast under the level rule; since ADR 0057 the chroma, 1.0, says no
+cast at all). Warm bottom-right corner (R +9.4, B -9.9; +4.1 / -4.0 / -17.1
 against the sky patches, on the corner's own sky pixels) and warm bottom edge: horizon glow,
 fix on linear or keep as composition. Recommended 70 x 49 cm at 1.5 m; the
 50:35 target cuts 192 px per side. Denoise pressed hard for print: sigma 0.45, target
@@ -199,6 +200,16 @@ exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), and the image passes as it
 LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6, LDN 559 at 4.7.
 
 ## History
+
+- 2026-10-27 (ADR 0057, a cast is a sky chroma over 3 in L*a*b*;
+  `docs/plans/2026-10-27-cast-on-lab-chroma.md`, its table): the owner asked whether the +2.2
+  levels of green on his photometrically calibrated core were a cast; in L*a*b* that sky sits
+  at chroma 1.8, under what an eye reads on paper. `background.hasCast` V-001 true -> false
+  (chroma 1.0), V-004 true -> false (2.0), V-010 true -> false (1.4); V-013 stays true (4.8).
+  `background.lab.l`, `.a`, `.b` and `background.chroma` recorded for the four colour cases.
+  No other figure moved; the golden console texts move on the dark scene's cast, now "The
+  background is neutral" at chroma 1.7, and on the colour's `Because` and Appendix E line,
+  which carry the chroma, a* and b*.
 
 - 2026-10-27 (ADR 0056, each edge region on its own sky pixels, a quarter of sky as the floor;
   `docs/plans/2026-10-27-edge-regions-on-sky-patches.md`, its measurement table): the regions

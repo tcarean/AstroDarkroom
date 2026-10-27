@@ -794,7 +794,7 @@ namespace AstroPhotoAnalyzer.Wpf
         internal override void Populate(AnalysisResult r)
         {
             BackgroundResult b = r.Background;
-            string cast = Fmt.F1(Thresholds.CastWarnLevels);
+            string cast = Fmt.F1(Thresholds.CastWarnChroma);
             var rows = new List<MetricRow>
             {
                 Row(b.ColorApplicable
@@ -815,24 +815,34 @@ namespace AstroPhotoAnalyzer.Wpf
             if (b.ColorApplicable)
             {
                 string levels = Tr.Pick(" levels", " niveluri");
-                rows.Add(Row("G - (R+B)/2", Fmt.S1(b.GreenExcess) + levels,
-                    b.GreenExcess > Thresholds.CastWarnLevels ? Tr.Pick("green cast", "tenta verde") : b.GreenExcess < -Thresholds.CastWarnLevels ? Tr.Pick("magenta cast", "tenta magenta") : null,
-                    Tr.Pick("How far green is over the mean of red and blue, in levels: positive = a green cast, negative = magenta. "
-                        + "A neutral sky has no excess of green; such a cast comes from the sensor or the calibration, not from the object. "
-                        + "On screen, with the background dark, it does not show; on paper, with the background raised to clear paper black, it shows. "
-                        + $"Over {cast} levels, either way: to neutralize before printing (SCNR / Background Neutralization in Siril).",
-                        "Cat e verdele peste media rosului si albastrului, in niveluri: pozitiv = tenta verde, negativ = magenta. "
-                        + "Un cer neutru nu are exces de verde; o astfel de tenta vine de la senzor sau de la calibrare, nu de la obiect. "
-                        + "Pe ecran, cu fundalul intunecat, nu se vede; pe hartie, cu fundalul ridicat ca sa treaca de negrul hartiei, se vede. "
-                        + $"Peste {cast} niveluri, in oricare sens: de neutralizat inainte de print (SCNR / Background Neutralization in Siril).")));
-                rows.Add(Row("R - B", Fmt.S1(b.RedMinusBlue) + levels,
-                    b.RedMinusBlue > Thresholds.CastWarnLevels ? Tr.Pick("warm cast", "tenta calda") : b.RedMinusBlue < -Thresholds.CastWarnLevels ? Tr.Pick("cool cast", "tenta rece") : null,
-                    Tr.Pick("Red minus blue, in levels: positive = a warm cast (horizon glow, urban light pollution), negative = a cool, bluish cast. "
-                        + $"The same threshold, {cast} levels. Together with the row above it describes the background colour completely: "
-                        + "a neutral background has both close to zero.",
-                        "Rosu minus albastru, in niveluri: pozitiv = tenta calda (lumina de orizont, poluare urbana), negativ = tenta rece, albastruie. "
-                        + $"Acelasi prag, {cast} niveluri. Impreuna cu randul de mai sus descrie complet culoarea fundalului: "
-                        + "un fundal neutru le are pe amandoua aproape de zero.")));
+                bool greenLarger = Math.Abs(b.GreenExcess) >= Math.Abs(b.RedMinusBlue);
+                string castName = !b.HasCast ? null
+                    : greenLarger ? (b.GreenExcess > 0 ? Tr.Pick("green cast", "tenta verde") : Tr.Pick("magenta cast", "tenta magenta"))
+                    : (b.RedMinusBlue > 0 ? Tr.Pick("warm cast", "tenta calda") : Tr.Pick("cool cast", "tenta rece"));
+                rows.Add(Row(Tr.Pick("Chroma in L*a*b* (a*, b*)", "Croma in L*a*b* (a*, b*)"), $"{Fmt.F1(b.Chroma)} ({Fmt.S1(b.Lab.A)}, {Fmt.S1(b.Lab.B)})",
+                    castName,
+                    Tr.Pick("How far the background colour sits from a grey of the same lightness, in CIE L*a*b*: sqrt(a*^2 + b*^2), with a* negative towards green and "
+                        + "positive towards magenta, b* negative towards blue and positive towards yellow. It is the size of the cast in the unit the eye works in: "
+                        + "about 2 is the smallest difference seen beside a grey, and on paper, where the only reference is the white far above, a sky's cast begins to read at 3 to 5. "
+                        + "A gamma lift of the background keeps the channels' ratio and barely moves the chroma, so a cast does not grow when the sky is raised for print. "
+                        + $"Over {cast}: to neutralize before printing (SCNR / Background Neutralization in Siril). The two rows below name its direction.",
+                        "Cat de departe sta culoarea fundalului de un gri de aceeasi luminozitate, in CIE L*a*b*: sqrt(a*^2 + b*^2), cu a* negativ spre verde si "
+                        + "pozitiv spre magenta, b* negativ spre albastru si pozitiv spre galben. E marimea tentei in unitatea in care lucreaza ochiul: "
+                        + "cam 2 e cea mai mica diferenta vazuta langa un gri, iar pe hartie, unde singura referinta e albul de mult mai sus, o tenta a cerului incepe sa se citeasca pe la 3-5. "
+                        + "O ridicare gamma a fundalului pastreaza raportul canalelor si abia misca croma, deci o tenta nu creste cand cerul e ridicat pentru print. "
+                        + $"Peste {cast}: de neutralizat inainte de print (SCNR / Background Neutralization in Siril). Cele doua randuri de mai jos ii spun directia.")));
+                rows.Add(Row("G - (R+B)/2", Fmt.S1(b.GreenExcess) + levels, null,
+                    Tr.Pick("How far green is over the mean of red and blue, in levels: positive = towards green, negative = towards magenta. "
+                        + "A figure for the direction of the cast, not a verdict: the chroma above decides. "
+                        + "A neutral sky has no excess of green; a green one comes from the airglow or the calibration, not from the object.",
+                        "Cat e verdele peste media rosului si albastrului, in niveluri: pozitiv = spre verde, negativ = spre magenta. "
+                        + "O cifra pentru directia tentei, nu un verdict: decide croma de mai sus. "
+                        + "Un cer neutru nu are exces de verde; unul verde vine de la airglow sau de la calibrare, nu de la obiect.")));
+                rows.Add(Row("R - B", Fmt.S1(b.RedMinusBlue) + levels, null,
+                    Tr.Pick("Red minus blue, in levels: positive = towards warm (horizon glow, urban light pollution), negative = towards cool, bluish. "
+                        + "Together with the row above it names the cast: the larger of the two gives it its name.",
+                        "Rosu minus albastru, in niveluri: pozitiv = spre cald (lumina de orizont, poluare urbana), negativ = spre rece, albastrui. "
+                        + "Impreuna cu randul de mai sus da numele tentei: cel mai mare dintre cele doua o numeste.")));
             }
             Rows = rows;
             RegionRows = b.Regions.Select(e =>
@@ -998,10 +1008,10 @@ namespace AstroPhotoAnalyzer.Wpf
                     Image = RasterBitmaps.Whole(RasterOps.Gamma(small, primary.Gamma), side),
                     Note = Tr.Pick("a gamma curve on every channel; on screen it looks flat - the paper brings it back", "curba gamma pe toate canalele; pe ecran pare plata - hartia o aduce inapoi"),
                     Check = Tr.Pick("Beside the whole frame: what appears when the sky rises. Not the flatness - the paper's Dmax brings it back - but the cast "
-                        + $"(a cast of over {Fmt.F1(Thresholds.CastWarnLevels)} levels becomes visible here), the gradient, and whether the faint "
+                        + $"(a cast with a chroma over {Fmt.F1(Thresholds.CastWarnChroma)} in L*a*b* reads here), the gradient, and whether the faint "
                         + "nebulosity stays separate from the sky. Read it as if the darkest tone were paper black.",
                         "Alaturi de cadrul intreg: ce apare cand cerul urca. Nu platitudinea - Dmax-ul hartiei o aduce inapoi - ci dominanta "
-                        + $"(o tenta de peste {Fmt.F1(Thresholds.CastWarnLevels)} niveluri devine vizibila aici), gradientul, si daca nebulozitatea "
+                        + $"(o tenta cu croma peste {Fmt.F1(Thresholds.CastWarnChroma)} in L*a*b* se citeste aici), gradientul, si daca nebulozitatea "
                         + "slaba ramane separata de cer. Citeste-o ca si cum cel mai inchis ton ar fi negrul hartiei."),
                 });
             }

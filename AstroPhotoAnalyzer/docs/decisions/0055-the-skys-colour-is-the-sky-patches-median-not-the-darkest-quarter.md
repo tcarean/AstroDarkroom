@@ -61,9 +61,10 @@ tie rule of ADR 0014 no longer applies to anything.
   where against the dust it read +11 / +10 / +16, neutral. The band is bluer than the sky; the
   rule cannot tell it from a bluish gradient while the band's pixels count (ADR 0056 leaves them
   out).
-- The reference image's green excess falls from +1.6 to +0.9 levels, under `CastWarnLevels`,
-  but red minus blue goes from +0.3 to -1.9: its cast is now a cool one. The new core keeps a
-  green one, +2.2.
+- The reference image's green excess falls from +1.6 to +0.9 levels, under the level rule's
+  threshold, but red minus blue goes from +0.3 to -1.9: under that rule its cast became a cool
+  one, and the new core kept a green one, +2.2. ADR 0057 then replaced the rule by the
+  chroma in L*a*b*, under which neither has a cast.
 - Validation cases V-001, V-004, V-010 and V-013 re-measured; the goldens of the dark scene
   change where the background's levels and the regions' deltas are printed.
 - Guards: `BackgroundAnalyzerTests` (R-060, R-061), `RecommendationsTests`, the golden files,

@@ -231,13 +231,12 @@ namespace AstroPhotoAnalyzer
                     ? (b.GreenExcess > 0 ? Tr.Pick("green", "verde") : "magenta")
                     : (b.RedMinusBlue > 0 ? Tr.Pick("warm", "calda") : Tr.Pick("cool", "rece"));
                 o.Add(new Recommendation(Topic.Colour, Verdict.Attention,
-                    Tr.Pick($"A {kind} cast on the background: neutralize it (SCNR / BackgroundNeutralization) before printing - with a raised background it will show.", $"Tenta {kind} pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - la fundal ridicat se va vedea."),
-                    Tr.Pick($"background R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} levels (threshold {Fmt.F1(Thresholds.CastWarnLevels)})", $"fundal R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} niveluri (prag {Fmt.F1(Thresholds.CastWarnLevels)})")));
+                    Tr.Pick($"A {kind} cast on the background: neutralize it (SCNR / BackgroundNeutralization) before printing - on paper, with no grey beside it, it still reads.", $"Tenta {kind} pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - pe hartie, fara un gri alaturi, tot se citeste."),
+                    CastBecause(b, true)));
             }
             else
             {
-                o.Add(new Recommendation(Topic.Colour, Verdict.Ok, Tr.Pick("The background is neutral.", "Fundalul e neutru."),
-                    Tr.Pick($"background R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} levels", $"fundal R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} niveluri")));
+                o.Add(new Recommendation(Topic.Colour, Verdict.Ok, Tr.Pick("The background is neutral.", "Fundalul e neutru."), CastBecause(b, false)));
             }
 
             // The COLOURED deviations, each with its own recommendation: light pollution, the
@@ -271,6 +270,21 @@ namespace AstroPhotoAnalyzer
                             + "cel mai probabil obiectul insusi, nu un gradient - verifica in Preview inainte sa corectezi ceva."),
                     Tr.Pick($"against the background, in levels: {list} (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move together", $"fata de fundal, in niveluri: {list} (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca impreuna")));
             }
+        }
+
+        /// <summary>
+        /// The evidence of the cast verdict: the sky's colour, its chroma in L*a*b* with a* and
+        /// b*, the threshold, and the two level figures that name the direction.
+        /// </summary>
+        /// <param name="b">The background measurement, on colour.</param>
+        /// <param name="attention">Whether the verdict is a cast (the text then names the threshold as passed).</param>
+        /// <returns>The "because" text in the current language.</returns>
+        static string CastBecause(BackgroundResult b, bool attention)
+        {
+            string chroma = $"{Fmt.F1(b.Chroma)} (a* {Fmt.S1(b.Lab.A)}, b* {Fmt.S1(b.Lab.B)}";
+            return Tr.Pick(
+                $"background R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}: chroma {chroma}; threshold {Fmt.F1(Thresholds.CastWarnChroma)}{(attention ? ", passed" : "")}); G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} levels",
+                $"fundal R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}: croma {chroma}; prag {Fmt.F1(Thresholds.CastWarnChroma)}{(attention ? ", depasit" : "")}); G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} niveluri");
         }
 
         /// <summary>

@@ -19,7 +19,7 @@ VERDICT: CAUTION
 
 3. The background colour and the gradients  [OK]
    - The background is neutral.
-     because: background R 63.8 G 63.7 B 63.8; G - (R+B)/2 = 0.0, R - B = 0.0 levels
+     because: background R 63.8 G 63.7 B 63.8: chroma 0.0 (a* 0.0, b* 0.0; threshold 3.0); G - (R+B)/2 = 0.0, R - B = 0.0 levels
 
 4. The size of the print  [CAUTION]
    ! From the natural distance the stars are slight discs at every size - the image is soft for its resolution; the smallest (40 x 40 cm) minimizes the effect. Give the viewing distance, so that it is judged on that.
@@ -84,7 +84,7 @@ Appendix D. Resolution and size
     and the test does not tell the sizes apart - the wall chooses; give a viewing distance to tell them apart
 
 Appendix E. Background colour
-  background colour, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; from the sky patches above the bottom band
+  background colour, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; L* 27.0, a* 0.0, b* 0.0, chroma 0.0; from the sky patches above the bottom band
   upper-left corner  63.6 / 63.8 / 63.8     delta -0.1 / 0.0 / +0.1
   upper-right corner 63.7 / 63.7 / 63.7     delta -0.1 / 0.0 / -0.1
   lower-left corner  63.8 / 63.9 / 63.7     delta +0.1 / +0.1 / -0.1

@@ -19,7 +19,7 @@ VERDICT: ATENTIE
 
 3. Culoarea fundalului si gradientele  [OK]
    - Fundalul e neutru.
-     fiindca: fundal R 63.8 G 63.7 B 63.8; G - (R+B)/2 = 0.0, R - B = 0.0 niveluri
+     fiindca: fundal R 63.8 G 63.7 B 63.8: croma 0.0 (a* 0.0, b* 0.0; prag 3.0); G - (R+B)/2 = 0.0, R - B = 0.0 niveluri
 
 4. Marimea printului  [ATENTIE]
    ! De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica (40 x 40 cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea.
@@ -84,7 +84,7 @@ Anexa D. Rezolutie si marime
     si testul nu desparte marimile - o alege peretele; da o distanta de privire ca sa le desparta
 
 Anexa E. Culoarea fundalului
-  culoarea fundalului, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; de pe dalele de cer de deasupra benzii de jos
+  culoarea fundalului, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; L* 27.0, a* 0.0, b* 0.0, croma 0.0; de pe dalele de cer de deasupra benzii de jos
   colt stanga-sus    63.6 / 63.8 / 63.8     delta -0.1 / 0.0 / +0.1
   colt dreapta-sus   63.7 / 63.7 / 63.7     delta -0.1 / 0.0 / -0.1
   colt stanga-jos    63.8 / 63.9 / 63.7     delta +0.1 / +0.1 / -0.1

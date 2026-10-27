@@ -144,14 +144,30 @@ namespace AstroPhotoAnalyzer
         /// <summary>The cast metrics make sense only on colour.</summary>
         internal bool ColorApplicable { get; init; }
 
-        /// <summary>G - (R + B) / 2: positive = green, negative = magenta.</summary>
+        /// <summary>
+        /// G - (R + B) / 2, in levels: positive = green, negative = magenta. A figure that names
+        /// the cast's direction; the verdict is <see cref="Chroma"/>'s (ADR 0057).
+        /// </summary>
         internal double GreenExcess { get; init; }
 
-        /// <summary>R - B: positive = warm, negative = cool.</summary>
+        /// <summary>R - B, in levels: positive = warm, negative = cool. A figure, as above.</summary>
         internal double RedMinusBlue { get; init; }
 
-        internal bool HasCast => ColorApplicable
-            && (Math.Abs(GreenExcess) > Thresholds.CastWarnLevels || Math.Abs(RedMinusBlue) > Thresholds.CastWarnLevels);
+        /// <summary>
+        /// The sky's colour in CIE L*a*b*: L* (0..100), a* (negative green, positive magenta)
+        /// and b* (negative blue, positive yellow). 0 on mono.
+        /// </summary>
+        internal (double L, double A, double B) Lab { get; init; }
+
+        /// <summary>
+        /// The distance of the sky's colour from a grey of the same lightness,
+        /// sqrt(a*^2 + b*^2): the size of the cast in the unit the eye works in, which a gamma
+        /// lift of the background barely changes. 0 on mono.
+        /// </summary>
+        internal double Chroma => Math.Sqrt(Lab.A * Lab.A + Lab.B * Lab.B);
+
+        /// <summary>A cast: the chroma over <see cref="Thresholds.CastWarnChroma"/>.</summary>
+        internal bool HasCast => ColorApplicable && Chroma > Thresholds.CastWarnChroma;
 
         internal IReadOnlyList<EdgeRegion> Regions { get; init; }
         internal IEnumerable<EdgeRegion> FlaggedRegions => Regions.Where(x => x.Flagged);
@@ -201,6 +217,7 @@ namespace AstroPhotoAnalyzer
                 ColorApplicable = color,
                 GreenExcess = color ? bg[1] - (bg[0] + bg[2]) / 2 : 0,
                 RedMinusBlue = color ? bg[0] - bg[2] : 0,
+                Lab = color ? ColorMath.LabOfSrgb(bg[0] / 255, bg[1] / 255, bg[2] / 255) : (0, 0, 0),
                 Regions = Regions(s, map, bg),
             };
         }

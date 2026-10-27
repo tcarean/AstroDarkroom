@@ -213,8 +213,11 @@ says which tier gave them: `SkyPatches`; `AllPatches` when no sky patch lies abo
 patch). `AnalysisRun` passes the simulation's map; the one-argument overload builds a map
 without the catalogue for the tests. Before ADR 0055 the reference was the darkest quarter of
 the pixels by luminance, which on a frame the Great Rift crosses is the dust, brown, so that
-every sky edge read "bluer than the background". On colour: `GreenExcess` = G - (R+B)/2,
-`RedMinusBlue`; `HasCast` when either exceeds `CastWarnLevels` (1.0).
+every sky edge read "bluer than the background". On colour: `Lab`, the colour in CIE L*a*b*
+(`ColorMath.LabOfSrgb`, D65 with the sRGB matrix's row sums as the white, so that a grey is
+exactly neutral), `Chroma` = sqrt(a*^2 + b*^2), and `HasCast` when the chroma exceeds
+`CastWarnChroma` (3.0; ADR 0057); `GreenExcess` = G - (R+B)/2 and `RedMinusBlue` are figures
+that name the cast's direction, the larger of the two giving the name (`Recommendations`).
 
 **Regions** (E2), on the same subsample as the map: four corners (15 % of height x 20 % of
 width) and four edges (the same bands between the corners). Each `EdgeRegion` has per-plane

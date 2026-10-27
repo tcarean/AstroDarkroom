@@ -36,14 +36,37 @@ public class BackgroundAnalyzerTests
     }
 
     [Fact]
-    public void AGreenTintOfTwoLevelsIsMeasuredAsSuch()
+    public void R060_ATwoLevelGreenTintIsMeasuredButIsNoCast()
     {
+        // Two levels of green at level 20 sit at a* -1.4, a chroma of 1.7: under what an eye
+        // reads on paper (ADR 0057). The level figures still say which way it leans.
         var r = SyntheticRasters.Flat(120, 120, Sky, Sky + 2f / 255, Sky);
         var b = BackgroundAnalyzer.Analyze(r);
 
         Assert.Equal(2.0, b.GreenExcess, 3);
         Assert.Equal(0, b.RedMinusBlue, 3);
+        Assert.True(b.Lab.A < -1 && b.Lab.A > -2, "a* " + b.Lab.A);
+        Assert.True(b.Chroma > 1 && b.Chroma < Thresholds.CastWarnChroma, "chroma " + b.Chroma);
+        Assert.False(b.HasCast);
+    }
+
+    [Fact]
+    public void R060_AFiveLevelGreenTintIsACast()
+    {
+        var r = SyntheticRasters.Flat(120, 120, Sky, Sky + 5f / 255, Sky);
+        var b = BackgroundAnalyzer.Analyze(r);
+
+        Assert.Equal(5.0, b.GreenExcess, 3);
+        Assert.True(b.Lab.A < -3, "a* " + b.Lab.A);
+        Assert.True(b.Chroma > Thresholds.CastWarnChroma, "chroma " + b.Chroma);
         Assert.True(b.HasCast);
+    }
+
+    [Fact]
+    public void R060_AGreyHasNoChromaAndMonoNone()
+    {
+        Assert.Equal(0, BackgroundAnalyzer.Analyze(SyntheticRasters.Flat(120, 120, Sky)).Chroma, 6);
+        Assert.Equal(0, BackgroundAnalyzer.Analyze(SyntheticRasters.Flat(120, 120, Sky, planes: 1)).Chroma, 6);
     }
 
     [Fact]
