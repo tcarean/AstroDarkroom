@@ -61,6 +61,7 @@ AstroPhotoAnalyzer.Wpf/
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),
+             WindowSettings.cs (the remembered settings file, R-156),
              CurvesTab.cs (the Curbe tab and the curve window, R-146, R-147)
   Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, PreviewView, CurvesView (.xaml),
         ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs),
@@ -69,5 +70,6 @@ AstroPhotoAnalyzer.Wpf/
 AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt and *.en.txt; testdata/ (manifest, large/);
                                        RunsInRomanian, LanguageTests, RomanianWords (language.md)
 AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests, IccPickerTests,
+                                       ProfileBarTests (the bar's profile and the settings, R-155, R-156),
                                        RunsInRomanian, AppLanguageTests, WindowEnglishTests
 ```
