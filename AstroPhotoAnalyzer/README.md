@@ -63,8 +63,15 @@ Darkroom launcher, it speaks the launcher's language.
   a medium writes that medium's Dmax into it, and you can type your paper's over it (emptied, it
   means the medium's again). **From ICC profile...**, beside it, lists the printer profiles
   installed in Windows, each with its Dmax, and **Choose file...** adds a `.icc` or `.icm` file
-  from anywhere; **Use** writes the chosen profile's Dmax into the field. The medium keeps its
-  name, and Appendix F of the report names the profile the Dmax came from.
+  from anywhere; **Use** writes the chosen profile's Dmax into the field and, with an image
+  open, runs the analysis again at once. The profile in use is shown in the top bar, under the
+  image's name, with its Dmax; **Clear** beside it drops it, puts the medium's Dmax back and runs
+  the analysis again. Typing another Dmax over the profile's, or choosing a medium, drops it
+  too (the bar says so; those apply at the next **Analyse**). The medium keeps its name, and
+  Appendix F of the report names the profile the Dmax came from. The chosen profile is
+  remembered in `%LOCALAPPDATA%\AstroPhotoAnalyzer\settings.json` and is still in use when the
+  window is next opened; if its file has gone meanwhile, the bar says so in red and the medium's
+  Dmax is used until you choose another or press **Clear**.
 - **Viewing distance** (empty: 1.5 x the diagonal of each print size), **candidate widths**,
   **target aspect ratio** (empty: the image's own, no crop), **extra target background** (one
   more row in the background simulation), **WCS from a FITS**, **passepartout** and **frame**.

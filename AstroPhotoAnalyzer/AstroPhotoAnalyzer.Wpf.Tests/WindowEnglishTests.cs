@@ -115,6 +115,12 @@ public class WindowEnglishTests
         {
             using IDisposable english = Tr.Use(UiLanguage.English);
             AssertEnglish("the empty window", await TextsOfAsync(new MainWindow(), "fereastra-goala"));
+            // The bar with a remembered profile (R-155, R-156), readable and not.
+            string settingsPath = ws.PathTo("settings.json");
+            File.WriteAllText(settingsPath, "{\"iccProfile\": " + System.Text.Json.JsonSerializer.Serialize(ws.PathTo("baryta.icc")) + "}");
+            AssertEnglish("the window with a profile", await TextsOfAsync(new MainWindow(WindowSettings.Read(settingsPath)), "fereastra-profil"));
+            File.WriteAllText(settingsPath, "{\"iccProfile\": " + System.Text.Json.JsonSerializer.Serialize(ws.PathTo("absent.icc")) + "}");
+            AssertEnglish("the window with a missing profile", await TextsOfAsync(new MainWindow(WindowSettings.Read(settingsPath)), "fereastra-profil-lipsa"));
             var about = new AboutWindow();
             string aboutTexts = await TextsOfAsync(about, "despre", 600, 720);
             Assert.Equal("About AstroPhotoAnalyzer", about.Title);

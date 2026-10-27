@@ -123,4 +123,80 @@ public class IccPickerTests
         f.UseProfile(vm.Selected);
         Assert.Equal("1.5", f.Dmax);
     }
+
+    /// <summary>
+    /// The profile is a state of the fields, shown in the bar (R-155): "Foloseste" sets it, a
+    /// Dmax typed over its own or a medium chosen drops it at once, "Scoate" drops it and puts
+    /// the medium's Dmax back; the run names it only while it is set.
+    /// </summary>
+    [Fact]
+    public void R155_UsingAProfileSetsItAndTypingOrAMediumDropsItAtOnce()
+    {
+        using TempWorkspace ws = FolderWithProfiles();
+        var vm = new IccPickerViewModel(ws.Dir);
+        var f = new ParameterFields();
+        var raised = new List<string>();
+        f.PropertyChanged += (_, e) => raised.Add(e.PropertyName!);
+
+        Assert.False(f.HasProfile);
+        Assert.Null(f.Profile);
+        Assert.Equal("(niciunul: Dmax-ul mediului)", f.ProfileText);
+        Assert.False(f.ProfileIsProblem);
+
+        IccProfileRow baryta = vm.Profiles.Single(p => p.Name == "Zeta baryta");
+        Assert.True(f.UseProfile(baryta));
+        Assert.Same(baryta, f.Profile);
+        Assert.True(f.HasProfile);
+        Assert.Equal("Zeta baryta - Dmax 1.52 (negrul la L* 20.0 fata de albul hartiei)", f.ProfileText);
+        Assert.Contains(nameof(ParameterFields.Profile), raised);
+        Assert.Contains(nameof(ParameterFields.ProfileText), raised);
+        Assert.Equal("Zeta baryta", f.TryBuild(out _)!.DmaxProfile);
+
+        // The same profile again, its Dmax still in the field: nothing changes.
+        Assert.False(f.UseProfile(baryta));
+
+        // A Dmax typed over the profile's drops it at once; retyping it does not bring it back.
+        f.Dmax = "1.6";
+        Assert.False(f.HasProfile);
+        Assert.Equal("(niciunul: Dmax-ul mediului)", f.ProfileText);
+        Assert.Null(f.TryBuild(out _)!.DmaxProfile);
+        f.Dmax = "1.52";
+        Assert.False(f.HasProfile);
+        Assert.Null(f.TryBuild(out _)!.DmaxProfile);
+        Assert.True(f.UseProfile(baryta));   // the same file, but the field had been typed over: a change
+
+        // A medium chosen drops it too.
+        f.Medium = "canvas";
+        Assert.False(f.HasProfile);
+        Assert.Equal("1.5", f.Dmax);
+
+        // "Scoate": the medium's Dmax is back in the field.
+        Assert.True(f.UseProfile(vm.Profiles.Single(p => p.Name == "Alfa canvas")));
+        Assert.Equal("1.21", f.Dmax);
+        f.ClearProfile();
+        Assert.False(f.HasProfile);
+        Assert.Equal("1.5", f.Dmax);
+        Assert.Null(f.TryBuild(out _)!.DmaxOverride);
+
+        // An unreadable profile restored from the settings (R-156) is shown with its reason and
+        // not used; a Dmax typed leaves it (it wrote none), a medium or "Scoate" removes it.
+        vm.AddFile(ws.WriteFile("note.icc", Encoding.ASCII.GetBytes(new string('x', 400))));
+        f.RestoreProfile(vm.Selected);
+        Assert.True(f.HasProfile);
+        Assert.True(f.ProfileIsProblem);
+        Assert.Equal("note.icc - nu e un profil ICC", f.ProfileText);
+        Assert.Equal("1.5", f.Dmax);
+        Assert.Null(f.TryBuild(out _)!.DmaxProfile);
+        f.Dmax = "1.7";
+        Assert.True(f.HasProfile);
+        f.ClearProfile();
+        Assert.False(f.HasProfile);
+        Assert.Equal("1.5", f.Dmax);
+
+        // Restoring a readable one applies it as if chosen.
+        f.RestoreProfile(baryta);
+        Assert.False(f.ProfileIsProblem);
+        Assert.Equal("1.52", f.Dmax);
+        Assert.Equal("Zeta baryta", f.TryBuild(out _)!.DmaxProfile);
+    }
 }

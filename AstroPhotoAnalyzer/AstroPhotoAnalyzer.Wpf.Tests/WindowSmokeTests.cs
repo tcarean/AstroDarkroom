@@ -114,6 +114,40 @@ public class WindowSmokeTests
             Assert.NotNull(window.FindName("SaveErrorText"));
         });
 
+    /// <summary>
+    /// The bar with a remembered profile (R-155, R-156): the window built over a settings file of
+    /// the test's own names it, with the Clear button; and with a profile whose file is gone, in
+    /// red, without binding errors either.
+    /// </summary>
+    [Fact]
+    public void R155_TheWindowRendersWithAProfileInTheBar()
+        => _sta.Invoke(() =>
+        {
+            using var ws = new TempWorkspace();
+            string baryta = ws.WriteFile("baryta.icc", IccPrinterTestData.V2Lut16("Zeta baryta", 20));
+            string settingsPath = ws.PathTo("settings.json");
+            File.WriteAllText(settingsPath, "{\"iccProfile\": " + System.Text.Json.JsonSerializer.Serialize(baryta) + "}");
+            using var errors = new BindingErrors();
+
+            var window = new MainWindow(WindowSettings.Read(settingsPath));
+            Assert.Equal("Zeta baryta - Dmax 1.52 (negrul la L* 20.0 fata de albul hartiei)", ((MainViewModel)window.DataContext).Parameters.ProfileText);
+            Render(ContentOf(window), name: "fereastra-profil");
+            Assert.Equal(Visibility.Visible, ((Button)window.FindName("ClearProfileButton")).Visibility);
+
+            File.Delete(baryta);
+            var gone = new MainWindow(WindowSettings.Read(settingsPath));
+            Assert.True(((MainViewModel)gone.DataContext).Parameters.ProfileIsProblem);
+            Render(ContentOf(gone), name: "fereastra-profil-lipsa");
+            Assert.Equal(Visibility.Visible, ((Button)gone.FindName("ClearProfileButton")).Visibility);
+
+            // Without a profile the button is not there to press.
+            var none = new MainWindow();
+            Render(ContentOf(none));
+            Assert.Equal(Visibility.Collapsed, ((Button)none.FindName("ClearProfileButton")).Visibility);
+
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+
     /// <summary>The profile window with a list of its own: three printer profiles, one of them CMYK with its note.</summary>
     [Fact]
     public void R132_TheProfileWindowLoadsAndRenders()

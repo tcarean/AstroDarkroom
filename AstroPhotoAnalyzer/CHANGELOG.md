@@ -8,6 +8,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The window shows the ICC profile in use in its top bar, under the image's name, with a
+  **Clear** button beside it; choosing a profile or clearing it runs the analysis again by
+  itself, and the chosen profile is remembered in `%LOCALAPPDATA%\AstroPhotoAnalyzer\settings.json`
+  and still in use at the next start (a profile whose file has gone is shown in red and not
+  used). A Dmax typed over the profile's, or a medium chosen, now drops the profile at once
+  rather than at the next run (R-155, R-156; ADR 0053).
+
 - The interface speaks English as well as Romanian, in the console and in the window: every
   text, the report, `--help` and the errors included, is chosen by `--lang en|ro` (also
   `--lang=ro`), **English when it is not given**; an unknown value is an error in the console

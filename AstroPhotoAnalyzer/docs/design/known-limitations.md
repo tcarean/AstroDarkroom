@@ -10,8 +10,9 @@
 > `AstroPhotoAnalyzer.Core/Analysis/BackgroundAnalyzer.cs`,
 > `AstroPhotoAnalyzer.Core/Analysis/JpegAnalyzer.cs`,
 > `AstroPhotoAnalyzer.Core/Analysis/QuantizationAnalyzer.cs`,
-> `AstroPhotoAnalyzer.Core/Analysis/PrintSizeAnalyzer.cs` and
-> `AstroPhotoAnalyzer.Core/Input/ImageSharpReader.cs`. A change to the code this describes
+> `AstroPhotoAnalyzer.Core/Analysis/PrintSizeAnalyzer.cs`,
+> `AstroPhotoAnalyzer.Core/Input/ImageSharpReader.cs` and
+> `AstroPhotoAnalyzer.Wpf/ViewModels/MainViewModel.cs`. A change to the code this describes
 > means this note is updated in the same task, or deleted with the decision it explains.
 
 ## Known limitations
@@ -30,6 +31,10 @@
   milliseconds for a normal colour folder, but a folder of hundreds of printer profiles, or one
   damaged profile the package is slow on (4 s measured on one corrupted file), freezes the
   window that long.
+- The remembered profile (R-156) is read again on the UI thread before the window shows: a
+  profile chosen from a network share that is later unreachable holds the start for the
+  share's timeout, tens of seconds, before the bar says in red that it cannot be read; "Scoate"
+  then ends it for good.
 - A Dmax read from a profile replaces the medium's Dmax and leaves its name: a canvas profile
   used with `baryta` chosen prints `Mediu: baryta (Dmax 1.49, ...)`. Anexa F names the profile.
 - The simulation is a gamma curve from the measured background. A real stretch to the same
