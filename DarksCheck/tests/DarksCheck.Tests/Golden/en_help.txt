@@ -7,7 +7,7 @@ Usage: darkscheck <session folder or folder of darks> [--against DIR] [--out DIR
   The Siril session folder: the darks are taken from darks\ (or from the folder
   itself, when there is no darks\ and no other session subfolder), the biases
   from biases\ and the lights from lights\, both optional. Camera raw
-  (.nef, .cr2, .cr3, .arw, .dng, .raf) or FITS. Nothing is written into the folder.
+  (.nef, .cr2, .cr3, .arw, .dng, .raf, .pef) or FITS. Nothing is written into the folder.
 
   No options:   decodes the biases, the darks and the lights and prints the report:
                 light leaks, thermal drift, noise, hot pixels, fixed pattern,

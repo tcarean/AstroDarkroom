@@ -147,13 +147,20 @@ internal static class ScaleReport
         string scale = g.Bits is int bits
             ? T($"{bits} bits, from 0 to {F(d.White, 0)}, with the camera's black at {F(d.Black, 0)}", $"pe {bits} biti, de la 0 la {F(d.White, 0)}, cu negrul camerei la {F(d.Black, 0)}")
             : T($"here floating-point values from 0 to {F(d.White, 3)}, with the black at {F(d.Black, 3)}", $"aici valori in virgula mobila de la 0 la {F(d.White, 3)}, cu negrul la {F(d.Black, 3)}");
+        // The camera the table does not know: the paragraph says so, not only the electrons row (ADR 0023).
+        string unknownCamera = g.Facts is not null ? "" : T(
+            (g.First?.Camera is string cameraEn ? $" {cameraEn} is not in the application's table" : " The frames do not name the camera")
+            + ", so no figure of this section is given in electrons, and the source's full well and read noise are missing.",
+            (g.First?.Camera is string cameraRo ? $" Aparatul {cameraRo} nu e in tabelul aplicatiei" : " Cadrele nu spun aparatul")
+            + ", deci nicio cifra de aici nu e data in electroni, iar full well-ul si zgomotul de citire din sursa lipsesc.");
         string p1 = T(
             $"ADU is the file's unit: {scale}. "
             + $"ADU-eq is raw ADU brought to ISO 400 and 120 s, so that series taken with different settings compare with one another: on this set 1 ADU-eq = {F(g.Norm, 2)} raw ADU. "
             + $"A quantisation step is {d.QuantStep} ADU, but a mean over many pixels is measured far below it, because the noise blends the steps.",
             $"ADU e unitatea fisierului: {scale}. "
             + $"ADU-eq e ADU brut adus la ISO 400 si 120 s, ca seriile cu setari diferite sa se compare intre ele: pe acest set 1 ADU-eq = {F(g.Norm, 2)} ADU brut. "
-            + $"Un pas de cuantizare are {d.QuantStep} ADU, dar o medie pe multi pixeli se masoara mult sub el, pentru ca zgomotul amesteca treptele.");
+            + $"Un pas de cuantizare are {d.QuantStep} ADU, dar o medie pe multi pixeli se masoara mult sub el, pentru ca zgomotul amesteca treptele.")
+            + unknownCamera;
         string masterWords = double.IsNaN(g.MasterNoise) ? "" : T(
             $" The dark master, the median of {d.Used} frames, still has {F(g.MasterNoise, 2)} ADU per pixel; a deviation is set against that, not against the noise of one frame.",
             $" Masterul dark, mediana a {d.Used} cadre, mai are {F(g.MasterNoise, 2)} ADU pe pixel; cu el se compara o abatere, nu cu zgomotul unui cadru.");

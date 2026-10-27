@@ -76,9 +76,8 @@ namespace DarksCheck.Core
         /// What the file knows about the shot: focal length (FOCALLEN on FITS, libraw on raw),
         /// f-number (raw only), camera name (INSTRUME / libraw), exposure in seconds (EXPTIME /
         /// shutter), ISO (ISOSPEED / iso_speed), the time of capture (DATE-OBS, UTC as Siril
-        /// writes it / libraw's timestamp, the camera's wall-clock), the pixel size in microns
-        /// (XPIXSZ; a raw does not say it) and the Nikon lens ID (raw only). Null when the file
-        /// is silent.
+        /// writes it / libraw's timestamp, the camera's wall-clock) and the pixel size in microns
+        /// (XPIXSZ; a raw does not say it). Null when the file is silent.
         /// </summary>
         internal double? FocalMm;
         internal double? FNumber;
@@ -87,10 +86,33 @@ namespace DarksCheck.Core
         internal double? Iso;
         internal DateTime? Timestamp;
         internal double? PixelSizeUm;
-        internal long? NikonLensId;
 
         /// <summary>
-        /// The lens range from the raw's MakerNote, as libraw decodes it; null when zero.
+        /// The lens ID the raw carries, whichever the mount (raw only; FlatCheck's R-108, taken
+        /// by ADR 0023): Nikon's LensIDNumber on a Nikon body (139 for the Tokina 11-20, 74 for a
+        /// lens without CPU), the MakerNote's LensID elsewhere - Canon's lens type (198 = EF 50mm
+        /// f/1.4 USM), Sony's (32831 = FE 16-35mm F2.8 GM), Pentax's two bytes as a*256+b (2263 =
+        /// 8 215). Null when the file gives none; a FITS never has one. Nothing prints it yet.
+        /// </summary>
+        internal long? LensId;
+
+        /// <summary>
+        /// The mount as libraw names it - "Nikon F", "Canon EF", "Sony E", "Pentax K" - so a
+        /// report can say whose number the ID is: the lens's mount, the camera's only when the
+        /// lens's is unknown (RawReader.MountOf); null when both are unknown (a FITS, always).
+        /// </summary>
+        internal string LensMount;
+
+        /// <summary>
+        /// The lens's name as the camera wrote it (EXIF LensModel: "EF50mm f/1.4 USM", "FE 16-35mm
+        /// F2.8 GM"). Null when the file has none: a D3300 with any lens measured, a Pentax K-70,
+        /// every FITS.
+        /// </summary>
+        internal string LensName;
+
+        /// <summary>
+        /// The lens range as libraw decodes it, from the raw's MakerNote or the top of its
+        /// LensInfo (RawReader.RangeOf); null when every source gives zero.
         /// </summary>
         internal double? LensMinFocalMm;
         internal double? LensMaxFocalMm;

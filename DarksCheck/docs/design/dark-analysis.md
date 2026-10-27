@@ -185,7 +185,10 @@ reference plane (`sigma / sqrt(N)`), the thresholds from `Th` times the normalis
 found from `LeakVerdict` (`ConstantLight`, the lit frames, the offset). `CameraFacts.For` maps
 a camera name to its published figures (one entry, the D3300; a name containing `D3300` in any
 case) and `GainAt` interpolates the gain on the log2 scale between the listed ISO stops,
-returning null outside them, so a row never guesses. The console writes the rows as
+returning null outside them, so a row never guesses; when `For` returns null the `electroni`
+row says `necunoscut pentru <camera>`, the `saturatie` and `zgomot de citire` rows drop the
+source's figures, and the first paragraph gains its last sentence, built in `Paragraphs` from
+the first dark's `Camera` or the words for no camera (ADR 0023). The console writes the rows as
 `label : value` and the paragraphs through `ScaleReport.Wrap` at 96 columns with a four-space
 indent; the window binds `Rows` and `Paragraphs` as they are. `StackNoise.Of` holds the lights'
 sky median, sky sigma and count on the reference plane with the mean and median stack's noise,

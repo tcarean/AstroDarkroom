@@ -141,9 +141,9 @@ internal sealed class SessionFixture : IDisposable
     internal static byte[] Frame(DateTime? start, double? exposure, double? iso) =>
         FitsTestData.BuildFits(32, 24, (x, y) => 300, bitpix: 16, extraCards: Cards(start, exposure, iso));
 
-    internal static string[] Cards(DateTime? start, double? exposure, double? iso)
+    internal static string[] Cards(DateTime? start, double? exposure, double? iso, string? camera = "NIKON D3300")
     {
-        List<string> cards = [FitsTestData.Card("INSTRUME", "'NIKON D3300'")];
+        List<string> cards = camera is null ? [] : [FitsTestData.Card("INSTRUME", $"'{camera}'")];
         if (start is DateTime s)
         {
             cards.Add(FitsTestData.Card("DATE-OBS", "'" + s.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture) + "'"));
