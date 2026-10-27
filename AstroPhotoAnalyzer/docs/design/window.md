@@ -184,7 +184,8 @@ closes it.
   target-background field exposed that "fundal" named two numbers: the Tonuri tab's
   `BackgroundMedian` (median of the green channel over the frame, 0..1, what the
   simulation lifts) and the tab called Fundal's `BackgroundResult.Levels` (per-channel
-  medians of the darkest quarter, 0..255, for cast and gradients). The only place that
+  medians of the sky patches, 0..255, for cast and gradients; the darkest quarter before
+  ADR 0055). The only place that
   said so was a row description. Rather than a third term ("cer curat") or one
   measurement for both (which would move the acceptance number 0.103), the labels now
   name the *property*: the tab is Culoare, the rows are "Nivelul fundalului" and

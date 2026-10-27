@@ -484,12 +484,9 @@ namespace AstroPhotoAnalyzer
 
         // ------------------------------------------------------------ background
 
-        /// <summary>The background = the darkest this many pixels (a fraction) ...</summary>
-        internal const double BackgroundDarkestFraction = 0.25;
-
         /// <summary>
-        /// ... without the bottom band (a fraction of the height), where the horizon and its
-        /// pollution sit.
+        /// The background's colour = the sky patches of R-044 (ADR 0055) without the bottom band
+        /// (a fraction of the height), where the horizon and its pollution sit.
         /// </summary>
         internal const double BackgroundExcludeBottomFraction = 0.25;
 
@@ -514,10 +511,13 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// A departure is COLOURED if the difference between the channels (max - min of the
         /// delta) exceeds CornerGradientLevels and exceeds this fraction of the mean absolute
-        /// departure. Measured on the reference image: the horizon corner has R +9, B -10
-        /// (coloured, pollution); the corner the Milky Way enters has +11 / +10 / +16 (neutral -
-        /// it is the object, not a gradient). A rule that mistakes the object for the defect is
-        /// wrong more often than it is useful, so neutral = informative, coloured = attention.
+        /// departure. Measured on the reference image against the darkest quarter (ADR 0014):
+        /// the horizon corner had R +9, B -10 (coloured, pollution); the corner the Milky Way
+        /// enters +11 / +10 / +16 (neutral - it is the object, not a gradient). A rule that
+        /// mistakes the object for the defect is wrong more often than it is useful, so neutral =
+        /// informative, coloured = attention. Against the sky patches (ADR 0055) the same corners
+        /// read +4.6 / -3.6 / -17.0 and +6.5 / +5.0 / +8.8: the band is bluer than the sky, and
+        /// the rule now reads that corner as coloured too (known-limitations.md).
         /// </summary>
         internal const double CornerColourSpreadRatio = 0.5;
 

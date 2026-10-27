@@ -182,7 +182,7 @@ namespace AstroPhotoAnalyzer
             res.Noise = NoiseAnalyzer.Analyze(r, p);
 
             progress?.Report(Tr.Pick("background", "fundal"));
-            res.Background = BackgroundAnalyzer.Analyze(r);
+            res.Background = BackgroundAnalyzer.Analyze(r, res.Simulation.Map);
 
             progress?.Report(Tr.Pick("stars", "stele"));
             res.Stars = StarAnalyzer.Analyze(r);

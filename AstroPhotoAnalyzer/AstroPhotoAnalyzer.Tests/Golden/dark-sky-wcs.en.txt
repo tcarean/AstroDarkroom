@@ -21,9 +21,9 @@ VERDICT: PROBLEM
 
 3. The background colour and the gradients  [CAUTION]
    ! A green cast on the background: neutralize it (SCNR / BackgroundNeutralization) before printing - with a raised background it will show.
-     because: background R 20.0 G 22.0 B 20.0; G - (R+B)/2 = +2.0, R - B = 0.0 levels (threshold 1.0)
+     because: background R 20.4 G 22.4 B 20.4; G - (R+B)/2 = +2.0, R - B = 0.0 levels (threshold 1.0)
    ! Lower-right corner: warm (horizon glow / light pollution). Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.
-     because: against the background: R +10.4, G +0.4, B -7.6 levels (threshold 3.0); the channels move differently
+     because: against the background: R +10.0, G -0.1, B -8.0 levels (threshold 3.0); the channels move differently
 
 4. The size of the print  [CAUTION]
    ! From the natural distance the stars are slight discs at every size - the image is soft for its resolution; the smallest (50 x 50 cm) minimizes the effect. Give the viewing distance, so that it is judged on that.
@@ -106,15 +106,15 @@ Appendix D. Resolution and size
     and the test does not tell the sizes apart - the wall chooses; give a viewing distance to tell them apart
 
 Appendix E. Background colour
-  background colour, R / G / B (0..255): 20.0 / 22.0 / 20.0; G - (R+B)/2 = +2.0; R - B = 0.0
-  upper-left corner  20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
-  upper-right corner 20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
-  lower-left corner  20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
-  lower-right corner 30.4 / 22.4 / 12.4     delta +10.4 / +0.4 / -7.6  !
-  top edge           19.9 / 21.9 / 19.9     delta -0.1 / -0.1 / -0.2
-  bottom edge        20.5 / 22.5 / 20.5     delta +0.5 / +0.5 / +0.5
-  left edge          20.6 / 22.6 / 20.6     delta +0.6 / +0.6 / +0.5
-  right edge         20.6 / 22.6 / 20.6     delta +0.6 / +0.5 / +0.5
+  background colour, R / G / B (0..255): 20.4 / 22.4 / 20.4; G - (R+B)/2 = +2.0; R - B = 0.0; from the sky patches above the bottom band
+  upper-left corner  20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
+  upper-right corner 20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
+  lower-left corner  20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
+  lower-right corner 30.4 / 22.4 / 12.4     delta +10.0 / -0.1 / -8.0  !
+  top edge           19.9 / 21.9 / 19.9     delta -0.5 / -0.5 / -0.6
+  bottom edge        20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
+  left edge          20.6 / 22.6 / 20.6     delta +0.1 / +0.1 / +0.1
+  right edge         20.6 / 22.6 / 20.6     delta +0.1 / +0.1 / +0.1
 
 Appendix F. Parameters
   medium baryta, Dmax 2.0 (explicit); widths 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, frame 3 cm

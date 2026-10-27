@@ -81,7 +81,7 @@ Anexa B. Simularea     table: target (as-is among the grid, "(dat)", "*"), gamma
                        ends, "<= 0.05" (even the lowest step already reaches paper black) and "> 0.60" (none does)
 Anexa C. Export        TIFF size; JPEG table; rounding; stress; plateau
 Anexa D. Rezolutie     stars, regions, size table with "*" on the recommended row, or a note on why there is none
-Anexa E. Culoarea fundalului  background colour (R/G/B) and cast; the eight regions with deltas, "!" when flagged
+Anexa E. Culoarea fundalului  background colour (R/G/B) and cast, and which pixels gave it (`BackgroundResult.SourceText`); the eight regions with deltas, "!" when flagged
 Anexa F. Parametri     every parameter as used
 ```
 

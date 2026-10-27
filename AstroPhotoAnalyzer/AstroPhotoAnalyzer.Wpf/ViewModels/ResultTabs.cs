@@ -801,13 +801,13 @@ namespace AstroPhotoAnalyzer.Wpf
                         ? Tr.Pick("Background colour, R / G / B (0..255)", "Culoarea fundalului, R / G / B (0..255)")
                         : Tr.Pick("Background, one channel (0..255)", "Fundalul, un singur canal (0..255)"),
                     string.Join(" / ", b.Levels.Select(Fmt.F1)),
-                    description: Tr.Pick($"The median on each channel of the darkest {Fraction(Thresholds.BackgroundDarkestFraction)} of the image, by lightness, "
-                        + $"without the bottom band of {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % of the height, where the horizon and its pollution lie. "
+                    description: Tr.Pick("The median on each channel of the pixels of the sky patches, the class the Background tab calls sky (the band, the dust and the nebulae left out), "
+                        + $"without the bottom band of {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % of the height, where the horizon and its pollution lie; here: {b.SourceText}. "
                         + "It is the \"clean\" sky: the cast below and the edges in the next table are judged against it. "
                         + "It is not the same number as the background level in the Tones tab, which is the median over the whole frame: that one says how high the sky is, "
                         + "this one what colour it has.",
-                        $"Mediana pe fiecare canal a celui mai intunecat {Fraction(Thresholds.BackgroundDarkestFraction)} din imagine, dupa luminozitate, "
-                        + $"fara banda de jos de {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % din inaltime, unde stau orizontul si poluarea lui. "
+                        "Mediana pe fiecare canal a pixelilor din dalele de cer, clasa pe care tabul Fundal o numeste cer (fara banda, praf si nebuloase), "
+                        + $"fara banda de jos de {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % din inaltime, unde stau orizontul si poluarea lui; aici: {b.SourceText}. "
                         + "E cerul \"curat\": fata de el se judeca tenta de mai jos si marginile din tabelul urmator. "
                         + "Nu e acelasi numar cu nivelul fundalului din tabul Tonuri, care e mediana pe tot cadrul: acela spune cat de sus e cerul, "
                         + "acesta ce culoare are.")),
@@ -873,10 +873,10 @@ namespace AstroPhotoAnalyzer.Wpf
                 new GuideParagraph
                 {
                     Lead = "Delta.",
-                    Text = Tr.Pick("The region minus the background colour above, on each channel, in levels. Zero means an edge identical with the clean sky. "
-                        + $"It is almost always positive, because the background is already the darkest {Fraction(Thresholds.BackgroundDarkestFraction)} of the image.",
-                        "Regiune minus culoarea fundalului de mai sus, pe fiecare canal, in niveluri. Zero inseamna margine identica cu cerul curat. "
-                        + $"E aproape intotdeauna pozitiva, fiindca fundalul e deja cel mai intunecat {Fraction(Thresholds.BackgroundDarkestFraction)} al imaginii."),
+                    Text = Tr.Pick("The region minus the background colour above, on each channel, in levels. Zero means an edge identical with the clean sky; "
+                        + "positive, an edge brighter than it (the object entering, or a glow); negative, darker (dust, or vignetting left over).",
+                        "Regiune minus culoarea fundalului de mai sus, pe fiecare canal, in niveluri. Zero inseamna margine identica cu cerul curat; "
+                        + "pozitiv, margine mai luminoasa decat el (obiectul care intra, sau o lumina); negativ, mai intunecata (praf, sau vinietare ramasa)."),
                 },
                 new GuideParagraph
                 {
@@ -893,14 +893,16 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "and stays at Ok, with the advice to look in Preview before you correct anything. If they move differently (the difference between "
                         + $"the channels over {grad} levels and over {Fmt.F0(Thresholds.CornerColourSpreadRatio * 100)} % of the mean departure), it is a gradient with a colour: "
                         + "horizon glow, light pollution - to correct on the linear data (GraXpert), not with a local curve on the stretched image. "
-                        + "On the reference image: the horizon corner +9.4 / +1.7 / -9.9 is coloured; the corner the Milky Way enters, "
-                        + "+11 / +10 / +16, is neutral.",
+                        + "On the reference image: the horizon corner +4.6 / -3.6 / -17.0 is coloured; the top edge, where the Milky Way band crosses, "
+                        + "+7.0 / +5.1 / +6.4, is neutral; the corner the band enters, +6.5 / +5.0 / +8.8, is bluer than the sky and reads coloured too: "
+                        + "the rule cannot tell the band's own colour from a bluish gradient, so look in Preview.",
                         "Daca cele trei delta se misca impreuna, marginea e cel mai probabil obiectul insusi (Calea Lactee care intra in colt) "
                         + "si ramane la Ok, cu indemnul sa te uiti in Preview inainte sa corectezi ceva. Daca se misca diferit (diferenta dintre "
                         + $"canale peste {grad} niveluri si peste {Fmt.F0(Thresholds.CornerColourSpreadRatio * 100)} % din abaterea medie), e un gradient cu culoare: "
                         + "lumina de orizont, poluare - de corectat pe liniar (GraXpert), nu cu o curba locala pe imaginea stretch-uita. "
-                        + "Pe imaginea de referinta: coltul de orizont +9.4 / +1.7 / -9.9 e colorat; coltul in care intra Calea Lactee, "
-                        + "+11 / +10 / +16, e neutru."),
+                        + "Pe imaginea de referinta: coltul de orizont +4.6 / -3.6 / -17.0 e colorat; latura de sus, pe unde trece banda Caii Lactee, "
+                        + "+7.0 / +5.1 / +6.4, e neutra; coltul in care intra banda, +6.5 / +5.0 / +8.8, e mai albastru decat cerul si iese tot colorat: "
+                        + "regula nu poate deosebi culoarea benzii de un gradient albastrui, asa ca uita-te in Preview."),
                 },
                 new GuideParagraph
                 {

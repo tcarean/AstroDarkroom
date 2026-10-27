@@ -39,7 +39,7 @@ CropAnalyzer.Analyze              -> CropResult          (needs Parameters.Targe
 TonalAnalyzer.Analyze             -> TonalResult         (needs Parameters.Dmax)
 PrintStretchSimulator.Simulate    -> SimulationResult    (needs TonalResult, SourceInfo.Wcs; builds the DustMap, runs DustAnalyzer per lift)
 NoiseAnalyzer.Analyze             -> NoiseResult         (needs Parameters.Seed)
-BackgroundAnalyzer.Analyze        -> BackgroundResult
+BackgroundAnalyzer.Analyze        -> BackgroundResult    (needs SimulationResult.Map: the sky patches give the colour)
 StarAnalyzer.Analyze              -> StarResult
 PrintSizeAnalyzer.Analyze         -> PrintSizeResult     (needs CropResult.W/H, StarResult.FwhmMedian)
 QuantizationAnalyzer.Analyze      -> QuantizationResult

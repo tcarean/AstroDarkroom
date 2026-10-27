@@ -55,7 +55,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `CornerSoftRatio` / `RegionFraction` / `CenterFraction` / `StarMinCount` / `RegionMinStars` | 1.4 / 0.2 / 0.4 / 20 / 5 | |
 | `FallbackMinDpi` | 180 | pixel-grid floor without stars and without a distance: 0.14 mm pitch, invisible from ~0.5 m (lab convention 150-200); with a distance the floor is 25.4 / (0.29 x d) |
 | `JpegQualities` | 100, 95, 90 | |
-| `BackgroundDarkestFraction` / `BackgroundExcludeBottomFraction` | 0.25 / 0.25 | |
+| `BackgroundExcludeBottomFraction` | 0.25 | the sky's colour leaves out the bottom band, where the horizon sits; it is taken on the sky patches of R-044 (ADR 0055; `BackgroundDarkestFraction`, the darkest quarter, went with it) |
 | `EdgeRegionHeightFraction` / `EdgeRegionWidthFraction` | 0.15 / 0.20 | corner = this much of the height x this much of the width; the edges are bands of the same thickness |
 | `CastWarnLevels` / `CornerGradientLevels` / `CornerColourSpreadRatio` | 1.0 / 3.0 / 0.5 | |
 | `ScreenPixelMm` | 0.25 | a common monitor's pixel pitch (96-110 ppi); a presumption about the screen, for the Preview tab's step-back rule |

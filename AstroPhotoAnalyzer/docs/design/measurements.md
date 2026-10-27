@@ -205,21 +205,28 @@ a tile have zero candidates.
 
 ### E1/E2 - `BackgroundAnalyzer` - sky colour, and edge regions against it
 
-On the stride-3 subsample. Luminance = mean of the planes. **Background** = pixels whose
-luminance is `<=` the 25th percentile (computed over the whole subsample), excluding the
-bottom 25 % of rows (the horizon). `Levels` = per-plane medians x 255. On colour:
-`GreenExcess` = G - (R+B)/2, `RedMinusBlue`; `HasCast` when either exceeds
-`CastWarnLevels` (1.0). `<=` and not `<` because a flat synthetic sky puts every pixel
-exactly at the percentile.
+**Background** (E1) = the sky's colour: on the subsample the dust map was built on (stride
+4), the pixels of the patches whose class is `Sky` (R-044, `DustMap.Classes`) that lie above
+the bottom 25 % of rows (the horizon); `Levels` = their per-plane medians x 255, and `Source`
+says which tier gave them: `SkyPatches`; `AllPatches` when no sky patch lies above the band
+(every patch there); `WholeFrame` as a guard the grid never reaches (it keeps at least one
+patch). `AnalysisRun` passes the simulation's map; the one-argument overload builds a map
+without the catalogue for the tests. Before ADR 0055 the reference was the darkest quarter of
+the pixels by luminance, which on a frame the Great Rift crosses is the dust, brown, so that
+every sky edge read "bluer than the background". On colour: `GreenExcess` = G - (R+B)/2,
+`RedMinusBlue`; `HasCast` when either exceeds `CastWarnLevels` (1.0).
 
-**Regions**: four corners (15 % of height x 20 % of width) and four edges (the same bands
-between the corners). Each `EdgeRegion` has per-plane medians (`Levels`), `Deltas` =
-region - background per plane, `MaxAbsDelta`, `Flagged` (> `CornerGradientLevels` = 3),
-and `Coloured`: spread (max delta - min delta) > 3 **and** > `CornerColourSpreadRatio`
-(0.5) x mean |delta| - the channels move differently. The distinction came from the
-reference image: the horizon corner is +9.4 / +1.7 / -9.9 (coloured, light pollution);
-the corner the Milky Way enters is +11 / +10 / +16 (neutral, the object). On mono there
-is one plane and `Coloured` is always false.
+**Regions** (E2), on the stride-3 subsample: four corners (15 % of height x 20 % of width)
+and four edges (the same bands between the corners). Each `EdgeRegion` has per-plane medians
+(`Levels`), `Deltas` = region - background per plane, `MaxAbsDelta`, `Flagged`
+(> `CornerGradientLevels` = 3), and `Coloured`: spread (max delta - min delta) > 3 **and**
+> `CornerColourSpreadRatio` (0.5) x mean |delta| - the channels move differently. The
+distinction came from the reference image against the darkest quarter: the horizon corner
++9.4 / +1.7 / -9.9 (coloured, light pollution), the corner the Milky Way enters +11 / +10 / +16
+(neutral, the object). Against the sky patches (ADR 0055) they read +4.6 / -3.6 / -17.0 and
++6.5 / +5.0 / +8.8: the band is bluer than the sky and that corner is coloured too, while
+the top edge the band crosses, +7.0 / +5.1 / +6.4, stays neutral. On mono there is one plane
+and `Coloured` is always false.
 
 ### D1/D2 - `StarAnalyzer` - the real resolution
 
@@ -455,7 +462,8 @@ by digit.
   pixel sits exactly at the percentile and a strict `<` selects nothing. Real data ties
   too, but little: on the 16-bit reference image 68 pixels, and the acceptance numbers are
   unaffected; on 8-bit data the choice moves the cast by a level (the reference image's 8-bit
-  version: +2.0 with `<=`, +1.0 with `<`), ADR 0014's correction of 2026-10-23.
+  version: +2.0 with `<=`, +1.0 with `<`), ADR 0014's correction of 2026-10-23. Moot since
+  ADR 0055: the colour comes from the sky patches, and no percentile cut remains.
 - **Corner regions are compared per channel, not by luminance.** The reference image's
   horizon corner has the sky's luminance (R +9, B -10); a luminance test would miss it.
 

@@ -24,6 +24,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The background colour of section 3, the reference of the cast and of the eight edge regions,
+  is the colour of the sky patches above the bottom band (the class the background section
+  calls sky), no longer the darkest quarter of the frame: on a Milky Way core the darkest
+  quarter is the Great Rift's dust, brown, and every sky edge came out "cool" against it, six
+  false gradients on a GraXpert-flattened frame. Appendix E and the Colour tab say which pixels
+  gave the colour (R-060, R-061; ADR 0055).
 - The Curbe tab is called Editare Curbe (`Curves Editing` in English), and its gallery of
   suggested curves is computed right after the analysis, without pressing `Calculeaza`, so it
   is there when the tab is opened; the button computes it again at the tab's current size

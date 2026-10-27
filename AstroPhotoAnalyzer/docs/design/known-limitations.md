@@ -83,14 +83,16 @@
   14, a bias of the estimator older than ADR 0054. The frames measured so far have stars of 2 to
   5 px, where it is nil.
 - The half-max estimator overestimates a sampled Gaussian by ~2.5 %.
-- On an 8-bit file the background's levels (the per-channel medians of the darkest quarter, R-060)
-  are whole levels, so a cast near `CastWarnLevels` (1 level) depends on the tie rule of the
-  darkest-quarter cut: `<=` keeps the pixels that sit exactly at the 25th percentile and `<`
-  drops them, +2.0 against +1.0 levels of green on the reference image's 8-bit version, either
-  side of the threshold. The code keeps `<=`, as ADR 0014 decided (its correction of 2026-10-23
-  records the ties); on the 16-bit version no printed figure moves.
+- On an 8-bit file the background's levels (the per-channel medians of the sky patches, R-060)
+  are whole levels, so a cast near `CastWarnLevels` (1 level) can fall either side of the
+  threshold between the 8-bit and the 16-bit version of the same image.
 - Neutral edge brightening cannot be told from the object; it is reported as
-  informative and left to the eye.
+  informative and left to the eye. Nor can a coloured one when the object's own colour differs
+  from the sky's: the Milky Way band is bluer than the sky, and the corner it enters on the
+  reference image reads +6.5 / +5.0 / +8.8 against the sky patches, coloured by ADR 0018's
+  rule, as a bluish gradient would (ADR 0055). The band's edges on the 2026-08-12 core stay
+  within 2.3 levels of the sky, and the Rift's dust in its top-left corner, darker and warmer,
+  is flagged coloured too.
 - JPEG numbers are ImageSharp's encoder's; another encoder will differ by tenths of a
   level at q100.
 - Colour is measured as sRGB; other profiles are only named.
