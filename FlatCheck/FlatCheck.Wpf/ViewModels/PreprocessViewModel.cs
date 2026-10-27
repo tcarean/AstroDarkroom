@@ -31,6 +31,7 @@
 // text and a button that is enabled or not.
 
 using System;
+using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -61,6 +62,9 @@ namespace FlatCheck.Wpf
     /// hold one.</summary>
     public class ScriptChoiceViewModel : ObservableObject
     {
+        /// <summary>The diagnostic log: the script that could not be read (R-110).</summary>
+        private protected static readonly Logger Log = LogManager.GetLogger(Loggers.Siril);
+
         SirilSession _session;
         SirilInstall _install;
         Func<bool> _guiRunning;
@@ -183,7 +187,7 @@ namespace FlatCheck.Wpf
             try { text = File.ReadAllText(_selected.Path); }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                NLog.LogManager.GetLogger("Siril").Warn(e, "the script " + _selected.Path + " could not be read; the run is blocked");
+                Log.Warn(e, "the script " + _selected.Path + " could not be read; the run is blocked");
                 return SessionMessages.ScriptUnreadable(_selected.Path, e.Message);
             }
 

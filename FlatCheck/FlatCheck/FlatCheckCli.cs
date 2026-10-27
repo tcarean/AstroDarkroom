@@ -30,7 +30,8 @@
 //     0  OK / PERFECT / BUN; --expo exposed right
 //     1  error (missing file, wrong argument, invalid FITS, failed fit) or input refused
 //        (INAPLICABIL, --expo on a file that is not a raw flat, --smooth on a raw or a cube,
-//        --synthetic on a cube or without a focal length, f-stop or crop)
+//        --synthetic on a cube, without a focal length, f-stop or crop, or on a lens whose
+//        file carries no vignetting model)
 //     2  SUSPECT / ACCEPTABIL / NEDETERMINAT; --expo acceptable, low or high; --smooth
 //        --scale auto with no scale proposed; --synthetic when the lens cannot be chosen
 //     3  PROBLEMA / REFA; --expo too low or too high

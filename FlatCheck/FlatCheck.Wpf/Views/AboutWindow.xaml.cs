@@ -26,6 +26,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
+using NLog;
 
 namespace FlatCheck.Wpf
 {
@@ -35,6 +36,9 @@ namespace FlatCheck.Wpf
     /// </summary>
     public partial class AboutWindow : Window
     {
+        /// <summary>The diagnostic log: the link that could not be opened (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
         /// <summary>Builds the window over a new <see cref="AboutViewModel"/>, with the
         /// largest icon and the dark title bar.</summary>
         public AboutWindow()
@@ -63,7 +67,7 @@ namespace FlatCheck.Wpf
             }
             catch (System.Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is System.InvalidOperationException)
             {
-                NLog.LogManager.GetLogger("Window").Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
+                Log.Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
             }
         }
 

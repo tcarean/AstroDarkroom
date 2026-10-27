@@ -233,7 +233,9 @@ namespace FlatCheck
             => "white=" + Num(r.White) + " black=" + Num(r.Black) + " range=" + Num(r.Range)
              + " channelMedians=" + List(r.ChannelMedians?.Select(Num)) + " cfaSpread=" + Num(r.CfaSpread) + " isCfa=" + Yes(r.IsCfa)
              + " cfa=" + (r.Cfa != null ? r.Cfa.Letters : "none") + " brightest=" + Int(r.BrightestChannel)
-             + " channels=" + List(r.Channels?.Select(c => Int(c.Position) + ":" + c.Colour + "=" + Num(c.MedianPct) + "%"))
+             // The label, not the colour: a channel without a colour (no BAYERPAT, or mono)
+             // has '\0' for it, which would put a NUL byte in the file.
+             + " channels=" + List(r.Channels?.Select(c => Int(c.Position) + ":" + c.Label + "=" + Num(c.MedianPct) + "%"))
              + " centreMedianPct=" + Num(r.CentreMedianPct) + " globalMedianPct=" + Num(r.GlobalMedianPct) + " centreClipPct=" + Num(r.CentreClipPct)
              + " levelTooLow=" + Yes(r.LevelTooLow) + " looksDebayered=" + Yes(r.LooksDebayered) + " sky=" + Yes(r.IsSky)
              + " preview=" + Yes(r.Preview != null) + " verdict=" + r.Verdict;

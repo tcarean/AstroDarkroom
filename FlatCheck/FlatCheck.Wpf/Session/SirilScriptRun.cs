@@ -50,6 +50,7 @@
 // failure of the script, and it is not one.
 
 using System;
+using NLog;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -222,7 +223,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>The diagnostic log: the command line started and what could not be
         /// cleaned up (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Siril");
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Siril);
 
         /// <summary>Kills the process and its children, if it is still running; never
         /// throws.</summary>

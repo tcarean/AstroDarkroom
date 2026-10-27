@@ -23,6 +23,7 @@
 // same folder fifty times.
 
 using System;
+using NLog;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -54,7 +55,7 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>The diagnostic log: the start's choices.</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("App");
+        static readonly Logger Log = LogManager.GetLogger(Loggers.App);
 
         /// <summary>Forces invariant numbers, shows the main window, says a --lang it did not
         /// understand, and starts the window on the command line's folder.</summary>

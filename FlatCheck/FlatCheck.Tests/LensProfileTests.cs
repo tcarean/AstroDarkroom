@@ -764,6 +764,40 @@ public class SyntheticRunTests
     }
 
     /// <summary>
+    /// R-071: a lens whose Adobe file carries no vignetting model (1275 of the 3531 files on the
+    /// author's machine on 2026-10-27, the extender combinations among them) is listed, since
+    /// listing reads names only, but refused with the reason and exit 1 when asked for: not a
+    /// NullReferenceException from a null nearest profile (the review of 2026-10-27, A3).
+    /// </summary>
+    [Fact]
+    public void R071_ALensWhoseFileHasNoVignettingModelIsRefusedWithTheReason()
+    {
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        const string Name = "Canon RF 100-400mm F5.6-8 IS USM + EXTENDER RF2x";
+        File.WriteAllText(Path.Combine(dir, "Tokina", $"Canon ({Name}) - RAW.lcp"),
+            LensProfileTestData.LcpWithoutVignette("Canon", Name, "RF100-400mm F5.6-8 IS USM + RF2x", "61182", "1", "200"));
+        var sources = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        string reference = ws.WriteFile("ref.fit", Reference());
+        var req = new SyntheticRequest { LensText = "EXTENDER RF2x" };
+        var sw = new StringWriter();
+
+        var run = SyntheticRun.Execute(reference, req, sources, null, 8, null, sw);
+
+        Assert.True(run.Refused);
+        Assert.False(run.RefusedChoice);
+        Assert.Contains($"FLAT SINTETIC: obiectivul \"{req.Lens.Title}\" nu are profil de vignetare", run.Refusal);
+        Assert.Contains(run.Refusal, sw.ToString());
+
+        var stderr = new StringWriter();
+        int exit = FlatCheckCli.Run(new[] { reference, "--synthetic", ws.PathTo("synth.fit"), "--lens", "EXTENDER RF2x", "--fstop", "8", "--profiles", dir },
+                                    new StringWriter(), stderr);
+        Assert.Equal(1, exit);
+        Assert.StartsWith("EROARE: FLAT SINTETIC: obiectivul", stderr.ToString());
+        Assert.False(File.Exists(ws.PathTo("synth.fit")));
+    }
+
+    /// <summary>
     /// A lens calibrated on two formats matches its name twice: the choice is refused as
     /// ambiguous, the list names both calibrations, and the format word picks one. The written
     /// file then says which calibration it came from.

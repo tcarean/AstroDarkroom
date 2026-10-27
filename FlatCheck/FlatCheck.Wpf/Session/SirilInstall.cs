@@ -34,6 +34,7 @@
 // one that touches the machine.
 
 using System;
+using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -120,7 +121,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>The diagnostic log: where Siril was found, and what could not be read
         /// (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Siril");
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Siril);
 
         /// <summary>
         /// siril-cli.exe: from the uninstall entry in the registry (the Inno installer writes

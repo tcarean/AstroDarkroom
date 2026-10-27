@@ -80,4 +80,25 @@ public class AboutTests
         Assert.False(string.IsNullOrWhiteSpace(vm.ThirdPartyHeading));
         Assert.Contains("THIRD-PARTY-NOTICES.md", vm.ThirdPartyLead);
     }
+
+    /// <summary>
+    /// The lead counts the linked components from the core's list, so it cannot stay behind
+    /// the list: NLog made them four on 2026-10-27 and the window still said three (the review
+    /// of 2026-10-27, A5). The database is named apart, as the README does.
+    /// </summary>
+    [Fact]
+    public void TheLeadCountsTheLinkedComponentsFromTheCoresList()
+    {
+        Assert.Equal(4, ThirdParty.Components.Count(c => !c.IsData));
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            string lead = new AboutViewModel().ThirdPartyLead;
+            Assert.Contains("links four components", lead);
+            Assert.Contains("database", lead);
+            Assert.DoesNotContain("three", lead);
+        }
+        using (Ui.Use(UiLanguage.Romanian))
+            Assert.Contains("leaga patru componente", new AboutViewModel().ThirdPartyLead);
+    }
 }

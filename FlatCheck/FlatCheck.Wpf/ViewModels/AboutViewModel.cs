@@ -72,7 +72,9 @@ namespace FlatCheck.Wpf
 
         public string ThirdPartyHeading => SessionMessages.AboutThirdPartyHeading();
 
-        public string ThirdPartyLead => SessionMessages.AboutThirdPartyLead();
+        /// <summary>The lead counts the linked components from the core's list, so it cannot
+        /// stay behind the list; the database is named apart.</summary>
+        public string ThirdPartyLead => SessionMessages.AboutThirdPartyLead(ThirdParty.Components.Count(c => !c.IsData));
 
         public IReadOnlyList<ComponentRow> Components { get; }
     }

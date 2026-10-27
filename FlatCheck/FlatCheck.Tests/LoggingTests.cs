@@ -270,6 +270,25 @@ public class LoggingTests
         Assert.All(capture.Events, e => Assert.Matches(LinePrefix, e.Line));
     }
 
+    /// <summary>
+    /// A channel without a colour (a CFA file without <c>BAYERPAT</c>, or a mono frame) is
+    /// named in the log by its position, as the report names it; before, the analyzer's
+    /// <c>'\0'</c> went into the file and <c>grep</c> took the whole log for binary (the review
+    /// of 2026-10-27, A4).
+    /// </summary>
+    [Fact]
+    public void R110_AChannelWithoutAColourIsNamedByItsPosition_NoNulByteInTheLog()
+    {
+        using var ws = new TempWorkspace();
+        string raw = GoldenOutputTests.Flat(ws, "raw.fit", FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000)), Size);
+        using var capture = LogCapture.Start();
+
+        FlatCheckCli.Run(new[] { raw, "--expo" }, new StringWriter(), new StringWriter());
+
+        Assert.DoesNotContain('\0', capture.Text);
+        Assert.Contains("channels=[0:CFA[0,0]=", capture.Text);
+    }
+
     [Fact]
     public void R110_AFailedRunLogsTheExceptionWithItsStackAndStderrKeepsOneLine()
     {

@@ -361,7 +361,7 @@ namespace FlatCheck.Wpf
             try { return SplitCost.Pixels(_loadInfo(master).Header); }
             catch (Exception e)
             {
-                Log.Debug(e, "Split tab: the master's header could not be read; no pixel count for the estimate");
+                Log.Debug(e, "the master's header could not be read; no pixel count for the estimate");
                 return 0;
             }
         }
@@ -399,7 +399,7 @@ namespace FlatCheck.Wpf
         /// <summary>The free space on the drive that holds a path.</summary>
         /// <param name="path">A path, which need not exist yet.</param>
         /// <returns>The free bytes, or null when the drive cannot be asked.</returns>
-        static long? FreeBytes(string path)
+        long? FreeBytes(string path)
         {
             try
             {
@@ -408,7 +408,7 @@ namespace FlatCheck.Wpf
             }
             catch (Exception e)
             {
-                Log.Debug(e, "Split tab: the free space of " + path + "'s drive could not be read");
+                Log.Debug(e, "the free space of " + path + "'s drive could not be read");
                 return null;
             }
         }
@@ -456,7 +456,7 @@ namespace FlatCheck.Wpf
             bool keepTemp = false;
             int totalSteps = parts * 2 + 1;
             var clock = System.Diagnostics.Stopwatch.StartNew();
-            Log.Info("Split tab: started, parts=" + LogText.Int(parts) + " framesPerPart=" + LogText.Int(plan.FramesPerPart)
+            Log.Info("started, parts=" + LogText.Int(parts) + " framesPerPart=" + LogText.Int(plan.FramesPerPart)
                      + " script=" + LogText.Str(script) + " temp=" + plan.TempRoot);
 
             try
@@ -477,7 +477,7 @@ namespace FlatCheck.Wpf
                     var progress = new Progress<double>(f => Progress = (done + f) / totalSteps);
                     await Task.Run(() => Copy(list, progress, ct), ct).ConfigureAwait(true);
                     ct.ThrowIfCancellationRequested();
-                    Log.Info("Split tab: part " + LogText.Int(i) + "/" + LogText.Int(parts) + " copied, " + LogText.Int(list.Count)
+                    Log.Info("part " + LogText.Int(i) + "/" + LogText.Int(parts) + " copied, " + LogText.Int(list.Count)
                              + " files into " + plan.PartRoot(i));
 
                     Phase = SessionMessages.SplitPhaseSiril(i, parts, scriptName);
@@ -495,7 +495,7 @@ namespace FlatCheck.Wpf
 
                     if (run.Succeeded != true)
                     {
-                        Log.Warn("Split tab: Siril failed on part " + LogText.Int(i) + "/" + LogText.Int(parts) + "; the temp folder is kept");
+                        Log.Warn("Siril failed on part " + LogText.Int(i) + "/" + LogText.Int(parts) + "; the temp folder is kept");
                         keepTemp = true;
                         Fail(SessionMessages.SplitFailedTitle(), SessionMessages.SplitFailed(i, parts, run.Outcome, plan.TempRoot));
                         return;
@@ -503,7 +503,7 @@ namespace FlatCheck.Wpf
                     string master = plan.PartSession(i).FlatMasterPath;
                     if (master == null)
                     {
-                        Log.Warn("Split tab: part " + LogText.Int(i) + "/" + LogText.Int(parts) + " has no master after Siril, in "
+                        Log.Warn("part " + LogText.Int(i) + "/" + LogText.Int(parts) + " has no master after Siril, in "
                                  + plan.PartRoot(i) + "; the temp folder is kept");
                         keepTemp = true;
                         Fail(SessionMessages.SplitFailedTitle(), SessionMessages.SplitNoMaster(i, parts, plan.PartRoot(i), scriptName));
@@ -542,12 +542,12 @@ namespace FlatCheck.Wpf
             }
             catch (OperationCanceledException)
             {
-                Log.Info("Split tab: stopped after " + LogText.Int(clock.ElapsedMilliseconds / 1000) + " s");
+                Log.Info("stopped after " + LogText.Int(clock.ElapsedMilliseconds / 1000) + " s");
                 HasResult = false;
             }
             catch (Exception e)
             {
-                Log.Error(e, "Split tab: failed after " + LogText.Int(clock.ElapsedMilliseconds / 1000) + " s; the temp folder "
+                Log.Error(e, "failed after " + LogText.Int(clock.ElapsedMilliseconds / 1000) + " s; the temp folder "
                              + plan.TempRoot + " is kept");
                 keepTemp = true;
                 Fail(SessionMessages.SplitFailedTitle(), Describe(e) + "\n\n" + SessionMessages.SplitTempKept(plan.TempRoot));
@@ -600,7 +600,7 @@ namespace FlatCheck.Wpf
         /// on a cancellation.</summary>
         internal void StopRun()
         {
-            Log.Info("Split tab: stop asked" + (_run == null ? ", nothing runs" : ""));
+            Log.Info("stop asked" + (_run == null ? ", nothing runs" : ""));
             try { _run?.Cancel(); } catch (ObjectDisposedException) { }
         }
 
@@ -666,11 +666,11 @@ namespace FlatCheck.Wpf
                 File.WriteAllText(session.SplitResultTextPath, Report);
                 File.WriteAllBytes(session.SplitPngPath, png);
                 SavedTo = session.SplitResultTextPath;
-                Log.Info("Split tab: wrote " + session.SplitResultTextPath + " and " + session.SplitPngPath + " (" + LogText.KiB(png.Length) + ")");
+                Log.Info("wrote " + session.SplitResultTextPath + " and " + session.SplitPngPath + " (" + LogText.KiB(png.Length) + ")");
             }
             catch (Exception e)
             {
-                Log.Warn(e, "Split tab: the report or the mosaic could not be saved beside the session");
+                Log.Warn(e, "the report or the mosaic could not be saved beside the session");
                 SaveError = T("Could not save the report:\n", "Nu am putut salva raportul:\n") + Describe(e);
             }
         }

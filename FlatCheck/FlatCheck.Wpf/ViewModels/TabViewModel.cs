@@ -39,6 +39,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
@@ -126,13 +127,14 @@ namespace FlatCheck.Wpf
         {
             int gen = ++_generation;
             var clock = Stopwatch.StartNew();
-            string run = TabName + " tab, run " + LogText.Int(gen);
+            string run = "run " + LogText.Int(gen);
             Log.Info(run + " started");
             BeginBusy(busyMessage);
             try
             {
                 await work().ConfigureAwait(true);
-                Log.Info(run + " done in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+                // A run that ended with an explanation shown (Refuse) was refused, not done.
+                Log.Info(run + (HasError ? " refused in " : " done in ") + LogText.Int(clock.ElapsedMilliseconds) + " ms");
             }
             catch (OperationCanceledException)
             {
@@ -157,13 +159,20 @@ namespace FlatCheck.Wpf
             }
         }
 
-        /// <summary>The diagnostic log of the tabs: their runs, the user's actions, the
-        /// failures they show or swallow (R-110).</summary>
-        private protected static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Window");
+        /// <summary>The tab's diagnostic log, named <c>Window.&lt;Tab&gt;</c>: its runs, the
+        /// user's actions, the failures it shows or swallows (R-110). The logger's name says
+        /// which tab, so the messages carry no prefix.</summary>
+        private protected readonly Logger Log;
 
         /// <summary>The tab's name in the log: its view-model's class name without
         /// <c>TabViewModel</c> (<c>Structure</c>, <c>Exposure</c>, ...).</summary>
         private protected string TabName => GetType().Name.Replace("TabViewModel", "");
+
+        /// <summary>Gives the tab its logger, by its runtime type's name.</summary>
+        protected TabViewModel()
+        {
+            Log = LogManager.GetLogger(Loggers.Window + "." + TabName);
+        }
 
         /// <summary>
         /// Enters the window's heavy-run gate before a run a click started (ADR 0061), with the
@@ -253,6 +262,20 @@ namespace FlatCheck.Wpf
             HasResult = false;
             ErrorTitle = title;
             ErrorText = text;
+        }
+
+        /// <summary>
+        /// <see cref="Fail"/>, and a line in the log saying why, in English, with the title the
+        /// user sees (R-110): for the refusals a tab decides itself, which no exception reaches
+        /// the log for. A run that ends this way is logged as refused, not done.
+        /// </summary>
+        /// <param name="title">The explanation's heading.</param>
+        /// <param name="text">The explanation itself.</param>
+        /// <param name="why">The reason, in the log's words.</param>
+        protected void Refuse(string title, string text, string why)
+        {
+            Log.Info("refused: " + why + "; the tab shows \"" + title + "\"");
+            Fail(title, text);
         }
 
         /// <summary>Removes the explanation, if one is shown.</summary>

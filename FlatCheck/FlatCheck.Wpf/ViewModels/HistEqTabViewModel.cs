@@ -164,7 +164,8 @@ namespace FlatCheck.Wpf
             Raise(nameof(Selected));
 
             if (Files.Count == 0)
-                Fail(T("Nothing to equalise", "Nimic de egalizat"), SessionMessages.NoFlatFrames(session));
+                Refuse(T("Nothing to equalise", "Nimic de egalizat"), SessionMessages.NoFlatFrames(session),
+                       "no master and no flat frame to equalise in " + session.Root);
             else
                 ClearError();
         }

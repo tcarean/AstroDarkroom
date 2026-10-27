@@ -31,6 +31,7 @@
 // reopened and Check() says whether the master appeared.
 
 using System;
+using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -98,7 +99,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>The diagnostic log of the Siril runs: start, every line siril-cli prints,
         /// the end (R-110). Not <c>Log</c>, which is the text the window shows.</summary>
-        static readonly NLog.Logger RunLog = NLog.LogManager.GetLogger("Siril");
+        static readonly Logger RunLog = LogManager.GetLogger(Loggers.Siril);
 
         public string Title => SessionMessages.RunWindowTitle();
         public string ScriptName { get; }

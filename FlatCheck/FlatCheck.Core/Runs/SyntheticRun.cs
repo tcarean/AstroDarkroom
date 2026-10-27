@@ -241,6 +241,19 @@ namespace FlatCheck
                 refusal = Complete(req, id, req.Lens.Source == ProfileSource.Lensfun);
                 if (refusal != null) why = "the focal length, the f-number or the crop cannot be found";
             }
+            IReadOnlyList<LensProfile> all = null;
+            if (refusal == null)
+            {
+                // A lens is listed by its file's name; only now is the file parsed, and Adobe's
+                // files for a lens measured for distortion or colour only hold no vignetting
+                // model: an input refusal, not a null profile handed to the builder (R-071).
+                all = sources.Catalog.ProfilesOf(req.Lens);
+                if (all.Count == 0)
+                {
+                    refusal = SyntheticReport.NoProfile(req.Lens);
+                    why = "the lens has no vignetting profile";
+                }
+            }
             if (refusal != null)
             {
                 clock.Done("refused: " + why + "; " + LogText.Request(req));
@@ -248,7 +261,6 @@ namespace FlatCheck
                 report.WriteLine(refusal);
                 return new SyntheticRunOutcome(null, req, f, refusal, choice);
             }
-            IReadOnlyList<LensProfile> all = sources.Catalog.ProfilesOf(req.Lens);
             LensProfile profile = LensCatalog.Nearest(all, req.FocalMm, req.FStop);
             var r = SyntheticFlatBuilder.Build(profile, f.Image.W, f.Image.H, req.CameraCrop);
             r.LensProfiles = all;
