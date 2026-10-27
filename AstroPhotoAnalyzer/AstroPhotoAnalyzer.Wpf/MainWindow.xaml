@@ -209,7 +209,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TabItem Header="Preview">
             <local:PreviewView DataContext="{Binding Preview}" />
           </TabItem>
-          <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves', Ro='Curbe'}">
+          <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves Editing', Ro='Editare Curbe'}">
             <local:CurvesView DataContext="{Binding Curves}" />
           </TabItem>
         </TabControl>

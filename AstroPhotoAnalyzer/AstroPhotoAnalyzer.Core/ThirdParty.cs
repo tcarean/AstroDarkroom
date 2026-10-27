@@ -83,8 +83,8 @@ namespace AstroPhotoAnalyzer
                 Packages: new[] { "SixLabors.ImageSharp" }),
             new ThirdPartyComponent(
                 Name: "Wacton.Unicolour",
-                Role: Tr.Pick("evaluating the tables of a printer ICC profile, for the paper's Dmax and for the share outside the paper gamut in the Curves tab",
-                             "evaluarea tabelelor unui profil ICC de imprimanta, pentru Dmax-ul hartiei si pentru partea din afara gamutului hartiei din tabul Curbe"),
+                Role: Tr.Pick("evaluating the tables of a printer ICC profile, for the paper's Dmax and for the share outside the paper gamut in the Curves Editing tab",
+                             "evaluarea tabelelor unui profil ICC de imprimanta, pentru Dmax-ul hartiei si pentru partea din afara gamutului hartiei din tabul Editare Curbe"),
                 Licence: "MIT",
                 Copyright: "Copyright (c) 2022-2026 William Acton",
                 Url: "https://github.com/waacton/Unicolour",

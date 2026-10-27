@@ -21,7 +21,7 @@ using System.Windows;
 namespace AstroPhotoAnalyzer.Wpf.Tests;
 
 /// <summary>
-/// R-146, R-147: the Curbe tab's gallery and its curve window. The tab computes nothing: every
+/// R-146, R-147: the Editare Curbe tab's gallery and its curve window. The tab computes nothing: every
 /// name, point and figure asserted here is read back from the core's <c>CurveRun</c>.
 /// </summary>
 [Collection("fereastra")]

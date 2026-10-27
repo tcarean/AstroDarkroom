@@ -14,6 +14,9 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Added
 
+- CopyWcs is the sixth tool of the suite (R-001, ADR 0010): its window, `CopyWcs.Wpf.exe`, is
+  published into the suite folder from `../WCS_Copy`, and the launcher lists it between
+  ImageVisualCompare and AstroPhotoAnalyzer and opens it in its own language, like the others.
 - The launcher says what the suite needs (R-009, ADR 0007): one line under the title and a
   "Cerinte" / "Requirements" card in "Despre" with the Siril session folder, Siril 1.4.4 or
   newer, and, optional for FlatCheck, Adobe's lens profiles with the programs that install

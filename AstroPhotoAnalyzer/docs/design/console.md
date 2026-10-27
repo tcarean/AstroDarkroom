@@ -18,7 +18,7 @@
 | `DmaxOverride` | null | `--dmax n` (0 < n <= 4) | "Dmax", filled with the chosen medium's | paper black |
 | `Dmax` (derived) | baryta 2.4 / canvas 1.5 / acrylic 2.2 (ADR 0028) | | | Tonal, Simulation |
 | `DmaxProfile` | null | `--icc file` (sets it with `DmaxOverride`; excludes `--dmax`) | `Din profil ICC...` | Anexa F: where the Dmax came from (R-028) |
-| `DmaxProfilePath` | null | set with `DmaxProfile`, the same file | set with `DmaxProfile` | the Curbe tab's gamut figure re-opens the profile (R-144); the report does not print it |
+| `DmaxProfilePath` | null | set with `DmaxProfile`, the same file | set with `DmaxProfile` | the Editare Curbe tab's gamut figure re-opens the profile (R-144); the report does not print it |
 | `CandidateWidthsCm` | 50, 60, 70, 80, 90, 100 | `--sizes a,b,c` | "Latimi candidate" | PrintSize |
 | `ViewingDistanceM` | null = 1.5 x diagonal per row (then no row is recommended) | `--distance m` | "Distanta de privire" | PrintSize |
 | `PassepartoutCm` | 7 | `--passepartout cm` | field | PrintSize (outer size) |

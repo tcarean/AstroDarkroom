@@ -25,7 +25,7 @@ public class LauncherTests
     private static SuiteApp App(string folder) => AppCatalogue.Apps.Single(a => a.Folder == folder);
 
     [Fact]
-    public void R001_Catalogue_ListsTheFiveAppsInWorkflowOrderWithTheirTexts()
+    public void R001_Catalogue_ListsTheSixAppsInWorkflowOrderWithTheirTexts()
     {
         SuiteApp[] expected =
         [
@@ -33,6 +33,7 @@ public class LauncherTests
             new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv", "FlatCheck.Wpf.exe"),
             new("LightsCheck", "LightsCheck", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift", "LightsCheck.Wpf.exe"),
             new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale aceleiasi procesari, pixel cu pixel", "ImageVisualCompare.Wpf.exe"),
+            new("WCS_Copy", "CopyWcs", "Copiaza plate solve-ul unui FITS in altul", "CopyWcs.Wpf.exe"),
             new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Verifica o imagine finala inainte de print", "AstroPhotoAnalyzer.Wpf.exe"),
         ];
         Assert.Equal(expected, AppCatalogue.Apps);

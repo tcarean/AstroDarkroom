@@ -48,6 +48,7 @@ public class LanguageTests
     public void R006_TheCatalogue_DescribesEveryAppInEnglishToo()
     {
         string[] romanian = AppCatalogue.Apps.Select(a => a.Description).ToArray();
+        var romanianRest = AppCatalogue.Apps.Select(a => (a.Folder, a.Title, a.WindowExe)).ToArray();
         using IDisposable english = Ui.Use(UiLanguage.English);
 
         string[] expected =
@@ -56,14 +57,14 @@ public class LanguageTests
             "Checks the flats of a lens",
             "Checks the lights of a session: focus, trailing, dithering, drift",
             "Compares two versions of the same processing, pixel by pixel",
+            "Copies the plate solve of one FITS into another",
             "Checks a final image before printing",
         ];
         Assert.Equal(expected, AppCatalogue.Apps.Select(a => a.Description));
 
         // The rest of the catalogue does not change with the language.
-        Assert.Equal(["DarksCheck", "FlatCheck", "LightsCheck", "ImageVisualCompare", "AstroPhotoAnalyzer"], AppCatalogue.Apps.Select(a => a.Folder));
-        Assert.Equal(AppCatalogue.Apps.Select(a => a.Folder), AppCatalogue.Apps.Select(a => a.Title));
-        Assert.Equal(AppCatalogue.Apps.Select(a => a.Folder + ".Wpf.exe"), AppCatalogue.Apps.Select(a => a.WindowExe));
+        Assert.Equal(["DarksCheck", "FlatCheck", "LightsCheck", "ImageVisualCompare", "WCS_Copy", "AstroPhotoAnalyzer"], AppCatalogue.Apps.Select(a => a.Folder));
+        Assert.Equal(romanianRest, AppCatalogue.Apps.Select(a => (a.Folder, a.Title, a.WindowExe)));
 
         // Each English wording is its own text, not the Romanian one left in place.
         Assert.All(expected.Zip(romanian), pair => Assert.NotEqual(pair.First, pair.Second));

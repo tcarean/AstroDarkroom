@@ -19,6 +19,7 @@
       { "project": "../FlatCheck/FlatCheck.Wpf/FlatCheck.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
       { "project": "../LightsCheck/src/LightsCheck.Wpf/LightsCheck.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
       { "project": "../ImageVisualCompare/src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
+      { "project": "../WCS_Copy/src/CopyWcs.Wpf/CopyWcs.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] },
       { "project": "../AstroPhotoAnalyzer/AstroPhotoAnalyzer.Wpf/AstroPhotoAnalyzer.Wpf.csproj", "output": "", "args": ["-r", "win-x64", "--self-contained"] }
     ],
     "zip": "AstroDarkroom-{version}-win-x64.zip"

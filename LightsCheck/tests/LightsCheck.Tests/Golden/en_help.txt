@@ -7,14 +7,15 @@ Usage: lightscheck <session folder> [--out DIR] [--threads N] [--pixel UM] [--ea
 
   The Siril session folder: the frames are taken from lights\ (or from the folder
   itself when there is no lights\), the biases, optional, from biases\. Camera raws
-  (.nef, .cr2, .cr3, .arw, .dng, .raf) or FITS. Nothing is written into the folder.
+  (.nef, .cr2, .cr3, .arw, .dng, .raf, .pef) or FITS. Nothing is written into the folder.
 
   No options:   measures every frame and prints the report: focus, exposure and
                 noise, dew, trailed frames, drift, dithering, the frames to reject.
   --out DIR     writes into DIR the report, a CSV with every figure and the reject list
                 (lightscheck-report.txt, lightscheck-frames.csv, lightscheck-rejected.txt).
   --threads N   how many frames are measured in parallel (default half the cores).
-  --pixel UM    the pixel size in microns, when the files do not say it (default 3.92, Nikon D3300).
+  --pixel UM    the pixel size in microns; without it, the files' XPIXSZ, else the raw's 35 mm-
+                equivalent focal length, else 3.92 (Nikon D3300).
   --east left|right  the SynScan arrow that moves the mount east (default right); the other is west.
   --north up|down    the SynScan arrow that moves the mount north (default up); the other is south.
   --inventory   the frames' metadata only (no decoding): time, exposure, ISO, pauses.

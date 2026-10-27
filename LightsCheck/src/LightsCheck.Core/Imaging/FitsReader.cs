@@ -17,8 +17,9 @@
 
 #nullable disable // copied from FlatCheck unchanged, which compiles without nullable annotations
 // (ADR 0003): its code of 2.3.0 with the edits ADR 0003 lists, its English comments of
-// 504b5d1 (ADR 0018), FlatCheck's cut-data check of 469da9b (ADR 0021), and FlatCheck's
-// English/Romanian wordings of its messages of 55e959c (ADR 0022).
+// 504b5d1 (ADR 0018), FlatCheck's cut-data check of 469da9b (ADR 0021) with that commit's
+// LoadHeader sentence (ADR 0025), and FlatCheck's English/Romanian wordings of its messages of
+// 55e959c (ADR 0022).
 
 // FitsReader.cs - our own FITS reader (no dependencies).
 // Header of 80-byte cards in 2880-byte blocks, then big-endian binary data.
@@ -72,7 +73,10 @@ namespace LightsCheck.Core
         /// Synthetic tab, when the session opens). The SIMPLE card is not checked: a file that is
         /// not a FITS gives whatever cards with '=' in column 9 its blocks happen to hold,
         /// usually none, and a header cut before END gives the cards of the whole blocks before
-        /// the cut (FlatCheck's later refusal of both, its ADR 0057, is not in this copy).
+        /// the cut (FlatCheck's later refusal of both, its ADR 0057, is not in this copy). It does
+        /// not check the data area either: a file whose pixels are cut short (FlatCheck's R-009,
+        /// ADR 0021) has an intact, usable header, so this read answers it and only the full load
+        /// refuses it.
         /// </summary>
         /// <param name="path">The FITS file to read.</param>
         /// <returns>The keywords and their values, string quotes and comments removed.</returns>

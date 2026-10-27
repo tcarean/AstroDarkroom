@@ -40,12 +40,12 @@ public static class Prerequisites
     [
         T("A Siril session folder: the folder of one night with lights/, darks/, flats/ and biases/ as "
           + "Siril lays them out, and the results of its scripts in process/ (or masters/). DarksCheck, "
-          + "FlatCheck and LightsCheck open that folder; ImageVisualCompare and AstroPhotoAnalyzer open "
-          + "the files exported from Siril.",
+          + "FlatCheck and LightsCheck open that folder; ImageVisualCompare, CopyWcs and AstroPhotoAnalyzer "
+          + "open the files exported from Siril.",
           "Folderul unei sesiuni Siril: folderul unei nopti cu lights/, darks/, flats/ si biases/ cum le "
           + "aseaza Siril, si rezultatele scripturilor lui in process/ (sau masters/). DarksCheck, FlatCheck "
-          + "si LightsCheck deschid acel folder; ImageVisualCompare si AstroPhotoAnalyzer deschid fisierele "
-          + "exportate din Siril."),
+          + "si LightsCheck deschid acel folder; ImageVisualCompare, CopyWcs si AstroPhotoAnalyzer deschid "
+          + "fisierele exportate din Siril."),
         T("Siril 1.4.4 or newer installed (siril.org): the masters and the stacks the tools check come "
           + "from its scripts, and FlatCheck runs the preprocessing script through siril-cli from your "
           + "installation.",

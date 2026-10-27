@@ -37,3 +37,7 @@ loads, and the cut HDU without an image. The copy's code is now FlatCheck 2.3.0'
 ADR 0003 lists plus this one hunk; its comments stay as ADR 0018 says. AstroPhotoAnalyzer's
 reader, a stream reader of its own started from FlatCheck's, already refuses a cut data area
 (`FITS: date trunchiate.`, its `FitsReaderTests`) and took nothing.
+
+Note 2026-10-27: the one sentence of 469da9b the hunk had left out, on `LoadHeader`'s doc
+comment (the header read does not check the data area), is in the copy (ADR 0025); the SIMPLE
+check is still out.

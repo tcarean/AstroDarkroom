@@ -1,15 +1,15 @@
 # AstroDarkroom
 
-Astro Darkroom is the launcher and the release of the five astrophotography tools of the `photo`
-repository: DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare and AstroPhotoAnalyzer. The
-launcher is a small WPF window that lists the five, says which is in the suite folder beside it
-and starts the one the user picks; it computes nothing of its own. Its `<Version>` is the
-suite's version and its `/release` publishes the five components' windows and the launcher into
-one flat self-contained folder, zipped; the zip is shared from the owner's Google Drive, its
-link and SHA-256 in `README.md` (ADR 0005) and, for the latest release, in the repository
-root's `README.md`, the Bitbucket front page (ADR 0008), and the consoles stay in the
+Astro Darkroom is the launcher and the release of the six astrophotography tools of the `photo`
+repository: DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare, CopyWcs (folder `WCS_Copy`)
+and AstroPhotoAnalyzer. The launcher is a small WPF window that lists the six, says which is in
+the suite folder beside it and starts the one the user picks; it computes nothing of its own.
+Its `<Version>` is the suite's version and its `/release` publishes the six components' windows
+and the launcher into one flat self-contained folder, zipped; the zip is shared from the owner's
+Google Drive, its link and SHA-256 in `README.md` (ADR 0005) and, for the latest release, in the
+repository root's `README.md`, the Bitbucket front page (ADR 0008), and the consoles stay in the
 components' own releases (ADR 0002). It is for the owner and the few people who receive the
-zip; it is not a sixth analysis tool and never changes a component.
+zip; it is not a seventh analysis tool and never changes a component.
 
 ## Commands
 
@@ -26,7 +26,7 @@ zip; it is not a sixth analysis tool and never changes a component.
 - Design notes a branch touched (the index and Covers paths are a gate step):
   `scripts/check-design.ps1 -Since main`
 - Mutation score of Core (minutes, not in the gate): `scripts/mutate.ps1 [-Mutate "**/File.cs"]`
-- Release of the suite (verify, version, CHANGELOG, the five windows and the launcher
+- Release of the suite (verify, version, CHANGELOG, the six windows and the launcher
   published into `artifacts/<version>/`, `release.json`, the zip and its `.sha256` in
   `artifacts/`; no commit, no tag): `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`; the publish
   alone again, from any branch: `-PublishOnly`

@@ -175,9 +175,9 @@ public class WindowSmokeTests
             Render(new ResolutionView { DataContext = vm.Resolution }, name: "tab-rezolutie");
             Render(new BackgroundView { DataContext = vm.Background }, name: "tab-fundal");
             Render(new PreviewView { DataContext = vm.Preview }, h: 2400, name: "tab-preview");
-            Render(new CurvesView { DataContext = vm.Curves }, name: "tab-curbe-gol");
-            // R-146, R-147: the gallery on a suggestion, and its curve window.
-            vm.Curves.Compute(1300, 600);
+            // R-146, R-147: the gallery the analysis computed on its own, on a suggestion, and
+            // its curve window.
+            await vm.CurvesComputation;
             Assert.True(vm.Curves.HasGallery, vm.Curves.Message);
             vm.Curves.Next.Execute(null);
             Render(new CurvesView { DataContext = vm.Curves }, name: "tab-curbe");

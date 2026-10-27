@@ -1,6 +1,6 @@
 # Analysing the series
 
-**Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/Wcs.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Analysis/PatternAnalyzer.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
+**Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/Wcs.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Analysis/PatternAnalyzer.cs`, `src/LightsCheck.Core/Analysis/PixelPitch.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
 
 The behaviour is R-018 to R-028, R-042 to R-046, R-049 and R-050; the dither definitions and the verdicts are ADR 0007, the drift-aware walking verdict and the sensor's pattern ADR 0015, the drift pairs and the polar alignment ADR 0016. The
 prototype is `prototype/reg.py` and `prototype/summary.py`; `docs/validation/2026-10-06-veil/raport.md`
@@ -9,8 +9,8 @@ is the hand report the tool reproduces, and V-008 pins its session figures.
 ## The chain (`SeriesRun`)
 
 The entry point both applications call is `SeriesRun.Run(folder, SeriesOptions(PixelSizeUm,
-Threads), progress, cancel)`: the options record carries the pixel size (default
-`D3300PixelUm`, 3.92 um) and the thread count (0 = half the cores), `progress` is an
+Threads), progress, cancel)`: the options record carries the pixel size the user typed (null
+when none was typed) and the thread count (0 = half the cores), `progress` is an
 `IProgress<(int Done, int Total)>` reported once per measured frame, `cancel` a
 `CancellationToken`; the result is a `SeriesResult` with the session, the `AnalyzedFrame`
 list (each with its metadata, measurement, registration and any error), the cadence, the
@@ -31,7 +31,13 @@ points (`frame-analysis.md`, `session-and-console.md`).
    the crops (then the crops are dropped), the read noise from the first two biases, the RA
    axis from a plate-solved FITS at the root, then `SeriesAnalyzer`.
 4. The pixel scale is `206.265 x pixel_um / focal_mm` from the first frame's focal length and
-   the file's `XPIXSZ` or the option's pixel size.
+   the pixel size `PixelPitch.Choose` picks (R-066, ADR 0026): the first frame's `XPIXSZ`, else
+   the typed size, else the first raw's own figure, else `SeriesOptions.D3300PixelUm`. The
+   raw's figure (`PixelPitch.FromCrop`) is `43.2666 mm x focal / (focal35 x sqrt(W² + H²))`:
+   the camera's 35 mm-equivalent focal length over the shot's is the crop, a ratio of sensor
+   diagonals, so the full-frame diagonal over the crop is the sensor's diagonal, spread over the
+   mosaic's diagonal in pixels. `Choose` returns a `PixelPitchSource`; `SeriesRun` turns it into
+   the words of the `scale` line, so the choice is `Analysis/`'s and the words stay in the run.
 
 ## The constants (`Th`)
 
