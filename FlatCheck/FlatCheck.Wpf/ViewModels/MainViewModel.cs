@@ -32,8 +32,10 @@
 // new ones. The cancellation is caught between frames, so it answers in under a second.
 
 using System;
+using System.Collections.Generic;
 using NLog;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -290,9 +292,15 @@ namespace FlatCheck.Wpf
         {
             if (problem == SessionProblem.NoFolder) return "the folder does not exist";
             FlatMasterLookup master = session.FindFlatMaster();
+            // flats/ is listed once: the raw flats and the reference raw are read off the same
+            // list, as the session reads them (RawFlats is FlatFrames narrowed to the raws).
+            IReadOnlyList<string> flats = null;
+            string flatCount = Read(() => { flats = session.FlatFrames(); return LogText.Int(flats.Count); });
             return "master=" + LogText.Str(master.Path) + (master.Ambiguous ? " (an older one ignored: " + master.Other + ")" : "")
-                 + " flats=" + Count(() => session.FlatFrames().Count) + " rawFlats=" + Count(() => session.RawFlats().Count)
-                 + " lights=" + Count(() => session.LightSeries().Count) + " referenceRaw=" + Read(() => session.ReferenceRawPath)
+                 + " flats=" + flatCount
+                 + " rawFlats=" + (flats != null ? LogText.Int(flats.Count(RawReader.IsRawPath)) : flatCount)
+                 + " lights=" + Count(() => session.LightSeries().Count)
+                 + " referenceRaw=" + (flats != null ? LogText.Str(LensIdentification.FirstRaw(flats)) : flatCount)
                  + " process=" + LogText.Yes(Directory.Exists(session.ProcessDir)) + " masters=" + LogText.Yes(Directory.Exists(session.MastersDir));
 
             static string Count(Func<int> count) => Read(() => LogText.Int(count()));
@@ -317,7 +325,11 @@ namespace FlatCheck.Wpf
             // beside it. Another folder chosen during that wait cancels it, and that is no fault.
             IDisposable lease;
             try { lease = await _gate.EnterAsync(ct).ConfigureAwait(true); }
-            catch (OperationCanceledException) { return; }
+            catch (OperationCanceledException)
+            {
+                Log.Debug("session " + session.Root + ": the opening chain was cancelled while it waited for the gate");
+                return;
+            }
 
             using (lease)
             {

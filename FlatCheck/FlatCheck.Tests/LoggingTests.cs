@@ -24,7 +24,7 @@ using Xunit.Abstractions;
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// The diagnostic log (R-109 to R-111, ADR 0070): where the files go and how they roll, what a
+/// The diagnostic log (R-109 to R-112, ADR 0070): where the files go and how they roll, what a
 /// run writes, the level. The file tests run the applications' configuration
 /// (<see cref="LogSetup.Build"/>) in a private <see cref="LogFactory"/>, so they touch neither
 /// the test assembly's log (<see cref="LogCapture"/>) nor the tests beside them.
@@ -343,6 +343,42 @@ public class LoggingTests
         Assert.Contains(capture.Events, e => e.Logger == "SyntheticRun" && e.Message.StartsWith("synthetic start " + notFits, StringComparison.Ordinal));
         Assert.Matches(@"SyntheticRun synthetic ended without an outcome after \d+ ms(\r?\n|$)", capture.Text);
         Assert.Single(capture.Events, e => e.Level == LogLevel.Error);
+    }
+
+    /// <summary>A crash the window's dispatcher sees and then the process sees again is written
+    /// once with its stack: the second Fatal line names the first (ADR 0070; the review of
+    /// 2026-10-27, D11, kept both hooks and asked for this test).</summary>
+    [Fact]
+    public void R110_TheSameCrashSeenByTwoHooksIsWrittenOnce()
+    {
+        var crash = new InvalidOperationException("the window fell over");
+        using var capture = LogCapture.Start();
+
+        LogSetup.Fatal(crash, "unhandled exception on the window's thread");
+        LogSetup.Fatal(crash, "unhandled exception, the process ends");
+        LogSetup.Fatal(new InvalidOperationException("another"), "unhandled exception, the process ends");
+
+        var fatal = capture.Events.Where(e => e.Level == LogLevel.Fatal && e.Logger == "Process").ToList();
+        Assert.Equal(3, fatal.Count);
+        Assert.Same(crash, fatal[0].Exception);
+        Assert.Null(fatal[1].Exception);
+        Assert.Equal("unhandled exception, the process ends: the exception logged above", fatal[1].Message);
+        Assert.NotNull(fatal[2].Exception);
+    }
+
+    /// <summary><c>--lenses</c> is a run like the others, with its start and done lines and the
+    /// time of its two stages; before, it left no done line (the review of 2026-10-27, C8).</summary>
+    [Fact]
+    public void R110_TheLensListIsARunWithItsOwnDoneLine()
+    {
+        using var ws = new TempWorkspace();
+        using var capture = LogCapture.Start();
+
+        int exit = FlatCheckCli.Run(new[] { "--lenses", "--profiles", ws.PathTo("none") }, new StringWriter(), new StringWriter());
+
+        Assert.Equal(0, exit);
+        Assert.Contains(capture.Events, e => e.Logger == "Cli" && e.Message.StartsWith("lenses start text=none source=both", StringComparison.Ordinal));
+        Assert.Matches(@"Cli lenses done listed 0 lenses in \d+ ms \(locate \d+ ms, list \d+ ms\)", capture.Text);
     }
 
     /// <summary>The log writes an elapsed time in two forms only: milliseconds, or seconds

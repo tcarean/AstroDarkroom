@@ -112,33 +112,40 @@ namespace FlatCheck
             // other modes work on a master or on a given frame.
             if (Directory.Exists(o.Image) && !o.Light)
             {
-                Log.Warn("refused: " + o.Image + " is a folder, and only --light takes one");
-                stderr.WriteLine(ErrorPrefix + T(
+                string message = T(
                     "a folder can be given only with --light, for the run on a series. "
                     + "The other modes expect a file.",
                     "un folder se poate da doar cu --light, pentru rularea pe serie. "
-                    + "Celelalte moduri asteapta un fisier."));
+                    + "Celelalte moduri asteapta un fisier.");
+                // The message as the user saw it, like the two other refusals (R-110).
+                Log.Warn("refused: " + o.Image + " is a folder; " + message);
+                stderr.WriteLine(ErrorPrefix + message);
                 return 1;
             }
 
-            Log.Info("mode=" + ModeOf(o) + " input=" + LogText.Str(o.Image) + " lang=" + (Ui.Current == UiLanguage.Romanian ? "ro" : "en") + Describe(o));
+            // The arguments are in the process's first line already; this line says what they
+            // came to (the mode is Options' decision, R-003, so the log and the dispatch agree).
+            Log.Info("mode=" + ModeName(o.Mode) + " input=" + LogText.Str(o.Image) + " lang=" + (Ui.Current == UiLanguage.Romanian ? "ro" : "en"));
             int code;
             try
             {
-                if (o.Lenses) code = RunLenses(o, stdout);
-                else if (o.Synthetic != null) code = RunSynthetic(o, stdout, stderr);
-                else if (o.Against != null) code = ExitFor(RunAgainst(o, stdout));
-                else if (o.Smooth != null) code = RunSmooth(o, stdout, stderr);
-                else if (o.Histeq) code = RunHisteq(o, stdout);
-                else if (o.Expo) code = ExitFor(RunExpo(o, stdout));
-                else if (o.Light) code = ExitFor(RunLight(o, stdout));
-                else code = ExitFor(RunStructure(o, stdout));
+                switch (o.Mode)
+                {
+                    case Mode.Lenses: code = RunLenses(o, stdout); break;
+                    case Mode.Synthetic: code = RunSynthetic(o, stdout, stderr); break;
+                    case Mode.Against: code = ExitFor(RunAgainst(o, stdout)); break;
+                    case Mode.Smooth: code = RunSmooth(o, stdout, stderr); break;
+                    case Mode.Histeq: code = RunHisteq(o, stdout); break;
+                    case Mode.Expo: code = ExitFor(RunExpo(o, stdout)); break;
+                    case Mode.Light: code = ExitFor(RunLight(o, stdout)); break;
+                    default: code = ExitFor(RunStructure(o, stdout)); break;
+                }
             }
             catch (Exception e)
             {
                 // stderr keeps its one line; the type, the stack and the inner exceptions go to
                 // the log (R-110).
-                Log.Error(e, "run failed: mode=" + ModeOf(o));
+                Log.Error(e, "run failed: mode=" + ModeName(o.Mode));
                 stderr.WriteLine(ErrorPrefix + e.Message);
                 return 1;
             }
@@ -153,46 +160,10 @@ namespace FlatCheck
         /// their stack, the files written (R-110).</summary>
         static readonly Logger Log = LogManager.GetLogger("Cli");
 
-        /// <summary>The mode the dispatch below picks, by the same order (R-003).</summary>
-        /// <param name="o">The parsed options.</param>
-        /// <returns>The mode's name in the log.</returns>
-        static string ModeOf(Options o)
-            => o.Lenses ? "lenses"
-             : o.Synthetic != null ? "synthetic"
-             : o.Against != null ? "against"
-             : o.Smooth != null ? "smooth"
-             : o.Histeq ? "histeq"
-             : o.Expo ? "expo"
-             : o.Light ? (Directory.Exists(o.Image) ? "light series" : "light")
-             : "structure";
-
-        /// <summary>The map's path, then the options that differ from their defaults, for the
-        /// mode's line.</summary>
-        /// <param name="o">The parsed options.</param>
-        /// <returns>The text, with a leading space.</returns>
-        static string Describe(Options o)
-        {
-            var parts = new List<string> { "out=" + o.OutPng };
-            void Add(string name, string value) { if (value != null) parts.Add(name + "=" + value); }
-            Add("raw", o.Raw);
-            Add("lens", o.Lens);
-            Add("source", o.Source?.ToString());
-            Add("focal", o.Focal.HasValue ? LogText.Num(o.Focal) : null);
-            Add("fstop", o.FStop.HasValue ? LogText.Num(o.FStop) : null);
-            Add("crop", o.Crop.HasValue ? LogText.Num(o.Crop) : null);
-            Add("profiles", o.Profiles);
-            Add("sat", o.Sat.HasValue ? LogText.Num(o.Sat) : null);
-            Add("black", o.Black.HasValue ? LogText.Num(o.Black) : null);
-            Add("sky", o.Sky ? "yes" : null);
-            Add("fov", o.Fov.HasValue ? LogText.Num(o.Fov) : null);
-            Add("pattern", o.Light ? o.Pattern : null);
-            Add("smooth", o.Smooth);
-            Add("scale", o.Smooth == null ? null : o.ScaleAuto ? "auto" : LogText.Num(o.ScalePx));
-            Add("synthetic", o.Synthetic);
-            Add("against", o.Against);
-            Add("rainbow", o.Rainbow ? "yes" : null);
-            return " " + string.Join(" ", parts);
-        }
+        /// <summary>A mode's name in the log: its enum name in lower case.</summary>
+        /// <param name="mode">The mode.</param>
+        /// <returns><c>structure</c>, <c>light</c>, ...</returns>
+        static string ModeName(Mode mode) => mode.ToString().ToLowerInvariant();
 
         /// <summary>
         /// The input refusal, in the core's vocabulary. It exits with 1, the same category as
@@ -368,8 +339,13 @@ namespace FlatCheck
         /// <returns>0.</returns>
         static int RunLenses(Options o, TextWriter w)
         {
+            using RunClock clock = RunClock.Start(Log, "lenses", "text=" + LogText.Str(o.Lens) + " source=" + (o.Source.HasValue ? o.Source.Value.ToString() : "both"));
             ProfileSources sources = Sources(o);
-            SyntheticReport.WriteList(sources.Catalog.Search(o.Lens, o.Source), sources.Catalog, o.Lens, sources, w);
+            clock.Lap("locate");
+            IReadOnlyList<LensChoice> hits = sources.Catalog.Search(o.Lens, o.Source);
+            SyntheticReport.WriteList(hits, sources.Catalog, o.Lens, sources, w);
+            clock.Lap("list");
+            clock.Done("listed " + LogText.Int(hits.Count) + " lenses");
             return 0;
         }
 

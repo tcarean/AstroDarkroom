@@ -150,7 +150,7 @@ namespace FlatCheck
                 ct.ThrowIfCancellationRequested();
 
                 var frameClock = Stopwatch.StartNew();
-                Img img = first?.Image ?? ImageLoader.LoadImage(files[i]);
+                Img img = first?.Image ?? ImageLoader.LoadImage(files[i], logHeader: false);
                 // The first frame was loaded for the guard above: its time counts that load,
                 // as the other frames' times count theirs.
                 long loaded = first != null ? firstLoadMs : 0;

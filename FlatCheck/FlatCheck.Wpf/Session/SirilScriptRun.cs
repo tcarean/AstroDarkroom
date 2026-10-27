@@ -53,6 +53,7 @@ using System;
 using NLog;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -159,8 +160,10 @@ namespace FlatCheck.Wpf
                 process.OutputDataReceived += (_, e) => { if (e.Data != null) onLine(e.Data); };
                 process.ErrorDataReceived += (_, e) => { if (e.Data != null) onLine(e.Data); };
 
-                Log.Info("starting " + cliPath + " -d \"" + folder + "\" -s \"" + scriptPath + "\" -i \"" + config
-                         + "\" (settings copied from " + LogText.Str(settings) + ", " + LogText.Int(copy.Length) + " bytes)");
+                // The command line as the process gets it, from ProcessStartInfo itself, so the
+                // log cannot drift from what runs.
+                Log.Info("starting " + psi.FileName + " " + string.Join(" ", psi.ArgumentList.Select(a => "\"" + a + "\""))
+                         + " (settings copied from " + LogText.Str(settings) + ", " + LogText.Int(copy.Length) + " bytes)");
                 process.Start();
                 Log.Debug("siril-cli started, pid " + LogText.Int(process.Id));
                 process.BeginOutputReadLine();

@@ -232,7 +232,7 @@ namespace FlatCheck.Wpf
         {
             SirilLogLine line = SirilLogLine.Parse(raw);
             // Every line in the log, the progress ones (most of the output) only at Trace.
-            if (line.Kind == SirilLineKind.Progress) RunLog.Trace("siril: " + raw);
+            if (line.Kind == SirilLineKind.Progress) { if (RunLog.IsTraceEnabled) RunLog.Trace("siril: " + raw); }
             else RunLog.Debug("siril: " + raw);
             if (line.Kind == SirilLineKind.Other) return;
 

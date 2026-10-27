@@ -95,20 +95,23 @@ namespace FlatCheck
         /// shot.</param>
         /// <param name="lensfunNeedsCrop">True when the chosen lens is a lensfun one, whose
         /// profile needs the camera's crop factor.</param>
+        /// <param name="why">The refusal's reason in the log's words, English; null when
+        /// complete.</param>
         /// <returns>Null when complete, otherwise the refusal's text (no focal length, no
         /// aperture, or no crop for lensfun).</returns>
-        internal static string Complete(SyntheticRequest req, ShotIdentity id, bool lensfunNeedsCrop)
+        internal static string Complete(SyntheticRequest req, ShotIdentity id, bool lensfunNeedsCrop, out string why)
         {
-            if (!id.FocalMm.HasValue) return SyntheticReport.NoFocal();
+            why = null;
+            if (!id.FocalMm.HasValue) { why = "the focal length cannot be found"; return SyntheticReport.NoFocal(); }
             req.FocalMm = id.FocalMm.Value;
             req.FocalSource = id.FocalSource;
 
-            if (!id.FStop.HasValue) return SyntheticReport.NoFStop();
+            if (!id.FStop.HasValue) { why = "the f-number cannot be found"; return SyntheticReport.NoFStop(); }
             req.FStop = id.FStop.Value;
             req.FStopSource = id.FStopSource;
 
             if (id.Crop.HasValue) { req.CameraCrop = id.Crop.Value; req.CropSource = id.CropSource; }
-            else if (lensfunNeedsCrop) return SyntheticReport.NoCrop(id.Camera);
+            else if (lensfunNeedsCrop) { why = "the lensfun profile needs a crop factor nobody supplied"; return SyntheticReport.NoCrop(id.Camera); }
             else { req.CameraCrop = 0; req.CropSource = id.CropSource; }
             return null;
         }
@@ -124,24 +127,30 @@ namespace FlatCheck
         /// <param name="f">The reference frame; not read by this overload, the identity
         /// carries what it knows.</param>
         /// <param name="id">The shot's identity, with the candidates and the camera.</param>
+        /// <param name="why">The refusal's reason in the log's words, English; null when a
+        /// lens was chosen.</param>
         /// <returns>Null when exactly one lens was chosen, otherwise the refusal's text (none
         /// given, no match, or ambiguous).</returns>
-        internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f, ShotIdentity id)
+        internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f, ShotIdentity id, out string why)
         {
-            LensCatalog cat = sources.Catalog;
+            why = null;
             IReadOnlyList<LensChoice> hits;
             if (string.IsNullOrWhiteSpace(req.LensText))
             {
                 hits = id.Candidates;
                 if (req.Source.HasValue) hits = hits.Where(h => h.Source == req.Source.Value).ToList();
-                if (hits.Count == 0) return SyntheticReport.NoLensGiven();
+                if (hits.Count == 0) { why = "no lens given and the raw names none"; return SyntheticReport.NoLensGiven(); }
             }
             else
             {
                 hits = MatchLenses(req.LensText, req.Source, sources, id);
-                if (hits.Count == 0) return SyntheticReport.NoMatch(req.LensText, sources);
+                if (hits.Count == 0) { why = "no lens matches the text"; return SyntheticReport.NoMatch(req.LensText, sources); }
             }
-            if (hits.Count > 1) return SyntheticReport.Ambiguous(req.LensText != null ? $"\"{req.LensText}\"" : id.RawLensLabel, hits);
+            if (hits.Count > 1)
+            {
+                why = LogText.Int(hits.Count) + " lenses match";
+                return SyntheticReport.Ambiguous(req.LensText != null ? $"\"{req.LensText}\"" : id.RawLensLabel, hits);
+            }
             req.Lens = hits[0];
             return null;
         }
@@ -180,7 +189,7 @@ namespace FlatCheck
         /// <returns>Null when exactly one lens was chosen, otherwise the refusal's
         /// text.</returns>
         internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f)
-            => ChooseLens(req, sources, f, LensIdentification.Identify(f, null, sources));
+            => ChooseLens(req, sources, f, LensIdentification.Identify(f, null, sources), out _);
 
         /// <summary>
         /// Loads the reference frame and runs the chain on it. Throws what
@@ -266,15 +275,11 @@ namespace FlatCheck
             // looks it up from the text.
             if (refusal == null && req.Lens == null)
             {
-                refusal = ChooseLens(req, sources, f, id);
+                refusal = ChooseLens(req, sources, f, id, out why);
                 choice = refusal != null;
-                if (choice) why = "no lens or more than one matches";
             }
             if (refusal == null)
-            {
-                refusal = Complete(req, id, req.Lens.Source == ProfileSource.Lensfun);
-                if (refusal != null) why = "the focal length, the f-number or the crop cannot be found";
-            }
+                refusal = Complete(req, id, req.Lens.Source == ProfileSource.Lensfun, out why);
             IReadOnlyList<LensProfile> all = null;
             if (refusal == null)
             {

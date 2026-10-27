@@ -82,23 +82,43 @@ namespace FlatCheck
         /// read.</summary>
         /// <param name="path">The file.</param>
         /// <returns>The text.</returns>
-        internal static string FileMiB(string path)
-        {
-            try { return MiB(new FileInfo(path).Length); }
-            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ArgumentException || e is NotSupportedException)
-            { return "?"; }
-        }
+        internal static string FileMiB(string path) => FileSize(path, MiB);
 
         /// <summary>A file's size in kibibytes, or a question mark when it cannot be
         /// read.</summary>
         /// <param name="path">The file.</param>
         /// <returns>The text.</returns>
-        internal static string FileKiB(string path)
+        internal static string FileKiB(string path) => FileSize(path, KiB);
+
+        /// <summary>A file's size in the given unit, or a question mark when it cannot be
+        /// read: the log never throws for a size.</summary>
+        /// <param name="path">The file.</param>
+        /// <param name="unit">How the bytes are written: <see cref="KiB"/> or <see cref="MiB"/>.</param>
+        /// <returns>The text.</returns>
+        static string FileSize(string path, Func<long, string> unit)
         {
-            try { return KiB(new FileInfo(path).Length); }
+            try { return unit(new FileInfo(path).Length); }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ArgumentException || e is NotSupportedException)
             { return "?"; }
         }
+
+        /// <summary>A lens as a frame names it: <c>id/mount/name</c>, each <c>none</c> when
+        /// missing; <c>none</c> alone when the frame names no lens at all.</summary>
+        /// <param name="f">The frame.</param>
+        /// <returns>The text.</returns>
+        static string Lens(LoadedFrame f)
+            => f.LensId.HasValue || f.LensMount != null || f.LensName != null
+                ? (f.LensId.HasValue ? Int(f.LensId.Value) : "none") + "/" + Str(f.LensMount) + "/" + Str(f.LensName)
+                : "none";
+
+        /// <summary>A lens's range as a frame carries it: <c>18-55 mm f/3.5</c>; <c>none</c>
+        /// when the frame carries no range.</summary>
+        /// <param name="f">The frame.</param>
+        /// <returns>The text.</returns>
+        static string Range(LoadedFrame f)
+            => f.LensMinFocalMm.HasValue || f.LensMaxFocalMm.HasValue
+                ? Num(f.LensMinFocalMm) + "-" + Num(f.LensMaxFocalMm) + " mm f/" + Num(f.LensMaxAperture)
+                : "none";
 
         /// <summary>A list of values as <c>[a, b, c]</c>.</summary>
         /// <param name="items">The values; null gives <c>[]</c>.</param>
@@ -118,19 +138,13 @@ namespace FlatCheck
             string raster = f.Image != null ? Int(f.Image.W) + "x" + Int(f.Image.H) : "no pixels";
             string cfa = f.Cfa != null ? f.Cfa.Letters + " (" + f.Cfa.Source + ")" : "none";
             string scale = f.Scale != null ? Num(f.Scale.White) + "/" + Num(f.Scale.Black) + " (" + f.Scale.Source + ")" : "none";
-            string lens = f.LensId.HasValue || f.LensMount != null || f.LensName != null
-                ? (f.LensId.HasValue ? Int(f.LensId.Value) : "none") + "/" + Str(f.LensMount) + "/" + Str(f.LensName)
-                : "none";
-            string range = f.LensMinFocalMm.HasValue || f.LensMaxFocalMm.HasValue
-                ? Num(f.LensMinFocalMm) + "-" + Num(f.LensMaxFocalMm) + " mm f/" + Num(f.LensMaxAperture)
-                : "none";
             string preview = f.Preview != null
                 ? (f.Preview.IsJpeg ? "jpeg " : "rgb ") + Int(f.Preview.W) + "x" + Int(f.Preview.H) + " " + KiB(f.Preview.Data?.Length ?? 0)
                 : "none";
             return path + " (" + FileMiB(path) + ") reader=" + reader + " " + raster
                  + " planes=" + Int(f.Planes) + " bitpix=" + Int(f.Bitpix) + " cfa=" + cfa + " scale=" + scale
                  + " camera=" + Str(f.Camera) + " focal=" + Num(f.FocalMm) + " fnumber=" + Num(f.FNumber)
-                 + " lens=" + lens + " range=" + range + " preview=" + preview;
+                 + " lens=" + Lens(f) + " range=" + Range(f) + " preview=" + preview;
         }
 
         /// <summary>
@@ -145,9 +159,7 @@ namespace FlatCheck
             if (id == null) return "none";
             string cropFrom = id.CropSource == "--crop" ? "--crop" : id.CropFromTable ? "lensfun table" : "unknown";
             LoadedFrame raw = id.Raw;
-            string rawLens = raw == null ? "none"
-                : (raw.LensId.HasValue ? Int(raw.LensId.Value) : "none") + "/" + Str(raw.LensMount) + "/" + Str(raw.LensName)
-                  + " range " + Num(raw.LensMinFocalMm) + "-" + Num(raw.LensMaxFocalMm) + " mm f/" + Num(raw.LensMaxAperture);
+            string rawLens = raw == null ? "none" : Lens(raw) + " range " + Range(raw);
             return "focal=" + Num(id.FocalMm) + " (" + Str(id.FocalSource) + ") fstop=" + Num(id.FStop) + " (" + Str(id.FStopSource)
                  + ") crop=" + Num(id.Crop) + " (" + cropFrom + ") camera=" + Str(id.Camera) + " raw=" + Str(id.RawName)
                  + " rawLens=" + rawLens + " candidates=" + Int(id.Candidates?.Count ?? 0) + " "
@@ -170,26 +182,13 @@ namespace FlatCheck
             => "raster " + Int(r.Width) + "x" + Int(r.Height) + " rawMedian=" + Num(r.RawMedian) + " rawMax=" + Num(r.RawMax)
              + " fitCentre=(" + Num(r.FitCx) + ", " + Num(r.FitCy) + ") sensorCentre=(" + Num(r.SensorCx) + ", " + Num(r.SensorCy) + ")"
              + " centroidOffsetPct=" + Num(r.CentroidOffsetPct) + " centroidValid=" + Yes(r.CentroidValid) + " tiltPct=" + Num(r.TiltPct)
-             + " corners=" + List(r.Corners?.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => CornerName(c.Key) + "=" + Num(c.Value)))
+             + " corners=" + List(r.Corners?.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => StructureReport.EnglishCorner(c.Key) + "=" + Num(c.Value)))
              + " cornerMean=" + Num(r.CornerMean) + " centreMedian=" + Num(r.CentreMedian) + " vignetteStops=" + Num(r.VignetteStops)
              + " cornerSpreadPct=" + Num(r.CornerSpreadPct) + " azimuthalMaxPct=" + Num(r.AzimuthalMaxPct)
              + " residualPtpPct=" + Num(r.ResidualPtpPct) + " maxTilePct=" + Num(r.MaxTilePct)
              + " localSpotPct=" + Num(r.LocalSpotPct) + " at (" + Int(r.LocalSpotX) + ", " + Int(r.LocalSpotY) + ") flagged=" + Yes(r.LocalSpotFlagged)
              + " verdicts corner=" + Str(r.CornerVerdict) + " azimuthal=" + Str(r.AzimuthalVerdict) + " residual=" + Str(r.ResidualVerdict)
              + " tilt=" + Str(r.TiltVerdict) + " maxTile=" + Str(r.MaxTileVerdict) + " worst=" + Str(r.Verdict);
-
-        /// <summary>A corner's key in <see cref="StructureResult.Corners"/> (the analyzer's own,
-        /// Romanian, identifiers) in English; any other key as it is.</summary>
-        /// <param name="key">The key.</param>
-        /// <returns>The English name.</returns>
-        static string CornerName(string key) => key switch
-        {
-            "stanga-sus" => "top-left",
-            "dreapta-sus" => "top-right",
-            "stanga-jos" => "bottom-left",
-            "dreapta-jos" => "bottom-right",
-            _ => key,
-        };
 
         /// <summary>A lens profile by its catalogue key and its settings.</summary>
         /// <param name="p">The profile; null gives <c>none</c>.</param>

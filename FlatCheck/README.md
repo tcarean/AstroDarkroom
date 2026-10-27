@@ -1371,30 +1371,42 @@ problem, attach the whole `log` folder: it holds what is needed to see what happ
 **Where it is.** In a folder named `log` beside the program: `log\flatcheck.log` beside
 `flatcheck.exe`, `log\FlatCheck.Wpf.log` beside `FlatCheck.Wpf.exe`. When that folder cannot be
 written (a program under Program Files, a read-only drive), the log goes to
-`%LOCALAPPDATA%\FlatCheck\log` instead, and its first line says so. Past 1 MB a file is left and
-the next one is started (`flatcheck_01.log`, `flatcheck_02.log`, ...); the five most recent files
-are kept and the older ones deleted, so the folder never holds more than 5 MB per program. Two
-windows open at the same time write into the same file, each line marked with its process.
+`%LOCALAPPDATA%\FlatCheck\log` instead, and its first line says so. Past 1 MiB (1,048,576
+bytes, so a file ends one line past that) a file is left and the next one is started
+(`flatcheck_01.log`, `flatcheck_02.log`, ...); the five most recent files are kept and the older
+ones deleted, so the folder holds about 5 MiB per program at most. Two windows open at the same
+time write into the same file, each line marked with its process.
 
-**What is in it.** One line per event, in English whatever `--lang` says, numbers with a point:
-at the start the version, the command line, the Windows and .NET versions and the folders; every
-file read, with its size, its dimensions and what its header or the camera says (camera, lens,
-focal length, aperture); for each run its options, the figures behind the verdict, the verdict and
-the time each stage took; the lens profiles found and the lenses that matched; every file
-written; in the window, the session opened, each tab's run and the buttons pressed, and the whole
-output of a Siril run; every error with its technical details, those the program works around
-without a word included; at the end the exit code and the time taken. It holds the paths of
-your files and the figures measured on them, not their pixels.
+**What is in it.** One line per event, numbers with a point: at the start the version, the
+command line, the Windows and .NET versions and the folders; every file read, with its size, its
+dimensions and what its header or the camera says (camera, lens, focal length, aperture); for
+each run its options, the figures behind the verdict, the verdict and the time each stage took;
+the lens profiles found and the lenses that matched; every file written; in the window, the
+session opened, each tab's run and the buttons pressed, and the whole output of a Siril run;
+every error with its technical details, those the program works around without a word included
+(not a run you cancelled yourself, nor what the window drops while it closes); at the end the
+exit code and the time taken. The log's own words are English whatever `--lang` says; an error's
+or a refusal's message appears as you saw it, so in Romanian under `--lang ro`. It holds the
+paths of your files and the figures measured on them, not their pixels.
 
-**How much.** The environment variable `FLATCHECK_LOG` sets the level:
+**How much.** The environment variable `FLATCHECK_LOG` sets the level. For a program started
+from a command window, set it there first:
 
 ```
 set FLATCHECK_LOG=trace
 ```
 
+That reaches only the programs started from that window. For the window started from the Start
+menu or from AstroDarkroom, set it for your account, once (new programs see it; the ones already
+open do not):
+
+```
+setx FLATCHECK_LOG trace
+```
+
 `debug`, the default, writes everything above; `trace` adds every FITS header card and Siril's
-progress lines; `info`, `warn` and `error` write less and less; `off` writes nothing and creates
-no folder.
+progress lines; `info`, `warn`, `error` and `fatal` write less and less; `off` writes nothing
+and creates no folder.
 
 ## Development
 

@@ -40,7 +40,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// Starts the diagnostic log first, so a failure while the resources load is in it too
-        /// (R-109 to R-111), then sets the interface language from the command line (R-101)
+        /// (R-109 to R-112), then sets the interface language from the command line (R-101)
         /// before anything else: the constructor runs before App.xaml's resources and the first
         /// view load, and both may carry texts.
         /// </summary>

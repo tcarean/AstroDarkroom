@@ -314,7 +314,12 @@ namespace FlatCheck.Wpf
         /// <returns>The full path, or the path unchanged when it is not valid.</returns>
         static string Normalise(string p)
         {
-            try { return Path.GetFullPath(p); } catch (ArgumentException) { return p; }
+            try { return Path.GetFullPath(p); }
+            catch (ArgumentException e)
+            {
+                Log.Debug(e, "the path " + p + " could not be normalised; used as it is");
+                return p;
+            }
         }
 
         /// <summary>

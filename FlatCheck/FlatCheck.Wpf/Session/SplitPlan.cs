@@ -193,8 +193,12 @@ namespace FlatCheck.Wpf
         static long SizeOf(string path)
         {
             try { return new FileInfo(path).Length; }
-            catch (IOException) { return 0; }
-            catch (UnauthorizedAccessException) { return 0; }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                // The estimate is a convenience: a file that cannot be sized counts as nothing.
+                Log.Debug(e, "the size of " + path + " could not be read; the estimate counts it as 0");
+                return 0;
+            }
         }
 
         /// <summary>How many frames (raw or FITS) each part has in the folders copied whole; a

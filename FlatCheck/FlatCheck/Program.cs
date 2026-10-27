@@ -30,7 +30,7 @@ namespace FlatCheck
         /// <summary>
         /// Runs the console on the process's own stdout and stderr, between the diagnostic
         /// log's first and last lines (<see cref="LogSetup.Apply"/>, <see cref="LogSetup.Close"/>;
-        /// R-109 to R-111). The log is configured here and not in <see cref="FlatCheckCli.Run"/>,
+        /// R-109 to R-112). The log is configured here and not in <see cref="FlatCheckCli.Run"/>,
         /// which the tests call in-process.
         /// </summary>
         /// <param name="args">The command line, flags before or after the path

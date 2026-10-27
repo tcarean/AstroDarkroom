@@ -99,3 +99,15 @@ owner, who chose the second package the same day.
   `NothingThatComputesOrWordsTheReportLogs`. `R112_TwoProcessesWritingAtFullSpeedKeepEveryLine`
   fails on the plain target: kept open, one of its two writers lost all 4000 lines.
 - The other tools of the suite can take `LogSetup` as it is, under their own names.
+- Corrected 2026-10-27: the table's "33, 33 and 42 lines lost of 4000" for the plain target
+  closed between lines is "48, 33 and 42"; the first run lost 48, as R-112, the package notice
+  and the plan say.
+- Restated 2026-10-27: "`Analysis/`, `Report/` ... never log" means they write no log line and
+  hold no logger; the lens catalog they call to read a profile may warn about an Adobe file it
+  cannot read, which is the catalog's line, not theirs.
+- Restated 2026-10-27: "without a configuration, which is the case of the tests" is the case of
+  a library use only; the test assemblies configure a capture at Trace, as the bullet above
+  says, so every test runs every log line on its path.
+- Restated 2026-10-27: "every exception, those recovered from included" excepts a cancellation
+  the user asked for, a race at the window's close and the log's own probes, whose outcome is
+  their own line; R-110 names the three.

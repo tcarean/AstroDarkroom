@@ -347,13 +347,19 @@ namespace FlatCheck
         {
             Profiles = profiles ?? Array.Empty<LensProfile>();
             AdobeFiles = adobeFiles ?? Array.Empty<AdobeProfileFile>();
+            _lenses = new Lazy<IReadOnlyList<LensChoice>>(() =>
+                Profiles.Select(p => p.Lens).Concat(AdobeFiles.Select(f => f.Lens)).Distinct()
+                    .OrderBy(l => l.Source).ThenBy(l => l.Maker).ThenBy(l => l.Name).ThenBy(l => l.Mount).ToList());
         }
 
         internal static readonly LensCatalog Empty = new LensCatalog(Array.Empty<LensProfile>());
 
-        internal IReadOnlyList<LensChoice> Lenses
-            => Profiles.Select(p => p.Lens).Concat(AdobeFiles.Select(f => f.Lens)).Distinct()
-                .OrderBy(l => l.Source).ThenBy(l => l.Maker).ThenBy(l => l.Name).ThenBy(l => l.Mount).ToList();
+        /// <summary>Every lens of both sources, each once, in the list's order. Built once on
+        /// the first read: the window's list, the console's list and the locator's log line
+        /// all ask for it, and the catalog never changes.</summary>
+        internal IReadOnlyList<LensChoice> Lenses => _lenses.Value;
+
+        readonly Lazy<IReadOnlyList<LensChoice>> _lenses;
 
         /// <summary>
         /// The lenses whose name, maker, mount or calibration contains ALL the words searched (and

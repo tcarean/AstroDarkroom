@@ -512,7 +512,10 @@ namespace FlatCheck.Wpf
                 Log.Info("prefilled from " + master + " focal=" + LogText.Str(FocalText) + " fstop=" + LogText.Str(FStopText)
                          + " crop=" + LogText.Str(CropText) + " lens=" + (SelectedLens?.Choice.Key ?? "none"));
             }
-            catch (OperationCanceledException) { }
+            catch (OperationCanceledException)
+            {
+                Log.Debug("the prefill was cancelled; another folder was opened or the window closes");
+            }
             catch (Exception e)
             {
                 // The prefill is a convenience, not an analysis: a strange header leaves the

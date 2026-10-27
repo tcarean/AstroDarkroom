@@ -603,12 +603,18 @@ namespace FlatCheck
         /// </summary>
         /// <param name="key">A corner key, "stanga-sus" and the three others.</param>
         /// <returns>The corner's name in the run's language; an unknown key as it is.</returns>
-        internal static string CornerName(string key) => key switch
+        internal static string CornerName(string key) => T(EnglishCorner(key), key);
+
+        /// <summary>A corner's key in English, the one name the diagnostic log writes whatever
+        /// the language (R-110); the Romanian name is the key itself.</summary>
+        /// <param name="key">A corner key, "stanga-sus" and the three others.</param>
+        /// <returns>The English name; an unknown key as it is.</returns>
+        internal static string EnglishCorner(string key) => key switch
         {
-            "stanga-sus" => T("top-left", "stanga-sus"),
-            "dreapta-sus" => T("top-right", "dreapta-sus"),
-            "stanga-jos" => T("bottom-left", "stanga-jos"),
-            "dreapta-jos" => T("bottom-right", "dreapta-jos"),
+            "stanga-sus" => "top-left",
+            "dreapta-sus" => "top-right",
+            "stanga-jos" => "bottom-left",
+            "dreapta-jos" => "bottom-right",
             _ => key,
         };
 
