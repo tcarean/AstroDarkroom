@@ -1,7 +1,7 @@
 # 0011. Each row shows its app's icon from a copy of the component's .ico, kept equal by a test
 
 Date: 2026-10-27
-Status: proposed
+Status: accepted 2026-10-27
 
 ## Context
 
