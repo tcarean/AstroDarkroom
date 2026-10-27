@@ -1,9 +1,9 @@
-# The dependencies: the rule, libraw and ImageSharp
+# The dependencies: the rule, libraw, ImageSharp and NLog
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
 > CLAUDE.md nor a decision record says (ADR 0051): the rule "Package notices" and ADR 0008 hold the
-> rule, ADR 0009 and ADR 0010 the two packages, ADR 0028 and ADR 0040 the data component and the
-> displayed list. **Covers:** by pointer, `FlatCheck.Core.csproj`, `Directory.Packages.props`,
+> rule, ADR 0009, ADR 0010 and ADR 0070 the three packages, ADR 0028 and ADR 0040 the data component
+> and the displayed list. **Covers:** by pointer, `FlatCheck.Core.csproj`, `Directory.Packages.props`,
 > `Directory.Build.props` (the audit codes kept as warnings),
 > `RawReader.cs`, `PreviewReader.cs`, `ThirdParty.cs`, `THIRD-PARTY-NOTICES.md`; in full, one
 > mechanic of the lazy loading of libraw. Cross-references such as "see X below" point at the
@@ -43,6 +43,16 @@ and why FlatCheck qualifies for its Apache-2.0 terms all the way downstream, the
 and what 4.x would cost (a licence key at compile time, `ColorProfileHandling.Preserve`), why
 the version is pinned at all, the one file that names an ImageSharp type (`PreviewReader.cs`),
 and `StbImageSharp` as the measured drop-in fallback if the licence ever moves.
+
+### `NLog`
+
+ADR 0070 holds the whole of it: why a logging package, why NLog and not
+`Microsoft.Extensions.Logging` or Serilog, why it is configured in code with no `NLog.config`,
+why the core logs at its seams and never in `Analysis/` or `Report/`, and the measurements behind
+the file closed between lines; `THIRD-PARTY-NOTICES.md` reproduces its BSD-3-Clause text. The one
+open question is a second package of the same project, `NLog.Targets.AtomicFile`, so two
+processes writing at full speed lose no line (R-112). How the log is configured, what each seam
+writes and how the tests capture it are `logging.md`.
 
 ### Security advisories against 3.1.11
 

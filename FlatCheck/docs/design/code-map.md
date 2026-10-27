@@ -17,7 +17,7 @@
 
 What the tool is and what its six modes answer is the first paragraph of CLAUDE.md; each
 mode has its own note (`modes-*.md`, mapped by the index). The dependency rule, the hand-rolled
-FITS and PNG and the two packages are ADR 0008, 0009 and 0010 with `dependencies.md`; what each
+FITS and PNG and the three packages are ADR 0008, 0009, 0010 and 0070 with `dependencies.md`; what each
 of the two applications owns is ADR 0011 with `two-applications.md`. The target is .NET 8.
 
 
@@ -184,6 +184,9 @@ a library extraction and not a copy is ADR 0011.
   - `Language/` - `Ui` (the run's language and the `T(english, romanian)` pick) and
     `LanguageArgument` (`--lang`); see `language.md`. `Report/VerdictWords.cs` prints a
     verdict key in the run's language.
+  - `Logging/` - the diagnostic log (ADR 0070): `LogSetup` (the configuration the two
+    applications apply), `LogText` (how a value and a result are written in a line) and
+    `RunClock` (a run's first and last lines with the time of each stage); see `logging.md`.
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
     function. `SplitReport` is the one with a variable number of columns: `Headers`,
     `Rows` of `SplitCell` (value + verdict), the report text with the date line, the map
@@ -281,7 +284,8 @@ a library extraction and not a copy is ADR 0011.
 - `FlatCheck/` - the console app. `AssemblyName` is `flatcheck`, so the binary is
   `flatcheck.exe`, not `FlatCheck.exe`. Three files; their contract and how a flag or a mode
   is added are `process.md` ("Extending the console").
-  - `Program.cs` - a one-line `Main` shim, plus a header that points at `README.md`
+  - `Program.cs` - a `Main` shim over `FlatCheckCli.Run`, between the diagnostic log's first
+    and last lines (`logging.md`), plus a header that points at `README.md`
     rather than restating it (the convention, and the drift that made it, are `process.md`,
     "Conventions").
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map(s) to
