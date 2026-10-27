@@ -34,9 +34,10 @@ languages and the live switch are ADR 0006.
 - `SuiteApp` is one app: its folder name in the repository (also its name in `release.json`),
   its title (the component's name), its description in one language and its window exe. The
   suite ships windows only, so there is no console field (ADR 0002). `AppCatalogue.Apps` is
-  the fixed list of five, in workflow order (darks, flats, lights, the processed pair, the
-  print), in the language of `Ui.Current`: `Build` makes the list once per language when the
-  type loads, each description a `T(en, ro)` pair, and `Apps` picks the list. The exe names are the
+  the fixed list of six, in workflow order (darks, flats, lights, the processed pair, the
+  plate solve put back into the processed image, the print; ADR 0010), in the language of
+  `Ui.Current`: `Build` makes the list once per language when the type loads, each
+  description a `T(en, ro)` pair, and `Apps` picks the list. The exe names are the
   components' `AssemblyName` plus `.exe`; `SuiteTests` reads the components' project files to
   keep them so, reads `kit.json` to keep the list equal to the set of components the release
   bundles, and refuses an entry whose project is a console.

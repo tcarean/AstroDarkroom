@@ -20,12 +20,13 @@ using static AstroDarkroom.Core.Ui;
 namespace AstroDarkroom.Core;
 
 /// <summary>
-/// The five applications of the suite, compiled in, in the order of the workflow: the
-/// calibration frames first (darks, flats), then the lights, then the processed result and
-/// the print (R-001). SuiteTests keeps the list in step with the components kit.json bundles
-/// and with the executable names their project files build (the rule "The catalogue and
-/// kit.json agree"). Each description is written in both languages where it stands, and
-/// <see cref="Apps"/> gives the wording of the current language (R-006, ADR 0006).
+/// The six applications of the suite, compiled in, in the order of the workflow: the
+/// calibration frames first (darks, flats), then the lights, then the processed result, the
+/// plate solve put back into it, and the print (R-001, ADR 0010). SuiteTests keeps the list
+/// in step with the components kit.json bundles and with the executable names their project
+/// files build (the rule "The catalogue and kit.json agree"). Each description is written in
+/// both languages where it stands, and <see cref="Apps"/> gives the wording of the current
+/// language (R-006, ADR 0006).
 /// </summary>
 public static class AppCatalogue
 {
@@ -38,7 +39,7 @@ public static class AppCatalogue
 
     /// <summary>The list in one language, built once per language when the type loads.</summary>
     /// <param name="language">The language of the descriptions.</param>
-    /// <returns>The five apps, described in that language.</returns>
+    /// <returns>The six apps, described in that language.</returns>
     private static SuiteApp[] Build(UiLanguage language)
     {
         using IDisposable scope = Use(language);
@@ -48,6 +49,7 @@ public static class AppCatalogue
             new("FlatCheck", "FlatCheck", T("Checks the flats of a lens", "Verifica flat-urile unui obiectiv"), "FlatCheck.Wpf.exe"),
             new("LightsCheck", "LightsCheck", T("Checks the lights of a session: focus, trailing, dithering, drift", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift"), "LightsCheck.Wpf.exe"),
             new("ImageVisualCompare", "ImageVisualCompare", T("Compares two versions of the same processing, pixel by pixel", "Compara doua variante ale aceleiasi procesari, pixel cu pixel"), "ImageVisualCompare.Wpf.exe"),
+            new("WCS_Copy", "CopyWcs", T("Copies the plate solve of one FITS into another", "Copiaza plate solve-ul unui FITS in altul"), "CopyWcs.Wpf.exe"),
             new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", T("Checks a final image before printing", "Verifica o imagine finala inainte de print"), "AstroPhotoAnalyzer.Wpf.exe"),
         ];
     }

@@ -2,7 +2,7 @@
 
 ## Download
 
-The latest release of Astro Darkroom: one zip for Windows 10 or 11 (x64) with the five tools, the
+The latest release of Astro Darkroom: one zip for Windows 10 or 11 (x64) with the six tools, the
 launcher and the .NET 8 runtime inside. No installer, and no .NET to install.
 
 | Version | Date | Zip | SHA-256 |
@@ -80,7 +80,7 @@ made a folder of 356 files and 160 MB, and a zip of 66 MB (measured 2026-10-26).
 - `-PublishOnly` runs the publish step of the suite's release script alone: no checks, no tests,
   no change to `Directory.Build.props` or `CHANGELOG.md`, nothing committed or tagged.
 - It empties `artifacts\<version>\`, then publishes into it the launcher and the window of each of
-  the five tools, self-contained for win-x64. The folder is flat, with one copy of every file; if
+  the six tools, self-contained for win-x64. The folder is flat, with one copy of every file; if
   two tools would put different files at the same path, the command stops and names the file.
 - It writes `release.json` beside the executables: the suite's version, the date, the commit, and
   for each tool its version, its last commit and whether its folder had uncommitted changes
@@ -98,23 +98,26 @@ folder whose path is shorter than about 95 characters, such as `C:\src\photo`.
 
 ### The consoles and the tests
 
-The suite holds the windows only. DarksCheck, FlatCheck, LightsCheck and AstroPhotoAnalyzer also
-have a console for scripted use (`darkscheck.exe`, `flatcheck.exe`, `lightscheck.exe`,
-`AstroPhotoAnalyzer.exe`), which cannot share the suite's folder: the consoles' base runtime and
-the windows' desktop runtime carry three DLLs with the same names and different contents. The
-same command, `scripts/release.ps1 -Version X.Y.Z -PublishOnly`, run in a tool's own folder,
-publishes that tool alone, its console included, into the tool's `artifacts\`. Every folder is a
-project of its own, with its own gate (format check, strict build, tests):
+The suite holds the windows only. DarksCheck, FlatCheck, LightsCheck, CopyWcs and
+AstroPhotoAnalyzer also have a console for scripted use (`darkscheck.exe`, `flatcheck.exe`,
+`lightscheck.exe`, `copywcs.exe`, `AstroPhotoAnalyzer.exe`), which cannot share the suite's
+folder: the consoles' base runtime and the windows' desktop runtime carry three DLLs with the
+same names and different contents. The same command,
+`scripts/release.ps1 -Version X.Y.Z -PublishOnly`, run in a tool's own folder, publishes that
+tool alone, its console included, into the tool's `artifacts\`. Every folder is a project of its
+own, with its own gate (format check, strict build, tests):
 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`.
 
 ## What Astro Darkroom is
 
-Astro Darkroom is a suite of five Windows tools that check a deep-sky astrophotography session
-made with a DSLR and processed in [Siril](https://siril.org), one step at a time: the darks, the
-flats, the lights, two versions of a processing side by side, and the finished image before it
-goes to print. Each tool measures and reports, every verdict with the number and the threshold
-behind it. None of them modifies, moves or deletes a frame; the few files some of them write on
-request are new files beside the originals.
+Astro Darkroom is a suite of six Windows tools for a deep-sky astrophotography session made with
+a DSLR and processed in [Siril](https://siril.org), one step at a time: the darks, the flats, the
+lights, two versions of a processing side by side, the plate solve put back into the processed
+image, and the finished image before it goes to print. Five of them check: each measures and
+reports, every verdict with the number and the threshold behind it. None of them modifies, moves
+or deletes a frame; the few files some of them write on request are new files beside the
+originals. The sixth, CopyWcs, writes: it copies header cards from one FITS into another, in
+place or into a new file, and leaves the pixels as they were.
 
 The tools were built around the author's own equipment and validated on the author's sessions: a
 Nikon D3300 with a Samyang 135 mm f/2, a Nikkor 35 mm DX and a Tokina 11-20 mm, on a Sky-Watcher
@@ -189,6 +192,17 @@ cannot see it. It opens PNG and TIFF files (8 or 16 bits per channel, and 32-bit
 FITS; two images of different sizes are compared on a common canvas after it asks. Everything on
 screen is dark, whatever the Windows theme.
 
+### CopyWcs: the plate solve, put back
+
+Copies the plate solve of one FITS file into another. You solve a stacked image in Siril, then
+stretch, denoise or export it and lose the astrometric header on the way; CopyWcs puts the WCS
+cards of the solved file back into the processed one, so that Siril's annotation and
+AstroPhotoAnalyzer's catalogue of dark nebulae find the sky again. Choose the solved file and the
+destination, preview the cards it would copy, then copy them into the destination in place or
+into a new file; the image data are left exactly as they were. It refuses two images of
+different sizes unless you tell it to go on, and it cannot know whether the image was mirrored
+or flipped on the way: check the annotation in Siril before trusting the result.
+
 ### AstroPhotoAnalyzer: the finished image, before print
 
 A print-readiness diagnostic for a finished, stretched image: a TIFF, PNG or FITS as it comes out
@@ -224,6 +238,7 @@ its preprocessing scripts lay it out; FlatCheck also reads what those scripts wr
 | FlatCheck | the session folder: the master `pp_flat_stacked.fit` in `process/` or `masters/`, the calibrated lights `pp_light_*.fit` in `process/`, a raw from `flats/` |
 | LightsCheck | the session folder: `lights/` required (or the frames directly in the folder), `biases/` optional; `darks/` is only counted |
 | ImageVisualCompare | two PNG, TIFF or FITS files, such as two exports from Siril |
+| CopyWcs | two FITS files of the same stack: the plate-solved one and the processed one, which it rewrites in place or copies to a new file |
 | AstroPhotoAnalyzer | one finished TIFF, PNG or FITS, as exported from Siril |
 
 FlatCheck's Smoothing, Synthetic and Split write their new files into the session folder, and
@@ -276,14 +291,13 @@ others is listed, with its licence, in the folder's `THIRD-PARTY-NOTICES.md`, wh
 
 ## Also in this repository
 
-Besides the five tools' folders and `AstroDarkroom` (the launcher and the suite's release):
+Besides the six tools' folders and `AstroDarkroom` (the launcher and the suite's release):
 
 | Folder | What it is |
 | --- | --- |
 | `ClaudeCodeStarterKit` | the template and the development process the projects above follow: C#/.NET, maintained with Claude Code |
 | `SirilCleanup` | a PowerShell script that tidies a session folder after Siril: it moves what is no longer needed into `safe-to-delete` and deletes nothing |
 | `DitherCalculator` | a Python script: how long to hold a SynScan arrow for a wanted dither, on a Star Adventurer GTi |
-| `WCS_Copy` | copies the plate-solving (WCS) and optical metadata of a Siril-solved FITS into another FITS |
 | `FocalLenghChecker` | a console tool that counts the Nikon raws of a folder per focal length |
 | `MindfulnessReminder` | a Windows tray reminder, not related to astrophotography |
 | `CodeMetrics`, `count_lines.py` | count the code files and lines of a folder |
