@@ -29,12 +29,12 @@ public class LauncherTests
     {
         SuiteApp[] expected =
         [
-            new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau ale unei biblioteci", "DarksCheck.Wpf.exe"),
-            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv", "FlatCheck.Wpf.exe"),
-            new("LightsCheck", "LightsCheck", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift", "LightsCheck.Wpf.exe"),
-            new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale aceleiasi procesari, pixel cu pixel", "ImageVisualCompare.Wpf.exe"),
-            new("WCS_Copy", "CopyWcs", "Copiaza plate solve-ul unui FITS in altul", "CopyWcs.Wpf.exe"),
-            new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Verifica o imagine finala inainte de print", "AstroPhotoAnalyzer.Wpf.exe"),
+            new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau ale unei biblioteci", "DarksCheck.Wpf.exe", "darkscheck.ico"),
+            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv", "FlatCheck.Wpf.exe", "flatcheck.ico"),
+            new("LightsCheck", "LightsCheck", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift", "LightsCheck.Wpf.exe", "lightscheck.ico"),
+            new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale aceleiasi procesari, pixel cu pixel", "ImageVisualCompare.Wpf.exe", "ImageVisualCompare.ico"),
+            new("WCS_Copy", "CopyWcs", "Copiaza plate solve-ul unui FITS in altul", "CopyWcs.Wpf.exe", "copywcs.ico"),
+            new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Verifica o imagine finala inainte de print", "AstroPhotoAnalyzer.Wpf.exe", "AstroPhotoAnalyzer.ico"),
         ];
         Assert.Equal(expected, AppCatalogue.Apps);
     }

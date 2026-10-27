@@ -52,7 +52,7 @@ public partial class MainWindow : Window
         _folder = folder;
         _settingsPath = settingsPath;
         _release = ReleaseManifest.TryRead(folder.ManifestPath);
-        Logo.Source = App.LargestIconFrame();
+        Logo.Source = Icons.LargestFrame(Icons.Launcher);
         Banner.Text = VersionInfo.Banner;
         // Checking the current language fires LanguageChecked, which sees no change and does
         // nothing; from here on the selector fires only for the user's clicks.

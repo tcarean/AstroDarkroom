@@ -14,6 +14,9 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Added
 
+- Each row of the launcher shows its tool's own icon, dimmed when the tool is missing from
+  the suite folder (R-010, ADR 0011); the icons are copies of the components' files, kept
+  equal to them by `SuiteTests`.
 - CopyWcs is the sixth tool of the suite (R-001, ADR 0010): its window, `CopyWcs.Wpf.exe`, is
   published into the suite folder from `../WCS_Copy`, and the launcher lists it between
   ImageVisualCompare and AstroPhotoAnalyzer and opens it in its own language, like the others.
