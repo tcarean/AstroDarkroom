@@ -610,11 +610,11 @@ namespace AstroPhotoAnalyzer.Wpf
         static IReadOnlyList<GuideParagraph> JpegGuideParagraphs(JpegResult jpeg)
         {
             string count = Fmt.F0(Thresholds.JpegErrorCountLevels);
-            // The floor not to go under, once a warning of the report (ADR 0061): named here, with
-            // its figure, when a quality under 100 fails the maximum-error threshold.
-            JpegRow floor = jpeg.HighestFailingBelow100;
-            string floorEn = floor == null ? "" : $" Here q{floor.Quality} reaches a maximum error of {Fmt.F1(floor.MaxError)} levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below q100.";
-            string floorRo = floor == null ? "" : $" Aici q{floor.Quality} ajunge la o eroare maxima de {Fmt.F1(floor.MaxError)} niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub q100.";
+            // The evidence for "do not go below q100", once a warning of the report (ADR 0061): the
+            // highest quality under 100 that fails the maximum-error threshold, named with its figure.
+            JpegRow failing = jpeg.HighestFailingBelow100;
+            string failingEn = failing == null ? "" : $" Here q{failing.Quality} reaches a maximum error of {Fmt.F1(failing.MaxError)} levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below q100.";
+            string failingRo = failing == null ? "" : $" Aici q{failing.Quality} ajunge la o eroare maxima de {Fmt.F1(failing.MaxError)} niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub q100.";
             return new[]
             {
                 new GuideParagraph
@@ -663,9 +663,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Lead = Tr.Pick("What is recommended.", "Ce se recomanda."),
                     Text = Tr.Pick("An 8-bit LZW TIFF. If the lab accepts only JPEG: q100, 4:4:4. Under q100 the maximum error jumps on the stars and the edges, "
-                        + "and the size gained does not matter for a print." + floorEn,
+                        + "and the size gained does not matter for a print." + failingEn,
                         "TIFF 8-bit LZW. Daca laboratorul accepta doar JPEG: q100, 4:4:4. Sub q100 eroarea maxima sare pe stele si pe muchii, "
-                        + "iar castigul de marime nu conteaza pentru un print." + floorRo),
+                        + "iar castigul de marime nu conteaza pentru un print." + failingRo),
                 },
             };
         }

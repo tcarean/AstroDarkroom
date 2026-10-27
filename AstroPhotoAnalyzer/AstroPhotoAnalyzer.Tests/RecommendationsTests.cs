@@ -174,9 +174,11 @@ public class RecommendationsTests
     [Fact]
     public void R091_TheBandingLineSaysWhereThePlateauWasMeasured()
     {
-        // The dark scene's plateau is measured on 120 clean tiles: the because names the tiles,
-        // their share of the frame and the noise left on them, so that the reader can tell it
-        // apart from the denoise section's median, taken on other tiles.
+        // The dark scene's plateau is measured on every clean tile among the 5000 positions (419
+        // of them): the because gives the share of the frame with a visible step and the
+        // threshold, then the typical plateau with the tiles, their share of the frame and the
+        // noise left on them, so that the reader can tell it apart from the denoise section's
+        // median, taken on other tiles.
         var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
 
         Recommendation banding = Assert.Single(Of(a, Topic.Format), r => r.Text.StartsWith("Risc de banding"));

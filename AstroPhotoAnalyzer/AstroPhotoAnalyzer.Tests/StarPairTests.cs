@@ -59,7 +59,11 @@ public class StarPairTests
         StarResult? s = Stars(name);
         if (s == null) return;
 
-        Assert.True(s.Insufficient, $"{name}: {s.Count} bumps passed as stars");
+        // The count, not only Insufficient: since ADR 0062 a 22.6 MP frame is insufficient up to
+        // 225 stars (under 10 per megapixel), so Insufficient alone would let the grain clause of
+        // ADR 0054 regress unseen. The starless frames keep 0 to 8.
+        Assert.True(s.Count < Thresholds.StarMinCount, $"{name}: {s.Count} bumps passed as stars");
+        Assert.True(s.Insufficient);
     }
 
     [Theory]

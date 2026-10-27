@@ -93,8 +93,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The core's one piece of markup: a part of a "because" that must catch the eye, between
-        /// <c>**</c> marks. The window's Raport tab shows it in bold; the text report strips the
-        /// marks with <see cref="Plain"/>.
+        /// <c>**</c> marks. The window's Raport tab shows it in bold; the text report and the curves
+        /// tab's evidence rows strip the marks with <see cref="Plain"/>.
         /// </summary>
         /// <param name="s">The part to emphasise, without marks of its own.</param>
         /// <returns>The part between <c>**</c> marks.</returns>

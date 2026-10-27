@@ -57,7 +57,7 @@ AstroPhotoAnalyzer.Wpf/
   App.xaml(.cs), MainWindow.xaml(.cs), Theme/Dark.xaml
   Interop/DarkTitleBar.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
   Presentation/AppIcon.cs, BarsCanvas.cs, CurveCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs,
-               TExtension.cs (a XAML text in both languages)
+               TExtension.cs (a XAML text in both languages), Emphasis.cs (a because's ** marks in bold, R-112)
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),
@@ -71,5 +71,6 @@ AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt and *.en.txt
                                        RunsInRomanian, LanguageTests, RomanianWords (language.md)
 AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests, IccPickerTests,
                                        ProfileBarTests (the bar's profile and the settings, R-155, R-156),
-                                       RunsInRomanian, AppLanguageTests, WindowEnglishTests
+                                       RunsInRomanian, AppLanguageTests, WindowEnglishTests,
+                                       EmphasisTests (the bold marks, R-112), ExportTabTests (the Export tab's facts, R-114)
 ```

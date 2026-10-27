@@ -10,8 +10,9 @@
 
 `Recommendation(Topic, Verdict, Text, Because)`; the constructor refuses an empty
 `Because`. A `Because` may hold `Fmt.Strong(part)`, `**part**`, the core's one piece of
-markup, for a figure the eye must catch; `ReportWriter` writes it through `Fmt.Plain`, which
-strips the marks, and the window's Raport tab renders them bold (`Emphasis`). Verdicts are monotone `Ok < Attention < Problem`; a section's verdict is its
+markup, for a figure the eye must catch; `ReportWriter` and `CurveTexts.EvidenceRows` (the
+curves tab's paper checks) write it through `Fmt.Plain`, which strips the marks, and the
+window's Raport tab renders them bold (`Emphasis`). Verdicts are monotone `Ok < Attention < Problem`; a section's verdict is its
 maximum, the overall verdict the maximum of all. Topics in decision order: Format,
 Background, Colour, Size, Denoise, Warnings.
 
@@ -20,8 +21,8 @@ Background, Colour, Size, Denoise, Warnings.
 | Format | source > 8 bits | Ok | send TIFF 8-bit LZW (size); 16 -> 8 is rounding (mean/max) |
 | Format | source 8 bits | Ok | send TIFF 8-bit LZW; nothing to convert |
 | Format | q100 row exists | Ok, or Attention when not `Acceptable` or > `JpegOverThresholdWarnPct` (5 %) samples over 2 | if only JPEG: q100 4:4:4 (size, errors, where they sit; "in the dark sky" when the mean level of affected samples < 64) |
-| Format | plateau known and visible at the reference row's dpi | Attention | banding risk: send 16-bit or dither |
-| Format | plateau known and not visible | Ok | no visible banding |
+| Format | plateau known and the share of the frame with a visible step at the reference row's dpi over `PlateauFlatFrameWarnPct` (0.1 %, ADR 0060) | Attention | banding risk: send 16-bit or dither (the share and the threshold in `Fmt.Strong` marks, then the typical plateau and where it was measured) |
+| Format | plateau known and the share at or under it | Ok | no visible banding: flat steps on too little of the frame (the same because) |
 | Format | plateau unknown and `BandingRisk` | Attention | banding risk from sigma alone |
 | Background | the as-is dust at or above paper black and the as-is sky at or above L\* 15 | Ok | print-safe as is; "poti cobori pana la <row>" when the recommended row is lower, or the row just below and what fails there (the dust under paper black, or the sky under L\* 15) when the as-is row is the recommended one |
 | Background | the as-is sky under paper black | Problem | the sky and the dust would print the same black; re-stretch to the recommended row (its simulated dust and sky, the exact target), or "no target up to 0.20" with the exact target or "nici 0.60" |

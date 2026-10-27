@@ -128,7 +128,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Keep the 16-bit master: more than <see cref="Thresholds.MissingLevelsWarn"/> levels are
-        /// missing on the 8-bit path over the 16-bit one (R-082, R-096). False where C4 does not
+        /// missing on the 8-bit path over the 16-bit one (R-082): a mark of the Export tab's stress
+        /// row (R-114), since ADR 0061 took it out of the report's warnings. False where C4 does not
         /// apply, and on an 8-bit upscale, whose two paths miss the same levels.
         /// </summary>
         internal bool Keep16BitMaster => Applicable && MissingFrom8 - MissingFrom16 > Thresholds.MissingLevelsWarn;

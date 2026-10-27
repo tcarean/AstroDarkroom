@@ -28,7 +28,7 @@ public class ExportTabTests
     {
         // The two facts the report no longer warns about (ADR 0061). The dark scene loses levels
         // from 8 bits, so the stress test's 8-bit row is marked; its JPEG qualities under 100 all
-        // stay within the threshold (q90 at 7.3 levels), so no floor is named.
+        // stay within the threshold (q90 at 7.3 levels), so no failing quality is named.
         AnalysisResult result = Result(Scenes.DarkSky());
         Assert.True(result.Quantization.Keep16BitMaster);
         Assert.Null(result.Jpeg.HighestFailingBelow100);
@@ -40,8 +40,9 @@ public class ExportTabTests
         GuideParagraph recommended = Assert.Single(export.JpegGuide, p => p.Lead == "Ce se recomanda.");
         Assert.DoesNotContain("nu cobori sub q100", recommended.Text);
 
-        // The same analysis with the JPEG figures of a real frame (the owner's 2026-08-12 core:
-        // q95 at 25.3 levels, q90 at 32.4): the paragraph names q95, the highest that fails.
+        // The same analysis with the JPEG figures of the owner's 2026-08-12 core denoised by Syqon
+        // at 0.75 (ADR 0061: q100 at 4.5 levels, q95 at 25.3, q90 at 32.4): the paragraph names
+        // q95, the highest that fails, in both languages.
         result.Jpeg = new JpegResult
         {
             Rows = new[]
@@ -56,5 +57,12 @@ public class ExportTabTests
 
         recommended = Assert.Single(export.JpegGuide, p => p.Lead == "Ce se recomanda.");
         Assert.EndsWith($" Aici q95 ajunge la o eroare maxima de 25.3 niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub q100.", recommended.Text);
+
+        using (Tr.Use(UiLanguage.English))
+        {
+            export.Populate(result);
+            recommended = Assert.Single(export.JpegGuide, p => p.Lead == "What is recommended.");
+            Assert.EndsWith($" Here q95 reaches a maximum error of 25.3 levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below q100.", recommended.Text);
+        }
     }
 }

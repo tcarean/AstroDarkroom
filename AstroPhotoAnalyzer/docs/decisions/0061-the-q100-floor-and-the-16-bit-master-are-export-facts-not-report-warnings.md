@@ -8,9 +8,10 @@ Status: accepted 2026-10-27
 Section 1 of the report carried an Attention, "Do not go below q100", whenever a JPEG quality
 under 100 failed the maximum-error threshold, and section 6 another, "Keep the 16-bit master",
 whenever the shadow-lift stress test lost more levels from 8 bits than from 16. Both fired on
-nearly every real image (the owner's 2026-08-12 core: q95 at 25.3 levels, 37 levels missing
-from 8 bits), and each raised its section to CAUTION over something the owner does not decide
-at print time: the lab gets the TIFF the first line recommends, and the master is kept anyway.
+nearly every real image (the owner's 2026-08-12 core denoised by Syqon at 0.75,
+`starless_denoised_syqon_studio_in_max_0.75_stretch0.15.fit`, measured 2026-10-27: q100 at 4.5
+levels, q95 at 25.3 and q90 at 32.4 against a threshold of 10, 37 levels missing from 8 bits),
+and each raised its section to CAUTION over something the owner does not decide at print time: the lab gets the TIFF the first line recommends, and the master is kept anyway.
 On 2026-10-27 the owner judged that neither is worth a warning and asked for the two to live
 on the tab where their measurements already are, the Export tab, which holds the JPEG table
 with its "what is recommended" paragraph and the shadow-lift rows.

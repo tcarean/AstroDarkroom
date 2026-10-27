@@ -22,7 +22,8 @@ The stars are insufficient when fewer than `StarMinCount` (20) or fewer than
 `StarMinPerMegapixel` (10) per megapixel of the frame, `StarResult.DensityPerMp` = count /
 (width x height / 10^6). Ten is seven times under the sparsest real field measured and five
 times over the most misleading starless one; the absolute floor stays for small crops. The
-report's size section, Appendix D and the Rezolutie tab name both figures and both thresholds.
+report's size section and the Rezolutie tab name both figures and both thresholds; Appendix D
+names both figures.
 
 ## Alternatives rejected
 

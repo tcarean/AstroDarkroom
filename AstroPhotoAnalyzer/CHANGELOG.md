@@ -34,8 +34,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   share and the threshold are in bold; the text report shows the same figures without the
   marks (R-112).
 - "Do not go below q100" and "Keep the 16-bit master" are no longer warnings of the report:
-  they are facts of the Export tab, which names the highest JPEG quality that fails with its
-  maximum error and marks the stress test's 8-bit row; the report's sections 1 and 6 are Ok
+  they are facts of the Export tab, which names the highest JPEG quality under 100 that fails
+  with its maximum error and marks the stress test's 8-bit row; the report's sections 1 and 6 are Ok
   when nothing else is wrong (R-091, R-096, R-114; ADR 0061).
 - The stars are too few for a FWHM under 10 per megapixel as well as under 20 in all, so a
   starless frame on which a strong denoise leaves a few dozen soft blobs (48 on 22.6 MP, 2.1
