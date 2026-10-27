@@ -5,8 +5,8 @@ comes out of Siril. It measures the image and reports, in decision order, how to
 print: file format, whether the background survives paper, colour cast and gradient, the
 largest size the real detail supports, how much denoise the print version needs. It gives
 recommendations only, each with the number and the threshold behind it, and **writes one
-image**: on request, from the window's Curbe tab, a new FITS with a suggested contrast curve
-applied, the input never touched (ADR 0032); every other export is made cleanly from Siril. Two applications, a console (`AstroPhotoAnalyzer.exe`) and a WPF
+image**: on request, from the window's Editare Curbe tab, a new FITS with a suggested contrast
+curve applied, the input never touched (ADR 0032); every other export is made cleanly from Siril. Two applications, a console (`AstroPhotoAnalyzer.exe`) and a WPF
 window, over one core library that hand-parses FITS and takes ImageSharp for TIFF/PNG/JPEG;
 neither application computes a number or writes a sentence of diagnosis. .NET 8. A sibling of
 FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this file says so.
@@ -49,9 +49,9 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   Console, no UI, no entry point: a compile boundary. `Input/` reads (readers, `Raster`, colour
   maths, statistics), `Analysis/` decides numbers (one class per measurement family), `Report/`
   decides words (English and Romanian, `Language.cs`) and the recommendations, `Runs/` chains
-  them; both applications call `Runs/AnalysisRun.Execute`, and the window alone, on request,
-  `Runs/CurveRun.cs` (the
-  suggested curves and the saved FITS, ADR 0032), nothing else. `Thresholds.cs`, `Parameters.cs`.
+  them; both applications call `Runs/AnalysisRun.Execute`, and the window alone, after it,
+  `Runs/CurveRun.cs` (the suggested curves and the saved FITS, ADR 0032, ADR 0051), nothing
+  else. `Thresholds.cs`, `Parameters.cs`.
 - `AstroPhotoAnalyzer/` - the console: `Program.cs`, `Options.cs`, `AnalyzerCli.cs`. Nothing else.
 - `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, seven
   tabs out. Formats, never decides; view-models are public and cannot expose a core type.

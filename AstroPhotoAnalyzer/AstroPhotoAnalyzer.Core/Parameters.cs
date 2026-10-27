@@ -87,7 +87,7 @@ namespace AstroPhotoAnalyzer
         internal string DmaxProfile { get; init; }
 
         /// <summary>
-        /// The path of the same profile, so that the Curbe tab can reopen it for the gamut figure
+        /// The path of the same profile, so that the Editare Curbe tab can reopen it for the gamut figure
         /// (R-144); null when DmaxProfile is null.
         /// </summary>
         internal string DmaxProfilePath { get; init; }

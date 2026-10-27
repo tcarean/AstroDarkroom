@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CurveRun.cs - the core's second run, on request: the suggested curves for an image already
-// analysed, and the saving of one (R-140 to R-145, ADR 0032).
+// CurveRun.cs - the core's second run: the suggested curves for an image already analysed,
+// and the saving of one (R-140 to R-145, ADR 0032).
 //
-// It is not in AnalysisRun because it is not a diagnosis and it costs: it runs only when the
-// user presses "Calculeaza" in the Curbe tab, on the analysis's result (the raster, the patch
-// map, the noise, the parameters). The console does not call it. The purpose (print or screen)
+// It is not in AnalysisRun because it is not a diagnosis and it costs: it runs after the
+// analysis, started by the window once the other tabs are filled (ADR 0051) or by "Calculeaza"
+// in the Editare Curbe tab, on the analysis's result (the raster, the patch map, the noise, the
+// parameters). The console does not call it. The purpose (print or screen)
 // changes no curve: it adds the paper checks and the gamut figure to the evidence.
 
 using System;
@@ -30,7 +31,7 @@ using System.IO;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// What the Curbe tab shows for one computation: the anchors, the class names, the original's
+    /// What the Editare Curbe tab shows for one computation: the anchors, the class names, the original's
     /// preview, the suggestions with their evidence for the purpose, or why there are none.
     /// </summary>
     internal sealed record CurveSet
@@ -62,7 +63,7 @@ namespace AstroPhotoAnalyzer
     }
 
     /// <summary>
-    /// Computes the suggested curves of an analysed image, on request (ADR 0032).
+    /// Computes the suggested curves of an analysed image, after the analysis (ADR 0032, ADR 0051).
     /// </summary>
     internal static class CurveRun
     {

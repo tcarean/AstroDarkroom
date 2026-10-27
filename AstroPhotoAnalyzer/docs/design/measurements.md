@@ -342,7 +342,7 @@ are, and only those feed a verdict. The numbers are this encoder's, not libjpeg'
 
 ### F1 - `ToneCurve`, `CurveAdvisor` - the suggested curves (ADR 0032)
 
-Not a measurement of the image but a suggestion built on its measurements; computed on request
+Not a measurement of the image but a suggestion built on its measurements; computed by a second run after the analysis
 (`pipeline.md`, "The second run").
 
 **The curve** (`ToneCurve`). Control points from (0, 0) to (1, 1), strictly increasing in x,

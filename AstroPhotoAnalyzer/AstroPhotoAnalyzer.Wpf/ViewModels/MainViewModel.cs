@@ -123,6 +123,12 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool CanSave => HasResult && !IsBusy;
 
         /// <summary>
+        /// The curves' computation the last run started (R-146), for whoever must wait for the
+        /// gallery; completed before the first run and after one that failed.
+        /// </summary>
+        internal Task CurvesComputation { get; private set; } = Task.CompletedTask;
+
+        /// <summary>
         /// Report.txt (Raport.txt in Romanian) beside the image - the default name in the save
         /// dialog.
         /// </summary>
@@ -173,6 +179,10 @@ namespace AstroPhotoAnalyzer.Wpf
                 _result = await Task.Run(() => AnalysisRun.Execute(path, p, progress)).ConfigureAwait(true);
                 Populate(_result);
                 HasResult = true;
+                // The curves follow the analysis without a press (R-146, ADR 0051): the window is
+                // free meanwhile, the tab says "computing" until they are there. ComputeAsync
+                // catches its own exceptions, so the task never faults.
+                CurvesComputation = Curves.ComputeAsync();
             }
             catch (Exception e)
             {

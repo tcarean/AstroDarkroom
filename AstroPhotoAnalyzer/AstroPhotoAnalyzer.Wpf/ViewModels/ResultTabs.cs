@@ -42,7 +42,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Takes an analysis and sets <see cref="HasResult"/>: the six tabs of this file fill
-        /// their rows from it; the Curbe tab only keeps it, until "Calculeaza".
+        /// their rows from it; the Editare Curbe tab only keeps it, for the second run MainViewModel
+        /// starts (ADR 0051).
         /// </summary>
         /// <param name="r">The analysis; not null.</param>
         internal abstract void Populate(AnalysisResult r);

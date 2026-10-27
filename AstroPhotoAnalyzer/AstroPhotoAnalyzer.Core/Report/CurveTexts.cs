@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CurveTexts.cs - the Curbe tab's sentences (R-143, R-144, R-145): a curve's evidence, the
+// CurveTexts.cs - the Editare Curbe tab's sentences (R-143, R-144, R-145): a curve's evidence, the
 // paper checks, where the anchors come from, the HISTORY text of the saved file.
 //
 // The window writes none of them: it shows them. The paper checks are Recommendations, with a
@@ -29,7 +29,7 @@ using System.Linq;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// The sentences of diagnosis and evidence the Curbe tab and the curve window show (the
+    /// The sentences of diagnosis and evidence the Editare Curbe tab and the curve window show (the
     /// reasons, the evidence lines, the paper checks, the captions), and the HISTORY text of a
     /// saved curve, in the interface language (ADR 0032, ADR 0048); the console prints none of
     /// them.

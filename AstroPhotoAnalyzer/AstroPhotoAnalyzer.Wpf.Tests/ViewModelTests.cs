@@ -120,6 +120,51 @@ public class ViewModelTests
         Assert.Equal(5, bg.Guide.Count);
     }
 
+    /// <summary>
+    /// R-146: the curves follow the analysis without a press, so the gallery is there when the
+    /// tab is opened; the run itself does not wait for them, and a run that fails starts none.
+    /// </summary>
+    [Fact]
+    public async Task R146_TheCurvesAreComputedWithTheAnalysisWithoutAPress()
+    {
+        using var ws = new TempWorkspace();
+        // Vertical stripes with five increasing levels, so that the frame has its five anchors
+        // and the core suggests curves (the fixture of CurvesTabTests' save test).
+        string tif = ws.WriteFile("calea-lactee.tif", TiffTestData.Build16Rgb(512, 512,
+            (x, y, c) => (int)(65535 * (x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7 : x < 32 ? 0.05 : x < 416 ? 0.15 : x < 480 ? 0.3 : 0.5)), IccTestData.V2("sRGB test")));
+        var vm = new MainViewModel();
+        Assert.True(vm.CurvesComputation.IsCompleted);
+
+        await vm.OpenAsync(tif);
+
+        Assert.True(vm.HasResult, vm.Error);
+        Assert.False(vm.IsBusy);
+        await vm.CurvesComputation;
+        Assert.True(vm.Curves.HasGallery, vm.Curves.Message);
+        Assert.False(vm.Curves.IsBusy);
+        Assert.Equal("Originalul", vm.Curves.Current.Name);
+        Assert.True(vm.Curves.Items.Count > 1);
+
+        // The size is the default of a screen never reported: the previews fit a Full HD gallery.
+        Assert.InRange(vm.Curves.Current.Image.PixelWidth, 1, Thresholds.CurvePreviewDefaultWidth);
+        Assert.InRange(vm.Curves.Current.Image.PixelHeight, 1, Thresholds.CurvePreviewDefaultHeight);
+
+        // A run a bad field stops keeps the tabs, the gallery with them, and starts nothing.
+        Task done = vm.CurvesComputation;
+        vm.Parameters.Distance = "1,5";
+        await vm.RunAsync();
+        Assert.True(vm.HasError);
+        Assert.True(vm.Curves.HasGallery);
+        Assert.Same(done, vm.CurvesComputation);
+
+        // A run that fails in the core clears the tabs and starts no computation.
+        vm.Parameters.Distance = "";
+        await vm.OpenAsync(ws.PathTo("nu-exista.tif"));
+        Assert.True(vm.HasError);
+        Assert.False(vm.Curves.HasGallery);
+        Assert.Same(done, vm.CurvesComputation);
+    }
+
     [Fact]
     public async Task RunningOnAFileAndSavingGivesTheConsolesReport()
     {

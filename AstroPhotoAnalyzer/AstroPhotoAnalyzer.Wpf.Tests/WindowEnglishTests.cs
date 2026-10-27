@@ -146,8 +146,7 @@ public class WindowEnglishTests
             AssertEnglish("Resolution", TextsOf(new ResolutionView { DataContext = vm.Resolution }, "tab-rezolutie"));
             AssertEnglish("Colour", TextsOf(new BackgroundView { DataContext = vm.Background }, "tab-fundal"));
             AssertEnglish("Preview", TextsOf(new PreviewView { DataContext = vm.Preview }, "tab-preview", h: 2400));
-            AssertEnglish("Curves, empty", TextsOf(new CurvesView { DataContext = vm.Curves }, "tab-curbe-gol"));
-            vm.Curves.Compute(1300, 600);
+            await vm.CurvesComputation;   // R-146: the gallery comes with the analysis
             Assert.True(vm.Curves.HasGallery, vm.Curves.Message);
             vm.Curves.Next.Execute(null);
             AssertEnglish("Curves", TextsOf(new CurvesView { DataContext = vm.Curves }, "tab-curbe"));
