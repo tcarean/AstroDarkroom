@@ -32,8 +32,9 @@ per detection, the amplitude against a sigma:
 | flux of the 5 x 5 core / (5 x local sigma) | at 10: 907 kept | at 10: 110 kept |
 | roundness (min / max of the two half-widths) | p10 0.57 | median 0.73: no separation |
 
-"Stars" left on the starless frames by the local-sigma criterion at k = 8 / 10 / 12 / 15, the
-limit under which the FWHM is not reported being `StarMinCount` = 20:
+"Stars" left on the starless frames by the local-sigma criterion, the sigma taken as the
+deviation about the border median (the first form), at k = 8 / 10 / 12 / 15, the limit under
+which the FWHM is not reported being `StarMinCount` = 20:
 
 | frame | now | 8 | 10 | 12 | 15 |
 |---|---|---|---|---|---|
@@ -57,10 +58,20 @@ V-013) and the plan's drift table.
 The raw deviation about the border median read a nebula's slope as noise: the gate found the
 DarkSky golden scene (a Gaussian nebula of 0.4 over 60 px under 64 stars of 0.3, 0.3 LSB of
 noise) down to 50 stars, the slope giving the border a "sigma" near 0.03. The same sigma taken
-about a plane fitted to the border by least squares, at 12: the 0.17 FITS 5, the Veil 1, the
-Rosetta starless 1; the Rosetta frame with stars 649 stars and 1 grain (grain p90 4.7, max
-13.1); `de_printat.png` 6994 of 8395 in the probe (83 % against 65 % with the raw deviation),
-the median 3.14.
+about a plane fitted to the border by least squares (the final form), on the starless frames,
+the probe where a column has a figure and the tool at 12:
+
+| frame | 10 | 12 | 15 |
+|---|---|---|---|
+| `starless_rbf0.5_stretch0.17.fit` | 14 | 5 | 0 |
+| `starless_rbf0.5_stretch0.1.fit` | - | 8 | - |
+| `Rosetta_starless_no_WCS.fit` | 2 | 1 | 0 |
+| `Veil_Starless.fit` | 5 | 1 | 0 |
+| `Andromeda_starless_WithWCS.fit`, `Orion_with_WCS.fit` | - | 0 | - |
+
+The Rosetta frame with stars keeps 649 stars and 1 grain at 12 (grain p90 4.7, max 13.1);
+`de_printat.png` 6994 of 8395 in the probe (83 % against 65 % with the raw deviation), the
+median 3.14.
 
 ## Decision
 
@@ -69,15 +80,16 @@ A candidate's amplitude over the border median must reach, beside the absolute f
 absolute deviation of the 96 border pixels about a plane fitted to them by least squares (its
 coefficients are the mean and two ratios of sums, the border being symmetric about the centre).
 The floor stays: a denoised frame has a sigma near 0 and the floor still refuses its tiny bumps;
-a quantised flat border, where more than half the residuals are equal, has a sigma of exactly 0
-and the floor alone decides, as before. The owner chose 12 over 10 and 15 on 2026-10-27, on the
+a quantised flat border has a sigma near 0 (exactly 0 when it is uniform) and the floor alone
+decides, as before. The owner chose 12 over 10 and 15 on 2026-10-27, on the
 table above, and the plane over the raw deviation the same day, on the DarkSky scene.
 
 ## Alternatives rejected
 
 - **The deviation about the border median, no plane.** The slope of a nebula under a star
-  becomes its "noise": 14 of the DarkSky scene's 64 stars lost, a third of the reference
-  image's against a sixth, for no gain on the starless frames (2 against 5 on the 0.17 FITS).
+  becomes its "noise": 14 of the DarkSky scene's 64 stars lost, a quarter of the reference
+  image's 7163 against an eighth about the plane, for a gain of three grain bumps on the 0.17
+  FITS (2 against 5) and none elsewhere.
 - **10 sigmas.** 9 and 11 left on the two starless reference FITS: under 20, but a frame with a
   little more grain would pass again; the gain is about 10 % of the faint stars.
 - **15 sigmas.** Zero everywhere, but 20 to 25 % of the stars of `de_printat.png` lost against
@@ -101,7 +113,11 @@ table above, and the plane over the raw deviation the same day, on the DarkSky s
   on the reference image.
 - A frame whose stars all sit on strongly textured nebulosity (a large local sigma) may lose them
   and fall to R-074; the report says so with the count.
-- Guards: `R070_NoiseGrainIsNotAStar`, `R070_StarsOverGrainAreStillMeasured`
-  (`StarAnalyzerTests`); on the real frames, `StarPairTests` (Category=Validation): every
-  starless frame `Insufficient`, every frame with stars kept, and at least 99 % of the stars kept
-  on the Rosetta frame with stars in the difference image.
+- Guards: `R070_NoiseGrainIsNotAStar`, `R070_StarsOverGrainAreStillMeasured`,
+  `R070_StarsOnANebulasSlopeAreKept` and `R070_AWideStarDoesNotRejectItself` (a star of FWHM
+  12 to 14 lays its own wings on the border, which the plane cannot take out; their spread stays
+  well under a twelfth of the amplitude) in `StarAnalyzerTests`; on the real frames,
+  `StarPairTests` (Category=Validation): every starless frame `Insufficient`, every frame with
+  stars kept, and at least 99 % of the stars kept on the Rosetta frame with stars sit where the
+  starless frame is lower by at least 0.02 at the peak (the grain differs by under 0.005 on
+  96.9 % of the pixels; the labelling above used half the amplitude, which the test cannot see).

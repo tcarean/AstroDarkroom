@@ -72,6 +72,11 @@
   frame whose stars all sit on strongly textured nebulosity, where the border's sigma is the
   texture left after a plane is taken out, may fall to the dpi rule of R-074 with a count under
   20; the report says so. A smooth slope is not texture: the plane removes it.
+- A wide star lays its own wings on the window border, which the plane cannot take out: it does
+  not reject itself (all 64 synthetic stars kept at FWHM 12, 13 and 14, `R070_AWideStarDoesNotRejectItself`),
+  but the wings lift the border median, its base, so it reads narrower: 12.50 px at 13, 13.19 at
+  14, a bias of the estimator older than ADR 0051. The frames measured so far have stars of 2 to
+  5 px, where it is nil.
 - The half-max estimator overestimates a sampled Gaussian by ~2.5 %.
 - On an 8-bit file the background's levels (the per-channel medians of the darkest quarter, R-060)
   are whole levels, so a cast near `CastWarnLevels` (1 level) depends on the tie rule of the

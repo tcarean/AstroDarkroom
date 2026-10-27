@@ -100,6 +100,28 @@ public class StarAnalyzerTests
     }
 
     /// <summary>
+    /// A wide star lays its own wings on the window border (a Gaussian of FWHM 14, sigma 5.9,
+    /// puts 13 % of its amplitude on the border's middle pixels and 2 % on its corners), and the
+    /// plane cannot take a radial wing out; the spread of those wings is the border's "sigma".
+    /// Up to the accepted width (StarFwhmMax 15) that sigma stays well under a twelfth of the
+    /// amplitude, so the star does not reject itself (ADR 0051, the review of 2026-10-27: all 64
+    /// kept at 12, 13 and 14). The same wings lift the border median, the base, so a wide star
+    /// reads narrower: 12.50 at 13 and 13.19 at 14 (measured 2026-10-27), a bias of the
+    /// estimator older than the clause, within 7 % here.
+    /// </summary>
+    [Theory]
+    [InlineData(12.0)]
+    [InlineData(13.0)]
+    [InlineData(14.0)]
+    public void R070_AWideStarDoesNotRejectItself(double fwhm)
+    {
+        var s = StarAnalyzer.Analyze(StarField(fwhm));
+
+        Assert.InRange(s.Count, 55, 70);
+        Assert.InRange(s.FwhmMedian, fwhm * 0.93, fwhm * 1.06);
+    }
+
+    /// <summary>
     /// A flat two-pixel peak (two adjacent pixels at the same value, each the maximum of its
     /// window) is one star, at its first pixel in scan order (ADR 0041); before it both pixels
     /// passed and the star was counted twice.

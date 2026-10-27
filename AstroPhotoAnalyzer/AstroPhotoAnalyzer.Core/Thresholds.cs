@@ -397,27 +397,26 @@ namespace AstroPhotoAnalyzer
         internal const double StarMinAmplitude16 = 3000;
 
         /// <summary>
-        /// ... and this many times the border's robust sigma (1.4826 x the median absolute
+        /// ... and this many times the border's robust sigma: 1.4826 x the median absolute
         /// deviation of the 96 border pixels about a plane fitted to them, so that a nebula's
-        /// slope is not read as noise: the raw deviation about the median lost 14 of the 64
-        /// stars of the DarkSky golden scene and a quarter of the reference image's 7163,
-        /// against an eighth about the plane),
-        /// beside the absolute floor, which stays for the denoised image whose sigma is near 0
-        /// (ADR 0051). The floor alone
-        /// let the grain of the stretched noise through: its window maxima stand 3 to 4 sigmas
-        /// over the border median, and the floor (3000/65535 = 0.046) sits on the expected
-        /// maximum of 625 noise samples (0.044 on the starless reference FITS). Measured on
-        /// 2026-10-27 on the aligned Rosetta pair (a kept bump is a star when the frame without
-        /// stars is lower at its peak by at least half the amplitude): stars have a median SNR
-        /// of 12.5 (p10 4.6), grain 3.2 (p90 4.3). "Stars" left on the starless frames at
-        /// 8 / 10 / 12 / 15 sigmas, with the raw deviation: starless_rbf0.5_stretch0.17.fit
-        /// 42 / 9 / 2 / 0 (6297 before), starless_rbf0.5_stretch0.1.fit 52 / 11 / 5 / 0, Rosetta
-        /// 2 / 1 / 1 / 0 (2858 before), the Veil 2 / 0 / 0 / 0 (22 485 before); about the plane,
-        /// at 10 / 12 / 15: the 0.17 FITS 14 / 5 / 0, the Veil 5 / 1 / 0, Rosetta 2 / 1 / 0, and
-        /// the Rosetta frame with stars keeps 649 stars and 1 grain at 12. 12 keeps every
-        /// starless frame at a quarter of StarMinCount or under and costs about 10 % of the faint
-        /// stars against 10, the median FWHM of the reference image moving under 0.05 px. The
-        /// owner chose 12 on 2026-10-27, and the plane the same day.
+        /// slope is not read as noise (the raw deviation about the median lost 14 of the 64 stars
+        /// of the DarkSky golden scene and a quarter of the reference image's 7163, against an
+        /// eighth about the plane). The absolute floor stays beside it, for the denoised image
+        /// whose sigma is near 0 (ADR 0051). The floor alone let the grain of the stretched noise
+        /// through: its window maxima stand 3 to 4 sigmas over the border median, and the floor
+        /// (3000/65535 = 0.046) sits on the expected maximum of 625 noise samples (0.044 on the
+        /// starless reference FITS). Measured on 2026-10-27 on the aligned Rosetta pair (a kept
+        /// bump is a star when the frame without stars is lower at its peak by at least half the
+        /// amplitude): stars have a median SNR of 12.5 (p10 4.6), grain 3.2 (p90 4.3). "Stars"
+        /// left on the starless frames at 8 / 10 / 12 / 15 sigmas, with the raw deviation:
+        /// starless_rbf0.5_stretch0.17.fit 42 / 9 / 2 / 0 (6297 before),
+        /// starless_rbf0.5_stretch0.1.fit 52 / 11 / 5 / 0, Rosetta 2 / 1 / 1 / 0 (2858 before),
+        /// the Veil 2 / 0 / 0 / 0 (22 485 before); about the plane, at 10 / 12 / 15: the 0.17
+        /// FITS 14 / 5 / 0, the Veil 5 / 1 / 0, Rosetta 2 / 1 / 0, the 0.1 FITS 8 at 12, and the
+        /// Rosetta frame with stars keeps 649 stars and 1 grain at 12. So 12 keeps every starless
+        /// frame under half of StarMinCount (at most 8, on the 0.1 FITS) and costs about 10 % of
+        /// the faint stars against 10, the median FWHM of the reference image moving under
+        /// 0.05 px. The owner chose 12 on 2026-10-27, and the plane the same day.
         /// </summary>
         internal const double StarMinSnr = 12;
 

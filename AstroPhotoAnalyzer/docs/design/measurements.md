@@ -231,8 +231,8 @@ peak is one star (ADR 0041); a tied pixel in the border left out disqualifies no
 peak straddling the border is still measured, at its first scanned pixel. Base = median of the
 window's 96 border pixels; sigma = 1.4826 x the median absolute deviation of those pixels about
 a plane fitted to them by least squares, whose coefficients are three sums because the border
-is symmetric about the centre (`BorderStats` returns the base and the sigma; 0 on a quantised
-flat border); amplitude = peak - base >=
+is symmetric about the centre (`BorderStats` returns the base and the sigma; near 0 on a
+quantised flat border, exactly 0 on a uniform one); amplitude = peak - base >=
 `StarMinAmplitude16/65535` and >= `StarMinSnr` (12) x sigma (ADR 0051). Width
 at half maximum is measured on the horizontal and vertical lines through the peak:
 descend from the centre until below `base + amplitude/2`, interpolate the crossing

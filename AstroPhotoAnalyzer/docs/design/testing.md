@@ -12,8 +12,9 @@
 > `AstroPhotoAnalyzer.Wpf.Tests/AstroPhotoAnalyzer.Wpf.Tests.csproj` that borrows six of
 > them, and the window's harness `AstroPhotoAnalyzer.Wpf.Tests/StaFixture.cs` and
 > `AstroPhotoAnalyzer.Wpf.Tests/WindowSmokeTests.cs`, and the tests of the process
-> `AstroPhotoAnalyzer.Tests/RepoInvariantTests.cs`, `AstroPhotoAnalyzer.Tests/ValidationTests.cs`
-> and `AstroPhotoAnalyzer.Tests/TestData.cs`. A change to the code this describes
+> `AstroPhotoAnalyzer.Tests/RepoInvariantTests.cs`, `AstroPhotoAnalyzer.Tests/ValidationTests.cs`,
+> `AstroPhotoAnalyzer.Tests/StarPairTests.cs` and `AstroPhotoAnalyzer.Tests/TestData.cs`. A
+> change to the code this describes
 > means this note is updated in the same task, or deleted with the decision it explains.
 
 ## Testing
@@ -29,7 +30,7 @@
 | language | `LanguageTests`, `AppLanguageTests`, `WindowEnglishTests`, the `*.en.txt` goldens, `RomanianWords` (the guard); `RunsInRomanian` in each test assembly sets Romanian as the default, so the older tests assert Romanian (`language.md`) | a console run picks its own language, English without `--lang`: a test that asserts the console's Romanian passes `--lang ro` |
 | window | `Wpf.Tests/WindowSmokeTests` (renders the window's *content*, About, every tab with a real result, the map and preview windows, the error card; fails on any binding error; `APA_DUMP_SCREENS=<dir>` saves PNGs), `CultureTests` (report identical under ro-RO), `ParameterFieldsTests`, `ViewModelTests`, `OverlayWindowTests` (the Tonuri tab's definitions and buttons, the map and preview view-models with and without a WCS) | one STA thread with a message loop per process (`StaFixture`) |
 | invariants | `RepoInvariantTests` | every `implemented` row of `docs/requirements.md` has a test named `R###_...` and every such test names a real row, read from the sources of both test projects; unique IDs; the design index exists; every validation case names a manifest file; `CLAUDE.md` at most 200 lines |
-| validation | `ValidationTests`, `TestData` | the reference images (the PNG, V-001 to V-003, V-005 and V-009; the plate-solved FITS, V-004 and V-008; the Rosetta FITS, V-010 and V-011; the Orion FITS, V-012; the Veil FITS, V-013 and V-014; the two profiles, V-006 and V-007) against `docs/validation.json`; trait `Category=Validation`, kept out of the gate by `kit.json`'s filter; `TestData.Large` finds the git-ignored copies in `testdata/large/` |
+| validation | `ValidationTests`, `StarPairTests`, `TestData` | the reference images (the PNG, V-001 to V-003, V-005 and V-009; the plate-solved FITS, V-004 and V-008; the Rosetta FITS, V-010 and V-011; the Orion FITS, V-012; the Veil FITS, V-013 and V-014; the two profiles, V-006 and V-007) against `docs/validation.json`; `StarPairTests` runs the star rule alone on the frames with and without stars (ADR 0051: every starless frame under `StarMinCount`, every frame with stars kept, the Rosetta pair's kept stars where the two frames differ); both carry the trait `Category=Validation`, kept out of the gate by `kit.json`'s filter; `TestData.Large` finds the git-ignored copies in `testdata/large/` and a test whose frame is absent prints `NOT MEASURED` and returns |
 
 The scenes were built for a paper black of L\* 9.0, the baryta of Dmax 2.0 from before ADR 0028
 (`Scenes.BuiltForDmax`): a sky at 0.08 is under that black and above today's (2.4, L\* 3.6). A

@@ -108,8 +108,8 @@ namespace AstroPhotoAnalyzer
         const int Half = Thresholds.StarWindow / 2;
 
         /// <summary>
-        /// The column and row offsets of each border pixel in the order <see cref="BorderStats"/>
-        /// fills its buffer, and the sums of their squares: the plane fitted to the border is
+        /// The column and row offsets of each border pixel, the one order <see cref="BorderStats"/>
+        /// fills its buffer in, and the sums of their squares: the plane fitted to the border is
         /// a + b x dx + c x dy, and because the border is symmetric about the centre (the sums
         /// of dx, of dy and of dx x dy vanish) its least-squares coefficients are the mean and
         /// the two ratios sum(dx x v) / sum(dx^2) and sum(dy x v) / sum(dy^2).
@@ -117,10 +117,13 @@ namespace AstroPhotoAnalyzer
         static readonly int[] BorderDx, BorderDy;
         static readonly int SumDx2, SumDy2;
 
+        /// <summary>The number of pixels on the window's border: 96 for the window of 25.</summary>
+        const int BorderLength = 4 * (2 * Half + 1) - 4;
+
         /// <summary>Builds the border's offset tables once, in the buffer's fill order.</summary>
         static StarAnalyzer()
         {
-            int n = 4 * (2 * Half + 1) - 4;
+            int n = BorderLength;
             BorderDx = new int[n];
             BorderDy = new int[n];
             int k = 0;
@@ -163,8 +166,8 @@ namespace AstroPhotoAnalyzer
             float maxPeak = (float)(Thresholds.StarMaxPeak16 / 65535.0);
 
             var stars = new List<Star>();
-            var border = new float[4 * (2 * Half + 1) - 4];
-            var deviations = new float[border.Length];
+            var border = new float[BorderLength];
+            var deviations = new float[BorderLength];
             var line = new double[2 * Half + 1];
 
             for (int y = Half; y < H - Half; y++)
@@ -259,8 +262,8 @@ namespace AstroPhotoAnalyzer
         /// by least squares: the noise the amplitude is judged against, the local gradient taken
         /// out so that a star on a nebula's slope is judged against the grain and not the slope
         /// (ADR 0051; the raw deviation about the median lost 14 of the 64 stars of the DarkSky
-        /// scene). On a quantised flat border more than half the residuals are equal and the
-        /// sigma is 0, which leaves the absolute floor alone.
+        /// scene). On a quantised flat border the sigma is near 0 (exactly 0 when the border is
+        /// uniform), which leaves the absolute floor alone.
         /// </summary>
         /// <param name="g">The reference plane, 0..1, row-major.</param>
         /// <param name="W">The plane's width, in pixels.</param>
@@ -272,24 +275,14 @@ namespace AstroPhotoAnalyzer
         /// The window's centre row, at least <see cref="Thresholds.StarWindow"/> / 2 px from the
         /// top and bottom edges.
         /// </param>
-        /// <param name="buf">A buffer of 4 x (StarWindow - 1) values (96), overwritten.</param>
+        /// <param name="buf">A buffer of <see cref="BorderLength"/> values (96), overwritten.</param>
         /// <param name="dev">A second buffer of the same length for the residuals, overwritten.</param>
         /// <returns>
         /// The median of the border (the mean of its two middle values) and its robust sigma.
         /// </returns>
         static (float Median, float Sigma) BorderStats(float[] g, int W, int x, int y, float[] buf, float[] dev)
         {
-            int k = 0;
-            for (int dx = -Half; dx <= Half; dx++)
-            {
-                buf[k++] = g[(y - Half) * W + x + dx];
-                buf[k++] = g[(y + Half) * W + x + dx];
-            }
-            for (int dy = -Half + 1; dy <= Half - 1; dy++)
-            {
-                buf[k++] = g[(y + dy) * W + x - Half];
-                buf[k++] = g[(y + dy) * W + x + Half];
-            }
+            for (int i = 0; i < buf.Length; i++) buf[i] = g[(y + BorderDy[i]) * W + x + BorderDx[i]];
 
             // The plane through the border (see BorderDx), then the residuals about it.
             double sum = 0, sumX = 0, sumY = 0;
