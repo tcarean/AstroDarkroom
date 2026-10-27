@@ -119,6 +119,21 @@ public class RecommendationsTests
     }
 
     [Fact]
+    public void R093_TheBottomEdgeUnderTheSkyWithTheBlueMissingIsStillTheHorizon()
+    {
+        // The bottom edge of the 2026-08-12 core: under the sky on every channel (-0.6 / -2.2 /
+        // -4.5), the blue missing most. On the bottom row that is the horizon's signature, so
+        // it keeps its name; the same colours in a top corner would be a darkening.
+        const float sky = 0.14f;
+        Raster r = SyntheticRasters.From(320, 320, 3, (x, y, p) =>
+            y >= 272 && x >= 64 && x < 256 ? (p == 0 ? sky - 1f / 255 : p == 1 ? sky - 2f / 255 : sky - 5f / 255) : sky);
+        var a = Run(r);
+
+        Recommendation edge = Assert.Single(Of(a, Topic.Colour), x => x.Verdict == Verdict.Attention);
+        Assert.StartsWith("Latura de jos: cald (lumina de orizont / poluare). Corecteaza pe liniar", edge.Text);
+    }
+
+    [Fact]
     public void R093_MonoHasNoColourToJudge()
     {
         var a = Run(Scenes.MonoSky());

@@ -54,9 +54,11 @@ regions' levels in `docs/validation.json` move by tenths of a level with the sub
   does not change on any measured image.
 - Validation cases V-001, V-004, V-010 and V-013 re-measured; the goldens of the dark scene
   change where the regions' levels are printed.
-- A coloured region that lies under the sky on average is named a darkening, browner or
-  bluer by the channel missing most, with dust or a leftover gradient as the reading and the
-  Preview as the judge; the "horizon glow / light pollution" wording was written for a
-  brightening and read wrong on that corner (the owner's remark of 2026-10-27).
+- A coloured region under the sky on every channel is named a darkening, browner or bluer by
+  the channel missing most, with dust or a leftover gradient as the reading and the Preview as
+  the judge; the "horizon glow / light pollution" wording was written for a brightening and
+  read wrong on that corner (the owner's remark of 2026-10-27). On the bottom row, where the
+  horizon sits (ADR 0014), red over blue keeps the horizon's name whether the region is
+  brighter or darker: the 2026-08-12 core's bottom edge, -0.6 / -2.2 / -4.5, is the horizon.
 - Guards: `BackgroundAnalyzerTests` (R-061), `RecommendationsTests`, the golden files, the
   validation cases.

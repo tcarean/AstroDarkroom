@@ -53,6 +53,12 @@ namespace AstroPhotoAnalyzer
         internal int H { get; init; }
 
         /// <summary>
+        /// Is the region one of the three on the frame's bottom row (the two lower corners and
+        /// the bottom edge), where the horizon and its glow sit?
+        /// </summary>
+        internal bool AtBottom { get; init; }
+
+        /// <summary>
         /// The region's medians, in levels 0..255, on each plane: of its sky pixels when
         /// <see cref="OnSkyPixels"/>, of every pixel otherwise.
         /// </summary>
@@ -350,6 +356,7 @@ namespace AstroPhotoAnalyzer
                     Deltas = deltas,
                     SkyFraction = skyFraction,
                     OnSkyPixels = onSky,
+                    AtBottom = d.Y0 + d.H == s.H,
                 });
             }
             return list;
