@@ -17,7 +17,6 @@
 
 using System.IO;
 using System.Windows;
-using System.Windows.Media.Imaging;
 using AstroDarkroom.Core;
 
 namespace AstroDarkroom.Wpf;
@@ -28,9 +27,6 @@ namespace AstroDarkroom.Wpf;
 /// </summary>
 public partial class App : Application
 {
-    /// <summary>The icon, the same resource as Icon= in the windows' XAML and the executable's own.</summary>
-    internal static readonly Uri IconSource = new("pack://application:,,,/AstroDarkroom;component/Icon/astrodarkroom.ico");
-
     /// <summary>
     /// Reads the language the last run chose (R-007), English when there is none, then opens
     /// the main window on the suite folder, the launcher's own base directory (R-002).
@@ -45,22 +41,5 @@ public partial class App : Application
         MainWindow window = new(new SuiteFolder(AppContext.BaseDirectory), settingsPath);
         MainWindow = window;
         window.Show();
-    }
-
-    /// <summary>
-    /// The icon's frame with the most pixels, for the About box, where WPF scales it down; the
-    /// first frame is not reliably the largest.
-    /// </summary>
-    /// <returns>The widest frame, frozen.</returns>
-    internal static BitmapSource LargestIconFrame()
-    {
-        BitmapDecoder decoder = BitmapDecoder.Create(IconSource, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-        BitmapFrame frame = decoder.Frames.OrderByDescending(f => f.PixelWidth).First();
-        if (frame.CanFreeze)
-        {
-            frame.Freeze();
-        }
-
-        return frame;
     }
 }

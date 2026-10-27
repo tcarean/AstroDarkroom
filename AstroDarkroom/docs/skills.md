@@ -10,10 +10,11 @@ Values (the solution, the folders, the publish list, what the auditor may also r
 
 - At step 1: a new app in the suite is one `release.publish` entry in `kit.json` (its window
   project, a sibling project; never its console, ADR 0002), one `AppCatalogue` line (folder,
-  Romanian title and description, the exe name the component's project file builds) and a
-  row in R-001; `SuiteTests` then checks the three agree and that the component is on .NET 8
-  with the suite's package versions. Nothing else changes: the window lists whatever the
-  catalogue holds.
+  Romanian title and description, the exe name the component's project file builds, the file
+  name of its icon), its icon copied into `Icon/` under the component's own file name (R-010,
+  ADR 0011) and a row in R-001; `SuiteTests` then checks the three agree, that the copy has
+  the component's bytes and that the component is on .NET 8 with the suite's package
+  versions. Nothing else changes: the window lists whatever the catalogue holds.
 - At step 2: the core is tested in `tests/AstroDarkroom.Tests` with a temp folder of empty
   files named like the executables (`TempWorkspace`); the window has no tests (ADR 0001) and
   is checked by starting it from a published suite folder.

@@ -18,7 +18,7 @@
 | `DmaxOverride` | null | `--dmax n` (0 < n <= 4) | "Dmax", filled with the chosen medium's | paper black |
 | `Dmax` (derived) | baryta 2.4 / canvas 1.5 / acrylic 2.2 (ADR 0028) | | | Tonal, Simulation |
 | `DmaxProfile` | null | `--icc file` (sets it with `DmaxOverride`; excludes `--dmax`) | `Din profil ICC...` | Anexa F: where the Dmax came from (R-028) |
-| `DmaxProfilePath` | null | set with `DmaxProfile`, the same file | set with `DmaxProfile` | the Curbe tab's gamut figure re-opens the profile (R-144); the report does not print it |
+| `DmaxProfilePath` | null | set with `DmaxProfile`, the same file | set with `DmaxProfile` | the Editare Curbe tab's gamut figure re-opens the profile (R-144); the report does not print it |
 | `CandidateWidthsCm` | 50, 60, 70, 80, 90, 100 | `--sizes a,b,c` | "Latimi candidate" | PrintSize |
 | `ViewingDistanceM` | null = 1.5 x diagonal per row (then no row is recommended) | `--distance m` | "Distanta de privire" | PrintSize |
 | `PassepartoutCm` | 7 | `--passepartout cm` | field | PrintSize (outer size) |
@@ -56,9 +56,10 @@ an ICC profile (`input.md`, "The Dmax of a printer profile") arrives as `DmaxOve
 `DmaxProfile`, the profile's name: in the console through `Parameters.WithDmaxFromProfile`,
 called by `AnalyzerCli.Run` before `Validate` (a problem is `ERROR: --icc: <reason>`, exit 1);
 in the window through `ParameterFields.UseProfile`, which writes the Dmax into the field and
-remembers the name with the text it wrote, so that `TryBuild` passes the name only while the
-field still shows that text. `ReportWriter.DmaxOrigin` turns the three cases into Anexa F's
-words.
+keeps the profile as `Profile`, the one the top bar shows, until another text is typed over
+its Dmax or a medium is chosen, when it is dropped at once (R-155, `window.md`); `TryBuild`
+passes the name while the profile is set and readable. `ReportWriter.DmaxOrigin` turns the
+three cases into Anexa F's words.
 
 Rules between parameters are the core's: `Parameters.Validate()` returns a message or
 null, and both the console (exit 1, before any reading) and the window (the error text)

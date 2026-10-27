@@ -35,9 +35,9 @@ namespace AstroPhotoAnalyzer.Wpf
     {
         /// <summary>
         /// Starts the application: the invariant culture first, then the interface language,
-        /// before any XAML loads, then the main window, shown, the --lang error said if there is
-        /// one (R-152), and started with the first existing file among the arguments, or with
-        /// none.
+        /// before any XAML loads, then the main window over the user's remembered settings
+        /// (R-156), shown, the --lang error said if there is one (R-152), and started with the
+        /// first existing file among the arguments, or with none.
         /// </summary>
         /// <param name="e">WPF's startup arguments; <c>e.Args</c> is read.</param>
         protected override void OnStartup(StartupEventArgs e)
@@ -46,7 +46,7 @@ namespace AstroPhotoAnalyzer.Wpf
             ForceInvariantNumbers();
             Tr.SetDefault(LanguageFromArgs(e.Args, out string languageError));
 
-            var window = new MainWindow();
+            var window = new MainWindow(WindowSettings.InLocalAppData());
             MainWindow = window;
             window.Show();
             if (languageError != null)

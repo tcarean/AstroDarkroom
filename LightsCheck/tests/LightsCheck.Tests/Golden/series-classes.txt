@@ -68,7 +68,7 @@ Copyright (C) 2026 Tudor Carean
 
   RESPINSE (1 cadre slabe, 1 necitite; cele la limita raman la alegerea ta)
       7  DSC_0007.fit          alungire 1.76 (prag 1.60), dara la 90 grade
-      9  DSC_0009.fit          nu s-a putut citi: FITS: header incomplet.
+      9  DSC_0009.fit          nu s-a putut citi: FITS: fisierul nu incepe cu SIMPLE.
 
   TABEL PE CADRE
      nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  dithering                                   acelasi loc     motive
@@ -80,7 +80,7 @@ Copyright (C) 2026 Tudor Carean
       6  DSC_0006.fit          20:46:06  bun        1.01   3.25      40   2600    1 s    0.5    12.5   -15.0  -                                           -               salt de fond +30 % fata de vecini (prag 8 %)
       7  DSC_0007.fit          20:48:36  SLAB       1.76   4.60      40   2001   30 s   27.5    40.0   -15.0  -                                           -               alungire 1.76 (prag 1.60), dara la 90 grade
       8  DSC_0008.fit          20:50:37  bun        1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               
-      9  DSC_0009.fit          -         necitit       -      -       -      -      -      -       -       -  -                                           -               nu s-a putut citi: FITS: header incomplet.
+      9  DSC_0009.fit          -         necitit       -      -       -      -      -      -       -       -  -                                           -               nu s-a putut citi: FITS: fisierul nu incepe cu SIMPLE.
      10  DSC_0010.fit          20:55:08  bun        1.01   3.25      40   2000      -      -    41.5   -15.2  -                                           -               
 --- stderr ---
 (progresul, omis)

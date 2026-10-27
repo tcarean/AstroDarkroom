@@ -27,7 +27,7 @@
 // with a low threshold (a faint smudge has no profile) and, over it, StarMinSnr times the
 // border's robust sigma, measured about a plane fitted to the border so that the local gradient
 // of a nebula is not read as noise: the grain of the stretched noise peaks 3 to 4 sigmas over
-// its base and passed the absolute floor by the thousand on a starless frame (ADR 0051). A high
+// its base and passed the absolute floor by the thousand on a starless frame (ADR 0054). A high
 // threshold on the peak itself leaves out a saturated star (it has no half). The width at half
 // maximum is taken on the horizontal and on the vertical, with linear subpixel interpolation,
 // and averaged.
@@ -261,7 +261,7 @@ namespace AstroPhotoAnalyzer
         /// 1.4826 x the median absolute deviation of the residuals of a plane fitted to the border
         /// by least squares: the noise the amplitude is judged against, the local gradient taken
         /// out so that a star on a nebula's slope is judged against the grain and not the slope
-        /// (ADR 0051; the raw deviation about the median lost 14 of the 64 stars of the DarkSky
+        /// (ADR 0054; the raw deviation about the median lost 14 of the 64 stars of the DarkSky
         /// scene). On a quantised flat border the sigma is near 0 (exactly 0 when the border is
         /// uniform), which leaves the absolute floor alone.
         /// </summary>

@@ -233,7 +233,7 @@ window's 96 border pixels; sigma = 1.4826 x the median absolute deviation of tho
 a plane fitted to them by least squares, whose coefficients are three sums because the border
 is symmetric about the centre (`BorderStats` returns the base and the sigma; near 0 on a
 quantised flat border, exactly 0 on a uniform one); amplitude = peak - base >=
-`StarMinAmplitude16/65535` and >= `StarMinSnr` (12) x sigma (ADR 0051). Width
+`StarMinAmplitude16/65535` and >= `StarMinSnr` (12) x sigma (ADR 0054). Width
 at half maximum is measured on the horizontal and vertical lines through the peak:
 descend from the centre until below `base + amplitude/2`, interpolate the crossing
 linearly (the acceptance script's function, epsilon included), keep the star when both
@@ -252,7 +252,7 @@ version of a real image). On a nebulous core stars measure wider (bright, struct
 base) - see the acceptance record. The floor alone found the grain: on a stretched frame
 the noise's window maxima stand 3 to 4 local sigmas over the border median and the floor
 (0.046) sits on the expected maximum of 625 samples (0.044 on the starless reference FITS),
-so a starless frame gave 6297 "stars" at 2.38 px until the sigma clause (ADR 0051); the
+so a starless frame gave 6297 "stars" at 2.38 px until the sigma clause (ADR 0054); the
 clause costs the faint stars (under 12 sigmas), and the FWHM is the bright stars'. The sigma
 is taken about a plane because the raw deviation about the border median read a nebula's
 slope as noise: it lost 14 of the 64 stars of the DarkSky golden scene (0.4 over 60 px) and a
@@ -353,7 +353,7 @@ are, and only those feed a verdict. The numbers are this encoder's, not libjpeg'
 
 ### F1 - `ToneCurve`, `CurveAdvisor` - the suggested curves (ADR 0032)
 
-Not a measurement of the image but a suggestion built on its measurements; computed on request
+Not a measurement of the image but a suggestion built on its measurements; computed by a second run after the analysis
 (`pipeline.md`, "The second run").
 
 **The curve** (`ToneCurve`). Control points from (0, 0) to (1, 1), strictly increasing in x,

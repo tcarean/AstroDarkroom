@@ -14,11 +14,24 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (R-060 to R-063, ADR 0022).
 - `--east left|right` and `--north up|down`, the English forms of `--est stanga|dreapta` and
   `--nord sus|jos`; both forms work in both languages (R-064).
+- `.pef` (Pentax) is a raw extension, and the lens of a raw of any make is read as FlatCheck
+  reads it since its ADR 0068 (R-065, ADR 0025): the maker's lens ID by mount (Nikon's own field
+  on a Nikon body, the MakerNote's on Canon, Sony, Pentax and the rest), the mount's name, the
+  lens's name as the camera wrote it and its range. The inventory's `lens` line names it:
+  `"EF50mm f/1.4 USM" (ID 198, Canon EF)`, `ID 2263 (Pentax K)`.
 
 ### Changed
 
 - Without `--lang`, the console and the window now speak English; `--lang ro` gives the
   Romanian output as it was.
+- The inventory's `lens` line reads `ID 74 (Nikon F)` where it read `Nikon ID 74`: the ID is
+  no longer Nikon's alone, so the mount says whose number it is (R-065).
+- The pixel size, when no file carries `XPIXSZ` and none is typed, comes from the raw itself:
+  the 35 mm-equivalent focal length the camera writes, over the shot's focal length, over the
+  mosaic's diagonal (4.00 um on the D3300 at 135 mm, 3.99 at 20 mm); the D3300's 3.92 is used
+  only when the raw gives no such figure. `--pixel` and the window's field, blank by default,
+  still override it; the `scale` line names the source (R-066, ADR 0026). On the Veil session the
+  scale reads 6.11 "/px instead of 5.99, so every arcsecond figure grows by 1.9 %.
 - The files of `--out` and of "Write the files..." are named in English in both languages:
   `lightscheck-report.txt`, `lightscheck-frames.csv`, `lightscheck-rejected.txt` (they were
   `lightscheck-raport.txt`, `lightscheck-cadre.csv`, `lightscheck-respinse.txt`); the CSV's text
@@ -30,6 +43,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A `.fit` whose header begins with `SIMPLE` but ends before `END` was read as a FITS with the
+  cards found so far; it is now refused with `FITS: incomplete header.`, by the inventory's
+  metadata read and the full load alike, and a file that does not begin with `SIMPLE` is
+  refused by both with `FITS: the file does not begin with SIMPLE.` (FlatCheck's check, R-008,
+  ADR 0027). The inventory's row for such a file reads that message where it read `not a FITS
+  file (it does not begin with SIMPLE)`.
 - A session read from FITS lights (a folder with no raws, for example Siril's `pp_light_*.fit`)
   had the sense its y axis feeds the wrong way round in the dithering cells, the CSV's
   `move_ra_px` / `move_dec_px`, the star drift and the polar handedness: the solved FITS was

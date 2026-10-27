@@ -25,10 +25,11 @@ namespace AstroDarkroom.Tests;
 /// The suite's consistency, read from the sibling projects of the photo repository: the
 /// catalogue against the components kit.json bundles and the executables their project files
 /// build (the rule "The catalogue and kit.json agree"), and the components' frameworks and
-/// package versions (the rule "Same .NET and same packages across the suite"). Not
-/// requirement-numbered: these are repository facts, not behaviour of the launcher. They
-/// return early, with the reason in the output, where the sibling folders are not beside this
-/// project (a clone of this folder alone).
+/// package versions (the rule "Same .NET and same packages across the suite"), and the icon
+/// copies against the components' own files. Repository facts rather than behaviour of the
+/// launcher, so not requirement-numbered, except the icon copies (R-010), which the window
+/// shows. They return early, with the reason in the output, where the sibling folders are
+/// not beside this project (a clone of this folder alone).
 /// </summary>
 public partial class SuiteTests
 {
@@ -163,6 +164,35 @@ public partial class SuiteTests
         Assert.True(resolved.Count > 0, "no package was read from any lock file");
     }
 
+    /// <summary>
+    /// Each app's icon is a copy of the component's own, the ApplicationIcon of its window
+    /// project, kept in Icon/ under the same file name (R-010, ADR 0011). The copy's presence
+    /// is checked anywhere; its bytes against the component's file only beside the siblings.
+    /// </summary>
+    [Fact]
+    public void R010_EveryAppsIcon_IsACopyOfTheComponentsOwn()
+    {
+        List<ComponentEntry> entries = ComponentEntries();
+        bool siblings = SiblingsPresent(entries);
+        foreach (SuiteApp app in AppCatalogue.Apps)
+        {
+            string copy = Path.Combine(Root, "Icon", app.Icon);
+            Assert.True(File.Exists(copy), $"{app.Folder}: Icon/{app.Icon} is not in the repository");
+            if (!siblings)
+            {
+                continue;   // the sibling projects are not beside this one
+            }
+
+            ComponentEntry entry = Assert.Single(entries, e => e.Component == app.Folder);
+            Match icon = ApplicationIcon().Match(File.ReadAllText(entry.ProjectFile));
+            Assert.True(icon.Success, $"{entry.ProjectFile} has no <ApplicationIcon>");
+            string original = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(entry.ProjectFile)!, icon.Groups[1].Value));
+            Assert.Equal(Path.GetFileName(original), app.Icon);
+            Assert.True(File.ReadAllBytes(original).AsSpan().SequenceEqual(File.ReadAllBytes(copy)),
+                $"Icon/{app.Icon} differs from {original}; copy the component's file over it");
+        }
+    }
+
     /// <summary>The packages.lock.json files under a component's codeFolders, bin/ and obj/ excluded.</summary>
     private static IEnumerable<string> LockFiles(string componentRoot)
     {
@@ -191,4 +221,7 @@ public partial class SuiteTests
 
     [GeneratedRegex(@"<AssemblyName>\s*([^<\s]+)\s*</AssemblyName>")]
     private static partial Regex AssemblyName();
+
+    [GeneratedRegex(@"<ApplicationIcon>\s*([^<\s]+)\s*</ApplicationIcon>")]
+    private static partial Regex ApplicationIcon();
 }

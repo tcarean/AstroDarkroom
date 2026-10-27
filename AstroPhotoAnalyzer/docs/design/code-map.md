@@ -45,9 +45,9 @@ AstroPhotoAnalyzer.Core/
   Report/ReportWriter.cs               the text
   Report/Fmt.cs                        invariant number formatting
   Report/RunReport.cs                  banner, warranty
-  Report/CurveTexts.cs                 the Curbe tab's sentences and the HISTORY text
+  Report/CurveTexts.cs                 the Editare Curbe tab's sentences and the HISTORY text
   Runs/AnalysisRun.cs                  the chain, AnalysisResult, RefusedImageException
-  Runs/CurveRun.cs                     the second run, on request: CurveSet, CurveExport
+  Runs/CurveRun.cs                     the second run, after the analysis: CurveSet, CurveExport
   Parameters.cs, Thresholds.cs, ThirdParty.cs, Version.cs
   Language.cs                          the interface language: Tr.Pick, the --lang parser (ADR 0048)
 
@@ -61,7 +61,8 @@ AstroPhotoAnalyzer.Wpf/
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),
-             CurvesTab.cs (the Curbe tab and the curve window, R-146, R-147)
+             WindowSettings.cs (the remembered settings file, R-156),
+             CurvesTab.cs (the Editare Curbe tab and the curve window, R-146, R-147)
   Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, PreviewView, CurvesView (.xaml),
         ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs),
         MapWindow.xaml, PreviewWindow.xaml, CurveWindow.xaml, OverlayWindows.xaml.cs, IccPickerWindow.xaml(.cs)
@@ -69,5 +70,6 @@ AstroPhotoAnalyzer.Wpf/
 AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt and *.en.txt; testdata/ (manifest, large/);
                                        RunsInRomanian, LanguageTests, RomanianWords (language.md)
 AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests, IccPickerTests,
+                                       ProfileBarTests (the bar's profile and the settings, R-155, R-156),
                                        RunsInRomanian, AppLanguageTests, WindowEnglishTests
 ```

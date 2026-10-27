@@ -247,8 +247,8 @@ namespace AstroPhotoAnalyzer
         internal const double SkyDarkestFraction = 0.01;
 
         /// <summary>
-        /// How many clouds, from the darkest, the report names (Anexa B and the "fiindca"); the
-        /// window shows them all.
+        /// How many clouds, from the darkest, the report names (Anexa B and the "fiindca") and the
+        /// map window labels on the image; its list shows them all.
         /// </summary>
         internal const int DustCloudReportRows = 15;
 
@@ -402,7 +402,7 @@ namespace AstroPhotoAnalyzer
         /// slope is not read as noise (the raw deviation about the median lost 14 of the 64 stars
         /// of the DarkSky golden scene and a quarter of the reference image's 7163, against an
         /// eighth about the plane). The absolute floor stays beside it, for the denoised image
-        /// whose sigma is near 0 (ADR 0051). The floor alone let the grain of the stretched noise
+        /// whose sigma is near 0 (ADR 0054). The floor alone let the grain of the stretched noise
         /// through: its window maxima stand 3 to 4 sigmas over the border median, and the floor
         /// (3000/65535 = 0.046) sits on the expected maximum of 625 noise samples (0.044 on the
         /// starless reference FITS). Measured on 2026-10-27 on the aligned Rosetta pair (a kept

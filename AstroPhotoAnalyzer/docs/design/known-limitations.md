@@ -10,8 +10,9 @@
 > `AstroPhotoAnalyzer.Core/Analysis/BackgroundAnalyzer.cs`,
 > `AstroPhotoAnalyzer.Core/Analysis/JpegAnalyzer.cs`,
 > `AstroPhotoAnalyzer.Core/Analysis/QuantizationAnalyzer.cs`,
-> `AstroPhotoAnalyzer.Core/Analysis/PrintSizeAnalyzer.cs` and
-> `AstroPhotoAnalyzer.Core/Input/ImageSharpReader.cs`. A change to the code this describes
+> `AstroPhotoAnalyzer.Core/Analysis/PrintSizeAnalyzer.cs`,
+> `AstroPhotoAnalyzer.Core/Input/ImageSharpReader.cs` and
+> `AstroPhotoAnalyzer.Wpf/ViewModels/MainViewModel.cs`. A change to the code this describes
 > means this note is updated in the same task, or deleted with the decision it explains.
 
 ## Known limitations
@@ -30,6 +31,10 @@
   milliseconds for a normal colour folder, but a folder of hundreds of printer profiles, or one
   damaged profile the package is slow on (4 s measured on one corrupted file), freezes the
   window that long.
+- The remembered profile (R-156) is read again on the UI thread before the window shows: a
+  profile chosen from a network share that is later unreachable holds the start for the
+  share's timeout, tens of seconds, before the bar says in red that it cannot be read; "Scoate"
+  then ends it for good.
 - A Dmax read from a profile replaces the medium's Dmax and leaves its name: a canvas profile
   used with `baryta` chosen prints `Mediu: baryta (Dmax 1.49, ...)`. Anexa F names the profile.
 - The simulation is a gamma curve from the measured background. A real stretch to the same
@@ -68,14 +73,14 @@
   patch; a field with far stronger distortion would misplace the outer patches.
 - Stars on bright nebulosity measure wider (border median overestimates the base); the
   centre region of a Milky Way core is not a sharpness statement.
-- A star under 12 local sigmas is not counted (ADR 0051): the FWHM is the bright stars', and a
+- A star under 12 local sigmas is not counted (ADR 0054): the FWHM is the bright stars', and a
   frame whose stars all sit on strongly textured nebulosity, where the border's sigma is the
   texture left after a plane is taken out, may fall to the dpi rule of R-074 with a count under
   20; the report says so. A smooth slope is not texture: the plane removes it.
 - A wide star lays its own wings on the window border, which the plane cannot take out: it does
   not reject itself (all 64 synthetic stars kept at FWHM 12, 13 and 14, `R070_AWideStarDoesNotRejectItself`),
   but the wings lift the border median, its base, so it reads narrower: 12.50 px at 13, 13.19 at
-  14, a bias of the estimator older than ADR 0051. The frames measured so far have stars of 2 to
+  14, a bias of the estimator older than ADR 0054. The frames measured so far have stars of 2 to
   5 px, where it is nil.
 - The half-max estimator overestimates a sampled Gaussian by ~2.5 %.
 - On an 8-bit file the background's levels (the per-channel medians of the darkest quarter, R-060)

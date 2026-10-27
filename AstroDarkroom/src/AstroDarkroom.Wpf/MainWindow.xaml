@@ -72,17 +72,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <Border Style="{StaticResource Card}" Margin="0,0,0,10" Padding="16,12">
             <Grid>
               <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
               </Grid.ColumnDefinitions>
-              <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+              <!-- The app's own icon (R-010), dimmed like the button when the file is missing. -->
+              <Image Grid.Column="0" Source="{Binding Icon}" Width="40" Height="40" Margin="0,0,14,0"
+                     VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality">
+                <Image.Style>
+                  <Style TargetType="Image">
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding IsAvailable}" Value="False">
+                        <Setter Property="Opacity" Value="0.4" />
+                      </DataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </Image.Style>
+              </Image>
+              <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,16,0">
                 <TextBlock Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" />
                 <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0" Text="{Binding Description}" />
                 <TextBlock Style="{StaticResource Faint}" Margin="0,5,0,0" Text="{Binding VersionHint}" />
               </StackPanel>
               <!-- ShowOnDisabled: the reason an app cannot start is the one thing a disabled
                    button must still tell. -->
-              <Button Grid.Column="1" Content="{Binding OpenLabel}" MinWidth="104" VerticalAlignment="Center"
+              <Button Grid.Column="2" Content="{Binding OpenLabel}" MinWidth="104" VerticalAlignment="Center"
                       IsEnabled="{Binding IsAvailable}" ToolTip="{Binding ButtonHint}"
                       ToolTipService.ShowOnDisabled="True" Click="OpenApp" />
             </Grid>

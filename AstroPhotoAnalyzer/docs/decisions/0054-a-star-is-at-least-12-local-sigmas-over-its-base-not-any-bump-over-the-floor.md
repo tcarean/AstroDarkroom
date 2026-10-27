@@ -1,4 +1,4 @@
-# 0051. A star is at least 12 local sigmas over its base, not any bump over the floor
+# 0054. A star is at least 12 local sigmas over its base, not any bump over the floor
 
 Date: 2026-10-27
 Status: accepted 2026-10-27

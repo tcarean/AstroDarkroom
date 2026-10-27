@@ -2,7 +2,7 @@
 
   <!-- The application with windows. The same core as AstroPhotoAnalyzer.exe, through
        AstroPhotoAnalyzer.Core - it reimplements no figure and no line of the report; it
-       calls AnalysisRun.Execute and shows the result, and, on request from the Curbe tab,
+       calls AnalysisRun.Execute and shows the result, and, after it, for the Editare Curbe tab,
        CurveRun (the suggested curves and the saved FITS, ADR 0032).
 
        net8.0-windows + UseWPF makes this project Windows-only, and that is what stops

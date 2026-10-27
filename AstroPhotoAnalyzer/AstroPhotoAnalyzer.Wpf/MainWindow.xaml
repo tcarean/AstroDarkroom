@@ -63,6 +63,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                      Visibility="{Binding HasPath, Converter={StaticResource BoolToVis}}" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,3,0,0" Text="{local:T En='(none chosen)', Ro='(niciuna aleasa)'}"
                      Visibility="{Binding HasPath, Converter={StaticResource NotBoolToVis}}" />
+          <!-- The ICC profile in use (R-155): the name and the core's sentence, red when its file
+               can no longer be read (R-156), muted when there is none; "Scoate" only beside a
+               profile, and never during a run, as the choice that re-runs is. -->
+          <TextBlock Style="{StaticResource Faint}" Margin="0,8,0,0" Text="{local:T En='ICC PROFILE', Ro='PROFIL ICC'}" />
+          <!-- A grid, not a horizontal StackPanel: in a panel of infinite width a long reason
+               would push the button out of the column instead of being trimmed. -->
+          <Grid Margin="0,3,0,0" DataContext="{Binding Parameters}">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" MaxWidth="700" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="ProfileText" Grid.Column="0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding ProfileText}" ToolTip="{Binding ProfileText}">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding HasProfile}" Value="False">
+                      <Setter Property="Foreground" Value="{StaticResource MutedBr}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding ProfileIsProblem}" Value="True">
+                      <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+            <Button x:Name="ClearProfileButton" Grid.Column="1" Content="{local:T En='Clear', Ro='Scoate'}" Click="ClearProfile" Padding="8,2" FontSize="11" Margin="10,0,0,0"
+                    Visibility="{Binding HasProfile, Converter={StaticResource BoolToVis}}"
+                    IsEnabled="{Binding DataContext.IsIdle, RelativeSource={RelativeSource AncestorType=Window}}"
+                    ToolTip="{local:T En='Stops using the profile: the Dmax of the medium is back, and the analysis runs again', Ro='Nu mai foloseste profilul: revine Dmax-ul mediului, si analiza se reia'}" />
+          </Grid>
         </StackPanel>
 
         <StackPanel Grid.Column="2" VerticalAlignment="Center">
@@ -110,7 +140,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </Grid.ColumnDefinitions>
               <TextBox Grid.Column="0" Style="{StaticResource Field}" Text="{Binding Dmax, UpdateSourceTrigger=PropertyChanged}" />
               <Button Grid.Column="2" Content="{local:T En='From ICC profile...', Ro='Din profil ICC...'}" Click="ChooseProfile"
-                      ToolTip="{local:T En='Reads the Dmax from the ICC profile of the paper on its printer: the list of installed profiles, or a file', Ro='Citeste Dmax-ul din profilul ICC al hartiei pe imprimanta ei: lista profilelor instalate, sau un fisier'}" />
+                      IsEnabled="{Binding DataContext.IsIdle, RelativeSource={RelativeSource AncestorType=Window}}"
+                      ToolTip="{local:T En='Reads the Dmax from the ICC profile of the paper on its printer: the list of installed profiles, or a file; the analysis then runs again', Ro='Citeste Dmax-ul din profilul ICC al hartiei pe imprimanta ei: lista profilelor instalate, sau un fisier; analiza se reia apoi'}" />
             </Grid>
 
             <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Viewing distance, m (empty = 1.5 x diagonal)', Ro='Distanta de privire, m (gol = 1.5 x diagonala)'}" ToolTip="{Binding DistanceHelp}" />
@@ -209,7 +240,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TabItem Header="Preview">
             <local:PreviewView DataContext="{Binding Preview}" />
           </TabItem>
-          <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves', Ro='Curbe'}">
+          <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves Editing', Ro='Editare Curbe'}">
             <local:CurvesView DataContext="{Binding Curves}" />
           </TabItem>
         </TabControl>

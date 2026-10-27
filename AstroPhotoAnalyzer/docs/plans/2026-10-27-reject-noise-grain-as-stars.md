@@ -70,7 +70,7 @@ with-stars files are **added to `testdata/manifest.json`** with their hashes.
    `scripts/check-testdata.ps1 -Update` in the worktree, then write each new entry's `source`
    (the owner's copy, the pair of the starless frame already listed, with size and shape) and
    `demonstrates` (`StarPairTests`), in the manifest's style.
-6. **Docs.** ADR 0051 "A star is at least 12 local sigmas over its base, not any bump over the
+6. **Docs.** ADR 0054 "A star is at least 12 local sigmas over its base, not any bump over the
    floor" (context, the measurement, the alternatives: 10 and 15, roundness, flux SNR, global
    sigma; consequences: the star figures of V-001, V-004, V-010, V-013 move, the starless frames
    take R-074). `docs/design/measurements.md` D1: the sigma and the clause; its "Known"
@@ -123,4 +123,4 @@ with-stars files are **added to `testdata/manifest.json`** with their hashes.
 Every differing figure of these cases is recorded, the ones within the 0.01 tolerance included (the second review of 2026-10-27). V-003, V-005 to V-009, V-011, V-012 and V-014: no figure moved. The golden console texts did not
 move. The first form of the clause, the deviation about the raw border median, had cost the
 DarkSky golden scene 14 of its 64 stars (the nebula's slope read as noise) and V-001 1747 stars
-instead of 889; the owner chose the plane the same day (ADR 0051).
+instead of 889; the owner chose the plane the same day (ADR 0054).

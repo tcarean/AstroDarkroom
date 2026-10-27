@@ -1,7 +1,7 @@
 # 0016. Every local maximum above mean plus amplitude is a star candidate; the half-max estimator stays, with its bias
 
 Date: 2026-10-02
-Status: accepted 2026-10-02; a tied maximum counted once per tied pixel superseded by 0041; the amplitude floor alone deciding a star superseded by 0051
+Status: accepted 2026-10-02; a tied maximum counted once per tied pixel superseded by 0041; the amplitude floor alone deciding a star superseded by 0054
 
 ## Context
 

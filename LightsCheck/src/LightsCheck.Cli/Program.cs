@@ -226,7 +226,8 @@ internal static class Program
         w.WriteLine("  --out DIR     writes into DIR the report, a CSV with every figure and the reject list");
         w.WriteLine("                (" + SeriesOutputs.ReportName + ", " + SeriesOutputs.CsvName + ", " + SeriesOutputs.RejectedName + ").");
         w.WriteLine("  --threads N   how many frames are measured in parallel (default half the cores).");
-        w.WriteLine("  --pixel UM    the pixel size in microns, when the files do not say it (default " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + ", Nikon D3300).");
+        w.WriteLine("  --pixel UM    the pixel size in microns; without it, the files' XPIXSZ, else the raw's 35 mm-");
+        w.WriteLine("                equivalent focal length, else " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + " (Nikon D3300).");
         w.WriteLine("  --east left|right  the SynScan arrow that moves the mount east (default right); the other is west.");
         w.WriteLine("  --north up|down    the SynScan arrow that moves the mount north (default up); the other is south.");
         w.WriteLine("  --inventory   the frames' metadata only (no decoding): time, exposure, ISO, pauses.");
@@ -255,7 +256,8 @@ internal static class Program
         w.WriteLine("  --out DIR     scrie in DIR raportul, un CSV cu toate cifrele si lista de respins");
         w.WriteLine("                (" + SeriesOutputs.ReportName + ", " + SeriesOutputs.CsvName + ", " + SeriesOutputs.RejectedName + ").");
         w.WriteLine("  --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).");
-        w.WriteLine("  --pixel UM    marimea pixelului in microni, cand fisierele n-o spun (implicit " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + ", Nikon D3300).");
+        w.WriteLine("  --pixel UM    marimea pixelului in microni; fara ea, XPIXSZ din fisiere, apoi focala echivalenta");
+        w.WriteLine("                35 mm din raw, apoi " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + " (Nikon D3300).");
         w.WriteLine("  --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit dreapta); cealalta e vest.");
         w.WriteLine("  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.");
         w.WriteLine("  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.");

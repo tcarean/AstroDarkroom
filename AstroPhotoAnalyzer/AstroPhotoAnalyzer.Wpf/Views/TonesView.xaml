@@ -73,7 +73,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                      Visibility="{Binding NoWcsWarning, Converter={StaticResource NotNullToVis}}" />
           <Button Content="{local:T En='Dust / sky map', Ro='Harta praf / cer'}" Command="{Binding OpenMap}" HorizontalAlignment="Left" Margin="0,10,0,0"
                   ToolTip="{local:T En='The whole image with the dust and sky patches painted and the catalogued clouds by name', Ro='Imaginea intreaga cu dalele de praf si de cer vopsite si norii catalogati pe nume'}" />
-          <ItemsControl ItemsSource="{Binding CloudRows}" ItemTemplate="{StaticResource MonoRowTemplate}" Margin="0,12,0,0" />
         </StackPanel>
       </Border>
 

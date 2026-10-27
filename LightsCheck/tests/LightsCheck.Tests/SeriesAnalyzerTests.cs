@@ -32,7 +32,7 @@ public class SeriesAnalyzerTests
     }
 
     private static AnalyzedFrame Frame(int i, FrameMeasurement? m, string? error = null)
-        => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, SessionFixture.FirstStart.AddSeconds(i * 141.0), null, null, null, null, null, error), m,
+        => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, SessionFixture.FirstStart.AddSeconds(i * 141.0), null, null, null, null, null, null, null, null, null, null, error), m,
             m is null ? null : new RegistrationResult(true, 300, 200, 0, 0, 0, 1, 0.3), error);
 
     /// <summary>n good frames 141 s apart (120 s exposures), the k-th registered at (dx * k, dy * k), with the dithering read from those positions.</summary>
@@ -343,7 +343,7 @@ public class SeriesAnalyzerTests
 
     /// <summary>A 120 s frame starting at <paramref name="start"/>, registered with the rotation given, its stars good or trailed as the measurement says.</summary>
     private static AnalyzedFrame Timed(int i, DateTime start, double rotationDeg = 0, FrameMeasurement? m = null)
-        => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, start, null, null, null, null, null, null),
+        => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, start, null, null, null, null, null, null, null, null, null, null, null),
             m ?? Measurement(3.0, 1.1, 10000, 120), new RegistrationResult(true, 300, 200, 0, 0, rotationDeg, 1, 0.3), null);
 
     /// <summary>The frames, cadence and dithering of a session whose frames start at the given seconds and sit at the given positions.</summary>

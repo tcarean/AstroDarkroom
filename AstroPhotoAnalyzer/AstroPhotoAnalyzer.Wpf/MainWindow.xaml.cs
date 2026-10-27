@@ -29,14 +29,20 @@ namespace AstroPhotoAnalyzer.Wpf
     /// </summary>
     public partial class MainWindow : Window
     {
-        readonly MainViewModel _vm = new();
+        readonly MainViewModel _vm;
+
+        /// <summary>Builds the window over a view-model that remembers nothing (the tests').</summary>
+        public MainWindow() : this(WindowSettings.None) { }
 
         /// <summary>
-        /// Builds the window over a new view-model, asks for the dark title bar once there is a
-        /// handle, and subscribes to the requests of the Tonuri and Curbe tabs.
+        /// Builds the window over a new view-model with the remembered settings (R-156), asks
+        /// for the dark title bar once there is a handle, and subscribes to the requests of the
+        /// Tonuri and Editare Curbe tabs.
         /// </summary>
-        public MainWindow()
+        /// <param name="settings">The settings read at the start; the application passes the user's file.</param>
+        public MainWindow(WindowSettings settings)
         {
+            _vm = new MainViewModel(settings);
             InitializeComponent();
             DataContext = _vm;
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
@@ -44,7 +50,7 @@ namespace AstroPhotoAnalyzer.Wpf
             // window opens. Non-modal, maximised, as many as the user wants.
             _vm.Tones.MapRequested += m => new MapWindow { Owner = this, DataContext = m }.Show();
             _vm.Tones.PreviewRequested += p => new PreviewWindow { Owner = this, DataContext = p }.Show();
-            // The Curbe tab (R-146, R-147): the curve window, the save dialog and the arrow keys.
+            // The Editare Curbe tab (R-146, R-147): the curve window, the save dialog and the arrow keys.
             _vm.Curves.CurveRequested += c => new CurveWindow { Owner = this, DataContext = c }.Show();
             _vm.Curves.SaveRequested += SaveCurve;
             PreviewKeyDown += GalleryKeys;
@@ -74,7 +80,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// "Din profil ICC...": the window with the installed profiles; "Foloseste" writes the
-        /// profile's Dmax into the field (R-132).
+        /// profile's Dmax into the field and runs the analysis again (R-132, R-155).
         /// </summary>
         /// <param name="sender">The button; not read.</param>
         /// <param name="e">The click; not read.</param>
@@ -82,8 +88,13 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             var picker = new IccPickerViewModel();
             if (new IccPickerWindow { Owner = this, DataContext = picker }.ShowDialog() == true)
-                _vm.Parameters.UseProfile(picker.Selected);
+                _ = _vm.ChooseProfile(picker.Selected);
         }
+
+        /// <summary>"Scoate", beside the profile in the top bar: drops it and runs the analysis again (R-155).</summary>
+        /// <param name="sender">The button; not read.</param>
+        /// <param name="e">The click; not read.</param>
+        void ClearProfile(object sender, RoutedEventArgs e) => _ = _vm.ClearProfile();
 
         /// <summary>"Despre", the button or F1: the about window, modal (R-119).</summary>
         /// <param name="sender">The command's source; not read.</param>
@@ -108,7 +119,7 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// The Left and Right arrows browse the gallery while the Curbe tab is the one selected
+        /// The Left and Right arrows browse the gallery while the Editare Curbe tab is the one selected
         /// (R-146). They are caught at the window, before the TabControl, which would otherwise
         /// use them to change the tab; in a text box they stay the box's.
         /// </summary>

@@ -22,7 +22,10 @@
     <ProjectReference Include="..\AstroDarkroom.Core\AstroDarkroom.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="..\..\Icon\astrodarkroom.ico" Link="Icon\astrodarkroom.ico" />
+    <!-- The launcher's own icon and the copies of the six components' (R-010, ADR 0011;
+         SuiteTests keeps them equal to the components' files), each shown beside its row
+         through Icons.LargestFrame. -->
+    <Resource Include="..\..\Icon\*.ico" Link="Icon\%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <!-- GPLv3 wants a copy of the licence to travel with every copy of the program, and

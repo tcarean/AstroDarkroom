@@ -160,17 +160,21 @@ public class MainViewModelTests
         Assert.False(vm.IsRunning);
     }
 
-    /// <summary>The inputs the files do not carry: invariant parsing, the D3300's pixel when blank or wrong.</summary>
+    /// <summary>
+    /// The inputs the files do not carry: invariant parsing; blank or wrong means none typed
+    /// (null, the run then reads the files or the raws, R-066); blank is not invalid, wrong is.
+    /// </summary>
     [Theory]
     [InlineData("4.5", 4.5, true)]
     [InlineData("3.92", 3.92, true)]
-    [InlineData("", SeriesOptions.D3300PixelUm, false)]
-    [InlineData("abc", SeriesOptions.D3300PixelUm, false)]
-    [InlineData("4,5", SeriesOptions.D3300PixelUm, false)]
-    [InlineData("-1", SeriesOptions.D3300PixelUm, false)]
-    [InlineData("NaN", SeriesOptions.D3300PixelUm, false)]
-    [InlineData("Infinity", SeriesOptions.D3300PixelUm, false)]
-    public void R029_ThePixelInputIsParsedInvariantAndFallsBackToTheD3300(string typed, double expected, bool valid)
+    [InlineData("", null, true)]
+    [InlineData("  ", null, true)]
+    [InlineData("abc", null, false)]
+    [InlineData("4,5", null, false)]
+    [InlineData("-1", null, false)]
+    [InlineData("NaN", null, false)]
+    [InlineData("Infinity", null, false)]
+    public void R029_ThePixelInputIsParsedInvariantAndBlankMeansNoneTyped(string typed, double? expected, bool valid)
     {
         MainViewModel vm = new() { PixelText = typed };
 
@@ -191,12 +195,13 @@ public class MainViewModelTests
     }
 
     [Fact]
-    public void R029_ThePixelInputStartsAtTheD3300()
+    public void R029_ThePixelInputStartsBlank_SoTheFilesOrTheRawsDecide()
     {
         MainViewModel vm = new();
 
-        Assert.Equal("3.92", vm.PixelText);
+        Assert.Equal("", vm.PixelText);
         Assert.True(vm.PixelIsValid);
+        Assert.Null(vm.Options.PixelSizeUm);
         Assert.Equal("", vm.ThreadsText);
     }
 

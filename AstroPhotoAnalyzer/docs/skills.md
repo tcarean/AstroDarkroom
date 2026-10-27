@@ -46,7 +46,7 @@ are in `kit.json`, not here.
   worktree has no copies: copy the images into the worktree's `testdata/large/` first, or every
   case prints `NOT MEASURED`. A case runs the whole analysis on a 23 MP image, 10 to 15 s
   (the twelve cases together about 2.5 min; before ADR 0035 a case took up to 27 s). The
-  filter `Category=Validation` also runs `StarPairTests` (ADR 0051): every starless frame under
+  filter `Category=Validation` also runs `StarPairTests` (ADR 0054): every starless frame under
   `StarMinCount` stars, every frame with stars kept, the Rosetta pair's kept stars in the
   difference image; they print each frame's count and FWHM.
 - At step 3: the table's second column is the case's parameters, not a fixture; the figures are

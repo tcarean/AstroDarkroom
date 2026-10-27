@@ -8,6 +8,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The window shows the ICC profile in use in its top bar, under the image's name, with a
+  **Clear** button beside it; choosing a profile or clearing it runs the analysis again by
+  itself, and the chosen profile is remembered in `%LOCALAPPDATA%\AstroPhotoAnalyzer\settings.json`
+  and still in use at the next start (a profile whose file has gone is shown in red and not
+  used). A Dmax typed over the profile's, or a medium chosen, now drops the profile at once
+  rather than at the next run (R-155, R-156; ADR 0053).
+
 - The interface speaks English as well as Romanian, in the console and in the window: every
   text, the report, `--help` and the errors included, is chosen by `--lang en|ro` (also
   `--lang=ro`), **English when it is not given**; an unknown value is an error in the console
@@ -17,6 +24,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Curbe tab is called Editare Curbe (`Curves Editing` in English), and its gallery of
+  suggested curves is computed right after the analysis, without pressing `Calculeaza`, so it
+  is there when the tab is opened; the button computes it again at the tab's current size
+  (R-110, R-111, R-146; ADR 0051).
 - `README.md`, the user documentation, and `THIRD-PARTY-NOTICES.md` are in English, the language
   the interface starts in, both checked against the current behaviour. The README quotes the
   window's English labels and `Report.txt`, gives every console option with its default and how
@@ -25,6 +36,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `xunit.runner.visualstudio` among the test packages (ADR 0050). The About window's list of
   components names them too: Unicolour's gamut figure and ImageSharp's 8-bit TIFF.
 
+### Removed
+
+- The table of catalogued clouds under the Tonuri tab's simulation. The map window's list, one
+  row per cloud with its name, L\*, target and patch count, is the one place the window lists
+  them; the report keeps its table (R-113, R-130; ADR 0052).
+
 ### Fixed
 
 - A starless image no longer reports thousands of stars and a false resolution: a star must
@@ -32,7 +49,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   stretched sky, which the absolute floor let through (6297 "stars" at 2.38 px on the starless
   reference FITS, 22 485 on a starless Veil), is not counted, and such a frame takes the dpi rule
   it was promised; faint stars under that noise go with the grain, and the FWHM is the bright
-  stars' (ADR 0051).
+  stars' (ADR 0054).
 - A FITS is read the way up Siril shows it, whatever its `ROWORDER` says: the file's first row
   is the bottom of the image, keyword or not, and a `TOP-DOWN` keyword is noted as ignored in
   the report; before, a file without the keyword, or one saying `TOP-DOWN` over bottom-up

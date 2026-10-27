@@ -10,12 +10,16 @@
 
 ## The window (`AstroPhotoAnalyzer.Wpf/`)
 
-**Layout** (`MainWindow.xaml`): top bar (banner, image path, "Deschide imagine...",
+**Layout** (`MainWindow.xaml`): top bar (banner, image path and under it the ICC profile in use
+with its "Scoate" button (R-155: `ParameterFields.ProfileText`, red through a style trigger on
+`ProfileIsProblem`, muted on none; the button visible on `HasProfile`, enabled on the window's
+`IsIdle`, in a two-column grid so a long reason is trimmed instead of pushing the button out),
+"Deschide imagine...",
 "Salveaza raportul...", "Despre" = F1, and under the three buttons a fixed two-line place for
-`SaveMessage` / `SaveError`, as the Curbe tab has for its own save); left column `ParameterFields` card with
+`SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
-Preview, Curbe; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
+Preview, Editare Curbe; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
 sky; Tonuri measures its *level* (`BackgroundMedian`, "Nivelul fundalului") and Culoare
 its *colour* (`BackgroundResult.Levels`, "Culoarea fundalului"), and every label, row
 and appendix says which of the two it shows. Starts maximised. A file from
@@ -34,7 +38,25 @@ the outcome rather than throwing it: `SaveMessage` ("raport salvat: " and the pa
 refuses writing or does not exist), both cleared as soon as the next run is asked, before the
 fields are checked (R-111). The place under the buttons takes its width from the buttons row
 (`TopButtons`): in an Auto column a text has no width to wrap or trim against. It opens no dialogs
-(the window does), so it is fully testable.
+(the window does), so it is fully testable. `ChooseProfile(row)` and `ClearProfile()` (R-155)
+apply the profile through `ParameterFields.UseProfile` / `ClearProfile` and return `RunAsync()`
+when something changed, a completed task otherwise, so the window fires and forgets and the
+tests await; the constructor takes a `WindowSettings` (R-156, ADR 0053): the remembered path is
+read again by `IccPaperBlack.Read` and given to `ParameterFields.RestoreProfile`, then the
+view-model subscribes to `Parameters`' `Profile` change and writes the settings on each one.
+The parameterless constructor passes `WindowSettings.None`.
+
+**`WindowSettings`** (`ViewModels/WindowSettings.cs`, R-156): one JSON object, today the key
+`iccProfile`; `Read(path)` tolerates a missing, unreadable or malformed file (no profile),
+`Write()` goes through `<file>.tmp` and one move and swallows IO and access errors; a null
+path reads and writes nothing. `InLocalAppData()` is the user's file, passed by `App`.
+
+**`ParameterFields` and the profile** (R-155): `Profile` is the one place the profile lives;
+`UseProfile` sets it before the Dmax text (the `Dmax` setter drops a readable profile whose
+text differs from the new value, so the new profile must already be in place), `ClearProfile`
+puts the medium's Dmax back, `RestoreProfile` applies a readable row and only shows an
+unreadable one; the `Medium` setter drops any profile. `TryBuild` names the profile when it is
+set and readable, no text comparison left: the setter keeps the two in step.
 
 **Tabs** (`ResultTabs.cs`, each a `ResultTabViewModel` with `Populate(AnalysisResult)`,
 `Clear()`, `HasResult`):
@@ -42,9 +64,9 @@ fields are checked (R-111). The place under the buttons takes its width from the
 | tab | shows |
 |---|---|
 | `ReportTabViewModel` | `VerdictLabel`; `Sections` (number, title, verdict label, `RecommendationRow`s with mark, text, because, verdict label); `Text` = the full report; `ShowText` toggle |
-| `TonesTabViewModel` | `Rows` (metric rows, each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `Histogram` (101 values), `PaperBlack` and `LowSeparation` (the two marker positions: paper black from the result, the visibility threshold from `Thresholds`, both NaN when cleared), `HistogramHeading` and `HistogramNote` (the chart's heading and the note under it, naming the red solid and the amber dashed line - the preview window's colours for the same two classes - with the threshold interpolated; each sentence of the note says what lies left of one line, never which line is left of the other, so it holds on canvas, where paper black is right of L* 15), `SimulationRows` (`SimulationRowItem`s: the report's mono line, the target, and a `Preview` command on every target row - none on the header and the footer - that raises `PreviewRequested` with a `PreviewWindowViewModel`), `Definition` (the dust and the sky in use, `ReportWriter.DustDefinition`), `ExactLine`, `NoWcsWarning` (the red sentence, `NoWcsSentence`, or null), `OpenMap` (raises `MapRequested` with a `MapViewModel`), `CloudRows` (every cloud row as mono text), `LadderRows` (mono strings from `TonalAnalyzer.LstarLadder`, "<- mediul ales" on the chosen medium; a static note under it says the level is a grey's), `Guide` (`GuideParagraph`s of the last card, "CUM SE CITESTE TABUL": what the tab asks, the two scales and the conversion, paper black per medium, the dust and the sky, the verdict, the simulation - every number from `Thresholds`, `Parameters.DmaxOf` and `ColorMath`, none typed in). It keeps the `AnalysisResult` privately to build the two windows on demand (`BuildMap`, `BuildPreview`); `MainWindow` subscribes to the two events and shows the windows, non-modal and maximised |
-| `MapViewModel` (the map window, R-130) | `Image` (the whole frame, its long side at most `PreviewMaxSide`), `Layers` (one `ClassLayer` per class of the map, always five, named for the path by `DustMap.ClassNames`: name, legend with the share (`DustMap.FractionOf`), the definition with the image's own thresholds on the sky path, and for the dust and the sky the L\* the verdict took and which rule gave it, the `RasterBitmaps.Overlay` bitmap from a patch index per reduced pixel, a swatch, `IsVisible`), `Clouds` (`CloudLayer`s: name, caption with L\* and target, centre and radius in reduced pixels, `Labelled` for the darkest `DustCloudReportRows`, `IsVisible`), `ShowClouds` (circles and labels together; off, the cloud list is disabled), `SelectAllClouds` / `DeselectAllClouds`, `HasWcs` (the clouds box is disabled and off without one), `Definition`, `NoWcsWarning`, the two legends. `MapWindow.xaml` stacks the image, the layer bitmaps (an `ItemsControl` on a `Grid`) and a `Canvas` of ellipses and labels in one `Viewbox`, so that everything scales together |
-| `IccPickerViewModel` (the profile window, R-132) | `Profiles` (`IccProfileRow`s from `IccPaperBlack.Installed`: `Name`, `File`, `Detail` = `IccPaperBlack.Describe`, `Note`, `Readable`, `DmaxText`), `Selected` (the first readable one at the start), `CanUse`, `IsEmpty`, `Folder`, `Explanation`, `AddFile(path)` (reads one more profile, adds and selects it). The window (`IccPickerWindow`) opens the file dialog and closes with a result; `MainWindow.ChooseProfile` then calls `ParameterFields.UseProfile(Selected)` |
+| `TonesTabViewModel` | `Rows` (metric rows, each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `Histogram` (101 values), `PaperBlack` and `LowSeparation` (the two marker positions: paper black from the result, the visibility threshold from `Thresholds`, both NaN when cleared), `HistogramHeading` and `HistogramNote` (the chart's heading and the note under it, naming the red solid and the amber dashed line - the preview window's colours for the same two classes - with the threshold interpolated; each sentence of the note says what lies left of one line, never which line is left of the other, so it holds on canvas, where paper black is right of L* 15), `SimulationRows` (`SimulationRowItem`s: the report's mono line, the target, and a `Preview` command on every target row - none on the header and the footer - that raises `PreviewRequested` with a `PreviewWindowViewModel`), `Definition` (the dust and the sky in use, `ReportWriter.DustDefinition`), `ExactLine`, `NoWcsWarning` (the red sentence, `NoWcsSentence`, or null), `OpenMap` (raises `MapRequested` with a `MapViewModel`), `LadderRows` (mono strings from `TonalAnalyzer.LstarLadder`, "<- mediul ales" on the chosen medium; a static note under it says the level is a grey's), `Guide` (`GuideParagraph`s of the last card, "CUM SE CITESTE TABUL": what the tab asks, the two scales and the conversion, paper black per medium, the dust and the sky, the verdict, the simulation - every number from `Thresholds`, `Parameters.DmaxOf` and `ColorMath`, none typed in). It keeps the `AnalysisResult` privately to build the two windows on demand (`BuildMap`, `BuildPreview`); `MainWindow` subscribes to the two events and shows the windows, non-modal and maximised |
+| `MapViewModel` (the map window, R-130) | `Image` (the whole frame, its long side at most `PreviewMaxSide`), `Layers` (one `ClassLayer` per class of the map, always five, named for the path by `DustMap.ClassNames`: name, legend with the share (`DustMap.FractionOf`), the definition with the image's own thresholds on the sky path, and for the dust and the sky the L\* the verdict took and which rule gave it, the `RasterBitmaps.Overlay` bitmap from a patch index per reduced pixel, a swatch, `IsVisible`), `Clouds` (`CloudLayer`s: name, caption with L\*, target and patch count, centre and radius in reduced pixels, `Labelled` for the darkest `DustCloudReportRows`, `IsVisible`), `ShowClouds` (circles and labels together; off, the cloud list is disabled), `SelectAllClouds` / `DeselectAllClouds`, `HasWcs` (the clouds box is disabled and off without one), `Definition`, `NoWcsWarning`, the two legends. `MapWindow.xaml` stacks the image, the layer bitmaps (an `ItemsControl` on a `Grid`) and a `Canvas` of ellipses and labels in one `Viewbox`, so that everything scales together |
+| `IccPickerViewModel` (the profile window, R-132) | `Profiles` (`IccProfileRow`s from `IccPaperBlack.Installed`: `Name`, `File`, `Detail` = `IccPaperBlack.Describe`, `Note`, `Readable`, `DmaxText`), `Selected` (the first readable one at the start), `CanUse`, `IsEmpty`, `Folder`, `Explanation`, `AddFile(path)` (reads one more profile, adds and selects it). The window (`IccPickerWindow`) opens the file dialog and closes with a result; `MainWindow.ChooseProfile` then calls `MainViewModel.ChooseProfile(Selected)`, which applies it and re-runs (R-155) |
 | `PreviewWindowViewModel` (the preview window, R-131) | `Image` (`PrintPreview.Render` at the row's gamma), `BlackLayer` / `LowLayer` (overlays from the `PreviewClass`es), `ShowBlack` / `ShowLow`, `Title`, `Caption` (target, gamma, dust, sky, paper black, print-safe), the two legends with the shares |
 | `ExportTabViewModel` | `JpegRows` (mono strings), `JpegGuide` (`GuideParagraph`s under the table: how it is measured, each column group, what is recommended - thresholds from `Thresholds`), `Rows` (TIFF size, rounding, stress, plateau at the reference row's dpi; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`) |
 | `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "FWHM median in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
@@ -82,10 +104,15 @@ window; every XAML text is `{local:T En=..., Ro=...}` and every view-model text 
 `Tr.Pick(english, romanian)` pair, the window's file argument never `--lang` or its value
 (`language.md`, ADR 0048).
 
-**The Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0032). Unlike
-the other tabs it is empty after an analysis: `Populate` only keeps the result, and
-`Calculeaza` runs `CurveRun.Execute` on a pool thread (`ComputeAsync`; `Compute(w, h)` is the
-same body, synchronous, for most tests; one test awaits `ComputeAsync` itself). The gallery is a list of `CurveGalleryItem` (name,
+**The Editare Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0032,
+ADR 0051). Unlike the other tabs it is filled by a second run: `Populate` only keeps the result,
+and `MainViewModel.RunAsync`, once every tab is filled and the busy overlay is gone, starts
+`ComputeAsync`, which runs `CurveRun.Execute` on a pool thread and keeps the task in
+`CurvesComputation` for the tests to await; `Calculeaza` runs the same `ComputeAsync` again, at
+the size the view has reported by then (`Compute(w, h)` is the same body, synchronous, for most
+tests). Before the tab is first shown no size has been reported, so the first computation uses
+`Thresholds.CurvePreviewDefaultWidth` x `Height`, and the view's `Viewbox` only shrinks a preview
+to the area, never enlarges it. The gallery is a list of `CurveGalleryItem` (name,
 frozen bitmap, evidence lines, the core's suggestion), the original first; `Next` /
 `Previous` move an index and stop at the ends, `OpenCurve` and `SaveAs` are disabled on the
 original. The view is a grid, not a scrolled column, so the image takes the room left, and that room
@@ -103,7 +130,7 @@ the purpose only rebuilds the rows over the same bitmaps and keeps the position.
 a number (`_run`): `Reset`, on another image or a clear, advances it and frees `IsBusy`, and a
 computation that ends with an old number touches nothing, on success or on failure. The Left and
 Right keys are caught on the window (`MainWindow.GalleryKeys`, `PreviewKeyDown`), before the
-`TabControl`, which would use them to change the tab; they act only while the Curbe tab is
+`TabControl`, which would use them to change the tab; they act only while the Editare Curbe tab is
 selected, the gallery exists and the focus is not in a text box. `SaveRequested` makes the
 window show the save dialog with the core's proposed name, then `Save(path)` calls
 `CurveExport.Save` and shows `SaveMessage` or `SaveError`.
@@ -121,7 +148,7 @@ closes it.
 
 - **The window adds no number and no sentence.** `MainViewModel.RunAsync` calls
   `AnalysisRun.Execute` on a pool thread; the tab view-models turn the result records
-  into rows (the Curbe tab is filled on request, see above). Tables are rendered as pre-aligned mono strings - the same strings the
+  into rows (the Editare Curbe tab is filled by a second run started after them, see above). Tables are rendered as pre-aligned mono strings - the same strings the
   report writes - instead of one XAML template per table.
 - **View-models are public and therefore cannot expose core types**, which are internal.
   The compiler enforces that everything shown passes through the simple rows in

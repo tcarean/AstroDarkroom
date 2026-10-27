@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // ResultViews.xaml.cs - the links with the XAML of the seven tabs. The behaviour is in the
-// view-models; here there is only the size of the Curbe tab's gallery, which only the view
+// view-models; here there is only the size of the Editare Curbe tab's gallery, which only the view
 // knows.
 
 using System.Windows;
@@ -68,7 +68,7 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
-    /// The Curbe tab's view (R-146): the XAML, plus the gallery's size for the view-model.
+    /// The Editare Curbe tab's view (R-146): the XAML, plus the gallery's size for the view-model.
     /// </summary>
     public partial class CurvesView : UserControl
     {

@@ -124,9 +124,11 @@ internal static class InventoryReport
     }
 
     /// <summary>
-    /// The lens cell, from the first readable frame that has a focal length or a Nikon lens ID:
-    /// the shot's focal length and f-number, the lens's own range and widest aperture, and the
-    /// Nikon lens ID, each when known.
+    /// The lens cell, from the first readable frame that has a focal length, a lens ID or a lens
+    /// name: the shot's focal length and f-number, the lens's own range and widest aperture, and
+    /// the lens as the raw names it (R-065): its name in quotes with the ID and the mount in one
+    /// parenthesis, or the ID with the mount when the raw gives no name; a mount alone is
+    /// nothing, since without an ID or a name it says nothing about the lens.
     /// </summary>
     /// <param name="frames">The lights of the session.</param>
     /// <returns>
@@ -134,7 +136,7 @@ internal static class InventoryReport
     /// </returns>
     private static string Lens(IReadOnlyList<FrameInfo> frames)
     {
-        FrameInfo? f = frames.FirstOrDefault(x => x.Error is null && (x.FocalMm is not null || x.NikonLensId is not null));
+        FrameInfo? f = frames.FirstOrDefault(x => x.Error is null && (x.FocalMm is not null || x.LensId is not null || x.LensName is not null));
         if (f is null)
         {
             return T("unknown", "necunoscut");
@@ -154,9 +156,17 @@ internal static class InventoryReport
             parts.Add(T("lens ", "obiectiv ") + range + " mm" + (f.LensMaxAperture is double ap ? " f/" + RunReport.F(ap, 1) : ""));
         }
 
-        if (f.NikonLensId is long id)
+        // The lens as the raw names it: "EF50mm f/1.4 USM" (ID 198, Canon EF), ID 74 (Nikon F),
+        // "FE 16-35mm F2.8 GM" (Sony E). The same in both languages: "ID" is one word in both.
+        string id = f.LensId is long n ? "ID " + n.ToString(CultureInfo.InvariantCulture) : "";
+        if (f.LensName is string name)
         {
-            parts.Add(T("Nikon ID ", "ID Nikon ") + id.ToString(CultureInfo.InvariantCulture));
+            string inside = string.Join(", ", new[] { id, f.LensMount }.Where(p => !string.IsNullOrEmpty(p)));
+            parts.Add("\"" + name + "\"" + (inside.Length > 0 ? " (" + inside + ")" : ""));
+        }
+        else if (id.Length > 0)
+        {
+            parts.Add(id + (f.LensMount is string mount ? " (" + mount + ")" : ""));
         }
 
         return string.Join(", ", parts);

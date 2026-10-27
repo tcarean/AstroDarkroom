@@ -94,10 +94,10 @@ makes the window's saved file byte-identical to the console's output on any Wind
 interface language (`language.md`); the numbers are the same in both. The format is pinned by
 the golden tests, in both languages: change it on purpose, re-approve, read the diff.
 
-### The Curbe tab's sentences (`Report/CurveTexts.cs`, ADR 0032)
+### The Editare Curbe tab's sentences (`Report/CurveTexts.cs`, ADR 0032)
 
 Not part of the report: the console prints none of it. The file holds every sentence the
-Curbe tab shows, so that the window writes none: the evidence lines of a suggestion
+Editare Curbe tab shows, so that the window writes none: the evidence lines of a suggestion
 (`EvidenceLines`: the points, the five L\* before and after, the noise gain, the clipped
 share, the paper checks, the gamut figure or the note that explains its absence), the two
 paper checks as `Recommendation`s with a `Because` (`PaperChecks`: the background too low for

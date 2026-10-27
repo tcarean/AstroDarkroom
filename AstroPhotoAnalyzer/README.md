@@ -8,7 +8,7 @@ distance it will be seen at, and how much denoise the print version needs. Every
 comes with the figure it measured and the threshold it judged it by.
 
 It measures and recommends; the export itself is made cleanly from Siril. Besides its report it
-writes one file, and only when you ask for it: from the window's **Curves** tab, a new FITS with
+writes one file, and only when you ask for it: from the window's **Curves Editing** tab, a new FITS with
 a suggested contrast curve applied. The image you open is never modified.
 
 There are two applications over one core, so both give the same figures: the window,
@@ -63,8 +63,15 @@ Darkroom launcher, it speaks the launcher's language.
   a medium writes that medium's Dmax into it, and you can type your paper's over it (emptied, it
   means the medium's again). **From ICC profile...**, beside it, lists the printer profiles
   installed in Windows, each with its Dmax, and **Choose file...** adds a `.icc` or `.icm` file
-  from anywhere; **Use** writes the chosen profile's Dmax into the field. The medium keeps its
-  name, and Appendix F of the report names the profile the Dmax came from.
+  from anywhere; **Use** writes the chosen profile's Dmax into the field and, with an image
+  open, runs the analysis again at once. The profile in use is shown in the top bar, under the
+  image's name, with its Dmax; **Clear** beside it drops it, puts the medium's Dmax back and runs
+  the analysis again. Typing another Dmax over the profile's, or choosing a medium, drops it
+  too (the bar says so; those apply at the next **Analyse**). The medium keeps its name, and
+  Appendix F of the report names the profile the Dmax came from. The chosen profile is
+  remembered in `%LOCALAPPDATA%\AstroPhotoAnalyzer\settings.json` and is still in use when the
+  window is next opened; if its file has gone meanwhile, the bar says so in red and the medium's
+  Dmax is used until you choose another or press **Clear**.
 - **Viewing distance** (empty: 1.5 x the diagonal of each print size), **candidate widths**,
   **target aspect ratio** (empty: the image's own, no crop), **extra target background** (one
   more row in the background simulation), **WCS from a FITS**, **passepartout** and **frame**.
@@ -87,12 +94,12 @@ where one applies, the threshold they are judged by.
 | Tab | What it shows |
 | --- | --- |
 | **Report** | The decisions, in the report's order, each with its verdict chip and its "because:" line; the whole text report behind a check box. |
-| **Tones** | The L\* histogram, with paper black as a red line and the visibility threshold L\* 15 as a dashed yellow one; the tonal figures, the background level among them; the background simulation, with a **Preview** button on every row; under it, the definition of the dust and the sky used on this file, a red line when the file has no WCS, the **Dust / sky map** button and the table of catalogued clouds; the tab's landmarks in level and in L\*; how to read the tab. |
+| **Tones** | The L\* histogram, with paper black as a red line and the visibility threshold L\* 15 as a dashed yellow one; the tonal figures, the background level among them; the background simulation, with a **Preview** button on every row; under it, the definition of the dust and the sky used on this file, a red line when the file has no WCS and the **Dust / sky map** button; the tab's landmarks in level and in L\*; how to read the tab. |
 | **Export** | The JPEG table, with what its columns mean; the size of the 8-bit TIFF; the 16 to 8 bit rounding; the shadow-lift stress test; the plateau, how wide the flat steps of the 8-bit sky would print. |
 | **Resolution** | The stars' FWHM, in the centre and in the four corners, and the real detail it leaves; the table of print sizes; the scale of dpi against viewing distance. |
 | **Colour** | The background colour, R / G / B, with its cast; the four corners and the four edges against it, a flagged one marked "! coloured" or "! neutral"; how to read them. |
 | **Preview** | The centre at 100 % and 200 %, the four corners at 100 %, the whole frame, the print simulation (at the extra target background, or else at the recommended one, when it is not the image as it is) and, when the target ratio cuts, the crop, each with what to look for in it; the rule of screen against paper, with the step back computed for this image. |
-| **Curves** | Suggested contrast curves, on request: see below. |
+| **Curves Editing** | Suggested contrast curves, computed with the analysis: see below. |
 
 **Save the report...** writes `Report.txt` beside the image by default (`Raport.txt` in
 Romanian), byte for byte what the console writes with `-o`, and says under the buttons where it
@@ -106,20 +113,22 @@ nothing and show what the analysis decided. Esc closes them.
   colour, with its share of the patches and its definition in the legend, the image's own
   thresholds and, for the dust and the sky, the L\* the verdict took; the classes are those of
   "How the background is judged" below. With a WCS it circles the catalogued clouds and writes
-  the names of the darkest 15 on the image; the list beside it names them all, each with its L\*
-  and its level. Every layer has its check box, so do the clouds (disabled without a WCS), and
-  the list of clouds has **All** / **None** and a check box per cloud. It is made for checking
-  the classes by eye on your own images.
+  the names of the darkest 15 on the image; the list beside it names them all, each with its L\*,
+  its target and its patch count, the one place the window lists the clouds. Every layer has
+  its check box, so do the clouds (disabled without a WCS), and the list of clouds has **All** /
+  **None** and a check box per cloud. It is made for checking the classes by eye on your own
+  images.
 - **Preview**, on a row of the simulation, shows the image lifted to that row's background level
   (the "as is" row included), with the pixels under paper black and those under L\* 15 coloured,
   each layer with its check box.
 
 ### Suggested contrast curves
 
-The **Curves** tab is the only one the analysis does not fill: choose **Print** or **Screen** and
-press **Calculate**. You get a gallery: the original, then three or four suggestions, **Gentle**,
-**Moderate**, **Strong** and, when the peaks still have room under 0.92 of the scale,
-**Maximum**, each at the size that fits the window. Browse them with **< Back** and **Next >**,
+The **Curves Editing** tab is filled right after the analysis, so it is ready when you open it:
+a gallery of the original, then three or four suggestions, **Gentle**, **Moderate**, **Strong**
+and, when the peaks still have room under 0.92 of the scale, **Maximum**, each at the size that
+fits the window. Choose **Print** or **Screen** for the evidence under them; **Calculate**
+computes the gallery again, at the size the tab has now. Browse them with **< Back** and **Next >**,
 or with the Left and Right arrow keys.
 
 The curves are contrast curves: they do not move the dust or the sky, they spread the classes
@@ -372,5 +381,5 @@ compatible with the GPL:
 | Component | What it does here | Licence |
 | --- | --- | --- |
 | SixLabors.ImageSharp | reads TIFF, PNG and JPEG, and encodes the JPEGs and the 8-bit TIFF of the compression table | Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software) |
-| Wacton.Unicolour | evaluates the tables of a printer ICC profile, for the paper's Dmax and for the out-of-gamut figure of the Curves tab | MIT |
+| Wacton.Unicolour | evaluates the tables of a printer ICC profile, for the paper's Dmax and for the out-of-gamut figure of the Curves Editing tab | MIT |
 | Lynds' Catalogue of Dark Nebulae (data, not code) | the catalogue of dust clouds (LDN, 1962) by which the clouds of a plate-solved FITS are recognized | published data (Lynds 1962, ApJS 7, 1), the ADC/NASA version of 1979 distributed by CDS/VizieR as VII/7A; citing the source is the only condition |

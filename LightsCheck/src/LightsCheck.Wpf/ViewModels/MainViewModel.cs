@@ -132,7 +132,7 @@ public sealed class MainViewModel : ObservableObject
     private double _progress;
     private string _busyMessage = "";
     private string _report = "";
-    private string _pixelText = SeriesOptions.D3300PixelUm.ToString("F2", CultureInfo.InvariantCulture);
+    private string _pixelText = "";
     private string _threadsText = "";
     private string _eastArrow;
     private string _northArrow;
@@ -223,8 +223,8 @@ public sealed class MainViewModel : ObservableObject
     public string? Status { get => _status; private set => Set(ref _status, value); }
 
     /// <summary>
-    /// The pixel size in microns, as typed; the D3300's by default, used when the files do not
-    /// say it.
+    /// The pixel size in microns, as typed; blank by default, and then the run reads it from the
+    /// files or the raws, 3.92 as the last fallback (R-029, R-066).
     /// </summary>
     public string PixelText
     {
@@ -238,7 +238,12 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    public bool PixelIsValid => double.TryParse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) && SeriesOptions.PixelSizeIsValid(p);
+    /// <summary>Blank, or a pixel size the core accepts; a wrong value is the one invalid state.</summary>
+    public bool PixelIsValid => string.IsNullOrWhiteSpace(_pixelText) || TypedPixel is not null;
+
+    /// <summary>The pixel size typed, in microns, or null when the field is blank or wrong.</summary>
+    private double? TypedPixel =>
+        double.TryParse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) && SeriesOptions.PixelSizeIsValid(p) ? p : null;
 
     /// <summary>How many frames in parallel, as typed; empty = half the cores.</summary>
     public string ThreadsText { get => _threadsText; set => Set(ref _threadsText, value); }
@@ -276,7 +281,7 @@ public sealed class MainViewModel : ObservableObject
     }
 
     internal SeriesOptions Options => new(
-        PixelIsValid ? double.Parse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture) : SeriesOptions.D3300PixelUm,
+        TypedPixel,
         int.TryParse(_threadsText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int t) && t > 0 ? t : 0,
         new ArrowKeys(ArrowKeys.FromSymbol(_eastArrow) ?? ArrowKeys.Default.East, ArrowKeys.FromSymbol(_northArrow) ?? ArrowKeys.Default.North));
 

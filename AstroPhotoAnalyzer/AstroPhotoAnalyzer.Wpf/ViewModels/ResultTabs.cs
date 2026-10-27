@@ -42,7 +42,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Takes an analysis and sets <see cref="HasResult"/>: the six tabs of this file fill
-        /// their rows from it; the Curbe tab only keeps it, until "Calculeaza".
+        /// their rows from it; the Editare Curbe tab only keeps it, for the second run MainViewModel
+        /// starts (ADR 0051).
         /// </summary>
         /// <param name="r">The analysis; not null.</param>
         internal abstract void Populate(AnalysisResult r);
@@ -132,8 +133,8 @@ namespace AstroPhotoAnalyzer.Wpf
     /// <summary>
     /// The Tonuri tab (R-113): the tonal rows with their descriptions, the L* histogram with
     /// paper black and the visibility threshold marked, the simulation table with a preview
-    /// button per row, the cloud rows, the level-L* ladder, the guide, and the requests for the
-    /// map and preview windows.
+    /// button per row, the level-L* ladder, the guide, and the requests for the map and preview
+    /// windows. The catalogued clouds have no table here: their rows are the map window's list.
     /// </summary>
     public sealed class TonesTabViewModel : ResultTabViewModel
     {
@@ -148,7 +149,6 @@ namespace AstroPhotoAnalyzer.Wpf
         IReadOnlyList<MetricRow> _rows = Array.Empty<MetricRow>();
         IReadOnlyList<double> _hist = Array.Empty<double>();
         IReadOnlyList<SimulationRowItem> _simulation = Array.Empty<SimulationRowItem>();
-        IReadOnlyList<string> _clouds = Array.Empty<string>();
         IReadOnlyList<string> _ladder = Array.Empty<string>();
         IReadOnlyList<GuideParagraph> _guide = Array.Empty<GuideParagraph>();
         double _paperBlack = double.NaN, _lowSeparation = double.NaN;
@@ -214,12 +214,6 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>The red sentence without a WCS; null with one (hidden).</summary>
         public string NoWcsWarning { get => _noWcs; private set => Set(ref _noWcs, value); }
-
-        /// <summary>
-        /// The catalogued clouds with a row, all of them, as mono text (the report shows the first
-        /// DustCloudReportRows).
-        /// </summary>
-        public IReadOnlyList<string> CloudRows { get => _clouds; private set => Set(ref _clouds, value); }
 
         /// <summary>
         /// The level - L* table of the tab's landmarks, from TonalAnalyzer.LstarLadder; in the
@@ -338,9 +332,6 @@ namespace AstroPhotoAnalyzer.Wpf
             Definition = ReportWriter.DustDefinition(s);
             ExactLine = ReportWriter.ExactLine(s);
             NoWcsWarning = r.Raster.Source?.Wcs == null ? NoWcsSentence : null;
-            CloudRows = s.Clouds.Count == 0
-                ? Array.Empty<string>()
-                : new[] { ReportWriter.CloudHeader }.Concat(s.Clouds.Select(ReportWriter.CloudLine)).ToList();
             // The English column titles end where the Romanian ones do, over the right-aligned figures.
             LadderRows = new[] { Tr.Pick("   L*  level (grey)   landmark", "   L*   nivel (gri)   reper") }
                 .Concat(TonalAnalyzer.LstarLadder(r.Parameters, s).Select(l =>
@@ -361,7 +352,6 @@ namespace AstroPhotoAnalyzer.Wpf
             PaperBlack = double.NaN;
             LowSeparation = double.NaN;
             SimulationRows = Array.Empty<SimulationRowItem>();
-            CloudRows = Array.Empty<string>();
             LadderRows = Array.Empty<string>();
             Guide = Array.Empty<GuideParagraph>();
             Definition = null;
@@ -436,8 +426,8 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "sky over the model, the dust one as much under it, the bright nebula one over the nebula's Otsu threshold, the peaks as above. "
                         + $"On either path, the sky's L* is the median of the sky patches, and the dust's L* is the darkest extended area: the {Fmt.F0(Thresholds.DustClassFraction * 100)} % percentile of the dust patches "
                         + $"when the class holds at least {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % of the patches (under that they are cores or artefacts), or the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of the sky patches, "
-                        + $"whichever of the two is darker. The Lynds catalogue gives the names of the clouds and a row for each one with at least {Thresholds.DustCloudMinPatches} patches, with the target at which it reaches black. "
-                        + "The \"Dust / sky map\" button shows the classes on the image and the clouds by name.",
+                        + "whichever of the two is darker. "
+                        + $"The \"Dust / sky map\" button shows the classes on the image and, from the Lynds catalogue, the clouds by name: each one with at least {Thresholds.DustCloudMinPatches} patches, listed with its L* and the target at which it reaches black, the darkest {Thresholds.DustCloudReportRows} labelled on the image.",
                         $"Imaginea se imparte in dale de {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, fiecare cu L*-ul luminantei ei medii: "
                         + "ce integreaza ochiul pe o pata de hartie, nu un pixel. Dalele se impart in cinci clase, relativ, nu dupa un prag fix, pe una din doua cai. "
                         + "Cu un FITS plate-solved (WCS in antet, sau imprumutat cu campul \"WCS din FITS\") si cu Calea Lactee in cadru: banda e latitudinea galactica |b| sub "
@@ -450,8 +440,8 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "cerului deasupra modelului, praful cu la fel de mult sub el, nebuloasa stralucitoare cea de peste pragul Otsu al nebuloasei, varfurile ca mai sus. "
                         + $"Pe orice cale, L*-ul cerului e mediana dalelor de cer, iar L*-ul prafului e zona intinsa cea mai intunecata: percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf "
                         + $"cand clasa are cel putin {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale (sub atat sunt nuclee sau artefacte), sau cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al dalelor de cer, "
-                        + $"care din doua e mai intunecata. Catalogul Lynds da numele norilor si randul fiecaruia cu cel putin {Thresholds.DustCloudMinPatches} dale, cu tinta la care ajunge el pe negru. "
-                        + "Butonul \"Harta praf / cer\" arata clasele pe imagine si norii pe nume."),
+                        + "care din doua e mai intunecata. "
+                        + $"Butonul \"Harta praf / cer\" arata clasele pe imagine si, din catalogul Lynds, norii pe nume: fiecare cu cel putin {Thresholds.DustCloudMinPatches} dale, in lista cu L*-ul lui si tinta la care ajunge el pe negru, cei mai intunecati {Thresholds.DustCloudReportRows} etichetati pe imagine."),
                 },
                 new GuideParagraph
                 {

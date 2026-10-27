@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Windows.Media.Imaging;
 using AstroDarkroom.Core;
 using static AstroDarkroom.Core.Ui;
 
@@ -36,6 +37,9 @@ public sealed record AppRow(SuiteApp App, AppLocation Location, ComponentInfo? C
 
     /// <summary>The one-line description, as the catalogue gives it.</summary>
     public string Description => App.Description;
+
+    /// <summary>The app's icon, the component's own, which the XAML scales to the row (R-010).</summary>
+    public BitmapSource Icon => Icons.LargestFrame(App.Icon);
 
     /// <summary>Whether the app can be started from this folder.</summary>
     public bool IsAvailable => Location.IsAvailable;
