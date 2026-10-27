@@ -59,6 +59,26 @@ public class StarAnalyzerTests
     /// this 600 x 600 frame (measured 2026-10-27 with StarMinSnr set to 0); a star must be
     /// StarMinSnr sigmas over its base.
     /// </summary>
+    /// <summary>
+    /// Thirty stars pass the count floor, but on a 2000 x 2000 frame they are 7.5 per
+    /// megapixel, under the density floor: a starless frame on which a denoise left a few dozen
+    /// soft blobs. The same thirty on 1000 x 1000 are 30 per megapixel: a sparse field, measured.
+    /// </summary>
+    [Fact]
+    public void R070_TooFewStarsPerMegapixelAreInsufficientEvenOverTheCountFloor()
+    {
+        var sparse = StarAnalyzer.Analyze(Scenes.WithStars(SyntheticRasters.Flat(2000, 2000, 0.2f), count: 30, fwhm: 3.0, amplitude: 0.3f));
+        Assert.InRange(sparse.Count, 25, 30);
+        Assert.InRange(sparse.DensityPerMp, 6.0, 7.6);
+        Assert.True(sparse.Insufficient);
+        Assert.True(double.IsNaN(sparse.FwhmMedian));
+
+        var dense = StarAnalyzer.Analyze(Scenes.WithStars(SyntheticRasters.Flat(1000, 1000, 0.2f), count: 30, fwhm: 3.0, amplitude: 0.3f));
+        Assert.InRange(dense.Count, 25, 30);
+        Assert.InRange(dense.DensityPerMp, 25.0, 30.0);
+        Assert.False(dense.Insufficient);
+    }
+
     [Fact]
     public void R070_NoiseGrainIsNotAStar()
     {

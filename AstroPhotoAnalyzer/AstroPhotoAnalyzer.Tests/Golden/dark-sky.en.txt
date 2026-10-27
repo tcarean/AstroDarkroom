@@ -35,9 +35,8 @@ VERDICT: PROBLEM
    ! Denoise is set too strong for print: the noise no longer dithers the quantization. For the print version, a lower setting keeps the texture and the faint stars.
      because: median sigma 0.30 LSB on 38 smooth tiles (10 % 0.30, minimum 0.29; under 0.5 LSB, 100.0 % of the tiles); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.16 the noise grows by ~1.36 x (the slope of the curve at the background), to ~0.41 LSB
 
-6. Warnings  [CAUTION]
-   ! Keep the 16-bit master: any later edit (a reframing, a retouch, another print) starts from it, not from the print file.
-     because: after a shadow-lift (gamma 1.9), from 8 bits 24 shadow levels are missing (52 used), from 16 0 (75 used); threshold 20
+6. Warnings  [OK]
+   (nothing to report)
 
 Appendix A. Tones
   channel means (0..255): 29.1 / 30.8 / 28.6

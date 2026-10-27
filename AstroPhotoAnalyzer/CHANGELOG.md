@@ -32,6 +32,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   with the denoise (0.18, 0.24, 0.44 % of the frame) while the mean plateau shrank and would
   have cleared the strongest one (R-080, R-091; ADR 0060). In the window's Raport tab the
   share and the threshold are in bold; the text report is unchanged (R-112).
+- "Do not go below q100" and "Keep the 16-bit master" are no longer warnings of the report:
+  they are facts of the Export tab, which names the highest JPEG quality that fails with its
+  maximum error and marks the stress test's 8-bit row; the report's sections 1 and 6 are Ok
+  when nothing else is wrong (R-091, R-096, R-114; ADR 0061).
+- The stars are too few for a FWHM under 10 per megapixel as well as under 20 in all, so a
+  starless frame on which a strong denoise leaves a few dozen soft blobs (48 on 22.6 MP, 2.1
+  per megapixel) is judged by the pixel grid, not by a "real detail" computed on the blobs;
+  real star fields sit at 76 to 332 per megapixel (R-070; ADR 0062).
 - The background colour of section 3, the reference of the cast and of the eight edge regions,
   is the colour of the sky patches above the bottom band (the class the background section
   calls sky), no longer the darkest quarter of the frame: on a Milky Way core the darkest

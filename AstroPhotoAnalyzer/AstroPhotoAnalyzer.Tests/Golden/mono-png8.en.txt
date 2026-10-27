@@ -23,7 +23,7 @@ VERDICT: CAUTION
 
 4. The size of the print  [CAUTION]
    ! Without stars the real resolution is not measured; only the pixel grid is judged: without a given distance the convention of 180 dpi applies (the grid invisible from ~0.5 m, when you step closer), and not even the smallest width of the list (50 x 50 cm, 15 dpi) reaches the threshold. It is a limit of the file, not of the detail - a soft nebula may need much less - so no size is recommended. Give the viewing distance, so that the threshold is the physical one, not the convention.
-     because: 16 stars measured (minimum 20); at 50 cm the pixel pitch is 1.67 mm, invisible from 5.75 m; threshold 180 dpi (convention: a pitch of 0.14 mm, invisible from 0.49 m)
+     because: 16 stars measured, 177.8 per megapixel (minimum 20 and 10 per megapixel); at 50 cm the pixel pitch is 1.67 mm, invisible from 5.75 m; threshold 180 dpi (convention: a pitch of 0.14 mm, invisible from 0.49 m)
 
 5. Denoise for the print version  [OK]
    - The residual noise is exactly where it should be for print.
@@ -72,7 +72,7 @@ Appendix C. Export
   plateau: no clean sky tiles (0 of 5000 positions)
 
 Appendix D. Resolution and size
-  stars: 16 measured - too few for a FWHM
+  stars: 16 measured, 177.8 per megapixel - too few for a FWHM
   regions: centre 3.09 px (6); upper-left corner n/a (1); upper-right corner n/a (1); lower-left corner n/a (0); lower-right corner n/a (0)
   sizes for 300 x 300 px:
    width cm     height   dpi   star mm    point from       dist. used   outer frame cm

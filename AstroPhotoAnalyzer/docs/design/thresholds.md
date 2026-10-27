@@ -54,6 +54,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `StarMinSnr` | 12 | the amplitude over the border's robust sigma about a fitted plane; the grain peaks at 3 to 4 (ADR 0054) |
 | `StarFwhmMin` / `StarFwhmMax` | 0.8 / 15 | accepted widths |
 | `CornerSoftRatio` / `RegionFraction` / `CenterFraction` / `StarMinCount` / `RegionMinStars` | 1.4 / 0.2 / 0.4 / 20 / 5 | |
+| `StarMinPerMegapixel` | 10 | stars per megapixel under which the FWHM is not trusted, beside the count: real fields at 76 to 332, the strongest Syqon denoise of a starless core at 2.1 (ADR 0062) |
 | `FallbackMinDpi` | 180 | pixel-grid floor without stars and without a distance: 0.14 mm pitch, invisible from ~0.5 m (lab convention 150-200); with a distance the floor is 25.4 / (0.29 x d) |
 | `JpegQualities` | 100, 95, 90 | |
 | `BackgroundExcludeBottomFraction` | 0.25 | the sky's colour leaves out the bottom band, where the horizon sits; it is taken on the sky patches of R-044 (ADR 0055; `BackgroundDarkestFraction`, the darkest quarter, went with it) |

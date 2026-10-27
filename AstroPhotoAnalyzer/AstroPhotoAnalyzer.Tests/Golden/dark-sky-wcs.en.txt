@@ -36,8 +36,6 @@ VERDICT: PROBLEM
 6. Warnings  [CAUTION]
    ! No ICC profile: the lab will assume sRGB. Export with the sRGB profile embedded, so that nobody assumes anything.
      because: no profile in the file; the tool measured assuming sRGB
-   ! Keep the 16-bit master: any later edit (a reframing, a retouch, another print) starts from it, not from the print file.
-     because: after a shadow-lift (gamma 1.9), from 8 bits 24 shadow levels are missing (52 used), from 16 0 (75 used); threshold 20
 
 Appendix A. Tones
   channel means (0..255): 29.1 / 30.8 / 28.6

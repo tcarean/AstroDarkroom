@@ -73,7 +73,18 @@ namespace AstroPhotoAnalyzer
     {
         internal IReadOnlyList<Star> Stars { get; init; }
         internal int Count => Stars.Count;
-        internal bool Insufficient => Count < Thresholds.StarMinCount;
+
+        /// <summary>The frame's area in megapixels, what the density is read against.</summary>
+        internal double MegaPixels { get; init; }
+
+        /// <summary>The stars per megapixel of the frame; 0 on an empty frame.</summary>
+        internal double DensityPerMp => MegaPixels > 0 ? Count / MegaPixels : 0;
+
+        /// <summary>
+        /// Too few stars for a FWHM: under <see cref="Thresholds.StarMinCount"/> in all, or under
+        /// <see cref="Thresholds.StarMinPerMegapixel"/> per megapixel (ADR 0062).
+        /// </summary>
+        internal bool Insufficient => Count < Thresholds.StarMinCount || DensityPerMp < Thresholds.StarMinPerMegapixel;
 
         /// <summary>NaN when there are too few stars.</summary>
         internal double FwhmMedian { get; init; }
@@ -200,13 +211,15 @@ namespace AstroPhotoAnalyzer
             double worstCorner = regions.Skip(1).Where(c => c.Known).Select(c => c.FwhmMedian).DefaultIfEmpty(double.NaN).Max();
             double ratio = double.IsNaN(center) || double.IsNaN(worstCorner) ? double.NaN : worstCorner / center;
 
-            if (stars.Count < Thresholds.StarMinCount)
-                return new StarResult { Stars = stars, FwhmMedian = double.NaN, FwhmQ1 = double.NaN, FwhmQ3 = double.NaN, Regions = regions, CornerToCenterRatio = ratio };
+            double megaPixels = W * (double)H / 1e6;
+            if (stars.Count < Thresholds.StarMinCount || stars.Count / megaPixels < Thresholds.StarMinPerMegapixel)
+                return new StarResult { Stars = stars, MegaPixels = megaPixels, FwhmMedian = double.NaN, FwhmQ1 = double.NaN, FwhmQ3 = double.NaN, Regions = regions, CornerToCenterRatio = ratio };
 
             float[] sorted = Stats.Sorted(stars.Select(s => (float)s.Fwhm).ToArray());
             return new StarResult
             {
                 Stars = stars,
+                MegaPixels = megaPixels,
                 FwhmMedian = Stats.PercentileSorted(sorted, 50),
                 FwhmQ1 = Stats.PercentileSorted(sorted, 25),
                 FwhmQ3 = Stats.PercentileSorted(sorted, 75),

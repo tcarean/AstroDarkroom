@@ -50,7 +50,11 @@ public class RecommendationsTests
         Assert.Contains(Of(a, Topic.Colour), r => r.Verdict == Verdict.Attention && r.Text.StartsWith("Colt dreapta-jos"));
         Assert.Contains(Of(a, Topic.Size), r => r.Verdict == Verdict.Attention && r.Text.Contains("decupaj"));
         Assert.Contains(Of(a, Topic.Denoise), r => r.Verdict == Verdict.Attention && r.Text.Contains("apasat tare"));
-        Assert.Contains(Of(a, Topic.Warnings), r => r.Text.Contains("master-ul de 16 biti"));
+        // The 16-bit master and the q100 floor are facts of the Export tab since ADR 0061, not
+        // warnings: neither line is in the report, though the scene raises both measurements.
+        Assert.True(a.Quantization.Keep16BitMaster);
+        Assert.DoesNotContain(Of(a, Topic.Warnings), r => r.Text.Contains("master-ul de 16 biti"));
+        Assert.DoesNotContain(Of(a, Topic.Format), r => r.Text.StartsWith("Nu cobori"));
     }
 
     [Fact]

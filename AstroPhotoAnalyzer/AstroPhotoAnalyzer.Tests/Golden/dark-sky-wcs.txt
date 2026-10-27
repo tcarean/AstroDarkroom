@@ -36,8 +36,6 @@ VERDICT: PROBLEMA
 6. Avertismente  [ATENTIE]
    ! Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic.
      fiindca: niciun profil in fisier; unealta a masurat presupunand sRGB
-   ! Pastreaza master-ul de 16 biti: orice editare ulterioara (recadrare, retus, alt print) pleaca din el, nu din fisierul de tipar.
-     fiindca: dupa un shadow-lift (gamma 1.9) din 8 biti lipsesc 24 niveluri din umbre (52 folosite), din 16 lipsesc 0 (75 folosite); prag 20
 
 Anexa A. Tonuri
   medii pe canal (0..255): 29.1 / 30.8 / 28.6

@@ -479,6 +479,17 @@ namespace AstroPhotoAnalyzer
         /// <summary>Under this many measured stars the global FWHM is not to be trusted.</summary>
         internal const int StarMinCount = 20;
 
+        /// <summary>
+        /// Under this many measured stars per megapixel of the frame the FWHM is not to be
+        /// trusted either (ADR 0062): a count alone cannot tell a few dozen soft blobs a denoiser
+        /// left on a starless 23 MP frame from as many stars on a small crop. Measured on
+        /// 2026-10-27: frames with stars at 76 (Rosetta), 136 (Orion), 272 (the reference
+        /// image) and 332 (Andromeda) per megapixel; the owner's 2026-08-12 core denoised by
+        /// Syqon at its strongest, starless, at 2.1 (48 blobs of median FWHM 6.98 px, which gave
+        /// a "real detail" of 836 px across the width), and every other starless frame under 1.
+        /// </summary>
+        internal const double StarMinPerMegapixel = 10;
+
         /// <summary>Under this many stars in a region, its FWHM is not reported.</summary>
         internal const int RegionMinStars = 5;
 

@@ -518,7 +518,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 .Concat(r.Jpeg.Rows.Select(j =>
                     $"q{j.Quality,-3}         {Fmt.Mb(j.Megabytes),8}   {Fmt.F3(j.MeanAbsError),9}   {Fmt.F1(j.MaxError),7}   {Fmt.F2(j.P99),4}   {Fmt.F2(j.P999),5}   {Fmt.Pct(j.PctOverThreshold),7}   {Fmt.F0(j.MeanLevelOverThreshold),11}"))
                 .ToList();
-            JpegGuide = JpegGuideParagraphs();
+            JpegGuide = JpegGuideParagraphs(r.Jpeg);
 
             // The descriptions: what the row measures, with the thresholds from Thresholds, not
             // typed in.
@@ -603,10 +603,16 @@ namespace AstroPhotoAnalyzer.Wpf
         /// The text under the JPEG table: explanation, not diagnosis - it does not depend on the
         /// image, only on the thresholds.
         /// </summary>
+        /// <param name="jpeg">The JPEG measurement, for the quality under 100 that fails, if any.</param>
         /// <returns>The five paragraphs.</returns>
-        static IReadOnlyList<GuideParagraph> JpegGuideParagraphs()
+        static IReadOnlyList<GuideParagraph> JpegGuideParagraphs(JpegResult jpeg)
         {
             string count = Fmt.F0(Thresholds.JpegErrorCountLevels);
+            // The floor not to go under, once a warning of the report (ADR 0061): named here, with
+            // its figure, when a quality under 100 fails the maximum-error threshold.
+            JpegRow floor = jpeg.HighestFailingBelow100;
+            string floorEn = floor == null ? "" : $" Here q{floor.Quality} reaches a maximum error of {Fmt.F1(floor.MaxError)} levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below q100.";
+            string floorRo = floor == null ? "" : $" Aici q{floor.Quality} ajunge la o eroare maxima de {Fmt.F1(floor.MaxError)} niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub q100.";
             return new[]
             {
                 new GuideParagraph
@@ -655,9 +661,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Lead = Tr.Pick("What is recommended.", "Ce se recomanda."),
                     Text = Tr.Pick("An 8-bit LZW TIFF. If the lab accepts only JPEG: q100, 4:4:4. Under q100 the maximum error jumps on the stars and the edges, "
-                        + "and the size gained does not matter for a print.",
+                        + "and the size gained does not matter for a print." + floorEn,
                         "TIFF 8-bit LZW. Daca laboratorul accepta doar JPEG: q100, 4:4:4. Sub q100 eroarea maxima sare pe stele si pe muchii, "
-                        + "iar castigul de marime nu conteaza pentru un print."),
+                        + "iar castigul de marime nu conteaza pentru un print." + floorRo),
                 },
             };
         }
@@ -704,17 +710,19 @@ namespace AstroPhotoAnalyzer.Wpf
             var rows = new List<MetricRow>
             {
                 Row(Tr.Pick("Stars measured", "Stele masurate"), Fmt.Int(s.Count),
-                    s.Insufficient ? Tr.Pick($"too few for a FWHM (minimum {minStars})", $"prea putine pentru FWHM (minim {minStars})") : null,
+                    s.Insufficient ? Tr.Pick($"{Fmt.F1(s.DensityPerMp)} per megapixel: too few for a FWHM (minimum {minStars}, {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel)", $"{Fmt.F1(s.DensityPerMp)} pe megapixel: prea putine pentru FWHM (minim {minStars}, {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel)") : null,
                     Tr.Pick("How many stars passed the filters: an unsaturated local peak, with a minimum amplitude against the background around it "
                         + $"and at least {Fmt.F0(Thresholds.StarMinSnr)} times that background's noise (the grain of a stretched sky is not a star), "
                         + $"with a width between {Fmt.F1(Thresholds.StarFwhmMin)} and {Fmt.F0(Thresholds.StarFwhmMax)} px on both axes. "
                         + "They are searched for on the reference channel (green; the only channel in mono). "
-                        + $"Under {minStars} stars, the global FWHM is not reliable and is not reported.",
+                        + $"Under {minStars} stars, or under {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel of the frame (a starless frame keeps a few dozen soft blobs after a denoise, "
+                        + "which a count alone would take for stars), the global FWHM is not reliable and is not reported.",
                         "Cate stele au trecut de filtre: un varf local nesaturat, cu amplitudine minima fata de fundalul din jurul lui "
                         + $"si de cel putin {Fmt.F0(Thresholds.StarMinSnr)} ori zgomotul acelui fundal (granulatia unui cer intins nu e stea), "
                         + $"cu latimea intre {Fmt.F1(Thresholds.StarFwhmMin)} si {Fmt.F0(Thresholds.StarFwhmMax)} px pe ambele axe. "
                         + "Se cauta pe canalul de referinta (verdele; singurul canal la mono). "
-                        + $"Sub {minStars} de stele, FWHM-ul global nu e de incredere si nu se raporteaza.")),
+                        + $"Sub {minStars} de stele, sau sub {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel de cadru (un cadru fara stele pastreaza dupa denoise cateva zeci de pete moi, "
+                        + "pe care un numar singur le-ar lua drept stele), FWHM-ul global nu e de incredere si nu se raporteaza.")),
                 Row(Tr.Pick("Median FWHM (Q1 / Q3)", "FWHM median (Q1 / Q3)"), s.Insufficient ? "n/a" : $"{Fmt.F2(s.FwhmMedian)} px ({Fmt.F2(s.FwhmQ1)} / {Fmt.F2(s.FwhmQ3)})",
                     description: fwhmDesc),
                 Row(Tr.Pick("Real detail across the width", "Detaliu real pe latime"), ps.FwhmKnown ? $"~{Fmt.F0(ps.EffectiveDetailPx)} px" : "n/a",

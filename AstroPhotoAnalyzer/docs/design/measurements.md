@@ -252,7 +252,7 @@ linearly (the acceptance script's function, epsilon included), keep the star whe
 widths are in (`StarFwhmMin` 0.8, `StarFwhmMax` 15) and record their mean.
 
 Result: `Stars` (x, y, fwhm, peak), `FwhmMedian` / `Q1` / `Q3` (NaN below
-`StarMinCount` = 20), `Regions` (centre = central 40 % x 40 %, four corners 20 % x 20 %;
+`StarMinCount` = 20, or under `StarMinPerMegapixel` = 10 per megapixel, `DensityPerMp`; ADR 0062), `Regions` (centre = central 40 % x 40 %, four corners 20 % x 20 %;
 median per region when >= `RegionMinStars` = 5), `CornerToCenterRatio` = widest known
 corner / centre, `SoftCorners` when > `CornerSoftRatio` (1.4), `EffectiveDetailPx(w)` =
 w / FwhmMedian.
@@ -354,7 +354,7 @@ histogram).
 first rounded to 8 bits. Levels used strictly inside (`ShadowLiftLevelLo` 8,
 `ShadowLiftLevelHi` 120) and missing between the first and last used:
 `LevelsUsedFrom16` / `MissingFrom16` / `LevelsUsedFrom8` / `MissingFrom8`.
-`Keep16BitMaster` when MissingFrom8 - MissingFrom16 > `MissingLevelsWarn` (20): the levels 8 bits
+`Keep16BitMaster` when MissingFrom8 - MissingFrom16 > `MissingLevelsWarn` (20), a mark on the Export tab's stress row since ADR 0061, not a warning: the levels 8 bits
 lose that 16 bits keep, so an upscale, missing the same on both paths, gets no such advice
 (ADR 0043).
 

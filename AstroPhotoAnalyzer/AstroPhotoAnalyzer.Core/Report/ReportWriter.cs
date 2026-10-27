@@ -422,7 +422,7 @@ namespace AstroPhotoAnalyzer
             w.WriteLine();
             w.WriteLine(Tr.Pick("Appendix D. Resolution and size", "Anexa D. Rezolutie si marime"));
             w.WriteLine(s.Insufficient
-                ? Tr.Pick($"  stars: {s.Count} measured - too few for a FWHM", $"  stele: {s.Count} masurate - prea putine pentru FWHM")
+                ? Tr.Pick($"  stars: {s.Count} measured, {Fmt.F1(s.DensityPerMp)} per megapixel - too few for a FWHM", $"  stele: {s.Count} masurate, {Fmt.F1(s.DensityPerMp)} pe megapixel - prea putine pentru FWHM")
                 : Tr.Pick($"  stars: {s.Count} measured; median FWHM {Fmt.F2(s.FwhmMedian)} px, Q1 {Fmt.F2(s.FwhmQ1)}, Q3 {Fmt.F2(s.FwhmQ3)}; real detail ~{Fmt.F0(ps.EffectiveDetailPx)} px across the width",
                           $"  stele: {s.Count} masurate; FWHM median {Fmt.F2(s.FwhmMedian)} px, Q1 {Fmt.F2(s.FwhmQ1)}, Q3 {Fmt.F2(s.FwhmQ3)}; detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime"));
             w.WriteLine(Tr.Pick("  regions: ", "  regiuni: ") + string.Join("; ", s.Regions.Select(x => $"{x.Name} {(x.Known ? Fmt.F2(x.FwhmMedian) + " px" : "n/a")} ({x.Count})"))

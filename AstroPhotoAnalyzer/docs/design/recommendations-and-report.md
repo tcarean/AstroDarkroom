@@ -20,7 +20,6 @@ Background, Colour, Size, Denoise, Warnings.
 | Format | source > 8 bits | Ok | send TIFF 8-bit LZW (size); 16 -> 8 is rounding (mean/max) |
 | Format | source 8 bits | Ok | send TIFF 8-bit LZW; nothing to convert |
 | Format | q100 row exists | Ok, or Attention when not `Acceptable` or > `JpegOverThresholdWarnPct` (5 %) samples over 2 | if only JPEG: q100 4:4:4 (size, errors, where they sit; "in the dark sky" when the mean level of affected samples < 64) |
-| Format | any q < 100 not `Acceptable` | Attention | never below q100 (the highest failing quality's max error) |
 | Format | plateau known and visible at the reference row's dpi | Attention | banding risk: send 16-bit or dither |
 | Format | plateau known and not visible | Ok | no visible banding |
 | Format | plateau unknown and `BandingRisk` | Attention | banding risk from sigma alone |
@@ -49,7 +48,6 @@ Background, Colour, Size, Denoise, Warnings.
 | Warnings | `IsUpscaled` | Attention | 8 bits in disguise |
 | Warnings | no ICC | Attention | export with sRGB embedded |
 | Warnings | ICC not sRGB | Attention | tell the lab; L\* assumed sRGB |
-| Warnings | `Keep16BitMaster` | Attention | keep the 16-bit master (levels missing from 8 vs 16) |
 | Warnings | reader note | Ok | the note |
 
 The noise-after-restretch figure: slope = gamma x bg^(gamma - 1) at the measured
