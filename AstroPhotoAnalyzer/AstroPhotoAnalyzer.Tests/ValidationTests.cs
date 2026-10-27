@@ -385,9 +385,11 @@ public class ValidationTests
 
         QuantizationResult q = a.Quantization;
         f["quantization.plateauTiles"] = q.PlateauTiles;
+        f["quantization.plateauPositions"] = q.PlateauPositions;
         f["quantization.plateauFramePct"] = R(q.PlateauFramePct);
         f["quantization.plateauPx"] = R(q.PlateauPx);
         f["quantization.plateauSigmaLsb"] = R(q.PlateauSigmaLsb);
+        f["quantization.plateauVisibleFramePctAtReference"] = a.Size.ReferenceRow == null ? "n/a" : R(q.PlateauVisibleFramePctAt(a.Size.ReferenceRow.Dpi));
         if (q.Applicable)
         {
             f["quantization.roundingMeanAbs"] = R(q.RoundingMeanAbs);

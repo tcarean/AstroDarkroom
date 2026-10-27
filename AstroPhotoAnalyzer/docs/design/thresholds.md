@@ -44,9 +44,10 @@ All empirical, most from the reference image. Change one, change its comment.
 | `NoiseTileSize` / `NoiseTileCandidates` | 64 / 400 | |
 | `NoiseTileMaxRangeLevels` | 6000/257 = 23.3 | smooth-tile range for noise |
 | `NoiseMinTiles` | 10 | fewer: insufficient |
-| `PlateauTileMaxRangeLevels` / `PlateauTileMaxMeanLevels` / `PlateauTileCount` / `PlateauSeed` / `PlateauMaxAttempts` | 6 / 70 / 120 / 1 / 5000 | strict tiles for the plateau |
+| `PlateauTileMaxRangeLevels` / `PlateauTileMaxMeanLevels` / `PlateauSeed` / `PlateauPositions` | 6 / 70 / 1 / 5000 | strict tiles for the plateau, at every one of the positions (`PlateauTileCount`, 120, and `PlateauMaxAttempts` went with ADR 0060) |
 | `NoiseBandingLsb` / `NoisePrintLoLsb` / `NoisePrintHiLsb` / `NoiseUnderDenoisedLsb` | 0.5 / 0.8 / 1.5 / 2.0 | sigma bands |
-| `PlateauVisibleMm` | 1.0 | a plateau longer than this on paper is a contour |
+| `PlateauVisibleMm` | 1.0 | a tile's plateau longer than this on paper is a contour |
+| `PlateauFlatFrameWarnPct` | 0.1 | a banding risk when the tiles with a contour are more than this share of the frame, in percent: about five tiles on 23 MP, 4 cm2 on an 80 cm print; 0.00 % on the reference image, 0.18 / 0.24 / 0.44 % on the owner's core at Syqon 0.5 / 0.75 / 1 (ADR 0060) |
 | `JpegMaxErrorReject` / `JpegErrorCountLevels` / `JpegOverThresholdWarnPct` | 10 / 2 / 5 | q100 gets Attention above this percentage of samples over `JpegErrorCountLevels` even when its max error is acceptable |
 | `ShadowLiftGamma` / `ShadowLiftLevelLo` / `ShadowLiftLevelHi` / `MissingLevelsWarn` | 1.9 / 8 / 120 / 20 | stress test |
 | `StarWindow` / `StarMinAmplitude16` / `StarMaxPeak16` / `StarCandidateAboveMean16` | 25 / 3000 / 60000 / 3000 | in 16-bit units |

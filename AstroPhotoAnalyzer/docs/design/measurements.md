@@ -326,21 +326,24 @@ shows it under the size table so the dpi column reads against physics rather tha
 
 ### C1/C2/C4 - `QuantizationAnalyzer`
 
-**C1 plateau**: up to `PlateauTileCount` (120) tiles from `SeededRandom(PlateauSeed = 1)`
-within `PlateauMaxAttempts` (5000), accepted when the reference plane's range < 6 levels
-and mean < 70 levels (`PlateauTile*` - the strict criterion of the other acceptance
-script). On each, the 8-bit quantised values: changes of value per row, averaged;
-plateau = 64 / (1 + changes). `PlateauPx` = mean over tiles (NaN without tiles);
-`PlateauMmAt(dpi)` = PlateauPx x 25.4 / dpi; `PlateauVisibleAt(dpi)` when >
-`PlateauVisibleMm` (1.0). `PlateauFramePct` = 100 x tiles accepted / positions tried (the draws
-are uniform, so it estimates the share of the frame that is clean sky by the strict
-criterion); `PlateauSigmaLsb` = the median over the tiles of `NoiseAnalyzer.SigmaLsb`. The
-two say where the plateau was measured: a tile with real noise of about 1 LSB or more spans
-over 6 levels (the range of its 4096 samples is about 7 sigma; the clean-sky scene at 1.0 LSB
-yields no tile) and fails the range criterion, so on an AI-denoised frame the plateau's tiles are
-the patches the denoiser wiped (the owner's 2026-08-12 core at Syqon 0.75: 11 tiles, 0.2 %
-of the frame, sigma 0.01, against a noise median of 0.82 on 313 smooth tiles), and the mean
-plateau is not comparable across denoise strengths (see `known-limitations.md`).
+**C1 plateau**: at every one of `PlateauPositions` (5000) random positions from
+`SeededRandom(PlateauSeed = 1)`, the tiles accepted when the reference plane's range < 6
+levels and mean < 70 levels (`PlateauTile*` - the strict criterion of the other acceptance
+script). On each, the 8-bit quantised values: changes of value per row, averaged; the tile's
+plateau = 64 / (1 + changes), kept in `PlateauTilePx` (sorted). `PlateauPx` = mean over tiles
+(NaN without tiles), the typical step, for information; `PlateauMmAt(dpi)` = PlateauPx x
+25.4 / dpi. The verdict (ADR 0060): `PlateauVisibleFramePctAt(dpi)` = 100 x (tiles with px x
+25.4 / dpi > `PlateauVisibleMm` (1.0)) / positions, and `PlateauVisibleAt(dpi)` when it passes
+`PlateauFlatFrameWarnPct` (0.1 %). The mean cannot decide: on a heavily denoised frame the many
+ordinary tiles drown the few fully flat ones (the owner's 2026-08-12 core at Syqon 1: mean
+4.7 px, but 0.44 % of the frame flat over 1 mm). `PlateauFramePct` = 100 x tiles accepted /
+positions (the draws are uniform, so it estimates the share of the frame that is clean sky by
+the strict criterion); `PlateauSigmaLsb` = the median over the tiles of
+`NoiseAnalyzer.SigmaLsb`. The two say where the plateau was measured: a tile with real noise
+of about 1 LSB or more spans over 6 levels (the range of its 4096 samples is about 7 sigma;
+the clean-sky scene at 1.0 LSB yields no tile) and fails the range criterion, so on an
+AI-denoised frame the plateau's tiles are the patches the denoiser wiped (at Syqon 0.75: 11
+tiles, 0.2 % of the frame, sigma 0.01, against a noise median of 0.82 on 313 smooth tiles).
 
 **C2 rounding** (when the source has more than 8 bits): |v x 255 - round(v x 255)| on all
 planes at stride 2 -> `RoundingMeanAbs`, `RoundingMax`, `RoundingP999` (from a 1000-bin
@@ -466,7 +469,7 @@ by digit.
 
 - **Two different tile criteria, on purpose.** The noise sigma (B3) uses tiles with a
   range up to 6000/65535 (~23 levels), seed 0, 400 candidates; the plateau (C1, phase 3)
-  uses range < 6 levels, mean < 70, seed 1, 120 tiles. Those are the two scripts the
+  uses range < 6 levels, mean < 70, seed 1 (120 tiles then, every one of 5000 positions since ADR 0060). Those are the two scripts the
   acceptance numbers came from. `Thresholds` keeps them apart.
 - **"Background" for the simulation is the median of the reference channel.** Right
   whenever the sky dominates the frame - every astrophoto - and wrong on a frame where

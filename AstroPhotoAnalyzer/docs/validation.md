@@ -201,6 +201,17 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-10-27 (ADR 0060, the banding verdict on the share of the frame with a visible plateau,
+  every one of 5000 positions tried; `docs/plans/2026-10-27-plateau-share-of-flat-tiles.md`, its
+  table): `quantization.plateauPositions` (5000) and
+  `quantization.plateauVisibleFramePctAtReference` (0 on every analysis case: the reference
+  image's 20 clean tiles hold no step over 1 mm at its reference dpi, the FITS frames have no
+  clean tile) recorded; no existing figure moved, V-001's 20 tiles and 2.6796 px included, since
+  5000 positions were already what found them. The golden console texts move on the dark
+  scene, whose plateau is now measured on every clean tile among 5000 positions (419, 8.4 % of
+  the frame) and whose banding line carries the share (8.38 %) and the threshold (0.10 %), and
+  on Appendix C's plateau line.
+
 - 2026-10-27 (R-080, R-091, R-095: where the plateau is measured): `quantization.plateauFramePct`
   (tiles accepted over positions tried, in percent) and `quantization.plateauSigmaLsb` (the median noise on the
   plateau's tiles) recorded for every analysis case; no existing figure moved. On the reference image

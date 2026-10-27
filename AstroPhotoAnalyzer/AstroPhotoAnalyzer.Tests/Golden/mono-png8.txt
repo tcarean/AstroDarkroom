@@ -69,7 +69,7 @@ Anexa C. Export
   q100           0.0 MB       0.084       1.0   1.00    1.00     0.0 %             0
   q95            0.0 MB       0.680       4.0   2.00    3.00     0.8 %            65
   q90            0.0 MB       0.765       7.0   3.00    4.00     1.5 %            66
-  palier: fara dale de cer curat (0)
+  palier: fara dale de cer curat (0 din 5000 pozitii)
 
 Anexa D. Rezolutie si marime
   stele: 16 masurate - prea putine pentru FWHM

@@ -66,6 +66,37 @@ public class QuantizationAnalyzerTests
     }
 
     [Fact]
+    public void R080_TheVerdictIsTheShareOfTheFrameWithAVisibleStepNotTheMeanPlateau()
+    {
+        // A noisy sky (0.5 LSB) with one noiseless square over about a tenth of the frame: the
+        // tiles inside the square are flat over all 64 px, the rest dither at 2-4 px. The mean
+        // plateau stays small; the share of the frame with a step over 1 mm at 200 dpi (7.9 px)
+        // is the square's: 9.3 % of the positions hold a tile wholly inside it, and a tile mostly
+        // inside it still averages over 7.9 px, so the share lands a little over that, far over
+        // the threshold (ADR 0060).
+        Raster r = SyntheticRasters.AddNoise(SyntheticRasters.Flat(512, 512, 0.10f), 0.5 / 255, 4);
+        for (int y = 100; y < 300; y++)
+            for (int x = 100; x < 300; x++)
+                foreach (float[] plane in r.Planes) plane[y * r.W + x] = 0.10f;
+        var q = QuantizationAnalyzer.Analyze(r);
+
+        Assert.Equal(Thresholds.PlateauPositions, q.PlateauPositions);
+        Assert.Equal(100.0, q.PlateauFramePct, 1);
+        Assert.InRange(q.PlateauVisibleFramePctAt(200), 9.0, 16.0);
+        Assert.True(q.PlateauVisibleAt(200));
+        Assert.InRange(q.PlateauPx, 4.0, 12.0);
+        Assert.Equal(64.0, q.PlateauTilePx[q.PlateauTilePx.Count - 1], 6);
+
+        // The same frame without the square: no step over 1 mm anywhere, and the ramp of the
+        // first test: every tile a step, the whole frame.
+        var plain = QuantizationAnalyzer.Analyze(SyntheticRasters.AddNoise(SyntheticRasters.Flat(512, 512, 0.10f), 0.5 / 255, 4));
+        Assert.Equal(0.0, plain.PlateauVisibleFramePctAt(200));
+        Assert.False(plain.PlateauVisibleAt(200));
+        var ramp = QuantizationAnalyzer.Analyze(SyntheticRasters.Ramp(256, 256, 0.10f, 0.11f));
+        Assert.Equal(100.0, ramp.PlateauVisibleFramePctAt(200), 6);
+    }
+
+    [Fact]
     public void ABrightOrStructuredImageHasNoPlateauTiles()
     {
         // A mean over 70 levels: not sky, not measured.

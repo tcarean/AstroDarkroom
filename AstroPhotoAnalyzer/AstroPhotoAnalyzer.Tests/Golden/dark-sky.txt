@@ -13,7 +13,7 @@ VERDICT: PROBLEMA
    - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.1 MB).
      fiindca: eroare medie 0.58, maxima 3.5 niveluri; 0.4 % din esantioane cu eroare > 2, la nivelul mediu 28 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
    ! Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export.
-     fiindca: palier de 2.2 px = 2.13 mm la 26 dpi, peste 1.0 mm; pe 120 dale curate, 8.3 % din cadru, unde zgomotul ramas e sigma 0.30 LSB
+     fiindca: trepte plate de peste 1.0 mm la 26 dpi pe 8.38 % din cadru (prag 0.10 %); palierul tipic pe cele 419 dale curate, 8.4 % din cadru, e 2.2 px = 2.13 mm, cu zgomotul ramas la sigma 0.30 LSB
 
 2. Fundalul si hartia  [PROBLEMA]
    !! Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru. Re-stretch din liniar la fundal 0.16 (simulat: praful la L* 11.7, cerul la L* 15.9; exact pe negru la 0.135).
@@ -77,7 +77,7 @@ Anexa C. Export
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
   rotunjire 16 -> 8: medie 0.262, maxim 0.498, p99.9 0.498 niveluri
   stres shadow-lift (gamma 1.9), niveluri 8..120: din 16 biti 75 folosite / 0 lipsa; din 8 biti 52 folosite / 24 lipsa
-  palier pe cerul cuantizat: 2.2 px pe 120 dale (8.3 % din cadru, zgomot ramas sigma 0.30 LSB)
+  palier pe cerul cuantizat: 2.2 px pe 419 dale din 5000 pozitii (8.4 % din cadru, zgomot ramas sigma 0.30 LSB); trepte plate de peste 1.0 mm la 26 dpi pe 8.38 % din cadru
 
 Anexa D. Rezolutie si marime
   stele: 64 masurate; FWHM median 3.06 px, Q1 3.05, Q3 3.08; detaliu real ~167 px pe latime

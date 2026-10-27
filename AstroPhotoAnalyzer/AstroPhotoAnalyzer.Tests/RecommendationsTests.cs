@@ -176,8 +176,7 @@ public class RecommendationsTests
         var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
 
         Recommendation banding = Assert.Single(Of(a, Topic.Format), r => r.Text.StartsWith("Risc de banding"));
-        Assert.Contains("; pe 120 dale curate, ", banding.Because);
-        Assert.Matches(@" din cadru, unde zgomotul ramas e sigma \d+\.\d\d LSB$", banding.Because);
+        Assert.Matches(@"^trepte plate de peste 1\.0 mm la \d+ dpi pe \d+\.\d\d % din cadru \(prag 0\.10 %\); palierul tipic pe cele \d+ dale curate, \d+\.\d % din cadru, e \d+\.\d px = \d+\.\d\d mm, cu zgomotul ramas la sigma \d+\.\d\d LSB$", banding.Because);
     }
 
     [Fact]

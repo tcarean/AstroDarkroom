@@ -400,9 +400,13 @@ namespace AstroPhotoAnalyzer
                 w.WriteLine(Tr.Pick($"  shadow-lift stress (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), levels {Thresholds.ShadowLiftLevelLo}..{Thresholds.ShadowLiftLevelHi}: from 16 bits {q.LevelsUsedFrom16} used / {q.MissingFrom16} missing; from 8 bits {q.LevelsUsedFrom8} used / {q.MissingFrom8} missing",
                                     $"  stres shadow-lift (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), niveluri {Thresholds.ShadowLiftLevelLo}..{Thresholds.ShadowLiftLevelHi}: din 16 biti {q.LevelsUsedFrom16} folosite / {q.MissingFrom16} lipsa; din 8 biti {q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa"));
             }
+            SizeRow reference = r.Size.ReferenceRow;
+            string steps = !q.PlateauKnown || reference == null ? "" : Tr.Pick(
+                $"; flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm at {Fmt.F0(reference.Dpi)} dpi on {Fmt.F2(q.PlateauVisibleFramePctAt(reference.Dpi))} % of the frame",
+                $"; trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm la {Fmt.F0(reference.Dpi)} dpi pe {Fmt.F2(q.PlateauVisibleFramePctAt(reference.Dpi))} % din cadru");
             w.WriteLine(q.PlateauKnown
-                ? Tr.Pick($"  plateau on the quantized sky: {Fmt.F1(q.PlateauPx)} px over {q.PlateauTiles} tiles ({Fmt.Pct(q.PlateauFramePct)} of the frame, noise left sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB)", $"  palier pe cerul cuantizat: {Fmt.F1(q.PlateauPx)} px pe {q.PlateauTiles} dale ({Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB)")
-                : Tr.Pick($"  plateau: no clean sky tiles ({q.PlateauTiles})", $"  palier: fara dale de cer curat ({q.PlateauTiles})"));
+                ? Tr.Pick($"  plateau on the quantized sky: {Fmt.F1(q.PlateauPx)} px over {q.PlateauTiles} tiles of {q.PlateauPositions} positions ({Fmt.Pct(q.PlateauFramePct)} of the frame, noise left sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB){steps}", $"  palier pe cerul cuantizat: {Fmt.F1(q.PlateauPx)} px pe {q.PlateauTiles} dale din {q.PlateauPositions} pozitii ({Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB){steps}")
+                : Tr.Pick($"  plateau: no clean sky tiles ({q.PlateauTiles} of {q.PlateauPositions} positions)", $"  palier: fara dale de cer curat ({q.PlateauTiles} din {q.PlateauPositions} pozitii)"));
         }
 
         /// <summary>

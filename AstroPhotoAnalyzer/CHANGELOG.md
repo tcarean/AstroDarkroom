@@ -24,6 +24,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The banding verdict of section 1 is the share of the frame in clean sky tiles whose 8-bit
+  plateau is longer than 1 mm at the reference row's dpi, a risk over 0.1 %; the mean plateau
+  stays in the line as the typical step, for information. The plateau's tiles are now looked
+  for at every one of 5000 random positions, not up to 120 tiles, so the share has the same
+  precision on every image. On a core denoised by Syqon at 0.5, 0.75 and 1 the share grows
+  with the denoise (0.18, 0.24, 0.44 % of the frame) while the mean plateau shrank and would
+  have cleared the strongest one (R-080, R-091; ADR 0060).
 - The background colour of section 3, the reference of the cast and of the eight edge regions,
   is the colour of the sky patches above the bottom band (the class the background section
   calls sky), no longer the darkest quarter of the frame: on a Milky Way core the darkest

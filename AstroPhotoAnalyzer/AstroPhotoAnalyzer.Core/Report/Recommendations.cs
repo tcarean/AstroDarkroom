@@ -93,21 +93,26 @@ namespace AstroPhotoAnalyzer
 
             if (q.PlateauKnown && size != null)
             {
-                double mm = q.PlateauMmAt(size.Dpi);
-                // Where the plateau was measured: on an AI-denoised frame the only tiles clean
-                // enough are the patches the denoiser wiped, a few tenths of a percent of the
-                // frame at a sigma near zero, while the noise section's median says the sky is
-                // fine. The reader must see that the two speak of different places.
-                string where = Tr.Pick($"; on {q.PlateauTiles} clean tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, where the noise left is sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB",
-                    $"; pe {q.PlateauTiles} dale curate, {Fmt.Pct(q.PlateauFramePct)} din cadru, unde zgomotul ramas e sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB");
+                // The verdict is the share of the frame in clean tiles whose plateau passes the
+                // visible length at the print's dpi (ADR 0060); the mean plateau is the typical
+                // step, told for information. Where it was measured matters: on an AI-denoised
+                // frame the only tiles clean enough are the patches the denoiser wiped, a few
+                // tenths of a percent of the frame at a sigma near zero, while the noise section's
+                // median says the sky is fine. The reader must see that the two speak of
+                // different places.
+                double flat = q.PlateauVisibleFramePctAt(size.Dpi);
+                string steps = Tr.Pick($"flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm at {Fmt.F0(size.Dpi)} dpi on {Fmt.F2(flat)} % of the frame (threshold {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)",
+                    $"trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm la {Fmt.F0(size.Dpi)} dpi pe {Fmt.F2(flat)} % din cadru (prag {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)");
+                string where = Tr.Pick($"; the typical plateau on the {q.PlateauTiles} clean tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, is {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, with the noise left at sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB",
+                    $"; palierul tipic pe cele {q.PlateauTiles} dale curate, {Fmt.Pct(q.PlateauFramePct)} din cadru, e {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, cu zgomotul ramas la sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB");
                 if (q.PlateauVisibleAt(size.Dpi))
                     o.Add(new Recommendation(Topic.Format, Verdict.Attention,
                         Tr.Pick("Banding risk at 8 bits: send 16-bit if the lab accepts it, or add dither at the export.", "Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export."),
-                        Tr.Pick($"a plateau of {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm at {Fmt.F0(size.Dpi)} dpi, over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm", $"palier de {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm la {Fmt.F0(size.Dpi)} dpi, peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm") + where));
+                        steps + where));
                 else
                     o.Add(new Recommendation(Topic.Format, Verdict.Ok,
-                        Tr.Pick("No visible banding at 8 bits: the residual noise dithers the quantization.", "Fara banding vizibil pe 8 biti: zgomotul rezidual dither-eaza cuantizarea."),
-                        Tr.Pick($"a plateau of {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm at {Fmt.F0(size.Dpi)} dpi, under {Fmt.F1(Thresholds.PlateauVisibleMm)} mm", $"palier de {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(mm)} mm la {Fmt.F0(size.Dpi)} dpi, sub {Fmt.F1(Thresholds.PlateauVisibleMm)} mm") + where));
+                        Tr.Pick("No visible banding at 8 bits: flat steps on too little of the frame to show.", "Fara banding vizibil pe 8 biti: trepte plate pe prea putin din cadru ca sa se vada."),
+                        steps + where));
             }
             else if (r.Noise.BandingRisk)
                 o.Add(new Recommendation(Topic.Format, Verdict.Attention,

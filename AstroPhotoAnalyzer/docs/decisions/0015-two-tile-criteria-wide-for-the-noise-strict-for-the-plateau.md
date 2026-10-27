@@ -1,7 +1,7 @@
 # 0015. Two tile criteria on purpose: wide for the noise, strict for the plateau
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the plateau's sampling and statistic superseded by 0060
 
 ## Context
 

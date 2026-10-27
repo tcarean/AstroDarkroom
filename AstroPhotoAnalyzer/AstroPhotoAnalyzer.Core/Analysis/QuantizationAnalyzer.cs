@@ -19,7 +19,11 @@
 //
 // C1, the plateau: on the sky quantised to 8 bits, how long the runs of pixels with the same
 // value are. On paper a plateau becomes a contour; under ~1 mm it does not show. The tiles are
-// the strict ones (Thresholds.Plateau*): clean sky, no core.
+// the strict ones (Thresholds.Plateau*): clean sky, no core, at every one of PlateauPositions
+// random positions. The verdict is the share of the frame in tiles whose plateau passes the
+// visible length at the print's dpi (ADR 0060): the mean plateau is the typical step, for
+// information, and cannot decide, since on a heavily denoised frame the many ordinary tiles
+// drown the few fully flat ones.
 //
 // C2, the rounding error: 16 -> 8 bits is |v*255 - round(v*255)|, and the report states it so
 // that it can be seen to be pure rounding (max 0.5), not a loss.
@@ -46,6 +50,18 @@ namespace AstroPhotoAnalyzer
         internal int PlateauTiles { get; init; }
 
         /// <summary>
+        /// How many random positions were tried, <see cref="Thresholds.PlateauPositions"/>, or
+        /// 0 on a frame no larger than a tile.
+        /// </summary>
+        internal int PlateauPositions { get; init; }
+
+        /// <summary>
+        /// Each clean tile's plateau, in pixels, sorted ascending; empty without tiles. The share
+        /// of the frame over a length at a dpi is read on it.
+        /// </summary>
+        internal IReadOnlyList<double> PlateauTilePx { get; init; }
+
+        /// <summary>
         /// The share of the frame the plateau's tiles stand for, in percent (0..100, as
         /// <see cref="NoiseResult.PctTilesBelowBanding"/>): the tiles accepted over the random
         /// positions tried (the draws are uniform over the frame), so a frame whose clean sky is a
@@ -62,7 +78,8 @@ namespace AstroPhotoAnalyzer
         internal double PlateauSigmaLsb { get; init; }
 
         /// <summary>
-        /// The mean length of the runs of identical values, in pixels; NaN without tiles.
+        /// The mean length of the runs of identical values over the clean tiles, in pixels: the
+        /// typical step, for information; NaN without tiles.
         /// </summary>
         internal double PlateauPx { get; init; }
         internal bool PlateauKnown => !double.IsNaN(PlateauPx);
@@ -73,14 +90,29 @@ namespace AstroPhotoAnalyzer
         internal double PlateauMmAt(double dpi) => PlateauPx * 25.4 / dpi;
 
         /// <summary>
-        /// Whether the plateau shows on paper at a dpi: longer than
-        /// <see cref="Thresholds.PlateauVisibleMm"/>.
+        /// The share of the frame, in percent, in clean tiles whose plateau is longer than
+        /// <see cref="Thresholds.PlateauVisibleMm"/> on paper at a dpi: such tiles over the
+        /// positions tried. 0 without positions.
         /// </summary>
         /// <param name="dpi">The print's dots per inch, positive.</param>
-        /// <returns>
-        /// <c>true</c> when the plateau is known and its length at that dpi is over the limit.
-        /// </returns>
-        internal bool PlateauVisibleAt(double dpi) => PlateauKnown && PlateauMmAt(dpi) > Thresholds.PlateauVisibleMm;
+        /// <returns>0..100.</returns>
+        internal double PlateauVisibleFramePctAt(double dpi)
+        {
+            if (PlateauPositions == 0) return 0;
+            double limitPx = Thresholds.PlateauVisibleMm * dpi / 25.4;
+            int over = 0;
+            foreach (double px in PlateauTilePx) if (px > limitPx) over++;
+            return 100.0 * over / PlateauPositions;
+        }
+
+        /// <summary>
+        /// Whether banding would show on paper at a dpi (ADR 0060): the share of the frame in
+        /// tiles with a plateau over <see cref="Thresholds.PlateauVisibleMm"/> is more than
+        /// <see cref="Thresholds.PlateauFlatFrameWarnPct"/>.
+        /// </summary>
+        /// <param name="dpi">The print's dots per inch, positive.</param>
+        /// <returns><c>true</c> when the plateau is known and that share passes the threshold.</returns>
+        internal bool PlateauVisibleAt(double dpi) => PlateauKnown && PlateauVisibleFramePctAt(dpi) > Thresholds.PlateauFlatFrameWarnPct;
 
         /// <summary>C2 and C4 make sense only on a source with more than 8 bits.</summary>
         internal bool Applicable { get; init; }
@@ -113,16 +145,18 @@ namespace AstroPhotoAnalyzer
         /// <returns>The result; C2 and C4 at 0 where they do not apply.</returns>
         internal static QuantizationResult Analyze(Raster r)
         {
-            var (tiles, pct, plateau, sigma) = Plateau(r);
+            var (tiles, positions, plateau, sigma, perTile) = Plateau(r);
             bool applicable = r.Source == null || r.Source.IsFloat || r.Source.BitDepth > 8;
             var (mean, max, p999) = applicable ? Rounding(r) : (0, 0, 0);
             var (u16, m16, u8, m8) = applicable ? Stress(r) : (0, 0, 0, 0);
             return new QuantizationResult
             {
                 PlateauTiles = tiles,
-                PlateauFramePct = pct,
+                PlateauPositions = positions,
+                PlateauFramePct = positions == 0 ? 0 : 100.0 * tiles / positions,
                 PlateauPx = plateau,
                 PlateauSigmaLsb = sigma,
+                PlateauTilePx = perTile,
                 Applicable = applicable,
                 RoundingMeanAbs = mean,
                 RoundingMax = max,
@@ -135,29 +169,29 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The plateau (C1): up to <see cref="Thresholds.PlateauTileCount"/> strict tiles drawn
-        /// from <see cref="Thresholds.PlateauSeed"/> within
-        /// <see cref="Thresholds.PlateauMaxAttempts"/> draws, and on each the mean run length of
-        /// the values quantised to 8 bits along its rows.
+        /// The plateau (C1): at every one of <see cref="Thresholds.PlateauPositions"/> random
+        /// positions from <see cref="Thresholds.PlateauSeed"/>, the strict tiles, and on each the
+        /// mean run length of identical 8-bit values along the rows.
         /// </summary>
-        /// <param name="r">The image, 0..1; its reference plane is read.</param>
+        /// <param name="r">The image, 0..1.</param>
         /// <returns>
-        /// The tiles accepted, their share of the frame in percent (accepted over tried), the mean
-        /// plateau in pixels and the median of the tiles' noise sigmas in LSB; NaN without a tile, and 0 and NaN
-        /// on a raster not larger than a tile.
+        /// The tiles accepted, the positions tried (0 on a frame no larger than a tile), the
+        /// mean plateau in pixels and the median of the tiles' noise sigmas in LSB (both NaN
+        /// without a tile), and every tile's plateau sorted ascending.
         /// </returns>
-        static (int Tiles, double FramePct, double PlateauPx, double SigmaLsb) Plateau(Raster r)
+        static (int Tiles, int Positions, double PlateauPx, double SigmaLsb, double[] PerTile) Plateau(Raster r)
         {
             int size = Thresholds.NoiseTileSize;
-            if (r.H <= size || r.W <= size) return (0, 0, double.NaN, double.NaN);
+            if (r.H <= size || r.W <= size) return (0, 0, double.NaN, double.NaN, Array.Empty<double>());
             float[] g = r.Reference;
             var rng = new SeededRandom(Thresholds.PlateauSeed);
             float maxRange = (float)(Thresholds.PlateauTileMaxRangeLevels / 255.0);
             float maxMean = (float)(Thresholds.PlateauTileMaxMeanLevels / 255.0);
 
-            double sum = 0; int tiles = 0, attempts = 0;
+            double sum = 0; int tiles = 0;
             var sigmas = new List<float>();
-            for (; attempts < Thresholds.PlateauMaxAttempts && tiles < Thresholds.PlateauTileCount; attempts++)
+            var perTile = new List<double>();
+            for (int position = 0; position < Thresholds.PlateauPositions; position++)
             {
                 int y0 = rng.Next(r.H - size), x0 = rng.Next(r.W - size);
                 if (!Accept(g, r.W, x0, y0, size, maxRange, maxMean)) continue;
@@ -175,10 +209,13 @@ namespace AstroPhotoAnalyzer
                         if (q != prev) { changes++; prev = q; }
                     }
                 }
-                sum += size / (1 + changes / size);
+                double plateau = size / (1 + changes / size);
+                sum += plateau;
+                perTile.Add(plateau);
                 tiles++;
             }
-            return (tiles, attempts == 0 ? 0 : 100.0 * tiles / attempts, tiles == 0 ? double.NaN : sum / tiles, tiles == 0 ? double.NaN : Stats.Median(sigmas.ToArray()));
+            perTile.Sort();
+            return (tiles, Thresholds.PlateauPositions, tiles == 0 ? double.NaN : sum / tiles, tiles == 0 ? double.NaN : Stats.Median(sigmas.ToArray()), perTile.ToArray());
         }
 
         /// <summary>

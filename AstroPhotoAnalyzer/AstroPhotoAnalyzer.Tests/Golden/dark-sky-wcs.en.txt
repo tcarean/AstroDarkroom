@@ -13,7 +13,7 @@ VERDICT: PROBLEM
    - If the lab accepts only JPEG: q100, 4:4:4 (0.1 MB).
      because: mean error 0.58, max 3.5 levels; 0.4 % of the samples with an error > 2, at a mean level of 28 (in the dark sky, where JPEG does worst)
    ! Banding risk at 8 bits: send 16-bit if the lab accepts it, or add dither at the export.
-     because: a plateau of 2.2 px = 2.13 mm at 26 dpi, over 1.0 mm; on 120 clean tiles, 8.3 % of the frame, where the noise left is sigma 0.30 LSB
+     because: flat steps over 1.0 mm at 26 dpi on 8.38 % of the frame (threshold 0.10 %); the typical plateau on the 419 clean tiles, 8.4 % of the frame, is 2.2 px = 2.13 mm, with the noise left at sigma 0.30 LSB
 
 2. The background and the paper  [PROBLEM]
    !! The sky is under paper black: the sky and the dust would print as the SAME black. Re-stretch from linear to a background of 0.16 (simulated: the dust at L* 11.7, the sky at L* 15.9; exactly on black at 0.135).
@@ -89,7 +89,7 @@ Appendix C. Export
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
   16 -> 8 rounding: mean 0.262, max 0.500, p99.9 0.499 levels
   shadow-lift stress (gamma 1.9), levels 8..120: from 16 bits 75 used / 0 missing; from 8 bits 52 used / 24 missing
-  plateau on the quantized sky: 2.2 px over 120 tiles (8.3 % of the frame, noise left sigma 0.30 LSB)
+  plateau on the quantized sky: 2.2 px over 419 tiles of 5000 positions (8.4 % of the frame, noise left sigma 0.30 LSB); flat steps over 1.0 mm at 26 dpi on 8.38 % of the frame
 
 Appendix D. Resolution and size
   stars: 64 measured; median FWHM 3.06 px, Q1 3.05, Q3 3.08; real detail ~167 px across the width

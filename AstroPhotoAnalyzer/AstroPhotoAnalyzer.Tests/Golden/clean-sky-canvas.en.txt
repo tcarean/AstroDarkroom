@@ -70,7 +70,7 @@ Appendix C. Export
   q90            0.0 MB       0.847       8.1   2.78    3.81     6.1 %            64
   16 -> 8 rounding: mean 0.250, max 0.498, p99.9 0.498 levels
   shadow-lift stress (gamma 1.9), levels 8..120: from 16 bits 1 used / 0 missing; from 8 bits 1 used / 0 missing
-  plateau: no clean sky tiles (0)
+  plateau: no clean sky tiles (0 of 5000 positions)
 
 Appendix D. Resolution and size
   stars: 64 measured; median FWHM 3.05 px, Q1 3.03, Q3 3.07; real detail ~168 px across the width
