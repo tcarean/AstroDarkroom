@@ -1,4 +1,4 @@
-# 0051. The window lists the catalogued clouds in the map window only
+# 0052. The window lists the catalogued clouds in the map window only
 
 Date: 2026-10-27
 Status: accepted 2026-10-27
