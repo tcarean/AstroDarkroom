@@ -32,8 +32,7 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   (`../DarksCheck`, `../FlatCheck`, `../LightsCheck`, `../ImageVisualCompare`,
   `../WCS_Copy`, `../AstroPhotoAnalyzer`) and list the ones whose `[Unreleased]` has content:
   their entry in `release.json` will say `unreleased: true` (the launcher does not show it,
-  ADR 0007). Say so
-  to the owner, who may release them first (each with its own `/release`) or
+  ADR 0007). Say so to the owner, who may release them first (each with its own `/release`) or
   bundle them as they are; the recommendation is to bundle, since `release.json` records each
   component's commit.
 - At step 5: the publish is one flat folder, `artifacts/<version>/`, with the launcher and

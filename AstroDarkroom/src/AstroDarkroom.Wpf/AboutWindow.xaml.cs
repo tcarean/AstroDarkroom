@@ -58,14 +58,15 @@ public partial class AboutWindow : Window
         PrerequisitesList.ItemsSource = Prerequisites.Details;
         ComponentsHeading.Text = T("COMPONENTS", "COMPONENTE");
         CloseButton.Content = T("Close", "Inchide");
-        // The list the file gives, without the launcher's own entry; a file that names no
-        // component (hand-edited, truncated) falls back to the catalogue with unknown versions,
-        // the same thing the rows of the main window say.
+        // The list the file gives, without the launcher's own entry, each under the catalogue's
+        // title (the file names a component by its folder, WCS_Copy for CopyWcs); a file that
+        // names no component (hand-edited, truncated) falls back to the catalogue with unknown
+        // versions, the same thing the rows of the main window say.
         List<ComponentLine> listed = release is null
             ? []
             : release.Components
                 .Where(c => c.Name != release.Name)
-                .Select(c => new ComponentLine(c.Name, c.Version.Length > 0 ? c.Version : "?"))
+                .Select(c => new ComponentLine(TitleOf(c.Name), c.Version.Length > 0 ? c.Version : "?"))
                 .ToList();
         bool known = listed.Count > 0;
         ReleaseLine.Text = known && release is { Date.Length: > 0 }
@@ -78,8 +79,18 @@ public partial class AboutWindow : Window
                     "Fara un release.json cu componente langa program: versiunile componentelor nu se cunosc.");
         Components.ItemsSource = known
             ? listed
-            : AppCatalogue.Apps.Select(a => new ComponentLine(a.Folder, "?")).ToList();
+            : AppCatalogue.Apps.Select(a => new ComponentLine(a.Title, "?")).ToList();
     }
+
+    /// <summary>
+    /// The title the launcher shows for a component of release.json, which names it by its
+    /// folder (R-004): the catalogue's title for that folder, or the name itself when the
+    /// catalogue has no such app.
+    /// </summary>
+    /// <param name="name">The component's name in release.json; not null.</param>
+    /// <returns>The catalogue's title, else the name unchanged.</returns>
+    private static string TitleOf(string name)
+        => AppCatalogue.Apps.FirstOrDefault(a => a.Folder == name)?.Title ?? name;
 
     /// <summary>Closes the window.</summary>
     /// <param name="sender">The button; not read.</param>

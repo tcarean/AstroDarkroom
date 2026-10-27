@@ -105,9 +105,11 @@ languages and the live switch are ADR 0006.
   title, the tagline, the headings, the banner, the copyright, the warranty, the prerequisites
   card (an `ItemsControl` of `Muted` paragraphs over `Prerequisites.Details`), the release line
   and the component list from `release.json` without the launcher's own entry (`Name` equal to
-  the release's `name`), each as a `ComponentLine` with `?` for an unknown version; the
-  `unreleased` flag of the file is not shown (ADR 0007). Without a file, or with one that
-  names no component, the list is the catalogue with `?` and the line says the versions are
+  the release's `name`), each as a `ComponentLine` under the catalogue's title for that name
+  (`release.json` names a component by its folder, so `WCS_Copy` is shown as CopyWcs; a name
+  the catalogue lacks is shown as it is) with `?` for an unknown version; the `unreleased`
+  flag of the file is not shown (ADR 0007). Without a file, or with one that names no
+  component, the list is the catalogue's titles with `?` and the line says the versions are
   unknown. Enter and Esc close it (`IsDefault` and `IsCancel` on one button).
 - The palette and the button, tooltip and card styles are in `App.xaml`, the same colours as
   LightsCheck's dark theme reduced to what two windows need. Both windows darken their title

@@ -20,8 +20,9 @@ was the one choice left.
 CopyWcs is the sixth component of the suite: the entry
 `../WCS_Copy/src/CopyWcs.Wpf/CopyWcs.Wpf.csproj` in `release.publish` and the catalogue line
 `WCS_Copy` / `CopyWcs` / `CopyWcs.Wpf.exe`, described as "Copies the plate solve of one FITS
-into another" / "Copiaza plate solve-ul unui FITS in altul", the wording of its own About
-window. It stands after ImageVisualCompare and before AstroPhotoAnalyzer: in the order of a
+into another" / "Copiaza plate solve-ul unui FITS in altul", after the tagline of its own
+About window ("from one FITS" there). It stands after ImageVisualCompare and before
+AstroPhotoAnalyzer: in the order of a
 session it runs on the processed image, once the processing is chosen, and before the finished
 image is checked by the tool that reads the WCS it restores. Its console, `copywcs.exe`, stays
 in its own release (ADR 0002). Everything else of ADR 0002 stands; only the count changes.
@@ -38,9 +39,29 @@ in its own release (ADR 0002). Everything else of ADR 0002 stands; only the coun
 
 ## Consequences
 
-The window has six rows, which `SizeToContent="Height"` fits. R-001 lists six apps; `README.md`,
+The window has six rows, which `SizeToContent="Height"` fits. The About window lists the
+components under the catalogue's titles: `release.json` names each by its folder, and this
+is the first whose folder, `WCS_Copy`, is not its name. R-001 lists six apps; `README.md`,
 the front page and `CLAUDE.md` say six; `docs/skills.md` names `../WCS_Copy` among the
 CHANGELOGs `/release` reads; the prerequisites texts (R-009) name CopyWcs among the tools that
 open the files exported from Siril. `SuiteTests` reads CopyWcs's lock files with the other
 components', so a package it resolves to another version than a sibling is a red gate, fixed in
 the component.
+
+Measured on 2026-10-27 in the task's worktree, `scripts/release.ps1 -Version 1.0.0 -PublishOnly`
+with the projects already built: CopyWcs's window is the fifth publish, 9 files of its own and
+243 already there with the same bytes, no collision; the folder has 365 files and 160.5 MB
+(356 files with five tools, ADR 0002), the zip 65.9 MB, and the publish took 77 seconds.
+
+```
+merged   248 file(s) copied, 0 already there with the same bytes, into ...\artifacts\1.0.0
+merged   14 file(s) copied, 238 already there with the same bytes, into ...\artifacts\1.0.0
+merged   67 file(s) copied, 243 already there with the same bytes, into ...\artifacts\1.0.0
+merged   9 file(s) copied, 243 already there with the same bytes, into ...\artifacts\1.0.0
+merged   9 file(s) copied, 239 already there with the same bytes, into ...\artifacts\1.0.0
+merged   9 file(s) copied, 239 already there with the same bytes, into ...\artifacts\1.0.0
+merged   8 file(s) copied, 239 already there with the same bytes, into ...\artifacts\1.0.0
+component WCS_Copy 1.0.0 (cfa54cc, unreleased changes)
+published ...\artifacts\1.0.0 (365 files, 160.5 MB)
+zipped    ...\artifacts\AstroDarkroom-1.0.0-win-x64.zip (65.9 MB), SHA-256 in AstroDarkroom-1.0.0-win-x64.zip.sha256
+```

@@ -72,8 +72,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version
 `artifacts\1.0.0\` is the whole suite; copy it anywhere. Beside it, in `artifacts\`, are its zip,
 `AstroDarkroom-1.0.0-win-x64.zip`, and the zip's `.sha256`.
 
-On the author's computer, with the NuGet packages already downloaded, step 2 took 105 seconds and
-made a folder of 356 files and 160 MB, and a zip of 66 MB (measured 2026-10-26).
+On the author's computer, with the NuGet packages already downloaded and the projects already
+built, step 2 took 77 seconds and made a folder of 365 files and 160 MB, and a zip of 66 MB
+(measured 2026-10-27, with the six tools).
 
 ### What the command does
 
@@ -114,8 +115,8 @@ Astro Darkroom is a suite of six Windows tools for a deep-sky astrophotography s
 a DSLR and processed in [Siril](https://siril.org), one step at a time: the darks, the flats, the
 lights, two versions of a processing side by side, the plate solve put back into the processed
 image, and the finished image before it goes to print. Five of them check: each measures and
-reports, every verdict with the number and the threshold behind it. None of them modifies, moves
-or deletes a frame; the few files some of them write on request are new files beside the
+reports, every verdict with the number and the threshold behind it. None of the five modifies,
+moves or deletes a frame; the few files some of them write on request are new files beside the
 originals. The sixth, CopyWcs, writes: it copies header cards from one FITS into another, in
 place or into a new file, and leaves the pixels as they were.
 
@@ -136,7 +137,7 @@ launcher's language. Started on its own, a tool speaks English, or Romanian with
 
 Each tool has its own folder in this repository, with its sources, its tests and its
 documentation: the user guide is the folder's `README.md`, in English for LightsCheck,
-AstroPhotoAnalyzer, ImageVisualCompare and DarksCheck and in Romanian for FlatCheck; the
+AstroPhotoAnalyzer, ImageVisualCompare, CopyWcs and DarksCheck and in Romanian for FlatCheck; the
 requirements, the decisions and the validation figures are in its `docs/`, in English.
 
 ## The tools
@@ -194,14 +195,15 @@ screen is dark, whatever the Windows theme.
 
 ### CopyWcs: the plate solve, put back
 
-Copies the plate solve of one FITS file into another. You solve a stacked image in Siril, then
-stretch, denoise or export it and lose the astrometric header on the way; CopyWcs puts the WCS
-cards of the solved file back into the processed one, so that Siril's annotation and
-AstroPhotoAnalyzer's catalogue of dark nebulae find the sky again. Choose the solved file and the
-destination, preview the cards it would copy, then copy them into the destination in place or
-into a new file; the image data are left exactly as they were. It refuses two images of
-different sizes unless you tell it to go on, and it cannot know whether the image was mirrored
-or flipped on the way: check the annotation in Siril before trusting the result.
+Copies the plate solve of one FITS file into another (its folder is `WCS_Copy`). You solve a
+stacked image in Siril, then stretch, denoise or export it and lose the astrometric header on
+the way; CopyWcs puts the WCS cards of the solved file back into the processed one, so that
+Siril's annotation and AstroPhotoAnalyzer's catalogue of dark nebulae find the sky again. Choose
+the solved file and the destination, preview the cards it would copy, then copy them into the
+destination in place or into a new file; the image data are left exactly as they were. It
+refuses two images of different sizes unless you tell it to go on, and it cannot know whether
+the image was mirrored or flipped on the way: check the annotation in Siril before trusting the
+result.
 
 ### AstroPhotoAnalyzer: the finished image, before print
 
