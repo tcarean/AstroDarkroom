@@ -56,6 +56,46 @@
       "sha256": "c72b96970a4e232b73bcea14821697187ab141d1b9c840d0ec43fcaac99cddac",
       "source": "the owner's starless Veil nebula, stretched in Siril, 5601 x 3692, three float planes, 248 158 080 bytes, with a WCS inside the galactic band (b -14.6 to -3.6 over a 9.6 x 6.4 degree field); added 2026-10-11 as the deep-sky frame the band path mistook for a Milky Way landscape (ADR 0037)",
       "demonstrates": "docs/validation.json V-013 and V-014: the sky path taken on a frame narrower than the band, with the reason naming its span; the curves anchored on the nebula's classes"
+    },
+    {
+      "name": "Rosetta_withStars_no_WCS.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "c7a65f5d2a9206a47f7d3fbc4804dd3dbedf8ff4b0dfd1134e866d0ae8cce41d",
+      "source": "the owner's Rosetta nebula with its stars, the frame Rosetta_starless_no_WCS.fit was made from, stretched in Siril, 3551 x 2422, three float planes, 103 210 560 bytes, no WCS, pixel-aligned with the starless frame; added 2026-10-27 as the half of the pair that labels a detection a star or grain (ADR 0051)",
+      "demonstrates": "StarPairTests (Category=Validation): the stars kept on it, at least 99 % of them where the starless frame differs; the comparison ADR 0051's threshold was chosen on"
+    },
+    {
+      "name": "Andromeda_WithStars_andWCS.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "60fe1a9f3aad9074e67d5b474640ba61239be41be4d7a5c24ba215b9bc3302e3",
+      "source": "the owner's Andromeda galaxy with its stars, stretched in Siril, 3790 x 2476, three float planes, 112 622 400 bytes, with a WCS; added 2026-10-27 as a frame with stars the sigma clause must keep (ADR 0051)",
+      "demonstrates": "StarPairTests (Category=Validation): at least 2500 stars kept"
+    },
+    {
+      "name": "Andromeda_starless_WithWCS.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "76e39b26731d2dab4c9caba725d3c7b23e701fb7ae8966e964c792bf5c6c71ab",
+      "source": "the owner's starless Andromeda galaxy, stretched in Siril, 2623 x 1716 (a smaller export than the frame with stars, not pixel-aligned with it), three float planes, 54 023 040 bytes, with a WCS; added 2026-10-27 as a starless frame that must stay under StarMinCount (ADR 0051)",
+      "demonstrates": "StarPairTests (Category=Validation): under 20 stars"
+    },
+    {
+      "name": "Orion_WithStars_and_WCS.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "35a6f907d580849f139cd2e9094ab3f5602dc66ac14553aa3081aee6649a239b",
+      "source": "the owner's Orion nebula with its stars, stretched in Siril, 3908 x 2602 (a larger export than Orion_with_WCS.fit, not pixel-aligned with it), three float planes, 122 031 360 bytes, with a WCS; added 2026-10-27 as a frame with stars the sigma clause must keep (ADR 0051)",
+      "demonstrates": "StarPairTests (Category=Validation): at least 1000 stars kept"
+    },
+    {
+      "name": "starless_rbf0.5_stretch0.1.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "d5666de69692f47e00fe8ee0aad28f800a47363952905ad8168e17184b63e34c",
+      "source": "the owner's plate-solved, starless FITS of the same Milky Way core as starless_rbf0.5_stretch0.17.fit, VeraLux-stretched to a background of 0.1 instead of 0.17, 5837 x 3867, three float planes, 270 869 760 bytes; measured in ADRs 0032 and 0037, added to the manifest 2026-10-27 as a starless frame that must stay under StarMinCount (ADR 0051)",
+      "demonstrates": "StarPairTests (Category=Validation): under 20 stars"
     }
   ]
 }

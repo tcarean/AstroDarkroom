@@ -53,6 +53,53 @@ public class StarAnalyzerTests
     }
 
     /// <summary>
+    /// The grain of a noisy sky is not a star (ADR 0051): on a flat sky with Gaussian noise of
+    /// sigma 0.02 the window maxima stand about 3 sigmas over the border median, past the
+    /// absolute floor of 3000/65535, and before the sigma clause well over 20 of them passed as
+    /// stars on a 600 x 600 frame; a star must be StarMinSnr sigmas over its base.
+    /// </summary>
+    [Fact]
+    public void R070_NoiseGrainIsNotAStar()
+    {
+        var s = StarAnalyzer.Analyze(SyntheticRasters.AddNoise(SyntheticRasters.Flat(600, 600, 0.2f), 0.02, 7));
+
+        Assert.True(s.Insufficient, $"{s.Count} grain bumps passed as stars");
+        Assert.True(double.IsNaN(s.FwhmMedian));
+    }
+
+    /// <summary>
+    /// The sigma clause keeps the stars: the same noisy sky (sigma 0.02) with stars of 0.3
+    /// (15 sigmas) over it is still measured as before, and the grain between them is not.
+    /// </summary>
+    [Fact]
+    public void R070_StarsOverGrainAreStillMeasured()
+    {
+        Raster r = SyntheticRasters.AddNoise(Scenes.WithStars(SyntheticRasters.Flat(600, 600, 0.2f), fwhm: 3.0, amplitude: 0.3f), 0.02, 7);
+        var s = StarAnalyzer.Analyze(r);
+
+        Assert.False(s.Insufficient);
+        Assert.InRange(s.Count, 55, 70);
+        Assert.InRange(s.FwhmMedian, 2.8, 3.4);
+    }
+
+    /// <summary>
+    /// The sigma is measured about a plane fitted to the border, so a star on a nebula's slope is
+    /// judged against the grain and not the slope (ADR 0051): the DarkSky scene's nebula (0.4
+    /// over 60 px) carries the 64 stars of 0.3 over 0.3 LSB of noise; the raw deviation about the
+    /// border median read the slope as a sigma of about 0.03 and kept 50 of them.
+    /// </summary>
+    [Fact]
+    public void R070_StarsOnANebulasSlopeAreKept()
+    {
+        Raster r = SyntheticRasters.From(512, 512, 3, (x, y, p) =>
+            0.08f + (float)(0.4 * Math.Exp(-((x - 256) * (x - 256) + (y - 256) * (y - 256)) / (2 * 60.0 * 60.0))));
+        var s = StarAnalyzer.Analyze(SyntheticRasters.AddNoise(Scenes.WithStars(r), 0.3 / 255, 21));
+
+        Assert.InRange(s.Count, 60, 70);
+        Assert.InRange(s.FwhmMedian, 2.95, 3.2);
+    }
+
+    /// <summary>
     /// A flat two-pixel peak (two adjacent pixels at the same value, each the maximum of its
     /// window) is one star, at its first pixel in scan order (ADR 0041); before it both pixels
     /// passed and the star was counted twice.

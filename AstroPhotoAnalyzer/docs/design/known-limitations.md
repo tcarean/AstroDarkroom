@@ -68,6 +68,10 @@
   patch; a field with far stronger distortion would misplace the outer patches.
 - Stars on bright nebulosity measure wider (border median overestimates the base); the
   centre region of a Milky Way core is not a sharpness statement.
+- A star under 12 local sigmas is not counted (ADR 0051): the FWHM is the bright stars', and a
+  frame whose stars all sit on strongly textured nebulosity, where the border's sigma is the
+  texture left after a plane is taken out, may fall to the dpi rule of R-074 with a count under
+  20; the report says so. A smooth slope is not texture: the plane removes it.
 - The half-max estimator overestimates a sampled Gaussian by ~2.5 %.
 - On an 8-bit file the background's levels (the per-channel medians of the darkest quarter, R-060)
   are whole levels, so a cast near `CastWarnLevels` (1 level) depends on the tie rule of the

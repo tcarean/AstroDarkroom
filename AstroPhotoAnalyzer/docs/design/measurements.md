@@ -229,7 +229,11 @@ and the maximum (ties allowed) of its 25 x 25 window (`StarWindow`, `Half = Star
 border left out); among tied maxima only the first in scan order passes, so a flat two-pixel
 peak is one star (ADR 0041); a tied pixel in the border left out disqualifies nothing, so a flat
 peak straddling the border is still measured, at its first scanned pixel. Base = median of the
-window's 96 border pixels; amplitude = peak - base >= `StarMinAmplitude16/65535`. Width
+window's 96 border pixels; sigma = 1.4826 x the median absolute deviation of those pixels about
+a plane fitted to them by least squares, whose coefficients are three sums because the border
+is symmetric about the centre (`BorderStats` returns the base and the sigma; 0 on a quantised
+flat border); amplitude = peak - base >=
+`StarMinAmplitude16/65535` and >= `StarMinSnr` (12) x sigma (ADR 0051). Width
 at half maximum is measured on the horizontal and vertical lines through the peak:
 descend from the centre until below `base + amplitude/2`, interpolate the crossing
 linearly (the acceptance script's function, epsilon included), keep the star when both
@@ -245,7 +249,14 @@ Known: the estimator overestimates a sampled Gaussian by ~2.5 % (linear interpol
 a convex curve); the candidate threshold is `mean + minimum amplitude`, not the script's
 `3 x mean`, because at a 0.25 background the latter rejected every star (the print
 version of a real image). On a nebulous core stars measure wider (bright, structured
-base) - see the acceptance record.
+base) - see the acceptance record. The floor alone found the grain: on a stretched frame
+the noise's window maxima stand 3 to 4 local sigmas over the border median and the floor
+(0.046) sits on the expected maximum of 625 samples (0.044 on the starless reference FITS),
+so a starless frame gave 6297 "stars" at 2.38 px until the sigma clause (ADR 0051); the
+clause costs the faint stars (under 12 sigmas), and the FWHM is the bright stars'. The sigma
+is taken about a plane because the raw deviation about the border median read a nebula's
+slope as noise: it lost 14 of the 64 stars of the DarkSky golden scene (0.4 over 60 px) and a
+quarter of the reference image's 7163, against an eighth about the plane.
 
 ### D3 - `PrintSizeAnalyzer` - the size table
 

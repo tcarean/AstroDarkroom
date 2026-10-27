@@ -50,6 +50,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `JpegMaxErrorReject` / `JpegErrorCountLevels` / `JpegOverThresholdWarnPct` | 10 / 2 / 5 | q100 gets Attention above this percentage of samples over `JpegErrorCountLevels` even when its max error is acceptable |
 | `ShadowLiftGamma` / `ShadowLiftLevelLo` / `ShadowLiftLevelHi` / `MissingLevelsWarn` | 1.9 / 8 / 120 / 20 | stress test |
 | `StarWindow` / `StarMinAmplitude16` / `StarMaxPeak16` / `StarCandidateAboveMean16` | 25 / 3000 / 60000 / 3000 | in 16-bit units |
+| `StarMinSnr` | 12 | the amplitude over the border's robust sigma about a fitted plane; the grain peaks at 3 to 4 (ADR 0051) |
 | `StarFwhmMin` / `StarFwhmMax` | 0.8 / 15 | accepted widths |
 | `CornerSoftRatio` / `RegionFraction` / `CenterFraction` / `StarMinCount` / `RegionMinStars` | 1.4 / 0.2 / 0.4 / 20 / 5 | |
 | `FallbackMinDpi` | 180 | pixel-grid floor without stars and without a distance: 0.14 mm pitch, invisible from ~0.5 m (lab convention 150-200); with a distance the floor is 25.4 / (0.29 x d) |
