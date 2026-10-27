@@ -147,7 +147,7 @@ internal static class ScaleReport
         string scale = g.Bits is int bits
             ? T($"{bits} bits, from 0 to {F(d.White, 0)}, with the camera's black at {F(d.Black, 0)}", $"pe {bits} biti, de la 0 la {F(d.White, 0)}, cu negrul camerei la {F(d.Black, 0)}")
             : T($"here floating-point values from 0 to {F(d.White, 3)}, with the black at {F(d.Black, 3)}", $"aici valori in virgula mobila de la 0 la {F(d.White, 3)}, cu negrul la {F(d.Black, 3)}");
-        // The camera the table does not know: the paragraph says so, not only the electroni row (ADR 0023).
+        // The camera the table does not know: the paragraph says so, not only the electrons row (ADR 0023).
         string unknownCamera = g.Facts is not null ? "" : T(
             (g.First?.Camera is string cameraEn ? $" {cameraEn} is not in the application's table" : " The frames do not name the camera")
             + ", so no figure of this section is given in electrons, and the source's full well and read noise are missing.",

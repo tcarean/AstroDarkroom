@@ -97,8 +97,9 @@ namespace DarksCheck.Core
         internal long? LensId;
 
         /// <summary>
-        /// The camera's mount as libraw names it - "Nikon F", "Canon EF", "Sony E", "Pentax K" -
-        /// so a report can say whose number the ID is; null when unknown (a FITS, always).
+        /// The mount as libraw names it - "Nikon F", "Canon EF", "Sony E", "Pentax K" - so a
+        /// report can say whose number the ID is: the lens's mount, the camera's only when the
+        /// lens's is unknown (RawReader.MountOf); null when both are unknown (a FITS, always).
         /// </summary>
         internal string LensMount;
 

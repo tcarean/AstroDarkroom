@@ -38,8 +38,8 @@ namespace DarksCheck.Core;
 /// <param name="PixelSizeUm">The pixel pitch in micrometres, or null.</param>
 /// <param name="LensId">The lens ID as the raw carries it, whichever the mount (Nikon's own
 /// number on a Nikon body, the maker's lens type elsewhere; ADR 0023), or null.</param>
-/// <param name="LensMount">The camera's mount as libraw names it (`Nikon F`, `Canon EF`), or
-/// null.</param>
+/// <param name="LensMount">The mount as libraw names it (`Nikon F`, `Canon EF`): the lens's,
+/// or the camera's when the lens's is unknown; null when both are.</param>
 /// <param name="LensName">The lens's name as the camera wrote it (EXIF LensModel), or null.</param>
 /// <param name="LensMinFocalMm">The lens's shortest focal length in mm, from libraw, or
 /// null.</param>

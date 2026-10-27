@@ -111,6 +111,9 @@ public class RawReaderTests
         Assert.Equal(f.Camera, info.Camera);
         Assert.Equal(f.FocalMm, info.FocalMm);
         Assert.Equal(f.FNumber, info.FNumber);
+        // the gated file is a D3300 NEF: the mount is Nikon's F, read through MountOf (the lens's, else the camera's);
+        // the ID may be null on a telescope, so it is not pinned
+        Assert.Equal("Nikon F", f.LensMount);
         Assert.Equal(f.LensId, info.LensId);
         Assert.Equal(f.LensMount, info.LensMount);
         Assert.Equal(f.LensName, info.LensName);
