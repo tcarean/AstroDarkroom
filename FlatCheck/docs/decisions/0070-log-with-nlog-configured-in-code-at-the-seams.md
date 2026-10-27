@@ -15,11 +15,15 @@ NLog, as text, in a `log` folder beside the executable, the file names starting 
 executable's name, at most 5 files per executable of at most 1 MB each, rolling, and left what to
 log to the implementer, with one criterion: a bug report with the log attached can be diagnosed
 from it. The plan (`docs/plans/2026-10-27-add-a-diagnostic-log-with-nlog.md`) put eight choices to
-the owner, each with a recommendation; the owner approved it as written.
+the owner, each with a recommendation; the owner approved it as written. One of them, NLog's plain
+file target closed between lines and no second package, rested on the claim that it would let two
+windows write one file; measured, it lost lines and cost 4.8 ms a line, so it went back to the
+owner, who chose the second package the same day.
 
 ## Decision
 
-- **Where NLog lives.** The core references NLog 6.2.2 and logs at its seams: the readers, the
+- **Where NLog lives.** The core references NLog 6.2.2 and `NLog.Targets.AtomicFile` 6.2.2, and
+  logs at its seams: the readers, the
   profile locator and the lens identification, every run in `Runs/`. `Analysis/`, `Report/`,
   `Metrics.cs`, `Stats.cs`, `Img.cs` and `Thresholds.cs` never log; a run logs the figures its
   analyzer returned. The two applications configure NLog in code, through
@@ -30,21 +34,20 @@ the owner, each with a recommendation; the owner approved it as written.
   `<executable>_01.log`, then `_02` and so on, and the oldest is deleted when there are more than
   5. NLog 6.2.2's `MaxArchiveFiles` counts the file being written, so it is 5 (set to 4, it left 4
   files). The next process goes on in the newest file. UTF-8 without BOM.
-- **Two processes.** The file is closed between lines (`KeepFileOpen = false`, the plan's
-  choice), measured against the two alternatives:
+- **Two processes.** The file target is `AtomicFileTarget`, NLog's own target that leaves the
+  operating system to place every write at the end of the file (`FILE_APPEND_DATA` on Windows),
+  kept open, with `ConcurrentWrites`; the owner chose it on 2026-10-27 over the plan's plain target
+  closed between lines, after this measurement on 2026-10-27:
 
   | target | two windows on one session | two processes, 2000 lines each at full speed | one process, per line |
   | --- | --- | --- | --- |
-  | file closed between lines | 28 and 28 lines kept | 33, 33 and 42 lines lost of 4000 | 4.8 ms |
-  | file kept open (NLog's default) | 0 and 28 lines kept: one window's whole log lost | 67, 70 and 72 lost | 0.07 ms |
-  | `NLog.Targets.AtomicFile` (a second package) | not run | 0 lost, three times | 0.09 ms |
+  | `AtomicFileTarget`, kept open | 28 and 28 lines kept | 0 lost, three times | 0.09 ms |
+  | plain target, closed between lines | 28 and 28 lines kept | 33, 33 and 42 lines lost of 4000 | 4.8 ms |
+  | plain target, kept open (NLog's default) | 0 and 28 lines kept: one window's whole log lost | 67, 70 and 72 lost | 0.07 ms |
 
-  At the Debug level a structure run writes about 10 lines and the opening of a session in the
-  window about 30, so the closed file costs well under a second: a structure run on the Samyang
-  master took 3.8 to 4.1 s with the log off and 4.0 to 4.4 s at Debug or Trace, three runs each.
-  Whether to take
-  the second package, so that no line is lost when two processes write at full speed, is the
-  owner's call, asked at the end of this task and written down as R-112, a draft.
+  A structure run on the Samyang master took 3.6 to 4.0 s with the log off and 3.7 to 3.9 s at
+  Debug or Trace, three runs each: the log costs nothing measurable. Two writers crossing the 1 MiB
+  roll together keep every line too (R-112).
 - **The level.** Debug by default; the environment variable `FLATCHECK_LOG` sets `off`, `fatal`,
   `error`, `warn`, `info`, `debug` or `trace`. No console option, so the console's contract and
   its golden files do not move. Trace adds every FITS header card and the progress lines siril-cli
@@ -75,20 +78,24 @@ the owner, each with a recommendation; the owner approved it as written.
   analyzers return.
 - **A `--log` console option.** It changes the console's contract, its usage text and the golden
   files, for what an environment variable does without touching them.
-- **Keeping the file open.** 70 times faster, but the second of two windows wrote over the first's
-  whole log (the table above).
+- **NLog's plain target, closed between lines.** The plan's first choice: two windows kept their
+  lines, but two processes writing at full speed lost about 1 % of theirs, and a line cost 4.8 ms
+  (the table above).
+- **NLog's plain target, kept open.** As fast as the atomic target, but the second of two windows
+  wrote over the first's whole log (the table above).
 - **One file per process.** No line lost, but the five files per executable would be filled by
   five runs, and a report would come in pieces.
 
 ## Consequences
 
-- A fifth third-party component (`ThirdParty.cs`, `THIRD-PARTY-NOTICES.md` with the BSD-3-Clause
-  text, the README's table, the About window by itself); `ThirdPartyTests` counts five.
+- A fifth third-party component with two packages of the same project, as LibRaw has
+  (`ThirdParty.cs`, `THIRD-PARTY-NOTICES.md` with the BSD-3-Clause text, the README's table, the
+  About window by itself); `ThirdPartyTests` counts five. The two versions move together.
 - The log is the first thing to ask a reporter for: the README's "Logs" section says where it is.
 - Every test runs every log line on its path: the test assemblies configure NLog once, at Trace,
   into a target that renders each event (`LogCapture`), so a log line that throws fails a test,
-  not a user's run. Guarded by `R109_...` to `R111_...` in `LoggingTests` and `WindowLoggingTests`,
+  not a user's run. Guarded by `R109_...` to `R112_...` in `LoggingTests` and `WindowLoggingTests`,
   and by `OnlyTheTwoEntryPointsConfigureTheLog`, `NoLogLineGoesThroughTheTranslation` and
-  `NothingThatComputesOrWordsTheReportLogs`.
+  `NothingThatComputesOrWordsTheReportLogs`. `R112_TwoProcessesWritingAtFullSpeedKeepEveryLine`
+  fails on the plain target: kept open, one of its two writers lost all 4000 lines.
 - The other tools of the suite can take `LogSetup` as it is, under their own names.
-- Two processes writing at full speed can lose about 1 % of their lines until R-112 is decided.

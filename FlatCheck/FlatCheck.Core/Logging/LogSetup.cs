@@ -192,9 +192,9 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The configuration of one executable's log: one file target, every logger from
-        /// <paramref name="minimum"/> up; no console target, ever (stdout and stderr are the
-        /// console's contract, R-001). <c>Off</c> gives a configuration without targets.
+        /// The configuration of one executable's log: one atomic-append file target, every
+        /// logger from <paramref name="minimum"/> up; no console target, ever (stdout and stderr
+        /// are the console's contract, R-001). <c>Off</c> gives a configuration without targets.
         /// </summary>
         /// <param name="executableName">The start of every file's name.</param>
         /// <param name="folder">The folder of the files; created on the first line when
@@ -206,21 +206,22 @@ namespace FlatCheck
             var config = new LoggingConfiguration { DefaultCultureInfo = CultureInfo.InvariantCulture };
             if (minimum == LogLevel.Off) return config;
 
-            var file = new FileTarget("file")
+            // The atomic target, so a second process of the same executable (two windows)
+            // appends to the same file without a line lost: the operating system places every
+            // write at the end. NLog's plain target lost lines either way, closed between lines
+            // (and 4.8 ms a line) or kept open (where the second of two windows wrote over the
+            // first's whole log); ADR 0070 has the measurements, R-112 the requirement.
+            var file = new AtomicFileTarget
             {
+                Name = "file",
                 FileName = Layout.FromLiteral(Path.Combine(folder, executableName + ".log")),
                 Layout = LineLayout,
                 Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
                 WriteBom = false,
                 ArchiveAboveSize = FileSizeLimit,
                 MaxArchiveFiles = FilesPerExecutable,
-                // Closed between lines, so a second process of the same executable (two
-                // windows) appends to the same file: kept open (NLog's default), the second of
-                // two windows wrote over the first's whole log. The cost is about 5 ms a line,
-                // and two processes writing at full speed still lose about 1 % of their lines;
-                // the package NLog.Targets.AtomicFile loses none at 0.09 ms a line (ADR 0070
-                // has the measurements; taking it is the owner's call, R-112).
-                KeepFileOpen = false,
+                ConcurrentWrites = true,
+                KeepFileOpen = true,
                 AutoFlush = true,
                 CreateDirs = true,
             };

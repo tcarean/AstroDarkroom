@@ -51,13 +51,15 @@
        NLog, for the diagnostic log only (ADR 0070): the core logs at its seams (the readers,
        the profile locator, Runs/), never inside Analysis/ or Report/; the two applications
        configure it, in code, through Logging/LogSetup.cs. Without a configuration (the tests,
-       a library use) every call is a no-op. -->
+       a library use) every call is a no-op. NLog.Targets.AtomicFile is its file target with
+       the operating system's atomic append, so two windows writing one log lose no line. -->
   <ItemGroup>
     <PackageReference Include="Sdcb.LibRaw" />
     <PackageReference Include="Sdcb.LibRaw.runtime.win64" />
     <PackageReference Include="Sdcb.LibRaw.runtime.linux64" />
     <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="NLog" />
+    <PackageReference Include="NLog.Targets.AtomicFile" />
   </ItemGroup>
 
   <!-- The core stays internal entirely. No public surface was built for it because it has no

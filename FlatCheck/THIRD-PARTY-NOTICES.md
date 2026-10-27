@@ -102,8 +102,12 @@ Copyright (c) Six Labors.
 **Role.** Writes the diagnostic log, the text files in the `log` folder beside each executable
 that a bug report carries (ADR 0070). It decides nothing and computes nothing: the core and the
 two applications hand it finished lines, and without its configuration every call is a no-op.
+Two packages of the same project come with it: `NLog`, and `NLog.Targets.AtomicFile`, its file
+target with the operating system's atomic append, so two windows writing one log at the same
+time lose no line (R-112).
 
-**Licence.** BSD-3-Clause, the version taken being **6.2.2**.
+**Licence.** BSD-3-Clause, for both packages, the version taken being **6.2.2**; both are built
+from the same commit of the same repository, and neither carries a native file.
 
 **Compatibility.** BSD-3-Clause is permissive and compatible with GPLv3; the Free Software
 Foundation lists the modified (3-clause) BSD licence as GPL-compatible. Of its three conditions,
@@ -149,9 +153,10 @@ The package's own metadata carries a second notice, `Copyright (c) 2004-2026 NLo
 https://nlog-project.org/`.
 
 **The alternatives evaluated.** `Microsoft.Extensions.Logging` needs a second package for a file
-sink; Serilog does the same work, and the owner asked for NLog by name. The package
-`NLog.Targets.AtomicFile`, which NLog 6 offers for several processes writing one file, is not
-taken: the plain file target with `KeepFileOpen = false` covers the two windows a user may open.
+sink; Serilog does the same work, and the owner asked for NLog by name. `NLog.Targets.AtomicFile`
+was measured against NLog's plain file target before it was taken: two processes writing 2000
+lines each at once lost 33 to 48 of the 4000 lines with the plain target closed between lines,
+67 to 72 with it kept open, and none with the atomic target (ADR 0070).
 
 - Project: <https://nlog-project.org/>
 - Licence: <https://github.com/NLog/NLog/blob/master/LICENSE.txt>

@@ -171,8 +171,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
-- NLog 6.2.2 is the fifth third-party component (BSD-3-Clause, ADR 0070); the core logs at its
-  seams and never in `Analysis/` or `Report/`, and every test runs every log line on its path.
+- NLog 6.2.2 is the fifth third-party component, with its `NLog.Targets.AtomicFile` package so two
+  windows writing one log lose no line (BSD-3-Clause, R-112, ADR 0070); the core logs at its seams
+  and never in `Analysis/` or `Report/`, and every test runs every log line on its path.
 - The build writes the XML documentation file in all five projects, so the gate's compiler
   fails a malformed comment, a tag naming no parameter or an unresolved `cref`; CS1591 stays
   muted and no publish ships the files (ADR 0059). The 34 errors it found on `main` are fixed.

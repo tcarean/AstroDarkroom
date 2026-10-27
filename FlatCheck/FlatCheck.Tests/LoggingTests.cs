@@ -167,36 +167,59 @@ public class LoggingTests
         Assert.Equal(LogSetup.FilesPerExecutable, FilesOf(folder, "flatcheck").Length);
     }
 
+    /// <summary>The lines two writers left in a folder, whole, by writer: the numbers each
+    /// one's lines carry, and the count of lines that are neither writer's whole line.</summary>
+    static (List<int> A, List<int> B, int Broken) TwoWritersLines(string folder, string executable)
+    {
+        var a = new List<int>();
+        var b = new List<int>();
+        int broken = 0;
+        var whole = new Regex(@" (A|B) (a|b) (\d{5}) ([AB]+)$");
+        foreach (string line in FilesOf(folder, executable).SelectMany(File.ReadAllLines))
+        {
+            Match m = whole.Match(line);
+            bool ok = LinePrefix.IsMatch(line) && m.Success && m.Groups[1].Value.ToLowerInvariant() == m.Groups[2].Value;
+            int n = ok ? int.Parse(m.Groups[3].Value) : -1;
+            // the payload is the writer's letter, as many as the line's number says
+            ok = ok && m.Groups[4].Value == new string(m.Groups[1].Value[0], 140 + n % 37);
+            if (!ok) { broken++; continue; }
+            (m.Groups[1].Value == "A" ? a : b).Add(n);
+        }
+        return (a, b, broken);
+    }
+
     /// <summary>
-    /// Two processes of one executable (two windows) write into the same file, each line whole.
-    /// Two factories stand for the two processes; each opens the file on its own. Written at full
-    /// speed, about 1 % of the lines can still be lost (R-112, a draft until the owner decides on
-    /// NLog.Targets.AtomicFile; ADR 0070 has the measurements), so most are asked for, not all:
-    /// with the file kept open, one writer lost all of its.
+    /// Two processes of one executable (two windows) write into the same file at full speed, and
+    /// every line of both arrives whole, once, past the 1 MiB roll too (R-109, R-112). Two
+    /// factories stand for the two processes; each opens the file on its own. NLog's plain
+    /// target failed this: closed between lines it lost about 1 % of them, kept open one writer
+    /// lost all of its (ADR 0070).
     /// </summary>
     [Fact]
-    public void R109_TwoProcessesWriteIntoTheSameFile()
+    public void R112_TwoProcessesWritingAtFullSpeedKeepEveryLine()
     {
         using var ws = new TempWorkspace();
         string folder = Path.Combine(ws.Dir, "log");
         using var a = Factory(LogSetup.Build("FlatCheck.Wpf", folder, LogLevel.Debug));
         using var b = Factory(LogSetup.Build("FlatCheck.Wpf", folder, LogLevel.Debug));
-        const int Lines = 200;
+        const int Lines = 4000;   // about 1.6 MiB together: the writers cross the roll
 
         Parallel.Invoke(
-            () => { var log = a.GetLogger("A"); for (int i = 0; i < Lines; i++) log.Info($"a {i:D4}"); },
-            () => { var log = b.GetLogger("B"); for (int i = 0; i < Lines; i++) log.Info($"b {i:D4}"); });
+            () => { var log = a.GetLogger("A"); for (int i = 0; i < Lines; i++) log.Info($"a {i:D5} " + new string('A', 140 + i % 37)); },
+            () => { var log = b.GetLogger("B"); for (int i = 0; i < Lines; i++) log.Info($"b {i:D5} " + new string('B', 140 + i % 37)); });
         a.Shutdown();
         b.Shutdown();
 
-        Assert.Equal(new[] { Path.Combine(folder, "FlatCheck.Wpf.log") }, Directory.GetFiles(folder));
-        string[] lines = File.ReadAllLines(Path.Combine(folder, "FlatCheck.Wpf.log"));
-        Assert.All(lines, l => Assert.Matches(LinePrefix, l));
-        int fromA = lines.Count(l => Regex.IsMatch(l, @" A a \d{4}$")), fromB = lines.Count(l => Regex.IsMatch(l, @" B b \d{4}$"));
-        output.WriteLine($"intact lines: {fromA} of {Lines} from A, {fromB} of {Lines} from B");
-        Assert.Equal(lines.Length, fromA + fromB);
-        Assert.InRange(fromA, Lines * 9 / 10, Lines);
-        Assert.InRange(fromB, Lines * 9 / 10, Lines);
+        string[] files = FilesOf(folder, "FlatCheck.Wpf");
+        foreach (string f in files)
+            output.WriteLine($"{Path.GetFileName(f)} {new FileInfo(f).Length} bytes");
+        var (fromA, fromB, broken) = TwoWritersLines(folder, "FlatCheck.Wpf");
+        output.WriteLine($"whole lines: {fromA.Count} from A, {fromB.Count} from B; broken: {broken}");
+        Assert.Equal(Directory.GetFiles(folder).Length, files.Length);
+        Assert.InRange(files.Length, 2, LogSetup.FilesPerExecutable);
+        Assert.Equal(0, broken);
+        Assert.Equal(Enumerable.Range(0, Lines), fromA.OrderBy(n => n));
+        Assert.Equal(Enumerable.Range(0, Lines), fromB.OrderBy(n => n));
     }
 
     [Theory]
@@ -294,10 +317,11 @@ public class LoggingTests
     {
         var config = LogSetup.Build("flatcheck", @"C:\any\log", LogLevel.Debug);
 
-        var file = Assert.IsType<FileTarget>(Assert.Single(config.AllTargets));
+        var file = Assert.IsType<AtomicFileTarget>(Assert.Single(config.AllTargets));
         Assert.Equal(LogSetup.FileSizeLimit, file.ArchiveAboveSize);
         Assert.Equal(LogSetup.FilesPerExecutable, file.MaxArchiveFiles);
-        Assert.False(file.KeepFileOpen);
+        Assert.True(file.KeepFileOpen);
+        Assert.True(file.ConcurrentWrites);
         var rule = Assert.Single(config.LoggingRules);
         Assert.True(rule.IsLoggingEnabledForLevel(LogLevel.Debug));
         Assert.False(rule.IsLoggingEnabledForLevel(LogLevel.Trace));

@@ -1497,7 +1497,7 @@ compatible with GPLv3:
 | Sdcb.LibRaw | the C# wrapper over LibRaw | MIT |
 | LibRaw (the native DLLs) | reading camera raw files | LGPL-2.1 (the option chosen of LibRaw's dual LGPL-2.1 / CDDL-1.0) |
 | SixLabors.ImageSharp 3.1.x | decoding the JPEG preview a raw carries | Six Labors Split License 1.0, which grants open-source projects the terms of Apache 2.0. Pinned to 3.1.x because from 4.0 the package asks for a licence key at compile time, an error on Release builds. |
-| NLog 6.2.x | writing the diagnostic log (see "Logs") | BSD-3-Clause |
+| NLog and NLog.Targets.AtomicFile 6.2.x | writing the diagnostic log (see "Logs"), two windows into one file | BSD-3-Clause |
 | the lensfun database (the `lensfun/` folder) | the vignetting profiles of mode 6 and of the structure's profile comparison; data, not code, copied unchanged | CC BY-SA 3.0 |
 
 Adobe's profiles (`.lcp`) are not a component: they are read on the machine, where Adobe put them, and

@@ -310,13 +310,15 @@ Implemented as planned, on `claude/Add-a-diagnostic-log-with-NLog`; ADR 0070 and
 
 - **`MaxArchiveFiles` is 5, not 4.** Measured: NLog 6.2.2 counts the file being written among its
   archives, and 4 left 4 files.
-- **D3 held, measured, with one question left.** `KeepFileOpen = false` as approved. Measured
-  against the file kept open and against `NLog.Targets.AtomicFile`: with two real windows on one
-  session the closed file kept 28 and 28 lines where the open one kept 0 and 28; two processes
-  writing 2000 lines each at full speed lose 33 to 48 of 4000 with the closed file and none with
-  AtomicFile; a line costs 4.8 ms closed and 0.09 ms with AtomicFile. "No line lost under full
-  load" became R-112, a draft, and taking the second package is put to the owner. A real
-  structure run took 3.8 to 4.1 s with the log off and 4.0 to 4.4 s at Debug or Trace.
+- **D3 replaced, at the owner's word.** `KeepFileOpen = false` as approved was measured against
+  the file kept open and against `NLog.Targets.AtomicFile`: with two real windows on one session
+  the closed file kept 28 and 28 lines where the open one kept 0 and 28; two processes writing
+  2000 lines each at full speed lost 33 to 48 of 4000 with the closed file and none with
+  AtomicFile; a line cost 4.8 ms closed and 0.09 ms with AtomicFile. Put back to the owner as
+  R-112, the owner chose the second package the same day: the target is `AtomicFileTarget`, kept
+  open, R-112 is implemented with a strict test that fails on the plain target, and two real
+  windows still keep 28 and 28 lines. A real structure run takes 3.6 to 4.0 s with the log off
+  and 3.7 to 3.9 s at Debug or Trace.
 - **The siril-cli lines.** The plan said Trace in D2 and Debug in the seam table; the progress
   lines are at Trace and every other line at Debug, since a failed Siril run is the likeliest
   report.

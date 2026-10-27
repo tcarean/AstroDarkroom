@@ -41,10 +41,14 @@ past the limit (1049286 bytes for 4 KB lines). After 8 MiB written the folder ho
 console's eight rolls in the same folder (`R109_OneExecutablesRollingLeavesTheOthersFilesAlone`):
 NLog matches its own name and number only.
 
-`KeepFileOpen` is `false`: ADR 0070 has the measurements behind it (two windows, two processes at
-full speed, the cost per line) and R-112 the question of `NLog.Targets.AtomicFile`. In one process
-two factories on one file stand for two processes; with the file kept open, one of them lost all
-its lines, which `R109_TwoProcessesWriteIntoTheSameFile` would catch.
+The target is `AtomicFileTarget`, from `NLog.Targets.AtomicFile`: a `FileTarget` whose stream the
+operating system appends to (`FILE_APPEND_DATA` on Windows), so every write lands at the end of
+the file whichever process makes it. It is kept open (`KeepFileOpen`) with `ConcurrentWrites`;
+everything above, names, rolling and counts, is the plain target's, unchanged. ADR 0070 has the
+measurements against the plain target. In one process two factories on one file stand for two
+processes: `R112_TwoProcessesWritingAtFullSpeedKeepEveryLine` writes 4000 lines from each, crossing
+the 1 MiB roll (two files, the first ending at 1048936 bytes), and asks for every line, whole,
+once. On the plain target kept open, one of the two writers lost all of its.
 
 ## The line
 

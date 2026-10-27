@@ -49,10 +49,10 @@ and `StbImageSharp` as the measured drop-in fallback if the licence ever moves.
 ADR 0070 holds the whole of it: why a logging package, why NLog and not
 `Microsoft.Extensions.Logging` or Serilog, why it is configured in code with no `NLog.config`,
 why the core logs at its seams and never in `Analysis/` or `Report/`, and the measurements behind
-the file closed between lines; `THIRD-PARTY-NOTICES.md` reproduces its BSD-3-Clause text. The one
-open question is a second package of the same project, `NLog.Targets.AtomicFile`, so two
-processes writing at full speed lose no line (R-112). How the log is configured, what each seam
-writes and how the tests capture it are `logging.md`.
+the second package of the same project, `NLog.Targets.AtomicFile`, taken so two processes writing
+at full speed lose no line (R-112); `THIRD-PARTY-NOTICES.md` reproduces their BSD-3-Clause text,
+and `ThirdParty.cs` claims both packages under one component. The two versions move together. How
+the log is configured, what each seam writes and how the tests capture it are `logging.md`.
 
 ### Security advisories against 3.1.11
 
