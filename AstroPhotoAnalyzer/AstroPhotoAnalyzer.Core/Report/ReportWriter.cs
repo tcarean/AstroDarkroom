@@ -131,7 +131,7 @@ namespace AstroPhotoAnalyzer
                 foreach (Recommendation rec in recs)
                 {
                     w.WriteLine($"   {Mark(rec.Verdict)} {rec.Text}");
-                    w.WriteLine(Tr.Pick("     because: ", "     fiindca: ") + rec.Because);
+                    w.WriteLine(Tr.Pick("     because: ", "     fiindca: ") + Fmt.Plain(rec.Because));
                 }
             }
         }

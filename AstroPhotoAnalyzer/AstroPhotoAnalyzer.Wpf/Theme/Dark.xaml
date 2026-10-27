@@ -436,9 +436,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                  Foreground="{Binding VerdictLabel, Converter={StaticResource VerdictToBrush}}" />
       <StackPanel Grid.Column="1">
         <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
-        <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" TextWrapping="Wrap">
+        <!-- The "because" may carry the core's ** marks around a figure that must catch the eye;
+             Emphasis.Text appends it after the label, those parts in bold. -->
+        <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" TextWrapping="Wrap"
+                   local:Emphasis.Text="{Binding Because, Mode=OneWay}">
           <Run Text="{local:T En='because: ', Ro='fiindca: '}" FontWeight="SemiBold" />
-          <Run Text="{Binding Because, Mode=OneWay}" />
         </TextBlock>
       </StackPanel>
     </Grid>

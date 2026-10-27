@@ -30,7 +30,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   for at every one of 5000 random positions, not up to 120 tiles, so the share has the same
   precision on every image. On a core denoised by Syqon at 0.5, 0.75 and 1 the share grows
   with the denoise (0.18, 0.24, 0.44 % of the frame) while the mean plateau shrank and would
-  have cleared the strongest one (R-080, R-091; ADR 0060).
+  have cleared the strongest one (R-080, R-091; ADR 0060). In the window's Raport tab the
+  share and the threshold are in bold; the text report is unchanged (R-112).
 - The background colour of section 3, the reference of the cast and of the eight edge regions,
   is the colour of the sky patches above the bottom band (the class the background section
   calls sky), no longer the darkest quarter of the frame: on a Milky Way core the darkest

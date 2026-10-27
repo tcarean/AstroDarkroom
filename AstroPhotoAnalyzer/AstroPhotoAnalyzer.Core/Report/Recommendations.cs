@@ -101,8 +101,9 @@ namespace AstroPhotoAnalyzer
                 // median says the sky is fine. The reader must see that the two speak of
                 // different places.
                 double flat = q.PlateauVisibleFramePctAt(size.Dpi);
-                string steps = Tr.Pick($"flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm at {Fmt.F0(size.Dpi)} dpi on {Fmt.F2(flat)} % of the frame (threshold {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)",
-                    $"trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm la {Fmt.F0(size.Dpi)} dpi pe {Fmt.F2(flat)} % din cadru (prag {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)");
+                string share = Fmt.Strong(Fmt.F2(flat) + " %"), limit = Fmt.Strong(Fmt.F2(Thresholds.PlateauFlatFrameWarnPct) + " %");
+                string steps = Tr.Pick($"flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm at {Fmt.F0(size.Dpi)} dpi on {share} of the frame (threshold {limit})",
+                    $"trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm la {Fmt.F0(size.Dpi)} dpi pe {share} din cadru (prag {limit})");
                 string where = Tr.Pick($"; the typical plateau on the {q.PlateauTiles} clean tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, is {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, with the noise left at sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB",
                     $"; palierul tipic pe cele {q.PlateauTiles} dale curate, {Fmt.Pct(q.PlateauFramePct)} din cadru, e {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, cu zgomotul ramas la sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB");
                 if (q.PlateauVisibleAt(size.Dpi))
