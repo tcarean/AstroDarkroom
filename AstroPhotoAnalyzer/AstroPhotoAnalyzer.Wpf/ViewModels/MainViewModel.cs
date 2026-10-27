@@ -47,9 +47,25 @@ namespace AstroPhotoAnalyzer.Wpf
         // The words the console prints after -o ("-> raport salvat: <file>"), without the arrow.
         static string SavedPrefix => Tr.Pick("report saved: ", "raport salvat: ");
 
-        /// <summary>Makes the parameter fields and the tabs, all empty.</summary>
-        public MainViewModel()
+        // What the window remembers between its runs (R-156): the profile's path, written on
+        // every change of the bar's profile.
+        readonly WindowSettings _settings;
+
+        /// <summary>Makes the parameter fields and the tabs, all empty, remembering nothing (the tests' constructor).</summary>
+        public MainViewModel() : this(WindowSettings.None) { }
+
+        /// <summary>
+        /// Makes the parameter fields and the tabs, all empty, and restores the profile the
+        /// settings remember (R-156): read again from its file by the core, applied when
+        /// readable, shown with its reason when not.
+        /// </summary>
+        /// <param name="settings">
+        /// The settings read at the start, written back on every change of the profile; not
+        /// null (<see cref="WindowSettings.None"/> remembers nothing).
+        /// </param>
+        public MainViewModel(WindowSettings settings)
         {
+            _settings = settings ?? WindowSettings.None;
             Parameters = new ParameterFields();
             Report = new ReportTabViewModel();
             Tones = new TonesTabViewModel();
@@ -58,6 +74,16 @@ namespace AstroPhotoAnalyzer.Wpf
             Background = new BackgroundTabViewModel();
             Preview = new PreviewTabViewModel();
             Curves = new CurvesTabViewModel();
+
+            if (_settings.IccProfilePath != null)
+                Parameters.RestoreProfile(new IccProfileRow(IccPaperBlack.Read(_settings.IccProfilePath)));
+            // Subscribed after the restore: what was just read back need not be written again.
+            Parameters.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName != nameof(ParameterFields.Profile)) return;
+                _settings.IccProfilePath = Parameters.Profile?.File;
+                _settings.Write();
+            };
         }
 
         public ParameterFields Parameters { get; }
@@ -142,6 +168,29 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             Path = path ?? "";
             return HasPath ? RunAsync() : Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// "Foloseste" in the profile window (R-132, R-155): the profile goes into the fields and
+        /// the bar, and the analysis runs again by itself on the open image. A choice that
+        /// changes nothing (the profile in use again, its Dmax still in the field) runs nothing.
+        /// </summary>
+        /// <param name="profile">The row chosen; null, or one that could not be read, changes nothing.</param>
+        /// <returns>The run, or a completed task when nothing runs.</returns>
+        internal Task ChooseProfile(IccProfileRow profile)
+            => Parameters.UseProfile(profile) ? RunAsync() : Task.CompletedTask;
+
+        /// <summary>
+        /// "Scoate" in the top bar (R-155): the profile is dropped, the medium's Dmax is back in
+        /// the field, and the analysis runs again by itself on the open image. Nothing happens
+        /// without a profile.
+        /// </summary>
+        /// <returns>The run, or a completed task when nothing runs.</returns>
+        internal Task ClearProfile()
+        {
+            if (!Parameters.HasProfile) return Task.CompletedTask;
+            Parameters.ClearProfile();
+            return RunAsync();
         }
 
         /// <summary>

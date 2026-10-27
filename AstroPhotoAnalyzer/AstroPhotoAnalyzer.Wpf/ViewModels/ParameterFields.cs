@@ -48,16 +48,18 @@ namespace AstroPhotoAnalyzer.Wpf
         string _frame = Fmt.F0(D.FrameCm);
         string _wcsPath = "";
 
-        // The ICC profile the Dmax was taken from, and the text put in the field then: the name
-        // reaches the report only while the field still shows that text (R-132).
-        string _dmaxProfile, _dmaxProfileText, _dmaxProfileNote, _dmaxProfilePath;
+        // The ICC profile the Dmax was taken from, the one the top bar shows (R-155): it is
+        // dropped the moment the field shows another text than the one it wrote, or a medium is
+        // chosen, so the bar never names a profile the next run would not use.
+        IccProfileRow _profile;
 
         public IReadOnlyList<string> Media { get; } = Parameters.MediumNames;
 
         /// <summary>
         /// Choosing a medium writes its Dmax into the Dmax field, over whatever was there, so
         /// that the user sees which Dmax the analysis will use. The value is the core's (R-020).
-        /// The order matters: code that sets both sets the medium first, then the Dmax.
+        /// The order matters: code that sets both sets the medium first, then the Dmax. A
+        /// profile in use, readable or not, is dropped (R-155).
         /// </summary>
         public string Medium
         {
@@ -66,33 +68,111 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (Set(ref _medium, value) && Media.Contains(value, StringComparer.OrdinalIgnoreCase))
                 {
+                    Profile = null;
                     Dmax = DmaxTextOf(value);
-                    _dmaxProfile = _dmaxProfileText = _dmaxProfileNote = _dmaxProfilePath = null;
                 }
             }
         }
 
         /// <summary>
         /// Filled with the chosen medium's Dmax; the user may change it. Empty = the medium's.
+        /// A text other than the one the profile in use wrote drops that profile (R-155); one
+        /// that could not be read wrote none and stays until a medium or "Scoate".
         /// </summary>
-        public string Dmax { get => _dmax; set => Set(ref _dmax, value); }
+        public string Dmax
+        {
+            get => _dmax;
+            set
+            {
+                if (Set(ref _dmax, value) && _profile != null && _profile.Readable && (value ?? "").Trim() != _profile.DmaxText)
+                    Profile = null;
+            }
+        }
+
+        /// <summary>
+        /// The ICC profile in use, as the top bar shows it (R-155): the one "Foloseste" chose or
+        /// the settings restored (R-156), readable or not; null when there is none. Set only
+        /// here: through <see cref="UseProfile"/>, <see cref="RestoreProfile"/>,
+        /// <see cref="ClearProfile"/>, a typed Dmax or a chosen medium.
+        /// </summary>
+        public IccProfileRow Profile
+        {
+            get => _profile;
+            private set
+            {
+                if (!Set(ref _profile, value)) return;
+                Raise(nameof(HasProfile));
+                Raise(nameof(ProfileText));
+                Raise(nameof(ProfileIsProblem));
+            }
+        }
+
+        public bool HasProfile => _profile != null;
+
+        /// <summary>
+        /// A profile that is set but could not be read (its file gone or broken since it was
+        /// remembered, R-156): the bar shows it in red and the run does not use it.
+        /// </summary>
+        public bool ProfileIsProblem => _profile != null && !_profile.Readable;
+
+        /// <summary>
+        /// What the bar shows: the profile's name and the core's sentence about it, or that
+        /// there is none and the medium's Dmax is used. Explanation, not diagnosis (ADR 0020):
+        /// the name and the sentence are the core's.
+        /// </summary>
+        public string ProfileText
+            => _profile == null ? Tr.Pick("(none: the medium's Dmax)", "(niciunul: Dmax-ul mediului)") : _profile.Name + " - " + _profile.Detail;
 
         /// <summary>
         /// The Dmax of a profile chosen in the "Din profil ICC..." window: it goes into the
-        /// field, and the profile's name accompanies it in the report until the user types
-        /// something else or chooses a medium.
+        /// field, and the profile is shown in the bar and named in the report until the user
+        /// types something else, chooses a medium or presses "Scoate" (R-155).
         /// </summary>
         /// <param name="profile">
         /// The row chosen; null, or one that could not be read, changes nothing.
         /// </param>
-        public void UseProfile(IccProfileRow profile)
+        /// <returns>
+        /// True when something changed: another file than the profile in use, a profile that
+        /// was not in use, or the field no longer showing the profile's Dmax; false when the
+        /// profile in use was chosen again with its Dmax still in the field, or nothing was
+        /// chosen, so that the caller runs nothing.
+        /// </returns>
+        public bool UseProfile(IccProfileRow profile)
         {
-            if (profile == null || !profile.Readable) return;
+            if (profile == null || !profile.Readable) return false;
+            bool same = _profile != null && _profile.Readable
+                && string.Equals(_profile.File, profile.File, StringComparison.OrdinalIgnoreCase)
+                && (Dmax ?? "").Trim() == profile.DmaxText;
+            if (same) return false;
+            // The profile first: the Dmax setter compares the text with the profile in use, and
+            // the new profile's own text must not drop it.
+            Profile = profile;
             Dmax = profile.DmaxText;
-            _dmaxProfile = profile.Name;
-            _dmaxProfileText = profile.DmaxText;
-            _dmaxProfileNote = profile.Note;
-            _dmaxProfilePath = profile.File;
+            return true;
+        }
+
+        /// <summary>
+        /// The profile the settings remembered (R-156), at the start: readable, it is applied as
+        /// if chosen; not readable (its file gone or broken), it is shown with its reason and
+        /// not used, the field keeping the medium's Dmax.
+        /// </summary>
+        /// <param name="profile">The row as the core read the remembered file; null changes nothing.</param>
+        internal void RestoreProfile(IccProfileRow profile)
+        {
+            if (profile == null) return;
+            if (profile.Readable) UseProfile(profile);
+            else Profile = profile;
+        }
+
+        /// <summary>
+        /// "Scoate" (R-155): the profile is dropped and the chosen medium's Dmax goes back into
+        /// the field. Nothing happens without a profile.
+        /// </summary>
+        public void ClearProfile()
+        {
+            if (_profile == null) return;
+            Profile = null;
+            Dmax = DmaxTextOf(Medium);
         }
 
         /// <summary>
@@ -137,16 +217,18 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 // A field that still shows the text the medium put there is not a given Dmax: it
                 // stays the core's, with all its decimals, not a copy rounded for display (R-024).
+                // A readable profile in use always has its Dmax in the field (the setter drops
+                // it otherwise); one that could not be read is shown, not used.
                 string dmax = (Dmax ?? "").Trim();
-                bool fromProfile = _dmaxProfile != null && dmax == _dmaxProfileText;
+                bool fromProfile = _profile != null && _profile.Readable;
                 bool untouched = !fromProfile && dmax == DmaxTextOf(Medium);
                 var p = new Parameters
                 {
                     Medium = Parameters.MediumFromName(Medium),
                     DmaxOverride = untouched ? null : OptionalNumber(Dmax, "Dmax", 0, Thresholds.DmaxMax),
-                    DmaxProfile = fromProfile ? _dmaxProfile : null,
-                    DmaxProfileNote = fromProfile ? _dmaxProfileNote : null,
-                    DmaxProfilePath = fromProfile ? _dmaxProfilePath : null,
+                    DmaxProfile = fromProfile ? _profile.Name : null,
+                    DmaxProfileNote = fromProfile ? _profile.Note : null,
+                    DmaxProfilePath = fromProfile ? _profile.File : null,
                     ViewingDistanceM = OptionalNumber(Distance, Tr.Pick("distance", "distanta"), 0, 100),
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),

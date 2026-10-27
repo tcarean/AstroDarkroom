@@ -56,9 +56,10 @@ an ICC profile (`input.md`, "The Dmax of a printer profile") arrives as `DmaxOve
 `DmaxProfile`, the profile's name: in the console through `Parameters.WithDmaxFromProfile`,
 called by `AnalyzerCli.Run` before `Validate` (a problem is `ERROR: --icc: <reason>`, exit 1);
 in the window through `ParameterFields.UseProfile`, which writes the Dmax into the field and
-remembers the name with the text it wrote, so that `TryBuild` passes the name only while the
-field still shows that text. `ReportWriter.DmaxOrigin` turns the three cases into Anexa F's
-words.
+keeps the profile as `Profile`, the one the top bar shows, until another text is typed over
+its Dmax or a medium is chosen, when it is dropped at once (R-155, `window.md`); `TryBuild`
+passes the name while the profile is set and readable. `ReportWriter.DmaxOrigin` turns the
+three cases into Anexa F's words.
 
 Rules between parameters are the core's: `Parameters.Validate()` returns a message or
 null, and both the console (exit 1, before any reading) and the window (the error text)
