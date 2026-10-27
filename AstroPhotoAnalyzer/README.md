@@ -84,7 +84,9 @@ Give the viewing distance when you know it. Left empty, it is 1.5 x the diagonal
 and no size is recommended: a star's size on paper and that distance both grow with the print, so
 the test answers the same at every size, and the report only says up to which width the image is
 equally sharp from its natural distance. A starless image has no stars to measure: its sizes are
-judged by the dpi alone (180 dpi without a distance).
+judged by the dpi alone (180 dpi without a distance). A star must stand 12 times the local noise
+over its surroundings, so the grain of a stretched sky is not counted as one; faint stars are
+left out with it, and the resolution is the bright stars'.
 
 **On the right, seven tabs.** Most figures have a line under them saying what they measure and,
 where one applies, the threshold they are judged by.

@@ -40,10 +40,15 @@ are in `kit.json`, not here.
   `AstroPhotoAnalyzer.Tests/testdata/large/` of the owner's file in `E:\Photografie\Claude`
   (ADR 0004), and `starless_rbf0.5_stretch0.17.fit` (V-004), the plate-solved FITS of ADR 0025,
   copied from the folder `testdata/manifest.json` names, and the lab's two ICC profiles (V-006,
-  V-007; ADR 0030), from the page the manifest names; the manifest holds the four hashes. A
+  V-007; ADR 0030), from the page the manifest names, and the other frames the manifest lists
+  (the Rosetta, Orion and Andromeda pairs with and without stars, the Veil, the 0.1 stretch);
+  the manifest holds every hash. A
   worktree has no copies: copy the images into the worktree's `testdata/large/` first, or every
   case prints `NOT MEASURED`. A case runs the whole analysis on a 23 MP image, 10 to 15 s
-  (the twelve cases together about 2.5 min; before ADR 0035 a case took up to 27 s).
+  (the twelve cases together about 2.5 min; before ADR 0035 a case took up to 27 s). The
+  filter `Category=Validation` also runs `StarPairTests` (ADR 0054): every starless frame under
+  `StarMinCount` stars, every frame with stars kept, the Rosetta pair's kept stars in the
+  difference image; they print each frame's count and FWHM.
 - At step 3: the table's second column is the case's parameters, not a fixture; the figures are
   the ones `ValidationTests` prints on its `MEASURED` line.
 

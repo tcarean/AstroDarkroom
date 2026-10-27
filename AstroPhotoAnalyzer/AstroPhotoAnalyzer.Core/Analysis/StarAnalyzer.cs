@@ -24,12 +24,17 @@
 // of its StarWindow x StarWindow window (25 x 25); among equal maxima only the first in scan
 // order counts, so a flat two-pixel peak is one star, not two (ADR 0041).
 // The star's base = the median of the window's border; the amplitude = peak - base,
-// with a low threshold (a faint smudge has no profile); a high threshold on the peak itself
-// leaves out a saturated star (it has no half). The width at half maximum is taken on the
-// horizontal and on the vertical, with linear subpixel interpolation, and averaged. Exactly the
-// acceptance script - with two differences: the script's candidates were above 3 x the mean,
-// which rejects every star once the background is lifted (ADR 0016), and it took 20,000 of them
-// at random, here ALL are taken. It is deterministic and better sampled.
+// with a low threshold (a faint smudge has no profile) and, over it, StarMinSnr times the
+// border's robust sigma, measured about a plane fitted to the border so that the local gradient
+// of a nebula is not read as noise: the grain of the stretched noise peaks 3 to 4 sigmas over
+// its base and passed the absolute floor by the thousand on a starless frame (ADR 0054). A high
+// threshold on the peak itself leaves out a saturated star (it has no half). The width at half
+// maximum is taken on the horizontal and on the vertical, with linear subpixel interpolation,
+// and averaged.
+// Exactly the acceptance script - with three differences: the script's candidates were above
+// 3 x the mean, which rejects every star once the background is lifted (ADR 0016); it took
+// 20,000 of them at random, here ALL are taken, deterministic and better sampled; and it had no
+// sigma clause.
 
 using System;
 using System.Collections.Generic;
@@ -103,6 +108,43 @@ namespace AstroPhotoAnalyzer
         const int Half = Thresholds.StarWindow / 2;
 
         /// <summary>
+        /// The column and row offsets of each border pixel, the one order <see cref="BorderStats"/>
+        /// fills its buffer in, and the sums of their squares: the plane fitted to the border is
+        /// a + b x dx + c x dy, and because the border is symmetric about the centre (the sums
+        /// of dx, of dy and of dx x dy vanish) its least-squares coefficients are the mean and
+        /// the two ratios sum(dx x v) / sum(dx^2) and sum(dy x v) / sum(dy^2).
+        /// </summary>
+        static readonly int[] BorderDx, BorderDy;
+        static readonly int SumDx2, SumDy2;
+
+        /// <summary>The number of pixels on the window's border: 96 for the window of 25.</summary>
+        const int BorderLength = 4 * (2 * Half + 1) - 4;
+
+        /// <summary>Builds the border's offset tables once, in the buffer's fill order.</summary>
+        static StarAnalyzer()
+        {
+            int n = BorderLength;
+            BorderDx = new int[n];
+            BorderDy = new int[n];
+            int k = 0;
+            for (int dx = -Half; dx <= Half; dx++)
+            {
+                BorderDx[k] = dx; BorderDy[k++] = -Half;
+                BorderDx[k] = dx; BorderDy[k++] = Half;
+            }
+            for (int dy = -Half + 1; dy <= Half - 1; dy++)
+            {
+                BorderDx[k] = -Half; BorderDy[k++] = dy;
+                BorderDx[k] = Half; BorderDy[k++] = dy;
+            }
+            for (int i = 0; i < n; i++)
+            {
+                SumDx2 += BorderDx[i] * BorderDx[i];
+                SumDy2 += BorderDy[i] * BorderDy[i];
+            }
+        }
+
+        /// <summary>
         /// Scans every pixel of the reference plane for star candidates and measures the width at
         /// half maximum of each one kept.
         /// </summary>
@@ -124,7 +166,8 @@ namespace AstroPhotoAnalyzer
             float maxPeak = (float)(Thresholds.StarMaxPeak16 / 65535.0);
 
             var stars = new List<Star>();
-            var border = new float[4 * (2 * Half + 1) - 4];
+            var border = new float[BorderLength];
+            var deviations = new float[BorderLength];
             var line = new double[2 * Half + 1];
 
             for (int y = Half; y < H - Half; y++)
@@ -136,9 +179,9 @@ namespace AstroPhotoAnalyzer
                     if (v <= thr || v > maxPeak) continue;
                     if (!IsWindowMax(g, W, H, x, y, v)) continue;
 
-                    float baseLevel = BorderMedian(g, W, x, y, border);
+                    (float baseLevel, float sigma) = BorderStats(g, W, x, y, border, deviations);
                     float amp = v - baseLevel;
-                    if (amp < minAmp) continue;
+                    if (amp < minAmp || amp < Thresholds.StarMinSnr * sigma) continue;
                     double half = baseLevel + amp / 2.0;
 
                     for (int i = 0; i < line.Length; i++) line[i] = g[row + x - Half + i];
@@ -214,7 +257,13 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The median of the pixels on the border of the window around (x, y), 96 for the window
-        /// of <see cref="Thresholds.StarWindow"/> (25): the star's base.
+        /// of <see cref="Thresholds.StarWindow"/> (25), the star's base, and their robust sigma,
+        /// 1.4826 x the median absolute deviation of the residuals of a plane fitted to the border
+        /// by least squares: the noise the amplitude is judged against, the local gradient taken
+        /// out so that a star on a nebula's slope is judged against the grain and not the slope
+        /// (ADR 0054; the raw deviation about the median lost 14 of the 64 stars of the DarkSky
+        /// scene). On a quantised flat border the sigma is near 0 (exactly 0 when the border is
+        /// uniform), which leaves the absolute floor alone.
         /// </summary>
         /// <param name="g">The reference plane, 0..1, row-major.</param>
         /// <param name="W">The plane's width, in pixels.</param>
@@ -226,23 +275,34 @@ namespace AstroPhotoAnalyzer
         /// The window's centre row, at least <see cref="Thresholds.StarWindow"/> / 2 px from the
         /// top and bottom edges.
         /// </param>
-        /// <param name="buf">A buffer of 4 x (StarWindow - 1) values (96), overwritten.</param>
-        /// <returns>The median of the border: the mean of its two middle values.</returns>
-        static float BorderMedian(float[] g, int W, int x, int y, float[] buf)
+        /// <param name="buf">A buffer of <see cref="BorderLength"/> values (96), overwritten.</param>
+        /// <param name="dev">A second buffer of the same length for the residuals, overwritten.</param>
+        /// <returns>
+        /// The median of the border (the mean of its two middle values) and its robust sigma.
+        /// </returns>
+        static (float Median, float Sigma) BorderStats(float[] g, int W, int x, int y, float[] buf, float[] dev)
         {
-            int k = 0;
-            for (int dx = -Half; dx <= Half; dx++)
+            for (int i = 0; i < buf.Length; i++) buf[i] = g[(y + BorderDy[i]) * W + x + BorderDx[i]];
+
+            // The plane through the border (see BorderDx), then the residuals about it.
+            double sum = 0, sumX = 0, sumY = 0;
+            for (int i = 0; i < buf.Length; i++)
             {
-                buf[k++] = g[(y - Half) * W + x + dx];
-                buf[k++] = g[(y + Half) * W + x + dx];
+                sum += buf[i];
+                sumX += BorderDx[i] * (double)buf[i];
+                sumY += BorderDy[i] * (double)buf[i];
             }
-            for (int dy = -Half + 1; dy <= Half - 1; dy++)
-            {
-                buf[k++] = g[(y + dy) * W + x - Half];
-                buf[k++] = g[(y + dy) * W + x + Half];
-            }
+            double a = sum / buf.Length, b = sumX / SumDx2, c = sumY / SumDy2;
+            for (int i = 0; i < buf.Length; i++) dev[i] = (float)(buf[i] - a - b * BorderDx[i] - c * BorderDy[i]);
+            Array.Sort(dev);
+            float residualMedian = (dev[dev.Length / 2 - 1] + dev[dev.Length / 2]) / 2;
+            for (int i = 0; i < dev.Length; i++) dev[i] = Math.Abs(dev[i] - residualMedian);
+            Array.Sort(dev);
+            float mad = (dev[dev.Length / 2 - 1] + dev[dev.Length / 2]) / 2;
+
             Array.Sort(buf);
-            return (buf[buf.Length / 2 - 1] + buf[buf.Length / 2]) / 2;
+            float median = (buf[buf.Length / 2 - 1] + buf[buf.Length / 2]) / 2;
+            return (median, 1.4826f * mad);
         }
 
         /// <summary>

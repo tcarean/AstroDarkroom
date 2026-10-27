@@ -44,6 +44,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A starless image no longer reports thousands of stars and a false resolution: a star must
+  stand 12 times the local noise over its surroundings (`StarMinSnr`), so the grain of the
+  stretched sky, which the absolute floor let through (6297 "stars" at 2.38 px on the starless
+  reference FITS, 22 485 on a starless Veil), is not counted, and such a frame takes the dpi rule
+  it was promised; faint stars under that noise go with the grain, and the FWHM is the bright
+  stars' (ADR 0054).
 - A FITS is read the way up Siril shows it, whatever its `ROWORDER` says: the file's first row
   is the bottom of the image, keyword or not, and a `TOP-DOWN` keyword is noted as ignored in
   the report; before, a file without the keyword, or one saying `TOP-DOWN` over bottom-up

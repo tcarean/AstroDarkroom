@@ -53,6 +53,75 @@ public class StarAnalyzerTests
     }
 
     /// <summary>
+    /// The grain of a noisy sky is not a star (ADR 0054): on a flat sky with Gaussian noise of
+    /// sigma 0.02 the window maxima stand about 3 sigmas over the border median, past the
+    /// absolute floor of 3000/65535, and without the sigma clause 429 of them pass as stars on
+    /// this 600 x 600 frame (measured 2026-10-27 with StarMinSnr set to 0); a star must be
+    /// StarMinSnr sigmas over its base.
+    /// </summary>
+    [Fact]
+    public void R070_NoiseGrainIsNotAStar()
+    {
+        var s = StarAnalyzer.Analyze(SyntheticRasters.AddNoise(SyntheticRasters.Flat(600, 600, 0.2f), 0.02, 7));
+
+        Assert.True(s.Insufficient, $"{s.Count} grain bumps passed as stars");
+        Assert.True(double.IsNaN(s.FwhmMedian));
+    }
+
+    /// <summary>
+    /// The sigma clause keeps the stars: the same noisy sky (sigma 0.02) with stars of 0.3
+    /// (15 sigmas) over it is still measured as before, and the grain between them is not.
+    /// </summary>
+    [Fact]
+    public void R070_StarsOverGrainAreStillMeasured()
+    {
+        Raster r = SyntheticRasters.AddNoise(Scenes.WithStars(SyntheticRasters.Flat(600, 600, 0.2f), fwhm: 3.0, amplitude: 0.3f), 0.02, 7);
+        var s = StarAnalyzer.Analyze(r);
+
+        Assert.False(s.Insufficient);
+        Assert.InRange(s.Count, 55, 70);
+        Assert.InRange(s.FwhmMedian, 2.8, 3.4);
+    }
+
+    /// <summary>
+    /// The sigma is measured about a plane fitted to the border, so a star on a nebula's slope is
+    /// judged against the grain and not the slope (ADR 0054): the DarkSky scene's nebula (0.4
+    /// over 60 px) carries its 64 stars of 0.3 over 0.3 LSB of noise; the raw deviation about the
+    /// border median read the slope as a sigma of about 0.03 and kept 50 of them. The scene
+    /// itself is analysed, so an edit of it reaches this test.
+    /// </summary>
+    [Fact]
+    public void R070_StarsOnANebulasSlopeAreKept()
+    {
+        var s = StarAnalyzer.Analyze(Scenes.DarkSky());
+
+        Assert.InRange(s.Count, 60, 70);
+        Assert.InRange(s.FwhmMedian, 2.95, 3.2);
+    }
+
+    /// <summary>
+    /// A wide star lays its own wings on the window border (a Gaussian of FWHM 14, sigma 5.9,
+    /// puts 13 % of its amplitude on the border's middle pixels and 2 % on its corners), and the
+    /// plane cannot take a radial wing out; the spread of those wings is the border's "sigma".
+    /// Up to the accepted width (StarFwhmMax 15) that sigma stays well under a twelfth of the
+    /// amplitude, so the star does not reject itself (ADR 0054, the review of 2026-10-27: all 64
+    /// kept at 12, 13 and 14). The same wings lift the border median, the base, so a wide star
+    /// reads narrower: 12.50 at 13 and 13.19 at 14 (measured 2026-10-27), a bias of the
+    /// estimator older than the clause, within 7 % here.
+    /// </summary>
+    [Theory]
+    [InlineData(12.0)]
+    [InlineData(13.0)]
+    [InlineData(14.0)]
+    public void R070_AWideStarDoesNotRejectItself(double fwhm)
+    {
+        var s = StarAnalyzer.Analyze(StarField(fwhm));
+
+        Assert.InRange(s.Count, 55, 70);
+        Assert.InRange(s.FwhmMedian, fwhm * 0.93, fwhm * 1.06);
+    }
+
+    /// <summary>
     /// A flat two-pixel peak (two adjacent pixels at the same value, each the maximum of its
     /// window) is one star, at its first pixel in scan order (ADR 0041); before it both pixels
     /// passed and the star was counted twice.
