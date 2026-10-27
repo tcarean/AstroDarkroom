@@ -140,12 +140,15 @@ public class LoggingTests
                      files.Select(Path.GetFileName));
         Assert.EndsWith("console last", File.ReadAllLines(files[^1])[^1]);
 
-        // The next process goes on in the newest file, and the count stays at five.
+        // The next process goes on in the newest file: the same five names, the newest grown,
+        // nothing started and nothing deleted (ADR 0070 rejected one file per process).
+        long newestBefore = new FileInfo(files[^1]).Length;
         WriteThrough(folder, "flatcheck", 1000, "next");
         string[] after = FilesOf(folder, "flatcheck");
         foreach (string f in after)
             output.WriteLine($"after a second process: {Path.GetFileName(f)} {new FileInfo(f).Length} bytes");
-        Assert.True(after.Length <= LogSetup.FilesPerExecutable);
+        Assert.Equal(files.Select(Path.GetFileName), after.Select(Path.GetFileName));
+        Assert.True(new FileInfo(after[^1]).Length > newestBefore, "the newest file did not grow");
         Assert.EndsWith("next last", File.ReadAllLines(after[^1])[^1]);
     }
 
@@ -169,10 +172,11 @@ public class LoggingTests
 
     /// <summary>The lines two writers left in a folder, whole, by writer: the numbers each
     /// one's lines carry, and the count of lines that are neither writer's whole line.</summary>
-    static (List<int> A, List<int> B, int Broken) TwoWritersLines(string folder, string executable)
+    static (List<int> A, List<int> B, int Broken, string Order) TwoWritersLines(string folder, string executable)
     {
         var a = new List<int>();
         var b = new List<int>();
+        var order = new StringBuilder();
         int broken = 0;
         var whole = new Regex(@" (A|B) (a|b) (\d{5}) ([AB]+)$");
         foreach (string line in FilesOf(folder, executable).SelectMany(File.ReadAllLines))
@@ -184,8 +188,9 @@ public class LoggingTests
             ok = ok && m.Groups[4].Value == new string(m.Groups[1].Value[0], 140 + n % 37);
             if (!ok) { broken++; continue; }
             (m.Groups[1].Value == "A" ? a : b).Add(n);
+            order.Append(m.Groups[1].Value);
         }
-        return (a, b, broken);
+        return (a, b, broken, order.ToString());
     }
 
     /// <summary>
@@ -204,29 +209,40 @@ public class LoggingTests
         using var b = Factory(LogSetup.Build("FlatCheck.Wpf", folder, LogLevel.Debug));
         const int Lines = 4000;   // about 1.6 MiB together: the writers cross the roll
 
-        Parallel.Invoke(
-            () => { var log = a.GetLogger("A"); for (int i = 0; i < Lines; i++) log.Info($"a {i:D5} " + new string('A', 140 + i % 37)); },
-            () => { var log = b.GetLogger("B"); for (int i = 0; i < Lines; i++) log.Info($"b {i:D5} " + new string('B', 140 + i % 37)); });
+        // Two threads of their own, released together: Parallel.Invoke may run the second
+        // action after the first on a busy pool, and then nothing would overlap.
+        using var together = new Barrier(2);
+        var ta = new Thread(() => { var log = a.GetLogger("A"); together.SignalAndWait(); for (int i = 0; i < Lines; i++) log.Info($"a {i:D5} " + new string('A', 140 + i % 37)); });
+        var tb = new Thread(() => { var log = b.GetLogger("B"); together.SignalAndWait(); for (int i = 0; i < Lines; i++) log.Info($"b {i:D5} " + new string('B', 140 + i % 37)); });
+        ta.Start();
+        tb.Start();
+        ta.Join();
+        tb.Join();
         a.Shutdown();
         b.Shutdown();
 
         string[] files = FilesOf(folder, "FlatCheck.Wpf");
         foreach (string f in files)
             output.WriteLine($"{Path.GetFileName(f)} {new FileInfo(f).Length} bytes");
-        var (fromA, fromB, broken) = TwoWritersLines(folder, "FlatCheck.Wpf");
+        var (fromA, fromB, broken, order) = TwoWritersLines(folder, "FlatCheck.Wpf");
         output.WriteLine($"whole lines: {fromA.Count} from A, {fromB.Count} from B; broken: {broken}");
         Assert.Equal(Directory.GetFiles(folder).Length, files.Length);
         Assert.InRange(files.Length, 2, LogSetup.FilesPerExecutable);
         Assert.Equal(0, broken);
         Assert.Equal(Enumerable.Range(0, Lines), fromA.OrderBy(n => n));
         Assert.Equal(Enumerable.Range(0, Lines), fromB.OrderBy(n => n));
+        // The writers did overlap: their lines interleave in the file, both ways round.
+        Assert.Contains("AB", order);
+        Assert.Contains("BA", order);
     }
 
     [Theory]
-    [InlineData(@"C:\Tools\flatcheck.exe", "flatcheck", "flatcheck")]
-    [InlineData(@"C:\Tools\flatcheck-2.3.exe", "flatcheck", "flatcheck-2.3")]
-    [InlineData(@"C:\Program Files\dotnet\dotnet.exe", "flatcheck", "flatcheck")]
-    [InlineData(@"/usr/share/dotnet/dotnet", "flatcheck", "flatcheck")]
+    // Windows paths with forward slashes, which Windows accepts and Unix can split too: the
+    // test project is portable, and a backslash is not a separator there.
+    [InlineData("C:/Tools/flatcheck.exe", "flatcheck", "flatcheck")]
+    [InlineData("C:/Tools/flatcheck-2.3.exe", "flatcheck", "flatcheck-2.3")]
+    [InlineData("C:/Program Files/dotnet/dotnet.exe", "flatcheck", "flatcheck")]
+    [InlineData("/usr/share/dotnet/dotnet", "flatcheck", "flatcheck")]
     [InlineData(null, "FlatCheck.Wpf", "FlatCheck.Wpf")]
     public void R109_TheFilesBeginWithTheExecutablesName(string? processPath, string entry, string expected)
     {
@@ -421,20 +437,41 @@ public class LoggingTests
         Assert.Contains("   at FlatCheck.FitsReader.", failed.Line);
     }
 
-    [Fact]
-    public void R110_TheLogIsTheSameInBothLanguages()
+    [Theory]
+    [InlineData("structure")]
+    [InlineData("expo")]
+    [InlineData("light")]
+    [InlineData("synthetic")]
+    [InlineData("smooth")]
+    [InlineData("against")]
+    public void R110_TheLogIsTheSameInBothLanguages(string scenario)
     {
         using var ws = new TempWorkspace();
         string flat = GoldenOutputTests.Flat(ws, "flat.fit", FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.12), Size);
+        string raw = GoldenOutputTests.Flat(ws, "raw.fit", FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000)), Size);
+        string cube = ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(Size, Size, 3, (x, y, p) => 30000));
+        string lights = GoldenOutputTests.SeriesDir(ws, "lights", FitsTestData.Radial(Size, Size), FitsTestData.Radial(Size, Size));
+
+        // Every mode, the refusals included (synthetic: no lens matches; smooth: a cube).
+        string[] Args(string lang) => scenario switch
+        {
+            "structure" => new[] { flat, "-o", ws.PathTo(lang + ".png") },
+            "expo" => new[] { raw, "--expo" },
+            "light" => new[] { lights, "--light", "--fov", "10", "-o", ws.PathTo(lang + ".png") },
+            "synthetic" => new[] { flat, "--synthetic", ws.PathTo(lang + ".fit"), "--lens", "nothing matches this", "--profiles", ws.PathTo("none") },
+            "smooth" => new[] { cube, "--smooth", ws.PathTo(lang + ".fit") },
+            "against" => new[] { flat, "--against", flat, "-o", ws.PathTo(lang + ".png") },
+            _ => throw new ArgumentException(scenario),
+        };
 
         IReadOnlyList<string> Run(string lang)
         {
             using var capture = LogCapture.Start();
-            FlatCheckCli.Run(new[] { flat, "--lang", lang, "-o", ws.PathTo(lang + ".png") }, new StringWriter(), new StringWriter());
-            // Times and the map's name are the only things allowed to differ.
+            FlatCheckCli.Run(Args(lang).Concat(new[] { "--lang", lang }).ToArray(), new StringWriter(), new StringWriter());
+            // Times and the output's name are the only things allowed to differ.
             return capture.Messages
                 .Select(m => Regex.Replace(m, @"\d+(\.\d+)? m?s\b", "# ms"))
-                .Select(m => m.Replace(lang + ".png", "<map>.png").Replace("lang=" + lang, "lang=<lang>"))
+                .Select(m => m.Replace(lang + ".png", "<out>.png").Replace(lang + ".fit", "<out>.fit").Replace("lang=" + lang, "lang=<lang>"))
                 .ToArray();
         }
 
@@ -510,47 +547,82 @@ public class LoggingTests
 
     // ---------------------------------------------------------------- invariants of the repository
 
-    static IEnumerable<string> CodeFiles(params string[] folders) =>
-        folders.SelectMany(f => Directory.GetFiles(Path.Combine(Root, f), "*.cs", SearchOption.AllDirectories))
-               .Where(f => !f.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar)
-                        && !f.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar));
+    /// <summary>The C# sources under the given repository folders, without bin/ and obj/
+    /// (filtered on the relative path, so a checkout under a folder named bin still yields
+    /// every file).</summary>
+    static IEnumerable<string> CodeFiles(params string[] folders) => RepoInvariantTests.CsSources(folders);
 
-    /// <summary>Only the two entry points configure the log; the core and the tests never
-    /// do, so a library use and every test log into nothing but the capture.</summary>
+    /// <summary>A file's path as the assertions name it: relative to the repository, with
+    /// forward slashes.</summary>
+    static string Rel(string f) => Path.GetRelativePath(Root, f).Replace('\\', '/');
+
+    /// <summary>Only the two entry points configure the log for a user's run, and nothing but
+    /// LogSetup (for them) and LogCapture (for the tests) sets NLog's configuration at all;
+    /// so a library use logs into nothing and every test into the capture (ADR 0070).</summary>
     [Fact]
     public void OnlyTheTwoEntryPointsConfigureTheLog()
     {
-        var callers = CodeFiles("FlatCheck.Core", "FlatCheck", "FlatCheck.Wpf", "FlatCheck.Tests", "FlatCheck.Wpf.Tests")
+        string[] all = { "FlatCheck.Core", "FlatCheck", "FlatCheck.Wpf", "FlatCheck.Tests", "FlatCheck.Wpf.Tests" };
+        var callers = CodeFiles(all)
             .Where(f => Regex.IsMatch(File.ReadAllText(f), @"LogSetup\.(Apply|Close)\("))
-            .Select(f => Path.GetRelativePath(Root, f).Replace('\\', '/'))
-            .OrderBy(f => f, StringComparer.Ordinal)
-            .ToArray();
+            .Select(Rel).OrderBy(f => f, StringComparer.Ordinal).ToArray();
+        var configurers = CodeFiles(all)
+            .Where(f => Regex.IsMatch(File.ReadAllText(f), @"LogManager\.(Configuration\s*=[^=]|Setup\()"))
+            .Select(Rel).OrderBy(f => f, StringComparer.Ordinal).ToArray();
 
         Assert.Equal(new[] { "FlatCheck.Wpf/App.xaml.cs", "FlatCheck/Program.cs" }, callers);
+        Assert.Equal(new[] { "FlatCheck.Core/Logging/LogSetup.cs", "FlatCheck.Tests/LogCapture.cs" }, configurers);
     }
 
-    /// <summary>The log is English whatever the language (R-110): no log call composes its
-    /// message through the T(english, romanian) pair.</summary>
+    /// <summary>
+    /// The log's own words are English whatever the language (R-110): no log call composes its
+    /// message through the T(english, romanian) pair, whichever logger it goes through and
+    /// however many lines the call spans. And every logger is declared the one way, a
+    /// <c>Logger</c> field taken from <c>LogManager.GetLogger</c> with <c>using NLog</c>, so the
+    /// first check sees every call (a tab's logger is an instance named after the tab, and
+    /// LogSetup's is fetched on use, on purpose).
+    /// </summary>
     [Fact]
     public void NoLogLineGoesThroughTheTranslation()
     {
-        var offenders = CodeFiles("FlatCheck.Core", "FlatCheck", "FlatCheck.Wpf")
-            .SelectMany(f => File.ReadAllLines(f).Select((l, i) => (f, i, l)))
-            .Where(x => Regex.IsMatch(x.l, @"\bLog\.(Trace|Debug|Info|Warn|Error|Fatal)\(") && Regex.IsMatch(x.l, @"\bT\("))
-            .Select(x => $"{Path.GetFileName(x.f)}:{x.i + 1}")
-            .ToArray();
+        var call = new Regex(@"\b\w*[Ll]og\.(Trace|Debug|Info|Warn|Error|Fatal)\(");
+        var callEnd = new Regex(@"\)\s*;");
+        var declaration = new Regex(@"static readonly Logger \w+ = LogManager\.GetLogger\(|static Logger \w+ => LogManager\.GetLogger\(|^\s*Log = LogManager\.GetLogger\(", RegexOptions.Multiline);
+        var offenders = new List<string>();
+        var declarations = new List<string>();
+        foreach (string f in CodeFiles("FlatCheck.Core", "FlatCheck", "FlatCheck.Wpf"))
+        {
+            string text = File.ReadAllText(f);
+            foreach (Match m in call.Matches(text))
+            {
+                Match end = callEnd.Match(text, m.Index);
+                string whole = end.Success ? text.Substring(m.Index, end.Index + end.Length - m.Index) : text.Substring(m.Index);
+                if (Regex.IsMatch(whole, @"\bT\(")) offenders.Add(Rel(f) + ":" + (text.Take(m.Index).Count(c => c == '\n') + 1));
+            }
+            string[] lines = File.ReadAllLines(f);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                bool inline = lines[i].Contains("GetLogger(") && !declaration.IsMatch(lines[i]);
+                bool qualified = lines[i].Contains("NLog.Logger") || lines[i].Contains("NLog.LogManager");
+                if (inline || qualified) declarations.Add(Rel(f) + ":" + (i + 1));
+            }
+        }
 
         Assert.Empty(offenders);
+        Assert.Empty(declarations);
     }
 
     /// <summary>The maths stay pure (ADR 0070): nothing in Analysis/ or Report/, nor Metrics,
-    /// Stats or Img, names NLog; the runs log what the analyzers return.</summary>
+    /// Stats or Img, holds a logger or names NLog; the runs log what the analyzers return. (A
+    /// catalog they call may still warn about an Adobe file it cannot read: the ADR's restated
+    /// note of 2026-10-27.)</summary>
     [Fact]
     public void NothingThatComputesOrWordsTheReportLogs()
     {
-        var files = CodeFiles(Path.Combine("FlatCheck.Core", "Analysis"), Path.Combine("FlatCheck.Core", "Report"))
+        var files = CodeFiles("FlatCheck.Core/Analysis", "FlatCheck.Core/Report")
             .Concat(new[] { "Metrics.cs", "Stats.cs", "Img.cs", "Thresholds.cs" }.Select(n => Path.Combine(Root, "FlatCheck.Core", n)));
 
-        Assert.All(files, f => Assert.DoesNotContain("NLog", File.ReadAllText(f)));
+        Assert.NotEmpty(files);
+        Assert.All(files, f => Assert.DoesNotMatch(@"\bNLog\b|\bLogger\b|\bLogManager\b", File.ReadAllText(f)));
     }
 }

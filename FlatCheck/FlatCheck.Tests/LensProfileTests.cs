@@ -247,7 +247,7 @@ public class LensProfileReaderTests
     [Fact]
     public void AnAdobeLensHasNoCalibrationLabel_SoItsWhereIsTheMount()
     {
-        var stub = AdobeProfileFile.FromName(@"C:\p\Nikon\NIKON D90 (Nikon AF-S DX NIKKOR 35mm f1.8G) - RAW.lcp");
+        var stub = AdobeProfileFile.FromName("C:/p/Nikon/NIKON D90 (Nikon AF-S DX NIKKOR 35mm f1.8G) - RAW.lcp");   // slashes: splits on Unix too
         Assert.False(stub.Lens.HasCalibration);
         Assert.Equal("NIKON D90", stub.Lens.Where);
         Assert.Equal(stub.Lens.Name, stub.Lens.Title);
@@ -1287,7 +1287,7 @@ public class LensIdentificationTests
         Assert.Equal("b.NEF", LensIdentification.FirstRaw(new[] { "a.fit", "b.NEF", "c.nef" }));
         Assert.Null(LensIdentification.FirstRaw(new[] { "a.fit" }));
         Assert.Null(LensIdentification.FirstRaw(null));
-        Assert.Equal("b.NEF", LensIdentification.NameOf(@"E:\x\flats\b.NEF"));
+        Assert.Equal("b.NEF", LensIdentification.NameOf("E:/x/flats/b.NEF"));   // slashes: splits on Unix too
         Assert.Null(LensIdentification.NameOf(null));
     }
 }
