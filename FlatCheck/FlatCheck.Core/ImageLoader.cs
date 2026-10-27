@@ -149,7 +149,7 @@ namespace FlatCheck
             IFrameReader reader = ReaderOf(path);
             LoadedFrame f = reader.Load(path);
             if (Log.IsInfoEnabled)
-                Log.Info("loaded " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+                Log.Info("loaded " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
             return f;
         }
 
@@ -196,7 +196,7 @@ namespace FlatCheck
             IFrameReader reader = ReaderOf(path);
             LoadedFrame f = reader.LoadInfo(path);
             if (Log.IsDebugEnabled)
-                Log.Debug("read the header of " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+                Log.Debug("read the header of " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
             return f;
         }
     }

@@ -25,6 +25,7 @@
 // exists for.
 
 using System.IO;
+using NLog;
 
 namespace FlatCheck
 {
@@ -46,7 +47,7 @@ namespace FlatCheck
         /// <returns>The equalised rasters and the picture as PNG; no second map.</returns>
         internal static RunOutcome<HistEqResult> Execute(string path, TextWriter report, bool rainbow = false)
         {
-            RunClock clock = RunClock.Start(Log, "histeq", path + " rainbow=" + LogText.Yes(rainbow));
+            using RunClock clock = RunClock.Start(Log, "histeq", path + " rainbow=" + LogText.Yes(rainbow));
             LoadedFrame f = ImageLoader.Load(path);
             clock.Lap("load");
             var r = HistEqAnalyzer.Analyze(f.Image, f.Cfa);
@@ -61,7 +62,7 @@ namespace FlatCheck
         }
 
         /// <summary>The diagnostic log: the run's lines and sizes (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(HistEqRun));
+        static readonly Logger Log = LogManager.GetLogger(nameof(HistEqRun));
 
         /// <summary>
         /// Encodes the one-layer view in Siril's false colours: the mosaic on a CFA frame, the

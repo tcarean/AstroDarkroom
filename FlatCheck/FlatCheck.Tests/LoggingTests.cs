@@ -289,6 +289,119 @@ public class LoggingTests
         Assert.Contains("channels=[0:CFA[0,0]=", capture.Text);
     }
 
+    /// <summary>
+    /// A refusal decided after the load has the run's start and done lines, with the load
+    /// stage: before, the path overloads of <c>--smooth</c> and <c>--synthetic</c> loaded the
+    /// file before the clock started, and a refusal left one bare line (the review of
+    /// 2026-10-27, A9).
+    /// </summary>
+    [Fact]
+    public void R110_ASmoothRefusalHasItsStartAndDoneLinesWithTheLoadStage()
+    {
+        using var ws = new TempWorkspace();
+        string cube = ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(Size, Size, 3, (x, y, p) => 30000));
+        using var capture = LogCapture.Start();
+
+        int exit = FlatCheckCli.Run(new[] { cube, "--smooth", ws.PathTo("smooth.fit") }, new StringWriter(), new StringWriter());
+
+        Assert.Equal(1, exit);
+        Assert.Contains(capture.Events, e => e.Logger == "SmoothRun" && e.Message.StartsWith("smooth start " + cube, StringComparison.Ordinal));
+        Assert.Matches(@"SmoothRun smooth done refused: a cube of 3 planes in \d+ ms \(load \d+ ms\)", capture.Text);
+    }
+
+    /// <summary>
+    /// A run that throws leaves its start line, so its inputs are in the log, and a line with
+    /// the time and the stages it reached before the exception (the review of 2026-10-27, A9).
+    /// </summary>
+    [Fact]
+    public void R110_ARunThatThrowsLeavesItsStartLineAndTheStagesItReached()
+    {
+        using var ws = new TempWorkspace();
+        string notFits = ws.WriteFile("notes.fit", Encoding.ASCII.GetBytes("not a FITS file, only some text"));
+        using var capture = LogCapture.Start();
+
+        int exit = FlatCheckCli.Run(new[] { notFits, "--synthetic", ws.PathTo("s.fit"), "--lens", "x", "--profiles", ws.PathTo("none") },
+                                    new StringWriter(), new StringWriter());
+
+        Assert.Equal(1, exit);
+        Assert.Contains(capture.Events, e => e.Logger == "SyntheticRun" && e.Message.StartsWith("synthetic start " + notFits, StringComparison.Ordinal));
+        Assert.Matches(@"SyntheticRun synthetic ended without an outcome after \d+ ms(\r?\n|$)", capture.Text);
+        Assert.Single(capture.Events, e => e.Level == LogLevel.Error);
+    }
+
+    /// <summary>The log writes an elapsed time in two forms only: milliseconds, or seconds
+    /// with one decimal; never whole seconds (the review of 2026-10-27, A10 and D8).</summary>
+    [Fact]
+    public void TheElapsedTimeHasTwoForms_MillisecondsAndSecondsWithOneDecimal()
+    {
+        Assert.Equal("12.9 s", LogText.Seconds(TimeSpan.FromMilliseconds(12900)));
+        Assert.Equal("0.8 s", LogText.Seconds(TimeSpan.FromMilliseconds(800)));
+        Assert.Equal("5 ms", LogText.Ms(5));
+    }
+
+    /// <summary>
+    /// A light series finds its files and loads its first frame before the frames stage:
+    /// both are stages of their own, so the first frame's time is not shorter than the others'
+    /// by its load (the review of 2026-10-27, A11).
+    /// </summary>
+    [Fact]
+    public void R110_ALightSeriesTimesTheFindAndTheFirstLoadAsStagesOfTheirOwn()
+    {
+        using var ws = new TempWorkspace();
+        string dir = GoldenOutputTests.SeriesDir(ws, "lights", FitsTestData.Radial(Size, Size), FitsTestData.Radial(Size, Size));
+        using var capture = LogCapture.Start();
+
+        FlatCheckCli.Run(new[] { dir, "--light", "--fov", "10", "-o", ws.PathTo("out.png") }, new StringWriter(), new StringWriter());
+
+        Assert.Matches(@"LightSeriesRun light series done .* in \d+ ms \(find \d+ ms, load \d+ ms, frames \d+ ms", capture.Text);
+    }
+
+    /// <summary>
+    /// The folder probe also opens the file NLog will append to: a read-only newest file sends
+    /// the log to the fallback, where before it passed the probe and every line was dropped
+    /// in silence (the review of 2026-10-27, A16).
+    /// </summary>
+    [Fact]
+    public void R109_AReadOnlyNewestLogFileSendsTheLogToTheFallback()
+    {
+        using var ws = new TempWorkspace();
+        string beside = Path.Combine(ws.Dir, "exe");
+        string folder = Path.Combine(beside, LogSetup.FolderName);
+        Directory.CreateDirectory(folder);
+        string newest = Path.Combine(folder, "flatcheck_03.log");
+        File.WriteAllText(Path.Combine(folder, "flatcheck.log"), "old\n");
+        File.WriteAllText(newest, "newest\n");
+        File.SetAttributes(newest, FileAttributes.ReadOnly);
+        try
+        {
+            string chosen = LogSetup.ResolveFolder(beside, ws.PathTo("fallback"), "flatcheck", out bool fellBack);
+
+            Assert.True(fellBack);
+            Assert.Equal(Path.Combine(ws.PathTo("fallback"), LogSetup.FallbackFolder, LogSetup.FolderName), chosen);
+        }
+        finally
+        {
+            File.SetAttributes(newest, FileAttributes.Normal);
+        }
+    }
+
+    /// <summary>A file another process of the same executable holds open (R-112) passes the
+    /// probe: the second window logs beside the first.</summary>
+    [Fact]
+    public void R109_ALogFileAnotherProcessHoldsOpenStillPassesTheProbe()
+    {
+        using var ws = new TempWorkspace();
+        string beside = Path.Combine(ws.Dir, "exe");
+        string folder = Path.Combine(beside, LogSetup.FolderName);
+        using var other = Factory(LogSetup.Build("flatcheck", folder, LogLevel.Debug));
+        other.GetLogger("Other").Info("held open");
+
+        string chosen = LogSetup.ResolveFolder(beside, ws.PathTo("fallback"), "flatcheck", out bool fellBack);
+
+        Assert.False(fellBack);
+        Assert.Equal(folder, chosen);
+    }
+
     [Fact]
     public void R110_AFailedRunLogsTheExceptionWithItsStackAndStderrKeepsOneLine()
     {

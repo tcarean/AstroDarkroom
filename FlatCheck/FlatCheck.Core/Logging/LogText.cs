@@ -51,6 +51,18 @@ namespace FlatCheck
         /// <returns>The text.</returns>
         internal static string Int(long v) => v.ToString(Inv);
 
+        /// <summary>An elapsed time in milliseconds: <c>1141 ms</c>. The log's short form; the
+        /// long one is <see cref="Seconds"/>.</summary>
+        /// <param name="ms">The milliseconds.</param>
+        /// <returns>The text.</returns>
+        internal static string Ms(long ms) => Int(ms) + " ms";
+
+        /// <summary>An elapsed time in seconds with one decimal: <c>12.9 s</c>, never whole
+        /// seconds, so <c>0.8 s</c> does not read as nothing.</summary>
+        /// <param name="elapsed">The time.</param>
+        /// <returns>The text.</returns>
+        internal static string Seconds(TimeSpan elapsed) => elapsed.TotalSeconds.ToString("F1", Inv) + " s";
+
         /// <summary>A text that may be missing or empty: itself, or <c>none</c>.</summary>
         /// <param name="s">The text, or null.</param>
         /// <returns>The text.</returns>

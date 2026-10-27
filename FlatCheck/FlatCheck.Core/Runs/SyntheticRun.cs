@@ -22,6 +22,7 @@
 // --smooth. The refusals are text, as in the other runs, and do not throw.
 
 using System;
+using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -197,9 +198,25 @@ namespace FlatCheck
         internal static SyntheticRunOutcome Execute(string referencePath, SyntheticRequest req, ProfileSources sources,
                                                     double? focal, double? fstop, double? crop, TextWriter report)
         {
+            // The clock starts before the load, so a reference that does not load still leaves
+            // the run's start line, with the lens and the values typed (R-110).
+            using RunClock clock = RunClock.Start(Log, "synthetic", Inputs(referencePath, req, focal, fstop, crop));
             LoadedFrame f = ImageLoader.Load(referencePath);
-            return Execute(f, referencePath, req, sources, focal, fstop, crop, report);
+            clock.Lap("load");
+            return Execute(f, referencePath, req, sources, focal, fstop, crop, report, clock);
         }
+
+        /// <summary>The run's inputs for its start line: the reference, the request as given
+        /// and the values given by hand.</summary>
+        /// <param name="referencePath">The reference frame.</param>
+        /// <param name="req">The request.</param>
+        /// <param name="focal">The focal length given by hand, or null.</param>
+        /// <param name="fstop">The f-number given by hand, or null.</param>
+        /// <param name="crop">The crop factor given by hand, or null.</param>
+        /// <returns>The text.</returns>
+        static string Inputs(string referencePath, SyntheticRequest req, double? focal, double? fstop, double? crop)
+            => referencePath + " " + LogText.Request(req)
+             + " given focal=" + LogText.Num(focal) + " fstop=" + LogText.Num(fstop) + " crop=" + LogText.Num(crop);
 
         /// <summary>
         /// The chain on a frame already loaded: refuses a cube, identifies the shot once,
@@ -219,8 +236,25 @@ namespace FlatCheck
         internal static SyntheticRunOutcome Execute(LoadedFrame f, string referencePath, SyntheticRequest req, ProfileSources sources,
                                                     double? focal, double? fstop, double? crop, TextWriter report)
         {
-            RunClock clock = RunClock.Start(Log, "synthetic", referencePath + " " + LogText.Request(req)
-                                                   + " given focal=" + LogText.Num(focal) + " fstop=" + LogText.Num(fstop) + " crop=" + LogText.Num(crop));
+            using RunClock clock = RunClock.Start(Log, "synthetic", Inputs(referencePath, req, focal, fstop, crop));
+            return Execute(f, referencePath, req, sources, focal, fstop, crop, report, clock);
+        }
+
+        /// <summary>The chain itself, on a clock already started by one of the two overloads
+        /// above, so each run has one start line.</summary>
+        /// <param name="f">The reference frame, as loaded.</param>
+        /// <param name="referencePath">Its path, for the report.</param>
+        /// <param name="req">The request.</param>
+        /// <param name="sources">The profile catalog.</param>
+        /// <param name="focal">The focal length in mm given by hand, or null.</param>
+        /// <param name="fstop">The f-number given by hand, or null.</param>
+        /// <param name="crop">The crop factor given by hand, or null.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <param name="clock">The run's clock, started.</param>
+        /// <returns>The synthetic flat with its request, or the refusal.</returns>
+        static SyntheticRunOutcome Execute(LoadedFrame f, string referencePath, SyntheticRequest req, ProfileSources sources,
+                                           double? focal, double? fstop, double? crop, TextWriter report, RunClock clock)
+        {
             string refusal = f.Planes > 1 ? SyntheticReport.RefusalCube(referencePath, f.Planes) : null;
             string why = refusal != null ? "a cube of " + LogText.Int(f.Planes) + " planes" : null;   // the log's words
             bool choice = false;
@@ -274,7 +308,7 @@ namespace FlatCheck
 
         /// <summary>The diagnostic log: the run's lines, the lens chosen and the flat built
         /// (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(SyntheticRun));
+        static readonly Logger Log = LogManager.GetLogger(nameof(SyntheticRun));
 
         /// <summary>The HISTORY lines: the version, the lens and profile, the model, the
         /// reference file.</summary>

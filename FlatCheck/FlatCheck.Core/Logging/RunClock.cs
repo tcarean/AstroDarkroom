@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using NLog;
@@ -24,10 +25,11 @@ namespace FlatCheck
     /// <summary>
     /// A run's first and last lines in the diagnostic log, and the time of each stage between
     /// them: <c>structure start ...</c>, then <c>structure done verdict=PERFECT in 60 ms (load 5
-    /// ms, analyze 40 ms, report 5 ms, map 10 ms)</c> (R-110). A run that throws writes no last
-    /// line; its caller logs the exception.
+    /// ms, analyze 40 ms, report 5 ms, map 10 ms)</c> (R-110). Held in a <c>using</c>: a run
+    /// that leaves without <see cref="Done"/>, because it threw, writes <c>ended without an
+    /// outcome after N ms</c> with the stages it reached; its caller logs the exception.
     /// </summary>
-    internal sealed class RunClock
+    internal sealed class RunClock : IDisposable
     {
         /// <summary>The run's logger.</summary>
         readonly Logger log;
@@ -44,6 +46,10 @@ namespace FlatCheck
         /// <summary>When the current stage began, in milliseconds since the start.</summary>
         long stageStart;
 
+        /// <summary>True once the last line was written, by <see cref="Done"/> or by
+        /// <see cref="Dispose"/>.</summary>
+        bool ended;
+
         /// <summary>A clock for one run, started now.</summary>
         /// <param name="log">The run's logger.</param>
         /// <param name="run">The run's name.</param>
@@ -58,7 +64,7 @@ namespace FlatCheck
         /// <param name="run">The run's name: <c>structure</c>, <c>light</c>, ...</param>
         /// <param name="inputs">The files and options the run was given, already
         /// formatted.</param>
-        /// <returns>The clock.</returns>
+        /// <returns>The clock, to hold in a <c>using</c>.</returns>
         internal static RunClock Start(Logger log, string run, string inputs)
         {
             log.Info(run + " start " + inputs);
@@ -70,7 +76,7 @@ namespace FlatCheck
         internal void Lap(string stage)
         {
             long now = total.ElapsedMilliseconds;
-            laps.Add(stage + " " + LogText.Int(now - stageStart) + " ms");
+            laps.Add(stage + " " + LogText.Ms(now - stageStart));
             stageStart = now;
         }
 
@@ -79,6 +85,22 @@ namespace FlatCheck
         /// <param name="outcome">What the run concluded: <c>verdict=PERFECT</c>,
         /// <c>refused: ...</c>, <c>wrote nothing</c>.</param>
         internal void Done(string outcome)
-            => log.Info(run + " done " + outcome + " in " + LogText.Int(total.ElapsedMilliseconds) + " ms (" + string.Join(", ", laps) + ")");
+        {
+            ended = true;
+            log.Info(run + " done " + outcome + " in " + LogText.Ms(total.ElapsedMilliseconds) + Stages());
+        }
+
+        /// <summary>Writes the last line of a run that left without an outcome, at
+        /// <c>Info</c>, with the stages it reached; nothing after <see cref="Done"/>.</summary>
+        public void Dispose()
+        {
+            if (ended) return;
+            ended = true;
+            log.Info(run + " ended without an outcome after " + LogText.Ms(total.ElapsedMilliseconds) + Stages());
+        }
+
+        /// <summary>The stages timed, in parentheses; nothing when none was.</summary>
+        /// <returns>The text, with a leading space, or empty.</returns>
+        string Stages() => laps.Count == 0 ? "" : " (" + string.Join(", ", laps) + ")";
     }
 }

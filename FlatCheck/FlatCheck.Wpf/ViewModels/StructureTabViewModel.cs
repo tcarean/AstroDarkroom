@@ -420,7 +420,8 @@ namespace FlatCheck.Wpf
                 File.WriteAllText(session.ResultTextPath, Report);
                 File.WriteAllBytes(session.ResidualPngPath, png);
                 SavedTo = session.ResultTextPath;
-                Log.Info("wrote " + session.ResultTextPath + " and " + session.ResidualPngPath + " (" + LogText.KiB(png.Length) + ")");
+                Log.Info("wrote " + session.ResultTextPath + " (" + LogText.FileKiB(session.ResultTextPath) + ")");
+                Log.Info("wrote " + session.ResidualPngPath + " (" + LogText.KiB(png.Length) + ")");
             }
             catch (Exception e)
             {

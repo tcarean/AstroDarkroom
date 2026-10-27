@@ -68,6 +68,24 @@ public class WindowLoggingTests
         Assert.DoesNotContain(capture.Events, e => e.Message.StartsWith("run 1 done", StringComparison.Ordinal));
     }
 
+    /// <summary>R-110: every file a tab writes is one line with its own size; before, the
+    /// Structure and Split tabs wrote two files on one line with the PNG's size (the review
+    /// of 2026-10-27, A10).</summary>
+    [Fact]
+    public async Task R110_EveryFileATabWritesIsOneLineWithItsOwnSize()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = new MainViewModel();
+        using var capture = LogCapture.Start();
+
+        await vm.OpenAsync(f.Root);
+
+        var wrote = capture.Events.Where(e => e.Logger == "Window.Structure" && e.Message.StartsWith("wrote ", StringComparison.Ordinal)).ToList();
+        Assert.Equal(2, wrote.Count);
+        Assert.All(wrote, e => Assert.Matches(@"^wrote .+ \(\d+(\.\d)? KiB\)$", e.Message));
+        Assert.Contains(wrote, e => e.Message.Contains(".png"));
+    }
+
     /// <summary>The Exposure tab's refusal at <c>Attach</c>, outside any run, is logged too.</summary>
     [Fact]
     public void R110_ARefusalAtAttachIsLoggedUnderTheTabsName()

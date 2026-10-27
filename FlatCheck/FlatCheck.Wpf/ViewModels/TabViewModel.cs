@@ -134,11 +134,11 @@ namespace FlatCheck.Wpf
             {
                 await work().ConfigureAwait(true);
                 // A run that ended with an explanation shown (Refuse) was refused, not done.
-                Log.Info(run + (HasError ? " refused in " : " done in ") + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+                Log.Info(run + (HasError ? " refused in " : " done in ") + LogText.Ms(clock.ElapsedMilliseconds));
             }
             catch (OperationCanceledException)
             {
-                Log.Info(run + " cancelled after " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+                Log.Info(run + " cancelled after " + LogText.Ms(clock.ElapsedMilliseconds));
                 if (gen == _generation) HasResult = false;
             }
             catch (Exception e)

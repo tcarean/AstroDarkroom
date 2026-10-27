@@ -73,7 +73,7 @@ namespace FlatCheck
         /// <returns>The check, and the figures with the map unless the run refused.</returns>
         internal static LightRunOutcome Execute(string path, double? fov, TextWriter report)
         {
-            RunClock clock = RunClock.Start(Log, "light", path + " fov=" + LogText.Num(fov));
+            using RunClock clock = RunClock.Start(Log, "light", path + " fov=" + LogText.Num(fov));
             LoadedFrame f = ImageLoader.Load(path);
             clock.Lap("load");
 

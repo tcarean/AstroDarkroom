@@ -114,7 +114,7 @@ namespace FlatCheck
         /// <returns>The outcome and the residual map as PNG.</returns>
         internal static RunOutcome<StructureOutcome> Execute(string path, TextWriter report, StructureQuery query = null)
         {
-            RunClock clock = RunClock.Start(Log, "structure", path + Describe(query));
+            using RunClock clock = RunClock.Start(Log, "structure", path + Describe(query));
             StructureOutcome o = AnalyzeTimed(path, query, clock);
             StructureReport.Write(o, path, report);
             clock.Lap("report");

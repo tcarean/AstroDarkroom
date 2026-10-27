@@ -261,7 +261,6 @@ public class LensProfileReaderTests
         var s = LensProfileTestData.Sources(ws);
 
         Assert.Equal(2, s.AdobeFiles);
-        Assert.Equal(0, s.AdobeFilesSkipped);
         Assert.True(s.LensfunPresent);
         Assert.Contains("upstream commit: test", s.LensfunVersion);
         Assert.Equal(2, s.AdobeLenses);          // the same lens on two mounts, known from the file names alone
@@ -298,6 +297,53 @@ public class LensProfileReaderTests
         Assert.Equal("", phone.Lens.Mount);
         var compact = AdobeProfileFile.FromName(System.IO.Path.Combine("x", "Canon", "Canon PowerShot G12 - RAW.lcp"));
         Assert.Equal("Canon PowerShot G12", compact.Lens.Name);
+    }
+
+    /// <summary>
+    /// R-107: a subfolder the user may not list loses its own files only; the other subfolders
+    /// of the same root are still read. Before, the enumeration threw inside the root's try
+    /// and the whole root, 3500 files on the author's machine, was left out (the review of
+    /// 2026-10-27, A7). The folder is made unlistable with a deny rule.
+    /// </summary>
+    [Fact]
+    public void R107_AnUnlistableSubfolderLosesItsOwnFilesOnly_NotTheWholeRoot()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string locked = Path.Combine(dir, "Locked");
+        Directory.CreateDirectory(locked);
+        File.WriteAllText(Path.Combine(locked, "Canon (Canon EF 50mm f1.4 USM) - RAW.lcp"),
+            LensProfileTestData.LcpOneProfile("Canon", "Canon EF 50mm f/1.4 USM", "EF50mm f/1.4 USM", "198", "1", "50"));
+        using var deny = UnlistableFolder.Deny(locked);
+
+        var s = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+
+        Assert.Equal(2, s.AdobeFiles);
+        Assert.Equal(2, s.AdobeLenses);
+        Assert.DoesNotContain(s.Catalog.Lenses, l => l.Name.Contains("50mm"));
+    }
+
+    /// <summary>
+    /// A file that parses to no vignetting profile (the A3 lens) is a Debug line when the
+    /// catalog parses it, so a report that says "no vignetting profile" can be traced to the
+    /// file (the review of 2026-10-27, A8).
+    /// </summary>
+    [Fact]
+    public void AFileThatParsesToNoProfileIsADebugLineInTheLog()
+    {
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string path = Path.Combine(dir, "Tokina", "Canon (Canon RF 28mm F2.8 STM) - RAW.lcp");
+        File.WriteAllText(path, LensProfileTestData.LcpWithoutVignette("Canon", "Canon RF 28mm F2.8 STM", "RF28mm F2.8 STM", "61182", "1", "28"));
+        var s = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        using var capture = LogCapture.Start();
+
+        var profiles = s.Catalog.ProfilesOf(s.Catalog.Lenses.Single(l => l.Name.Contains("28mm")));
+
+        Assert.Empty(profiles);
+        var line = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Debug && e.Message.Contains("no vignetting profile"));
+        Assert.Contains(path, line.Message);
     }
 
     [Fact]
@@ -337,7 +383,6 @@ public class LensProfileReaderTests
 
         Assert.Equal(3, s.AdobeFiles);
         Assert.Equal(1, s.AdobeFilesDuplicate);
-        Assert.Equal(0, s.AdobeFilesSkipped);
         var lenses = s.Catalog.Lenses;
         Assert.Equal(2, lenses.Count);
         Assert.Equal(new[] { "Canon", "NIKON CORPORATION" }, lenses.Select(l => l.Mount).OrderBy(m => m, StringComparer.Ordinal));
@@ -398,7 +443,7 @@ public class LensProfileReaderTests
     public void R107_SourcesSummary_NamesTheDuplicatesSkippedOnlyWhenThereAreAny()
     {
         static ProfileSources Sources(int duplicates)
-            => new(new[] { "x" }, 10, 0, duplicates, "lf", false, null, LensCatalog.Empty, LensfunData.Empty);
+            => new(new[] { "x" }, 10, duplicates, "lf", false, null, LensCatalog.Empty, LensfunData.Empty);
         using (Ui.Use(UiLanguage.English))
         {
             Assert.Contains("10 files (7164 duplicates skipped)", SyntheticReport.SourcesSummary(Sources(7164)));

@@ -542,12 +542,12 @@ namespace FlatCheck.Wpf
             }
             catch (OperationCanceledException)
             {
-                Log.Info("stopped after " + LogText.Int(clock.ElapsedMilliseconds / 1000) + " s");
+                Log.Info("stopped after " + LogText.Seconds(clock.Elapsed));
                 HasResult = false;
             }
             catch (Exception e)
             {
-                Log.Error(e, "failed after " + LogText.Int(clock.ElapsedMilliseconds / 1000) + " s; the temp folder "
+                Log.Error(e, "failed after " + LogText.Seconds(clock.Elapsed) + "; the temp folder "
                              + plan.TempRoot + " is kept");
                 keepTemp = true;
                 Fail(SessionMessages.SplitFailedTitle(), Describe(e) + "\n\n" + SessionMessages.SplitTempKept(plan.TempRoot));
@@ -666,7 +666,8 @@ namespace FlatCheck.Wpf
                 File.WriteAllText(session.SplitResultTextPath, Report);
                 File.WriteAllBytes(session.SplitPngPath, png);
                 SavedTo = session.SplitResultTextPath;
-                Log.Info("wrote " + session.SplitResultTextPath + " and " + session.SplitPngPath + " (" + LogText.KiB(png.Length) + ")");
+                Log.Info("wrote " + session.SplitResultTextPath + " (" + LogText.FileKiB(session.SplitResultTextPath) + ")");
+                Log.Info("wrote " + session.SplitPngPath + " (" + LogText.KiB(png.Length) + ")");
             }
             catch (Exception e)
             {

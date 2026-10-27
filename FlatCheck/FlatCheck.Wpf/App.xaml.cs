@@ -48,7 +48,9 @@ namespace FlatCheck.Wpf
         {
             string[] all = Environment.GetCommandLineArgs();
             string[] args = all.Length > 1 ? all[1..] : Array.Empty<string>();
-            LogSetup.Apply("FlatCheck.Wpf", args);
+            // The log never stops the window: without it the session opens all the same.
+            try { LogSetup.Apply("FlatCheck.Wpf", args); }
+            catch (Exception) { }
             DispatcherUnhandledException += (s, e) =>
                 LogSetup.Fatal(e.Exception, "unhandled exception on the window's thread, the window closes");
             _unknownLanguage = ApplyCommandLine(args);

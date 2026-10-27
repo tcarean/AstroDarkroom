@@ -266,13 +266,17 @@ namespace FlatCheck
                 Preview = preview,
             };
             FillShootingInfo(ctx, ip, frame);
+            // Copied out before the lambda below: a lambda that captured c would move the libraw
+            // struct into a compiler-generated class, a field of a libraw type by another name
+            // (the rule at the top of this class, checked by HoldsNoLibrawTypedFields).
+            double black0 = c.Black;
             if (Log.IsDebugEnabled)
                 Log.Debug("libraw on " + path + ": visible " + LogText.Int(w) + "x" + LogText.Int(h)
                           + " of " + LogText.Int(s.RawWidth) + "x" + LogText.Int(s.RawHeight)
                           + " margins top=" + LogText.Int(s.TopMargin) + " left=" + LogText.Int(s.LeftMargin)
                           + " filters=0x" + ip.Filters.ToString("X8", System.Globalization.CultureInfo.InvariantCulture)
                           + " cdesc=" + LogText.Str(ip.Cdesc) + " maximum=" + LogText.Num(white)
-                          + " black=" + LogText.Num(c.Black) + " cblack=" + LogText.List(blacks.ConvertAll(b => LogText.Num(b - c.Black)))
+                          + " black=" + LogText.Num(black0) + " cblack=" + LogText.List(blacks.ConvertAll(b => LogText.Num(b - black0)))
                           + " thumbnails=" + LogText.Int(d.ThumbnailList.ThumbCount));
             return frame;
         }

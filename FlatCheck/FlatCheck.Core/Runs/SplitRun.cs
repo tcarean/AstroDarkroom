@@ -29,6 +29,7 @@
 // each column would compare nothing.
 
 using System;
+using NLog;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -149,7 +150,7 @@ namespace FlatCheck
         internal static RunOutcome<SplitResult> Execute(string wholePath, IReadOnlyList<string> partPaths, StructureQuery query,
                                                         DateTime when, int framesPerPart, TextWriter report)
         {
-            RunClock clock = RunClock.Start(Log, "split", wholePath + " parts=" + LogText.List(partPaths)
+            using RunClock clock = RunClock.Start(Log, "split", wholePath + " parts=" + LogText.List(partPaths)
                                                    + " framesPerPart=" + LogText.Int(framesPerPart) + " compare=" + LogText.Yes(query != null));
             SplitResult r = Analyze(wholePath, partPaths, query, when, framesPerPart);
             clock.Lap("analyze");
@@ -170,7 +171,7 @@ namespace FlatCheck
 
         /// <summary>The diagnostic log: the run's lines and every column's figures
         /// (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(SplitRun));
+        static readonly Logger Log = LogManager.GetLogger(nameof(SplitRun));
 
         /// <summary>
         /// Runs <see cref="StructureRun.Analyze"/> on the whole and on each part, takes the

@@ -452,7 +452,6 @@ namespace FlatCheck
         /// <returns>Two lines joined by '\n'.</returns>
         internal static string SourcesSummary(ProfileSources s)
             => T($"    Adobe  : {s.AdobeLenses} lenses from {s.AdobeFiles} files", $"    Adobe  : {s.AdobeLenses} obiective din {s.AdobeFiles} fisiere")
-             + (s.AdobeFilesSkipped > 0 ? T($" ({s.AdobeFilesSkipped} skipped)", $" ({s.AdobeFilesSkipped} sarite)") : "")
              + (s.AdobeFilesDuplicate > 0 ? T($" ({s.AdobeFilesDuplicate} duplicates skipped)", $" ({s.AdobeFilesDuplicate} duplicate sarite)") : "")
              + (s.AdobeFiles == 0 ? T(" - no profile found in ", " - niciun profil gasit in ") + string.Join(" / ", s.AdobeDirectories) : "") + "\n"
              + T($"    lensfun: {s.LensfunLenses} lenses from {s.LensfunDirectory}", $"    lensfun: {s.LensfunLenses} obiective din {s.LensfunDirectory}")

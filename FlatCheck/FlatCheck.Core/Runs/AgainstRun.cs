@@ -49,6 +49,7 @@
 // at the top does not say.
 
 using System;
+using NLog;
 using System.Collections.Generic;
 using System.IO;
 using static FlatCheck.Ui;
@@ -374,7 +375,7 @@ namespace FlatCheck
         /// <returns>The comparison and the A / B residual map as PNG.</returns>
         internal static RunOutcome<AgainstResult> Execute(string pathA, string pathB, TextWriter report)
         {
-            RunClock clock = RunClock.Start(Log, "against", pathA + " against " + pathB);
+            using RunClock clock = RunClock.Start(Log, "against", pathA + " against " + pathB);
             var fa = ImageLoader.Load(pathA);
             var fb = ImageLoader.Load(pathB);
             clock.Lap("load");
@@ -390,6 +391,6 @@ namespace FlatCheck
         }
 
         /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(AgainstRun));
+        static readonly Logger Log = LogManager.GetLogger(nameof(AgainstRun));
     }
 }

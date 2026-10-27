@@ -38,8 +38,14 @@ namespace FlatCheck
         /// <returns>The process's exit code, <see cref="FlatCheckCli.Run"/>'s.</returns>
         internal static int Main(string[] args)
         {
-            LogSetup.Apply("flatcheck", args);
-            int code = 1;   // what an exception escaping the run leaves the process with
+            // The log never stops the tool: a folder that cannot be probed, a broken NLog on
+            // this machine, and the run goes on without a log, stdout and stderr untouched
+            // (R-001, R-110).
+            try { LogSetup.Apply("flatcheck", args); }
+            catch (Exception) { }
+            // What the log's last line reports when the run throws past RunIn's catch; the
+            // process itself then exits with the runtime's crash code, not with this.
+            int code = 1;
             try
             {
                 code = FlatCheckCli.Run(args, Console.Out, Console.Error);
@@ -47,7 +53,8 @@ namespace FlatCheck
             }
             finally
             {
-                LogSetup.Close(code);
+                try { LogSetup.Close(code); }
+                catch (Exception) { }
             }
         }
     }
