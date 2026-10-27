@@ -41,7 +41,7 @@ fields are checked (R-111). The place under the buttons takes its width from the
 (the window does), so it is fully testable. `ChooseProfile(row)` and `ClearProfile()` (R-155)
 apply the profile through `ParameterFields.UseProfile` / `ClearProfile` and return `RunAsync()`
 when something changed, a completed task otherwise, so the window fires and forgets and the
-tests await; the constructor takes a `WindowSettings` (R-156, ADR 0051): the remembered path is
+tests await; the constructor takes a `WindowSettings` (R-156, ADR 0053): the remembered path is
 read again by `IccPaperBlack.Read` and given to `ParameterFields.RestoreProfile`, then the
 view-model subscribes to `Parameters`' `Profile` change and writes the settings on each one.
 The parameterless constructor passes `WindowSettings.None`.

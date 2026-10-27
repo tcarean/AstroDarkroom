@@ -14,7 +14,7 @@ by itself; and that the chosen profile be saved and still be selected when the w
 opened. Nothing is computed by this change: the window keeps formatting what the core already
 reads (`IccPaperBlack.Read`), so no `/validate` run is needed.
 
-## Design choices (the plan's approval settled them; ADR 0051 records them)
+## Design choices (the plan's approval settled them; ADR 0053 records them)
 
 1. **The profile is a state of `ParameterFields`**, `Profile` (an `IccProfileRow`, public,
    notifying), beside the Dmax text it wrote; the bar binds `Parameters.Profile`. The name was
@@ -54,7 +54,7 @@ reads (`IccPaperBlack.Read`), so no `/validate` run is needed.
    `WindowSettings`, `MainViewModel(WindowSettings)` with `ChooseProfile` and `ClearProfile`
    that re-run, `MainWindow(WindowSettings)`, the bar in `MainWindow.xaml`, `App` passing the
    real path.
-5. ADR 0051, `docs/design/window.md`, `docs/design/console.md` "Parameters", the README's
+5. ADR 0053, `docs/design/window.md`, `docs/design/console.md` "Parameters", the README's
    "The window", the CHANGELOG, the rows set to `implemented`.
 6. The gate after a `--no-incremental -warnaserror` build; the renders looked at; `/wrap-up`.
 

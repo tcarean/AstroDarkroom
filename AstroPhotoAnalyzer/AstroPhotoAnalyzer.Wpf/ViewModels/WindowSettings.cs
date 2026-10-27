@@ -17,7 +17,7 @@
 
 // WindowSettings.cs - what the window remembers between its runs (R-156): one JSON file in the
 // user's local application data, today with one key, the ICC profile's path. Window state,
-// nothing computed, so it lives here and not in the core (ADR 0051). It judges nothing: what
+// nothing computed, so it lives here and not in the core (ADR 0053). It judges nothing: what
 // cannot be read is no setting, what cannot be written is forgotten at the next start.
 
 using System;
