@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CurvesTab.cs - the Curbe tab (R-146) and the curve window (R-147): the gallery of previews
-// of the suggested curves, the evidence of each, the table and the charts of one curve, the
-// saving.
+// CurvesTab.cs - the Editare Curbe tab (R-146) and the curve window (R-147): the gallery of
+// previews of the suggested curves, the evidence of each, the table and the charts of one
+// curve, the saving.
 //
 // It computes nothing: the curves, the previews, the figures and the sentences come from
 // CurveRun; the saving is CurveExport's. Here are only the position in the gallery, the
 // commands and the formatting of the points for the table. Unlike the other tabs, the content
-// does not come with the analysis: it is asked for with "Calculeaza", because it costs and is
-// not diagnosis.
+// is a second run after the analysis: MainViewModel starts it once the other tabs are filled
+// (ADR 0051), and "Calculeaza" runs it again at the gallery's current size.
 
 using System;
 using System.Collections.Generic;
@@ -159,9 +159,10 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
-    /// The Curbe tab (R-146): empty after an analysis, filled by "Calculeaza" with the gallery of
-    /// the original and the suggested curves, browsed with Next and Previous, each openable in
-    /// the curve window and saveable as a new FITS.
+    /// The Editare Curbe tab (R-146): filled after an analysis, by the computation MainViewModel
+    /// starts or by "Calculeaza", with the gallery of the original and the suggested curves,
+    /// browsed with Next and Previous, each openable in the curve window and saveable as a new
+    /// FITS.
     /// </summary>
     public sealed class CurvesTabViewModel : ResultTabViewModel
     {
@@ -276,7 +277,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Keeps the result and enables "Calculeaza"; unlike the other tabs, it fills nothing
-        /// until the user asks (R-146). Any computation in progress is abandoned.
+        /// itself: MainViewModel starts the computation after every tab is filled (R-146, ADR
+        /// 0051). Any computation in progress is abandoned.
         /// </summary>
         /// <param name="r">The analysis; not null.</param>
         internal override void Populate(AnalysisResult r)

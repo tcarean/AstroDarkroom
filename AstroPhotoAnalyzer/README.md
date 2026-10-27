@@ -8,7 +8,7 @@ distance it will be seen at, and how much denoise the print version needs. Every
 comes with the figure it measured and the threshold it judged it by.
 
 It measures and recommends; the export itself is made cleanly from Siril. Besides its report it
-writes one file, and only when you ask for it: from the window's **Curves** tab, a new FITS with
+writes one file, and only when you ask for it: from the window's **Curves Editing** tab, a new FITS with
 a suggested contrast curve applied. The image you open is never modified.
 
 There are two applications over one core, so both give the same figures: the window,
@@ -90,7 +90,7 @@ where one applies, the threshold they are judged by.
 | **Resolution** | The stars' FWHM, in the centre and in the four corners, and the real detail it leaves; the table of print sizes; the scale of dpi against viewing distance. |
 | **Colour** | The background colour, R / G / B, with its cast; the four corners and the four edges against it, a flagged one marked "! coloured" or "! neutral"; how to read them. |
 | **Preview** | The centre at 100 % and 200 %, the four corners at 100 %, the whole frame, the print simulation (at the extra target background, or else at the recommended one, when it is not the image as it is) and, when the target ratio cuts, the crop, each with what to look for in it; the rule of screen against paper, with the step back computed for this image. |
-| **Curves** | Suggested contrast curves, on request: see below. |
+| **Curves Editing** | Suggested contrast curves, computed with the analysis: see below. |
 
 **Save the report...** writes `Report.txt` beside the image by default (`Raport.txt` in
 Romanian), byte for byte what the console writes with `-o`, and says under the buttons where it
@@ -114,10 +114,11 @@ nothing and show what the analysis decided. Esc closes them.
 
 ### Suggested contrast curves
 
-The **Curves** tab is the only one the analysis does not fill: choose **Print** or **Screen** and
-press **Calculate**. You get a gallery: the original, then three or four suggestions, **Gentle**,
-**Moderate**, **Strong** and, when the peaks still have room under 0.92 of the scale,
-**Maximum**, each at the size that fits the window. Browse them with **< Back** and **Next >**,
+The **Curves Editing** tab is filled right after the analysis, so it is ready when you open it:
+a gallery of the original, then three or four suggestions, **Gentle**, **Moderate**, **Strong**
+and, when the peaks still have room under 0.92 of the scale, **Maximum**, each at the size that
+fits the window. Choose **Print** or **Screen** for the evidence under them; **Calculate**
+computes the gallery again, at the size the tab has now. Browse them with **< Back** and **Next >**,
 or with the Left and Right arrow keys.
 
 The curves are contrast curves: they do not move the dust or the sky, they spread the classes

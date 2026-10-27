@@ -17,6 +17,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Curbe tab is called Editare Curbe (`Curves Editing` in English), and its gallery of
+  suggested curves is computed right after the analysis, without pressing `Calculeaza`, so it
+  is there when the tab is opened; the button computes it again at the tab's current size
+  (R-110, R-111, R-146; ADR 0051).
 - `README.md`, the user documentation, and `THIRD-PARTY-NOTICES.md` are in English, the language
   the interface starts in, both checked against the current behaviour. The README quotes the
   window's English labels and `Report.txt`, gives every console option with its default and how

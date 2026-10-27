@@ -82,10 +82,15 @@ window; every XAML text is `{local:T En=..., Ro=...}` and every view-model text 
 `Tr.Pick(english, romanian)` pair, the window's file argument never `--lang` or its value
 (`language.md`, ADR 0048).
 
-**The Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0032). Unlike
-the other tabs it is empty after an analysis: `Populate` only keeps the result, and
-`Calculeaza` runs `CurveRun.Execute` on a pool thread (`ComputeAsync`; `Compute(w, h)` is the
-same body, synchronous, for most tests; one test awaits `ComputeAsync` itself). The gallery is a list of `CurveGalleryItem` (name,
+**The Editare Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0032,
+ADR 0051). Unlike the other tabs it is filled by a second run: `Populate` only keeps the result,
+and `MainViewModel.RunAsync`, once every tab is filled and the busy overlay is gone, starts
+`ComputeAsync`, which runs `CurveRun.Execute` on a pool thread and keeps the task in
+`CurvesComputation` for the tests to await; `Calculeaza` runs the same `ComputeAsync` again, at
+the size the view has reported by then (`Compute(w, h)` is the same body, synchronous, for most
+tests). Before the tab is first shown no size has been reported, so the first computation uses
+`Thresholds.CurvePreviewDefaultWidth` x `Height`, and the view's `Viewbox` only shrinks a preview
+to the area, never enlarges it. The gallery is a list of `CurveGalleryItem` (name,
 frozen bitmap, evidence lines, the core's suggestion), the original first; `Next` /
 `Previous` move an index and stop at the ends, `OpenCurve` and `SaveAs` are disabled on the
 original. The view is a grid, not a scrolled column, so the image takes the room left, and that room
@@ -103,7 +108,7 @@ the purpose only rebuilds the rows over the same bitmaps and keeps the position.
 a number (`_run`): `Reset`, on another image or a clear, advances it and frees `IsBusy`, and a
 computation that ends with an old number touches nothing, on success or on failure. The Left and
 Right keys are caught on the window (`MainWindow.GalleryKeys`, `PreviewKeyDown`), before the
-`TabControl`, which would use them to change the tab; they act only while the Curbe tab is
+`TabControl`, which would use them to change the tab; they act only while the Editare Curbe tab is
 selected, the gallery exists and the focus is not in a text box. `SaveRequested` makes the
 window show the save dialog with the core's proposed name, then `Save(path)` calls
 `CurveExport.Save` and shows `SaveMessage` or `SaveError`.
@@ -121,7 +126,7 @@ closes it.
 
 - **The window adds no number and no sentence.** `MainViewModel.RunAsync` calls
   `AnalysisRun.Execute` on a pool thread; the tab view-models turn the result records
-  into rows (the Curbe tab is filled on request, see above). Tables are rendered as pre-aligned mono strings - the same strings the
+  into rows (the Editare Curbe tab is filled by a second run started after them, see above). Tables are rendered as pre-aligned mono strings - the same strings the
   report writes - instead of one XAML template per table.
 - **View-models are public and therefore cannot expose core types**, which are internal.
   The compiler enforces that everything shown passes through the simple rows in

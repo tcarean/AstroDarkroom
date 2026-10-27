@@ -87,7 +87,7 @@ encoder at hand cannot produce the real thing; **its row in `../requirements.md`
 **A new tab**: a `ResultTabViewModel` in `ResultTabs.cs`, a `UserControl` in `Views/`
 (partial class in `ResultViews.xaml.cs`), a `TabItem` in `MainWindow.xaml`, a `Render`
 line in `WindowSmokeTests.R110_EveryTabRenders...`; **its row in `../requirements.md` and `window.md`**.
-A tab whose content is computed on request, like Curbe, also gets its own run in
+A tab whose content is a second run after the analysis, like Editare Curbe, also gets its own run in
 `Core/Runs/` beside `AnalysisRun` (**`pipeline.md`**), never a computation in the view-model.
 
 **A new output**: the tool writes one image, the FITS of `Core/Input/FitsWriter.cs` (ADR 0032).
