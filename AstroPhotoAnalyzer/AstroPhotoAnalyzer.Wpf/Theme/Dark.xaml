@@ -524,7 +524,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
   <!-- A table row with mono cells: the view-model gives the columns as a single aligned
        string, exactly as the report writes them. A real table would have needed a template
-       for each of the six tables, for the same text. -->
+       for each of the five tables, for the same text. -->
   <DataTemplate x:Key="MonoRowTemplate">
     <TextBlock Style="{StaticResource Mono}" Text="{Binding}" Margin="0,0,0,2" />
   </DataTemplate>

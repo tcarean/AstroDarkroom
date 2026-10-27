@@ -29,6 +29,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `xunit.runner.visualstudio` among the test packages (ADR 0050). The About window's list of
   components names them too: Unicolour's gamut figure and ImageSharp's 8-bit TIFF.
 
+### Removed
+
+- The table of catalogued clouds under the Tonuri tab's simulation. The map window's list, one
+  row per cloud with its name, L\*, target and patch count, is the one place the window lists
+  them; the report keeps its table (R-113, R-130; ADR 0052).
+
 ### Fixed
 
 - A FITS is read the way up Siril shows it, whatever its `ROWORDER` says: the file's first row
