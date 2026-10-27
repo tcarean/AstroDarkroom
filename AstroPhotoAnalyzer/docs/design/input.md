@@ -168,6 +168,10 @@ L\*(10^-Dmax): baryta 2.4 -> 3.6, canvas 1.5 -> 20.7, acrylic C-print 2.2 -> 5.7
 `YOfLstar` is the exact inverse of `LstarOfY` (both segments); `GrayLevelOfLstar` /
 `LstarOfGrayLevel` go between an L\* and the 8-bit level of a grey (R = G = B) with that
 L\* - one fixed curve, used only by the window's level - L\* table and guide text.
+`LabOfSrgb` gives the CIE L\*a\*b\* of an sRGB pixel under D65, the white taken as the sRGB
+matrix's own row sums (0.9505, 1, 1.0890) so that a grey is exactly neutral (the standard's
+0.95047 and 1.08883 give it an a\* of 0.01); the background section's cast is its chroma
+(ADR 0057).
 
 ### Statistics (`Input/Stats.cs`)
 

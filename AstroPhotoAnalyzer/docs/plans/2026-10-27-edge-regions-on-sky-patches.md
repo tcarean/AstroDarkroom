@@ -56,3 +56,15 @@ supersedes the regions' part of ADR 0055.
 4. ADR 0056; ADR 0055's last alternative and ADR 0018's dated note restated (both unmerged on
    this branch); `measurements.md`, `thresholds.md`, `known-limitations.md`, `window.md`,
    `validation.md`, CHANGELOG.
+
+## Deviations
+
+Noted at the wrap-up of 2026-10-27.
+
+- The test of the quarter floor needed its lane to end on a patch boundary: on a flat synthetic
+  sky the sky's sigma is 0, so a patch half covered by the lane is not sky, and a lane to x 240
+  left 8 % of the region as sky instead of the share its width suggested. The test uses a lane to
+  x 224, a sixth of the region as sky.
+- Looking at the window afterwards, the owner found the top-left corner of the 2026-08-12 core
+  named a horizon glow while it is darker than the sky; the naming of a darker region followed,
+  outside this plan, and was recorded in ADR 0056's consequences.

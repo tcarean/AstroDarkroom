@@ -43,7 +43,9 @@ help text), and `thresholds.md` for the lifted literal.
 **A new recommendation**: a rule in `Recommendations.cs` under its topic, with a `Because` that
 names the metric and the threshold; a test in `RecommendationsTests` on a scene that triggers it
 (extend `Scenes` if none does); goldens; **its row in `../requirements.md` and
-`recommendations-and-report.md`**.
+`recommendations-and-report.md`**. A figure the reader must not miss goes in `Fmt.Strong`
+marks, bold on the Raport tab; a new place that shows a `Because` as plain text passes it
+through `Fmt.Plain` (ADR 0063).
 
 **A new parameter**: `Parameters.cs` (default + comment, and for a number its `FiniteError`
 line in `Validate`, so that NaN and infinity are refused with the others, R-024), `Options.cs`

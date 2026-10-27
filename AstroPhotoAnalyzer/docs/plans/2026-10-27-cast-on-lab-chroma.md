@@ -47,3 +47,13 @@ Culoare tab a chroma row above the two level rows. ADR 0057 records it.
    and `background.chroma` recorded), the drift recorded.
 4. ADR 0057; `measurements.md`, `thresholds.md`, `known-limitations.md`, `validation.md`,
    CHANGELOG.
+
+## Deviations
+
+Noted at the wrap-up of 2026-10-27.
+
+- The white point is the sRGB matrix's own row sums (0.9505, 1, 1.0890), not the standard's
+  0.95047 and 1.08883: with those a grey reads a* 0.01, which the grey test caught.
+- The dark scene's two levels of green read a chroma of 1.7, first written 1.6, and the flat sky
+  with five levels of green 4.3, first written 3.9; the tests, R-093 and the ADR carry the
+  measured figures.

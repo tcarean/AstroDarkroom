@@ -99,7 +99,7 @@ where one applies, the threshold they are judged by.
 | **Tones** | The L\* histogram, with paper black as a red line and the visibility threshold L\* 15 as a dashed yellow one; the tonal figures, the background level among them; the background simulation, with a **Preview** button on every row; under it, the definition of the dust and the sky used on this file, a red line when the file has no WCS and the **Dust / sky map** button; the tab's landmarks in level and in L\*; how to read the tab. |
 | **Export** | The JPEG table, with what its columns mean and, when a quality under 100 spoils the stars and the edges, which one and by how much; the size of the 8-bit TIFF; the 16 to 8 bit rounding; the shadow-lift stress test, marked when the 16-bit master is worth keeping; the plateau, how wide the flat steps of the 8-bit sky would print and on what share of the frame, which decides the banding risk. |
 | **Resolution** | The stars' FWHM, in the centre and in the four corners, and the real detail it leaves; the table of print sizes; the scale of dpi against viewing distance. |
-| **Colour** | The background colour, R / G / B, with its cast; the four corners and the four edges against it, a flagged one marked "! coloured" or "! neutral"; how to read them. |
+| **Colour** | The background colour, R / G / B, taken on the sky patches, with its chroma in L\*a\*b\*, which decides the cast, and the two level figures that name its direction; the four corners and the four edges against it, each on its own sky pixels, a flagged one marked "! coloured" or "! neutral"; how to read them. |
 | **Preview** | The centre at 100 % and 200 %, the four corners at 100 %, the whole frame, the print simulation (at the extra target background, or else at the recommended one, when it is not the image as it is) and, when the target ratio cuts, the crop, each with what to look for in it; the rule of screen against paper, with the step back computed for this image. |
 | **Curves Editing** | Suggested contrast curves, computed with the analysis: see below. |
 
@@ -300,6 +300,41 @@ Two cautions on reading it:
 
 The other known limits, each with what was measured, are in
 [`docs/design/known-limitations.md`](docs/design/known-limitations.md).
+
+## How the colour is judged
+
+The third decision, the background colour and the gradients, compares the colour of the sky with
+a neutral grey, and the edges of the frame with the sky.
+
+The **sky's colour** is the median, on each channel, of the patches the background section calls
+sky (the band, the dust and the nebulae left out), without the bottom quarter of the frame, where
+the horizon and its glow sit. Its **cast** is its distance from a grey of the same lightness in
+CIE L\*a\*b\*, the chroma: over 3 it is a cast to neutralise before printing, under 3 the
+background is neutral. About 2 is the smallest difference an eye sees beside a grey; on a print,
+with no grey beside the sky, a cast begins to read at 3 to 5. The two level figures, G - (R+B)/2
+and R - B, name the cast green, magenta, warm or cool. A colour calibration on the stars leaves
+the sky its own colour, green from airglow, yellow from light pollution, so a faint green after
+it is expected and not an error.
+
+The **edges** are four corners, 15 % of the height by 20 % of the width, and the four bands
+between them. Each is measured on its own sky pixels, so that the Milky Way or a dust lane
+entering a corner does not pass for a gradient; a region with under a quarter of sky is measured
+on every pixel, and its row says so. A region more than 3 levels from the sky on some channel is
+flagged:
+
+- **Neutral**, its channels moving together: most likely the object; one note sends you to the
+  Preview.
+- **Coloured**, its channels moving differently: a caution. Darker than the sky on every
+  channel, it is a **darkening**: dust at the edge of the frame or a gradient left over, to check
+  in the Preview; on the bottom row, where the horizon sits, a region leaning red over blue keeps
+  the horizon's name instead. Any other coloured region is named warm (on the bottom row,
+  horizon glow or light pollution), cool, greenish or another colour, to correct on the linear
+  data or keep as part of the composition.
+- An edge flagged with the colour of the corner beside it, and less than it, is that corner's
+  glow reaching along the edge: one line, the corner's, with the edge's figures under it.
+
+On a mono image there is no cast, and no region is coloured. Appendix E gives the sky's colour
+with its L\*, a\*, b\* and chroma, and the eight regions with their deltas.
 
 ## Building
 
