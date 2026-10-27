@@ -1,7 +1,7 @@
 # 0018. Every comment is English, and the copies take FlatCheck's English text
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; the SIMPLE check left for a task of its own superseded by 0027
 Supersedes: 0003 in part (the copied files keep FlatCheck's Romanian comments); 0005 in part (the comments of the copied files Romanian, a comment added to a copied file Romanian)
 
 ## Context
@@ -47,3 +47,5 @@ FlatCheck first (CLAUDE.md, the rule "Copied files stay copies"). Copying FlatCh
 check into `FitsReader` is a task of its own: a behaviour change with its test. Nothing
 enforces the language; the backfill's check found no Romanian comment line left except quoted
 output.
+
+Note 2026-10-27: the FITS-magic check is in the copy (ADR 0027).

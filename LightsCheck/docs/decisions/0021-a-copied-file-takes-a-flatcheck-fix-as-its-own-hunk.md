@@ -1,7 +1,7 @@
 # 0021. A copied file takes a FlatCheck fix as its own hunk, without the rest of FlatCheck's later code
 
 Date: 2026-10-25
-Status: accepted 2026-10-25
+Status: accepted 2026-10-25; the SIMPLE check left for a task of its own superseded by 0027
 
 ## Context
 
@@ -40,4 +40,4 @@ reader, a stream reader of its own started from FlatCheck's, already refuses a c
 
 Note 2026-10-27: the one sentence of 469da9b the hunk had left out, on `LoadHeader`'s doc
 comment (the header read does not check the data area), is in the copy (ADR 0025); the SIMPLE
-check is still out.
+check followed the same day (ADR 0027).

@@ -18,8 +18,9 @@
 #nullable disable // copied from FlatCheck unchanged, which compiles without nullable annotations
 // (ADR 0003): its code of 2.3.0 with the edits ADR 0003 lists, its English comments of
 // 504b5d1 (ADR 0018), FlatCheck's cut-data check of 469da9b (ADR 0021) with that commit's
-// LoadHeader sentence (ADR 0025), and FlatCheck's English/Romanian wordings of its messages of
-// 55e959c (ADR 0022).
+// LoadHeader sentence (ADR 0025), FlatCheck's SIMPLE and incomplete-header refusals of its ADR
+// 0057 (ADR 0027), and FlatCheck's English/Romanian wordings of its messages of 55e959c (ADR
+// 0022).
 
 // FitsReader.cs - our own FITS reader (no dependencies).
 // Header of 80-byte cards in 2880-byte blocks, then big-endian binary data.
@@ -67,16 +68,43 @@ namespace LightsCheck.Core
             return Array.IndexOf(Extensions, ext) >= 0;
         }
 
+        static string NotSimple => T("FITS: the file does not begin with SIMPLE.", "FITS: fisierul nu incepe cu SIMPLE.");
+        static string HeaderIncomplete => T("FITS: incomplete header.", "FITS: header incomplet.");
+
+        /// <summary>
+        /// A card's keyword: the first 8 bytes, without blanks. One definition for Load and
+        /// LoadHeader, so that the two cannot read a card differently.
+        /// </summary>
+        /// <param name="card">The card's text, normally 80 characters.</param>
+        /// <returns>The keyword; empty for a card shorter than 8 characters.</returns>
+        static string KeyOf(string card) => card.Length >= 8 ? card.Substring(0, 8).Trim() : "";
+
+        /// <summary>
+        /// The file's magic: the first card of the primary HDU is SIMPLE, otherwise it is not a
+        /// FITS and both reads refuse the file with the same message (FlatCheck's ADR 0057; here
+        /// R-008, ADR 0027). <paramref name="length"/> is how much was actually read into
+        /// <paramref name="bytes"/>: a file that is empty or shorter than a keyword is refused
+        /// the same way. Throws InvalidDataException.
+        /// </summary>
+        /// <param name="bytes">The start of the file.</param>
+        /// <param name="length">How many of <paramref name="bytes"/> hold file data.</param>
+        static void RequireSimple(byte[] bytes, int length)
+        {
+            if (length < 8 || KeyOf(Encoding.ASCII.GetString(bytes, 0, Math.Min(length, 80))) != "SIMPLE")
+                throw new InvalidDataException(NotSimple);
+        }
+
         /// <summary>
         /// Only the header of the primary HDU, without pixels: the 2880 blocks up to END. For
         /// whoever wants FOCALLEN or INSTRUME from a 96 MB master without reading it (the
-        /// Synthetic tab, when the session opens). The SIMPLE card is not checked: a file that is
-        /// not a FITS gives whatever cards with '=' in column 9 its blocks happen to hold,
-        /// usually none, and a header cut before END gives the cards of the whole blocks before
-        /// the cut (FlatCheck's later refusal of both, its ADR 0057, is not in this copy). It does
-        /// not check the data area either: a file whose pixels are cut short (FlatCheck's R-009,
-        /// ADR 0021) has an intact, usable header, so this read answers it and only the full load
-        /// refuses it.
+        /// Synthetic tab, when the session opens). It refuses, with InvalidDataException,
+        /// exactly what the full load refuses too: a file that does not begin with the SIMPLE
+        /// card (empty, shorter than a keyword, or with something else in the first card) and a
+        /// header cut before END. An empty header would be an answer, not an error, and every
+        /// caller would have to recognise it by the number of cards (FlatCheck's ADR 0057, taken
+        /// as ADR 0027). It does not check the data area: a file whose pixels are cut short
+        /// (FlatCheck's R-009, ADR 0021) has an intact, usable header, so this read answers it and
+        /// only the full load refuses it.
         /// </summary>
         /// <param name="path">The FITS file to read.</param>
         /// <returns>The keywords and their values, string quotes and comments removed.</returns>
@@ -91,13 +119,15 @@ namespace LightsCheck.Core
                 while (got < block.Length)
                 {
                     int n = fs.Read(block, got, block.Length - got);
-                    if (n <= 0) return hdr;
+                    if (n <= 0) break;
                     got += n;
                 }
+                if (b == 0) RequireSimple(block, got);
+                if (got < block.Length) throw new InvalidDataException(HeaderIncomplete);
                 for (int c = 0; c < 36; c++)
                 {
                     string card = Encoding.ASCII.GetString(block, c * 80, 80);
-                    string key = card.Substring(0, 8).Trim();
+                    string key = KeyOf(card);
                     if (key == "END") return hdr;
                     if (key.Length == 0 || card.Length < 10 || card[8] != '=') continue;
                     string value = card.Substring(10);
@@ -120,9 +150,9 @@ namespace LightsCheck.Core
         /// Reads the whole file: the first HDU with a 2D image, its planes averaged, the header
         /// as a dictionary and as raw cards, the CFA order from BAYERPAT, and what the header
         /// says of the shot (<see cref="FillShootingInfo"/>). The ADU scale stays null: a FITS
-        /// does not carry it. Throws InvalidDataException when the header is cut, when the data
-        /// area is shorter than the header declares, when no HDU holds a 2D image or when BITPIX
-        /// is not one of the five (as <see cref="LoadFull"/>).
+        /// does not carry it. Throws InvalidDataException on a file that is not a FITS, when the
+        /// header is cut, when the data area is shorter than the header declares, when no HDU
+        /// holds a 2D image or when BITPIX is not one of the five (as <see cref="LoadFull"/>).
         /// </summary>
         /// <param name="path">The FITS file to read.</param>
         /// <returns>The frame, its image filled.</returns>
@@ -159,8 +189,8 @@ namespace LightsCheck.Core
         /// <summary>
         /// Only what the header says: the shot (<see cref="FillShootingInfo"/>), planes, BITPIX,
         /// CFA order. No pixels and no raw cards (LoadHeader does not keep them; whoever writes a
-        /// file back loads everything anyway). A file that is not a FITS gives a header that is
-        /// empty or nearly so, not an error - as LoadHeader.
+        /// file back loads everything anyway). What LoadHeader refuses (no SIMPLE, a cut header)
+        /// throws InvalidDataException with the same message as Load on the same file (R-008).
         /// </summary>
         /// <param name="path">The FITS file to read.</param>
         /// <returns>The frame's metadata, its image null.</returns>
@@ -250,9 +280,9 @@ namespace LightsCheck.Core
         /// (without END), its number of planes and its BITPIX. The raw cards are what FitsWriter
         /// copies into a file written back; the dictionary cannot be the source, because it
         /// loses the comments and cuts the strings at the first '/'. Throws
-        /// InvalidDataException when the header is cut, when the data area is shorter than the
-        /// header declares (checked for every HDU before a sample is read), when no HDU holds a
-        /// 2D image or when BITPIX is not one of the five.
+        /// InvalidDataException on a file that is not a FITS, when the header is cut, when the
+        /// data area is shorter than the header declares (checked for every HDU before a sample
+        /// is read), when no HDU holds a 2D image or when BITPIX is not one of the five.
         /// </summary>
         /// <param name="raw">The whole file's bytes.</param>
         /// <returns>
@@ -262,7 +292,7 @@ namespace LightsCheck.Core
         internal static (Img Image, IReadOnlyDictionary<string, string> Header, IReadOnlyList<string> Cards, int Planes, int Bitpix)
             LoadFull(byte[] raw)
         {
-
+            RequireSimple(raw, raw.Length);
             int pos = 0;
             while (pos < raw.Length)
             {
@@ -271,11 +301,11 @@ namespace LightsCheck.Core
                 bool end = false;
                 while (!end)
                 {
-                    if (pos + 2880 > raw.Length) throw new InvalidDataException(T("FITS: incomplete header.", "FITS: header incomplet."));
+                    if (pos + 2880 > raw.Length) throw new InvalidDataException(HeaderIncomplete);
                     for (int c = 0; c < 36; c++)
                     {
                         string card = System.Text.Encoding.ASCII.GetString(raw, pos + c * 80, 80);
-                        string key = card.Length >= 8 ? card.Substring(0, 8).Trim() : "";
+                        string key = KeyOf(card);
                         if (key == "END") { end = true; break; }   // nothing after END matters
                         cards.Add(card);
                         if (card.Length > 10 && card[8] == '=')

@@ -34,10 +34,11 @@ length and visible size (R-066), the lens's ID, mount and name as the raw gives 
 `imaging.md`) and the lens's own focal range and maximum aperture, all nullable) and an
 `Error`. `FrameInfo.Read(index, path)`
 never throws: it calls `ImageLoader.LoadInfo` (the metadata without the pixels,
-`imaging.md`), turns any exception into the record's `Error` (libraw's own type no longer
-reaches it: `RawReader` wraps it into `InvalidDataException` naming the file, ADR 0019),
-and treats a `.fit` whose header came back empty (the reader's answer to a file that does
-not start with `SIMPLE`) as the error `nu e un fisier FITS`. `FrameInfo.From(index, path,
+`imaging.md`) and turns any exception into the record's `Error`: libraw's own type no longer
+reaches it (`RawReader` wraps it into `InvalidDataException` naming the file, ADR 0019), and a
+`.fit` that is not a FITS is refused by the reader itself with `FITS: the file does not begin
+with SIMPLE.` (R-008, ADR 0027), so the record guesses nothing from an empty header any more.
+`FrameInfo.From(index, path,
 loaded)` builds the same record from a frame that was decoded for measuring, so `FrameRun`
 and `SeriesRun` read the file once.
 

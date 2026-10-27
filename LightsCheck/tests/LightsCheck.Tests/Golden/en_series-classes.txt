@@ -68,7 +68,7 @@ Copyright (C) 2026 Tudor Carean
 
   REJECTED (1 bad frame, 1 unread; the marginal ones stay, your choice)
       7  DSC_0007.fit          elongation 1.76 (threshold 1.60), trail at 90 degrees
-      9  DSC_0009.fit          could not be read: FITS: incomplete header.
+      9  DSC_0009.fit          could not be read: FITS: the file does not begin with SIMPLE.
 
   FRAME BY FRAME
      no  file                  time      class     elong   FWHM   stars     bg  pause   step      dX      dY  dithering                                   same spot       reasons
@@ -80,7 +80,7 @@ Copyright (C) 2026 Tudor Carean
       6  DSC_0006.fit          20:46:06  good       1.01   3.25      40   2600    1 s    0.5    12.5   -15.0  -                                           -               background jump +30 % relative to the neighbours (threshold 8 %)
       7  DSC_0007.fit          20:48:36  BAD        1.76   4.60      40   2001   30 s   27.5    40.0   -15.0  -                                           -               elongation 1.76 (threshold 1.60), trail at 90 degrees
       8  DSC_0008.fit          20:50:37  good       1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               
-      9  DSC_0009.fit          -         unread        -      -       -      -      -      -       -       -  -                                           -               could not be read: FITS: incomplete header.
+      9  DSC_0009.fit          -         unread        -      -       -      -      -      -       -       -  -                                           -               could not be read: FITS: the file does not begin with SIMPLE.
      10  DSC_0010.fit          20:55:08  good       1.01   3.25      40   2000      -      -    41.5   -15.2  -                                           -               
 --- stderr ---
 (progress, left out)
