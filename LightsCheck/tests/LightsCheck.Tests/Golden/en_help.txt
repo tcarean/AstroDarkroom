@@ -7,7 +7,7 @@ Usage: lightscheck <session folder> [--out DIR] [--threads N] [--pixel UM] [--ea
 
   The Siril session folder: the frames are taken from lights\ (or from the folder
   itself when there is no lights\), the biases, optional, from biases\. Camera raws
-  (.nef, .cr2, .cr3, .arw, .dng, .raf) or FITS. Nothing is written into the folder.
+  (.nef, .cr2, .cr3, .arw, .dng, .raf, .pef) or FITS. Nothing is written into the folder.
 
   No options:   measures every frame and prints the report: focus, exposure and
                 noise, dew, trailed frames, drift, dithering, the frames to reject.

@@ -29,8 +29,9 @@ here writes.
 ## The metadata of a frame (`FrameInfo`)
 
 One record per light, with its 1-based `Index`, its path, the shot fields (camera, focal
-length, f-number, exposure, ISO, timestamp, pixel size, the Nikon lens ID and the lens's own
-focal range and maximum aperture, all nullable) and an `Error`. `FrameInfo.Read(index, path)`
+length, f-number, exposure, ISO, timestamp, pixel size, the lens's ID, mount and name as the
+raw gives them (R-065, `imaging.md`) and the lens's own focal range and maximum aperture, all
+nullable) and an `Error`. `FrameInfo.Read(index, path)`
 never throws: it calls `ImageLoader.LoadInfo` (the metadata without the pixels,
 `imaging.md`), turns any exception into the record's `Error` (libraw's own type no longer
 reaches it: `RawReader` wraps it into `InvalidDataException` naming the file, ADR 0019),
@@ -59,7 +60,10 @@ the table. `WriteHeader` is shared: the series report opens with the same sessio
 (folders with their frame counts and extension, camera, lens, exposure, interval, and an
 `ATENTIE` line when frames could not be read). The lens line puts the shot's focal length
 and f-number first, then the lens as its chip declares it (`obiectiv 135 mm f/2.0`, a range
-for a zoom) and the Nikon lens ID; the exposure line lists each distinct exposure and ISO
+for a zoom) and the lens as the raw names it: the name in quotes, then the ID and the mount in
+one parenthesis (`"EF50mm f/1.4 USM" (ID 198, Canon EF)`), or the ID with the mount when the
+raw gives no name (`ID 74 (Nikon F)`), nothing for a mount alone (R-065); the frame read is the
+first readable one with a focal length, an ID or a name; the exposure line lists each distinct exposure and ISO
 pair and says `(expuneri diferite)` when there is more than one; the interval line is start,
 end, span, integration, timed frame count and duty. The table prints one row per light with
 `-` for a missing field and `eroare: <message>` in place of the fields for a frame that

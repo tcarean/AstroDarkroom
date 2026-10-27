@@ -7,7 +7,7 @@ Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [-
 
   Folderul sesiunii Siril: cadrele se iau din lights\ (sau direct din folder,
   daca nu exista lights\), iar bias-urile, optional, din biases\. Raw de aparat
-  (.nef, .cr2, .cr3, .arw, .dng, .raf) sau FITS. Nimic nu e scris in folder.
+  (.nef, .cr2, .cr3, .arw, .dng, .raf, .pef) sau FITS. Nimic nu e scris in folder.
 
   Fara optiuni: masoara toate cadrele si tipareste raportul: focus, expunere si
                 zgomot, roua, cadre miscate, drift, dithering, lista de respins.

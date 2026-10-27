@@ -44,15 +44,24 @@ namespace LightsCheck.Core;
 /// <param name="PixelSizeUm">
 /// The pixel size in microns (XPIXSZ on a FITS; a raw does not say it); null when unknown.
 /// </param>
-/// <param name="NikonLensId">The Nikon lens ID from a raw's MakerNote; null when absent.</param>
+/// <param name="LensId">
+/// The lens ID as the raw carries it, whichever the mount (Nikon's own number on a Nikon body,
+/// the maker's lens type elsewhere; R-065); null when absent.
+/// </param>
+/// <param name="LensMount">
+/// The camera's mount as libraw names it (`Nikon F`, `Canon EF`); null when unknown.
+/// </param>
+/// <param name="LensName">
+/// The lens's name as the camera wrote it (EXIF LensModel); null when the file has none.
+/// </param>
 /// <param name="LensMinFocalMm">
-/// The lens's shortest focal length in millimetres, from the MakerNote; null when absent.
+/// The lens's shortest focal length in millimetres, from libraw; null when absent.
 /// </param>
 /// <param name="LensMaxFocalMm">
-/// The lens's longest focal length in millimetres, from the MakerNote; null when absent.
+/// The lens's longest focal length in millimetres, from libraw; null when absent.
 /// </param>
 /// <param name="LensMaxAperture">
-/// The lens's widest f-number at its shortest focal length, from the MakerNote; null when absent.
+/// The lens's widest f-number at its shortest focal length, from libraw; null when absent.
 /// </param>
 /// <param name="Error">
 /// Why the file could not be read (Romanian, shown to the user); null for a readable file.
@@ -67,7 +76,9 @@ internal sealed record FrameInfo(
     double? Iso,
     DateTime? Timestamp,
     double? PixelSizeUm,
-    long? NikonLensId,
+    long? LensId,
+    string? LensMount,
+    string? LensName,
     double? LensMinFocalMm,
     double? LensMaxFocalMm,
     double? LensMaxAperture,
@@ -86,7 +97,7 @@ internal sealed record FrameInfo(
     {
         ArgumentNullException.ThrowIfNull(f);
         return new FrameInfo(index, path, f.Camera, f.FocalMm, f.FNumber, f.ExposureSeconds, f.Iso,
-            f.Timestamp, f.PixelSizeUm, f.NikonLensId, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
+            f.Timestamp, f.PixelSizeUm, f.LensId, f.LensMount, f.LensName, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
     }
 
     /// <summary>
@@ -109,7 +120,7 @@ internal sealed record FrameInfo(
             // (as a rule, a file that is not a FITS) is a frame nothing can be said about.
             if (FitsReader.IsFitsPath(path) && f.Header.Count == 0)
             {
-                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
+                return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, T("not a FITS file (it does not begin with SIMPLE)", "nu e un fisier FITS (nu incepe cu SIMPLE)"));
             }
 
             return From(index, path, f);
@@ -118,7 +129,7 @@ internal sealed record FrameInfo(
         {
             // Anything the file makes the readers throw, libraw's own exception type included,
             // is this frame's error, never the run's: the other frames are still listed.
-            return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, e.Message);
+            return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, e.Message);
         }
     }
 }

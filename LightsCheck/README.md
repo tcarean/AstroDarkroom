@@ -39,7 +39,7 @@ Give it the folder of one night, laid out the way Siril and its scripts lay it o
 - The lights are the frames of `lights\`. A folder without `lights\` but with frames of its own
   is taken as the lights; an empty `lights\` is an error, never a fall-back to the root of the
   session, where `result.fit` and the other results of the stacking sit.
-- The frames are the camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`) when the folder
+- The frames are the camera raws (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`, `.raf`, `.pef`) when the folder
   has any, otherwise its FITS files (`.fit`, `.fits`, `.fts`); the two kinds are never mixed. They
   are taken in the order of their file names.
 - `biases\`, two frames or more, gives the read noise, and with it the verdict on the exposure.
@@ -244,7 +244,7 @@ raws of the Veil night:
     biases             : biases\ (30 frames .NEF)
     darks              : (missing)
     camera             : Nikon D3300
-    lens               : 135 mm f/2.8 (as shot), lens 135 mm f/2.0, Nikon ID 74
+    lens               : 135 mm f/2.8 (as shot), lens 135 mm f/2.0, ID 74 (Nikon F)
     exposure           : 120.2 s at ISO 1600; 133.2 s at ISO 1600 (different exposures)
     interval           : 2026-10-06 23:35:03 -> 2026-10-07 02:57:49 (3 h 22 min); integration 2 h 54 min from 87 frames (86 % of the interval)
 

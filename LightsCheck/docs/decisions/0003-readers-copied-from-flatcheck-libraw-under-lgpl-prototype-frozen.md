@@ -1,7 +1,7 @@
 # 0003. The readers are copied from FlatCheck, libraw is taken under LGPL-2.1, the Python prototype is frozen
 
 Date: 2026-10-09
-Status: accepted 2026-10-09; the Romanian comments of the copies superseded by 0018
+Status: accepted 2026-10-09; the Romanian comments of the copies superseded by 0018; the Nikon-only lens ID and the six raw extensions superseded by 0025
 
 ## Context
 
@@ -56,3 +56,7 @@ A fix in a copied file goes to FlatCheck first, then the copy is refreshed (CLAU
 validation figures (`docs/validation.json`) can be traced to `prototype/` and
 `docs/validation/2026-10-06-veil/frames.csv`. `RawReaderTests` keeps the lazy-loading guard
 (no libraw-typed field) and the real-decode test gated on `LIGHTSCHECK_NEF`.
+
+Note 2026-10-27: `LoadedFrame.NikonLensId` is `LensId`, beside `LensMount` and `LensName`, and
+`.pef` is a raw extension, since the copies took FlatCheck's lens-on-every-mount hunk
+(ADR 0025).
