@@ -35,6 +35,20 @@ public class SessionFolderTests
     }
 
     [Fact]
+    public void R002_APentaxPefIsARawFrame()
+    {
+        // taken from FlatCheck 2026-10-26 (ADR 0023): a K-70 session was refused as FITS files that do not begin with SIMPLE
+        using TempWorkspace ws = new();
+        foreach (string name in new[] { "IMGP0002.PEF", "IMGP0001.pef", "dark_00001.fit" })
+        {
+            File.WriteAllBytes(ws.PathTo(name), [0]);
+        }
+
+        IReadOnlyList<string> frames = SessionFolder.FramesIn(ws.Dir);
+        Assert.Equal(["IMGP0001.pef", "IMGP0002.PEF"], frames.Select(f => Path.GetFileName(f)).ToArray());
+    }
+
+    [Fact]
     public void R002_FitsAreTheFramesWhenThereIsNoRaw()
     {
         using TempWorkspace ws = new();
@@ -132,7 +146,7 @@ public class SessionFolderTests
             Frame(1, SessionFixture.FirstStart, 120),
             Frame(2, SessionFixture.FirstStart.AddSeconds(150), 120),
             Frame(3, SessionFixture.FirstStart.AddSeconds(271), 120),
-            new FrameInfo(4, "x", null, null, null, null, null, null, null, null, null, null, null, "stricat"),
+            new FrameInfo(4, "x", null, null, null, null, null, null, null, null, null, null, null, null, null, "stricat"),
             Frame(5, SessionFixture.FirstStart.AddSeconds(600), 60),
         ];
         Cadence c = CadenceAnalyzer.Analyze(frames);
@@ -152,7 +166,7 @@ public class SessionFolderTests
     [Fact]
     public void R006_NoTimedFrameMeansNoIntervalAndZeroDuty()
     {
-        Cadence c = CadenceAnalyzer.Analyze([new FrameInfo(1, "x", null, null, null, null, null, null, null, null, null, null, null, null)]);
+        Cadence c = CadenceAnalyzer.Analyze([new FrameInfo(1, "x", null, null, null, null, null, null, null, null, null, null, null, null, null, null)]);
         Assert.Null(c.Start);
         Assert.Equal(0, c.DutyPct);
         Assert.Equal([null], c.PauseSeconds);
@@ -166,7 +180,7 @@ public class SessionFolderTests
         FrameInfo[] frames =
         [
             Frame(1, SessionFixture.FirstStart, 119.2), Frame(2, SessionFixture.FirstStart, 118.5), Frame(3, SessionFixture.FirstStart, 119.2),
-            Frame(4, SessionFixture.FirstStart, 60), new FrameInfo(5, "x", null, null, null, null, null, null, null, null, null, null, null, "stricat"),
+            Frame(4, SessionFixture.FirstStart, 60), new FrameInfo(5, "x", null, null, null, null, null, null, null, null, null, null, null, null, null, "stricat"),
         ];
         GroupSettings g = MatchAnalyzer.Settings(frames)!;
         Assert.Equal(119.2, g.ExposureSeconds);
@@ -199,7 +213,7 @@ public class SessionFolderTests
         Assert.Equal(Verdict.Ok, MatchAnalyzer.Analyze(darks, bias, lightsSame).DarksVsLights);
         Assert.Equal(Verdict.Warning, MatchAnalyzer.Analyze(darks, bias, lightsOther).DarksVsLights);
         Assert.Equal(Verdict.Unmeasured, MatchAnalyzer.Analyze(darks, bias, []).DarksVsLights);
-        FrameInfo[] lightsNoIso = [new FrameInfo(1, "x", "NIKON D3300", null, null, 120.2, null, SessionFixture.FirstStart, null, null, null, null, null, null)];
+        FrameInfo[] lightsNoIso = [new FrameInfo(1, "x", "NIKON D3300", null, null, 120.2, null, SessionFixture.FirstStart, null, null, null, null, null, null, null, null)];
         Assert.Equal(Verdict.Unmeasured, MatchAnalyzer.Analyze(darks, bias, lightsNoIso).DarksVsLights);
         Assert.Equal(Verdict.Ok, MatchAnalyzer.Analyze(darks, bias, []).Bias);
         Assert.Equal(Verdict.Warning, MatchAnalyzer.Analyze(darks, longBias, []).Bias);
@@ -207,5 +221,5 @@ public class SessionFolderTests
     }
 
     private static FrameInfo Frame(int index, DateTime t, double exposure) =>
-        new(index, $"DSC_{index:0000}.NEF", "NIKON D3300", 135, 2.8, exposure, 1600, t, null, 74, null, null, null, null);
+        new(index, $"DSC_{index:0000}.NEF", "NIKON D3300", 135, 2.8, exposure, 1600, t, null, 74, "Nikon F", null, null, null, null, null);
 }

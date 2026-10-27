@@ -7,7 +7,7 @@ Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--
   Folderul sesiunii Siril: dark-urile se iau din darks\ (sau direct din folder,
   daca nu exista darks\ si nici alt subfolder de sesiune), bias-urile din biases\
   si lights-urile din lights\, amandoua optionale. Raw de aparat
-  (.nef, .cr2, .cr3, .arw, .dng, .raf) sau FITS. Nimic nu e scris in folder.
+  (.nef, .cr2, .cr3, .arw, .dng, .raf, .pef) sau FITS. Nimic nu e scris in folder.
 
   Fara optiuni: decodeaza bias-urile, dark-urile si lights-urile si tipareste raportul:
                 scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti,
