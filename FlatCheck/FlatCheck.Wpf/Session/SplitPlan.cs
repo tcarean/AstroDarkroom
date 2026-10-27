@@ -229,8 +229,12 @@ namespace FlatCheck.Wpf
                 Directory.Delete(TempRoot, recursive: true);
                 return true;
             }
-            catch (IOException) { return false; }
-            catch (UnauthorizedAccessException) { return false; }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                // The split's copies can be tens of GB; where they were left is worth a line.
+                NLog.LogManager.GetLogger("Split").Warn(e, "the split's temp folder " + TempRoot + " could not be deleted");
+                return false;
+            }
         }
     }
 }

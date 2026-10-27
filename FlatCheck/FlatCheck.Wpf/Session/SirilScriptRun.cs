@@ -158,7 +158,10 @@ namespace FlatCheck.Wpf
                 process.OutputDataReceived += (_, e) => { if (e.Data != null) onLine(e.Data); };
                 process.ErrorDataReceived += (_, e) => { if (e.Data != null) onLine(e.Data); };
 
+                Log.Info("starting " + cliPath + " -d \"" + folder + "\" -s \"" + scriptPath + "\" -i \"" + config
+                         + "\" (settings copied from " + LogText.Str(settings) + ", " + LogText.Int(copy.Length) + " bytes)");
                 process.Start();
+                Log.Debug("siril-cli started, pid " + LogText.Int(process.Id));
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
 
@@ -211,18 +214,33 @@ namespace FlatCheck.Wpf
         static void DeleteQuietly(string dir)
         {
             try { Directory.Delete(dir, recursive: true); }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Log.Debug(e, "the private settings folder " + dir + " could not be deleted; it stays in %TEMP%");
+            }
         }
+
+        /// <summary>The diagnostic log: the command line started and what could not be
+        /// cleaned up (R-110).</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Siril");
 
         /// <summary>Kills the process and its children, if it is still running; never
         /// throws.</summary>
         /// <param name="p">The siril-cli process.</param>
         static void Kill(Process p)
         {
-            try { if (!p.HasExited) p.Kill(entireProcessTree: true); }
-            catch (InvalidOperationException) { }
-            catch (System.ComponentModel.Win32Exception) { }
+            try
+            {
+                if (!p.HasExited)
+                {
+                    Log.Info("killing siril-cli and its children, the run was stopped");
+                    p.Kill(entireProcessTree: true);
+                }
+            }
+            catch (Exception e) when (e is InvalidOperationException || e is System.ComponentModel.Win32Exception)
+            {
+                Log.Debug(e, "siril-cli could not be killed; it had probably exited");
+            }
         }
     }
 }

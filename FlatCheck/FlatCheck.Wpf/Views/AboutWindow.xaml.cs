@@ -61,11 +61,9 @@ namespace FlatCheck.Wpf
             {
                 Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
             }
-            catch (System.ComponentModel.Win32Exception)
+            catch (System.Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is System.InvalidOperationException)
             {
-            }
-            catch (System.InvalidOperationException)
-            {
+                NLog.LogManager.GetLogger("Window").Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
             }
         }
 

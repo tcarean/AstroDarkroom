@@ -232,7 +232,11 @@ namespace FlatCheck.Wpf
                 details = await Task.Run(() => rows.AsParallel().AsOrdered()
                     .Select(r => (r, Safe(() => SyntheticReport.LensDetails(r.Choice, sources.Catalog)))).ToList()).ConfigureAwait(true);
             }
-            catch (Exception) { return; }
+            catch (Exception e)
+            {
+                Log.Debug(e, "Synthetic tab: the lens list's details could not be computed; the rows stay without");
+                return;
+            }
             if (gen != _detailsGen) return;
             foreach (var (row, text) in details) row.Details = text;
         }
@@ -242,7 +246,13 @@ namespace FlatCheck.Wpf
         /// <returns>Its text, or "" when it threw.</returns>
         static string Safe(Func<string> f)
         {
-            try { return f(); } catch (Exception) { return ""; }   // a broken Adobe file leaves the row without details; choosing it will say why
+            try { return f(); }
+            catch (Exception e)
+            {
+                // A broken Adobe file leaves the row without details; choosing it will say why.
+                Log.Debug(e, "Synthetic tab: a lens row's details could not be read");
+                return "";
+            }
         }
 
         public LensRow SelectedLens
@@ -349,7 +359,12 @@ namespace FlatCheck.Wpf
                             SyntheticReport.FormatMatchIsWarning(p.Model, crop ?? 0, w, h), request);
                 }).ConfigureAwait(true);
             }
-            catch (Exception) { note = ("", false, ""); }   // a broken Adobe file leaves the note empty; the write will refuse it with the reason
+            catch (Exception e)
+            {
+                // A broken Adobe file leaves the note empty; the write will refuse it with the reason.
+                Log.Debug(e, "Synthetic tab: the format note could not be computed");
+                note = ("", false, "");
+            }
             if (gen != _formatGen) return;
             FormatNote = note.Text;
             FormatWarning = note.Warning;
@@ -459,6 +474,7 @@ namespace FlatCheck.Wpf
                         try { raw = _loadInfo(rawPath); }
                         catch (Exception e)
                         {
+                            Log.Warn(e, "Synthetic tab: the raw " + rawPath + " could not be read for the prefill");
                             error = T($"{Path.GetFileName(rawPath)} could not be read ({e.Message}); type the aperture by hand",
                                       $"{Path.GetFileName(rawPath)} nu s-a putut citi ({e.Message}); diafragma se scrie de mana");
                         }
@@ -488,6 +504,8 @@ namespace FlatCheck.Wpf
                     if (note != null) notes.Add(note);
                 }
                 PrefillNote = notes.Count == 0 ? "" : T("prefilled: ", "preumplut: ") + string.Join("; ", notes);
+                Log.Info("Synthetic tab: prefilled from " + master + " focal=" + LogText.Str(FocalText) + " fstop=" + LogText.Str(FStopText)
+                         + " crop=" + LogText.Str(CropText) + " lens=" + (SelectedLens?.Choice.Key ?? "none"));
             }
             catch (OperationCanceledException) { }
             catch (Exception e)
@@ -495,6 +513,7 @@ namespace FlatCheck.Wpf
                 // The prefill is a convenience, not an analysis: a strange header leaves the
                 // fields empty and says why. A background task that threw would bring the
                 // application down.
+                Log.Warn(e, "Synthetic tab: the prefill failed; the fields stay empty");
                 PrefillNote = T("the prefill failed: ", "preumplerea a esuat: ") + Describe(e);
             }
         }
@@ -616,6 +635,7 @@ namespace FlatCheck.Wpf
                 SaveError = "";
                 if (File.Exists(target) && !_confirm(SessionMessages.SyntheticOverwriteQuestion(target)))
                 {
+                    Log.Info("Synthetic tab: the user kept the existing " + target + "; nothing written");
                     SaveError = SessionMessages.SyntheticNotOverwritten(target);
                     Report = text.ToString();
                     return;
@@ -629,10 +649,12 @@ namespace FlatCheck.Wpf
                     }, ct).ConfigureAwait(true);
                     text.WriteLine(SyntheticReport.SavedLine(target));
                     SavedTo = target;
+                    Log.Info("Synthetic tab: wrote " + target + " (" + LogText.FileKiB(target) + ")");
                     Saved?.Invoke(target);
                 }
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
+                    Log.Warn(e, "Synthetic tab: the synthetic flat could not be written to " + target);
                     SaveError = T("Could not write the synthetic flat:\n", "Nu am putut scrie flatul sintetic:\n") + Describe(e);
                 }
                 Report = text.ToString();

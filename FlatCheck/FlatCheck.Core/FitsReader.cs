@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -196,8 +197,15 @@ namespace FlatCheck
                 Bitpix = bitpix,
             };
             FillShootingInfo(f, hdr);
+            if (Log.IsDebugEnabled) Log.Debug("header of " + path + ": " + LogText.FitsKeys(hdr));
+            if (Log.IsTraceEnabled)
+                foreach (string card in cards) Log.Trace("card " + card.TrimEnd());
             return f;
         }
+
+        /// <summary>The diagnostic log: the keywords that decide the reading at <c>Debug</c>,
+        /// every card at <c>Trace</c> (R-111).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(FitsReader));
 
         /// <summary>
         /// Only what the header says: focal length, camera, planes, BITPIX, CFA order. No pixels
@@ -223,6 +231,7 @@ namespace FlatCheck
                 Bitpix = HInt(hdr, "BITPIX", 0),
             };
             FillShootingInfo(f, hdr);
+            if (Log.IsDebugEnabled) Log.Debug("header of " + path + ": " + LogText.FitsKeys(hdr));
             return f;
         }
 

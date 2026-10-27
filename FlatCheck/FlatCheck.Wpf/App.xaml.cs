@@ -38,15 +38,23 @@ namespace FlatCheck.Wpf
         readonly string _unknownLanguage;
 
         /// <summary>
-        /// Sets the interface language from the command line (R-101) before anything else: the
-        /// constructor runs before App.xaml's resources and the first view load, and both may
-        /// carry texts.
+        /// Starts the diagnostic log first, so a failure while the resources load is in it too
+        /// (R-109 to R-111), then sets the interface language from the command line (R-101)
+        /// before anything else: the constructor runs before App.xaml's resources and the first
+        /// view load, and both may carry texts.
         /// </summary>
         public App()
         {
             string[] all = Environment.GetCommandLineArgs();
-            _unknownLanguage = ApplyCommandLine(all.Length > 1 ? all[1..] : Array.Empty<string>());
+            string[] args = all.Length > 1 ? all[1..] : Array.Empty<string>();
+            LogSetup.Apply("FlatCheck.Wpf", args);
+            DispatcherUnhandledException += (s, e) =>
+                LogSetup.Fatal(e.Exception, "unhandled exception on the window's thread, the window closes");
+            _unknownLanguage = ApplyCommandLine(args);
         }
+
+        /// <summary>The diagnostic log: the start's choices.</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("App");
 
         /// <summary>Forces invariant numbers, shows the main window, says a --lang it did not
         /// understand, and starts the window on the command line's folder.</summary>
@@ -61,10 +69,24 @@ namespace FlatCheck.Wpf
             window.Show();
 
             if (_unknownLanguage != null)
+            {
+                Log.Warn("refused: " + LanguageArgument.BadValueMessage(_unknownLanguage) + "; the window goes on in English");
                 MessageBox.Show(window, LanguageArgument.BadValueMessage(_unknownLanguage), "FlatCheck",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
 
-            window.Start(FolderFromArgs(e.Args));
+            string folder = FolderFromArgs(e.Args);
+            Log.Info("language=" + (Ui.Default == UiLanguage.Romanian ? "ro" : "en")
+                     + " folder from the command line: " + (folder ?? "none, the window asks for one"));
+            window.Start(folder);
+        }
+
+        /// <summary>Writes the log's last line, with the exit code, and closes it.</summary>
+        /// <param name="e">The exit's arguments.</param>
+        protected override void OnExit(ExitEventArgs e)
+        {
+            base.OnExit(e);
+            LogSetup.Close(e.ApplicationExitCode);
         }
 
         /// <summary>

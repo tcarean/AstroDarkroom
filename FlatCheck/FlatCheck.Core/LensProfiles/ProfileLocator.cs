@@ -27,8 +27,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using NLog;
 
 namespace FlatCheck
 {
@@ -128,8 +130,17 @@ namespace FlatCheck
                     .Where(Directory.Exists)
                     .ToList();
             }
-            catch (Exception) { return Array.Empty<string>(); }   // a folder we may not list is a folder without profiles
+            catch (Exception e)
+            {
+                // A folder we may not list is a folder without profiles; the log says which.
+                Log.Warn(e, "the Adobe applications under " + adobeRoot + " could not be listed; their profiles are left out");
+                return Array.Empty<string>();
+            }
         }
+
+        /// <summary>The diagnostic log: what was searched and found, and what could not be
+        /// read (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(ProfileLocator));
 
         /// <summary>The lensfun/ folder beside the running exe.</summary>
         /// <returns>Its path, whether it exists or not.</returns>
@@ -154,6 +165,7 @@ namespace FlatCheck
         /// <returns>What was found.</returns>
         internal static ProfileSources Locate(IReadOnlyList<string> adobeDirs, string lensfunDir)
         {
+            var clock = Stopwatch.StartNew();
             // Adobe: only the file names - 3531 on the author's machine, 36 s to parse them all.
             // A name that does not have the expected form is parsed on the spot, so that it is
             // not missing. Lightroom's folder repeats the DNG Converter's files under the same
@@ -169,7 +181,11 @@ namespace FlatCheck
                 // The enumeration is lazy and throws on a subfolder without list rights; the files
                 // found before it stay, the rest of this folder is lost, the next folder is searched.
                 try { found = Directory.EnumerateFiles(dir, "*.lcp", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal).ToList(); }
-                catch (Exception) { continue; }
+                catch (Exception e)
+                {
+                    Log.Warn(e, "the Adobe folder " + dir + " could not be listed; its profiles are left out");
+                    continue;
+                }
                 foreach (string f in found)
                 {
                     if (!seen.Add(Path.GetRelativePath(dir, f))) { duplicates++; continue; }
@@ -177,7 +193,11 @@ namespace FlatCheck
                     AdobeProfileFile stub = AdobeProfileFile.FromName(f);
                     if (stub != null) { stubs.Add(stub); continue; }
                     try { profiles.AddRange(LcpReader.Read(f)); }
-                    catch (Exception) { skipped++; }
+                    catch (Exception e)
+                    {
+                        Log.Debug(e, "the Adobe profile " + f + " could not be read; it is counted as skipped");
+                        skipped++;
+                    }
                 }
             }
             bool lfPresent = Directory.Exists(lensfunDir) && Directory.EnumerateFiles(lensfunDir, "*.xml").Any();
@@ -188,9 +208,20 @@ namespace FlatCheck
             if (File.Exists(vf))
             {
                 try { version = File.ReadAllText(vf).Trim(); }
-                catch (Exception) { version = null; }
+                catch (Exception e)
+                {
+                    Log.Warn(e, "the lensfun version file " + vf + " could not be read");
+                    version = null;
+                }
             }
-            return new ProfileSources(adobeDirs, files, skipped, duplicates, lensfunDir, lfPresent, version, new LensCatalog(profiles, stubs), lf);
+            var sources = new ProfileSources(adobeDirs, files, skipped, duplicates, lensfunDir, lfPresent, version, new LensCatalog(profiles, stubs), lf);
+            if (Log.IsInfoEnabled)
+                Log.Info("profiles: adobe folders " + LogText.List(adobeDirs.Select(d => d + (Directory.Exists(d) ? "" : " (missing)")))
+                         + " files=" + LogText.Int(files) + " skipped=" + LogText.Int(skipped) + " duplicate=" + LogText.Int(duplicates)
+                         + "; lensfun " + (lfPresent ? "present" : "absent") + " version=" + LogText.Str(version?.Split('\n')[0].Trim())
+                         + " at " + lensfunDir + "; lenses adobe=" + LogText.Int(sources.AdobeLenses) + " lensfun=" + LogText.Int(sources.LensfunLenses)
+                         + " in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+            return sources;
         }
     }
 }

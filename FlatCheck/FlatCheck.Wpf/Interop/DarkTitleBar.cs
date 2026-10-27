@@ -62,13 +62,11 @@ namespace FlatCheck.Wpf
                 if (DwmSetWindowAttribute(hwnd, UseImmersiveDarkMode, ref on, sizeof(int)) != 0)
                     DwmSetWindowAttribute(hwnd, UseImmersiveDarkModeBefore20H1, ref on, sizeof(int));
             }
-            catch (DllNotFoundException)
+            catch (Exception e) when (e is DllNotFoundException || e is EntryPointNotFoundException)
             {
                 // dwmapi is missing (Windows without a compositor). The bar stays light; that
                 // is no reason for the application not to start.
-            }
-            catch (EntryPointNotFoundException)
-            {
+                NLog.LogManager.GetLogger("Window").Debug(e, "the title bar cannot be darkened on this system");
             }
         }
     }

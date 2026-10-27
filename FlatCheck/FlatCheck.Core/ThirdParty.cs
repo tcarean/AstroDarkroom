@@ -98,6 +98,18 @@ namespace FlatCheck
                 Url: "https://github.com/SixLabors/ImageSharp",
                 Packages: new[] { "SixLabors.ImageSharp" }),
 
+            // The copyright notice is the first line of LICENSE.txt at the commit NLog 6.2.2 was
+            // built from (d9ebf82); the BSD terms ask for it, the conditions and the disclaimer,
+            // which THIRD-PARTY-NOTICES.md reproduces.
+            new ThirdPartyComponent(
+                Name: "NLog",
+                Role: T("writing the diagnostic log beside the program (the log folder)",
+                        "scrierea jurnalului de diagnostic langa program (folderul log)"),
+                Licence: "BSD-3-Clause",
+                Copyright: "Copyright (c) 2004-2024 Jaroslaw Kowalski <jaak@jkowalski.net>, Kim Christensen, Julian Verdurmen",
+                Url: "https://nlog-project.org/",
+                Packages: new[] { "NLog" }),
+
             // Data, not code: the database of lens profiles, copied unchanged into the lensfun/
             // folder beside the exe, for the synthetic flat. CC BY-SA asks for attribution, and
             // this list is the place where the program shows its notices - which is why it is here.

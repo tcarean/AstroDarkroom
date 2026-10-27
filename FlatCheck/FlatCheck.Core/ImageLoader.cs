@@ -28,6 +28,8 @@
 // as a parse error (see docs/design/known-issues.md, point 2).
 
 using System.Collections.Generic;
+using System.Diagnostics;
+using NLog;
 
 namespace FlatCheck
 {
@@ -134,22 +136,44 @@ namespace FlatCheck
         static readonly IFrameReader Fits = new FitsReader();
         static readonly IFrameReader[] Readers = { new RawReader(), Fits };
 
+        /// <summary>The diagnostic log: one line per file read (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(ImageLoader));
+
         /// <summary>Loads a frame with its pixels and everything the file says about it.</summary>
         /// <param name="path">The file to read: a camera raw, a FITS, or anything else, which is
         /// read as a FITS.</param>
         /// <returns>The frame, its image filled.</returns>
         internal static LoadedFrame Load(string path)
         {
+            var clock = Stopwatch.StartNew();
+            IFrameReader reader = ReaderOf(path);
+            LoadedFrame f = reader.Load(path);
+            if (Log.IsInfoEnabled)
+                Log.Info("loaded " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+            return f;
+        }
+
+        /// <summary>The reader that claims <paramref name="path"/>: a raw reader by its
+        /// extension, the FITS reader for everything else.</summary>
+        /// <param name="path">The file to read.</param>
+        /// <returns>The reader.</returns>
+        static IFrameReader ReaderOf(string path)
+        {
             foreach (IFrameReader r in Readers)
-                if (r.Handles(path)) return r.Load(path);
+                if (r.Handles(path)) return r;
 
             // What no one claims still goes to FITS. It is a decision, not an oversight: a .jpg
             // given by mistake fails with a FITS parse error, which still points at the guilty
             // file, instead of "unrecognised format" (see docs/design/known-issues.md, point 2).
             // It sits explicitly here, not as the last element of the list, so that a reordering
             // of the list cannot break it silently.
-            return Fits.Load(path);
+            return Fits;
         }
+
+        /// <summary>The reader's name in the log.</summary>
+        /// <param name="reader">One of <see cref="Readers"/>.</param>
+        /// <returns><c>fits</c> or <c>raw</c>.</returns>
+        static string NameOf(IFrameReader reader) => ReferenceEquals(reader, Fits) ? "fits" : "raw";
 
         /// <summary>
         /// When all you need is the pixels - structure, the --light series.
@@ -168,9 +192,12 @@ namespace FlatCheck
         /// <returns>The frame's metadata.</returns>
         internal static LoadedFrame LoadInfo(string path)
         {
-            foreach (IFrameReader r in Readers)
-                if (r.Handles(path)) return r.LoadInfo(path);
-            return Fits.LoadInfo(path);
+            var clock = Stopwatch.StartNew();
+            IFrameReader reader = ReaderOf(path);
+            LoadedFrame f = reader.LoadInfo(path);
+            if (Log.IsDebugEnabled)
+                Log.Debug("read the header of " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+            return f;
         }
     }
 }

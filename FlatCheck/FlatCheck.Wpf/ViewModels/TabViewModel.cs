@@ -36,6 +36,7 @@
 // fields, chosen on purpose.
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using static FlatCheck.Ui;
@@ -124,18 +125,29 @@ namespace FlatCheck.Wpf
         protected async Task RunGuardedAsync(string busyMessage, Func<Task> work)
         {
             int gen = ++_generation;
+            var clock = Stopwatch.StartNew();
+            string run = TabName + " tab, run " + LogText.Int(gen);
+            Log.Info(run + " started");
             BeginBusy(busyMessage);
             try
             {
                 await work().ConfigureAwait(true);
+                Log.Info(run + " done in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
             }
             catch (OperationCanceledException)
             {
+                Log.Info(run + " cancelled after " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
                 if (gen == _generation) HasResult = false;
             }
             catch (Exception e)
             {
-                if (gen != _generation) return;
+                // A superseded run's failure is shown nowhere, but kept in the log (R-110).
+                if (gen != _generation)
+                {
+                    Log.Debug(e, run + " failed after a newer run started; nothing is shown");
+                    return;
+                }
+                Log.Error(e, run + " failed after " + LogText.Int(clock.ElapsedMilliseconds) + " ms; the tab shows the message");
                 HasResult = false;
                 Fail(T("The analysis failed", "Analiza a esuat"), Describe(e));
             }
@@ -144,6 +156,14 @@ namespace FlatCheck.Wpf
                 if (gen == _generation) EndBusy();
             }
         }
+
+        /// <summary>The diagnostic log of the tabs: their runs, the user's actions, the
+        /// failures they show or swallow (R-110).</summary>
+        private protected static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Window");
+
+        /// <summary>The tab's name in the log: its view-model's class name without
+        /// <c>TabViewModel</c> (<c>Structure</c>, <c>Exposure</c>, ...).</summary>
+        private protected string TabName => GetType().Name.Replace("TabViewModel", "");
 
         /// <summary>
         /// Enters the window's heavy-run gate before a run a click started (ADR 0061), with the

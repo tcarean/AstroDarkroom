@@ -91,7 +91,8 @@ public class ThirdPartyTests
     [Fact]
     public void EveryComponentNamesItsLicenceAndUrl()
     {
-        Assert.Equal(4, ThirdParty.Components.Count);
+        // Five since 2026-10-27: NLog joined for the diagnostic log (ADR 0070).
+        Assert.Equal(5, ThirdParty.Components.Count);
 
         foreach (var c in ThirdParty.Components)
         {

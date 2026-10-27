@@ -347,6 +347,7 @@ namespace FlatCheck.Wpf
                 SaveError = "";
                 if (File.Exists(target) && !_confirm(SessionMessages.SmoothOverwriteQuestion(target)))
                 {
+                    Log.Info("Smooth tab: the user kept the existing " + target + "; nothing written");
                     SaveError = SessionMessages.SmoothNotOverwritten(target);
                     Report = text.ToString();
                     return;
@@ -360,10 +361,12 @@ namespace FlatCheck.Wpf
                     }, ct).ConfigureAwait(true);
                     text.WriteLine(SmoothReport.SavedLine(target));
                     SavedTo = target;
+                    Log.Info("Smooth tab: wrote " + target + " (" + LogText.FileKiB(target) + ")");
                     Saved?.Invoke(target);
                 }
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
+                    Log.Warn(e, "Smooth tab: the smoothed flat could not be written to " + target);
                     SaveError = T("Could not write the smoothed flat:\n", "Nu am putut scrie flat-ul netezit:\n") + Describe(e);
                 }
                 Report = text.ToString();

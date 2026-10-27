@@ -48,7 +48,6 @@
 // RawReader; TargetSize is the safety net for the cameras that have only a large one.
 
 using System;
-using System.IO;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
@@ -89,13 +88,19 @@ namespace FlatCheck
             {
                 return DecodeJpeg(p);
             }
-            catch (ImageFormatException) { return null; }
-            catch (DllNotFoundException) { return null; }
-            catch (FileNotFoundException) { return null; }
-            catch (BadImageFormatException) { return null; }
-            catch (TypeInitializationException) { return null; }
-            catch (Exception) { return null; }
+            // ImageFormatException (a corrupt stream), DllNotFoundException, FileNotFoundException,
+            // BadImageFormatException and TypeInitializationException (ImageSharp missing or
+            // broken beside the executable), anything else: no preview, never a failed run. The
+            // log keeps which one it was (R-110).
+            catch (Exception e)
+            {
+                Log.Warn(e, "the raw's JPEG preview (" + LogText.Int(p.W) + "x" + LogText.Int(p.H) + ") could not be decoded; there is none to show");
+                return null;
+            }
         }
+
+        /// <summary>The diagnostic log: the previews that did not decode.</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(PreviewReader));
 
         /// <summary>
         /// Decodes a JPEG preview into RGB, shrunk to about <see cref="TargetLongSide"/> only

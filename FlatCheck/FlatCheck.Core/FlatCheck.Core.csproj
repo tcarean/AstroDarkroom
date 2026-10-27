@@ -46,12 +46,18 @@
        their own to publish. 3.1.x has exactly the same licence terms (Split License 1.0, the
        Apache 2.0 branch for open source) and no task; the only API difference that concerns us
        is that 3.x never applies the ICC profile when decoding, which is exactly the behaviour
-       wanted. See THIRD-PARTY-NOTICES.md. -->
+       wanted. See THIRD-PARTY-NOTICES.md.
+
+       NLog, for the diagnostic log only (ADR 0070): the core logs at its seams (the readers,
+       the profile locator, Runs/), never inside Analysis/ or Report/; the two applications
+       configure it, in code, through Logging/LogSetup.cs. Without a configuration (the tests,
+       a library use) every call is a no-op. -->
   <ItemGroup>
     <PackageReference Include="Sdcb.LibRaw" />
     <PackageReference Include="Sdcb.LibRaw.runtime.win64" />
     <PackageReference Include="Sdcb.LibRaw.runtime.linux64" />
     <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="NLog" />
   </ItemGroup>
 
   <!-- The core stays internal entirely. No public surface was built for it because it has no

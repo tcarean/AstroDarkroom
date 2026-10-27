@@ -374,11 +374,22 @@ namespace FlatCheck
         /// <returns>The comparison and the A / B residual map as PNG.</returns>
         internal static RunOutcome<AgainstResult> Execute(string pathA, string pathB, TextWriter report)
         {
+            RunClock clock = RunClock.Start(Log, "against", pathA + " against " + pathB);
             var fa = ImageLoader.Load(pathA);
             var fb = ImageLoader.Load(pathB);
+            clock.Lap("load");
             var r = AgainstAnalyzer.Analyze(fa.Image, fb.Image);
+            clock.Lap("analyze");
+            if (Log.IsDebugEnabled) Log.Debug("comparison of " + pathA + " with " + pathB + ": " + LogText.Against(r));
             AgainstReport.Write(r, pathA, pathB, report);
-            return new RunOutcome<AgainstResult>(r, PngWriter.EncodeResidualMap(r.Structure.Residual));
+            clock.Lap("report");
+            byte[] png = PngWriter.EncodeResidualMap(r.Structure.Residual);
+            clock.Lap("map");
+            clock.Done("verdict=" + r.Verdict);
+            return new RunOutcome<AgainstResult>(r, png);
         }
+
+        /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(AgainstRun));
     }
 }

@@ -100,13 +100,27 @@ namespace FlatCheck.Wpf
             string config = FindConfig();
             string text = null;
             if (config != null)
-                try { text = File.ReadAllText(config); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            {
+                try { text = File.ReadAllText(config); }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    Log.Debug(e, "Siril's config " + config + " could not be read; its script folders are not known");
+                }
+            }
 
             var scripts = ScriptsFrom(text, File.Exists, ListScripts);
-            if (scripts.Count == 0) scripts = ScriptsFrom(FallbackScriptDirs(cli), ListScripts);
+            bool fromConfig = scripts.Count > 0;
+            if (!fromConfig) scripts = ScriptsFrom(FallbackScriptDirs(cli), ListScripts);
 
+            Log.Info("Siril: siril-cli=" + LogText.Str(cli) + " config=" + LogText.Str(config) + " scripts=" + LogText.Int(scripts.Count)
+                     + (fromConfig ? " from the config's folders" : " from the fallback folders"));
+            if (Log.IsDebugEnabled) Log.Debug("Siril scripts " + LogText.List(scripts));
             return new SirilInstall(cli, scripts, config);
         }
+
+        /// <summary>The diagnostic log: where Siril was found, and what could not be read
+        /// (R-110).</summary>
+        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Siril");
 
         /// <summary>
         /// siril-cli.exe: from the uninstall entry in the registry (the Inno installer writes
@@ -146,7 +160,11 @@ namespace FlatCheck.Wpf
                     if (key == null) continue;
                     names = key.GetSubKeyNames();
                 }
-                catch (Exception e) when (IsUnreadable(e)) { continue; }
+                catch (Exception e) when (IsUnreadable(e))
+                {
+                    Log.Debug(e, "the uninstall entries of " + hive.Name + " could not be read");
+                    continue;
+                }
 
                 foreach (string name in names)
                 {
@@ -158,7 +176,10 @@ namespace FlatCheck.Wpf
                         if (k.GetValue("InstallLocation") is string loc && !string.IsNullOrWhiteSpace(loc))
                             found.Add(loc);
                     }
-                    catch (Exception e) when (IsUnreadable(e)) { }
+                    catch (Exception e) when (IsUnreadable(e))
+                    {
+                        Log.Debug(e, "the uninstall entry " + name + " could not be read");
+                    }
                 }
             }
 
@@ -196,8 +217,11 @@ namespace FlatCheck.Wpf
                     .OrderByDescending(File.GetLastWriteTimeUtc)
                     .FirstOrDefault();
             }
-            catch (IOException) { return null; }
-            catch (UnauthorizedAccessException) { return null; }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Log.Debug(e, "Siril's settings folder " + dir + " could not be listed");
+                return null;
+            }
         }
 
         /// <summary>The .ssf files of a folder and its subfolders; never throws.</summary>
@@ -208,8 +232,11 @@ namespace FlatCheck.Wpf
         {
             if (!Directory.Exists(dir)) return Array.Empty<string>();
             try { return Directory.EnumerateFiles(dir, "*.ssf", SearchOption.AllDirectories).ToList(); }
-            catch (IOException) { return Array.Empty<string>(); }
-            catch (UnauthorizedAccessException) { return Array.Empty<string>(); }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Log.Debug(e, "the script folder " + dir + " could not be listed");
+                return Array.Empty<string>();
+            }
         }
 
         /// <summary>
@@ -343,7 +370,11 @@ namespace FlatCheck.Wpf
         internal static bool IsGuiRunning()
         {
             try { return System.Diagnostics.Process.GetProcessesByName(GuiProcessName).Length > 0; }
-            catch (InvalidOperationException) { return false; }
+            catch (InvalidOperationException e)
+            {
+                Log.Debug(e, "the process list could not be read; Siril's window is taken as closed");
+                return false;
+            }
         }
     }
 }

@@ -30,8 +30,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -110,7 +112,9 @@ namespace FlatCheck
             Action<int, int, string, LightResult> onFrame = null,
             CancellationToken ct = default)
         {
+            RunClock clock = RunClock.Start(Log, "light series", dir + " pattern=" + pattern + " fov=" + LogText.Num(fov));
             var files = SeriesFinder.Find(dir, pattern);
+            Log.Info("series: " + LogText.Int(files.Count) + " files match " + pattern + " in " + dir);
             if (files.Count == 0)
                 throw new Exception(T(
                     $"No file matches '{pattern}' in {dir}. "
@@ -122,9 +126,11 @@ namespace FlatCheck
             // session, so they have the same focal length and the same scale.
             LoadedFrame first = ImageLoader.Load(files[0]);
             var s = LightSuitability.Check(first.Header, fov);
+            if (Log.IsDebugEnabled) Log.Debug("field of " + files[0] + ": " + LogText.Suitability(s));
             if (!s.CanRun)
             {
                 LightReport.WriteTooWide(s, dir, report);
+                clock.Done("refused: the field is too wide");
                 return new LightSeriesRunOutcome(s, null, null, files);
             }
 
@@ -139,20 +145,33 @@ namespace FlatCheck
             {
                 ct.ThrowIfCancellationRequested();
 
+                var frameClock = Stopwatch.StartNew();
                 Img img = first?.Image ?? ImageLoader.LoadImage(files[i]);
                 first = null;
 
                 var r = LightAnalyzer.Analyze(img);
                 string name = Path.GetFileName(files[i]);
+                if (Log.IsDebugEnabled)
+                    Log.Debug("frame " + LogText.Int(i + 1) + "/" + LogText.Int(files.Count) + " " + name + ": " + LogText.Light(r)
+                              + " in " + LogText.Int(frameClock.ElapsedMilliseconds) + " ms");
                 LightSeriesReport.WriteRow(name, r, report);
                 frames.Add((name, r));
                 onFrame?.Invoke(i, files.Count, name, r);
             }
+            clock.Lap("frames");
 
             var series = LightSeriesAnalyzer.Combine(frames);
+            if (Log.IsDebugEnabled) Log.Debug("series of " + dir + ": " + LogText.LightSeries(series));
             LightSeriesReport.WriteSummary(series, report);
-            return new LightSeriesRunOutcome(
-                s, series, PngWriter.EncodeResidualMap(series.RadialMap), files);
+            clock.Lap("combine");
+            byte[] png = PngWriter.EncodeResidualMap(series.RadialMap);
+            clock.Lap("map");
+            clock.Done("verdict=" + series.Verdict);
+            return new LightSeriesRunOutcome(s, series, png, files);
         }
+
+        /// <summary>The diagnostic log: the run's lines, one per frame, and the synthesis
+        /// (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(LightSeriesRun));
     }
 }

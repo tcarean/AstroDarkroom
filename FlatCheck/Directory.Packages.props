@@ -15,6 +15,10 @@
     <!-- Decodes the JPEG preview a raw embeds. Pinned to 3.1.x on purpose: 4.x adds a
          licence-key MSBuild task that errors on Release builds. -->
     <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <!-- The diagnostic log beside each executable (R-109 to R-111, ADR 0070): configured in
+         code, a size-rolled text file, BSD-3-Clause, purely managed. The owner asked for NLog
+         by name on 2026-10-27. -->
+    <PackageVersion Include="NLog" Version="6.2.2" />
   </ItemGroup>
   <ItemGroup>
     <!-- Test host and runner (xUnit 2: no dynamic skip, which is why absent large files

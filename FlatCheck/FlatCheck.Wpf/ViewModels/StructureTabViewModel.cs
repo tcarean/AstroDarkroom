@@ -420,9 +420,11 @@ namespace FlatCheck.Wpf
                 File.WriteAllText(session.ResultTextPath, Report);
                 File.WriteAllBytes(session.ResidualPngPath, png);
                 SavedTo = session.ResultTextPath;
+                Log.Info("Structure tab: wrote " + session.ResultTextPath + " and " + session.ResidualPngPath + " (" + LogText.KiB(png.Length) + ")");
             }
             catch (Exception e)
             {
+                Log.Warn(e, "Structure tab: the report or the map could not be saved beside the session");
                 SaveError = T("Could not save the report:\n", "Nu am putut salva raportul:\n") + Describe(e);
             }
         }

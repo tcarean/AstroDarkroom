@@ -181,8 +181,11 @@ namespace FlatCheck.Wpf
 
             string text;
             try { text = File.ReadAllText(_selected.Path); }
-            catch (IOException e) { return SessionMessages.ScriptUnreadable(_selected.Path, e.Message); }
-            catch (UnauthorizedAccessException e) { return SessionMessages.ScriptUnreadable(_selected.Path, e.Message); }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                NLog.LogManager.GetLogger("Siril").Warn(e, "the script " + _selected.Path + " could not be read; the run is blocked");
+                return SessionMessages.ScriptUnreadable(_selected.Path, e.Message);
+            }
 
             var required = SirilScript.RequiredFolders(text);
             RequiredFolders = required;
