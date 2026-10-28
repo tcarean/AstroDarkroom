@@ -60,31 +60,42 @@ public class AutomationTreeTests
             await vm.OpenAsync(tif);
             Assert.True(vm.HasResult, vm.Error);
             var window = new MainWindow { DataContext = vm };
-            var content = (FrameworkElement)window.Content;
-            var tabs = (TabControl)window.FindName("Tabs");
-            AutomationPeer tabsPeer = UIElementAutomationPeer.CreatePeerForElement(tabs);
-
-            Assert.NotEmpty(tabs.Items);
-            foreach (TabItem item in tabs.Items)
+            try
             {
-                tabs.SelectedItem = item;
-                content.Measure(new Size(1400, 860)); content.Arrange(new Rect(0, 0, 1400, 860)); content.UpdateLayout();
-                tabsPeer.ResetChildrenCache();
-                AutomationPeer itemPeer = tabsPeer.GetChildren().OfType<ItemAutomationPeer>().Single(p => p.Item == item);
-                itemPeer.ResetChildrenCache();
+                var content = (FrameworkElement)window.Content;
+                var tabs = (TabControl)window.FindName("Tabs");
+                AutomationPeer tabsPeer = UIElementAutomationPeer.CreatePeerForElement(tabs);
 
-                Assert.Contains(itemPeer.GetChildren() ?? new List<AutomationPeer>(), p => p is UIElementAutomationPeer u && u.Owner == item.Content);
-                if (item.Content is TonesView)
-                    Assert.Contains(Descendants(itemPeer), p => p.GetAutomationControlType() == AutomationControlType.Button && p.GetName() == "Preview");
+                Assert.NotEmpty(tabs.Items);
+                bool sawTones = false;
+                foreach (TabItem item in tabs.Items)
+                {
+                    tabs.SelectedItem = item;
+                    content.Measure(new Size(1400, 860)); content.Arrange(new Rect(0, 0, 1400, 860)); content.UpdateLayout();
+                    tabsPeer.ResetChildrenCache();
+                    AutomationPeer itemPeer = tabsPeer.GetChildren().OfType<ItemAutomationPeer>().Single(p => p.Item == item);
+                    itemPeer.ResetChildrenCache();
+
+                    Assert.Contains(itemPeer.GetChildren() ?? new List<AutomationPeer>(), p => p is UIElementAutomationPeer u && u.Owner == item.Content);
+                    if (item.Content is TonesView)
+                    {
+                        sawTones = true;
+                        Assert.Contains(Descendants(itemPeer), p => p.GetAutomationControlType() == AutomationControlType.Button && p.GetName() == "Preview");
+                    }
+                }
+                Assert.True(sawTones, "no tab holds the Tonuri view");
+
+                await vm.CurvesComputation;
             }
-
-            await vm.CurvesComputation;
-
-            // Radio buttons with a GroupName and no PresentationSource, as in a window never
-            // shown, form one group across the process: the Curves tab's Print box left checked
-            // here would uncheck the Print box of a later test's CurvesView. Without its
-            // view-model the window's boxes go back to unchecked.
-            window.DataContext = null;
+            finally
+            {
+                // Radio buttons with a GroupName and no PresentationSource, as in a window never
+                // shown, form one group across the process: the Curves tab's Print box left
+                // checked here would uncheck the Print box of a later test's CurvesView, a failure
+                // of this test included. Without its view-model the window's boxes go back to
+                // unchecked.
+                window.DataContext = null;
+            }
         });
     }
 }
