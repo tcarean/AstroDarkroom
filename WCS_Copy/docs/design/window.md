@@ -127,7 +127,8 @@ line under it, and that the copyright, the explanation and the window's single A
 the window, and that Help can run from the button; the two lines are the first two the console
 prints at `--help`, in each language. `AboutTests` bind the About view-model to `VersionInfo`
 and `LicenseInfo` and check the console prints the same five warranty lines; `AppTests` cover
-`Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`, the script's `SIZES`
-line and the two `ApplicationIcon` paths together. The tests that run the core await
-`Preview()` or `Copy()`; the smoke tests that do so run through `StaFixture.InvokeAsync`, since
-the outcome comes back on the dispatcher, which a blocking `Invoke` would hold.
+`Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`,
+the script's `SIZES` line and the two `ApplicationIcon` paths together. The tests that run the
+core await `Preview()` or `Copy()`; the smoke tests that do so run through
+`StaFixture.InvokeAsync`, since the outcome comes back on the dispatcher, which a blocking
+`Invoke` would hold.

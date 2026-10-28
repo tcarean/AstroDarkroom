@@ -7,14 +7,16 @@ Status: accepted 2026-10-28
 
 On 2026-10-28 the owner asked for the band FlatCheck has at the top of its window (the name
 with the version, the copyright, the About button) and for a short explanation of what CopyWcs
-does, in both interface languages. FlatCheck's band, the same shape in DarksCheck, LightsCheck
-and AstroPhotoAnalyzer, is a `Border` on `PanelBg` with a 1 px `BorderBr` line under it:
+does, in both interface languages. FlatCheck's band, which DarksCheck, LightsCheck and
+AstroPhotoAnalyzer share (DarksCheck and LightsCheck with a further column of settings before
+the buttons), is a `Border` on `PanelBg` with a 1 px `BorderBr` line under it:
 `VersionInfo.Banner` over the copyright on the left, what the window works on in the middle
 (the session folder; AstroPhotoAnalyzer's image and ICC profile), the buttons on the right with
-About last, run by `ApplicationCommands.Help` (F1) and carrying a tooltip. CopyWcs has no folder, so the middle of its band is free; its About button sat in the
-row of Preview and Copy. Two placements of the explanation were shown to the owner as mockups
-at the window's 800 px width: in the middle of the band, where it takes two lines, or as a
-paragraph under the band, above the source.
+About last, run by `ApplicationCommands.Help` (F1) and carrying a tooltip. CopyWcs has no
+folder, so the middle of its band is free; its About button sat in the row of Preview and Copy.
+Two placements of the explanation were shown to the owner as mockups at the window's 800 px
+width: in the middle of the band, where it takes two lines, or as a paragraph under the band,
+above the source.
 
 ## Decision
 
@@ -24,8 +26,8 @@ middle in the muted style, wrapped, and on the right the About button, which lea
 Preview and Copy, so the window has one. The owner chose the middle of the band on 2026-10-28.
 The explanation is a label of the window, a `{l:T En='...', Ro='...'}` pair in XAML: like the
 About window's tagline (a `T(...)` pair of `AboutViewModel`), it describes the tool, not a run,
-so it is not one of the sentences about the copy that ADR 0007 keeps in the core. The tooltip drops FlatCheck's "components":
-this About window has no third-party card.
+so it is not one of the sentences about the copy that ADR 0007 keeps in the core. The tooltip
+drops FlatCheck's "components": this About window has no third-party card.
 
 ## Alternatives rejected
 
