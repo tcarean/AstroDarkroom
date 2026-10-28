@@ -77,7 +77,7 @@ public class OverlayWindowTests
         Assert.Contains(" (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei", noWcs.Definition);
         Assert.Equal(TonesTabViewModel.NoWcsSentence, noWcs.NoWcsWarning);
         Assert.StartsWith("tinta exacta a prafului pe negru:", noWcs.ExactLine);
-        Assert.Equal($"Imaginea la tinta randului, cu ce e sub negrul hartiei si sub L* {Thresholds.LowSeparationLstar:0} vopsit", noWcs.PreviewTooltip);
+        Assert.Equal($"Imaginea la tinta randului; casutele ferestrei, odata bifate, vopsesc ce e sub negrul hartiei si sub L* {Thresholds.LowSeparationLstar:0}", noWcs.PreviewTooltip);
         Assert.Contains($"grila {new Parameters().SimulationTargets.Min():0.00}..{new Parameters().SimulationTargets.Max():0.00}", string.Join(" ", noWcs.Guide.Select(g => g.Text)));
         Assert.True(noWcs.OpenMap.CanExecute(null));
 
@@ -255,6 +255,12 @@ public class OverlayWindowTests
             Assert.True(preview.ShowBlack);
             Assert.False(preview.ShowLow);
             Assert.Equal(new[] { Visibility.Visible, Visibility.Collapsed, Visibility.Visible }, images.Select(i => i.Visibility));
+
+            boxes[0].IsChecked = false;
+            boxes[1].IsChecked = true;
+            Assert.False(preview.ShowBlack);
+            Assert.True(preview.ShowLow);
+            Assert.Equal(new[] { Visibility.Visible, Visibility.Visible, Visibility.Collapsed }, images.Select(i => i.Visibility));
         });
 
     [Fact]

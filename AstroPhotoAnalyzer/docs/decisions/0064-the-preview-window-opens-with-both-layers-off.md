@@ -38,5 +38,7 @@ not changed: its layers and its clouds stay on when it opens.
   asserts the view-model starts with both off; `R131_ThePreviewWindowOpensWithBothLayersOff`
   builds the window and asserts both boxes unchecked, both layers collapsed, and a ticked box
   showing its own layer alone.
-- The README's paragraph on **Preview** says the boxes start unchecked.
+- The README's paragraph on **Preview** says the boxes start unchecked; the `Preview` button's
+  tooltip and the Tonuri tab's guide paragraph on the simulation say the window's check boxes,
+  once ticked, paint the two classes, no longer that the image comes painted.
 - The `preview-rand` screen that `APA_DUMP_SCREENS` writes shows the image without the layers.
