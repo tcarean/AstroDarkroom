@@ -5,8 +5,9 @@
 The behaviour is R-070 to R-076; the reasons are ADR 0009. The pieces copied from LightsCheck
 (`Theme/Dark.xaml`, `Presentation/*.cs`, `Views/AboutWindow.*`, `ViewModels/AboutViewModel.cs`,
 the test fixture `StaFixture`) are marked as such in their headers and are LightsCheck's to
-improve first; `Theme/Rows.xaml` (DarksCheck's templates, merging the theme), `MainViewModel`,
-the views and `WindowTexts` are DarksCheck's own.
+improve first; `Presentation/AccessibleTabControl.cs` was taken from AstroPhotoAnalyzer with the
+theme's tab style it reads, as LightsCheck took both (ADR 0024); `Theme/Rows.xaml` (DarksCheck's
+templates, merging the theme), `MainViewModel`, the views and `WindowTexts` are DarksCheck's own.
 
 ## The shape
 
@@ -19,6 +20,14 @@ code. The six tab views under `Views/` are `UserControl`s with no code of their 
 (`CopyLabelFromView`, `ChoosePartnerFromView`, `ClearPartnerFromView`, `RerunFromView`),
 since the folder dialogs and the clipboard belong to the window. `AboutWindow` is the only
 second window.
+
+The tab control is an `AccessibleTabControl`, whose automation peer gives each tab the stock
+`TabItemAutomationPeer`'s children and, under the selected tab only, the children of the
+presenter the theme's template names `ContentHost`: the selected tab's content, so a screen
+reader reaches it (R-079, ADR 0024). The stock peer adds that content only through the stock
+name `PART_SelectedContentHost`, which would also move the keyboard focus into a tab on a click
+on its header. The theme's tab style targets the class, and the window's local style, the one
+that hides the tabs until `HasResult`, is based on that type's style.
 
 ## One view-model, fed by the core
 
@@ -149,4 +158,8 @@ the lattice hot pixels, three biases, four lights at 1.3 of the darks, a partner
 `PresentationTraceSources`; with `DARKSCHECK_DUMP_SCREENS=<folder>` each render is saved as a
 PNG. `StaFixture` is the one STA thread with a `Dispatcher.Run` loop the view-model's awaits
 need; the assembly disables test parallelization. `MainViewModelTests` cover R-070 to R-076
-without a window, the report tab against `Program.Run`'s text.
+without a window, the report tab against `Program.Run`'s text. `AutomationTreeTests` (R-079)
+select each tab of a window over the same session and ask the automation peers in process: the
+tab's content under its item, once, and under no other tab's item. Keyboard focus needs a
+window on screen, which no test shows, so the second test makes WPF's own lookup of the stock
+presenter name in the applied template and finds nothing.
