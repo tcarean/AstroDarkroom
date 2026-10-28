@@ -91,7 +91,9 @@ over its surroundings, so the grain of a stretched sky is not counted as one; fa
 left out with it, and the resolution is the bright stars'.
 
 **On the right, seven tabs.** Most figures have a line under them saying what they measure and,
-where one applies, the threshold they are judged by.
+where one applies, the threshold they are judged by. Ctrl+Tab and Ctrl+Shift+Tab change the tab;
+after a click on a tab, Up and Down scroll it. A screen reader such as Narrator reads what each
+tab shows.
 
 | Tab | What it shows |
 | --- | --- |
