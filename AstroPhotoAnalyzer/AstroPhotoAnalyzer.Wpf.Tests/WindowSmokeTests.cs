@@ -86,7 +86,7 @@ public class WindowSmokeTests
         enc.Save(fs);
     }
 
-    static string DarkTiff(TempWorkspace ws)
+    internal static string DarkTiff(TempWorkspace ws)
     {
         Raster r = Scenes.DarkSky();
         return ws.WriteFile("cer-intunecat.tif", TiffTestData.Build16Rgb(r.W, r.H,
