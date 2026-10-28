@@ -102,8 +102,9 @@ that the console can is `--lens` by hand: a body without a raw in `flats/` gets 
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
 
 **Without Adobe's profiles the card says so first** (R-113, ADR 0073). `Populate` takes the
-sources the run searched (`query.Sources`; null without a raw, when nothing was searched) and
-shows the core's `AdobeMissing` and `AdobeSearched`, empty unless that search found no Adobe
+sources the run searched (`query.Sources`; null without a raw, when the run compares nothing and
+does not wait for the catalog, which the Sintetic tab's prefill loads at every opening anyway)
+and shows the core's `AdobeMissing` and `AdobeSearched`, empty unless that search found no Adobe
 file. The block sits at the top of the card's `StackPanel`, above the rows or the gap: the
 paragraph in the window's red for a message (`#F0857E`), then `AdobeInstall`, the link to
 `AdobeDngConverterUrl` and the folders searched. The link is a `Hyperlink`, whose

@@ -19,7 +19,7 @@
 //
 // Outside a navigation window a Hyperlink only raises RequestNavigate, a routed event: each
 // window that shows links catches it on its root and calls Open here - the "Despre" window for
-// its components, the main window for the links its tabs show.
+// the licence's and the components' links, the main window for the links its tabs show.
 
 using System;
 using System.ComponentModel;

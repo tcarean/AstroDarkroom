@@ -23,7 +23,10 @@ holds only `lensfun/`, which is what a computer without Adobe looks like:
 - The author's computer holds 3531 Adobe files in `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0`
   and 3633 in each Lightroom folder, so the message never shows there.
 - The window's `ProfileCatalog` locates the profiles once per window; a search that finds no
-  Adobe file is not a failure and is not repeated.
+  Adobe file is not a failure and is not repeated. The Sintetic tab's prefill loads it at every
+  opening of a folder with a master; the Structure tab waits for it only when it compares, that
+  is with a raw in `flats/` (found by the code review, 2026-10-28; the plan had said nothing was
+  searched without a raw).
 - Adobe's DNG Converter page, checked in a browser:
   `https://helpx.adobe.com/camera-raw/desktop/dng-and-file-formats/adobe-dng-converter.html`,
   where the older helpx address redirects, with downloads for Windows x64 and ARM64.
@@ -42,7 +45,9 @@ recommendation the same day. The rest were stated in the plan the owner approved
   (`AdobeMissing`, `AdobeInstall`, `AdobeSearched`, `AdobeDngConverterUrl`); the console's
   report, and so the saved `Test result.txt` and the golden files, do not change.
 - **What**: at the top of the card, a red paragraph (`#F0857E`, the window's colour for a
-  message) saying the profiles were not found and what that leaves; then, in the card's muted
+  message) saying the profiles were not found and, when the `lensfun/` folder is there, what that
+  leaves (without it the card's gap already says no profile is on the machine, and the review
+  found the paragraph contradicting it); then, in the card's muted
   text, to install the free Adobe DNG Converter, or Lightroom Classic, Lightroom or Photoshop's
   Camera Raw, and to restart FlatCheck; the link to Adobe's DNG Converter page, opened in the
   browser; the folders searched, in faint text.
@@ -54,7 +59,9 @@ recommendation the same day. The rest were stated in the plan the owner approved
   approved; the owner chose this answer over keeping `Process.Start` in the About window for
   both links, or a link that cannot be clicked (2026-10-28). The test keeps its name, which ADR
   0055 cites.
-- **Without a raw** in `flats/` the tab does not search, so it says nothing about Adobe.
+- **Without a raw** in `flats/` the tab's run does not search the profiles, so it says nothing
+  about Adobe. The owner kept this answer after the review found that the window loads the
+  catalog anyway (2026-10-28).
 - **After installing**, FlatCheck is restarted; `ProfileCatalog` is unchanged.
 
 ## Alternatives rejected
@@ -66,9 +73,11 @@ recommendation the same day. The rest were stated in the plan the owner approved
   call away.
 - **The product's name without a URL.** Nothing to go stale, but the user would have to search
   for it; Adobe kept a redirect from the older address, and the URL is one constant.
-- **Searching without a raw too, to warn earlier.** The card's problem is then the missing raw,
-  in the Siril workflow the raws are in `flats/` (ADR 0031), and the search costs a second or
-  two on the first open.
+- **Showing it without a raw too, to warn earlier.** The card's problem is then the missing raw,
+  and in the Siril workflow the raws are in `flats/` (ADR 0031). It would cost no search, since
+  the Sintetic tab's prefill loads the catalog anyway, but the tab would wait for that load
+  before showing its result (a second or two warm; the first cold start of `--lenses` took
+  11 s, ADR 0066).
 - **Searching again on every folder opened while Adobe is missing, so that no restart is
   needed.** A change to `ProfileCatalog` for a one-time event.
 - **Fixing the range-only identification in this task.** It is a design of its own, with its
@@ -81,4 +90,6 @@ recommendation the same day. The rest were stated in the plan the owner approved
 - The URL is a fact about Adobe's site that can go stale; it lives in one constant, whose form
   (https, `helpx.adobe.com`) a test checks.
 - Guarded by the R-113 tests in `FlatCheck.Tests` (`StructureReportTests`) and
-  `FlatCheck.Wpf.Tests` (`StructureTabTests`, and the window render in `WindowSmokeTests`).
+  `FlatCheck.Wpf.Tests`: `StructureTabTests`, and in `WindowSmokeTests` the render (the block
+  visible, red, above the first row), the link's route out of the tab, and a text check that
+  the main window declares its handler (raising the event there would open the browser).

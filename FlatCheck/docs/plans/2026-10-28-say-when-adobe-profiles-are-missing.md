@@ -186,3 +186,26 @@ is absent. |
 - Gate green (1123 + 334 tests); no golden regenerated. `/validate` on the real masters: the 36
   large files present, 48 validation tests passed, every figure of V-001 to V-040 equal to the
   recorded one (drift 0), V-041 to V-048 unchanged.
+
+## Code review (2026-10-28)
+
+A subagent reviewed the branch (6553cda) against `main`; its six findings were checked in the code
+and all held. Applied in the second commit:
+
+- Fact 5 and D4 rested on a false premise: the window does search the profiles without a raw,
+  because the Sintetic tab's prefill loads the shared `ProfileCatalog` at every opening. Put back
+  to the owner, who kept D4; ADR 0073's reason (the search's cost) was corrected, and the README,
+  the CHANGELOG, R-113, the window note and the no-raw test's summary now say "when the tab's run
+  searched", with a raw in `flats/`.
+- With no profile at all, the red paragraph said the lens is looked for in lensfun while the gap
+  under it said lensfun's folder is missing too: without `lensfun/` the paragraph now keeps its
+  first sentence only (a failing test first, in each test project).
+- The link's opening had no test: the render test now raises `RequestNavigate` on the card's link
+  and checks that it carries Adobe's URL out of the tab, and a text check pins the main window's
+  handler (raising it in a real window would open the browser). The owner chose this over a
+  launcher seam with a `MainWindow` test.
+- The tests named "Above" checked only the view-model: the render test now finds the red block,
+  visible and red, above the first row; the other test was renamed.
+- `modes-structure.md` said the console's report is the same with or without Adobe (its rows
+  differ); it now says R-113 adds no line to it. The About window's link handler, `ExternalLink`'s
+  header and `Dark.xaml`'s `Hyperlink` style comment named too few of the links they serve.

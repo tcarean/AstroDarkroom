@@ -617,8 +617,9 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Without a raw in flats/ the tab searches no profile, so it does not know whether Adobe is
-    /// installed and says nothing about it; the card says why it cannot compare.
+    /// Without a raw in flats/ the tab's run searches no profile and does not wait for the
+    /// catalog (in the window the Sintetic tab's prefill loads it anyway), so it says nothing
+    /// about Adobe; the card says why it cannot compare.
     /// </summary>
     [Fact]
     public async Task R113_WithoutARawNothingIsSearchedSoNothingIsSaidAboutAdobe()
@@ -637,10 +638,13 @@ public class StructureTabTests
         Assert.Contains("niciun raw langa master", vm.ProfileGap);
     }
 
-    /// <summary>With no profile at all, the message sits above the card's "no profile on this
-    /// machine".</summary>
+    /// <summary>
+    /// With no profile at all, the card says Adobe's were not found and, in its gap, that there
+    /// is no profile on this machine; the red paragraph does not claim lensfun is searched, since
+    /// the gap says its folder is missing too. Where the block sits is the render test's.
+    /// </summary>
     [Fact]
-    public async Task R113_WithNoProfileAtAllTheCardSaysSoAboveTheGap()
+    public async Task R113_WithNoProfileAtAllTheCardSaysSoAndTheGapToo()
     {
         using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
         using var ws = new TempWorkspace();
@@ -651,6 +655,7 @@ public class StructureTabTests
         Assert.True(vm.HasResult, vm.ErrorText);
         Assert.Equal(StructureReport.AdobeMissing(none), vm.AdobeMissing);
         Assert.NotEmpty(vm.AdobeMissing);
+        Assert.DoesNotContain("lensfun", vm.AdobeMissing);
         Assert.False(vm.HasProfileRows);
         Assert.Contains("niciun profil de obiectiv pe masina", vm.ProfileGap);
     }

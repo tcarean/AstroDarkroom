@@ -417,22 +417,28 @@ namespace FlatCheck
 
         /// <summary>
         /// The red paragraph at the top of the window's profile card when the search found no
-        /// Adobe file: that the profiles are not on this computer, and what that leaves. A
-        /// search that found Adobe's files has nothing to say, and neither has one that never
-        /// ran (no raw beside the master).
+        /// Adobe file: that the profiles are not on this computer and, when the lensfun/ folder
+        /// is there, what that leaves. A search that found Adobe's files has nothing to say,
+        /// and neither has a run that searched nothing (no raw beside the master).
         /// </summary>
-        /// <param name="s">The sources the comparison searched; null when nothing was
-        /// searched.</param>
-        /// <returns>Two sentences; "" when <paramref name="s"/> is null or holds at least one
-        /// Adobe file.</returns>
+        /// <param name="s">The sources the run searched; null when it searched
+        /// nothing.</param>
+        /// <returns>Two sentences, one without lensfun/ (the card's gap then says no profile is
+        /// on the machine); "" when <paramref name="s"/> is null or holds at least one Adobe
+        /// file.</returns>
         internal static string AdobeMissing(ProfileSources s)
-            => s == null || s.AdobeFiles > 0 ? ""
-             : T("Adobe's lens profiles were not found on this computer. Without them the lens is looked for in lensfun alone, "
-                 + "the database that ships with FlatCheck: one database instead of two, and a raw that names no lens "
-                 + "(a Nikon writes only an ID) is matched by its focal range alone.",
-                 "Profilele de obiectiv Adobe nu au fost gasite pe acest calculator. Fara ele obiectivul e cautat doar in lensfun, "
-                 + "baza livrata cu FlatCheck: o singura baza in loc de doua, iar un raw care nu numeste obiectivul "
-                 + "(un Nikon scrie doar un ID) e potrivit doar dupa gama de focale.");
+        {
+            if (s == null || s.AdobeFiles > 0) return "";
+            string missing = T("Adobe's lens profiles were not found on this computer.",
+                               "Profilele de obiectiv Adobe nu au fost gasite pe acest calculator.");
+            return !s.LensfunPresent ? missing
+                 : missing + " " + T("Without them the lens is looked for in lensfun alone, the database that ships with FlatCheck: "
+                                     + "one database instead of two, and a raw that names no lens (a Nikon writes only an ID) "
+                                     + "is matched by its focal range alone.",
+                                     "Fara ele obiectivul e cautat doar in lensfun, baza livrata cu FlatCheck: o singura baza "
+                                     + "in loc de doua, iar un raw care nu numeste obiectivul (un Nikon scrie doar un ID) "
+                                     + "e potrivit doar dupa gama de focale.");
+        }
 
         /// <summary>
         /// What to install to get Adobe's profiles, and that FlatCheck must then restart: the
@@ -447,8 +453,8 @@ namespace FlatCheck
                  + "Lightroom si Camera Raw din Photoshop. Apoi reporneste FlatCheck: le cauta o singura data cat timp ruleaza.");
 
         /// <summary>The folders the search looked in, for the line under the link.</summary>
-        /// <param name="s">The sources the comparison searched; null when nothing was
-        /// searched.</param>
+        /// <param name="s">The sources the run searched; null when it searched
+        /// nothing.</param>
         /// <returns>"Searched in: " and the folders, comma-separated; "" whenever
         /// <see cref="AdobeMissing"/> is.</returns>
         internal static string AdobeSearched(ProfileSources s)

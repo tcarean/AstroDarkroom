@@ -603,10 +603,11 @@ public class StructureReportTests
     // ---------------------------------------------------------------- without Adobe's profiles
 
     /// <summary>Sources found by a search of two Adobe folders that held
-    /// <paramref name="adobeFiles"/> files.</summary>
-    static ProfileSources AdobeSearch(int adobeFiles)
+    /// <paramref name="adobeFiles"/> files, beside a lensfun/ folder when
+    /// <paramref name="lensfun"/>.</summary>
+    static ProfileSources AdobeSearch(int adobeFiles, bool lensfun = true)
         => new(new[] { @"C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0", @"D:\profiles\Adobe" }, adobeFiles, 0, 0,
-               "lf", true, null, LensCatalog.Empty, LensfunData.Empty);
+               "lf", lensfun, null, LensCatalog.Empty, LensfunData.Empty);
 
     /// <summary>
     /// The red paragraph and the folders line belong to a search that found no Adobe file:
@@ -650,6 +651,21 @@ public class StructureReportTests
             Assert.Contains("reporneste FlatCheck", StructureReport.AdobeInstall());
             Assert.Equal(@"Cautate in: C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0, D:\profiles\Adobe", StructureReport.AdobeSearched(s));
         }
+    }
+
+    /// <summary>
+    /// With neither Adobe's files nor the lensfun/ folder, the card's gap already says no
+    /// profile is on the machine: the red paragraph then says only that Adobe's were not found,
+    /// never that the lens is looked for in lensfun.
+    /// </summary>
+    [Fact]
+    public void R113_WithoutLensfunEitherTheParagraphDoesNotSayLensfunIsSearched()
+    {
+        ProfileSources s = AdobeSearch(0, lensfun: false);
+        using (Ui.Use(UiLanguage.English))
+            Assert.Equal("Adobe's lens profiles were not found on this computer.", StructureReport.AdobeMissing(s));
+        using (Ui.Use(UiLanguage.Romanian))
+            Assert.Equal("Profilele de obiectiv Adobe nu au fost gasite pe acest calculator.", StructureReport.AdobeMissing(s));
     }
 
     /// <summary>Each text differs between the two languages and uses no diacritics.</summary>

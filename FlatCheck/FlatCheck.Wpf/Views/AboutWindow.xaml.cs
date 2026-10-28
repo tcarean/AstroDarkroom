@@ -45,8 +45,8 @@ namespace FlatCheck.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         }
 
-        /// <summary>Opens a component's link in the system's browser, through
-        /// <see cref="ExternalLink.Open"/>.</summary>
+        /// <summary>Opens a link of the window, the licence's or a component's, in the system's
+        /// browser, through <see cref="ExternalLink.Open"/>.</summary>
         /// <param name="sender">The window, where the link's event arrives.</param>
         /// <param name="e">The navigation; marked handled.</param>
         void OpenLink(object sender, RequestNavigateEventArgs e) => ExternalLink.Open(e);

@@ -29,14 +29,20 @@
 // start. Now it would fail here.
 //
 // What is checked: the window is built, laid out, rendered into a bitmap, and produces no
-// binding error on the way. What is not checked: how it looks.
+// binding error on the way; for the Structure tab's message without Adobe (R-113), also that it
+// is on screen above the rows and that its link leaves the tab. What is not checked: how it
+// looks.
 
 using FlatCheck.Tests;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 
 namespace FlatCheck.Wpf.Tests;
 
@@ -302,12 +308,80 @@ public class WindowSmokeTests
 
             var vm = new StructureTabViewModel();
             vm.Populate(compared, null, sources);
-            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structura-fara-adobe");
+            var view = new StructureView { DataContext = vm };
+            Render(view, h: 1800, name: "tab-structura-fara-adobe");
             Assert.NotEmpty(vm.AdobeMissing);
             Assert.True(vm.HasProfileRows);
 
+            // On screen, in the window's red for a message, above the first profile row.
+            TextBlock red = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.AdobeMissing);
+            Assert.Equal(Visibility.Visible, ((UIElement)VisualTreeHelper.GetParent(red)).Visibility);
+            Assert.True(red.ActualHeight > 0);
+            Assert.Equal(Color.FromRgb(0xF0, 0x85, 0x7E), ((SolidColorBrush)red.Foreground).Color);
+            TextBlock firstRow = Descendants(view).OfType<TextBlock>().First(t => t.Text == vm.ProfileRows[0].Lens);
+            Assert.True(red.TranslatePoint(new Point(), view).Y < firstRow.TranslatePoint(new Point(), view).Y);
+
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
+    }
+
+    /// <summary>
+    /// The card's link carries Adobe's DNG Converter page, and its RequestNavigate leaves the
+    /// tab unhandled, so it reaches the window around it (R-113). A stand-in root catches it
+    /// here: MainWindow's own handler would open the browser.
+    /// </summary>
+    [Fact]
+    public void R113_TheCardsLinkCarriesAdobesPageOutOfTheTab()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, withAdobe: false);
+        var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
+        StructureOutcome plain = new(r, null, null, null);
+
+        _sta.Invoke(() =>
+        {
+            var vm = new StructureTabViewModel();
+            vm.Populate(plain, null, sources);
+            var view = new StructureView { DataContext = vm };
+            var root = new Border { Child = view };
+            Uri? reached = null;
+            root.AddHandler(Hyperlink.RequestNavigateEvent, new RequestNavigateEventHandler((_, e) => { reached = e.Uri; e.Handled = true; }));
+            Render(root, h: 1800);
+
+            Hyperlink link = Assert.Single(Descendants(view).OfType<TextBlock>().SelectMany(t => t.Inlines.OfType<Hyperlink>()));
+            Assert.Equal(StructureReport.AdobeDngConverterUrl, link.NavigateUri.AbsoluteUri);
+            link.RaiseEvent(new RequestNavigateEventArgs(link.NavigateUri, null) { RoutedEvent = Hyperlink.RequestNavigateEvent, Source = link });
+            Assert.Equal(link.NavigateUri, reached);
+        });
+    }
+
+    /// <summary>
+    /// The main window catches the links its tabs raise and opens them through ExternalLink
+    /// (R-113). A text check: raising the event in a real window would start the browser.
+    /// </summary>
+    [Fact]
+    public void R113_TheMainWindowOpensTheLinksItsTabsRaise()
+    {
+        string dir = Path.Combine(RepoDir(), "FlatCheck.Wpf");
+
+        Assert.Contains("Hyperlink.RequestNavigate=\"OpenLink\"", File.ReadAllText(Path.Combine(dir, "MainWindow.xaml")));
+        Assert.Contains("RequestNavigateEventArgs e) => ExternalLink.Open(e);", File.ReadAllText(Path.Combine(dir, "MainWindow.xaml.cs")));
+    }
+
+    /// <summary>The FlatCheck folder, two levels above this file, as in IconTests.</summary>
+    static string RepoDir([CallerFilePath] string thisFile = "")
+        => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
+
+    /// <summary>Every element under <paramref name="node"/> in the visual tree, depth
+    /// first.</summary>
+    static IEnumerable<DependencyObject> Descendants(DependencyObject node)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(node, i);
+            yield return child;
+            foreach (var d in Descendants(child)) yield return d;
+        }
     }
 
     /// <summary>

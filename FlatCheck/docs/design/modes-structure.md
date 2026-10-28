@@ -85,7 +85,9 @@ library figures of 2026-09-18 and the guards. ADR 0030 holds how the lens is ide
 - What the search left out is said on the window's card only (R-113, ADR 0073):
   `StructureReport.AdobeMissing` and `AdobeSearched` take the sources the run searched and give
   text only when that search found no Adobe file (`ProfileSources.AdobeFiles == 0`), "" when it
-  found one or when nothing was searched (null); `AdobeInstall` and `AdobeDngConverterUrl` are
-  the instructions and the link under them. `Write` prints none of them, so the console's report and the goldens are the same
-  with or without Adobe on the machine.
+  found one or when the run searched nothing (null, no raw). Without the `lensfun/` folder
+  `AdobeMissing` keeps its first sentence only: the gap under it then says no profile is on the
+  machine. `AdobeInstall` and `AdobeDngConverterUrl` are the instructions and the link under
+  them. `Write` prints none of them: R-113 adds no line to the console's report and changes no
+  golden.
 - `--help` moved when the flags were added, and was re-approved.

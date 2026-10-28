@@ -182,8 +182,8 @@ namespace FlatCheck.Wpf
         /// <summary>Why it could not compare, when it could not; empty otherwise.</summary>
         public string ProfileGap { get => _profileGap; private set => Set(ref _profileGap, value); }
 
-        /// <summary>The red paragraph when the search found no Adobe profile (R-113); empty
-        /// otherwise, and when nothing was searched.</summary>
+        /// <summary>The red paragraph when the run's search found no Adobe profile (R-113);
+        /// empty otherwise, and when the run searched nothing.</summary>
         public string AdobeMissing { get => _adobeMissing; private set => Set(ref _adobeMissing, value); }
 
         /// <summary>What to install and that FlatCheck must restart; on screen only with
