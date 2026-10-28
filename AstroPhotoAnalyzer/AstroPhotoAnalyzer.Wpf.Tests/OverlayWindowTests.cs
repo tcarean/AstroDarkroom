@@ -206,7 +206,7 @@ public class OverlayWindowTests
         Assert.Contains("gamma 1.000", a.Caption);
         Assert.Contains("praful la L* 6.", a.Caption);
         Assert.Contains("sub negrul hartiei (L* 9.0): 100.0 % din pixeli", a.BlackLegend);
-        Assert.True(a.ShowBlack && a.ShowLow);
+        Assert.False(a.ShowBlack || a.ShowLow);   // both layers start off (ADR 0064)
         Assert.Equal(64, a.Width);
 
         PreviewWindowViewModel b = PreviewWindowViewModel.From(result, lifted);
@@ -215,6 +215,47 @@ public class OverlayWindowTests
         Assert.Contains("sub negrul hartiei (L* 9.0): 0.0 % din pixeli", b.BlackLegend);
         Assert.Contains("0.0 % din pixeli", b.LowLegend);
     }
+
+    /// <summary>
+    /// The window as it opens: both boxes unchecked and both layers hidden over the lifted image
+    /// (ADR 0064); a ticked box shows its own layer and leaves the other hidden.
+    /// </summary>
+    [Fact]
+    public void R131_ThePreviewWindowOpensWithBothLayersOff()
+        => _sta.Invoke(() =>
+        {
+            AnalysisResult result = Result(SyntheticRasters.Flat(64, 64, 0.08f));
+            PreviewWindowViewModel preview = PreviewWindowViewModel.From(result, result.Simulation.AsIs);
+            var window = new PreviewWindow { DataContext = preview };
+            var content = (FrameworkElement)window.Content;
+            content.Measure(new Size(1280, 760));
+            content.Arrange(new Rect(0, 0, 1280, 760));
+            content.UpdateLayout();
+
+            var boxes = new List<System.Windows.Controls.CheckBox>();
+            var images = new List<System.Windows.Controls.Image>();
+            void Collect(DependencyObject d)
+            {
+                foreach (object child in LogicalTreeHelper.GetChildren(d))
+                {
+                    if (child is System.Windows.Controls.CheckBox b) boxes.Add(b);
+                    if (child is System.Windows.Controls.Image i) images.Add(i);
+                    if (child is DependencyObject c) Collect(c);
+                }
+            }
+            Collect(content);
+
+            // The boxes: paper black, then L* 15. The images: the lifted one, then the L* 15 and
+            // the paper-black layers over it, in the XAML's order.
+            Assert.Equal(2, boxes.Count);
+            Assert.All(boxes, box => Assert.False(box.IsChecked));
+            Assert.Equal(new[] { Visibility.Visible, Visibility.Collapsed, Visibility.Collapsed }, images.Select(i => i.Visibility));
+
+            boxes[0].IsChecked = true;
+            Assert.True(preview.ShowBlack);
+            Assert.False(preview.ShowLow);
+            Assert.Equal(new[] { Visibility.Visible, Visibility.Collapsed, Visibility.Visible }, images.Select(i => i.Visibility));
+        });
 
     [Fact]
     public void R130_TheMapWindowRendersWithAWcsAndNoBindingErrors()

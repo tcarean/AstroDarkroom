@@ -67,6 +67,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `docs/`; the notices name the gamut figure among Unicolour's uses and list
   `xunit.runner.visualstudio` among the test packages (ADR 0050). The About window's list of
   components names them too: Unicolour's gamut figure and ImageSharp's 8-bit TIFF.
+- The preview window of a simulation row opens with its two check boxes unchecked: the image
+  lifted to the row's target is seen alone first, and the pixels under paper black and those
+  under L\* 15 are coloured only once their box is ticked; the legends keep their shares either
+  way (R-131; ADR 0064).
 
 ### Removed
 

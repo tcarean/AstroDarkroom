@@ -21,7 +21,8 @@
 //
 // The lifted image, the class of each pixel and the two shares come from the core (PrintPreview,
 // R-045); here they are painted, the amber legend's share is taken as the difference of the
-// two, and the user is let to switch the layers off.
+// two, and the user is let to switch the layers on: both start off, so the window opens on the
+// lifted image alone (ADR 0064).
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -37,7 +38,7 @@ namespace AstroPhotoAnalyzer.Wpf
         static readonly Color BlackColour = Color.FromArgb(140, 0xF8, 0x51, 0x49);
         static readonly Color LowColour = Color.FromArgb(100, 0xE3, 0xB3, 0x41);
 
-        bool _showBlack = true, _showLow = true;
+        bool _showBlack, _showLow;
 
         public string Title { get; private init; }
         public BitmapSource Image { get; private init; }
@@ -68,7 +69,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="row">
         /// The row: its gamma lifts the image, its figures fill the caption.
         /// </param>
-        /// <returns>The view-model, with both layers shown.</returns>
+        /// <returns>The view-model, with both layers hidden until their boxes are ticked.</returns>
         internal static PreviewWindowViewModel From(AnalysisResult r, SimulationRow row)
         {
             PrintPreviewResult p = PrintPreview.Render(r.Raster, row.Gamma, r.Parameters.Dmax);
