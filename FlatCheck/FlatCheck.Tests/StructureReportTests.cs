@@ -599,4 +599,87 @@ public class StructureReportTests
         }
         Assert.DoesNotMatch("[ăâîșțĂÂÎȘȚ]", StructureReport.ComparisonNote() + StructureReport.GapMeaning() + StructureReport.DepthAdvice(1, "REFA") + StructureReport.DepthAdvice(-1, "BUN"));
     }
+
+    // ---------------------------------------------------------------- without Adobe's profiles
+
+    /// <summary>Sources found by a search of two Adobe folders that held
+    /// <paramref name="adobeFiles"/> files.</summary>
+    static ProfileSources AdobeSearch(int adobeFiles)
+        => new(new[] { @"C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0", @"D:\profiles\Adobe" }, adobeFiles, 0, 0,
+               "lf", true, null, LensCatalog.Empty, LensfunData.Empty);
+
+    /// <summary>
+    /// The red paragraph and the folders line belong to a search that found no Adobe file:
+    /// with a single file found, or with nothing searched (no raw), there is nothing to say.
+    /// </summary>
+    [Fact]
+    public void R113_TheAdobeTextsAreEmptyWhenOneFileWasFoundOrNothingWasSearched()
+    {
+        Assert.Empty(StructureReport.AdobeMissing(AdobeSearch(1)));
+        Assert.Empty(StructureReport.AdobeSearched(AdobeSearch(1)));
+        Assert.Empty(StructureReport.AdobeMissing(null));
+        Assert.Empty(StructureReport.AdobeSearched(null));
+    }
+
+    /// <summary>
+    /// Without an Adobe file the card says the profiles were not found and what that leaves,
+    /// names the free DNG Converter and the other programs that bring them, says FlatCheck must
+    /// restart, and lists the folders searched, in each language.
+    /// </summary>
+    [Fact]
+    public void R113_WithoutAdobeFilesTheTextsSaySoNameTheConverterAndListTheFolders()
+    {
+        ProfileSources s = AdobeSearch(0);
+        using (Ui.Use(UiLanguage.English))
+        {
+            string missing = StructureReport.AdobeMissing(s);
+            Assert.StartsWith("Adobe's lens profiles were not found on this computer.", missing);
+            Assert.Contains("lensfun alone", missing);
+            Assert.Contains("focal range", missing);
+            string install = StructureReport.AdobeInstall();
+            Assert.Contains("free Adobe DNG Converter", install);
+            Assert.Contains("Lightroom Classic", install);
+            Assert.Contains("Camera Raw", install);
+            Assert.Contains("restart FlatCheck", install);
+            Assert.Equal(@"Searched in: C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0, D:\profiles\Adobe", StructureReport.AdobeSearched(s));
+        }
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            Assert.StartsWith("Profilele de obiectiv Adobe nu au fost gasite pe acest calculator.", StructureReport.AdobeMissing(s));
+            Assert.Contains("Adobe DNG Converter, gratuit", StructureReport.AdobeInstall());
+            Assert.Contains("reporneste FlatCheck", StructureReport.AdobeInstall());
+            Assert.Equal(@"Cautate in: C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0, D:\profiles\Adobe", StructureReport.AdobeSearched(s));
+        }
+    }
+
+    /// <summary>Each text differs between the two languages and uses no diacritics.</summary>
+    [Fact]
+    public void R113_TheAdobeTextsDifferBetweenLanguagesAndUseNoDiacritics()
+    {
+        ProfileSources s = AdobeSearch(0);
+        static string[] Texts(ProfileSources s, UiLanguage lang)
+        {
+            using (Ui.Use(lang))
+                return new[] { StructureReport.AdobeMissing(s), StructureReport.AdobeInstall(), StructureReport.AdobeSearched(s) };
+        }
+        string[] en = Texts(s, UiLanguage.English), ro = Texts(s, UiLanguage.Romanian);
+
+        for (int i = 0; i < en.Length; i++)
+        {
+            Assert.NotEqual(en[i], ro[i]);
+            Assert.All(en[i] + ro[i], c => Assert.True(c < 128, $"non-ASCII: '{c}'"));
+        }
+    }
+
+    /// <summary>The link is Adobe's own page for the DNG Converter, over https (checked in a
+    /// browser on 2026-10-28, ADR 0073).</summary>
+    [Fact]
+    public void R113_TheConverterLinkIsAdobesHttpsPage()
+    {
+        var uri = new Uri(StructureReport.AdobeDngConverterUrl);
+
+        Assert.Equal(Uri.UriSchemeHttps, uri.Scheme);
+        Assert.Equal("helpx.adobe.com", uri.Host);
+        Assert.EndsWith("/adobe-dng-converter.html", uri.AbsolutePath);
+    }
 }

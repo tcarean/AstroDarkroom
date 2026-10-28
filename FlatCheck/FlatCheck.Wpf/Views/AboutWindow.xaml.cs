@@ -23,7 +23,6 @@
 // notice beside ours. All the text comes through AboutViewModel; here remain only the two
 // window things: the dark title bar and opening the links in the browser.
 
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
 
@@ -46,26 +45,11 @@ namespace FlatCheck.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         }
 
-        /// <summary>
-        /// Opens the link in the system's browser. UseShellExecute is mandatory on
-        /// .NET Core - without it Process.Start tries to execute the URL as a program.
-        /// A system without an associated browser throws; that is no reason for the window
-        /// to crash.
-        /// </summary>
-        /// <param name="sender">The hyperlink.</param>
+        /// <summary>Opens a component's link in the system's browser, through
+        /// <see cref="ExternalLink.Open"/>.</summary>
+        /// <param name="sender">The window, where the link's event arrives.</param>
         /// <param name="e">The navigation; marked handled.</param>
-        void OpenLink(object sender, RequestNavigateEventArgs e)
-        {
-            e.Handled = true;
-            try
-            {
-                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-            }
-            catch (System.Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is System.InvalidOperationException)
-            {
-                NLog.LogManager.GetLogger("Window").Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
-            }
-        }
+        void OpenLink(object sender, RequestNavigateEventArgs e) => ExternalLink.Open(e);
 
         /// <summary>The "Inchide" button's handler: closes the window.</summary>
         /// <param name="sender">The button.</param>

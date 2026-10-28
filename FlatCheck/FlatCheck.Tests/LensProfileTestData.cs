@@ -358,9 +358,15 @@ internal static class LensProfileTestData
         return dir;
     }
 
-    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false)
+    /// <summary>
+    /// The sources located on <see cref="ProfilesDir"/>. Without <paramref name="withAdobe"/> the
+    /// Adobe folder searched is one that does not exist, so only lensfun/ is read: a computer
+    /// without Adobe software (R-113).
+    /// </summary>
+    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool withAdobe = true)
     {
         string dir = ProfilesDir(ws, tokinaOnTwoFormats, otherMounts);
-        return ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        string adobe = withAdobe ? dir : Path.Combine(ws.Dir, "no-adobe");
+        return ProfileLocator.Locate(new[] { adobe }, Path.Combine(dir, "lensfun"));
     }
 }

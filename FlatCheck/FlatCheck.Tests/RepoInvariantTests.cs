@@ -153,7 +153,9 @@ public class RepoInvariantTests
     /// <summary>
     /// ADR 0055 made checkable: siril-cli rewrites the settings file it is given, so every launch
     /// goes through SirilScriptRun, which always hands it a private copy with -i. The only other
-    /// process the code starts is the About window's link, opened by the shell. A new launch
+    /// process the code starts is a link a window shows, opened by the shell through
+    /// ExternalLink: the About window's links and, since ADR 0073, the Structure tab's link to
+    /// Adobe's DNG Converter (listed on the owner's yes, 2026-10-28). A new launch
     /// site in the applications or in a test, written in any of the three forms the pattern
     /// knows (a new Process or ProcessStartInfo, typed or target-typed, or the static Start),
     /// fails here until it is listed on purpose. It is a text scan, so a start reached through
@@ -163,7 +165,7 @@ public class RepoInvariantTests
     [Fact]
     public void OnlySirilScriptRunAndTheAboutLink_StartAProcess()
     {
-        string[] allowed = { "FlatCheck.Wpf/Session/SirilScriptRun.cs", "FlatCheck.Wpf/Views/AboutWindow.xaml.cs" };
+        string[] allowed = { "FlatCheck.Wpf/Presentation/ExternalLink.cs", "FlatCheck.Wpf/Session/SirilScriptRun.cs" };
         string[] found = CsSources()
             .Where(f => ProcessStart.IsMatch(File.ReadAllText(f)))
             .Select(f => Path.GetRelativePath(Root, f).Replace('\\', '/'))

@@ -36,7 +36,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         MinHeight="560" MinWidth="960"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource WindowBg}"
-        TextOptions.TextFormattingMode="Display">
+        TextOptions.TextFormattingMode="Display"
+        Hyperlink.RequestNavigate="OpenLink">
 
   <!-- "Despre" goes through ApplicationCommands.Help, whose default gesture is F1: the button
        and the key reach the same handler without a command on the view-model - which may not

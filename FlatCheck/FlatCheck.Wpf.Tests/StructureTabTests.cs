@@ -558,6 +558,117 @@ public class StructureTabTests
         Assert.Empty(vm.VerdictDetail);
     }
 
+    // ------------------------------------------ without Adobe's profiles (R-113)
+
+    /// <summary>The tab on <paramref name="sources"/>, with the fabricated raw in flats/.</summary>
+    static async Task<StructureTabViewModel> RunOn(SessionFixture f, ProfileSources sources)
+    {
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        await vm.RunAsync(f.Session, CancellationToken.None);
+        return vm;
+    }
+
+    /// <summary>
+    /// On a computer without Adobe software the comparison runs on lensfun alone; the card then
+    /// says the Adobe profiles were not found, what to install, the link and the folders
+    /// searched, all in the core's words, while the saved report stays the console's.
+    /// </summary>
+    [Fact]
+    public async Task R113_WithoutAdobeFilesTheCardSaysSoAndHowToGetThem()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, withAdobe: false);
+
+        var vm = await RunOn(f, sources);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(0, sources.AdobeFiles);
+        Assert.StartsWith("Profilele de obiectiv Adobe nu au fost gasite", vm.AdobeMissing);
+        Assert.Equal(StructureReport.AdobeMissing(sources), vm.AdobeMissing);
+        Assert.Equal(StructureReport.AdobeInstall(), vm.AdobeInstall);
+        Assert.Equal(StructureReport.AdobeDngConverterUrl, vm.AdobeLink);
+        Assert.Equal(StructureReport.AdobeSearched(sources), vm.AdobeSearched);
+        Assert.Contains(sources.AdobeDirectories[0], vm.AdobeSearched);
+        Assert.True(vm.HasProfileRows);                                // lensfun alone still compares
+        Assert.All(vm.ProfileRows, r => Assert.Equal("lensfun", r.Source));
+
+        var expected = new StringWriter();
+        RunReport.WriteBanner(expected);
+        StructureRun.Execute(f.Session.FlatMasterPath, expected,
+            new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => RawFrame() });
+        RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
+        Assert.Equal(expected.ToString(), File.ReadAllText(f.Session.ResultTextPath));
+        Assert.DoesNotContain("DNG Converter", vm.Report);             // the window's card only
+    }
+
+    /// <summary>With one Adobe file found there is nothing to say about Adobe.</summary>
+    [Fact]
+    public async Task R113_WithAdobeFilesTheCardSaysNothingAboutThem()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, sources) = await RunWithProfiles(f, ws);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.True(sources.AdobeFiles > 0);
+        Assert.Empty(vm.AdobeMissing);
+        Assert.Empty(vm.AdobeSearched);
+    }
+
+    /// <summary>
+    /// Without a raw in flats/ the tab searches no profile, so it does not know whether Adobe is
+    /// installed and says nothing about it; the card says why it cannot compare.
+    /// </summary>
+    [Fact]
+    public async Task R113_WithoutARawNothingIsSearchedSoNothingIsSaidAboutAdobe()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        using var ws = new TempWorkspace();
+        int searches = 0;
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => { searches++; return LensProfileTestData.Sources(ws, withAdobe: false); }), ImageLoader.LoadInfo);
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(0, searches);
+        Assert.Empty(vm.AdobeMissing);
+        Assert.Empty(vm.AdobeSearched);
+        Assert.Contains("niciun raw langa master", vm.ProfileGap);
+    }
+
+    /// <summary>With no profile at all, the message sits above the card's "no profile on this
+    /// machine".</summary>
+    [Fact]
+    public async Task R113_WithNoProfileAtAllTheCardSaysSoAboveTheGap()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var none = ProfileLocator.Locate(new[] { Path.Combine(ws.Dir, "no-adobe") }, Path.Combine(ws.Dir, "no-lensfun"));
+
+        var vm = await RunOn(f, none);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(StructureReport.AdobeMissing(none), vm.AdobeMissing);
+        Assert.NotEmpty(vm.AdobeMissing);
+        Assert.False(vm.HasProfileRows);
+        Assert.Contains("niciun profil de obiectiv pe masina", vm.ProfileGap);
+    }
+
+    [Fact]
+    public async Task R113_ResetClearsTheAdobeMessage()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var vm = await RunOn(f, LensProfileTestData.Sources(ws, withAdobe: false));
+        Assert.NotEmpty(vm.AdobeMissing);
+
+        vm.Reset();
+
+        Assert.Empty(vm.AdobeMissing);
+        Assert.Empty(vm.AdobeSearched);
+    }
+
     // -------------------------------------------------------- the map scale
 
     static MapScaleOption Cap(StructureTabViewModel vm, double? capPct)

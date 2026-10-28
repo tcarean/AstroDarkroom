@@ -1085,6 +1085,13 @@ camera on a telescope, or a lens without contacts: focal length 0, no ID, no nam
 as such, with what it lacks, not as a missing raw; the comparison is then made by naming the lens in
 the Synthetic tab, or in the console with `--lens`, `--focal` and `--fstop`.
 
+When no Adobe lens profile is found on the computer, the card opens with a red paragraph that says
+so: the comparison then has lensfun's profiles alone, and a raw that names no lens (a Nikon writes
+only an ID) is matched by its focal range alone. Under it: install the free Adobe DNG Converter (the
+link opens Adobe's page in the browser), or Lightroom Classic, Lightroom or Photoshop's Camera Raw,
+then restart FlatCheck; and the folders it looked in. The console's report does not carry this
+paragraph.
+
 It saves in the session folder:
 
 - **`Test result.txt`**: the console's output, identical: the version banner, the copyright, the

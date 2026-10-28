@@ -101,6 +101,17 @@ Netezire tab, which reuses `StructureRows.Tests`, are untouched. `Populate` is
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
 
+**Without Adobe's profiles the card says so first** (R-113, ADR 0073). `Populate` takes the
+sources the run searched (`query.Sources`; null without a raw, when nothing was searched) and
+shows the core's `AdobeMissing` and `AdobeSearched`, empty unless that search found no Adobe
+file. The block sits at the top of the card's `StackPanel`, above the rows or the gap: the
+paragraph in the window's red for a message (`#F0857E`), then `AdobeInstall`, the link to
+`AdobeDngConverterUrl` and the folders searched. The link is a `Hyperlink`, whose
+`RequestNavigate` bubbles to `MainWindow` and is opened by `Presentation/ExternalLink`, the
+code the "Despre" window's links use too (ADR 0037: links are handled once, on their window).
+The console prints none of it, so the saved report stays the console's. `ProfileCatalog`
+searches once per window, so the text asks for a restart after an install.
+
 #### Two places for the master
 
 ADR 0034 holds the whole of it: Siril's two conventions for where `pp_flat_stacked.fit` lands

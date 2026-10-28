@@ -520,6 +520,8 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   mounts and a lensfun file with the Tokina, a lens without vignetting and the D3300
   camera; the golden files `synthetic_written`, `synthetic_lensfun`,
   `synthetic_ambiguous`, `lenses`, `against_radial` pin the console output on them.
+  `Sources(..., withAdobe: false)` searches an Adobe folder that does not exist beside the same
+  lensfun file: a computer without Adobe software (R-113).
 
 ## 11. The master against the profiles, inside the structure mode
 
@@ -555,6 +557,9 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
   0065). Since 2026-10-26 the lens ID is read by mount and the camera's name of the lens is the
   first key (ADR 0068, section 10), so a Canon with an EF lens is identified, not reported as a
   raw that says nothing; a raw with an ID or a name is never this case.
+- A search that found no Adobe file is said on the window's card only, above the rows or the
+  gap, with what to install (R-113, ADR 0073); the texts are in `modes-structure.md`, the card
+  in `two-applications.md`.
 
 **Measured** (corner, stops; "nearest" is the profile that gives the verdict):
 

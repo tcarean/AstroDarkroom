@@ -272,6 +272,45 @@ public class WindowSmokeTests
     }
 
     /// <summary>
+    /// The structure tab on a computer without Adobe software (R-113): the red paragraph, the
+    /// instructions, the link to the DNG Converter and the folders searched, above the lensfun
+    /// rows. The result comes through Populate, with the sources the run searched.
+    /// </summary>
+    [Fact]
+    public void R113_TheStructureTabRendersTheAdobeMessageAboveTheLensfunRows()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, withAdobe: false);
+        var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
+        var master = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" }, FocalMm = 20, Camera = "Nikon D3300" };
+        var raw = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(),
+            FocalMm = 20,
+            FNumber = 2.8,
+            Camera = "NIKON D3300",
+            LensId = 139,
+            LensMinFocalMm = 11,
+            LensMaxFocalMm = 20,
+            LensMaxAperture = 2.8,
+        };
+        StructureOutcome compared = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw });
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+
+            var vm = new StructureTabViewModel();
+            vm.Populate(compared, null, sources);
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structura-fara-adobe");
+            Assert.NotEmpty(vm.AdobeMissing);
+            Assert.True(vm.HasProfileRows);
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+    }
+
+    /// <summary>
     /// The smoothing tab WITH a result - both maps, the warning, the two batteries - and in
     /// the refused state (a colour cube). The result comes through Populate, without a file
     /// written, as on the histogram tab.

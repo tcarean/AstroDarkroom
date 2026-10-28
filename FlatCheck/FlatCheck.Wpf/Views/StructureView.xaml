@@ -160,6 +160,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="{Binding ProfilesHeading}" />
           <Border Style="{StaticResource Card}">
             <StackPanel>
+              <!-- Without Adobe's profiles (R-113, ADR 0073), above whatever the card holds: that
+                   they were not found, in the window's red for a message; then what to install,
+                   the link to Adobe's page (MainWindow opens it in the browser) and the folders
+                   searched, in the card's own colours. The texts come from the core. -->
+              <StackPanel Margin="0,0,0,14"
+                          Visibility="{Binding AdobeMissing, Converter={StaticResource NotNullToVis}}">
+                <TextBlock Style="{StaticResource Muted}" Foreground="#F0857E" TextWrapping="Wrap"
+                           Text="{Binding AdobeMissing}" />
+                <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap"
+                           Text="{Binding AdobeInstall, Mode=OneWay}" />
+                <TextBlock Margin="0,4,0,0" TextWrapping="Wrap">
+                  <Hyperlink NavigateUri="{Binding AdobeLink, Mode=OneWay}">
+                    <Run Text="{Binding AdobeLink, Mode=OneWay}" />
+                  </Hyperlink>
+                </TextBlock>
+                <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" TextWrapping="Wrap"
+                           Text="{Binding AdobeSearched}" />
+              </StackPanel>
               <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding ProfileGap}"
                          Visibility="{Binding ProfileGap, Converter={StaticResource NotNullToVis}}" />
               <StackPanel Visibility="{Binding HasProfileRows, Converter={StaticResource BoolToVis}}">
