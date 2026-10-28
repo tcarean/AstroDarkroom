@@ -209,3 +209,5 @@ and all held. Applied in the second commit:
 - `modes-structure.md` said the console's report is the same with or without Adobe (its rows
   differ); it now says R-113 adds no line to it. The About window's link handler, `ExternalLink`'s
   header and `Dark.xaml`'s `Hyperlink` style comment named too few of the links they serve.
+- Gate green after the fixes (1124 + 336 tests). `/validate` again, since `Report/` changed: 48
+  passed, every measured line identical to the first run's.

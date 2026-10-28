@@ -186,8 +186,9 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 - 2026-10-28: re-measured at the wrap-up of the task that says on the Structure tab when Adobe's
   lens profiles are missing (R-113, ADR 0073), which added texts to `Report/StructureReport.cs`
   that the console does not print: the 36 large files present with their hashes, 48 passed, no
-  drift (every figure of V-001 to V-040 equal to the recorded one), 5.0 minutes. No figure
-  changed; no formula moved.
+  drift (every figure of V-001 to V-040 equal to the recorded one), 5.0 minutes. Again after the
+  code review's fix to the same file (046f3e3): 48 passed, every measured line identical to the
+  first run's, 4.3 minutes. No figure changed; no formula moved.
 
 - 2026-10-26: all 48 cases re-measured on `main` at 876782d (the merge of ADR 0068) while the
   README was rewritten in English (ADR 0069), whose tables quote V-016 to V-040: 48 passed, no
