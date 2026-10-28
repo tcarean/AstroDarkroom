@@ -230,7 +230,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// The tooltip of a row's Preview button: the threshold comes from Thresholds, not typed.
         /// </summary>
-        public string PreviewTooltip => Tr.Pick($"The image at the row's target, with what is under paper black and under L* {Fmt.F0(Thresholds.LowSeparationLstar)} painted", $"Imaginea la tinta randului, cu ce e sub negrul hartiei si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} vopsit");
+        public string PreviewTooltip => Tr.Pick($"The image at the row's target, in a separate window whose two check boxes, once ticked, paint what is under paper black and under L* {Fmt.F0(Thresholds.LowSeparationLstar)}", $"Imaginea la tinta randului, intr-o fereastra separata ale carei doua casute, odata bifate, vopsesc ce e sub negrul hartiei si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}");
 
         /// <summary>
         /// Opens the dust / sky map (R-130). Whoever listens to MapRequested opens the window;
@@ -472,7 +472,7 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "the stretch from the linear data in Siril up to that background. Under the table: the exact target at which the dust reaches black, "
                         + $"and the same target at a Dmax {Fmt.F1(Thresholds.DmaxSensitivityStep)} lower and higher, because the Dmax of a paper on a printer is rarely known better. "
                         + "It is a simulation: a real stretch (Siril, VeraLux) holds the shadows lower than the gamma curve, so the exact target is the curve's, "
-                        + $"not the stretch's. The Preview button of a row shows the image at its target, with what is under black and under L* {Fmt.F0(Thresholds.LowSeparationLstar)} painted. "
+                        + $"not the stretch's. The Preview button of a row opens the image at its target in a separate window, whose two check boxes, once ticked, paint what is under black and under L* {Fmt.F0(Thresholds.LowSeparationLstar)}. "
                         + $"A target that is too high washes the sky into grey; watch the \"L* > {Fmt.F0(Thresholds.HighlightLstar)}\" column.",
                         $"raspunde la \"si daca mut fundalul?\". Aplica pe o copie redusa a imaginii o curba gamma, aceeasi pe toate canalele, "
                         + $"care duce fundalul masurat la fiecare tinta din grila {Fmt.Level(grid.Min())}..{Fmt.Level(grid.Max())}, apoi remasoara praful si cerul. "
@@ -480,7 +480,7 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "stretch-ul din datele liniare in Siril pana la fundalul acela. Sub tabel: tinta exacta la care praful atinge negrul, "
                         + $"si aceeasi tinta la Dmax cu {Fmt.F1(Thresholds.DmaxSensitivityStep)} mai mic si mai mare, fiindca Dmax-ul unei hartii pe o imprimanta rar e stiut mai bine. "
                         + "E o simulare: un stretch adevarat (Siril, VeraLux) tine umbrele mai jos decat curba gamma, deci tinta exacta e a curbei, "
-                        + $"nu a lui. Butonul Preview al unui rand arata imaginea la tinta lui, cu ce e sub negru si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} vopsit. "
+                        + $"nu a lui. Butonul Preview al unui rand deschide imaginea la tinta lui intr-o fereastra separata, ale carei doua casute, odata bifate, vopsesc ce e sub negru si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}. "
                         + $"O tinta prea mare spala cerul in gri; urmareste coloana \"peste L*{Fmt.F0(Thresholds.HighlightLstar)}\"."),
                 },
             };
