@@ -67,3 +67,13 @@ Nothing in the steps. The band measured 57 px at 720 px wide in both languages (
 in two lines; the bottom line of the band on row 56 of `band-en.png`, `band-ro.png` and
 `window-preview.png`), so the planned 700 and 620 stand, the 57 rounded up. The gate ended
 green with 172 tests (132 + 40), the 170 of `main` and the two cases of the R038 theory.
+
+Two subagent reviews followed. The first found that the R038 theory pinned neither the band's
+left-to-right order nor that Help can run from About, and four inaccurate doc wordings (R-030's
+"under the options", ADR 0008 on the siblings' bands and on the tagline, the window note's sizes
+and a long line); d3a614b fixed them, and the strengthened theory fails on three broken bands
+(the Help handler removed, banner and About swapped, the middle column sized to its text). The
+second, on d3a614b alone, found three doc nits (lines the edits left over 96 characters, the
+settings column of DarksCheck's and LightsCheck's bands), fixed in dc9f56e. Left to the owner:
+the first Tab now lands on About, as in FlatCheck, and the 620 minimum height is more than a
+1366 x 768 screen at 125 % offers.
