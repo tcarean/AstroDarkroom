@@ -92,8 +92,9 @@ public partial class WindowSmokeTests
     private static TextBlock TextBlockWith(DependencyObject root, string text)
         => Assert.Single(Descendants(root).OfType<TextBlock>(), t => t.Text == text);
 
-    /// <summary>The top edge of an element in the coordinates of the rendered root.</summary>
-    private static double Top(Visual element, Visual root) => element.TransformToAncestor(root).Transform(new Point(0, 0)).Y;
+    /// <summary>Where an element was laid out, in the coordinates of the rendered root.</summary>
+    private static Rect Box(FrameworkElement element, Visual root)
+        => element.TransformToAncestor(root).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight));
 
     /// <summary>
     /// Both windows in English, with an outcome that has a refusal heading, a warning, the
@@ -217,8 +218,8 @@ public partial class WindowSmokeTests
 
     /// <summary>
     /// The band at the top (R-038): edge to edge on the panel colour with a line under it, the
-    /// console's first two lines on the left, the explanation, and the window's one About
-    /// button, run by Help like F1, in each language.
+    /// console's first two lines on the left, the explanation in the middle, and on the right
+    /// the window's one About button, which runs Help as F1 does, in each language.
     /// </summary>
     [Theory]
     [InlineData(false, "Copies the plate solve (WCS) from a FITS solved in Siril into the same image processed elsewhere, card by card, without touching its pixels.", "About", "Version and licence (F1)")]
@@ -242,7 +243,7 @@ public partial class WindowSmokeTests
             TextBlock banner = TextBlockWith(window, console[0]);
             Border band = Ancestors(banner).OfType<Border>()
                 .First(b => b.Background is SolidColorBrush brush && brush.Color == Color.FromRgb(0x23, 0x23, 0x26));
-            Assert.Equal(0.0, Top(band, window));
+            Assert.Equal(0.0, Box(band, window).Top);
             Assert.Equal(window.ActualWidth, band.ActualWidth);
             Assert.Equal(new Thickness(0, 0, 0, 1), band.BorderThickness);
             Assert.Equal(Color.FromRgb(0x3A, 0x3A, 0x40), Assert.IsType<SolidColorBrush>(band.BorderBrush).Color);
@@ -257,10 +258,18 @@ public partial class WindowSmokeTests
                 Assert.Contains(band, Ancestors(e));
             }
 
-            Assert.True(Top(banner, window) < Top(copyright, window));
+            // the banner over the copyright on the left, the explanation in the middle, About on
+            // the right and inside the window: a column swapped, or a line too wide to wrap, fails
+            Assert.True(Box(banner, window).Top < Box(copyright, window).Top);
+            Assert.True(Math.Max(Box(banner, window).Right, Box(copyright, window).Right) < Box(line, window).Left);
+            Assert.True(Box(line, window).Right < Box(button, window).Left);
+            Assert.True(Box(button, window).Right <= window.ActualWidth);
             Assert.Equal(TextWrapping.Wrap, line.TextWrapping);
+
+            // About runs the Help command, as F1 does, and the window's binding lets it run
             Assert.Same(ApplicationCommands.Help, button.Command);
             Assert.Contains(w.CommandBindings.Cast<CommandBinding>(), b => b.Command == ApplicationCommands.Help);
+            Assert.True(ApplicationCommands.Help.CanExecute(null, button));
             Assert.Equal(tip, button.ToolTip as string);
         });
 

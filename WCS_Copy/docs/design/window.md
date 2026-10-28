@@ -16,9 +16,10 @@ their headers and are the siblings' to improve first; `App`, `MainViewModel`, th
 `20,12`) over three columns, `Banner` in semi-bold over `Copyright` in `Faint`, the explanation
 of the tool in `Muted` (wrapped, the window's own pair), and the About button, whose
 `MinWidth` of 88 is the Browse buttons', so the two right-hand columns line up. The band is 57
-px high at 720 px wide in both languages (the explanation in two lines, measured on the
-rendered window on 2026-10-28), which is why the window opens at 700 by 800 with a minimum of
-620 by 720: the 640 and 560 it had before, plus the band, so the outcome card keeps its room.
+px high in both languages, the explanation in two lines (measured on 2026-10-28 in the tests'
+renders, 720 px wide, and in screenshots of the running window at its minimum size), so the
+window opens 700 px high instead of 640, with a minimum height of 620 instead of 560 (the
+widths stay 800 and 720): the outcome card keeps its room.
 
 The second row is the form, one column with the margin `20,16`: the three file rows (a label,
 a `TextBox` bound to the path with `UpdateSourceTrigger=PropertyChanged`, a Browse button, and
@@ -122,10 +123,11 @@ visual tree against a list of Romanian words; `COPYWCS_DUMP_SCREENS=<folder>` sa
 render as a PNG. The R-038 theory finds the band upward from the banner's text block (the
 nearest `Border` on `PanelBg`), checks that it starts at the top, spans the width and has the
 line under it, and that the copyright, the explanation and the window's single About button
-(run by Help, with its tooltip) sit inside it, the two lines equal to the first two lines the
-console prints at `--help`, in each language. `AboutTests` bind the About view-model to
-`VersionInfo` and `LicenseInfo` and check the console prints the same five warranty lines; `AppTests` cover `Parse`, `--lang` and
-the files from the arguments; `IconTests` tie the sizes of the `.ico`, the script's `SIZES`
+(run by Help, with its tooltip) sit inside it, left to right in that order with About inside
+the window, and that Help can run from the button; the two lines are the first two the console
+prints at `--help`, in each language. `AboutTests` bind the About view-model to `VersionInfo`
+and `LicenseInfo` and check the console prints the same five warranty lines; `AppTests` cover
+`Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`, the script's `SIZES`
 line and the two `ApplicationIcon` paths together. The tests that run the core await
 `Preview()` or `Copy()`; the smoke tests that do so run through `StaFixture.InvokeAsync`, since
 the outcome comes back on the dispatcher, which a blocking `Invoke` would hold.
