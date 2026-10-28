@@ -23,9 +23,9 @@ using static CopyWcs.Ui;
 namespace CopyWcs.Wpf;
 
 /// <summary>
-/// The main window: the two files, the output choice, the options, the two commands and the
-/// core's outcome, over one <see cref="MainViewModel"/>. It owns what needs a window (the file
-/// dialogs) and computes nothing (ADR 0007).
+/// The main window: the band at the top, the two files, the output choice, the options, the two
+/// commands and the core's outcome, over one <see cref="MainViewModel"/>. It owns what needs a
+/// window (the file dialogs, the About window) and computes nothing (ADR 0007, ADR 0008).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -128,15 +128,10 @@ public partial class MainWindow : Window
     /// <param name="e">The click.</param>
     private async void CopyCards(object sender, RoutedEventArgs e) => await _vm.Copy().ConfigureAwait(true);
 
-    /// <summary>The About button: the About window, modal, over this one (R-035).</summary>
-    /// <param name="sender">The button.</param>
-    /// <param name="e">The click.</param>
-    private void ShowAbout(object sender, RoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
-
-    /// <summary>F1: the same About window.</summary>
-    /// <param name="sender">The command's source.</param>
+    /// <summary>The Help command, run by the band's About button and by F1: the About window, modal, over this one (R-035, R-038).</summary>
+    /// <param name="sender">The window, whose command binding caught the command.</param>
     /// <param name="e">The executed command.</param>
-    private void ShowAboutCommand(object sender, ExecutedRoutedEventArgs e) => ShowAbout(sender, e);
+    private void ShowAbout(object sender, ExecutedRoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
 
     /// <summary>An open-file dialog for FITS files, starting in the folder of a path when it has one.</summary>
     /// <param name="title">The dialog's title, in the run's language.</param>

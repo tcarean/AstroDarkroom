@@ -76,9 +76,10 @@ plate-solved`.
 
 The window computes nothing of its own: Preview lists exactly the cards `copywcs --dry-run`
 would print, Copy writes exactly the bytes the console writes, and a refusal or a warning is
-shown with the console's words (a refused copy writes nothing). **About** (or F1) shows the
-version, the copyright and the GPLv3 notice. The window is Windows-only; the console builds
-anywhere.
+shown with the console's words (a refused copy writes nothing). The band at the top shows the
+version, the copyright and one sentence on what the tool does; its **About** button (or F1)
+opens the version, the copyright and the GPLv3 notice. The window is Windows-only; the console
+builds anywhere.
 
 ## The two languages
 

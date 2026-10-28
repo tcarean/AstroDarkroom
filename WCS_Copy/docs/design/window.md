@@ -2,32 +2,44 @@
 
 **Covers:** `src/CopyWcs.Wpf/`, `tests/CopyWcs.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-030 to R-037; the reasons are ADR 0007. The pieces copied from the siblings
-(`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`, `Presentation/Mvvm.cs`,
-`Presentation/AppIcon.cs`, `Theme/Dark.xaml`, `Views/AboutWindow.*`, the test fixture
-`StaFixture`) are marked as such in their headers and are the siblings' to improve first;
-`App`, `MainViewModel`, `MainWindow` and `AboutViewModel` are this project's own.
+The behaviour is R-030 to R-038; the reasons are ADR 0007 and ADR 0008. The pieces copied from
+the siblings (`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`,
+`Presentation/Mvvm.cs`, `Presentation/AppIcon.cs`, `Theme/Dark.xaml`, `Views/AboutWindow.*`,
+the band at the top of `MainWindow.xaml`, the test fixture `StaFixture`) are marked as such in
+their headers and are the siblings' to improve first; `App`, `MainViewModel`, the rest of
+`MainWindow` and `AboutViewModel` are this project's own.
 
 ## The shape
 
-`MainWindow.xaml` is one column: the three file rows (a label, a `TextBox` bound to the path
-with `UpdateSourceTrigger=PropertyChanged`, a Browse button, and under the two inputs the fact
-line read from the header), the two radio buttons for in place or a new file with the output
-row enabled only by the second, the two check boxes, the row of buttons (`Preview`, `Copy`,
-`About`), and the outcome card. The card is one `Border` of the `Card` style whose visibility
-follows `HasOutcome`, holding four blocks that each follow their own flag: the refusal (the
-heading `RefusedHeading` in the `BadBr` colour over the core's `Error`), the warnings (an
-`ItemsControl` in `WarnBr`), the preview's heading, the cards (a `ListBox` in the monospace
-font with a horizontal scroll bar, since a card is 80 characters) and the closing notes. The
-built-in `BooleanToVisibilityConverter` does every visibility; there is no converter of the
-project's own. Every label is `{l:T En='...', Ro='...'}`, resolved by `TExtension` when the
-element is made (its header says why a binding and not a string). F1 and the About button
-open `AboutWindow` modally, made anew at every open.
+`MainWindow.xaml` is a grid of two rows. The first is the band, FlatCheck's top bar markup: a
+`Border` on `PanelBg` with a `BorderBr` line under it (`BorderThickness="0,0,0,1"`, padding
+`20,12`) over three columns, `Banner` in semi-bold over `Copyright` in `Faint`, the explanation
+of the tool in `Muted` (wrapped, the window's own pair), and the About button, whose
+`MinWidth` of 88 is the Browse buttons', so the two right-hand columns line up. The band is 57
+px high at 720 px wide in both languages (the explanation in two lines, measured on the
+rendered window on 2026-10-28), which is why the window opens at 700 by 800 with a minimum of
+620 by 720: the 640 and 560 it had before, plus the band, so the outcome card keeps its room.
+
+The second row is the form, one column with the margin `20,16`: the three file rows (a label,
+a `TextBox` bound to the path with `UpdateSourceTrigger=PropertyChanged`, a Browse button, and
+under the two inputs the fact line read from the header), the two radio buttons for in place
+or a new file with the output row enabled only by the second, the two check boxes, the row of
+buttons (`Preview`, `Copy`), and the outcome card. The card is one `Border` of the `Card`
+style whose visibility follows `HasOutcome`, holding four blocks that each follow their own
+flag: the refusal (the heading `RefusedHeading` in the `BadBr` colour over the core's
+`Error`), the warnings (an `ItemsControl` in `WarnBr`), the preview's heading, the cards (a
+`ListBox` in the monospace font with a horizontal scroll bar, since a card is 80 characters)
+and the closing notes. The built-in `BooleanToVisibilityConverter` does every visibility;
+there is no converter of the project's own. Every label is `{l:T En='...', Ro='...'}`,
+resolved by `TExtension` when the element is made (its header says why a binding and not a
+string). The band's About button runs `ApplicationCommands.Help`, the command F1 runs, and the
+window's one `CommandBinding` for it opens `AboutWindow` modally, made anew at every open.
 
 `MainWindow.xaml.cs` owns what needs a window: the two `OpenFileDialog`s and the
 `SaveFileDialog` (the FITS filter first, every file second, the folder of the current path
-proposed), the About window, and `Start(source, dest)`, which `App` calls with the files from
-the command line. The three handlers of the buttons call the view-model and nothing else.
+proposed), the About window (`ShowAbout`, the Help command's handler), and
+`Start(source, dest)`, which `App` calls with the files from the command line. The handlers of
+`Preview` and `Copy` call the view-model and nothing else.
 
 ## One view-model, three things
 
@@ -60,6 +72,11 @@ the command line. The three handlers of the buttons call the view-model and noth
   the core's one heading line), `Cards` (each card with its padding trimmed, as the console
   prints it without the indent) and `Notes` (the notes when the kind is `Copied`: the count
   and the reminder). The `Has...` flags are derived, never stored.
+
+Beside the three, `Banner` and `Copyright` hand the band the core's `VersionInfo.Banner` and
+`LicenseInfo.Copyright`, the console's lines 1 and 2, as `AboutViewModel` does: passed
+through, not composed. They are properties of the view-model because the core's members are
+internal, which an `x:Static` in XAML cannot reach.
 
 ## The application
 
@@ -102,8 +119,12 @@ bytes with the console's on a second fixture, the refusal line with the console'
 (the window's background drawn first, or the labels on transparency come out dim in a PNG),
 fail on any data-binding trace error, and in the English pass walk every `TextBlock` of the
 visual tree against a list of Romanian words; `COPYWCS_DUMP_SCREENS=<folder>` saves each
-render as a PNG. `AboutTests` bind the About view-model to `VersionInfo` and `LicenseInfo` and
-check the console prints the same five warranty lines; `AppTests` cover `Parse`, `--lang` and
+render as a PNG. The R-038 theory finds the band upward from the banner's text block (the
+nearest `Border` on `PanelBg`), checks that it starts at the top, spans the width and has the
+line under it, and that the copyright, the explanation and the window's single About button
+(run by Help, with its tooltip) sit inside it, the two lines equal to the first two lines the
+console prints at `--help`, in each language. `AboutTests` bind the About view-model to
+`VersionInfo` and `LicenseInfo` and check the console prints the same five warranty lines; `AppTests` cover `Parse`, `--lang` and
 the files from the arguments; `IconTests` tie the sizes of the `.ico`, the script's `SIZES`
 line and the two `ApplicationIcon` paths together. The tests that run the core await
 `Preview()` or `Copy()`; the smoke tests that do so run through `StaFixture.InvokeAsync`, since
