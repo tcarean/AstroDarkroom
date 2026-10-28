@@ -17,15 +17,16 @@
 
 // MainViewModel.cs - what the window binds. Three things and no more (ADR 0007): the boxes and
 // the options become a WcsCopyRequest; two facts are read from each header before any run; the
-// WcsCopyOutcome is shown as the core gives it. No sentence about the copy is composed here.
+// WcsCopyOutcome is shown as the core gives it. No sentence about the copy is composed here; the
+// band's two lines are the core's banner and copyright, passed through (ADR 0008).
 
 using static CopyWcs.Ui;
 
 namespace CopyWcs.Wpf;
 
 /// <summary>
-/// The main window's state: the two files, the output choice, the two options, the facts
-/// under the boxes, and the last outcome of the core (R-030 to R-033).
+/// The main window's state: the band's two lines, the two files, the output choice, the two
+/// options, the facts under the boxes, and the last outcome of the core (R-030 to R-033, R-038).
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
@@ -41,6 +42,15 @@ public sealed class MainViewModel : ObservableObject
     private string _sourceFacts = "";
     private string _destFacts = "";
     private WcsCopyOutcome? _outcome;
+
+    // CA1822: XAML binds these two, and a binding needs an instance member; a static would not bind.
+#pragma warning disable CA1822
+    /// <summary>The band's first line: <c>copywcs</c> and the version, the console's line 1 (R-001, R-038).</summary>
+    public string Banner => VersionInfo.Banner;
+
+    /// <summary>The band's second line: the copyright, the console's line 2 (R-001, R-038).</summary>
+    public string Copyright => LicenseInfo.Copyright;
+#pragma warning restore CA1822
 
     /// <summary>The path of the plate-solved source; setting it reads the facts under its box.</summary>
     public string Source

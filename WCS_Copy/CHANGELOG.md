@@ -11,8 +11,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   boxes (filled from the command line when two existing files are given), in place or a new
   file, the two options, Preview and Copy showing exactly what the console's dry run and copy
   do, the header facts under each box, an About window with the GPLv3 notice, English or
-  Romanian by `--lang` as the console. The window and the console share one icon,
-  `Icon/copywcs.ico`.
+  Romanian by `--lang` as the console. At the top, FlatCheck's band: the version, the
+  copyright, one sentence on what the tool does and the About button (ADR 0008). The window
+  and the console share one icon, `Icon/copywcs.ico`.
 - `--lang en|ro`: the console speaks English or Romanian, chosen on the command line, English
   when the option is absent (ADR 0004); `--lang` anywhere, `--lang=ro` too, a value that is
   not `en` or `ro` refused with exit 1.

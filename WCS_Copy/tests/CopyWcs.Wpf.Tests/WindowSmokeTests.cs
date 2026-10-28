@@ -20,6 +20,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -44,7 +45,7 @@ public partial class WindowSmokeTests
     // Words that only the Romanian texts hold, the console's (LanguageTests) and the window's
     // own (R-036); the paths of the fixture are temp folders named CopyWcsTests_ plus random
     // letters, so none of these can come from them.
-    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Copiate|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un)\b", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Copiate|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii)\b", RegexOptions.CultureInvariant)]
     private static partial Regex RomanianWord();
 
     /// <summary>Every text a rendered tree shows: the text blocks (the buttons' and the check boxes' labels become ones), and the hints as strings.</summary>
@@ -77,6 +78,23 @@ public partial class WindowSmokeTests
             }
         }
     }
+
+    /// <summary>The visual parents of an element, the nearest first.</summary>
+    private static IEnumerable<DependencyObject> Ancestors(DependencyObject d)
+    {
+        for (DependencyObject? p = VisualTreeHelper.GetParent(d); p is not null; p = VisualTreeHelper.GetParent(p))
+        {
+            yield return p;
+        }
+    }
+
+    /// <summary>The one text block of a rendered tree that shows exactly this text.</summary>
+    private static TextBlock TextBlockWith(DependencyObject root, string text)
+        => Assert.Single(Descendants(root).OfType<TextBlock>(), t => t.Text == text);
+
+    /// <summary>Where an element was laid out, in the coordinates of the rendered root.</summary>
+    private static Rect Box(FrameworkElement element, Visual root)
+        => element.TransformToAncestor(root).TransformBounds(new Rect(0, 0, element.ActualWidth, element.ActualHeight));
 
     /// <summary>
     /// Both windows in English, with an outcome that has a refusal heading, a warning, the
@@ -197,6 +215,63 @@ public partial class WindowSmokeTests
         using FileStream fs = File.Create(Path.Combine(dir, name + ".png"));
         enc.Save(fs);
     }
+
+    /// <summary>
+    /// The band at the top (R-038): edge to edge on the panel colour with a line under it, the
+    /// console's first two lines on the left, the explanation in the middle, and on the right
+    /// the window's one About button, which runs Help as F1 does, in each language.
+    /// </summary>
+    [Theory]
+    [InlineData(false, "Copies the plate solve (WCS) from a FITS solved in Siril into the same image processed elsewhere, card by card, without touching its pixels.", "About", "Version and licence (F1)")]
+    [InlineData(true, "Copiaza plate solve-ul (WCS) dintr-un FITS rezolvat in Siril in aceeasi imagine procesata in alta parte, card cu card, fara sa-i atinga pixelii.", "Despre", "Versiune si licenta (F1)")]
+    public void R038_TheBandShowsTheConsolesFirstTwoLinesTheExplanationAndTheOnlyAboutButton(bool romanian, string explanation, string about, string tip)
+        => _sta.Invoke(() =>
+        {
+            using IDisposable _ = Ui.Use(romanian ? UiLanguage.Romanian : UiLanguage.English);
+            using StringWriter stdout = new();
+            Assert.Equal(0, CopyWcsCli.Run(["--help"], stdout, new StringWriter()));
+            string[] console = stdout.ToString().ReplaceLineEndings("\n").Split('\n');
+
+            using BindingErrors errors = new();
+            MainWindow w = new();
+            FrameworkElement window = (FrameworkElement)w.Content;
+            Render(window, name: romanian ? "band-ro" : "band-en");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+
+            // the band: the nearest border on the panel colour around the banner, at the very
+            // top, as wide as the window, with a line under it
+            TextBlock banner = TextBlockWith(window, console[0]);
+            Border band = Ancestors(banner).OfType<Border>()
+                .First(b => b.Background is SolidColorBrush brush && brush.Color == Color.FromRgb(0x23, 0x23, 0x26));
+            Assert.Equal(0.0, Box(band, window).Top);
+            Assert.Equal(window.ActualWidth, band.ActualWidth);
+            Assert.Equal(new Thickness(0, 0, 0, 1), band.BorderThickness);
+            Assert.Equal(Color.FromRgb(0x3A, 0x3A, 0x40), Assert.IsType<SolidColorBrush>(band.BorderBrush).Color);
+            Assert.Equal(FontWeights.SemiBold, banner.FontWeight);
+
+            // the copyright under the banner, the explanation, and the one About button, all in it
+            TextBlock copyright = TextBlockWith(window, console[1]);
+            TextBlock line = TextBlockWith(window, explanation);
+            Button button = Assert.Single(Descendants(window).OfType<Button>(), b => Equals(b.Content, about));
+            foreach (FrameworkElement e in new FrameworkElement[] { copyright, line, button })
+            {
+                Assert.Contains(band, Ancestors(e));
+            }
+
+            // the banner over the copyright on the left, the explanation in the middle, About on
+            // the right and inside the window: a column swapped, or a line too wide to wrap, fails
+            Assert.True(Box(banner, window).Top < Box(copyright, window).Top);
+            Assert.True(Math.Max(Box(banner, window).Right, Box(copyright, window).Right) < Box(line, window).Left);
+            Assert.True(Box(line, window).Right < Box(button, window).Left);
+            Assert.True(Box(button, window).Right <= window.ActualWidth);
+            Assert.Equal(TextWrapping.Wrap, line.TextWrapping);
+
+            // About runs the Help command, as F1 does, and the window's binding lets it run
+            Assert.Same(ApplicationCommands.Help, button.Command);
+            Assert.Contains(w.CommandBindings.Cast<CommandBinding>(), b => b.Command == ApplicationCommands.Help);
+            Assert.True(ApplicationCommands.Help.CanExecute(null, button));
+            Assert.Equal(tip, button.ToolTip as string);
+        });
 
     /// <summary>The window before any file: the empty state, the dark palette as its background (R-037).</summary>
     [Fact]
