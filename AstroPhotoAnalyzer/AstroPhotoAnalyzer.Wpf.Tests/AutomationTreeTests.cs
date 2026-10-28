@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // AutomationTreeTests.cs - the window's controls are in the UI Automation tree, the one a screen
-// reader and every UI Automation client walk (R-157).
+// reader and every UI Automation client walk, and putting them there leaves the keyboard focus
+// where a click puts it (R-157).
 //
 // WPF builds that tree from automation peers, and the peers are asked here directly, in process:
 // a client in another process is answered by the same peers.
@@ -25,6 +26,7 @@ using AstroPhotoAnalyzer.Tests;
 using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace AstroPhotoAnalyzer.Wpf.Tests;
 
@@ -44,9 +46,20 @@ public class AutomationTreeTests
         }
     }
 
+    static IEnumerable<DependencyObject> VisualDescendants(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+            yield return child;
+            foreach (DependencyObject below in VisualDescendants(child)) yield return below;
+        }
+    }
+
     /// <summary>
     /// Every tab, selected in turn over a real result, has its view under its item in the tree,
-    /// and on Tonuri the simulation's Preview buttons are found there, as a client looks for them.
+    /// once, and on Tonuri the simulation's Preview buttons are found there, as a client looks
+    /// for them.
     /// </summary>
     [Fact]
     public async Task R157_EveryTabsContentIsInTheAutomationTree()
@@ -76,7 +89,7 @@ public class AutomationTreeTests
                     AutomationPeer itemPeer = tabsPeer.GetChildren().OfType<ItemAutomationPeer>().Single(p => p.Item == item);
                     itemPeer.ResetChildrenCache();
 
-                    Assert.Contains(itemPeer.GetChildren() ?? new List<AutomationPeer>(), p => p is UIElementAutomationPeer u && u.Owner == item.Content);
+                    Assert.Single(itemPeer.GetChildren() ?? new List<AutomationPeer>(), p => p is UIElementAutomationPeer u && u.Owner == item.Content);
                     if (item.Content is TonesView)
                     {
                         sawTones = true;
@@ -94,6 +107,37 @@ public class AutomationTreeTests
                 // checked here would uncheck the Print box of a later test's CurvesView, a failure
                 // of this test included. Without its view-model the window's boxes go back to
                 // unchecked.
+                window.DataContext = null;
+            }
+        });
+    }
+
+    /// <summary>
+    /// A click on a tab's header leaves the keyboard focus on the header: the template's presenter
+    /// of the selected content does not carry the stock name, through which WPF would move the
+    /// focus into the tab, where the focused control would scroll a tab left scrolled down back
+    /// up to itself.
+    /// </summary>
+    [Fact]
+    public void R157_AClickOnATabsHeaderLeavesTheFocusOnIt()
+    {
+        _sta.Invoke(() =>
+        {
+            var window = new MainWindow();
+            try
+            {
+                // Keyboard focus needs a window on screen, which no test shows. What moves it into
+                // the tab is WPF finding the presenter by that name (TabItem's
+                // OnPreviewGotKeyboardFocus), so the presenter is found here by what it shows, and
+                // its name is checked.
+                var tabs = (TabControl)window.FindName("Tabs");
+                tabs.ApplyTemplate();
+                ContentPresenter host = VisualDescendants(tabs).OfType<ContentPresenter>().Single(p => p.ContentSource == "SelectedContent");
+                Assert.NotEqual("PART_SelectedContentHost", host.Name);
+            }
+            finally
+            {
+                // The Curves tab's Print box, as in the test above.
                 window.DataContext = null;
             }
         });

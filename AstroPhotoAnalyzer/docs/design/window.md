@@ -79,10 +79,12 @@ Tables are pre-aligned mono strings, the same the report writes, rendered with
 **Presentation**: `Theme/Dark.xaml` (palette, styles, converters, templates
 `VerdictChip`, `RecommendationRowTemplate`, `SectionTemplate`, `MetricRowTemplate`,
 `MonoRowTemplate`, `PreviewTileTemplate`, `ComponentRowTemplate`,
-`DescribedMetricRowTemplate`, `GuideParagraphTemplate`). Its `TabControl` template names the
-presenter of the selected content `PART_SelectedContentHost`, the stock name, through which WPF
-puts that content under the tab's item in the UI Automation tree and moves the keyboard focus
-into it on a click on a header (R-157, ADR 0065). `MetricRowTemplate` puts the
+`DescribedMetricRowTemplate`, `GuideParagraphTemplate`). Its tab style targets
+`AccessibleTabControl` (`Presentation/AccessibleTabControl.cs`), the window's tabs: the template
+names the presenter of the selected content `ContentHost`, and the control's automation peer
+adds that presenter's children, the selected tab's view, under the tab's item, which the stock
+peer does only through the stock name `PART_SelectedContentHost`; that name would also move
+the keyboard focus into a tab on a click on its header (R-157, ADR 0065). `MetricRowTemplate` puts the
 optional `Description` under the label in the label's column only, wrapped, and the `Note`
 below it across both columns. `DescribedMetricRowTemplate` (the described panels: Tonuri,
 Export's Cuantizare, Rezolutie's stars, Culoare's colour) is the same row on two equal
