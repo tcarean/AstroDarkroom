@@ -36,7 +36,10 @@ namespace AstroPhotoAnalyzer.Wpf
     /// A <see cref="TabControl"/> whose automation peer puts the selected tab's content under that
     /// tab's item, as a stock one's does when its template names the content's presenter
     /// <c>PART_SelectedContentHost</c>, while a click on a tab's header leaves the keyboard focus on
-    /// the header. Its template names the presenter <see cref="ContentHostName"/>.
+    /// the header. Both rest on the template: the theme's names the presenter
+    /// <see cref="ContentHostName"/>; without the theme's style the control gets the system's
+    /// <see cref="TabControl"/> template, which names it <c>PART_SelectedContentHost</c>, and WPF
+    /// then adds the content itself and moves the focus into the tab.
     /// </summary>
     [TemplatePart(Name = ContentHostName, Type = typeof(ContentPresenter))]
     public sealed class AccessibleTabControl : TabControl

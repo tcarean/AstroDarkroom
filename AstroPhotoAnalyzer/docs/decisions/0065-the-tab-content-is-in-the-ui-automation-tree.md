@@ -46,13 +46,16 @@ automation peer of our own on 2026-10-29 ("Peer propriu").
 The theme's template names the presenter `ContentHost`, not `PART_SelectedContentHost`, so WPF
 does with it nothing of what it does with the stock name. The window's tabs are an
 `AccessibleTabControl` (`Presentation/AccessibleTabControl.cs`), a `TabControl` whose automation
-peer gives each tab the stock `TabItemAutomationPeer` and adds under the selected one the
-children of `ContentHost`, the children the stock peer adds through the stock name. The theme's
-style targets that class, so the template and the class that reads its part go together.
+peer gives each tab a subclass of the stock `TabItemAutomationPeer` that adds, under the
+selected tab only, the children of `ContentHost`, the children the stock peer adds through the
+stock name. The theme's style targets that class, so the template and the class that reads its
+part go together: without that style the class would get the system's template, which carries
+the stock name.
 
 Everything else is as before this ADR: a click on a tab's header leaves the keyboard focus on the
-header, where Left and Right change the tab and Down does not scroll it, and a tab shown again is
-where it was left.
+header, where Left and Right change the tab (on Editare Curbe, while there is a gallery, they
+browse it, R-146) and Down does not scroll it, and a tab shown again is where it was left
+(measured in process: Tonuri, left at 1200 px, was at 1200 px again after a visit to Culoare).
 
 ## Alternatives rejected
 
@@ -72,13 +75,14 @@ where it was left.
 ## Consequences
 
 - R-157 has two tests. `R157_EveryTabsContentIsInTheAutomationTree` selects each of the seven
-  tabs over a real result and asserts its view under its item, once, and the Tonuri tab's
-  `Preview` buttons among its descendants; a later WPF that added the content another way too
-  would fail it by the `once`. `R157_AClickOnATabsHeaderLeavesTheFocusOnIt` asserts that the
-  presenter does not carry the stock name: keyboard focus needs a window on screen, which no test
-  shows.
+  tabs over a real result and asserts its view under its item, once, and under no other tab's
+  item, and the Tonuri tab's `Preview` buttons among its descendants; a later WPF that added the
+  content another way too would fail it by the `once`. `R157_AClickOnATabsHeaderLeavesTheFocusOnIt`
+  makes WPF's own lookup of the stock name in the applied template and finds nothing: keyboard
+  focus needs a window on screen, which no test shows.
 - A tab control added to the window is an `AccessibleTabControl`. A plain `TabControl` gets no
   style from the theme: it would show the system's light look and, with the system's template,
   the stock name and its focus.
 - DarksCheck, FlatCheck and LightsCheck carry the same unnamed presenter in their
-  `Theme/Dark.xaml`; each is its own project's task, and can take this class.
+  `Theme/Dark.xaml`; each is its own project's task, and can take this class together with the
+  theme's style for it and the presenter's name.

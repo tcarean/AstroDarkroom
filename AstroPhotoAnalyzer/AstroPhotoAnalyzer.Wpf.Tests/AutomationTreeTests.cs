@@ -58,8 +58,8 @@ public class AutomationTreeTests
 
     /// <summary>
     /// Every tab, selected in turn over a real result, has its view under its item in the tree,
-    /// once, and on Tonuri the simulation's Preview buttons are found there, as a client looks
-    /// for them.
+    /// once, and under no other tab's item, and on Tonuri the simulation's Preview buttons are
+    /// found there, as a client looks for them.
     /// </summary>
     [Fact]
     public async Task R157_EveryTabsContentIsInTheAutomationTree()
@@ -80,16 +80,21 @@ public class AutomationTreeTests
                 AutomationPeer tabsPeer = UIElementAutomationPeer.CreatePeerForElement(tabs);
 
                 Assert.NotEmpty(tabs.Items);
+                var views = tabs.Items.Cast<TabItem>().Select(t => t.Content).ToList();
                 bool sawTones = false;
                 foreach (TabItem item in tabs.Items)
                 {
                     tabs.SelectedItem = item;
                     content.Measure(new Size(1400, 860)); content.Arrange(new Rect(0, 0, 1400, 860)); content.UpdateLayout();
                     tabsPeer.ResetChildrenCache();
-                    AutomationPeer itemPeer = tabsPeer.GetChildren().OfType<ItemAutomationPeer>().Single(p => p.Item == item);
-                    itemPeer.ResetChildrenCache();
+                    List<ItemAutomationPeer> itemPeers = tabsPeer.GetChildren().OfType<ItemAutomationPeer>().ToList();
+                    foreach (ItemAutomationPeer peer in itemPeers) peer.ResetChildrenCache();
+                    AutomationPeer itemPeer = itemPeers.Single(p => p.Item == item);
 
                     Assert.Single(itemPeer.GetChildren() ?? new List<AutomationPeer>(), p => p is UIElementAutomationPeer u && u.Owner == item.Content);
+                    // A screen reader must not find the selected view under another tab's name.
+                    foreach (ItemAutomationPeer other in itemPeers.Where(p => p.Item != item))
+                        Assert.DoesNotContain(other.GetChildren() ?? new List<AutomationPeer>(), p => p is UIElementAutomationPeer u && views.Contains(u.Owner));
                     if (item.Content is TonesView)
                     {
                         sawTones = true;
@@ -113,10 +118,10 @@ public class AutomationTreeTests
     }
 
     /// <summary>
-    /// A click on a tab's header leaves the keyboard focus on the header: the template's presenter
-    /// of the selected content does not carry the stock name, through which WPF would move the
-    /// focus into the tab, where the focused control would scroll a tab left scrolled down back
-    /// up to itself.
+    /// A click on a tab's header leaves the keyboard focus on the header: nothing in the applied
+    /// template carries the stock name of the content's presenter, through which WPF would move
+    /// the focus into the tab, where the focused control would scroll a tab left scrolled down
+    /// back up to itself.
     /// </summary>
     [Fact]
     public void R157_AClickOnATabsHeaderLeavesTheFocusOnIt()
@@ -128,12 +133,12 @@ public class AutomationTreeTests
             {
                 // Keyboard focus needs a window on screen, which no test shows. What moves it into
                 // the tab is WPF finding the presenter by that name (TabItem's
-                // OnPreviewGotKeyboardFocus), so the presenter is found here by what it shows, and
-                // its name is checked.
+                // OnPreviewGotKeyboardFocus, through TabControl.SelectedContentPresenter), so the
+                // test makes the same lookup in the applied template and finds nothing.
                 var tabs = (TabControl)window.FindName("Tabs");
                 tabs.ApplyTemplate();
-                ContentPresenter host = VisualDescendants(tabs).OfType<ContentPresenter>().Single(p => p.ContentSource == "SelectedContent");
-                Assert.NotEqual("PART_SelectedContentHost", host.Name);
+                Assert.Single(VisualDescendants(tabs).OfType<ContentPresenter>(), p => p.ContentSource == "SelectedContent");
+                Assert.Null(tabs.Template.FindName("PART_SelectedContentHost", tabs));
             }
             finally
             {
