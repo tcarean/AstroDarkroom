@@ -121,6 +121,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The content of the window's tabs is in the UI Automation tree: a screen reader such as
+  Narrator, or a UI Automation tool, now reaches the controls inside a tab, where it found only
+  the seven tab headers before (R-114, ADR 0074).
 - The note under the illumination offset in the structure report no longer says the offset falls
   back toward 0 past a threshold: since ADR 0014 the row reads `undetermined` / `nedeterminat` once
   the peak leaves the frame, and the note now says so (R-013). Every structure golden changes in

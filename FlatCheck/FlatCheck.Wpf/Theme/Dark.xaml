@@ -219,19 +219,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
   <!-- ============================================================ tabs -->
 
-  <Style TargetType="TabControl">
+  <!-- The window's tabs are an AccessibleTabControl, whose automation peer finds the presenter
+       below by its name (R-114, ADR 0074). -->
+  <Style TargetType="local:AccessibleTabControl">
     <Setter Property="Background" Value="{StaticResource WindowBg}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="0" />
     <Setter Property="Template">
       <Setter.Value>
-        <ControlTemplate TargetType="TabControl">
+        <ControlTemplate TargetType="local:AccessibleTabControl">
           <DockPanel>
             <Border DockPanel.Dock="Top" Background="{StaticResource WindowBg}"
                     BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1">
               <TabPanel IsItemsHost="True" Margin="12,6,12,0" />
             </Border>
-            <ContentPresenter ContentSource="SelectedContent" />
+            <!-- ContentHost, not PART_SelectedContentHost, the stock name: through that name WPF
+                 would also move the keyboard focus into a tab on a click on its header, and the
+                 control taking it would scroll a tab left scrolled down back up (R-114, ADR 0074). -->
+            <ContentPresenter x:Name="ContentHost" ContentSource="SelectedContent" />
           </DockPanel>
         </ControlTemplate>
       </Setter.Value>
