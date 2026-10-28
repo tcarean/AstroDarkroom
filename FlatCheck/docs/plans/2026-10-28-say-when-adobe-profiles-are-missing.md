@@ -200,7 +200,7 @@ and all held. Applied in the second commit:
 - With no profile at all, the red paragraph said the lens is looked for in lensfun while the gap
   under it said lensfun's folder is missing too: without `lensfun/` the paragraph now keeps its
   first sentence only (a failing test first, in each test project).
-- The link's opening had no test: the render test now raises `RequestNavigate` on the card's link
+- The link's opening had no test: a new render test raises `RequestNavigate` on the card's link
   and checks that it carries Adobe's URL out of the tab, and a text check pins the main window's
   handler (raising it in a real window would open the browser). The owner chose this over a
   launcher seam with a `MainWindow` test.
@@ -211,3 +211,20 @@ and all held. Applied in the second commit:
   header and `Dark.xaml`'s `Hyperlink` style comment named too few of the links they serve.
 - Gate green after the fixes (1124 + 336 tests). `/validate` again, since `Report/` changed: 48
   passed, every measured line identical to the first run's.
+
+## Second code review (2026-10-28)
+
+A second subagent reviewed the fix commits alone (046f3e3, a2e29b5); its six findings held.
+Applied in the third fix commit:
+
+- The block's place above a gap, and its collapse when Adobe's files are found (the constant
+  instructions and link included), had no rendered test: the render test now covers both.
+- Two test names still said "nothing searched"; they now say the run searched nothing.
+- The one-sentence paragraph had not been put to the owner: the owner confirmed it.
+- It keyed on `LensfunPresent` (the folder holds an `.xml`), so a folder whose files cannot be
+  read gave the contradiction again: it now keys on the lenses read, `LensfunLenses == 0`, the
+  gap's own condition (a failing test first). The core test's hand-made sources, which claimed a
+  lensfun folder with no lens in it, now hold the fixture's lensfun lenses, on the owner's yes.
+- The smoke tests' header, this plan's line on the link test (it is a separate test), and three
+  ragged lines were corrected.
+- Per the owner's earlier limit, no third review round.

@@ -1086,12 +1086,12 @@ as such, with what it lacks, not as a missing raw; the comparison is then made b
 the Synthetic tab, or in the console with `--lens`, `--focal` and `--fstop`.
 
 When `flats/` holds a raw and no Adobe lens profile is found on the computer, the card opens with a
-red paragraph that says so and, with the `lensfun/` folder beside the program, what that leaves:
-lensfun's profiles alone, and a raw that names no lens (a Nikon writes only an ID) matched by its
-focal range alone. Under it: install the free Adobe
-DNG Converter (the link opens Adobe's page in the browser), or Lightroom Classic, Lightroom or
-Photoshop's Camera Raw, then restart FlatCheck; and the folders it looked in. The console's report
-does not carry this paragraph.
+red paragraph that says so and, when the `lensfun/` folder beside the program could be read, what
+that leaves: lensfun's profiles alone, and a raw that names no lens (a Nikon writes only an ID)
+matched by its focal range alone. Under it: install the free Adobe DNG Converter (the link opens
+Adobe's page in the browser), or Lightroom Classic, Lightroom or Photoshop's Camera Raw, then
+restart FlatCheck; and the folders it looked in. The console's report does not carry this
+paragraph.
 
 It saves in the session folder:
 

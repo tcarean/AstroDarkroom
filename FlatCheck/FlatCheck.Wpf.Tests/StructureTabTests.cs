@@ -622,7 +622,7 @@ public class StructureTabTests
     /// about Adobe; the card says why it cannot compare.
     /// </summary>
     [Fact]
-    public async Task R113_WithoutARawNothingIsSearchedSoNothingIsSaidAboutAdobe()
+    public async Task R113_WithoutARawTheRunSearchesNothingSoNothingIsSaidAboutAdobe()
     {
         using var f = new SessionFixture().WithFlatMaster();
         using var ws = new TempWorkspace();

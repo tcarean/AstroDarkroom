@@ -45,12 +45,16 @@ recommendation the same day. The rest were stated in the plan the owner approved
   (`AdobeMissing`, `AdobeInstall`, `AdobeSearched`, `AdobeDngConverterUrl`); the console's
   report, and so the saved `Test result.txt` and the golden files, do not change.
 - **What**: at the top of the card, a red paragraph (`#F0857E`, the window's colour for a
-  message) saying the profiles were not found and, when the `lensfun/` folder is there, what that
-  leaves (without it the card's gap already says no profile is on the machine, and the review
-  found the paragraph contradicting it); then, in the card's muted
-  text, to install the free Adobe DNG Converter, or Lightroom Classic, Lightroom or Photoshop's
-  Camera Raw, and to restart FlatCheck; the link to Adobe's DNG Converter page, opened in the
-  browser; the folders searched, in faint text.
+  message) saying the profiles were not found and, when lensfun's lenses were read, what that
+  leaves; then, in the card's muted text, to install the free Adobe DNG Converter, or Lightroom
+  Classic, Lightroom or Photoshop's Camera Raw, and to restart FlatCheck; the link to Adobe's
+  DNG Converter page, opened in the browser; the folders searched, in faint text.
+- **With no lensfun lens read** (`ProfileSources.LensfunLenses == 0`: the folder missing, or
+  none of its files readable) the paragraph is its first sentence alone: the card's gap then
+  says no profile is on the machine, which the second sentence would contradict. The code
+  reviews found that contradiction, first with the folder missing, then with its files
+  unreadable; the owner confirmed the one-sentence wording and keying it on the lenses read,
+  with the test fixture that change needed (2026-10-28).
 - **The link** opens through one `Hyperlink.RequestNavigate` handler on the main window, which
   shares its code with the About window's: `Presentation/ExternalLink.Open`, moved out of
   `AboutWindow.xaml.cs`. It is now the one place besides `SirilScriptRun` that starts a
@@ -91,5 +95,6 @@ recommendation the same day. The rest were stated in the plan the owner approved
   (https, `helpx.adobe.com`) a test checks.
 - Guarded by the R-113 tests in `FlatCheck.Tests` (`StructureReportTests`) and
   `FlatCheck.Wpf.Tests`: `StructureTabTests`, and in `WindowSmokeTests` the render (the block
-  visible, red, above the first row), the link's route out of the tab, and a text check that
-  the main window declares its handler (raising the event there would open the browser).
+  visible, red, above the first row or above the gap, collapsed with Adobe's files), the link's
+  route out of the tab, and a text check that the main window declares its handler (raising the
+  event there would open the browser).

@@ -417,21 +417,23 @@ namespace FlatCheck
 
         /// <summary>
         /// The red paragraph at the top of the window's profile card when the search found no
-        /// Adobe file: that the profiles are not on this computer and, when the lensfun/ folder
-        /// is there, what that leaves. A search that found Adobe's files has nothing to say,
+        /// Adobe file: that the profiles are not on this computer and, when lensfun's lenses
+        /// were read, what that leaves. A search that found Adobe's files has nothing to say,
         /// and neither has a run that searched nothing (no raw beside the master).
         /// </summary>
         /// <param name="s">The sources the run searched; null when it searched
         /// nothing.</param>
-        /// <returns>Two sentences, one without lensfun/ (the card's gap then says no profile is
-        /// on the machine); "" when <paramref name="s"/> is null or holds at least one Adobe
-        /// file.</returns>
+        /// <returns>Two sentences, one when no lensfun lens was read either (the card's gap then
+        /// says no profile is on the machine); "" when <paramref name="s"/> is null or holds at
+        /// least one Adobe file.</returns>
         internal static string AdobeMissing(ProfileSources s)
         {
             if (s == null || s.AdobeFiles > 0) return "";
             string missing = T("Adobe's lens profiles were not found on this computer.",
                                "Profilele de obiectiv Adobe nu au fost gasite pe acest calculator.");
-            return !s.LensfunPresent ? missing
+            // The gap's own condition: no lensfun lens read, whether the folder is missing or
+            // none of its files could be read (it then counts as present).
+            return s.LensfunLenses == 0 ? missing
                  : missing + " " + T("Without them the lens is looked for in lensfun alone, the database that ships with FlatCheck: "
                                      + "one database instead of two, and a raw that names no lens (a Nikon writes only an ID) "
                                      + "is matched by its focal range alone.",
