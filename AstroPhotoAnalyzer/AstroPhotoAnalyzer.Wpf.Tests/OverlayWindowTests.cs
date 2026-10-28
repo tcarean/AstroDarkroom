@@ -22,8 +22,9 @@ namespace AstroPhotoAnalyzer.Wpf.Tests;
 
 /// <summary>
 /// R-113, R-130, R-131: the Tonuri tab's definitions, warning and buttons, and the two
-/// visualisation windows' view-models, with and without a WCS. The windows compute nothing:
-/// every figure asserted here is read back from the core's result.
+/// visualisation windows: their view-models, with and without a WCS, and the windows built over
+/// them, the preview's check boxes driving its layers. The windows compute nothing: every figure
+/// asserted here is read back from the core's result.
 /// </summary>
 [Collection("fereastra")]
 public class OverlayWindowTests
@@ -77,7 +78,7 @@ public class OverlayWindowTests
         Assert.Contains(" (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei", noWcs.Definition);
         Assert.Equal(TonesTabViewModel.NoWcsSentence, noWcs.NoWcsWarning);
         Assert.StartsWith("tinta exacta a prafului pe negru:", noWcs.ExactLine);
-        Assert.Equal($"Imaginea la tinta randului; casutele ferestrei, odata bifate, vopsesc ce e sub negrul hartiei si sub L* {Thresholds.LowSeparationLstar:0}", noWcs.PreviewTooltip);
+        Assert.Equal($"Imaginea la tinta randului, intr-o fereastra separata ale carei doua casute, odata bifate, vopsesc ce e sub negrul hartiei si sub L* {Thresholds.LowSeparationLstar:0}", noWcs.PreviewTooltip);
         Assert.Contains($"grila {new Parameters().SimulationTargets.Min():0.00}..{new Parameters().SimulationTargets.Max():0.00}", string.Join(" ", noWcs.Guide.Select(g => g.Text)));
         Assert.True(noWcs.OpenMap.CanExecute(null));
 
@@ -245,11 +246,13 @@ public class OverlayWindowTests
             }
             Collect(content);
 
-            // The boxes: paper black, then L* 15. The images: the lifted one, then the L* 15 and
-            // the paper-black layers over it, in the XAML's order.
-            Assert.Equal(2, boxes.Count);
+            // The boxes: paper black, then L* 15, each labelled with its legend. The images: the
+            // lifted one, then the L* 15 and the paper-black layers over it, in the XAML's order.
+            Assert.Equal(new[] { preview.BlackLegend, preview.LowLegend }, boxes.Select(box => ((System.Windows.Controls.TextBlock)box.Content).Text));
             Assert.All(boxes, box => Assert.False(box.IsChecked));
             Assert.Equal(new[] { Visibility.Visible, Visibility.Collapsed, Visibility.Collapsed }, images.Select(i => i.Visibility));
+            Assert.Same(preview.LowLayer, images[1].Source);
+            Assert.Same(preview.BlackLayer, images[2].Source);
 
             boxes[0].IsChecked = true;
             Assert.True(preview.ShowBlack);
