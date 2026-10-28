@@ -88,7 +88,8 @@ library figures of 2026-09-18 and the guards. ADR 0030 holds how the lens is ide
   found one or when the run searched nothing (null, no raw). With no lensfun lens read
   (`ProfileSources.LensfunLenses == 0`: the folder missing, or none of its files readable, which
   still counts as present) `AdobeMissing` keeps its first sentence only: that is the gap's own
-  condition, and the gap under it then says no profile is on the machine. `AdobeInstall` and `AdobeDngConverterUrl` are the instructions and the link under
-  them. `Write` prints none of them: R-113 adds no line to the console's report and changes no
-  golden.
+  condition, and the gap under it then says no profile is on the machine. `AdobeInstall` and
+  `AdobeDngConverterUrl` are the instructions and the link under them. `Write` prints none of
+  them: R-113 adds no line to the console's report, and a window test checks the saved report
+  holds neither the paragraph nor the folders line.
 - `--help` moved when the flags were added, and was re-approved.

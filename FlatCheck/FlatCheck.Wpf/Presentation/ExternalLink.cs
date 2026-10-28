@@ -25,6 +25,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows.Navigation;
+using NLog;
 
 namespace FlatCheck.Wpf
 {
@@ -32,6 +33,9 @@ namespace FlatCheck.Wpf
     /// in the system's browser.</summary>
     internal static class ExternalLink
     {
+        /// <summary>The diagnostic log of the user's actions in the windows (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger("Window");
+
         /// <summary>
         /// Opens the link in the system's browser. UseShellExecute is mandatory on .NET Core -
         /// without it Process.Start tries to execute the URL as a program. A system without an
@@ -48,7 +52,7 @@ namespace FlatCheck.Wpf
             }
             catch (Exception ex) when (ex is Win32Exception || ex is InvalidOperationException)
             {
-                NLog.LogManager.GetLogger("Window").Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
+                Log.Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
             }
         }
     }

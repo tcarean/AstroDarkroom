@@ -228,3 +228,29 @@ Applied in the third fix commit:
 - The smoke tests' header, this plan's line on the link test (it is a separate test), and three
   ragged lines were corrected.
 - Per the owner's earlier limit, no third review round.
+
+## Third code review (2026-10-29)
+
+At the owner's request, a third subagent reviewed all five commits against `main`. It found no
+bug in the branch's own code; its five findings held:
+
+- Fact 8 understated the overlap with `claude/Fix-the-diagnostic-log-review-findings`, checked
+  with `git merge-tree`:
+  - two textual conflicts, `AboutWindow.xaml.cs` (both rewrite `OpenLink`'s catch) and
+    `docs/validation.md` (both add a History entry at the top);
+  - that branch's eight-parameter `ProfileSources` constructor (no `adobeSkipped`), which the two
+    hand-made sources in `StructureReportTests` must follow after a merge;
+  - its `LoggingTests.NoLogLineGoesThroughTheTranslation`, which rejects the inline
+    `NLog.LogManager.GetLogger("Window")` moved into `ExternalLink`. `ExternalLink` now declares
+    a `static readonly Logger Log = LogManager.GetLogger("Window")` field, the form that test
+    accepts; the other three are resolved by whichever merge comes second.
+- The no-raw test ran on a catalog never loaded, while in the window it is: a new test runs the
+  tab without a raw on a loaded lensfun-only catalog.
+- No golden scenario runs without an Adobe file, so "the golden files do not change" guarded
+  nothing: R-113 and ADR 0073 now say the console's report carries none of the texts, and the
+  window test checks that the saved report holds neither the paragraph nor the folders line.
+- The owner's choice of the light link test over a launcher seam is now among ADR 0073's
+  alternatives.
+- The CHANGELOG said "when it compares"; a long line in `modes-structure.md` was reflowed.
+- Out of scope, reported to the owner: a `lensfun/` folder that cannot be listed throws in
+  `ProfileLocator.Locate`, so the Structure run fails with a raw in `flats/` (as on `main`).

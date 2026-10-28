@@ -43,7 +43,7 @@ recommendation the same day. The rest were stated in the plan the owner approved
   profile at all. `StructureReport.AdobeMissing` decides it and returns "" otherwise.
 - **Where**: the Structure tab only. The texts are composed in `StructureReport`
   (`AdobeMissing`, `AdobeInstall`, `AdobeSearched`, `AdobeDngConverterUrl`); the console's
-  report, and so the saved `Test result.txt` and the golden files, do not change.
+  report, and so the saved `Test result.txt`, carries none of them.
 - **What**: at the top of the card, a red paragraph (`#F0857E`, the window's colour for a
   message) saying the profiles were not found and, when lensfun's lenses were read, what that
   leaves; then, in the card's muted text, to install the free Adobe DNG Converter, or Lightroom
@@ -72,11 +72,15 @@ recommendation the same day. The rest were stated in the plan the owner approved
 
 - **Also when Adobe is installed but has no file for this lens.** The install instructions
   would be false there; that case would need a text of its own, and it was not asked for.
-- **A line in the console's report too.** Not asked for, and it would change the saved report
-  and every golden whose fixture holds no Adobe file; the texts sit in the core, so it stays one
-  call away.
+- **A line in the console's report too.** Not asked for, and it would change the console's
+  report, and so the saved one, on every computer without Adobe (no golden scenario runs
+  without an Adobe file today); the texts sit in the core, so it stays one call away.
 - **The product's name without a URL.** Nothing to go stale, but the user would have to search
   for it; Adobe kept a redirect from the older address, and the URL is one constant.
+- **A launcher seam in `ExternalLink` and a test that builds `MainWindow` and raises the
+  link's event there.** It would cover the whole route to the browser; the owner chose the
+  lighter test, which leaves the code as it is: the event's route out of the tab, and a text
+  check of the main window's handler (2026-10-28).
 - **Showing it without a raw too, to warn earlier.** The card's problem is then the missing raw,
   and in the Siril workflow the raws are in `flats/` (ADR 0031). It would cost no search, since
   the Sintetic tab's prefill loads the catalog anyway, but the tab would wait for that load

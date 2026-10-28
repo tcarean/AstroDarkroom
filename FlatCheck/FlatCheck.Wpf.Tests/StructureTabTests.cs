@@ -600,6 +600,8 @@ public class StructureTabTests
         RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
         Assert.Equal(expected.ToString(), File.ReadAllText(f.Session.ResultTextPath));
         Assert.DoesNotContain("DNG Converter", vm.Report);             // the window's card only
+        Assert.DoesNotContain(vm.AdobeMissing, vm.Report);
+        Assert.DoesNotContain(vm.AdobeSearched, vm.Report);
     }
 
     /// <summary>With one Adobe file found there is nothing to say about Adobe.</summary>
@@ -633,6 +635,28 @@ public class StructureTabTests
 
         Assert.True(vm.HasResult, vm.ErrorText);
         Assert.Equal(0, searches);
+        Assert.Empty(vm.AdobeMissing);
+        Assert.Empty(vm.AdobeSearched);
+        Assert.Contains("niciun raw langa master", vm.ProfileGap);
+    }
+
+    /// <summary>
+    /// In the window the catalog is already loaded when the tab runs without a raw (the Sintetic
+    /// tab's prefill loads it at every opening): the card still says nothing about Adobe, since
+    /// the owner chose no message without a raw (ADR 0073).
+    /// </summary>
+    [Fact]
+    public async Task R113_WithoutARawTheCardSaysNothingEvenWithTheCatalogLoaded()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        using var ws = new TempWorkspace();
+        var catalog = new ProfileCatalog(() => LensProfileTestData.Sources(ws, withAdobe: false));
+        Assert.Equal(0, (await catalog.EnsureAsync()).AdobeFiles);   // as the Sintetic tab's prefill leaves it
+        var vm = new StructureTabViewModel(catalog, ImageLoader.LoadInfo);
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
         Assert.Empty(vm.AdobeMissing);
         Assert.Empty(vm.AdobeSearched);
         Assert.Contains("niciun raw langa master", vm.ProfileGap);

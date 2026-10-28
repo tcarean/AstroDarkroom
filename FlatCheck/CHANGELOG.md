@@ -70,10 +70,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   every number (43 scenarios, 0 numeric differences). They carry the prototype's last confirmed
   figures into the gate; a re-approval there is a C#-only decision (ADR 0047).
 - The window's Structure tab says in red, at the top of the card "VIGNETTING against the lens
-  profile", when it compares with a raw in `flats/` and no Adobe lens profile was found on the
-  computer, and how to get them: the free Adobe DNG Converter (a link to Adobe's page), or
-  Lightroom Classic, Lightroom or Photoshop's Camera Raw, then a restart; and the folders it
-  looked in (R-113, ADR 0073). The console's report is unchanged.
+  profile", when `flats/` holds a raw and no Adobe lens profile was found on the computer, and
+  how to get them: the free Adobe DNG Converter (a link to Adobe's page), or Lightroom Classic,
+  Lightroom or Photoshop's Camera Raw, then a restart; and the folders it looked in (R-113, ADR
+  0073). The console's report is unchanged.
 
 ### Changed
 
