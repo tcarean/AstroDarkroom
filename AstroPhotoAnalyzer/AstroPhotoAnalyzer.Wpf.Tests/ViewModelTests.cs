@@ -44,27 +44,36 @@ public class ViewModelTests
         var vm = new MainViewModel();
         var result = Result(Scenes.CleanSky());
         vm.Report.Populate(result);
+        vm.Tones.Populate(result);
         vm.Export.Populate(result);
         vm.Resolution.Populate(result);
         vm.Background.Populate(result);
 
         vm.Report.Clear();
+        vm.Tones.Clear();
         vm.Export.Clear();
         vm.Resolution.Clear();
         vm.Background.Clear();
 
         Assert.False(vm.Report.HasResult);
         Assert.Empty(vm.Report.Sections);
+        Assert.False(vm.Tones.HasResult);
+        Assert.Empty(vm.Tones.Rows);
+        Assert.Empty(vm.Tones.SimulationRows);
+        Assert.Empty(vm.Tones.Guide);
         // Until 2026-10-30 these three tabs cleared only HasResult and kept their rows.
         Assert.False(vm.Export.HasResult);
         Assert.Empty(vm.Export.Rows);
         Assert.Empty(vm.Export.JpegRows);
+        Assert.Empty(vm.Export.JpegGuide);
         Assert.False(vm.Resolution.HasResult);
         Assert.Empty(vm.Resolution.Rows);
         Assert.Empty(vm.Resolution.SizeRows);
+        Assert.Empty(vm.Resolution.DpiRows);
         Assert.False(vm.Background.HasResult);
         Assert.Empty(vm.Background.Rows);
         Assert.Empty(vm.Background.RegionRows);
+        Assert.Empty(vm.Background.Guide);
     }
 
     [Fact]

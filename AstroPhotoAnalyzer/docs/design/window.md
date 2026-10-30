@@ -95,7 +95,7 @@ value right-aligned in the right half, so every description stops at the middle 
 the value's length; its rows sit 14 px apart, each being a paragraph; the Tonuri
 percentiles are one per line. `VerdictPalette`
 (colour from the core's label: OK green, ATENTIE amber, PROBLEMA red, anything else
-neutral); `RasterBitmaps` (a raster region as `BitmapSource`, stride and integer zoom,
+neutral); `RasterBitmaps` (a raster region as `BitmapSource`, at an integer stride,
 frozen); `BarsCanvas` (a `FrameworkElement` drawing a histogram with up to two marker lines in
 `OnRender`, the second dashed, each at the centre of its value's bin since the bins are centred on their index); `DarkTitleBar` (DWM attribute 20, falling back to 19); `AppIcon` (largest
 frame of the .ico for "Despre").

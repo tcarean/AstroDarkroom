@@ -13,7 +13,8 @@ with the screen-versus-paper rule: the width the file would print at a monitor's
 (`PrintSizeResult.ScreenEquivalentWidthCm`, from `Thresholds.ScreenPixelMm` = 0.25 mm) and how
 many times the monitor's distance to step back to see the reference print
 (`ScreenStepBackFactor`). The three members existed for that card alone (ADR 0007 and ADR 0020
-cite them as the example of a window figure computed in the core). Two sentences of the report
+cite them as the example of a window figure computed in the core; ADR 0012 lists
+`ScreenPixelMm` among the literals lifted into `Thresholds` for a window text). Two sentences of the report
 sent the reader to the tab: the darkening of a coloured edge region ("check in Preview") and
 the note on the neutral edge regions ("check in Preview before you correct anything", R-093).
 
@@ -61,7 +62,10 @@ The preview window of a simulation row (R-131), the map window (R-130), `PrintPr
 - R-117 is `dropped`; R-110 lists seven tabs; R-023 and R-093 no longer mention the tab. The
   tests of the tab (`R117_...`, the `tab-preview` renders, the tile assertions of
   `WindowSmokeTests`) are removed, as are the tests of `ScreenEquivalentWidthCm` and
-  `RasterOps.Crop`; `R111_ClearEmptiesEveryTab` checks the Culoare tab instead.
+  `RasterOps.Crop`. `R111_ClearEmptiesEveryTab`, which checked the Report and Preview tabs,
+  now checks the five tabs of `ResultTabs.cs`; that showed the Export, Rezolutie and Culoare
+  tabs cleared only `HasResult` and kept their rows, so the three got the `Clear` override the
+  Report and Tonuri tabs already had (R-111; a Fixed line in the CHANGELOG).
 - ADR 0007 and ADR 0020 cite the step-back rule as their example of a window figure computed in
   the core; the example no longer exists, and the rule stands (the Editare Curbe and Soft proof
   figures are its examples now). The ADRs are not edited (the kit's ADR 0024).

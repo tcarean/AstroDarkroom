@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RasterOps.cs - the pure transformations of a Raster: subsampling, cropping, the gamma curve,
+// RasterOps.cs - the pure transformations of a Raster: subsampling, the gamma curve,
 // quantization, L* over the whole plane, and the guard against linear data.
 //
 // Those that return a raster return a new one, except Subsample with a stride of 1 or less,

@@ -6,19 +6,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
-### Removed
-
-- The **Preview** tab of the window (the centre at 100 % and 200 %, the four corners, the
-  whole frame, the print simulation, the crop, and the screen-versus-paper step-back rule): the
-  **Soft proof** tab shows the whole image through the paper's profile, maximised, with zoom
-  and pan, and supersedes it. With it go the step-back figures and the monitor pixel pitch
-  (`ScreenPixelMm`), which nothing else read. The report's two edge-region sentences that sent
-  the reader to the Preview now say to look at the edges before correcting anything. The
-  Preview window of a simulation row on the Tones tab stays (R-117 dropped; ADR 0067).
-
 ### Added
 
-- A **Soft proof** tab, the eighth, modelled on Lightroom Classic's soft proofing and for
+- A **Soft proof** tab, the last, modelled on Lightroom Classic's soft proofing and for
   looking only: the image through the ICC printer profile chosen for the Dmax, with the intent
   (**Perceptual**, **Relative** with black point compensation, and **Relative, no black point
   compensation**, the Tones tab's own model), the paper's white and black shown as they are, a paper gamut warning
@@ -91,6 +81,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   way (R-131; ADR 0064).
 
 ### Removed
+
+- The **Preview** tab of the window (the centre at 100 % and 200 %, the four corners, the
+  whole frame, the print simulation, the crop, and the screen-versus-paper step-back rule): the
+  **Soft proof** tab shows the whole image through the paper's profile, maximised, with zoom
+  and pan, and supersedes it. With it go the step-back figures and the monitor pixel pitch
+  (`ScreenPixelMm`), which nothing else read. The report's two edge-region sentences that sent
+  the reader to the Preview now say to look at the edges before correcting anything. The
+  Preview window of a simulation row on the Tones tab stays (R-117 dropped; ADR 0067).
 
 - The table of catalogued clouds under the Tonuri tab's simulation. The map window's list, one
   row per cloud with its name, L\*, target and patch count, is the one place the window lists
