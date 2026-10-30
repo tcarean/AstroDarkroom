@@ -14,6 +14,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   padding question is asked when the sizes differ. `Open…` and `Ctrl+O` still open a whole pair
   (R-009, R-065, ADR 0046).
 
+### Changed
+
+- Every toolbar and dialog button has the 10-pixel padding its style always declared; the
+  border hugged the text before.
+
 ### Fixed
 
 - A switch of display mode gave the outgoing pair's memory back only at the next load, not after

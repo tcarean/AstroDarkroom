@@ -75,7 +75,9 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="4">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <!-- The style's Padding reaches the content only through this margin;
+                             without it the border hugged the text (seen on 2026-10-30). -->
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -112,7 +114,9 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="4">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <!-- The style's Padding reaches the content only through this margin;
+                             without it the border hugged the text (seen on 2026-10-30). -->
+                        <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -129,6 +133,27 @@
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- The two buttons that change one image (R-065): a toolbar button whose text follows the
+         open-file glyph of Segoe MDL2 Assets, the icon font every Windows 10 and 11 carries, so
+         the two stand out from the names beside them. The content stays the plain string, which
+         is what the tests read and what UI Automation names the button by. -->
+    <Style x:Key="ChangeButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
+        <Setter Property="ContentTemplate">
+            <Setter.Value>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8E5;"
+                                   FontFamily="Segoe MDL2 Assets"
+                                   FontSize="13"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,7,0" />
+                        <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </DataTemplate>
             </Setter.Value>
         </Setter>
     </Style>

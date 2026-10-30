@@ -40,7 +40,7 @@
                                Margin="0,0,3,0"
                                MaxWidth="360"
                                TextTrimming="CharacterEllipsis" />
-                    <Button x:Name="ChangeBeforeButton" Style="{StaticResource ToolButton}" IsEnabled="False" />
+                    <Button x:Name="ChangeBeforeButton" Style="{StaticResource ChangeButton}" IsEnabled="False" />
                     <TextBlock x:Name="VsLabel" Style="{StaticResource ToolLabel}" Margin="12,0" Text="vs" />
                     <TextBlock x:Name="AfterName"
                                Style="{StaticResource ToolLabel}"
@@ -48,7 +48,7 @@
                                Margin="0,0,3,0"
                                MaxWidth="360"
                                TextTrimming="CharacterEllipsis" />
-                    <Button x:Name="ChangeAfterButton" Style="{StaticResource ToolButton}" IsEnabled="False" />
+                    <Button x:Name="ChangeAfterButton" Style="{StaticResource ChangeButton}" IsEnabled="False" />
                 </StackPanel>
 
                 <StackPanel x:Name="Toolbar" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">

@@ -67,4 +67,11 @@ images.
   with the pair no longer held, 670.6 before and 403.8 after, then 672.8 and 407.9. Fixed in this
   task, the same way; R-081 and R-113 described the intended behaviour all along.
 - The toolbar's left part is no longer one text block but the names with a button after each;
-  the README's controls table and its "What the window shows" section say so.
+  the README's controls table and its "What the window shows" section say so. The two buttons
+  carry the open-file glyph of Segoe MDL2 Assets before their text (`ChangeButton` in
+  `Theme.xaml`), asked for by the owner on 2026-10-30 so they stand out from the names; the glyph
+  is a font character, not an image, so it draws crisp at every display scale and needs no asset.
+- The first live run showed every toolbar button's border hugging its text: `ToolButton`'s and
+  `ToolToggleButton`'s templates never handed the style's `Padding` to their content. The
+  `ContentPresenter` now takes it as its margin, so every toolbar and dialog button is 20 DIPs
+  wider than before.

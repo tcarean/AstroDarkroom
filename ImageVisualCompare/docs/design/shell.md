@@ -85,7 +85,11 @@ nothing (measured on 2026-10-30, ADR 0046). On success
 `_selection` takes the new path, so a later switch of mode decodes the pair now on screen, and
 `ShowPair` keeps the view when the canvas has the same size as before and fits otherwise; `ShowPair`
 also writes the two names into `BeforeName` and `AfterName` and enables the two buttons, disabled
-in the XAML until the first pair. A cancelled dialog, a declined padding or a failure (the R-005
+in the XAML until the first pair. The buttons use `ChangeButton` of `Theme.xaml`, `ToolButton` with
+a `ContentTemplate` that puts the open-file glyph of Segoe MDL2 Assets before the content string,
+so the content stays the string the tests read and UI Automation names the button by; the
+template's `ContentPresenter` takes the style's `Padding` as its margin, in `ToolToggleButton`
+too, which no template did before. A cancelled dialog, a declined padding or a failure (the R-005
 dialog, no second file dialog) leave the pair as it was. A change of A moves `_lastDirectory`, so
 `Open…` follows the image A chosen last (R-001). `LoadWithOverlayAsync` takes the load as a
 function of the overlay's progress, the one place the overlay goes up and down for an open, a
