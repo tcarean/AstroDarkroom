@@ -841,3 +841,42 @@ hold the result. What differs from the plan, and why:
   select 3 ms, write 9 ms)`, the destination's facts read again, `Window About opened`, and
   `Process exit 0 after 80.4 s`: `App`'s constructor and `OnExit`, which no test runs, wrote
   their lines. The browse dialogs were not opened (they would need a file picked by hand).
+- **The cost's done lines**, the two Debug runs of the measurement above that were the last in
+  the log: `copy done copied 72 keys into <scratch>\out-big.fit (new 67, replaced 1, identical 4)
+  in 328 ms (source 2 ms, dest 0 ms, select 17 ms, write 309 ms)` and `... in 373 ms (source 2 ms,
+  dest 1 ms, select 20 ms, write 350 ms)`, each after `dimensions differ: source 5601x3692,
+  destination 6016x4016; forced, the copy goes on`.
+
+### The review of 2026-10-30
+
+A subagent reviewed the branch at the owner's word ("Review first"), with the intent and the
+rules, not the author's conclusions. Each of its nine findings was checked in the code before
+anything changed; all nine held.
+
+1. **A dry run from a named pipe crashed** on `FileStream.Length`, asked only for the read line:
+   reproduced by `R042_AHeaderReadFromAPipeIsLoggedWithoutItsSize` (`NotSupportedException` at
+   `FitsHeader.ReadPrimary`), fixed by asking only a stream that can seek (`size unknown`,
+   `bytes=none`, `data=none` otherwise); R-042 and ADR 0009 say so.
+2. **R-045 tested only the console's build of `NLog.Targets.AtomicFile`** (`net8.0`, 8192 bytes);
+   the window ships `net8.0-windows7.0` (7168 bytes): the two writers moved into `LogFiles`,
+   linked into both test projects, and `R045_TwoWindowsWritingAtFullSpeedKeepEveryLine` runs them
+   through the window's build, each test first checking which build it loaded.
+3. **No test saw the About card on screen**: `R035_TheAboutWindowLoadsAndRenders` now reads the
+   rendered card (its heading, the NLog row, the licence, the link). The row's runs are not
+   reported by `TextBlock.Text` inside a template, so the test reads the displayed text; the
+   English pass of R-036 has the same blind spot for those two blocks, whose English texts hold
+   no Romanian word.
+4. **`logging.md` overstated what the tests run**: it now lists the log calls no test runs and
+   which of them ran by hand.
+5. **Nothing pinned the variable's name**: `R044_TheVariableIsCOPYWCS_LOG`.
+6. **A crash's last line said `exit 1`**, a refusal's code, when Windows unwinds the stack and
+   `Main`'s `finally` runs: the placeholder is now the crash code, 0xE0434352, and `logging.md`
+   describes both endings of a crashed process's log.
+7. **A HISTORY card from a file name outside ASCII** was logged with the letter while the file
+   holds `?`: `LogText.Card` now writes what ASCII encodes, pinned by
+   `R042_ACardIsLoggedAsTheFileHoldsIt_ALetterOutsideAsciiAsAQuestionMark`.
+8. **The copy test checked 2 of 15 card lines**: it now checks all 15 in the selection's order
+   and the 14 new to the destination.
+9. **Two doc points**: the done lines behind "`write 309 ms` of a `328 ms` run" are quoted above,
+   and `LogCapture`'s and `logging.md`'s claim that a throwing line fails a test now says it holds
+   for a message that throws while it is composed, not for NLog's own rendering.

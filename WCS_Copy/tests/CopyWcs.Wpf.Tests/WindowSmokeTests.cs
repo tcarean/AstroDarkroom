@@ -20,6 +20,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -337,6 +338,18 @@ public partial class WindowSmokeTests
             // root panel inherits the DataContext and goes through the same bindings.
             Render((FrameworkElement)about.Content, 560, AboutHeight(about), "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+
+            // The third-party card is on screen, not only in the view-model (R-035). The row's
+            // name and link are inline runs in a template, which TextBlock.Text does not report
+            // here, so every block is read as the text it displays.
+            List<string> shown = Descendants((FrameworkElement)about.Content).OfType<TextBlock>()
+                .Select(t => new TextRange(t.ContentStart, t.ContentEnd).Text).ToList();
+            Assert.Contains("COMPONENTE TERTE", shown);
+            // (the XAML's line breaks between the runs read as spaces around the dash)
+            Assert.Contains(shown, t => t.StartsWith("NLog", StringComparison.Ordinal)
+                                        && t.Contains("scrierea jurnalului de diagnostic", StringComparison.Ordinal));
+            Assert.Contains("BSD-3-Clause", shown);
+            Assert.Contains("https://nlog-project.org/", shown);
 
             BitmapSource logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);
             Assert.Equal(256, logo.PixelWidth);

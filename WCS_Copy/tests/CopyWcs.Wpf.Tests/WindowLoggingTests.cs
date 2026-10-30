@@ -15,9 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using CopyWcs.Tests;
 using NLog;
+using NLog.Targets;
 
 namespace CopyWcs.Wpf.Tests;
 
@@ -80,6 +83,24 @@ public class WindowLoggingTests
 
         Assert.NotEmpty(fromWindow);
         Assert.Equal(fromConsole, fromWindow);
+    }
+
+    /// <summary>
+    /// Two windows writing one file at full speed keep every line, through the build of
+    /// <c>NLog.Targets.AtomicFile</c> the window ships, its <c>net8.0-windows7.0</c> one, which
+    /// is not the console's (R-045; the review of 2026-10-30 found it untested).
+    /// </summary>
+    [Fact]
+    public void R045_TwoWindowsWritingAtFullSpeedKeepEveryLine()
+    {
+        Assert.Equal("Windows7.0", typeof(AtomicFileTarget).Assembly.GetCustomAttribute<TargetPlatformAttribute>()?.PlatformName);
+        using TempWorkspace ws = new();
+        string folder = ws.FilePath("log");
+        const int Lines = 4000;   // about 1.6 MiB together: the writers cross the roll
+
+        LogFiles.TwoWriters result = LogFiles.WriteTwoAtFullSpeed(folder, "CopyWcs.Wpf", Lines);
+
+        LogFiles.AssertEveryLineKept(folder, result, Lines);
     }
 
     /// <summary>A run's messages from <c>copy start</c> to <c>copy done</c>, the folder and the times made neutral.</summary>

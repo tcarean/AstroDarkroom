@@ -45,6 +45,11 @@ internal static class LogText
     /// <returns>The text: <c>2880</c>, <c>-1</c>.</returns>
     internal static string Int(long v) => v.ToString(Inv);
 
+    /// <summary>An integer that may be unknown: <see cref="Int(long)"/>, or <c>none</c>.</summary>
+    /// <param name="v">The value, or null when it cannot be known (the length of a pipe).</param>
+    /// <returns>The text.</returns>
+    internal static string Int(long? v) => v.HasValue ? Int(v.Value) : "none";
+
     /// <summary>An elapsed time in milliseconds: <c>1141 ms</c>. The log's short form; the long one is <see cref="Seconds"/>.</summary>
     /// <param name="ms">The milliseconds.</param>
     /// <returns>The text.</returns>
@@ -87,9 +92,11 @@ internal static class LogText
     internal static string Dimensions(int width, int height) => Int(width) + "x" + Int(height);
 
     /// <summary>
-    /// A header card as the log writes it: its text without the trailing spaces, each control
-    /// character written as <c>\xNN</c>, so a malformed header never puts a NUL byte in the file.
-    /// The reader decodes ASCII, so nothing above 0x7F reaches here.
+    /// A header card as the log writes it, which is as the file holds it: its text without the
+    /// trailing spaces, each control character written as <c>\xNN</c>, so a malformed header
+    /// never puts a NUL byte in the log, and each character ASCII cannot hold written as the
+    /// <c>?</c> the writer's ASCII encoding puts in the file for it (a HISTORY card built from a
+    /// source whose name holds a letter outside ASCII has a <c>?</c> for it in both).
     /// </summary>
     /// <param name="card">The card, normally 80 characters.</param>
     /// <returns>The text.</returns>
@@ -155,12 +162,15 @@ internal static class LogText
         "source=" + r.Source + " dest=" + r.Dest + " output=" + (r.Output ?? "in place")
         + " optical=" + Yes(r.IncludeOptical) + " force=" + Yes(r.Force) + " dryRun=" + Yes(r.DryRun);
 
-    /// <summary>A text with each character below 0x20, and 0x7F, written as <c>\xNN</c>.</summary>
+    /// <summary>
+    /// A card's text as the file holds it: each character below 0x20, and 0x7F, written as
+    /// <c>\xNN</c>, and each one above 0x7F as <c>?</c>, as <c>Encoding.ASCII</c> writes it.
+    /// </summary>
     /// <param name="s">The text.</param>
     /// <returns>The text, unchanged when it holds no such character.</returns>
     private static string Escape(string s)
     {
-        if (!s.Any(IsControl))
+        if (!s.Any(c => IsControl(c) || c > 0x7F))
         {
             return s;
         }
@@ -174,7 +184,7 @@ internal static class LogText
             }
             else
             {
-                sb.Append(c);
+                sb.Append(c > 0x7F ? '?' : c);
             }
         }
 

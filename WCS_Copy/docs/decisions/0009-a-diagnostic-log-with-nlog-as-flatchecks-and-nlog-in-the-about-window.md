@@ -57,7 +57,13 @@ questions to the owner with a recommendation each; the owner chose both recommen
 - **`Main` is a shim around the run** (the owner's answer, 2026-10-30): FlatCheck's guarded
   `Apply`, one `CopyWcsCli.Run`, `Close` in a `finally`; `CLAUDE.md`'s rule "`Main` is a one-line
   shim" is amended to say so, its purpose kept (console behaviour lives in `CopyWcsCli` or
-  `Options`, testable in process).
+  `Options`, testable in process). One value differs from FlatCheck's: the exit code the last line
+  reports when the run threw is the one the crashed process gets, 0xE0434352, not 1, which is a
+  refusal's (the review of 2026-10-30: where Windows unwinds the stack the `finally` runs and the
+  line is written).
+- **A value the log reads must never throw.** The read line asks a file its length only when it
+  can seek; a named pipe is logged `size unknown` (the review of 2026-10-30 found the length
+  ending a dry run from a pipe with an unhandled exception the copy never had).
 - **NLog's notice is in the About window** (the owner's answer, 2026-10-30): the siblings'
   third-party card comes back (DarksCheck's markup and `ThirdParty.cs` shape, FlatCheck's NLog
   entry: name, role, licence, copyright line, link), the About button's tooltip goes back to the

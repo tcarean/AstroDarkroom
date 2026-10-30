@@ -27,6 +27,13 @@ namespace CopyWcs;
 internal static class Program
 {
     /// <summary>
+    /// The exit code Windows gives a process an unhandled .NET exception ended, 0xE0434352. The
+    /// log's last line carries it when a crash still reaches <see cref="Main"/>'s <c>finally</c>,
+    /// so that line does not read as a refusal's exit 1 (the review of 2026-10-30).
+    /// </summary>
+    private const int CrashExitCode = unchecked((int)0xE0434352);
+
+    /// <summary>
     /// Runs the console on the real standard streams, between the diagnostic log's first and last
     /// lines (<see cref="LogSetup.Apply"/>, <see cref="LogSetup.Close"/>; R-040 to R-046).
     /// </summary>
@@ -39,9 +46,11 @@ internal static class Program
         try { LogSetup.Apply("copywcs", args); }
         catch (Exception) { }
 
-        // What the log's last line reports when the run throws; the process itself then exits
-        // with the runtime's crash code, not with this.
-        int code = 1;
+        // What the log's last line reports when the run throws: the code the crashed process
+        // gets. Whether that line is written depends on the machine: where Windows unwinds the
+        // stack before ending the process (its crash dialog turned off) this finally runs; with
+        // Windows Error Reporting on, the log ends at the FATAL line (docs/design/logging.md).
+        int code = CrashExitCode;
         try
         {
             code = CopyWcsCli.Run(args, Console.Out, Console.Error);

@@ -28,8 +28,9 @@ namespace CopyWcs.Tests;
 /// The diagnostic log in the tests (linked into CopyWcs.Wpf.Tests too), FlatCheck's. A module
 /// initializer configures NLog once, before any test runs, with one target at <c>Trace</c> that
 /// renders every event through <see cref="LogSetup.LineLayout"/>: every test thus also runs every
-/// log line on its path, and a line that throws fails the test that reaches it instead of a
-/// user's run. A test that reads the lines opens a capture with <see cref="Start"/>; it sees only
+/// log line on its path, and a line whose message throws while it is composed fails the test
+/// that reaches it instead of a user's run (an error inside NLog's own rendering is swallowed, as
+/// in a user's run). A test that reads the lines opens a capture with <see cref="Start"/>; it sees only
 /// the events of its own call tree (an <see cref="AsyncLocal{T}"/> scope, the same mechanism as
 /// <see cref="Ui.Use"/>), so the tests running beside it add nothing; one capture at a time per
 /// call tree. The tests never call <see cref="LogSetup.Apply"/>: only the two entry points do.

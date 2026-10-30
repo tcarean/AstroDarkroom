@@ -45,8 +45,10 @@
   </ItemGroup>
   <!-- LogCapture configures the diagnostic log for the whole test assembly, at Trace, and lets a
        test read its own lines (ADR 0009): linked, so the window's tests and the console's run
-       every log line the same way. -->
+       every log line the same way. LogFiles reads the log's files, so that R-045 runs here too,
+       through the window's own build of NLog.Targets.AtomicFile. -->
   <ItemGroup>
     <Compile Include="..\CopyWcs.Tests\LogCapture.cs" Link="Shared\LogCapture.cs" />
+    <Compile Include="..\CopyWcs.Tests\LogFiles.cs" Link="Shared\LogFiles.cs" />
   </ItemGroup>
 </Project>

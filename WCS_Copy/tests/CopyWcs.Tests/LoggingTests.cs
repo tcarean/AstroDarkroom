@@ -15,11 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.IO.Pipes;
+using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Text.RegularExpressions;
 using NLog;
 using NLog.Targets;
 using Xunit.Abstractions;
+using static CopyWcs.Tests.LogFiles;
 
 namespace CopyWcs.Tests;
 
@@ -37,21 +41,9 @@ public class LoggingTests
     /// <summary>The runner's output, for the measured file lists.</summary>
     public LoggingTests(ITestOutputHelper output) => _output = output;
 
-    private static readonly Regex LinePrefix = new(
-        @"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d\.\d{4} (TRACE|DEBUG|INFO |WARN |ERROR|FATAL) \[\d+:\d+\] \S+ ",
-        RegexOptions.Compiled);
-
-    /// <summary>The files one executable left in a folder, oldest first by NLog's own numbering:
-    /// the bare name, then _01, _02 and so on.</summary>
-    private static string[] FilesOf(string folder, string executable) =>
-        Directory.GetFiles(folder, executable + "*.log")
-                 .Where(f => Regex.IsMatch(Path.GetFileName(f), "^" + Regex.Escape(executable) + @"(_\d+)?\.log$", RegexOptions.IgnoreCase))
-                 .OrderBy(f => Path.GetFileNameWithoutExtension(f).Length)
-                 .ThenBy(f => f, StringComparer.Ordinal)
-                 .ToArray();
-
-    /// <summary>A private factory on <paramref name="config"/>, standing for one process.</summary>
-    private static LogFactory Factory(NLog.Config.LoggingConfiguration config) => new() { Configuration = config };
+    /// <summary>The keys of the test pair's copy, in the order the selection takes them (R-007).</summary>
+    private static readonly string[] PairKeys =
+        ["CTYPE1", "CTYPE2", "CRPIX1", "CRPIX2", "CRVAL1", "CRVAL2", "CDELT1", "CDELT2", "PLTSOLVD", "A_0_2", "BP_1_1", "FOCALLEN", "XPIXSZ", "OBJECT", "TELESCOP"];
 
     /// <summary>Writes <paramref name="bytes"/> of lines through one executable's configuration and closes it.</summary>
     private static void WriteThrough(string folder, string executable, long bytes, string tag)
@@ -343,6 +335,10 @@ public class LoggingTests
         Assert.Contains("selected 15 keys: 9 WCS, 2 SIP, 4 optical (optical keys asked: yes)", messages);
         Assert.Contains("card CTYPE1: CTYPE1  = 'RA---TAN-SIP' / TAN + SIP | dest: none", messages);
         Assert.Contains("card OBJECT: OBJECT  = 'M42' | dest: OBJECT  = 'M43'", messages);
+        // One card line per key selected, in the selection's order, the other 14 new to the destination.
+        string[] cardLines = messages.Where(m => m.StartsWith("card ", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(PairKeys, cardLines.Select(m => m[5..m.IndexOf(':', StringComparison.Ordinal)]));
+        Assert.Equal(14, cardLines.Count(m => m.EndsWith(" | dest: none", StringComparison.Ordinal)));
         Assert.Contains("appended HISTORY WCS copied from source.fit", messages);
         Assert.Contains("write " + dst + " in place through " + dst + ".tmp, the data from byte 2880 of " + dst, messages);
         Assert.Contains("wrote " + dst + " (3.2 KiB) bytes=3280 cards=21 blocks=1 data=400", messages);
@@ -469,6 +465,73 @@ public class LoggingTests
         Assert.Contains(@"card OBJECT: OBJECT  = 'M42' / a\x00b | dest: OBJECT  = 'M42'", capture.Messages);
     }
 
+    /// <summary>
+    /// A header read from a stream that cannot seek (a named pipe) has no length to tell: the
+    /// read line says so instead of throwing, and the run goes on as it did before the log
+    /// (R-041, R-042; the review of 2026-10-30 found <c>FileStream.Length</c> ending such a run
+    /// with an unhandled exception). Windows only: the test returns elsewhere.
+    /// </summary>
+    [Fact]
+    public async Task R042_AHeaderReadFromAPipeIsLoggedWithoutItsSize()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        using var ws = new TempWorkspace();
+        var (_, dst) = Pair(ws);
+        string name = "copywcs-tests-" + Guid.NewGuid().ToString("N");
+        byte[] header = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards());
+        var done = new TaskCompletionSource();
+        using var server = new NamedPipeServerStream(name, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+        Task serve = Task.Run(async () =>
+        {
+            await server.WaitForConnectionAsync();
+            await server.WriteAsync(header);
+            await done.Task;
+        });
+        string pipe = @"\\.\pipe\" + name;
+        using var capture = LogCapture.Start();
+
+        int code;
+        try
+        {
+            code = Cli(pipe, dst, "--dry-run").Code;
+        }
+        finally
+        {
+            done.SetResult();
+            await serve;
+        }
+
+        Assert.Equal(0, code);
+        Assert.Contains(capture.Messages, m => m.StartsWith(
+            "read " + pipe + " (size unknown) bytes=none cards=20 blocks=1 dataOffset=2880 data=none BITPIX=16 ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A card is written as the file holds it: a HISTORY card built from a source named with a
+    /// letter outside ASCII is logged with the question mark the file gets for it, not with the
+    /// letter (the review of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R042_ACardIsLoggedAsTheFileHoldsIt_ALetterOutsideAsciiAsAQuestionMark()
+    {
+        using var ws = new TempWorkspace();
+        byte[] data = FitsTestData.DeterministicData(400);
+        // A-ring, one letter outside ASCII, by its code point so this file stays ASCII.
+        string src = ws.WriteFile("Nebula-" + (char)0xC5 + ".fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), data));
+        string dst = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), data));
+        using (var capture = LogCapture.Start())
+        {
+            Assert.Equal(0, Cli(src, dst).Code);
+            Assert.Contains("appended HISTORY WCS copied from Nebula-?.fit", capture.Messages);
+        }
+
+        Assert.Equal("HISTORY WCS copied from Nebula-?.fit", FitsHeader.ReadPrimary(dst).GetCard("HISTORY")!.TrimEnd());
+    }
+
     [Fact]
     public void R042_ARunThatEndsWithoutAnOutcomeSaysSoWithItsStages()
     {
@@ -547,6 +610,15 @@ public class LoggingTests
         Assert.Equal(LogLevel.FromString(level), LogSetup.LevelFrom(value));
     }
 
+    /// <summary>The variable is the one the README tells the user to set: a typo in the constant
+    /// would leave every other test green and <c>set COPYWCS_LOG=trace</c> doing nothing (the
+    /// review of 2026-10-30).</summary>
+    [Fact]
+    public void R044_TheVariableIsCOPYWCS_LOG()
+    {
+        Assert.Equal("COPYWCS_LOG", LogSetup.LevelVariable);
+    }
+
     [Fact]
     public void R044_OffCreatesNeitherTheFolderNorAFile()
     {
@@ -566,95 +638,31 @@ public class LoggingTests
 
     // ---------------------------------------------------------------- R-045: two writers
 
-    /// <summary>The lines two writers left in a folder, whole, by writer: the numbers each one's
-    /// lines carry, and the count of lines that are neither writer's whole line.</summary>
-    private static (List<int> A, List<int> B, int Broken, string Order) TwoWritersLines(string folder, string executable)
-    {
-        var a = new List<int>();
-        var b = new List<int>();
-        var order = new StringBuilder();
-        int broken = 0;
-        var whole = new Regex(@" (A|B) (a|b) (\d{5}) ([AB]+)$");
-        foreach (string line in FilesOf(folder, executable).SelectMany(File.ReadAllLines))
-        {
-            Match m = whole.Match(line);
-            bool ok = LinePrefix.IsMatch(line) && m.Success && m.Groups[1].Value.Equals(m.Groups[2].Value, StringComparison.OrdinalIgnoreCase);
-            int n = ok ? int.Parse(m.Groups[3].Value) : -1;
-            // the payload is the writer's letter, as many as the line's number says
-            ok = ok && m.Groups[4].Value == new string(m.Groups[1].Value[0], 140 + n % 37);
-            if (!ok)
-            {
-                broken++;
-                continue;
-            }
-
-            (m.Groups[1].Value == "A" ? a : b).Add(n);
-            order.Append(m.Groups[1].Value);
-        }
-
-        return (a, b, broken, order.ToString());
-    }
-
     /// <summary>
-    /// Two processes of one executable (two windows) write into the same file at full speed, and
-    /// every line of both arrives whole, once, past the 1 MiB roll too (R-040, R-045). Two
-    /// factories stand for the two processes; each opens the file on its own. NLog's plain target
-    /// failed this in FlatCheck: closed between lines it lost about 1 % of them, kept open one
-    /// writer lost all of its (FlatCheck's ADR 0070).
+    /// Two processes of one executable write into the same file at full speed, and every line of
+    /// both arrives whole, once, past the 1 MiB roll too (R-040, R-045), through the build of
+    /// <c>NLog.Targets.AtomicFile</c> the console ships, its <c>net8.0</c> one; the window's
+    /// build has its own test in CopyWcs.Wpf.Tests. NLog's plain target failed this in FlatCheck:
+    /// closed between lines it lost about 1 % of them, kept open one writer lost all of its
+    /// (FlatCheck's ADR 0070).
     /// </summary>
     [Fact]
     public void R045_TwoProcessesWritingAtFullSpeedKeepEveryLine()
     {
+        Assert.Null(typeof(AtomicFileTarget).Assembly.GetCustomAttribute<TargetPlatformAttribute>());
         using var ws = new TempWorkspace();
         string folder = ws.FilePath("log");
-        using LogFactory a = Factory(LogSetup.Build("CopyWcs.Wpf", folder, LogLevel.Debug));
-        using LogFactory b = Factory(LogSetup.Build("CopyWcs.Wpf", folder, LogLevel.Debug));
         const int Lines = 4000;   // about 1.6 MiB together: the writers cross the roll
 
-        // Two threads of their own, released together: Parallel.Invoke may run the second action
-        // after the first on a busy pool, and then nothing would overlap.
-        using var together = new Barrier(2);
-        var ta = new Thread(() =>
-        {
-            Logger log = a.GetLogger("A");
-            together.SignalAndWait();
-            for (int i = 0; i < Lines; i++)
-            {
-                log.Info($"a {i:D5} " + new string('A', 140 + i % 37));
-            }
-        });
-        var tb = new Thread(() =>
-        {
-            Logger log = b.GetLogger("B");
-            together.SignalAndWait();
-            for (int i = 0; i < Lines; i++)
-            {
-                log.Info($"b {i:D5} " + new string('B', 140 + i % 37));
-            }
-        });
-        ta.Start();
-        tb.Start();
-        ta.Join();
-        tb.Join();
-        a.Shutdown();
-        b.Shutdown();
+        TwoWriters result = WriteTwoAtFullSpeed(folder, "copywcs", Lines);
 
-        string[] files = FilesOf(folder, "CopyWcs.Wpf");
-        foreach (string f in files)
+        foreach (string f in result.Files)
         {
             _output.WriteLine($"{Path.GetFileName(f)} {new FileInfo(f).Length} bytes");
         }
 
-        var (fromA, fromB, broken, order) = TwoWritersLines(folder, "CopyWcs.Wpf");
-        _output.WriteLine($"whole lines: {fromA.Count} from A, {fromB.Count} from B; broken: {broken}");
-        Assert.Equal(Directory.GetFiles(folder).Length, files.Length);
-        Assert.InRange(files.Length, 2, LogSetup.FilesPerExecutable);
-        Assert.Equal(0, broken);
-        Assert.Equal(Enumerable.Range(0, Lines), fromA.OrderBy(n => n));
-        Assert.Equal(Enumerable.Range(0, Lines), fromB.OrderBy(n => n));
-        // The writers did overlap: their lines interleave in the file, both ways round.
-        Assert.Contains("AB", order, StringComparison.Ordinal);
-        Assert.Contains("BA", order, StringComparison.Ordinal);
+        _output.WriteLine($"whole lines: {result.FromA.Count} from A, {result.FromB.Count} from B; broken: {result.Broken}");
+        AssertEveryLineKept(folder, result, Lines);
     }
 
     // ---------------------------------------------------------------- R-046: the language

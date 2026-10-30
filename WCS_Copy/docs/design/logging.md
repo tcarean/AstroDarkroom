@@ -3,8 +3,9 @@
 **Covers:** `src/CopyWcs.Core/Logging/LogSetup.cs`, `src/CopyWcs.Core/Logging/LogText.cs`,
 `src/CopyWcs.Core/Logging/RunClock.cs`, `src/CopyWcs.Cli/Program.cs`,
 `src/CopyWcs.Wpf/App.xaml.cs`, `src/CopyWcs.Wpf/Loggers.cs`, `tests/CopyWcs.Tests/LogCapture.cs`,
-`tests/CopyWcs.Tests/LoggingTests.cs`, `tests/CopyWcs.Wpf.Tests/WindowLoggingTests.cs`, and the
-log lines of the seams the table below lists.
+`tests/CopyWcs.Tests/LogFiles.cs`, `tests/CopyWcs.Tests/LoggingTests.cs`,
+`tests/CopyWcs.Wpf.Tests/WindowLoggingTests.cs`, and the log lines of the seams the table below
+lists.
 
 The behaviour is R-040 to R-046; the decisions are ADR 0009, which takes FlatCheck's (its ADRs
 0070 and 0072) and its measurements; this note is the mechanics. `Logging/` is adapted from
@@ -38,8 +39,12 @@ process:
 4. The first line, `StartupLine`, at Info.
 
 `CopyWcsCli.Run` configures nothing, so the tests call it in process; the window's test fixture
-(`StaFixture`) builds a plain `Application`, not `App`, for the same reason. `App`'s constructor
-and `OnExit` are thus the only log calls no test runs.
+(`StaFixture`) builds a plain `Application`, not `App`, for the same reason. No test therefore
+runs `Program.Main`, `App`'s constructor, `OnStartup` and `OnExit`, the dialogs' handlers of
+`MainWindow`, `ShowAbout` or `AboutWindow.OpenLink`; the tests cover the text `App.StartLine`
+builds, and the runs by hand of 2026-10-30 (the plan's Outcome) wrote the process's first and last
+lines of both applications, `App`'s start line and `About opened`. The dialogs' lines, a refused
+`--lang` in the window and a link that would not open have not run anywhere yet.
 
 ## The files, measured
 
@@ -69,7 +74,8 @@ The cost, measured on 2026-10-30 with the Release console copying the Veil fixtu
 the 290 MB stack `procesate\result.fit` of the same session (6016 x 4016, so with `--force`, `-o`
 into a scratch folder), the runs alternated: 1.52 s (the cold first run), 0.49 s and 0.65 s with
 `COPYWCS_LOG=off`; 0.63 s, 0.56 s and 0.63 s at Debug, each writing 12194 bytes of log. The log
-costs nothing measurable: a copy's time is the data stream (`write 309 ms` of a `328 ms` run).
+costs nothing measurable: a copy's time is the data stream (`write 309 ms` of a `328 ms` run, the
+done line the plan's Outcome quotes).
 The single-file console published as `kit.json` publishes it, copied alone into a folder and run
 from another, wrote `log\copywcs.log` beside itself; the window's published `NLog.dll` and
 `NLog.Targets.AtomicFile.dll` hash equal to those in AstroDarkroom's 1.0.0 folder.
@@ -81,8 +87,10 @@ padded to five, `[pid:thread]`, the logger's name, the message, and on the next 
 `Exception.ToString()` when there is one. Messages are composed from `LogText` and logged as plain
 strings, so NLog never parses them as message templates and a `{` in a path is harmless; a line
 whose message costs a loop is guarded by `IsDebugEnabled` or `IsTraceEnabled`. A card is written
-by `LogText.Card` (no trailing spaces, a control character as `\xNN`, so a NUL in a malformed
-header never reaches the file), a value by `LogText.Value` (the text of a value card up to its
+by `LogText.Card` as the file holds it (no trailing spaces, a control character as `\xNN`, so a
+NUL in a malformed header never reaches the log, and a character outside ASCII as the `?` the
+writer's ASCII encoding puts in the file, which only a HISTORY card built from a file name can
+hold), a value by `LogText.Value` (the text of a value card up to its
 comment, a quoted string whole); neither feeds the copy, which stays the raw card (R-010).
 
 Every logger is a `Logger` named `Log`, taken from `LogManager.GetLogger` with `using NLog`: a
@@ -111,7 +119,7 @@ identical)`; in a dry run too.
 | Seam | Level | What |
 | --- | --- | --- |
 | `LogSetup` | Info, Fatal, Error | the first line, the last line (`exit <code> after <s> s`); the unhandled exceptions; a task nobody awaited |
-| `FitsHeader.ReadPrimary` | Info, Trace | `read <path> (<size>) bytes cards blocks dataOffset data` and the keys of `LogText.Keys`; at Trace `<path> card <n>: <card>`, every card from 1 |
+| `FitsHeader.ReadPrimary` | Info, Trace | `read <path> (<size>) bytes cards blocks dataOffset data` and the keys of `LogText.Keys` (`size unknown`, `bytes=none`, `data=none` for a stream that cannot tell its length, a named pipe: asking would throw); at Trace `<path> card <n>: <card>`, every card from 1 |
 | `FitsHeader.AddHistory` | Debug | `appended <card>` |
 | `FitsHeader.WriteWithDataFrom` | Debug, Trace, Info | `write <target>[ in place through <target>.tmp], the data from byte <offset> of <source>` before the file is created, every card to be written at Trace, `wrote <target> (<size>) bytes cards blocks data` after the move |
 | `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the two warnings and the two refusals without one; `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical` and `card <KEY>: <card> \| dest: <none, same or card>` |
@@ -128,7 +136,12 @@ its done line the outcome, and a copy from the window writes what the console's 
 ## Reading a log
 
 A process begins at its `Process <name> <version> starting` line and ends at `Process exit <code>
-after <s> s`; a crash ends instead at a `FATAL` line. Two processes writing at once interleave,
+after <s> s`. A crash writes a `FATAL` line with its stack, and with Windows Error Reporting on
+the log ends there; where Windows unwinds the stack before ending the process (its crash dialog
+turned off, as the review of 2026-10-30 found in a test script), the console's `finally` blocks
+still run, and the `FATAL` line is followed by the run's `ended without an outcome` line and
+`exit -532462766`, the code the crashed process gets (`Program.CrashExitCode`, never the
+refusal's 1). Two processes writing at once interleave,
 and the `[pid:thread]` field separates them. A run is found from `copy start` to `copy done`,
 whose stage times say where the time went, or to `ended without an outcome` when it threw; a wrong
 WCS from the `card` lines and the two `read` lines (`ROWORDER`, `NAXIS`, the solve's `CTYPE`); an
@@ -139,9 +152,14 @@ headers and the one written.
 
 `LogCapture` configures NLog once per test assembly, through a module initializer, with one
 target at Trace that renders every event through `LineLayout`: every test thus runs every log
-line on its path, and a line that throws fails the test that reaches it. A test that reads the
-lines opens a capture with `LogCapture.Start`, an `AsyncLocal` scope like `Ui.Use`, which sees
-only its own call tree (a `Task.Run` inside it included), so the tests running beside it add
-nothing; one capture at a time per call tree. The window's test project links the same file. The
-file tests never touch that configuration: they build the applications' configuration with
-`LogSetup.Build` into a private `LogFactory`, which stands for one process.
+line on its path, and a line whose message throws while it is composed fails the test that
+reaches it (an error inside NLog's own rendering is swallowed, as in a user's run). A test that
+reads the lines opens a capture with `LogCapture.Start`, an `AsyncLocal` scope like `Ui.Use`,
+which sees only its own call tree (a `Task.Run` inside it included), so the tests running beside
+it add nothing; one capture at a time per call tree. The window's test project links the same
+file. The file tests never touch that configuration: they build the applications' configuration
+with `LogSetup.Build` into a private `LogFactory`, which stands for one process. `LogFiles`, linked
+into both test projects too, reads the files and runs the two writers of R-045, so each assembly
+tests the build of `NLog.Targets.AtomicFile` its application ships: `net8.0` for the console,
+`net8.0-windows7.0` for the window, two different files (8192 and 7168 bytes), each test first
+checking which one it loaded.
