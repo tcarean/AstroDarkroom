@@ -562,10 +562,10 @@ Docs: `docs/requirements.md` (R-070 to R-073), new `docs/decisions/0029-...md`, 
 
 ## Outcome and deviations (2026-10-30)
 
-Implemented as planned, on `claude/Log-LightsCheck-with-NLog`, in three commits (the packages and
-the requirements as `accepted`; the code and the tests, the requirements `implemented`; the
-docs), the gate green each time. ADR 0029 and `docs/design/logging.md` hold the result. What
-differs from the plan, and why:
+Implemented as planned, on `claude/Log-LightsCheck-with-NLog`: the packages with the requirements
+as `accepted` (116678f); the code and the tests, the requirements `implemented` (5fa4362); the
+docs (f10093f); `Logging/` named in `CLAUDE.md`'s layout (345ec8a); the gate green each time. ADR
+0029 and `docs/design/logging.md` hold the result. What differs from the plan, and why:
 
 - **The branch and the worktree are `Log-LightsCheck-with-NLog`.** DarksCheck's plan of the same
   day names `claude/Add-a-diagnostic-log-with-NLog` too, and branch names are shared by the whole
