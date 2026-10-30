@@ -3,18 +3,28 @@
 **Covers:** `src/LightsCheck.Wpf/`, `src/LightsCheck.Core/Analysis/StarCrops.cs`, `tests/LightsCheck.Wpf.Tests/`, `Icon/make_icon.py`.
 
 The behaviour is R-029 to R-032; the reasons are ADR 0008. The pieces copied from FlatCheck
-(`Theme/Dark.xaml`, `Presentation/*.cs`) are marked as such in their headers and are
-FlatCheck's to improve first (the same rule as the readers, ADR 0003); `Charts.cs` and the
-view-models are LightsCheck's own.
+(`Theme/Dark.xaml`, `Presentation/*.cs` but one) are FlatCheck's to improve first (the same rule
+as the readers, ADR 0003); `Charts.cs` and the view-models are LightsCheck's own, and the one,
+`Presentation/AccessibleTabControl.cs`, is AstroPhotoAnalyzer's class in LightsCheck's style
+(ADR 0028).
 
 ## The shape
 
 `MainWindow.xaml` is the top bar (banner, folder, the two inputs, the buttons) and one content
 grid holding four overlapping states: the empty state (no folder and no problem), the problem
-card (`HasProblem`), the `TabControl` (`HasResult`) and the wait screen over everything
+card (`HasProblem`), the tabs (`HasResult`) and the wait screen over everything
 (`IsRunning`). Each state is a visibility binding on `MainViewModel`; there is no navigation
-code. The six tabs are `UserControl`s under `Views/` with no code of their own beyond
-`InitializeComponent`; `AboutWindow` is the only second window.
+code. Five of the six tabs are `UserControl`s under `Views/` with no code of their own beyond
+`InitializeComponent`, the sixth the report's text box in a card; `AboutWindow` is the only
+second window.
+
+The tabs are an `AccessibleTabControl` (R-067, ADR 0028). The theme's template for it names the
+presenter of the selected content `ContentHost`, and the control's automation peer adds that
+presenter's children, the selected tab's view, under the tab's item, which the stock peer does
+only through the stock name `PART_SelectedContentHost`; that name would also move the keyboard
+focus into a tab on a click on its header. The theme's style targets the class, and the
+window's own style of the tabs, the `HasResult` trigger, is based on it: an implicit style
+applies to its exact type only.
 
 ## One view-model, fed by the core
 
@@ -131,4 +141,7 @@ out, renders it to a bitmap and fails on any binding error traced by
 `PresentationTraceSources`; with `LIGHTSCHECK_DUMP_SCREENS=<folder>` each render is saved as a
 PNG. `StaFixture` is the one STA thread with a `Dispatcher.Run` loop the view-models' awaits
 need; the assembly disables test parallelization. `MainViewModelTests` cover R-029 to R-032
-without a window.
+without a window. `AutomationTreeTests` ask the automation peers in process, the same ones a
+client in another process is answered by: every tab's content under its item, once, and under
+no other tab's item; and nothing in the tabs' applied template by the stock name, a lookup,
+since keyboard focus needs a window on screen.

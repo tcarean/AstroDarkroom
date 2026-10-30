@@ -33,8 +33,8 @@ namespace FlatCheck.Wpf
     /// in the system's browser.</summary>
     internal static class ExternalLink
     {
-        /// <summary>The diagnostic log of the user's actions in the windows (R-110).</summary>
-        static readonly Logger Log = LogManager.GetLogger("Window");
+        /// <summary>The diagnostic log: the link that could not be opened (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         /// <summary>
         /// Opens the link in the system's browser. UseShellExecute is mandatory on .NET Core -

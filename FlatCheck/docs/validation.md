@@ -191,6 +191,12 @@ Every case also prints its measured figures as a JSON line, and appends it to th
   first run's, 4.3 minutes; and after the second review's (4589022): the same, 4.4 minutes. No
   figure changed; no formula moved.
 
+- 2026-10-27: all 48 cases re-measured at the wrap-up of the diagnostic log's review fixes
+  (`claude/Fix-the-diagnostic-log-review-findings`, after 97808e8), which touched `Report/` with
+  a new refusal text (`SyntheticReport.NoProfile`, ADR 0071), a dead `(N skipped)` branch
+  removed and `StructureReport.CornerName` written through `EnglishCorner`: 48 passed, every
+  figure and verdict of V-001 to V-040 equal to the recorded one, 2 min 48 s. No formula moved.
+
 - 2026-10-26: all 48 cases re-measured on `main` at 876782d (the merge of ADR 0068) while the
   README was rewritten in English (ADR 0069), whose tables quote V-016 to V-040: 48 passed, no
   drift, 5.8 minutes. Again after the note under the illumination offset was reworded (R-013, a

@@ -182,7 +182,8 @@ namespace FlatCheck.Wpf
             Raise(nameof(Selected));
 
             if (Files.Count == 0)
-                Fail(T("No raw flat to check", "Niciun flat brut de verificat"), SessionMessages.NoRawFlats(session));
+                Refuse(T("No raw flat to check", "Niciun flat brut de verificat"), SessionMessages.NoRawFlats(session),
+                       "no raw flat to check in " + session.FlatsDir);
             else
                 ClearError();
         }

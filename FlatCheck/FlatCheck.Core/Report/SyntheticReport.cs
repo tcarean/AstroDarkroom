@@ -429,6 +429,16 @@ namespace FlatCheck
                  : T($"\"{camera}\" is not in the lensfun database", $"\"{camera}\" nu e in baza lensfun"))
              + T($". Give --crop <factor>: {SensorFormats.Describe()}.", $". Da --crop <factor>: {SensorFormats.Describe()}.");
 
+        /// <summary>The refusal when the chosen lens's file carries no vignetting model: Adobe
+        /// ships such files for a lens measured for distortion or colour only (1275 of the 3531
+        /// on the author's machine, 2026-10-27), and the list names them, since it reads names
+        /// only (R-071).</summary>
+        /// <param name="lens">The lens chosen.</param>
+        /// <returns>One line.</returns>
+        internal static string NoProfile(LensChoice lens)
+            => T($"SYNTHETIC FLAT: the lens \"{lens.Title}\" has no vignetting profile (its file describes distortion or colour only); choose another lens.",
+                 $"FLAT SINTETIC: obiectivul \"{lens.Title}\" nu are profil de vignetare (fisierul lui descrie doar distorsiunea sau culoarea); alege alt obiectiv.");
+
         /// <summary>The refusal for a colour cube as the reference.</summary>
         /// <param name="path">The refused file's path, as printed.</param>
         /// <param name="planes">How many colour planes it has.</param>
@@ -442,7 +452,6 @@ namespace FlatCheck
         /// <returns>Two lines joined by '\n'.</returns>
         internal static string SourcesSummary(ProfileSources s)
             => T($"    Adobe  : {s.AdobeLenses} lenses from {s.AdobeFiles} files", $"    Adobe  : {s.AdobeLenses} obiective din {s.AdobeFiles} fisiere")
-             + (s.AdobeFilesSkipped > 0 ? T($" ({s.AdobeFilesSkipped} skipped)", $" ({s.AdobeFilesSkipped} sarite)") : "")
              + (s.AdobeFilesDuplicate > 0 ? T($" ({s.AdobeFilesDuplicate} duplicates skipped)", $" ({s.AdobeFilesDuplicate} duplicate sarite)") : "")
              + (s.AdobeFiles == 0 ? T(" - no profile found in ", " - niciun profil gasit in ") + string.Join(" / ", s.AdobeDirectories) : "") + "\n"
              + T($"    lensfun: {s.LensfunLenses} lenses from {s.LensfunDirectory}", $"    lensfun: {s.LensfunLenses} obiective din {s.LensfunDirectory}")

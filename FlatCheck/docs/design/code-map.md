@@ -293,7 +293,8 @@ a library extraction and not a copy is ADR 0011.
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map(s) to
     disk, and the exit code. All output goes through the injected `TextWriter`, never
     `Console` directly. `AfterMapPath` lives here rather than in the core (ADR 0011).
-  - `Options.cs` - CLI parsing.
+  - `Options.cs` - CLI parsing, and the mode the flags ask for (`Options.Mode`, decided once
+    by R-003's precedence; the dispatch and the log both read it, `process.md`).
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See `two-applications.md`.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
     master and where it may be, ADR 0034; which are raw flats; `SmoothedMasterPath` and `SyntheticMasterPath`, the two files the
@@ -425,9 +426,19 @@ a library extraction and not a copy is ADR 0011.
     histograms - deliberately **not** routed through `Stats.Severity`: a red channel is
     not a worse channel; the neutral accent on an unknown order is ADR 0023),
     `HistogramCanvas` (the hand-drawn chart) and the value converters.
+  - `Presentation/AccessibleTabControl.cs` - the window's tabs (`Tabs` in `MainWindow.xaml`),
+    whose automation peer puts the selected tab's view under the tab's item (R-114, ADR 0074):
+    each tab's peer, a subclass of the stock one, adds the children of the template's presenter
+    `ContentHost` while its tab is selected, which the stock peer does only through the name
+    `PART_SelectedContentHost`, a name that would also move the keyboard focus into a tab on a
+    click on its header. The window's own tab style, with the trigger that shows the tabs, is
+    `BasedOn` the theme's, keyed by this class.
   - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
-    templates; why the converters and the `ToolTip` style live there is ADR 0037.
+    templates; why the converters and the `ToolTip` style live there is ADR 0037. The tabs'
+    style targets `AccessibleTabControl` and names its presenter `ContentHost` (ADR 0074).
   - `Interop/DarkTitleBar.cs` - the one P/Invoke: Windows draws the title bar, not WPF.
+  - `Loggers.cs` - the names of the window's loggers in the diagnostic log (`logging.md`);
+    each tab logs under `Window.<Tab>`, given by `TabViewModel`.
 - `FlatCheck.Tests/` - xUnit tests for the core and the console, reaching them via
   `InternalsVisibleTo`.
 - `FlatCheck.Wpf.Tests/` - xUnit tests for the window app, `net8.0-windows`. Separate

@@ -32,9 +32,12 @@
 // new ones. The cancellation is caught between frames, so it answers in under a second.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NLog;
 
 namespace FlatCheck.Wpf
 {
@@ -193,7 +196,6 @@ namespace FlatCheck.Wpf
             var session = new SirilSession(folder);
             SessionProblem problem = session.Check();
             Log.Info("session " + folder + ": " + (problem == SessionProblem.None ? "usable" : "refused, " + problem));
-            if (Log.IsDebugEnabled) Log.Debug("session " + folder + ": " + Describe(session, problem));
             if (problem != SessionProblem.None)
             {
                 _session = null;
@@ -204,6 +206,7 @@ namespace FlatCheck.Wpf
                 // that does not exist.
                 if (problem == SessionProblem.NoProcessDir || problem == SessionProblem.NoFlatMaster)
                     Preprocess.Attach(session, _locate(), _sirilGuiRunning);
+                DescribeInLog(session, problem);
                 return;
             }
 
@@ -212,25 +215,45 @@ namespace FlatCheck.Wpf
             _cts = new CancellationTokenSource();
             CancellationToken ct = _cts.Token;
 
-            // The tabs that wait for a choice are prepared at once: their lists are read from the
-            // folder, not from a computation, so they have no reason to wait. Every run a click
-            // starts in them takes the gate, so it waits for the chain below, and for each other.
-            Exposure.Attach(session, ct, _gate);
-            // A list too, also without a computation: the 24 MP master is not loaded twice on
-            // opening - Structure is already reading it, below.
-            HistEq.Attach(session, ct, _gate);
-            // The smoothing does not compute on opening either: it writes a file, and a file is
-            // not produced because a folder was opened. It waits for a click.
-            Smooth.Attach(session, ct, _gate);
-            Synthetic.Attach(session, ct, _gate);
-            // Nor does Split: it copies and runs Siril N times, so only on the button, and after
-            // the chain.
-            Split.Attach(session, ct, _gate);
-
             IsRunning = true;
             try
             {
+                // The tabs that wait for a choice are prepared at once: their lists are read from
+                // the folder, not from a computation, so they have no reason to wait. Every run a
+                // click starts in them takes the gate, so it waits for the chain below, and for
+                // each other.
+                Exposure.Attach(session, ct, _gate);
+                // A list too, also without a computation: the 24 MP master is not loaded twice
+                // on opening - Structure is already reading it, below.
+                HistEq.Attach(session, ct, _gate);
+                // The smoothing does not compute on opening either: it writes a file, and a file
+                // is not produced because a folder was opened. It waits for a click.
+                Smooth.Attach(session, ct, _gate);
+                Synthetic.Attach(session, ct, _gate);
+                // Nor does Split: it copies and runs Siril N times, so only on the button, and
+                // after the chain.
+                Split.Attach(session, ct, _gate);
+                DescribeInLog(session, problem);
+
                 await RunChainAsync(session, ct).ConfigureAwait(true);
+            }
+            catch (Exception e) when (e is not OperationCanceledException)
+            {
+                // Check() looked only at what exists; listing the folders can still fail (a
+                // folder the user may not list, a broken junction). The window fires this task
+                // without awaiting it, so the exception would reach no handler: it goes to the
+                // log whole and to the user as a card, not as seven empty tabs (R-110).
+                if (!ReferenceEquals(_session, session))
+                {
+                    Log.Debug(e, "session " + folder + ": the opening failed after another folder was opened; nothing is shown");
+                    return;
+                }
+                Log.Error(e, "session " + folder + ": the opening failed; the card shows the message");
+                _session = null;
+                CancelPending();
+                ResetTabs();
+                ProblemTitle = SessionMessages.FolderUnreadableTitle();
+                ProblemText = SessionMessages.FolderUnreadable(folder, TabViewModel.Describe(e));
             }
             finally
             {
@@ -238,13 +261,29 @@ namespace FlatCheck.Wpf
             }
         }
 
+        /// <summary>Writes <see cref="Describe"/> at <c>Debug</c>, after the card or the tabs
+        /// are up: it lists the folders, and a folder that cannot be listed is a line here, not
+        /// the end of the opening.</summary>
+        /// <param name="session">The session.</param>
+        /// <param name="problem">What its check found.</param>
+        void DescribeInLog(SirilSession session, SessionProblem problem)
+        {
+            if (!Log.IsDebugEnabled) return;
+            try { Log.Debug("session " + session.Root + ": " + Describe(session, problem)); }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Log.Debug(e, "session " + session.Root + ": the folder could not be described");
+            }
+        }
+
         /// <summary>The diagnostic log of the window's own flow (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Window");
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         /// <summary>
         /// What a session folder holds, in one English line for the log: the master found (and
         /// an older one ignored), the counts of flats, raw flats and lights, the raw the lens is
-        /// read from. Reads the disk; called only at <c>Debug</c>.
+        /// read from. Reads the disk, each count on its own: a folder that cannot be listed is
+        /// written as <c>unreadable</c> with the exception's type, and the other counts stay.
         /// </summary>
         /// <param name="session">The session.</param>
         /// <param name="problem">What its check found.</param>
@@ -253,10 +292,23 @@ namespace FlatCheck.Wpf
         {
             if (problem == SessionProblem.NoFolder) return "the folder does not exist";
             FlatMasterLookup master = session.FindFlatMaster();
+            // flats/ is listed once: the raw flats and the reference raw are read off the same
+            // list, as the session reads them (RawFlats is FlatFrames narrowed to the raws).
+            IReadOnlyList<string> flats = null;
+            string flatCount = Read(() => { flats = session.FlatFrames(); return LogText.Int(flats.Count); });
             return "master=" + LogText.Str(master.Path) + (master.Ambiguous ? " (an older one ignored: " + master.Other + ")" : "")
-                 + " flats=" + LogText.Int(session.FlatFrames().Count) + " rawFlats=" + LogText.Int(session.RawFlats().Count)
-                 + " lights=" + LogText.Int(session.LightSeries().Count) + " referenceRaw=" + LogText.Str(session.ReferenceRawPath)
+                 + " flats=" + flatCount
+                 + " rawFlats=" + (flats != null ? LogText.Int(flats.Count(RawReader.IsRawPath)) : flatCount)
+                 + " lights=" + Count(() => session.LightSeries().Count)
+                 + " referenceRaw=" + (flats != null ? LogText.Str(LensIdentification.FirstRaw(flats)) : flatCount)
                  + " process=" + LogText.Yes(Directory.Exists(session.ProcessDir)) + " masters=" + LogText.Yes(Directory.Exists(session.MastersDir));
+
+            static string Count(Func<int> count) => Read(() => LogText.Int(count()));
+            static string Read(Func<string> read)
+            {
+                try { return LogText.Str(read()); }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) { return "unreadable (" + e.GetType().Name + ")"; }
+            }
         }
 
         /// <summary>The opening chain, one after the other: Structure, then the end-to-end
@@ -273,7 +325,11 @@ namespace FlatCheck.Wpf
             // beside it. Another folder chosen during that wait cancels it, and that is no fault.
             IDisposable lease;
             try { lease = await _gate.EnterAsync(ct).ConfigureAwait(true); }
-            catch (OperationCanceledException) { return; }
+            catch (OperationCanceledException)
+            {
+                Log.Debug("session " + session.Root + ": the opening chain was cancelled while it waited for the gate");
+                return;
+            }
 
             using (lease)
             {

@@ -158,7 +158,8 @@ namespace FlatCheck.Wpf
                 var files = session.LightSeries();
                 if (files.Count == 0)
                 {
-                    Fail(T("Nothing to run the end-to-end test on", "Nu am pe ce rula testul end-to-end"), SessionMessages.NoLightSeries(session));
+                    Refuse(T("Nothing to run the end-to-end test on", "Nu am pe ce rula testul end-to-end"), SessionMessages.NoLightSeries(session),
+                           "no light series in " + session.ProcessDir);
                     return;
                 }
 

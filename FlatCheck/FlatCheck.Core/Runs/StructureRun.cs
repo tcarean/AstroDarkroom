@@ -102,7 +102,7 @@ namespace FlatCheck
     {
         /// <summary>
         /// Analyses the master (<see cref="Analyze"/>), writes the report and encodes the
-        /// residual map. Throws what <see cref="ImageLoader.Load"/> throws.
+        /// residual map. Throws what <see cref="ImageLoader.Load(string)"/> throws.
         /// </summary>
         /// <param name="path">The master flat to analyze: a FITS or a camera raw.</param>
         /// <param name="report">
@@ -114,8 +114,8 @@ namespace FlatCheck
         /// <returns>The outcome and the residual map as PNG.</returns>
         internal static RunOutcome<StructureOutcome> Execute(string path, TextWriter report, StructureQuery query = null)
         {
-            RunClock clock = RunClock.Start(Log, "structure", path + Describe(query));
-            StructureOutcome o = AnalyzeTimed(path, query, clock);
+            using RunClock clock = RunClock.Start(Log, "structure", path + Describe(query));
+            StructureOutcome o = Analyze(path, query, clock);
             StructureReport.Write(o, path, report);
             clock.Lap("report");
             byte[] png = PngWriter.EncodeResidualMap(o.Structure.Residual);
@@ -144,18 +144,11 @@ namespace FlatCheck
         /// <param name="path">The master flat: a FITS or a camera raw.</param>
         /// <param name="query">Null = the structure only; otherwise the comparison
         /// too.</param>
+        /// <param name="clock">The run's clock, whose stages are timed; null (SplitRun) times
+        /// nothing.</param>
         /// <returns>The outcome; its <see cref="StructureOutcome.Profiles"/> is null without
         /// a query.</returns>
-        internal static StructureOutcome Analyze(string path, StructureQuery query = null) => AnalyzeTimed(path, query, null);
-
-        /// <summary><see cref="Analyze"/>, timing its stages on
-        /// <paramref name="clock"/> when there is one.</summary>
-        /// <param name="path">The master flat: a FITS or a camera raw.</param>
-        /// <param name="query">Null = the structure only; otherwise the comparison
-        /// too.</param>
-        /// <param name="clock">The run's clock, or null.</param>
-        /// <returns>The outcome, as <see cref="Analyze"/>.</returns>
-        static StructureOutcome AnalyzeTimed(string path, StructureQuery query, RunClock clock)
+        internal static StructureOutcome Analyze(string path, StructureQuery query = null, RunClock clock = null)
         {
             LoadedFrame f = ImageLoader.Load(path);
             clock?.Lap("load");

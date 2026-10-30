@@ -82,7 +82,7 @@ namespace FlatCheck
         /// <summary>
         /// Finds the series, checks the first frame's field of view, then loads, analyses and
         /// reports each frame in turn and writes the synthesis. Throws when no file matches
-        /// the pattern, and what <see cref="ImageLoader.Load"/> throws on a frame it cannot
+        /// the pattern, and what <see cref="ImageLoader.Load(string)"/> throws on a frame it cannot
         /// read; an <see cref="OperationCanceledException"/> when <paramref name="ct"/> is
         /// cancelled between frames.
         /// </summary>
@@ -112,8 +112,9 @@ namespace FlatCheck
             Action<int, int, string, LightResult> onFrame = null,
             CancellationToken ct = default)
         {
-            RunClock clock = RunClock.Start(Log, "light series", dir + " pattern=" + pattern + " fov=" + LogText.Num(fov));
+            using RunClock clock = RunClock.Start(Log, "light series", dir + " pattern=" + pattern + " fov=" + LogText.Num(fov));
             var files = SeriesFinder.Find(dir, pattern);
+            clock.Lap("find");
             Log.Info("series: " + LogText.Int(files.Count) + " files match " + pattern + " in " + dir);
             if (files.Count == 0)
                 throw new Exception(T(
@@ -124,7 +125,10 @@ namespace FlatCheck
 
             // Applicability is decided on the first frame: they all come from the same
             // session, so they have the same focal length and the same scale.
+            var firstLoad = Stopwatch.StartNew();
             LoadedFrame first = ImageLoader.Load(files[0]);
+            long firstLoadMs = firstLoad.ElapsedMilliseconds;
+            clock.Lap("load");
             var s = LightSuitability.Check(first.Header, fov);
             if (Log.IsDebugEnabled) Log.Debug("field of " + files[0] + ": " + LogText.Suitability(s));
             if (!s.CanRun)
@@ -146,14 +150,17 @@ namespace FlatCheck
                 ct.ThrowIfCancellationRequested();
 
                 var frameClock = Stopwatch.StartNew();
-                Img img = first?.Image ?? ImageLoader.LoadImage(files[i]);
+                Img img = first?.Image ?? ImageLoader.LoadImage(files[i], logHeader: false);
+                // The first frame was loaded for the guard above: its time counts that load,
+                // as the other frames' times count theirs.
+                long loaded = first != null ? firstLoadMs : 0;
                 first = null;
 
                 var r = LightAnalyzer.Analyze(img);
                 string name = Path.GetFileName(files[i]);
                 if (Log.IsDebugEnabled)
                     Log.Debug("frame " + LogText.Int(i + 1) + "/" + LogText.Int(files.Count) + " " + name + ": " + LogText.Light(r)
-                              + " in " + LogText.Int(frameClock.ElapsedMilliseconds) + " ms");
+                              + " in " + LogText.Ms(frameClock.ElapsedMilliseconds + loaded));
                 LightSeriesReport.WriteRow(name, r, report);
                 frames.Add((name, r));
                 onFrame?.Invoke(i, files.Count, name, r);

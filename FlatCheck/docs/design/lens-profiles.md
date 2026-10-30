@@ -187,10 +187,15 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   under `%APPDATA%` in Adobe's layout (`LensProfiles\1.0\<maker>\`) never collides with an
   installed one by that rule, which is what one wants: it is theirs; a copy put directly under
   `LensProfiles\<maker>\` with an installed file's name is its duplicate, and the installed one
-  wins. The enumeration of one folder is lazy: an exception part-way (a subfolder without list
-  rights) is caught per folder, the files found before it stay, the rest of that folder is
-  lost, and the next folder is searched; `AdobeAppDirectories` swallows the same for the
-  Program Files root. Each such loss is a Warn line in the diagnostic log (`logging.md`). `--profiles <dir>` replaces the whole list.
+  wins. The enumeration of one folder skips a subfolder the user may not list
+  (`EnumerationOptions.IgnoreInaccessible`, with `AttributesToSkip` cleared so hidden and system
+  files are still read), so only that subfolder's files are lost and the rest of the root is
+  read; a root the user may not list (opened once without `IgnoreInaccessible` first, which
+  would otherwise skip it in silence), one that vanishes or an I/O error is lost whole, with a Warn
+  line in the diagnostic log (`logging.md`), and the next folder is searched;
+  `AdobeAppDirectories` swallows the same for the Program Files root. (Until 2026-10-27 the
+  whole root was lost on a subfolder without list rights, though this note said otherwise: the
+  review's A7.) `--profiles <dir>` replaces the whole list.
 - **Search**: every word of the text must appear in name + maker + mount (+ known
   aliases), case-insensitive; empty text lists everything; `--source` restricts.
 - **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the

@@ -121,7 +121,9 @@ tests and documents; this section is that list, in the order the work goes.
 So a new flag is: a field with its default, an entry in `BoolFlags` or `ValueFlags`, a `case`
 with its validation and its `Fail` messages, a cross-argument check when it interacts with
 another flag, and an `OptionsTests` fact for the parsed value and for each `Fail`. A new mode
-adds its switch or value flag the same way and continues below.
+adds its switch or value flag the same way, a value of `Mode` where its precedence belongs in
+`Options.ModeOf` (`Parse` decides the mode once, R-003, and the dispatch and the log's `mode=`
+line both read `o.Mode`, so a mode cannot be in one and not the other), and continues below.
 
 ### Dispatch in FlatCheckCli.Run
 
@@ -137,12 +139,13 @@ every test calls, with two `StringWriter`s. In order:
 3. `Options.Parse`. `Help` prints `WriteUsage` and returns 0. `Error` prints
    `ERROR: <Error>` (Romanian `EROARE:`) to stderr and returns 1.
 4. A folder as input is refused with exit 1 unless `--light` (series mode).
-5. The mode, chosen by the first match in a fixed `if / else if` chain: `--lenses`,
-   `--synthetic`, `--against`, `--smooth`, `--histeq`, `--expo`, `--light`,
-   structure (the default, no flag). This chain is the mutual exclusion R-003 promises and its
-   order is the requirement. The comment at the top of `FlatCheckCli.cs` still lists the
-   pre-mode-7 order; the code is the truth. A new mode is one more `else if`, placed where its
-   precedence belongs, and R-003 is updated in the same task.
+5. The mode, `o.Mode`, chosen by `Options.ModeOf` as the first match in a fixed order:
+   `--lenses`, `--synthetic`, `--against`, `--smooth`, `--histeq`, `--expo`, `--light`,
+   structure (the default, no flag). That order is the mutual exclusion R-003 promises and
+   the requirement itself; `Run` logs `mode=<name>` from it and switches on it. The comment
+   at the top of `FlatCheckCli.cs` still lists the pre-mode-7 order; the code is the truth. A
+   new mode is one more value of `Mode`, placed where its precedence belongs in `ModeOf`, one
+   more `case` in the switch, and R-003 is updated in the same task.
 6. Everything inside the chain runs under one `try`; any exception becomes
    `ERROR: <message>` on stderr and exit 1. That is how a missing file, an invalid FITS or a
    failed fit are reported; the run methods do not catch.

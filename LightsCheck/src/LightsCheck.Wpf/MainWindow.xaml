@@ -141,10 +141,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </Border>
 
-      <!-- the tabs -->
-      <TabControl>
-        <TabControl.Style>
-          <Style TargetType="TabControl" BasedOn="{StaticResource {x:Type TabControl}}">
+      <!-- the tabs; their style is the theme's for AccessibleTabControl, an implicit style
+           applying to its exact type only (R-067, ADR 0028) -->
+      <local:AccessibleTabControl>
+        <local:AccessibleTabControl.Style>
+          <Style TargetType="local:AccessibleTabControl" BasedOn="{StaticResource {x:Type local:AccessibleTabControl}}">
             <Setter Property="Visibility" Value="Collapsed" />
             <Style.Triggers>
               <DataTrigger Binding="{Binding HasResult}" Value="True">
@@ -152,7 +153,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </DataTrigger>
             </Style.Triggers>
           </Style>
-        </TabControl.Style>
+        </local:AccessibleTabControl.Style>
         <TabItem Header="{local:T En='Summary', Ro='Rezumat'}">
           <local:SummaryView />
         </TabItem>
@@ -177,7 +178,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" TextWrapping="NoWrap" />
           </Border>
         </TabItem>
-      </TabControl>
+      </local:AccessibleTabControl>
 
       <!-- the wait screen over everything while the frames are measured -->
       <Border Background="#E01B1B1D" Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">

@@ -153,6 +153,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The content of the window's tabs is in the UI Automation tree: a screen reader such as
+  Narrator, or a UI Automation tool, now reaches the checks and the buttons inside a tab, where
+  it found only the eight tab headers before (R-079; ADR 0024, as AstroPhotoAnalyzer's
+  ADR 0065).
 - A FITS frame whose data is shorter than its header says (a copy cut mid-transfer) was
   listed with `Index was outside the bounds of the array.`; the reader now refuses it with
   `FITS: date trunchiate: ...` and both byte counts. Taken from FlatCheck's fix (R-012,

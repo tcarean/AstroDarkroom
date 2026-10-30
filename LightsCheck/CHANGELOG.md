@@ -43,6 +43,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The content of the window's tabs is in the UI Automation tree: a screen reader such as
+  Narrator, or a UI Automation tool, now reaches what each tab shows, where it found only the six
+  tab headers before (R-067, ADR 0028).
 - A `.fit` whose header begins with `SIMPLE` but ends before `END` was read as a FITS with the
   cards found so far; it is now refused with `FITS: incomplete header.`, by the inventory's
   metadata read and the full load alike, and a file that does not begin with `SIMPLE` is

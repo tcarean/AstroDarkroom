@@ -254,3 +254,19 @@ bug in the branch's own code; its five findings held:
 - The CHANGELOG said "when it compares"; a long line in `modes-structure.md` was reflowed.
 - Out of scope, reported to the owner: a `lensfun/` folder that cannot be listed throws in
   `ProfileLocator.Locate`, so the Structure run fails with a raw in `flats/` (as on `main`).
+
+## Merge (2026-10-30)
+
+The owner asked for the merge after `claude/Fix-the-diagnostic-log-review-findings` and the UI
+Automation branch had reached `main` (173567c). `main` was merged into this branch first, in its
+worktree:
+
+- `AboutWindow.xaml.cs`: kept `OpenLink => ExternalLink.Open(e)` and dropped `main`'s logger
+  field, which only the moved catch used.
+- `docs/requirements.md`: R-113 beside `main`'s R-114.
+- `docs/validation.md`: both History entries, this task's above the log fixes'.
+- Two calls in `StructureReportTests` follow `main`'s eight-parameter `ProfileSources`.
+- `ExternalLink` takes its logger from `Loggers.Window`, `main`'s convention.
+
+Gate green on the result (1151 + 347 tests), the build clean with warnings as errors. No figure
+moved on either side, so `/validate` was not run again.

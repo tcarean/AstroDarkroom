@@ -50,8 +50,9 @@
 
        NLog, for the diagnostic log only (ADR 0070): the core logs at its seams (the readers,
        the profile locator, Runs/), never inside Analysis/ or Report/; the two applications
-       configure it, in code, through Logging/LogSetup.cs. Without a configuration (the tests,
-       a library use) every call is a no-op. NLog.Targets.AtomicFile is its file target with
+       configure it, in code, through Logging/LogSetup.cs. Without a configuration (a library
+       use) every call is a no-op; the test assemblies configure a capture at Trace
+       (LogCapture). NLog.Targets.AtomicFile is its file target with
        the operating system's atomic append, so two windows writing one log lose no line. -->
   <ItemGroup>
     <PackageReference Include="Sdcb.LibRaw" />
