@@ -828,5 +828,16 @@ hold the result. What differs from the plan, and why:
   - the published window's `NLog.dll` and `NLog.Targets.AtomicFile.dll` hash equal to
     AstroDarkroom's 1.0.0 folder's (`B539A440...`, `FBECF655...`); no notices file in the publish;
   - the About window rendered in both languages with the third-party card whole.
-- **Not done: the window by hand.** Starting it puts a window over the owner's work, and the owner
-  was at the PC; `App`'s constructor and `OnExit` are the only log calls no test runs.
+- **The window by hand**, at the owner's word ("deschide fereastra sa vedem ca merge"), the owner
+  away on Remote Control: the Release window started with `--lang ro` on a scratch copy of the
+  Veil solve and a header-only destination of 5601 x 3692, driven through UI Automation
+  (Previzualizare, Copiaza, Despre, Inchide, then the window closed), each step captured with
+  `PrintWindow`. `CopyWcs.Wpf.log` held 164 lines: `Process CopyWcs.Wpf 1.0.0 starting; ...
+  culture=en-GB/en-GB ...`, `App language=ro source from the command line: ...veil-solve.fit
+  dest: ...stack-5601x3692.fit`, the two facts' read lines, the preview's run on thread 6
+  (`copy done previewed 72 keys (new 72, replaced 0, identical 0) in 29 ms`), the copy's run with
+  `write ... in place through ...stack-5601x3692.fit.tmp`, `wrote ... (8.4 KiB) bytes=8640
+  cards=79 blocks=3 data=0` and `copy done copied 72 keys ... in 12 ms (source 0 ms, dest 0 ms,
+  select 3 ms, write 9 ms)`, the destination's facts read again, `Window About opened`, and
+  `Process exit 0 after 80.4 s`: `App`'s constructor and `OnExit`, which no test runs, wrote
+  their lines. The browse dialogs were not opened (they would need a file picked by hand).
