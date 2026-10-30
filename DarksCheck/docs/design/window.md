@@ -2,11 +2,12 @@
 
 **Covers:** `src/DarksCheck.Wpf/`, `tests/DarksCheck.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-070 to R-076; the reasons are ADR 0009. The pieces copied from LightsCheck
-(`Theme/Dark.xaml`, `Presentation/*.cs`, `Views/AboutWindow.*`, `ViewModels/AboutViewModel.cs`,
-the test fixture `StaFixture`) are marked as such in their headers and are LightsCheck's to
-improve first; `Presentation/AccessibleTabControl.cs` was taken from AstroPhotoAnalyzer with the
-theme's tab style it reads, as LightsCheck took both (ADR 0024); `Theme/Rows.xaml` (DarksCheck's
+The behaviour is R-070 to R-079; the reasons are ADR 0009. The pieces copied from LightsCheck
+(`Theme/Dark.xaml`, `Presentation/*.cs` but one, `Views/AboutWindow.*`,
+`ViewModels/AboutViewModel.cs`, the test fixture `StaFixture`) are marked as such in their
+headers and are LightsCheck's to improve first; the one, `Presentation/AccessibleTabControl.cs`,
+was taken from AstroPhotoAnalyzer with the theme's tab style it reads, as LightsCheck took both
+(ADR 0024); `Theme/Rows.xaml` (DarksCheck's
 templates, merging the theme), `MainViewModel`, the views and `WindowTexts` are DarksCheck's own.
 
 ## The shape

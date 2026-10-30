@@ -39,8 +39,9 @@ until there is a result) based on the theme's, `BasedOn="{StaticResource {x:Type
 That key no longer exists once the theme's style targets the class, so the local style targets
 `AccessibleTabControl` and is based on that type's style.
 
-Everything else is as before: a click on a tab's header leaves the keyboard focus on the header,
-where Left and Right change the tab and Down does not scroll it.
+Everything else is as before: a click on a tab's header leaves the keyboard focus on the header.
+The keyboard's behaviour after it was measured in AstroPhotoAnalyzer with its window on screen,
+not here; here the second test of R-079 shows only that the stock name is absent.
 
 The theme is LightsCheck's copy and stays one (ADR 0009): LightsCheck takes the same change the
 same day, and a later change to the theme's tab style or to the class goes there first.
