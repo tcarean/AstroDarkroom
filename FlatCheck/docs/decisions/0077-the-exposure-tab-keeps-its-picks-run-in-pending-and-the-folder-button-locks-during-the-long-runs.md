@@ -47,7 +47,7 @@ console from the task worktree, wall time of the whole process, three runs each:
 | the comparison the window runs after it (`--against`) | | 4.0-4.4 s |
 | exposure of the first NEF (`--expo`) | | 3.9-4.1 s |
 | smoothing (`--smooth`) | | 6.4-6.7 s |
-| structure with the raw (the opening chain) | | 8.1 s |
+| the structure run with the raw (the opening chain's first half) | | 8.1 s |
 
 The window's Synthetic button runs the write and then the comparison: about 8 s warm, 14 s
 cold. The window's exposure run also decodes the preview, about half a second more (ADR 0024).
@@ -67,8 +67,11 @@ The owner chose, on 2026-10-30, in two answers:
 - A run that takes more than 4-5 seconds locks the folder button while it runs, the simplest
   fix: `MainViewModel.CanChooseFolder` is false during the opening chain and while the
   Synthetic tab is busy. The Smoothing run, measured over the same threshold, is included by
-  the same rule; that extension is the assistant's, said at wrap-up (R-117). The Exposure,
-  Histogram and Split runs leave the button live.
+  the same rule; that extension is the assistant's, said at wrap-up (R-117). The lock is per
+  tab, one property on the tabs' busy state, so it also holds during the Smoothing tab's
+  proposal (one smoothing per step of the scale ladder, not measured) and the Synthetic tab's
+  stand-alone comparison (4.0-4.4 s, under the threshold): accepted for the simplicity of one
+  rule over a per-run list. The Exposure, Histogram and Split runs leave the button live.
 
 ## Alternatives rejected
 
@@ -94,3 +97,8 @@ The owner chose, on 2026-10-30, in two answers:
   window; `R117_TheFolderButtonIsLockedDuringASmoothingOrSyntheticRun` pins the lock.
 - `two-applications.md` says which tabs can overlap runs, what orders them, and what the
   folder button follows.
+- Changing the folder was the one way to abandon a Smoothing or Synthetic run started by
+  mistake, neither tab having a stop button; now only closing the window is. A Smoothing
+  click made during the opening chain locks the button for the chain and the run together,
+  about 15 s warm on a 24 MP master. The window's comment on the button already said it: less
+  confusing not to be able to than to lose the work.

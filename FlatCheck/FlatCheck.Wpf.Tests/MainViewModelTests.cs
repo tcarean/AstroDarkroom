@@ -660,44 +660,13 @@ public class MainViewModelTests
         Assert.Equal(VersionInfo.Banner, vm.Banner);
         Assert.Equal(VersionInfo.Copyright, vm.Copyright);
     }
-}
-
-/// <summary>The command-line argument: a folder, or nothing.</summary>
-public class AppStartupTests
-{
-    [Fact]
-    public void AnExistingFolderInTheArgumentsIsUsed()
-    {
-        using var f = new SessionFixture();
-
-        Assert.Equal(f.Root, App.FolderFromArgs(new[] { f.Root }));
-    }
 
     /// <summary>
-    /// Anything else is ignored. A window that refuses to start because of a wrong argument is
-    /// more annoying than one that asks which folder you want.
-    /// </summary>
-    [Fact]
-    public void AnythingElseIsIgnoredRatherThanFatal()
-    {
-        Assert.Null(App.FolderFromArgs(null));
-        Assert.Null(App.FolderFromArgs(Array.Empty<string>()));
-        Assert.Null(App.FolderFromArgs(new[] { "", "  ", "--ceva", @"C:\nu\exista\aici" }));
-    }
-
-    [Fact]
-    public void TheFirstExistingFolderWins()
-    {
-        using var f = new SessionFixture();
-
-        Assert.Equal(f.Root, App.FolderFromArgs(new[] { "--flag", f.Root }));
-    }
-
-    /// <summary>
-    /// R-117: the folder button is locked while a Smoothing or a Synthetic run is in progress,
-    /// as it is during the opening chain: both take longer than a folder change does (measured
-    /// 2026-10-30 on a 24 MP master, 6.4-6.7 s and about 8 s), and their file writes have no
-    /// business landing on another folder's tabs. The gate the test holds keeps each run busy.
+    /// R-117: the folder button is locked while the Smoothing or the Synthetic tab is busy, as
+    /// it is during the opening chain: their main runs take longer than a folder change does
+    /// (measured 2026-10-30 on a 24 MP master, 6.4-6.7 s and about 8 s), and their file writes
+    /// have no business landing on another folder's tabs. The gate the test holds keeps each
+    /// run busy.
     /// </summary>
     [Fact]
     public async Task R117_TheFolderButtonIsLockedDuringASmoothingOrSyntheticRun()
@@ -730,5 +699,37 @@ public class AppStartupTests
 
         // the binding hears every change: false at each run, true at its end
         Assert.Equal(new[] { false, true, false, true }, seen.Skip(seen.Count - 4));
+    }
+}
+
+/// <summary>The command-line argument: a folder, or nothing.</summary>
+public class AppStartupTests
+{
+    [Fact]
+    public void AnExistingFolderInTheArgumentsIsUsed()
+    {
+        using var f = new SessionFixture();
+
+        Assert.Equal(f.Root, App.FolderFromArgs(new[] { f.Root }));
+    }
+
+    /// <summary>
+    /// Anything else is ignored. A window that refuses to start because of a wrong argument is
+    /// more annoying than one that asks which folder you want.
+    /// </summary>
+    [Fact]
+    public void AnythingElseIsIgnoredRatherThanFatal()
+    {
+        Assert.Null(App.FolderFromArgs(null));
+        Assert.Null(App.FolderFromArgs(Array.Empty<string>()));
+        Assert.Null(App.FolderFromArgs(new[] { "", "  ", "--ceva", @"C:\nu\exista\aici" }));
+    }
+
+    [Fact]
+    public void TheFirstExistingFolderWins()
+    {
+        using var f = new SessionFixture();
+
+        Assert.Equal(f.Root, App.FolderFromArgs(new[] { "--flag", f.Root }));
     }
 }

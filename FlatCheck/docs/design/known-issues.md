@@ -60,7 +60,7 @@ correctness bugs that used to live here were fixed in phase 8.
    once.
 9. **A folder change during an Exposure run lands the old folder's figures.** The folder button
    is live during an Exposure run (`MainViewModel.CanChooseFolder` locks it only for the
-   opening chain, a Smoothing run and a Synthetic run, R-117), and the Exposure tab's run
+   opening chain and while the Smoothing or the Synthetic tab is busy, R-117), and the Exposure tab's run
    lambda does not re-check its token after its computation: a run that was computing when the
    folder changed writes its report, figures and `HasResult` on the tab the new folder reset,
    under the new folder's list with nothing selected, until the next pick. Reproduced

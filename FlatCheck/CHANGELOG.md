@@ -78,10 +78,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- The window's folder button is disabled while a Smoothing or a Synthetic run is in progress,
-  as it is during the opening chain (R-117, ADR 0077): measured on a 24 MP master, those two
-  take 6.4-6.7 s and about 8 s, long enough for a folder change to land on the new folder's
-  tabs; an Exposure pick, about 4 s, leaves it live.
+- The window's folder button is disabled while the Smoothing or the Synthetic tab is busy, as
+  it is during the opening chain (R-117, ADR 0077): measured on a 24 MP master, their main
+  runs take 6.4-6.7 s and about 8 s, long enough for a folder change to land on the new
+  folder's tabs; an Exposure pick, about 4 s, leaves it live.
 - `README.md`, the user guide, is in English (ADR 0069), up to date (two packages, five projects,
   the SDK the build needs, how to publish both applications, the lens read from the raw on every
   mount) and holds only what a user needs: the development process, the parity goldens and the
