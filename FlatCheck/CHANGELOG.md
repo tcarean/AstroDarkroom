@@ -128,9 +128,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 ### Fixed
 
 - A `lensfun/` folder beside the executable that cannot be listed (a deny rule, broken
-  permissions) no longer fails the profile search, and with it the console's `--raw`, `--lens`,
-  `--lenses` and `--synthetic` (exit 1) and the window's Structure run with a raw in `flats/`
-  ("The analysis failed"): the folder is left out whole, with a Warn line in the log, as
+  permissions) no longer fails the profile search, and with it the console's structure mode
+  with `--raw` or `--lens`, `--lenses` and `--synthetic` (exit 1) and the window's Structure and
+  Split runs with a raw in `flats/` ("The analysis failed"): the folder is left out whole, with
+  a Warn line in the log, as
   an Adobe root that cannot be listed is, and the lens list says "the folder could not be read"
   instead of "missing or empty" (R-115, ADR 0075).
 - The content of the window's tabs is in the UI Automation tree: a screen reader such as

@@ -58,7 +58,7 @@ namespace FlatCheck
         /// (a deny rule, broken permissions): then no lens of it was read, its version file was
         /// not read either and <paramref name="lensfunPresent"/> is false (R-115).</param>
         /// <param name="lensfunVersion">The text of its version file; null when there is
-        /// none.</param>
+        /// none, or when the folder could not be listed.</param>
         /// <param name="catalog">Every lens found, from both sources.</param>
         /// <param name="lensfun">The lensfun database read, cameras included.</param>
         internal ProfileSources(IReadOnlyList<string> adobeDirs, int adobeFiles, int adobeDuplicate,

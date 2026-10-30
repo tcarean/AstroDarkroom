@@ -372,7 +372,7 @@ public class LensProfileReaderTests
         Assert.Equal(0, s.LensfunLenses);
         Assert.False(s.LensfunPresent);
         Assert.True(s.LensfunUnreadable);
-        Assert.Null(s.LensfunVersion);   // the file can be opened by name past the deny; it is not
+        Assert.Null(s.LensfunVersion);   // the file can be opened by name past the deny; it is skipped on purpose
         var warned = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn && e.Message.Contains("could not be listed"));
         Assert.Contains(lensfun, warned.Message);
         Assert.IsType<UnauthorizedAccessException>(warned.Exception);

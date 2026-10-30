@@ -10,13 +10,13 @@ the `lensfun/` folder beside the executable. A folder that exists but cannot be 
 rule, broken permissions after a copy) threw there, and because one `Sources(o)` serves every
 console mode that locates the profiles, the structure mode with `--raw` or `--lens`, `--lenses`
 and `--synthetic` (`--against` compares two flats and locates none) printed `ERROR: Access to
-the path '...\lensfun' is denied.` and exited 1; in the
-window the shared `ProfileCatalog` threw the same into every Structure run with a raw in
-`flats/` ("The analysis failed", no five tests, no card) and into the Sintetic prefill. The
-Adobe roots had been made tolerant of this on 2026-10-27 (ADR 0066's dated correction) and
-2026-10-30 (the review of the task that says when Adobe's profiles are missing, R-107's root
-test): a root that cannot be listed is lost whole, with one Warn line, and the search goes on. ADR 0028's consequence, "without the folder every mode runs", did not hold for a folder
-that is there and unreadable.
+the path '...\lensfun' is denied.` and exited 1; in the window the one shared `ProfileCatalog`
+threw the same into every Structure and Split run with a raw in `flats/` ("The analysis
+failed", no five tests, no card) and into the Sintetic prefill. The Adobe roots had been made
+tolerant of this on 2026-10-27 (ADR 0066's dated correction) and 2026-10-30 (the review of the
+task that says when Adobe's profiles are missing, R-107's root test): a root that cannot be
+listed is lost whole, with one Warn line, and the search goes on. ADR 0028's consequence,
+"without the folder every mode runs", did not hold for a folder that is there and unreadable.
 
 Measured 2026-10-30 in the task worktree: two tests with `UnlistableFolder` (a deny rule on
 listing) failed on `Locate` and on the Structure tab's run; `flatcheck --lenses --profiles
@@ -65,5 +65,6 @@ recommendation; the owner chose the third the same day.
   `R115_AnUnlistableLensfunFolderDoesNotFailTheStructureRun` pin this; the first and the last
   two use `UnlistableFolder` and return on another OS.
 - `ProfileSources` gains a constructor parameter; the three test call sites that build one by
-  hand pass `false`. The mechanics are in `docs/design/lens-profiles.md` (section 5) and the Warn line
-  in `docs/design/logging.md`'s `ProfileLocator` row.
+  hand pass `false`. The Split tab awaits the same catalog as the Structure tab and has no test
+  of its own in this state. The mechanics are in `docs/design/lens-profiles.md` (section 5)
+  and the Warn line in `docs/design/logging.md`'s `ProfileLocator` row.
