@@ -43,6 +43,11 @@ end (R-012, R-013). On a failure before the move, the original is untouched and 
 is left behind; on success it is gone. The data area is copied as bytes: `BITPIX`, `NAXIS3`,
 extensions and padding travel unchanged.
 
+`ReadPrimary`, `AddHistory` and `WriteWithDataFrom` also write their lines to the diagnostic log
+(the read line, the card appended, the write with its temporary file, the file written, and at
+Trace every card; `logging.md` has the lines) and decide nothing from them: a failure still
+throws, and its caller logs it.
+
 ## The key lists
 
 `WcsMetadataKeys` holds two literal lists and a pattern:

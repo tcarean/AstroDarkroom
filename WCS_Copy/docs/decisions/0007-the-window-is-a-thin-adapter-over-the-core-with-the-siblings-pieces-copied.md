@@ -1,7 +1,7 @@
 # 0007. The window is a thin adapter over the core and computes no line of its own; the theme, the title bar and the MVVM pieces are copies of the siblings'; the window's tests are a second project
 
 Date: 2026-10-26
-Status: accepted 2026-10-26
+Status: accepted 2026-10-26; the About window without the third-party card superseded by 0009
 
 ## Context
 

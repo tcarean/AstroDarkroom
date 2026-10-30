@@ -2,8 +2,8 @@
 
 **Covers:** `src/CopyWcs.Core/WcsCopy.cs`, `src/CopyWcs.Core/Language/Ui.cs`,
 `src/CopyWcs.Core/Language/LanguageArgument.cs`, `src/CopyWcs.Core/VersionInfo.cs`,
-`src/CopyWcs.Core/LicenseInfo.cs`, `src/CopyWcs.Cli/Program.cs`, `src/CopyWcs.Cli/CopyWcsCli.cs`
-and `src/CopyWcs.Cli/Options.cs`.
+`src/CopyWcs.Core/LicenseInfo.cs`, `src/CopyWcs.Core/ThirdParty.cs`, `src/CopyWcs.Cli/Program.cs`,
+`src/CopyWcs.Cli/CopyWcsCli.cs` and `src/CopyWcs.Cli/Options.cs`.
 
 How a copy runs in the core, how the console drives it and prints it, and how the texts pick
 their language. The header engine the run calls is in `fits-header.md`; the window, which
@@ -32,12 +32,13 @@ the heading (R-009); else set each card verbatim, append the HISTORY card, write
 header engine (a write failure is a refusal, R-014) and return the count and the reminder
 (R-012). The warnings raised before a refusal stay in the outcome, so the console prints
 them before the error, as it did before the split. The core composes every sentence about
-the copy; an application adds nothing to them.
+the copy; an application adds nothing to them. Beside the outcome, the run writes its own lines
+to the diagnostic log, in English (`logging.md`, "A copy's lines").
 
 ## The console (`CopyWcsCli`, `Options`, `Program`)
 
-`Program.Main` is a one-line shim to `CopyWcsCli.Run(args, stdout, stderr)`, which the tests
-drive with string writers. `Run` prints the banner and the copyright first (R-001), then takes
+`Program.Main` is a shim: it opens the diagnostic log, calls `CopyWcsCli.Run(args, stdout,
+stderr)` once, which the tests drive with string writers, and closes the log (`logging.md`). `Run` prints the banner and the copyright first (R-001), then takes
 `--lang` out of the arguments (below), then parses `Options`: two positional paths, the flags
 in any position, `-h` stopping the parse at once; a parse error is one line on stderr, the
 usage on stdout and exit 2 (R-002); `--help` is the usage and exit 0 (R-003). The usage is
@@ -72,3 +73,11 @@ of each language, wrapped by hand, picked by `Ui.Current`; `Options.PrintUsage` 
 one per line under the usage, and `LicenseInfo.Warranty` joins them with a space for the
 About window (ADR 0007), so the two applications cannot disagree about the licence.
 `LicenseInfo.LicenseUrl` is the one place the licence's address is written.
+
+`ThirdParty.Components` is the list of what the core links, as values (ADR 0009, DarksCheck's
+shape): today one component, NLog, which claims the two packages `NLog` and
+`NLog.Targets.AtomicFile`, with its role as a pair, its licence, its copyright line and its link.
+The About window shows it; `THIRD-PARTY-NOTICES.md` beside the source holds the licence's whole
+text. `ThirdPartyTests` binds the list to the `PackageReference`s of `CopyWcs.Core.csproj` in
+both directions and each name to a heading of the notices file, so a package cannot be added
+without its notice.

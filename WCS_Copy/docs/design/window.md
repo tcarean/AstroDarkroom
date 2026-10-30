@@ -2,7 +2,8 @@
 
 **Covers:** `src/CopyWcs.Wpf/`, `tests/CopyWcs.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-030 to R-038; the reasons are ADR 0007 and ADR 0008. The pieces copied from
+The behaviour is R-030 to R-038; the reasons are ADR 0007, ADR 0008 and, for the About window's
+third-party card and the window's log lines, ADR 0009. The pieces copied from
 the siblings (`Presentation/DarkTitleBar.cs`, `Presentation/TExtension.cs`,
 `Presentation/Mvvm.cs`, `Presentation/AppIcon.cs`, `Theme/Dark.xaml`, `Views/AboutWindow.*`,
 the band at the top of `MainWindow.xaml`, the test fixture `StaFixture`) are marked as such in
@@ -92,13 +93,24 @@ application cannot use `InvariantGlobalization`, FlatCheck's ADR 0037; the facts
 read as the console's), shows the window, and fills the boxes with the two files of
 `StartArgs`; `e.Args` is not read again.
 
+Before all of it the constructor opens the diagnostic log and hooks the dispatcher's unhandled
+exceptions, and `OnExit` closes the log (`logging.md`); `OnStartup` logs `StartLine(StartArgs)`
+and a refused `--lang`. The window's classes take their logger names from `Loggers` (`App`,
+`Window`): `MainWindow` logs the file picked in each dialog and About, `MainViewModel.Facts` a
+header it could not read, `AboutWindow.OpenLink` a link that would not open; none of them logs a
+run, which the core logs itself.
+
 ## The theme and the pieces
 
 `Theme/Dark.xaml` is merged once in `App.xaml`: the palette (the siblings' colours, `WarnBr`
 amber and `BadBr` red for the two outcome colours), the text styles, the card, the tooltip,
 the button, the text field, the check box, the radio button (this project's, drawn after the
-check box), the list and the scroll bar. `DarkTitleBar.Apply` is called on `SourceInitialized`
-of each window. `AppIcon.Largest` decodes the 256 px frame of `Icon/copywcs.ico` for the About
+check box), the list and the scroll bar, and DarksCheck's `ComponentRowTemplate` (a component's
+name and role, its licence and copyright under them in the wrapping `Faint` style, its link),
+which the About window's third-party card lists `AboutViewModel.Components` with; the link's
+routed `RequestNavigate` reaches the window's `OpenLink`. The About button's tooltip reads
+`Version, licence, components (F1)`, the siblings' words. `DarkTitleBar.Apply` is called on
+`SourceInitialized` of each window. `AppIcon.Largest` decodes the 256 px frame of `Icon/copywcs.ico` for the About
 window's logo; both windows take the same resource through `Icon=`, both executables through
 `ApplicationIcon`.
 
@@ -126,7 +138,9 @@ line under it, and that the copyright, the explanation and the window's single A
 (run by Help, with its tooltip) sit inside it, left to right in that order with About inside
 the window, and that Help can run from the button; the two lines are the first two the console
 prints at `--help`, in each language. `AboutTests` bind the About view-model to `VersionInfo`
-and `LicenseInfo` and check the console prints the same five warranty lines; `AppTests` cover
+and `LicenseInfo`, check the console prints the same five warranty lines and that the card lists
+`ThirdParty.Components`, in both languages; `WindowLoggingTests` check the start line, the facts'
+Debug line and that a copy from the window logs what the console's copy logs; `AppTests` cover
 `Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`,
 the script's `SIZES` line and the two `ApplicationIcon` paths together. The tests that run the
 core await `Preview()` or `Copy()`; the smoke tests that do so run through
