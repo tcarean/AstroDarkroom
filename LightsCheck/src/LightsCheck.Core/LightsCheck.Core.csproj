@@ -13,10 +13,18 @@
        mosaic of a NEF. The native DLLs of the runtime.* packages sit beside the executable and
        are loaded lazily, from RawReader.cs alone; without them a FITS run is unaffected and a
        raw run says what is missing (ADR 0003, THIRD-PARTY-NOTICES.md). -->
+  <!-- NLog, for the diagnostic log only (ADR 0029): the core logs at its seams (the readers
+       adapted from FlatCheck, Session/, Runs/), never inside Analysis/ or Report/; the two
+       applications configure it, in code, through Logging/LogSetup.cs. Without a configuration
+       (a library use) every call is a no-op; the test assemblies configure a capture at Trace
+       (LogCapture). NLog.Targets.AtomicFile is its file target with the operating system's
+       atomic append, so two windows writing one log lose no line (R-073). -->
   <ItemGroup>
     <PackageReference Include="Sdcb.LibRaw" />
     <PackageReference Include="Sdcb.LibRaw.runtime.win64" />
     <PackageReference Include="Sdcb.LibRaw.runtime.linux64" />
+    <PackageReference Include="NLog" />
+    <PackageReference Include="NLog.Targets.AtomicFile" />
   </ItemGroup>
 
   <!-- The core stays internal: its consumers are in this repository and compile with it. -->

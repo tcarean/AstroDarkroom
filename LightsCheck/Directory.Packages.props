@@ -11,6 +11,15 @@
     <PackageVersion Include="Sdcb.LibRaw" Version="0.21.1.7" />
     <PackageVersion Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
     <PackageVersion Include="Sdcb.LibRaw.runtime.linux64" Version="0.21.1" />
+    <!-- The diagnostic log beside each executable (R-070 to R-073, ADR 0029): configured in
+         code, a size-rolled text file, BSD-3-Clause, purely managed; the version FlatCheck pinned
+         for the same log (its ADR 0070). The owner asked for NLog by name on 2026-10-30. -->
+    <PackageVersion Include="NLog" Version="6.2.2" />
+    <!-- NLog's own file target with the operating system's atomic append, so two windows
+         writing one log at once lose no line (R-073): FlatCheck measured NLog's plain target
+         losing 33 to 48 lines of 4000 and this one none (its ADR 0070). Same project, commit
+         and licence as NLog, no native file of its own. Keep its version equal to NLog's. -->
+    <PackageVersion Include="NLog.Targets.AtomicFile" Version="6.2.2" />
   </ItemGroup>
   <ItemGroup>
     <!-- Test host and runner. -->
