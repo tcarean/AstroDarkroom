@@ -17,11 +17,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- AboutWindow: the icon, the banner, the copyright, the GPLv3 notice (section 5(d)), what
-     the suite needs on the machine (R-009), the suite's date and the version of every
-     component bundled, from release.json. Modal; Enter and Esc close it. Every text is
-     assigned by the code behind in the current language; the product name is the same in
-     both. -->
+<!-- AboutWindow: the icon, the banner, the copyright, the GPLv3 notice (section 5(d)), the
+     components written by others that the launcher ships (R-015), what the suite needs on the
+     machine (R-009), the suite's date and the version of every component bundled, from
+     release.json. Modal; Enter and Esc close it. Every text is assigned by the code behind in
+     the current language; the product name is the same in both. -->
 
 <Window x:Class="AstroDarkroom.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -53,6 +53,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <StackPanel>
         <TextBlock x:Name="LicenceHeading" Style="{StaticResource Heading}" />
         <TextBlock x:Name="Warranty" Style="{StaticResource Muted}" />
+      </StackPanel>
+    </Border>
+
+    <!-- The components written by others (R-015): the name and the role on the first line, the
+         licence and the project's address on the second, the copyright line under them, which
+         the licence asks to go with the program; where the whole text is, in the lead. Kept
+         short: "Despre" grows by this card on every screen (ADR 0013). -->
+    <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+      <StackPanel>
+        <TextBlock x:Name="ThirdPartyHeading" Style="{StaticResource Heading}" />
+        <TextBlock x:Name="ThirdPartyLead" Style="{StaticResource Muted}" Margin="0,0,0,8" />
+        <ItemsControl x:Name="ThirdPartyList" Focusable="False">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <StackPanel>
+                <TextBlock TextWrapping="Wrap">
+                  <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" />
+                  <Run Text=" - " Foreground="{StaticResource FaintBr}" />
+                  <Run Text="{Binding Role, Mode=OneWay}" Foreground="{StaticResource MutedBr}" FontSize="12" />
+                </TextBlock>
+                <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0">
+                  <Run Text="{Binding Licence, Mode=OneWay}" />
+                  <Run Text=" - " />
+                  <Run Text="{Binding Url, Mode=OneWay}" />
+                </TextBlock>
+                <TextBlock Style="{StaticResource Faint}" Text="{Binding Copyright, Mode=OneWay}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
       </StackPanel>
     </Border>
 

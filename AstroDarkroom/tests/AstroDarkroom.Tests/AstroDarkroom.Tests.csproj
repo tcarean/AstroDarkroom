@@ -3,6 +3,10 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>AstroDarkroom.Tests</RootNamespace>
+    <!-- net8.0-windows, the window's framework, so the tests load the build of
+         NLog.Targets.AtomicFile the window ships: the package has a net8.0 build and a
+         net8.0-windows one, and R-014 is about the second (ADR 0012). The core stays net8.0. -->
+    <TargetFramework>net8.0-windows</TargetFramework>
     <!-- CA1707: underscores in test names are the convention here, not a defect. -->
     <NoWarn>$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>

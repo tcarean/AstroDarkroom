@@ -18,15 +18,21 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using NLog;
 
 namespace AstroDarkroom.Wpf;
 
 /// <summary>
 /// Asks the window manager for a dark title bar, so the bar matches the dark windows (ADR 0004);
-/// silently nothing on a Windows without the attribute. A copy of LightsCheck's.
+/// silently nothing on a Windows without the attribute, and a Debug line in the diagnostic log
+/// when the call itself cannot be made (no <c>dwmapi.dll</c>, or no such entry point in it). A
+/// copy of LightsCheck's, its log line included.
 /// </summary>
 internal static partial class DarkTitleBar
 {
+    /// <summary>The diagnostic log: a window manager that cannot be called, so the title bar stays light (R-012).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private const int UseImmersiveDarkModeBefore20H1 = 19;
     private const int UseImmersiveDarkMode = 20;
 
@@ -60,12 +66,11 @@ internal static partial class DarkTitleBar
                 DwmSetWindowAttribute(hwnd, UseImmersiveDarkModeBefore20H1, ref on, sizeof(int));
             }
         }
-        catch (DllNotFoundException)
+        catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException)
         {
-            // No compositor: the bar stays light, the launcher still starts.
-        }
-        catch (EntryPointNotFoundException)
-        {
+            // No compositor: the bar stays light, the launcher still starts. LightsCheck's and
+            // FlatCheck's copies log the same line.
+            Log.Debug(e, "the title bar cannot be darkened on this system");
         }
     }
 }

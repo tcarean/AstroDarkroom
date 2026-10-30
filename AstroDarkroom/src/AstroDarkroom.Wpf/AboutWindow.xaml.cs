@@ -30,10 +30,11 @@ public sealed record ComponentLine(string Name, string Version);
 
 /// <summary>
 /// The about window: the banner, the copyright, the disclaimer of warranty GPLv3 section 5(d)
-/// asks for, what the suite needs on the machine (R-009), the suite's date and each
-/// component's version, all from the core and from release.json, worded in the language
-/// current when it opens (R-006); it is modal and made anew at every open, so it never has to
-/// switch. The unreleased flag of release.json is not shown (ADR 0007).
+/// asks for, the components written by others that the launcher ships (R-015), what the suite
+/// needs on the machine (R-009), the suite's date and each component's version, all from the
+/// core and from release.json, worded in the language current when it opens (R-006); it is
+/// modal and made anew at every open, so it never has to switch. The unreleased flag of
+/// release.json is not shown (ADR 0007).
 /// </summary>
 public partial class AboutWindow : Window
 {
@@ -54,6 +55,11 @@ public partial class AboutWindow : Window
         Copyright.Text = VersionInfo.Copyright;
         LicenceHeading.Text = T("LICENCE", "LICENTA");
         Warranty.Text = LicenseInfo.Warranty;
+        ThirdPartyHeading.Text = T("THIRD-PARTY COMPONENTS", "COMPONENTE TERTE");
+        ThirdPartyLead.Text = T(
+            "Each licence's whole text is in THIRD-PARTY-NOTICES.md, beside the source.",
+            "Textul intreg al fiecarei licente e in THIRD-PARTY-NOTICES.md, langa sursa.");
+        ThirdPartyList.ItemsSource = ThirdParty.Components;
         PrerequisitesHeading.Text = T("REQUIREMENTS", "CERINTE");
         PrerequisitesList.ItemsSource = Prerequisites.Details;
         ComponentsHeading.Text = T("COMPONENTS", "COMPONENTE");
