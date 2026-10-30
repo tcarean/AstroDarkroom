@@ -490,13 +490,52 @@ the normalisation to ISO 400 (2 = linear, the D3300's); and `DEGREES / DOUBLING`
 degrees double the dark current, for the degrees in the report (6). The four and the partner are
 read when a folder is opened and remembered between starts in
 `%LOCALAPPDATA%\DarksCheck\settings.json`, the only file the window writes outside the folder
-you export to; a value that is not a positive number with `.` as its decimal separator means the
+you export to besides its log ("Logs" below); a value that is not a positive number with `.` as its decimal separator means the
 default, and the field says it is invalid. The console always runs with a gain of 2 and 6 degrees
 per doubling.
 
 **Write the files...** writes the files of `--out` into a folder you choose; the dialog opens in
 the session folder, which is refused, as is the partner's, so choose a folder outside both.
 **About** (F1) shows the version, the licence and the third-party components.
+
+## Logs
+
+Both programs keep a log of what they did, for the day something goes wrong. To report a problem,
+attach the whole `log` folder: it holds what is needed to see what happened.
+
+**Where it is.** In a folder named `log` beside the program: `log\darkscheck.log` beside
+`darkscheck.exe`, `log\DarksCheck.Wpf.log` beside `DarksCheck.Wpf.exe`. When that folder cannot
+be written (a program under Program Files, a read-only drive), the log goes to
+`%LOCALAPPDATA%\DarksCheck\log` instead, and its first line says so. Past 1 MiB (1,048,576 bytes,
+so a file ends one line past that) a file is left and the next one is started
+(`darkscheck_01.log`, `darkscheck_02.log`, ...); the five most recent files are kept and the older
+ones deleted, so the folder holds about 5 MiB per program at most: an analysis of a night like
+Smida (20 darks, 30 biases and 32 lights, against a library of 30 darks) writes about 200 KB, so
+the log keeps some twenty-five of them. Two windows open at the same time write into the same
+file, each line marked with its process. Nothing is written into the session folder or the
+library.
+
+**What is in it.** One line per event, numbers with a point: at the start the version, the command
+line, the Windows and .NET versions and the folders; each folder opened, with its frame counts;
+every file read, with its size and what its header or the camera says (camera, lens, focal length,
+exposure, ISO, time), and for a raw libraw's own figures; every frame decoded, with the time it
+took and the memory the program held after it; for each run its options, its outcome and the time
+each stage took; the figures behind every verdict: each dark's, bias's and light's figures, the
+masters, the noise curve, the warming, the maps' regions, the six verdicts, the index, the lights
+and the partner; every file written; in the window, the folder opened, each run's end, the dialogs
+and the buttons pressed; every error with its technical details, those the program works around
+without a word included (not a run you stopped yourself, nor what the window drops while it
+closes); at the end the exit code and the time taken. The log's own words are English whatever
+`--lang` says; an error's or a refusal's message appears as you saw it, so in Romanian under
+`--lang ro`. It holds the paths of your files and the figures measured on them, not their pixels.
+
+**How much.** The environment variable `DARKSCHECK_LOG` sets the level: `off`, `fatal`, `error`,
+`warn`, `info`, `debug` (the default) or `trace`, which adds every header card of each FITS frame
+the analysis decodes (`--inventory` reads headers only, so it adds none); `off` writes no log and
+creates no folder. In a command window, `set DARKSCHECK_LOG=trace` holds for the programs started
+from that window; for the window started from a shortcut or from Astro Darkroom, set it once with
+`setx DARKSCHECK_LOG trace` (or in Windows' environment variables) and start the program, or
+Astro Darkroom, again.
 
 ## Building
 

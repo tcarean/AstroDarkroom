@@ -458,4 +458,57 @@ English, one line, at most 100 characters, saying why. No builds in the main che
 
 ## What deviated
 
-(Written at wrap-up.)
+Written at wrap-up, 2026-10-30. LightsCheck's log task (its ADR 0029, plan of the same day) was
+merged into `main` (ad721aaf) before this task began, so D3 took its main path, and LightsCheck's
+files, FlatCheck's already in the style DarksCheck shares and fixed by two reviews, were the model
+of `Logging/`, `LogCapture`, `LogFiles` and the tests rather than FlatCheck's directly.
+
+- **D3, the readers, as a hunk.** Step 3 said to copy the two files over DarksCheck's. LightsCheck's
+  copies held two more hunks besides the log, its `InvalidDataException` for a raw libraw refuses
+  (321ab4aa, for its `--frame` mode) and the fields of its pixel size from the 35 mm-equivalent
+  focal length (its R-066, 7fa82a12); a whole copy would have brought both, the first changing a
+  report's words. The log hunk alone was taken (LightsCheck's 5fa43622 and 80ac6867), byte for
+  byte in the code, as ADR 0023 took FlatCheck's lens hunk; `LogText.Frame` leaves out the fields
+  DarksCheck's `LoadedFrame` does not have. `docs/design/imaging.md` lists the hunk and the two
+  left out.
+- **D7, Trace.** The cards are the full load's: a metadata read keeps none, so the inventory's
+  reads add no card at Trace, and R-102 says so (LightsCheck's R-072 says the same).
+- **`DarkOutputs` holds no logger.** The table had it write `wrote <path>`, the invariant of step
+  6 keeps `Report/` free of loggers; LightsCheck's way was taken: `WriteAll` tells a callback each
+  file as soon as it is written, and the console and the window write the line. The Debug line
+  for a map not written was dropped.
+- **The figures by one rule.** The named members (`LogText.Series`, `DarkFrame`, `Verdicts`, ...)
+  became one, `LogText.Figures`, which writes every public property of a record by the plan's own
+  rule; the call sites name what they leave out (a frame's `Info`, `Error` and `Skipped`, the
+  masters, a text in the run's language: the series' `ScaleSource`, the partner's `FirstError`).
+- **The words.** `SessionFolder.Open` writes the folder line at Info (LightsCheck's), for the
+  partner too; the plan had it at Debug in `InventoryRun`. A frame left out for its size or its
+  settings is written in the log's own English words, not as the row's message. The console's
+  refused `--out` is its run's failure, one Error line `run failed: mode=darks` with the
+  exception, not a Warn `refused:` line. The window's failed run is `run N failed after ...; the
+  problem card shows the message` at Error, as planned; the label copied names the label; a
+  settings file read without trouble writes nothing, a write writes `wrote` at Debug.
+- **The console names its mode** in `Program` (`help`, `darks`, `inventory`); `Options` is
+  unchanged. `GoldenOutputTests.Scrub` and `GoldenDir` became internal so
+  `R101_TheConsoleAddsNothingToStdoutOrStderr` compares stdout with the golden file itself.
+- **The tests.** Renamed: `R101_ASupersededRunsFailureIsKeptInTheLogThoughTheScreenShowsNothing`
+  is `R101_ASupersededRunIsKeptInTheLogThoughTheScreenShowsNothing` (a superseded run's failure
+  depends on a race; its stop does not). `R101_ARunThatThrowsLeavesItsStartLineAndTheStagesItReached`
+  uses a session whose darks are all unreadable, so the run throws after two stages. Added, most
+  from LightsCheck: the first line's facts, the clock's two endings, a task exception already
+  written, the frames left out, the export's callback, the figures' rule, libraw's line without a
+  CFA order, the real console's first and last lines and its level, the window's exception
+  filter and its lines in both languages.
+- **CLAUDE.md** names the log in the layout and adds to the rule "Computed only in the core" the
+  sentence LightsCheck's owner settled the same day (its ADR 0029): a diagnostic log line is no
+  figure of the analysis.
+- **The size (D8).** Measured: 495 lines, about 198 KB, a Smida run against the library, not
+  30 to 45 KB: a dark's figures line is 1.3 KB (four planes and their residuals), and the readers'
+  three lines per file are 55 % of the bytes. The five files hold about twenty-six such runs.
+- **Step 7, the window.** The owner was at the PC (idle under a second, the Claude app in the
+  foreground), so no window was opened; two console processes writing one file at once stood for
+  two windows, and the window's build of the atomic target is checked by its test.
+- **Names.** The ADR is `0025-a-diagnostic-log-with-nlog-as-lightschecks-written-at-the-seams.md`
+  and step 0's commit message "Plan the diagnostic log with NLog, so a reported bug can be
+  diagnosed from the log": the planned names said "the readers' copies left alone", written before
+  D3 was rewritten.

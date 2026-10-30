@@ -26,7 +26,9 @@ decoded and the others are listed as skipped, the same rule as the darks. A ligh
 size than the darks, or one that fails to decode, is listed with its error. A FITS light has no
 black level of its own and takes the darks' black (the pedestal is the camera's); a raw brings
 libraw's. A light that does not say its ISO or its exposure is taken at the darks'
-normalisation and marked `AssumedSettings`.
+normalisation and marked `AssumedSettings`. The loop writes the diagnostic log as it goes, one
+line per light measured with its time, the working set and its figures, and a light that failed
+with its exception (ADR 0025, `logging.md`); `Measure` and the rest of the file write nothing.
 
 `Measure` works per CFA plane. The sky is the clipped sigma and median of the plane, read on
 every fourth row and column (`Subsample`), minus black. The **local excess** `LocalExcess` is

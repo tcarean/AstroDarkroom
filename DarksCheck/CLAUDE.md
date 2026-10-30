@@ -43,7 +43,8 @@ modifies, moves or writes anything into the frames' folders.
   LightsCheck, which copied FlatCheck, ADR 0003), `Session/` finds the frames, `Analysis/`
   decides numbers, `Thresholds.cs` holds every constant a verdict depends on, `Report/`
   decides words (English and Romanian; `Language/` holds the pick), `Runs/` chains them; both
-  applications call `Runs/` only.
+  applications call `Runs/` only, and start and close the diagnostic log of `Logging/`, which
+  the seams write (ADR 0025).
 - `src/DarksCheck.Cli/` - the console, `darkscheck.exe`: options, dispatch, exit code.
 - `src/DarksCheck.Wpf/` - the window, `DarksCheck.Wpf.exe`: the theme and presentation pieces
   copied from LightsCheck, one view-model fed by the report's rows, the views (ADR 0009).
@@ -81,7 +82,8 @@ varies a kit rule names it.
   file dialogs or anything with a UI.
 - **Computed only in the core.** Nothing is computed outside `DarksCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never
-  in a view-model or the console.
+  in a view-model or the console. A diagnostic log line is no figure of the analysis: the
+  applications write and time their own lines (ADR 0025).
 - **Read-only input.** Nothing is ever written into the session folder or the library folder:
   the frames are read, never modified, moved or renamed; the label is shown, never written
   (ADR 0002).

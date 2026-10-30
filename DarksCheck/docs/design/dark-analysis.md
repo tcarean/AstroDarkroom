@@ -51,6 +51,14 @@ lights): the same decode and 16-bit conversion, the frame listed with `dimensiun
 when its size is not the darks', and the file's own black and white returned (NaN black for a
 FITS, which the caller replaces).
 
+The two decoding loops, this one and the lights' (`lights-and-index.md`), are the only code of
+`Analysis/` that writes the diagnostic log (ADR 0025): one line per frame decoded, with its time
+and the process's working set after its collection, a frame left out or failed with its
+exception, and the stack's counts and scale in the log's own words. `DarkSeriesRun` writes the
+run's stages and every figure of the records it gets back, and `DarkOutputs.WriteAll` tells its
+caller each file as soon as it is written, so the console and the window log the files; the
+lines are in `logging.md`.
+
 ## The planes and the estimators
 
 `Planes` works on one CFA position at a time, p = (y &amp; 1) * 2 + (x &amp; 1), named by
