@@ -42,7 +42,7 @@ public class WindowSmokeTests
 
     public WindowSmokeTests(StaFixture sta) => _sta = sta;
 
-    sealed class BindingErrors : IDisposable
+    internal sealed class BindingErrors : IDisposable
     {
         readonly StringBuilder _sb = new();
         readonly TraceListener _listener;
@@ -226,6 +226,34 @@ public class WindowSmokeTests
             Assert.False(map.HasWcs);   // a TIFF: no WCS, the labels box is disabled
             PreviewWindowViewModel preview = vm.Tones.BuildPreview(AnalysisRun.Execute(tif, Scenes.OnBuiltForPaper()).Simulation.Rows[3]);
             Render((FrameworkElement)new PreviewWindow { DataContext = preview }.Content, name: "preview-rand");
+
+            // R-162, R-163: the Soft proof tab without a profile shows the core's sentence; with
+            // one, the proof inside its margin, then the full-screen window over the same
+            // view-model, with the warning on. The paper and ink are always simulated.
+            await vm.ProofComputation;
+            Assert.False(vm.SoftProof.HasProof);
+            Render(new SoftProofView { DataContext = vm.SoftProof }, name: "tab-soft-proof-fara-profil");
+            // A second view-model with the profile, so that the first keeps the Dmax the
+            // assertions below were written for.
+            string icc = ws.WriteFile("hartie.icc", IccPrinterTestData.V2Lut16("Hartie de test", 20, white: new[] { 0.90, 0.93, 0.75 }));
+            var proofed = new MainViewModel();
+            proofed.Parameters.Aspect = "50:35";
+            proofed.Parameters.Distance = "1.5";
+            Assert.True(proofed.Parameters.UseProfile(new IccProfileRow(IccPaperBlack.Read(icc))));
+            await proofed.OpenAsync(tif);
+            await proofed.ProofComputation;
+            Assert.True(proofed.SoftProof.HasProof, proofed.SoftProof.Message);
+            Render(new SoftProofView { DataContext = proofed.SoftProof }, name: "tab-soft-proof");
+            proofed.SoftProof.ShowPaperGamut = true;
+            var proofWindow = new SoftProofWindow { DataContext = proofed.SoftProof };
+            try
+            {
+                Render((FrameworkElement)proofWindow.Content, name: "fereastra-soft-proof");
+            }
+            finally
+            {
+                proofWindow.DataContext = null;
+            }
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });

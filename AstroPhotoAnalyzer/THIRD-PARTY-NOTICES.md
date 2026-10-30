@@ -129,8 +129,10 @@ black and the relative colorimetric intent, through the table from the device (v
 `lut8`/`lut16`, v4 `lutAToB`), and gets back that black's colour against the paper's white, from
 which comes the paper's Dmax on that printer (`--icc`, the window's **From ICC profile...**
 button). For the out-of-gamut figure of the **Curves** tab it also takes the image's colours to
-the printer and back through the profile's relative colorimetric tables (R-144). It never
-changes the image itself.
+the printer and back through the profile's relative colorimetric tables (R-144), and for the
+**Soft proof** tab it takes each colour of a reduced copy through the table of the chosen intent
+and back through the colorimetric one, to show what the paper would do (R-160; ADR 0066). It
+never changes the image itself.
 
 **Why not written by hand.** A hand-written reader for the lab's two profiles gave the same
 figures to the last decimal, but knew a single kind of table; the second kind (`lutAToB`, in the

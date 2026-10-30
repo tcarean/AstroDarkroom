@@ -1,0 +1,122 @@
+# 0066. The soft proof is the paper's colour through the profile, on a grid of 65, shown as the paper beside a white
+
+Date: 2026-10-30
+Status: accepted 2026-10-30
+
+## Context
+
+The window reads the paper's Dmax from an ICC printer profile (ADR 0030) and counts the pixels
+outside the paper's gamut (ADR 0032, ADR 0042), but nothing shows what the paper would do to
+the image. On 2026-10-30 the owner asked for a soft-proofing tab as close as possible to
+Lightroom Classic's: a rendering intent (perceptual, relative), "Simulate Paper & Ink", gamut
+warnings that can be switched on and off (the box and the screen's warning later fell on the
+owner's questions, below), the image full-screen inside a margin whose colour follows the
+selections; viewing only, no editing, no proof copy; without a profile the tab shows
+an error and nothing else. The proposal the owner accepted the same day added three things
+beyond Lightroom: a third intent, relative without black point compensation, which is what
+the Tonuri tab's "under paper black" counts; a screen-gamut warning with the screen assumed
+sRGB, as the whole tool assumes; and the proof live in the tab as well as in a window.
+
+Measured on 2026-10-30 (a scratchpad probe over Wacton.Unicolour 8.0.0, on the lab's two
+profiles, the Epson P900 baryta profile installed on the owner's machine and the CMYK
+`RSWOP.icm` Windows ships):
+
+- the package evaluates the perceptual, relative and absolute intents and lets each direction
+  use its own; it has no black point compensation (BPC), so BPC is the ICC scaling of XYZ,
+  written here;
+- the paper white under the absolute intent: the Chromatone baryta L\* 97.6 b\* +1.1 (sRGB
+  249, 248, 246), the canvas L\* 95.0, the P900 baryta L\* 95.5; the paper black relative to
+  the paper white L\* 3.49, 22.3 and 6.54;
+- relative without BPC on the canvas sends every grey under L\* 22 to the paper's black (a grey
+  at L\* 10 comes back at 22.3); with BPC towards the paper and back towards the screen the same
+  grey comes back at L\* 8.0 to 9.0 on every profile: the two intents answer different
+  questions, and the first is the one the Tonuri tab's simulation asks (ADR 0025);
+- a grid of 65 nodes per channel, read trilinearly, is within Delta E76 1.0 of the exact
+  per-pixel proof at the 99th percentile on both lab profiles (max 1.4 on the canvas, 0.7 on the
+  baryta) over 8 000 colours, half of them dark and nearly neutral as a sky is; 33 nodes reach
+  2.4 to 5.2 at the maximum on the canvas; a 65-grid builds in 1.6 to 2.2 s with the rows in
+  parallel on the owner's machine, 33 in 0.2 to 0.5 s; the exact trip per pixel would take
+  about 35 s on a 1.4 MP reduction (ADR 0042);
+- the CMYK profile proofs through every intent with the same code.
+
+## Decision
+
+1. The proof is computed only in the core (`Analysis/SoftProof.cs`, run by `Runs/ProofRun.cs`
+   after the analysis, as the curves are, ADR 0051): source sRGB to XYZ D50; for `Relativ`
+   the ICC black point compensation towards the paper (`XYZ' = XYZ x (W - K) / W + K`, K the
+   device black through A2B1, the black ADR 0030 reads, taken as the neutral of its Y as ISO
+   18619 and lcms do, W the D50 white), none for
+   `Perceptual` and `Relativ, fara compensarea negrului`; the profile's B2A table of the
+   intent to device values; A2B1 back, the colour the paper shows relative to its white. That
+   colour, in XYZ, is what the grid stores: one table of `ProofGrid` (65) nodes per intent,
+   built once per image and intent, the rows in parallel.
+2. The display step is applied per pixel after the interpolation: the absolute scaling by the
+   media white of the `wtpt` tag, so the paper's white shows as its own colour and its black
+   as its own grey, the print beside a white. Then XYZ D50 to sRGB (the Bradford-adapted
+   matrix, as the package converts), encoded. The core also keeps the other display step,
+   BPC towards the screen, `(XYZ - K) x W / (W - K)`, the paper's black as the screen's black
+   and its white as the screen's white, for its figures (V-015 measures both); the window does
+   not show it. The tab first had Lightroom's box "Simulate Paper & Ink" for the two; on
+   2026-10-30, on seeing the tab, the owner asked what the unsimulated state was for and no
+   use survived the questions: the automatic margin, the paper's white, already gives the eye
+   the white to adapt to, and in the full-screen window the paper's black is the darkest thing
+   on screen, so the eye adapts to that too; the colour changes the profile makes are shown by
+   the gamut warning; and this tool edits nothing under the proof, which is where Lightroom's
+   unsimulated view earns its place (editing under the dull simulation over-corrects). The
+   box was dropped, the proof is always simulated, and the texts the user sees name no other
+   program: the documentation says what the tab is modelled on, the tooltips do not.
+3. One warning, decided by the core once per image on the source pixels of the reduction: the
+   paper's gamut by the rule of ADR 0042 on the existing `GamutTable`, so that the share equals
+   the Editare Curbe tab's figure for the original. The tab first had Lightroom's second
+   warning too, the screen's gamut (a display channel outside 0..1 whose clipping moved the
+   colour by more than Delta E76 2.0). On 2026-10-30 the owner asked when it could ever fire;
+   measured on the plate-solved FITS in the state the window shows: 0 % through the baryta
+   profile and 0 % through the canvas, whose white is bluish (it gave figures, up to 8 %, only
+   in the unsimulated display step dropped in decision 2). With an sRGB source and a profile
+   that leaves in-gamut colours in place or pulls them inward, no proofed colour can leave the
+   screen's gamut; Lightroom needs the warning because its source is ProPhoto. The warning, its
+   threshold and its class were removed; a colour the screen cannot show is clipped.
+4. The margin is view only: `Albul hartiei` (the default) is the paper's white, the display
+   colour of sRGB white under the absolute scaling, and five fixed backgrounds (white to
+   black, Lightroom's) can be chosen instead. The state of the controls is the session's: it survives another image and is not
+   written to `settings.json`.
+
+## Alternatives rejected
+
+- **lcms2 (`lcms2-dotnet`, `lcmsNET`) for the proof.** The reference engine, with BPC and soft
+  proofing built in, but a native library: the console would stop being one copyable file (the
+  rule "Package notices", ADR 0030).
+- **A grid of 33, as the gamut figure uses.** Delta E76 up to 5.2 against the exact proof on the
+  canvas, visible on a sky; 65 costs 1.6 to 2.2 s per intent, once per image, and keeps every
+  colour within about 1.
+- **The exact trip per pixel.** About 35 s per rendering on one thread; the window would wait
+  for every change of intent.
+- **Storing the display colour in the grid.** One grid per intent and per value of `simulate`,
+  twice the work for a step that is a per-pixel scaling.
+- **A monitor profile from Windows, for a screen warning.** The tool assumes sRGB everywhere
+  (R-096); a profile read from the display would make the proof alone colour-managed, and with
+  an sRGB source there is nothing for the warning to find.
+- **The histogram of the proof, Before/After side by side, the proof copy.** Not asked; the
+  `Originalul` box swaps the image inside the same margin, which is what the comparison is for.
+- **Keeping the simulation box as parity with Lightroom.** A control with no use in this tool
+  is a question every reader asks; the state it switched to is kept in the core, measured and
+  documented, so it can come back if a use appears.
+- **Remembering the controls in `settings.json`.** The reasoning of ADR 0064: a view opens in a
+  state chosen this session, nothing hidden from an earlier one.
+
+## Consequences
+
+- R-160 to R-163 state the behaviour; `SoftProofTests` guards the chain, the warning's mask and the
+  problems on a hand-built profile that now carries B2A tables, `SoftProofTabTests` the tab and
+  the window; V-015 holds the figures on the plate-solved FITS through the lab's baryta profile.
+- The paper white the tab shows and the margin takes is the `wtpt` tag's, L\* 97.2 on the lab's
+  baryta (V-015), 0.4 under the L\* 97.6 the package's own absolute intent gave in the probe,
+  which adapts the white its own way; the tag is the figure the profile states, and the
+  display step is written here, so the two cannot drift apart.
+- `Thresholds` gains `ProofGrid` and `ProofMaxSide`, each with its provenance; `thresholds.md`
+  their rows.
+- Wacton.Unicolour has a third use, named in `THIRD-PARTY-NOTICES.md`, `ThirdParty.cs` and the
+  README's table.
+- A profile without B2A tables cannot be proofed (the gamut figure already says so); B2A0,
+  mandatory in a printer profile, is required too, since the package refuses a profile
+  without it.

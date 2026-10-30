@@ -155,18 +155,14 @@ namespace AstroPhotoAnalyzer
         /// <returns>The displacement of a* and of b*.</returns>
         internal static (float Da, float Db) Interpolated(GamutTable t, float r, float g, float b)
         {
-            int n = t.N;
-            float fr = Math.Clamp(r, 0f, 1f) * (n - 1), fg = Math.Clamp(g, 0f, 1f) * (n - 1), fb = Math.Clamp(b, 0f, 1f) * (n - 1);
-            int ir = Math.Min((int)fr, n - 2), ig = Math.Min((int)fg, n - 2), ib = Math.Min((int)fb, n - 2);
-            float tr = fr - ir, tg = fg - ig, tb = fb - ib;
+            Span<int> index = stackalloc int[8];
+            Span<float> weight = stackalloc float[8];
+            Trilinear.Corners(t.N, r, g, b, index, weight);
             float da = 0, db = 0;
             for (int k = 0; k < 8; k++)
             {
-                int dr = k & 1, dg = (k >> 1) & 1, dbb = (k >> 2) & 1;
-                float w = (dr == 1 ? tr : 1 - tr) * (dg == 1 ? tg : 1 - tg) * (dbb == 1 ? tb : 1 - tb);
-                int i = ((ir + dr) * n + ig + dg) * n + ib + dbb;
-                da += w * t.Da[i];
-                db += w * t.Db[i];
+                da += weight[k] * t.Da[index[k]];
+                db += weight[k] * t.Db[index[k]];
             }
             return (da, db);
         }

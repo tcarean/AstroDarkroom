@@ -61,7 +61,7 @@ public class ValidationTests
         JsonElement c = doc.RootElement.GetProperty("cases").EnumerateArray()
             .Single(e => e.GetProperty("id").GetString() == id);
         string kind = c.GetProperty("kind").GetString()!;
-        Assert.Contains(kind, new[] { "analysis", "icc", "curves" });
+        Assert.Contains(kind, new[] { "analysis", "icc", "curves", "proof" });
 
         string name = c.GetProperty("image").GetString()!;
         string? image = TestData.Large(name);
@@ -77,6 +77,7 @@ public class ValidationTests
         {
             "icc" => IccFigures(IccPaperBlack.Read(image)),
             "curves" => CurveFigures(image, c.GetProperty("parameters")),
+            "proof" => ProofFigures(image, c.GetProperty("parameters")),
             _ => Figures(AnalysisRun.Execute(image, ParametersOf(c.GetProperty("parameters")))),
         };
 
@@ -215,6 +216,44 @@ public class ValidationTests
     }
 
     /// <summary>What an icc case guards: the profile's name, whether it could be read, its black and its Dmax.</summary>
+    /// <summary>
+    /// A proof case (R-160 to R-162, ADR 0066): the analysis with the case's profile, the proof
+    /// prepared on it, and each intent rendered with the simulation off and on: the profile's
+    /// facts, the share outside the paper's gamut and the mean L* of each proof.
+    /// </summary>
+    static Dictionary<string, object> ProofFigures(string image, JsonElement parameters)
+    {
+        Parameters p = ParametersOf(parameters);
+        string profile = TestData.Large(parameters.GetProperty("icc").GetString()!) ?? throw new FileNotFoundException("the case's profile is absent: " + parameters.GetProperty("icc").GetString());
+        p = p.WithDmaxFromProfile(profile, out string error) ?? throw new Exception(error);
+        AnalysisResult a = AnalysisRun.Execute(image, p);
+        ProofSet set = ProofRun.Prepare(a);
+        var f = new Dictionary<string, object>(StringComparer.Ordinal)
+        {
+            ["proof.problem"] = set.Problem ?? "none",
+        };
+        if (set.Problem != null) return f;
+        ProofProfile pr = set.Profile;
+        f["proof.description"] = pr.Description;
+        f["proof.paperWhite.L"] = R(pr.PaperWhiteLab.L);
+        f["proof.paperWhite.a"] = R(pr.PaperWhiteLab.A);
+        f["proof.paperWhite.b"] = R(pr.PaperWhiteLab.B);
+        f["proof.paperWhite.srgb"] = string.Join(",", pr.PaperWhiteSrgb.Select(v => RasterOps.Level8(v)));
+        f["proof.paperBlackLstar"] = R(pr.PaperBlackLstar);
+        f["proof.dmax"] = pr.Dmax;
+        f["proof.width"] = set.Reduced.W;
+        f["proof.pctPaperGamut"] = R(set.PctPaper);
+        foreach (ProofIntent intent in Enum.GetValues<ProofIntent>())
+            foreach (bool simulate in new[] { false, true })
+            {
+                SoftProofResult r = ProofRun.Render(set, intent, simulate);
+                string k = "proof." + intent + (simulate ? ".simulated." : ".");
+                float[] L = RasterOps.LstarPlane(r.Image, 1);
+                f[k + "meanLstar"] = R(L.Average());
+            }
+        return f;
+    }
+
     static Dictionary<string, object> IccFigures(IccBlack b) => new()
     {
         ["icc.description"] = b.Description,

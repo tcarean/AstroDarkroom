@@ -465,6 +465,12 @@ ADR 0032 counted Delta E with black point compensation in 8 bits through LittleC
 the same order above the darks, a different definition, so the two are not to be compared digit
 by digit.
 
+### F3 - `SoftProof` - what the paper shows of the image (R-160 to R-162)
+
+Not a measurement of the image but of the paper's effect on it, viewing only: the chain through
+the profile's tables, the table per intent, the display step and the two warnings are in
+`soft-proof.md`; the decision is ADR 0066.
+
 ## Notes from phase 2
 
 - **Two different tile criteria, on purpose.** The noise sigma (B3) uses tiles with a

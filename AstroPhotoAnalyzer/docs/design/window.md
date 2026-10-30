@@ -19,7 +19,7 @@ with its "Scoate" button (R-155: `ParameterFields.ProfileText`, red through a st
 `SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
-Preview, Editare Curbe; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
+Preview, Editare Curbe, Soft proof; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
 sky; Tonuri measures its *level* (`BackgroundMedian`, "Nivelul fundalului") and Culoare
 its *colour* (`BackgroundResult.Levels`, "Culoarea fundalului"), and every label, row
 and appendix says which of the two it shows. Starts maximised. A file from
@@ -72,6 +72,7 @@ set and readable, no text comparison left: the setter keeps the two in step.
 | `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "FWHM median in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
 | `BackgroundTabViewModel` (the Culoare tab) | `Rows` (the background colour per channel, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, a region measured on every pixel carrying `EdgeRegion.PixelsNote`, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the regions, delta, the "!" mark, coloured vs neutral with the reference image's two corners, mono) |
 | `PreviewTabViewModel` | `Guide` (`GuideParagraph`s of the card above the tiles, "CUM SE FOLOSESTE PREVIEW-UL": the screen is harsher than paper, with `ScreenEquivalentWidthCm`; the step back, with `ScreenStepBackFactor` against the reference row, or the inverse when the print is larger than the 100 % view; what to look for; what the tab is not), `Tiles`: centre 100 % (480 x 320), centre 200 % (nearest-neighbour zoom), four corners 100 % (320 x 220), whole frame (max side 520), the print simulation at the primary target (gamma on a downsample), the crop when needed - each with a `Check`, what to verify in it, wrapped to the image's width |
+| `SoftProofTabViewModel` (the Soft proof tab, R-163) | the intent, the two boxes, the margin, the proof and its warning layer, the core's lines and legend, `FullScreen` (raises `ProofRequested` with the same view-model); filled by the third run `MainViewModel` starts beside the curves' (`ProofComputation`); the whole area in `soft-proof.md` |
 
 Tables are pre-aligned mono strings, the same the report writes, rendered with
 `MonoRowTemplate`; the alternative was a template per table for the same text.
@@ -140,6 +141,11 @@ selected, the gallery exists and the focus is not in a text box. `SaveRequested`
 window show the save dialog with the core's proposed name, then `Save(path)` calls
 `CurveExport.Save` and shows `SaveMessage` or `SaveError`.
 
+**The Soft proof tab and its window** (`ViewModels/SoftProofTab.cs`, `Views/SoftProofView.xaml`,
+`Views/SoftProofControls.xaml`, `Views/SoftProofWindow.xaml`; R-163, ADR 0066): the eighth tab,
+filled like the Editare Curbe tab by a run after the analysis, `ProofRun`; the tab, the window over
+the same view-model and their keys are described in `soft-proof.md`.
+
 **The curve window** (`Views/CurveWindow.xaml`, `CurveWindowViewModel`; R-147): the table of
 control points (label, input, output at three decimals, the class's L\* before and after) and
 two `CurveCanvas` charts, the whole curve and the shadows up to `CurveShadowChartFactor`
@@ -149,7 +155,7 @@ of the Raport tab's "fiindca" block (`Theme/Dark.xaml`, `RecommendationRowTempla
 block's inlines are rebuilt from both, the label semi-bold and then the `Because`, the parts
 between the core's `**` marks (`Fmt.Strong`) as `Bold`, an unclosed mark kept as text; the
 label is a property and not content because a XAML attribute is applied before the content,
-which put the label after the text. `Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
+which put the label after the text. `Presentation/ZoomPanViewer.cs` is the soft proof's viewer (`soft-proof.md`). `Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
 the diagonal, the sampled curve, the control points, a dotted vertical with a rotated label
 per class; the output axis ends at the largest value drawn. Not modal, not maximised, Esc
 closes it.
@@ -158,7 +164,7 @@ closes it.
 
 - **The window adds no number and no sentence.** `MainViewModel.RunAsync` calls
   `AnalysisRun.Execute` on a pool thread; the tab view-models turn the result records
-  into rows (the Editare Curbe tab is filled by a second run started after them, see above). Tables are rendered as pre-aligned mono strings - the same strings the
+  into rows (the Editare Curbe and Soft proof tabs are filled by runs started after them, see above). Tables are rendered as pre-aligned mono strings - the same strings the
   report writes - instead of one XAML template per table.
 - **View-models are public and therefore cannot expose core types**, which are internal.
   The compiler enforces that everything shown passes through the simple rows in

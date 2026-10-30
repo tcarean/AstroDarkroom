@@ -38,6 +38,7 @@ AstroPhotoAnalyzer.Core/
            PrintPreview.cs (a row as an image, for the preview window),
            ToneCurve.cs, CurveAdvisor.cs (the suggested curves: spline, anchors, recipe, evidence; R-140 to R-143),
            GamutAnalyzer.cs (the share outside the paper's gamut, R-144),
+           SoftProof.cs (the soft proof: the profile's tables per intent, the display step; R-160 to R-162),
            NoiseAnalyzer.cs, BackgroundAnalyzer.cs,
            StarAnalyzer.cs, PrintSizeAnalyzer.cs, QuantizationAnalyzer.cs, JpegAnalyzer.cs
   Report/Recommendation.cs             Verdict, Topic, Recommendation, VerdictText
@@ -46,8 +47,10 @@ AstroPhotoAnalyzer.Core/
   Report/Fmt.cs                        invariant number formatting; the ** marks of a because (ADR 0063)
   Report/RunReport.cs                  banner, warranty
   Report/CurveTexts.cs                 the Editare Curbe tab's sentences and the HISTORY text
+  Report/ProofTexts.cs                 the Soft proof tab's sentences
   Runs/AnalysisRun.cs                  the chain, AnalysisResult, RefusedImageException
   Runs/CurveRun.cs                     the second run, after the analysis: CurveSet, CurveExport
+  Runs/ProofRun.cs                     the third run, after the analysis: ProofSet (ADR 0066)
   Parameters.cs, Thresholds.cs, ThirdParty.cs, Version.cs
   Language.cs                          the interface language: Tr.Pick, the --lang parser (ADR 0048)
 
@@ -58,15 +61,19 @@ AstroPhotoAnalyzer.Wpf/
   Interop/DarkTitleBar.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
   Presentation/AppIcon.cs, BarsCanvas.cs, CurveCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs,
                TExtension.cs (a XAML text in both languages), Emphasis.cs (a because's ** marks in bold, R-112),
-               AccessibleTabControl.cs (the window's tabs, their content in the UI Automation tree, R-157)
+               AccessibleTabControl.cs (the window's tabs, their content in the UI Automation tree, R-157),
+               ZoomPanViewer.cs (the soft proof's viewer: wheel zoom, drag pan, double-click fit, R-163)
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),
              WindowSettings.cs (the remembered settings file, R-156),
-             CurvesTab.cs (the Editare Curbe tab and the curve window, R-146, R-147)
-  Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, PreviewView, CurvesView (.xaml),
+             CurvesTab.cs (the Editare Curbe tab and the curve window, R-146, R-147),
+             SoftProofTab.cs (the Soft proof tab and its window, R-163)
+  Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, PreviewView, CurvesView, SoftProofView,
+        SoftProofControls (.xaml),
         ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs),
-        MapWindow.xaml, PreviewWindow.xaml, CurveWindow.xaml, OverlayWindows.xaml.cs, IccPickerWindow.xaml(.cs)
+        MapWindow.xaml, PreviewWindow.xaml, CurveWindow.xaml, SoftProofWindow.xaml, OverlayWindows.xaml.cs,
+        IccPickerWindow.xaml(.cs)
 
 AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt and *.en.txt; testdata/ (manifest, large/);
                                        RunsInRomanian, LanguageTests, RomanianWords (language.md)

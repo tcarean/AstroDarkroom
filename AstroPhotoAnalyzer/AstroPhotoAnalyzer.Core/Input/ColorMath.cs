@@ -121,6 +121,24 @@ namespace AstroPhotoAnalyzer
             return (116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz));
         }
 
+        /// <summary>
+        /// The CIE L*a*b* of a tristimulus value against a given white: the same companding as
+        /// <see cref="LabOfSrgb"/>, for a colour already in XYZ (the soft proof's, relative to
+        /// D50, R-160).
+        /// </summary>
+        /// <param name="x">The colour's X, in the white's scale.</param>
+        /// <param name="y">The colour's Y, in the white's scale.</param>
+        /// <param name="z">The colour's Z, in the white's scale.</param>
+        /// <param name="xn">The white's X, positive.</param>
+        /// <param name="yn">The white's Y, positive.</param>
+        /// <param name="zn">The white's Z, positive.</param>
+        /// <returns>L* (0..100 for a colour under the white), a* and b*.</returns>
+        internal static (double L, double A, double B) LabOfXyz(double x, double y, double z, double xn, double yn, double zn)
+        {
+            double fx = LabF(x / xn), fy = LabF(y / yn), fz = LabF(z / zn);
+            return (116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz));
+        }
+
         /// <summary>The L*a*b* companding function: the cube root, linear under 0.008856.</summary>
         /// <param name="t">A tristimulus value relative to the white, 0..1.</param>
         /// <returns>f(t), 4/29..1.</returns>

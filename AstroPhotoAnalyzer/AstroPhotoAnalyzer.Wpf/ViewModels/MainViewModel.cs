@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - the file, the parameters, the run, and the seven tabs.
+// MainViewModel.cs - the file, the parameters, the run, and the eight tabs.
 //
 // One run at a time: the button is disabled while it computes. The analysis takes a few
 // seconds on 23 MP (the JPEG is half of them) and sits on a pool thread; the progress comes by
@@ -74,6 +74,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Background = new BackgroundTabViewModel();
             Preview = new PreviewTabViewModel();
             Curves = new CurvesTabViewModel();
+            SoftProof = new SoftProofTabViewModel();
 
             if (_settings.IccProfilePath != null)
                 Parameters.RestoreProfile(new IccProfileRow(IccPaperBlack.Read(_settings.IccProfilePath)));
@@ -94,6 +95,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public BackgroundTabViewModel Background { get; }
         public PreviewTabViewModel Preview { get; }
         public CurvesTabViewModel Curves { get; }
+        public SoftProofTabViewModel SoftProof { get; }
 
         public string Banner => VersionInfo.Banner;
         public string Copyright => VersionInfo.Copyright;
@@ -153,6 +155,12 @@ namespace AstroPhotoAnalyzer.Wpf
         /// gallery; completed before the first run and after one that failed.
         /// </summary>
         internal Task CurvesComputation { get; private set; } = Task.CompletedTask;
+
+        /// <summary>
+        /// The soft proof's computation the last run started (R-163), started beside the curves';
+        /// completed before the first run and after one that failed.
+        /// </summary>
+        internal Task ProofComputation { get; private set; } = Task.CompletedTask;
 
         /// <summary>
         /// Report.txt (Raport.txt in Romanian) beside the image - the default name in the save
@@ -237,6 +245,8 @@ namespace AstroPhotoAnalyzer.Wpf
                 // free meanwhile, the tab says "computing" until they are there. ComputeAsync
                 // catches its own exceptions, so the task never faults.
                 CurvesComputation = Curves.ComputeAsync();
+                // The soft proof too (R-163, ADR 0066): its own run, independent of the curves'.
+                ProofComputation = SoftProof.ComputeAsync();
             }
             catch (Exception e)
             {
@@ -275,7 +285,7 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>Pours one result into the seven tabs.</summary>
+        /// <summary>Pours one result into the eight tabs.</summary>
         /// <param name="r">The analysis; not null.</param>
         void Populate(AnalysisResult r)
         {
@@ -286,12 +296,13 @@ namespace AstroPhotoAnalyzer.Wpf
             Background.Populate(r);
             Preview.Populate(r);
             Curves.Populate(r);
+            SoftProof.Populate(r);
         }
 
-        /// <summary>Empties the seven tabs.</summary>
+        /// <summary>Empties the eight tabs.</summary>
         void ClearTabs()
         {
-            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Preview.Clear(); Curves.Clear();
+            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Preview.Clear(); Curves.Clear(); SoftProof.Clear();
         }
 
         /// <summary>

@@ -55,6 +55,30 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
+    /// The soft proof's full-screen window (R-163), over the tab's own
+    /// <see cref="SoftProofTabViewModel"/>; non-modal. The keys G, O and I go to the
+    /// view-model, Esc closes.
+    /// </summary>
+    public partial class SoftProofWindow : Window
+    {
+        /// <summary>
+        /// Loads the XAML, asks for the dark title bar once there is a handle; the keys as above.
+        /// </summary>
+        public SoftProofWindow()
+        {
+            InitializeComponent();
+            SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+            PreviewKeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Escape) { Close(); e.Handled = true; return; }
+                if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase) return;
+                if (Keyboard.Modifiers != ModifierKeys.None) return;
+                if (DataContext is SoftProofTabViewModel vm && vm.HandleKey(e.Key)) e.Handled = true;
+            };
+        }
+    }
+
+    /// <summary>
     /// The preview window (R-131), over a <see cref="PreviewWindowViewModel"/>; non-modal.
     /// </summary>
     public partial class PreviewWindow : Window

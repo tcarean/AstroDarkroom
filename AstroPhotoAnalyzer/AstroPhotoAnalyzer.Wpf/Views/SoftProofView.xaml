@@ -1,0 +1,77 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- SoftProofView - the Soft proof tab (R-163): the intent, the two boxes, the margin, the
+     proof inside its margin with the warning layers, the core's facts and legend under it,
+     and "Full screen". Without a profile only the core's sentence shows (R-162). The image
+     takes all the remaining room, which is why the tab is a grid, as the Editare Curbe tab.
+     No figure is computed here. -->
+
+<UserControl x:Class="AstroPhotoAnalyzer.Wpf.SoftProofView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf">
+  <Grid Margin="20,12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <!-- The controls, shown once the set is prepared: while a render runs and after one the
+         core refused too, so that another intent can be chosen. -->
+    <StackPanel Grid.Row="0" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+      <local:SoftProofControls Visibility="{Binding HasControls, Converter={StaticResource BoolToVis}}" />
+      <TextBlock Text="{Binding Message}" TextWrapping="Wrap" MaxWidth="900" HorizontalAlignment="Left" Margin="0,4,0,8">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+    </StackPanel>
+
+    <!-- The proof inside its margin: the margin's colour follows the selections (R-163). -->
+    <!-- The viewer fits the proof, zooms it with the wheel around the cursor and pans it with
+         the left button; a double click fits it again (ZoomPanViewer). -->
+    <Border Grid.Row="1" Background="{Binding MarginBrush}" CornerRadius="4" Padding="24"
+            Visibility="{Binding HasProof, Converter={StaticResource BoolToVis}}">
+      <local:ZoomPanViewer>
+        <Grid Width="{Binding Width}" Height="{Binding Height}">
+          <Image Source="{Binding Image}" Stretch="None" />
+          <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
+        </Grid>
+      </local:ZoomPanViewer>
+    </Border>
+
+    <StackPanel Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasProof, Converter={StaticResource BoolToVis}}">
+      <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding PaperGamutLegend}" TextWrapping="Wrap" Margin="0,4,0,0" />
+      <TextBlock Style="{StaticResource Muted}" Text="{Binding ProfileLine}" TextWrapping="Wrap" Margin="0,6,0,0" />
+      <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperWhiteLine}" TextWrapping="Wrap" Margin="0,2,0,0" />
+      <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperBlackLine}" TextWrapping="Wrap" Margin="0,2,0,0" />
+      <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,6,0,0"
+                 Text="{local:T En='Wheel: zoom around the cursor, up to 8:1 at 100 % display scaling; left button: drag; double click: fit again. A reduced copy through the tables of the profile, viewing only: the pixels and the screen are assumed sRGB. The white and the black of the paper are shown as they are: the print beside a white. The third intent, without the compensation, is the model of the Tones tab.', Ro='Rola: zoom in jurul cursorului, pana la 8:1 la scalare de 100 % a ecranului; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa prin tabelele profilului, doar pentru privit: pixelii si ecranul sunt presupusi sRGB. Albul si negrul hartiei sunt aratate asa cum sunt: printul langa un alb. Al treilea intent, fara compensare, e modelul tabului Tonuri.'}" />
+    </StackPanel>
+  </Grid>
+</UserControl>
