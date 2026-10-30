@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - the file, the parameters, the run, and the eight tabs.
+// MainViewModel.cs - the file, the parameters, the run, and the seven tabs.
 //
 // One run at a time: the button is disabled while it computes. The analysis takes a few
 // seconds on 23 MP (the JPEG is half of them) and sits on a pool thread; the progress comes by
@@ -72,7 +72,6 @@ namespace AstroPhotoAnalyzer.Wpf
             Export = new ExportTabViewModel();
             Resolution = new ResolutionTabViewModel();
             Background = new BackgroundTabViewModel();
-            Preview = new PreviewTabViewModel();
             Curves = new CurvesTabViewModel();
             SoftProof = new SoftProofTabViewModel();
 
@@ -93,7 +92,6 @@ namespace AstroPhotoAnalyzer.Wpf
         public ExportTabViewModel Export { get; }
         public ResolutionTabViewModel Resolution { get; }
         public BackgroundTabViewModel Background { get; }
-        public PreviewTabViewModel Preview { get; }
         public CurvesTabViewModel Curves { get; }
         public SoftProofTabViewModel SoftProof { get; }
 
@@ -285,7 +283,7 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>Pours one result into the eight tabs.</summary>
+        /// <summary>Pours one result into the seven tabs.</summary>
         /// <param name="r">The analysis; not null.</param>
         void Populate(AnalysisResult r)
         {
@@ -294,15 +292,14 @@ namespace AstroPhotoAnalyzer.Wpf
             Export.Populate(r);
             Resolution.Populate(r);
             Background.Populate(r);
-            Preview.Populate(r);
             Curves.Populate(r);
             SoftProof.Populate(r);
         }
 
-        /// <summary>Empties the eight tabs.</summary>
+        /// <summary>Empties the seven tabs.</summary>
         void ClearTabs()
         {
-            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Preview.Clear(); Curves.Clear(); SoftProof.Clear();
+            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Curves.Clear(); SoftProof.Clear();
         }
 
         /// <summary>

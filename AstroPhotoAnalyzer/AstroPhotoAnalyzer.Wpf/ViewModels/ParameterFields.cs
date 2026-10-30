@@ -363,7 +363,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public string TargetBgHelp => Tr.Pick(
             $"One more level for the simulation to try, strictly between 0 and 1 and rounded to {Parameters.TargetBackgroundDecimals} decimals, besides its grid "
             + $"{Fmt.Level(D.SimulationTargets.Min())}..{Fmt.Level(D.SimulationTargets.Max())}: its row appears in the table marked "
-            + "\"(given)\" and is the one the print tile of Preview shows. Empty = the grid only, and Preview takes the recommended row."
+            + "\"(given)\". Empty = the grid only."
             + "\n\n"
             + "The background level = the median of the green channel over the whole image (the sky dominates the frame). The simulation applies "
             + "gamma = ln(target) / ln(background) on every channel and re-measures the dust and the sky. It is a simulation, not Siril's stretch, "
@@ -375,7 +375,7 @@ namespace AstroPhotoAnalyzer.Wpf
             + $"at which the dust still stays over paper black and the sky at L* {Fmt.F0(Thresholds.LowSeparationLstar)} or above; this field does not change it.",
             $"Un nivel in plus pe care sa-l incerce simularea, strict intre 0 si 1 si rotunjit la {Parameters.TargetBackgroundDecimals} zecimale, pe langa grila ei "
             + $"{Fmt.Level(D.SimulationTargets.Min())}..{Fmt.Level(D.SimulationTargets.Max())}: randul lui apare in tabel marcat "
-            + "\"(dat)\" si e cel pe care il arata dala de print din Preview. Gol = doar grila, si Preview-ul ia randul recomandat."
+            + "\"(dat)\". Gol = doar grila."
             + "\n\n"
             + "Nivelul fundalului = mediana canalului verde pe toata imaginea (cerul domina cadrul). Simularea aplica "
             + "gamma = ln(tinta) / ln(fundal) pe toate canalele si remasoara praful si cerul. E o simulare, nu stretch-ul lui Siril, "

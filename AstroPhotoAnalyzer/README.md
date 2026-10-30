@@ -101,7 +101,6 @@ what each tab shows, not only the tabs' names.
 | **Export** | The JPEG table, with what its columns mean and, when a quality under 100 spoils the stars and the edges, which one and by how much; the size of the 8-bit TIFF; the 16 to 8 bit rounding; the shadow-lift stress test, marked when the 16-bit master is worth keeping; the plateau, how wide the flat steps of the 8-bit sky would print and on what share of the frame, which decides the banding risk. |
 | **Resolution** | The stars' FWHM, in the centre and in the four corners, and the real detail it leaves; the table of print sizes; the scale of dpi against viewing distance. |
 | **Colour** | The background colour, R / G / B, taken on the sky patches, with its chroma in L\*a\*b\*, which decides the cast, and the two level figures that name its direction; the four corners and the four edges against it, each on its own sky pixels, a flagged one marked "! coloured" or "! neutral"; how to read them. |
-| **Preview** | The centre at 100 % and 200 %, the four corners at 100 %, the whole frame, the print simulation (at the extra target background, or else at the recommended one, when it is not the image as it is) and, when the target ratio cuts, the crop, each with what to look for in it; the rule of screen against paper, with the step back computed for this image. |
 | **Curves Editing** | Suggested contrast curves, computed with the analysis: see below. |
 | **Soft proof** | What the paper would do to the image, through its ICC profile, the way Lightroom soft-proofs: see below. |
 
@@ -356,11 +355,11 @@ entering a corner does not pass for a gradient; a region with under a quarter of
 on every pixel, and its row says so. A region more than 3 levels from the sky on some channel is
 flagged:
 
-- **Neutral**, its channels moving together: most likely the object; one note sends you to the
-  Preview.
+- **Neutral**, its channels moving together: most likely the object; one note asks you to look
+  at the edges before you correct anything.
 - **Coloured**, its channels moving differently: a caution. Darker than the sky on every
-  channel, it is a **darkening**: dust at the edge of the frame or a gradient left over, to check
-  in the Preview; on the bottom row, where the horizon sits, a region leaning red over blue keeps
+  channel, it is a **darkening**: dust at the edge of the frame or a gradient left over, to look
+  at by eye; on the bottom row, where the horizon sits, a region leaning red over blue keeps
   the horizon's name instead. Any other coloured region is named warm (on the bottom row,
   horizon glow or light pollution), cool, greenish or another colour, to correct on the linear
   data or keep as part of the composition.

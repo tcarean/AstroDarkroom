@@ -151,7 +151,6 @@ public class WindowEnglishTests
             AssertEnglish("Export", TextsOf(new ExportView { DataContext = vm.Export }, "tab-export"));
             AssertEnglish("Resolution", TextsOf(new ResolutionView { DataContext = vm.Resolution }, "tab-rezolutie"));
             AssertEnglish("Colour", TextsOf(new BackgroundView { DataContext = vm.Background }, "tab-fundal"));
-            AssertEnglish("Preview", TextsOf(new PreviewView { DataContext = vm.Preview }, "tab-preview", h: 2400));
             await vm.CurvesComputation;   // R-146: the gallery comes with the analysis
             Assert.True(vm.Curves.HasGallery, vm.Curves.Message);
             vm.Curves.Next.Execute(null);

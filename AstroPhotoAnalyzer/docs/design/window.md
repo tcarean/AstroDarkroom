@@ -19,7 +19,8 @@ with its "Scoate" button (R-155: `ParameterFields.ProfileText`, red through a st
 `SaveMessage` / `SaveError`, as the Editare Curbe tab has for its own save); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
-Preview, Editare Curbe, Soft proof; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
+Editare Curbe, Soft proof (the Preview tab was removed on 2026-10-30, ADR 0067);
+`BusyOverlay` over the right side while running. "Fundal" names one thing, the
 sky; Tonuri measures its *level* (`BackgroundMedian`, "Nivelul fundalului") and Culoare
 its *colour* (`BackgroundResult.Levels`, "Culoarea fundalului"), and every label, row
 and appendix says which of the two it shows. Starts maximised. A file from
@@ -59,7 +60,8 @@ unreadable one; the `Medium` setter drops any profile. `TryBuild` names the prof
 set and readable, no text comparison left: the setter keeps the two in step.
 
 **Tabs** (`ResultTabs.cs`, each a `ResultTabViewModel` with `Populate(AnalysisResult)`,
-`Clear()`, `HasResult`):
+`Clear()`, `HasResult`; every tab's `Clear` empties its rows as well as `HasResult`, which
+`R111_ClearEmptiesEveryTab` checks on the tabs of this file):
 
 | tab | shows |
 |---|---|
@@ -71,7 +73,6 @@ set and readable, no text comparison left: the setter keeps the two in step.
 | `ExportTabViewModel` | `JpegRows` (mono strings), `JpegGuide` (`GuideParagraph`s under the table: how it is measured, each column group, what is recommended - thresholds from `Thresholds`, and the highest quality under 100 that fails with its maximum error, `JpegResult.HighestFailingBelow100`, ADR 0061), `Rows` (TIFF size, rounding, stress, plateau at the reference row's dpi; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`) |
 | `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "FWHM median in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
 | `BackgroundTabViewModel` (the Culoare tab) | `Rows` (the background colour per channel, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, a region measured on every pixel carrying `EdgeRegion.PixelsNote`, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the regions, delta, the "!" mark, coloured vs neutral with the reference image's two corners, mono) |
-| `PreviewTabViewModel` | `Guide` (`GuideParagraph`s of the card above the tiles, "CUM SE FOLOSESTE PREVIEW-UL": the screen is harsher than paper, with `ScreenEquivalentWidthCm`; the step back, with `ScreenStepBackFactor` against the reference row, or the inverse when the print is larger than the 100 % view; what to look for; what the tab is not), `Tiles`: centre 100 % (480 x 320), centre 200 % (nearest-neighbour zoom), four corners 100 % (320 x 220), whole frame (max side 520), the print simulation at the primary target (gamma on a downsample), the crop when needed - each with a `Check`, what to verify in it, wrapped to the image's width |
 | `SoftProofTabViewModel` (the Soft proof tab, R-163) | the intent, the two boxes, the margin, the proof and its warning layer, the core's lines and legend, `FullScreen` (raises `ProofRequested` with the same view-model); filled by the third run `MainViewModel` starts beside the curves' (`ProofComputation`); the whole area in `soft-proof.md` |
 
 Tables are pre-aligned mono strings, the same the report writes, rendered with
@@ -79,7 +80,7 @@ Tables are pre-aligned mono strings, the same the report writes, rendered with
 
 **Presentation**: `Theme/Dark.xaml` (palette, styles, converters, templates
 `VerdictChip`, `RecommendationRowTemplate`, `SectionTemplate`, `MetricRowTemplate`,
-`MonoRowTemplate`, `PreviewTileTemplate`, `ComponentRowTemplate`,
+`MonoRowTemplate`, `ComponentRowTemplate`,
 `DescribedMetricRowTemplate`, `GuideParagraphTemplate`). Its tab style targets
 `AccessibleTabControl` (`Presentation/AccessibleTabControl.cs`), the window's tabs: the template
 names the presenter of the selected content `ContentHost`, and the control's automation peer
@@ -92,11 +93,9 @@ Export's Cuantizare, Rezolutie's stars, Culoare's colour) is the same row on two
 columns over the card's full width: label, description and note in the left half, the
 value right-aligned in the right half, so every description stops at the middle whatever
 the value's length; its rows sit 14 px apart, each being a paragraph; the Tonuri
-percentiles are one per line. `PreviewTileTemplate` wraps the tile's `Note` and `Check`
-to the image's width (bitmaps are 96 dpi, so `PixelWidth` is the width in DIU), else a
-sentence would widen the card. `VerdictPalette`
+percentiles are one per line. `VerdictPalette`
 (colour from the core's label: OK green, ATENTIE amber, PROBLEMA red, anything else
-neutral); `RasterBitmaps` (a raster region as `BitmapSource`, stride and integer zoom,
+neutral); `RasterBitmaps` (a raster region as `BitmapSource`, at an integer stride,
 frozen); `BarsCanvas` (a `FrameworkElement` drawing a histogram with up to two marker lines in
 `OnRender`, the second dashed, each at the centre of its value's bin since the bins are centred on their index); `DarkTitleBar` (DWM attribute 20, falling back to 19); `AppIcon` (largest
 frame of the .ico for "Despre").
@@ -142,7 +141,7 @@ window show the save dialog with the core's proposed name, then `Save(path)` cal
 `CurveExport.Save` and shows `SaveMessage` or `SaveError`.
 
 **The Soft proof tab and its window** (`ViewModels/SoftProofTab.cs`, `Views/SoftProofView.xaml`,
-`Views/SoftProofControls.xaml`, `Views/SoftProofWindow.xaml`; R-163, ADR 0066): the eighth tab,
+`Views/SoftProofControls.xaml`, `Views/SoftProofWindow.xaml`; R-163, ADR 0066): the last tab,
 filled like the Editare Curbe tab by a run after the analysis, `ProofRun`; the tab, the window over
 the same view-model and their keys are described in `soft-proof.md`.
 
@@ -195,7 +194,9 @@ closes it.
   branches, since a small image prints larger than its 100 % view - the synthetic scenes
   are 512 px and land on that branch. Layout lessons: described rows need two equal
   columns, not label/auto, or the longest value narrows every description; a preview
-  tile's text must wrap to the image's width or it widens the card.
+  tile's text must wrap to the image's width or it widens the card. The Preview tab, its
+  tiles, the step-back rule and the monitor pixel pitch were removed on 2026-10-30, once the
+  Soft proof tab showed the image better (ADR 0067); what is said of them here is history.
 - **The naming pass (after the explanation pass).** Writing the tooltip for the
   target-background field exposed that "fundal" named two numbers: the Tonuri tab's
   `BackgroundMedian` (median of the green channel over the frame, 0..1, what the

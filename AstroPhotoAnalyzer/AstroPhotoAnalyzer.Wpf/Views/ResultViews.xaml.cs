@@ -60,13 +60,6 @@ namespace AstroPhotoAnalyzer.Wpf
         public BackgroundView() => InitializeComponent();
     }
 
-    /// <summary>The Preview tab's view (R-117); the XAML holds everything.</summary>
-    public partial class PreviewView : UserControl
-    {
-        /// <summary>Loads the XAML.</summary>
-        public PreviewView() => InitializeComponent();
-    }
-
     /// <summary>The Soft proof tab's view (R-163); the XAML holds everything.</summary>
     public partial class SoftProofView : UserControl
     {

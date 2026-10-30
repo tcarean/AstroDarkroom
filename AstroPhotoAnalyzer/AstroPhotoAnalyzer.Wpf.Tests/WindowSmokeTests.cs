@@ -208,7 +208,6 @@ public class WindowSmokeTests
             Render(new ExportView { DataContext = vm.Export }, name: "tab-export");
             Render(new ResolutionView { DataContext = vm.Resolution }, name: "tab-rezolutie");
             Render(new BackgroundView { DataContext = vm.Background }, name: "tab-fundal");
-            Render(new PreviewView { DataContext = vm.Preview }, h: 2400, name: "tab-preview");
             // R-146, R-147: the gallery the analysis computed on its own, on a suggestion, and
             // its curve window.
             await vm.CurvesComputation;
@@ -260,9 +259,6 @@ public class WindowSmokeTests
 
         Assert.Equal("PROBLEMA", vm.Report.VerdictLabel);
         Assert.Equal(6, vm.Report.Sections.Count);
-        Assert.NotEmpty(vm.Preview.Tiles);
-        Assert.Contains(vm.Preview.Tiles, t => t.Title.StartsWith("Simulare print"));
-        Assert.Contains(vm.Preview.Tiles, t => t.Title.StartsWith("Decupaj"));
     }
 
     /// <summary>

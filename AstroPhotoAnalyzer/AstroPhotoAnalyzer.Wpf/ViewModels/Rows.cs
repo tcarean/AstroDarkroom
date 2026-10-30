@@ -20,7 +20,6 @@
 // properties through reflection.
 
 using System.Collections.Generic;
-using System.Windows.Media.Imaging;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -68,20 +67,6 @@ namespace AstroPhotoAnalyzer.Wpf
     {
         public string Lead { get; init; }
         public string Text { get; init; }
-    }
-
-    /// <summary>
-    /// One tile of the Preview tab (R-117): its title, the bitmap, an optional note under it and
-    /// what to check in it.
-    /// </summary>
-    public sealed class PreviewTile
-    {
-        public string Title { get; init; }
-        public BitmapSource Image { get; init; }
-        public string Note { get; init; }
-
-        /// <summary>What to verify in this tile, under it; wrapped to the image's width.</summary>
-        public string Check { get; init; }
     }
 
     /// <summary>

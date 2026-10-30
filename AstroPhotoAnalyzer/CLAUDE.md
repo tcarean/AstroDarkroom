@@ -53,7 +53,7 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   `Runs/CurveRun.cs` (the suggested curves and the saved FITS, ADR 0032, ADR 0051) and
   `Runs/ProofRun.cs` (the soft proof, ADR 0066), nothing else. `Thresholds.cs`, `Parameters.cs`.
 - `AstroPhotoAnalyzer/` - the console: `Program.cs`, `Options.cs`, `AnalyzerCli.cs`. Nothing else.
-- `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, eight
+- `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, seven
   tabs out. Formats, never decides; view-models are public and cannot expose a core type.
 - `AstroPhotoAnalyzer.Tests/` (core + console, portable; `Golden/` holds the console snapshots;
   `testdata/manifest.json` hashes the reference image, which stays outside git) and
@@ -108,7 +108,7 @@ or varies a kit rule names it.
   number, threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`,
   never in a view-model or the console (ADR 0007).
 - **Explanation is not diagnosis.** The window's explanatory texts (a row's `Description`, a
-  table's `GuideParagraph`s, a tile's `Check`, a field's `*Help`) are the one kind of sentence a
+  table's `GuideParagraph`s, a field's `*Help`) are the one kind of sentence a
   view-model writes; every number in them is interpolated from `Thresholds`, `Parameters` or the
   result, never typed. A literal a text needs is lifted into `Thresholds` first, with its
   comment, even one no rule reads (ADR 0012, ADR 0020).

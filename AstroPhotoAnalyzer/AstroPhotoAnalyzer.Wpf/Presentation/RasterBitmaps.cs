@@ -17,10 +17,10 @@
 
 // RasterBitmaps.cs - a piece of a Raster, directly as a WPF bitmap, with no file.
 //
-// The previews are crops at 100 % or 200 % and reductions of the whole: all are made with an
-// integer step (stride) and an integer magnification (zoom, nearest neighbour), so that the
-// pixels shown are pixels of the file, not averages. BitmapSource.Create takes the bytes as
-// they are; frozen, so good to bind from any thread.
+// The map's reduced frame, the preview window's lifted copy, the curves' previews and the soft
+// proof are all made with an integer step (stride), so that the pixels shown are pixels of the
+// file, not averages. BitmapSource.Create takes the bytes as they are; frozen, so good to bind
+// from any thread.
 
 using System;
 using System.Windows.Media;
@@ -29,15 +29,14 @@ using System.Windows.Media.Imaging;
 namespace AstroPhotoAnalyzer.Wpf
 {
     /// <summary>
-    /// Frozen WPF bitmaps from a <see cref="Raster"/>: a region at an integer step and zoom,
-    /// the whole frame reduced, and a semi-transparent overlay from a predicate per pixel.
+    /// Frozen WPF bitmaps from a <see cref="Raster"/>: a region at an integer step, and a
+    /// semi-transparent overlay from a predicate per pixel.
     /// </summary>
     internal static class RasterBitmaps
     {
         /// <summary>
         /// The rectangle (x0, y0, w, h) of the raster, taken every <paramref name="stride"/>
-        /// pixels and magnified <paramref name="zoom"/> times. On mono the same grey goes on all
-        /// three channels.
+        /// pixels. On mono the same grey goes on all three channels.
         /// </summary>
         /// <param name="r">The raster, 0..1 levels; at least one pixel.</param>
         /// <param name="x0">The left column, in pixels; clamped into the image.</param>
@@ -49,30 +48,27 @@ namespace AstroPhotoAnalyzer.Wpf
         /// The height in source pixels; clamped to 1..the rows from y0 to the bottom edge.
         /// </param>
         /// <param name="stride">Take every n-th pixel on both axes, 1 or more.</param>
-        /// <param name="zoom">
-        /// Repeat each taken pixel this many times on both axes, 1 or more.
-        /// </param>
         /// <returns>
-        /// A frozen Rgb24 bitmap at 96 dpi, (w / stride) x zoom by (h / stride) x zoom pixels, at
-        /// least 1 x 1, each sample the 8-bit level of <see cref="RasterOps.Level8"/>.
+        /// A frozen Rgb24 bitmap at 96 dpi, (w / stride) by (h / stride) pixels, at least 1 x 1,
+        /// each sample the 8-bit level of <see cref="RasterOps.Level8"/>.
         /// </returns>
-        internal static BitmapSource Region(Raster r, int x0, int y0, int w, int h, int stride = 1, int zoom = 1)
+        internal static BitmapSource Region(Raster r, int x0, int y0, int w, int h, int stride = 1)
         {
             x0 = Math.Clamp(x0, 0, Math.Max(0, r.W - 1));
             y0 = Math.Clamp(y0, 0, Math.Max(0, r.H - 1));
             w = Math.Clamp(w, 1, r.W - x0);
             h = Math.Clamp(h, 1, r.H - y0);
-            int ow = Math.Max(1, w / stride) * zoom, oh = Math.Max(1, h / stride) * zoom;
+            int ow = Math.Max(1, w / stride), oh = Math.Max(1, h / stride);
             var rgb = new byte[ow * oh * 3];
             float[] R = r.Planes[0], G = r.IsColor ? r.Planes[1] : r.Planes[0], B = r.IsColor ? r.Planes[2] : r.Planes[0];
             for (int y = 0; y < oh; y++)
             {
-                int sy = y0 + (y / zoom) * stride;
+                int sy = y0 + y * stride;
                 int so = sy * r.W;
                 int o = y * ow * 3;
                 for (int x = 0; x < ow; x++)
                 {
-                    int sx = x0 + (x / zoom) * stride;
+                    int sx = x0 + x * stride;
                     rgb[o + x * 3] = (byte)RasterOps.Level8(R[so + sx]);
                     rgb[o + x * 3 + 1] = (byte)RasterOps.Level8(G[so + sx]);
                     rgb[o + x * 3 + 2] = (byte)RasterOps.Level8(B[so + sx]);
@@ -82,16 +78,6 @@ namespace AstroPhotoAnalyzer.Wpf
             b.Freeze();
             return b;
         }
-
-        /// <summary>
-        /// The whole image, reduced by the smallest step that brings its long side to at most
-        /// <paramref name="maxSide"/> px (3200 px at 1600 gives 1600, not under).
-        /// </summary>
-        /// <param name="r">The raster, 0..1 levels.</param>
-        /// <param name="maxSide">The limit of the long side, in pixels, 1 or more.</param>
-        /// <returns>A frozen Rgb24 bitmap, as <see cref="Region"/> gives it.</returns>
-        internal static BitmapSource Whole(Raster r, int maxSide)
-            => Region(r, 0, 0, r.W, r.H, Math.Max(1, (int)Math.Ceiling(Math.Max(r.W, r.H) / (double)maxSide)));
 
         /// <summary>
         /// A layer of one semi-transparent colour, <paramref name="w"/> x <paramref name="h"/>

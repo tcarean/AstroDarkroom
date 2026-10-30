@@ -44,28 +44,39 @@ public class ViewModelTests
         var vm = new MainViewModel();
         var result = Result(Scenes.CleanSky());
         vm.Report.Populate(result);
-        vm.Preview.Populate(result);
+        vm.Tones.Populate(result);
+        vm.Export.Populate(result);
+        vm.Resolution.Populate(result);
+        vm.Background.Populate(result);
 
         vm.Report.Clear();
-        vm.Preview.Clear();
+        vm.Tones.Clear();
+        vm.Export.Clear();
+        vm.Resolution.Clear();
+        vm.Background.Clear();
 
         Assert.False(vm.Report.HasResult);
         Assert.Empty(vm.Report.Sections);
-        Assert.Empty(vm.Preview.Tiles);
-        Assert.Empty(vm.Preview.Guide);
-    }
-
-    [Fact]
-    public void R117_PreviewTilesSayWhatToCheckAndTheGuideHasTheStepBack()
-    {
-        var vm = new PreviewTabViewModel();
-        vm.Populate(Result(Scenes.DarkSky()));
-
-        Assert.All(vm.Tiles, t => Assert.False(string.IsNullOrWhiteSpace(t.Check), t.Title));
-        Assert.Equal(4, vm.Guide.Count);
-        // The scene is 512 px: at 100 % it would be 12.8 cm, less than the 50 cm print - the
-        // "printul e mai mare" branch.
-        Assert.Contains("e mai mare decat vederea la 100 %", vm.Guide[1].Text);
+        Assert.False(vm.Tones.HasResult);
+        Assert.Empty(vm.Tones.Rows);
+        Assert.Empty(vm.Tones.SimulationRows);
+        Assert.Empty(vm.Tones.Histogram);
+        Assert.Empty(vm.Tones.LadderRows);
+        Assert.Empty(vm.Tones.Guide);
+        Assert.True(double.IsNaN(vm.Tones.PaperBlack));
+        // Until 2026-10-30 these three tabs cleared only HasResult and kept their rows.
+        Assert.False(vm.Export.HasResult);
+        Assert.Empty(vm.Export.Rows);
+        Assert.Empty(vm.Export.JpegRows);
+        Assert.Empty(vm.Export.JpegGuide);
+        Assert.False(vm.Resolution.HasResult);
+        Assert.Empty(vm.Resolution.Rows);
+        Assert.Empty(vm.Resolution.SizeRows);
+        Assert.Empty(vm.Resolution.DpiRows);
+        Assert.False(vm.Background.HasResult);
+        Assert.Empty(vm.Background.Rows);
+        Assert.Empty(vm.Background.RegionRows);
+        Assert.Empty(vm.Background.Guide);
     }
 
     [Fact]
@@ -274,11 +285,13 @@ public class ViewModelTests
     {
         var r = SyntheticRasters.From(10, 10, 3, (x, y, p) => p == 0 ? x / 10f : p == 1 ? y / 10f : 0.5f);
 
-        var bmp = RasterBitmaps.Region(r, 2, 3, 4, 2, stride: 1, zoom: 2);
-        Assert.Equal(8, bmp.PixelWidth);
-        Assert.Equal(4, bmp.PixelHeight);
+        var bmp = RasterBitmaps.Region(r, 2, 3, 4, 2);
+        Assert.Equal(4, bmp.PixelWidth);
+        Assert.Equal(2, bmp.PixelHeight);
 
-        var whole = RasterBitmaps.Whole(r, 5);
-        Assert.Equal(5, whole.PixelWidth);
+        // The map's reduction: every second pixel on both axes.
+        var reduced = RasterBitmaps.Region(r, 0, 0, 10, 10, stride: 2);
+        Assert.Equal(5, reduced.PixelWidth);
+        Assert.Equal(5, reduced.PixelHeight);
     }
 }

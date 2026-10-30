@@ -237,9 +237,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TabItem Header="{local:T En='Colour', Ro='Culoare'}">
             <local:BackgroundView DataContext="{Binding Background}" />
           </TabItem>
-          <TabItem Header="Preview">
-            <local:PreviewView DataContext="{Binding Preview}" />
-          </TabItem>
           <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves Editing', Ro='Editare Curbe'}">
             <local:CurvesView DataContext="{Binding Curves}" />
           </TabItem>

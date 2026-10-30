@@ -8,7 +8,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
-- A **Soft proof** tab, the eighth, modelled on Lightroom Classic's soft proofing and for
+- A **Soft proof** tab, the last, modelled on Lightroom Classic's soft proofing and for
   looking only: the image through the ICC printer profile chosen for the Dmax, with the intent
   (**Perceptual**, **Relative** with black point compensation, and **Relative, no black point
   compensation**, the Tones tab's own model), the paper's white and black shown as they are, a paper gamut warning
@@ -82,18 +82,30 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Removed
 
+- The **Preview** tab of the window (the centre at 100 % and 200 %, the four corners, the
+  whole frame, the print simulation, the crop, and the screen-versus-paper step-back rule): the
+  **Soft proof** tab shows the whole image through the paper's profile, maximised, with zoom
+  and pan, and supersedes it. With it go the step-back figures and the monitor pixel pitch
+  (`ScreenPixelMm`), which nothing else read. The report's two edge-region sentences that sent
+  the reader to the Preview now say to look at the edges before correcting anything. The
+  Preview window of a simulation row on the Tones tab stays (R-117 dropped; ADR 0067).
+
 - The table of catalogued clouds under the Tonuri tab's simulation. The map window's list, one
   row per cloud with its name, L\*, target and patch count, is the one place the window lists
   them; the report keeps its table (R-113, R-130; ADR 0052).
 
 ### Fixed
 
+- Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
+  Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
+  replaced them. All three now empty their rows (R-111).
+
 - The content of the window's tabs is in the UI Automation tree: a screen reader such as
   Narrator, or a UI Automation tool, now reaches the controls inside a tab, where it found only
   the seven tab headers before (R-157; ADR 0065).
 - An edge region darker than the sky on every channel was called "warm (horizon glow / light
   pollution)"; it is now named a darkening, browner or bluer by the channel missing most, read
-  as dust at the frame's edge or a gradient left over, to check in Preview; on the bottom row,
+  as dust at the frame's edge or a gradient left over, to look at by eye; on the bottom row,
   where the horizon sits, red over blue keeps the horizon's name, and elsewhere a brightening
   that is red over blue is "warm (reddish)" (R-093).
 - An edge flagged with the colour of the corner beside it, and less than it, is no longer a

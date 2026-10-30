@@ -105,9 +105,6 @@
 - JPEG numbers are ImageSharp's encoder's; another encoder will differ by tenths of a
   level at q100.
 - Colour is measured as sRGB; other profiles are only named.
-- The Preview tab's step-back rule presumes a monitor pixel of `ScreenPixelMm` (0.25
-  mm); on a HiDPI screen (0.16 mm on a 27" 4K) the 100 % view is harsher still and the
-  factor understates the step.
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
   not measured natively.
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.

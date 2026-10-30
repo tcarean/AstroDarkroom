@@ -288,11 +288,8 @@ passes and is not oversize; if none passes, the smallest - it always exists (giv
 candidate). **`CanRecommend`** = the distance is explicit **and** FWHM is known - the
 only case where the rows separate on a measurement; only then is the reference row
 `Recommended` and `RecommendedRow` non-null. `NaturalRatio` = MinDistance / NaturalDistance, the same on
-every row (NaN without FWHM). `EffectiveDetailPx` = Wpx / FWHM. `ScreenEquivalentWidthCm`
-= Wpx x `ScreenPixelMm` / 10 - how wide the crop would print at a monitor's pixel pitch,
-i.e. what a 100 % view on screen shows; `ScreenStepBackFactor` = that / the reference
-row's width (NaN without one): view the 100 % crop from this many times the monitor
-distance to see the reference print. Window only (the Preview tab's step-back rule).
+every row (NaN without FWHM). `EffectiveDetailPx` = Wpx / FWHM. (The screen-equivalent
+width and the step-back factor of the former Preview tab went with it, ADR 0067.)
 
 **The natural distance cannot pick a size.** MinDistance and NaturalDistance both scale
 with the width; their ratio is `fwhm x 1000 / (Wpx x 0.29 x 1.5 x sqrt(1 + (H/W)^2))`, a
