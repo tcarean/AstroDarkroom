@@ -85,7 +85,7 @@ writes none of them.
 ## The tab and the window (`ViewModels/SoftProofTab.cs`, the three views)
 
 `SoftProofTabViewModel` holds the state of the controls (the intent as three booleans over one
-`ProofIntent`, the four boxes, the margin choice) and what is shown: the proof bitmap and the
+`ProofIntent`, the four boxes, the simulation on at the start, the margin choice) and what is shown: the proof bitmap and the
 original's (`RasterBitmaps.Region` of the core's rasters), three overlay bitmaps from the
 classes (`RasterBitmaps.Overlay`: the paper layer red over the pixels outside the paper's gamut,
 those outside both included; the screen layer blue the same way; the both layer magenta over the

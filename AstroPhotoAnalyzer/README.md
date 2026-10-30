@@ -182,8 +182,10 @@ nothing is edited, nothing is written. The proof is computed right after the ana
   on the paper's black, as Lightroom's Relative), and a third Lightroom does not have,
   **Relative, no black point compensation**: every tone darker than the paper's black prints as
   that black, which is what the **Tones** tab counts as "under paper black".
-- **Simulate paper & ink**: ticked, the paper's white shows as its own colour and its black as
-  its own grey, the way the print will look beside a pure white; unticked, both are the screen's.
+- **Simulate paper & ink**, ticked by default: the paper's white shows as its own colour and
+  its black as its own grey, the way the print will look beside a pure white; unticked, both
+  are the screen's, so the tones and the colours are judged on the screen's full range, the way
+  the eye sees a print alone once it has adapted to the paper.
 - **Paper gamut warning** paints in red the pixels whose colour the paper does not reproduce, by
   the rule of the **Curves Editing** tab, so its share is the same figure; **Screen gamut
   warning** paints in blue the pixels the paper shows but an sRGB screen cannot; magenta where

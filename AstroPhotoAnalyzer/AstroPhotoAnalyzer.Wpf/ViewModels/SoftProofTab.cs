@@ -89,7 +89,9 @@ namespace AstroPhotoAnalyzer.Wpf
         string _message;
 
         ProofIntent _intent = ProofIntent.Perceptual;
-        bool _simulate, _showPaper, _showScreen, _showOriginal;
+        // The simulation starts on (the owner's choice, ADR 0066): the proof is for seeing the
+        // print as it will look beside a white; off is for judging the tones on the screen's range.
+        bool _simulate = true, _showPaper, _showScreen, _showOriginal;
         ProofMarginChoice _margin = ProofMarginChoice.Auto;
 
         /// <summary>Makes the command; the tab starts empty.</summary>

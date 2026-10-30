@@ -53,7 +53,7 @@ public class SoftProofTabTests
         Assert.True(tab.IsPerceptual);
         Assert.False(tab.IsRelative);
         Assert.False(tab.IsRelativeNoBpc);
-        Assert.False(tab.SimulatePaper);
+        Assert.True(tab.SimulatePaper);   // on by default (ADR 0066)
         Assert.False(tab.ShowPaperGamut);
         Assert.False(tab.ShowScreenGamut);
         Assert.False(tab.ShowOriginal);
@@ -85,6 +85,7 @@ public class SoftProofTabTests
         tab.Compute();
 
         Assert.True(tab.HasProof, tab.Message);
+        Assert.True(tab.Caption.Contains("simulate"), tab.Caption);   // the default state
         Assert.Null(tab.Message);
         Assert.NotNull(tab.Image);
         Assert.Equal(512, tab.Width);
@@ -95,12 +96,12 @@ public class SoftProofTabTests
 
         // The figures are the core's own.
         ProofSet set = ProofRun.Prepare(result);
-        SoftProofResult core = ProofRun.Render(set, ProofIntent.Perceptual, false);
+        SoftProofResult core = ProofRun.Render(set, ProofIntent.Perceptual, true);
         Assert.Equal(ProofTexts.PaperGamutLegend(core.PctPaper), tab.PaperGamutLegend);
         Assert.Equal(ProofTexts.ScreenGamutLegend(core.PctScreen), tab.ScreenGamutLegend);
         Assert.Equal(ProofTexts.PaperWhiteLine(set.Profile), tab.PaperWhiteLine);
         Assert.Equal(ProofTexts.PaperBlackLine(set.Profile), tab.PaperBlackLine);
-        Assert.Equal(ProofTexts.Caption(set.Profile, ProofIntent.Perceptual, false), tab.Caption);
+        Assert.Equal(ProofTexts.Caption(set.Profile, ProofIntent.Perceptual, true), tab.Caption);
 
         // The intent renders again; the proof image is a new bitmap.
         var proofImage = tab.Image;
@@ -112,7 +113,11 @@ public class SoftProofTabTests
         Assert.NotSame(proofImage, tab.Image);
         Assert.False(tab.IsBusy);
 
-        // The simulation renders again and the automatic margin takes the paper's white.
+        // The simulation, on by default, renders again when switched; the automatic margin is
+        // the screen's white without it and the paper's white with it.
+        tab.SimulatePaper = false;
+        await tab.ProofComputation;
+        Assert.Equal(ProofTexts.Caption(set.Profile, ProofIntent.Relative, false), tab.Caption);
         Assert.Equal(Colors.White, ColourOf(tab.MarginBrush));
         tab.SimulatePaper = true;
         await tab.ProofComputation;
@@ -205,16 +210,16 @@ public class SoftProofTabTests
         Task first = early.ComputeAsync();
         Assert.Same(first, early.ProofComputation);
         early.IsRelative = true;
-        early.SimulatePaper = true;
+        early.SimulatePaper = false;
         await first;
         await early.ProofComputation;
         Assert.True(early.HasProof, early.Message);
-        Assert.Equal(ProofTexts.Caption(ProofRun.Prepare(Result(icc)).Profile, ProofIntent.Relative, true), early.Caption);
+        Assert.Equal(ProofTexts.Caption(ProofRun.Prepare(Result(icc)).Profile, ProofIntent.Relative, false), early.Caption);
         Assert.False(early.IsBusy);
 
         // A computation abandoned by Clear touches nothing when it ends; the controls keep
         // their state from one image to the next.
-        var tab = new SoftProofTabViewModel { SimulatePaper = true, Margin = ProofMarginChoice.Grey };
+        var tab = new SoftProofTabViewModel { SimulatePaper = false, Margin = ProofMarginChoice.Grey };
         tab.Populate(Result(icc));
         Task late = tab.ComputeAsync();
         tab.Clear();
@@ -223,11 +228,11 @@ public class SoftProofTabTests
         Assert.Null(tab.Message);
         Assert.False(tab.IsBusy);
         tab.Populate(Result(icc));
-        Assert.True(tab.SimulatePaper);
+        Assert.False(tab.SimulatePaper);
         Assert.Equal(ProofMarginChoice.Grey, tab.Margin);
         tab.Compute();
         Assert.True(tab.HasProof);
-        Assert.True(tab.Caption.Contains("simulate"), tab.Caption);
+        Assert.False(tab.Caption.Contains("simulate"), tab.Caption);
     }
 
     [Fact]

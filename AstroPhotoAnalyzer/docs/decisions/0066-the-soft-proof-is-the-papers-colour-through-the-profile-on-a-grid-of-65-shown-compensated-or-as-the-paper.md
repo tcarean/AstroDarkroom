@@ -54,7 +54,12 @@ profiles, the Epson P900 baryta profile installed on the owner's machine and the
    screen, `(XYZ - K) x W / (W - K)`, so the paper's black is the screen's black and its white
    the screen's white; on, the absolute scaling by the media white of the `wtpt` tag, so the
    paper's white shows as its own colour and its black as its own grey. Then XYZ D50 to sRGB
-   (the Bradford-adapted matrix, as the package converts), encoded.
+   (the Bradford-adapted matrix, as the package converts), encoded. The box starts ticked, the
+   owner's choice on 2026-10-30 on seeing the tab: the proof is for seeing the print as it will
+   look beside a white; off is for judging the tones and the colours on the screen's full range,
+   the way the eye sees a print alone once it has adapted to the paper. The texts the user sees
+   name no other program: the tab is modelled on Lightroom's soft proofing, the documentation
+   says so, the tooltips do not.
 3. Two warnings, both decided by the core on the proof's pixels: the paper's gamut by the rule
    of ADR 0042 on the existing `GamutTable`, so that the share equals the Editare Curbe tab's
    figure for the original; the screen's gamut where a display channel leaves 0..1 and the

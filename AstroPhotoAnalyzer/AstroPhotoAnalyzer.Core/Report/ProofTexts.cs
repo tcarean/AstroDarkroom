@@ -94,10 +94,10 @@ namespace AstroPhotoAnalyzer
         /// <returns>The sentence.</returns>
         internal static string IntentHelp(ProofIntent intent) => intent switch
         {
-            ProofIntent.Perceptual => Tr.Pick("The profile's own perceptual table (B2A0): every colour moved so that the ones outside the gamut fit; Lightroom's default",
-                "Tabela perceptuala a profilului (B2A0): toate culorile mutate ca sa incapa cele din afara gamutului; implicitul din Lightroom"),
-            ProofIntent.Relative => Tr.Pick("The colorimetric table (B2A1) with black point compensation: the image's black lands on the paper's, the colours inside the gamut stay; Lightroom's Relative",
-                "Tabela colorimetrica (B2A1) cu compensarea negrului: negrul imaginii ajunge pe al hartiei, culorile din gamut raman; Relative din Lightroom"),
+            ProofIntent.Perceptual => Tr.Pick("The profile's own perceptual table (B2A0): every colour moved so that the ones outside the gamut fit; the usual choice for a photograph",
+                "Tabela perceptuala a profilului (B2A0): toate culorile mutate ca sa incapa cele din afara gamutului; alegerea obisnuita pentru o fotografie"),
+            ProofIntent.Relative => Tr.Pick("The colorimetric table (B2A1) with black point compensation: the image's black lands on the paper's, the colours inside the gamut stay as they are",
+                "Tabela colorimetrica (B2A1) cu compensarea negrului: negrul imaginii ajunge pe al hartiei, culorile din gamut raman cum sunt"),
             _ => Tr.Pick("The colorimetric table without compensation: every tone darker than the paper's black prints as that black, what the Tones tab counts",
                 "Tabela colorimetrica fara compensare: orice ton mai intunecat decat negrul hartiei se tipareste cu acel negru, ce numara tabul Tonuri"),
         };

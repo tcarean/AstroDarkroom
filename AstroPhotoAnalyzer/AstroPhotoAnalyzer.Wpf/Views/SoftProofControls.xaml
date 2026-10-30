@@ -39,7 +39,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </StackPanel>
     <CheckBox IsChecked="{Binding SimulatePaper}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,16,4"
               Content="{local:T En='Simulate paper &amp; ink', Ro='Simuleaza hartia si cerneala'}"
-              ToolTip="{local:T En='The white of the paper shown as its own colour and its black as its own grey, as in Lightroom; off, both are those of the screen. Key P in the full-screen window.', Ro='Albul hartiei aratat cu culoarea lui si negrul ei ca griul lui, ca in Lightroom; debifat, amandoua sunt ale ecranului. Tasta P in fereastra pe tot ecranul.'}" />
+              ToolTip="{local:T En='The white of the paper shown as its own colour and its black as its own grey, the print as it will look beside a white; off, both are those of the screen, the tones on its full range. Key P in the full-screen window.', Ro='Albul hartiei aratat cu culoarea lui si negrul ei ca griul lui, printul asa cum va arata langa un alb; debifat, amandoua sunt ale ecranului, tonurile pe toata plaja lui. Tasta P in fereastra pe tot ecranul.'}" />
     <CheckBox IsChecked="{Binding ShowPaperGamut}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,16,4"
               Content="{local:T En='Paper gamut warning', Ro='Avertisment gamut hartie'}"
               ToolTip="{local:T En='Paints in red the pixels whose colour the paper does not reproduce, by the rule of the Curves Editing tab. Key G.', Ro='Picteaza cu rosu pixelii a caror culoare hartia nu o reda, dupa regula din tabul Editare Curbe. Tasta G.'}" />
@@ -52,7 +52,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <StackPanel Orientation="Horizontal" Margin="0,0,20,4" VerticalAlignment="Center">
       <TextBlock Text="{local:T En='Margin:', Ro='Margine:'}" VerticalAlignment="Center" Margin="0,0,8,0" />
       <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding Margin}" MinWidth="120" VerticalAlignment="Center"
-                ToolTip="{local:T En='The background around the image: automatic is the white of the screen, or the white of the paper with the simulation on; the others are the backgrounds of Lightroom', Ro='Fundalul din jurul imaginii: automat e albul ecranului, sau albul hartiei cu simularea pornita; celelalte sunt fundalurile din Lightroom'}">
+                ToolTip="{local:T En='The background around the image: automatic is the white of the screen, or the white of the paper with the simulation on; the others are fixed greys, white to black', Ro='Fundalul din jurul imaginii: automat e albul ecranului, sau albul hartiei cu simularea pornita; celelalte sunt griuri fixe, de la alb la negru'}">
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.Auto}" Content="{local:T En='Auto', Ro='Automat'}" />
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.White}" Content="{local:T En='White', Ro='Alb'}" />
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.LightGrey}" Content="{local:T En='Light grey', Ro='Gri deschis'}" />
