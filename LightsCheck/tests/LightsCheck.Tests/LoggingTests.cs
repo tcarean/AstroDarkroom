@@ -341,6 +341,28 @@ public partial class LoggingTests
         Assert.Contains(capture.Events, e => e.Logger == "SeriesRun" && ThrownRun().IsMatch(e.Message));
     }
 
+    /// <summary>
+    /// A folder the run refuses after its clock started (an empty <c>lights/</c>) leaves the run's
+    /// start line, with its inputs, and the line its clock writes when the run threw, beside the
+    /// console's Error line with the exception.
+    /// </summary>
+    [Fact]
+    public void R071_ARefusedFolderLeavesTheRunsStartLine()
+    {
+        using TempWorkspace ws = new();
+        Directory.CreateDirectory(Path.Combine(ws.Dir, "lights"));
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Equal(1, Cli.Run(ws.Dir, "--inventory", "--lang", "en").Code);
+
+        Assert.Contains(capture.Events, e => e.Logger == "InventoryRun" && e.Message == "inventory start " + ws.Dir);
+        Assert.Contains(capture.Events, e => e.Logger == "InventoryRun" && InventoryThrown().IsMatch(e.Message));
+        LogCapture.Captured failed = Assert.Single(capture.Events, e => e.Level == LogLevel.Error);
+        Assert.Equal("run failed: mode=Inventory", failed.Message);
+        Assert.IsType<InvalidOperationException>(failed.Exception);
+        Assert.DoesNotContain(capture.Events, e => e.Logger == "SessionFolder");
+    }
+
     [Fact]
     public void R071_TheArgumentsTheConsoleRefusesAreLoggedAsTheUserSawThem()
     {
@@ -662,6 +684,10 @@ public partial class LoggingTests
     /// <summary>The line a run's clock leaves when the run threw.</summary>
     [GeneratedRegex(@"^series ended without an outcome after \d+ ms")]
     private static partial Regex ThrownRun();
+
+    /// <summary>The line the inventory's clock leaves when it threw before any stage ended.</summary>
+    [GeneratedRegex(@"^inventory ended without an outcome after \d+ ms$")]
+    private static partial Regex InventoryThrown();
 
     [GeneratedRegex(@"LogSetup\.(Apply|Close)\(")]
     private static partial Regex ApplyOrClose();

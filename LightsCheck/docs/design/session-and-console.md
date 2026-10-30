@@ -115,3 +115,11 @@ the report; stdout stays the report alone, which is what the goldens compare. Ex
 for an inventory or a series in which a frame could not be read, the report having been
 printed in full. Any other exception is a bug and crashes. `WriteUsage` is the `--help`
 text, written whole per language; the goldens `help.txt` and `en_help.txt` hold it.
+
+`Options.Mode` is the mode, decided once from what `Parse` read by the precedence above: help,
+then an error, then `--frame`, then `--inventory`, else the series. `RunIn` dispatches on it and
+the diagnostic log's `mode=` line reads it, so the two cannot disagree. `Main` starts the log
+before anything else and closes it last, after the code page is put back; `Run` and `RunIn`
+configure nothing, so the tests call them in-process. `SessionFolder.Open` writes the session's
+line, `FrameInfo.Read` a frame whose metadata could not be read, and `InventoryRun` its start and
+done lines (`logging.md`).

@@ -334,9 +334,46 @@ The top bar holds the inputs, read when a folder is opened: `PIXEL (um)`, the pi
 by default, when the files' `XPIXSZ` or the raw's own figure decide, as for `--pixel`; `THREADS`, how many frames are measured in parallel
 (empty = half the cores); and `EAST` and `NORTH`, the SynScan arrows that move the mount east and
 north (`→` and `↑` by default), remembered between starts in
-`%LOCALAPPDATA%\LightsCheck\settings.json`, the only thing the program keeps there.
+`%LOCALAPPDATA%\LightsCheck\settings.json`, the only setting the program keeps there (its log goes
+there too when the folder beside the program cannot be written, see [Logs](#logs)).
 **Write the files...** writes the three files of `--out` into a folder you choose; the session
 folder is proposed. **About** (F1) shows the version, the licence and the third-party components.
+
+## Logs
+
+Both programs keep a log of what they did, for the day something goes wrong. To report a problem,
+attach the whole `log` folder: it holds what is needed to see what happened.
+
+**Where it is.** In a folder named `log` beside the program: `log\lightscheck.log` beside
+`lightscheck.exe`, `log\LightsCheck.Wpf.log` beside `LightsCheck.Wpf.exe`. When that folder cannot
+be written (a program under Program Files, a read-only drive), the log goes to
+`%LOCALAPPDATA%\LightsCheck\log` instead, and its first line says so. Past 1 MiB (1,048,576 bytes,
+so a file ends one line past that) a file is left and the next one is started
+(`lightscheck_01.log`, `lightscheck_02.log`, ...); the five most recent files are kept and the
+older ones deleted, so the folder holds about 5 MiB per program at most, the log of some thirty
+analyses of a night of 90 frames. Two windows open
+at the same time write into the same file, each line marked with its process. Nothing is written
+into the session folder.
+
+**What is in it.** One line per event, numbers with a point: at the start the version, the command
+line, the Windows and .NET versions and the folders; the session's folders and frame counts; every
+file read, with its size, its dimensions and what its header or the camera says (camera, lens,
+focal length, exposure, ISO, time); for each run its options, its outcome and the time each stage
+took; for each frame its figures, and the class, the flags and the thresholds behind every
+rejection; the dithering, the drift, the sensor's pattern, the read noise and the polar alignment
+as the report's verdicts read them; every file written; in the window, the folder opened, each
+run's end and the buttons pressed; every error with its technical details, those the program works
+around without a word included (not a run you stopped yourself, nor what the window drops while it
+closes); at the end the exit code and the time taken. The log's own words are English whatever
+`--lang` says; an error's or a refusal's message appears as you saw it, so in Romanian under
+`--lang ro`. It holds the paths of your files and the figures measured on them, not their pixels.
+
+**How much.** The environment variable `LIGHTSCHECK_LOG` sets the level: `off`, `fatal`, `error`,
+`warn`, `info`, `debug` (the default) or `trace`, which adds every FITS header card; `off` writes
+no log and creates no folder. In a command window, `set LIGHTSCHECK_LOG=trace` holds for the
+programs started from that window; for the window started from a shortcut or from Astro Darkroom,
+set it once with `setx LIGHTSCHECK_LOG trace` (or in Windows' environment variables) and start the
+program, or Astro Darkroom, again.
 
 ## Building
 
@@ -369,8 +406,8 @@ and changes no tracked file; the `.pdb` and `.xml` files beside them are not nee
 
 LightsCheck is free software, under the GNU General Public License version 3 or, at your option,
 any later version: see [LICENSE](LICENSE). Its raw and FITS readers are copied from FlatCheck.
-What the programs ship from others is listed, each with its licence, in
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), in Romanian.
+What the programs ship from others (libraw, its C# wrapper, and NLog, which writes the log) is
+listed, each with its licence, in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), in Romanian.
 
 ## For developers
 

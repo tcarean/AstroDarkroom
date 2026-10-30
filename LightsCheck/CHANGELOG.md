@@ -8,6 +8,18 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A diagnostic log, for bug reports (R-070 to R-073, ADR 0029): each application writes
+  `log\lightscheck.log` or `log\LightsCheck.Wpf.log` beside its executable (or under
+  `%LOCALAPPDATA%\LightsCheck\log` when that folder cannot be written), at most 5 files of 1 MiB
+  each, rolled by NLog, two windows writing into one file without losing a line. It holds the
+  arguments, the machine and the runtime, the session's folders, every file read, each run's
+  options, stages and times, each frame's figures, the figures and thresholds behind every
+  verdict, every file written, the window's runs and buttons, and every error with its stack,
+  those the program works around included (not a stop you asked for, nor what the window drops
+  while it closes). The log's own words are English whatever `--lang` says; an error's or a
+  refusal's message appears as it was shown. `LIGHTSCHECK_LOG=off|fatal|error|warn|info|debug|trace`
+  sets the level, Debug by default. Nothing changes on stdout, on stderr or on screen.
+
 - The interface speaks English or Romanian: `--lang en` or `--lang ro` (also `--lang=ro`), in the
   console and in the window, English when it is missing; a value it does not know stops the
   console with an English `ERROR:` and exit 1, and the window says it and goes on in English
@@ -82,6 +94,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- NLog 6.2.2 is the third third-party component, with its `NLog.Targets.AtomicFile` package so
+  two windows writing one log lose no line (BSD-3-Clause, R-073, ADR 0029), as FlatCheck has it;
+  the core logs at its seams and never in `Analysis/`, `Report/` or the readers copied from
+  FlatCheck, and every test runs every log line on its path. The console dispatches on one mode,
+  `Options.Mode`, which the log's `mode=` line reads too.
 - Every type and method in the code has its XML documentation comment (the kit's rule
   "Documentation comments"), and every comment is English: the files copied from FlatCheck take
   FlatCheck's English text, their code unchanged (ADR 0018). No behaviour changed.

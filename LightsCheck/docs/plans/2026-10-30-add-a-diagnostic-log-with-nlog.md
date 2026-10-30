@@ -560,7 +560,89 @@ Docs: `docs/requirements.md` (R-070 to R-073), new `docs/decisions/0029-...md`, 
 `docs/design/logging.md`, `docs/design/{README,session-and-console,window,imaging,frame-analysis,series-analysis}.md`,
 `CHANGELOG.md`, `README.md`, `THIRD-PARTY-NOTICES.md`, this plan under `docs/plans/`.
 
-## Outcome and deviations
+## Outcome and deviations (2026-10-30)
 
-Filled in by the implementer at wrap-up: what differs from this plan and why, the measured times
-of L8, the real log lines of the Veil session for R-071's example, the by-hand checks.
+Implemented as planned, on `claude/Log-LightsCheck-with-NLog`, in three commits (the packages and
+the requirements as `accepted`; the code and the tests, the requirements `implemented`; the
+docs), the gate green each time. ADR 0029 and `docs/design/logging.md` hold the result. What
+differs from the plan, and why:
+
+- **The branch and the worktree are `Log-LightsCheck-with-NLog`.** DarksCheck's plan of the same
+  day names `claude/Add-a-diagnostic-log-with-NLog` too, and branch names are shared by the whole
+  repository. The plan was moved into the worktree, not copied, so the main checkout holds no
+  untracked copy to delete before the merge.
+- **The ADR's file is `0029-a-diagnostic-log-with-nlog-as-flatchecks-written-at-the-seams.md`.**
+- **The series has seven stages**, `open`, `measure`, `register`, `dither`, `pattern`, `noise`,
+  `analyze`, where the plan's examples named five; R-071's example says seven.
+- **No line in `RawReader.Missing`.** Every caller logs the exception it throws, the libraw
+  failure inside as the inner exception; a line there would write the stack twice. The ADR lists
+  it among the alternatives.
+- **No per-frame line of the inventory's own.** `ImageLoader`'s `read the header of` line is that
+  line; a frame that cannot be read is `FrameInfo`'s Warn with the exception.
+- **`Options.Mode` is a computed property**, not a value set at the end of `Parse`: the same
+  precedence in one place, with nothing to keep in step.
+- **The window writes a bug's exception through an exception filter** (`LogUnhandled`), which the
+  plan did not name: `OpenAsync` runs in a task nobody awaits, so an exception outside the three
+  types the card shows would surface only when the task is collected, if ever. The filter returns
+  false, so nothing else changes.
+- **The window's done line says `done in 12.3 s; the tabs show the result`**, not the frame counts
+  the plan's test named: counting frames in the view-model would be a figure computed outside the
+  core, and the core's `series done` line has the counts.
+- **The stopped line says `stopped after`**, not `cancelled after`: the button is Stop.
+- **`DarkTitleBar`'s two empty catches became one filtered catch** with FlatCheck's Debug line; the
+  About window's two the same way.
+- **The README's settings sentence was corrected**: `%LOCALAPPDATA%\LightsCheck` holds the log too
+  when the folder beside the program cannot be written.
+- **One more test than the plan**, `R071_TheArgumentsTheConsoleRefusesAreLoggedAsTheUserSawThem`.
+- **Measured (L8)**, 2026-10-30, the Release console on `E:\Photografie\Astro\Veil\2026-10-06-3h`
+  (87 NEF lights, 30 biases, 4 threads), runs alternated, the owner using the PC meanwhile:
+
+  | run | `LIGHTSCHECK_LOG` | wall time | log grew by |
+  | --- | --- | --- | --- |
+  | 1 | off | 154.1 s | 0 bytes, no folder |
+  | 2 | unset (Debug) | 173.5 s | 172720 bytes |
+  | 3 | off | 133.0 s | 0 |
+  | 4 | unset (Debug) | 163.7 s | 173309 bytes |
+  | 5 | off | 111.4 s | 0 |
+  | 6 | unset (Debug) | 96.7 s | 173257 bytes |
+
+  The first four runs suggested a cost at Debug, so it was measured where it would arise: the time
+  between libraw's line and the loader's line of each file, a little decode work and one write,
+  is 4.9 ms at the median and 1.8 s summed over the three Debug runs; and a scratch program
+  writing through the same configuration measured 0.079 ms a line (600 lines, one writer) and
+  0.032 (2400 lines, four writers) on the hard disk `E:`, 0.032 and 0.033 on the SSD `C:`. Run 6,
+  at Debug, was then the fastest of the six. The log costs under 0.1 s of a run; the spread is the
+  disk cache filling and the PC in use.
+- **By hand**, 2026-10-30, the same Release build:
+  - the console on the Veil session: 540 lines, from `Process lightscheck 1.0.0 starting; ...
+    cpus=8; memory=31.9 GiB; runtime=.NET 8.0.33 X64; culture=invariant/invariant; tz=GTB
+    Standard Time (UTC+02:00); pid=9700`, `SessionFolder session root=E:\Photografie\Astro\Veil\2026-10-06-3h
+    lights=...\lights (87 frames, .NEF) biases=...\biases (30) darks=none (0)`, `ImageLoader loaded
+    ...\DSC_0001.NEF (21.6 MiB) reader=raw 6016x4016 ... scale=4095/150 (libraw (exact))
+    camera=Nikon D3300 focal=135 fnumber=2.8 exposure=120.2 iso=1600 time=2026-10-06 23:35:03
+    pixel=none focal35=202 lens=74/Nikon F/none ...`, `SeriesRun frame 1/87 DSC_0001.NEF
+    detected=12308 fwhm=3.85188 elongation=1.6833 in 6790 ms` (V-002's figures), `SeriesRun
+    classified frame 1: Bad flags=[Trailed value 1.6833 threshold 1.6 angle 83 on Ra]`, `SeriesRun
+    pixel size 3.9976 um source=Raw focal=135 mm scale=6.10789 arcsec/px`, to `series done frames=87
+    measured=87 errors=0 good=48 marginal=17 bad=22 unknown=0 walking=Insufficient polar=Unknown in
+    171549 ms (open 3 ms, measure 167094 ms, register 121 ms, dither 17 ms, pattern 1639 ms, noise
+    2640 ms, analyze 19 ms)` and `Process exit 0 after 171.8 s`; no Warn, no Error;
+  - the console on a folder that does not exist: stderr `ERROR: cannot find the folder ...`, exit 1,
+    and in the log `series start`, `series ended without an outcome after 0 ms`, `ERROR ... Cli run
+    failed: mode=Series` with `System.IO.DirectoryNotFoundException` and its stack through
+    `SessionFolder.Open`, `SeriesRun.Run` and `Program.RunIn`, then `Process exit 1 after 0.2 s`;
+  - `LIGHTSCHECK_LOG=off`: runs 1, 3 and 5 wrote nothing, and run 1 created no `log` folder (it
+    appeared with run 2); `LIGHTSCHECK_LOG=trace` with `--frame 1` on the session's `process/`
+    (Siril's FITS): the 26 cards of `bias_00001.fit` at Trace, its keys at Debug
+    (`BAYERPAT=RGGB ROWORDER=BOTTOM-UP` beside `cfa=GBRG (BAYERPAT)` in the loaded line);
+  - the console published as `kit.json` publishes it (single file, self-contained), the one
+    `lightscheck.exe` copied alone into a scratch folder and run from another working folder on
+    the session's `--inventory`: `log\lightscheck.log` appeared beside the executable, `inventory
+    done lights=87 errors=0 in 214 ms (open 2 ms, read 211 ms, cadence 1 ms)`; the lock files did
+    not move;
+  - **not done**: the window by hand (its start and exit lines, two windows into one file). Both
+    times it was checked, the owner was at the PC (Firefox, then Claude in the foreground, under 5 s
+    since the last input), and a window started over their work is an action on their desktop.
+    The window's lines are tested in process by `WindowLoggingTests`, and the two-processes file
+    by `R073_TwoProcessesWritingAtFullSpeedKeepEveryLine`; `App`'s constructor and `OnExit` are the
+    only lines no test runs.

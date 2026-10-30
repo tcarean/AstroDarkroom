@@ -21,8 +21,10 @@ is an empty command line and prints the usage, in Romanian.
 an `AsyncLocal` (the series run's `Parallel` work inherits it), else `Ui.Default`. `Ui.Default`
 is `Ui.StartupDefault`, English, until a start-up sets it: the window in `App`'s constructor,
 the test assemblies to Romanian in `RomanianByDefault`'s module initializer (linked into the
-window's test project too). `App.ApplyCommandLine` reads `Environment.GetCommandLineArgs()`
-before App.xaml's resources and the first view load, since both carry texts, sets `Ui.Default`
+window's test project too). `App`'s constructor reads `Environment.GetCommandLineArgs()` and
+first starts the diagnostic log with them, which needs no language, its words being no text of
+the interface (`logging.md`); then `App.ApplyCommandLine`, before App.xaml's resources and the
+first view load, since both carry texts, sets `Ui.Default`
 to the language named or to English, and keeps the other arguments and the bad value;
 `OnStartup` shows the bad value's message in a box once the main window is up and looks for the
 session folder (`FolderFromArgs`) among the other arguments only, so a `--lang` value is never

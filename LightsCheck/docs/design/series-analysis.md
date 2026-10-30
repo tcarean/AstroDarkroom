@@ -39,6 +39,11 @@ points (`frame-analysis.md`, `session-and-console.md`).
    mosaic's diagonal in pixels. `Choose` returns a `PixelPitchSource`; `SeriesRun` turns it into
    the words of the `scale` line, so the choice is `Analysis/`'s and the words stay in the run.
 
+The run times its stages for the diagnostic log (`open`, `measure`, `register`, `dither`,
+`pattern`, `noise`, `analyze`), writes a line per frame measured from the frame's worker thread,
+and at the end writes the figures of every step above at Debug, the source of the pixel size by
+its `PixelPitchSource` key, not by the scale line's words (`logging.md`).
+
 ## The constants (`Th`)
 
 The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
