@@ -16,10 +16,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // The reader of the lensfun database (data/db/*.xml, <lensdatabase version="2">). The <lens>
-// elements with <calibration><vignetting model="pa" .../> are taken, and the <camera> elements,
-// for the crop factor. A lens can have several <mount>s; the canonical name is the <model>
-// without lang, and those with lang are search aliases. Nothing else of the database is read
-// (distortion, TCA).
+// elements with <calibration><vignetting model="pa" .../> are taken, the <camera> elements, for
+// the crop factor and the mount, and the <mount> definitions, for which mounts a body takes
+// (R-116). A lens can have several <mount>s; the canonical name is the <model> without lang, and
+// those with lang are search aliases. Nothing else of the database is read (distortion, TCA).
 //
 // The database is CC BY-SA 3.0 and is shipped unchanged in the lensfun/ folder beside the exe -
 // see THIRD-PARTY-NOTICES.md.
@@ -43,23 +43,37 @@ namespace FlatCheck
     internal sealed record LensfunCamera(string Maker, string Model, IReadOnlyList<string> Aliases, string Mount, double CropFactor);
 
     /// <summary>
-    /// What was read from the lensfun database: the vignetting profiles and the cameras.
+    /// A mount definition of the lensfun database: what the <c>&lt;mount&gt;</c> element at the
+    /// root of a file says a body of that mount also takes (the F body's lists the older F
+    /// mounts and the adapter mounts M42, T2, DKL; the Z body's lists every F mount).
+    /// </summary>
+    /// <param name="Name">The mount's name, as the cameras and lenses spell it.</param>
+    /// <param name="Compat">The mounts whose lenses fit a body of this mount, the mount itself
+    /// not among them.</param>
+    internal sealed record LensfunMount(string Name, IReadOnlyList<string> Compat);
+
+    /// <summary>
+    /// What was read from the lensfun database: the vignetting profiles, the cameras and the
+    /// mount definitions.
     /// </summary>
     internal sealed class LensfunData
     {
         internal readonly IReadOnlyList<LensProfile> Profiles;
         internal readonly IReadOnlyList<LensfunCamera> Cameras;
+        internal readonly IReadOnlyList<LensfunMount> Mounts;
 
         /// <summary>The database's content.</summary>
         /// <param name="profiles">The vignetting profiles, one per calibration entry.</param>
         /// <param name="cameras">The camera bodies with a crop factor.</param>
-        internal LensfunData(IReadOnlyList<LensProfile> profiles, IReadOnlyList<LensfunCamera> cameras)
+        /// <param name="mounts">The mount definitions, with their compatible mounts.</param>
+        internal LensfunData(IReadOnlyList<LensProfile> profiles, IReadOnlyList<LensfunCamera> cameras, IReadOnlyList<LensfunMount> mounts)
         {
             Profiles = profiles;
             Cameras = cameras;
+            Mounts = mounts;
         }
 
-        internal static readonly LensfunData Empty = new LensfunData(Array.Empty<LensProfile>(), Array.Empty<LensfunCamera>());
+        internal static readonly LensfunData Empty = new LensfunData(Array.Empty<LensProfile>(), Array.Empty<LensfunCamera>(), Array.Empty<LensfunMount>());
 
         /// <summary>
         /// The crop of the camera whose name (model or alias) appears in
@@ -68,7 +82,36 @@ namespace FlatCheck
         /// </summary>
         /// <param name="cameraName">The camera's name from the file; null or blank allowed.</param>
         /// <returns>The crop factor of the longest matching name, or null.</returns>
-        internal double? CropOf(string cameraName)
+        internal double? CropOf(string cameraName) => CameraOf(cameraName)?.CropFactor;
+
+        /// <summary>
+        /// The mounts whose lenses fit the camera (R-116): the mount the camera table gives it,
+        /// plus those its <c>&lt;mount&gt;</c> definition lists as compatible - for a D3300
+        /// "Nikon F AF" with "Nikon F", "Nikon F AI", "Nikon F AI-S", "M42", "M39/1", "DKL",
+        /// "T2" and "Generic", never "Nikon Z". A mount without a definition is itself alone.
+        /// Null when the camera is not in the table or has no mount there: the caller falls back
+        /// to the camera's first word (ADR 0076).
+        /// </summary>
+        /// <param name="cameraName">The camera's name from the file; null or blank allowed.</param>
+        /// <returns>The mount names, compared without case; null when the camera's mount is
+        /// not known.</returns>
+        internal IReadOnlySet<string> MountsOf(string cameraName)
+        {
+            string mount = CameraOf(cameraName)?.Mount;
+            if (string.IsNullOrEmpty(mount)) return null;
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { mount };
+            LensfunMount def = Mounts.FirstOrDefault(m => string.Equals(m.Name, mount, StringComparison.OrdinalIgnoreCase));
+            if (def != null) set.UnionWith(def.Compat);
+            return set;
+        }
+
+        /// <summary>
+        /// The camera whose name (model or alias) appears in <paramref name="cameraName"/> or
+        /// contains it, the longest matching name winning ("D3300" beats "D3").
+        /// </summary>
+        /// <param name="cameraName">The camera's name from the file; null or blank allowed.</param>
+        /// <returns>The camera, or null when none matches.</returns>
+        LensfunCamera CameraOf(string cameraName)
         {
             if (string.IsNullOrWhiteSpace(cameraName)) return null;
             string wanted = Normalise(cameraName);
@@ -82,7 +125,7 @@ namespace FlatCheck
                     // the longest matching name wins: "D3300" beats "D3"
                     if ((wanted.Contains(n) || n.Contains(wanted)) && n.Length > bestLen) { best = c; bestLen = n.Length; }
                 }
-            return best?.CropFactor;
+            return best;
         }
 
         /// <summary>A name with only its letters and digits, upper-cased, for matching.</summary>
@@ -107,6 +150,7 @@ namespace FlatCheck
         {
             var profiles = new List<LensProfile>();
             var cameras = new List<LensfunCamera>();
+            var mounts = new List<LensfunMount>();
             if (!Directory.Exists(dir)) return LensfunData.Empty;
             foreach (string f in Directory.EnumerateFiles(dir, "*.xml").OrderBy(f => f, StringComparer.Ordinal))
             {
@@ -120,13 +164,15 @@ namespace FlatCheck
                 }
                 profiles.AddRange(d.Profiles);
                 cameras.AddRange(d.Cameras);
+                mounts.AddRange(d.Mounts);
             }
-            return new LensfunData(profiles, cameras);
+            return new LensfunData(profiles, cameras, mounts);
         }
 
         /// <summary>
-        /// The cameras with a crop factor and the lenses' "pa" vignetting entries of one
-        /// document, the copied-distance pairs collapsed. Throws on XML that does not parse.
+        /// The mount definitions, the cameras with a crop factor and the lenses' "pa" vignetting
+        /// entries of one document, the copied-distance pairs collapsed. Throws on XML that does
+        /// not parse.
         /// </summary>
         /// <param name="xml">The document's text.</param>
         /// <param name="file">The path recorded as each profile's source.</param>
@@ -137,7 +183,16 @@ namespace FlatCheck
             XElement root = doc.Root;
             var profiles = new List<LensProfile>();
             var cameras = new List<LensfunCamera>();
+            var mountDefs = new List<LensfunMount>();
             if (root == null) return LensfunData.Empty;
+
+            foreach (XElement mount in root.Elements("mount"))
+            {
+                string name = mount.Element("name")?.Value?.Trim();
+                if (string.IsNullOrEmpty(name)) continue;
+                mountDefs.Add(new LensfunMount(name,
+                    mount.Elements("compat").Select(c => c.Value.Trim()).Where(c => c.Length > 0).Distinct().ToList()));
+            }
 
             foreach (XElement cam in root.Elements("camera"))
             {
@@ -178,7 +233,7 @@ namespace FlatCheck
                 }
                 profiles.AddRange(CollapseCopiedDistances(own));
             }
-            return new LensfunData(profiles, cameras);
+            return new LensfunData(profiles, cameras, mountDefs);
         }
 
         /// <summary>

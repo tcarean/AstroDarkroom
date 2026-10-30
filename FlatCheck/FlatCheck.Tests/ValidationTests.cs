@@ -47,6 +47,10 @@ public class ValidationTests
         ProfileLocator.Locate(ProfileLocator.DefaultAdobeDirectories(),
                               Path.Combine(TestData.RepoDir(), ProfileLocator.LensfunFolderName)));
 
+    /// <summary>The shipped lensfun copy alone, no Adobe folder: a computer without Adobe's profiles (V-049).</summary>
+    static readonly Lazy<ProfileSources> LensfunOnly = new(() =>
+        ProfileLocator.Locate(Array.Empty<string>(), Path.Combine(TestData.RepoDir(), ProfileLocator.LensfunFolderName)));
+
     [Theory]
     [MemberData(nameof(Cases))]
     public void ValidationCase_MatchesRecordedFigures(string id)
@@ -127,7 +131,8 @@ public class ValidationTests
     {
         string? raw = TestData.Large(c.GetProperty("raw").GetString()!);
         Assert.True(raw != null, "raw absent: " + c.GetProperty("raw").GetString());
-        var q = new StructureQuery { Sources = Sources.Value, RawPath = raw };
+        bool lensfunOnly = c.TryGetProperty("sources", out JsonElement src) && src.GetString() == "lensfun";
+        var q = new StructureQuery { Sources = lensfunOnly ? LensfunOnly.Value : Sources.Value, RawPath = raw };
         StructureOutcome o = StructureRun.Execute(master, TextWriter.Null, q).Result;
         var m = new Dictionary<string, object>
         {

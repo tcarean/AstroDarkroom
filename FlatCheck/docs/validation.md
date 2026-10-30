@@ -65,6 +65,7 @@ the second decimal is the check that the port and the notes describe the same th
 | V-028 | Tokina paper, rotated in place | lensfun, Aspherical (7D2) | -0.085 | BUN | BUN | |
 | V-029 | Tokina paper, 3 sheets | same | -0.036 | BUN | BUN | |
 | V-030 | Tokina paper, 4 sheets | same | -0.046 | BUN | BUN | |
+| V-049 | Nikkor 35 DX ISO400, lensfun alone (`sources: lensfun`, no Adobe folder: a computer without Adobe's profiles) | lensfun, Nikkor 35/1.8G DX (full frame 1), 3 profiles | +0.207 | ACCEPTABIL | ACCEPTABIL | before ADR 0076: 6 profiles, +0.20 ACCEPTABIL from the Viltrox AF 35mm f/1.8 Z (2026-10-28) |
 
 The library on 2026-09-25 holds 15 sessions with a raw beside every master, so every session is
 here; the ten quoted in `modes-structure.md` are a subset.
@@ -182,6 +183,14 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 `FLATCHECK_VALIDATION_DUMP` when that is set; that is how the expected values were first filled.
 
 ## History
+
+- 2026-10-30: V-049 added, the Nikkor 35 DX master against the shipped lensfun copy alone, the
+  case of a computer without Adobe's profiles (R-116, ADR 0076): the nearest profile is the
+  lens's own full-frame calibration (+0.207 stops, ACCEPTABIL, 3 profiles) where the first-word
+  mount rule had let three Nikon Z lenses in and the Viltrox AF 35mm f/1.8 Z give the verdict
+  (+0.20, 6 profiles, measured 2026-10-28 and again on 2026-10-30 before the fix). The 48
+  recorded cases re-measured with the fix in `LensProfiles/` (no formula moved; the 36 large
+  files present): 48 passed, no drift, 3 min 40 s; V-049 measured in a second run, 15 s.
 
 - 2026-10-26: all 48 cases re-measured on `main` at 876782d (the merge of ADR 0068) while the
   README was rewritten in English (ADR 0069), whose tables quote V-016 to V-040: 48 passed, no

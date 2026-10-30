@@ -201,13 +201,19 @@ namespace FlatCheck
                    : NamesLens(reference) ? reference
                    : raw ?? (referenceIsRaw ? reference : null);
             id.RawName = rawName;
+            // The mounts the camera takes, from lensfun's camera table and mount definitions
+            // (R-116); null when the table does not know the body, and then the camera's first
+            // word alone tells the mount, as before.
+            IReadOnlySet<string> mounts = sources?.Lensfun?.MountsOf(id.Camera);
+            if (mounts == null && !string.IsNullOrEmpty(id.Camera) && sources != null && Log.IsDebugEnabled)
+                Log.Debug("mount of " + id.Camera + " unknown to lensfun: the camera's first word alone filters the candidates");
             if (id.RawNamesLens && sources != null)
             {
-                var hits = CandidatesFromRaw(sources.Catalog, id.Raw);
+                var hits = CandidatesFromRaw(sources.Catalog, id.Raw, mounts);
                 // The same lens exists on several mounts (Adobe: one file per mount). When the
                 // camera is known, its mount wins: "Nikon D3300" picks [NIKON CORPORATION] over
-                // [Canon]. A word of the camera's name, not a table of mounts - nothing is guessed
-                // that is not written in the files.
+                // [Canon]. A word of the camera's name, since an Adobe file carries no mount
+                // (ADR 0076) - nothing is guessed that is not written in the files.
                 string maker = id.Camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
                 if (hits.Count > 1 && !string.IsNullOrEmpty(maker))
                 {
@@ -221,7 +227,7 @@ namespace FlatCheck
             // "135 mm f/2.0" on every mount would be a list, not an identification.
             if (id.Candidates.Count == 0 && id.HasRawLensRange && sources != null && !string.IsNullOrEmpty(id.Camera))
             {
-                var byRange = CandidatesByRange(sources.Catalog, id.Raw, id.Camera);
+                var byRange = CandidatesByRange(sources.Catalog, id.Raw, id.Camera, mounts);
                 if (byRange.Count > 0)
                 {
                     id.Candidates = byRange;
@@ -243,14 +249,19 @@ namespace FlatCheck
         /// The lenses on the camera's mount whose name says exactly the raw's range: both ends of
         /// the focal length within LensSpec's tolerance and the aperture within a quarter stop. A
         /// name that does not give the whole range does not match - here equality is asked for,
-        /// not just the absence of a contradiction as in Narrow.
+        /// not just the absence of a contradiction as in Narrow. The mount is the camera's first
+        /// word in the lens's mount or maker, and for a lensfun lens also one of the mounts the
+        /// camera takes (<see cref="FitsMount"/>, R-116).
         /// </summary>
         /// <param name="cat">The lens catalogue.</param>
         /// <param name="f">The raw with the lens's range; null gives an empty list.</param>
         /// <param name="camera">The camera's name; its first word is taken as the mount's
         /// maker.</param>
+        /// <param name="mounts">The mounts the camera takes, from lensfun
+        /// (<see cref="LensfunData.MountsOf"/>); null when not known, and then the first word
+        /// alone decides.</param>
         /// <returns>The matching lenses, the camera's own files preferred.</returns>
-        internal static IReadOnlyList<LensChoice> CandidatesByRange(LensCatalog cat, LoadedFrame f, string camera)
+        internal static IReadOnlyList<LensChoice> CandidatesByRange(LensCatalog cat, LoadedFrame f, string camera, IReadOnlySet<string> mounts = null)
         {
             string maker = camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
             if (f == null || string.IsNullOrEmpty(maker)) return Array.Empty<LensChoice>();
@@ -259,10 +270,25 @@ namespace FlatCheck
                 LensSpec spec = LensSpec.Parse(l.Name);
                 return spec.MinFocalMm.HasValue && spec.MaxFocalMm.HasValue && spec.MaxAperture.HasValue
                     && !spec.Contradicts(f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture)
-                    && (l.Mount + " " + l.Maker).Contains(maker, StringComparison.OrdinalIgnoreCase);
+                    && (l.Mount + " " + l.Maker).Contains(maker, StringComparison.OrdinalIgnoreCase)
+                    && FitsMount(l, mounts);
             }).ToList();
             return PreferCamera(hits, camera);
         }
+
+        /// <summary>
+        /// Whether a lens sits on a mount the camera takes (R-116, ADR 0076): for a lensfun lens,
+        /// one of its mounts (joined with " / " in <see cref="LensChoice.Mount"/>) is in
+        /// <paramref name="mounts"/>. An Adobe file carries no mount, and a camera lensfun does
+        /// not know gives no list: both pass, and the camera's first word alone decides, as
+        /// before this rule.
+        /// </summary>
+        /// <param name="l">The lens.</param>
+        /// <param name="mounts">The mounts the camera takes; null when not known.</param>
+        /// <returns>True when the lens fits, or when nothing says it does not.</returns>
+        internal static bool FitsMount(LensChoice l, IReadOnlySet<string> mounts)
+            => mounts == null || l.Source != ProfileSource.Lensfun
+               || (l.Mount ?? "").Split(" / ", StringSplitOptions.RemoveEmptyEntries).Any(m => mounts.Contains(m.Trim()));
 
         /// <summary>
         /// True when the frame says which lens made it, by ID or by name; false for null.
@@ -289,12 +315,16 @@ namespace FlatCheck
         /// 18-135mm ... AL IF DC WR", under the maker Pentax while the Adobe stub's maker is its
         /// first word, "smc"). When the name decided, it already found the lensfun entry, and a
         /// join by range would pull another lens of the same range (the A-mount 16-35 f/2.8
-        /// beside the FE). Adobe first, then lensfun, by name. Empty without an ID and a name.
+        /// beside the FE). A lensfun lens that joins by range must also sit on a mount the camera
+        /// takes (<see cref="FitsMount"/>, R-116). Adobe first, then lensfun, by name. Empty
+        /// without an ID and a name.
         /// </summary>
         /// <param name="cat">The lens catalogue.</param>
         /// <param name="f">The raw; null allowed.</param>
+        /// <param name="mounts">The mounts the camera takes, from lensfun
+        /// (<see cref="LensfunData.MountsOf"/>); null when not known.</param>
         /// <returns>The lenses matched by name and ID, then the lensfun lenses that join them.</returns>
-        internal static IReadOnlyList<LensChoice> CandidatesFromRaw(LensCatalog cat, LoadedFrame f)
+        internal static IReadOnlyList<LensChoice> CandidatesFromRaw(LensCatalog cat, LoadedFrame f, IReadOnlySet<string> mounts = null)
         {
             if (!NamesLens(f)) return Array.Empty<LensChoice>();
             string hint = f.Camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
@@ -319,7 +349,7 @@ namespace FlatCheck
             var lensfun = cat.Lenses.Where(l => l.Source == ProfileSource.Lensfun).ToList();
             IEnumerable<LensChoice> byRange = min == null && max == null && ap == null
                 ? Array.Empty<LensChoice>()
-                : LensCatalog.Narrow(lensfun.Where(l => makers.Contains(l.Maker)).ToList(), min, max, ap);
+                : LensCatalog.Narrow(lensfun.Where(l => makers.Contains(l.Maker) && FitsMount(l, mounts)).ToList(), min, max, ap);
             IEnumerable<LensChoice> byName = cat.Profiles
                 .Where(p => p.Lens.Source == ProfileSource.Lensfun
                             && (names.Contains(LensCatalog.Letters(p.Lens.Name)) || p.Aliases.Any(a => names.Contains(LensCatalog.Letters(a)))))
