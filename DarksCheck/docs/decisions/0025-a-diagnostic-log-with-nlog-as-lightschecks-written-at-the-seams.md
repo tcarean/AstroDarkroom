@@ -119,7 +119,15 @@ to the owner, each with a recommendation, and the owner approved it as written o
   into one `darkscheck.log`, none broken, each process's lines whole and interleaved both ways
   round. The published single-file console (`scripts/release.ps1 -Version 1.0.0 -PublishOnly`),
   run from another folder, wrote `log\darkscheck.log` beside its executable, not in the working
-  folder: `AppContext.BaseDirectory` is the executable's folder for this publish.
+  folder: `AppContext.BaseDirectory` is the executable's folder for this publish. The window, the
+  Release build started at the owner's word the same evening and closed with `WM_CLOSE`: one
+  window in Romanian on the idx67 library wrote 168 lines, every message English, and exited 0
+  after 76.6 s; two windows started together on the idx47 and idx33 libraries wrote 336 lines into
+  one `DarksCheck.Wpf.log`, 168 each, none broken, interleaved both ways round (64 switches); one
+  window on an empty folder showed the problem card and wrote `run 1 failed after 0.0 s; the
+  problem card shows the message` at Error with the `InvalidOperationException` and its stack
+  from `SessionFolder.Open` up to `MainViewModel.OpenAsync`, after the two clocks' `ended without
+  an outcome` lines.
 
 ## Alternatives rejected
 
@@ -141,12 +149,6 @@ to the owner, each with a recommendation, and the owner approved it as written o
   them.
 - **`DarkOutputs` writing its own lines.** `Report/` decides words and holds no logger; the
   callback gives the console and the window the same line, as soon as each file is written.
-- **Opening the window twice at once on the owner's machine (the plan's step 7).** The owner was at
-  the PC (idle under a second, the Claude app in the foreground), and a window opened over their
-  work is an action on their desktop; two console processes wrote one file instead, and the
-  window's build of the atomic target is checked by
-  `R103_TheWindowsBuildOfTheAtomicTargetKeepsEveryLineOfTwoWindows`.
-
 ## Consequences
 
 - A third third-party component with two packages of the same project, as LibRaw has

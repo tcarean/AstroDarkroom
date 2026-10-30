@@ -506,8 +506,10 @@ of `Logging/`, `LogCapture`, `LogFiles` and the tests rather than FlatCheck's di
   30 to 45 KB: a dark's figures line is 1.3 KB (four planes and their residuals), and the readers'
   three lines per file are 55 % of the bytes. The five files hold about twenty-six such runs.
 - **Step 7, the window.** The owner was at the PC (idle under a second, the Claude app in the
-  foreground), so no window was opened; two console processes writing one file at once stood for
-  two windows, and the window's build of the atomic target is checked by its test.
+  foreground), so no window was opened at first, and two console processes writing one file at
+  once stood for two windows. At the owner's word after the wrap-up the window was started for
+  real: once in Romanian on a library, twice at once on two libraries into one file, once on an
+  empty folder; ADR 0025 has the figures.
 - **Names.** The ADR is `0025-a-diagnostic-log-with-nlog-as-lightschecks-written-at-the-seams.md`
   and step 0's commit message "Plan the diagnostic log with NLog, so a reported bug can be
   diagnosed from the log": the planned names said "the readers' copies left alone", written before

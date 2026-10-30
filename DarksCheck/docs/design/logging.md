@@ -90,7 +90,9 @@ file are more than half of it. ADR 0025 has the run times with the log on and of
 console processes started together wrote 130 lines into one file, none broken, interleaved both
 ways round; and the published single-file console, started from another folder, wrote its log
 beside its executable, since `AppContext.BaseDirectory` is the executable's folder for that
-publish (the native libraries alone are extracted, not the managed code).
+publish (the native libraries alone are extracted, not the managed code). Two real windows
+started together on two libraries wrote 336 lines into one `DarksCheck.Wpf.log`, 168 each, none
+broken, interleaved both ways round.
 
 ## The line
 
