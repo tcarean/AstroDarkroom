@@ -106,8 +106,8 @@ internal static class LogText
     /// A card's value as written, for the log only: when columns 9 and 10 hold <c>= </c>, the text
     /// from column 11, its leading spaces trimmed, a quoted string up to and including its closing
     /// quote (a doubled quote inside is part of it), anything else up to the first <c>/</c>,
-    /// trimmed; otherwise the text from column 9, trimmed. Control characters are escaped as
-    /// <see cref="Card"/> does.
+    /// trimmed; otherwise the text from column 9, trimmed. Written as <see cref="Card"/> writes a
+    /// card: control characters as <c>\xNN</c>, characters outside ASCII as <c>?</c>.
     /// </summary>
     /// <param name="card">The card; null when the header has none.</param>
     /// <returns>The value's text, or <c>none</c> for a missing card or an empty value.</returns>

@@ -484,10 +484,13 @@ public class LoggingTests
         string name = "copywcs-tests-" + Guid.NewGuid().ToString("N");
         byte[] header = FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards());
         var done = new TaskCompletionSource();
+        // A run that never opens the source must fail the test, not hang the gate: the wait for
+        // the client gives up after 30 s.
+        using var connect = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         using var server = new NamedPipeServerStream(name, PipeDirection.Out, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
         Task serve = Task.Run(async () =>
         {
-            await server.WaitForConnectionAsync();
+            await server.WaitForConnectionAsync(connect.Token);
             await server.WriteAsync(header);
             await done.Task;
         });
@@ -529,7 +532,9 @@ public class LoggingTests
             Assert.Contains("appended HISTORY WCS copied from Nebula-?.fit", capture.Messages);
         }
 
-        Assert.Equal("HISTORY WCS copied from Nebula-?.fit", FitsHeader.ReadPrimary(dst).GetCard("HISTORY")!.TrimEnd());
+        // The file's own bytes, not the reader's decoding, which turns any byte above 0x7F into a
+        // question mark itself: Latin-1 keeps each byte as it is.
+        Assert.Contains("HISTORY WCS copied from Nebula-?.fit", Encoding.Latin1.GetString(File.ReadAllBytes(dst)), StringComparison.Ordinal);
     }
 
     [Fact]

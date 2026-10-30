@@ -63,7 +63,9 @@ public partial class AboutWindow : Window
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
-            Log.Debug(ex, "the link " + e.Uri.AbsoluteUri + " could not be opened");
+            // OriginalString, never AbsoluteUri again: a relative link throws there, which is
+            // what landed here, and a value the log reads must never throw (ADR 0009).
+            Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened");
         }
     }
 

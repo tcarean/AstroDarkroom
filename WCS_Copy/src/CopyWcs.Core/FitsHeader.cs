@@ -60,9 +60,18 @@ internal sealed class FitsHeader
         using var fs = File.OpenRead(path);
         var h = ReadFrom(fs);
 
-        // A pipe or a device cannot tell its length, and asking would throw: the line says so
-        // instead, since the log never stops a run (R-041).
-        long? length = fs.CanSeek ? fs.Length : null;
+        // A pipe or a device cannot tell its length, and asking would throw; a share that drops
+        // after the header was read may throw too. The line says so instead: the header is read,
+        // and the log never stops a run (R-041).
+        long? length;
+        try
+        {
+            length = fs.CanSeek ? fs.Length : null;
+        }
+        catch (IOException)
+        {
+            length = null;
+        }
         Log.Info("read " + path + " (" + (length is long n ? LogText.Size(n) : "size unknown") + ") bytes=" + LogText.Int(length)
                  + " cards=" + LogText.Int(h._cards.Count) + " blocks=" + LogText.Int(h._dataOffset / BlockSize)
                  + " dataOffset=" + LogText.Int(h._dataOffset) + " data=" + LogText.Int(length - h._dataOffset)

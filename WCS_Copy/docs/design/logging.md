@@ -40,11 +40,13 @@ process:
 
 `CopyWcsCli.Run` configures nothing, so the tests call it in process; the window's test fixture
 (`StaFixture`) builds a plain `Application`, not `App`, for the same reason. No test therefore
-runs `Program.Main`, `App`'s constructor, `OnStartup` and `OnExit`, the dialogs' handlers of
-`MainWindow`, `ShowAbout` or `AboutWindow.OpenLink`; the tests cover the text `App.StartLine`
-builds, and the runs by hand of 2026-10-30 (the plan's Outcome) wrote the process's first and last
-lines of both applications, `App`'s start line and `About opened`. The dialogs' lines, a refused
-`--lang` in the window and a link that would not open have not run anywhere yet.
+runs `Program.Main`, `App`'s constructor (with its dispatcher hook), `OnStartup` and `OnExit`, the
+dialogs' handlers of `MainWindow` or `ShowAbout`; the tests cover the text `App.StartLine` builds,
+`LogSetup.Fatal` called directly, and `AboutWindow.OpenLink` through a raised navigation. The runs
+by hand of 2026-10-30 (the plan's Outcome) wrote the process's first and last lines of both
+applications, `App`'s start line and `About opened`. The dialogs' lines, a refused `--lang` in the
+window, the window's dispatcher hook and `LogSetup`'s "a task failed and nobody awaited it" have
+not run anywhere yet.
 
 ## The files, measured
 
@@ -65,9 +67,12 @@ after a second process: copywcs_07.log 984336 bytes, the four others unchanged
 The window's two files, rolled once, survive the console's rolls in the same folder
 (`R040_OneExecutablesRollingLeavesTheOthersFilesAlone`; `CopyWcs.Wpf` begins with the letters of
 `copywcs` in another case, and NLog matches its own name and number only). Two factories on one
-file stand for two processes, each on a thread of its own released by a `Barrier`:
-`R045_TwoProcessesWritingAtFullSpeedKeepEveryLine` wrote 4000 lines from each, crossing the roll
-(`CopyWcs.Wpf.log` 1048891 bytes, `CopyWcs.Wpf_01.log` 646977), and found 4000 and 4000 whole
+file stand for two processes, each on a thread of its own released by a `Barrier` (`LogFiles`),
+4000 lines from each, crossing the roll, once through each build of `NLog.Targets.AtomicFile`.
+Measured on 2026-10-30: `R045_TwoProcessesWritingAtFullSpeedKeepEveryLine`, the console's
+`net8.0` build, left `copywcs.log` 1048832 bytes and `copywcs_01.log` 647036;
+`R045_TwoWindowsWritingAtFullSpeedKeepEveryLine`, the window's `net8.0-windows7.0` build, left
+`CopyWcs.Wpf.log` 1048891 bytes and `CopyWcs.Wpf_01.log` 638977; both found 4000 and 4000 whole
 lines, none broken, interleaved both ways round.
 
 The cost, measured on 2026-10-30 with the Release console copying the Veil fixture's solve into
@@ -87,11 +92,13 @@ padded to five, `[pid:thread]`, the logger's name, the message, and on the next 
 `Exception.ToString()` when there is one. Messages are composed from `LogText` and logged as plain
 strings, so NLog never parses them as message templates and a `{` in a path is harmless; a line
 whose message costs a loop is guarded by `IsDebugEnabled` or `IsTraceEnabled`. A card is written
-by `LogText.Card` as the file holds it (no trailing spaces, a control character as `\xNN`, so a
-NUL in a malformed header never reaches the log, and a character outside ASCII as the `?` the
-writer's ASCII encoding puts in the file, which only a HISTORY card built from a file name can
-hold), a value by `LogText.Value` (the text of a value card up to its
-comment, a quoted string whole); neither feeds the copy, which stays the raw card (R-010).
+by `LogText.Card` as the header holds it: no trailing spaces, a control character as `\xNN`, so a
+NUL in a malformed header never reaches the log, and a character outside ASCII as `?`, which is
+what the writer's ASCII encoding puts in the file written (a HISTORY card built from a file name
+is the one such card it writes) and what the reader's ASCII decoding already made of a byte above
+0x7F in a file read; such a byte is not valid in a FITS header, and the copy writes it back as `?`
+too. A value is written by `LogText.Value` (the text of a value card up to its comment, a quoted
+string whole). Neither feeds the copy, which stays the card as read (R-010).
 
 Every logger is a `Logger` named `Log`, taken from `LogManager.GetLogger` with `using NLog`: a
 `private static readonly` field everywhere but `LogSetup` and `App`, whose are fetched on use
@@ -136,11 +143,13 @@ its done line the outcome, and a copy from the window writes what the console's 
 ## Reading a log
 
 A process begins at its `Process <name> <version> starting` line and ends at `Process exit <code>
-after <s> s`. A crash writes a `FATAL` line with its stack, and with Windows Error Reporting on
-the log ends there; where Windows unwinds the stack before ending the process (its crash dialog
-turned off, as the review of 2026-10-30 found in a test script), the console's `finally` blocks
-still run, and the `FATAL` line is followed by the run's `ended without an outcome` line and
-`exit -532462766`, the code the crashed process gets (`Program.CrashExitCode`, never the
+after <s> s`. A crash writes a `FATAL` line with its stack; what follows depends on the error mode
+the process inherits from what started it (measured by the second review of 2026-10-30 with a
+probe): started from cmd, PowerShell or Explorer, Windows Error Reporting takes the crash and the
+log ends at the `FATAL` line; started from Git Bash, whose children inherit the crash dialog
+turned off, Windows unwinds the stack, the console's `finally` blocks run, and the `FATAL` line is
+followed by the run's `ended without an outcome` line when the crash happened inside a copy run,
+then by `exit -532462766`, the code the crashed process gets (`Program.CrashExitCode`, never the
 refusal's 1). Two processes writing at once interleave,
 and the `[pid:thread]` field separates them. A run is found from `copy start` to `copy done`,
 whose stage times say where the time went, or to `ended without an outcome` when it threw; a wrong

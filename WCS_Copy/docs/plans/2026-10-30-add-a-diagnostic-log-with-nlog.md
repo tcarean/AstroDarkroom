@@ -880,3 +880,42 @@ anything changed; all nine held.
 9. **Two doc points**: the done lines behind "`write 309 ms` of a `328 ms` run" are quoted above,
    and `LogCapture`'s and `logging.md`'s claim that a throwing line fails a test now says it holds
    for a message that throws while it is composed, not for NLog's own rendering.
+
+### The second review of 2026-10-30
+
+At the owner's word, a second subagent reviewed the fix commit 3551f96 alone. It found the four
+code fixes correct and eleven weaker points; each was checked in the code, and all held.
+
+1. **A latent crash in `AboutWindow.OpenLink`**: the new Debug line read `e.Uri.AbsoluteUri`
+   again, which throws for a relative link, the very exception the catch had just taken; both
+   links are absolute today. `R043_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays` raises a
+   navigation to a relative link and failed (`InvalidOperationException` out of the handler); the
+   line now names `e.Uri.OriginalString`.
+2. **The HISTORY test read the file back through the reader**, whose ASCII decoding makes any byte
+   a `?` itself: it now reads the file's raw bytes as Latin-1.
+3. **`logging.md` quoted the two writers' figures of the console test before it switched to
+   `copywcs`**, and the window's test printed none: both print and both are quoted now
+   (`copywcs.log` 1048832 and `copywcs_01.log` 647036 bytes; `CopyWcs.Wpf.log` 1048891 and
+   `CopyWcs.Wpf_01.log` 638977; 4000 and 4000 whole lines each, none broken).
+4. **R-036's English pass could not see the component row**: `TextsOf` now reads every text
+   block as it displays (`TextRange`), which also serves the About test's card check.
+5. **The pipe test could hang the gate** if a run never opened its source: the server's wait for
+   the client now gives up after 30 s.
+6. **R-042 and `logging.md` said a card is logged "as the file holds it"**, true of the file
+   written; a byte above 0x7F in a file read is already a `?` from the reader. The texts say both
+   now, and `fits-header.md` says that the copy writes such a byte back as `?` (older than the
+   log; such a byte is not valid FITS, so R-010's verbatim copy holds for what the standard
+   allows).
+7. **The list of log lines no test runs missed two**, the window's dispatcher hook and the
+   unobserved-task line, and a crash's `ended without an outcome` line follows the `FATAL` line
+   only for a crash inside a copy run: `logging.md` corrected.
+8. **`FileStream.Length` may also throw on a seekable file** (a share dropping after the header
+   was read): the read line catches the `IOException` and says `size unknown`.
+9. **Which crash ending a process gets is set by the error mode it inherits**, not by the machine:
+   from Git Bash (crash dialog off) the `finally` runs, from cmd, PowerShell or Explorer Windows
+   Error Reporting takes over (the review measured both modes with a probe). `Program.cs` and
+   `logging.md` say so. The crash code itself has no test: `Main` is not run in process, by rule.
+10. **The About test did not check the card's sentence and the copyright line**: it does now.
+11. **`LogText.Value`'s comment** now says it escapes as `Card` does, the `?` included.
+
+The owner's rule of two review rounds is met; no third was run.

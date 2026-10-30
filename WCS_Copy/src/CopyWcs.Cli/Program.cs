@@ -47,9 +47,10 @@ internal static class Program
         catch (Exception) { }
 
         // What the log's last line reports when the run throws: the code the crashed process
-        // gets. Whether that line is written depends on the machine: where Windows unwinds the
-        // stack before ending the process (its crash dialog turned off) this finally runs; with
-        // Windows Error Reporting on, the log ends at the FATAL line (docs/design/logging.md).
+        // gets. Whether that line is written depends on the error mode the process inherits from
+        // what started it: with the crash dialog off (a child of Git Bash) Windows unwinds the
+        // stack and this finally runs; otherwise Windows Error Reporting takes the crash and the
+        // log ends at the FATAL line (docs/design/logging.md).
         int code = CrashExitCode;
         try
         {

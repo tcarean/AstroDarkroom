@@ -54,9 +54,12 @@ public partial class WindowSmokeTests
     {
         foreach (DependencyObject d in Descendants(root))
         {
-            if (d is TextBlock t && !string.IsNullOrEmpty(t.Text))
+            // The text the block displays: TextBlock.Text misses the inline runs of a template's
+            // blocks (the About window's component row, the second review of 2026-10-30).
+            string shown = d is TextBlock t ? new TextRange(t.ContentStart, t.ContentEnd).Text : "";
+            if (shown.Length > 0)
             {
-                yield return t.Text;
+                yield return shown;
             }
 
             if (d is FrameworkElement fe && fe.ToolTip is string tip)
@@ -339,16 +342,17 @@ public partial class WindowSmokeTests
             Render((FrameworkElement)about.Content, 560, AboutHeight(about), "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
-            // The third-party card is on screen, not only in the view-model (R-035). The row's
-            // name and link are inline runs in a template, which TextBlock.Text does not report
-            // here, so every block is read as the text it displays.
-            List<string> shown = Descendants((FrameworkElement)about.Content).OfType<TextBlock>()
-                .Select(t => new TextRange(t.ContentStart, t.ContentEnd).Text).ToList();
+            // The third-party card is on screen, not only in the view-model (R-035): its heading,
+            // its sentence, and the row's name and role, licence, copyright line and link.
+            List<string> shown = TextsOf((FrameworkElement)about.Content).ToList();
+            ThirdPartyComponent nlog = Assert.Single(ThirdParty.Components);
             Assert.Contains("COMPONENTE TERTE", shown);
+            Assert.Contains(((AboutViewModel)about.DataContext).ThirdPartyLead, shown);
             // (the XAML's line breaks between the runs read as spaces around the dash)
             Assert.Contains(shown, t => t.StartsWith("NLog", StringComparison.Ordinal)
                                         && t.Contains("scrierea jurnalului de diagnostic", StringComparison.Ordinal));
             Assert.Contains("BSD-3-Clause", shown);
+            Assert.Contains(nlog.Copyright, shown);
             Assert.Contains("https://nlog-project.org/", shown);
 
             BitmapSource logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);

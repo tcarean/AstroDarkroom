@@ -18,19 +18,58 @@
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
+using System.Windows.Documents;
+using System.Windows.Navigation;
 using CopyWcs.Tests;
 using NLog;
 using NLog.Targets;
+using Xunit.Abstractions;
 
 namespace CopyWcs.Wpf.Tests;
 
 /// <summary>
-/// The window's side of the diagnostic log (R-043, ADR 0009): its start line, a header whose facts
-/// could not be read, and a copy that writes what the console's copy writes. Without a window,
-/// like <see cref="MainViewModelTests"/>.
+/// The window's side of the diagnostic log (R-043, R-045, ADR 0009): its start line, a header whose
+/// facts could not be read, a copy that writes what the console's copy writes, a link the About
+/// window cannot open, and two windows into one file. Without a window, like
+/// <see cref="MainViewModelTests"/>, except the About window's link, which needs the UI thread.
 /// </summary>
+[Collection("window")]
 public class WindowLoggingTests
 {
+    private readonly StaFixture _sta;
+    private readonly ITestOutputHelper _output;
+
+    public WindowLoggingTests(StaFixture sta, ITestOutputHelper output)
+    {
+        _sta = sta;
+        _output = output;
+    }
+
+    /// <summary>
+    /// A link the About window cannot open is a Debug line with the reason, and the window stays:
+    /// a relative link has no absolute address to start, and the line must not ask for one again
+    /// (the second review of 2026-10-30: it did, and the exception escaped the handler).
+    /// </summary>
+    [Fact]
+    public void R043_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays()
+        => _sta.Invoke(() =>
+        {
+            AboutWindow about = new();
+            RequestNavigateEventArgs args = new(new Uri("THIRD-PARTY-NOTICES.md", UriKind.Relative), null)
+            {
+                RoutedEvent = Hyperlink.RequestNavigateEvent,
+            };
+            using LogCapture capture = LogCapture.Start();
+
+            about.RaiseEvent(args);
+
+            Assert.True(args.Handled);
+            LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");
+            Assert.Equal(LogLevel.Debug, line.Level);
+            Assert.Equal("the link THIRD-PARTY-NOTICES.md could not be opened", line.Message);
+            Assert.IsType<InvalidOperationException>(line.Exception);
+        });
+
     [Fact]
     public void R043_TheStartLineNamesTheLanguageAndTheFilesFromTheCommandLine()
     {
@@ -100,6 +139,12 @@ public class WindowLoggingTests
 
         LogFiles.TwoWriters result = LogFiles.WriteTwoAtFullSpeed(folder, "CopyWcs.Wpf", Lines);
 
+        foreach (string f in result.Files)
+        {
+            _output.WriteLine($"{Path.GetFileName(f)} {new FileInfo(f).Length} bytes");
+        }
+
+        _output.WriteLine($"whole lines: {result.FromA.Count} from A, {result.FromB.Count} from B; broken: {result.Broken}");
         LogFiles.AssertEveryLineKept(folder, result, Lines);
     }
 
