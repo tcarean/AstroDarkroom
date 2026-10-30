@@ -1,7 +1,7 @@
 # 0008. The window has the siblings' top band: the banner and the copyright, a short explanation of the tool in its middle, and the window's only About button
 
 Date: 2026-10-28
-Status: accepted 2026-10-28
+Status: accepted 2026-10-28; the About tooltip without the components superseded by 0009
 
 ## Context
 

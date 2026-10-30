@@ -43,6 +43,18 @@ end (R-012, R-013). On a failure before the move, the original is untouched and 
 is left behind; on success it is gone. The data area is copied as bytes: `BITPIX`, `NAXIS3`,
 extensions and padding travel unchanged.
 
+The cards are decoded and encoded as ASCII: a byte above 0x7F, which a FITS header may not hold,
+reads as `?` and is written back as `?`, so the verbatim copy of R-010 holds for the characters
+the standard allows, as R-010 says (measured by the second review of 2026-10-30: 0xC5 decodes to
+U+003F; `R010_Run_AByteAboveAsciiInACopiedCard_IsWrittenAsAQuestionMark` pins it).
+
+`ReadPrimary`, `AddHistory` and `WriteWithDataFrom` also write their lines to the diagnostic log
+(the read line, the card appended, the write with its temporary file, the file written, and at
+Trace every card; `logging.md` has the lines) and decide nothing from them: a failure still
+throws, and its caller logs it. The read line's length comes from `LengthOf`, which never throws:
+a stream that cannot seek is not asked, and whatever a seekable file's query throws is taken as
+no length.
+
 ## The key lists
 
 `WcsMetadataKeys` holds two literal lists and a pattern:

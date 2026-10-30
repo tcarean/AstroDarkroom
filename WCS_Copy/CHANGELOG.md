@@ -7,6 +7,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A diagnostic log beside each executable, `log\copywcs.log` and `log\CopyWcs.Wpf.log`, five
+  files of 1 MiB at most, with each copy's options, the headers read, every card copied and the
+  card of the destination it replaced, the file written, the time of each stage and every error
+  with its technical details (ADR 0009); attach the `log` folder to a bug report;
+  `COPYWCS_LOG` sets the level (`off` to `trace`).
+- The About window lists the third-party components (NLog), and the About button's tooltip
+  says so.
 - The window, `CopyWcs.Wpf.exe` (ADR 0007): dark, one page, the source and the destination
   boxes (filled from the command line when two existing files are given), in place or a new
   file, the two options, Preview and Copy showing exactly what the console's dry run and copy
@@ -30,6 +37,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- NLog 6.2.2 and NLog.Targets.AtomicFile 6.2.2, the tool's first package, at FlatCheck's
+  versions (the Astro Darkroom suite's folder holds one of each); `Logging/` adapted from
+  FlatCheck's, and every test runs its log lines into a capture.
 - The project adopted the ClaudeCodeStarterKit process (ADR 0001): the gate `scripts/verify.ps1`,
   the kit's skills, agent and rules, `kit.json`, the layout `src/` and `tests/`, the core library
   `CopyWcs.Core` under the console `CopyWcs.Cli`, the Python prototype under `prototype/`, the

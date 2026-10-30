@@ -1,7 +1,21 @@
 <Project>
   <!-- Central Package Management: every package version lives here, once. The kit's rule
        "Packages": no new package without asking, and every package gets a one-line "why".
-       The tool itself has no package: the FITS header is read and written by hand (ADR 0001). -->
+       The FITS header is read and written by hand (ADR 0001); the tool's one package is NLog,
+       for the diagnostic log (ADR 0009). -->
+  <ItemGroup>
+    <!-- The diagnostic log beside each executable (R-040 to R-046, ADR 0009): configured in code,
+         a size-rolled text file, BSD-3-Clause, purely managed. The owner asked for NLog by name on
+         2026-10-30, the way FlatCheck has it (FlatCheck's ADR 0070). -->
+    <PackageVersion Include="NLog" Version="6.2.2" />
+    <!-- NLog's own file target with the operating system's atomic append, so two processes of one
+         executable writing one log lose no line (R-045); FlatCheck measured NLog's plain target
+         losing 33 to 48 lines of 4000 (its ADR 0070). Same project, commit and licence as NLog.
+         Keep both versions equal to each other and to FlatCheck's: AstroDarkroom bundles every
+         window into one folder, where an NLog.dll of other bytes is a collision that stops the
+         suite's release (the kit's ADR 0036). -->
+    <PackageVersion Include="NLog.Targets.AtomicFile" Version="6.2.2" />
+  </ItemGroup>
   <ItemGroup>
     <!-- Test host and runner, at the kit's versions (ADR 0002). -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />

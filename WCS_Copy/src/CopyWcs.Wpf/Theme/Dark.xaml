@@ -356,4 +356,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Style.Triggers>
   </Style>
 
+  <!-- A third-party component in the About window, DarksCheck's template (ADR 0009): the name
+       and the role on the first line, the licence and the copyright under it (the Faint style
+       wraps them), the link to the project last. The licence sits on its own line, not in a
+       tooltip. The link has no handler here - a resource dictionary has no code-behind - the
+       window catches it, through the routed event Hyperlink.RequestNavigate. -->
+  <DataTemplate x:Key="ComponentRowTemplate">
+    <StackPanel Margin="0,0,0,10">
+      <TextBlock TextWrapping="Wrap">
+        <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" />
+        <Run Text=" - " Foreground="{StaticResource FaintBr}" />
+        <Run Text="{Binding Role, Mode=OneWay}" Foreground="{StaticResource MutedBr}" FontSize="12" />
+      </TextBlock>
+      <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Licence}" />
+      <TextBlock Style="{StaticResource Faint}" Text="{Binding Copyright}" />
+      <TextBlock Margin="0,2,0,0" FontSize="11">
+        <Hyperlink NavigateUri="{Binding Url}">
+          <Run Text="{Binding Url, Mode=OneWay}" />
+        </Hyperlink>
+      </TextBlock>
+    </StackPanel>
+  </DataTemplate>
+
 </ResourceDictionary>

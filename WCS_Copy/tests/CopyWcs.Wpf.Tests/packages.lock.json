@@ -94,12 +94,31 @@
         }
       },
       "copywcs.core": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "NLog": "[6.2.2, )",
+          "NLog.Targets.AtomicFile": "[6.2.2, )"
+        }
       },
       "copywcs.wpf": {
         "type": "Project",
         "dependencies": {
           "CopyWcs.Core": "[1.0.0, )"
+        }
+      },
+      "NLog": {
+        "type": "CentralTransitive",
+        "requested": "[6.2.2, )",
+        "resolved": "6.2.2",
+        "contentHash": "Hoxigm/d7wY/+y4y2ILF2ERSojhxgLd8ASBZQbrnm52jB5NHkF4AWW5tZzMxJ/HTOp0bLwClGOokrA31iSXuMA=="
+      },
+      "NLog.Targets.AtomicFile": {
+        "type": "CentralTransitive",
+        "requested": "[6.2.2, )",
+        "resolved": "6.2.2",
+        "contentHash": "RrX67lNu9DjmnZBjEaY8O/uT3wyi0EVpusf/5mABYPadyBBfYxnjtsG/qcxo6zAcLSTxgHO30JBgr31hA9UPFg==",
+        "dependencies": {
+          "NLog": "6.2.2"
         }
       }
     }
