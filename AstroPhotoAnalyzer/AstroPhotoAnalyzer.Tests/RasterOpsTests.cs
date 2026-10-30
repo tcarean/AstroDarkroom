@@ -55,19 +55,6 @@ public class RasterOpsTests
     }
 
     [Fact]
-    public void CropTakesTheRectangleAndRejectsOneOutsideTheRaster()
-    {
-        var r = SyntheticRasters.From(4, 6, 3, (x, y, p) => (y * 6 + x + p * 100) / 1000f);
-        var c = RasterOps.Crop(r, 2, 1, 3, 2);
-
-        Assert.Equal(3, c.W);
-        Assert.Equal(2, c.H);
-        Assert.Equal(r.At(1, 1, 2), c.At(1, 0, 0));
-        Assert.Equal(r.At(2, 2, 4), c.At(2, 1, 2));
-        Assert.Throws<ArgumentException>(() => RasterOps.Crop(r, 4, 0, 3, 2));
-    }
-
-    [Fact]
     public void GammaForMapsTheBackgroundOntoTheTarget()
     {
         double g = RasterOps.GammaFor(0.10, 0.19);

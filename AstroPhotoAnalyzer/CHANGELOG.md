@@ -6,6 +6,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Removed
+
+- The **Preview** tab of the window (the centre at 100 % and 200 %, the four corners, the
+  whole frame, the print simulation, the crop, and the screen-versus-paper step-back rule): the
+  **Soft proof** tab shows the whole image through the paper's profile, maximised, with zoom
+  and pan, and supersedes it. With it go the step-back figures and the monitor pixel pitch
+  (`ScreenPixelMm`), which nothing else read. The report's two edge-region sentences that sent
+  the reader to the Preview now say to look at the edges before correcting anything. The
+  Preview window of a simulation row on the Tones tab stays (R-117 dropped; ADR 0067).
+
 ### Added
 
 - A **Soft proof** tab, the eighth, modelled on Lightroom Classic's soft proofing and for
@@ -87,6 +97,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   them; the report keeps its table (R-113, R-130; ADR 0052).
 
 ### Fixed
+
+- Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
+  Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
+  replaced them. All three now empty their rows (R-111).
 
 - The content of the window's tabs is in the UI Automation tree: a screen reader such as
   Narrator, or a UI Automation tool, now reaches the controls inside a tab, where it found only

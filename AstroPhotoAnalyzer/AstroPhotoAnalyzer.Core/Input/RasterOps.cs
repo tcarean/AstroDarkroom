@@ -64,28 +64,6 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// A copy of the rectangle <paramref name="w"/> x <paramref name="h"/> at (x0, y0).
-        /// </summary>
-        /// <param name="r">The raster.</param>
-        /// <param name="x0">The rectangle's left column, from 0.</param>
-        /// <param name="y0">The rectangle's top row, from 0 at the top.</param>
-        /// <param name="w">
-        /// The width, in pixels; at least 1, the rectangle wholly inside <paramref name="r"/>.
-        /// </param>
-        /// <param name="h">The height, in pixels; at least 1.</param>
-        /// <returns>A new raster with the same planes and <see cref="Raster.Source"/>.</returns>
-        internal static Raster Crop(Raster r, int x0, int y0, int w, int h)
-        {
-            if (x0 < 0 || y0 < 0 || x0 + w > r.W || y0 + h > r.H || w <= 0 || h <= 0)
-                throw new ArgumentException(Tr.Pick($"a crop outside the raster: {w}x{h} at ({x0},{y0}) of {r.W}x{r.H}", $"decupaj in afara rasterului: {w}x{h} la ({x0},{y0}) din {r.W}x{r.H}"));
-            var o = new Raster(h, w, r.Planes.Length) { Source = r.Source };
-            for (int p = 0; p < r.Planes.Length; p++)
-                for (int y = 0; y < h; y++)
-                    Array.Copy(r.Planes[p], (y0 + y) * r.W + x0, o.Planes[p], y * w, w);
-            return o;
-        }
-
-        /// <summary>
         /// v^gamma on every channel, the same on all - so a neutral grey stays neutral. It is the
         /// print simulation's curve: gamma = ln(target)/ln(background) takes the measured
         /// background exactly to the target and lifts the rest in proportion. Not a real

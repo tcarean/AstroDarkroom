@@ -281,7 +281,7 @@ namespace AstroPhotoAnalyzer
                         : cool ? Tr.Pick("cool (bluish)", "rece (albastrui)")
                         : ColourOf(e) == RegionColour.Greenish ? Tr.Pick("greenish", "verzui") : Tr.Pick("of another colour than the background", "cu alta culoare decat fundalul"));
                 string advice = darker
-                    ? Tr.Pick("Dust at the edge of the frame, or a gradient left over (vignetting, the edge of the flattening): check in Preview; a gradient is corrected on the linear data (GraXpert), dust is the object.", "Praf la marginea cadrului, sau un rest de gradient (vinietare, marginea aplatizarii): verifica in Preview; un gradient se corecteaza pe liniar (GraXpert), praful e obiectul.")
+                    ? Tr.Pick("Dust at the edge of the frame, or a gradient left over (vignetting, the edge of the flattening): look at the edge yourself; a gradient is corrected on the linear data (GraXpert), dust is the object.", "Praf la marginea cadrului, sau un rest de gradient (vinietare, marginea aplatizarii): uita-te la margine; un gradient se corecteaza pe liniar (GraXpert), praful e obiectul.")
                     : Tr.Pick("Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.", "Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.");
                 o.Add(new Recommendation(Topic.Colour, Verdict.Attention,
                     $"{Cap(e.Name)}: {kind}{extended}. {advice}",
@@ -292,7 +292,7 @@ namespace AstroPhotoAnalyzer
             // The NEUTRAL deviations, all in a single note: an edge brighter by the same amount on
             // every channel is most often the object itself (the Milky Way band entering the
             // corner), not a gradient. The tool cannot tell them apart; it says so and lets the
-            // user look in Preview.
+            // user look at the edges.
             var neutral = b.FlaggedRegions.Where(x => !x.Coloured).ToList();
             if (neutral.Count > 0)
             {
@@ -301,9 +301,9 @@ namespace AstroPhotoAnalyzer
                 bool brighter = neutral.All(e => e.Deltas.Average() > 0);
                 o.Add(new Recommendation(Topic.Colour, Verdict.Ok,
                     Tr.Pick((brighter ? "Edges brighter than the background, without a cast: " : "Edges that differ from the background, without a cast: ")
-                            + "most likely the object itself, not a gradient - check in Preview before you correct anything.",
+                            + "most likely the object itself, not a gradient - look at the edges before you correct anything.",
                             (brighter ? "Margini mai luminoase decat fundalul, fara tenta: " : "Margini care difera de fundal, fara tenta: ")
-                            + "cel mai probabil obiectul insusi, nu un gradient - verifica in Preview inainte sa corectezi ceva."),
+                            + "cel mai probabil obiectul insusi, nu un gradient - uita-te la margini inainte sa corectezi ceva."),
                     Tr.Pick($"against the background, in levels: {list} (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move together", $"fata de fundal, in niveluri: {list} (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca impreuna")));
             }
         }

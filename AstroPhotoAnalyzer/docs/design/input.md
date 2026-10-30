@@ -134,7 +134,7 @@ chosen over double (554 MB) because 24 mantissa bits recover every 16-bit level 
 
 `RasterOps` never modifies its input, and what returns a raster returns a new one, except
 `Subsample` at a stride of 1 or less, which returns its input: `Subsample` (every n-th pixel,
-anchored top-left, `a[::s, ::s]`), `Crop`, `Gamma` (v^gamma on every channel through a
+anchored top-left, `a[::s, ::s]`), `Gamma` (v^gamma on every channel through a
 65 537-entry `PowerLut` of `Math.Pow(k / 65535, gamma)`), `GammaFor` (ln(to) / ln(from)),
 `Level8` / `Level16`, `LstarPlane` (L\* per pixel of a subsample). `Interpolate(lut, s)` is
 the one reading of such a table, shared by `Gamma` and `LiftTable`: exact on a 16-bit level,

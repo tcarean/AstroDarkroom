@@ -349,7 +349,7 @@ namespace AstroPhotoAnalyzer
         /// What the crop cuts, as text (R-032): "192 px on each side of the width" when the two
         /// sides are equal, otherwise "0 px on the left and 1 px on the right of the width" or
         /// "... at the top and ... at the bottom of the height" (Romanian "192 px pe fiecare parte
-        /// din latime"). The same text in the recommendation and in the Preview tile.
+        /// din latime"), for the crop recommendation.
         /// </summary>
         /// <param name="c">The crop, one that is needed (its axis is not null).</param>
         /// <returns>The pixels cut on each side and the axis, without a final full stop.</returns>

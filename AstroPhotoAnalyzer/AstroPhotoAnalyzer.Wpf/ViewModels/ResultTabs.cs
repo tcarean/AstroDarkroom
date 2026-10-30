@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ResultTabs.cs - the six tabs with results. Each receives the AnalysisResult through Populate
-// and turns it into rows; none phrases a sentence of diagnosis - those come from
-// Recommendations and from ReportWriter, the figures from Fmt. The descriptions, the guides and
-// the checks are the view-models' own explanation, every number in them interpolated from
-// Thresholds, Parameters or the result (ADR 0020); one is derived here, the Preview guide's
-// 1 / ScreenStepBackFactor, when the print is larger than the 100 % view.
+// ResultTabs.cs - the five tabs with results (Raport, Tonuri, Export, Rezolutie, Culoare; the
+// Editare Curbe and Soft proof tabs have files of their own). Each receives the AnalysisResult
+// through Populate and turns it into rows; none phrases a sentence of diagnosis - those come
+// from Recommendations and from ReportWriter, the figures from Fmt. The descriptions and the
+// guides are the view-models' own explanation, every number in them interpolated from
+// Thresholds, Parameters or the result (ADR 0020).
 //
 // All in one file because they are all the same thing: a list of rows and a bool HasResult.
 // When one grows, it takes a file of its own.
@@ -41,7 +41,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool HasResult { get => _has; protected set => Set(ref _has, value); }
 
         /// <summary>
-        /// Takes an analysis and sets <see cref="HasResult"/>: the six tabs of this file fill
+        /// Takes an analysis and sets <see cref="HasResult"/>: the five tabs of this file fill
         /// their rows from it; the Editare Curbe tab only keeps it, for the second run MainViewModel
         /// starts (ADR 0051).
         /// </summary>
@@ -509,6 +509,15 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<MetricRow> Rows { get => _rows; private set => Set(ref _rows, value); }
 
         /// <inheritdoc/>
+        internal override void Clear()
+        {
+            base.Clear();
+            JpegRows = Array.Empty<string>();
+            JpegGuide = Array.Empty<GuideParagraph>();
+            Rows = Array.Empty<MetricRow>();
+        }
+
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             QuantizationResult q = r.Quantization;
@@ -693,6 +702,15 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<string> DpiRows { get => _dpi; private set => Set(ref _dpi, value); }
 
         /// <inheritdoc/>
+        internal override void Clear()
+        {
+            base.Clear();
+            Rows = Array.Empty<MetricRow>();
+            SizeRows = Array.Empty<string>();
+            DpiRows = Array.Empty<string>();
+        }
+
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             StarResult s = r.Stars;
@@ -812,6 +830,15 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<GuideParagraph> Guide { get => _guide; private set => Set(ref _guide, value); }
 
         /// <inheritdoc/>
+        internal override void Clear()
+        {
+            base.Clear();
+            Rows = Array.Empty<MetricRow>();
+            RegionRows = Array.Empty<string>();
+            Guide = Array.Empty<GuideParagraph>();
+        }
+
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             BackgroundResult b = r.Background;
@@ -927,13 +954,13 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Lead = Tr.Pick("Coloured or neutral.", "Colorat sau neutru."),
                     Text = Tr.Pick("If the three deltas move together, the edge is most likely the object itself (the Milky Way entering the corner) "
-                        + "and stays at Ok, with the advice to look in Preview before you correct anything. If they move differently (the difference between "
+                        + "and stays at Ok, with the advice to look at the edges before you correct anything. If they move differently (the difference between "
                         + $"the channels over {grad} levels and over {Fmt.F0(Thresholds.CornerColourSpreadRatio * 100)} % of the mean departure), it is a gradient with a colour: "
                         + "horizon glow, light pollution - to correct on the linear data (GraXpert), not with a local curve on the stretched image. "
                         + "On the reference image: the horizon corner +4.1 / -4.0 / -17.1 is coloured; the corner the Milky Way enters, "
                         + "+4.2 / +2.9 / +5.6 on its sky pixels, is neutral (on every pixel it would read +6.5 / +5.1 / +8.7, bluer than the sky, and pass for coloured).",
                         "Daca cele trei delta se misca impreuna, marginea e cel mai probabil obiectul insusi (Calea Lactee care intra in colt) "
-                        + "si ramane la Ok, cu indemnul sa te uiti in Preview inainte sa corectezi ceva. Daca se misca diferit (diferenta dintre "
+                        + "si ramane la Ok, cu indemnul sa te uiti la margini inainte sa corectezi ceva. Daca se misca diferit (diferenta dintre "
                         + $"canale peste {grad} niveluri si peste {Fmt.F0(Thresholds.CornerColourSpreadRatio * 100)} % din abaterea medie), e un gradient cu culoare: "
                         + "lumina de orizont, poluare - de corectat pe liniar (GraXpert), nu cu o curba locala pe imaginea stretch-uita. "
                         + "Pe imaginea de referinta: coltul de orizont +4.1 / -4.0 / -17.1 e colorat; coltul in care intra Calea Lactee, "
@@ -946,177 +973,6 @@ namespace AstroPhotoAnalyzer.Wpf
                         "e un singur canal si nu exista \"colorat\": orice ! inseamna doar \"diferit de fundal\"."),
                 },
             };
-        }
-    }
-
-    // ------------------------------------------------------------ Preview
-
-    /// <summary>
-    /// The Preview tab (R-117): the guide card with the screen-versus-paper rule, and the tiles
-    /// - centre at 100 % and 200 %, the four corners, the whole frame, the print simulation and
-    /// the crop - each with what to check in it.
-    /// </summary>
-    public sealed class PreviewTabViewModel : ResultTabViewModel
-    {
-        IReadOnlyList<PreviewTile> _tiles = Array.Empty<PreviewTile>();
-        IReadOnlyList<GuideParagraph> _guide = Array.Empty<GuideParagraph>();
-        public IReadOnlyList<PreviewTile> Tiles { get => _tiles; private set => Set(ref _tiles, value); }
-
-        /// <summary>
-        /// The card above the tiles: the screen - paper rule, with the step back computed on the
-        /// image.
-        /// </summary>
-        public IReadOnlyList<GuideParagraph> Guide { get => _guide; private set => Set(ref _guide, value); }
-
-        /// <inheritdoc/>
-        internal override void Populate(AnalysisResult r)
-        {
-            Raster img = r.Raster;
-            var tiles = new List<PreviewTile>();
-            int cw = Math.Min(480, img.W), ch = Math.Min(320, img.H);
-            int cx = (img.W - cw) / 2, cy = (img.H - ch) / 2;
-
-            // What to check in each tile: guidance, not diagnosis. The thresholds from Thresholds.
-            string corner = Tr.Pick("Against the centre: stars stretched towards the corner = coma; in one corner only = tilt; in all four = field curvature. "
-                + "A brighter or warmer corner = the gradient of the Colour tab; bands at the edge = the frames of the stack. A bad corner can go with a crop.",
-                "Fata de centru: stele alungite spre colt = coma; intr-un singur colt = tilt; in toate patru = curbura de camp. "
-                + "Colt mai luminos sau mai cald = gradientul din tabul Culoare; benzi la margine = cadrele stivei. Un colt rau poate iesi prin decupaj.");
-
-            tiles.Add(new PreviewTile
-            {
-                Title = Tr.Pick("Centre, 100 %", "Centru, 100 %"),
-                Image = RasterBitmaps.Region(img, cx, cy, cw, ch),
-                Check = Tr.Pick("The texture, not the detail. The grain of the sky - the denoise recommendation for the screen is judged here, with the step back "
-                    + "from the card above - the shape of the stars, round and soft, without a sharpening halo, and steps in the sky.",
-                    "Textura, nu detaliul. Granulatia cerului - recomandarea de denoise pentru ecran se judeca aici, cu pasul inapoi "
-                    + "din cardul de sus - forma stelelor, rotunde si moi, fara halo de sharpening, si trepte in cer."),
-            });
-            tiles.Add(new PreviewTile
-            {
-                Title = Tr.Pick("Centre, 200 %", "Centru, 200 %"),
-                Image = RasterBitmaps.Region(img, cx + cw / 4, cy + ch / 4, cw / 2, ch / 2, zoom: 2),
-                Note = Tr.Pick("the file's pixels, enlarged twice", "pixelii din fisier, mariti de doua ori"),
-                Check = Tr.Pick("The magnifier, not the print: file artefacts. The sky must be a fine grain, not patches of the same value (the plateau of "
-                    + "Export); the stars soft discs, not squares or crosses. 8 x 8 blocks mean the file went through JPEG; steps "
-                    + "visible on \"16 bits\" mean 8 bits in disguise.",
-                    "Lupa, nu printul: artefacte de fisier. Cerul trebuie sa fie granulatie fina, nu petice de aceeasi valoare (palierul din "
-                    + "Export); stelele discuri moi, nu patrate sau cruci. Blocuri de 8 x 8 inseamna ca fisierul a trecut prin JPEG; trepte "
-                    + "vizibile pe \"16 biti\" inseamna 8 biti deghizati."),
-            });
-            int kw = Math.Min(320, img.W), kh = Math.Min(220, img.H);
-            tiles.Add(new PreviewTile { Title = Tr.Pick("Upper-left corner, 100 %", "Colt stanga-sus, 100 %"), Image = RasterBitmaps.Region(img, 0, 0, kw, kh), Check = corner });
-            tiles.Add(new PreviewTile { Title = Tr.Pick("Upper-right corner, 100 %", "Colt dreapta-sus, 100 %"), Image = RasterBitmaps.Region(img, img.W - kw, 0, kw, kh), Check = corner });
-            tiles.Add(new PreviewTile { Title = Tr.Pick("Lower-left corner, 100 %", "Colt stanga-jos, 100 %"), Image = RasterBitmaps.Region(img, 0, img.H - kh, kw, kh), Check = corner });
-            tiles.Add(new PreviewTile { Title = Tr.Pick("Lower-right corner, 100 %", "Colt dreapta-jos, 100 %"), Image = RasterBitmaps.Region(img, img.W - kw, img.H - kh, kw, kh), Check = corner });
-
-            const int side = 520;
-            tiles.Add(new PreviewTile
-            {
-                Title = Tr.Pick("Whole frame, as is", "Cadru intreg, asa cum e"),
-                Image = RasterBitmaps.Whole(img, side),
-                Check = Tr.Pick("The composition and the global gradient, seen from a distance or with half-closed eyes: a brighter part, the horizon band, "
-                    + "a cast. Here you answer the question of the neutral edges: is the marked corner the Milky Way entering the frame, or a light?",
-                    "Compozitia si gradientul global, privit de la distanta sau mijind ochii: o parte mai luminoasa, banda orizontului, "
-                    + "o dominanta. Aici raspunzi intrebarii de la marginile neutre: coltul marcat e Calea Lactee care intra in cadru, sau o lumina?"),
-            });
-            SimulationRow primary = r.Simulation.Primary;
-            if (!primary.AsIs)
-            {
-                Raster small = RasterOps.Subsample(img, Math.Max(1, (int)Math.Ceiling(Math.Max(img.W, img.H) / (double)side)));
-                tiles.Add(new PreviewTile
-                {
-                    Title = Tr.Pick($"Print simulation, background {Fmt.F2(primary.Target)}", $"Simulare print, fundal {Fmt.F2(primary.Target)}"),
-                    Image = RasterBitmaps.Whole(RasterOps.Gamma(small, primary.Gamma), side),
-                    Note = Tr.Pick("a gamma curve on every channel; on screen it looks flat - the paper brings it back", "curba gamma pe toate canalele; pe ecran pare plata - hartia o aduce inapoi"),
-                    Check = Tr.Pick("Beside the whole frame: what appears when the sky rises. Not the flatness - the paper's Dmax brings it back - but the cast "
-                        + $"(a cast with a chroma over {Fmt.F1(Thresholds.CastWarnChroma)} in L*a*b* reads here), the gradient, and whether the faint "
-                        + "nebulosity stays separate from the sky. Read it as if the darkest tone were paper black.",
-                        "Alaturi de cadrul intreg: ce apare cand cerul urca. Nu platitudinea - Dmax-ul hartiei o aduce inapoi - ci dominanta "
-                        + $"(o tenta cu croma peste {Fmt.F1(Thresholds.CastWarnChroma)} in L*a*b* se citeste aici), gradientul, si daca nebulozitatea "
-                        + "slaba ramane separata de cer. Citeste-o ca si cum cel mai inchis ton ar fi negrul hartiei."),
-                });
-            }
-            if (r.Crop.Needed)
-                tiles.Add(new PreviewTile
-                {
-                    Title = Tr.Pick("Crop to the target ratio", "Decupaj la raportul tinta"),
-                    Image = RasterBitmaps.Whole(RasterOps.Crop(img, r.Crop.X0, r.Crop.Y0, r.Crop.W, r.Crop.H), side),
-                    Note = Tr.Pick($"{Fmt.Dim(r.Crop.W, r.Crop.H)} px, centred; cut: {ReportWriter.CropCutText(r.Crop)}", $"{Fmt.Dim(r.Crop.W, r.Crop.H)} px, centrat; taiati {ReportWriter.CropCutText(r.Crop)}"),
-                    Check = Tr.Pick("What the requested ratio cuts: does it go into the object or the composition? Does it remove the soft corner or the bands of the stack? "
-                        + "The only tile where the answer can be \"I change the ratio\".",
-                        "Ce taie raportul cerut: intra in obiect sau in compozitie? Scoate coltul moale sau benzile stivei? "
-                        + "Singura dala unde raspunsul poate fi \"schimb raportul\"."),
-                });
-            Tiles = tiles;
-            Guide = GuideParagraphs(r.Size);
-            HasResult = true;
-        }
-
-        /// <summary>
-        /// The card at the top: the screen - paper rule. The figures come from PrintSizeResult and
-        /// Thresholds.
-        /// </summary>
-        /// <param name="ps">
-        /// The size analysis: the screen-equivalent width, the step-back factor and the reference
-        /// row.
-        /// </param>
-        /// <returns>The four paragraphs, "HOW TO USE THE PREVIEW" ("CUM SE FOLOSESTE PREVIEW-UL").</returns>
-        static IReadOnlyList<GuideParagraph> GuideParagraphs(PrintSizeResult ps)
-        {
-            string eq = Fmt.F0(ps.ScreenEquivalentWidthCm);
-            double f = ps.ScreenStepBackFactor;
-            string stepBack = double.IsNaN(f) ? ""
-                : f >= 1
-                    ? Tr.Pick($" For the reference print, {Fmt.F0(ps.ReferenceRow.WidthCm)} cm, look at the 100 % tiles from {Fmt.F1(f)} x your distance from the monitor: "
-                        + "what no longer shows from there does not show on paper either.",
-                        $" Pentru printul de referinta, {Fmt.F0(ps.ReferenceRow.WidthCm)} cm, priveste dalele de 100 % de la {Fmt.F1(f)} x distanta ta fata de monitor: "
-                        + "ce nu se mai vede de acolo nu se vede nici pe hartie.")
-                    : Tr.Pick($" The reference print, {Fmt.F0(ps.ReferenceRow.WidthCm)} cm, is larger than the 100 % view: its pixel on paper is "
-                        + $"{Fmt.F1(1 / f)} times the one on screen, so what you see at 100 % shows on paper too, enlarged.",
-                        $" Printul de referinta, {Fmt.F0(ps.ReferenceRow.WidthCm)} cm, e mai mare decat vederea la 100 %: pixelul lui pe hartie e de "
-                        + $"{Fmt.F1(1 / f)} ori cat cel de pe ecran, deci ce vezi la 100 % se vede si pe hartie, marit.");
-            return new[]
-            {
-                new GuideParagraph
-                {
-                    Lead = Tr.Pick("The screen is harsher than the paper.", "Ecranul e mai aspru decat hartia."),
-                    Text = Tr.Pick($"An ordinary monitor has a pixel of ~{Fmt.F2(Thresholds.ScreenPixelMm)} mm; at 100 % you see the file as a print "
-                        + $"~{eq} cm wide, seen from your distance from the monitor.",
-                        $"Un monitor obisnuit are pixelul de ~{Fmt.F2(Thresholds.ScreenPixelMm)} mm; la 100 % vezi fisierul ca pe un print lat de "
-                        + $"~{eq} cm, privit de la distanta ta fata de monitor."),
-                },
-                new GuideParagraph
-                {
-                    Lead = Tr.Pick("The step back.", "Pasul inapoi."),
-                    Text = (stepBack.Length > 0 ? stepBack.Substring(1) + " " : "")
-                        + Tr.Pick("The 100 % tiles are made for this; the 200 % one is not: it is a magnifier, no paper looks like that.",
-                            "Dalele de 100 % sunt facute pentru asta; cea de 200 % nu: e o lupa, nicio hartie nu arata asa."),
-                },
-                new GuideParagraph
-                {
-                    Lead = Tr.Pick("What to look for.", "Ce cauti."),
-                    Text = Tr.Pick("The texture and the shape of the stars in the centre; the shape of the stars and the gradient in the corners; the composition and the global gradient on the whole "
-                        + "frame; the cast and the faint nebulosity in the simulation; what the ratio cuts in the crop. Each tile says under it what you check.",
-                        "Textura si forma stelelor in centru; forma stelelor si gradientul in colturi; compozitia si gradientul global pe cadrul "
-                        + "intreg; dominanta si nebulozitatea slaba in simulare; ce taie raportul in decupaj. Fiecare dala spune sub ea ce verifici."),
-                },
-                new GuideParagraph
-                {
-                    Lead = Tr.Pick("What it is not.", "Ce nu e."),
-                    Text = Tr.Pick("It is not a viewer: pixel crops and reductions, from memory; nothing is written to disk. The colour is not managed: "
-                        + "the pixels are shown as they are in the file, assumed sRGB.",
-                        "Nu e un vizualizator: decupaje la pixel si reduceri, din memorie; nu se scrie nimic pe disc. Nu e gestionata culoarea: "
-                        + "pixelii sunt aratati asa cum sunt in fisier, presupusi sRGB."),
-                },
-            };
-        }
-
-        /// <inheritdoc/>
-        internal override void Clear()
-        {
-            base.Clear();
-            Tiles = Array.Empty<PreviewTile>();
-            Guide = Array.Empty<GuideParagraph>();
         }
     }
 }

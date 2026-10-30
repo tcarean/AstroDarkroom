@@ -69,7 +69,7 @@ AstroPhotoAnalyzer.Wpf/
              WindowSettings.cs (the remembered settings file, R-156),
              CurvesTab.cs (the Editare Curbe tab and the curve window, R-146, R-147),
              SoftProofTab.cs (the Soft proof tab and its window, R-163)
-  Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, PreviewView, CurvesView, SoftProofView,
+  Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, CurvesView, SoftProofView,
         SoftProofControls (.xaml),
         ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs),
         MapWindow.xaml, PreviewWindow.xaml, CurveWindow.xaml, SoftProofWindow.xaml, OverlayWindows.xaml.cs,

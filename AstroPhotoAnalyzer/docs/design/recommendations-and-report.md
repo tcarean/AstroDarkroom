@@ -32,7 +32,7 @@ Background, Colour, Size, Denoise, Warnings.
 | Colour | `HasCast` | Attention | green/magenta/warm/cool cast (whichever metric is larger); neutralise on linear |
 | Colour | no cast | Ok | neutral background |
 | Colour | each flagged **coloured** region | Attention | warm (R > B + 3) / cool (B > R + 3) / greenish / other; fix on linear or keep as composition |
-| Colour | flagged **neutral** regions | Ok (one note) | most likely the object; check Preview |
+| Colour | flagged **neutral** regions | Ok (one note) | most likely the object; look at the edges before correcting |
 | Size | stars `Insufficient` | Attention | no real resolution: the pixel-grid rule (physical floor from the given distance, else the 180 dpi convention), how far the file reaches or that the smallest width misses it; a file limit, not a detail one; no size recommended; asks for a distance when none |
 | Size | explicit distance, recommended row passes | Ok | recommended size, outer size; FWHM, effective detail, star mm, point distance, the given distance |
 | Size | explicit distance, no row passes | Attention | "discs at any listed size from that distance; the smallest minimises it; try smaller widths or a larger distance" |

@@ -24,7 +24,7 @@
 | `PassepartoutCm` | 7 | `--passepartout cm` | field | PrintSize (outer size) |
 | `FrameCm` | 3 | `--frame cm` | field | PrintSize (outer size) |
 | `TargetAspect` | null = native | `--aspect w:h` (also `wxh`) | "Raport de aspect" | Crop, PrintSize |
-| `TargetBackground` | null = none | `--target-bg`, strictly inside (0, 1) once rounded to 3 decimals (the core's `TargetBackgroundError`, one message for both applications; ADR 0040) | "Fundal-tinta in plus" | Simulation (one more row, marked `(dat)`, the primary one; the Preview tile) |
+| `TargetBackground` | null = none | `--target-bg`, strictly inside (0, 1) once rounded to 3 decimals (the core's `TargetBackgroundError`, one message for both applications; ADR 0040) | "Fundal-tinta in plus" | Simulation (one more row, marked `(dat)`, the primary one) |
 | `SimulationTargets` | 0.05 .. 0.20 by 0.01 | - | - | Simulation (the grid) |
 | `WcsPath` | null = the file's own WCS | `--wcs file.fit` | "WCS din FITS" | the dust and the sky (R-027: a FITS header lent to a TIFF/PNG of the same size) |
 | `Seed` | 0 | - | - | Noise tiles |
@@ -85,7 +85,7 @@ being the lens's own perspective (a normal focal length equals the frame diagona
 empty means the native ratio with no crop (what a fine-art lab needs), that a ready-made
 frame does not constrain it either (the passepartout absorbs the difference), and that it
 is for labs with fixed formats. The target-background one says that the level is one more row for the simulation
-beside its grid (`SimulationTargets`' bounds), marked `(dat)` and used by the Preview tile,
+beside its grid (`SimulationTargets`' bounds), marked `(dat)`,
 and that empty means the grid alone; how the measured background is taken (the median of the
 green channel over the whole frame) and how the simulation uses it (gamma = ln(target) /
 ln(background), a simulation and not Siril's stretch); where a screen image's sky usually sits

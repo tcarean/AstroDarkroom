@@ -139,8 +139,8 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The target background the user gave, optional, rounded to TargetBackgroundDecimals
         /// decimals (the ones the report prints, Fmt.Level): it adds its row to the simulation's
-        /// table and chooses the print tile of the Preview. Null = no extra row; the Preview takes
-        /// the recommended row (R-023). A value that after rounding is not strictly between 0 and
+        /// table, as its primary row. Null = no extra row; the primary row is the recommended one
+        /// (R-023). A value that after rounding is not strictly between 0 and
         /// 1, NaN or infinite, is refused by Validate with TargetBackgroundError's message
         /// (ADR 0040).
         /// </summary>

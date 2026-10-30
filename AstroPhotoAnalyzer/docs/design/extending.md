@@ -31,10 +31,10 @@ changed together; never a `const` or `static readonly` text, and never a compari
 Romanian.
 
 **An explanatory text in the window** (a row's `Description`, a table's `GuideParagraph`s, a
-preview tile's `Check`, a parameter field's `*Help` in `ParameterFields`): written in the
+parameter field's `*Help` in `ParameterFields`): written in the
 view-model, explanation rather than diagnosis, every number interpolated from `Thresholds`,
 `Parameters` or the result - a literal the text needs goes into `Thresholds` first, with its
-comment (this is how `EdgeRegion*Fraction`, `JpegOverThresholdWarnPct`, `ScreenPixelMm` and the
+comment (this is how `EdgeRegion*Fraction`, `JpegOverThresholdWarnPct` and the
 help-only `ScreenBackground*` / `PrintBackground*` got there). Window only, so no goldens;
 `ViewModelTests` asserts the tab texts exist and `ParameterFieldsTests` the help texts (key
 phrases, interpolated numbers, paragraphs); **`window.md`** (`console.md`, "Parameters", for a

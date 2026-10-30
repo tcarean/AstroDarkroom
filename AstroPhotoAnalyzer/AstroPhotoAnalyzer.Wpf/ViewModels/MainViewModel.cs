@@ -72,7 +72,6 @@ namespace AstroPhotoAnalyzer.Wpf
             Export = new ExportTabViewModel();
             Resolution = new ResolutionTabViewModel();
             Background = new BackgroundTabViewModel();
-            Preview = new PreviewTabViewModel();
             Curves = new CurvesTabViewModel();
             SoftProof = new SoftProofTabViewModel();
 
@@ -93,7 +92,6 @@ namespace AstroPhotoAnalyzer.Wpf
         public ExportTabViewModel Export { get; }
         public ResolutionTabViewModel Resolution { get; }
         public BackgroundTabViewModel Background { get; }
-        public PreviewTabViewModel Preview { get; }
         public CurvesTabViewModel Curves { get; }
         public SoftProofTabViewModel SoftProof { get; }
 
@@ -294,15 +292,14 @@ namespace AstroPhotoAnalyzer.Wpf
             Export.Populate(r);
             Resolution.Populate(r);
             Background.Populate(r);
-            Preview.Populate(r);
             Curves.Populate(r);
             SoftProof.Populate(r);
         }
 
-        /// <summary>Empties the eight tabs.</summary>
+        /// <summary>Empties the seven tabs.</summary>
         void ClearTabs()
         {
-            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Preview.Clear(); Curves.Clear(); SoftProof.Clear();
+            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Curves.Clear(); SoftProof.Clear();
         }
 
         /// <summary>

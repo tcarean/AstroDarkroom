@@ -97,18 +97,6 @@ namespace AstroPhotoAnalyzer
         internal bool FwhmKnown => !double.IsNaN(FwhmPx);
         internal double EffectiveDetailPx => FwhmKnown ? PixelW / FwhmPx : double.NaN;
 
-        /// <summary>
-        /// How wide the print would be at a monitor's pixel pitch (Thresholds.ScreenPixelMm):
-        /// what a 100 % view on screen shows. Only for the Preview.
-        /// </summary>
-        internal double ScreenEquivalentWidthCm => PixelW * Thresholds.ScreenPixelMm / 10;
-
-        /// <summary>
-        /// At how many times the monitor's distance the 100 % tile must be viewed to look like
-        /// the reference print from the monitor's distance: the equivalent width / its width.
-        /// Under 1 the print is larger than the screen at 100 %. NaN without a reference row.
-        /// </summary>
-        internal double ScreenStepBackFactor => ReferenceRow == null ? double.NaN : ScreenEquivalentWidthCm / ReferenceRow.WidthCm;
         internal bool DistanceIsExplicit { get; init; }
 
         /// <summary>

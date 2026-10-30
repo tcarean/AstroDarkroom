@@ -535,25 +535,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <TextBlock Style="{StaticResource Mono}" Text="{Binding}" Margin="0,0,0,2" />
   </DataTemplate>
 
-  <!-- A preview: title, image pixel for pixel, note, then what you check in it. The texts
-       wrap at the image's width (the bitmaps are at 96 dpi, so PixelWidth is the width in
-       DIU); otherwise they would widen the card to the sentence's length. -->
-  <DataTemplate x:Key="PreviewTileTemplate">
-    <Border Style="{StaticResource Card}" Margin="0,0,12,12" Padding="10">
-      <StackPanel>
-        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,0,6" />
-        <Image Source="{Binding Image}" Stretch="None" HorizontalAlignment="Left"
-               RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
-        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" Text="{Binding Note}" TextWrapping="Wrap"
-                   MaxWidth="{Binding Image.PixelWidth}" HorizontalAlignment="Left"
-                   Visibility="{Binding Note, Converter={StaticResource NotNullToVis}}" />
-        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" Text="{Binding Check}" TextWrapping="Wrap" LineHeight="16"
-                   MaxWidth="{Binding Image.PixelWidth}" HorizontalAlignment="Left"
-                   Visibility="{Binding Check, Converter={StaticResource NotNullToVis}}" />
-      </StackPanel>
-    </Border>
-  </DataTemplate>
-
   <!-- A third-party component in "Despre". -->
   <DataTemplate x:Key="ComponentRowTemplate">
     <StackPanel Margin="0,0,0,10">

@@ -166,22 +166,6 @@ public class PrintSizeAnalyzerTests
     }
 
     /// <summary>
-    /// At 0.25 mm/px, 5938 px are ~148 cm at 100 %; the reference print at the natural
-    /// distance is 100 cm.
-    /// </summary>
-    [Fact]
-    public void TheHundredPercentViewIsAPrintOfTheScreensPitch()
-    {
-        var r = PrintSizeAnalyzer.Analyze(W, H, Fwhm, new Parameters());
-        Assert.InRange(r.ScreenEquivalentWidthCm, 148.4, 148.5);
-        Assert.Equal(100, r.ReferenceRow.WidthCm);
-        Assert.InRange(r.ScreenStepBackFactor, 1.48, 1.49);
-
-        var none = PrintSizeAnalyzer.Analyze(W, H, Fwhm, new Parameters { CandidateWidthsCm = System.Array.Empty<double>() });
-        Assert.True(double.IsNaN(none.ScreenStepBackFactor));
-    }
-
-    /// <summary>
     /// The dpi - distance ladder: 300 dpi = the grid disappears from 0.29 m (read), 180 =
     /// pitch 0.14 mm, 0.49 m. With a given distance, the last row is its threshold: 58 dpi
     /// at 1.5 m.

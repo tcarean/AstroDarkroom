@@ -609,13 +609,6 @@ namespace AstroPhotoAnalyzer
         internal const double OversizeCm = 100;
 
         /// <summary>
-        /// The pixel pitch of a common monitor (96-110 ppi), for the Preview's step-back rule: at
-        /// 100 % the file is seen as a print of Wpx x this. A presumption about the screen, not a
-        /// measurement; a 27" 4K has 0.16 mm, and the view is that much harsher.
-        /// </summary>
-        internal const double ScreenPixelMm = 0.25;
-
-        /// <summary>
         /// The passepartout must be at least this many times the frame's width: under that the
         /// frame "squeezes" the image and the white around it has nothing left to do. The
         /// framers' rule; 0 means no passepartout and is not checked.
