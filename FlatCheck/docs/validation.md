@@ -46,7 +46,7 @@ the second decimal is the check that the port and the notes describe the same th
 | V-014 | Tokina tablet, 3 sheets of paper | BUN | 4.69 / 3.68 / 3.50 / 3.88 / 2.77 | 0.81 | 3.8 % residual, 0.81 stops |
 | V-015 | Tokina tablet, 4 sheets of paper | BUN | 2.46 / 5.79 / 4.98 / 3.10 / 3.93 | 0.80 | 5.1 % residual, 0.80 stops |
 
-### The sixth test with the raw beside the master (V-016 to V-030)
+### The sixth test with the raw beside the master (V-016 to V-030, V-049)
 
 | ID | Master | Nearest profile | diff (stops) | depth | run | earlier figure |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -191,6 +191,7 @@ Every case also prints its measured figures as a JSON line, and appends it to th
   (+0.20, 6 profiles, measured 2026-10-28 and again on 2026-10-30 before the fix). The 48
   recorded cases re-measured with the fix in `LensProfiles/` (no formula moved; the 36 large
   files present): 48 passed, no drift, 3 min 40 s; V-049 measured in a second run, 15 s.
+
 - 2026-10-30: re-measured at the wrap-up of the task that leaves an unlistable `lensfun/` folder
   out of the profile search (R-115, ADR 0075), which added a text suffix to
   `Report/SyntheticReport.cs` (`SourcesSummary`) and a `try` to `ProfileLocator.Locate`: the 36

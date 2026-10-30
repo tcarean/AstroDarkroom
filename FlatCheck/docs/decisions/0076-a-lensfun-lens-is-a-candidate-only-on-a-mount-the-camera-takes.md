@@ -50,7 +50,8 @@ The owner's, 2026-10-30, four questions answered "yes to all":
    camera's first word in its mount or maker, which stays. The rule only removes: a lens the
    word let through and the table refuses.
 2. **A body the table does not know**, or knows without a mount, keeps the first-word rule
-   alone, as before, with a Debug line in the diagnostic log saying so. Every body with
+   alone, as before, with a Debug line in the diagnostic log saying so when a lensfun copy was
+   read (without one every body is unknown, and ADR 0075's Warn line already says why). Every body with
    interchangeable lenses in the shipped copy has a mount, so the case is a database gap, not a
    lens class, and the list the user had is not taken away.
 3. **The Adobe files** keep the first-word rule: they carry no mount, and the limit is
@@ -82,9 +83,9 @@ gives the set for a camera name matched as `CropOf` matches it. R-116.
 ## Consequences
 
 - `LensfunMount`, `LensfunData.Mounts` / `MountsOf` / `CameraOf`; `LensIdentification.FitsMount`,
-  a `mounts` parameter on `CandidatesByRange` and `CandidatesFromRaw` (null keeps the old
-  behaviour, which the window's prefill and the tests without a mount table get); one Debug
-  line for a body without a mount.
+  a `mounts` parameter on `CandidatesByRange` and `CandidatesFromRaw` (null, for a camera the
+  table does not know, keeps the old behaviour; every caller, the window's prefill included,
+  goes through `Identify` and gets the set); one Debug line for a body without a mount.
 - On the Nikkor 35 DX master without Adobe's profiles the list is three rows and the verdict is
   the lens's own (+0.21 stops = 15.4 %, ACCEPTABLE, from the full-frame calibration); with them,
   three rows instead of four and the same verdict as before (V-016). The Tokina and Samyang

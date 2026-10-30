@@ -247,7 +247,9 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   first word appears in the lens's mount or maker, which alone let `Nikon Z` lenses through
   for a D3300 ("Nikon Z Viltrox" contains "NIKON"). An Adobe file has no mount and keeps the
   first-word rule; a camera lensfun does not know gives no mount set, and then the first word
-  alone decides, with a Debug line in the log. The window's prefill calls `Identify`, so it
+  alone decides, with a Debug line in the log when a lensfun copy was read (`LensfunPresent`;
+  without one every body is unknown, and ADR 0075's Warn line says why). The window's prefill
+  calls `Identify`, so it
   gets the same list.
 - **Narrowing by name** (`LensSpec`; why, and the Tokina raw that preselected a Nikkor, are
   ADR 0030): `LensSpec.Parse(name)` reads the focal range (first `<n>[-<m>]mm`) and the
