@@ -21,7 +21,8 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
   runtime, what `release.json` says or why it could not be read, the language setting read and
   written, the tools present and missing, the window's size and screens, each language switch,
   each tool opened with the process it became or the error, "Despre", and every exception with
-  its stack, those the launcher recovers from included. The log's own words are English
+  its stack, those the launcher recovers from included (not the log's own probes, whose outcome
+  is in the line they serve). The log's own words are English
   whatever the language. `ASTRODARKROOM_LOG=off|fatal|error|warn|info|debug|trace` sets the
   level, Debug by default.
 - "Despre" lists the component written by others the launcher now ships, NLog, with its role,

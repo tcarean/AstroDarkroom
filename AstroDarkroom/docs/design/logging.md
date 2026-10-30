@@ -94,11 +94,14 @@ window's two, from `Loggers`), `ReleaseManifest` and `LanguageSetting` (the core
 | `LanguageSetting` | `LanguageSetting` | Debug, Warn | the file missing, read (`language=<code>`) or written, at Debug; a file that is no JSON object or holds no known code, an unreadable file and a failed write, at Warn, the last two with the exception |
 | `ReleaseManifest.TryRead` | `ReleaseManifest` | Info, Warn | `read <path>: name= version= date= commit=; N components: <name> version= commit= unreleased= clean=; ...` (`LogText.Release`), or `no file at <path>`, at Info; a file that is not a manifest, and an unreadable one with the exception, at Warn |
 | `MainWindow.Relabel` | `Window` | Info | `suite folder <dir>: N of 6 apps present; missing <exes>` (`LogText.Presence`), at the start and at every language switch |
-| `MainWindow` | `Window` | Info, Debug, Error | `window shown <w>x<h> at (<x>,<y>); work area ...; desktop ...; dpi ...` once, at Debug; `language switched to <code>`; `open <title>: <file> <arguments> in <dir>` (`LogText.Open`), then `started <exe>, process <id>`, or the start's exception at Error beside its message box; `About opened`, `About closed`; `window closing` |
+| `MainWindow` | `Window` | Info, Debug, Error | `window shown <w>x<h> at (<x>,<y>); primary work area ...; desktop ...; dpi ...` once, at Debug (the work area is the primary screen's whichever screen the window is on, in the primary screen's DIPs; with screens of different DPIs they are not the window's); `language switched to <code>`; `open <title>: <file> <arguments> in <dir>` (`LogText.Open`), then `started <exe>, process <id>`, or the start's exception at Error beside its message box; `About opened`, `About closed`; `window closing` |
 | `DarkTitleBar` | `Window` | Debug | a window manager that cannot be called, with the exception, as LightsCheck's copy writes it |
 
 Not logged: the catalogue, the plan of a start before the `open` line, each row's lookup (the
-suite folder's line sums them up), the interface's texts.
+suite folder's line sums them up), the interface's texts, and the exceptions of the reads the log
+makes for its own lines, whose outcome the line gives: the folder's probe (`CanWrite`, before the
+log exists; the first line's `fallback` note names both of its causes), the working folder
+(`cwd=?`) and a started process's id (`IdOf`, `process unknown`).
 
 ## Reading a log
 

@@ -417,7 +417,9 @@ public static class LogSetup
         sb.Append("; log=").Append(folder);
         if (fellBack)
         {
-            sb.Append(" (fallback: the folder beside the executable cannot be written)");
+            // Both of the probe's causes, since the line cannot say which: a folder that cannot be
+            // created or written, or a newest log file that cannot be appended to (read-only).
+            sb.Append(" (fallback: the log folder beside the executable, or its newest file, cannot be written)");
         }
 
         sb.Append("; level=").Append(level.Name);

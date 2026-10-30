@@ -60,6 +60,34 @@ public partial class ThirdPartyTests
         }
     }
 
+    /// <summary>
+    /// NLog's section holds the BSD-3-Clause text whole, as R-015 says: its three conditions and
+    /// its disclaimer, which "Despre" does not show, are what the binary condition asks to go with
+    /// the program; a section reduced to the copyright line would pass the test above.
+    /// </summary>
+    [Fact]
+    public void R015_TheNoticesFileHoldsNLogsWholeBsdText()
+    {
+        string notices = File.ReadAllText(Path.Combine(TestData.FindRepoRoot(), "THIRD-PARTY-NOTICES.md"));
+        int start = notices.IndexOf("## NLog", StringComparison.Ordinal);
+        Assert.True(start >= 0, "THIRD-PARTY-NOTICES.md has no section ## NLog");
+        int end = notices.IndexOf("\n## ", start + 1, StringComparison.Ordinal);
+        string section = end < 0 ? notices[start..] : notices[start..end];
+        string[] lines =
+        [
+            "Redistributions of source code must retain the above copyright notice,",
+            "Redistributions in binary form must reproduce the above copyright notice,",
+            "Neither the name of Jaroslaw Kowalski nor the names of its",
+            "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"",
+            "THE POSSIBILITY OF SUCH DAMAGE.",
+        ];
+
+        foreach (string line in lines)
+        {
+            Assert.Contains(line, section, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void R015_NLogIsListedWithItsLicenceCopyrightAndAddress_ItsRoleInBothLanguages()
     {

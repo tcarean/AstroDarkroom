@@ -174,3 +174,27 @@ Branch `claude/Log-AstroDarkroom-with-NLog`, worktree
   opened and closed, `ASTRODARKROOM_LOG=off`, the build folder's run (every app missing) and the
   fallback; their words and their logic are tested in the core, the calls in the window are
   not.
+- **The review of the branch** (a subagent, before the merge proposal) found no bug in the
+  logging code and six points. Taken on the branch: the first line's `fallback` note names both
+  of the probe's causes (the folder, or its newest file), R-012 and the CHANGELOG state the one
+  exception to "every exception" (the reads the log makes for its own lines, whose outcome the
+  line gives), the geometry line says "primary work area", and
+  `R015_TheNoticesFileHoldsNLogsWholeBsdText` pins the BSD conditions and disclaimer (it fails
+  with the disclaimer's last line cut). Put to the owner, not taken: "Despre"'s height (ADR 0013)
+  and whether the BSD text should travel with the zip (a question for the whole suite: FlatCheck
+  and LightsCheck show the same notice line only).
+- **The start's lines, checked offscreen** after the review, with nothing on the screen: a scratch
+  program built the launcher's `MainWindow` on a folder holding a windowless stand-in
+  `FlatCheck.Wpf.exe`, never showed it, and called its real `OpenApp`. With
+  `ASTRODARKROOM_LOG=off` its `App` created no `log` folder; at the default level its log read:
+
+  ```
+  INFO  [17432:1] ReleaseManifest no file at ...\release.json; the versions are unknown
+  INFO  [17432:1] Window suite folder ...: 1 of 6 apps present; missing DarksCheck.Wpf.exe, LightsCheck.Wpf.exe, ImageVisualCompare.Wpf.exe, CopyWcs.Wpf.exe, AstroPhotoAnalyzer.Wpf.exe
+  INFO  [17432:1] Window open FlatCheck: ...\FlatCheck.Wpf.exe --lang=ro in ...
+  INFO  [17432:1] Window started FlatCheck.Wpf.exe, process 10436
+  INFO  [17432:1] Process exit 0 after 2.7 s
+  ```
+
+  Still not seen in a real start: "Despre" opened and closed, a start that fails (its message
+  box), the fallback under `%LOCALAPPDATA%`.

@@ -95,8 +95,11 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Writes, once the window is shown, its size and place, the primary screen's work area, the
-    /// whole desktop's and the DPI, all in device-independent pixels but the DPI: what a report of
-    /// a window cut off or off the screen needs (R-012).
+    /// whole desktop's and the window's DPI, all in device-independent pixels but the DPI: what a
+    /// report of a window cut off or off the screen needs (R-012). The work area is the primary
+    /// screen's, whichever screen the window is on, and with screens of different DPIs its pixels
+    /// and the window's are not the same size; the line says "primary" so no reader takes it for
+    /// the window's own screen.
     /// </summary>
     private void LogShown()
     {
@@ -108,7 +111,7 @@ public partial class MainWindow : Window
         Rect area = SystemParameters.WorkArea;
         DpiScale dpi = VisualTreeHelper.GetDpi(this);
         Log.Debug(FormattableString.Invariant(
-            $"window shown {ActualWidth:0}x{ActualHeight:0} at ({Left:0},{Top:0}); work area {area.Width:0}x{area.Height:0} at ({area.Left:0},{area.Top:0}); ")
+            $"window shown {ActualWidth:0}x{ActualHeight:0} at ({Left:0},{Top:0}); primary work area {area.Width:0}x{area.Height:0} at ({area.Left:0},{area.Top:0}); ")
             + FormattableString.Invariant(
             $"desktop {SystemParameters.VirtualScreenWidth:0}x{SystemParameters.VirtualScreenHeight:0} at ({SystemParameters.VirtualScreenLeft:0},{SystemParameters.VirtualScreenTop:0}); dpi {dpi.PixelsPerInchX:0}x{dpi.PixelsPerInchY:0}"));
     }
