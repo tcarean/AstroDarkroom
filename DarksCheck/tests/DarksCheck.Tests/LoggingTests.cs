@@ -39,6 +39,12 @@ public partial class LoggingTests
 {
     private const string Exe = "darkscheck";
 
+    /// <summary>The only two files that start and close the log: the two entry points.</summary>
+    private static readonly string[] EntryPoints = ["src/DarksCheck.Cli/Program.cs", "src/DarksCheck.Wpf/App.xaml.cs"];
+
+    /// <summary>The only two files that set NLog's configuration: the applications' and the tests'.</summary>
+    private static readonly string[] Configurers = ["src/DarksCheck.Core/Logging/LogSetup.cs", "tests/DarksCheck.Tests/LogCapture.cs"];
+
     /// <summary>The five files 8 MiB of lines leave, measured in FlatCheck with the same NLog and the same settings (R-100).</summary>
     private static readonly string[] RolledFiles = ["darkscheck_03.log", "darkscheck_04.log", "darkscheck_05.log", "darkscheck_06.log", "darkscheck_07.log"];
 
@@ -815,7 +821,127 @@ public partial class LoggingTests
         LogFiles.TwoWritersKeepEveryLine(Path.Combine(ws.Dir, "log"), "DarksCheck.Wpf", _output);
     }
 
+    // ---------------------------------------------------------------- invariants of the repository
+
+    /// <summary>
+    /// Only the two entry points configure the log for a user's run, and nothing but LogSetup (for
+    /// them) and LogCapture (for the tests) sets NLog's configuration at all: a library use logs
+    /// into nothing and every test into the capture (ADR 0025).
+    /// </summary>
+    [Fact]
+    public void OnlyTheTwoEntryPointsConfigureTheLog()
+    {
+        string[] callers = CsSources("src", "tests").Where(f => ApplyOrClose().IsMatch(File.ReadAllText(f))).Select(Rel).Order(StringComparer.Ordinal).ToArray();
+        string[] configurers = CsSources("src", "tests").Where(f => SetsConfiguration().IsMatch(File.ReadAllText(f))).Select(Rel).Order(StringComparer.Ordinal).ToArray();
+
+        Assert.Equal(EntryPoints, callers);
+        Assert.Equal(Configurers, configurers);
+    }
+
+    /// <summary>
+    /// The log's own words are English whatever the language (R-101): no log call composes its
+    /// message through the T(english, romanian) pair, whichever logger it goes through and however
+    /// many lines the call spans. And every logger is declared one way, a <c>Logger</c> field or
+    /// property taken from <c>LogManager.GetLogger</c> with <c>using NLog</c>, so the first check
+    /// sees every call.
+    /// </summary>
+    [Fact]
+    public void NoLogLineGoesThroughTheTranslation()
+    {
+        List<string> offenders = [];
+        List<string> declarations = [];
+        foreach (string f in CsSources("src"))
+        {
+            string text = File.ReadAllText(f);
+            foreach (Match m in LogCall().Matches(text))
+            {
+                Match end = CallEnd().Match(text, m.Index);
+                string whole = end.Success ? text[m.Index..(end.Index + end.Length)] : text[m.Index..];
+                if (Translation().IsMatch(whole))
+                {
+                    offenders.Add(Rel(f) + ":" + (text.Take(m.Index).Count(c => c == '\n') + 1).ToString(CultureInfo.InvariantCulture));
+                }
+            }
+
+            string[] lines = File.ReadAllLines(f);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                bool inline = lines[i].Contains("GetLogger(", StringComparison.Ordinal) && !Declaration().IsMatch(lines[i]);
+                bool qualified = lines[i].Contains("NLog.Logger", StringComparison.Ordinal) || lines[i].Contains("NLog.LogManager", StringComparison.Ordinal);
+                if (inline || qualified)
+                {
+                    declarations.Add(Rel(f) + ":" + (i + 1).ToString(CultureInfo.InvariantCulture));
+                }
+            }
+        }
+
+        Assert.Empty(offenders);
+        Assert.Empty(declarations);
+    }
+
+    /// <summary>
+    /// The numbers and the report's words stay pure (ADR 0025): of Analysis/ only the two decoding
+    /// loops' files hold a logger (D4), of Imaging/ only the two files adapted from LightsCheck
+    /// (D3: FitsReader.cs and the other copies take no line), and nothing in Report/, Language/ or
+    /// Thresholds.cs names NLog; the runs log what the analyzers return.
+    /// </summary>
+    [Fact]
+    public void NothingThatComputesOrWordsTheReportLogs()
+    {
+        string[] loops = ["FrameStack.cs", "LightsAnalyzer.cs"];
+        string[] adapted = ["ImageLoader.cs", "RawReader.cs"];
+        string[] analysis = CsSources("src/DarksCheck.Core/Analysis").ToArray();
+        string[] imaging = CsSources("src/DarksCheck.Core/Imaging").ToArray();
+        string[] pure = analysis.Where(f => !loops.Contains(Path.GetFileName(f)))
+            .Concat(imaging.Where(f => !adapted.Contains(Path.GetFileName(f))))
+            .Concat(CsSources("src/DarksCheck.Core/Report", "src/DarksCheck.Core/Language"))
+            .Append(Path.Combine(TestData.FindRepoRoot(), "src", "DarksCheck.Core", "Thresholds.cs"))
+            .ToArray();
+
+        Assert.True(pure.Length > 25, "the folders were not found");
+        Assert.All(pure, f => Assert.DoesNotMatch(NamesNLog(), File.ReadAllText(f)));
+        // and the two exceptions of each folder are the files that do log, no more
+        Assert.Equal(loops, analysis.Where(f => NamesNLog().IsMatch(File.ReadAllText(f))).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal));
+        Assert.Equal(adapted, imaging.Where(f => NamesNLog().IsMatch(File.ReadAllText(f))).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal));
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    [GeneratedRegex(@"LogSetup\.(Apply|Close)\(")]
+    private static partial Regex ApplyOrClose();
+
+    [GeneratedRegex(@"LogManager\.(Configuration\s*=[^=]|Setup\()")]
+    private static partial Regex SetsConfiguration();
+
+    /// <summary>A call that composes a log line's text: a logger's, or a run clock's start, lap or outcome.</summary>
+    [GeneratedRegex(@"\b\w*[Ll]og\.(Trace|Debug|Info|Warn|Error|Fatal)\(|\bRunClock\.Start\(|\b\w*[Cc]lock\??\.(Lap|Done)\(")]
+    private static partial Regex LogCall();
+
+    [GeneratedRegex(@"\)\s*;")]
+    private static partial Regex CallEnd();
+
+    [GeneratedRegex(@"\bT\(")]
+    private static partial Regex Translation();
+
+    [GeneratedRegex(@"static readonly Logger \w+ = LogManager\.GetLogger\(|static Logger \w+ => LogManager\.GetLogger\(")]
+    private static partial Regex Declaration();
+
+    [GeneratedRegex(@"\bNLog\b|\bLogger\b|\bLogManager\b")]
+    private static partial Regex NamesNLog();
+
+    /// <summary>The C# sources under the given folders of the project, without bin/ and obj/ (filtered on the relative path).</summary>
+    private static IEnumerable<string> CsSources(params string[] folders)
+    {
+        string root = TestData.FindRepoRoot();
+        return folders.SelectMany(f => Directory.EnumerateFiles(Path.Combine(root, f), "*.cs", SearchOption.AllDirectories))
+            .Where(f => !BuildOutput().IsMatch(Rel(f)));
+    }
+
+    [GeneratedRegex(@"(^|/)(bin|obj)/")]
+    private static partial Regex BuildOutput();
+
+    /// <summary>A file's path as the assertions name it: relative to the project, with forward slashes.</summary>
+    private static string Rel(string f) => Path.GetRelativePath(TestData.FindRepoRoot(), f).Replace('\\', '/');
 
     /// <summary>A record for the figures' rule: every kind of value it writes.</summary>
     private sealed record Probe(string? Name, double? Missing, bool Flag, Verdict Verdict, Pair Pair, IReadOnlyList<int> Few, IReadOnlyList<double> Many, DateTime When);
