@@ -82,10 +82,10 @@ namespace FlatCheck.Wpf
         /// One histogram row per channel: four on CFA, one on mono.
         ///
         /// The list is REPLACED whole on every run, not cleared and refilled, so an
-        /// ObservableCollection has no business here. The reason is concrete: choosing a file
-        /// starts a run nobody awaits, and a second choice (or the Sky switch) can start another
-        /// over it. On plain properties the last one wins and that is that; a collection cleared
-        /// and refilled by two runs at once ends up with duplicated rows and nulls in it. The
+        /// ObservableCollection has no business here. The reason is concrete: a second choice (or
+        /// the Sky switch) can start a run over the first's, and the gate orders their writes
+        /// (ADR 0077). On plain properties the last one wins and that is that; a collection
+        /// cleared and refilled by two runs ends up with duplicated rows and nulls in it. The
         /// end-to-end series really does need an ObservableCollection, because it appends its rows
         /// as they come - not here.
         /// </summary>
@@ -188,12 +188,9 @@ namespace FlatCheck.Wpf
                 ClearError();
         }
 
-        /// <summary>
-        /// The last run started, so a test can await one it did not start. A test that started a
-        /// second run on the same file instead, beside the one the setter starts, had the two
-        /// compute at once (the tests attach no gate), and the first one's figures could land
-        /// after the second one's: the flaky PickingAnotherFileRecomputes of 2026-10-27 (ADR 0077).
-        /// </summary>
+        /// <summary>The last run started, so a test can await one it did not start.</summary>
+        // A test that starts a second run beside the setter's has the two compute at once, and
+        // the first one's figures can land last (ADR 0077): the tests await this one instead.
         internal Task Pending { get; private set; } = Task.CompletedTask;
 
         /// <summary>Starts a run on the chosen file and keeps it in <see cref="Pending"/>;
@@ -207,7 +204,7 @@ namespace FlatCheck.Wpf
         /// <summary>Measures the chosen file's exposure, guarded, after the heavy-run gate, with
         /// the preview decoded, and shows the result and the console's report.</summary>
         /// <returns>A task that completes when the run ended; it never faults.</returns>
-        internal Task RecomputeAsync()
+        Task RecomputeAsync()
         {
             string path = Selected;
             bool sky = Sky;

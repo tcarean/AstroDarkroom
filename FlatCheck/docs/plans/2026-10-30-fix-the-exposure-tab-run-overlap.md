@@ -28,10 +28,13 @@ the real window cannot do, and where it can, the least-risk fix.
 3. The Exposure tab's busy overlay sits in the result column (`ExposureView.xaml`), so the list
    and the Sky switch stay clickable during a run; the gate orders the runs they start.
 4. The folder button is disabled by `MainViewModel.IsRunning`, which only the opening chain
-   sets. The Exposure lambda, alone among the five click-run tabs, does not re-check its token
-   after `Task.Run`, so a folder change during an Exposure run lands the old folder's figures
-   on the reset tab (reproduced deterministically with a queued `SynchronizationContext`). The
-   owner chose to leave this as it is (ADR 0077).
+   sets. The Exposure lambda does not re-check its token after its computation, so a folder
+   change during an Exposure run lands the old folder's figures on the reset tab (reproduced
+   deterministically with a queued `SynchronizationContext`). The owner chose to leave this as
+   it is (ADR 0077). Corrected after the review of 2026-10-30: the plan first said Exposure was
+   alone among the click-run tabs; Smoothing and Synthetic check the token on the pool thread
+   at the end of the computation and have the same hole in a narrower window, Histogram and
+   Split check after the hop and do not.
 
 ## Decision (the owner, 2026-10-30)
 
@@ -45,8 +48,8 @@ second run. No token check after the await, no lock on the folder button.
 1. The test first: `ExposureTabTests.APickKeepsItsRunInPendingUntilItLands` (a pick's run is
    in `Pending`, not complete until the figures are there; the Sky switch's run too). It does
    not compile before the change.
-2. `ExposureTabViewModel.Pending`, set by `Recompute`; `RecomputeAsync` stays internal for the
-   smoke tests that bring their own session.
+2. `ExposureTabViewModel.Pending`, set by `Recompute`; `RecomputeAsync` becomes private, since
+   no test calls it once they all await `Pending` (the review found the smoke tests among them).
 3. Every `await vm.RecomputeAsync()` that follows a `Selected` or `Sky` setter in
    `ExposureTabTests`, and the `Task expo` of `MainViewModelTests`, awaits `Pending`.
 4. `docs/design/two-applications.md`: the Exposure tab keeps its run in `Pending`; the gate,

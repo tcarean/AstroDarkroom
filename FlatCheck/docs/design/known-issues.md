@@ -58,8 +58,11 @@ correctness bugs that used to live here were fixed in phase 8.
    once.
 9. **A folder change during an Exposure run lands the old folder's figures.** The folder button
    is disabled only by the opening chain (`MainViewModel.IsRunning`), and the Exposure tab's run
-   lambda, alone among the click-run tabs, does not re-check its token after `Task.Run`: a run
-   that was computing when the folder changed writes its report, figures and `HasResult` on the
-   tab the new folder reset, under the new folder's list with nothing selected, until the next
-   pick. Reproduced deterministically on 2026-10-30; the owner left it as it is (ADR 0077,
-   where the one-line check and the button lock are the alternatives rejected).
+   lambda does not re-check its token after its computation: a run that was computing when the
+   folder changed writes its report, figures and `HasResult` on the tab the new folder reset,
+   under the new folder's list with nothing selected, until the next pick. The Smoothing and
+   Synthetic lambdas check the token on the pool thread at the end of the computation, so a
+   cancellation between that check and the continuation lands their figures the same way; the
+   Histogram and Split lambdas check after the hop back and do not. Reproduced deterministically
+   on the Exposure tab on 2026-10-30; the owner left it as it is (ADR 0077, where the one-line
+   check and the button lock are the alternatives rejected).

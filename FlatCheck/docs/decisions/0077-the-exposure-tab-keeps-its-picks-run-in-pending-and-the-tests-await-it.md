@@ -16,26 +16,33 @@ first file's unawaited run could therefore land after the second file's awaited 
 Measured 2026-10-30 in the task worktree, Release: the test's own body failed 1 round in 30
 alone; with the first file 2048x2048 and the second 128x128 and no gate, the stale run
 overwrote the new pick 3 of 3; the same two picks with a gate, the latest pick landed last
-3 of 3, because a run holds the lease through its writes and the semaphore serves its waiters
-in order. The window always attaches the gate (`MainViewModel.OpenAsync`), so a second pick
-there, which the overlay does not stop (it covers the result column, not the list), ends with
-the latest pick's figures. The flake is the harness's, not the window's.
+3 of 3, because the first pick takes the lease synchronously and holds it through its writes
+(the semaphore also serves its waiters in order, an implementation detail of `SemaphoreSlim`,
+not a contract; it matters only when both picks queue behind the opening chain). The window
+always attaches the gate (`MainViewModel.OpenAsync`), so a second pick there, which the
+overlay does not stop (it covers the result column, not the list), ends with the latest pick's
+figures. The flake is the harness's, not the window's.
 
 Two more facts went to the owner. The folder button is disabled by `MainViewModel.IsRunning`,
-which only the opening chain sets, and the Exposure lambda, alone among the five click-run
-tabs, does not re-check its token after `Task.Run`: a folder change during an Exposure run
-lands the old folder's figures on the reset tab, reproduced deterministically with a queued
-`SynchronizationContext` (the computation done, the token cancelled and the tab reset before
-its continuation ran). The owner's standing instruction for the task: fix nothing the real
-window cannot do, and where it can, the least-risk fix, without overcomplicating.
+which only the opening chain sets, and the Exposure lambda does not re-check its token after
+its computation: a folder change during an Exposure run lands the old folder's figures on the
+reset tab, reproduced deterministically with a queued `SynchronizationContext` (the
+computation done, the token cancelled and the tab reset before its continuation ran). The
+review of the branch (2026-10-30, after the decision) found the hole wider than the owner was
+told: the Histogram and Split lambdas re-check the token after the hop back to the UI thread,
+but the Smoothing and Synthetic lambdas check it on the pool thread at the end of the
+computation, so the same reproduction lands their figures too, in the narrower window between
+that check and the continuation; only Exposure checks nowhere after the computation. The
+owner's standing instruction for the task: fix nothing the real window cannot do, and where
+it can, the least-risk fix, without overcomplicating.
 
 ## Decision
 
 The owner chose, on 2026-10-30, to fix the flake only: `ExposureTabViewModel.Recompute` keeps
 the run it starts in `Pending` (the shape `HistEqTabViewModel`, `SmoothTabViewModel` and
 `SyntheticTabViewModel` already have), and the window tests await that run instead of starting
-a second one beside it. `RecomputeAsync` stays internal for the tests that bring their own
-session. Nothing else changes: no token check after the await in the Exposure lambda, no lock
+a second one beside it. `RecomputeAsync` becomes private: nothing but `Recompute` calls it
+now. Nothing else changes: no token check after the await in the Exposure lambda, no lock
 on the folder button, no generation check inside the work. The folder-change case is recorded
 in `known-issues.md` as deliberate.
 
@@ -58,5 +65,6 @@ in `known-issues.md` as deliberate.
   `APickKeepsItsRunInPendingUntilItLands` pins that `Pending` is that run. The two window
   smoke tests of the Exposure tab await it too.
 - A folder change during an Exposure run still lands the old folder's figures on the reset tab
-  until a new pick replaces them (`known-issues.md`, item 9).
+  until a new pick replaces them, and a Smoothing or Synthetic run cancelled between its last
+  check and its continuation does the same (`known-issues.md`, item 9).
 - `two-applications.md` says which tabs can overlap runs and what orders them.
