@@ -331,3 +331,7 @@ Implemented as planned, on `claude/Add-a-diagnostic-log-with-NLog`; ADR 0070 and
   and `LensfunReader`'s of an XML file, both Warn. `PreviewReader`'s six catches became one, with
   the types in a comment.
 - **The analyzer's Romanian corner keys** (`stanga-sus` ...) are written in English in the log.
+- **D8 narrowed** (noted 2026-10-27, after the review): the log's own words are English, but an
+  exception's or a refusal's message is logged as the user saw it, so in Romanian under
+  `--lang ro`; R-110 and ADR 0070 say so, the README and the CHANGELOG said "English whatever
+  `--lang` says" until the review's C3.

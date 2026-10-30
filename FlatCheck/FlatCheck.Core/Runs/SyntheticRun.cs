@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -94,20 +95,23 @@ namespace FlatCheck
         /// shot.</param>
         /// <param name="lensfunNeedsCrop">True when the chosen lens is a lensfun one, whose
         /// profile needs the camera's crop factor.</param>
+        /// <param name="why">The refusal's reason in the log's words, English; null when
+        /// complete.</param>
         /// <returns>Null when complete, otherwise the refusal's text (no focal length, no
         /// aperture, or no crop for lensfun).</returns>
-        internal static string Complete(SyntheticRequest req, ShotIdentity id, bool lensfunNeedsCrop)
+        internal static string Complete(SyntheticRequest req, ShotIdentity id, bool lensfunNeedsCrop, out string why)
         {
-            if (!id.FocalMm.HasValue) return SyntheticReport.NoFocal();
+            why = null;
+            if (!id.FocalMm.HasValue) { why = "the focal length cannot be found"; return SyntheticReport.NoFocal(); }
             req.FocalMm = id.FocalMm.Value;
             req.FocalSource = id.FocalSource;
 
-            if (!id.FStop.HasValue) return SyntheticReport.NoFStop();
+            if (!id.FStop.HasValue) { why = "the f-number cannot be found"; return SyntheticReport.NoFStop(); }
             req.FStop = id.FStop.Value;
             req.FStopSource = id.FStopSource;
 
             if (id.Crop.HasValue) { req.CameraCrop = id.Crop.Value; req.CropSource = id.CropSource; }
-            else if (lensfunNeedsCrop) return SyntheticReport.NoCrop(id.Camera);
+            else if (lensfunNeedsCrop) { why = "the lensfun profile needs a crop factor nobody supplied"; return SyntheticReport.NoCrop(id.Camera); }
             else { req.CameraCrop = 0; req.CropSource = id.CropSource; }
             return null;
         }
@@ -123,24 +127,30 @@ namespace FlatCheck
         /// <param name="f">The reference frame; not read by this overload, the identity
         /// carries what it knows.</param>
         /// <param name="id">The shot's identity, with the candidates and the camera.</param>
+        /// <param name="why">The refusal's reason in the log's words, English; null when a
+        /// lens was chosen.</param>
         /// <returns>Null when exactly one lens was chosen, otherwise the refusal's text (none
         /// given, no match, or ambiguous).</returns>
-        internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f, ShotIdentity id)
+        internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f, ShotIdentity id, out string why)
         {
-            LensCatalog cat = sources.Catalog;
+            why = null;
             IReadOnlyList<LensChoice> hits;
             if (string.IsNullOrWhiteSpace(req.LensText))
             {
                 hits = id.Candidates;
                 if (req.Source.HasValue) hits = hits.Where(h => h.Source == req.Source.Value).ToList();
-                if (hits.Count == 0) return SyntheticReport.NoLensGiven();
+                if (hits.Count == 0) { why = "no lens given and the raw names none"; return SyntheticReport.NoLensGiven(); }
             }
             else
             {
                 hits = MatchLenses(req.LensText, req.Source, sources, id);
-                if (hits.Count == 0) return SyntheticReport.NoMatch(req.LensText, sources);
+                if (hits.Count == 0) { why = "no lens matches the text"; return SyntheticReport.NoMatch(req.LensText, sources); }
             }
-            if (hits.Count > 1) return SyntheticReport.Ambiguous(req.LensText != null ? $"\"{req.LensText}\"" : id.RawLensLabel, hits);
+            if (hits.Count > 1)
+            {
+                why = LogText.Int(hits.Count) + " lenses match";
+                return SyntheticReport.Ambiguous(req.LensText != null ? $"\"{req.LensText}\"" : id.RawLensLabel, hits);
+            }
             req.Lens = hits[0];
             return null;
         }
@@ -179,11 +189,11 @@ namespace FlatCheck
         /// <returns>Null when exactly one lens was chosen, otherwise the refusal's
         /// text.</returns>
         internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f)
-            => ChooseLens(req, sources, f, LensIdentification.Identify(f, null, sources));
+            => ChooseLens(req, sources, f, LensIdentification.Identify(f, null, sources), out _);
 
         /// <summary>
         /// Loads the reference frame and runs the chain on it. Throws what
-        /// <see cref="ImageLoader.Load"/> throws; the refusals are returned, not thrown.
+        /// <see cref="ImageLoader.Load(string)"/> throws; the refusals are returned, not thrown.
         /// </summary>
         /// <param name="referencePath">The frame whose size and cards the synthetic flat takes
         /// (normally the master).</param>
@@ -197,9 +207,25 @@ namespace FlatCheck
         internal static SyntheticRunOutcome Execute(string referencePath, SyntheticRequest req, ProfileSources sources,
                                                     double? focal, double? fstop, double? crop, TextWriter report)
         {
+            // The clock starts before the load, so a reference that does not load still leaves
+            // the run's start line, with the lens and the values typed (R-110).
+            using RunClock clock = RunClock.Start(Log, "synthetic", Inputs(referencePath, req, focal, fstop, crop));
             LoadedFrame f = ImageLoader.Load(referencePath);
-            return Execute(f, referencePath, req, sources, focal, fstop, crop, report);
+            clock.Lap("load");
+            return Execute(f, referencePath, req, sources, focal, fstop, crop, report, clock);
         }
+
+        /// <summary>The run's inputs for its start line: the reference, the request as given
+        /// and the values given by hand.</summary>
+        /// <param name="referencePath">The reference frame.</param>
+        /// <param name="req">The request.</param>
+        /// <param name="focal">The focal length given by hand, or null.</param>
+        /// <param name="fstop">The f-number given by hand, or null.</param>
+        /// <param name="crop">The crop factor given by hand, or null.</param>
+        /// <returns>The text.</returns>
+        static string Inputs(string referencePath, SyntheticRequest req, double? focal, double? fstop, double? crop)
+            => referencePath + " " + LogText.Request(req)
+             + " given focal=" + LogText.Num(focal) + " fstop=" + LogText.Num(fstop) + " crop=" + LogText.Num(crop);
 
         /// <summary>
         /// The chain on a frame already loaded: refuses a cube, identifies the shot once,
@@ -219,8 +245,25 @@ namespace FlatCheck
         internal static SyntheticRunOutcome Execute(LoadedFrame f, string referencePath, SyntheticRequest req, ProfileSources sources,
                                                     double? focal, double? fstop, double? crop, TextWriter report)
         {
-            RunClock clock = RunClock.Start(Log, "synthetic", referencePath + " " + LogText.Request(req)
-                                                   + " given focal=" + LogText.Num(focal) + " fstop=" + LogText.Num(fstop) + " crop=" + LogText.Num(crop));
+            using RunClock clock = RunClock.Start(Log, "synthetic", Inputs(referencePath, req, focal, fstop, crop));
+            return Execute(f, referencePath, req, sources, focal, fstop, crop, report, clock);
+        }
+
+        /// <summary>The chain itself, on a clock already started by one of the two overloads
+        /// above, so each run has one start line.</summary>
+        /// <param name="f">The reference frame, as loaded.</param>
+        /// <param name="referencePath">Its path, for the report.</param>
+        /// <param name="req">The request.</param>
+        /// <param name="sources">The profile catalog.</param>
+        /// <param name="focal">The focal length in mm given by hand, or null.</param>
+        /// <param name="fstop">The f-number given by hand, or null.</param>
+        /// <param name="crop">The crop factor given by hand, or null.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <param name="clock">The run's clock, started.</param>
+        /// <returns>The synthetic flat with its request, or the refusal.</returns>
+        static SyntheticRunOutcome Execute(LoadedFrame f, string referencePath, SyntheticRequest req, ProfileSources sources,
+                                           double? focal, double? fstop, double? crop, TextWriter report, RunClock clock)
+        {
             string refusal = f.Planes > 1 ? SyntheticReport.RefusalCube(referencePath, f.Planes) : null;
             string why = refusal != null ? "a cube of " + LogText.Int(f.Planes) + " planes" : null;   // the log's words
             bool choice = false;
@@ -232,14 +275,23 @@ namespace FlatCheck
             // looks it up from the text.
             if (refusal == null && req.Lens == null)
             {
-                refusal = ChooseLens(req, sources, f, id);
+                refusal = ChooseLens(req, sources, f, id, out why);
                 choice = refusal != null;
-                if (choice) why = "no lens or more than one matches";
             }
             if (refusal == null)
+                refusal = Complete(req, id, req.Lens.Source == ProfileSource.Lensfun, out why);
+            IReadOnlyList<LensProfile> all = null;
+            if (refusal == null)
             {
-                refusal = Complete(req, id, req.Lens.Source == ProfileSource.Lensfun);
-                if (refusal != null) why = "the focal length, the f-number or the crop cannot be found";
+                // A lens is listed by its file's name; only now is the file parsed, and Adobe's
+                // files for a lens measured for distortion or colour only hold no vignetting
+                // model: an input refusal, not a null profile handed to the builder (R-071).
+                all = sources.Catalog.ProfilesOf(req.Lens);
+                if (all.Count == 0)
+                {
+                    refusal = SyntheticReport.NoProfile(req.Lens);
+                    why = "the lens has no vignetting profile";
+                }
             }
             if (refusal != null)
             {
@@ -248,7 +300,6 @@ namespace FlatCheck
                 report.WriteLine(refusal);
                 return new SyntheticRunOutcome(null, req, f, refusal, choice);
             }
-            IReadOnlyList<LensProfile> all = sources.Catalog.ProfilesOf(req.Lens);
             LensProfile profile = LensCatalog.Nearest(all, req.FocalMm, req.FStop);
             var r = SyntheticFlatBuilder.Build(profile, f.Image.W, f.Image.H, req.CameraCrop);
             r.LensProfiles = all;
@@ -262,7 +313,7 @@ namespace FlatCheck
 
         /// <summary>The diagnostic log: the run's lines, the lens chosen and the flat built
         /// (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(SyntheticRun));
+        static readonly Logger Log = LogManager.GetLogger(nameof(SyntheticRun));
 
         /// <summary>The HISTORY lines: the version, the lens and profile, the model, the
         /// reference file.</summary>

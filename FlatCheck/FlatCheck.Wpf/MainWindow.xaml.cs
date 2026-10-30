@@ -26,6 +26,7 @@
 // it.
 
 using System.Windows;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
@@ -118,7 +119,7 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>The diagnostic log of the user's actions in the main window (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Window");
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         /// <summary>
         /// The button on the problem screen: starts the chosen script in siril-cli, modal, with

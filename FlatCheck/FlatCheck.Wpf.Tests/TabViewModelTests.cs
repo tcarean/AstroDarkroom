@@ -25,13 +25,6 @@ namespace FlatCheck.Wpf.Tests;
 /// </summary>
 public class TabViewModelTests
 {
-    sealed class StubTab : TabViewModel
-    {
-        internal Task Run(string message, Func<Task> work) => RunGuardedAsync(message, work);
-        internal void SetResult(string report) { Report = report; HasResult = true; }
-        internal Task<IDisposable> Enter(HeavyRunGate? gate) => EnterGateAsync(gate, CancellationToken.None);
-    }
-
     /// <summary>
     /// A run that waits for the heavy-run gate says so while it waits, then shows its own
     /// message: the first line of the waiting screen reads the waiting text while another run
@@ -41,7 +34,7 @@ public class TabViewModelTests
     [Fact]
     public async Task ARunThatWaitsForTheGateSaysSoUntilItIsIn()
     {
-        var tab = new StubTab();
+        var tab = new StubTabViewModel();
         var gate = new HeavyRunGate();
         IDisposable held = await gate.EnterAsync(CancellationToken.None);
         var messages = new List<string>();
@@ -72,7 +65,7 @@ public class TabViewModelTests
     [Fact]
     public async Task OnlyTheLatestWaitingRunRestoresItsMessage()
     {
-        var tab = new StubTab();
+        var tab = new StubTabViewModel();
         var gate = new HeavyRunGate();
         IDisposable held = await gate.EnterAsync(CancellationToken.None);
 
@@ -89,7 +82,7 @@ public class TabViewModelTests
     [Fact]
     public async Task ARunThatFailsShowsAnErrorAndClearsTheResult()
     {
-        var tab = new StubTab();
+        var tab = new StubTabViewModel();
         tab.SetResult("vechi");
 
         await tab.Run("x", () => throw new InvalidOperationException("a crapat"));
@@ -103,7 +96,7 @@ public class TabViewModelTests
     [Fact]
     public async Task ACancelledRunLeavesTheTabEmptyWithoutAnError()
     {
-        var tab = new StubTab();
+        var tab = new StubTabViewModel();
         tab.SetResult("vechi");
 
         await tab.Run("x", () => throw new OperationCanceledException());
@@ -121,7 +114,7 @@ public class TabViewModelTests
     [Fact]
     public async Task ASupersededRunDoesNotTouchTheScreenWhenItFinishes()
     {
-        var tab = new StubTab();
+        var tab = new StubTabViewModel();
         var gate = new TaskCompletionSource();
         var busyChanges = new List<bool>();
         tab.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(tab.IsBusy)) busyChanges.Add(tab.IsBusy); };
@@ -151,7 +144,7 @@ public class TabViewModelTests
     [Fact]
     public async Task ASupersededRunThatIsCancelledDoesNotClearTheNewResult()
     {
-        var tab = new StubTab();
+        var tab = new StubTabViewModel();
         var gate = new TaskCompletionSource();
 
         Task first = tab.Run("A", async () => { await gate.Task; throw new OperationCanceledException(); });

@@ -269,15 +269,32 @@ public class RawReaderTests
     [Fact]
     public void HoldsNoLibrawTypedFields_SoTheAssemblyStaysLazilyLoaded()
     {
-        var fields = typeof(RawReader).GetFields(
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+        // The nested types too: a lambda that captures a libraw struct moves it into a
+        // compiler-generated class, which is a field of a libraw value type under another
+        // name (the review of 2026-10-27, A13).
+        foreach (Type t in WithNested(typeof(RawReader)))
+            foreach (var f in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                foreach (Type ft in WithGenericArguments(f.FieldType))
+                {
+                    string asm = ft.Assembly.GetName().Name ?? "";
+                    Assert.False(asm.StartsWith("Sdcb", StringComparison.Ordinal),
+                        $"the field {t.Name}.{f.Name} is of type {f.FieldType.FullName} from {asm}: "
+                      + "that forces libraw to load on the FITS runs too");
+                }
 
-        foreach (var f in fields)
+        static IEnumerable<Type> WithNested(Type t)
         {
-            string asm = f.FieldType.Assembly.GetName().Name ?? "";
-            Assert.False(asm.StartsWith("Sdcb", StringComparison.Ordinal),
-                $"campul {f.Name} e de tip {f.FieldType.FullName} din {asm} - "
-              + "asta forteaza incarcarea libraw si pe rularile pe FITS");
+            yield return t;
+            foreach (Type n in t.GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+                foreach (Type d in WithNested(n)) yield return d;
+        }
+
+        static IEnumerable<Type> WithGenericArguments(Type t)
+        {
+            yield return t;
+            if (t.IsGenericType)
+                foreach (Type a in t.GetGenericArguments())
+                    foreach (Type d in WithGenericArguments(a)) yield return d;
         }
     }
 }

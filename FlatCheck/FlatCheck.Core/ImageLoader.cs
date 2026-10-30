@@ -143,13 +143,23 @@ namespace FlatCheck
         /// <param name="path">The file to read: a camera raw, a FITS, or anything else, which is
         /// read as a FITS.</param>
         /// <returns>The frame, its image filled.</returns>
-        internal static LoadedFrame Load(string path)
+        internal static LoadedFrame Load(string path) => Load(path, logHeader: true);
+
+        /// <summary><see cref="Load(string)"/>, with the FITS keywords that decide the reading
+        /// written at Debug or not: a series writes them for its first frame only, the others
+        /// come from the same session (R-110).</summary>
+        /// <param name="path">The file to read.</param>
+        /// <param name="logHeader">False to leave out the keywords line.</param>
+        /// <returns>The frame, as <see cref="Load(string)"/>.</returns>
+        internal static LoadedFrame Load(string path, bool logHeader)
         {
             var clock = Stopwatch.StartNew();
             IFrameReader reader = ReaderOf(path);
             LoadedFrame f = reader.Load(path);
+            if (logHeader && f.Cards.Count > 0 && Log.IsDebugEnabled)
+                Log.Debug("header of " + path + ": " + LogText.FitsKeys(f.Header));
             if (Log.IsInfoEnabled)
-                Log.Info("loaded " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+                Log.Info("loaded " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
             return f;
         }
 
@@ -178,17 +188,19 @@ namespace FlatCheck
         /// <summary>
         /// When all you need is the pixels - structure, the --light series.
         /// </summary>
-        /// <param name="path">The file to read, as for <see cref="Load"/>.</param>
+        /// <param name="path">The file to read, as for <see cref="Load(string)"/>.</param>
+        /// <param name="logHeader">False to leave out the FITS keywords line, for the frames
+        /// of a series after the first.</param>
         /// <returns>The frame's image.</returns>
-        internal static Img LoadImage(string path) => Load(path).Image;
+        internal static Img LoadImage(string path, bool logHeader = true) => Load(path, logHeader).Image;
 
         /// <summary>
         /// When all you need is the metadata - identifying the lens, prefilling the Synthetic
-        /// tab. The same dispatch as <see cref="Load"/>, the fall onto FITS included, so that the
+        /// tab. The same dispatch as <see cref="Load(string)"/>, the fall onto FITS included, so that the
         /// two cannot reach different readers for the same file. <see cref="LoadedFrame.Image"/>
         /// is null.
         /// </summary>
-        /// <param name="path">The file to read, as for <see cref="Load"/>.</param>
+        /// <param name="path">The file to read, as for <see cref="Load(string)"/>.</param>
         /// <returns>The frame's metadata.</returns>
         internal static LoadedFrame LoadInfo(string path)
         {
@@ -196,7 +208,7 @@ namespace FlatCheck
             IFrameReader reader = ReaderOf(path);
             LoadedFrame f = reader.LoadInfo(path);
             if (Log.IsDebugEnabled)
-                Log.Debug("read the header of " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+                Log.Debug("read the header of " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
             return f;
         }
     }

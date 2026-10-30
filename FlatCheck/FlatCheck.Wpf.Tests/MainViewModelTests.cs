@@ -288,6 +288,53 @@ public class MainViewModelTests
         Assert.Contains("Siril", vm.ProblemText);
     }
 
+    /// <summary>
+    /// A folder the window cannot list fully keeps its card: the log's Debug line about the
+    /// folder, which counts its files, must not take the "flat master is missing" card down
+    /// with it (the review of 2026-10-27, A1). The folder is made unlistable with a deny rule.
+    /// </summary>
+    [Fact]
+    public async Task R080_AnUnlistableProcessFolderStillGetsTheMissingMasterCard()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var f = new SessionFixture().WithFlats().WithProcess();
+        using var deny = UnlistableFolder.Deny(f.ProcessDir);
+        var vm = new MainViewModel();
+        using var capture = LogCapture.Start();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.HasProblem);
+        Assert.Contains("pp_flat_stacked.fit", vm.ProblemText);
+        Assert.Contains("OSC_Preprocessing_WithoutDark.ssf", vm.ProblemText);
+        Assert.Contains(capture.Events, e => e.Message.Contains("lights=unreadable (UnauthorizedAccessException)"));
+    }
+
+    /// <summary>
+    /// R-110: an exception while a folder is opened, here a <c>flats</c> folder the user may
+    /// not list, is shown as a card and logged with its stack; before, the task fired by the
+    /// window swallowed it and the tabs stayed empty (the review of 2026-10-27, A2).
+    /// </summary>
+    [Fact]
+    public async Task R080_AnUnlistableFlatsFolderGivesACardAndAnErrorLine_NotEmptyTabs()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var f = new SessionFixture().WithFlatMaster().WithFlats();
+        using var deny = UnlistableFolder.Deny(f.FlatsDir);
+        var vm = new MainViewModel();
+        using var capture = LogCapture.Start();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.HasProblem);
+        Assert.Contains("flats", vm.ProblemText);
+        Assert.False(vm.IsRunning);
+        Assert.False(vm.Exposure.IsBusy);
+        var failed = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Error);
+        Assert.IsType<UnauthorizedAccessException>(failed.Exception);
+        Assert.Contains("   at ", failed.Line);
+    }
+
     [Fact]
     public async Task WithoutProcessAtAllItAlsoNamesTheScript()
     {

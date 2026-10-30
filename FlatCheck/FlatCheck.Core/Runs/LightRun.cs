@@ -64,7 +64,7 @@ namespace FlatCheck
         /// <summary>
         /// Loads the light, checks its field of view (<see cref="LightSuitability.Check"/>)
         /// and, when the field allows it, fits it and writes the report; on a refusal writes
-        /// only the refusal. Throws what <see cref="ImageLoader.Load"/> throws.
+        /// only the refusal. Throws what <see cref="ImageLoader.Load(string)"/> throws.
         /// </summary>
         /// <param name="path">A calibrated, unregistered light.</param>
         /// <param name="fov">The diagonal field in degrees given with <c>--fov</c>, or null
@@ -73,7 +73,7 @@ namespace FlatCheck
         /// <returns>The check, and the figures with the map unless the run refused.</returns>
         internal static LightRunOutcome Execute(string path, double? fov, TextWriter report)
         {
-            RunClock clock = RunClock.Start(Log, "light", path + " fov=" + LogText.Num(fov));
+            using RunClock clock = RunClock.Start(Log, "light", path + " fov=" + LogText.Num(fov));
             LoadedFrame f = ImageLoader.Load(path);
             clock.Lap("load");
 

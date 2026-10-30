@@ -63,6 +63,14 @@ need anyway; the owner chose (b) the same day.
 
 ## Alternatives rejected
 
+(Corrected 2026-10-27: the Decision's "A folder whose enumeration fails part-way (a
+subfolder without list rights) keeps the files found before the failure and loses the rest,
+without an error, like a root that cannot be listed" was never true: the enumeration was made
+eager inside the root's `try`, so the whole root was lost, with a Warn line. Since the review
+of 2026-10-27 the enumeration skips the unlistable subfolder itself and every other file of
+the root is read; a root that cannot be listed is still lost whole, with its Warn line
+(`docs/design/lens-profiles.md`).)
+
 - **Texts only, option (a).** Honest and an hour of work, but a Lightroom-only subscriber, a
   common case, would keep the lensfun half of the list alone while the suite's prerequisites
   tell them Adobe's profiles are read from the computer.

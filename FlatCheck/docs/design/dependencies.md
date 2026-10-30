@@ -34,7 +34,11 @@ figures against `rawpy`, and the lazy loading with its guard
 spell out: `RawReader`'s type is loaded on every run, FITS included, because `ImageLoader`
 asks it `Handles`, and that is harmless only because method bodies are resolved at JIT time,
 so `Decode` costs nothing until a raw is opened; fields are resolved when the type loads,
-which is why `RawReader` holds no field of a libraw type, reference or value.
+which is why `RawReader` holds no field of a libraw type, reference or value. A lambda that
+captures a libraw value is such a field under another name, in a compiler-generated nested
+class, so `Decode` copies what its log line needs into a `double` before the lambda; the
+guard walks the nested types and the fields' generic arguments for that reason (the review of
+2026-10-27).
 
 ### `SixLabors.ImageSharp`
 
@@ -47,8 +51,10 @@ and `StbImageSharp` as the measured drop-in fallback if the licence ever moves.
 ### `NLog`
 
 ADR 0070 holds the whole of it: why a logging package, why NLog and not
-`Microsoft.Extensions.Logging` or Serilog, why it is configured in code with no `NLog.config`,
-why the core logs at its seams and never in `Analysis/` or `Report/`, and the measurements behind
+`Microsoft.Extensions.Logging` with a provider (the owner asked for NLog by name;
+`THIRD-PARTY-NOTICES.md` adds that Serilog would do the same work), why it is configured in code
+with no `NLog.config`, why the core logs at its seams and never in `Analysis/` or `Report/`, and
+the measurements behind
 the second package of the same project, `NLog.Targets.AtomicFile`, taken so two processes writing
 at full speed lose no line (R-112); `THIRD-PARTY-NOTICES.md` reproduces their BSD-3-Clause text,
 and `ThirdParty.cs` claims both packages under one component. The two versions move together. How

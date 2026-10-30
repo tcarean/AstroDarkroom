@@ -28,12 +28,16 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using NLog;
 
 namespace FlatCheck.Wpf
 {
     /// <summary>Asks Windows to draw a window's title bar dark; never throws.</summary>
     internal static class DarkTitleBar
     {
+        /// <summary>The diagnostic log: the title bar that stays light (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
         const int UseImmersiveDarkModeBefore20H1 = 19;
         const int UseImmersiveDarkMode = 20;
 
@@ -66,7 +70,7 @@ namespace FlatCheck.Wpf
             {
                 // dwmapi is missing (Windows without a compositor). The bar stays light; that
                 // is no reason for the application not to start.
-                NLog.LogManager.GetLogger("Window").Debug(e, "the title bar cannot be darkened on this system");
+                Log.Debug(e, "the title bar cannot be darkened on this system");
             }
         }
     }

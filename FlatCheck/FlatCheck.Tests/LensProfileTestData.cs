@@ -201,6 +201,16 @@ internal static class LensProfileTestData
     /// is <c>stCamera:LensID</c> as written - a number, Pentax's two numbers, or null for none, as
     /// on every Sony E file.
     /// </summary>
+    /// <summary>
+    /// An Adobe file with one profile and no <c>VignetteModel</c>: what Adobe ships for a lens
+    /// measured for distortion or colour only, 1275 of the 3531 files on the author's machine
+    /// (2026-10-27). The same tags as <see cref="LcpOneProfile"/> otherwise.
+    /// </summary>
+    internal static string LcpWithoutVignette(string make, string prettyName, string lensTag, string? lensId, string sff, string focal, string? camera = null)
+        => LcpOneProfile(make, prettyName, lensTag, lensId, sff, focal, camera)
+            .Replace(@"       <stCamera:VignetteModel stCamera:VignetteModelParam1=""-0.289055"" stCamera:VignetteModelParam2=""-0.962432"" stCamera:VignetteModelParam3=""0.750297""/>" + "\n",
+                     @"       <stCamera:ChromaticGreenModel stCamera:Version=""2""/>" + "\n");
+
     internal static string LcpOneProfile(string make, string prettyName, string lensTag, string? lensId, string sff, string focal, string? camera = null)
     {
         string id = lensId == null ? "" : $@" stCamera:LensID=""{lensId}""";

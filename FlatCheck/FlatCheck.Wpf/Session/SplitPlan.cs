@@ -36,6 +36,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 
 namespace FlatCheck.Wpf
 {
@@ -45,6 +46,9 @@ namespace FlatCheck.Wpf
     /// </summary>
     internal sealed class SplitPlan
     {
+        /// <summary>The diagnostic log: the temp folder that could not be deleted (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Split);
+
         /// <summary>How many files of lights/ go into each part, at most.</summary>
         internal const int MaxLights = 2;
 
@@ -189,8 +193,12 @@ namespace FlatCheck.Wpf
         static long SizeOf(string path)
         {
             try { return new FileInfo(path).Length; }
-            catch (IOException) { return 0; }
-            catch (UnauthorizedAccessException) { return 0; }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                // The estimate is a convenience: a file that cannot be sized counts as nothing.
+                Log.Debug(e, "the size of " + path + " could not be read; the estimate counts it as 0");
+                return 0;
+            }
         }
 
         /// <summary>How many frames (raw or FITS) each part has in the folders copied whole; a
@@ -232,7 +240,7 @@ namespace FlatCheck.Wpf
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
                 // The split's copies can be tens of GB; where they were left is worth a line.
-                NLog.LogManager.GetLogger("Split").Warn(e, "the split's temp folder " + TempRoot + " could not be deleted");
+                Log.Warn(e, "the split's temp folder " + TempRoot + " could not be deleted");
                 return false;
             }
         }

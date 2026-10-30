@@ -73,7 +73,8 @@ The analysis hands out verdicts as the Romanian words they were (`OK`, `SUSPECT`
 compare those keys. Only printing translates them: every place that writes a verdict calls
 `VerdictWords.Of(key)`. `SplitCell` keeps the key in `Verdict` and the word in `Value` on the
 verdict row; `SplitReport.Cell` compares the value with the word. The same split for the corner
-names of `StructureResult.Corners` (`StructureReport.CornerName`) and for the views of
+names of `StructureResult.Corners` (`StructureReport.CornerName`; the diagnostic log writes the
+English one, `StructureReport.EnglishCorner`, whatever the language) and for the views of
 `HistEqReport.ViewCaption`, whose `"Mozaic"` / `"mono"` / `"RGB"` are keys the window passes.
 The series' reasons `"sem"` and `"corelatie"` are keys `LightSeriesReport.ReasonLines` words;
 the third reason is free text, written in the language of the run that produced it.

@@ -37,6 +37,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using NLog;
 
 namespace FlatCheck.Wpf
 {
@@ -120,7 +121,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>The diagnostic log: where Siril was found, and what could not be read
         /// (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Siril");
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Siril);
 
         /// <summary>
         /// siril-cli.exe: from the uninstall entry in the registry (the Inno installer writes
@@ -313,7 +314,12 @@ namespace FlatCheck.Wpf
         /// <returns>The full path, or the path unchanged when it is not valid.</returns>
         static string Normalise(string p)
         {
-            try { return Path.GetFullPath(p); } catch (ArgumentException) { return p; }
+            try { return Path.GetFullPath(p); }
+            catch (ArgumentException e)
+            {
+                Log.Debug(e, "the path " + p + " could not be normalised; used as it is");
+                return p;
+            }
         }
 
         /// <summary>

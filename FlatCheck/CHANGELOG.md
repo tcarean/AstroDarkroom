@@ -8,15 +8,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
-- A diagnostic log, for bug reports (R-109 to R-111, ADR 0070): each application writes
+- A diagnostic log, for bug reports (R-109 to R-112, ADR 0070): each application writes
   `log\flatcheck.log` or `log\FlatCheck.Wpf.log` beside its executable (or under
   `%LOCALAPPDATA%\FlatCheck\log` when that folder cannot be written), at most 5 files of 1 MiB
   each, rolled by NLog. It holds the arguments, the machine and the runtime, every file read, each
   run's inputs, figures, verdict and stage times, the lens profiles and candidates, every file
   written, the window's session, tab runs and actions, siril-cli's output, and every exception with
-  its stack, those the program recovers from included. English whatever `--lang` says; nothing
-  more on stdout or stderr. `FLATCHECK_LOG=off|error|warn|info|debug|trace` sets the level, Debug
-  by default.
+  its stack, those the program recovers from included (not a cancellation the user asked for, nor
+  a race at the window's close). The log's own words are English whatever `--lang` says, an
+  error's or a refusal's message as the user saw it; nothing more on stdout or stderr.
+  `FLATCHECK_LOG=off|fatal|error|warn|info|debug|trace` sets the level, Debug by default.
 - The lens is identified from a raw of any make, not only a Nikon (R-018, R-108, ADR 0068): the
   maker's lens ID is read by mount (Nikon's own field on a Nikon body, the MakerNote's on Canon,
   Sony, Pentax and the rest; Adobe's two-number Pentax IDs read as libraw does), and the lens's
@@ -124,6 +125,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The content of the window's tabs is in the UI Automation tree: a screen reader such as
   Narrator, or a UI Automation tool, now reaches the controls inside a tab, where it found only
   the seven tab headers before (R-114, ADR 0074).
+- `--synthetic` on a lens whose Adobe file carries no vignetting model (a lens measured for
+  distortion or colour only; 1275 of the 3531 files on the author's machine) refuses with the
+  reason and exit 1, where it failed with `ERROR: Object reference not set to an instance of an
+  object.` (R-071, ADR 0071). The window shows the same refusal.
+- The window: a session folder with a subfolder the user cannot list (a deny rule, a broken
+  junction) shows a card naming the folder and the error instead of seven empty tabs (R-080).
+- A subfolder of an Adobe profile folder without list rights loses its own files only; before,
+  the whole root's 3500 profiles were left out (R-107, ADR 0066 corrected).
 - The note under the illumination offset in the structure report no longer says the offset falls
   back toward 0 past a threshold: since ADR 0014 the row reads `undetermined` / `nedeterminat` once
   the peak leaves the frame, and the note now says so (R-013). Every structure golden changes in

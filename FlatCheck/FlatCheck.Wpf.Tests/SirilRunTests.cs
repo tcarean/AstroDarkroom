@@ -69,6 +69,29 @@ public class SirilRunViewModelTests
         Assert.Equal(SessionMessages.RunSucceeded(), vm.Outcome);
     }
 
+    /// <summary>
+    /// When the script could not be read, the window shows the verb Siril printed; the log
+    /// says the same, not "command 3 of 0" (the review of 2026-10-27, A12).
+    /// </summary>
+    [Fact]
+    public async Task WithoutTheScriptsTextTheLogNamesTheVerbSirilPrinted()
+    {
+        var vm = new SirilRunViewModel(@"C:\sesiune", @"C:\scripturi\proba.ssf", "");
+        using var capture = LogCapture.Start();
+
+        await vm.RunAsync(Fake(0,
+            "log: Running command: requires",
+            "log: Running command: cd",
+            "log: Running command: convert",
+            "log: Script execution finished successfully."));
+
+        Assert.Equal(0, vm.CommandCount);
+        Assert.Equal(3, vm.CommandIndex);
+        var ended = Assert.Single(capture.Events, e => e.Message.StartsWith("run ended", StringComparison.Ordinal));
+        Assert.EndsWith(" at command 3: convert", ended.Message);
+        Assert.DoesNotContain("of 0", ended.Message);
+    }
+
     /// <summary>Code 1 is a failure, and the verdict says at which command it stopped.</summary>
     [Fact]
     public async Task ANonZeroExitCodeIsAFailureNamingTheStep()

@@ -247,7 +247,7 @@ public class LensProfileReaderTests
     [Fact]
     public void AnAdobeLensHasNoCalibrationLabel_SoItsWhereIsTheMount()
     {
-        var stub = AdobeProfileFile.FromName(@"C:\p\Nikon\NIKON D90 (Nikon AF-S DX NIKKOR 35mm f1.8G) - RAW.lcp");
+        var stub = AdobeProfileFile.FromName("C:/p/Nikon/NIKON D90 (Nikon AF-S DX NIKKOR 35mm f1.8G) - RAW.lcp");   // slashes: splits on Unix too
         Assert.False(stub.Lens.HasCalibration);
         Assert.Equal("NIKON D90", stub.Lens.Where);
         Assert.Equal(stub.Lens.Name, stub.Lens.Title);
@@ -261,7 +261,6 @@ public class LensProfileReaderTests
         var s = LensProfileTestData.Sources(ws);
 
         Assert.Equal(2, s.AdobeFiles);
-        Assert.Equal(0, s.AdobeFilesSkipped);
         Assert.True(s.LensfunPresent);
         Assert.Contains("upstream commit: test", s.LensfunVersion);
         Assert.Equal(2, s.AdobeLenses);          // the same lens on two mounts, known from the file names alone
@@ -298,6 +297,78 @@ public class LensProfileReaderTests
         Assert.Equal("", phone.Lens.Mount);
         var compact = AdobeProfileFile.FromName(System.IO.Path.Combine("x", "Canon", "Canon PowerShot G12 - RAW.lcp"));
         Assert.Equal("Canon PowerShot G12", compact.Lens.Name);
+    }
+
+    /// <summary>
+    /// R-107: a subfolder the user may not list loses its own files only; the other subfolders
+    /// of the same root are still read. Before, the enumeration threw inside the root's try
+    /// and the whole root, 3500 files on the author's machine, was left out (the review of
+    /// 2026-10-27, A7). The folder is made unlistable with a deny rule.
+    /// </summary>
+    [Fact]
+    public void R107_AnUnlistableSubfolderLosesItsOwnFilesOnly_NotTheWholeRoot()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string locked = Path.Combine(dir, "Locked");
+        Directory.CreateDirectory(locked);
+        File.WriteAllText(Path.Combine(locked, "Canon (Canon EF 50mm f1.4 USM) - RAW.lcp"),
+            LensProfileTestData.LcpOneProfile("Canon", "Canon EF 50mm f/1.4 USM", "EF50mm f/1.4 USM", "198", "1", "50"));
+        using var deny = UnlistableFolder.Deny(locked);
+
+        var s = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+
+        Assert.Equal(2, s.AdobeFiles);
+        Assert.Equal(2, s.AdobeLenses);
+        Assert.DoesNotContain(s.Catalog.Lenses, l => l.Name.Contains("50mm"));
+    }
+
+    /// <summary>
+    /// R-107: an Adobe root the user may not list at all is left out whole, with a Warn line
+    /// naming it, as the design note and ADR 0066 say; the enumeration's IgnoreInaccessible
+    /// must not swallow the root itself in silence (the review's finding of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R107_AnUnlistableRootIsLeftOutWithAWarnLine()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string root = Path.Combine(ws.Dir, "locked-root");
+        Directory.CreateDirectory(Path.Combine(root, "Canon"));
+        File.WriteAllText(Path.Combine(root, "Canon", "Canon (Canon EF 50mm f1.4 USM) - RAW.lcp"),
+            LensProfileTestData.LcpOneProfile("Canon", "Canon EF 50mm f/1.4 USM", "EF50mm f/1.4 USM", "198", "1", "50"));
+        using var deny = UnlistableFolder.Deny(root);
+        using var capture = LogCapture.Start();
+
+        var s = ProfileLocator.Locate(new[] { root, dir }, Path.Combine(dir, "lensfun"));
+
+        Assert.Equal(2, s.AdobeFiles);   // the second root's two, nothing of the first
+        var warned = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn && e.Message.Contains("could not be listed"));
+        Assert.Contains(root, warned.Message);
+    }
+
+    /// <summary>
+    /// A file that parses to no vignetting profile (the A3 lens) is a Debug line when the
+    /// catalog parses it, so a report that says "no vignetting profile" can be traced to the
+    /// file (the review of 2026-10-27, A8).
+    /// </summary>
+    [Fact]
+    public void AFileThatParsesToNoProfileIsADebugLineInTheLog()
+    {
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string path = Path.Combine(dir, "Tokina", "Canon (Canon RF 28mm F2.8 STM) - RAW.lcp");
+        File.WriteAllText(path, LensProfileTestData.LcpWithoutVignette("Canon", "Canon RF 28mm F2.8 STM", "RF28mm F2.8 STM", "61182", "1", "28"));
+        var s = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        using var capture = LogCapture.Start();
+
+        var profiles = s.Catalog.ProfilesOf(s.Catalog.Lenses.Single(l => l.Name.Contains("28mm")));
+
+        Assert.Empty(profiles);
+        var line = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Debug && e.Message.Contains("no vignetting profile"));
+        Assert.Contains(path, line.Message);
     }
 
     [Fact]
@@ -337,7 +408,6 @@ public class LensProfileReaderTests
 
         Assert.Equal(3, s.AdobeFiles);
         Assert.Equal(1, s.AdobeFilesDuplicate);
-        Assert.Equal(0, s.AdobeFilesSkipped);
         var lenses = s.Catalog.Lenses;
         Assert.Equal(2, lenses.Count);
         Assert.Equal(new[] { "Canon", "NIKON CORPORATION" }, lenses.Select(l => l.Mount).OrderBy(m => m, StringComparer.Ordinal));
@@ -398,7 +468,7 @@ public class LensProfileReaderTests
     public void R107_SourcesSummary_NamesTheDuplicatesSkippedOnlyWhenThereAreAny()
     {
         static ProfileSources Sources(int duplicates)
-            => new(new[] { "x" }, 10, 0, duplicates, "lf", false, null, LensCatalog.Empty, LensfunData.Empty);
+            => new(new[] { "x" }, 10, duplicates, "lf", false, null, LensCatalog.Empty, LensfunData.Empty);
         using (Ui.Use(UiLanguage.English))
         {
             Assert.Contains("10 files (7164 duplicates skipped)", SyntheticReport.SourcesSummary(Sources(7164)));
@@ -761,6 +831,40 @@ public class SyntheticRunTests
         Assert.Equal("RGGB", FitsReader.HStr(hdr, "BAYERPAT", ""));
         Assert.Contains(cards, c => c.StartsWith("HISTORY") && c.Contains("--synthetic"));
         Assert.InRange(img.At(80, 120), 0.99, 1.0);
+    }
+
+    /// <summary>
+    /// R-071: a lens whose Adobe file carries no vignetting model (1275 of the 3531 files on the
+    /// author's machine on 2026-10-27, the extender combinations among them) is listed, since
+    /// listing reads names only, but refused with the reason and exit 1 when asked for: not a
+    /// NullReferenceException from a null nearest profile (the review of 2026-10-27, A3).
+    /// </summary>
+    [Fact]
+    public void R071_ALensWhoseFileHasNoVignettingModelIsRefusedWithTheReason()
+    {
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        const string Name = "Canon RF 100-400mm F5.6-8 IS USM + EXTENDER RF2x";
+        File.WriteAllText(Path.Combine(dir, "Tokina", $"Canon ({Name}) - RAW.lcp"),
+            LensProfileTestData.LcpWithoutVignette("Canon", Name, "RF100-400mm F5.6-8 IS USM + RF2x", "61182", "1", "200"));
+        var sources = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        string reference = ws.WriteFile("ref.fit", Reference());
+        var req = new SyntheticRequest { LensText = "EXTENDER RF2x" };
+        var sw = new StringWriter();
+
+        var run = SyntheticRun.Execute(reference, req, sources, null, 8, null, sw);
+
+        Assert.True(run.Refused);
+        Assert.False(run.RefusedChoice);
+        Assert.Contains($"FLAT SINTETIC: obiectivul \"{req.Lens.Title}\" nu are profil de vignetare", run.Refusal);
+        Assert.Contains(run.Refusal, sw.ToString());
+
+        var stderr = new StringWriter();
+        int exit = FlatCheckCli.Run(new[] { reference, "--synthetic", ws.PathTo("synth.fit"), "--lens", "EXTENDER RF2x", "--fstop", "8", "--profiles", dir },
+                                    new StringWriter(), stderr);
+        Assert.Equal(1, exit);
+        Assert.StartsWith("EROARE: FLAT SINTETIC: obiectivul", stderr.ToString());
+        Assert.False(File.Exists(ws.PathTo("synth.fit")));
     }
 
     /// <summary>
@@ -1208,7 +1312,7 @@ public class LensIdentificationTests
         Assert.Equal("b.NEF", LensIdentification.FirstRaw(new[] { "a.fit", "b.NEF", "c.nef" }));
         Assert.Null(LensIdentification.FirstRaw(new[] { "a.fit" }));
         Assert.Null(LensIdentification.FirstRaw(null));
-        Assert.Equal("b.NEF", LensIdentification.NameOf(@"E:\x\flats\b.NEF"));
+        Assert.Equal("b.NEF", LensIdentification.NameOf("E:/x/flats/b.NEF"));   // slashes: splits on Unix too
         Assert.Null(LensIdentification.NameOf(null));
     }
 }
