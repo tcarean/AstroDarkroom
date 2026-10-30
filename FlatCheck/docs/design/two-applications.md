@@ -200,16 +200,16 @@ preselected and not run at open, the smoothed master as a third kind of row (chi
   That last part is general and lives in `TabViewModel.RunGuardedAsync`: it numbers its runs
   and lets only the latest one clear the busy state, show an error or drop the result, and
   nothing more: the run's own writes inside the work are the tab's; `TabViewModelTests` pins
-  it with a stub tab. The button tabs never
-  overlap runs. The Exposure tab can start two: its overlay covers the result column, so the
-  list and the Sky switch stay clickable during a run, and a second pick starts a run that
-  queues at the gate while the first holds the lease through its writes, so the latest pick
-  lands last (measured 2026-10-30, ADR 0077; `SemaphoreSlim` also serves its waiters in order,
-  an implementation detail that matters only when both picks queue behind the opening chain).
-  Without a gate the first run's figures can land after the second's, which is why the Exposure
-  tab keeps the run its setters start in `Pending`, as the Histogram tab does, and the tests
-  await that run rather than start another. Each view is a
-  bitmap made on the UI thread straight from the full-resolution raster (`RasterBitmaps`), with
+  it with a stub tab. The button tabs never overlap runs. The Exposure tab can start two: its
+  overlay covers the result column, so the list and the Sky switch stay clickable during a
+  run, and a second pick starts a run that queues at the gate while the first holds the lease
+  through its writes, so the latest pick lands last (measured 2026-10-30, ADR 0077;
+  `SemaphoreSlim` also serves its waiters in order, an implementation detail that matters only
+  when both picks queue behind the opening chain). Without a gate the first run's figures can
+  land after the second's, which is why the Exposure tab keeps the run its setters start in
+  `Pending`, as the Histogram tab does, and the tests await that run rather than start
+  another. Each view is a bitmap made on the UI thread straight from the full-resolution
+  raster (`RasterBitmaps`), with
   no PNG in between, and cached per chip and per state of the false-colours checkbox
   (`modes-histeq.md`, "The false colours").
 

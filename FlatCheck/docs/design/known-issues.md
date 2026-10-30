@@ -5,8 +5,10 @@
 > stay here as numbered pointers, since other notes and tests cite them by number. **Covers:**
 > behaviour that is deliberate or not worth changing, by pointer in the files its items name:
 > `FitsReader.cs`, `ImageLoader.cs`, `RawReader.cs`, `PreviewReader.cs`, `Metrics.cs`,
-> `Stats.cs`, `Analysis/StructureAnalyzer.cs`, `PngWriter.cs` and
-> `FlatCheck.Wpf/ViewModels/ExposureTabViewModel.cs`; read before "fixing" any of it.
+> `Stats.cs`, `Analysis/StructureAnalyzer.cs`, `PngWriter.cs` and, for item 9, the run bodies of
+> `FlatCheck.Wpf/ViewModels/ExposureTabViewModel.cs`, `SmoothTabViewModel.cs`,
+> `SyntheticTabViewModel.cs`, `HistEqTabViewModel.cs` and `SplitTabViewModel.cs`; read before
+> "fixing" any of it.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -62,7 +64,11 @@ correctness bugs that used to live here were fixed in phase 8.
    folder changed writes its report, figures and `HasResult` on the tab the new folder reset,
    under the new folder's list with nothing selected, until the next pick. The Smoothing and
    Synthetic lambdas check the token on the pool thread at the end of the computation, so a
-   cancellation between that check and the continuation lands their figures the same way; the
-   Histogram and Split lambdas check after the hop back and do not. Reproduced deterministically
-   on the Exposure tab on 2026-10-30; the owner left it as it is (ADR 0077, where the one-line
-   check and the button lock are the alternatives rejected).
+   cancellation between that check and the continuation lands their figures too: the proposal
+   and the comparison exactly as Exposure does; the two runs that write a file land them, may
+   first ask the overwrite question about the old folder's file, then end as cancelled when
+   the write's `Task.Run` refuses the cancelled token, which hides the figures again
+   (`HasResult` false). The Histogram lambda and the Split's run body check after the hop back
+   and land nothing. Reproduced deterministically on the Exposure tab on 2026-10-30; the owner
+   left it as it is (ADR 0077, where the one-line check and the button lock are the
+   alternatives rejected).

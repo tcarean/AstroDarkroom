@@ -29,10 +29,11 @@ its computation: a folder change during an Exposure run lands the old folder's f
 reset tab, reproduced deterministically with a queued `SynchronizationContext` (the
 computation done, the token cancelled and the tab reset before its continuation ran). The
 review of the branch (2026-10-30, after the decision) found the hole wider than the owner was
-told: the Histogram and Split lambdas re-check the token after the hop back to the UI thread,
-but the Smoothing and Synthetic lambdas check it on the pool thread at the end of the
-computation, so the same reproduction lands their figures too, in the narrower window between
-that check and the continuation; only Exposure checks nowhere after the computation. The
+told: the Histogram lambda and the Split's run body re-check the token after the hop back to
+the UI thread, but the Smoothing and Synthetic lambdas check it on the pool thread at the end
+of the computation, so the same reproduction lands their figures too, in the narrower window
+between that check and the continuation (their file-writing runs then end as cancelled at the
+write's `Task.Run` and hide them again); only Exposure checks nowhere after the computation. The
 owner's standing instruction for the task: fix nothing the real window cannot do, and where
 it can, the least-risk fix, without overcomplicating.
 
@@ -65,6 +66,8 @@ in `known-issues.md` as deliberate.
   `APickKeepsItsRunInPendingUntilItLands` pins that `Pending` is that run. The two window
   smoke tests of the Exposure tab await it too.
 - A folder change during an Exposure run still lands the old folder's figures on the reset tab
-  until a new pick replaces them, and a Smoothing or Synthetic run cancelled between its last
-  check and its continuation does the same (`known-issues.md`, item 9).
+  until a new pick replaces them; a Smoothing proposal or a Synthetic comparison cancelled
+  between its last check and its continuation does the same, and their file-writing runs land
+  the figures, may ask the overwrite question, then end as cancelled (`known-issues.md`,
+  item 9).
 - `two-applications.md` says which tabs can overlap runs and what orders them.

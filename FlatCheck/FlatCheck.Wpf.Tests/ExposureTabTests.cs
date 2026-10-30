@@ -180,10 +180,11 @@ public class ExposureTabTests
 
     /// <summary>
     /// A pick's run is the one in Pending, so a test awaits that run and never starts a second
-    /// one beside it: two runs of the same tab at once (the tests attach no gate) let the first
-    /// one's figures land after the second one's, which is how PickingAnotherFileRecomputes
-    /// flaked on 2026-10-27 (ADR 0077). The Sky switch's run is kept the same way. The test
-    /// holds the gate while it looks at the run, so "not yet landed" rests on no timing.
+    /// one beside it: two runs of the same tab at once (the other tests attach no gate) let the
+    /// first one's figures land after the second one's, which is how
+    /// PickingAnotherFileRecomputes flaked on 2026-10-27 (ADR 0077). The Sky switch's run is
+    /// kept the same way. The test holds the gate while it looks at the run, so "not yet
+    /// landed" rests on no timing.
     /// </summary>
     [Fact]
     public async Task APickKeepsItsRunInPendingUntilItLands()

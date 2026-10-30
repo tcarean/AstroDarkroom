@@ -23,8 +23,10 @@ the real window cannot do, and where it can, the least-risk fix.
 2. The test's own body, 30 rounds alone: 1 failure. The first file 2048x2048 and the second
    128x128, no gate: the stale run overwrote the new pick 3 of 3. The same two picks with a
    `HeavyRunGate`: the latest pick landed last 3 of 3, because a run holds the lease through
-   its writes and the semaphore's waiters are served in order. The window always attaches the
-   gate (`MainViewModel.OpenAsync`), so there the last pick wins.
+   its writes and the semaphore's waiters are served in order (after the review of 2026-10-30:
+   the lease alone orders two picks; the waiter order is an implementation detail that matters
+   only behind the opening chain). The window always attaches the gate
+   (`MainViewModel.OpenAsync`), so there the last pick wins.
 3. The Exposure tab's busy overlay sits in the result column (`ExposureView.xaml`), so the list
    and the Sky switch stay clickable during a run; the gate orders the runs they start.
 4. The folder button is disabled by `MainViewModel.IsRunning`, which only the opening chain
@@ -49,7 +51,8 @@ second run. No token check after the await, no lock on the folder button.
    in `Pending`, not complete until the figures are there; the Sky switch's run too). It does
    not compile before the change.
 2. `ExposureTabViewModel.Pending`, set by `Recompute`; `RecomputeAsync` becomes private, since
-   no test calls it once they all await `Pending` (the review found the smoke tests among them).
+   no test calls it once they all await `Pending` (corrected after the review of 2026-10-30,
+   which found the smoke tests among them; the plan first kept it internal for them).
 3. Every `await vm.RecomputeAsync()` that follows a `Selected` or `Sky` setter in
    `ExposureTabTests`, and the `Task expo` of `MainViewModelTests`, awaits `Pending`.
 4. `docs/design/two-applications.md`: the Exposure tab keeps its run in `Pending`; the gate,
