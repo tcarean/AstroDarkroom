@@ -105,7 +105,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the seven tab headers before (R-157; ADR 0065).
 - An edge region darker than the sky on every channel was called "warm (horizon glow / light
   pollution)"; it is now named a darkening, browner or bluer by the channel missing most, read
-  as dust at the frame's edge or a gradient left over, to check in Preview; on the bottom row,
+  as dust at the frame's edge or a gradient left over, to look at by eye; on the bottom row,
   where the horizon sits, red over blue keeps the horizon's name, and elsewhere a brightening
   that is red over blue is "warm (reddish)" (R-093).
 - An edge flagged with the colour of the corner beside it, and less than it, is no longer a

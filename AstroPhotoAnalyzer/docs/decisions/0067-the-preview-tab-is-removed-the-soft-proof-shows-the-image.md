@@ -14,9 +14,10 @@ with the screen-versus-paper rule: the width the file would print at a monitor's
 many times the monitor's distance to step back to see the reference print
 (`ScreenStepBackFactor`). The three members existed for that card alone (ADR 0007 and ADR 0020
 cite them as the example of a window figure computed in the core; ADR 0012 lists
-`ScreenPixelMm` among the literals lifted into `Thresholds` for a window text). Two sentences of the report
-sent the reader to the tab: the darkening of a coloured edge region ("check in Preview") and
-the note on the neutral edge regions ("check in Preview before you correct anything", R-093).
+`ScreenPixelMm` among the literals lifted into `Thresholds` for a window text). Two sentences
+of the report sent the reader to the tab: the darkening of a coloured edge region ("check in
+Preview") and the note on the neutral edge regions ("check in Preview before you correct
+anything", R-093).
 
 On 2026-10-30 the Soft proof tab arrived (R-163, ADR 0066): the whole image through the paper's
 ICC profile, maximised in its own window, with wheel zoom and drag pan, the original beside it.

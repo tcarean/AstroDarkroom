@@ -60,7 +60,10 @@ public class ViewModelTests
         Assert.False(vm.Tones.HasResult);
         Assert.Empty(vm.Tones.Rows);
         Assert.Empty(vm.Tones.SimulationRows);
+        Assert.Empty(vm.Tones.Histogram);
+        Assert.Empty(vm.Tones.LadderRows);
         Assert.Empty(vm.Tones.Guide);
+        Assert.True(double.IsNaN(vm.Tones.PaperBlack));
         // Until 2026-10-30 these three tabs cleared only HasResult and kept their rows.
         Assert.False(vm.Export.HasResult);
         Assert.Empty(vm.Export.Rows);
