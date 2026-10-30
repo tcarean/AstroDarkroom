@@ -318,7 +318,8 @@ a library extraction and not a copy is ADR 0011.
     kinds of row, `HistEqKind`. The only part of the app with real rules, and the part with
     the most tests.
     `ProfileCatalog` is the lens-profile catalog loaded once for the whole window (in the
-    background, on first request, retried after a failure) - it was the Sintetic tab's
+    background, on first request, retried only after a load that threw; a folder that could
+    not be listed is left out by the locator, not a failure) - it was the Sintetic tab's
     until the Structure tab needed the same list; `MainViewModel` builds it and hands it
     to both, and a `Func<string, LoadedFrame>` beside it lets the tests put a fabricated
     raw in place of a file in `flats/`.

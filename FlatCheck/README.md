@@ -61,8 +61,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version
 - `artifacts/X.Y.Z/wpf/FlatCheck.Wpf.exe`, with its files.
 
 Each has a `lensfun/` folder beside it: copy it along with the executable. Without it everything
-works, but the list of lens profiles holds only Adobe's, and says which folder it looked in. The
-two `dotnet publish` commands the script runs are under "Development".
+works, but the list of lens profiles holds only Adobe's, and says which folder it looked in. A
+folder that is there but cannot be read (a permission) counts the same, and the list says so:
+"the folder could not be read"; the diagnostic log has the reason, and the window looks for the
+profiles only once while it runs, so fix the permission and restart it. The two `dotnet publish`
+commands the script runs are under "Development".
 
 **What FlatCheck works with:**
 
