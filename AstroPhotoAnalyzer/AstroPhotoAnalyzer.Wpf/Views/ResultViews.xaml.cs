@@ -67,6 +67,33 @@ namespace AstroPhotoAnalyzer.Wpf
         public PreviewView() => InitializeComponent();
     }
 
+    /// <summary>The Soft proof tab's view (R-163); the XAML holds everything.</summary>
+    public partial class SoftProofView : UserControl
+    {
+        /// <summary>Loads the XAML.</summary>
+        public SoftProofView() => InitializeComponent();
+    }
+
+    /// <summary>
+    /// The soft proof's controls (R-163), shared by the tab and the full-screen window over the
+    /// same view-model; the window hides the "Full screen" button.
+    /// </summary>
+    public partial class SoftProofControls : UserControl
+    {
+        /// <summary>Whether the "Full screen" button is shown; the tab keeps it, the window hides it.</summary>
+        public static readonly DependencyProperty ShowFullScreenButtonProperty =
+            DependencyProperty.Register(nameof(ShowFullScreenButton), typeof(bool), typeof(SoftProofControls), new PropertyMetadata(true));
+
+        /// <summary>Loads the XAML.</summary>
+        public SoftProofControls() => InitializeComponent();
+
+        public bool ShowFullScreenButton
+        {
+            get => (bool)GetValue(ShowFullScreenButtonProperty);
+            set => SetValue(ShowFullScreenButtonProperty, value);
+        }
+    }
+
     /// <summary>
     /// The Editare Curbe tab's view (R-146): the XAML, plus the gallery's size for the view-model.
     /// </summary>
