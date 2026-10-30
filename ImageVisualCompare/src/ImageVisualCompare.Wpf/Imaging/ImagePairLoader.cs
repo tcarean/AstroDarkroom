@@ -162,29 +162,9 @@ public sealed class ImagePairLoader(IImageLoader loader)
 
             PadPlan pad = ImagePairValidator.Inspect(beforeInfo, afterInfo);
 
-            if (pad.RequiresPadding)
+            if (await SettlePaddingAsync(beforeInfo, afterInfo, pad, confirmPadding, clock).ConfigureAwait(false) is { } unsettled)
             {
-                string sizes = "the sizes differ: A " + LogText.Size(beforeInfo.PixelWidth, beforeInfo.PixelHeight)
-                    + ", B " + LogText.Size(afterInfo.PixelWidth, afterInfo.PixelHeight)
-                    + ", canvas " + LogText.Size(pad.Width, pad.Height);
-                if (confirmPadding is null)
-                {
-                    Log.Info(sizes + "; no one to ask, so the pair is refused");
-                    clock.Done("refused: the sizes differ");
-                    return ImagePairLoadResult.Failure(
-                        ImagePairValidator.DescribeMismatch(beforeInfo, afterInfo, pad));
-                }
-
-                Log.Info(sizes + "; asking whether to pad");
-                bool padded = await confirmPadding(new PadRequest(beforeInfo, afterInfo, pad)).ConfigureAwait(false);
-                clock.Lap("question");
-                if (!padded)
-                {
-                    clock.Done("declined: the padding was answered no");
-                    return ImagePairLoadResult.Declined;
-                }
-
-                Log.Info("the padding was answered yes");
+                return unsettled;
             }
 
             // Sequentially, not in parallel: one decoder at a time, and the progress report names
@@ -192,18 +172,7 @@ public sealed class ImagePairLoader(IImageLoader loader)
             // decodes at once would double, did not hold when measured on 2026-09-08: WIC streams
             // each conversion with no spike above the finished bitmap (docs/design/imaging.md).
             // Decoding both at once has not been measured.
-            // A mode other than linear needs both files shown as stored (R-110); for any other
-            // pair the loaders would render linear anyway, and asking them so keeps the pair's
-            // own mode true to what is on screen.
-            if (!beforeInfo.ShownAsStored || !afterInfo.ShownAsStored)
-            {
-                if (mode != DisplayMode.Linear)
-                {
-                    Log.Debug("mode " + mode + " asked, Linear used: not both files are shown as stored");
-                }
-
-                mode = DisplayMode.Linear;
-            }
+            mode = ModeFor(beforeInfo, afterInfo, mode);
 
             currentPath = beforePath;
             progress?.Report(new ImageLoadProgress(0, beforeInfo.FileName));
@@ -218,10 +187,7 @@ public sealed class ImagePairLoader(IImageLoader loader)
             Log.Info("decoded B: " + LogText.Decoded(after.Info, after.Mode));
 
             progress?.Report(new ImageLoadProgress(1, null));
-            var pair = new ImagePair(before, after, pad);
-            clock.Done("mode=" + pair.Mode + " padded=" + LogText.Yes(pad.RequiresPadding)
-                + " canvas=" + LogText.Size(pair.PixelWidth, pair.PixelHeight) + " buffers=" + LogText.MiB(pair.DisplayBytes));
-            return ImagePairLoadResult.Success(pair);
+            return Done(new ImagePair(before, after, pad), clock);
         }
         catch (OperationCanceledException)
         {
@@ -231,14 +197,205 @@ public sealed class ImagePairLoader(IImageLoader loader)
         }
         catch (Exception ex) when (IsExpectedLoadFailure(ex))
         {
-            string message = $"{UiText.Current.CouldNotRead(Path.GetFileName(currentPath))}{Environment.NewLine}{ex.Message}";
-
-            // The exception with its type, its stack and its inner exception (a codec's own, ADR
-            // 0031), which the message leaves out, beside the message as the user reads it.
-            Log.Error(ex, "could not read " + currentPath + "; the user is told: " + LogText.OneLine(message));
-            clock.Done("failed on " + currentPath);
-            return ImagePairLoadResult.Failure(message);
+            return Failed(ex, currentPath, clock);
         }
+    }
+
+    /// <summary>
+    /// Changes one image of a pair on screen and keeps the other as it is (R-009): the new file's
+    /// header first, then, if its size differs from the kept image's, the question whether to
+    /// pad, then the one decode; the kept image is not read again, unless the pair's mode is no
+    /// longer the one it was rendered in.
+    /// </summary>
+    /// <param name="current">The pair on screen, both images decoded.</param>
+    /// <param name="side">The image the file replaces; the other is kept.</param>
+    /// <param name="path">The new file.</param>
+    /// <param name="progress">
+    /// Told 0 and the new file's name as its decode starts, 0.5 and the kept file's name when
+    /// that one has to be decoded again, and 1 with no name at the end; null for no reports.
+    /// </param>
+    /// <param name="confirmPadding">
+    /// As for <see cref="LoadAsync"/>: asked only when the new file's size differs from the kept
+    /// image's, with the kept image on its own side of the question.
+    /// </param>
+    /// <param name="mode">
+    /// How the samples become pixels: asked of the decode when the kept image and the new file
+    /// are both shown as stored, and <see cref="DisplayMode.Linear"/> otherwise. The kept image
+    /// is decoded again in the pair's mode when it was rendered in another, so that both images
+    /// of a pair are always in one mode.
+    /// </param>
+    /// <param name="cancellationToken">As for <see cref="LoadAsync"/>.</param>
+    /// <returns>
+    /// The new pair, in which the kept image is the very <see cref="LoadedImage"/> of
+    /// <paramref name="current"/> unless it had to be decoded again; or a failure naming the
+    /// file that could not be read, or the mismatch when there was no one to ask; or
+    /// <see cref="ImagePairLoadResult.Declined"/>.
+    /// </returns>
+    public async Task<ImagePairLoadResult> ReplaceAsync(
+        ImagePair current,
+        ImageSide side,
+        string path,
+        IProgress<ImageLoadProgress>? progress = null,
+        Func<PadRequest, Task<bool>>? confirmPadding = null,
+        DisplayMode mode = DisplayMode.Linear,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(current);
+
+        LoadedImage kept = side == ImageSide.A ? current.After : current.Before;
+        string keptSide = side == ImageSide.A ? "B" : "A";
+        string currentPath = path;
+
+        using RunClock clock = RunClock.Start(
+            Log,
+            "replace",
+            "A=" + (side == ImageSide.A ? path : kept.Info.Path) + " B=" + (side == ImageSide.B ? path : kept.Info.Path)
+                + " changes=" + side + " mode=" + mode);
+
+        try
+        {
+            // Only the new file's header: the kept image's was read when it was opened, and its
+            // size is what the new file is measured against.
+            ImageInfo info = await Task.Run(() => loader.Probe(path), cancellationToken).ConfigureAwait(false);
+            clock.Lap("probe " + side);
+            LogProbe(side.ToString(), info);
+
+            ImageInfo beforeInfo = side == ImageSide.A ? info : kept.Info;
+            ImageInfo afterInfo = side == ImageSide.B ? info : kept.Info;
+            PadPlan pad = ImagePairValidator.Inspect(beforeInfo, afterInfo);
+
+            if (await SettlePaddingAsync(beforeInfo, afterInfo, pad, confirmPadding, clock).ConfigureAwait(false) is { } unsettled)
+            {
+                return unsettled;
+            }
+
+            mode = ModeFor(beforeInfo, afterInfo, mode);
+
+            progress?.Report(new ImageLoadProgress(0, info.FileName));
+            LoadedImage changed = await loader.LoadAsync(path, mode, cancellationToken).ConfigureAwait(false);
+            clock.Lap("decode " + side);
+            Log.Info("decoded " + side + ": " + LogText.Decoded(changed.Info, changed.Mode));
+
+            // A pair is in one mode (R-110): a kept image equalised beside a new file that can
+            // only be linear, or the other way round, would compare nothing.
+            if (kept.Mode != mode)
+            {
+                currentPath = kept.Info.Path;
+                Log.Info("the kept " + keptSide + " was rendered in " + kept.Mode + ", so it is decoded again in " + mode);
+                progress?.Report(new ImageLoadProgress(0.5, kept.Info.FileName));
+                kept = await loader.LoadAsync(kept.Info.Path, mode, cancellationToken).ConfigureAwait(false);
+                clock.Lap("decode " + keptSide);
+                Log.Info("decoded " + keptSide + ": " + LogText.Decoded(kept.Info, kept.Mode));
+            }
+
+            progress?.Report(new ImageLoadProgress(1, null));
+            return Done(side == ImageSide.A ? new ImagePair(changed, kept, pad) : new ImagePair(kept, changed, pad), clock);
+        }
+        catch (OperationCanceledException)
+        {
+            clock.Done("cancelled during " + currentPath);
+            throw;
+        }
+        catch (Exception ex) when (IsExpectedLoadFailure(ex))
+        {
+            return Failed(ex, currentPath, clock);
+        }
+    }
+
+    /// <summary>
+    /// Settles a pair whose sizes differ before anything is decoded: refuses it when there is no
+    /// one to ask, or asks and takes the answer. A matching pair needs nothing.
+    /// </summary>
+    /// <param name="beforeInfo">Image A, as probed.</param>
+    /// <param name="afterInfo">Image B, as probed.</param>
+    /// <param name="pad">The canvas the two would be shown on.</param>
+    /// <param name="confirmPadding">The question, or null when there is no one to ask.</param>
+    /// <param name="clock">The load's clock, told the question's time and the outcome of a refusal.</param>
+    /// <returns>
+    /// The result to return without decoding, the mismatch as a failure or
+    /// <see cref="ImagePairLoadResult.Declined"/>; null when the load goes on.
+    /// </returns>
+    private static async Task<ImagePairLoadResult?> SettlePaddingAsync(
+        ImageInfo beforeInfo, ImageInfo afterInfo, PadPlan pad, Func<PadRequest, Task<bool>>? confirmPadding, RunClock clock)
+    {
+        if (!pad.RequiresPadding)
+        {
+            return null;
+        }
+
+        string sizes = "the sizes differ: A " + LogText.Size(beforeInfo.PixelWidth, beforeInfo.PixelHeight)
+            + ", B " + LogText.Size(afterInfo.PixelWidth, afterInfo.PixelHeight)
+            + ", canvas " + LogText.Size(pad.Width, pad.Height);
+        if (confirmPadding is null)
+        {
+            Log.Info(sizes + "; no one to ask, so the pair is refused");
+            clock.Done("refused: the sizes differ");
+            return ImagePairLoadResult.Failure(ImagePairValidator.DescribeMismatch(beforeInfo, afterInfo, pad));
+        }
+
+        Log.Info(sizes + "; asking whether to pad");
+        bool padded = await confirmPadding(new PadRequest(beforeInfo, afterInfo, pad)).ConfigureAwait(false);
+        clock.Lap("question");
+        if (!padded)
+        {
+            clock.Done("declined: the padding was answered no");
+            return ImagePairLoadResult.Declined;
+        }
+
+        Log.Info("the padding was answered yes");
+        return null;
+    }
+
+    /// <summary>
+    /// The mode a pair is rendered in: the one asked for when both files are shown as stored,
+    /// and linear otherwise (R-110). For any other pair the loaders would render linear anyway;
+    /// asking them so keeps the pair's own mode true to what is on screen.
+    /// </summary>
+    /// <param name="beforeInfo">Image A, as probed.</param>
+    /// <param name="afterInfo">Image B, as probed.</param>
+    /// <param name="mode">The mode asked for.</param>
+    /// <returns>The mode to ask of both decodes.</returns>
+    private static DisplayMode ModeFor(ImageInfo beforeInfo, ImageInfo afterInfo, DisplayMode mode)
+    {
+        if (beforeInfo.ShownAsStored && afterInfo.ShownAsStored)
+        {
+            return mode;
+        }
+
+        if (mode != DisplayMode.Linear)
+        {
+            Log.Debug("mode " + mode + " asked, Linear used: not both files are shown as stored");
+        }
+
+        return DisplayMode.Linear;
+    }
+
+    /// <summary>Writes the done line of a load that ended in a pair, and wraps the pair.</summary>
+    /// <param name="pair">The pair, both images decoded.</param>
+    /// <param name="clock">The load's clock.</param>
+    /// <returns>The success result.</returns>
+    private static ImagePairLoadResult Done(ImagePair pair, RunClock clock)
+    {
+        clock.Done("mode=" + pair.Mode + " padded=" + LogText.Yes(pair.Pad.RequiresPadding)
+            + " canvas=" + LogText.Size(pair.PixelWidth, pair.PixelHeight) + " buffers=" + LogText.MiB(pair.DisplayBytes));
+        return ImagePairLoadResult.Success(pair);
+    }
+
+    /// <summary>
+    /// Turns a failure of a file into the message the user reads (R-005), logged beside the
+    /// exception with its type, its stack and its inner exception (a codec's own, ADR 0031),
+    /// which the message leaves out.
+    /// </summary>
+    /// <param name="ex">What the probe, the question or the decode threw.</param>
+    /// <param name="path">The file being read when it was thrown.</param>
+    /// <param name="clock">The load's clock, told the outcome.</param>
+    /// <returns>The failure result with its message.</returns>
+    private static ImagePairLoadResult Failed(Exception ex, string path, RunClock clock)
+    {
+        string message = $"{UiText.Current.CouldNotRead(Path.GetFileName(path))}{Environment.NewLine}{ex.Message}";
+        Log.Error(ex, "could not read " + path + "; the user is told: " + LogText.OneLine(message));
+        clock.Done("failed on " + path);
+        return ImagePairLoadResult.Failure(message);
     }
 
     /// <summary>

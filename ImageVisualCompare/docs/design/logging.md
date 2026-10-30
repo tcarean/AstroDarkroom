@@ -76,7 +76,12 @@ breaks as ` | `.
 
 `ImagePairLoader.LoadAsync` holds a `RunClock` in a `using`: `RunClock.Start` writes
 `load start A=<path> B=<path> mode=<asked>`, `Lap` ends a stage (`probe A`, `probe B`, `question`
-while the padding is asked, `decode A`, `decode B`), and `Done` writes `load done <outcome> in N ms
+while the padding is asked, `decode A`, `decode B`), and `Done` writes `load done <outcome> in N ms`.
+`ReplaceAsync` (R-009) holds one named `replace`: `replace start A=<path> B=<path> changes=A|B
+mode=<asked>`, the stages of the one side probed and decoded, `decode` of the other side only when
+the kept file is decoded again, which a line `the kept A|B was rendered in <m>, so it is decoded
+again in <m>` announces, and `replace done` with the same outcomes as a load. The load's lines
+continue: `Done` writes `load done <outcome> in N ms
 (<stages>)`. The outcomes: `mode=<m> padded=yes|no canvas=WxH buffers=<MiB>`, `declined`,
 `refused: the sizes differ` (no one to ask), `failed on <path>` after the `Error` line with the
 exception, `cancelled during <path>` without a stack. A load that throws past the catches, a defect,
@@ -91,7 +96,7 @@ and `decoded A:` and `decoded B:` with the range the values were read in and the
 | --- | --- | --- | --- |
 | `LogSetup` | `Process` | Info, Error, Fatal | the first line; the last line, `ExitLine`; the unhandled exceptions, an unobserved task |
 | `App.ApplyCommandLine` | `App` | Info, Warn | `language=en\|ro`; a `--lang` refused; the pair the command line names, or the arguments that are not one, each missing file marked |
-| `MainWindow` | `Window` | Info, Debug | `render tier <0-2> of 2, process render mode <m>` when the window is built (Debug); `open asked by the start\|the Open button\|Ctrl+O`, one asked while another runs (Debug); what the dialogs chose, or that they were cancelled and what follows; a failed open or switch, the message being shown; a declined padding; `mode switch <from> -> <to>`, a refused one with why (Debug); `shown A=<file> B=<file> mode=<m> view=fit\|kept`; `memory:` managed and process, and what the process held before the outgoing pair was released (Debug); About. A repeat of a held `H` or `F` does nothing (`OnModeKeyAsync`, ADR 0044), and a repeat of `Ctrl+O` while a pair is being opened is not passed on, so neither writes a line |
+| `MainWindow` | `Window` | Info, Debug | `render tier <0-2> of 2, process render mode <m>` when the window is built (Debug); `open asked by the start\|the Open button\|Ctrl+O`, one asked while another runs (Debug); `change of A\|B asked by the Change A\|B button`, one asked while a pair is being opened or with no pair shown (Debug); what the dialogs chose, or that they were cancelled and what follows; a failed open, change or switch, the message being shown; a declined padding; `mode switch <from> -> <to>`, a refused one with why (Debug); `shown A=<file> B=<file> mode=<m> view=fit\|kept`; `memory:` managed and process, and what the process held before the outgoing pair was released (Debug); About. A repeat of a held `H` or `F` does nothing (`OnModeKeyAsync`, ADR 0044), and a repeat of `Ctrl+O` while a pair is being opened is not passed on, so neither writes a line |
 | `CompareView` | `Surface` | Debug | `pair set` and `pair replaced, the view kept` with the canvas, the view in physical pixels, the display scale and the zoom; `zoom in\|out\|to fit\|to 100% -> <zoom>`, for a held key its first step only (`_keyRepeat`), then, when it is released, `zoom after the held key -> <zoom>` (`OnKeyUp`); a change of display scale |
 | `ImagePairLoader` | `Load` | Info, Debug, Error | the load's lines above |
 | `WicImageLoader` | `Wic` | Debug | `probed` and `decoding <path>: decoder=<type> format=<WPF's name, or unnamed> bpp=<n> WxH`, for a TIFF its `SampleFormat`, `BitsPerSample` and `SamplesPerPixel`, then `profiles=<n>`, the colour profiles it carries; a float TIFF's range decision (`LogText.FloatRange`). A tag or a profile the codec cannot give is written as such, never thrown |

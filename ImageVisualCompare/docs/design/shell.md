@@ -59,7 +59,10 @@ the files of the pair on screen again (`_selection`, kept from the last open) th
 `LoadWithOverlayAsync` with the mode asked for and the padding answered yes, and
 `ShowPair(pair, keepView: true)` hands the new bitmaps to `CompareView.ReplacePair` instead of
 `SetPair`; for a switch as for an open, the outgoing pair is released after one render pass
-has put the incoming one on screen (`rendering.md`). `_mode` is always what the pair says it was
+has put the incoming one on screen (`rendering.md`). `ToggleModeAsync` keeps only the canvas's
+size across its await, never the pair: a local holding the pair is hoisted into the state machine
+and keeps the outgoing bitmaps alive through that release, which then frees nothing (measured on
+2026-10-30, ADR 0046). `_mode` is always what the pair says it was
 rendered in, so a pair the loader fell back to linear on leaves both toggles unchecked and
 disabled; the pair line of the status bar ends with the mode's name, and the readout gives, in
 false colours, the level `RainbowTable.LevelOf` finds for the pixel's colour. The two toggles
@@ -67,13 +70,37 @@ have their own style, `ToolToggleButton` in `Theme.xaml`, a copy of `ToolButton`
 with an `IsChecked` trigger, since a `ToggleButton` is not a `Button` and cannot be based on
 one.
 
+A change of one image (R-065, ADR 0046) is the third kind of load through the same field.
+`ChangeImageAsync(side, from)`, reached from `ChangeBeforeButton` and `ChangeAfterButton`, the
+two buttons after the file names in `PairPanel`, the left column of the toolbar's grid, returns at
+once while `_opening` is set or with no pair shown. Otherwise it asks `IFileDialogService.PickImage`
+for one file, in the folder of the file it replaces, and hands the pair on screen, the side and the
+file to `ImagePairLoader.ReplaceAsync` through `LoadWithOverlayAsync`, with
+`ConfirmPaddingAsync` for the question and `_mode` for the mode, as an open does; the loader
+keeps the other image's `LoadedImage` and decodes the new file alone (`imaging.md`). The pair is
+read inside `ReplaceShownAsync`, a method of its own, and `ChangeImageAsync` keeps only the
+canvas's size: a local holding the pair would be hoisted into the async method's state machine,
+live through `ShowPair`, and the release there would find the outgoing bitmap referenced and free
+nothing (measured on 2026-10-30, ADR 0046). On success
+`_selection` takes the new path, so a later switch of mode decodes the pair now on screen, and
+`ShowPair` keeps the view when the canvas has the same size as before and fits otherwise; `ShowPair`
+also writes the two names into `BeforeName` and `AfterName` and enables the two buttons, disabled
+in the XAML until the first pair. A cancelled dialog, a declined padding or a failure (the R-005
+dialog, no second file dialog) leave the pair as it was. A change of A moves `_lastDirectory`, so
+`Open…` follows the image A chosen last (R-001). `LoadWithOverlayAsync` takes the load as a
+function of the overlay's progress, the one place the overlay goes up and down for an open, a
+switch and a change alike. `MainWindowTests` changes B and A with dialogs that pick `c.png` for one
+image, and reads the names, the title, the divider and the other image's `Source`, the same bitmap
+object, back; it also cancels the one dialog and clicks the buttons before a pair and while one
+loads.
+
 ## The focus after a toolbar click
 
-Every toolbar button, the two toggles included, is a `ButtonBase` and focusable, so a click
-takes the keyboard focus from the comparison surface, and the surface's shortcuts (R-063)
-would reach the button instead. `MainWindow` adds one handler for `ButtonBase.ClickEvent` on
-the toolbar's panel, `Toolbar`; the event bubbles, so the handler runs after the clicked
-button's own, and it calls `Compare.Focus()`. By then `About`'s window has closed and
+Every toolbar button, the two toggles and the two change buttons included, is a `ButtonBase` and
+focusable, so a click takes the keyboard focus from the comparison surface, and the surface's
+shortcuts (R-063) would reach the button instead. `MainWindow` adds one handler for
+`ButtonBase.ClickEvent` on each of the toolbar's two panels, `PairPanel` and `Toolbar`; the event
+bubbles, so the handler runs after the clicked button's own, and it calls `Compare.Focus()`. By then `About`'s window has closed and
 `Open…`'s file dialogs have been answered; a load that follows, an open or a mode switch,
 focuses the surface once more when the pair is shown (`ShowPair`). The buttons stay focusable:
 `Tab` still reaches them, and the dialog buttons share the style (ADR 0042). `MainWindowTests`
@@ -87,6 +114,10 @@ The main window's constructor writes how WPF renders, its tier and the process's
 first line, and writes one asked for while another runs as ignored; it writes what the dialogs
 chose or that they were cancelled, and, after a load, that a message is shown or that the padding
 was declined. `ToggleModeAsync` writes the switch, or the reason it refuses one.
+`ChangeImageAsync` writes `change of A|B asked by the Change A|B button`, one asked while a pair is
+being opened or with no pair shown as ignored (Debug), what the dialog chose or that it was
+cancelled, and, after the load, that a message is shown or that the padding was declined, the pair
+on screen staying.
 `OnPreviewKeyDown` hands `H` and `F` to `OnModeKeyAsync` with `KeyEventArgs.IsRepeat`, and a repeat
 does nothing there, so a held key switches once (R-114, ADR 0044); it does not pass on a repeat of
 `Ctrl+O` while a pair is being opened, which the open would ignore and log for each. `ShowPair`

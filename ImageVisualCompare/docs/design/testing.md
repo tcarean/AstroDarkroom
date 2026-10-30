@@ -52,7 +52,9 @@ test of its own (ADR 0032). `WpfThread` starts one STA thread for the run, creat
 calls `Run`, and posts each test body to that thread's dispatcher; an exception in the body
 fails the test. `MainWindowTests` builds the main window there with dialogs that count the
 asking and a loader whose decode never ends, and clicks Open twice while the body still holds
-the dispatcher. For the display modes (R-113, R-114) it uses a loader that decodes a 2 × 2
+the dispatcher; the same dialogs pick `c.png` for one image, so the change of one image
+(R-065) is driven through `ChangeImageAsync` and read back from the names, the title, the
+divider and the other image's `Source`, which has to be the same bitmap object. For the display modes (R-113, R-114) it uses a loader that decodes a 2 × 2
 bitmap at once and records the mode of every load: it clicks Open, waits between pumps of the
 dispatcher until the pair line of the status bar is filled, moves the divider, calls
 `ToggleModeAsync` and reads the buttons, the status bar and the divider back; the keys `H` and

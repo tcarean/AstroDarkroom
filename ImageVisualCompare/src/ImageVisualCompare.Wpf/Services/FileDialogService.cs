@@ -31,6 +31,15 @@ public interface IFileDialogService
     /// </param>
     /// <returns>The two files, or null if the user cancels either dialog.</returns>
     ImagePairSelection? PickImagePair(string? initialDirectory = null);
+
+    /// <summary>Asks for one image, the one a change replaces (R-065).</summary>
+    /// <param name="side">The image asked for, which titles the dialog as R-001 does.</param>
+    /// <param name="initialDirectory">
+    /// The folder the dialog opens in; null, an empty string or a folder that is gone leaves the
+    /// choice to Windows.
+    /// </param>
+    /// <returns>The file, or null if the user cancels the dialog.</returns>
+    string? PickImage(ImageSide side, string? initialDirectory = null);
 }
 
 /// <summary>
@@ -49,7 +58,7 @@ public sealed class FileDialogService : IFileDialogService
     /// <inheritdoc/>
     public ImagePairSelection? PickImagePair(string? initialDirectory = null)
     {
-        string? before = Pick(UiText.Current.SelectImageA, initialDirectory);
+        string? before = PickImage(ImageSide.A, initialDirectory);
         if (before is null)
         {
             return null;
@@ -57,7 +66,7 @@ public sealed class FileDialogService : IFileDialogService
 
         // The second image almost always sits beside the first, so start there rather than
         // making the user navigate the same path twice.
-        string? after = Pick(UiText.Current.SelectImageB, Path.GetDirectoryName(before));
+        string? after = PickImage(ImageSide.B, Path.GetDirectoryName(before));
         if (after is null)
         {
             return null;
@@ -65,6 +74,10 @@ public sealed class FileDialogService : IFileDialogService
 
         return new ImagePairSelection(before, after);
     }
+
+    /// <inheritdoc/>
+    public string? PickImage(ImageSide side, string? initialDirectory = null) =>
+        Pick(UiText.Current.SelectImage(side), initialDirectory);
 
     /// <summary>Shows one open dialog for an existing file, with the image formats first.</summary>
     /// <param name="title">The dialog's title, which says which image is being picked.</param>

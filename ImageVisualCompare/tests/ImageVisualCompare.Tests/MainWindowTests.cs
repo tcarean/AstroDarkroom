@@ -42,6 +42,8 @@ public class MainWindowTests
     [InlineData("HistogramButton")]
     [InlineData("FalseColoursButton")]
     [InlineData("OpenButton")]
+    [InlineData("ChangeBeforeButton")]
+    [InlineData("ChangeAfterButton")]
     public async Task R063_AToolbarClick_HandsTheFocusBackToTheComparisonSurface(string buttonName)
     {
         object? surface = null;
@@ -82,15 +84,146 @@ public class MainWindowTests
         Assert.Equal(1, dialogs.Asked);
     }
 
-    /// <summary>Picks the same pair whenever it is asked, and counts the asking.</summary>
+    [Fact]
+    public async Task R065_ChangingImageB_ReplacesItAlone_AndKeepsTheView()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        var dialogs = new CountingDialogs();
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(dialogs, new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        object? imageA = null;
+        Task changed = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.True(window.ChangeAfterButton.IsEnabled);
+            imageA = window.Compare.BeforeImage.Source;
+            window.Compare.Divider.Position = 0.3;
+            changed = window.ChangeImageAsync(ImageSide.B, "the test");
+        });
+        await changed;
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.Equal(("a.png", "c.png"), (window.BeforeName.Text, window.AfterName.Text));
+            Assert.StartsWith("a.png  vs  c.png  —  ", window.Title);
+            Assert.Same(imageA, window.Compare.BeforeImage.Source);
+            Assert.Equal(0.3, window.Compare.Divider.Position);
+            Assert.True(window.HistogramButton.IsEnabled);
+        });
+        Assert.Equal((1, 1), (dialogs.Asked, dialogs.AskedForOne));
+        Assert.Equal(ImageSide.B, dialogs.SideAsked);
+        Assert.Equal(@"C:\pair", dialogs.DirectoryAsked);
+        Assert.Equal(3, loader.Modes.Count);
+    }
+
+    [Fact]
+    public async Task R065_ChangingImageA_ReplacesItAlone()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        var dialogs = new CountingDialogs();
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(dialogs, new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        object? imageB = null;
+        Task changed = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            imageB = window.Compare.AfterImage.Source;
+            changed = window.ChangeImageAsync(ImageSide.A, "the test");
+        });
+        await changed;
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.Equal(("c.png", "b.png"), (window.BeforeName.Text, window.AfterName.Text));
+            Assert.Same(imageB, window.Compare.AfterImage.Source);
+        });
+        Assert.Equal(ImageSide.A, dialogs.SideAsked);
+        Assert.Equal(3, loader.Modes.Count);
+    }
+
+    [Fact]
+    public async Task R065_CancellingTheDialog_LeavesThePairAsItWas()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        var dialogs = new CountingDialogs { CancelsTheChange = true };
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(dialogs, new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        Task changed = null!;
+        await WpfThread.RunAsync(() => changed = window.ChangeImageAsync(ImageSide.B, "the test"));
+        await changed;
+
+        await WpfThread.RunAsync(() => Assert.Equal(("a.png", "b.png"), (window.BeforeName.Text, window.AfterName.Text)));
+        Assert.Equal(1, dialogs.AskedForOne);
+        Assert.Equal(2, loader.Modes.Count);
+    }
+
+    [Fact]
+    public async Task R065_AChangeWhileAPairLoads_OrWithNoPair_AsksForNothing()
+    {
+        var dialogs = new CountingDialogs();
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(dialogs, new ImagePairLoader(new StalledLoader()));
+
+            Assert.False(window.ChangeBeforeButton.IsEnabled);
+            Assert.False(window.ChangeAfterButton.IsEnabled);
+            window.ChangeAfterButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+
+            // The open is still loading, suspended at its first await, when the change comes.
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            window.ChangeBeforeButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+
+        Assert.Equal((1, 0), (dialogs.Asked, dialogs.AskedForOne));
+    }
+
+    /// <summary>
+    /// Picks the same pair whenever it is asked, and <c>c.png</c> for one image, and counts the
+    /// asking; with <see cref="CancelsTheChange"/> the dialog for one image is cancelled.
+    /// </summary>
     private sealed class CountingDialogs : IFileDialogService
     {
         public int Asked { get; private set; }
+
+        public int AskedForOne { get; private set; }
+
+        public ImageSide? SideAsked { get; private set; }
+
+        public string? DirectoryAsked { get; private set; }
+
+        public bool CancelsTheChange { get; init; }
 
         public ImagePairSelection? PickImagePair(string? initialDirectory = null)
         {
             Asked++;
             return new ImagePairSelection(@"C:\pair\a.png", @"C:\pair\b.png");
+        }
+
+        public string? PickImage(ImageSide side, string? initialDirectory = null)
+        {
+            AskedForOne++;
+            SideAsked = side;
+            DirectoryAsked = initialDirectory;
+            return CancelsTheChange ? null : @"C:\pair\c.png";
         }
     }
 

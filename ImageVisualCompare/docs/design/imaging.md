@@ -19,6 +19,7 @@
 > `src/ImageVisualCompare.Core/LevelLookup.cs`,
 > `src/ImageVisualCompare.Core/RainbowTable.cs`,
 > `src/ImageVisualCompare.Core/ImagePairValidator.cs`,
+> `src/ImageVisualCompare.Wpf/Imaging/ImagePairLoader.cs`,
 > and, for the padding, `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`.
 > A change to the code this describes means this note is updated in the same task, or
@@ -194,6 +195,25 @@ forces a finaliser pass and does *not* bother with large object heap compaction.
 
 The same table is kept, as the history of the figures, in `../validation.md`; the figures
 measured since on a real pair are its cases.
+
+## The pair loader, and one image changed
+
+`ImagePairLoader.LoadAsync` is the whole open: the two probes, the canvas (`ImagePairValidator.Inspect`),
+the padding settled before anything is decoded (`SettlePaddingAsync`: refused with no one to ask,
+otherwise asked, and declined without an error), the mode both decodes are asked for (`ModeFor`:
+the one asked when both files are shown as stored, `Linear` otherwise, R-110), then the two
+decodes one after the other. `ReplaceAsync` (R-009, ADR 0046) changes one image of a pair already
+decoded: it probes the new file alone, puts its header beside the kept image's `Info` on the side
+each belongs to, and goes through the same `SettlePaddingAsync` and `ModeFor`, so the question's
+wording, the refusal and the fallback are one code path for both; then it decodes the new file,
+and the kept image's file again only when the kept `LoadedImage` was rendered in another mode than
+the one the pair ends in, which happens when a FITS pair in `Histogram` takes a PNG, or a
+`Linear` pair of a FITS and a PNG has the PNG replaced by a FITS while `Histogram` is asked. The
+kept `LoadedImage` is otherwise the very object of the pair on screen, bitmap included, which is
+what makes the change cost one decode and one buffer; `ImagePairLoaderTests` asserts the object is
+the same. Both methods end through `Done`, the done line and the success result, and `Failed`,
+the R-005 message beside the exception (`IsExpectedLoadFailure` says which exceptions are the
+file's and not the program's).
 
 ## In the diagnostic log
 

@@ -197,6 +197,8 @@ public class WindowLoggingTests
 
         public ImagePairSelection? PickImagePair(string? initialDirectory = null) =>
             _asked < answers.Length ? answers[_asked++] : null;
+
+        public string? PickImage(ImageSide side, string? initialDirectory = null) => null;
     }
 
     /// <summary>Probes every file as one image of this size and decodes it as such a bitmap at once.</summary>
