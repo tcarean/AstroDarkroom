@@ -16,19 +16,24 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Text;
+using NLog;
 using static CopyWcs.Ui;
 
 namespace CopyWcs;
 
 /// <summary>
 /// The header of the primary HDU, as a list of raw 80-character cards, read and written by
-/// hand: no FITS library, no package (ADR 0001). How the cards, the blocks and the in-place
-/// write fit together is in <c>docs/design/fits-header.md</c>.
+/// hand: no FITS library (ADR 0001). How the cards, the blocks and the in-place write fit
+/// together is in <c>docs/design/fits-header.md</c>; the lines it writes to the diagnostic log,
+/// in <c>docs/design/logging.md</c>.
 /// </summary>
 internal sealed class FitsHeader
 {
     private const int CardSize = 80;
     private const int BlockSize = 2880;
+
+    /// <summary>The header engine's lines in the diagnostic log: the reads, the writes and, at Trace, every card (R-042, R-044).</summary>
+    private static readonly Logger Log = LogManager.GetLogger("FitsHeader");
 
     private readonly List<string> _cards = new();
 
@@ -38,7 +43,12 @@ internal sealed class FitsHeader
     /// <summary>The keyword of every card that has one, in the header's order; blank cards are left out.</summary>
     public IEnumerable<string> Keywords => _cards.Select(KeywordOf).Where(k => k.Length > 0);
 
-    /// <summary>Reads the primary header of a FITS file.</summary>
+    /// <summary>
+    /// Reads the primary header of a FITS file, and writes its read line to the diagnostic log:
+    /// the file's size, the header's cards, blocks and data offset, and the keys that say what
+    /// the image is (R-042); at Trace every card (R-044). A file that cannot be read throws, and
+    /// its caller logs the exception.
+    /// </summary>
     /// <param name="path">The file's path.</param>
     /// <returns>The header, with the data offset remembered for <see cref="WriteWithDataFrom"/>.</returns>
     /// <exception cref="InvalidDataException">The file does not begin with SIMPLE, or ends before an END card.</exception>
@@ -48,7 +58,29 @@ internal sealed class FitsHeader
     public static FitsHeader ReadPrimary(string path)
     {
         using var fs = File.OpenRead(path);
-        return ReadFrom(fs);
+        var h = ReadFrom(fs);
+        long length = fs.Length;
+        Log.Info("read " + path + " (" + LogText.Size(length) + ") bytes=" + LogText.Int(length)
+                 + " cards=" + LogText.Int(h._cards.Count) + " blocks=" + LogText.Int(h._dataOffset / BlockSize)
+                 + " dataOffset=" + LogText.Int(h._dataOffset) + " data=" + LogText.Int(length - h._dataOffset)
+                 + " " + LogText.Keys(h));
+        h.TraceCards(path);
+        return h;
+    }
+
+    /// <summary>Writes every card of this header to the diagnostic log at Trace, numbered from 1; nothing when Trace is off (R-044).</summary>
+    /// <param name="path">The file the cards were read from or are written to, the start of each line.</param>
+    private void TraceCards(string path)
+    {
+        if (!Log.IsTraceEnabled)
+        {
+            return;
+        }
+
+        for (var i = 0; i < _cards.Count; i++)
+        {
+            Log.Trace(path + " card " + LogText.Int(i + 1) + ": " + LogText.Card(_cards[i]));
+        }
     }
 
     /// <summary>
@@ -204,14 +236,16 @@ internal sealed class FitsHeader
         }
     }
 
-    /// <summary>Appends a HISTORY card.</summary>
+    /// <summary>Appends a HISTORY card, and writes it to the diagnostic log at Debug as it was stored (R-042).</summary>
     /// <param name="text">The text after the keyword; cut to 72 characters, the room a card has after "HISTORY ".</param>
     public void AddHistory(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
 
         var body = text.Length > 72 ? text[..72] : text;
-        _cards.Add(Pad("HISTORY " + body));
+        var card = Pad("HISTORY " + body);
+        _cards.Add(card);
+        Log.Debug("appended " + LogText.Card(card));
     }
 
     /// <summary>A card at exactly 80 characters: padded with spaces, or cut.</summary>
@@ -224,7 +258,11 @@ internal sealed class FitsHeader
     /// Writes this header, END and the padding to the next 2880-byte boundary, followed by
     /// the data area copied from <paramref name="dataSource"/>. When the target is the data
     /// source itself, the file is written beside it first and moved over it at the end: the
-    /// header may have grown past its original blocks, so it cannot be patched in place.
+    /// header may have grown past its original blocks, so it cannot be patched in place. The
+    /// diagnostic log gets the write before it starts (the temporary file of an in-place write;
+    /// at Trace every card to be written, so a failed write still shows the header it meant to
+    /// write) and the file written after it (R-042, R-044); a write that throws is its caller's
+    /// to log.
     /// </summary>
     /// <param name="dataSource">The FITS file whose data area, from its own header's end, is copied; normally the file this header was read from.</param>
     /// <param name="target">The file to write; the same path as <paramref name="dataSource"/> for an in-place rewrite.</param>
@@ -236,6 +274,12 @@ internal sealed class FitsHeader
         var inPlace = Path.GetFullPath(dataSource) == Path.GetFullPath(target);
         var temp = inPlace ? target + ".tmp" : target;
 
+        Log.Debug("write " + target + (inPlace ? " in place through " + temp : "")
+                  + ", the data from byte " + LogText.Int(_dataOffset) + " of " + dataSource);
+        TraceCards(target);
+
+        long headerBytes;
+        long total;
         using (var input = File.OpenRead(dataSource))
         using (var output = File.Create(temp))
         {
@@ -255,13 +299,19 @@ internal sealed class FitsHeader
                 output.Write(fill);
             }
 
+            headerBytes = output.Position;
             input.Seek(_dataOffset, SeekOrigin.Begin);
             input.CopyTo(output);
+            total = output.Position;
         }
 
         if (inPlace)
         {
             File.Move(temp, target, overwrite: true);
         }
+
+        Log.Info("wrote " + target + " (" + LogText.Size(total) + ") bytes=" + LogText.Int(total)
+                 + " cards=" + LogText.Int(_cards.Count) + " blocks=" + LogText.Int(headerBytes / BlockSize)
+                 + " data=" + LogText.Int(total - headerBytes));
     }
 }

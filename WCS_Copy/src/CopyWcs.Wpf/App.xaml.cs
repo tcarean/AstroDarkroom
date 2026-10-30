@@ -23,6 +23,7 @@
 
 using System.Globalization;
 using System.Windows;
+using NLog;
 
 namespace CopyWcs.Wpf;
 
@@ -64,6 +65,14 @@ public partial class App : Application
     }
 
     /// <summary>
+    /// The diagnostic log: the start's choices. Fetched on use, not a static field: this is the
+    /// type whose constructor calls <see cref="LogSetup.Apply"/>, and a logger created by its type
+    /// initialiser could make NLog load a stray <c>NLog.config</c> before the configuration is set
+    /// (ADR 0009; FlatCheck's ADR 0072, the same reason as <c>LogSetup</c>'s own logger).
+    /// </summary>
+    private static Logger Log => LogManager.GetLogger(Loggers.App);
+
+    /// <summary>
     /// Sets the invariant number culture, shows <see cref="CopyWcs.Wpf.MainWindow"/>, says a
     /// <c>--lang</c> value it did not understand, and fills the boxes with the files the
     /// constructor read.
@@ -82,11 +91,22 @@ public partial class App : Application
         // (R-034).
         if (_start.BadLanguage is not null)
         {
-            MessageBox.Show(window, LanguageArgument.BadValueMessage(_start.BadLanguage), "CopyWcs", MessageBoxButton.OK, MessageBoxImage.Warning);
+            string message = LanguageArgument.BadValueMessage(_start.BadLanguage);
+            Log.Warn("refused: " + message + "; the window goes on in English");
+            MessageBox.Show(window, message, "CopyWcs", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
+        Log.Info(StartLine(_start));
         window.Start(_start.Source, _start.Dest);
     }
+
+    /// <summary>The diagnostic log's line of what the command line asked (R-043): the language and the two files, <c>none</c> for one not given.</summary>
+    /// <param name="start">The command line as <see cref="Parse"/> read it.</param>
+    /// <returns>The line: <c>language=ro source from the command line: a.fit dest: b.fit</c>.</returns>
+    internal static string StartLine(StartArgs start)
+        => "language=" + (start.Language == UiLanguage.Romanian ? "ro" : "en")
+           + " source from the command line: " + LogText.Str(start.Source)
+           + " dest: " + LogText.Str(start.Dest);
 
     /// <summary>Writes the diagnostic log's last line, with the exit code, and closes it.</summary>
     /// <param name="e">The exit's arguments.</param>

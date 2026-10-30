@@ -297,7 +297,239 @@ public class LoggingTests
         Assert.Equal("5 ms", LogText.Ms(5));
     }
 
+    // ---------------------------------------------------------------- R-042: what a copy writes
+
+    /// <summary>The console's run in process: the exit code and stderr.</summary>
+    private static (int Code, string Stderr) Cli(params string[] args)
+    {
+        using var stdout = new StringWriter();
+        using var stderr = new StringWriter();
+        int code = CopyWcsCli.Run(args, stdout, stderr);
+        return (code, stderr.ToString());
+    }
+
+    /// <summary>The test pair: a plate-solved <c>source.fit</c> and a processed <c>dest.fit</c>, 100 x 80, with the same 400 bytes of data.</summary>
+    private static (string Source, string Dest) Pair(TempWorkspace ws, List<string>? source = null, List<string>? dest = null)
+    {
+        byte[] data = FitsTestData.DeterministicData(400);
+        return (ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(source ?? FitsTestData.PlateSolvedCards(), data)),
+                ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(dest ?? FitsTestData.ProcessedCards(), data)));
+    }
+
+    /// <summary>The done line of the one run a capture saw.</summary>
+    private static string DoneLine(LogCapture capture) =>
+        Assert.Single(capture.Messages, m => m.StartsWith("copy done ", StringComparison.Ordinal));
+
+    [Fact]
+    public void R042_ACopyLogsTheRequestBothHeadersEveryCardAndTheStages()
+    {
+        using var ws = new TempWorkspace();
+        List<string> destCards = FitsTestData.ProcessedCards();
+        destCards[5] = FitsTestData.Card("OBJECT", "'M43'");
+        var (src, dst) = Pair(ws, dest: destCards);
+        using var capture = LogCapture.Start();
+
+        var (code, stderr) = Cli(src, dst);
+
+        Assert.Equal(0, code);
+        Assert.Equal("", stderr);
+        IReadOnlyList<string> messages = capture.Messages;
+        _output.WriteLine(capture.Text);
+        Assert.Equal("copy start source=" + src + " dest=" + dst + " output=in place optical=yes force=no dryRun=no", messages[0]);
+        Assert.Contains("read " + src + " (3.2 KiB) bytes=3280 cards=20 blocks=1 dataOffset=2880 data=400 BITPIX=16 NAXIS=2 NAXIS1=100"
+                        + " NAXIS2=80 NAXIS3=none EXTEND=none CTYPE1='RA---TAN-SIP' CTYPE2='DEC--TAN-SIP' ROWORDER=none A_ORDER=none PLTSOLVD=T", messages);
+        Assert.Contains("read " + dst + " (3.2 KiB) bytes=3280 cards=6 blocks=1 dataOffset=2880 data=400 BITPIX=16 NAXIS=2 NAXIS1=100"
+                        + " NAXIS2=80 NAXIS3=none EXTEND=none CTYPE1=none CTYPE2=none ROWORDER=none A_ORDER=none PLTSOLVD=none", messages);
+        Assert.Contains("selected 15 keys: 9 WCS, 2 SIP, 4 optical (optical keys asked: yes)", messages);
+        Assert.Contains("card CTYPE1: CTYPE1  = 'RA---TAN-SIP' / TAN + SIP | dest: none", messages);
+        Assert.Contains("card OBJECT: OBJECT  = 'M42' | dest: OBJECT  = 'M43'", messages);
+        Assert.Contains("appended HISTORY WCS copied from source.fit", messages);
+        Assert.Contains("write " + dst + " in place through " + dst + ".tmp, the data from byte 2880 of " + dst, messages);
+        Assert.Contains("wrote " + dst + " (3.2 KiB) bytes=3280 cards=21 blocks=1 data=400", messages);
+        Assert.Matches("^copy done copied 15 keys into " + Regex.Escape(dst) + @" \(new 14, replaced 1, identical 0\) in \d+ ms"
+                       + @" \(source \d+ ms, dest \d+ ms, select \d+ ms, write \d+ ms\)$", DoneLine(capture));
+        Assert.Contains(capture.Events, e => e.Logger == "FitsHeader" && e.Message.StartsWith("read " + src, StringComparison.Ordinal));
+        Assert.Contains(capture.Events, e => e.Logger == "WcsCopy" && e.Message.StartsWith("card OBJECT:", StringComparison.Ordinal));
+        Assert.All(capture.Events, e => Assert.Matches(LinePrefix, e.Line));
+    }
+
+    [Fact]
+    public void R042_ADryRunLogsTheCardsItWouldCopyAndWritesNoFile()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        Assert.Contains("card OBJECT: OBJECT  = 'M42' | dest: same", capture.Messages);
+        Assert.DoesNotContain(capture.Messages, m => m.StartsWith("write ", StringComparison.Ordinal) || m.StartsWith("wrote ", StringComparison.Ordinal));
+        Assert.Matches(@"^copy done previewed 15 keys \(new 14, replaced 0, identical 1\) in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)$",
+                       DoneLine(capture));
+    }
+
+    [Fact]
+    public void R042_AFileThatCannotBeReadIsAWarningWithTheExceptionAndItsStack()
+    {
+        using var ws = new TempWorkspace();
+        var (_, dst) = Pair(ws);
+        string notFits = ws.WriteFile("notes.fit", Encoding.ASCII.GetBytes("not a FITS file, only some text"));
+        using var capture = LogCapture.Start();
+
+        var (code, stderr) = Cli(notFits, dst);
+
+        Assert.Equal(1, code);
+        Assert.Single(stderr.ReplaceLineEndings("\n").TrimEnd('\n').Split('\n'));
+        LogCapture.Captured warn = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn);
+        Assert.Equal("WcsCopy", warn.Logger);
+        Assert.Equal("cannot read the source " + notFits, warn.Message);
+        Assert.IsType<InvalidDataException>(warn.Exception);
+        Assert.Contains("System.IO.InvalidDataException: ", warn.Line, StringComparison.Ordinal);
+        Assert.Contains("   at CopyWcs.FitsHeader.ReadFrom", warn.Line, StringComparison.Ordinal);
+        Assert.DoesNotContain(capture.Events, e => e.Level >= LogLevel.Error);
+        Assert.Matches(@"^copy done refused: cannot read the source in \d+ ms \(source \d+ ms\)$", DoneLine(capture));
+    }
+
+    [Theory]
+    [InlineData("missingdest", @"cannot read the destination in \d+ ms \(source \d+ ms, dest \d+ ms\)")]
+    [InlineData("dims", @"dimensions differ \(source 100x80, destination 200x80\) in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    [InlineData("nokey", @"no relevant key in the source in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms\)")]
+    public void R042_EveryRefusalSaysWhyInTheDoneLine(string scenario, string reason)
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws);
+        string[] args = scenario switch
+        {
+            "missingdest" => [src, ws.FilePath("missing.fit")],
+            "dims" => [src, ws.WriteFile("wide.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(naxis1: 200)))],
+            "nokey" => [ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards())), dst, "--no-optical"],
+            _ => throw new ArgumentException(scenario),
+        };
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(1, Cli(args).Code);
+
+        Assert.Matches("^copy done refused: " + reason + "$", DoneLine(capture));
+        Assert.Contains(capture.Events, e => e.Level == LogLevel.Warn && e.Logger == "WcsCopy");
+    }
+
+    [Fact]
+    public void R042_AWriteThatFailsIsAnErrorWithTheException()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws);
+        string output = ws.FilePath(Path.Combine("missing", "out.fit"));
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(1, Cli(src, dst, "-o", output).Code);
+
+        LogCapture.Captured error = Assert.Single(capture.Events, e => e.Level == LogLevel.Error);
+        Assert.Equal("the write of " + output + " failed", error.Message);
+        Assert.IsType<DirectoryNotFoundException>(error.Exception);
+        Assert.Matches(@"^copy done refused: the write failed in \d+ ms \(source \d+ ms, dest \d+ ms, select \d+ ms, write \d+ ms\)$", DoneLine(capture));
+    }
+
+    [Fact]
+    public void R042_TheTwoWarningsAreLogged()
+    {
+        using var ws = new TempWorkspace();
+        var (src, _) = Pair(ws);
+        string wide = ws.WriteFile("wide.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(naxis1: 200)));
+        string unsolved = ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+        string plain = ws.WriteFile("plain.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+
+        using (var capture = LogCapture.Start())
+        {
+            Assert.Equal(0, Cli(src, wide, "--force").Code);
+            Assert.Contains("dimensions differ: source 100x80, destination 200x80; forced, the copy goes on", capture.Messages);
+        }
+
+        using (var capture = LogCapture.Start())
+        {
+            Assert.Equal(0, Cli(unsolved, plain).Code);
+            Assert.Contains("the source has no CTYPE1, it does not look plate-solved; the copy goes on", capture.Messages);
+        }
+    }
+
+    /// <summary>A control character in a card (here a NUL in a comment) is written as <c>\x00</c>:
+    /// a raw NUL in the file would make grep take the whole log for binary (FlatCheck's review, A4).</summary>
+    [Fact]
+    public void R042_AControlCharacterInACardIsEscaped_NoNulByteInTheLog()
+    {
+        using var ws = new TempWorkspace();
+        List<string> cards = FitsTestData.PlateSolvedCards();
+        int obj = cards.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        cards[obj] = FitsTestData.Card("OBJECT", "'M42'", "a\0b");
+        var (src, dst) = Pair(ws, source: cards);
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        Assert.DoesNotContain('\0', capture.Text);
+        Assert.Contains(@"card OBJECT: OBJECT  = 'M42' / a\x00b | dest: OBJECT  = 'M42'", capture.Messages);
+    }
+
+    [Fact]
+    public void R042_ARunThatEndsWithoutAnOutcomeSaysSoWithItsStages()
+    {
+        Logger log = LogManager.GetLogger("RunClockTest");
+        using var capture = LogCapture.Start();
+
+        using (RunClock clock = RunClock.Start(log, "copy", "source=a.fit dest=b.fit"))
+        {
+            clock.Lap("source");
+        }
+
+        Assert.Equal("copy start source=a.fit dest=b.fit", capture.Messages[0]);
+        Assert.Matches(@"^copy ended without an outcome after \d+ ms \(source \d+ ms\)$", capture.Messages[1]);
+    }
+
+    // ---------------------------------------------------------------- R-043: the console's own lines
+
+    [Fact]
+    public void R043_TheConsoleLogsAUsageErrorHelpAndARefusedLang()
+    {
+        using (var capture = LogCapture.Start())
+        {
+            Assert.Equal(2, Cli("--lang", "en", "one.fit").Code);
+            Assert.Contains(capture.Events, e => e.Logger == "Cli" && e.Level == LogLevel.Warn
+                && e.Message == "usage error (exit 2): Exactly two files are needed: the source and the destination.");
+        }
+
+        using (var capture = LogCapture.Start())
+        {
+            Assert.Equal(0, Cli("--help").Code);
+            Assert.Contains(capture.Events, e => e.Logger == "Cli" && e.Message == "help shown (exit 0)");
+        }
+
+        using (var capture = LogCapture.Start())
+        {
+            Assert.Equal(1, Cli("--lang", "xx").Code);
+            Assert.Contains(capture.Events, e => e.Logger == "Cli" && e.Level == LogLevel.Warn
+                && e.Message == "refused (exit 1): --lang expects en or ro, got 'xx'");
+        }
+    }
+
     // ---------------------------------------------------------------- R-044: the level
+
+    [Fact]
+    public void R044_TraceHoldsEveryCardOfEveryHeaderReadAndWritten()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws);
+        string output = ws.FilePath("out.fit");
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "-o", output).Code);
+
+        var trace = capture.Events.Where(e => e.Level == LogLevel.Trace).Select(e => e.Message).ToList();
+        Assert.Contains(src + " card 1: SIMPLE  = T", trace);
+        Assert.Contains(dst + " card 1: SIMPLE  = T", trace);
+        Assert.Contains(output + " card 1: SIMPLE  = T", trace);
+        Assert.Equal(20, trace.Count(m => m.StartsWith(src + " card ", StringComparison.Ordinal)));
+        Assert.Equal(21, trace.Count(m => m.StartsWith(output + " card ", StringComparison.Ordinal)));
+        Assert.DoesNotContain(capture.Events, e => e.Level != LogLevel.Trace && e.Message.Contains(" card 1: ", StringComparison.Ordinal));
+    }
 
     [Theory]
     [InlineData(null, "Debug")]
@@ -423,6 +655,65 @@ public class LoggingTests
         // The writers did overlap: their lines interleave in the file, both ways round.
         Assert.Contains("AB", order, StringComparison.Ordinal);
         Assert.Contains("BA", order, StringComparison.Ordinal);
+    }
+
+    // ---------------------------------------------------------------- R-046: the language
+
+    /// <summary>The arguments of one console scenario, every file written into <paramref name="ws"/>.</summary>
+    private static string[] Scenario(TempWorkspace ws, string scenario)
+    {
+        byte[] data = FitsTestData.DeterministicData(400);
+        string solved = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), data));
+        string processed = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), data));
+        string wide = ws.WriteFile("wide.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(naxis1: 200), data));
+        string unsolved = ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), data));
+        string notFits = ws.WriteFile("notes.fit", Encoding.ASCII.GetBytes("not a FITS file, only some text"));
+        return scenario switch
+        {
+            "copy" => [solved, processed],
+            "preview" => [solved, processed, "--dry-run"],
+            "newfile" => [solved, processed, "-o", ws.FilePath("out.fit")],
+            "forced" => [solved, wide, "--force"],
+            "nosolve" => [unsolved, processed],
+            "dims" => [solved, wide],
+            "nokey" => [unsolved, processed, "--no-optical"],
+            "unreadable" => [notFits, processed],
+            "writeerror" => [solved, processed, "-o", ws.FilePath(Path.Combine("missing", "out.fit"))],
+            _ => throw new ArgumentException(scenario),
+        };
+    }
+
+    /// <summary>
+    /// The same run in English and in Romanian writes the same messages, the times aside: the
+    /// log's words never go through the translation (R-046). The exception of a file that cannot
+    /// be read keeps its message as the user saw it, but under the line, not in the message.
+    /// </summary>
+    [Theory]
+    [InlineData("copy")]
+    [InlineData("preview")]
+    [InlineData("newfile")]
+    [InlineData("forced")]
+    [InlineData("nosolve")]
+    [InlineData("dims")]
+    [InlineData("nokey")]
+    [InlineData("unreadable")]
+    [InlineData("writeerror")]
+    public void R046_TheLogIsTheSameInBothLanguages(string scenario)
+    {
+        IReadOnlyList<string> Run(string lang)
+        {
+            using var ws = new TempWorkspace();
+            string[] args = Scenario(ws, scenario);
+            using var capture = LogCapture.Start();
+            CopyWcsCli.Run([.. args, "--lang", lang], new StringWriter(), new StringWriter());
+            return capture.Messages.Select(m => Regex.Replace(m.Replace(ws.Dir, "<ws>", StringComparison.Ordinal), @"\d+ ms\b", "# ms")).ToArray();
+        }
+
+        IReadOnlyList<string> en = Run("en");
+        IReadOnlyList<string> ro = Run("ro");
+
+        Assert.NotEmpty(en);
+        Assert.Equal(en, ro);
     }
 
     // ---------------------------------------------------------------- invariants of the repository
