@@ -19,13 +19,38 @@ namespace CopyWcs;
 
 /// <summary>
 /// The entry point of <c>copywcs.exe</c>: copies the WCS (plate solving) metadata and the
-/// optical data from one FITS into another. A one-line shim to <see cref="CopyWcsCli.Run"/>,
-/// which the tests drive in process.
+/// optical data from one FITS into another. A shim: the diagnostic log's first line, one call to
+/// <see cref="CopyWcsCli.Run"/>, which the tests drive in process, and the log's last line (ADR
+/// 0009). The log is configured here and not in <see cref="CopyWcsCli.Run"/>, so the tests never
+/// configure it.
 /// </summary>
 internal static class Program
 {
-    /// <summary>Runs the console on the real standard streams.</summary>
+    /// <summary>
+    /// Runs the console on the real standard streams, between the diagnostic log's first and last
+    /// lines (<see cref="LogSetup.Apply"/>, <see cref="LogSetup.Close"/>; R-040 to R-046).
+    /// </summary>
     /// <param name="args">The command line without the executable.</param>
     /// <returns>The exit code: 0 on success, 1 when the copy was refused, 2 on a usage error.</returns>
-    private static int Main(string[] args) => CopyWcsCli.Run(args, Console.Out, Console.Error);
+    private static int Main(string[] args)
+    {
+        // The log never stops the tool: a folder that cannot be probed, a broken NLog on this
+        // machine, and the run goes on without a log, stdout and stderr untouched (R-041).
+        try { LogSetup.Apply("copywcs", args); }
+        catch (Exception) { }
+
+        // What the log's last line reports when the run throws; the process itself then exits
+        // with the runtime's crash code, not with this.
+        int code = 1;
+        try
+        {
+            code = CopyWcsCli.Run(args, Console.Out, Console.Error);
+            return code;
+        }
+        finally
+        {
+            try { LogSetup.Close(code); }
+            catch (Exception) { }
+        }
+    }
 }

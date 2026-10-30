@@ -15,10 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// App.xaml.cs - the application's start, after DarksCheck's and FlatCheck's: the command line
-// read once, in the constructor, for the language from --lang before the first view and for the
-// two files (R-034), so a shortcut or a "send to" can open the window on a pair; the invariant
-// number culture by hand.
+// App.xaml.cs - the application's start, after DarksCheck's and FlatCheck's: the diagnostic log
+// first, so a failure while the resources load is in it too (ADR 0009); the command line read
+// once, in the constructor, for the language from --lang before the first view and for the two
+// files (R-034), so a shortcut or a "send to" can open the window on a pair; the invariant number
+// culture by hand; the log's last line on the way out.
 
 using System.Globalization;
 using System.Windows;
@@ -41,14 +42,24 @@ public partial class App : Application
     private readonly StartArgs _start;
 
     /// <summary>
-    /// Reads the command line and sets the interface language (R-034) before anything else:
-    /// the constructor runs before App.xaml's resources and the first view load, and both carry
-    /// texts.
+    /// Starts the diagnostic log first (R-040 to R-046), then reads the command line and sets the
+    /// interface language (R-034) before anything else: the constructor runs before App.xaml's
+    /// resources and the first view load, and both carry texts.
     /// </summary>
     public App()
     {
         string[] all = Environment.GetCommandLineArgs();
-        _start = Parse(all.Length > 1 ? all[1..] : []);
+        string[] args = all.Length > 1 ? all[1..] : [];
+
+        // The log never stops the window: without it the window opens all the same (R-041).
+        try { LogSetup.Apply("CopyWcs.Wpf", args); }
+        catch (Exception) { }
+
+        // Logged, not handled: a crash on the window's thread still ends the window (ADR 0009).
+        DispatcherUnhandledException += (_, e) =>
+            LogSetup.Fatal(e.Exception, "unhandled exception on the window's thread, the window closes");
+
+        _start = Parse(args);
         Ui.Default = _start.Language;
     }
 
@@ -75,6 +86,17 @@ public partial class App : Application
         }
 
         window.Start(_start.Source, _start.Dest);
+    }
+
+    /// <summary>Writes the diagnostic log's last line, with the exit code, and closes it.</summary>
+    /// <param name="e">The exit's arguments.</param>
+    protected override void OnExit(ExitEventArgs e)
+    {
+        base.OnExit(e);
+
+        // Guarded like Apply: the log never stops the window, on the way out either.
+        try { LogSetup.Close(e.ApplicationExitCode); }
+        catch (Exception) { }
     }
 
     /// <summary>
