@@ -41,7 +41,8 @@ neither computes a number itself. It never modifies, moves or writes anything in
   no UI, no entry point: a compile boundary. `Imaging/` reads raws and FITS (copied from
   FlatCheck, ADR 0003), `Session/` finds the frames, `Analysis/` decides numbers, `Report/`
   decides words (English and Romanian, ADR 0022), `Runs/` chains them; both applications call
-  `Runs/` only.
+  `Runs/` only, and start and close the diagnostic log of `Logging/`, which the seams write
+  (ADR 0029).
 - `src/LightsCheck.Cli/` - the console, `lightscheck.exe`: options, dispatch, exit code.
 - `src/LightsCheck.Wpf/` - the window, `LightsCheck.Wpf.exe`: the theme and the small pieces
   copied from FlatCheck (`Theme/`, `Presentation/`), the view-models (`ViewModels/`), the XAML
