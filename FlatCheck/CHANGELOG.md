@@ -6,6 +6,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Internal
+
+- The Exposure tab keeps the run a pick or the Sky switch starts in `Pending`, as the Histogram
+  tab does, and the window tests await that run instead of starting a second one beside it: the
+  two runs computed at once and the first one's figures could land last, which is how
+  `PickingAnotherFileRecomputes` failed once on 2026-10-27 (ADR 0077).
+
 ### Added
 
 - A diagnostic log, for bug reports (R-109 to R-112, ADR 0070): each application writes

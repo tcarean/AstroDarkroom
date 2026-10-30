@@ -5,7 +5,8 @@
 > stay here as numbered pointers, since other notes and tests cite them by number. **Covers:**
 > behaviour that is deliberate or not worth changing, by pointer in the files its items name:
 > `FitsReader.cs`, `ImageLoader.cs`, `RawReader.cs`, `PreviewReader.cs`, `Metrics.cs`,
-> `Stats.cs`, `Analysis/StructureAnalyzer.cs` and `PngWriter.cs`; read before "fixing" any of it.
+> `Stats.cs`, `Analysis/StructureAnalyzer.cs`, `PngWriter.cs` and
+> `FlatCheck.Wpf/ViewModels/ExposureTabViewModel.cs`; read before "fixing" any of it.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -55,3 +56,10 @@ correctness bugs that used to live here were fixed in phase 8.
    entropy decoding whatever the target) and the copy of the chosen preview's bytes that every
    raw load makes, in modes that never look at them; that is the price of opening the file
    once.
+9. **A folder change during an Exposure run lands the old folder's figures.** The folder button
+   is disabled only by the opening chain (`MainViewModel.IsRunning`), and the Exposure tab's run
+   lambda, alone among the click-run tabs, does not re-check its token after `Task.Run`: a run
+   that was computing when the folder changed writes its report, figures and `HasResult` on the
+   tab the new folder reset, under the new folder's list with nothing selected, until the next
+   pick. Reproduced deterministically on 2026-10-30; the owner left it as it is (ADR 0077,
+   where the one-line check and the button lock are the alternatives rejected).

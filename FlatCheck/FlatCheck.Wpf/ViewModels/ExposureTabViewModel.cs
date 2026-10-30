@@ -188,12 +188,20 @@ namespace FlatCheck.Wpf
                 ClearError();
         }
 
-        /// <summary>Starts a run on the chosen file without awaiting it; nothing without a
-        /// session or a file.</summary>
+        /// <summary>
+        /// The last run started, so a test can await one it did not start. A test that started a
+        /// second run on the same file instead, beside the one the setter starts, had the two
+        /// compute at once (the tests attach no gate), and the first one's figures could land
+        /// after the second one's: the flaky PickingAnotherFileRecomputes of 2026-10-27 (ADR 0077).
+        /// </summary>
+        internal Task Pending { get; private set; } = Task.CompletedTask;
+
+        /// <summary>Starts a run on the chosen file and keeps it in <see cref="Pending"/>;
+        /// nothing without a session or a file.</summary>
         void Recompute()
         {
             if (_session == null || string.IsNullOrEmpty(Selected)) return;
-            _ = RecomputeAsync();
+            Pending = RecomputeAsync();
         }
 
         /// <summary>Measures the chosen file's exposure, guarded, after the heavy-run gate, with

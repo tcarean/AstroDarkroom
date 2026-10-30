@@ -61,7 +61,7 @@ public class MainViewModelTests
         vm.HistEq.Selected = vm.HistEq.Files[0];
         Task histEq = vm.HistEq.Pending;
         vm.Exposure.Selected = raw;
-        Task expo = vm.Exposure.RecomputeAsync();
+        Task expo = vm.Exposure.Pending;
 
         Task any = Task.WhenAny(histEq, expo);
         Assert.NotSame(any, await Task.WhenAny(any, Task.Delay(1000)));
