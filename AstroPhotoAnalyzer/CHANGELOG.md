@@ -13,8 +13,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (**Perceptual**, **Relative** with black point compensation, and **Relative, no black point
   compensation**, the Tones tab's own model), the paper's white and black shown as they are, a paper gamut warning
   (the Curves Editing figure, in red), the original for comparison, a margin that is the paper's white by default or a fixed grey, wheel
-  zoom and drag pan on the image, and a maximised window with keys. Without a profile the tab shows only a sentence saying so
-  (R-160 to R-163; ADR 0066).
+  zoom and drag pan on the image, and a true full-screen window with keys: no title bar, the
+  controls and a **Close** button in a panel that appears while the mouse is at the top of the
+  screen. Without a profile the tab shows only a sentence saying so
+  (R-160 to R-164; ADR 0066, ADR 0068).
 
 - The window shows the ICC profile in use in its top bar, under the image's name, with a
   **Clear** button beside it; choosing a profile or clearing it runs the analysis again by

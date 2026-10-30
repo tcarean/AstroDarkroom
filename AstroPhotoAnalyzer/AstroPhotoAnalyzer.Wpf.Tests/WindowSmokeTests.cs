@@ -244,7 +244,8 @@ public class WindowSmokeTests
             Assert.True(proofed.SoftProof.HasProof, proofed.SoftProof.Message);
             Render(new SoftProofView { DataContext = proofed.SoftProof }, name: "tab-soft-proof");
             proofed.SoftProof.ShowPaperGamut = true;
-            var proofWindow = new SoftProofWindow { DataContext = proofed.SoftProof };
+            // The panel hides until the mouse is over it (R-164): shown here, so the PNG has it.
+            var proofWindow = new SoftProofWindow { DataContext = proofed.SoftProof, PanelShown = true };
             try
             {
                 Render((FrameworkElement)proofWindow.Content, name: "fereastra-soft-proof");

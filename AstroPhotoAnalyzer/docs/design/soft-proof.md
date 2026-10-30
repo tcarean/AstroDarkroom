@@ -1,6 +1,6 @@
 # The soft proof
 
-> Written 2026-10-30 with the feature (R-160 to R-163, ADR 0066). **Covers:**
+> Written 2026-10-30 with the feature (R-160 to R-164, ADR 0066, ADR 0068). **Covers:**
 > `AstroPhotoAnalyzer.Core/Analysis/SoftProof.cs`, `AstroPhotoAnalyzer.Core/Runs/ProofRun.cs`,
 > `AstroPhotoAnalyzer.Core/Report/ProofTexts.cs`,
 > `AstroPhotoAnalyzer.Wpf/ViewModels/SoftProofTab.cs`,
@@ -128,12 +128,17 @@ neighbour, so that the zoom shows the proof's pixels; the left button drags with
 resets; the centre is clamped so that the child never leaves the viewport (centred along an axis
 where it is smaller). The child is arranged at its natural size under a scale and a translation.
 View state only: the view-model knows nothing of it.
-`SoftProofWindow` is maximised and non-modal, over the tab's own view-model (so the window's
-state is the tab's): the controls and the caption in a bar at the top, the margin brush filling
-the window behind the image (the same `ZoomPanViewer`), the message ("computing" or a refused
-table's reason, red) under the caption, and the keys in `PreviewKeyDown`:
-Esc closes, G and O toggle the boxes and I moves to the next intent through
-`SoftProofTabViewModel.HandleKey`, ignored while the focus is in a text box or a modifier is held.
+`SoftProofWindow` is a borderless window over the whole screen (`WindowStyle` `None`,
+`WindowState` `Maximized`, `ResizeMode` `NoResize`; R-164, ADR 0068), non-modal, over the tab's
+own view-model (so the window's state is the tab's): the margin brush filling the window behind
+the image (the same `ZoomPanViewer`), and over its top a panel with the controls, the caption,
+the message ("computing" or a refused table's reason, red), the key hint and the `Close` button
+(`CloseClicked` closes). The panel sits in a transparent `Border`, the band, aligned to the top;
+a style trigger keeps the panel `Hidden` (not `Collapsed`, so the band keeps its height) unless
+the window's `PanelShown` dependency property is true, which the band's `MouseEnter` and
+`MouseLeave` set and clear. The keys are in `PreviewKeyDown`: Esc closes, G and O toggle the
+boxes and I moves to the next intent through `SoftProofTabViewModel.HandleKey`, ignored while
+the focus is in a text box or a modifier is held.
 
 ## What was measured
 
