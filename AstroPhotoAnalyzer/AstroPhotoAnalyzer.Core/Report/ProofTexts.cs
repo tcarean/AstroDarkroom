@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // ProofTexts.cs - the Soft proof tab's sentences (R-161 to R-163): the problems, the profile's
-// facts, the legends of the two warnings with their shares, the names and the one-line help of
+// facts, the legend of the paper's gamut warning with its share, the names and the one-line help of
 // the intents, the caption of the window.
 //
 // The window writes none of them: it shows them. Every number in them is the profile's or a
@@ -71,13 +71,6 @@ namespace AstroPhotoAnalyzer
         internal static string PaperGamutLegend(double pct)
             => Tr.Pick($"outside the paper's gamut: {Fmt.Pct(pct)} of the pixels (a*, b* moved by more than {Fmt.F0(Thresholds.CurveGamutDeltaAb)} on the round trip through the profile, the rule of Curves Editing)",
                 $"in afara gamutului hartiei: {Fmt.Pct(pct)} din pixeli (a*, b* mutate cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)} la drumul dus-intors prin profil, regula din Editare Curbe)");
-
-        /// <summary>The legend of the screen's gamut warning, with its share (R-161).</summary>
-        /// <param name="pct">The share of the proof's pixels outside the screen's gamut, in percent.</param>
-        /// <returns>The sentence.</returns>
-        internal static string ScreenGamutLegend(double pct)
-            => Tr.Pick($"outside the screen's gamut: {Fmt.Pct(pct)} of the pixels (the paper shows them, an sRGB screen cannot: the clipped colour differs by more than Delta E {Fmt.F1(Thresholds.ProofScreenGamutDeltaE)})",
-                $"in afara gamutului ecranului: {Fmt.Pct(pct)} din pixeli (hartia le reda, un ecran sRGB nu: culoarea taiata difera cu peste Delta E {Fmt.F1(Thresholds.ProofScreenGamutDeltaE)})");
 
         /// <summary>The name of an intent, as the radio button shows it (R-163).</summary>
         /// <param name="intent">The intent.</param>

@@ -219,7 +219,7 @@ public class ValidationTests
     /// <summary>
     /// A proof case (R-160 to R-162, ADR 0066): the analysis with the case's profile, the proof
     /// prepared on it, and each intent rendered with the simulation off and on: the profile's
-    /// facts, the shares outside the two gamuts and the mean L* of the proof.
+    /// facts, the share outside the paper's gamut and the mean L* of each proof.
     /// </summary>
     static Dictionary<string, object> ProofFigures(string image, JsonElement parameters)
     {
@@ -248,8 +248,6 @@ public class ValidationTests
             {
                 SoftProofResult r = ProofRun.Render(set, intent, simulate);
                 string k = "proof." + intent + (simulate ? ".simulated." : ".");
-                f[k + "pctScreenGamut"] = R(r.PctScreen);
-                f[k + "pctBoth"] = R(r.PctBoth);
                 float[] L = RasterOps.LstarPlane(r.Image, 1);
                 f[k + "meanLstar"] = R(L.Average());
             }

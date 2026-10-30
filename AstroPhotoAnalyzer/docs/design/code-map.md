@@ -38,7 +38,7 @@ AstroPhotoAnalyzer.Core/
            PrintPreview.cs (a row as an image, for the preview window),
            ToneCurve.cs, CurveAdvisor.cs (the suggested curves: spline, anchors, recipe, evidence; R-140 to R-143),
            GamutAnalyzer.cs (the share outside the paper's gamut, R-144),
-           SoftProof.cs (the soft proof: the profile's tables per intent, the display step, the warnings; R-160 to R-162),
+           SoftProof.cs (the soft proof: the profile's tables per intent, the display step; R-160 to R-162),
            NoiseAnalyzer.cs, BackgroundAnalyzer.cs,
            StarAnalyzer.cs, PrintSizeAnalyzer.cs, QuantizationAnalyzer.cs, JpegAnalyzer.cs
   Report/Recommendation.cs             Verdict, Topic, Recommendation, VerdictText

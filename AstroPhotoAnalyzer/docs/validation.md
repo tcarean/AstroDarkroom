@@ -46,9 +46,8 @@ unmeasured: it prints what it found and passes.
 `proof` (R-160 to R-162, ADR 0066): the analysis with the profile the case names under `icc`, then
 `ProofRun.Prepare` and a `ProofRun.Render` per intent, with the simulation off and on: the
 profile's facts (`proof.paperWhite.L`, `.a`, `.b`, `proof.paperWhite.srgb`, `proof.paperBlackLstar`,
-`proof.dmax`), the proof's width, the share outside the paper's gamut and,
-per intent and state, the share outside the screen's, the share in both, and the mean L\* of the
-proof (`proof.Relative.simulated.meanLstar`).
+`proof.dmax`), the proof's width, the share outside the paper's gamut and, per intent and
+state, the mean L\* of the proof (`proof.Relative.simulated.meanLstar`).
 
 ```bash
 dotnet test AstroPhotoAnalyzer.sln -c Release --filter "Category=Validation"
@@ -75,7 +74,7 @@ stops on a drift instead of editing them.
 | V-012 | the Orion FITS; kind `curves` | measured 2026-10-06: a frame at the ceiling: anchors 0.114, 0.137, 0.365, 0.738, 0.971; the peaks over `CurvePeakTarget`, so no suggestion and the problem sentence naming the anchor, 0.971 and the target 0.92 |
 | V-013 | the Veil FITS; none | measured 2026-10-11 (ADR 0037): the sky path on a frame inside the band but narrower than it: method `Sky` for the reason `NarrowField`, the patch centres spanning 10.9 degrees of latitude; sky 96.4 %, nebula 2.9 %, bright nebula 0.5 %, peaks 0.1 %; 20 125 patches, 6 clouds named (LDN 873 first, 68 patches, L\* 7.6), the dust class 1 patch, so the dust is the darkest sky, L\* 6.3, and the sky 9.3; the recommended row 0.16 (the sky reaches L\* 15 at 0.155), the exact target 0.074, passes as is from Dmax 2.16; no smooth tile for the noise; 1 star since ADR 0054 (22 485 at FWHM 2.18 px before: the grain of a starless frame) and the size table on the dpi rule, the reference row 70 cm; and every other figure of the run |
 | V-014 | the Veil FITS; kind `curves` | measured 2026-10-11: the curves anchored on the nebula's own classes: anchors 0.078, 0.102, 0.166, 0.359, 0.498; four suggestions, `Puternica` taking the five L\* from 6.3, 9.3, 17.2, 38.8, 53.2 to 6.3, 10.0, 23.1, 49.4, 63.6 with a noise gain of 1.20, `Maxima` the peaks to 0.92 with a gain of 1.47; one paper check (the sky under L\* 15); the save keeps all 93 cards and the WCS |
-| V-015 | the plate-solved FITS; kind `proof`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-30: the soft proof through the lab's baryta profile (R-160 to R-162, ADR 0066): the paper white of the `wtpt` tag L\* 97.19, a\* -0.01, b\* +1.11, shown as sRGB 248, 247, 245 under the simulation; the paper black L\* 3.49 at Dmax 2.41 (V-006); the proof 1946 px wide (stride 3); 1.37 % of its pixels outside the paper's gamut (V-008 reads 1.36 % on the tonal subsample); outside the screen's gamut 0.02 % on `Perceptual`, 0.02 % on `RelativeNoBpc`, none on `Relative` and none under the simulation; the mean L\* of the proof 17.0 on `Perceptual`, 19.7 on `Relative`, 18.2 on `RelativeNoBpc` (18.0, 20.4 and 19.1 simulated): the three intents differ, and the compensated one keeps the most of the shadows |
+| V-015 | the plate-solved FITS; kind `proof`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-30: the soft proof through the lab's baryta profile (R-160 to R-162, ADR 0066): the paper white of the `wtpt` tag L\* 97.19, a\* -0.01, b\* +1.11, shown as sRGB 248, 247, 245 under the simulation; the paper black L\* 3.49 at Dmax 2.41 (V-006); the proof 1946 px wide (stride 3); 1.37 % of its pixels outside the paper's gamut (V-008 reads 1.36 % on the tonal subsample); the mean L\* of the proof 17.0 on `Perceptual`, 19.7 on `Relative`, 18.2 on `RelativeNoBpc` (18.0, 20.4 and 19.1 simulated): the three intents differ, and the compensated one keeps the most of the shadows |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
 run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
@@ -469,3 +468,6 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   the device black as the neutral of its Y (ISO 18619): the Relative mean L\* 19.6841 to 19.6904,
   the Perceptual screen-gamut share 0.0198 to 0.0214 %, every figure within the tolerance; the
   recorded values are the new line. The fifteen cases pass.
+- 2026-10-30 (ADR 0066, the screen-gamut warning dropped): V-015 loses its twelve `pctScreenGamut`
+  and `pctBoth` figures with the warning (0 % in the shown state on the baryta and on the canvas,
+  which is why it went); the other figures re-measured unchanged. The fifteen cases pass.

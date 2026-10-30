@@ -54,7 +54,6 @@ public class SoftProofTabTests
         Assert.False(tab.IsRelative);
         Assert.False(tab.IsRelativeNoBpc);
         Assert.False(tab.ShowPaperGamut);
-        Assert.False(tab.ShowScreenGamut);
         Assert.False(tab.ShowOriginal);
         Assert.Equal(ProofMarginChoice.PaperWhite, tab.Margin);
         Assert.Equal(Colors.White, ColourOf(tab.MarginBrush));
@@ -95,8 +94,7 @@ public class SoftProofTabTests
         // The figures are the core's own.
         ProofSet set = ProofRun.Prepare(result);
         SoftProofResult core = ProofRun.Render(set, ProofIntent.Perceptual, simulate: true);
-        Assert.Equal(ProofTexts.PaperGamutLegend(core.PctPaper), tab.PaperGamutLegend);
-        Assert.Equal(ProofTexts.ScreenGamutLegend(core.PctScreen), tab.ScreenGamutLegend);
+        Assert.Equal(ProofTexts.PaperGamutLegend(set.PctPaper), tab.PaperGamutLegend);
         Assert.Equal(ProofTexts.PaperWhiteLine(set.Profile), tab.PaperWhiteLine);
         Assert.Equal(ProofTexts.PaperBlackLine(set.Profile), tab.PaperBlackLine);
         Assert.Equal(ProofTexts.Caption(set.Profile, ProofIntent.Perceptual), tab.Caption);
@@ -141,26 +139,23 @@ public class SoftProofTabTests
         tab.ShowOriginal = false;
         Assert.Same(proof, tab.Image);
 
-        // Each warning shows its own layer; both show the third as well.
+        // The warning shows its layer, the same bitmap through a change of intent.
         Assert.True(tab.ShowPaperLayer);
-        Assert.False(tab.ShowScreenLayer);
-        Assert.False(tab.ShowBothLayer);
-        tab.ShowScreenGamut = true;
-        Assert.True(tab.ShowScreenLayer);
-        Assert.True(tab.ShowBothLayer);
+        var layer = tab.PaperLayer;
+        Assert.NotNull(layer);
         tab.ShowPaperGamut = false;
         Assert.False(tab.ShowPaperLayer);
-        Assert.False(tab.ShowBothLayer);
-        Assert.NotNull(tab.PaperLayer);
-        Assert.NotNull(tab.ScreenLayer);
-        Assert.NotNull(tab.BothLayer);
+        tab.IsRelativeNoBpc = true;
+        await tab.ProofComputation;
+        Assert.Same(layer, tab.PaperLayer);
+        tab.IsRelative = true;
+        await tab.ProofComputation;
 
-        // The window's keys; P, the simulation's, is no key any more.
+        // The window's keys; P and M, the dropped boxes', are no keys any more.
         Assert.False(tab.HandleKey(Key.P));
+        Assert.False(tab.HandleKey(Key.M));
         Assert.True(tab.HandleKey(Key.G));
         Assert.True(tab.ShowPaperGamut);
-        Assert.True(tab.HandleKey(Key.M));
-        Assert.False(tab.ShowScreenGamut);   // it was on from the layers check above
         Assert.True(tab.HandleKey(Key.O));
         Assert.True(tab.ShowOriginal);
         Assert.True(tab.HandleKey(Key.I));

@@ -50,14 +50,11 @@ public class SoftProofTests
         Assert.Equal(Thresholds.ProofGrid, t.N);
 
         Raster ramp = SyntheticRasters.Ramp(1, 256, 0, 1);
-        SoftProofResult r = SoftProof.Render(p, t, ramp, simulate: false, paperOutside: null);
+        SoftProofResult r = SoftProof.Render(p, t, ramp, simulate: false);
         Assert.Equal(3, r.Image.Planes.Length);
         for (int x = 0; x < 256; x++)
             for (int plane = 0; plane < 3; plane++)
                 Assert.True(Math.Abs(r.Image.At(plane, 0, x) - ramp.At(0, 0, x)) <= 1 / 255.0 + 1e-6, $"level {x}, plane {plane}: {r.Image.At(plane, 0, x)}");
-        Assert.All(r.Classes, c => Assert.Equal(ProofClass.None, c));
-        Assert.Equal(0, r.PctScreen);
-        Assert.Equal(0, r.PctPaper);
     }
 
     [Fact]
@@ -71,7 +68,7 @@ public class SoftProofTests
         Assert.Equal(Black, p.PaperBlackLstar, 1);
         Assert.Equal(1.52, p.Dmax);   // what IccPaperBlack reads from the same profile (R-028)
 
-        SoftProofResult r = SoftProof.Render(p, p.Table(ProofIntent.Relative), Pixels((1, 1, 1), (0, 0, 0)), simulate: true, paperOutside: null);
+        SoftProofResult r = SoftProof.Render(p, p.Table(ProofIntent.Relative), Pixels((1, 1, 1), (0, 0, 0)), simulate: true);
         var white = LabOf(r.Image, 0);
         var black = LabOf(r.Image, 1);
         Assert.Equal(p.PaperWhiteLab.L, white.L, 0.5);
@@ -82,7 +79,7 @@ public class SoftProofTests
         for (int plane = 0; plane < 3; plane++) Assert.Equal(r.Image.At(plane, 0, 0), p.PaperWhiteSrgb[plane], 2);
 
         // Off, the paper's white and black are the screen's.
-        SoftProofResult off = SoftProof.Render(p, p.Table(ProofIntent.Relative), Pixels((1, 1, 1), (0, 0, 0)), simulate: false, paperOutside: null);
+        SoftProofResult off = SoftProof.Render(p, p.Table(ProofIntent.Relative), Pixels((1, 1, 1), (0, 0, 0)), simulate: false);
         for (int plane = 0; plane < 3; plane++)
         {
             Assert.Equal(1, off.Image.At(plane, 0, 0), 2);
@@ -98,17 +95,17 @@ public class SoftProofTests
         ProofTable t = p.Table(ProofIntent.RelativeNoBpc);
         Raster px = Pixels((Grey(10), Grey(10), Grey(10)), (0, 0, 0), (Grey(50), Grey(50), Grey(50)));
 
-        SoftProofResult on = SoftProof.Render(p, t, px, simulate: true, paperOutside: null);
+        SoftProofResult on = SoftProof.Render(p, t, px, simulate: true);
         Assert.Equal(Black, LabOf(on.Image, 0).L, 1);
         Assert.Equal(Black, LabOf(on.Image, 1).L, 1);
         Assert.Equal(50, LabOf(on.Image, 2).L, 1);   // over the black: as it is
 
-        SoftProofResult off = SoftProof.Render(p, t, px, simulate: false, paperOutside: null);
+        SoftProofResult off = SoftProof.Render(p, t, px, simulate: false);
         Assert.Equal(LabOf(off.Image, 1).L, LabOf(off.Image, 0).L, 1);   // both the same black, the screen's
         Assert.True(LabOf(off.Image, 0).L < 1, "L* " + LabOf(off.Image, 0).L);
 
         // With the compensation the same grey keeps its place over the black.
-        SoftProofResult bpc = SoftProof.Render(p, p.Table(ProofIntent.Relative), px, simulate: false, paperOutside: null);
+        SoftProofResult bpc = SoftProof.Render(p, p.Table(ProofIntent.Relative), px, simulate: false);
         Assert.Equal(10, LabOf(bpc.Image, 0).L, 1);
     }
 
@@ -120,8 +117,8 @@ public class SoftProofTests
         Raster grey = Pixels((Grey(50), Grey(50), Grey(50)));
         // The fixture's perceptual table puts the black at L* 0, so L* 50 lands at 0.5 of the
         // device and prints at 20 + 0.8 x 50 = 60; the compensated relative trip returns ~50.
-        double perceptual = LabOf(SoftProof.Render(p, p.Table(ProofIntent.Perceptual), grey, simulate: true, paperOutside: null).Image, 0).L;
-        double relative = LabOf(SoftProof.Render(p, p.Table(ProofIntent.Relative), grey, simulate: true, paperOutside: null).Image, 0).L;
+        double perceptual = LabOf(SoftProof.Render(p, p.Table(ProofIntent.Perceptual), grey, simulate: true).Image, 0).L;
+        double relative = LabOf(SoftProof.Render(p, p.Table(ProofIntent.Relative), grey, simulate: true).Image, 0).L;
         Assert.Equal(60, perceptual, tolerance: 0.5);
         Assert.Equal(52.8, relative, tolerance: 0.5);
         Assert.NotSame(p.Table(ProofIntent.Perceptual), p.Table(ProofIntent.Relative));
@@ -147,37 +144,14 @@ public class SoftProofTests
         // A grey of D50 at Y 0.2 is the grey of that Y on screen, neutral; the matrix is the
         // Bradford-adapted sRGB one.
         var p = ProofProfile.ForTests(new[] { 0.9642, 1.0, 0.8249 }, new[] { 0.0, 0.0, 0.0 });
-        var (r, g, b) = SoftProof.Display(p, 0.9642 * 0.2, 0.2, 0.8249 * 0.2, simulate: false, out bool outside);
-        Assert.False(outside);
+        var (r, g, b) = SoftProof.Display(p, 0.9642 * 0.2, 0.2, 0.8249 * 0.2, simulate: false);
+        // A colour the screen cannot show is clipped, never left outside 0..1.
+        var (cr, cg, cb) = SoftProof.Display(p, 0.2, 0.6, 0.05, simulate: false);
+        Assert.InRange(cr, 0, 1); Assert.InRange(cg, 0, 1); Assert.InRange(cb, 0, 1);
+        Assert.Equal(0, cr, 3);
         Assert.Equal(ColorMath.LinearToSrgb(0.2), r, tolerance: 1e-3);
         Assert.Equal(r, g, tolerance: 1e-3);   // neutral within 0.3 of an 8-bit level
         Assert.Equal(r, b, tolerance: 1e-3);
-    }
-
-    [Fact]
-    public void R161_ThePaperAndTheScreenWarningsAreCountedPerPixel()
-    {
-        double ky = ColorMath.YOfLstar(Black);
-        var p = ProofProfile.ForTests(new[] { 0.9642, 1.0, 0.8249 }, new[] { 0.9642 * ky, ky, 0.8249 * ky });
-        // A 2-cube: every node a grey of Y 0.2, except the corner of pure red, which the "paper"
-        // turns into a green no sRGB screen shows (a negative red).
-        var t = new ProofTable { N = 2, Intent = ProofIntent.Relative, X = new float[8], Y = new float[8], Z = new float[8] };
-        for (int i = 0; i < 8; i++) { t.X[i] = 0.9642f * 0.2f; t.Y[i] = 0.2f; t.Z[i] = 0.8249f * 0.2f; }
-        int red = (1 * 2 + 0) * 2 + 0;
-        t.X[red] = 0.2f; t.Y[red] = 0.6f; t.Z[red] = 0.05f;
-
-        Raster px = Pixels((1, 0, 0), (0, 0, 0), (0, 1, 0));
-        SoftProofResult both = SoftProof.Render(p, t, px, simulate: false, paperOutside: new[] { true, false, true });
-        Assert.Equal(new[] { ProofClass.Both, ProofClass.None, ProofClass.Paper }, both.Classes);
-        Assert.Equal(100.0 * 2 / 3, both.PctPaper, 6);
-        Assert.Equal(100.0 / 3, both.PctScreen, 6);
-        Assert.Equal(100.0 / 3, both.PctBoth, 6);
-
-        SoftProofResult screen = SoftProof.Render(p, t, px, simulate: false, paperOutside: null);
-        Assert.Equal(new[] { ProofClass.Screen, ProofClass.None, ProofClass.None }, screen.Classes);
-        Assert.Equal(0, screen.PctPaper);
-        // The green is painted clipped, not left outside 0..1.
-        Assert.InRange(screen.Image.At(0, 0, 0), 0, 1);
     }
 
     [Fact]
@@ -195,10 +169,9 @@ public class SoftProofTests
         Assert.Equal(50, set.PctPaper, 6);
         Assert.Equal(scene.W * scene.H, set.PaperOutside.Length);
 
+        Assert.True(set.PaperOutside[0]);
+        Assert.False(set.PaperOutside[63]);
         SoftProofResult r = ProofRun.Render(set, ProofIntent.Perceptual, simulate: false);
-        Assert.Equal(50, r.PctPaper, 6);
-        Assert.Equal(ProofClass.Paper, r.Classes[0]);
-        Assert.Equal(ProofClass.None, r.Classes[63]);
         Assert.Equal(ProofIntent.Perceptual, r.Intent);
         Assert.False(r.Simulated);
     }
@@ -248,7 +221,7 @@ public class SoftProofTests
         ProofProfile p = ProofProfile.Open(Profile(ws, withPerceptual: false));
         Assert.Contains("B2A0", p.Problem);
         Assert.Contains("B2A0", p.Table(ProofIntent.Relative).Problem);
-        Assert.Throws<ArgumentException>(() => SoftProof.Render(p, p.Table(ProofIntent.Relative), Pixels((0.5f, 0.5f, 0.5f)), false, null));
+        Assert.Throws<ArgumentException>(() => SoftProof.Render(p, p.Table(ProofIntent.Relative), Pixels((0.5f, 0.5f, 0.5f)), false));
     }
 
     [Fact]
@@ -267,8 +240,6 @@ public class SoftProofTests
         Assert.Contains("L* 20.0", ProofTexts.PaperBlackLine(p));
         Assert.Contains("1.4 %", ProofTexts.PaperGamutLegend(1.4));
         Assert.Contains(Fmt.F0(Thresholds.CurveGamutDeltaAb), ProofTexts.PaperGamutLegend(1.4));
-        Assert.Contains("0.2 %", ProofTexts.ScreenGamutLegend(0.2));
-        Assert.Contains(Fmt.F1(Thresholds.ProofScreenGamutDeltaE), ProofTexts.ScreenGamutLegend(0.2));
         Assert.Equal("Relativ, fara compensarea negrului", ProofTexts.IntentName(ProofIntent.RelativeNoBpc));
         Assert.Contains("Tonuri", ProofTexts.IntentHelp(ProofIntent.RelativeNoBpc));
     }

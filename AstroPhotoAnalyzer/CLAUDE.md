@@ -162,7 +162,8 @@ edit:
 - `NoiseAnalyzer`, `QuantizationAnalyzer`: ADR 0015 (two tile criteria on purpose).
 - `JpegAnalyzer`: ADR 0019 (the mean error votes nothing).
 - `SoftProof`, `ProofRun`: `docs/design/soft-proof.md` and ADR 0066 (the table holds the paper's
-  colour, the display step is a scaling, the third intent is the Tonuri tab's model).
+  colour, the display step is a scaling, the third intent is the Tonuri tab's model, no screen
+  warning and no simulation box: both were measured useless).
 - `ToneCurve`, `CurveAdvisor`, `GamutAnalyzer`, `FitsWriter`: ADR 0032 (the curve never moves
   the dust or the sky; the anchors are the upper part of the classes; the spline is Siril's; the
   gamut is a figure; the writer copies a FITS and never opens the input for writing).

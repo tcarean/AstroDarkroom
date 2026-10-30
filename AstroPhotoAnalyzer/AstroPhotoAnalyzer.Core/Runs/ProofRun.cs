@@ -43,7 +43,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>The image reduced to at most ProofMaxSide on its long side.</summary>
         internal Raster Reduced { get; init; }
 
-        /// <summary>Per pixel of <see cref="Reduced"/>, in row order, whether it leaves the paper's gamut (R-144).</summary>
+        /// <summary>Per pixel of <see cref="Reduced"/>, in row order, whether it leaves the paper's gamut (R-144, R-161): the warning's mask.</summary>
         internal bool[] PaperOutside { get; init; }
 
         /// <summary>The share of <see cref="Reduced"/> outside the paper's gamut, in percent.</summary>
@@ -110,7 +110,7 @@ namespace AstroPhotoAnalyzer
         internal static SoftProofResult Render(ProofSet set, ProofIntent intent, bool simulate)
         {
             if (set.Problem != null) throw new InvalidOperationException(set.Problem);
-            return SoftProof.Render(set.Profile, set.Profile.Table(intent), set.Reduced, simulate, set.PaperOutside);
+            return SoftProof.Render(set.Profile, set.Profile.Table(intent), set.Reduced, simulate);
         }
     }
 }

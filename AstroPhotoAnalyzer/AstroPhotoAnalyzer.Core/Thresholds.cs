@@ -743,17 +743,6 @@ namespace AstroPhotoAnalyzer
         internal const int ProofGrid = 65;
 
         /// <summary>
-        /// The screen's gamut warning of the soft proof (R-161): a proofed colour whose display
-        /// sRGB leaves 0..1 is outside the screen's gamut when the colour the screen shows instead,
-        /// the clipped one, differs from it by more than this Delta E76. 2.0 is about the smallest
-        /// difference an eye sees between two patches side by side; under it the clipping is
-        /// invisible and a warning would only paint noise. On the plate-solved FITS through the
-        /// lab's baryta profile it flags 0.02 % of the pixels on the perceptual intent and none
-        /// under the simulation (V-015, 2026-10-30): a quiet warning on a sky, as it should be.
-        /// </summary>
-        internal const double ProofScreenGamutDeltaE = 2.0;
-
-        /// <summary>
         /// The longest side of the reduced copy the soft proof is made on (R-160). The preview's
         /// PreviewMaxSide (1600) fits a Full HD render; the proof is shown maximised on a 4K screen
         /// too, so a long side under the screen's would be enlarged there. 2400 is a presumption

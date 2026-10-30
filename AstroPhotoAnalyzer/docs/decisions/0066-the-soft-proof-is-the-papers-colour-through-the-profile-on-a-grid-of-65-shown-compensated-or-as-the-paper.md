@@ -9,7 +9,7 @@ The window reads the paper's Dmax from an ICC printer profile (ADR 0030) and cou
 outside the paper's gamut (ADR 0032, ADR 0042), but nothing shows what the paper would do to
 the image. On 2026-10-30 the owner asked for a soft-proofing tab as close as possible to
 Lightroom Classic's: a rendering intent (perceptual, relative), "Simulate Paper & Ink", gamut
-warnings that can be switched on and off, the image full-screen inside a margin whose colour
+warnings that can be switched on and off (both of which fell on the owner's questions, below), the image full-screen inside a margin whose colour
 follows the selections; viewing only, no editing, no proof copy; without a profile the tab shows
 an error and nothing else. The proposal the owner accepted the same day added three things
 beyond Lightroom: a third intent, relative without black point compensation, which is what
@@ -64,11 +64,17 @@ profiles, the Epson P900 baryta profile installed on the owner's machine and the
    unsimulated view earns its place (editing under the dull simulation over-corrects). The
    box was dropped, the proof is always simulated, and the texts the user sees name no other
    program: the documentation says what the tab is modelled on, the tooltips do not.
-3. Two warnings, both decided by the core on the proof's pixels: the paper's gamut by the rule
-   of ADR 0042 on the existing `GamutTable`, so that the share equals the Editare Curbe tab's
-   figure for the original; the screen's gamut where a display channel leaves 0..1 and the
-   clipped colour differs from it by more than `ProofScreenGamutDeltaE` (2.0) in Delta E76.
-   The screen is assumed sRGB, as every L\* in the tool is (R-096).
+3. One warning, decided by the core once per image on the source pixels of the reduction: the
+   paper's gamut by the rule of ADR 0042 on the existing `GamutTable`, so that the share equals
+   the Editare Curbe tab's figure for the original. The tab first had Lightroom's second
+   warning too, the screen's gamut (a display channel outside 0..1 whose clipping moved the
+   colour by more than Delta E76 2.0). On 2026-10-30 the owner asked when it could ever fire;
+   measured on the plate-solved FITS in the state the window shows: 0 % through the baryta
+   profile and 0 % through the canvas, whose white is bluish (it gave figures, up to 8 %, only
+   in the unsimulated display step dropped in decision 2). With an sRGB source and a profile
+   that leaves in-gamut colours in place or pulls them inward, no proofed colour can leave the
+   screen's gamut; Lightroom needs the warning because its source is ProPhoto. The warning, its
+   threshold and its class were removed; a colour the screen cannot show is clipped.
 4. The margin is view only: `Albul hartiei` (the default) is the paper's white, the display
    colour of sRGB white under the absolute scaling, and five fixed backgrounds (white to
    black, Lightroom's) can be chosen instead. The state of the controls is the session's: it survives another image and is not
@@ -86,9 +92,9 @@ profiles, the Epson P900 baryta profile installed on the owner's machine and the
   for every change of intent.
 - **Storing the display colour in the grid.** One grid per intent and per state of the box,
   twice the work for a step that is a per-pixel scaling.
-- **A monitor profile from Windows for the screen warning.** The tool assumes sRGB everywhere
-  (R-096); a profile read from the display would make the proof alone colour-managed. Open for
-  a later task.
+- **A monitor profile from Windows, for a screen warning.** The tool assumes sRGB everywhere
+  (R-096); a profile read from the display would make the proof alone colour-managed, and with
+  an sRGB source there is nothing for the warning to find.
 - **The histogram of the proof, Before/After side by side, the proof copy.** Not asked; the
   `Originalul` box swaps the image inside the same margin, which is what the comparison is for.
 - **Keeping the simulation box as parity with Lightroom.** A control with no use in this tool
@@ -99,15 +105,15 @@ profiles, the Epson P900 baryta profile installed on the owner's machine and the
 
 ## Consequences
 
-- R-160 to R-163 state the behaviour; `SoftProofTests` guards the chain, the warnings and the
+- R-160 to R-163 state the behaviour; `SoftProofTests` guards the chain, the warning's mask and the
   problems on a hand-built profile that now carries B2A tables, `SoftProofTabTests` the tab and
   the window; V-015 holds the figures on the plate-solved FITS through the lab's baryta profile.
 - The paper white the tab shows and the margin takes is the `wtpt` tag's, L\* 97.2 on the lab's
   baryta (V-015), 0.4 under the L\* 97.6 the package's own absolute intent gave in the probe,
   which adapts the white its own way; the tag is the figure the profile states, and the
   display step is written here, so the two cannot drift apart.
-- `Thresholds` gains `ProofGrid`, `ProofScreenGamutDeltaE` and `ProofMaxSide`, each with its
-  provenance; `thresholds.md` their rows.
+- `Thresholds` gains `ProofGrid` and `ProofMaxSide`, each with its provenance; `thresholds.md`
+  their rows.
 - Wacton.Unicolour has a third use, named in `THIRD-PARTY-NOTICES.md`, `ThirdParty.cs` and the
   README's table.
 - A profile without B2A tables cannot be proofed (the gamut figure already says so); B2A0,

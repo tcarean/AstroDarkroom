@@ -14,8 +14,8 @@
 
 The Soft proof tab shows what the paper would do to the image, through the ICC printer profile
 the Dmax came from (R-028, the top bar's profile, R-155), the way Lightroom Classic's soft
-proofing does: a rendering intent, the paper's white and black shown as they are, two gamut
-warnings, the image inside a margin, full screen on request. Viewing only: nothing is edited, nothing is written. Without a
+proofing does: a rendering intent, the paper's white and black shown as they are, the paper's
+gamut warning, the image inside a margin, full screen on request. Viewing only: nothing is edited, nothing is written. Without a
 profile the tab shows the core's sentence and nothing else (R-162).
 
 ## The chain (`Analysis/SoftProof.cs`)
@@ -42,7 +42,7 @@ NaN anywhere (no usable table) makes a table with a `Problem`. `RelativeNoBpc` s
 compensation, so every tone darker than the paper's black lands on the device black and prints
 as that black: the Tonuri tab's model (ADR 0025), which is why it exists beyond Lightroom's two.
 
-`SoftProof.Render(profile, table, raster, simulate, paperOutside)` proofs a reduced image: for
+`SoftProof.Render(profile, table, raster, simulate)` proofs a reduced image: for
 each pixel the paper colour read trilinearly from the table (`Trilinear.Corners`, the one read
 `GamutAnalyzer.Interpolated` uses too), then the display step `SoftProof.Display`: with
 `simulate` true, what the window always asks for, the absolute scaling by the media white,
@@ -50,19 +50,16 @@ each pixel the paper colour read trilinearly from the table (`Trilinear.Corners`
 core for the figures (V-015), BPC towards the screen, `(XYZ - K) x W / (W - K)`, so the paper's
 black is the screen's black and its white the screen's white; then the Bradford-adapted
 sRGB matrix (XYZ D50 to linear sRGB) and the encoding, clamped. A mono image goes through as
-grey; the result always has three planes. The rows run in parallel, with the shares counted per
-row and summed under a lock, as `GamutAnalyzer.Measure` does. Why the table holds XYZ and not the
+grey; the result always has three planes. The rows run in parallel. Why the table holds XYZ and not the
 display colour: the display step is a per-pixel scaling, so one table per intent serves both
 states of `simulate`.
 
-The two warnings, per pixel (`ProofClass`): *paper*, the pixel's source colour outside the
-paper's gamut by the rule of R-144 (`GamutAnalyzer.Outside` on the existing `GamutTable`, the
-exact trip near the threshold, ADR 0042), decided once per image in `ProofRun.Prepare` since it
-does not depend on the intent, so the share equals the Editare Curbe tab's figure for the
-original; *screen*, a display channel outside 0..1 whose clipping moves the colour by more than
-`ProofScreenGamutDeltaE` in Delta E76 (`ColorMath.LabOfXyz` against D50 on both the unclipped
-and the clipped colour, the clipped one brought back to XYZ by the inverse matrix); *both* where
-the two meet.
+The warning: the pixels outside the paper's gamut by the rule of R-144 (`GamutAnalyzer.Outside`
+on the existing `GamutTable`, the exact trip near the threshold, ADR 0042), decided once per
+image in `ProofRun.Prepare` on the source pixels of the reduction, since it does not depend on
+the intent; the share equals the Editare Curbe tab's figure for the original. There is no
+screen-gamut warning: with an sRGB source nothing can leave the screen's gamut (ADR 0066); a
+clipped channel is clipped silently in `Display`.
 
 ## The run (`Runs/ProofRun.cs`)
 
@@ -78,22 +75,21 @@ proof is shown maximised on a 4K screen too.
 ## The texts (`Report/ProofTexts.cs`)
 
 The sentences, all pairs in the interface language (ADR 0048): the two refusals, "computing",
-the profile's line with its tables, the paper white and black lines, the two legends with their
-shares and the thresholds they quote, the three intents' names and one-line helps (the radio
+the profile's line with its tables, the paper white and black lines, the legend with its share
+and the threshold it quotes, the three intents' names and one-line helps (the radio
 buttons' tooltips) and the caption (profile, intent, the state of the simulation). The window
 writes none of them.
 
 ## The tab and the window (`ViewModels/SoftProofTab.cs`, the three views)
 
 `SoftProofTabViewModel` holds the state of the controls (the intent as three booleans over one
-`ProofIntent`, the three boxes, the margin choice) and what is shown: the proof bitmap and the
-original's (`RasterBitmaps.Region` of the core's rasters), three overlay bitmaps from the
-classes (`RasterBitmaps.Overlay`: the paper layer red over the pixels outside the paper's gamut,
-those outside both included; the screen layer blue the same way; the both layer magenta over the
-two), the margin brush, the core's sentences. `Populate` keeps the result; `MainViewModel`
+`ProofIntent`, the two boxes, the margin choice) and what is shown: the proof bitmap and the
+original's (`RasterBitmaps.Region` of the core's rasters), the warning's overlay
+(`RasterBitmaps.Overlay`, red over the set's mask, made once per set like the original), the
+margin brush, the core's sentences. `Populate` keeps the result; `MainViewModel`
 starts `ComputeAsync` beside the curves' computation once every tab is filled (ADR 0051), which
 prepares, renders and makes the frozen bitmaps on a pool thread (an `Outcome` record handed
-back; three overlays over 2.7 MP would stall the window if made on its thread) with
+back; an overlay over 2.7 MP would stall the window if made on its thread) with
 "computing" shown meanwhile; a change of intent renders again the same way
 (`RenderAsync`, the cached set, a new table only on a new intent), and one made while the first
 computation runs is rendered right after it; the other controls raise properties. The run number
@@ -111,8 +107,8 @@ The margin (`MarginBrush`): `PaperWhite`, the default, is the paper's white (`Pa
 from the core's `PaperWhiteSrgb`); the five fixed
 backgrounds (white, light grey, grey, dark grey, black) are Lightroom's, presentation constants
 in the view-model, not thresholds, since nothing is measured against them. `ShowOriginal` swaps
-the image inside the same margin and hides the layers (`ShowPaperLayer`, `ShowScreenLayer`,
-`ShowBothLayer` are false over the original; the both layer shows only with both boxes on).
+the image inside the same margin and hides the layer (`ShowPaperLayer` is false over the
+original).
 
 `SoftProofControls` is one `UserControl` for the controls, used by the tab and by the window
 over the same view-model; its `ShowFullScreenButton` dependency property hides the button in the
@@ -134,7 +130,7 @@ View state only: the view-model knows nothing of it.
 state is the tab's): the controls and the caption in a bar at the top, the margin brush filling
 the window behind the image (the same `ZoomPanViewer`), the message ("computing" or a refused
 table's reason, red) under the caption, and the keys in `PreviewKeyDown`:
-Esc closes, G, M, O toggle the boxes and I moves to the next intent through
+Esc closes, G and O toggle the boxes and I moves to the next intent through
 `SoftProofTabViewModel.HandleKey`, ignored while the focus is in a text box or a modifier is held.
 
 ## What was measured

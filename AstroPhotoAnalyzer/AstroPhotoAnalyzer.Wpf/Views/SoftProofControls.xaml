@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- SoftProofControls - the controls of the soft proof (R-163), the same in the tab and in the
-     full-screen window over the same view-model: the three intents, the three boxes, the margin
+     full-screen window over the same view-model: the three intents, the two boxes, the margin
      and "Full screen". The radio buttons have no GroupName: a GroupName would join every
      instance in the process into one group (docs/design/testing.md), and each instance's
      panel already makes a group of its own. -->
@@ -40,12 +40,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <CheckBox IsChecked="{Binding ShowPaperGamut}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,16,4"
               Content="{local:T En='Paper gamut warning', Ro='Avertisment gamut hartie'}"
               ToolTip="{local:T En='Paints in red the pixels whose colour the paper does not reproduce, by the rule of the Curves Editing tab. Key G in the full-screen window.', Ro='Picteaza cu rosu pixelii a caror culoare hartia nu o reda, dupa regula din tabul Editare Curbe. Tasta G in fereastra pe tot ecranul.'}" />
-    <CheckBox IsChecked="{Binding ShowScreenGamut}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,16,4"
-              Content="{local:T En='Screen gamut warning', Ro='Avertisment gamut ecran'}"
-              ToolTip="{local:T En='Paints in blue the pixels the paper shows but an sRGB screen cannot; magenta where both warnings apply. Key M.', Ro='Picteaza cu albastru pixelii pe care hartia ii reda dar un ecran sRGB nu poate; magenta unde se aplica ambele avertismente. Tasta M.'}" />
     <CheckBox IsChecked="{Binding ShowOriginal}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,20,4"
               Content="{local:T En='Original', Ro='Originalul'}"
-              ToolTip="{local:T En='The image as it is, inside the same margin, for comparison; the warnings are not painted over it. Key O.', Ro='Imaginea asa cum e, in aceeasi margine, pentru comparatie; avertismentele nu se picteaza peste ea. Tasta O.'}" />
+              ToolTip="{local:T En='The image as it is, inside the same margin, for comparison; the warning is not painted over it. Key O.', Ro='Imaginea asa cum e, in aceeasi margine, pentru comparatie; avertismentul nu se picteaza peste ea. Tasta O.'}" />
     <StackPanel Orientation="Horizontal" Margin="0,0,20,4" VerticalAlignment="Center">
       <TextBlock Text="{local:T En='Margin:', Ro='Margine:'}" VerticalAlignment="Center" Margin="0,0,8,0" />
       <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding Margin}" MinWidth="120" VerticalAlignment="Center"

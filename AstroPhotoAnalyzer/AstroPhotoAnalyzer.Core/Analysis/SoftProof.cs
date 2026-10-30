@@ -17,6 +17,7 @@
 
 // SoftProof.cs - the soft proof (R-160 to R-162, ADR 0066): what the paper shows of each sRGB
 // colour, through the ICC printer profile's tables, and how that is put on an sRGB screen.
+// Which pixels leave the paper's gamut is GamutAnalyzer's rule (R-144), decided by ProofRun.
 //
 // THE CHAIN. Source sRGB -> XYZ D50 -> (black point compensation towards the paper, for the
 // relative intent) -> the profile's table towards the printer of the intent (B2A0 perceptual,
@@ -71,21 +72,6 @@ namespace AstroPhotoAnalyzer
         /// prints as that black, the Tonuri tab's model (R-045).
         /// </summary>
         RelativeNoBpc,
-    }
-
-    /// <summary>The class of a proofed pixel for the two warnings (R-161).</summary>
-    internal enum ProofClass : byte
-    {
-        None = 0,
-
-        /// <summary>Outside the paper's gamut (the rule of R-144).</summary>
-        Paper = 1,
-
-        /// <summary>The paper shows it, an sRGB screen cannot.</summary>
-        Screen = 2,
-
-        /// <summary>Both.</summary>
-        Both = 3,
     }
 
     /// <summary>
@@ -261,7 +247,7 @@ namespace AstroPhotoAnalyzer
         void FinishFacts()
         {
             PaperWhiteLab = ColorMath.LabOfXyz(MediaWhite[0], MediaWhite[1], MediaWhite[2], D50[0], D50[1], D50[2]);
-            var (r, g, b) = SoftProof.Display(this, D50[0], D50[1], D50[2], simulate: true, out _);
+            var (r, g, b) = SoftProof.Display(this, D50[0], D50[1], D50[2], simulate: true);
             PaperWhiteSrgb = new[] { r, g, b };
         }
 
@@ -326,62 +312,40 @@ namespace AstroPhotoAnalyzer
             "tabela profilului dinspre imprimanta (A2B1) nu da un negru intre 0 si albul hartiei; profilul e probabil stricat");
     }
 
-    /// <summary>
-    /// The proof of a reduced image: the proofed image, the class of each pixel for the two
-    /// warnings, and their shares.
-    /// </summary>
+    /// <summary>The proof of a reduced image: the proofed image, and how it was made.</summary>
     internal sealed record SoftProofResult
     {
         /// <summary>The proofed image, three planes, encoded sRGB 0..1.</summary>
         internal Raster Image { get; init; }
 
-        /// <summary>The class of each pixel, in row order.</summary>
-        internal ProofClass[] Classes { get; init; }
-
-        /// <summary>The share of the pixels outside the paper's gamut, those in both included, in percent.</summary>
-        internal double PctPaper { get; init; }
-
-        /// <summary>The share of the pixels outside the screen's gamut, those in both included, in percent.</summary>
-        internal double PctScreen { get; init; }
-
-        /// <summary>The share of the pixels outside both, in percent.</summary>
-        internal double PctBoth { get; init; }
-
         internal ProofIntent Intent { get; init; }
         internal bool Simulated { get; init; }
     }
 
-    /// <summary>The soft proof of an image through a profile's table (R-160, R-161).</summary>
+    /// <summary>The soft proof of an image through a profile's table (R-160).</summary>
     internal static class SoftProof
     {
-        // XYZ D50 to linear sRGB and back: the sRGB matrices adapted to D50 with Bradford, the
-        // ones the ICC world uses for an sRGB working space.
+        // XYZ D50 to linear sRGB: the sRGB matrix adapted to D50 with Bradford, the one the ICC
+        // world uses for an sRGB working space.
         const double M00 = 3.1338561, M01 = -1.6168667, M02 = -0.4906146;
         const double M10 = -0.9787684, M11 = 1.9161415, M12 = 0.0334540;
         const double M20 = 0.0719453, M21 = -0.2289914, M22 = 1.4052427;
-        const double I00 = 0.4360747, I01 = 0.3850649, I02 = 0.1430804;
-        const double I10 = 0.2225045, I11 = 0.7168786, I12 = 0.0606169;
-        const double I20 = 0.0139322, I21 = 0.0971045, I22 = 0.7141733;
-
-        // A channel this little outside 0..1 is rounding, not a colour the screen lacks.
-        const double Tolerance = 1e-4;
 
         /// <summary>
         /// The display step of one paper colour: the scaling the simulation decides (the paper's
         /// black and white to the screen's, or the absolute scaling by the media white), then the
-        /// Bradford-adapted sRGB matrix and the encoding, the channels clamped to 0..1.
+        /// Bradford-adapted sRGB matrix and the encoding, the channels clamped to 0..1. A colour
+        /// the screen cannot show is clipped: with an sRGB source and a profile that only pulls
+        /// colours inward, none leaves it but a bluish paper white, by less than the eye sees
+        /// (ADR 0066).
         /// </summary>
         /// <param name="p">The profile, for its media white and paper black.</param>
         /// <param name="x">The paper colour's X, relative to the paper's white.</param>
         /// <param name="y">The paper colour's Y.</param>
         /// <param name="z">The paper colour's Z.</param>
         /// <param name="simulate">Whether the paper's white and black are shown as they are.</param>
-        /// <param name="screenOutside">
-        /// Receives whether a channel left 0..1 and the clipped colour differs from the colour
-        /// by more than ProofScreenGamutDeltaE (R-161).
-        /// </param>
         /// <returns>The encoded sRGB, each 0..1.</returns>
-        internal static (float R, float G, float B) Display(ProofProfile p, double x, double y, double z, bool simulate, out bool screenOutside)
+        internal static (float R, float G, float B) Display(ProofProfile p, double x, double y, double z, bool simulate)
         {
             double[] w = ProofProfile.D50, k = p.PaperBlack, m = p.MediaWhite;
             if (simulate)
@@ -397,47 +361,27 @@ namespace AstroPhotoAnalyzer
             double rl = M00 * x + M01 * y + M02 * z;
             double gl = M10 * x + M11 * y + M12 * z;
             double bl = M20 * x + M21 * y + M22 * z;
-            double rc = Math.Clamp(rl, 0, 1), gc = Math.Clamp(gl, 0, 1), bc = Math.Clamp(bl, 0, 1);
-            screenOutside = false;
-            if (rl < -Tolerance || rl > 1 + Tolerance || gl < -Tolerance || gl > 1 + Tolerance || bl < -Tolerance || bl > 1 + Tolerance)
-            {
-                double xc = I00 * rc + I01 * gc + I02 * bc, yc = I10 * rc + I11 * gc + I12 * bc, zc = I20 * rc + I21 * gc + I22 * bc;
-                var a = ColorMath.LabOfXyz(x, y, z, w[0], w[1], w[2]);
-                var b = ColorMath.LabOfXyz(xc, yc, zc, w[0], w[1], w[2]);
-                double d = Math.Sqrt((a.L - b.L) * (a.L - b.L) + (a.A - b.A) * (a.A - b.A) + (a.B - b.B) * (a.B - b.B));
-                screenOutside = d > Thresholds.ProofScreenGamutDeltaE;
-            }
-            return ((float)ColorMath.LinearToSrgb(rc), (float)ColorMath.LinearToSrgb(gc), (float)ColorMath.LinearToSrgb(bc));
+            return ((float)ColorMath.LinearToSrgb(Math.Clamp(rl, 0, 1)), (float)ColorMath.LinearToSrgb(Math.Clamp(gl, 0, 1)), (float)ColorMath.LinearToSrgb(Math.Clamp(bl, 0, 1)));
         }
 
         /// <summary>
         /// Proofs <paramref name="img"/> through <paramref name="t"/>: each pixel's paper colour
-        /// read trilinearly, the display step of <see cref="Display"/>, and the class of each
-        /// pixel for the two warnings; the rows in parallel. A mono image goes through as grey;
-        /// the result always has three planes.
+        /// read trilinearly, then the display step of <see cref="Display"/>; the rows in
+        /// parallel. A mono image goes through as grey; the result always has three planes.
         /// </summary>
         /// <param name="p">The profile the table belongs to.</param>
         /// <param name="t">The table of the intent; one with a Problem is refused.</param>
         /// <param name="img">The image, 0..1, already reduced.</param>
         /// <param name="simulate">Whether the paper's white and black are shown as they are.</param>
-        /// <param name="paperOutside">
-        /// Per pixel of <paramref name="img"/>, in row order, whether it is outside the paper's
-        /// gamut (R-144); null for none outside.
-        /// </param>
-        /// <returns>The proofed image, the classes and the shares.</returns>
-        internal static SoftProofResult Render(ProofProfile p, ProofTable t, Raster img, bool simulate, bool[] paperOutside)
+        /// <returns>The proofed image.</returns>
+        internal static SoftProofResult Render(ProofProfile p, ProofTable t, Raster img, bool simulate)
         {
             if (t.Problem != null) throw new ArgumentException(t.Problem, nameof(t));
             int w = img.W, h = img.H;
-            if (paperOutside != null && paperOutside.Length != w * h)
-                throw new ArgumentException(Tr.Pick("the gamut mask does not match the image", "masca de gamut nu se potriveste cu imaginea"), nameof(paperOutside));
             var o = new Raster(h, w, 3);
-            var classes = new ProofClass[w * h];
             float[] R = img.Planes[0], G = img.IsColor ? img.Planes[1] : img.Planes[0], B = img.IsColor ? img.Planes[2] : img.Planes[0];
             float[] oR = o.Planes[0], oG = o.Planes[1], oB = o.Planes[2];
-            long nPaper = 0, nScreen = 0, nBoth = 0;
-            object gate = new();
-            Parallel.For(0, h, () => (Paper: 0L, Screen: 0L, Both: 0L), (y, _, acc) =>
+            Parallel.For(0, h, y =>
             {
                 Span<int> index = stackalloc int[8];
                 Span<float> weight = stackalloc float[8];
@@ -452,27 +396,11 @@ namespace AstroPhotoAnalyzer
                         py += weight[c] * t.Y[index[c]];
                         pz += weight[c] * t.Z[index[c]];
                     }
-                    var (r, g, b) = Display(p, px, py, pz, simulate, out bool screen);
+                    var (r, g, b) = Display(p, px, py, pz, simulate);
                     oR[i] = r; oG[i] = g; oB[i] = b;
-                    bool paper = paperOutside != null && paperOutside[i];
-                    classes[i] = paper && screen ? ProofClass.Both : paper ? ProofClass.Paper : screen ? ProofClass.Screen : ProofClass.None;
-                    if (paper) acc.Paper++;
-                    if (screen) acc.Screen++;
-                    if (paper && screen) acc.Both++;
                 }
-                return acc;
-            }, acc => { lock (gate) { nPaper += acc.Paper; nScreen += acc.Screen; nBoth += acc.Both; } });
-            long all = (long)w * h;
-            return new SoftProofResult
-            {
-                Image = o,
-                Classes = classes,
-                PctPaper = all == 0 ? 0 : 100.0 * nPaper / all,
-                PctScreen = all == 0 ? 0 : 100.0 * nScreen / all,
-                PctBoth = all == 0 ? 0 : 100.0 * nBoth / all,
-                Intent = t.Intent,
-                Simulated = simulate,
-            };
+            });
+            return new SoftProofResult { Image = o, Intent = t.Intent, Simulated = simulate };
         }
     }
 }

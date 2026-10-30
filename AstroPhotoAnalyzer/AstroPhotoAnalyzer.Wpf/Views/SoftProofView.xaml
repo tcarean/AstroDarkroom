@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- SoftProofView - the Soft proof tab (R-163): the intent, the three boxes, the margin, the
+<!-- SoftProofView - the Soft proof tab (R-163): the intent, the two boxes, the margin, the
      proof inside its margin with the warning layers, the core's facts and legends under it,
      and "Full screen". Without a profile only the core's sentence shows (R-162). The image
      takes all the remaining room, which is why the tab is a grid, as the Editare Curbe tab.
@@ -60,8 +60,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Grid Width="{Binding Width}" Height="{Binding Height}">
           <Image Source="{Binding Image}" Stretch="None" />
           <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
-          <Image Source="{Binding ScreenLayer}" Stretch="None" Visibility="{Binding ShowScreenLayer, Converter={StaticResource BoolToVis}}" />
-          <Image Source="{Binding BothLayer}" Stretch="None" Visibility="{Binding ShowBothLayer, Converter={StaticResource BoolToVis}}" />
         </Grid>
       </local:ZoomPanViewer>
     </Border>
@@ -69,7 +67,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <StackPanel Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasProof, Converter={StaticResource BoolToVis}}">
       <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" />
       <TextBlock Text="{Binding PaperGamutLegend}" TextWrapping="Wrap" Margin="0,4,0,0" />
-      <TextBlock Text="{Binding ScreenGamutLegend}" TextWrapping="Wrap" Margin="0,2,0,0" />
       <TextBlock Style="{StaticResource Muted}" Text="{Binding ProfileLine}" TextWrapping="Wrap" Margin="0,6,0,0" />
       <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperWhiteLine}" TextWrapping="Wrap" Margin="0,2,0,0" />
       <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperBlackLine}" TextWrapping="Wrap" Margin="0,2,0,0" />

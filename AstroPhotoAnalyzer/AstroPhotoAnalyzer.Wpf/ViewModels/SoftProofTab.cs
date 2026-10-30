@@ -17,7 +17,7 @@
 
 // SoftProofTab.cs - the Soft proof tab (R-163) and its full-screen window: the proof of the
 // image through the paper's ICC profile, the paper's white and black shown as they are, with the
-// intent, the two gamut warnings, the original for comparison and the margin around the image.
+// intent, the paper's gamut warning, the original for comparison and the margin around the image.
 //
 // It computes nothing: the proof, the classes of the pixels, the shares and every sentence come
 // from ProofRun (R-160 to R-162). Here are only the state of the controls, the bitmaps made from
@@ -50,16 +50,13 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
-    /// The Soft proof tab (R-163): the intent, the three boxes, the margin, the proof with its
-    /// warning layers, the core's facts and legends, and the full-screen window's request.
+    /// The Soft proof tab (R-163): the intent, the two boxes, the margin, the proof with its
+    /// warning layer, the core's facts and legend, and the full-screen window's request.
     /// </summary>
     public sealed class SoftProofTabViewModel : ResultTabViewModel
     {
-        // The warnings' paints: red for the paper's gamut and blue for the screen's, as
-        // Lightroom; magenta where both apply.
+        // The warning's paint: red over the pixels outside the paper's gamut.
         static readonly Color PaperColour = Color.FromArgb(150, 0xF8, 0x51, 0x49);
-        static readonly Color ScreenColour = Color.FromArgb(150, 0x4E, 0xA8, 0xDE);
-        static readonly Color BothColour = Color.FromArgb(170, 0xD9, 0x46, 0xEF);
 
         // Lightroom's fixed backgrounds: presentation, nothing is measured against them.
         static readonly Color White = Color.FromRgb(0xFF, 0xFF, 0xFF);
@@ -70,27 +67,26 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// What one computation or render hands back from the pool thread: the set, the proof
-        /// and the frozen bitmaps made from them (null bitmaps with a problem).
+        /// and the frozen bitmaps made from them (null bitmaps with a problem). The original and
+        /// the paper layer belong to the set and are made once for it.
         /// </summary>
         /// <param name="Set">The prepared set, with or without a problem.</param>
         /// <param name="Proof">The proof; null when the set has a problem.</param>
         /// <param name="Original">The reduced original's bitmap; null with a problem.</param>
         /// <param name="Image">The proof's bitmap; null with a problem.</param>
         /// <param name="Paper">The paper-gamut layer; null with a problem.</param>
-        /// <param name="Screen">The screen-gamut layer; null with a problem.</param>
-        /// <param name="Both">The layer of the pixels outside both; null with a problem.</param>
-        sealed record Outcome(ProofSet Set, SoftProofResult Proof, BitmapSource Original, BitmapSource Image, BitmapSource Paper, BitmapSource Screen, BitmapSource Both);
+        sealed record Outcome(ProofSet Set, SoftProofResult Proof, BitmapSource Original, BitmapSource Image, BitmapSource Paper);
 
         AnalysisResult _result;
         ProofSet _set;
         SoftProofResult _proof;
-        BitmapSource _original, _proofImage, _paperLayer, _screenLayer, _bothLayer;
+        BitmapSource _original, _proofImage, _paperLayer;
         int _run;
         bool _busy, _isProblem;
         string _message;
 
         ProofIntent _intent = ProofIntent.Perceptual;
-        bool _showPaper, _showScreen, _showOriginal;
+        bool _showPaper, _showOriginal;
         ProofMarginChoice _margin = ProofMarginChoice.PaperWhite;
 
         /// <summary>Makes the command; the tab starts empty.</summary>
@@ -135,7 +131,6 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         public bool ShowPaperGamut { get => _showPaper; set { if (Set(ref _showPaper, value)) RaiseLayers(); } }
-        public bool ShowScreenGamut { get => _showScreen; set { if (Set(ref _showScreen, value)) RaiseLayers(); } }
 
         /// <summary>"Originalul": the image as it is, inside the same margin, without the warnings.</summary>
         public bool ShowOriginal { get => _showOriginal; set { if (Set(ref _showOriginal, value)) { Raise(nameof(Image)); RaiseLayers(); } } }
@@ -149,18 +144,10 @@ namespace AstroPhotoAnalyzer.Wpf
         public int Width => _proof?.Image.W ?? 0;
         public int Height => _proof?.Image.H ?? 0;
 
-        /// <summary>The pixels outside the paper's gamut, those outside both included, in red.</summary>
+        /// <summary>The pixels outside the paper's gamut, in red (R-161).</summary>
         public BitmapSource PaperLayer => _paperLayer;
 
-        /// <summary>The pixels outside the screen's gamut, those outside both included, in blue.</summary>
-        public BitmapSource ScreenLayer => _screenLayer;
-
-        /// <summary>The pixels outside both, in magenta, over the two others.</summary>
-        public BitmapSource BothLayer => _bothLayer;
-
         public bool ShowPaperLayer => HasProof && !_showOriginal && _showPaper;
-        public bool ShowScreenLayer => HasProof && !_showOriginal && _showScreen;
-        public bool ShowBothLayer => HasProof && !_showOriginal && _showPaper && _showScreen;
 
         /// <summary>The margin's colour: the paper's white, or the chosen fixed background.</summary>
         public Brush MarginBrush
@@ -214,8 +201,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public string ProfileLine => _set?.Profile == null ? "" : ProofTexts.ProfileLine(_set.Profile);
         public string PaperWhiteLine => _set?.Profile == null ? "" : ProofTexts.PaperWhiteLine(_set.Profile);
         public string PaperBlackLine => _set?.Profile == null ? "" : ProofTexts.PaperBlackLine(_set.Profile);
-        public string PaperGamutLegend => _proof == null ? "" : ProofTexts.PaperGamutLegend(_proof.PctPaper);
-        public string ScreenGamutLegend => _proof == null ? "" : ProofTexts.ScreenGamutLegend(_proof.PctScreen);
+        public string PaperGamutLegend => HasControls ? ProofTexts.PaperGamutLegend(_set.PctPaper) : "";
 
         public string PerceptualName => ProofTexts.IntentName(ProofIntent.Perceptual);
         public string RelativeName => ProofTexts.IntentName(ProofIntent.Relative);
@@ -258,12 +244,12 @@ namespace AstroPhotoAnalyzer.Wpf
             RaiseProof();
         }
 
-        /// <summary>Drops the proof and its bitmaps; the set and the original stay.</summary>
+        /// <summary>Drops the proof and its bitmap; the set, the original and the paper layer stay with it.</summary>
         void DropProof()
         {
             _proof = null;
-            _proofImage = _paperLayer = _screenLayer = _bothLayer = null;
-            if (_set == null) _original = null;
+            _proofImage = null;
+            if (_set == null) _original = _paperLayer = null;
         }
 
         /// <summary>
@@ -323,12 +309,12 @@ namespace AstroPhotoAnalyzer.Wpf
         async Task RenderAsync()
         {
             ProofSet set = _set; ProofIntent intent = _intent;
-            BitmapSource original = _original;   // read here, on the window's thread, as the set is
+            BitmapSource original = _original, paper = _paperLayer;   // read here, on the window's thread, as the set is
             int run = ++_run;
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                Outcome outcome = await Task.Run(() => Render(set, intent, original));
+                Outcome outcome = await Task.Run(() => Render(set, intent, original, paper));
                 if (run == _run) Show(outcome);
             }
             catch (Exception e)
@@ -352,7 +338,7 @@ namespace AstroPhotoAnalyzer.Wpf
         static Outcome Prepare(AnalysisResult result, ProofIntent intent)
         {
             ProofSet set = ProofRun.Prepare(result);
-            return set.Problem == null ? Render(set, intent, null) : new Outcome(set, null, null, null, null, null, null);
+            return set.Problem == null ? Render(set, intent, null, null) : new Outcome(set, null, null, null, null);
         }
 
         /// <summary>
@@ -362,19 +348,18 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="set">A set without a problem.</param>
         /// <param name="intent">The intent to render; one the core refuses throws its reason.</param>
         /// <param name="original">The original's bitmap when already made for this set; null to make it.</param>
+        /// <param name="paper">The paper layer when already made for this set; null to make it.</param>
         /// <returns>The outcome, bitmaps included.</returns>
-        static Outcome Render(ProofSet set, ProofIntent intent, BitmapSource original)
+        static Outcome Render(ProofSet set, ProofIntent intent, BitmapSource original, BitmapSource paper)
         {
             SoftProofResult proof = ProofRun.Render(set, intent, simulate: true);
             Raster img = proof.Image;
             int w = img.W, h = img.H;
-            ProofClass[] c = proof.Classes;
+            bool[] outside = set.PaperOutside;
             return new Outcome(set, proof,
                 original ?? RasterBitmaps.Region(set.Reduced, 0, 0, w, h),
                 RasterBitmaps.Region(img, 0, 0, w, h),
-                RasterBitmaps.Overlay(w, h, (x, y) => (c[y * w + x] & ProofClass.Paper) != 0, PaperColour),
-                RasterBitmaps.Overlay(w, h, (x, y) => (c[y * w + x] & ProofClass.Screen) != 0, ScreenColour),
-                RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == ProofClass.Both, BothColour));
+                paper ?? RasterBitmaps.Overlay(w, h, (x, y) => outside[y * w + x], PaperColour));
         }
 
         /// <summary>Takes a set and its proof with their bitmaps; a set with a problem empties the tab and shows it in red.</summary>
@@ -385,7 +370,7 @@ namespace AstroPhotoAnalyzer.Wpf
             _proof = o.Proof;
             if (_set.Problem != null)
             {
-                _original = _proofImage = _paperLayer = _screenLayer = _bothLayer = null;
+                _original = _proofImage = _paperLayer = null;
                 Message = _set.Problem; IsProblem = true;
                 RaiseProof();
                 return;
@@ -393,8 +378,6 @@ namespace AstroPhotoAnalyzer.Wpf
             _original = o.Original;
             _proofImage = o.Image;
             _paperLayer = o.Paper;
-            _screenLayer = o.Screen;
-            _bothLayer = o.Both;
             Message = null; IsProblem = false;
             RaiseProof();
         }
@@ -403,33 +386,29 @@ namespace AstroPhotoAnalyzer.Wpf
         void RaiseProof()
         {
             Raise(nameof(HasControls)); Raise(nameof(HasProof)); Raise(nameof(Image)); Raise(nameof(Width)); Raise(nameof(Height));
-            Raise(nameof(PaperLayer)); Raise(nameof(ScreenLayer)); Raise(nameof(BothLayer));
+            Raise(nameof(PaperLayer));
             Raise(nameof(Caption)); Raise(nameof(ProfileLine)); Raise(nameof(PaperWhiteLine)); Raise(nameof(PaperBlackLine));
-            Raise(nameof(PaperGamutLegend)); Raise(nameof(ScreenGamutLegend));
+            Raise(nameof(PaperGamutLegend));
             Raise(nameof(MarginBrush)); Raise(nameof(PaperWhiteColour));
             RaiseLayers();
             (FullScreen as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
-        /// <summary>Raises the three layers' visibilities.</summary>
-        void RaiseLayers()
-        {
-            Raise(nameof(ShowPaperLayer)); Raise(nameof(ShowScreenLayer)); Raise(nameof(ShowBothLayer));
-        }
+        /// <summary>Raises the layer's visibility.</summary>
+        void RaiseLayers() => Raise(nameof(ShowPaperLayer));
 
         /// <summary>
-        /// The full-screen window's keys (R-163): G, M and O toggle the three boxes, I moves to
-        /// the next intent; anything else is left alone. The window passes a key only without
+        /// The full-screen window's keys (R-163): G and O toggle the two boxes, I moves to the
+        /// next intent; anything else is left alone. The window passes a key only without
         /// modifiers.
         /// </summary>
         /// <param name="key">The key pressed.</param>
-        /// <returns>Whether the key was one of the four.</returns>
+        /// <returns>Whether the key was one of the three.</returns>
         internal bool HandleKey(Key key)
         {
             switch (key)
             {
                 case Key.G: ShowPaperGamut = !ShowPaperGamut; return true;
-                case Key.M: ShowScreenGamut = !ShowScreenGamut; return true;
                 case Key.O: ShowOriginal = !ShowOriginal; return true;
                 case Key.I: Intent = (ProofIntent)(((int)_intent + 1) % 3); return true;
                 default: return false;
