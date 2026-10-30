@@ -16,15 +16,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // SoftProofTab.cs - the Soft proof tab (R-163) and its full-screen window: the proof of the
-// image through the paper's ICC profile, with the intent, the simulation of paper and ink, the
-// two gamut warnings, the original for comparison and the margin around the image.
+// image through the paper's ICC profile, the paper's white and black shown as they are, with the
+// intent, the two gamut warnings, the original for comparison and the margin around the image.
 //
 // It computes nothing: the proof, the classes of the pixels, the shares and every sentence come
 // from ProofRun (R-160 to R-162). Here are only the state of the controls, the bitmaps made from
 // the core's rasters and classes, the brush of the margin and the commands. Like the curves, the
 // proof is a run after the analysis: MainViewModel starts it once the other tabs are filled
-// (ADR 0051), a change of intent or of the simulation renders again on a pool thread, and the
-// other controls only choose what is shown. The bitmaps are made on the pool thread too, frozen:
+// (ADR 0051), a change of intent renders again on a pool thread, and the other controls only
+// choose what is shown. The proof is always the paper and ink simulated (ADR 0066: the box
+// Lightroom has was dropped, nothing in this tool needed its other state). The bitmaps are made on the pool thread too, frozen:
 // three overlays over the reduction (2.7 MP on the reference image, up to 2400 px on the long
 // side) would stall the window for a visible moment.
 
@@ -39,8 +40,8 @@ namespace AstroPhotoAnalyzer.Wpf
     /// <summary>The margin around the proof (R-163): Lightroom's backgrounds plus the automatic one.</summary>
     public enum ProofMarginChoice
     {
-        /// <summary>The screen's white with the simulation off, the paper's white with it on.</summary>
-        Auto,
+        /// <summary>The paper's white, the one the proof's white becomes.</summary>
+        PaperWhite,
         White,
         LightGrey,
         Grey,
@@ -49,7 +50,7 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
-    /// The Soft proof tab (R-163): the intent, the four boxes, the margin, the proof with its
+    /// The Soft proof tab (R-163): the intent, the three boxes, the margin, the proof with its
     /// warning layers, the core's facts and legends, and the full-screen window's request.
     /// </summary>
     public sealed class SoftProofTabViewModel : ResultTabViewModel
@@ -89,10 +90,8 @@ namespace AstroPhotoAnalyzer.Wpf
         string _message;
 
         ProofIntent _intent = ProofIntent.Perceptual;
-        // The simulation starts on (the owner's choice, ADR 0066): the proof is for seeing the
-        // print as it will look beside a white; off is for judging the tones on the screen's range.
-        bool _simulate = true, _showPaper, _showScreen, _showOriginal;
-        ProofMarginChoice _margin = ProofMarginChoice.Auto;
+        bool _showPaper, _showScreen, _showOriginal;
+        ProofMarginChoice _margin = ProofMarginChoice.PaperWhite;
 
         /// <summary>Makes the command; the tab starts empty.</summary>
         public SoftProofTabViewModel()
@@ -109,7 +108,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// The computation or render last started (R-163), for whoever must wait for it;
         /// completed before the first and after one that was abandoned. Both
-        /// <see cref="ComputeAsync"/> and a change of intent or of the simulation set it.
+        /// <see cref="ComputeAsync"/> and a change of intent set it.
         /// </summary>
         internal Task ProofComputation { get; private set; } = Task.CompletedTask;
 
@@ -131,18 +130,6 @@ namespace AstroPhotoAnalyzer.Wpf
                 if (_intent == value) return;
                 _intent = value;
                 Raise(nameof(IsPerceptual)); Raise(nameof(IsRelative)); Raise(nameof(IsRelativeNoBpc));
-                if (HasControls) ProofComputation = RenderAsync();
-            }
-        }
-
-        /// <summary>"Simuleaza hartia si cerneala": the paper's white and black shown as they are; a change renders again.</summary>
-        public bool SimulatePaper
-        {
-            get => _simulate;
-            set
-            {
-                if (!Set(ref _simulate, value)) return;
-                Raise(nameof(MarginBrush));
                 if (HasControls) ProofComputation = RenderAsync();
             }
         }
@@ -175,7 +162,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool ShowScreenLayer => HasProof && !_showOriginal && _showScreen;
         public bool ShowBothLayer => HasProof && !_showOriginal && _showPaper && _showScreen;
 
-        /// <summary>The margin's colour: automatic, the screen's white or the paper's; else the chosen background.</summary>
+        /// <summary>The margin's colour: the paper's white, or the chosen fixed background.</summary>
         public Brush MarginBrush
         {
             get
@@ -187,7 +174,7 @@ namespace AstroPhotoAnalyzer.Wpf
                     ProofMarginChoice.Grey => Grey,
                     ProofMarginChoice.DarkGrey => DarkGrey,
                     ProofMarginChoice.Black => Black,
-                    _ => _simulate && HasControls ? PaperWhiteColour : White,
+                    _ => HasControls ? PaperWhiteColour : White,
                 };
                 var b = new SolidColorBrush(c);
                 b.Freeze();
@@ -195,7 +182,7 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>The paper's white as the core displays it under the simulation (R-163); the screen's white before a proof.</summary>
+        /// <summary>The paper's white as the core displays it (R-163); the screen's white before a proof.</summary>
         public Color PaperWhiteColour
         {
             get
@@ -223,7 +210,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The window's title: the image's name.</summary>
         public string Title => _result == null ? "Soft proof" : $"Soft proof - {System.IO.Path.GetFileName(_result.Path)}";
 
-        public string Caption => _proof == null ? "" : ProofTexts.Caption(_set.Profile, _proof.Intent, _proof.Simulated);
+        public string Caption => _proof == null ? "" : ProofTexts.Caption(_set.Profile, _proof.Intent);
         public string ProfileLine => _set?.Profile == null ? "" : ProofTexts.ProfileLine(_set.Profile);
         public string PaperWhiteLine => _set?.Profile == null ? "" : ProofTexts.PaperWhiteLine(_set.Profile);
         public string PaperBlackLine => _set?.Profile == null ? "" : ProofTexts.PaperBlackLine(_set.Profile);
@@ -288,7 +275,7 @@ namespace AstroPhotoAnalyzer.Wpf
             _run++;
             // A computation in flight is superseded: its finally will not touch these.
             IsBusy = false; Message = null; IsProblem = false;
-            Show(Prepare(_result, _intent, _simulate));
+            Show(Prepare(_result, _intent));
         }
 
         /// <summary>
@@ -304,18 +291,18 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             AnalysisResult result = _result;
             if (result == null) return;
-            ProofIntent intent = _intent; bool simulate = _simulate;
+            ProofIntent intent = _intent;
             int run = ++_run;
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                Outcome outcome = await Task.Run(() => Prepare(result, intent, simulate));
+                Outcome outcome = await Task.Run(() => Prepare(result, intent));
                 if (run != _run) return;
                 Show(outcome);
                 IsBusy = false;
-                // A control changed while the table was built: the proof shown is the old
-                // state's, so render the new one now rather than wait for the next change.
-                if (HasControls && (_intent != intent || _simulate != simulate)) await RenderAsync();
+                // The intent changed while the table was built: the proof shown is the old
+                // one's, so render the new one now rather than wait for the next change.
+                if (HasControls && _intent != intent) await RenderAsync();
             }
             catch (Exception e)
             {
@@ -328,20 +315,20 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Renders the prepared set again on a pool thread, after a change of intent or of the
-        /// simulation; a late outcome is dropped like a late computation. A table the core
+        /// Renders the prepared set again on a pool thread, after a change of intent; a late
+        /// outcome is dropped like a late computation. A table the core
         /// refuses (its Problem) leaves the set, so another intent can still be chosen, and shows
         /// the reason in red with no image.
         /// </summary>
         async Task RenderAsync()
         {
-            ProofSet set = _set; ProofIntent intent = _intent; bool simulate = _simulate;
+            ProofSet set = _set; ProofIntent intent = _intent;
             BitmapSource original = _original;   // read here, on the window's thread, as the set is
             int run = ++_run;
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                Outcome outcome = await Task.Run(() => Render(set, intent, simulate, original));
+                Outcome outcome = await Task.Run(() => Render(set, intent, original));
                 if (run == _run) Show(outcome);
             }
             catch (Exception e)
@@ -361,23 +348,24 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The core's two steps and the bitmaps, on whichever thread; a new set, so the original is made too.</summary>
         /// <param name="result">The analysis.</param>
         /// <param name="intent">The intent to render.</param>
-        /// <param name="simulate">The simulation's state.</param>
         /// <returns>The outcome; without a proof and bitmaps when the set has a problem.</returns>
-        static Outcome Prepare(AnalysisResult result, ProofIntent intent, bool simulate)
+        static Outcome Prepare(AnalysisResult result, ProofIntent intent)
         {
             ProofSet set = ProofRun.Prepare(result);
-            return set.Problem == null ? Render(set, intent, simulate, null) : new Outcome(set, null, null, null, null, null, null);
+            return set.Problem == null ? Render(set, intent, null) : new Outcome(set, null, null, null, null, null, null);
         }
 
-        /// <summary>The core's render and the frozen bitmaps of its result, on whichever thread.</summary>
+        /// <summary>
+        /// The core's render, the paper and ink simulated, and the frozen bitmaps of its result,
+        /// on whichever thread.
+        /// </summary>
         /// <param name="set">A set without a problem.</param>
         /// <param name="intent">The intent to render; one the core refuses throws its reason.</param>
-        /// <param name="simulate">The simulation's state.</param>
         /// <param name="original">The original's bitmap when already made for this set; null to make it.</param>
         /// <returns>The outcome, bitmaps included.</returns>
-        static Outcome Render(ProofSet set, ProofIntent intent, bool simulate, BitmapSource original)
+        static Outcome Render(ProofSet set, ProofIntent intent, BitmapSource original)
         {
-            SoftProofResult proof = ProofRun.Render(set, intent, simulate);
+            SoftProofResult proof = ProofRun.Render(set, intent, simulate: true);
             Raster img = proof.Image;
             int w = img.W, h = img.H;
             ProofClass[] c = proof.Classes;
@@ -430,17 +418,16 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// The full-screen window's keys (R-163): P, G, M and O toggle the four boxes, I moves
-        /// to the next intent; anything else is left alone. The window passes a key only without
+        /// The full-screen window's keys (R-163): G, M and O toggle the three boxes, I moves to
+        /// the next intent; anything else is left alone. The window passes a key only without
         /// modifiers.
         /// </summary>
         /// <param name="key">The key pressed.</param>
-        /// <returns>Whether the key was one of the five.</returns>
+        /// <returns>Whether the key was one of the four.</returns>
         internal bool HandleKey(Key key)
         {
             switch (key)
             {
-                case Key.P: SimulatePaper = !SimulatePaper; return true;
                 case Key.G: ShowPaperGamut = !ShowPaperGamut; return true;
                 case Key.M: ShowScreenGamut = !ShowScreenGamut; return true;
                 case Key.O: ShowOriginal = !ShowOriginal; return true;

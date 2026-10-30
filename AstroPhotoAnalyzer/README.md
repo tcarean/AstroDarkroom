@@ -182,25 +182,23 @@ nothing is edited, nothing is written. The proof is computed right after the ana
   on the paper's black, as Lightroom's Relative), and a third Lightroom does not have,
   **Relative, no black point compensation**: every tone darker than the paper's black prints as
   that black, which is what the **Tones** tab counts as "under paper black".
-- **Simulate paper & ink**, ticked by default: the paper's white shows as its own colour and
-  its black as its own grey, the way the print will look beside a pure white; unticked, both
-  are the screen's, so the tones and the colours are judged on the screen's full range, the way
-  the eye sees a print alone once it has adapted to the paper.
+- The paper's white shows as its own colour and its black as its own grey, always: the print
+  as it will look beside a white. The margin around the image is that white by default, so the
+  eye has it to adapt to.
 - **Paper gamut warning** paints in red the pixels whose colour the paper does not reproduce, by
   the rule of the **Curves Editing** tab, so its share is the same figure; **Screen gamut
   warning** paints in blue the pixels the paper shows but an sRGB screen cannot; magenta where
   both apply. Each legend under the image gives its share.
 - **Original** shows the image as it is inside the same margin, for comparison.
-- **Margin**: **Auto** is the screen's white, or the paper's white with the simulation on; the
-  others are Lightroom's backgrounds, white to black.
+- **Margin**: **Paper white** by default; the others are fixed greys, white to black.
 - In the tab and in the window, the mouse wheel zooms around the cursor, up to 8:1, dragging
   with the left button pans, and a double click fits the image again.
 - **Full screen** opens the same proof maximised, with the same controls at the top and the
-  margin filling the window; the keys P, G, M, O toggle the four boxes, I moves to the next
+  margin filling the window; the keys G, M, O toggle the three boxes, I moves to the next
   intent, Esc closes.
 
 Under the image: the profile's name, its paper white in L\*a\*b\* (what the image's white
-becomes with the simulation on), its paper black in L\* and Dmax, and the two warnings' shares.
+becomes), its paper black in L\* and Dmax, and the two warnings' shares.
 The pixels and the screen are assumed sRGB, as everywhere in the tool; the proof is a reduced
 copy. The controls keep their state from one image to the next and start afresh with the window.
 

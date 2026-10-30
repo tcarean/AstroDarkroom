@@ -49,26 +49,29 @@ profiles, the Epson P900 baryta profile installed on the owner's machine and the
    intent to device values; A2B1 back, the colour the paper shows relative to its white. That
    colour, in XYZ, is what the grid stores: one table of `ProofGrid` (65) nodes per intent,
    built once per image and intent, the rows in parallel.
-2. The display step is applied per pixel after the interpolation and follows the one box
-   "Simuleaza hartia si cerneala" (Lightroom's "Simulate Paper & Ink"): off, BPC towards the
-   screen, `(XYZ - K) x W / (W - K)`, so the paper's black is the screen's black and its white
-   the screen's white; on, the absolute scaling by the media white of the `wtpt` tag, so the
-   paper's white shows as its own colour and its black as its own grey. Then XYZ D50 to sRGB
-   (the Bradford-adapted matrix, as the package converts), encoded. The box starts ticked, the
-   owner's choice on 2026-10-30 on seeing the tab: the proof is for seeing the print as it will
-   look beside a white; off is for judging the tones and the colours on the screen's full range,
-   the way the eye sees a print alone once it has adapted to the paper. The texts the user sees
-   name no other program: the tab is modelled on Lightroom's soft proofing, the documentation
-   says so, the tooltips do not.
+2. The display step is applied per pixel after the interpolation: the absolute scaling by the
+   media white of the `wtpt` tag, so the paper's white shows as its own colour and its black
+   as its own grey, the print beside a white. Then XYZ D50 to sRGB (the Bradford-adapted
+   matrix, as the package converts), encoded. The core also keeps the other display step,
+   BPC towards the screen, `(XYZ - K) x W / (W - K)`, the paper's black as the screen's black
+   and its white as the screen's white, for its figures (V-015 measures both); the window does
+   not show it. The tab first had Lightroom's box "Simulate Paper & Ink" for the two; on
+   2026-10-30, on seeing the tab, the owner asked what the unsimulated state was for and no
+   use survived the questions: the automatic margin, the paper's white, already gives the eye
+   the white to adapt to, and in the full-screen window the paper's black is the darkest thing
+   on screen, so the eye adapts to that too; the colour changes the profile makes are shown by
+   the gamut warning; and this tool edits nothing under the proof, which is where Lightroom's
+   unsimulated view earns its place (editing under the dull simulation over-corrects). The
+   box was dropped, the proof is always simulated, and the texts the user sees name no other
+   program: the documentation says what the tab is modelled on, the tooltips do not.
 3. Two warnings, both decided by the core on the proof's pixels: the paper's gamut by the rule
    of ADR 0042 on the existing `GamutTable`, so that the share equals the Editare Curbe tab's
    figure for the original; the screen's gamut where a display channel leaves 0..1 and the
    clipped colour differs from it by more than `ProofScreenGamutDeltaE` (2.0) in Delta E76.
    The screen is assumed sRGB, as every L\* in the tool is (R-096).
-4. The margin is view only: `Automat` is the screen's white with the simulation off and the
-   paper's white with it on (what the probe measured as the display colour of sRGB white under
-   the absolute scaling), and Lightroom's five fixed backgrounds (white to black) can be chosen
-   instead. The state of the controls is the session's: it survives another image and is not
+4. The margin is view only: `Albul hartiei` (the default) is the paper's white, the display
+   colour of sRGB white under the absolute scaling, and five fixed backgrounds (white to
+   black, Lightroom's) can be chosen instead. The state of the controls is the session's: it survives another image and is not
    written to `settings.json`.
 
 ## Alternatives rejected
@@ -88,6 +91,9 @@ profiles, the Epson P900 baryta profile installed on the owner's machine and the
   a later task.
 - **The histogram of the proof, Before/After side by side, the proof copy.** Not asked; the
   `Originalul` box swaps the image inside the same margin, which is what the comparison is for.
+- **Keeping the simulation box as parity with Lightroom.** A control with no use in this tool
+  is a question every reader asks; the state it switched to is kept in the core, measured and
+  documented, so it can come back if a use appears.
 - **Remembering the controls in `settings.json`.** The reasoning of ADR 0064: a view opens in a
   state chosen this session, nothing hidden from an earlier one.
 

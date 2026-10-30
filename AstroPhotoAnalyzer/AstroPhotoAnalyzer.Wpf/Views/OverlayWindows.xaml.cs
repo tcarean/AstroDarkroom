@@ -56,7 +56,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
     /// <summary>
     /// The soft proof's full-screen window (R-163), over the tab's own
-    /// <see cref="SoftProofTabViewModel"/>; non-modal. The keys P, G, M, O and I go to the
+    /// <see cref="SoftProofTabViewModel"/>; non-modal. The keys G, M, O and I go to the
     /// view-model, Esc closes.
     /// </summary>
     public partial class SoftProofWindow : Window

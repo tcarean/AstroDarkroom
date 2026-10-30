@@ -19,7 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <!-- SoftProofWindow - the soft proof full screen (R-163): maximised, over the tab's own
      view-model, the same controls in a bar at the top, the margin filling the window behind
-     the image. The keys P, G, M, O, I and Esc are in the code-behind. No figure is computed
+     the image. The keys G, M, O, I and Esc are in the code-behind. No figure is computed
      here. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.SoftProofWindow"
@@ -55,7 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </TextBlock.Style>
         </TextBlock>
         <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
-                   Text="{local:T En='Keys: P paper &amp; ink, G paper gamut, M screen gamut, O original, I next intent, Esc closes. Wheel: zoom around the cursor, up to 8:1; left button: drag; double click: fit again. A reduced copy; the pixels and the screen are assumed sRGB.', Ro='Taste: P hartie si cerneala, G gamut hartie, M gamut ecran, O originalul, I intentul urmator, Esc inchide. Rola: zoom in jurul cursorului, pana la 8:1; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa; pixelii si ecranul sunt presupusi sRGB.'}" />
+                   Text="{local:T En='Keys: G paper gamut, M screen gamut, O original, I next intent, Esc closes. Wheel: zoom around the cursor, up to 8:1; left button: drag; double click: fit again. A reduced copy; the pixels and the screen are assumed sRGB.', Ro='Taste: G gamut hartie, M gamut ecran, O originalul, I intentul urmator, Esc inchide. Rola: zoom in jurul cursorului, pana la 8:1; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa; pixelii si ecranul sunt presupusi sRGB.'}" />
       </StackPanel>
     </Border>
 

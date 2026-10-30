@@ -102,13 +102,11 @@ namespace AstroPhotoAnalyzer
                 "Tabela colorimetrica fara compensare: orice ton mai intunecat decat negrul hartiei se tipareste cu acel negru, ce numara tabul Tonuri"),
         };
 
-        /// <summary>The caption of the proof: the profile, the intent, the state of the simulation (R-163).</summary>
+        /// <summary>The caption of the proof: the profile and the intent, the paper and ink simulated (R-163).</summary>
         /// <param name="p">The profile.</param>
         /// <param name="intent">The intent shown.</param>
-        /// <param name="simulate">Whether the paper's white and black are shown as they are.</param>
         /// <returns>The sentence.</returns>
-        internal static string Caption(ProofProfile p, ProofIntent intent, bool simulate)
-            => $"{p.Description}: {IntentName(intent)}; "
-               + (simulate ? Tr.Pick("paper and ink simulated", "hartia si cerneala simulate") : Tr.Pick("the paper's white and black as the screen's", "albul si negrul hartiei ca ale ecranului"));
+        internal static string Caption(ProofProfile p, ProofIntent intent)
+            => $"{p.Description}: {IntentName(intent)}; " + Tr.Pick("paper and ink simulated", "hartia si cerneala simulate");
     }
 }

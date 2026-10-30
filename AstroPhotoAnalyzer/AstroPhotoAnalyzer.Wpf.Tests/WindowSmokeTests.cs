@@ -229,7 +229,7 @@ public class WindowSmokeTests
 
             // R-162, R-163: the Soft proof tab without a profile shows the core's sentence; with
             // one, the proof inside its margin, then the full-screen window over the same
-            // view-model, with both warnings on.
+            // view-model, with both warnings on. The paper and ink are always simulated.
             await vm.ProofComputation;
             Assert.False(vm.SoftProof.HasProof);
             Render(new SoftProofView { DataContext = vm.SoftProof }, name: "tab-soft-proof-fara-profil");
@@ -244,8 +244,6 @@ public class WindowSmokeTests
             await proofed.ProofComputation;
             Assert.True(proofed.SoftProof.HasProof, proofed.SoftProof.Message);
             Render(new SoftProofView { DataContext = proofed.SoftProof }, name: "tab-soft-proof");
-            proofed.SoftProof.SimulatePaper = true;
-            await proofed.SoftProof.ProofComputation;
             proofed.SoftProof.ShowPaperGamut = true;
             proofed.SoftProof.ShowScreenGamut = true;
             var proofWindow = new SoftProofWindow { DataContext = proofed.SoftProof };
