@@ -68,5 +68,19 @@ internal static class ThirdParty
             Copyright: "Copyright (C) 2008-2021 LibRaw LLC (info@libraw.org)",
             Url: "https://www.libraw.org/",
             Packages: ["Sdcb.LibRaw.runtime.win64", "Sdcb.LibRaw.runtime.linux64"]),
+
+        // One component, two packages, as LibRaw above: NLog.Targets.AtomicFile is NLog's own file
+        // target with atomic append, built from the same commit (d9ebf82) under the same licence.
+        // The copyright notice is the first line of LICENSE.txt at that commit, as FlatCheck read
+        // it for the same packages (its ADR 0070); the BSD terms ask for it, the conditions and
+        // the disclaimer, which THIRD-PARTY-NOTICES.md reproduces.
+        new ThirdPartyComponent(
+            Name: "NLog",
+            Role: T("writing the diagnostic log beside the program (the log folder), two windows into one file",
+                    "scrierea jurnalului de diagnostic langa program (folderul log), doua ferestre in acelasi fisier"),
+            Licence: "BSD-3-Clause",
+            Copyright: "Copyright (c) 2004-2024 Jaroslaw Kowalski <jaak@jkowalski.net>, Kim Christensen, Julian Verdurmen",
+            Url: "https://nlog-project.org/",
+            Packages: ["NLog", "NLog.Targets.AtomicFile"]),
     ];
 }
