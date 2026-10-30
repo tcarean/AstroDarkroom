@@ -61,7 +61,8 @@ AstroPhotoAnalyzer.Wpf/
   Interop/DarkTitleBar.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
   Presentation/AppIcon.cs, BarsCanvas.cs, CurveCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs,
                TExtension.cs (a XAML text in both languages), Emphasis.cs (a because's ** marks in bold, R-112),
-               AccessibleTabControl.cs (the window's tabs, their content in the UI Automation tree, R-157)
+               AccessibleTabControl.cs (the window's tabs, their content in the UI Automation tree, R-157),
+               ZoomPanViewer.cs (the soft proof's viewer: wheel zoom, drag pan, double-click fit, R-163)
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
              MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
              IccPickerViewModel.cs (the profile window, R-132),

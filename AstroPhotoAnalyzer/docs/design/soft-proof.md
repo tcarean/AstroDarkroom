@@ -5,8 +5,9 @@
 > `AstroPhotoAnalyzer.Core/Report/ProofTexts.cs`,
 > `AstroPhotoAnalyzer.Wpf/ViewModels/SoftProofTab.cs`,
 > `AstroPhotoAnalyzer.Wpf/Views/SoftProofView.xaml`,
-> `AstroPhotoAnalyzer.Wpf/Views/SoftProofControls.xaml` and
-> `AstroPhotoAnalyzer.Wpf/Views/SoftProofWindow.xaml`. A change to the code this describes means
+> `AstroPhotoAnalyzer.Wpf/Views/SoftProofControls.xaml`,
+> `AstroPhotoAnalyzer.Wpf/Views/SoftProofWindow.xaml` and
+> `AstroPhotoAnalyzer.Wpf/Presentation/ZoomPanViewer.cs`. A change to the code this describes means
 > this note is updated in the same task, or deleted with the decision it explains.
 
 ## What it shows
@@ -117,10 +118,20 @@ over the same view-model; its `ShowFullScreenButton` dependency property hides t
 window. The radio buttons carry no `GroupName`: with one, every instance in the process would
 form one group (`testing.md`), and each instance's panel is a group already. `SoftProofView`
 is a grid like `CurvesView`: the controls or the red message, the proof inside a `Border` whose
-background is the margin brush (a `Viewbox` that only shrinks), the sentences under it.
+background is the margin brush, in a `ZoomPanViewer`, the sentences under it.
+
+`Presentation/ZoomPanViewer.cs` is a `Decorator` that fits its child (the grid of the proof and
+its layers, sized to the proof's pixels) and keeps two numbers of its own: the zoom relative to
+the fit and the child point at the viewport's centre, in child units, so that a resize keeps
+what was looked at; a child of another size resets both. The wheel zooms by 1.25 around the
+cursor (the child point under it stays under it), clamped between the fit and `MaxScale` (8)
+screen pixels per child pixel; the left button drags with the mouse captured; a double click
+resets; the centre is clamped so that the child never leaves the viewport (centred along an axis
+where it is smaller). The child is arranged at its natural size under a scale and a translation.
+View state only: the view-model knows nothing of it.
 `SoftProofWindow` is maximised and non-modal, over the tab's own view-model (so the window's
 state is the tab's): the controls and the caption in a bar at the top, the margin brush filling
-the window behind the image (a `Viewbox` that also enlarges), the message ("computing" or a refused
+the window behind the image (the same `ZoomPanViewer`), the message ("computing" or a refused
 table's reason, red) under the caption, and the keys in `PreviewKeyDown`:
 Esc closes, P, G, M, O toggle the boxes and I moves to the next intent through
 `SoftProofTabViewModel.HandleKey`, ignored while the focus is in a text box or a modifier is held.

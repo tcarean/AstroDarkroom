@@ -13,8 +13,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (**Perceptual**, **Relative** with black point compensation, and **Relative, no black point
   compensation**, the Tones tab's own model), **Simulate paper & ink**, a paper gamut warning
   (the Curves Editing figure, in red) and a screen gamut warning (in blue, the screen assumed
-  sRGB), the original for comparison, a margin that is the screen's white or the paper's, and a
-  maximised window with keys. Without a profile the tab shows only a sentence saying so
+  sRGB), the original for comparison, a margin that is the screen's white or the paper's, wheel
+  zoom and drag pan on the image, and a maximised window with keys. Without a profile the tab shows only a sentence saying so
   (R-160 to R-163; ADR 0066).
 
 - The window shows the ICC profile in use in its top bar, under the image's name, with a

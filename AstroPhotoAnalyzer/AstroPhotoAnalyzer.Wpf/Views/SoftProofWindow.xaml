@@ -55,19 +55,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </TextBlock.Style>
         </TextBlock>
         <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
-                   Text="{local:T En='Keys: P paper &amp; ink, G paper gamut, M screen gamut, O original, I next intent, Esc closes. A reduced copy; the pixels and the screen are assumed sRGB.', Ro='Taste: P hartie si cerneala, G gamut hartie, M gamut ecran, O originalul, I intentul urmator, Esc inchide. O copie redusa; pixelii si ecranul sunt presupusi sRGB.'}" />
+                   Text="{local:T En='Keys: P paper &amp; ink, G paper gamut, M screen gamut, O original, I next intent, Esc closes. Wheel: zoom around the cursor, up to 8:1; left button: drag; double click: fit again. A reduced copy; the pixels and the screen are assumed sRGB.', Ro='Taste: P hartie si cerneala, G gamut hartie, M gamut ecran, O originalul, I intentul urmator, Esc inchide. Rola: zoom in jurul cursorului, pana la 8:1; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa; pixelii si ecranul sunt presupusi sRGB.'}" />
       </StackPanel>
     </Border>
 
+    <!-- The viewer fits the proof, zooms it with the wheel and pans it with the left button;
+         a double click fits it again (ZoomPanViewer). -->
     <Border Grid.Row="1" Background="{Binding MarginBrush}" Padding="48">
-      <Viewbox Stretch="Uniform">
+      <local:ZoomPanViewer>
         <Grid Width="{Binding Width}" Height="{Binding Height}">
           <Image Source="{Binding Image}" Stretch="None" />
           <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
           <Image Source="{Binding ScreenLayer}" Stretch="None" Visibility="{Binding ShowScreenLayer, Converter={StaticResource BoolToVis}}" />
           <Image Source="{Binding BothLayer}" Stretch="None" Visibility="{Binding ShowBothLayer, Converter={StaticResource BoolToVis}}" />
         </Grid>
-      </Viewbox>
+      </local:ZoomPanViewer>
     </Border>
   </Grid>
 </Window>

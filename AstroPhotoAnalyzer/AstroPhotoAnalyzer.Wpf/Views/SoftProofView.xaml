@@ -52,16 +52,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </StackPanel>
 
     <!-- The proof inside its margin: the margin's colour follows the selections (R-163). -->
+    <!-- The viewer fits the proof, zooms it with the wheel around the cursor and pans it with
+         the left button; a double click fits it again (ZoomPanViewer). -->
     <Border Grid.Row="1" Background="{Binding MarginBrush}" CornerRadius="4" Padding="24"
             Visibility="{Binding HasProof, Converter={StaticResource BoolToVis}}">
-      <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+      <local:ZoomPanViewer>
         <Grid Width="{Binding Width}" Height="{Binding Height}">
           <Image Source="{Binding Image}" Stretch="None" />
           <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
           <Image Source="{Binding ScreenLayer}" Stretch="None" Visibility="{Binding ShowScreenLayer, Converter={StaticResource BoolToVis}}" />
           <Image Source="{Binding BothLayer}" Stretch="None" Visibility="{Binding ShowBothLayer, Converter={StaticResource BoolToVis}}" />
         </Grid>
-      </Viewbox>
+      </local:ZoomPanViewer>
     </Border>
 
     <StackPanel Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasProof, Converter={StaticResource BoolToVis}}">
@@ -72,7 +74,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperWhiteLine}" TextWrapping="Wrap" Margin="0,2,0,0" />
       <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperBlackLine}" TextWrapping="Wrap" Margin="0,2,0,0" />
       <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,6,0,0"
-                 Text="{local:T En='A reduced copy through the tables of the profile, viewing only: the pixels and the screen are assumed sRGB. The margin is the white of the screen, or that of the paper with the simulation on. The soft proofing of Lightroom has the same two intents, the same box and the same two warnings; the third intent belongs to this tool, the model of the Tones tab.', Ro='O copie redusa prin tabelele profilului, doar pentru privit: pixelii si ecranul sunt presupusi sRGB. Marginea e albul ecranului, sau al hartiei cu simularea pornita. Soft proofing-ul din Lightroom are aceleasi doua intenturi, aceeasi bifa si aceleasi doua avertismente; al treilea intent e al uneltei, modelul tabului Tonuri.'}" />
+                 Text="{local:T En='Wheel: zoom around the cursor, up to 8:1; left button: drag; double click: fit again. A reduced copy through the tables of the profile, viewing only: the pixels and the screen are assumed sRGB. The margin is the white of the screen, or that of the paper with the simulation on. The soft proofing of Lightroom has the same two intents, the same box and the same two warnings; the third intent belongs to this tool, the model of the Tones tab.', Ro='Rola: zoom in jurul cursorului, pana la 8:1; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa prin tabelele profilului, doar pentru privit: pixelii si ecranul sunt presupusi sRGB. Marginea e albul ecranului, sau al hartiei cu simularea pornita. Soft proofing-ul din Lightroom are aceleasi doua intenturi, aceeasi bifa si aceleasi doua avertismente; al treilea intent e al uneltei, modelul tabului Tonuri.'}" />
     </StackPanel>
   </Grid>
 </UserControl>

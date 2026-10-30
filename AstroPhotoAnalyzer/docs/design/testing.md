@@ -78,4 +78,5 @@ the black, the perceptual table lands elsewhere than the colorimetric one, the w
 hand-built `ProofTable` and a `ProofProfile.ForTests`, the problems. `SoftProofTabTests` drives
 the tab through `Compute()`, the synchronous body, and the async paths through
 `ProofComputation`; `WindowSmokeTests.BindingErrors` is internal so that it can watch the tab's
-and the window's renders there too. `ValidationTests` has a fourth kind of case, `proof` (V-015).
+and the window's renders there too; `ZoomPanViewerTests` lays the viewer out over a sized child
+and drives `ZoomAt`, `PanBy` and `Reset` by hand. `ValidationTests` has a fourth kind of case, `proof` (V-015).

@@ -155,7 +155,7 @@ of the Raport tab's "fiindca" block (`Theme/Dark.xaml`, `RecommendationRowTempla
 block's inlines are rebuilt from both, the label semi-bold and then the `Because`, the parts
 between the core's `**` marks (`Fmt.Strong`) as `Bold`, an unclosed mark kept as text; the
 label is a property and not content because a XAML attribute is applied before the content,
-which put the label after the text. `Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
+which put the label after the text. `Presentation/ZoomPanViewer.cs` is the soft proof's viewer (`soft-proof.md`). `Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
 the diagonal, the sampled curve, the control points, a dotted vertical with a rotated label
 per class; the output axis ends at the largest value drawn. Not modal, not maximised, Esc
 closes it.

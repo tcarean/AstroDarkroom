@@ -191,6 +191,8 @@ nothing is edited, nothing is written. The proof is computed right after the ana
 - **Original** shows the image as it is inside the same margin, for comparison.
 - **Margin**: **Auto** is the screen's white, or the paper's white with the simulation on; the
   others are Lightroom's backgrounds, white to black.
+- In the tab and in the window, the mouse wheel zooms around the cursor, up to 8:1, dragging
+  with the left button pans, and a double click fits the image again.
 - **Full screen** opens the same proof maximised, with the same controls at the top and the
   margin filling the window; the keys P, G, M, O toggle the four boxes, I moves to the next
   intent, Esc closes.
