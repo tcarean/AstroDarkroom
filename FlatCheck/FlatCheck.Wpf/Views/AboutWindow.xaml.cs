@@ -23,10 +23,8 @@
 // notice beside ours. All the text comes through AboutViewModel; here remain only the two
 // window things: the dark title bar and opening the links in the browser.
 
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
-using NLog;
 
 namespace FlatCheck.Wpf
 {
@@ -36,9 +34,6 @@ namespace FlatCheck.Wpf
     /// </summary>
     public partial class AboutWindow : Window
     {
-        /// <summary>The diagnostic log: the link that could not be opened (R-110).</summary>
-        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
-
         /// <summary>Builds the window over a new <see cref="AboutViewModel"/>, with the
         /// largest icon and the dark title bar.</summary>
         public AboutWindow()
@@ -50,26 +45,11 @@ namespace FlatCheck.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         }
 
-        /// <summary>
-        /// Opens the link in the system's browser. UseShellExecute is mandatory on
-        /// .NET Core - without it Process.Start tries to execute the URL as a program.
-        /// A system without an associated browser throws; that is no reason for the window
-        /// to crash.
-        /// </summary>
-        /// <param name="sender">The hyperlink.</param>
+        /// <summary>Opens a link of the window, the licence's or a component's, in the system's
+        /// browser, through <see cref="ExternalLink.Open"/>.</summary>
+        /// <param name="sender">The window, where the link's event arrives.</param>
         /// <param name="e">The navigation; marked handled.</param>
-        void OpenLink(object sender, RequestNavigateEventArgs e)
-        {
-            e.Handled = true;
-            try
-            {
-                Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-            }
-            catch (System.Exception ex) when (ex is System.ComponentModel.Win32Exception || ex is System.InvalidOperationException)
-            {
-                Log.Debug(ex, "the link " + e.Uri + " could not be opened in a browser");
-            }
-        }
+        void OpenLink(object sender, RequestNavigateEventArgs e) => ExternalLink.Open(e);
 
         /// <summary>The "Inchide" button's handler: closes the window.</summary>
         /// <param name="sender">The button.</param>

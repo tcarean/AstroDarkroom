@@ -117,8 +117,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="FontSize" Value="11" />
   </Style>
 
-  <!-- The links in "Despre". By default WPF makes them dark blue on a black background, that
-       is unreadable; the theme's accent, underlined only when the mouse passes over. -->
+  <!-- The links, in "Despre" and on the Structure tab's card. By default WPF makes them dark
+       blue on a black background, that is unreadable; the theme's accent, underlined only when
+       the mouse passes over. -->
   <Style TargetType="Hyperlink">
     <Setter Property="Foreground" Value="{StaticResource AccentBr}" />
     <Setter Property="TextDecorations" Value="{x:Null}" />

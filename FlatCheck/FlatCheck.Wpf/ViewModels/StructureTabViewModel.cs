@@ -71,6 +71,7 @@ namespace FlatCheck.Wpf
         string _verdictDetail = "";
         string _whyResidual = StructureReport.WhyResidualMatters();
         string _profileMaster = "", _profileSummary = "", _profileScaleNote = "", _profileNote = "", _profileGap = "";
+        string _adobeMissing = "", _adobeSearched = "";
         IReadOnlyList<ScaleRow> _profileScale = Array.Empty<ScaleRow>();
         IReadOnlyList<LensProfileRow> _profileRows = Array.Empty<LensProfileRow>();
         string _savedTo = "";
@@ -181,6 +182,20 @@ namespace FlatCheck.Wpf
         /// <summary>Why it could not compare, when it could not; empty otherwise.</summary>
         public string ProfileGap { get => _profileGap; private set => Set(ref _profileGap, value); }
 
+        /// <summary>The red paragraph when the run's search found no Adobe profile (R-113);
+        /// empty otherwise, and when the run searched nothing.</summary>
+        public string AdobeMissing { get => _adobeMissing; private set => Set(ref _adobeMissing, value); }
+
+        /// <summary>What to install and that FlatCheck must restart; on screen only with
+        /// <see cref="AdobeMissing"/>.</summary>
+        public string AdobeInstall => StructureReport.AdobeInstall();
+
+        /// <summary>Adobe's DNG Converter page, the card's link.</summary>
+        public string AdobeLink => StructureReport.AdobeDngConverterUrl;
+
+        /// <summary>The folders searched; empty whenever <see cref="AdobeMissing"/> is.</summary>
+        public string AdobeSearched { get => _adobeSearched; private set => Set(ref _adobeSearched, value); }
+
         /// <summary>Constant, but kept as a property so it can be bound from XAML.</summary>
         public string WhyResidual { get => _whyResidual; private set => Set(ref _whyResidual, value); }
 
@@ -264,7 +279,7 @@ namespace FlatCheck.Wpf
 
                 Source = path;
                 Report = text.ToString();
-                Populate(outcome.Result, gap);
+                Populate(outcome.Result, gap, query?.Sources);
 
                 // The raster, then the map on the chosen scale. The bytes received from the run
                 // are those on the automatic scale: they go straight into the cache, so the same
@@ -307,17 +322,24 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>Shows a run's outcome: the structure rows, the combined verdict and its two
-        /// parts, and the profile card or the reason it is empty. Sets
-        /// <see cref="TabViewModel.HasResult"/>; the map and the report are the caller's.</summary>
+        /// parts, the profile card or the reason it is empty, and what the profile search left
+        /// out of it. Sets <see cref="TabViewModel.HasResult"/>; the map and the report are the
+        /// caller's.</summary>
         /// <param name="o">The run, with or without a comparison.</param>
         /// <param name="gap">Without a comparison in the run: a comparison that says why it could
         /// not; null otherwise.</param>
-        internal void Populate(StructureOutcome o, StructureOutcome gap = null)
+        /// <param name="searched">The profile sources the run searched; null when it searched
+        /// none (no raw in flats/), so nothing is said about Adobe.</param>
+        internal void Populate(StructureOutcome o, StructureOutcome gap = null, ProfileSources searched = null)
         {
             Populate(o.Structure);
             // Internal and with HasResult, so the rendering test can show the tab from a result,
             // without a session - as on the smoothing tab.
             HasResult = true;
+
+            // A search that found no Adobe file says so above the card (R-113); the core decides.
+            AdobeMissing = StructureReport.AdobeMissing(searched);
+            AdobeSearched = StructureReport.AdobeSearched(searched);
 
             // The run's verdict - the worse of shape and depth - and its advice, which is the
             // depth's when the depth made it worse. The texts are the report's.
@@ -445,6 +467,7 @@ namespace FlatCheck.Wpf
             ProfileRows = Array.Empty<LensProfileRow>();
             ProfileScale = Array.Empty<ScaleRow>();
             ProfileMaster = ProfileSummary = ProfileScaleNote = ProfileNote = ProfileGap = "";
+            AdobeMissing = AdobeSearched = "";
             SavedTo = "";
             SaveError = "";
             Map = null;

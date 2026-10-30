@@ -406,6 +406,63 @@ namespace FlatCheck
                  "Comparatia ar fi spus daca adancimea vignetarii e cea a obiectivului: un exces radial - caderea\n"
                  + "unui panou, curbura cerului - trece neobservat prin cele cinci teste.");
 
+        // ------------------------------------------------ without Adobe's profiles (R-113)
+        //
+        // The window's card only (ADR 0073): the console's report does not print these, so the
+        // saved report and the goldens stay as they were.
+
+        /// <summary>Adobe's page for the free DNG Converter, with its Windows downloads
+        /// (checked in a browser on 2026-10-28; the older helpx address redirects here).</summary>
+        internal const string AdobeDngConverterUrl = "https://helpx.adobe.com/camera-raw/desktop/dng-and-file-formats/adobe-dng-converter.html";
+
+        /// <summary>
+        /// The red paragraph at the top of the window's profile card when the search found no
+        /// Adobe file: that the profiles are not on this computer and, when lensfun's lenses
+        /// were read, what that leaves. A search that found Adobe's files has nothing to say,
+        /// and neither has a run that searched nothing (no raw beside the master).
+        /// </summary>
+        /// <param name="s">The sources the run searched; null when it searched
+        /// nothing.</param>
+        /// <returns>Two sentences, one when no lensfun lens was read either (the card's gap then
+        /// says no profile is on the machine); "" when <paramref name="s"/> is null or holds at
+        /// least one Adobe file.</returns>
+        internal static string AdobeMissing(ProfileSources s)
+        {
+            if (s == null || s.AdobeFiles > 0) return "";
+            string missing = T("Adobe's lens profiles were not found on this computer.",
+                               "Profilele de obiectiv Adobe nu au fost gasite pe acest calculator.");
+            // The gap's own condition: no lensfun lens read, whether the folder is missing or
+            // none of its files could be read (it then counts as present).
+            return s.LensfunLenses == 0 ? missing
+                 : missing + " " + T("Without them the lens is looked for in lensfun alone, the database that ships with FlatCheck: "
+                                     + "one database instead of two, and a raw that names no lens (a Nikon writes only an ID) "
+                                     + "is matched by its focal range alone.",
+                                     "Fara ele obiectivul e cautat doar in lensfun, baza livrata cu FlatCheck: o singura baza "
+                                     + "in loc de doua, iar un raw care nu numeste obiectivul (un Nikon scrie doar un ID) "
+                                     + "e potrivit doar dupa gama de focale.");
+        }
+
+        /// <summary>
+        /// What to install to get Adobe's profiles, and that FlatCheck must then restart: the
+        /// window locates the profiles once while it runs. Shown under <see cref="AdobeMissing"/>,
+        /// above the link to <see cref="AdobeDngConverterUrl"/>.
+        /// </summary>
+        /// <returns>Two sentences.</returns>
+        internal static string AdobeInstall()
+            => T("To get them, install the free Adobe DNG Converter, from the page below; Lightroom Classic, Lightroom and "
+                 + "Photoshop's Camera Raw install them too. Then restart FlatCheck: it looks for them only once while it runs.",
+                 "Ca sa le ai, instaleaza Adobe DNG Converter, gratuit, de pe pagina de mai jos; le instaleaza si Lightroom Classic, "
+                 + "Lightroom si Camera Raw din Photoshop. Apoi reporneste FlatCheck: le cauta o singura data cat timp ruleaza.");
+
+        /// <summary>The folders the search looked in, for the line under the link.</summary>
+        /// <param name="s">The sources the run searched; null when it searched
+        /// nothing.</param>
+        /// <returns>"Searched in: " and the folders, comma-separated; "" whenever
+        /// <see cref="AdobeMissing"/> is.</returns>
+        internal static string AdobeSearched(ProfileSources s)
+            => s == null || s.AdobeFiles > 0 ? ""
+             : T("Searched in: ", "Cautate in: ") + string.Join(", ", s.AdobeDirectories);
+
         /// <summary>
         /// The two parts of the verdict, on two rows, as the console prints them under VERDICT.
         /// </summary>

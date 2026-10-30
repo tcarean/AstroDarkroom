@@ -234,7 +234,9 @@ a library extraction and not a copy is ADR 0011.
     (one sentence per `ComparisonGap`), `ShapeDetail` / `DepthDetail` (the two halves of
     the verdict; the console pads them into `VerdictDetail`, the window labels them itself)
     and `DepthAdvice`, which replaces `Advice` when the depth carried the verdict
-    (ADR 0031). The console formats them into columns, the WPF app puts them in cards
+    (ADR 0031); the window's card alone also takes `AdobeMissing`, `AdobeInstall`,
+    `AdobeSearched` and `AdobeDngConverterUrl`, what a search that found no Adobe file says
+    (ADR 0073). The console formats them into columns, the WPF app puts them in cards
     and under a coloured chip; the wording has one definition either way. `HistEqReport` has no verdict to write; what it
     exposes as values is `Caveat()` (what the picture cannot show), `MasterVersusFrame()`
     and `ViewCaption()` - window-only, like the others. `SmoothReport` prints "what was
@@ -303,7 +305,8 @@ a library extraction and not a copy is ADR 0011.
     the config parsing is pure, `Locate()` is the only thing that touches the machine),
     `SirilScript` (commands and input folders read out of a `.ssf`), `SirilLogLine` (one
     stdout line, sorted into log / progress / other) and `SirilScriptRun` (the `Process`
-    wrapper, the only place a process is started besides the About link: every run gets a
+    wrapper, the only place a process is started besides `Presentation/ExternalLink`, which
+    opens the windows' links: every run gets a
     private copy of Siril's settings with `-i`, in `%TEMP%\FlatCheck\siril-<guid>`, deleted
     after the exit (ADR 0055); plus the `SirilRunner` delegate the tests replace).
     `SplitPlan` is the disk rule of the Split tab (ADR 0054): the frames, whether the count
@@ -409,6 +412,10 @@ a library extraction and not a copy is ADR 0011.
   - `Presentation/AppIcon.cs` - the largest frame of `flatcheck.ico`, chosen through
     `BitmapDecoder`: an `<Image>` handed the `.ico` directly takes whichever frame comes
     first, which at 72 px on screen can be the 16 px one scaled up.
+  - `Presentation/ExternalLink.cs` - a clicked link's address opened in the browser
+    (`UseShellExecute`; a computer without a browser only logs it). The "Despre" window and
+    the main window catch `Hyperlink.RequestNavigate` on their root and call it (ADR 0037);
+    the main window's catches the Structure tab's link to Adobe's DNG Converter (ADR 0073).
   - `Presentation/RasterBitmaps.cs` - a byte raster straight into a frozen `BitmapSource`
     (`Gray8` / `Rgb24`), no PNG. The maps still go through `PngWriter` because the PNG *is*
     the file the console writes and the window shows those exact bytes; the equalised
