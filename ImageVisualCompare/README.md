@@ -7,9 +7,11 @@ processing, such as before and after star removal, two background extractions or
 stretches, and to show a difference of one or two levels in a dark field, where the eye cannot
 see it.
 
-A Windows application (Windows 10 or 11, x64, .NET 8) with **no NuGet package**: PNG and TIFF
+A Windows application (Windows 10 or 11, x64, .NET 8) with **no imaging library**: PNG and TIFF
 are decoded by WIC, the Windows codec that WPF uses anyway, and FITS, which WIC does not read, by
-the project's own reader. It only reads: it never writes, moves or changes a file.
+the project's own reader. Its only packages are NLog's two, which write its log. It only
+reads your images: it never writes, moves or changes one; the only files it writes are its own
+log (see [Logs](#logs)).
 
 Everything on screen is dark, whatever the Windows theme: the window, its title bar and its
 messages, because a bright frame around an astro image spoils the judgement of what is really
@@ -185,8 +187,8 @@ the one the Romanian interface shows.
 | fit the whole image | `Ctrl+0`, or the `Fit` button (`Încadrează`) |
 | actual size | `Ctrl+1`, or the `100%` button; about the centre of the view |
 | jump to another area | click or drag in the minimap, bottom left |
-| histogram (FITS, float TIFF) | `H`, or the `Histogram` button (`HistogramÄ`); once more goes back to linear |
-| false colours (FITS, float TIFF) | `F`, or the `False colours` button (`Culori false`); once more goes back to linear |
+| histogram (FITS, float TIFF) | `H`, or the `Histogram` button (`Histogramă`); once more goes back to linear; held down, the key switches once |
+| false colours (FITS, float TIFF) | `F`, or the `False colours` button (`Culori false`); once more goes back to linear; held down, the key switches once |
 | open another pair | `Ctrl+O`, or the `Open…` button (`Deschide…`); not while a pair is opening |
 
 The keyboard shortcuts work while the comparison area has the keyboard focus. It takes the focus
@@ -244,9 +246,9 @@ For a FITS, as for a float TIFF, the format is the depth and the planes of the f
 `A 32-bit float RGB` or `B 16-bit gray`. The values read are still the 0–255 levels on the
 screen, not the float values of the file.
 
-In the histogram mode the first part ends with `Â· Histogram` (`Â· HistogramÄ`), and the values read
+In the histogram mode the first part ends with `· Histogram` (`· Histogramă`), and the values read
 are the equalised levels on the screen, not the file's: press `H` again to read those. In false
-colours it ends with `Â· False colours` (`Â· Culori false`), and the readout is one number per
+colours it ends with `· False colours` (`· Culori false`), and the readout is one number per
 image, `A 143`, `B 141`: the equalised level the colour under the cursor stands for, not the
 colour's own RGB.
 
@@ -258,7 +260,8 @@ canvas alone would be half the truth, since one of the images does not have that
 read every 2 seconds. After them comes a hint,
 `wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open`, cut short
 when the window narrows; on the right, always, the version and the copyright (there is no
-`--version` option). `About` shows the licence notice.
+`--version` option). `About` opens a window with the version, the licence notice and the
+components written by others, laid out as the About windows of the suite's other tools.
 
 In the Romanian interface the same bar reads `A RGB pe 16 biți` (or `gri float pe 32 de biți`,
 `RGB float pe 32 de biți (0..65535)`) and `memorie .NET 2 MB, proces 560 MB`, and a padded pair
@@ -277,6 +280,57 @@ content until the new ones are first rendered, so a release before that frees no
 on 2026-10-26). The same holds for a switch between linear, histogram and false colours.
 
 Decoding two 16-bit files of 100 to 130 MB takes about three seconds.
+
+## Logs
+
+The program keeps a log of what it did, for the day something goes wrong. To report a problem,
+attach the whole `log` folder: it holds what is needed to see what happened.
+
+**Where it is.** In a folder named `log` beside the program: `log\ImageVisualCompare.Wpf.log`
+beside `ImageVisualCompare.Wpf.exe`. When that folder cannot be written (a program under Program
+Files, a read-only drive), the log goes to `%LOCALAPPDATA%\ImageVisualCompare\log` instead, and
+its first line says so. Past 1 MiB (1,048,576 bytes; a file ends one line past that) a file is left
+and the next one is started (`ImageVisualCompare.Wpf_01.log`, `ImageVisualCompare.Wpf_02.log`,
+...); the five most recent files are kept and the older ones deleted, so the program keeps about
+5 MiB there at most. In the Astro Darkroom folder, a tool of the suite that keeps a log too,
+FlatCheck for one, keeps its own files in the same `log` folder, under its own name. Two windows
+open at the same time write into the same file, each line marked with its process.
+
+**What is in it.** One line per event, with its time, numbers written with a point: at the start
+the version, the command line, the Windows and .NET versions, how Windows draws the window, the
+language and the folders; each pair asked for, how (at the start, `Open…` or `Ctrl+O`), and the
+two files chosen; for each file its size, its dimensions, its depth, whether it carries a colour
+profile and what the decoder made of it (WIC's pixel format, a FITS's layout, the range a float
+file was found to count in); the padding question and the answer; the time each step of a load
+took; each switch of display mode; the zoom `Fit`, `100%`, `+` and `−` left; the memory the
+program holds; every error with its technical details, beside the message the program showed; at
+the end the exit code and the time taken. The log's own words are English whatever `--lang`
+says; a message the program showed appears as it was shown, so in Romanian under `--lang=ro`. It
+holds the paths of your files and the figures read from them, never their pixels.
+
+**More or less of it.** The environment variable `IMAGEVISUALCOMPARE_LOG` sets how much is
+written: `off`, `fatal`, `error`, `warn`, `info`, `debug` (what is written without it) or `trace`,
+which adds every card of the FITS headers, a file the program refuses included. Set in a window,
+it holds for the programs started from that window. In a Command Prompt (`cmd.exe`):
+
+```
+set IMAGEVISUALCOMPARE_LOG=trace
+ImageVisualCompare.Wpf.exe "A.fit" "B.fit"
+```
+
+In PowerShell, which Windows Terminal opens by default:
+
+```
+$env:IMAGEVISUALCOMPARE_LOG = "trace"
+.\ImageVisualCompare.Wpf.exe "A.fit" "B.fit"
+```
+
+For every program started from now on, the Start menu's and the Astro Darkroom launcher's
+included, `setx IMAGEVISUALCOMPARE_LOG trace`. A program already open keeps what it had, the
+launcher too, so close it and start it again; `setx IMAGEVISUALCOMPARE_LOG debug` goes back.
+
+At `trace` the FITS cards in the log can name the observer and the site's coordinates, as Siril
+writes them: look through the log before you attach it to a public report.
 
 ## What it does not do (yet)
 
@@ -358,5 +412,11 @@ the GNU General Public License for more details.
 
 The full text of the licence is in the [LICENSE](LICENSE) file, which also sits next to the
 program in the folder it is built or published into, and at
-<https://www.gnu.org/licenses/gpl-3.0.html>. The `About` button shows the same notice, short;
-the version and the copyright are always on the status bar.
+<https://www.gnu.org/licenses/gpl-3.0.html>. The `About` window shows the same notice, short,
+with a link to that page; the version and the copyright are always on the status bar.
+
+The program references two packages of one project, [NLog](https://nlog-project.org/) and its
+atomic file target, which write the log, under the BSD-3-Clause licence, compatible with the GPL.
+The `About` window names it in a card of its own, with its licence, its copyright line and a link
+to its project; the licence's whole text is in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md),
+beside the source code.

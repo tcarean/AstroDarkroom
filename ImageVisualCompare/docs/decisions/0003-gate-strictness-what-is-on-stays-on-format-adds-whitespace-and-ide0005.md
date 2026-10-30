@@ -1,7 +1,7 @@
 # 0003. Gate strictness: what is on stays on; dotnet format adds whitespace and IDE0005; the kit's code style stays off
 
 Date: 2026-10-02
-Status: accepted 2026-10-02; comments for the "why" only and the CS1573 mute superseded by the kit's ADR 0035
+Status: accepted 2026-10-02; comments for the "why" only and the CS1573 mute superseded by the kit's ADR 0035; the four test packages as the only versions, the application's lock file without a package superseded by 0043
 
 ## Context
 

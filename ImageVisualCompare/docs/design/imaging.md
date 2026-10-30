@@ -195,6 +195,19 @@ forces a finaliser pass and does *not* bother with large object heap compaction.
 The same table is kept, as the history of the figures, in `../validation.md`; the figures
 measured since on a real pair are its cases.
 
+## In the diagnostic log
+
+The loaders write what a bug report needs about a file (ADR 0043): `ImagePairLoader` the load's
+start and done lines with the time of each stage, a line per file probed and decoded, the
+padding's question and answer, a fallback to linear, and a failure with its exception beside the
+message the user reads; `WicImageLoader` the decoder, the pixel format WPF names, or `unnamed`,
+a TIFF's own sample tags and the colour profiles a file carries; and `FitsImageLoader` the layout,
+and at `Trace` every header card, which `Probe` reads from the file on a stream of its own, so that
+a header the reader refuses is written too. Both write the range a float file was found to count
+in, with the counts `FitsScale.IsRescaled` decided on. Nothing is written per row or per band, and
+nothing the log does changes what a probe or a decode returns or throws. The lines are listed in
+`logging.md`.
+
 ## Invariants
 
 This is one of the ten invariants of the former `CLAUDE.md`; the list's introduction and seven

@@ -18,6 +18,12 @@
           "Microsoft.TestPlatform.TestHost": "17.12.0"
         }
       },
+      "NLog": {
+        "type": "Direct",
+        "requested": "[6.2.2, )",
+        "resolved": "6.2.2",
+        "contentHash": "Hoxigm/d7wY/+y4y2ILF2ERSojhxgLd8ASBZQbrnm52jB5NHkF4AWW5tZzMxJ/HTOp0bLwClGOokrA31iSXuMA=="
+      },
       "xunit": {
         "type": "Direct",
         "requested": "[2.9.2, )",
@@ -113,7 +119,18 @@
       "imagevisualcompare.wpf": {
         "type": "Project",
         "dependencies": {
-          "ImageVisualCompare.Core": "[1.1.1, )"
+          "ImageVisualCompare.Core": "[1.1.1, )",
+          "NLog": "[6.2.2, )",
+          "NLog.Targets.AtomicFile": "[6.2.2, )"
+        }
+      },
+      "NLog.Targets.AtomicFile": {
+        "type": "CentralTransitive",
+        "requested": "[6.2.2, )",
+        "resolved": "6.2.2",
+        "contentHash": "RrX67lNu9DjmnZBjEaY8O/uT3wyi0EVpusf/5mABYPadyBBfYxnjtsG/qcxo6zAcLSTxgHO30JBgr31hA9UPFg==",
+        "dependencies": {
+          "NLog": "6.2.2"
         }
       }
     }

@@ -4,9 +4,10 @@ WPF before/after slider for two variants of the same astro processing: image A l
 draggable vertical line, image B right of it, both at the same zoom and pan, with the RGB of
 the pixel under the cursor read from both. Built to see a difference of one or two levels in a
 dark field, where the eye cannot. One WPF application over a pure core library, .NET 8,
-Windows, x64, **no NuGet package** outside the test project: decoding is WIC, the codec WPF
-uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does not read (ADR
-0029). Everything on screen is dark, whatever the system theme (ADR 0018).
+Windows, x64, **no imaging package**: decoding is WIC, the codec WPF uses anyway (ADR 0008),
+and the project's own reader for FITS, which WIC does not read (ADR 0029). The application's
+only packages are NLog's two, for the diagnostic log beside the executable (ADR 0043); the core
+has none. Everything on screen is dark, whatever the system theme (ADR 0018).
 
 ## Commands
 
@@ -19,7 +20,8 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
 - Format: `dotnet format ImageVisualCompare.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project src/ImageVisualCompare.Wpf -- [--lang=ro] [A.png B.png]`; without
   the two paths the file dialogs ask (R-001, R-002), without `--lang` the interface is English
-  (R-100)
+  (R-100); the log is `bin/<config>/net8.0-windows/log/ImageVisualCompare.Wpf.log`, its level
+  the environment variable `IMAGEVISUALCOMPARE_LOG` (`trace` adds the FITS cards, R-122)
 - Figures on the real pair (seconds per case, not in the gate): `/validate`, or
   `dotnet test ImageVisualCompare.sln -c Release --filter "Category=Validation"`; the files are
   git-ignored copies in `tests/testdata/large/` (ADR 0005)
@@ -45,16 +47,23 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
   and every text the application shows, in English and Romanian, with the command line that
   chooses between them (`UiText.cs`, `StartupArguments.cs`).
   All of it unit tested.
-- `src/ImageVisualCompare.Wpf/` - `net8.0-windows`, the application: `Imaging/` (the decoder
+- `src/ImageVisualCompare.Wpf/` - `net8.0-windows`, the application: `Program.cs` (the entry
+  point, which starts the log), `Logging/` (the diagnostic log), `Imaging/` (the decoder
   seam, WIC and the FITS loader behind it, the pair loader, memory housekeeping), `Controls/` (the comparison
-  surface, the minimap), `MainWindow`, `MessageDialog`, `Interop/DarkTitleBar.cs`,
-  `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs`, `Assets/` (the icon and the
-  script that draws it).
+  surface, the minimap), `MainWindow`, `MessageDialog`, `AboutWindow` (FlatCheck's, ADR 0045),
+  `Interop/DarkTitleBar.cs`,
+  `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs` and `ThirdParty.cs` (what About
+  says), `Assets/` (the icon and the script that draws it). `THIRD-PARTY-NOTICES.md` holds the
+  licences' text of the components About lists and stays beside the source; no build ships it
+  (R-075).
 - `tests/ImageVisualCompare.Tests/` - `net8.0-windows` with `UseWPF`: Core, the imaging layer
   on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`), a
-  defect of a window or a control on one STA thread, never shown (`WpfThread`, ADR 0032),
-  `RepoInvariantTests`, `ValidationTests` (trait `Category=Validation`), `LicenseHeaderTests`,
-  `VersionTests`. `tests/testdata/manifest.json` hashes the real pair, which stays outside git.
+  defect of a window or a control on one STA thread, never shown (`WpfThread`, ADR 0032; the
+  `App` start WPF runs on that thread does show its own window, ADR 0043), the log of every
+  test captured at `Trace` (`LogCapture`), `RepoInvariantTests`, `ValidationTests` (trait
+  `Category=Validation`), `LicenseHeaderTests`, `VersionTests`, `ThirdPartyTests`,
+  `AboutWindowTests`.
+  `tests/testdata/manifest.json` hashes the real pair, which stays outside git.
 - `Directory.Build.props` - `<Version>` and `<Copyright>`, the single place for both (ADR
   0004), and the strictness every project builds with.
 - `kit.json` - what the kit's scripts, skills and agent need to know about this project.
@@ -78,11 +87,20 @@ The process rules every project made from the kit follows are in `.claude/rules/
 loaded with this file (the kit's ADR 0028). These are ImageVisualCompare's own; one that extends
 or varies a kit rule names it.
 
-- **No imaging dependency** (extends the kit's rule "Packages"). Core and the application
-  reference no NuGet package; WIC decodes, and `IImageLoader` is the one seam a replacement
+- **No imaging dependency** (extends the kit's rule "Packages"). Core references no NuGet
+  package, and the application only `NLog` and `NLog.Targets.AtomicFile`, for the log (ADR
+  0043); WIC decodes, and `IImageLoader` is the one seam a replacement
   decoder would fill. SkiaSharp, ImageSharp and Magick.NET were compared and rejected; read
   `docs/design/imaging.md` before proposing one again (ADR 0008). FITS, which WIC has no codec
-  for, is read by the project's own code in Core, behind the same seam (ADR 0029).
+  for, is read by the project's own code in Core, behind the same seam (ADR 0029). A package
+  the application references gets an entry in `ThirdParty.cs`, which About shows, and a heading
+  in `THIRD-PARTY-NOTICES.md` (R-075).
+- **The log is English, starts in `Program.Main`, and never stops the tool.** Every log line is
+  composed through `LogText`, never through `UiText`; a message the user was shown is logged
+  as shown. Only `Program.Main` calls `LogSetup.Apply` and `Close`, each in a `try`: the WPF
+  test thread builds an `App`, and WPF runs its start there. Every logger is a `static readonly
+  Logger Log` with a name of `Loggers`, but `LogSetup`'s, a property fetched on use; nothing in
+  Core logs (ADR 0043).
 - **A FITS, and a float TIFF, is shown as stored.** No stretch, and the 8-bit level is the one
   WIC gives the same value in a 16-bit PNG; `FitsScale` is the only place a FITS value or a
   float sample becomes a level, never WIC's float conversion (ADR 0029, ADR 0035).
@@ -116,8 +134,9 @@ or varies a kit rule names it.
   follows the system theme (ADR 0018).
 - **Run the application when the WPF layer changes.** Both real defects lived in the untested
   layer and were found on a screenshot; a green suite says little about `Controls/`,
-  `MainWindow` or `Directory.Build.props`, whose few tests reproduce single defects without
-  showing anything (ADR 0026, ADR 0032).
+  `MainWindow`, `Program.cs` or `Directory.Build.props`, whose few tests reproduce single
+  defects in windows they never show (ADR 0026, ADR 0032; the `App` start WPF runs on the test
+  thread does show its own, ADR 0043).
 - **Licence headers.** Every `.cs` file starts with the GPL notice, `.xaml` files do not;
   `LicenseHeaderTests` fails otherwise, and its project list is explicit, so adding a project
   is a decision (ADR 0024).
@@ -147,10 +166,12 @@ edit:
   shared transform, the two pixel spaces, `Canvas`, the clip, the backdrop, the floating bars).
 - Anything in `Imaging/`, or a package: `docs/design/imaging.md` and ADR 0008, ADR 0014 to
   ADR 0016 (probe first, decode sequentially, release through the finaliser pass).
-- `Directory.Build.props`, a new `Window`: `docs/design/shell.md` and ADR 0017, ADR 0018.
+- `Directory.Build.props`, a new `Window`, the About window: `docs/design/shell.md` and ADR 0017,
+  ADR 0018, ADR 0045.
 - A text on screen, `App.xaml.cs`, the command line: `docs/design/language.md` and ADR 0038.
-- `Version.cs`, `LicenseHeaderTests`: `docs/design/versioning-and-licence.md`, ADR 0023, ADR
-  0024.
+- `Program.cs`, `Logging/`, a log line: `docs/design/logging.md` and ADR 0043.
+- `Version.cs`, `ThirdParty.cs`, `LicenseHeaderTests`, `ThirdPartyTests`:
+  `docs/design/versioning-and-licence.md`, ADR 0023, ADR 0024, ADR 0043.
 - A file you have not opened before: `docs/design/code-map.md`.
 
 ## Style

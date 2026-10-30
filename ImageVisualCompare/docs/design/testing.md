@@ -13,6 +13,7 @@
 > `tests/ImageVisualCompare.Tests/LevelLookupTests.cs`,
 > `tests/ImageVisualCompare.Tests/RainbowTableTests.cs`,
 > `tests/ImageVisualCompare.Tests/MinimapViewTests.cs`,
+> `tests/ImageVisualCompare.Tests/AboutWindowTests.cs`,
 > `tests/ImageVisualCompare.Tests/Win32Resources.cs`,
 > and the WPF files it names, `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/MessageDialog.xaml.cs`,
@@ -56,7 +57,15 @@ bitmap at once and records the mode of every load: it clicks Open, waits between
 dispatcher until the pair line of the status bar is filled, moves the divider, calls
 `ToggleModeAsync` and reads the buttons, the status bar and the divider back; the keys `H` and
 `F` themselves are checked by launching the application, since a `KeyEventArgs` needs a
-presentation source a window never shown does not have.
+presentation source a window never shown does not have. `WindowLoggingTests` drives the main
+window the same way and reads its lines, and the surface's, in the diagnostic log
+(`logging.md`).
+
+`WpfThread` never calls `Run`, but WPF's `Application` constructor queues the application's start,
+which runs once the thread's dispatcher pumps (the note of 2026-10-30 on ADR 0032): `App.OnStartup`
+reads the test host's arguments, and `StartupUri` opens a real `MainWindow`, shown and maximised,
+whose start opens the real Open dialog; the tests' bodies run on inside that dialog's message
+loop, for as long as the test host lives.
 
 The display modes' arithmetic is Core's: `LevelLookupTests` pins Siril's equalisation on
 hand-computed histograms (R-111's two examples, the rounding, a uniform histogram, the share
@@ -71,7 +80,18 @@ main window in Romanian there and reads its toolbar and hint; it and the other R
 alone, in a collection with parallelisation off (`language.md`). `MessageDialog`, `DarkTitleBar`,
 `FileDialogService` and `MemoryHousekeeping.ReleaseImageBuffers` have no test, nor has the main
 window's message about an unknown `--lang` (a modal dialog, checked by launching); the start-up
-that sets the language and keeps that value, `App.ApplyCommandLine`, has one. `Win32Resources`
+that sets the language and keeps that value, `App.ApplyCommandLine`, has one. Of the diagnostic
+log, `Program.Main`, `LogSetup.Apply` and `LogSetup.Close` with their real file and their hooks,
+the lines a window writes around a modal dialog (a failed open, a declined padding, About), and the
+repeats of `Ctrl+O` and of the zoom keys are checked by launching (`logging.md`); a test cannot make
+a `KeyEventArgs` a repeat, so `MainWindowTests` gives a held `H` to `OnModeKeyAsync`, which takes
+the repeat as an argument (R-114, ADR 0044). `AboutWindowTests` reads the About window's view
+model against `VersionInfo`, `UiText` and `ThirdParty`, and builds the window on the WPF test
+thread, never shown, then lays its content out at the client width, which builds the card's rows
+from their template: the body that builds it returns before its bindings take their values, in
+the dispatcher's data-binding pass, and so do the rows' after the layout, so later bodies read
+the title, the logo, Close's Enter and Esc, the links and the row's text, as `MainWindowTests`
+waits for a pair (ADR 0045). `Win32Resources`
 reads one resource of a type out of a built file, loaded as data, for `AppIconTests` (the icon
 group) and `AppManifestTests` (the manifest).
 

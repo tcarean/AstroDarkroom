@@ -4,6 +4,10 @@
 > a paragraph became a decision record, its number is given beside it.
 > **Covers:** `Directory.Build.props`,
 > `src/ImageVisualCompare.Wpf/MessageDialog.xaml.cs`,
+> `src/ImageVisualCompare.Wpf/AboutWindow.xaml`,
+> `src/ImageVisualCompare.Wpf/AboutWindow.xaml.cs`,
+> `src/ImageVisualCompare.Wpf/AboutViewModel.cs`,
+> `src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj`,
 > `src/ImageVisualCompare.Wpf/Interop/DarkTitleBar.cs`,
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/Theme.xaml`,
@@ -69,12 +73,58 @@ Every toolbar button, the two toggles included, is a `ButtonBase` and focusable,
 takes the keyboard focus from the comparison surface, and the surface's shortcuts (R-063)
 would reach the button instead. `MainWindow` adds one handler for `ButtonBase.ClickEvent` on
 the toolbar's panel, `Toolbar`; the event bubbles, so the handler runs after the clicked
-button's own, and it calls `Compare.Focus()`. By then `About`'s dialog has closed and
+button's own, and it calls `Compare.Focus()`. By then `About`'s window has closed and
 `Open…`'s file dialogs have been answered; a load that follows, an open or a mode switch,
 focuses the surface once more when the pair is shown (`ShowPair`). The buttons stay focusable:
 `Tab` still reaches them, and the dialog buttons share the style (ADR 0042). `MainWindowTests`
 clicks each button but `About` on the WPF test thread and reads the window's logical focus, the
 part of `Focus()` that works without a window handle (ADR 0032).
+
+## In the diagnostic log
+
+The main window's constructor writes how WPF renders, its tier and the process's render mode.
+`OpenPairAsync` takes what asked for the open, `the start`, `the Open button` or `Ctrl+O`, for its
+first line, and writes one asked for while another runs as ignored; it writes what the dialogs
+chose or that they were cancelled, and, after a load, that a message is shown or that the padding
+was declined. `ToggleModeAsync` writes the switch, or the reason it refuses one.
+`OnPreviewKeyDown` hands `H` and `F` to `OnModeKeyAsync` with `KeyEventArgs.IsRepeat`, and a repeat
+does nothing there, so a held key switches once (R-114, ADR 0044); it does not pass on a repeat of
+`Ctrl+O` while a pair is being opened, which the open would ignore and log for each. `ShowPair`
+writes the pair on screen and the memory, reading the process's memory once more before the outgoing
+pair is released.
+`DarkTitleBar` writes the HRESULTs of the DWM calls it does not act on, for a report of a white
+caption. `MessageDialog` writes nothing: each caller says what it shows. The lines are listed in
+`logging.md` (ADR 0043).
+
+## The About window
+
+`AboutWindow` is FlatCheck's About window ported, in this tool's colours (ADR 0045): the same
+layout, sizes and styles, under FlatCheck's names, on this palette. A `StackPanel` holds the header,
+a `Grid` of the `Logo` image (72 DIPs) and the name, the tagline (`Muted`), the banner in Consolas
+and the copyright (`Faint`); the `LICENCE` card (`Card`, `Heading`, the paragraph, a `Hyperlink`);
+the card of the components written by others, whose `ItemsControl`, `ComponentList`, draws each
+`ComponentRow` through `ComponentRowTemplate`; and `Close`, a `DialogButton` that is both the
+default and the cancel button, so Enter and Esc close the window too. `MessageDialog` keeps the two
+apart because its buttons are two answers that would race to close it; About has no answer: a click,
+Enter or Esc runs `CloseClick` first, and the cancel command WPF sends after it finds the window
+closed, as in the About windows of FlatCheck and CopyWcs and in the live run of 2026-10-30.
+`FontSize` 13 on the window is what FlatCheck's implicit `TextBlock` style gives every text block
+without a style of its own; this theme has no implicit style, so the window sets it. The styles live
+in `Theme.xaml`, with two brushes of their own: `PanelBrush`, the card, as much lighter than
+`ChromeBrush` as FlatCheck's card is than its window (8 a channel), and `FaintTextBrush`, the muted
+grey darkened by FlatCheck's ratio. The implicit `Hyperlink` style draws the links in the accent,
+underlined under the pointer; they are the only links.
+
+The window binds `AboutViewModel`, which copies every text from `UiText.Current`, and the name,
+the banner, the copyright and the licence page from `VersionInfo`, when the window is built. The
+logo is the 256-pixel frame of `Assets/ImageVisualCompare.ico`, which the csproj also makes a WPF
+`Resource` for that: an `Image` given the file takes its first frame, maybe the 16-pixel one.
+A `Hyperlink` outside a navigation window only raises `RequestNavigate`, so the window catches it
+on its root and opens the address with `UseShellExecute`, disposing the process the shell may
+return; a refusal writes one `Debug` line with the address as written, since `AbsoluteUri`
+throws on a relative one. The
+constructor applies the dark caption, as every window does. `MainWindow` writes `About opened` and
+shows it modal over itself.
 
 ## The icon
 

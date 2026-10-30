@@ -23,6 +23,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
 using ImageVisualCompare.Wpf.Imaging;
+using ImageVisualCompare.Wpf.Logging;
+using NLog;
 
 namespace ImageVisualCompare.Wpf.Controls;
 
@@ -55,6 +57,12 @@ public partial class CompareView : UserControl
     private const int ThumbnailMaxWidth = 380;
     private const int ThumbnailMaxHeight = 300;
 
+    /// <summary>
+    /// The pair set on the surface and the zoom each command left, in the diagnostic log (R-121);
+    /// nothing per wheel notch, drag or scroll, which come many times a second (ADR 0043).
+    /// </summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Surface);
+
     private readonly TranslateTransform _translate = new();
     private readonly ScaleTransform _scale = new();
     private readonly TransformGroup _transform = new();
@@ -64,6 +72,18 @@ public partial class CompareView : UserControl
     private bool _draggingDivider;
     private bool _updatingScrollBars;
     private PointD? _cursorContentPoint;
+
+    /// <summary>
+    /// True while a repeat of a held key is handled: the zoom it steps is not logged, since a held
+    /// <c>+</c> repeats some thirty times a second.
+    /// </summary>
+    private bool _keyRepeat;
+
+    /// <summary>
+    /// True once a repeat of a held zoom key has stepped the zoom without a line: the key's release
+    /// writes the zoom the repeats left.
+    /// </summary>
+    private bool _zoomHeld;
 
     /// <summary>Builds the surface, empty until <see cref="SetPair"/>.</summary>
     public CompareView()
@@ -156,6 +176,7 @@ public partial class CompareView : UserControl
             Viewport);
 
         Sync();
+        LogView("pair set");
     }
 
     /// <summary>
@@ -181,25 +202,35 @@ public partial class CompareView : UserControl
             Viewport);
 
         Sync();
+        LogView("pair replaced, the view kept");
     }
 
     /// <summary>
     /// Zooms in one step as <see cref="Core.Viewport.ZoomIn"/> does, anchored at the centre of
     /// the view.
     /// </summary>
-    public void ZoomIn() => ZoomAtCentre(step: 1);
+    public void ZoomIn()
+    {
+        ZoomAtCentre(step: 1);
+        LogZoom("in");
+    }
 
     /// <summary>
     /// Zooms out one step as <see cref="Core.Viewport.ZoomOut"/> does, anchored at the centre of
     /// the view; when no stop is below the scale it goes to the fit, never in.
     /// </summary>
-    public void ZoomOut() => ZoomAtCentre(step: -1);
+    public void ZoomOut()
+    {
+        ZoomAtCentre(step: -1);
+        LogZoom("out");
+    }
 
     /// <summary>Zooms so the whole canvas is visible, and centres it.</summary>
     public void ZoomToFit()
     {
         Viewport.ZoomToFit();
         Sync();
+        LogZoom("to fit");
     }
 
     /// <summary>
@@ -210,6 +241,7 @@ public partial class CompareView : UserControl
     {
         Viewport.ZoomToActualSize();
         Sync();
+        LogZoom("to 100%");
     }
 
     /// <summary>
@@ -371,30 +403,38 @@ public partial class CompareView : UserControl
         bool control = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
         double nudge = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? 10 : 1;
 
-        switch (e.Key)
+        _keyRepeat = e.IsRepeat;
+        try
         {
-            case Key.D0 or Key.NumPad0 when control:
-                ZoomToFit();
-                break;
-            case Key.D1 or Key.NumPad1 when control:
-                ZoomToActualSize();
-                break;
-            case Key.OemPlus or Key.Add:
-                ZoomIn();
-                break;
-            case Key.OemMinus or Key.Subtract:
-                ZoomOut();
-                break;
-            case Key.Left:
-                Divider.NudgeBy(-nudge, ActualWidth);
-                Sync();
-                break;
-            case Key.Right:
-                Divider.NudgeBy(nudge, ActualWidth);
-                Sync();
-                break;
-            default:
-                return;
+            switch (e.Key)
+            {
+                case Key.D0 or Key.NumPad0 when control:
+                    ZoomToFit();
+                    break;
+                case Key.D1 or Key.NumPad1 when control:
+                    ZoomToActualSize();
+                    break;
+                case Key.OemPlus or Key.Add:
+                    ZoomIn();
+                    break;
+                case Key.OemMinus or Key.Subtract:
+                    ZoomOut();
+                    break;
+                case Key.Left:
+                    Divider.NudgeBy(-nudge, ActualWidth);
+                    Sync();
+                    break;
+                case Key.Right:
+                    Divider.NudgeBy(nudge, ActualWidth);
+                    Sync();
+                    break;
+                default:
+                    return;
+            }
+        }
+        finally
+        {
+            _keyRepeat = false;
         }
 
         e.Handled = true;
@@ -553,9 +593,66 @@ public partial class CompareView : UserControl
     /// </summary>
     private void ReadDeviceScale()
     {
-        _deviceScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        double scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        if (scale != _deviceScale)
+        {
+            Log.Debug("display scale " + LogText.Num(_deviceScale) + " -> " + LogText.Num(scale));
+        }
+
+        _deviceScale = scale;
         UpdateViewportSize();
         Sync();
+    }
+
+    /// <summary>
+    /// Writes what the surface shows, at <c>Debug</c>: the canvas, the view in physical pixels,
+    /// the display's scale and the zoom, as the viewport holds them.
+    /// </summary>
+    /// <param name="what">What just happened, in English: <c>pair set</c>.</param>
+    private void LogView(string what)
+    {
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug(what + ": canvas " + LogText.Num(Viewport.ContentWidth) + "x" + LogText.Num(Viewport.ContentHeight)
+                + ", view " + LogText.Num(Viewport.ViewportWidth) + "x" + LogText.Num(Viewport.ViewportHeight)
+                + " physical px at display scale " + LogText.Num(_deviceScale) + ", zoom " + LogText.Percent(Viewport.Scale));
+        }
+    }
+
+    /// <summary>
+    /// Writes the zoom a command left, at <c>Debug</c>; nothing before a pair is shown, and, for a
+    /// repeat of a held key, nothing until the key is released (<see cref="OnKeyUp"/>).
+    /// </summary>
+    /// <param name="what">The command, in English: <c>in</c>, <c>out</c>, <c>to fit</c>, <c>to 100%</c>.</param>
+    private void LogZoom(string what)
+    {
+        if (!Viewport.HasContent || !Log.IsDebugEnabled)
+        {
+            return;
+        }
+
+        if (_keyRepeat)
+        {
+            _zoomHeld = true;
+            return;
+        }
+
+        Log.Debug("zoom " + what + " -> " + LogText.Percent(Viewport.Scale));
+    }
+
+    /// <summary>
+    /// Writes, when a held zoom key is released, the zoom its repeats left, which no line of theirs
+    /// gave (R-121).
+    /// </summary>
+    /// <param name="e">The key released; not read.</param>
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        base.OnKeyUp(e);
+        if (_zoomHeld)
+        {
+            _zoomHeld = false;
+            LogZoom("after the held key");
+        }
     }
 
     /// <summary>Gives the viewport the surface's size, converted to physical pixels.</summary>

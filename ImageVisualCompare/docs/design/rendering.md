@@ -27,6 +27,14 @@ next switch or open. That is why `MainWindow.ShowPair` lets one render pass thro
 (`Dispatcher.Invoke` at `Render` priority) after the incoming pair is on the surface and
 releases the outgoing one only then (ADR 0040, which restates ADR 0016's order).
 
+In the diagnostic log (ADR 0043) the surface writes, at `Debug`, what `SetPair` and `ReplacePair`
+left on screen, read from `Viewport` (the canvas, the view in physical pixels, the display scale
+and the zoom), the zoom each of `ZoomIn`, `ZoomOut`, `ZoomToFit` and `ZoomToActualSize` leaves
+once a pair is shown, which covers their keys too, a held key's first step only and, when the key
+is released (`OnKeyUp`), the zoom its repeats left, and a change of the display scale. The wheel, a
+drag, the divider, the scrollbars and the minimap write nothing: they come many times a second. The
+lines are listed in `logging.md`.
+
 ## Invariants
 
 These are the things that will bite a future change. Each one has already cost time.

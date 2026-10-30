@@ -19,6 +19,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
+using ImageVisualCompare.Wpf.Logging;
+using NLog;
 
 namespace ImageVisualCompare.Wpf.Imaging;
 
@@ -30,9 +32,20 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// </summary>
 public sealed class FitsImageLoader : IImageLoader
 {
+    /// <summary>The most header bytes <see cref="LogCards"/> reads, 1 MiB: 13 107 cards.</summary>
+    private const int MaxHeaderBytes = 1024 * 1024;
+
+    /// <summary>The size of one FITS card, in bytes.</summary>
+    private const int CardBytes = 80;
+
+    /// <summary>What the FITS reader made of a file, in the diagnostic log (R-121).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Fits);
+
     /// <summary>
     /// Reads only the FITS header, to check that a pair matches before either is decoded. A
-    /// file this program cannot show throws as <see cref="FitsHeader.ReadLayout"/> does.
+    /// file this program cannot show throws as <see cref="FitsHeader.ReadLayout"/> does. At the
+    /// log's <c>Trace</c> level the headers are read once more, for their cards
+    /// (<see cref="LogCards"/>), which changes nothing the probe returns or throws.
     /// </summary>
     /// <param name="path">The file.</param>
     /// <returns>
@@ -41,8 +54,22 @@ public sealed class FitsImageLoader : IImageLoader
     /// </returns>
     public ImageInfo Probe(string path)
     {
-        using FileStream stream = OpenRead(path);
-        return FitsHeader.ReadLayout(stream).Describe(path);
+        try
+        {
+            using FileStream stream = OpenRead(path);
+            FitsImageLayout layout = FitsHeader.ReadLayout(stream);
+            LogLayout("probed", path, layout);
+            return layout.Describe(path);
+        }
+        finally
+        {
+            // At Trace the header's cards, of a file the reader refused too: its header is what
+            // says why (R-122). The pair loader probes every file before it decodes one.
+            if (Log.IsTraceEnabled)
+            {
+                LogCards(path);
+            }
+        }
     }
 
     /// <summary>Decodes a FITS on a background thread, as <see cref="Load"/> does.</summary>
@@ -76,6 +103,7 @@ public sealed class FitsImageLoader : IImageLoader
     {
         using FileStream stream = OpenRead(path);
         FitsImageLayout layout = FitsHeader.ReadLayout(stream);
+        LogLayout("decoding", path, layout);
 
         WriteableBitmap bitmap = CreateBitmap(layout);
         var renderer = new DisplayRenderer(mode, layout.Width, layout.Planes);
@@ -88,9 +116,10 @@ public sealed class FitsImageLoader : IImageLoader
         // second pass; holding the floats to avoid it would cost every file 277 MB. A mode
         // that equalises needs every sample before any pixel too, so it counts first and
         // renders after, and the rescaled file counts twice.
+        long above;
         if (renderer.NeedsCount)
         {
-            long above = Pass(layout, stream, renderer, fullScale, bitmap: null, cancellationToken);
+            above = Pass(layout, stream, renderer, fullScale, bitmap: null, cancellationToken);
             if (FitsScale.IsRescaled(layout.BitPix, above, samples))
             {
                 fullScale = FitsScale.FullScale(layout.BitPix, rescaled: true);
@@ -104,7 +133,7 @@ public sealed class FitsImageLoader : IImageLoader
         }
         else
         {
-            long above = Pass(layout, stream, renderer, fullScale, bitmap, cancellationToken);
+            above = Pass(layout, stream, renderer, fullScale, bitmap, cancellationToken);
             if (FitsScale.IsRescaled(layout.BitPix, above, samples))
             {
                 Pass(layout, stream, renderer, FitsScale.FullScale(layout.BitPix, rescaled: true), bitmap, cancellationToken);
@@ -112,8 +141,120 @@ public sealed class FitsImageLoader : IImageLoader
             }
         }
 
+        // An integer file has no such decision to make: its range is its BITPIX's.
+        if (layout.IsFloat)
+        {
+            Log.Debug(path + ": " + LogText.FloatRange(above, samples, rescaled: valueRange is not null));
+        }
+
         bitmap.Freeze();
         return new LoadedImage(layout.Describe(path, valueRange), bitmap, mode);
+    }
+
+    /// <summary>
+    /// Writes a FITS's layout, at <c>Debug</c>: everything <see cref="FitsHeader.ReadLayout"/>
+    /// found, which decides how the samples are read.
+    /// </summary>
+    /// <param name="stage">What is being done to the file: <c>probed</c> or <c>decoding</c>.</param>
+    /// <param name="path">The file.</param>
+    /// <param name="layout">Its layout.</param>
+    private static void LogLayout(string stage, string path, FitsImageLayout layout)
+    {
+        if (Log.IsDebugEnabled)
+        {
+            // BZERO and BSCALE exactly: six digits would write an unsigned 32-bit file's
+            // 2147483648 as 2.14748E+09.
+            Log.Debug(stage + " " + path + ": " + LogText.Size(layout.Width, layout.Height)
+                + " planes=" + LogText.Int(layout.Planes) + " bitpix=" + LogText.Int(layout.BitPix)
+                + " bzero=" + LogText.Exact(layout.BZero) + " bscale=" + LogText.Exact(layout.BScale)
+                + " data at " + LogText.Int(layout.DataOffset));
+        }
+    }
+
+    /// <summary>
+    /// Writes the headers' cards, at <c>Trace</c>, one line each (R-122), read from the file on a
+    /// stream of their own, without the reader: a header the reader refuses is written too, which
+    /// is when its cards matter most. Each header is walked card by card to its <c>END</c>; the
+    /// next one is the first 2880-byte block after it that starts with <c>XTENSION</c>, past the
+    /// data of the unit before, as the reader steps over a table or random groups to the image.
+    /// A byte that is not printable ASCII, a tab or a UTF-8 letter in a value, is written as
+    /// <c>?</c>; a card that is mostly such bytes is data, not a header, and ends the walk, as
+    /// does the end of <see cref="MaxHeaderBytes"/>. A blank card is left out. A file that cannot
+    /// be read is a line at <c>Debug</c>: the log never changes what the probe does.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    private static void LogCards(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            byte[] bytes = new byte[(int)Math.Min(stream.Length, MaxHeaderBytes)];
+            int read = stream.ReadAtLeast(bytes, bytes.Length, throwOnEndOfStream: false);
+            int at = 0;
+            while (at + CardBytes <= read)
+            {
+                ReadOnlySpan<byte> card = bytes.AsSpan(at, CardBytes);
+                if (card.Length - card.Count((byte)' ') - CountPrintable(card) > CardBytes / 2)
+                {
+                    return;
+                }
+
+                if (card.IndexOfAnyExcept((byte)' ') >= 0)
+                {
+                    Log.Trace("card " + Printable(card));
+                }
+
+                at += CardBytes;
+                if (card[..8].SequenceEqual("END     "u8))
+                {
+                    // The header ends with its 2880-byte block. The next header, an extension's,
+                    // starts a later block, after the data of this unit when it has any.
+                    at = (at + FitsHeader.BlockSize - 1) / FitsHeader.BlockSize * FitsHeader.BlockSize;
+                    while (at + 8 <= read && !bytes.AsSpan(at, 8).SequenceEqual("XTENSION"u8))
+                    {
+                        at += FitsHeader.BlockSize;
+                    }
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            Log.Debug(ex, "the header cards of " + path + " could not be read");
+        }
+    }
+
+    /// <summary>Counts the bytes of a card that are printable ASCII, the space aside.</summary>
+    /// <param name="card">The card's 80 bytes.</param>
+    /// <returns>How many of its bytes are in 0x21 to 0x7E.</returns>
+    private static int CountPrintable(ReadOnlySpan<byte> card)
+    {
+        int count = 0;
+        foreach (byte b in card)
+        {
+            if (b is > 0x20 and <= 0x7E)
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Writes a card for the log: each byte that is not printable ASCII as <c>?</c>, so that no
+    /// control byte reaches the file, and the spaces at its end left out.
+    /// </summary>
+    /// <param name="card">The card's 80 bytes.</param>
+    /// <returns>The card's text.</returns>
+    private static string Printable(ReadOnlySpan<byte> card)
+    {
+        Span<char> text = stackalloc char[CardBytes];
+        for (int i = 0; i < card.Length; i++)
+        {
+            text[i] = card[i] is >= 0x20 and <= 0x7E ? (char)card[i] : '?';
+        }
+
+        return new string(text[..card.Length]).TrimEnd();
     }
 
     /// <summary>

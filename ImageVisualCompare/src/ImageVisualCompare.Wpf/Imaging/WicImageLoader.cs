@@ -21,6 +21,8 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
+using ImageVisualCompare.Wpf.Logging;
+using NLog;
 
 namespace ImageVisualCompare.Wpf.Imaging;
 
@@ -45,6 +47,9 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// </summary>
 public sealed class WicImageLoader : IImageLoader
 {
+    /// <summary>What WIC made of a file, in the diagnostic log (R-121).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Wic);
+
     /// <inheritdoc/>
     public ImageInfo Probe(string path)
     {
@@ -55,7 +60,9 @@ public sealed class WicImageLoader : IImageLoader
             // DelayCreation reads the header and stops there, so this costs nothing even on a
             // 108 MB file.
             BitmapFrame frame = CreateDecoder(stream, BitmapCreateOptions.DelayCreation).Frames[0];
-            return Describe(path, frame);
+            ImageInfo info = Describe(path, frame);
+            LogFrame("probed", frame, info);
+            return info;
         }
         catch (COMException ex)
         {
@@ -96,6 +103,7 @@ public sealed class WicImageLoader : IImageLoader
             // reported to the user is the one the file really has.
             BitmapFrame frame = CreateDecoder(stream, BitmapCreateOptions.PreservePixelFormat).Frames[0];
             ImageInfo info = Describe(path, frame);
+            LogFrame("decoding", frame, info);
 
             if (info.ShownAsStored)
             {
@@ -179,9 +187,10 @@ public sealed class WicImageLoader : IImageLoader
         // As for a float FITS: whether the samples count in 0 to 1 or in 0 to 65535 is known only
         // once all of them have been seen, so the rare image in 0 to 65535 is decoded twice; a
         // mode that equalises counts every sample before it renders any, as the FITS loader does.
+        long above;
         if (renderer.NeedsCount)
         {
-            long above = Pass(floats, gray, renderer, fullScale, bitmap: null, cancellationToken);
+            above = Pass(floats, gray, renderer, fullScale, bitmap: null, cancellationToken);
             if (FitsScale.IsRescaled(-32, above, samples))
             {
                 fullScale = FitsScale.FullScale(-32, rescaled: true);
@@ -195,7 +204,7 @@ public sealed class WicImageLoader : IImageLoader
         }
         else
         {
-            long above = Pass(floats, gray, renderer, fullScale, bitmap, cancellationToken);
+            above = Pass(floats, gray, renderer, fullScale, bitmap, cancellationToken);
             if (FitsScale.IsRescaled(-32, above, samples))
             {
                 Pass(floats, gray, renderer, FitsScale.FullScale(-32, rescaled: true), bitmap, cancellationToken);
@@ -203,8 +212,89 @@ public sealed class WicImageLoader : IImageLoader
             }
         }
 
+        Log.Debug(info.Path + ": " + LogText.FloatRange(above, samples, rescaled: valueRange is not null));
         bitmap.Freeze();
         return new LoadedImage(info with { ValueRange = valueRange }, bitmap, mode);
+    }
+
+    /// <summary>
+    /// Writes what WIC made of a file, at <c>Debug</c>, the facts behind <see cref="ImageInfo"/>:
+    /// its decoder, its pixel format as WPF names it, or <c>unnamed</c>, its bits per pixel, its
+    /// size, for a TIFF the three tags <see cref="FloatSamplesOf"/> decides on, and how many
+    /// colour profiles it carries.
+    /// </summary>
+    /// <param name="stage">What is being done to the file: <c>probed</c> or <c>decoding</c>.</param>
+    /// <param name="frame">The file's first frame, in its own pixel format.</param>
+    /// <param name="info">What <see cref="Describe"/> made of the frame; its path is written.</param>
+    private static void LogFrame(string stage, BitmapFrame frame, ImageInfo info)
+    {
+        if (Log.IsDebugEnabled)
+        {
+            // WPF names the formats it knows; any other, such as the 96 bpp float RGB that Siril
+            // and GraXpert write, comes back as its Default, which is no format at all.
+            string format = frame.Format.ToString();
+            Log.Debug(stage + " " + info.Path + ": decoder=" + (frame.Decoder?.GetType().Name ?? "none")
+                + " format=" + (format == "Default" ? "unnamed" : format) + " bpp=" + LogText.Int(frame.Format.BitsPerPixel)
+                + " " + LogText.Size(frame.PixelWidth, frame.PixelHeight) + TiffSampleTags(frame)
+                + " profiles=" + ColourProfiles(frame));
+        }
+    }
+
+    /// <summary>
+    /// Reads, for the log, a TIFF's SampleFormat, BitsPerSample and SamplesPerPixel, the tags that
+    /// say what its samples are when WPF has no name for its format. A query that fails is written
+    /// as such: the log never changes what the load does.
+    /// </summary>
+    /// <param name="frame">The file's first frame.</param>
+    /// <returns>
+    /// The three tags with a leading space, <c> SampleFormat=3 BitsPerSample=32 SamplesPerPixel=3</c>,
+    /// each <c>none</c> when the file lacks it; empty for a file that is not a TIFF.
+    /// </returns>
+    private static string TiffSampleTags(BitmapFrame frame)
+    {
+        if (frame.Decoder is not TiffBitmapDecoder)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            if (frame.Metadata is not BitmapMetadata tags)
+            {
+                return " tags=none";
+            }
+
+            return " SampleFormat=" + Number(tags.GetQuery("/ifd/{ushort=339}"))
+                + " BitsPerSample=" + Number(tags.GetQuery("/ifd/{ushort=258}"))
+                + " SamplesPerPixel=" + Number(tags.GetQuery("/ifd/{ushort=277}"));
+        }
+        catch (Exception)
+        {
+            // Every exception, on purpose: these reads are the log's alone, and WPF turns WIC's
+            // errors into several types; one escaping here would refuse a file that opens.
+            return " tags=unreadable";
+        }
+
+        static string Number(object? value) => FirstNumber(value) is { } number ? LogText.Int(number) : "none";
+    }
+
+    /// <summary>
+    /// Counts, for the log, the colour profiles a frame carries: a profile in one file of a pair
+    /// and not in the other is a lead when the two look different on screen.
+    /// </summary>
+    /// <param name="frame">The file's first frame.</param>
+    /// <returns>The count, <c>0</c> when there is none, or <c>?</c> when the codec cannot say.</returns>
+    private static string ColourProfiles(BitmapFrame frame)
+    {
+        try
+        {
+            return LogText.Int(frame.ColorContexts?.Count ?? 0);
+        }
+        catch (Exception)
+        {
+            // Every exception, on purpose, as for the TIFF tags: the read is the log's alone.
+            return "?";
+        }
     }
 
     /// <summary>

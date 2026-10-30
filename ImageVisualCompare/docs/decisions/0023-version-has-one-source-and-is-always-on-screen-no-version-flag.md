@@ -1,7 +1,7 @@
 # 0023. The version has one source and no literal in code; it is always on screen, so there is no --version flag
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the banner heading About in its title and on its first line superseded by 0045
 
 ## Context
 
