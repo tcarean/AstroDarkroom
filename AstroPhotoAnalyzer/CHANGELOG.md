@@ -12,7 +12,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   looking only: the image through the ICC printer profile chosen for the Dmax, with the intent
   (**Perceptual**, **Relative** with black point compensation, and **Relative, no black point
   compensation**, the Tones tab's own model), the paper's white and black shown as they are, a paper gamut warning
-  (the Curves Editing figure, in red), the original for comparison, a margin that is the screen's white or the paper's, wheel
+  (the Curves Editing figure, in red), the original for comparison, a margin that is the paper's white by default or a fixed grey, wheel
   zoom and drag pan on the image, and a maximised window with keys. Without a profile the tab shows only a sentence saying so
   (R-160 to R-163; ADR 0066).
 

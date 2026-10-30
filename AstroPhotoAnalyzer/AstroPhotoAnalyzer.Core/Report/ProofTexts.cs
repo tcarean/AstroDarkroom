@@ -54,8 +54,8 @@ namespace AstroPhotoAnalyzer
             // A chroma that rounds to zero is written 0.0, not -0.0 (the baryta's a* is -0.01).
             a = Math.Abs(a) < 0.05 ? 0 : a;
             b = Math.Abs(b) < 0.05 ? 0 : b;
-            return Tr.Pick($"paper white L* {Fmt.F1(l)}, a* {Fmt.F1(a)}, b* {Fmt.F1(b)} (the profile's media white; what the image's white becomes with the simulation on)",
-                $"albul hartiei L* {Fmt.F1(l)}, a* {Fmt.F1(a)}, b* {Fmt.F1(b)} (albul mediului din profil; ce devine albul imaginii cu simularea pornita)");
+            return Tr.Pick($"paper white L* {Fmt.F1(l)}, a* {Fmt.F1(a)}, b* {Fmt.F1(b)} (the profile's media white; what the image's white becomes)",
+                $"albul hartiei L* {Fmt.F1(l)}, a* {Fmt.F1(a)}, b* {Fmt.F1(b)} (albul mediului din profil; ce devine albul imaginii)");
         }
 
         /// <summary>The paper's black in L* and Dmax, the figures of R-028 (R-162).</summary>

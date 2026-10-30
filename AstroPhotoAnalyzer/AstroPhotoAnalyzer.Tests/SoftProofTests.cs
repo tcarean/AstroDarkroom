@@ -225,7 +225,7 @@ public class SoftProofTests
     }
 
     [Fact]
-    public void R162_TheFactsAndTheLegendsAreTheCores()
+    public void R162_TheFactsAndTheLegendAreTheCores()
     {
         using var ws = new TempWorkspace();
         ProofProfile p = ProofProfile.Open(Profile(ws, white: TintedWhite));

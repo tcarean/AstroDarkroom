@@ -24,11 +24,12 @@
 // B2A1 relative) -> device values -> the relative colorimetric table back (A2B1): the colour the
 // paper shows, relative to its white. That colour is what a ProofTable stores, one table per
 // intent, on a grid of ProofGrid nodes per channel; a pixel reads it trilinearly. The display
-// step is applied after the interpolation and depends on one choice, "simulate paper and ink":
-// off, the paper's black is scaled to the screen's black and its white to the screen's white
-// (black point compensation towards the screen); on, the absolute scaling by the media white
-// of the profile's wtpt tag, so the paper's white and black show as they are. Then XYZ D50 ->
-// linear sRGB through the Bradford-adapted matrix -> encoded.
+// step is applied after the interpolation and takes one parameter, "simulate": true, the
+// absolute scaling by the media white of the profile's wtpt tag, so the paper's white and black
+// show as they are, which is what the window always asks for; false, the paper's black scaled
+// to the screen's black and its white to the screen's white (black point compensation towards
+// the screen), kept for the figures of V-015 (ADR 0066). Then XYZ D50 -> linear sRGB through
+// the Bradford-adapted matrix -> encoded.
 //
 // WHY A TABLE. The package makes the trip in 20 to 40 microseconds per colour: 35 s on a 1.4 MP
 // reduction, 2 s for 65^3 nodes with the rows in parallel. Measured on 2026-10-30, 65 nodes read
@@ -36,7 +37,7 @@
 // profiles; 33, the gamut figure's grid, reach 5 on the canvas (ADR 0066).
 //
 // WHY THE TABLE HOLDS XYZ AND NOT THE DISPLAY COLOUR. The display step is a per-pixel scaling:
-// one table per intent serves both states of the simulation.
+// one table per intent serves both values of the parameter.
 //
 // Black point compensation is the ICC one (ISO 18619), in XYZ: XYZ' = XYZ x (W - K) / W + K
 // towards the paper and its inverse towards the screen, W the D50 white and K the device black

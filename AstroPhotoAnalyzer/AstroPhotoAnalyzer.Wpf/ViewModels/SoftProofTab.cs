@@ -19,15 +19,15 @@
 // image through the paper's ICC profile, the paper's white and black shown as they are, with the
 // intent, the paper's gamut warning, the original for comparison and the margin around the image.
 //
-// It computes nothing: the proof, the classes of the pixels, the shares and every sentence come
-// from ProofRun (R-160 to R-162). Here are only the state of the controls, the bitmaps made from
-// the core's rasters and classes, the brush of the margin and the commands. Like the curves, the
+// It computes nothing: the proof, the gamut mask, its share and every sentence come from
+// ProofRun (R-160 to R-162). Here are only the state of the controls, the bitmaps made from the
+// core's rasters and mask, the brush of the margin and the commands. Like the curves, the
 // proof is a run after the analysis: MainViewModel starts it once the other tabs are filled
 // (ADR 0051), a change of intent renders again on a pool thread, and the other controls only
 // choose what is shown. The proof is always the paper and ink simulated (ADR 0066: the box
-// Lightroom has was dropped, nothing in this tool needed its other state). The bitmaps are made on the pool thread too, frozen:
-// three overlays over the reduction (2.7 MP on the reference image, up to 2400 px on the long
-// side) would stall the window for a visible moment.
+// Lightroom has was dropped, nothing in this tool needed its other state). The bitmaps are made
+// on the pool thread too, frozen: an overlay over the reduction (2.7 MP on the reference image,
+// up to 2400 px on the long side) would stall the window for a visible moment.
 
 using System;
 using System.Threading.Tasks;
@@ -37,7 +37,7 @@ using System.Windows.Media.Imaging;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
-    /// <summary>The margin around the proof (R-163): Lightroom's backgrounds plus the automatic one.</summary>
+    /// <summary>The margin around the proof (R-163): the paper's white, or a fixed background.</summary>
     public enum ProofMarginChoice
     {
         /// <summary>The paper's white, the one the proof's white becomes.</summary>

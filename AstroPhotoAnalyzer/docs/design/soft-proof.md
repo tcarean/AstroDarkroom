@@ -77,7 +77,7 @@ proof is shown maximised on a 4K screen too.
 The sentences, all pairs in the interface language (ADR 0048): the two refusals, "computing",
 the profile's line with its tables, the paper white and black lines, the legend with its share
 and the threshold it quotes, the three intents' names and one-line helps (the radio
-buttons' tooltips) and the caption (profile, intent, the state of the simulation). The window
+buttons' tooltips) and the caption (profile and intent). The window
 writes none of them.
 
 ## The tab and the window (`ViewModels/SoftProofTab.cs`, the three views)
@@ -122,7 +122,9 @@ its layers, sized to the proof's pixels) and keeps two numbers of its own: the z
 the fit and the child point at the viewport's centre, in child units, so that a resize keeps
 what was looked at; a child of another size resets both. The wheel zooms by 1.25 around the
 cursor (the child point under it stays under it), clamped between the fit and `MaxScale` (8)
-screen pixels per child pixel; the left button drags with the mouse captured; a double click
+device-independent pixels per child pixel (8:1 on a display at 100 % scaling), the viewport's
+growth never carrying the scale past it; from `PixelScale` (2) up the bitmaps are drawn nearest
+neighbour, so that the zoom shows the proof's pixels; the left button drags with the mouse captured; a double click
 resets; the centre is clamped so that the child never leaves the viewport (centred along an axis
 where it is smaller). The child is arranged at its natural size under a scale and a translation.
 View state only: the view-model knows nothing of it.
@@ -144,7 +146,7 @@ trilinearly is within Delta E76 1.0 of the exact per-pixel proof at the 99th per
 lab profiles (max 1.4 on the canvas), where 33 nodes reach 5.2; a 65-grid builds in 1.6 to 2.2 s
 with the rows in parallel. The figures on the plate-solved FITS through the baryta profile are
 V-015 (`../validation.md`): the paper white L\* 97.2, b\* +1.1 (sRGB 248, 247, 245), 1.37 % of
-the proof outside the paper's gamut, 0.02 % at most outside the screen's, and a mean L\* of
+the proof outside the paper's gamut, and a mean L\* of
 17.0, 19.7 and 18.2 on the three intents.
 
 ## The hand-built profile of the tests

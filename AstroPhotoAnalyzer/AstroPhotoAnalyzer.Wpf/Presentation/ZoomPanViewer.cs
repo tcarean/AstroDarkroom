@@ -39,14 +39,24 @@ namespace AstroPhotoAnalyzer.Wpf
     /// </summary>
     public sealed class ZoomPanViewer : Decorator
     {
-        /// <summary>The largest scale: this many device-independent pixels per unit of the child.</summary>
+        /// <summary>
+        /// The largest scale: this many device-independent pixels per unit of the child (8:1 on a
+        /// display at 100 % scaling; more physical pixels at 125 % or 150 %).
+        /// </summary>
         public const double MaxScale = 8;
+
+        /// <summary>
+        /// From this scale up the child's bitmaps are drawn pixel for pixel (nearest neighbour), so
+        /// that a zoom shows the proof's pixels and not a blur; under it they are smoothed.
+        /// </summary>
+        public const double PixelScale = 2;
 
         /// <summary>The zoom of one wheel notch, in or out.</summary>
         public const double WheelFactor = 1.25;
 
         readonly ScaleTransform _scale = new();
         readonly TranslateTransform _translate = new();
+        readonly TransformGroup _group = new();
 
         double _zoom = 1;
         Point _centre;
@@ -58,6 +68,8 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>Clips to its bounds and listens to the mouse.</summary>
         public ZoomPanViewer()
         {
+            _group.Children.Add(_scale);
+            _group.Children.Add(_translate);
             ClipToBounds = true;
             Background = Brushes.Transparent;
             Focusable = false;
@@ -88,7 +100,11 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The scale that fits the whole child in the viewport, 1 when either is empty.</summary>
         public double FitScale => FitScaleFor(RenderSize, _childSize);
 
-        /// <summary>Zooms around a point of the viewport, keeping the child under it in place.</summary>
+        /// <summary>
+        /// Zooms around a point of the viewport, keeping the child under it in place as far as the
+        /// clamp of the centre allows (near an edge, or out towards the fit, the child stays in the
+        /// viewport instead).
+        /// </summary>
         /// <param name="at">The point, in the viewer's device-independent pixels.</param>
         /// <param name="factor">Over 1 zooms in, under 1 out; clamped to the fit and <see cref="MaxScale"/>.</param>
         public void ZoomAt(Point at, double factor)
@@ -150,13 +166,7 @@ namespace AstroPhotoAnalyzer.Wpf
             if (child == null) return arrangeSize;
             Size size = child.DesiredSize;
             child.Arrange(new Rect(size));
-            if (child.RenderTransform is not TransformGroup)
-            {
-                var group = new TransformGroup();
-                group.Children.Add(_scale);
-                group.Children.Add(_translate);
-                child.RenderTransform = group;
-            }
+            if (!ReferenceEquals(child.RenderTransform, _group)) child.RenderTransform = _group;
             // A child of another size is a new image: look at the whole of it.
             if (size != _childSize || !_centred)
             {
@@ -181,6 +191,8 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             base.OnMouseWheel(e);
             ZoomAt(e.GetPosition(this), e.Delta > 0 ? WheelFactor : 1 / WheelFactor);
+            // A notch while dragging: the drag goes on from the new centre, not from the old one.
+            if (IsMouseCaptured) { _dragStart = e.GetPosition(this); _dragCentre = _centre; }
             e.Handled = true;
         }
 
@@ -189,6 +201,7 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             base.OnMouseLeftButtonDown(e);
             if (e.ClickCount == 2) { Reset(); e.Handled = true; return; }
+            if (_zoom <= 1) return;   // at the fit there is nowhere to pan
             _dragStart = e.GetPosition(this);
             _dragCentre = _centre;
             CaptureMouse();
@@ -233,14 +246,17 @@ namespace AstroPhotoAnalyzer.Wpf
         void Apply(Size viewport)
         {
             double fit = FitScaleFor(viewport, _childSize);
+            if (fit <= 0 || double.IsInfinity(fit)) return;
+            // A viewport grown since the zoom was chosen must not carry the scale past MaxScale.
+            _zoom = Math.Min(_zoom, Math.Max(1, MaxScale / fit));
             double scale = fit * _zoom;
-            if (scale <= 0 || double.IsInfinity(scale)) return;
             // The child never leaves the viewport: along an axis where it is larger, its edges
             // stay outside or on the viewport's; where it is smaller, it sits in the middle.
             _centre = new Point(ClampCentre(_centre.X, _childSize.Width, viewport.Width / scale), ClampCentre(_centre.Y, _childSize.Height, viewport.Height / scale));
             _scale.ScaleX = _scale.ScaleY = scale;
             _translate.X = viewport.Width / 2 - _centre.X * scale;
             _translate.Y = viewport.Height / 2 - _centre.Y * scale;
+            if (Child != null) RenderOptions.SetBitmapScalingMode(Child, scale >= PixelScale ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
         }
 
         /// <summary>The centre along one axis, clamped as <see cref="Apply(Size)"/> says.</summary>

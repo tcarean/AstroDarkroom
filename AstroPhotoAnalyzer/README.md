@@ -190,7 +190,7 @@ nothing is edited, nothing is written. The proof is computed right after the ana
   same figure.
 - **Original** shows the image as it is inside the same margin, for comparison.
 - **Margin**: **Paper white** by default; the others are fixed greys, white to black.
-- In the tab and in the window, the mouse wheel zooms around the cursor, up to 8:1, dragging
+- In the tab and in the window, the mouse wheel zooms around the cursor, up to 8:1 at 100 % display scaling, dragging
   with the left button pans, and a double click fits the image again.
 - **Full screen** opens the same proof maximised, with the same controls at the top and the
   margin filling the window; the keys G and O toggle the two boxes, I moves to the next

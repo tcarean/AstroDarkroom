@@ -75,6 +75,22 @@ public class ZoomPanViewerTests
             v.ZoomAt(new Point(200, 150), 1000);
             Assert.Equal(ZoomPanViewer.MaxScale, v.Scale, 9);
             Assert.Equal(ZoomPanViewer.MaxScale / 0.5, v.Zoom, 9);
+            Assert.Equal(System.Windows.Media.BitmapScalingMode.NearestNeighbor, RenderOptions.GetBitmapScalingMode(v.Child));
+
+            // A viewport grown afterwards keeps the scale at the maximum, not above it; at the
+            // fit the pixels are smoothed again.
+            v.Measure(new Size(1600, 1200));
+            v.Arrange(new Rect(0, 0, 1600, 1200));
+            v.UpdateLayout();
+            Assert.Equal(2, v.FitScale, 9);
+            Assert.Equal(ZoomPanViewer.MaxScale, v.Scale, 9);
+            v.Reset();
+            Assert.Equal(2, v.Scale, 9);
+            Assert.Equal(System.Windows.Media.BitmapScalingMode.NearestNeighbor, RenderOptions.GetBitmapScalingMode(v.Child));   // 2:1 shows pixels
+            v.Measure(new Size(400, 300));
+            v.Arrange(new Rect(0, 0, 400, 300));
+            v.UpdateLayout();
+            Assert.Equal(System.Windows.Media.BitmapScalingMode.HighQuality, RenderOptions.GetBitmapScalingMode(v.Child));
         });
 
     [Fact]

@@ -1,4 +1,4 @@
-# 0066. The soft proof is the paper's colour through the profile, on a grid of 65, shown black-compensated or as the paper
+# 0066. The soft proof is the paper's colour through the profile, on a grid of 65, shown as the paper beside a white
 
 Date: 2026-10-30
 Status: accepted 2026-10-30
@@ -9,8 +9,9 @@ The window reads the paper's Dmax from an ICC printer profile (ADR 0030) and cou
 outside the paper's gamut (ADR 0032, ADR 0042), but nothing shows what the paper would do to
 the image. On 2026-10-30 the owner asked for a soft-proofing tab as close as possible to
 Lightroom Classic's: a rendering intent (perceptual, relative), "Simulate Paper & Ink", gamut
-warnings that can be switched on and off (both of which fell on the owner's questions, below), the image full-screen inside a margin whose colour
-follows the selections; viewing only, no editing, no proof copy; without a profile the tab shows
+warnings that can be switched on and off (the box and the screen's warning later fell on the
+owner's questions, below), the image full-screen inside a margin whose colour follows the
+selections; viewing only, no editing, no proof copy; without a profile the tab shows
 an error and nothing else. The proposal the owner accepted the same day added three things
 beyond Lightroom: a third intent, relative without black point compensation, which is what
 the Tonuri tab's "under paper black" counts; a screen-gamut warning with the screen assumed
@@ -90,7 +91,7 @@ profiles, the Epson P900 baryta profile installed on the owner's machine and the
   colour within about 1.
 - **The exact trip per pixel.** About 35 s per rendering on one thread; the window would wait
   for every change of intent.
-- **Storing the display colour in the grid.** One grid per intent and per state of the box,
+- **Storing the display colour in the grid.** One grid per intent and per value of `simulate`,
   twice the work for a step that is a per-pixel scaling.
 - **A monitor profile from Windows, for a screen warning.** The tool assumes sRGB everywhere
   (R-096); a profile read from the display would make the proof alone colour-managed, and with

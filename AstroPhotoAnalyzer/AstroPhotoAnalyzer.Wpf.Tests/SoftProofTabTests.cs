@@ -73,7 +73,7 @@ public class SoftProofTabTests
     }
 
     [Fact]
-    public async Task R163_TheProofFollowsTheControlsAndTheMarginFollowsTheSimulation()
+    public async Task R163_TheProofFollowsTheControlsAndTheMarginIsThePaperWhiteUnlessChosen()
     {
         using var ws = new TempWorkspace();
         string icc = Profile(ws);
@@ -119,7 +119,7 @@ public class SoftProofTabTests
         Assert.Equal(paper, ColourOf(tab.MarginBrush));
         Assert.True(paper.B < paper.R, "a yellowish paper white");
 
-        // A chosen margin wins over the automatic one.
+        // A chosen margin replaces the paper's white, and the default brings it back.
         tab.Margin = ProofMarginChoice.White;
         Assert.Equal(Colors.White, ColourOf(tab.MarginBrush));
         tab.Margin = ProofMarginChoice.Black;
@@ -127,8 +127,7 @@ public class SoftProofTabTests
         tab.Margin = ProofMarginChoice.PaperWhite;
         Assert.Equal(paper, ColourOf(tab.MarginBrush));
 
-        // The original swaps the image inside the same margin and hides the warnings.
-        tab.Margin = ProofMarginChoice.PaperWhite;
+        // The original swaps the image inside the same margin and hides the warning.
         var proof = tab.Image;
         tab.ShowPaperGamut = true;
         Assert.True(tab.ShowPaperLayer);

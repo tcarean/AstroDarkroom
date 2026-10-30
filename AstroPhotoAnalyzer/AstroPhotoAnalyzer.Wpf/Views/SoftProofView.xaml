@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- SoftProofView - the Soft proof tab (R-163): the intent, the two boxes, the margin, the
-     proof inside its margin with the warning layers, the core's facts and legends under it,
+     proof inside its margin with the warning layers, the core's facts and legend under it,
      and "Full screen". Without a profile only the core's sentence shows (R-162). The image
      takes all the remaining room, which is why the tab is a grid, as the Editare Curbe tab.
      No figure is computed here. -->
@@ -71,7 +71,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperWhiteLine}" TextWrapping="Wrap" Margin="0,2,0,0" />
       <TextBlock Style="{StaticResource Muted}" Text="{Binding PaperBlackLine}" TextWrapping="Wrap" Margin="0,2,0,0" />
       <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,6,0,0"
-                 Text="{local:T En='Wheel: zoom around the cursor, up to 8:1; left button: drag; double click: fit again. A reduced copy through the tables of the profile, viewing only: the pixels and the screen are assumed sRGB. The white and the black of the paper are shown as they are: the print beside a white. The third intent, without the compensation, is the model of the Tones tab.', Ro='Rola: zoom in jurul cursorului, pana la 8:1; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa prin tabelele profilului, doar pentru privit: pixelii si ecranul sunt presupusi sRGB. Albul si negrul hartiei sunt aratate asa cum sunt: printul langa un alb. Al treilea intent, fara compensare, e modelul tabului Tonuri.'}" />
+                 Text="{local:T En='Wheel: zoom around the cursor, up to 8:1 at 100 % display scaling; left button: drag; double click: fit again. A reduced copy through the tables of the profile, viewing only: the pixels and the screen are assumed sRGB. The white and the black of the paper are shown as they are: the print beside a white. The third intent, without the compensation, is the model of the Tones tab.', Ro='Rola: zoom in jurul cursorului, pana la 8:1 la scalare de 100 % a ecranului; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa prin tabelele profilului, doar pentru privit: pixelii si ecranul sunt presupusi sRGB. Albul si negrul hartiei sunt aratate asa cum sunt: printul langa un alb. Al treilea intent, fara compensare, e modelul tabului Tonuri.'}" />
     </StackPanel>
   </Grid>
 </UserControl>
