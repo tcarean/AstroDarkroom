@@ -350,6 +350,54 @@ public class LensProfileReaderTests
     }
 
     /// <summary>
+    /// R-115: a lensfun/ folder the user may not list (a deny rule, broken permissions) does not
+    /// fail the search: it is left out whole with a Warn line naming it, as an Adobe root is, the
+    /// sources mark it unreadable rather than absent, and the Adobe half still comes. Before,
+    /// Locate threw from the folder's enumeration and every mode that locates the profiles
+    /// failed with it (2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R115_AnUnlistableLensfunFolderIsLeftOutWithAWarnLine_NotAFailedSearch()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string lensfun = Path.Combine(dir, "lensfun");
+        using var deny = UnlistableFolder.Deny(lensfun);
+        using var capture = LogCapture.Start();
+
+        var s = ProfileLocator.Locate(new[] { dir }, lensfun);
+
+        Assert.Equal(2, s.AdobeFiles);
+        Assert.Equal(0, s.LensfunLenses);
+        Assert.False(s.LensfunPresent);
+        Assert.True(s.LensfunUnreadable);
+        var warned = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn && e.Message.Contains("could not be listed"));
+        Assert.Contains(lensfun, warned.Message);
+        Assert.IsType<UnauthorizedAccessException>(warned.Exception);
+    }
+
+    /// <summary>R-115: the lensfun line of the summary tells an unreadable folder from a missing
+    /// or empty one, in both languages; a folder read, lenses or not, gets no suffix.</summary>
+    [Fact]
+    public void R115_SourcesSummary_TellsAnUnreadableLensfunFolderFromAMissingOne()
+    {
+        static ProfileSources Sources(bool present, bool unreadable)
+            => new(new[] { "x" }, 10, 0, "lf", present, unreadable, null, LensCatalog.Empty, LensfunData.Empty);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.EndsWith("0 lenses from lf - the folder could not be read", SyntheticReport.SourcesSummary(Sources(false, true)));
+            Assert.EndsWith("0 lenses from lf - the folder is missing or empty", SyntheticReport.SourcesSummary(Sources(false, false)));
+            Assert.EndsWith("0 lenses from lf", SyntheticReport.SourcesSummary(Sources(true, false)));
+        }
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            Assert.EndsWith("0 obiective din lf - folderul nu a putut fi citit", SyntheticReport.SourcesSummary(Sources(false, true)));
+            Assert.EndsWith("0 obiective din lf - folderul lipseste sau e gol", SyntheticReport.SourcesSummary(Sources(false, false)));
+        }
+    }
+
+    /// <summary>
     /// A file that parses to no vignetting profile (the A3 lens) is a Debug line when the
     /// catalog parses it, so a report that says "no vignetting profile" can be traced to the
     /// file (the review of 2026-10-27, A8).
@@ -468,7 +516,7 @@ public class LensProfileReaderTests
     public void R107_SourcesSummary_NamesTheDuplicatesSkippedOnlyWhenThereAreAny()
     {
         static ProfileSources Sources(int duplicates)
-            => new(new[] { "x" }, 10, duplicates, "lf", false, null, LensCatalog.Empty, LensfunData.Empty);
+            => new(new[] { "x" }, 10, duplicates, "lf", false, false, null, LensCatalog.Empty, LensfunData.Empty);
         using (Ui.Use(UiLanguage.English))
         {
             Assert.Contains("10 files (7164 duplicates skipped)", SyntheticReport.SourcesSummary(Sources(7164)));

@@ -611,7 +611,7 @@ public class StructureReportTests
     static ProfileSources AdobeSearch(int adobeFiles, bool lensfun = true)
     {
         LensfunData lf = lensfun ? LensfunReader.ReadXml(LensProfileTestData.LensfunXml, "slr-tokina.xml") : LensfunData.Empty;
-        return new(AdobeDirs, adobeFiles, 0, "lf", lensfun, null, new LensCatalog(lf.Profiles.ToList()), lf);
+        return new(AdobeDirs, adobeFiles, 0, "lf", lensfun, false, null, new LensCatalog(lf.Profiles.ToList()), lf);
     }
 
     /// <summary>
@@ -682,7 +682,7 @@ public class StructureReportTests
     [Fact]
     public void R113_ALensfunFolderThatYieldsNoLensCountsAsNoLensfun()
     {
-        var unreadable = new ProfileSources(AdobeDirs, 0, 0, "lf", true, null, LensCatalog.Empty, LensfunData.Empty);
+        var unreadable = new ProfileSources(AdobeDirs, 0, 0, "lf", true, false, null, LensCatalog.Empty, LensfunData.Empty);
 
         using (Ui.Use(UiLanguage.English))
             Assert.Equal("Adobe's lens profiles were not found on this computer.", StructureReport.AdobeMissing(unreadable));

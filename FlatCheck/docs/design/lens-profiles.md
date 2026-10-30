@@ -195,7 +195,13 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   line in the diagnostic log (`logging.md`), and the next folder is searched;
   `AdobeAppDirectories` swallows the same for the Program Files root. (Until 2026-10-27 the
   whole root was lost on a subfolder without list rights, though this note said otherwise: the
-  review's A7.) `--profiles <dir>` replaces the whole list.
+  review's A7.) The lensfun folder goes the same way: one that is there but cannot be listed
+  is left out whole with its Warn line, `LensfunPresent` false and `LensfunUnreadable` true,
+  and `SourcesSummary` ends its line with "the folder could not be read" rather than "missing
+  or empty" (R-115, ADR 0075); the read of its files is inside the same `try` as the check, so
+  a folder that turns unlistable between the two lands in the same state. Nothing else looks
+  at the flag: the Structure card never names lensfun when an Adobe file was found, and R-113's
+  first sentence covers the case without one. `--profiles <dir>` replaces the whole list.
 - **Search**: every word of the text must appear in name + maker + mount (+ known
   aliases), case-insensitive; empty text lists everything; `--source` restricts.
 - **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the

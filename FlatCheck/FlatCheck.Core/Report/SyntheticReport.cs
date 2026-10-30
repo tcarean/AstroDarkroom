@@ -447,7 +447,8 @@ namespace FlatCheck
             => T($"SYNTHETIC FLAT: {path} has {planes} colour planes (debayered); give a CFA or mono frame as the reference.",
                  $"FLAT SINTETIC: {path} are {planes} planuri de culoare (debayerizat); da un cadru CFA sau mono ca referinta.");
 
-        /// <summary>What profiles were found, in two lines: Adobe and lensfun.</summary>
+        /// <summary>What profiles were found, in two lines: Adobe and lensfun. The lensfun line
+        /// tells a folder that could not be read from one that is missing or empty (R-115).</summary>
         /// <param name="s">The profile sources found on the machine.</param>
         /// <returns>Two lines joined by '\n'.</returns>
         internal static string SourcesSummary(ProfileSources s)
@@ -455,7 +456,9 @@ namespace FlatCheck
              + (s.AdobeFilesDuplicate > 0 ? T($" ({s.AdobeFilesDuplicate} duplicates skipped)", $" ({s.AdobeFilesDuplicate} duplicate sarite)") : "")
              + (s.AdobeFiles == 0 ? T(" - no profile found in ", " - niciun profil gasit in ") + string.Join(" / ", s.AdobeDirectories) : "") + "\n"
              + T($"    lensfun: {s.LensfunLenses} lenses from {s.LensfunDirectory}", $"    lensfun: {s.LensfunLenses} obiective din {s.LensfunDirectory}")
-             + (s.LensfunPresent ? "" : T(" - the folder is missing or empty", " - folderul lipseste sau e gol"));
+             + (s.LensfunPresent ? ""
+                : s.LensfunUnreadable ? T(" - the folder could not be read", " - folderul nu a putut fi citit")
+                : T(" - the folder is missing or empty", " - folderul lipseste sau e gol"));
 
         // ---------------------------------------------------------------- --lenses
 

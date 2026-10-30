@@ -456,6 +456,33 @@ public class StructureTabTests
     }
 
     /// <summary>
+    /// R-115: a lensfun/ folder the user may not list does not take the Structure run down with
+    /// it: the five tests and the profile card still come, with the Adobe rows the raw's lens ID
+    /// finds and no red paragraph. Before, the shared catalog's load threw from the folder's
+    /// enumeration and the tab showed "The analysis failed" whenever flats/ held a raw
+    /// (2026-10-30).
+    /// </summary>
+    [Fact]
+    public async Task R115_AnUnlistableLensfunFolderDoesNotFailTheStructureRun()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string lensfun = Path.Combine(dir, "lensfun");
+        using var deny = UnlistableFolder.Deny(lensfun);
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => ProfileLocator.Locate(new[] { dir }, lensfun)),
+                                           path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasError);
+        Assert.True(vm.HasProfileRows);
+        Assert.Equal("", vm.AdobeMissing);
+    }
+
+    /// <summary>
     /// A lensfun lens calibrated on two formats is two rows in the table, with the same name
     /// and the calibration format beside the mount, so the user can tell which one the master
     /// agrees with; an Adobe row shows the mount alone.
