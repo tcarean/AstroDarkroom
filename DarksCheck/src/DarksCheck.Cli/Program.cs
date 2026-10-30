@@ -17,6 +17,7 @@
 
 using System.Globalization;
 using DarksCheck.Core;
+using NLog;
 using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Cli;
@@ -27,10 +28,55 @@ namespace DarksCheck.Cli;
 /// </summary>
 internal static class Program
 {
-    /// <summary>Runs the console on the process's own output and error streams.</summary>
+    /// <summary>
+    /// The diagnostic log's console lines (R-101): the mode and the options, the refusals, the files
+    /// written, a run that failed. Fetched on use, not held in a static field: this is the type
+    /// whose <see cref="Main"/> configures the log, and a logger its type initialiser created first
+    /// could make NLog load a stray <c>NLog.config</c> (ADR 0025, after FlatCheck's ADR 0072).
+    /// </summary>
+    private static Logger Log => LogManager.GetLogger("Cli");
+
+    /// <summary>
+    /// Runs the console on the process's own output and error streams, between the diagnostic
+    /// log's first and last lines. The log is configured here and not in <see cref="Run"/>, which
+    /// the tests call in-process (R-100 to R-103).
+    /// </summary>
     /// <param name="args">The command-line arguments.</param>
     /// <returns>The exit code: 0 on a clean run or for --help, 1 otherwise.</returns>
-    private static int Main(string[] args) => Run(args, Console.Out, Console.Error);
+    private static int Main(string[] args)
+    {
+        // The log never stops the tool: a folder that cannot be probed, a broken NLog on this
+        // machine, and the run goes on without a log, stdout and stderr untouched (R-001, R-101).
+        try
+        {
+            LogSetup.Apply("darkscheck", args);
+        }
+        catch (Exception)
+        {
+            // the run goes on without a log
+        }
+
+        // Run's exit code, for the log's last line. A run that throws past RunInLanguage's catch
+        // crashes: the hook's Fatal line, written first, is then the crash's line.
+        int code = 1;
+        try
+        {
+            code = Run(args, Console.Out, Console.Error);
+            return code;
+        }
+        finally
+        {
+            // Guarded like Apply: the log never stops the tool, on the way out either.
+            try
+            {
+                LogSetup.Close(code);
+            }
+            catch (Exception)
+            {
+                // the log's last line is lost, the exit code is not
+            }
+        }
+    }
 
     /// <summary>
     /// The whole console, testable: the tests call this with a StringWriter and compare the
@@ -57,6 +103,7 @@ internal static class Program
         LanguageArgument lang = LanguageArgument.Extract(args);
         if (lang.BadValue is not null)
         {
+            Log.Warn("refused: " + LanguageArgument.BadValueMessage(lang.BadValue));
             stderr.WriteLine("ERROR: " + LanguageArgument.BadValueMessage(lang.BadValue));
             return 1;
         }
@@ -69,7 +116,8 @@ internal static class Program
 
     /// <summary>
     /// The console after the banner and <c>--lang</c>: parses the options, runs and reports, every
-    /// text in <see cref="Ui.Current"/>.
+    /// text in <see cref="Ui.Current"/>, and writes the mode, the refusal, the files written or the
+    /// failure to the diagnostic log (R-101).
     /// </summary>
     /// <param name="args">The arguments without <c>--lang</c> and its value; not null.</param>
     /// <param name="stdout">Where the usage and the report go; not null.</param>
@@ -80,15 +128,22 @@ internal static class Program
         Options o = Options.Parse(args);
         if (o.Help)
         {
+            Log.Info("mode=help");
             WriteUsage(stdout);
             return 0;
         }
 
         if (o.Error is not null)
         {
+            Log.Warn("refused the arguments: " + o.Error);
             stderr.WriteLine(T("ERROR: ", "EROARE: ") + o.Error);
             return 1;
         }
+
+        string mode = o.Inventory ? "inventory" : "darks";
+        Log.Info("mode=" + mode + " input=" + o.Folder + " against=" + LogText.Str(o.Against) + " out=" + LogText.Str(o.Out)
+            + " threads=" + (o.Threads > 0 ? LogText.Int(o.Threads) : "auto") + " maxFrames=" + LogText.Int(o.MaxFrames)
+            + " lang=" + (Ui.Current == UiLanguage.Romanian ? "ro" : "en"));
 
         // Progress on stderr, one line rewritten, so stdout stays the report alone. Written
         // synchronously on the reporting thread under a lock, since the frames finish in
@@ -120,7 +175,9 @@ internal static class Program
             DarkReport.Write(r, stdout);
             if (o.Out is not null)
             {
-                IReadOnlyList<string> written = DarkOutputs.WriteAll(r, o.Out);
+                // Each file's line as soon as the file is written, so an export that fails
+                // part-way still names what it wrote (R-101).
+                IReadOnlyList<string> written = DarkOutputs.WriteAll(r, o.Out, p => Log.Info(LogText.Wrote(p)));
                 stdout.WriteLine();
                 foreach (string p in written)
                 {
@@ -135,6 +192,9 @@ internal static class Program
             // The analysis runs frames in parallel; a failure inside one lands here wrapped.
             // The progress line, if one was being written, is cleared first.
             string message = e is AggregateException a ? string.Join("; ", a.Flatten().InnerExceptions.Select(x => x.Message).Distinct(StringComparer.Ordinal)) : e.Message;
+
+            // The stack lives in the log; stderr keeps its one line, the same the window shows.
+            Log.Error(e, "run failed: mode=" + mode);
             progress.Clear();
             stderr.WriteLine(T("ERROR: ", "EROARE: ") + message);
             return 1;

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -605,6 +606,108 @@ public partial class LoggingTests
         Assert.Contains(" filters 0x00000009 cdesc RGBG cfa none maximum 16383 black 1024 ", line, StringComparison.Ordinal);
     }
 
+    // ---------------------------------------------------------------- R-101: the console
+
+    /// <summary>
+    /// A console run that fails keeps its one line on stderr, as before the log, and writes the
+    /// failure at Error with the exception's type and stack, after the mode and the options; the
+    /// run's clocks say where it stopped (R-101).
+    /// </summary>
+    [Fact]
+    public void R101_TheConsoleLogsTheModeAndAFailureWithItsStack_AndStderrKeepsOneLine()
+    {
+        using TempWorkspace ws = new();
+        string missing = Path.Combine(ws.Dir, "missing");
+        using LogCapture capture = LogCapture.Start();
+
+        (int code, _, string stderr) = Cli.Run(missing, "--threads", "2");
+
+        Assert.Equal(1, code);
+        Assert.Equal("EROARE: nu gasesc folderul " + missing + "\n", stderr);
+        Assert.Contains("mode=darks input=" + missing + " against=none out=none threads=2 maxFrames=60 lang=ro", capture.Messages);
+        LogCapture.Captured failed = Assert.Single(capture.Events, e => e.Level == LogLevel.Error);
+        Assert.Equal("Cli", failed.Logger);
+        Assert.Equal("run failed: mode=darks", failed.Message);
+        Assert.IsType<DirectoryNotFoundException>(failed.Exception);
+        Assert.Contains("   at DarksCheck.Core.SessionFolder.Open(", failed.Line, StringComparison.Ordinal);
+        Assert.Contains("darks ended without an outcome after #", Timeless(capture));
+    }
+
+    /// <summary>A refused argument is a Warn line with the message the user was shown, in the language it was shown in (R-101).</summary>
+    [Fact]
+    public void R101_ARefusedOptionIsLoggedAtWarnAsShown()
+    {
+        using LogCapture capture = LogCapture.Start();
+
+        (int threadsCode, _, string threadsError) = Cli.Run("C:/any", "--threads", "x");
+        (int langCode, _, string langError) = Cli.Run("C:/any", "--lang", "fr");
+
+        Assert.Equal(1, threadsCode);
+        Assert.Equal(1, langCode);
+        string[] warned = capture.Events.Where(e => e.Level == LogLevel.Warn && e.Logger == "Cli").Select(e => e.Message).ToArray();
+        Assert.Equal(2, warned.Length);
+        Assert.StartsWith("refused the arguments: ", warned[0], StringComparison.Ordinal);
+        Assert.Equal("EROARE: " + warned[0]["refused the arguments: ".Length..] + "\n", threadsError);
+        Assert.Equal("refused: --lang expects en or ro, got 'fr'", warned[1]);
+        Assert.Equal("ERROR: --lang expects en or ro, got 'fr'\n", langError);
+    }
+
+    /// <summary>
+    /// The log adds nothing to the console's streams: with the capture open, a darks run prints the
+    /// golden text on stdout and only the progress on stderr, while the log holds the run (R-101).
+    /// </summary>
+    [Fact]
+    public void R101_TheConsoleAddsNothingToStdoutOrStderr()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, HotFactor = 0.9 + 0.2 * i / 3 }, biases: 3);
+        using LogCapture capture = LogCapture.Start();
+
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
+
+        Assert.True(capture.Events.Count > 50, "the log holds " + capture.Events.Count.ToString(CultureInfo.InvariantCulture) + " lines");
+        Assert.Equal(File.ReadAllText(Path.Combine(GoldenOutputTests.GoldenDir, "darks.txt")).ReplaceLineEndings("\n"),
+            GoldenOutputTests.Scrub(stdout, s.Root) + "--- stderr ---\n(progresul, omis)\n--- exit " + code.ToString(CultureInfo.InvariantCulture) + " ---\n");
+        Assert.All(stderr.Split('\n').Where(l => l.Trim().Length > 0), l => Assert.Matches(@"^    .+: \d+ / \d+$", l));
+    }
+
+    [Fact]
+    public void R101_EveryFileWrittenIsOneLineWithItsSize()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i }, biases: 2);
+        using TempWorkspace ws = new();
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli.Run(s.Root, "--threads", "2", "--out", ws.Dir).Code);
+
+        string[] wrote = capture.Events.Where(e => e.Logger == "Cli" && e.Message.StartsWith("wrote ", StringComparison.Ordinal)).Select(e => e.Message).ToArray();
+        string[] files = Directory.GetFiles(ws.Dir);
+        Assert.Equal(files.Length, wrote.Length);
+        Assert.All(wrote, m => Assert.Matches(@"^wrote .+ \(\d+\.\d KiB\)$", m));
+        Assert.All(files, f => Assert.Contains(wrote, m => m.StartsWith("wrote " + f + " (", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
+    /// The real console starts and closes the log itself (R-101), which only its Main does and no
+    /// in-process test reaches: its first line names it, its version and its arguments, its last
+    /// line the exit code. Its lines are found by its process id from its first line, which names a
+    /// working folder of its own, in the log beside the copy of the executable in the test build
+    /// folder, which other tests' processes share (LightsCheck's test).
+    /// </summary>
+    [Fact]
+    public void R101_TheRealConsoleWritesItsFirstAndItsLastLine()
+    {
+        (int pid, int code, List<string> lines) = RunTheConsole(null, "--help", "--lang", "en");
+
+        Assert.Equal(0, code);
+        Assert.True(lines.Count >= 3, "the console wrote " + lines.Count.ToString(CultureInfo.InvariantCulture) + " lines");
+        Assert.Contains(" INFO  [" + pid.ToString(CultureInfo.InvariantCulture) + ":", lines[0], StringComparison.Ordinal);
+        Assert.Contains("] Process darkscheck " + VersionInfo.Value + " starting; exe=" + ConsoleExe + "; args=[\"--help\", \"--lang\", \"en\"]; ",
+            lines[0], StringComparison.Ordinal);
+        Assert.Contains("; level=Debug; ", lines[0], StringComparison.Ordinal);
+        Assert.Contains(lines, l => l.EndsWith("] Cli mode=help", StringComparison.Ordinal));
+        Assert.Matches(@"\] Process exit 0 after \d+\.\d s$", lines[^1]);
+    }
+
     /// <summary>The log writes an elapsed time in two forms only: milliseconds, or seconds with one decimal; never whole seconds.</summary>
     [Fact]
     public void TheElapsedTimeHasTwoForms_MillisecondsAndSecondsWithOneDecimal()
@@ -630,6 +733,24 @@ public partial class LoggingTests
     public void R102_TheLevelComesFromTheEnvironmentVariable(string? value, string level)
     {
         Assert.Equal(LogLevel.FromString(level), LogSetup.LevelFrom(value));
+    }
+
+    /// <summary>
+    /// The real console takes its level from <c>DARKSCHECK_LOG</c>, the name R-102 and the README
+    /// give, written out here so a renamed constant fails: <c>off</c> writes no line, <c>trace</c>
+    /// says so in the first line (LightsCheck's review of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R102_TheRealConsoleTakesItsLevelFromDARKSCHECK_LOG()
+    {
+        (_, int offCode, List<string> off) = RunTheConsole("off", "--help");
+        (_, int traceCode, List<string> trace) = RunTheConsole("trace", "--help");
+
+        Assert.Equal(0, offCode);
+        Assert.Equal(0, traceCode);
+        Assert.Empty(off);
+        Assert.NotEmpty(trace);
+        Assert.Contains("; level=Trace; ", trace[0], StringComparison.Ordinal);
     }
 
     [Fact]
@@ -717,6 +838,72 @@ public partial class LoggingTests
     /// <summary>The working set as the log writes it.</summary>
     [GeneratedRegex(@"working set \d+\.\d MiB")]
     private static partial Regex WorkingSet();
+
+    /// <summary>The console's executable as the build copies it beside the tests.</summary>
+    private static string ConsoleExe => Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "darkscheck.exe" : "darkscheck");
+
+    /// <summary>
+    /// Runs the real console, without a window, its level variable as given: removed for null,
+    /// whatever the developer's own environment says. It runs in a working folder of its own, which
+    /// its first line names, and its lines are read while this test still holds its handle, so no
+    /// other process can be given its id meanwhile and an older process's lines under the same id
+    /// stay out (LightsCheck's second review of 2026-10-30).
+    /// </summary>
+    private static (int Pid, int Code, List<string> Lines) RunTheConsole(string? level, params string[] args)
+    {
+        using TempWorkspace cwd = new();
+        ProcessStartInfo start = new(ConsoleExe) { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = cwd.Dir };
+        foreach (string a in args)
+        {
+            start.ArgumentList.Add(a);
+        }
+
+        start.Environment.Remove("DARKSCHECK_LOG");
+        if (level is not null)
+        {
+            start.Environment["DARKSCHECK_LOG"] = level;
+        }
+
+        using Process p = Process.Start(start)!;
+        Task<string> errors = p.StandardError.ReadToEndAsync();
+        p.StandardOutput.ReadToEnd();
+        Assert.True(p.WaitForExit(30_000), "darkscheck did not end within 30 s");
+        errors.Wait();
+        return (p.Id, p.ExitCode, ConsoleLinesOf(p.Id, Path.GetFileName(cwd.Dir)));
+    }
+
+    /// <summary>
+    /// The lines one console process wrote, in the log beside the executable: those of its process
+    /// id from its first line on, the one that names its working folder; none when it wrote no
+    /// first line. The files are opened sharing every access, as other tests' processes may hold
+    /// them.
+    /// </summary>
+    private static List<string> ConsoleLinesOf(int pid, string folderName)
+    {
+        string folder = Path.Combine(AppContext.BaseDirectory, LogSetup.FolderName);
+        List<string> lines = [];
+        if (!Directory.Exists(folder))
+        {
+            return lines;
+        }
+
+        string mark = " [" + pid.ToString(CultureInfo.InvariantCulture) + ":";
+        foreach (string f in LogFiles.FilesOf(folder, "darkscheck"))
+        {
+            using FileStream s = new(f, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using StreamReader r = new(s);
+            for (string? l = r.ReadLine(); l is not null; l = r.ReadLine())
+            {
+                if (l.Contains(mark, StringComparison.Ordinal) && (lines.Count > 0
+                    || (l.Contains(" starting; ", StringComparison.Ordinal) && l.Contains(folderName, StringComparison.Ordinal))))
+                {
+                    lines.Add(l);
+                }
+            }
+        }
+
+        return lines;
+    }
 
     /// <summary>A capture's messages, each elapsed time written as <c>#</c>.</summary>
     private static string[] Timeless(LogCapture capture) => capture.Messages.Select(x => LogFiles.ElapsedTime().Replace(x, "#")).ToArray();
