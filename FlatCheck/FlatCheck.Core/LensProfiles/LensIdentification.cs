@@ -203,9 +203,10 @@ namespace FlatCheck
             id.RawName = rawName;
             // The mounts the camera takes, from lensfun's camera table and mount definitions
             // (R-116); null when the table does not know the body, and then the camera's first
-            // word alone tells the mount, as before.
+            // word alone tells the mount, as before. Said in the log only when a lensfun copy was
+            // read: without one, every body is unknown, and ADR 0075's Warn line already says why.
             IReadOnlySet<string> mounts = sources?.Lensfun?.MountsOf(id.Camera);
-            if (mounts == null && !string.IsNullOrEmpty(id.Camera) && sources != null && Log.IsDebugEnabled)
+            if (mounts == null && !string.IsNullOrEmpty(id.Camera) && sources != null && sources.LensfunPresent && Log.IsDebugEnabled)
                 Log.Debug("mount of " + id.Camera + " unknown to lensfun: the camera's first word alone filters the candidates");
             if (id.RawNamesLens && sources != null)
             {
