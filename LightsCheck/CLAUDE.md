@@ -83,7 +83,8 @@ varies a kit rule names it.
   anything with a UI.
 - **Computed only in the core.** Nothing is computed outside `LightsCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never
-  in a view-model or the console.
+  in a view-model or the console. A diagnostic log line is no figure of the analysis: the
+  applications write and time their own lines (ADR 0029).
 - **Read-only input.** Nothing is ever written into the session folder's `lights/` or
   `biases/`; the raws are read, never modified, moved or renamed.
 - **Golden files** (extends the kit's rule "No test edited to pass", the kit's ADR 0033). The

@@ -127,14 +127,14 @@ three timed inside `FrameRun.Measure` by the clock it is handed; `open`, `measur
 | `SessionFolder.Open` | Info | `session root=... lights=<dir> (<n> frames, <ext>) biases=<dir> (<n>) darks=<dir> (<n>)`; a refused folder is its caller's exception |
 | `ImageLoader.Load` / `LoadInfo` | Info, Debug, Trace | `loaded <LogText.Frame> in <ms>` for a full load (Info), `read the header of ...` for a metadata read (Debug); the FITS keywords that decide the reading (`LogText.FitsKeys`) at Debug; every card at Trace, from a full load only |
 | `RawReader` | Debug, Warn | through `FiguresLine`, libraw's visible and raw sizes, margins, pitch, filters, `cdesc`, the CFA order or `none`, the maximum, the black and the per-channel blacks and their median, before the scale is judged; the lens block that could not be read, with the exception |
-| `FrameInfo.Read` | Warn | a frame whose metadata could not be read, with the exception; its row carries the message; not when its caller writes the frame's one line itself (the series) |
+| `FrameInfo.Read` | Warn | a frame whose metadata could not be read, with the exception; its row carries the message; not when its caller takes the exception back to write it itself (the series, through the overload with an `out` parameter) |
 | `InventoryRun` | Info, Debug | through `RunClock`, `inventory done lights=<n> errors=<n>`; the cadence at Debug |
 | `FrameRun` | Info, Debug | through `RunClock`, `frame done detected=<n> fwhm=<v> elongation=<v>`; in `Measure`, every figure of the frame's measurement (`LogText.Measured`) at Debug, for the series' frames too |
-| `SeriesRun` | Info, Debug, Warn | through `RunClock`, `series done frames= measured= errors= good= marginal= bad= unknown= walking= polar=`; `frame <i>/<n> <file> detected= fwhm= elongation= in <ms>` per frame measured, from its worker thread; a frame that could not be measured, with the exception, in one line that also says whether its metadata could be read; at Debug the reference frame, each frame's registration, the cadence, the dithering, the pattern, the pixel size and its source (`PixelPitchSource`), the read noise, the WCS with the flip the analysis uses, the series analysis and each frame's class with its flags and the mount's move; the read noise that could not be measured (Warn) or had fewer than two biases (Debug); each WCS candidate at the root skipped and why (no RA axis, a zero matrix row, a file that could not be read) and the one read (Debug) |
+| `SeriesRun` | Info, Debug, Warn | through `RunClock`, `series done frames= measured= errors= good= marginal= bad= unknown= walking= polar=`; `frame <i>/<n> <file> detected= fwhm= elongation= in <ms>` per frame measured, from its worker thread; a frame that could not be measured, with the exception, in one line that also says whether its metadata could be read (`LogFailedFrame`), and the metadata read's exception on a line of its own when it is another error than the measurement's (another type or message); at Debug the reference frame, each frame's registration, the cadence, the dithering, the pattern, the pixel size and its source (`PixelPitchSource`), the read noise, the WCS with the flip the analysis uses, the series analysis and each frame's class with its flags and the mount's move; the read noise that could not be measured (Warn) or had fewer than two biases (Debug); each WCS candidate at the root skipped and why (no RA axis, a zero matrix row, a file that could not be read) and the one read (Debug) |
 | `App` | Info, Warn | the language and the folder from the command line; a `--lang` refused; it hooks the window thread's unhandled exception, which `LogSetup` writes |
 | `MainWindow` | Info | the folder and export dialogs, chosen or cancelled; Stop; About |
 | `MainViewModel` | Info, Warn, Debug, Error | `session <folder>: run started pixel= threads= east= north=`; `done in`, `stopped after`, or `refused after ...; the card shows the message` with the exception; a run a newer one replaced, at Debug; an exception the window does not handle, at Error, from an exception filter that returns false and records it with `LogSetup.Wrote`; every file the export writes, as soon as it is written, and an export that failed; the cut-outs of a frame, and a decode that failed (Warn), at Debug when another frame was selected meanwhile |
-| `UserSettings`, `DarkTitleBar`, `AboutWindow` | Debug | the settings file written, with its size, and one that could not be read or written; a title bar that stays light; a link the system could not open; each failure with its exception |
+| `UserSettings`, `DarkTitleBar`, `AboutWindow` | Debug | the settings file written, with its size, and one that could not be read or written; a window manager that cannot be called (no `dwmapi.dll` or entry point), the title bar staying light; a link the system could not open; each failure with its exception |
 
 Not logged: pixels, a FITS card below Trace, a progress tick (the frame lines are the progress),
 the cancellation of `CancelPending` racing the window's close.
@@ -168,10 +168,14 @@ because the frames' threads write in any order.
 
 What only the entry points do, `Apply` and `Close`, is tested on the real console started as a
 process: `R071_TheRealConsoleWritesItsFirstAndItsLastLine` and
-`R072_TheRealConsoleTakesItsLevelFromLIGHTSCHECK_LOG` find its lines by its process id, after its
-start, since a process id of an older run may come back. Those processes, and the one of
+`R072_TheRealConsoleTakesItsLevelFromLIGHTSCHECK_LOG` start it in a working folder of their own,
+which its first line names, and take its lines by its process id from that line on, read while
+they still hold its handle: a process id of an older run may come back, and no newer process can
+be given it before the handle is closed. Those processes, and the one of
 `R060_WithoutLangTheProgramSpeaksEnglish`, log as any other, so every test run leaves their lines
 in `log\lightscheck.log` beside the copy of the executable in the test project's build folder,
-rolled like any log. `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers and
-the wiring of the hooks run in no test, since no test builds `App` or crashes a process; the hooks'
-bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, are tested directly.
+rolled like any log. `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers, the
+title bar's and the About window's catches and the wiring of the hooks run in no test: no test
+builds `App`, crashes a process, lacks `dwmapi.dll` or follows a link. The hooks' bodies,
+`LogSetup.Fatal` and `LogSetup.Unobserved`, and the view-model's filter for an exception it does
+not handle, `MainViewModel.LogUnhandled`, are tested directly.

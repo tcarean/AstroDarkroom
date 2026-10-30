@@ -483,7 +483,7 @@ public sealed class MainViewModel : ObservableObject
     /// <param name="folder">The run's folder.</param>
     /// <param name="e">The exception.</param>
     /// <returns>False, always.</returns>
-    private static bool LogUnhandled(string folder, Exception e)
+    internal static bool LogUnhandled(string folder, Exception e)
     {
         Log.Error(e, "session " + folder + ": failed with an exception the window does not handle; it shows no result");
         // Its task is never awaited: the hook that meets it when the task is collected names it

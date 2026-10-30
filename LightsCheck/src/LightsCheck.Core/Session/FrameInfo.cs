@@ -114,36 +114,53 @@ internal sealed record FrameInfo(
     }
 
     /// <summary>
-    /// Reads the metadata of one file; never throws, the error becomes part of the record.
+    /// Reads the metadata of one file; never throws, the error becomes part of the record, and a
+    /// failure is written to the diagnostic log with its exception, which the row cannot hold
+    /// (R-071).
     /// </summary>
     /// <param name="index">The frame's 1-based position in the session.</param>
     /// <param name="path">The frame's file, a camera raw or a FITS.</param>
-    /// <param name="logFailure">
-    /// True to write a failure to the diagnostic log with its exception (R-071); false when the
-    /// caller writes one line for the frame itself (the series, whose measurement of the same file
-    /// failed first).
-    /// </param>
     /// <returns>
     /// The frame's metadata, or a record with every shot field null and <see cref="Error"/> set
     /// when the file cannot be read; a `.fit` that is not a FITS is refused by the reader itself
     /// (`FITS: the file does not begin with SIMPLE.`, R-008), so no guess is made here.
     /// </returns>
-    internal static FrameInfo Read(int index, string path, bool logFailure = true)
+    internal static FrameInfo Read(int index, string path)
+    {
+        FrameInfo info = Read(index, path, out Exception? failure);
+        if (failure is not null)
+        {
+            Log.Warn(failure, "frame " + LogText.Int(index) + " " + path + " could not be read; its row carries the error");
+        }
+
+        return info;
+    }
+
+    /// <summary>
+    /// Reads the metadata of one file as <see cref="Read(int, string)"/> does, without writing to
+    /// the diagnostic log: for a caller that writes the failure itself (the series, whose
+    /// measurement of the same file failed first).
+    /// </summary>
+    /// <param name="index">The frame's 1-based position in the session.</param>
+    /// <param name="path">The frame's file, a camera raw or a FITS.</param>
+    /// <param name="failure">The exception the read met, or null when the file was read.</param>
+    /// <returns>
+    /// The frame's metadata, or for a file that cannot be read the record
+    /// <see cref="Read(int, string)"/> returns.
+    /// </returns>
+    internal static FrameInfo Read(int index, string path, out Exception? failure)
     {
         try
         {
-            return From(index, path, ImageLoader.LoadInfo(path));
+            FrameInfo info = From(index, path, ImageLoader.LoadInfo(path));
+            failure = null;
+            return info;
         }
         catch (Exception e)
         {
             // Anything the file makes the readers throw, libraw's own exception type included,
-            // is this frame's error, never the run's: the other frames are still listed. The
-            // log keeps the exception whole, which the row cannot (R-071).
-            if (logFailure)
-            {
-                Log.Warn(e, "frame " + LogText.Int(index) + " " + path + " could not be read; its row carries the error");
-            }
-
+            // is this frame's error, never the run's: the other frames are still listed.
+            failure = e;
             return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, e.Message);
         }
     }

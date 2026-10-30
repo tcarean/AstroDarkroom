@@ -98,8 +98,9 @@ reads it from the files or the raws, `series-analysis.md`, R-066), the thread co
 `Program.Run(args, stdout, stderr)` is the whole console, called by `Main` with the real
 streams (after switching the console's output encoding to UTF-8 for the run, since the report
 carries the arrow symbols of R-040, and putting the previous one back in a `finally`, the code
-page outliving the process otherwise; a process without a console throws `IOException` on the
-setter, which `Main` swallows) and by the tests with `StringWriter`s: it writes the banner, takes
+page outliving the process otherwise; a process without a console reads the code page but throws
+`IOException` on the setter, which `SwitchToUtf8` writes to the log at Debug, handing back
+nothing to put back) and by the tests with `StringWriter`s: it writes the banner, takes
 `--lang` out and runs the rest in its language (`language.md`), parses, and dispatches to `FrameRun` + `FrameReport` for `--frame`, to `InventoryRun` +
 `InventoryReport` for `--inventory`, and otherwise to `SeriesRun.Run(folder,
 SeriesOptions(pixel, threads, arrows), progress)` + `SeriesReport.Write`, then
@@ -122,4 +123,5 @@ the diagnostic log's `mode=` line reads it, so the two cannot disagree. `Main` s
 before anything else and closes it last, after the code page is put back; `Run` and `RunIn`
 configure nothing, so the tests call them in-process. `SessionFolder.Open` writes the session's
 line, `FrameInfo.Read` a frame whose metadata could not be read (unless its caller, the series,
-writes the frame's one line itself), and `InventoryRun` its start and done lines (`logging.md`).
+takes the exception back through the overload with an `out` parameter and writes it itself), and
+`InventoryRun` its start and done lines (`logging.md`).

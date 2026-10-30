@@ -33,8 +33,9 @@ namespace LightsCheck.Tests;
 /// run writes, the level, two writers on one file. The file tests run the applications'
 /// configuration (<see cref="LogSetup.Build"/>) in a private <see cref="LogFactory"/>, which
 /// stands for one process, so they touch neither the test assembly's capture
-/// (<see cref="LogCapture"/>) nor the tests beside them. FlatCheck's tests of the same log are the
-/// model (its LoggingTests).
+/// (<see cref="LogCapture"/>) nor the tests beside them; the tests of the real console start the
+/// executable, which logs beside its copy in the build folder as every real process of the tests
+/// does. FlatCheck's tests of the same log are the model (its LoggingTests).
 /// </summary>
 public partial class LoggingTests
 {
@@ -238,15 +239,15 @@ public partial class LoggingTests
     /// <summary>
     /// The real console starts and closes the log itself (R-071), which only its Main does and no
     /// in-process test reaches: its first line names it, its version and its arguments, its last
-    /// line the exit code. Its lines are found by its process id, after its start, in the log beside
-    /// the copy of the executable in the test build folder, which other tests' processes share.
+    /// line the exit code. Its lines are found by its process id from its first line, which names a
+    /// working folder of its own, in the log beside the copy of the executable in the test build
+    /// folder, which other tests' processes share.
     /// </summary>
     [Fact]
     public void R071_TheRealConsoleWritesItsFirstAndItsLastLine()
     {
-        (int pid, int code, DateTime started) = RunTheConsole(null, "--help", "--lang", "en");
+        (int pid, int code, List<string> lines) = RunTheConsole(null, "--help", "--lang", "en");
 
-        List<string> lines = ConsoleLinesOf(pid, started);
         Assert.Equal(0, code);
         Assert.True(lines.Count >= 3, "the console wrote " + lines.Count.ToString(CultureInfo.InvariantCulture) + " lines");
         Assert.Contains(" INFO  [" + pid.ToString(CultureInfo.InvariantCulture) + ":", lines[0], StringComparison.Ordinal);
@@ -255,6 +256,25 @@ public partial class LoggingTests
         Assert.Contains("; level=Debug; ", lines[0], StringComparison.Ordinal);
         Assert.Contains(lines, l => l.EndsWith("] Cli mode=Help", StringComparison.Ordinal));
         Assert.Matches(@"\] Process exit 0 after \d+\.\d s$", lines[^1]);
+    }
+
+    /// <summary>
+    /// A process without a console (one a launcher detached) reads the code page but cannot set
+    /// it: one Debug line says so, and nothing is put back, so the run's end writes no second line,
+    /// with the same stack, about a console that went away (the second review of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R071_ACodePageThatCannotBeSwitchedIsOneLineAndNothingIsPutBack()
+    {
+        using LogCapture capture = LogCapture.Start();
+
+        Encoding? previous = Program.SwitchToUtf8(() => Encoding.ASCII, _ => throw new IOException("The handle is invalid."));
+
+        Assert.Null(previous);
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Cli");
+        Assert.Equal(LogLevel.Debug, line.Level);
+        Assert.Equal("the console's output was not switched to UTF-8: no console is attached", line.Message);
+        Assert.IsType<IOException>(line.Exception);
     }
 
     [Fact]
@@ -335,13 +355,61 @@ public partial class LoggingTests
         LogCapture.Captured failed = Assert.Single(capture.Events, e => e.Logger == "SeriesRun" && e.Level == LogLevel.Warn);
         Assert.IsType<InvalidDataException>(failed.Exception);
         Assert.StartsWith("frame 3/8 " + junk + " could not be measured after ", failed.Message, StringComparison.Ordinal);
-        Assert.EndsWith("; its metadata could not be read either; its row carries the error", failed.Message, StringComparison.Ordinal);
+        Assert.EndsWith("; its metadata could not be read either, with the same error; its row carries the error", failed.Message, StringComparison.Ordinal);
         Assert.Contains("System.IO.InvalidDataException: FITS: the file does not begin with SIMPLE.", failed.Line, StringComparison.Ordinal);
         Assert.Contains("   at LightsCheck.Core.FitsReader.", failed.Line, StringComparison.Ordinal);
         // The metadata read that follows fails the same way: said in that one line, not in a
         // second stack (the review of 2026-10-30).
         Assert.DoesNotContain(capture.Events, e => e.Logger == "FrameInfo");
         Assert.Matches(@"SeriesRun series done frames=8 measured=7 errors=1 ", capture.Text);
+    }
+
+    /// <summary>
+    /// A frame whose data is cut keeps a header the metadata read answers: its one line says the
+    /// metadata was read (the second review of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R071_AFrameThatCannotBeMeasuredButWhoseMetadataIsReadSaysSo()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        string cut = Path.Combine(s.LightsDir, "DSC_0003.fit");
+        byte[] whole = File.ReadAllBytes(cut);
+        File.WriteAllBytes(cut, whole[..(whole.Length / 2)]);
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Equal(1, Cli.Run(s.Root, "--threads", "2", "--lang", "en").Code);
+
+        LogCapture.Captured failed = Assert.Single(capture.Events, e => e.Logger == "SeriesRun" && e.Level == LogLevel.Warn);
+        Assert.IsType<InvalidDataException>(failed.Exception);
+        Assert.StartsWith("frame 3/8 " + cut + " could not be measured after ", failed.Message, StringComparison.Ordinal);
+        Assert.EndsWith("; its metadata was read; its row carries the error", failed.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(capture.Events, e => e.Logger == "FrameInfo");
+    }
+
+    /// <summary>
+    /// The metadata read of a frame the series could not measure is written on a line of its own
+    /// when it failed with another error than the measurement (another type or message), and only
+    /// named when it failed with the same one, so each exception is written once with its stack
+    /// (R-071, the second review of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R071_AFailedFramesMetadataReadIsWrittenWhenItsErrorIsAnother()
+    {
+        InvalidDataException measured = new("the decode failed");
+        IOException other = new("the header read failed");
+        using LogCapture capture = LogCapture.Start();
+
+        SeriesRun.LogFailedFrame(3, 8, "DSC_0003.NEF", 120, measured, other);
+        SeriesRun.LogFailedFrame(4, 8, "DSC_0004.NEF", 130, measured, new InvalidDataException("the decode failed"));
+
+        List<LogCapture.Captured> warn = capture.Events.Where(e => e.Logger == "SeriesRun" && e.Level == LogLevel.Warn).ToList();
+        Assert.Equal(3, warn.Count);
+        Assert.Equal("frame 3/8 DSC_0003.NEF could not be measured after 120 ms; its metadata could not be read either, with another error, on its own line; its row carries the error", warn[0].Message);
+        Assert.Same(measured, warn[0].Exception);
+        Assert.Equal("frame 3/8 DSC_0003.NEF: its metadata could not be read", warn[1].Message);
+        Assert.Same(other, warn[1].Exception);
+        Assert.Equal("frame 4/8 DSC_0004.NEF could not be measured after 130 ms; its metadata could not be read either, with the same error; its row carries the error", warn[2].Message);
+        Assert.Same(measured, warn[2].Exception);
     }
 
     [Fact]
@@ -624,13 +692,12 @@ public partial class LoggingTests
     [Fact]
     public void R072_TheRealConsoleTakesItsLevelFromLIGHTSCHECK_LOG()
     {
-        (int offPid, int offCode, DateTime offStarted) = RunTheConsole("off", "--help");
-        (int tracePid, int traceCode, DateTime traceStarted) = RunTheConsole("trace", "--help");
+        (_, int offCode, List<string> off) = RunTheConsole("off", "--help");
+        (_, int traceCode, List<string> trace) = RunTheConsole("trace", "--help");
 
         Assert.Equal(0, offCode);
         Assert.Equal(0, traceCode);
-        Assert.Empty(ConsoleLinesOf(offPid, offStarted));
-        List<string> trace = ConsoleLinesOf(tracePid, traceStarted);
+        Assert.Empty(off);
         Assert.NotEmpty(trace);
         Assert.Contains("; level=Trace; ", trace[0], StringComparison.Ordinal);
     }
@@ -826,11 +893,15 @@ public partial class LoggingTests
 
     /// <summary>
     /// Runs the real console, without a window, its level variable as given: removed for null,
-    /// whatever the developer's own environment says.
+    /// whatever the developer's own environment says. It runs in a working folder of its own, which
+    /// its first line names, and its lines are read while this test still holds its handle, so no
+    /// other process can be given its id meanwhile and an older process's lines under the same id
+    /// stay out (the second review of 2026-10-30).
     /// </summary>
-    private static (int Pid, int Code, DateTime Started) RunTheConsole(string? level, params string[] args)
+    private static (int Pid, int Code, List<string> Lines) RunTheConsole(string? level, params string[] args)
     {
-        ProcessStartInfo start = new(ConsoleExe) { RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true };
+        using TempWorkspace cwd = new();
+        ProcessStartInfo start = new(ConsoleExe) { RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true, WorkingDirectory = cwd.Dir };
         foreach (string a in args)
         {
             start.ArgumentList.Add(a);
@@ -842,19 +913,19 @@ public partial class LoggingTests
             start.Environment["LIGHTSCHECK_LOG"] = level;
         }
 
-        DateTime started = DateTime.Now;
         using Process p = Process.Start(start)!;
         p.StandardOutput.ReadToEnd();
         Assert.True(p.WaitForExit(30_000), "lightscheck did not end within 30 s");
-        return (p.Id, p.ExitCode, started);
+        return (p.Id, p.ExitCode, ConsoleLinesOf(p.Id, Path.GetFileName(cwd.Dir)));
     }
 
     /// <summary>
-    /// The lines one console process wrote, by its process id, from its start on (a process id of
-    /// an older run may come back), in the log beside the executable; the files are opened sharing
-    /// every access, as other tests' processes may hold them.
+    /// The lines one console process wrote, in the log beside the executable: those of its process
+    /// id from its first line on, the one that names its working folder; none when it wrote no
+    /// first line. The files are opened sharing every access, as other tests' processes may hold
+    /// them.
     /// </summary>
-    private static List<string> ConsoleLinesOf(int pid, DateTime started)
+    private static List<string> ConsoleLinesOf(int pid, string folderName)
     {
         string folder = Path.Combine(AppContext.BaseDirectory, LogSetup.FolderName);
         List<string> lines = [];
@@ -870,9 +941,8 @@ public partial class LoggingTests
             using StreamReader r = new(s);
             for (string? l = r.ReadLine(); l is not null; l = r.ReadLine())
             {
-                if (l.Length > 24 && l.Contains(mark, StringComparison.Ordinal)
-                    && DateTime.TryParseExact(l[..24], "yyyy-MM-dd HH:mm:ss.ffff", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime t)
-                    && t >= started.AddSeconds(-1))
+                if (l.Contains(mark, StringComparison.Ordinal) && (lines.Count > 0
+                    || (l.Contains(" starting; ", StringComparison.Ordinal) && l.Contains(folderName, StringComparison.Ordinal))))
                 {
                     lines.Add(l);
                 }

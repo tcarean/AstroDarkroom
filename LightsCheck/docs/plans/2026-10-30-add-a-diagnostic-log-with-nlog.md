@@ -644,15 +644,25 @@ docs (f10093f); `Logging/` named in `CLAUDE.md`'s layout (345ec8a); the gate gre
     the session's `--inventory`: `log\lightscheck.log` appeared beside the executable, `inventory
     done lights=87 errors=0 in 214 ms (open 2 ms, read 211 ms, cadence 1 ms)`; the lock files did
     not move;
-  - **not done**: the window by hand (its start and exit lines, two windows into one file). Both
-    times it was checked, the owner was at the PC (Firefox, then Claude in the foreground, under 5 s
-    since the last input), and a window started over their work is an action on their desktop.
-    The view-model's lines are tested in process by `WindowLoggingTests`, and the two-processes
-    file on the window's build of the atomic target since the review (below). No test runs
-    `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers, `MainViewModel`'s
-    filter for an unhandled exception, the title bar's and the About window's catches, or the
-    wiring of the crash hooks (corrected after the review: this line first named `App`'s
-    constructor and `OnExit` alone).
+  - the window by hand, done on 2026-10-30 after the second review (below), once the owner had
+    said yes to two windows on their screen for about a minute; the two times before, the owner
+    was at the PC (Firefox, then Claude in the foreground, under 5 s since the last input), and a
+    window started over their work is an action on their desktop. Two `LightsCheck.Wpf.exe` of
+    the Release build, started together with `--lang en` and closed through `WM_CLOSE` once their
+    runs were done, on a scratch session of three NEF lights and two biases rather than the Veil
+    session, whose 87 frames would hold two windows on the screen for minutes: 38 lines each in
+    the one `log\LightsCheck.Wpf.log` beside the executable, 76 whole lines interleaved, none at
+    Warn or above. Each process wrote its `Process LightsCheck.Wpf 1.0.0 starting` line,
+    `App language=en folder from the command line`, `Window session <folder>: run started
+    pixel=none threads=default east=Right north=Up`, the session (`3 frames, .NEF`), its five
+    files, its frames, `done in 9.7 s; the tabs show the result` (9.8 s for the other) and
+    `Process exit 0 after 10.9 s`; both exited with 0. The view-model's lines are tested in
+    process by `WindowLoggingTests`, and the two-processes file on the window's build of the
+    atomic target since the review (below). No test runs `App`'s constructor, `OnStartup` and
+    `OnExit`, `MainWindow`'s handlers, the title bar's and the About window's catches, or the
+    wiring of the crash hooks (corrected after the first review, which found this line naming
+    `App`'s constructor and `OnExit` alone; the view-model's filter has its test since the
+    second).
 - **The review of 2026-10-30** (a subagent on `git diff main...HEAD`) reported ten findings; each
   was checked in the code and held; eight were applied, one was kept with its reason, and one is
   the owner's to judge:
@@ -682,7 +692,36 @@ docs (f10093f); `Logging/` named in `CLAUDE.md`'s layout (345ec8a); the gate gre
     (R-072, README); the `App` row of the seam table, the crash wording, the byte counts, which
     move with the digits of the ids, the title bar's summary, the `mode=` line above;
   - left to the owner: CLAUDE.md's rule "Computed only in the core" against the applications'
-    own timings and lines; ADR 0029 now records the reading FlatCheck already lives by, that a
-    log line is no figure of the analysis, and CLAUDE.md is unchanged;
+    own timings and lines; ADR 0029 records the reading FlatCheck already lives by, that a log
+    line is no figure of the analysis. The owner took that reading on 2026-10-30, and the rule in
+    CLAUDE.md says so since the commit of the second review's fixes;
   - kept as it is: the test that starts the real console writes into the test build folder's
     `log`, where every real process of the tests logs by design.
+- **The second review of 2026-10-30** (a subagent on the fix commit 80ac686 alone, the last round
+  as the owner chose) reported seven findings; each was checked in the code, six held as
+  described and the seventh as a risk, and all seven were applied:
+  - a bug: a process without a console (one a launcher detached) read the code page, failed to
+    set it, then tried to put it back, so the log said the console "went away during the run",
+    with the same stack twice; the switch is now `Program.SwitchToUtf8`, which hands back nothing
+    to put back when the setter throws
+    (`R071_ACodePageThatCannotBeSwitchedIsOneLineAndNothingIsPutBack`, red before);
+  - the one line of a frame the series cannot measure dropped the metadata read's exception when
+    it was another error than the measurement's, against R-071: the read hands its exception
+    back (`FrameInfo.Read` with an `out` parameter), and `SeriesRun.LogFailedFrame` writes it on a
+    line of its own when its type or message differs and names it otherwise, the one repeat
+    R-071 now lists (`R071_AFailedFramesMetadataReadIsWrittenWhenItsErrorIsAnother`, red before;
+    `R071_AFrameThatCannotBeMeasuredButWhoseMetadataIsReadSaysSo` for the branch that had no
+    test);
+  - CLAUDE.md and ADR 0029 disagreed on the rule "Computed only in the core": settled by the
+    owner, above;
+  - the title bar's summaries said a Windows without the attribute writes a Debug line; only a
+    window manager that cannot be called does, and the summaries and `logging.md` say so;
+  - the view-model's call to `LogSetup.Wrote` had no test: its filter is `internal` now, and
+    `R071_AnExceptionTheWindowDoesNotHandleIsWrittenOnceAndTheHookNamesIt` failed with the call
+    removed (checked once, then put back); `logging.md` lists what stays untested;
+  - stale texts: the settings logger's and the console logger's summaries, the code page's
+    sentence in `session-and-console.md`, the logging tests' class summary, and R-072's "their
+    keys", which are the keywords that decide the reading;
+  - the real console's tests could take an older process's lines under a reused process id: each
+    run now gets a working folder of its own, which its first line names, and its lines are read
+    from that line on while the test still holds the process's handle.

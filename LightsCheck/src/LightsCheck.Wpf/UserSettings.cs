@@ -31,7 +31,7 @@ namespace LightsCheck.Wpf;
 /// </summary>
 public static class UserSettings
 {
-    /// <summary>The diagnostic log: a settings file that could not be read or written (R-071).</summary>
+    /// <summary>The diagnostic log: the settings file written, and one that could not be read or written (R-071).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     /// <summary>

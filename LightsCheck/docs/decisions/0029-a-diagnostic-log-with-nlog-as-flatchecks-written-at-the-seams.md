@@ -62,13 +62,15 @@ recommendation; the owner approved it as written on 2026-10-30.
   the report words in the run's language (an assumed scale's source, the RA axis's source, an
   unreadable frame's error in its flag) is left out of the log's own words. A failure is written
   once with its stack: a frame the series cannot measure is one line, which also says whether its
-  metadata could be read; and a file is named as soon as it is written, so an export that fails
-  part-way names what it wrote.
+  metadata could be read, the metadata read's exception following on a line of its own only when
+  it is another error than the measurement's (another type or message); and a file is named as
+  soon as it is written, so an export that fails part-way names what it wrote.
 - **The applications' lines are no figure of the analysis.** The console and the window compose
   their own lines and time their own runs: the rule "Computed only in the core" keeps to what the
   reports and the window show, as in FlatCheck, whose window times its runs in its view-models
   under the same rule. What a line says about the frames (a figure, a class, a threshold) comes
-  from the core.
+  from the core. The owner settled this reading on 2026-10-30, after the branch's review raised
+  it, and the rule in `CLAUDE.md` says so.
 - **One mode.** `Options.Mode`, decided once by the dispatch's precedence (help, then an error,
   then `--frame`, then `--inventory`, else the series), is what the console dispatches on and what
   its `mode=` line writes, as FlatCheck decided in its ADR 0072.

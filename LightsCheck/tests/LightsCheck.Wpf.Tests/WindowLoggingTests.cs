@@ -29,9 +29,10 @@ namespace LightsCheck.Wpf.Tests;
 /// <summary>
 /// The window's side of the diagnostic log (R-071, R-073, ADR 0029): a session run's start and
 /// outcome, the refused folder with its exception while the card keeps the message, a stop, the
-/// files the export writes, a superseded run kept at Debug, the window's lines in both languages,
-/// and two writers on one file through the build of the atomic target the window ships. The
-/// view-model alone, without a window, as <c>MainViewModelTests</c> runs it.
+/// files the export writes, a superseded run kept at Debug, an exception the window does not
+/// handle, the window's lines in both languages, and two writers on one file through the build of
+/// the atomic target the window ships. The view-model alone, without a window, as
+/// <c>MainViewModelTests</c> runs it.
 /// </summary>
 public class WindowLoggingTests
 {
@@ -186,5 +187,28 @@ public class WindowLoggingTests
         Assert.Contains(capture.Events, e => e.Logger == "Window" && e.Level == LogLevel.Debug
             && e.Message.StartsWith("session " + f.Root + ": stopped after ", StringComparison.Ordinal)
             && e.Message.EndsWith(" by a newer run; nothing is shown", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// An exception the window does not handle is written at Error with its stack by the run's
+    /// exception filter, which returns false, so the exception leaves as before; the filter records
+    /// it, so the hook that meets its task later names it instead of writing it again (the second
+    /// review of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R071_AnExceptionTheWindowDoesNotHandleIsWrittenOnceAndTheHookNamesIt()
+    {
+        FormatException bug = new("the view-model's bug");
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.False(MainViewModel.LogUnhandled("C:/session", bug));
+        LogSetup.Unobserved(new AggregateException(bug));
+
+        LogCapture.Captured written = Assert.Single(capture.Events, e => e.Logger == "Window" && e.Level == LogLevel.Error);
+        Assert.Same(bug, written.Exception);
+        Assert.Equal("session C:/session: failed with an exception the window does not handle; it shows no result", written.Message);
+        LogCapture.Captured named = Assert.Single(capture.Events, e => e.Logger == "Process" && e.Level == LogLevel.Error);
+        Assert.Equal("a task failed and nobody awaited it: the exception logged above", named.Message);
+        Assert.Null(named.Exception);
     }
 }

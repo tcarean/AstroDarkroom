@@ -31,9 +31,10 @@ internal static class Program
 {
     /// <summary>
     /// The diagnostic log's console lines (R-071): the mode, the refusals, the files written, a run
-    /// that failed. Fetched on use, not held in a static field: this is the type whose
-    /// <see cref="Main"/> configures the log, and a logger its type initialiser created first
-    /// could make NLog load a stray <c>NLog.config</c> (ADR 0029, after FlatCheck's ADR 0072).
+    /// that failed, the code page that could not be switched or put back. Fetched on use, not held
+    /// in a static field: this is the type whose <see cref="Main"/> configures the log, and a
+    /// logger its type initialiser created first could make NLog load a stray
+    /// <c>NLog.config</c> (ADR 0029, after FlatCheck's ADR 0072).
     /// </summary>
     private static Logger Log => LogManager.GetLogger("Cli");
 
@@ -69,17 +70,7 @@ internal static class Program
         // page would print them as '?', so it is switched to UTF-8 for the run and put back
         // after (the code page outlives the process otherwise); a run without a console, or
         // with its output in a file or a pipe, writes UTF-8 bytes either way.
-        Encoding? previous = null;
-        try
-        {
-            previous = Console.OutputEncoding;
-            Console.OutputEncoding = new UTF8Encoding(false);
-        }
-        catch (IOException e)
-        {
-            // no console attached: nothing to switch
-            Log.Debug(e, "the console's output was not switched to UTF-8: no console is attached");
-        }
+        Encoding? previous = SwitchToUtf8(() => Console.OutputEncoding, enc => Console.OutputEncoding = enc);
 
         try
         {
@@ -110,6 +101,30 @@ internal static class Program
             {
                 // the log's last line is lost, the exit code is not
             }
+        }
+    }
+
+    /// <summary>
+    /// Switches the console's output to UTF-8 for the run (R-040), through two delegates that stand
+    /// for <see cref="Console.OutputEncoding"/>, so a test can play a process without a console.
+    /// </summary>
+    /// <param name="get">Reads the console's output encoding.</param>
+    /// <param name="set">Sets it; throws <see cref="IOException"/> when no console is attached.</param>
+    /// <returns>The encoding to put back after the run; null when nothing was switched.</returns>
+    internal static Encoding? SwitchToUtf8(Func<Encoding> get, Action<Encoding> set)
+    {
+        try
+        {
+            Encoding previous = get();
+            set(new UTF8Encoding(false));
+            return previous;
+        }
+        catch (IOException e)
+        {
+            // No console attached: the getter answers but the setter throws, so nothing was
+            // switched and there is nothing to put back.
+            Log.Debug(e, "the console's output was not switched to UTF-8: no console is attached");
+            return null;
         }
     }
 

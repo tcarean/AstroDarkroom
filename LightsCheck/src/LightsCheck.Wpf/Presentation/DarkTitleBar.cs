@@ -23,12 +23,13 @@ using NLog;
 namespace LightsCheck.Wpf;
 
 /// <summary>
-/// Asks the window manager for a dark title bar; on a Windows without the attribute, nothing on
-/// screen and a Debug line in the diagnostic log.
+/// Asks the window manager for a dark title bar; silently nothing on a Windows without the
+/// attribute, and a Debug line in the diagnostic log when the call itself cannot be made (no
+/// <c>dwmapi.dll</c>, or no such entry point in it).
 /// </summary>
 internal static partial class DarkTitleBar
 {
-    /// <summary>The diagnostic log: the title bar that stays light (R-071).</summary>
+    /// <summary>The diagnostic log: a window manager that cannot be called, so the title bar stays light (R-071).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     private const int UseImmersiveDarkModeBefore20H1 = 19;

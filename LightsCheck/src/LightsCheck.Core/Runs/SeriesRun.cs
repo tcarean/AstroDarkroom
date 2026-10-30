@@ -193,12 +193,9 @@ internal static class SeriesRun
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                // One line per frame, with the measurement's exception: the metadata read that
-                // follows meets the same file, so its outcome is said here, not in a second stack.
                 long ms = one.ElapsedMilliseconds;
-                FrameInfo info = FrameInfo.Read(i + 1, path, logFailure: false);
-                Log.Warn(e, "frame " + LogText.Int(i + 1) + "/" + LogText.Int(n) + " " + path + " could not be measured after "
-                    + LogText.Ms(ms) + "; its metadata " + (info.Error is null ? "was read" : "could not be read either") + "; its row carries the error");
+                FrameInfo info = FrameInfo.Read(i + 1, path, out Exception? metadata);
+                LogFailedFrame(i + 1, n, path, ms, e, metadata);
                 frames[i] = new AnalyzedFrame(info, null, null, e.Message);
             }
 
@@ -308,6 +305,33 @@ internal static class SeriesRun
         {
             Log.Debug("classified frame " + LogText.Int(i + 1) + ": " + LogText.Classified(series.Classes[i], series.Flags[i],
                 i < series.MountMoves.Count ? series.MountMoves[i] : null));
+        }
+    }
+
+    /// <summary>
+    /// Writes a frame the series could not measure, at Warn with the measurement's exception, in
+    /// one line that also says whether its metadata could be read. The metadata read's exception
+    /// follows on a line of its own when it is another error than the measurement's (another type
+    /// or message); the same error is only named, so each exception is written once with its stack
+    /// (R-071, ADR 0029).
+    /// </summary>
+    /// <param name="index">The frame's 1-based position in the session.</param>
+    /// <param name="count">The session's number of lights.</param>
+    /// <param name="path">The frame's file.</param>
+    /// <param name="ms">The milliseconds the measurement ran before it failed.</param>
+    /// <param name="measured">The measurement's exception; not null.</param>
+    /// <param name="metadata">The metadata read's exception, or null when the metadata was read.</param>
+    internal static void LogFailedFrame(int index, int count, string path, long ms, Exception measured, Exception? metadata)
+    {
+        string frame = "frame " + LogText.Int(index) + "/" + LogText.Int(count) + " " + path;
+        bool another = metadata is not null && (metadata.GetType() != measured.GetType() || metadata.Message != measured.Message);
+        string outcome = metadata is null ? "was read"
+            : another ? "could not be read either, with another error, on its own line"
+            : "could not be read either, with the same error";
+        Log.Warn(measured, frame + " could not be measured after " + LogText.Ms(ms) + "; its metadata " + outcome + "; its row carries the error");
+        if (another)
+        {
+            Log.Warn(metadata, frame + ": its metadata could not be read");
         }
     }
 
