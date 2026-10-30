@@ -17,6 +17,8 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using DarksCheck.Core;
+using NLog;
 
 namespace DarksCheck.Wpf;
 
@@ -69,6 +71,7 @@ public static class UserSettings
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
+            Log.Debug(e, "the settings " + FilePath + " could not be read; the defaults are used");
             return new StoredSettings(null, null, null, null, null);
         }
     }
@@ -89,13 +92,18 @@ public static class UserSettings
             }
 
             File.WriteAllText(FilePath, JsonSerializer.Serialize(settings, Json));
+            Log.Debug(LogText.Wrote(FilePath));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             // A setting that cannot be written is picked again next time; nothing else depends on
             // it.
+            Log.Debug(e, "the settings " + FilePath + " could not be written; they are picked again next time");
         }
     }
+
+    /// <summary>The diagnostic log: the settings file written, and one that could not be read or written (R-101).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     // The folder path is written as itself, not as \u escapes, so the file reads as the README
     // says.

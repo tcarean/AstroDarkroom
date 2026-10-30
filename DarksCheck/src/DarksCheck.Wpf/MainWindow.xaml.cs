@@ -17,6 +17,7 @@
 
 using System.Windows;
 using System.Windows.Input;
+using NLog;
 
 namespace DarksCheck.Wpf;
 
@@ -27,6 +28,9 @@ namespace DarksCheck.Wpf;
 /// </summary>
 public partial class MainWindow : Window
 {
+    /// <summary>The diagnostic log: the dialogs and the buttons the user pressed (R-101).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private readonly MainViewModel _vm;
 
     /// <summary>The window over a new view-model, which reads the stored settings.</summary>
@@ -73,7 +77,11 @@ public partial class MainWindow : Window
     /// <summary>The stop buttons (top bar, wait screen): cancels the run in flight.</summary>
     /// <param name="sender">The button.</param>
     /// <param name="e">The click.</param>
-    private void Stop(object sender, RoutedEventArgs e) => _vm.CancelPending();
+    private void Stop(object sender, RoutedEventArgs e)
+    {
+        Log.Info("stop pressed");
+        _vm.CancelPending();
+    }
 
     // The Index tab's buttons reach these: the dialogs and the clipboard belong to the window.
     /// <summary>The Index tab's copy button: puts the label in the clipboard.</summary>
@@ -89,12 +97,20 @@ public partial class MainWindow : Window
     /// The Index tab's rerun button: runs the same folder again with the settings and the partner
     /// as they are now.
     /// </summary>
-    internal void RerunFromView() => _ = _vm.RerunAsync();
+    internal void RerunFromView()
+    {
+        Log.Info("rerun pressed");
+        _ = _vm.RerunAsync();
+    }
 
     /// <summary>Shows the About window, modal, over this one.</summary>
     /// <param name="sender">The command's source.</param>
     /// <param name="e">The executed command.</param>
-    private void ShowAbout(object sender, ExecutedRoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
+    private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
+    {
+        Log.Info("About opened");
+        new AboutWindow { Owner = this }.ShowDialog();
+    }
 
     /// <summary>
     /// The partner folder (R-073): a library or another session; the current one proposed.
@@ -119,9 +135,11 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog(this) != true)
         {
+            Log.Info("partner dialog: cancelled");
             return false;
         }
 
+        Log.Info("partner dialog: chose " + dlg.FolderName);
         _vm.Partner = dlg.FolderName;
         return true;
     }
@@ -163,10 +181,11 @@ public partial class MainWindow : Window
             Clipboard.SetText(_vm.Label);
             _vm.LabelCopied();
         }
-        catch (System.Runtime.InteropServices.COMException)
+        catch (System.Runtime.InteropServices.COMException ex)
         {
             // The clipboard is held by another process: the label stays on screen to be selected by
             // hand.
+            Log.Debug(ex, "the label could not be copied: the clipboard is held by another process");
         }
     }
 
@@ -186,7 +205,12 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog(this) == true)
         {
+            Log.Info("export dialog: chose " + dlg.FolderName);
             _vm.Export(dlg.FolderName);
+        }
+        else
+        {
+            Log.Info("export dialog: cancelled");
         }
     }
 
@@ -198,7 +222,12 @@ public partial class MainWindow : Window
         Microsoft.Win32.OpenFolderDialog dlg = new() { Title = WindowTexts.ChooseTitle, Multiselect = false };
         if (dlg.ShowDialog(this) == true)
         {
+            Log.Info("folder dialog: chose " + dlg.FolderName);
             _ = _vm.OpenAsync(dlg.FolderName);
+        }
+        else
+        {
+            Log.Info("folder dialog: cancelled");
         }
     }
 }
