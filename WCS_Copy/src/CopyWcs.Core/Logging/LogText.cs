@@ -92,11 +92,12 @@ internal static class LogText
     internal static string Dimensions(int width, int height) => Int(width) + "x" + Int(height);
 
     /// <summary>
-    /// A header card as the log writes it, which is as the file holds it: its text without the
+    /// A header card as the log writes it, which is as the header holds it: its text without the
     /// trailing spaces, each control character written as <c>\xNN</c>, so a malformed header
-    /// never puts a NUL byte in the log, and each character ASCII cannot hold written as the
-    /// <c>?</c> the writer's ASCII encoding puts in the file for it (a HISTORY card built from a
-    /// source whose name holds a letter outside ASCII has a <c>?</c> for it in both).
+    /// never puts a NUL byte in the log, and each character ASCII cannot hold written as
+    /// <c>?</c>: what the writer's ASCII encoding puts in a file written, and what the reader made
+    /// of such a byte in a file read (a HISTORY card built from a source whose name holds a letter
+    /// outside ASCII has a <c>?</c> for it in the log and in the file).
     /// </summary>
     /// <param name="card">The card, normally 80 characters.</param>
     /// <returns>The text.</returns>
@@ -163,8 +164,9 @@ internal static class LogText
         + " optical=" + Yes(r.IncludeOptical) + " force=" + Yes(r.Force) + " dryRun=" + Yes(r.DryRun);
 
     /// <summary>
-    /// A card's text as the file holds it: each character below 0x20, and 0x7F, written as
-    /// <c>\xNN</c>, and each one above 0x7F as <c>?</c>, as <c>Encoding.ASCII</c> writes it.
+    /// A card's text as the header holds it: each character below 0x20, and 0x7F, written as
+    /// <c>\xNN</c>, and each one above 0x7F as <c>?</c>, as <c>Encoding.ASCII</c> writes it to a
+    /// file and has already made of such a byte in a file read.
     /// </summary>
     /// <param name="s">The text.</param>
     /// <returns>The text, unchanged when it holds no such character.</returns>

@@ -16,7 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Copied from DarksCheck (which copied LightsCheck); a fix goes there first (ADR 0007). The
-// link's one filtered catch writes a Debug line, as LightsCheck's does since its log (ADR 0009).
+// link's one filtered catch writes a Debug line with the link's OriginalString, as
+// ImageVisualCompare's does since its log (ADR 0009); LightsCheck's reads AbsoluteUri there,
+// which throws for a relative link, a fix recorded for LightsCheck in this task's plan.
 
 using System.ComponentModel;
 using System.Diagnostics;

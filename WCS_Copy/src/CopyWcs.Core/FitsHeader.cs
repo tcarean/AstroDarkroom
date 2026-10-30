@@ -60,24 +60,36 @@ internal sealed class FitsHeader
         using var fs = File.OpenRead(path);
         var h = ReadFrom(fs);
 
-        // A pipe or a device cannot tell its length, and asking would throw; a share that drops
-        // after the header was read may throw too. The line says so instead: the header is read,
-        // and the log never stops a run (R-041).
-        long? length;
-        try
-        {
-            length = fs.CanSeek ? fs.Length : null;
-        }
-        catch (IOException)
-        {
-            length = null;
-        }
+        long? length = LengthOf(fs);
         Log.Info("read " + path + " (" + (length is long n ? LogText.Size(n) : "size unknown") + ") bytes=" + LogText.Int(length)
                  + " cards=" + LogText.Int(h._cards.Count) + " blocks=" + LogText.Int(h._dataOffset / BlockSize)
                  + " dataOffset=" + LogText.Int(h._dataOffset) + " data=" + LogText.Int(length - h._dataOffset)
                  + " " + LogText.Keys(h));
         h.TraceCards(path);
         return h;
+    }
+
+    /// <summary>
+    /// A stream's length for the read line, or null when it cannot tell: a pipe or a device
+    /// cannot seek, and asking would throw; a seekable file may throw too, an
+    /// <see cref="IOException"/> for a share that dropped after the header was read, an
+    /// <see cref="UnauthorizedAccessException"/> for a query the system denies. The line then
+    /// says <c>size unknown</c>: the header is read, and the log never stops a run (R-041).
+    /// </summary>
+    /// <param name="stream">The stream the header was read from.</param>
+    /// <returns>The length in bytes, or null when the stream cannot seek or the query throws.</returns>
+    internal static long? LengthOf(Stream stream)
+    {
+        try
+        {
+            return stream.CanSeek ? stream.Length : null;
+        }
+        catch (Exception)
+        {
+            // Whatever the query throws: a value only the log reads must never stop the copy
+            // (ADR 0009), and the header it would describe is already read.
+            return null;
+        }
     }
 
     /// <summary>Writes every card of this header to the diagnostic log at Trace, numbered from 1; nothing when Trace is off (R-044).</summary>

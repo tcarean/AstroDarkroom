@@ -62,8 +62,11 @@ questions to the owner with a recommendation each; the owner chose both recommen
   refusal's (the review of 2026-10-30: where Windows unwinds the stack the `finally` runs and the
   line is written).
 - **A value the log reads must never throw.** The read line asks a file its length only when it
-  can seek; a named pipe is logged `size unknown` (the review of 2026-10-30 found the length
-  ending a dry run from a pipe with an unhandled exception the copy never had).
+  can seek, and takes whatever the query throws all the same as no length: a named pipe, a share
+  that dropped, a query the system denied are logged `size unknown` (the reviews of 2026-10-30
+  found the length ending a dry run from a pipe with an unhandled exception the copy never had,
+  then only an `IOException` caught). The About window's link line names the link's
+  `OriginalString`, which cannot throw, where `AbsoluteUri` throws for a relative link.
 - **NLog's notice is in the About window** (the owner's answer, 2026-10-30): the siblings'
   third-party card comes back (DarksCheck's markup and `ThirdParty.cs` shape, FlatCheck's NLog
   entry: name, role, licence, copyright line, link), the About button's tooltip goes back to the

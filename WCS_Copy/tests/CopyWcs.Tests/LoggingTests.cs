@@ -500,7 +500,9 @@ public class LoggingTests
         int code;
         try
         {
-            code = Cli(pipe, dst, "--dry-run").Code;
+            // The run is bounded too: one that read past the header would wait on the pipe for
+            // ever; after 30 s the test fails here, and disposing the server ends that read.
+            code = (await Task.Run(() => Cli(pipe, dst, "--dry-run")).WaitAsync(TimeSpan.FromSeconds(30))).Code;
         }
         finally
         {
@@ -511,6 +513,34 @@ public class LoggingTests
         Assert.Equal(0, code);
         Assert.Contains(capture.Messages, m => m.StartsWith(
             "read " + pipe + " (size unknown) bytes=none cards=20 blocks=1 dataOffset=2880 data=none BITPIX=16 ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A stream that says it can seek and then throws when asked its length (a share that drops
+    /// after the header was read, a query the system denies or aborts) gives the read line no
+    /// length, whatever it throws: a value the log reads never stops a run (R-041; the third
+    /// review of 2026-10-30 found only an <see cref="IOException"/> caught, and nothing making the
+    /// query throw). The pipe test above pins the line a missing length gives.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(IOException))]
+    [InlineData(typeof(UnauthorizedAccessException))]
+    [InlineData(typeof(NotSupportedException))]
+    [InlineData(typeof(OperationCanceledException))]
+    public void R042_ALengthThatCannotBeReadIsNone_WhateverTheQueryThrows(Type thrown)
+    {
+        using var stream = new LengthThrowingStream((Exception)Activator.CreateInstance(thrown)!);
+
+        Assert.Null(FitsHeader.LengthOf(stream));
+    }
+
+    /// <summary>A stream that can seek gives its length to the read line.</summary>
+    [Fact]
+    public void R042_ASeekableStreamGivesItsLength()
+    {
+        using var stream = new MemoryStream(new byte[2880]);
+
+        Assert.Equal(2880, FitsHeader.LengthOf(stream));
     }
 
     /// <summary>
@@ -533,8 +563,9 @@ public class LoggingTests
         }
 
         // The file's own bytes, not the reader's decoding, which turns any byte above 0x7F into a
-        // question mark itself: Latin-1 keeps each byte as it is.
-        Assert.Contains("HISTORY WCS copied from Nebula-?.fit", Encoding.Latin1.GetString(File.ReadAllBytes(dst)), StringComparison.Ordinal);
+        // question mark itself: Latin-1 keeps each byte as it is. The whole 80-byte card, so
+        // nothing may follow the name.
+        Assert.Contains("HISTORY WCS copied from Nebula-?.fit".PadRight(80), Encoding.Latin1.GetString(File.ReadAllBytes(dst)), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -811,5 +842,33 @@ public class LoggingTests
 
         Assert.Empty(offenders);
         Assert.Empty(declarations);
+    }
+
+    /// <summary>A stream that says it can seek, and throws the given exception when asked its length.</summary>
+    private sealed class LengthThrowingStream : Stream
+    {
+        private readonly Exception _thrown;
+
+        public LengthThrowingStream(Exception thrown)
+        {
+            _thrown = thrown;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
+        public override bool CanWrite => false;
+        public override long Length => throw _thrown;
+
+        public override long Position
+        {
+            get => 0;
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => 0;
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

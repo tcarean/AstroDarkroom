@@ -751,6 +751,14 @@ window's renders and the validation case do not move. No golden file changes.
   R-012's "gone at the end" holds on success only. A fix of its own, test first, after this task;
   the log's `write ... in place through <dest>.tmp` and Error lines will show it meanwhile.
 - The console's build and publish output carry no `LICENSE`; the window's do.
+- **LightsCheck's About window has the latent crash the second review found here** (the third
+  review of 2026-10-30): on `main`, `LightsCheck/src/LightsCheck.Wpf/Views/AboutWindow.xaml.cs:57`
+  logs `e.Uri.AbsoluteUri` inside `OpenLink`'s filtered catch, which throws
+  `InvalidOperationException` for a relative link, out of the handler, and closes the window; its
+  links are absolute today. ImageVisualCompare names `OriginalString` already, DarksCheck writes
+  no line there, FlatCheck's `ExternalLink` logs `e.Uri` (its `ToString`, which does not throw).
+  A fix of its own in LightsCheck, test first, as
+  `R043_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays` does here.
 - The version bump is the owner's.
 - DarksCheck has a plan of the same day; AstroDarkroom and AstroPhotoAnalyzer have no log yet.
   When FlatCheck moves to another NLog version, CopyWcs, LightsCheck and ImageVisualCompare move
@@ -892,11 +900,12 @@ code fixes correct and eleven weaker points; each was checked in the code, and a
    navigation to a relative link and failed (`InvalidOperationException` out of the handler); the
    line now names `e.Uri.OriginalString`.
 2. **The HISTORY test read the file back through the reader**, whose ASCII decoding makes any byte
-   a `?` itself: it now reads the file's raw bytes as Latin-1.
+   above 0x7F a `?` itself: it now reads the file's raw bytes as Latin-1.
 3. **`logging.md` quoted the two writers' figures of the console test before it switched to
    `copywcs`**, and the window's test printed none: both print and both are quoted now
    (`copywcs.log` 1048832 and `copywcs_01.log` 647036 bytes; `CopyWcs.Wpf.log` 1048891 and
-   `CopyWcs.Wpf_01.log` 638977; 4000 and 4000 whole lines each, none broken).
+   `CopyWcs.Wpf_01.log` 638977; 4000 and 4000 whole lines each, none broken; one run's sizes,
+   which change from run to run, as the third review found).
 4. **R-036's English pass could not see the component row**: `TextsOf` now reads every text
    block as it displays (`TextRange`), which also serves the About test's card check.
 5. **The pipe test could hang the gate** if a run never opened its source: the server's wait for
@@ -918,4 +927,42 @@ code fixes correct and eleven weaker points; each was checked in the code, and a
 10. **The About test did not check the card's sentence and the copyright line**: it does now.
 11. **`LogText.Value`'s comment** now says it escapes as `Card` does, the `?` included.
 
-The owner's rule of two review rounds is met; no third was run.
+### The third review of 2026-10-30
+
+At the owner's word, a third subagent reviewed the fix commit 5b8c2a6 alone. It found the four
+code changes correct and eleven weaker points; each was checked, and all held.
+
+1. **LightsCheck has the latent crash fixed here**, in its About window's link line: recorded
+   under "Out of scope, and noticed on the way"; the header of `AboutWindow.xaml.cs` now says the
+   line names `OriginalString`, as ImageVisualCompare's does.
+2. **The second review's length catch had no test**: the query moved into
+   `FitsHeader.LengthOf`, and `R042_ALengthThatCannotBeReadIsNone_WhateverTheQueryThrows` makes a
+   seekable stream's `Length` throw.
+3. **R-010 and `CLAUDE.md` said "verbatim" with no exception**, while a byte above 0x7F is copied
+   as `?` (the review ran it: 0xC5 in a source's comment came out as `?`): both say so now, and
+   `R010_Run_AByteAboveAsciiInACopiedCard_IsWrittenAsAQuestionMark` pins it. A byte-exact copy,
+   through a Latin-1 reading and writing, would change the behaviour, the owner's call; such a
+   byte is not valid FITS.
+4. **`LogText`'s two comments still said "as the file holds it"**: "as the header holds it" now,
+   R-042's wording.
+5. **The pipe test could still hang** on a run that read past the header: the run is bounded by
+   30 s too.
+6. **`window.md`'s summary of `WindowLoggingTests`** missed the link test, the two windows'
+   writers and the `window` collection: corrected.
+7. **The two writers' file sizes change from run to run** (the review's three runs of each; a run
+   here gave `copywcs.log` 1048731 and `copywcs_01.log` 647137, `CopyWcs.Wpf.log` 1048841 and
+   `CopyWcs.Wpf_01.log` 647027): `logging.md` pastes one run's printed lines and says what varies
+   and what holds, 4000 and 4000 whole lines, none broken.
+8. **`logging.md` said the tests cover `OpenLink`**; they run its `InvalidOperationException`
+   branch only: the `Win32Exception` branch and a link that opens are back in the list of what has
+   not run.
+9. **The length query caught `IOException` alone**, so another exception from it would have
+   refused a run whose header was already read (an `UnauthorizedAccessException`, which
+   `WcsCopy.Run`'s filters take as "cannot read") or left the run unhandled (a
+   `NotSupportedException` or an `OperationCanceledException`, which they do not): the new test
+   failed for those three of its four exception types, and `LengthOf` now takes whatever the query
+   throws as no length.
+10. **The HISTORY test's `Contains`** no longer pinned where the card ends: it compares the whole
+    80-byte card.
+11. **The plan's last line said no third review was run**, and the second review's item 2 said
+    "any byte" where it meant any byte above 0x7F: both corrected.

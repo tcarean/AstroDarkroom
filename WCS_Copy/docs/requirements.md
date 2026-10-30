@@ -39,7 +39,7 @@ from its tests (ADR 0001); the window rows (R-030 on) are the second task of
 
 | ID | Status | Requirement |
 | --- | --- | --- |
-| R-010 | implemented | A copied card is the source's 80 bytes, verbatim, formatting and inline comment included; never a reparsed or reformatted value. |
+| R-010 | implemented | A copied card is the source's 80 bytes, verbatim, formatting and inline comment included; never a reparsed or reformatted value. The header is read and written as ASCII, as FITS defines it: a byte above 0x7F, which a valid header never holds, is copied as `?`. |
 | R-011 | implemented | One `HISTORY WCS copied from <source file name>` card is appended, its text cut at 72 characters; the card is English in both interface languages (ADR 0004). |
 | R-012 | implemented | Without `-o` the destination is rewritten in place through a temporary file beside it, which is gone at the end; with `-o <file>` the new file is written and the destination is left byte for byte as it was. On success the last two lines are `Copied N keys into <target>.` and the reminder to check the annotation by eye, and the exit code is 0. |
 | R-013 | implemented | The written file holds the new header, `END`, spaces up to the next 2880-byte boundary, then the destination's data area unchanged; a header that grows past its original number of blocks (for example 41 cards, two blocks) is padded the same way and the data still follows it. |

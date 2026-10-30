@@ -42,11 +42,12 @@ process:
 (`StaFixture`) builds a plain `Application`, not `App`, for the same reason. No test therefore
 runs `Program.Main`, `App`'s constructor (with its dispatcher hook), `OnStartup` and `OnExit`, the
 dialogs' handlers of `MainWindow` or `ShowAbout`; the tests cover the text `App.StartLine` builds,
-`LogSetup.Fatal` called directly, and `AboutWindow.OpenLink` through a raised navigation. The runs
-by hand of 2026-10-30 (the plan's Outcome) wrote the process's first and last lines of both
-applications, `App`'s start line and `About opened`. The dialogs' lines, a refused `--lang` in the
-window, the window's dispatcher hook and `LogSetup`'s "a task failed and nobody awaited it" have
-not run anywhere yet.
+`LogSetup.Fatal` called directly, and `AboutWindow.OpenLink`'s catch through a raised navigation to
+a relative link (its `InvalidOperationException`). The runs by hand of 2026-10-30 (the plan's
+Outcome) wrote the process's first and last lines of both applications, `App`'s start line and
+`About opened`. The dialogs' lines, a refused `--lang` in the window, the window's dispatcher hook,
+`LogSetup`'s "a task failed and nobody awaited it" and a link with no program to open it
+(`OpenLink`'s `Win32Exception`) have not run anywhere yet, nor has a link that opens.
 
 ## The files, measured
 
@@ -69,11 +70,24 @@ The window's two files, rolled once, survive the console's rolls in the same fol
 `copywcs` in another case, and NLog matches its own name and number only). Two factories on one
 file stand for two processes, each on a thread of its own released by a `Barrier` (`LogFiles`),
 4000 lines from each, crossing the roll, once through each build of `NLog.Targets.AtomicFile`.
-Measured on 2026-10-30: `R045_TwoProcessesWritingAtFullSpeedKeepEveryLine`, the console's
-`net8.0` build, left `copywcs.log` 1048832 bytes and `copywcs_01.log` 647036;
-`R045_TwoWindowsWritingAtFullSpeedKeepEveryLine`, the window's `net8.0-windows7.0` build, left
-`CopyWcs.Wpf.log` 1048891 bytes and `CopyWcs.Wpf_01.log` 638977; both found 4000 and 4000 whole
-lines, none broken, interleaved both ways round.
+Measured on 2026-10-30, the lines the two tests print, from one run:
+
+```
+R045_TwoProcessesWritingAtFullSpeedKeepEveryLine, the console's net8.0 build:
+ copywcs.log 1048731 bytes
+ copywcs_01.log 647137 bytes
+ whole lines: 4000 from A, 4000 from B; broken: 0
+R045_TwoWindowsWritingAtFullSpeedKeepEveryLine, the window's net8.0-windows7.0 build:
+ CopyWcs.Wpf.log 1048841 bytes
+ CopyWcs.Wpf_01.log 647027 bytes
+ whole lines: 4000 from A, 4000 from B; broken: 0
+```
+
+The sizes change from run to run: the split with the interleaving, the total with the digits of
+the `[pid:thread]` field every line carries (a test process whose id has one digit more writes
+8000 bytes more; the third review's runs gave 1695868 and 1687868 bytes in all). What holds in
+every run is what the tests assert: 4000 and 4000 whole lines, none broken, interleaved both ways
+round.
 
 The cost, measured on 2026-10-30 with the Release console copying the Veil fixture's solve into
 the 290 MB stack `procesate\result.fit` of the same session (6016 x 4016, so with `--force`, `-o`
@@ -126,7 +140,7 @@ identical)`; in a dry run too.
 | Seam | Level | What |
 | --- | --- | --- |
 | `LogSetup` | Info, Fatal, Error | the first line, the last line (`exit <code> after <s> s`); the unhandled exceptions; a task nobody awaited |
-| `FitsHeader.ReadPrimary` | Info, Trace | `read <path> (<size>) bytes cards blocks dataOffset data` and the keys of `LogText.Keys` (`size unknown`, `bytes=none`, `data=none` for a stream that cannot tell its length, a named pipe: asking would throw); at Trace `<path> card <n>: <card>`, every card from 1 |
+| `FitsHeader.ReadPrimary` | Info, Trace | `read <path> (<size>) bytes cards blocks dataOffset data` and the keys of `LogText.Keys` (`size unknown`, `bytes=none`, `data=none` when `FitsHeader.LengthOf` has no length: a stream that cannot seek, a named pipe, is not asked, and whatever a seekable file's query throws is taken as none); at Trace `<path> card <n>: <card>`, every card from 1 |
 | `FitsHeader.AddHistory` | Debug | `appended <card>` |
 | `FitsHeader.WriteWithDataFrom` | Debug, Trace, Info | `write <target>[ in place through <target>.tmp], the data from byte <offset> of <source>` before the file is created, every card to be written at Trace, `wrote <target> (<size>) bytes cards blocks data` after the move |
 | `WcsCopy.Run` | Info, Warn, Error, Debug | the start and done lines; `cannot read the source` / `the destination <path>` with the exception; the two warnings and the two refusals without one; `the write of <target> failed` with the exception; at Debug `selected <n> keys: <w> WCS, <s> SIP, <o> optical` and `card <KEY>: <card> \| dest: <none, same or card>` |

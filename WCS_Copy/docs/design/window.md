@@ -141,8 +141,11 @@ line under it, and that the copyright, the explanation and the window's single A
 the window, and that Help can run from the button; the two lines are the first two the console
 prints at `--help`, in each language. `AboutTests` bind the About view-model to `VersionInfo`
 and `LicenseInfo`, check the console prints the same five warranty lines and that the card lists
-`ThirdParty.Components`, in both languages; `WindowLoggingTests` check the start line, the facts'
-Debug line and that a copy from the window logs what the console's copy logs; `AppTests` cover
+`ThirdParty.Components`, in both languages; `WindowLoggingTests`, in the `window` collection on
+the `StaFixture` thread, check the start line, the facts' Debug line, that a copy from the window
+logs what the console's copy logs, that a link the About window cannot open (a relative one) is a
+Debug line and leaves the window open, and that two writers through the window's build of
+`NLog.Targets.AtomicFile` keep every line (R-045); `AppTests` cover
 `Parse`, `--lang` and the files from the arguments; `IconTests` tie the sizes of the `.ico`,
 the script's `SIZES` line and the two `ApplicationIcon` paths together. The tests that run the
 core await `Preview()` or `Copy()`; the smoke tests that do so run through
