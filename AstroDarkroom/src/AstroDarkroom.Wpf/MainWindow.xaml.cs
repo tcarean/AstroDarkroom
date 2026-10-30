@@ -202,7 +202,7 @@ public partial class MainWindow : Window
     private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
     {
         Log.Info("About opened");
-        AboutWindow about = new(_release) { Owner = this };
+        AboutWindow about = new(_release, ScreenArea.WorkAreaOf(this)) { Owner = this };
         about.ShowDialog();
         Log.Info("About closed");
     }

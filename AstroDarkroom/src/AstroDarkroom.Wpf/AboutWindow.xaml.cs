@@ -17,6 +17,7 @@
 
 using System.Windows;
 using AstroDarkroom.Core;
+using NLog;
 using static AstroDarkroom.Core.Ui;
 
 namespace AstroDarkroom.Wpf;
@@ -34,18 +35,28 @@ public sealed record ComponentLine(string Name, string Version);
 /// needs on the machine (R-009), the suite's date and each component's version, all from the
 /// core and from release.json, worded in the language current when it opens (R-006); it is
 /// modal and made anew at every open, so it never has to switch. The unreleased flag of
-/// release.json is not shown (ADR 0007).
+/// release.json is not shown (ADR 0007). It fits the work area of its screen: no taller than it,
+/// its cards scrolling when they need more, and moved inside it once laid out (R-016).
 /// </summary>
 public partial class AboutWindow : Window
 {
+    /// <summary>The diagnostic log: the window's size and place once shown, whether its cards scroll (R-012).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     /// <summary>
     /// The window, filled; not yet shown.
     /// </summary>
     /// <param name="release">What release.json says, or null when the folder has none the launcher could read.</param>
-    public AboutWindow(ReleaseInfo? release)
+    /// <param name="workArea">
+    /// The work area of the screen the window opens on, in device-independent pixels: the window
+    /// is no taller than it and is moved inside it (R-016).
+    /// </param>
+    public AboutWindow(ReleaseInfo? release, Rect workArea)
     {
         InitializeComponent();
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        MaxHeight = workArea.Height;
+        Loaded += (_, _) => FitInto(workArea);
         Title = T("About Astro Darkroom", "Despre Astro Darkroom");
         Logo.Source = Icons.LargestFrame(Icons.Launcher);
         Tagline.Text = T(
@@ -97,6 +108,23 @@ public partial class AboutWindow : Window
     /// <returns>The catalogue's title, else the name unchanged.</returns>
     private static string TitleOf(string name)
         => AppCatalogue.Apps.FirstOrDefault(a => a.Folder == name)?.Title ?? name;
+
+    /// <summary>
+    /// Moves the laid-out window inside its screen's work area, where its place centred on the
+    /// main window would run past the area's top or bottom (R-016), and writes its size and place
+    /// and whether its cards scroll to the diagnostic log.
+    /// </summary>
+    /// <param name="workArea">The work area of the window's screen, in device-independent pixels.</param>
+    private void FitInto(Rect workArea)
+    {
+        Top = WindowFit.Top(Top, ActualHeight, workArea.Top, workArea.Height);
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug(FormattableString.Invariant(
+                $"About shown {ActualWidth:0}x{ActualHeight:0} at ({Left:0},{Top:0}); work area {workArea.Width:0}x{workArea.Height:0} at ({workArea.Left:0},{workArea.Top:0}); ")
+                + "cards scroll: " + (Cards.ScrollableHeight > 0 ? "yes" : "no"));
+        }
+    }
 
     /// <summary>Closes the window.</summary>
     /// <param name="sender">The button; not read.</param>

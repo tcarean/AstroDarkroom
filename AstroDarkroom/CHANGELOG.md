@@ -67,6 +67,14 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 - The "unreleased changes" note is no longer shown, in the rows or in "Despre";
   `release.json` keeps its `unreleased` key (ADR 0007).
 
+### Fixed
+
+- "Despre" fits the screen it opens on (R-016, ADR 0013): it is no taller than that screen's
+  work area, its cards scroll, with a dark scroll bar, when they need more room, the Close button
+  stays in view under them, and it is moved inside the screen when centring it on the main window
+  would push it past an edge. It used to be as tall as its content, which could run past the
+  bottom of a small screen.
+
 ### Internal
 
 - NLog 6.2.2 and NLog.Targets.AtomicFile 6.2.2 are the launcher's first packages, at

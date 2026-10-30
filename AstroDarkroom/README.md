@@ -28,7 +28,8 @@ and `AstroDarkroom.exe`, the launcher: a window with one row per tool (its icon,
 description and version) and an **Open** button. A row whose executable is missing from the
 folder is disabled and names the missing file. **About** (F1) shows the suite's version, its date, the licence, the
 component written by others that the launcher uses (see "Third-party components"), the
-requirements below and the version of every component.
+requirements below and the version of every component; on a screen too small for all of it, it
+fits the screen, its cards scroll and its **Close** button stays in view.
 
 The launcher speaks English or Romanian: the two buttons with a flag in the bottom bar,
 **English** / **Romana**, switch every text at once, without a restart. At its first start it is

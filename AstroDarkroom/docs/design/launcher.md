@@ -4,18 +4,19 @@
 `src/AstroDarkroom.Core/SuiteFolder.cs`, `src/AstroDarkroom.Core/Launcher.cs`,
 `src/AstroDarkroom.Core/ReleaseManifest.cs`, `src/AstroDarkroom.Core/LicenseInfo.cs`,
 `src/AstroDarkroom.Core/Prerequisites.cs`, `src/AstroDarkroom.Core/Version.cs`,
-`src/AstroDarkroom.Core/ThirdParty.cs`, `src/AstroDarkroom.Core/Language/Ui.cs`,
+`src/AstroDarkroom.Core/ThirdParty.cs`, `src/AstroDarkroom.Core/WindowFit.cs`,
+`src/AstroDarkroom.Core/Language/Ui.cs`,
 `src/AstroDarkroom.Core/Language/LanguageSetting.cs`, `src/AstroDarkroom.Wpf/App.xaml.cs`,
 `src/AstroDarkroom.Wpf/Icons.cs`, `src/AstroDarkroom.Wpf/AppRow.cs`,
 `src/AstroDarkroom.Wpf/MainWindow.xaml.cs`, `src/AstroDarkroom.Wpf/DarkTitleBar.cs`,
-`src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`, `Icon/make_icon.py` and the icon files in
-`Icon/`.
+`src/AstroDarkroom.Wpf/ScreenArea.cs`, `src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`,
+`Icon/make_icon.py` and the icon files in `Icon/`.
 
 The launcher is two layers: a core that answers three questions about a folder (which apps
 exist, which of them are there, how to start one), reads two files (`release.json`, the
 language setting) and words every answer in one of two languages, and a window that asks those
 questions at start-up and at every change of language and shows the answers. The requirements
-are R-001 to R-010 and R-015 in `docs/requirements.md`; the choice of a compiled-in catalogue
+are R-001 to R-010, R-015 and R-016 in `docs/requirements.md`; the choice of a compiled-in catalogue
 over a scan of the folder is ADR 0002, the split with no test project for the window is ADR
 0001, the two languages and the live switch are ADR 0006. What the launcher writes to its
 diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
@@ -78,6 +79,10 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   identifier, a copyright line, an address and its packages; all but the role are the same in
   both languages. `ThirdPartyTests` binds the list to the packages of the projects under `src/`
   and to the sections of `THIRD-PARTY-NOTICES.md`, which holds each licence's whole text.
+- `WindowFit.Top(top, height, areaTop, areaHeight)` keeps a window inside a work area (R-016,
+  ADR 0013): its own top when it fits, the area's top or the top that puts its bottom on the
+  area's when it runs past one edge, the area's top when it is as tall as the area or taller.
+  Plain numbers in device-independent pixels; the window brings the area.
 
 ## The window
 
@@ -137,6 +142,19 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   flag of the file is not shown (ADR 0007). Without a file, or with one that names no
   component, the list is the catalogue's titles with `?` and the line says the versions are
   unknown. Enter and Esc close it (`IsDefault` and `IsCancel` on one button).
+- `AboutWindow` fits its screen (R-016, ADR 0013). `MainWindow` hands it the work area of the
+  screen the main window is on, from `ScreenArea.WorkAreaOf`: Windows' `MonitorFromWindow`
+  (the screen nearest the window) and `GetMonitorInfoW` (its work area, in physical pixels),
+  divided by the window's DPI scale, since `SystemParameters.WorkArea` is the primary screen's;
+  the primary screen's stands in when the window has no handle or the call fails. The about
+  window sets its `MaxHeight` to the area's height, so `SizeToContent` stops there. Its content
+  is a grid of two rows: a `ScrollViewer` named `Cards`, with the header and the cards, in the
+  star row, and the Close button in the auto row, so the button stays in view and only the cards
+  scroll; with the window sized to its content the star row is as tall as the cards, so on a
+  screen where everything fits nothing changes. On `Loaded`, laid out and centred on its owner,
+  the window's `Top` goes through `WindowFit.Top`, and a Debug line writes its size and place, the
+  area and whether the cards scroll. The scroll bar is `App.xaml`'s implicit style, the vertical
+  half of LightsCheck's dark one: a thin rounded thumb, page buttons with no opacity.
 - The palette and the button, tooltip and card styles are in `App.xaml`, the same colours as
   LightsCheck's dark theme reduced to what two windows need. Both windows darken their title
   bar on `SourceInitialized`, when the handle exists, through `DarkTitleBar`, a copy of

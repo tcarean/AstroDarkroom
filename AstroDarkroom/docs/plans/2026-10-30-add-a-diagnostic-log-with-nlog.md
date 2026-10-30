@@ -198,3 +198,11 @@ Branch `claude/Log-AstroDarkroom-with-NLog`, worktree
 
   Still not seen in a real start: "Despre" opened and closed, a start that fails (its message
   box), the fallback under `%LOCALAPPDATA%`.
+- **"Despre" fits its screen** (R-016, ADR 0013 accepted): of the three ways put to the owner
+  for the taller window (keep it, add scrolling, drop the card), the owner chose scrolling on
+  2026-10-30. `ScreenArea` asks Windows for the work area of the main window's screen,
+  "Despre" caps its height there, scrolls its cards with LightsCheck's dark scroll bar, keeps the
+  Close button in view, and `WindowFit.Top` in the core moves it inside the area. Checked
+  offscreen: unchanged at 931 and 946 DIP where it fits; in a 700 DIP work area 700 DIP high with
+  the cards scrolling by 246 DIP; `ScreenArea` on hidden windows over the three screens gave each
+  screen's own area. Not seen on a real small screen.

@@ -40,8 +40,8 @@ throws, because the log never stops the launcher; `LogSetup.Close` is the last c
 4. The first line, `StartupLine`, at Info.
 
 The other loggers are `static readonly` fields of the types that log (`ReleaseManifest`,
-`LanguageSetting`, `MainWindow`, `DarkTitleBar`); none of those types runs before `Apply`, the
-first being `LanguageSetting` in `OnStartup`.
+`LanguageSetting`, `MainWindow`, `AboutWindow`, `DarkTitleBar`, `ScreenArea`); none of those
+types runs before `Apply`, the first being `LanguageSetting` in `OnStartup`.
 
 ## The files, measured
 
@@ -95,7 +95,9 @@ window's two, from `Loggers`), `ReleaseManifest` and `LanguageSetting` (the core
 | `ReleaseManifest.TryRead` | `ReleaseManifest` | Info, Warn | `read <path>: name= version= date= commit=; N components: <name> version= commit= unreleased= clean=; ...` (`LogText.Release`), or `no file at <path>`, at Info; a file that is not a manifest, and an unreadable one with the exception, at Warn |
 | `MainWindow.Relabel` | `Window` | Info | `suite folder <dir>: N of 6 apps present; missing <exes>` (`LogText.Presence`), at the start and at every language switch |
 | `MainWindow` | `Window` | Info, Debug, Error | `window shown <w>x<h> at (<x>,<y>); primary work area ...; desktop ...; dpi ...` once, at Debug (the work area is the primary screen's whichever screen the window is on, in the primary screen's DIPs; with screens of different DPIs they are not the window's); `language switched to <code>`; `open <title>: <file> <arguments> in <dir>` (`LogText.Open`), then `started <exe>, process <id>`, or the start's exception at Error beside its message box; `About opened`, `About closed`; `window closing` |
+| `AboutWindow` | `Window` | Debug | `About shown <w>x<h> at (<x>,<y>); work area ...; cards scroll: yes` or `no`, once laid out and moved inside its screen (R-016) |
 | `DarkTitleBar` | `Window` | Debug | a window manager that cannot be called, with the exception, as LightsCheck's copy writes it |
+| `ScreenArea` | `Window` | Debug | a screen's work area Windows did not give, with the exception when the call itself could not be made; the primary screen's is used |
 
 Not logged: the catalogue, the plan of a start before the `open` line, each row's lookup (the
 suite folder's line sums them up), the interface's texts, and the exceptions of the reads the log
