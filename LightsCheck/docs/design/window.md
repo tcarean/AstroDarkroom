@@ -3,10 +3,10 @@
 **Covers:** `src/LightsCheck.Wpf/`, `src/LightsCheck.Core/Analysis/StarCrops.cs`, `tests/LightsCheck.Wpf.Tests/`, `Icon/make_icon.py`.
 
 The behaviour is R-029 to R-032; the reasons are ADR 0008. The pieces copied from FlatCheck
-(`Theme/Dark.xaml`, `Presentation/*.cs`) are marked as such in their headers and are
-FlatCheck's to improve first (the same rule as the readers, ADR 0003); `Charts.cs` and the
-view-models are LightsCheck's own, and `Presentation/AccessibleTabControl.cs` is
-AstroPhotoAnalyzer's class in LightsCheck's style (ADR 0028).
+(`Theme/Dark.xaml`, `Presentation/*.cs` but one) are FlatCheck's to improve first (the same rule
+as the readers, ADR 0003); `Charts.cs` and the view-models are LightsCheck's own, and the one,
+`Presentation/AccessibleTabControl.cs`, is AstroPhotoAnalyzer's class in LightsCheck's style
+(ADR 0028).
 
 ## The shape
 

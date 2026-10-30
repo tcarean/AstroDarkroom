@@ -7,8 +7,8 @@ Status: accepted 2026-10-29
 
 The window's tab content was missing from the UI Automation tree, the one a screen reader such
 as Narrator and every UI Automation client walk: under the selected tab's item the tree held the
-header's text and nothing else. The theme's `TabControl` template (`Theme/Dark.xaml`, the theme
-of FlatCheck and AstroPhotoAnalyzer too) shows the selected content through a
+header's text and nothing else. The theme's `TabControl` template (`Theme/Dark.xaml`, FlatCheck's
+copy, ADR 0003; AstroPhotoAnalyzer has its own copy of the same theme) shows the selected content through a
 `ContentPresenter` without a name, and WPF's `TabItemAutomationPeer` puts the selected tab's
 content under the tab's item only through the presenter named `PART_SelectedContentHost`. The
 first test of R-067 showed it on the synthetic eight-frame session before the change: no peer of
