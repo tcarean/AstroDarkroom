@@ -72,6 +72,7 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (e.Key == Key.Escape) { Close(); e.Handled = true; return; }
                 if (Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase) return;
+                if (Keyboard.Modifiers != ModifierKeys.None) return;
                 if (DataContext is SoftProofTabViewModel vm && vm.HandleKey(e.Key)) e.Handled = true;
             };
         }

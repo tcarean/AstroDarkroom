@@ -37,9 +37,10 @@
 // WHY THE TABLE HOLDS XYZ AND NOT THE DISPLAY COLOUR. The display step is a per-pixel scaling:
 // one table per intent serves both states of the simulation.
 //
-// Black point compensation is the ICC one, in XYZ: XYZ' = XYZ x (W - K) / W + K towards the
-// paper and its inverse towards the screen, W the D50 white and K the device black through
-// A2B1, the black IccPaperBlack reads (ADR 0030). The package has none, so it is written here.
+// Black point compensation is the ICC one (ISO 18619), in XYZ: XYZ' = XYZ x (W - K) / W + K
+// towards the paper and its inverse towards the screen, W the D50 white and K the device black
+// through A2B1 taken as the neutral of its Y, the black IccPaperBlack reads (ADR 0030). The
+// package has none, so it is written here.
 
 using System;
 using System.Buffers.Binary;
@@ -152,7 +153,8 @@ namespace AstroPhotoAnalyzer
         internal double[] MediaWhite { get; private set; }
 
         /// <summary>
-        /// The device black through the colorimetric table, XYZ relative to the paper's white.
+        /// The device black through the colorimetric table, as the neutral of its Y (XYZ relative
+        /// to the paper's white): what the black point compensation scales with.
         /// </summary>
         internal double[] PaperBlack { get; private set; }
 
@@ -239,8 +241,12 @@ namespace AstroPhotoAnalyzer
                 p._perceptual = new Configuration(xyzConfig: XyzConfiguration.D50, iccConfig: perceptual);
                 p._deviceBlack = profile.Header.DataColourSpace.Trim() == "CMYK" ? new[] { 1.0, 1.0, 1.0, 1.0 } : new double[3];
                 var k = new Unicolour(p._back, new Channels(p._deviceBlack)).Xyz;
-                p.PaperBlack = new[] { k.X, k.Y, k.Z };
-                if (double.IsNaN(k.Y) || k.Y < 0 || k.Y >= 1) { p.Problem = NoB2A("A2B1"); return p; }
+                if (double.IsNaN(k.Y) || k.Y < 0 || k.Y >= 1) { p.Problem = BlackUnusable; return p; }
+                // The black point compensation of ISO 18619 (lcms too) takes the black as the
+                // neutral of its Y, not with the chromaticity the table gives it: the scaling is
+                // then one factor on X, Y and Z, and a slightly coloured black does not tint the
+                // shadows. The L* and the Dmax are the same either way.
+                p.PaperBlack = new[] { D50[0] * k.Y, k.Y, D50[2] * k.Y };
                 p.FinishFacts();
                 return p;
             }
@@ -316,6 +322,8 @@ namespace AstroPhotoAnalyzer
         /// <returns>The sentence, in the interface language.</returns>
         static string NoB2A(string table) => Tr.Pick($"the profile has no table towards the printer ({table})", $"profilul nu are tabela spre imprimanta ({table})");
         static string Unreadable => Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ");
+        static string BlackUnusable => Tr.Pick("the profile's table from the printer (A2B1) gives no black between 0 and the paper white; the profile is probably damaged",
+            "tabela profilului dinspre imprimanta (A2B1) nu da un negru intre 0 si albul hartiei; profilul e probabil stricat");
     }
 
     /// <summary>

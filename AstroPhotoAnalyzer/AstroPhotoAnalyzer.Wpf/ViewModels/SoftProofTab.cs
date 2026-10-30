@@ -21,10 +21,11 @@
 //
 // It computes nothing: the proof, the classes of the pixels, the shares and every sentence come
 // from ProofRun (R-160 to R-162). Here are only the state of the controls, the bitmaps made from
-// the core's rasters and classes, the brush of the margin and the commands. Like the curves,
-// the proof is a run after the analysis: MainViewModel starts it once the other tabs are filled
+// the core's rasters and classes, the brush of the margin and the commands. Like the curves, the
+// proof is a run after the analysis: MainViewModel starts it once the other tabs are filled
 // (ADR 0051), a change of intent or of the simulation renders again on a pool thread, and the
-// other controls only choose what is shown.
+// other controls only choose what is shown. The bitmaps are made on the pool thread too, frozen:
+// three overlays over up to 2.7 MP would stall the window for a visible moment.
 
 using System;
 using System.Threading.Tasks;
@@ -65,6 +66,12 @@ namespace AstroPhotoAnalyzer.Wpf
         static readonly Color DarkGrey = Color.FromRgb(0x40, 0x40, 0x40);
         static readonly Color Black = Color.FromRgb(0x00, 0x00, 0x00);
 
+        /// <summary>
+        /// What one computation or render hands back from the pool thread: the set, the proof
+        /// and the frozen bitmaps made from them (null bitmaps with a problem).
+        /// </summary>
+        sealed record Outcome(ProofSet Set, SoftProofResult Proof, BitmapSource Original, BitmapSource Image, BitmapSource Paper, BitmapSource Screen, BitmapSource Both);
+
         AnalysisResult _result;
         ProofSet _set;
         SoftProofResult _proof;
@@ -90,8 +97,9 @@ namespace AstroPhotoAnalyzer.Wpf
         public event Action<SoftProofTabViewModel> ProofRequested;
 
         /// <summary>
-        /// The proof's computation last started (R-163), for whoever must wait for it; completed
-        /// before the first and after one that was abandoned.
+        /// The computation or render last started (R-163), for whoever must wait for it;
+        /// completed before the first and after one that was abandoned. Both
+        /// <see cref="ComputeAsync"/> and a change of intent or of the simulation set it.
         /// </summary>
         internal Task ProofComputation { get; private set; } = Task.CompletedTask;
 
@@ -101,7 +109,10 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool IsRelative { get => _intent == ProofIntent.Relative; set { if (value) Intent = ProofIntent.Relative; } }
         public bool IsRelativeNoBpc { get => _intent == ProofIntent.RelativeNoBpc; set { if (value) Intent = ProofIntent.RelativeNoBpc; } }
 
-        /// <summary>The intent shown; a change renders again (the intent's table is built on its first use).</summary>
+        /// <summary>
+        /// The intent shown; a change renders again (the intent's table is built on its first
+        /// use). During the first computation the change is kept and rendered when it ends.
+        /// </summary>
         internal ProofIntent Intent
         {
             get => _intent;
@@ -110,7 +121,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 if (_intent == value) return;
                 _intent = value;
                 Raise(nameof(IsPerceptual)); Raise(nameof(IsRelative)); Raise(nameof(IsRelativeNoBpc));
-                if (_set != null && _set.Problem == null) ProofComputation = RenderAsync();
+                if (HasControls) ProofComputation = RenderAsync();
             }
         }
 
@@ -122,7 +133,7 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (!Set(ref _simulate, value)) return;
                 Raise(nameof(MarginBrush));
-                if (_set != null && _set.Problem == null) ProofComputation = RenderAsync();
+                if (HasControls) ProofComputation = RenderAsync();
             }
         }
 
@@ -166,7 +177,7 @@ namespace AstroPhotoAnalyzer.Wpf
                     ProofMarginChoice.Grey => Grey,
                     ProofMarginChoice.DarkGrey => DarkGrey,
                     ProofMarginChoice.Black => Black,
-                    _ => _simulate && _set?.Profile != null ? PaperWhiteColour : White,
+                    _ => _simulate && HasControls ? PaperWhiteColour : White,
                 };
                 var b = new SolidColorBrush(c);
                 b.Freeze();
@@ -184,10 +195,16 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
+        /// <summary>
+        /// The set is prepared and usable: the controls are shown, a render can be asked for,
+        /// even while one is computed or after one failed.
+        /// </summary>
+        public bool HasControls => _set != null && _set.Problem == null;
+
         public bool HasProof => _proof != null;
         public bool IsBusy { get => _busy; private set { if (Set(ref _busy, value)) (FullScreen as RelayCommand)?.RaiseCanExecuteChanged(); } }
 
-        /// <summary>Why there is no proof (no profile, an unusable one), "computing", or an error; null with a proof.</summary>
+        /// <summary>Why there is no proof (no profile, an unusable one or table), "computing", or an error; null with a proof.</summary>
         public string Message { get => _message; private set => Set(ref _message, value); }
 
         /// <summary>The message is a reason of the core's (R-162): the window shows it in red.</summary>
@@ -233,15 +250,23 @@ namespace AstroPhotoAnalyzer.Wpf
             Raise(nameof(Title));
         }
 
-        /// <summary>Drops the proof and abandons any computation in progress: its result is nobody's any more.</summary>
+        /// <summary>Drops the set and the proof and abandons any computation in progress: its result is nobody's any more.</summary>
         void Reset()
         {
             _run++;
-            _set = null; _proof = null;
-            _original = _proofImage = _paperLayer = _screenLayer = _bothLayer = null;
+            _set = null;
+            DropProof();
             Message = null; IsProblem = false;
             IsBusy = false;
             RaiseProof();
+        }
+
+        /// <summary>Drops the proof and its bitmaps; the set and the original stay.</summary>
+        void DropProof()
+        {
+            _proof = null;
+            _proofImage = _paperLayer = _screenLayer = _bothLayer = null;
+            if (_set == null) _original = null;
         }
 
         /// <summary>
@@ -251,15 +276,19 @@ namespace AstroPhotoAnalyzer.Wpf
         internal void Compute()
         {
             _run++;
-            Show(Prepare(_result, _intent, _simulate));
+            Show(Prepare(_result, _intent, _simulate, null));
         }
 
         /// <summary>
         /// Prepares the set and renders the proof on a pool thread, "computing" shown
         /// meanwhile; the outcome is applied only if no Reset or newer computation came in
-        /// between. An exception becomes the message, never a throw.
+        /// between, and a control changed meanwhile is rendered right after. An exception
+        /// becomes the message, never a throw. The task is also <see cref="ProofComputation"/>.
         /// </summary>
-        internal async Task ComputeAsync()
+        internal Task ComputeAsync() => ProofComputation = ComputeCore();
+
+        /// <summary>The body of <see cref="ComputeAsync"/>.</summary>
+        async Task ComputeCore()
         {
             AnalysisResult result = _result;
             if (result == null) return;
@@ -268,8 +297,13 @@ namespace AstroPhotoAnalyzer.Wpf
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                var outcome = await Task.Run(() => Prepare(result, intent, simulate));
-                if (run == _run) Show(outcome);
+                Outcome outcome = await Task.Run(() => Prepare(result, intent, simulate, null));
+                if (run != _run) return;
+                Show(outcome);
+                IsBusy = false;
+                // A control changed while the table was built: the proof shown is the old
+                // state's, so render the new one now rather than wait for the next change.
+                if (HasControls && (_intent != intent || _simulate != simulate)) await RenderAsync();
             }
             catch (Exception e)
             {
@@ -283,7 +317,9 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Renders the prepared set again on a pool thread, after a change of intent or of the
-        /// simulation; a late outcome is dropped like a late computation.
+        /// simulation; a late outcome is dropped like a late computation. A table the core
+        /// refuses (its Problem) leaves the set, so another intent can still be chosen, and shows
+        /// the reason in red with no image.
         /// </summary>
         async Task RenderAsync()
         {
@@ -292,12 +328,16 @@ namespace AstroPhotoAnalyzer.Wpf
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                SoftProofResult proof = await Task.Run(() => ProofRun.Render(set, intent, simulate));
-                if (run == _run) Show((set, proof));
+                Outcome outcome = await Task.Run(() => Render(set, intent, simulate, _original));
+                if (run == _run) Show(outcome);
             }
             catch (Exception e)
             {
-                if (run == _run) { Reset(); Message = MainViewModel.Describe(e); }
+                if (run != _run) return;
+                DropProof();
+                Message = e is ArgumentException ? e.Message : MainViewModel.Describe(e);
+                IsProblem = e is ArgumentException;
+                RaiseProof();
             }
             finally
             {
@@ -305,23 +345,44 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>The core's two steps, on whichever thread.</summary>
+        /// <summary>The core's two steps and the bitmaps, on whichever thread.</summary>
         /// <param name="result">The analysis.</param>
         /// <param name="intent">The intent to render.</param>
         /// <param name="simulate">The simulation's state.</param>
-        /// <returns>The set, and the proof when the set has no problem.</returns>
-        static (ProofSet Set, SoftProofResult Proof) Prepare(AnalysisResult result, ProofIntent intent, bool simulate)
+        /// <param name="original">The original's bitmap when already made for this set; null to make it.</param>
+        /// <returns>The outcome; without a proof and bitmaps when the set has a problem.</returns>
+        static Outcome Prepare(AnalysisResult result, ProofIntent intent, bool simulate, BitmapSource original)
         {
             ProofSet set = ProofRun.Prepare(result);
-            return (set, set.Problem == null ? ProofRun.Render(set, intent, simulate) : null);
+            return set.Problem == null ? Render(set, intent, simulate, original) : new Outcome(set, null, null, null, null, null, null);
         }
 
-        /// <summary>Takes a set and its proof: the bitmaps are made here, once per render.</summary>
-        /// <param name="outcome">The core's set and proof; a set with a problem empties the tab and shows it in red.</param>
-        void Show((ProofSet Set, SoftProofResult Proof) outcome)
+        /// <summary>The core's render and the frozen bitmaps of its result, on whichever thread.</summary>
+        /// <param name="set">A set without a problem.</param>
+        /// <param name="intent">The intent to render; one the core refuses throws its reason.</param>
+        /// <param name="simulate">The simulation's state.</param>
+        /// <param name="original">The original's bitmap when already made for this set; null to make it.</param>
+        /// <returns>The outcome, bitmaps included.</returns>
+        static Outcome Render(ProofSet set, ProofIntent intent, bool simulate, BitmapSource original)
         {
-            _set = outcome.Set;
-            _proof = outcome.Proof;
+            SoftProofResult proof = ProofRun.Render(set, intent, simulate);
+            Raster img = proof.Image;
+            int w = img.W, h = img.H;
+            ProofClass[] c = proof.Classes;
+            return new Outcome(set, proof,
+                original ?? RasterBitmaps.Region(set.Reduced, 0, 0, w, h),
+                RasterBitmaps.Region(img, 0, 0, w, h),
+                RasterBitmaps.Overlay(w, h, (x, y) => (c[y * w + x] & ProofClass.Paper) != 0, PaperColour),
+                RasterBitmaps.Overlay(w, h, (x, y) => (c[y * w + x] & ProofClass.Screen) != 0, ScreenColour),
+                RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == ProofClass.Both, BothColour));
+        }
+
+        /// <summary>Takes a set and its proof with their bitmaps; a set with a problem empties the tab and shows it in red.</summary>
+        /// <param name="o">The outcome; a set with a problem carries no proof.</param>
+        void Show(Outcome o)
+        {
+            _set = o.Set;
+            _proof = o.Proof;
             if (_set.Problem != null)
             {
                 _original = _proofImage = _paperLayer = _screenLayer = _bothLayer = null;
@@ -329,22 +390,19 @@ namespace AstroPhotoAnalyzer.Wpf
                 RaiseProof();
                 return;
             }
-            Raster img = _proof.Image;
-            int w = img.W, h = img.H;
-            ProofClass[] c = _proof.Classes;
-            _original ??= RasterBitmaps.Region(_set.Reduced, 0, 0, w, h);
-            _proofImage = RasterBitmaps.Region(img, 0, 0, w, h);
-            _paperLayer = RasterBitmaps.Overlay(w, h, (x, y) => (c[y * w + x] & ProofClass.Paper) != 0, PaperColour);
-            _screenLayer = RasterBitmaps.Overlay(w, h, (x, y) => (c[y * w + x] & ProofClass.Screen) != 0, ScreenColour);
-            _bothLayer = RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == ProofClass.Both, BothColour);
+            _original = o.Original;
+            _proofImage = o.Image;
+            _paperLayer = o.Paper;
+            _screenLayer = o.Screen;
+            _bothLayer = o.Both;
             Message = null; IsProblem = false;
             RaiseProof();
         }
 
-        /// <summary>Raises everything that follows the proof.</summary>
+        /// <summary>Raises everything that follows the set and the proof.</summary>
         void RaiseProof()
         {
-            Raise(nameof(HasProof)); Raise(nameof(Image)); Raise(nameof(Width)); Raise(nameof(Height));
+            Raise(nameof(HasControls)); Raise(nameof(HasProof)); Raise(nameof(Image)); Raise(nameof(Width)); Raise(nameof(Height));
             Raise(nameof(PaperLayer)); Raise(nameof(ScreenLayer)); Raise(nameof(BothLayer));
             Raise(nameof(Caption)); Raise(nameof(ProfileLine)); Raise(nameof(PaperWhiteLine)); Raise(nameof(PaperBlackLine));
             Raise(nameof(PaperGamutLegend)); Raise(nameof(ScreenGamutLegend));
@@ -361,7 +419,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// The full-screen window's keys (R-163): P, G, M and O toggle the four boxes, I moves
-        /// to the next intent; anything else is left alone.
+        /// to the next intent; anything else is left alone. The window passes a key only without
+        /// modifiers.
         /// </summary>
         /// <param name="key">The key pressed.</param>
         /// <returns>Whether the key was one of the five.</returns>

@@ -465,3 +465,7 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   sRGB 248, 247, 245; 1.37 % outside the paper gamut; 0.02 % at most outside the screen gamut).
   The other fourteen cases were re-measured in the same run and did not move: `Analysis/` gained
   a file and `GamutAnalyzer` only shares its trilinear read. The fifteen cases pass.
+- 2026-10-30 (the review of ADR 0066): V-015 re-measured after the black point compensation took
+  the device black as the neutral of its Y (ISO 18619): the Relative mean L\* 19.6841 to 19.6904,
+  the Perceptual screen-gamut share 0.0198 to 0.0214 %, every figure within the tolerance; the
+  recorded values are the new line. The fifteen cases pass.

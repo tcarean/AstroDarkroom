@@ -34,9 +34,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <!-- The controls, shown only with a proof or while one is computed. -->
+    <!-- The controls, shown once the set is prepared: while a render runs and after one the
+         core refused too, so that another intent can be chosen. -->
     <StackPanel Grid.Row="0" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
-      <local:SoftProofControls Visibility="{Binding HasProof, Converter={StaticResource BoolToVis}}" />
+      <local:SoftProofControls Visibility="{Binding HasControls, Converter={StaticResource BoolToVis}}" />
       <TextBlock Text="{Binding Message}" TextWrapping="Wrap" MaxWidth="900" HorizontalAlignment="Left" Margin="0,4,0,8">
         <TextBlock.Style>
           <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">

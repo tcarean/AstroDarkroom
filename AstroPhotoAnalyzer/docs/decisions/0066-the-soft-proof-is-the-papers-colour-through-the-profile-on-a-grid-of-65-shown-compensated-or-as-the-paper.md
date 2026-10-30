@@ -43,7 +43,8 @@ profiles, the Epson P900 baryta profile installed on the owner's machine and the
 1. The proof is computed only in the core (`Analysis/SoftProof.cs`, run by `Runs/ProofRun.cs`
    after the analysis, as the curves are, ADR 0051): source sRGB to XYZ D50; for `Relativ`
    the ICC black point compensation towards the paper (`XYZ' = XYZ x (W - K) / W + K`, K the
-   device black through A2B1, the black ADR 0030 reads, W the D50 white), none for
+   device black through A2B1, the black ADR 0030 reads, taken as the neutral of its Y as ISO
+   18619 and lcms do, W the D50 white), none for
    `Perceptual` and `Relativ, fara compensarea negrului`; the profile's B2A table of the
    intent to device values; A2B1 back, the colour the paper shows relative to its white. That
    colour, in XYZ, is what the grid stores: one table of `ProofGrid` (65) nodes per intent,

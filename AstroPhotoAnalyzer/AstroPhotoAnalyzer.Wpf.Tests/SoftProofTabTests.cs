@@ -199,6 +199,19 @@ public class SoftProofTabTests
         Assert.False(vm.SoftProof.HasProof);
         Assert.Equal(ProofTexts.NoProfile, vm.SoftProof.Message);
 
+        // A control changed while the first computation runs is rendered right after it.
+        var early = new SoftProofTabViewModel();
+        early.Populate(Result(icc));
+        Task first = early.ComputeAsync();
+        Assert.Same(first, early.ProofComputation);
+        early.IsRelative = true;
+        early.SimulatePaper = true;
+        await first;
+        await early.ProofComputation;
+        Assert.True(early.HasProof, early.Message);
+        Assert.Equal(ProofTexts.Caption(ProofRun.Prepare(Result(icc)).Profile, ProofIntent.Relative, true), early.Caption);
+        Assert.False(early.IsBusy);
+
         // A computation abandoned by Clear touches nothing when it ends; the controls keep
         // their state from one image to the next.
         var tab = new SoftProofTabViewModel { SimulatePaper = true, Margin = ProofMarginChoice.Grey };
@@ -269,7 +282,31 @@ public class SoftProofTabTests
                 window.DataContext = null;
             }
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+            tab.Clear();   // the renders the radio buttons started are abandoned, not left to the next test
         });
+
+    [Fact]
+    public async Task R163_TheControlsFollowThePreparedSetNotTheProof()
+    {
+        // Without a usable set there are no controls; with one they stay through a render of
+        // another intent, so an intent the core would refuse can be left for another.
+        var tab = new SoftProofTabViewModel();
+        tab.Populate(Result(null));
+        tab.Compute();
+        Assert.False(tab.HasControls);
+
+        using var ws = new TempWorkspace();
+        var usable = new SoftProofTabViewModel();
+        usable.Populate(Result(Profile(ws)));
+        usable.Compute();
+        Assert.True(usable.HasControls);
+        Assert.True(usable.HasProof);
+        usable.IsRelative = true;
+        await usable.ProofComputation;
+        Assert.True(usable.HasControls);
+        Assert.True(usable.HasProof);
+        Assert.Contains("Relativ", usable.Caption);
+    }
 
     static void Layout(FrameworkElement el)
     {

@@ -33,8 +33,9 @@ the simulation (`PaperWhiteSrgb`, the margin). `ForTests` makes a profile with t
 concurrent dictionary), a `ProofTable`: for every node of an sRGB cube of `ProofGrid` (65) nodes
 per channel, the colour the paper shows, in XYZ relative to the paper's white. The trip of a
 node: sRGB to XYZ D50 (the package); for `Relative` the ICC black point compensation towards the
-paper, `XYZ' = XYZ x (W - K) / W + K`, W the D50 white and K the device black (the package has no
-BPC, so it is written here); the B2A table of the intent (B2A0 for `Perceptual`, B2A1 for the two
+paper, `XYZ' = XYZ x (W - K) / W + K`, W the D50 white and K the device black taken as the
+neutral of its Y, as ISO 18619 and lcms do, so that a slightly coloured black does not tint the
+shadows (the package has no BPC, so it is written here); the B2A table of the intent (B2A0 for `Perceptual`, B2A1 for the two
 relative ones) to device values; A2B1 back to XYZ. The rows of the cube are built in parallel; a
 NaN anywhere (no usable table) makes a table with a `Problem`. `RelativeNoBpc` skips the
 compensation, so every tone darker than the paper's black lands on the device black and prints
@@ -89,13 +90,18 @@ classes (`RasterBitmaps.Overlay`: the paper layer red over the pixels outside th
 those outside both included; the screen layer blue the same way; the both layer magenta over the
 two), the margin brush, the core's sentences. `Populate` keeps the result; `MainViewModel`
 starts `ComputeAsync` beside the curves' computation once every tab is filled (ADR 0051), which
-prepares and renders on a pool thread with "computing" shown meanwhile; a change of intent or
-of the simulation renders again the same way (`RenderAsync`, the cached set, a new table only
-on a new intent); the other controls raise properties. The run number pattern of the Editare
-Curbe tab (`_run`): a result that ends after a `Reset` (another image, a clear, a newer
-computation) touches nothing. `Compute()` is the synchronous body for the tests;
-`ProofComputation` the last task started, for whoever must wait (`MainViewModel.ProofComputation`
-is the one the run started). The controls keep their state from one image to the next and are
+prepares, renders and makes the frozen bitmaps on a pool thread (an `Outcome` record handed
+back; three overlays over 2.7 MP would stall the window if made on its thread) with
+"computing" shown meanwhile; a change of intent or of the simulation renders again the same way
+(`RenderAsync`, the cached set, a new table only on a new intent), and one made while the first
+computation runs is rendered right after it; the other controls raise properties. The run number
+pattern of the Editare Curbe tab (`_run`): a result that ends after a `Reset` (another image, a
+clear, a newer computation) touches nothing. The controls follow `HasControls`, the prepared set,
+not the proof: they stay while a render runs and after one the core refused (a table with a
+`Problem` throws its reason, shown in red with no image, the set kept), so another intent can be
+chosen. `Compute()` is the synchronous body for the tests; `ProofComputation` the last task
+started by either path, for whoever must wait (`MainViewModel.ProofComputation` is the one the
+run started). The controls keep their state from one image to the next and are
 not remembered between runs of the window (ADR 0066).
 
 The margin (`MarginBrush`): `Auto` is the screen's white with the simulation off and the paper's
@@ -115,7 +121,7 @@ background is the margin brush (a `Viewbox` that only shrinks), the sentences un
 state is the tab's): the controls and the caption in a bar at the top, the margin brush filling
 the window behind the image (a `Viewbox` that also enlarges), and the keys in `PreviewKeyDown`:
 Esc closes, P, G, M, O toggle the boxes and I moves to the next intent through
-`SoftProofTabViewModel.HandleKey`, ignored while the focus is in a text box.
+`SoftProofTabViewModel.HandleKey`, ignored while the focus is in a text box or a modifier is held.
 
 ## What was measured
 
