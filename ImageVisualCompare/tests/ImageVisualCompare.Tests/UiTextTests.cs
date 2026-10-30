@@ -183,23 +183,30 @@ ot-here.png"]);
     }
 
     [Fact]
-    public void R101_TheAboutText_InRomanian()
+    public void R101_TheAboutWindow_InRomanian()
     {
         using var romanian = new InRomanian();
 
+        var about = new AboutViewModel();
+
+        Assert.Equal("Despre Image Visual Compare", about.Title);
+        Assert.Equal("Comparație înainte/după a două versiuni ale aceleiași imagini de astrofotografie.", about.Tagline);
+        Assert.Equal((VersionInfo.Banner, VersionInfo.Copyright), (about.Banner, about.Copyright));
+        Assert.Equal("LICENȚĂ", about.LicenceHeading);
         Assert.Equal(
-            string.Join(
-                Environment.NewLine,
-                VersionInfo.Banner,
-                VersionInfo.Copyright,
-                string.Empty,
-                "Acest program vine fără ABSOLUT NICIO GARANȚIE.",
-                "Este software liber și îl poți redistribui în condițiile",
-                "Licenței Publice Generale GNU, versiunea 3 sau ulterioară.",
-                string.Empty,
-                "Textul complet al licenței e în fișierul LICENSE de lângă program și la",
-                "https://www.gnu.org/licenses/gpl-3.0.html"),
-            VersionInfo.About);
+            "Acest program vine fără ABSOLUT NICIO GARANȚIE. Este software liber și îl poți redistribui în condițiile "
+            + "Licenței Publice Generale GNU, versiunea 3 sau ulterioară. Textul complet al licenței e în fișierul LICENSE "
+            + "de lângă program.",
+            about.Warranty);
+        Assert.Equal("Textul complet al GNU General Public License v3", about.LicenceLinkLabel);
+        Assert.Equal("COMPONENTE TERȚE", about.ThirdPartyHeading);
+        Assert.Equal(
+            "Programul leagă componente scrise de alții, fiecare compatibilă cu GPLv3; cititorul FITS, modurile de afișare "
+            + "și fiecare calcul sunt scrise de mână. Textul complet al fiecărei licențe și motivul pentru care e compatibilă "
+            + "sunt în THIRD-PARTY-NOTICES.md, lângă codul sursă.",
+            about.ThirdPartyLead);
+        Assert.Equal("scrierea jurnalului de diagnostic lângă program (folderul log)", Assert.Single(about.Components).Role);
+        Assert.Equal("Închide", about.Close);
     }
 
     [Fact]
@@ -213,7 +220,7 @@ ot-here.png"]);
         Assert.EndsWith("|Toate fișierele (*.*)|*.*", ro.FileFilter);
         Assert.Equal("Fișierele nu pot fi comparate", ro.CannotCompareTitle);
         Assert.Equal("Imaginile au dimensiuni diferite", ro.DifferentSizesTitle);
-        Assert.Equal("Despre Image Visual Compare 1.1.1", ro.AboutTitle("Image Visual Compare 1.1.1"));
+        Assert.Equal("Despre Image Visual Compare", ro.AboutTitle);
         Assert.Equal(("OK", "Da", "Nu"), (ro.Ok, ro.Yes, ro.No));
         Assert.Equal(("Se deschide…", "Se decodează de_printat.png…", "Aproape gata…"), (ro.Opening, ro.Decoding("de_printat.png"), ro.AlmostThere));
         Assert.Equal("pânză 5938 × 3888", ro.PaddedCanvas("5938 × 3888"));

@@ -1,7 +1,7 @@
 # 0024. GPLv3-or-later: the notice on every .cs file, the copyright always on screen, the warranty text in About
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; About as `VersionInfo.About`, a text, in `MessageDialog` superseded by 0045
 
 ## Context
 

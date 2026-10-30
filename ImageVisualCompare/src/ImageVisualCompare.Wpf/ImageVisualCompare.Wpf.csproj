@@ -14,15 +14,35 @@
     <!-- Per-monitor DPI awareness, which Windows reads from the executable's manifest when the
          process starts (R-022, ADR 0034). -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The entry point is Program.Main, which starts the diagnostic log before App, not the
+         Main WPF generates for App.xaml: no test runs it, while the WPF test thread builds an App
+         whose start WPF runs (ADR 0043). -->
+    <StartupObject>ImageVisualCompare.Wpf.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="ImageVisualCompare.Tests" />
   </ItemGroup>
 
+  <!-- The same icon as a WPF resource, so the About window can decode its 256-pixel frame for
+       its logo (ADR 0045); the executable's own icon is ApplicationIcon's. -->
+  <ItemGroup>
+    <Resource Include="Assets\ImageVisualCompare.ico" />
+  </ItemGroup>
+
+  <!-- The diagnostic log (R-120 to R-123, ADR 0043), configured in code by Logging/LogSetup.cs;
+       the versions are in Directory.Packages.props. -->
+  <ItemGroup>
+    <PackageReference Include="NLog" />
+    <PackageReference Include="NLog.Targets.AtomicFile" />
+  </ItemGroup>
+
   <!-- About says the full licence is in the LICENSE file next to this program (GPLv3 5(d)), so
        the root LICENSE is linked here, not copied, and lands beside the executable in the
-       build output and, through it, in the publish folder (ADR 0027). -->
+       build output and, through it, in the publish folder (ADR 0027). The notices of the
+       components written by others do not: About lists the components itself (ThirdParty.cs),
+       and their licences' text stays beside the source, since the suite's release puts every
+       tool in one folder (R-075, ADR 0043). -->
   <ItemGroup>
     <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

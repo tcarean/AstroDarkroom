@@ -92,9 +92,23 @@
   - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout.
   - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
     `Confirm` to ask yes or no.
+  - `AboutWindow.xaml(.cs)` and `AboutViewModel.cs` — the About window, FlatCheck's in this
+    tool's colours: the icon, the name, the version and the copyright, the licence card, the card
+    of the components written by others, `Close`. See `shell.md`, ADR 0045.
   - `App.xaml.cs` — the interface language, set from `--lang` before the first window; the
     command line pair, handed over once via `TakeStartupSelection`, and a `--lang` not
     understood, via `TakeUnknownLanguage`.
+  - `Program.cs` — the entry point, the csproj's `StartupObject`: starts the diagnostic log,
+    runs the `App` as WPF's generated `Main` would, ends the log with the exit code. See
+    `logging.md`, ADR 0043.
+  - `Logging/LogSetup.cs` — the log's configuration: the folder and its fallback, the file
+    names, the rolling, the level, the line, the first and last lines, the crash hooks.
+    `Logging/LogText.cs` — how a value is written in the log, invariant. `Logging/RunClock.cs`
+    — a load's start and done lines with the time of each stage. `Logging/Loggers.cs` — the
+    loggers' names. See `logging.md`.
+  - `Version.cs` and `ThirdParty.cs` — what the status bar and About say: the version and the
+    copyright, read from the assembly, the licence's page, and the components written by others,
+    which the About window lists (R-075). See `versioning-and-licence.md`.
   - `Theme.xaml` — the dark palette and every control style.
   - `Assets/ImageVisualCompare.ico` and `Assets/make-icon.ps1` — the application's icon and the
     script that draws it; the csproj's `ApplicationIcon` embeds the file. See `shell.md`.
@@ -103,4 +117,8 @@
     embeds it. See `rendering.md`, ADR 0034.
 - `tests/ImageVisualCompare.Tests/` — `net8.0-windows` with `UseWPF`, because the imaging
   tests drive the real WIC codecs. References both other projects. `WpfThread` runs the tests
-  of a window or a control on one STA thread (ADR 0032).
+  of a window or a control on one STA thread (ADR 0032). `LogCapture` configures the log of the
+  whole test run, at `Trace`, and lets a test read the lines of its own call tree (ADR 0043).
+- `THIRD-PARTY-NOTICES.md` — the components written by others that the application ships,
+  NLog's two packages, with their licence's whole text and why it is compatible with GPLv3; it
+  stays beside the source, and About lists the components from `ThirdParty.cs` (R-075).

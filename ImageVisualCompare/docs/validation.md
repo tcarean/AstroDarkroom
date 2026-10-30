@@ -169,3 +169,10 @@ files above. They are kept here as they were written, as the history of the figu
   MB (no longer the first FITS load); V-004 in 2.08 s, +177.3 and 0.2 MB. The linear decode
   now goes through a 16-bit row and `DisplayRenderer`; on `result_3813s.fit` alone it took
   0.52 to 0.54 s against 0.56 to 0.59 s for `main`'s code the same day (ADR 0040).
+- 2026-10-30: after the diagnostic log (ADR 0043), all six cases ran again in the task's
+  worktree and passed against the figures above, left as they are, in the order V-005, V-003,
+  V-002, V-001, V-006, V-004, the log writing every line of each load into the tests' capture
+  at `Trace`: V-005 decoded in 2.55 s, +203 MB and 25.2 MB after the release, the first FITS
+  load of the process; V-003 in 1.06 s, +177.7 and 0 MB; V-002 in 1.81 s, +171.6 and 0.6 MB;
+  V-001 in 2.73 s, +178.3 and -0.3 MB; V-006 in 2.37 s, +178.4 and 1.1 MB; V-004 in 1.99 s,
+  +177.4 and 0.4 MB.

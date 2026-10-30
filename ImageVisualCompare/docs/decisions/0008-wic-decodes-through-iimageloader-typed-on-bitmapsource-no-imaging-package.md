@@ -1,7 +1,7 @@
 # 0008. WIC decodes through IImageLoader, one seam typed on BitmapSource in the Wpf assembly; no imaging NuGet package
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the application referencing no NuGet package superseded by 0043
 
 ## Context
 

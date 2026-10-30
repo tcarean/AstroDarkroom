@@ -29,7 +29,10 @@ are in `kit.json`, not here.
 - At step 2: numeric code is `src/ImageVisualCompare.Core/` and
   `src/ImageVisualCompare.Wpf/Imaging/` (a memory figure that moved is a finding).
 - At step 9: a change under `src/ImageVisualCompare.Wpf/` also launches the application once,
-  on the real pair, before the commit (the rule "Run the application").
+  on the real pair, before the commit (the rule "Run the application"), and reads the run's log
+  beside the executable: the first line, the `load done` line with its stages, `exit 0`, and no
+  `ERROR` the run did not mean to cause (ADR 0043). Launch it only when the owner is not using
+  the PC; a test run that uses the WPF test thread also shows a window of its own (ADR 0043).
 
 ## /validate
 
@@ -48,7 +51,9 @@ are in `kit.json`, not here.
 ## /release
 
 - At step 5: the application is published self-contained for win-x64 into `artifacts/X.Y.Z/`
-  itself; the tag is `imagevisualcompare-vX.Y.Z`.
+  itself; the tag is `imagevisualcompare-vX.Y.Z`. `LICENSE` is beside the executable there
+  (R-074), no notices file is (R-075), and no `log` folder is, since the publish never runs the
+  program.
 - At step 7: the README's "Building" section names the build and test commands; `artifacts/`
   is what a release produces.
 

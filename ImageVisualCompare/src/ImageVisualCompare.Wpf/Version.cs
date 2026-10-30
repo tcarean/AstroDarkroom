@@ -24,20 +24,25 @@
 // It is bumped BY HAND, per feature or fix.
 
 using System.Reflection;
-using ImageVisualCompare.Core;
 
 namespace ImageVisualCompare.Wpf;
 
 /// <summary>
-/// The program's version and copyright, read once from the assembly, and the texts the status
-/// bar and the About dialog build from them.
+/// The program's name, version, copyright and licence page, the version and the copyright read
+/// once from the assembly: what the status bar and the About window show.
 /// </summary>
 internal static class VersionInfo
 {
     internal static string Value { get; } = Read();
 
+    /// <summary>The program's name, the same in every language, as About shows it over the banner.</summary>
+    internal static string Name => "Image Visual Compare";
+
     /// <summary>The name and the version, as they appear in the status bar and in About.</summary>
-    internal static string Banner => "Image Visual Compare " + Value;
+    internal static string Banner => Name + " " + Value;
+
+    /// <summary>The GNU page of the GPLv3's text, which About links (GPLv3 section 5(d)).</summary>
+    internal static string LicenceUrl => "https://www.gnu.org/licenses/gpl-3.0.html";
 
     /// <summary>
     /// The copyright notice. The program is GPLv3 (see LICENSE), and the licence wants every
@@ -45,22 +50,6 @@ internal static class VersionInfo
     /// version, it comes from Directory.Build.props (&lt;Copyright&gt;) - do not hardcode it here.
     /// </summary>
     internal static string Copyright { get; } = ReadCopyright();
-
-    /// <summary>
-    /// The text of the About dialog.
-    ///
-    /// GPLv3 section 5(d): a program with an interactive interface must also show the absence
-    /// of warranty, not just the copyright. It does not fit in the status bar, so it lives
-    /// here, one click away, and points on to the full text. It is a property, and not content
-    /// crammed into the button's handler, so that tests can check it without opening a window;
-    /// it is worded each time it is read, in the interface's language (<see cref="UiText.AboutNotice"/>).
-    /// </summary>
-    internal static string About => string.Join(
-        Environment.NewLine,
-        Banner,
-        Copyright,
-        string.Empty,
-        UiText.Current.AboutNotice);
 
     /// <summary>Reads the copyright notice that MSBuild wrote into the assembly.</summary>
     /// <returns>

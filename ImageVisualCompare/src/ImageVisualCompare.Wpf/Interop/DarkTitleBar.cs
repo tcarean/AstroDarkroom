@@ -18,6 +18,8 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using ImageVisualCompare.Wpf.Logging;
+using NLog;
 
 namespace ImageVisualCompare.Wpf.Interop;
 
@@ -53,6 +55,9 @@ internal static class DarkTitleBar
     private const int FirstBuildUsingAttribute20 = 19041;
 
     private const int FirstWindows11Build = 22000;
+
+    /// <summary>The dark caption asked of the desktop window manager, in the diagnostic log (R-121).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Chrome);
 
     /// <summary>
     /// Applies the dark caption as soon as the window has a handle, which is before it is
@@ -93,29 +98,38 @@ internal static class DarkTitleBar
 
         if (handle == IntPtr.Zero || build < FirstDarkModeBuild)
         {
+            Log.Debug("dark caption: none, " + (handle == IntPtr.Zero ? "the window has no handle" : "build " + LogText.Int(build) + " has no dark caption"));
             return;
         }
 
         int enabled = 1;
-        Set(handle, build >= FirstBuildUsingAttribute20 ? UseImmersiveDarkMode : UseImmersiveDarkModeBefore20H1, ref enabled);
+        int attribute = build >= FirstBuildUsingAttribute20 ? UseImmersiveDarkMode : UseImmersiveDarkModeBefore20H1;
+        int dark = Set(handle, attribute, ref enabled);
 
         // Windows 11 lets the caption be an exact colour, so it can match the toolbar below it
         // rather than being the generic Windows dark. Windows 10 has no such attribute and
         // gets the generic one, so the colour is set only from build 22000. No result of
-        // DwmSetWindowAttribute is checked, here or for the dark mode above.
+        // DwmSetWindowAttribute is acted on, here or for the dark mode above: they are logged,
+        // for a report of a white caption (R-121).
+        string colours = "not on this build";
         if (build >= FirstWindows11Build)
         {
             int colour = ChromeColorRef;
-            Set(handle, CaptionColor, ref colour);
-            Set(handle, BorderColor, ref colour);
+            int caption = Set(handle, CaptionColor, ref colour);
+            int border = Set(handle, BorderColor, ref colour);
+            colours = LogText.Hex(caption) + " and " + LogText.Hex(border);
         }
+
+        Log.Debug("dark caption on build " + LogText.Int(build) + ": attribute " + LogText.Int(attribute) + " -> "
+            + LogText.Hex(dark) + ", caption and border colours -> " + colours);
     }
 
-    /// <summary>Sets one DWM attribute of a window to a 32-bit value, unchecked.</summary>
+    /// <summary>Sets one DWM attribute of a window to a 32-bit value.</summary>
     /// <param name="handle">The window whose attribute is set.</param>
     /// <param name="attribute">The attribute's number (DWMWINDOWATTRIBUTE).</param>
     /// <param name="value">The value: 1 to turn a flag on, or a COLORREF.</param>
-    private static void Set(IntPtr handle, int attribute, ref int value) =>
+    /// <returns>The call's HRESULT, 0 on success; only logged.</returns>
+    private static int Set(IntPtr handle, int attribute, ref int value) =>
         DwmSetWindowAttribute(handle, attribute, ref value, sizeof(int));
 
     /// <summary>The desktop window manager's call that sets one attribute of a window.</summary>

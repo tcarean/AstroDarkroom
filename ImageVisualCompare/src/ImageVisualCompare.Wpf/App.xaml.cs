@@ -18,17 +18,23 @@
 using System.IO;
 using System.Windows;
 using ImageVisualCompare.Core;
+using ImageVisualCompare.Wpf.Logging;
 using ImageVisualCompare.Wpf.Services;
+using NLog;
 
 namespace ImageVisualCompare.Wpf;
 
 /// <summary>
 /// The application. It chooses the interface language from the command line before the first
 /// window, and keeps a pair named there, and a <c>--lang</c> it did not understand, for the main
-/// window, which opens the pair in place of the dialogs and reports the language.
+/// window, which opens the pair in place of the dialogs and reports the language. The process
+/// starts in <see cref="Program"/>, which starts the diagnostic log before this.
 /// </summary>
 public partial class App : Application
 {
+    /// <summary>The start's choices in the diagnostic log (R-121).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.App);
+
     /// <summary>
     /// A pair named on the command line, so the tool can be launched straight from a folder
     /// without walking through both dialogs. Null unless two existing files were given.
@@ -84,8 +90,8 @@ public partial class App : Application
     /// Sets the interface language from <c>--lang</c> (R-100), keeps a value it did not
     /// understand for the main window to report (R-102), and keeps the first two of the other
     /// arguments as the pair to open when both are existing files; anything else leaves the
-    /// choice to the dialogs. Separate from <see cref="OnStartup"/> so a test can run it
-    /// without an application.
+    /// choice to the dialogs. Each of the three is a line of the diagnostic log (R-121).
+    /// Separate from <see cref="OnStartup"/> so a test can run it without an application.
     /// </summary>
     /// <param name="args">The command line's arguments, as the process received them.</param>
     internal static void ApplyCommandLine(IReadOnlyList<string> args)
@@ -94,12 +100,31 @@ public partial class App : Application
         UiText.Current = UiText.For(arguments.Language);
         _unknownLanguage = arguments.UnknownLanguage;
 
+        Log.Info("language=" + (arguments.Language == UiLanguage.Romanian ? "ro" : "en"));
+        if (arguments.UnknownLanguage is { } unknown)
+        {
+            Log.Warn((unknown.Length == 0 ? "--lang was given without a language" : "--lang " + LogText.Quoted(unknown) + " names no language this program has")
+                + ": the interface is English, and the window says so");
+        }
+
         // Anything less than two existing files falls through to the dialogs rather than
         // failing: a mistyped path is not worth refusing to start over.
         IReadOnlyList<string> paths = arguments.Paths;
         if (paths.Count >= 2 && File.Exists(paths[0]) && File.Exists(paths[1]))
         {
             _startupSelection = new ImagePairSelection(paths[0], paths[1]);
+            Log.Info("the command line names the pair A=" + paths[0] + " B=" + paths[1]
+                + (paths.Count > 2 ? "; " + LogText.Int(paths.Count - 2) + " more argument(s) ignored" : string.Empty));
+        }
+        else if (paths.Count > 0)
+        {
+            Log.Info("the command line names no pair of existing files ("
+                + string.Join(", ", paths.Select(p => LogText.Quoted(p) + (File.Exists(p) ? string.Empty : " missing")))
+                + "): the dialogs ask");
+        }
+        else
+        {
+            Log.Info("the command line names no pair: the dialogs ask");
         }
     }
 }

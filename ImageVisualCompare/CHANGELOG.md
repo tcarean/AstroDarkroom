@@ -8,14 +8,26 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A diagnostic log, for the day a problem is reported: `log\ImageVisualCompare.Wpf.log` beside
+  the program (or `%LOCALAPPDATA%\ImageVisualCompare\log` when that folder cannot be written),
+  in plain text, 1 MiB a file and the five most recent files kept, two windows writing into the
+  same file. It holds the start's facts, every pair opened and how, what each file turned out
+  to be and what its decoder made of it, the time each step of a load took, the padding
+  question, the mode switches, the zoom, the memory, and every error with its technical details
+  beside the message shown, in English whatever the interface's language. The environment
+  variable `IMAGEVISUALCOMPARE_LOG` sets how much, from `off` to `trace`, which adds every FITS
+  header card, a refused file's too. Written with NLog, the first package the program references,
+  which the `About` window names with its licence, its copyright line and its address, the
+  licence's whole text in `THIRD-PARTY-NOTICES.md` beside the source (R-120 to R-123, R-075, ADR
+  0043).
 - Two display modes for a pair of FITS or float TIFF files, the files shown as stored:
   `Histogram` equalises each channel on its own histogram as Siril 1.4.4's "Histogram" display
   does, and `False colours` shows one layer, the mean of the planes, through Siril's rainbow
   colour map. The toolbar buttons `Histogram` and `False colours`, or the keys `H` and `F`,
-  switch; the pair is decoded again in the new mode with the zoom, the pan and the divider
-  kept, the status bar names the mode, and in false colours the readout shows the level a
-  colour stands for. A pair with a PNG or an integer TIFF stays linear and the buttons are
-  disabled (R-110 to R-114, ADR 0040).
+  switch, a key held down switching once; the pair is decoded again in the new mode with the
+  zoom, the pan and the divider kept, the status bar names the mode, and in false colours the
+  readout shows the level a colour stands for. A pair with a PNG or an integer TIFF stays linear
+  and the buttons are disabled (R-110 to R-114, ADR 0040, ADR 0044).
 
 - The interface is in English or in Romanian, chosen on the command line with `--lang=ro` (or
   `--lang ro`); without it the interface is English, and a language it does not have is said in
@@ -33,6 +45,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- `About` opens a window laid out as the About windows of the suite's other tools, in this
+  tool's colours: the icon, the name, the version and the copyright, a card with the licence
+  notice and a link to the GPL's text, a card with the components written by others, NLog with
+  its licence, copyright line and link, and `Close`, which Enter and Esc press too. It was a
+  message of plain text (R-072, R-075, ADR 0045).
 - The projects target .NET 8 instead of .NET 9, so the Astro Darkroom suite ships one runtime
   (ADR 0037).
 
@@ -49,7 +66,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 ### Fixed
 
 - `LICENSE` now sits next to the program, in the build folder and in the publish folder, where
-  the About dialog says the full licence text is (R-074, ADR 0027).
+  the About window says the full licence text is (R-074, ADR 0027).
 - A file WIC fails with an error of its own, an image too large to decode or a damaged WebP,
   HEIC or AVIF, gives the usual message instead of closing the application (R-005, ADR 0031).
 - `Ctrl+O` and `Open…` do nothing while a pair is being opened; a second open could start on

@@ -117,24 +117,47 @@ public sealed class UiText
         "FITS (*.fit;*.fits;*.fts)|*.fit;*.fits;*.fts|" +
         Pick("All files", "Toate fișierele") + " (*.*)|*.*";
 
-    // The About text after the banner and the copyright (R-072, GPLv3 section 5(d)). The licence
-    // itself stays the English LICENSE file; only the notice pointing to it is translated.
-    public string AboutNotice => string.Join(
-        Environment.NewLine,
-        Pick(
-            "This program comes with ABSOLUTELY NO WARRANTY.",
-            "Acest program vine fără ABSOLUT NICIO GARANȚIE."),
-        Pick(
-            "This is free software, and you are welcome to redistribute it under the terms",
-            "Este software liber și îl poți redistribui în condițiile"),
-        Pick(
-            "of the GNU General Public License, version 3 or later.",
-            "Licenței Publice Generale GNU, versiunea 3 sau ulterioară."),
-        string.Empty,
-        Pick(
-            "The full licence text is in the LICENSE file next to this program, and at",
-            "Textul complet al licenței e în fișierul LICENSE de lângă program și la"),
-        "https://www.gnu.org/licenses/gpl-3.0.html");
+    // The About window's words (R-072, R-075, ADR 0045): its title, the tagline under the name,
+    // the two cards' headings, the notice of GPLv3 section 5(d) as one paragraph, the link to the
+    // licence's text, the paragraph over the components and Close. The licence itself stays the
+    // English LICENSE file; the components' names, licences, copyright lines and addresses stay as
+    // their authors wrote them, in the application's list, and only their roles are worded here.
+    public string AboutTitle => Pick("About Image Visual Compare", "Despre Image Visual Compare");
+
+    public string AboutTagline => Pick(
+        "Before/after comparison of two versions of the same astrophotography image.",
+        "Comparație înainte/după a două versiuni ale aceleiași imagini de astrofotografie.");
+
+    public string AboutLicenceHeading => Pick("LICENCE", "LICENȚĂ");
+
+    public string AboutWarranty => Pick(
+        "This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it "
+        + "under the terms of the GNU General Public License, version 3 or later. The full licence text is in the LICENSE "
+        + "file next to this program.",
+        "Acest program vine fără ABSOLUT NICIO GARANȚIE. Este software liber și îl poți redistribui în condițiile "
+        + "Licenței Publice Generale GNU, versiunea 3 sau ulterioară. Textul complet al licenței e în fișierul LICENSE "
+        + "de lângă program.");
+
+    public string AboutLicenceLink => Pick(
+        "The full text of the GNU General Public License v3",
+        "Textul complet al GNU General Public License v3");
+
+    public string AboutThirdPartyHeading => Pick("THIRD-PARTY COMPONENTS", "COMPONENTE TERȚE");
+
+    public string AboutThirdParty => Pick(
+        "The program links components written by others, each compatible with GPLv3; the FITS reader, the display modes "
+        + "and every computation are written by hand. Each licence's full text, and why it is compatible, are in "
+        + "THIRD-PARTY-NOTICES.md, beside the source code.",
+        "Programul leagă componente scrise de alții, fiecare compatibilă cu GPLv3; cititorul FITS, modurile de afișare "
+        + "și fiecare calcul sunt scrise de mână. Textul complet al fiecărei licențe și motivul pentru care e compatibilă "
+        + "sunt în THIRD-PARTY-NOTICES.md, lângă codul sursă.");
+
+    // The role, in that card, of the component that writes the diagnostic log (R-075).
+    public string DiagnosticLogRole => Pick(
+        "writing the diagnostic log beside the program (the log folder)",
+        "scrierea jurnalului de diagnostic lângă program (folderul log)");
+
+    public string Close => Pick("Close", "Închide");
 
     // The FITS reader's refusals (R-019). Keywords and values stay as the file has them.
     public string FitsNoImage => Pick(
@@ -180,11 +203,6 @@ public sealed class UiText
             string.Empty,
             "Use --lang=en for English or --lang=ro for Romanian.");
     }
-
-    /// <summary>Words the About dialog's title (R-063).</summary>
-    /// <param name="banner">The program's name and version.</param>
-    /// <returns>The title, such as "About Image Visual Compare 1.1.1".</returns>
-    public string AboutTitle(string banner) => Pick($"About {banner}", $"Despre {banner}");
 
     /// <summary>Words the overlay's line while one image decodes (R-006).</summary>
     /// <param name="fileName">The file being decoded, without its folder.</param>

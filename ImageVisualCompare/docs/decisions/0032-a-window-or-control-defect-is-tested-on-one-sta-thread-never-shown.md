@@ -38,6 +38,14 @@ with no test that fails first.
 
 ## Alternatives rejected
 
+(Corrected 2026-10-30: the Decision's "`Run` is never called, so `StartupUri` opens nothing" does
+not hold. WPF's `Application` constructor queues the application's start, which runs as soon as
+the thread's dispatcher pumps: `App.OnStartup` runs with the test host's arguments, and
+`StartupUri` opens a real `MainWindow`, shown and maximised, whose `Loaded` starts an open with
+the real file dialogs, for as long as the test host lives; measured with
+`Application.Current.Windows` on 2026-10-30, ADR 0043. The windows the tests themselves create
+are still never shown. What to do about the one the start opens is the owner's to decide.)
+
 - **No unit tests in the WPF layer, as ADR 0026 had it.** The open flow would move out of
   `MainWindow` into a class of its own to be tested with fakes, a larger change than the missing
   flag; and the minimap's border would be fixed in XAML, seen at the launch, with no test.

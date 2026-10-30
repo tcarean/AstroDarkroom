@@ -16,6 +16,14 @@ keeps the pair as before (R-002), and keeps a value it did not understand for th
 `MainWindow`'s `Loaded` handler takes that value (`App.TakeUnknownLanguage`) and shows the
 message of R-102 before it opens the pair or asks for one; the message and its title are static
 members of `UiText`, English only, because the interface they announce is English.
+`ApplyCommandLine` also writes the language, a value it refused and the pair or its absence in
+the diagnostic log (`logging.md`, ADR 0043).
+
+The log is not translated: its words are English whatever `--lang` says, composed through
+`LogText` and never through `UiText`, which `NoLogLineGoesThroughTheInterfaceTexts` checks on
+every log call. The one text of the interface in it is a message the user was shown, logged as
+shown; `LanguageLoggingTests` runs the same loads in English and in Romanian and finds the same
+messages.
 
 ## How a text reaches the screen
 
@@ -35,7 +43,8 @@ Every place that writes a text reads `UiText.Current` when it writes it, not bef
   wording or the general one, chosen by `fits`), `MemorySnapshot.Describe`.
 - The shell: `MainWindow`'s constructor assigns the toolbar's words and the hint, which the XAML
   no longer carries; its titles, overlay lines and the padded canvas; `MessageDialog`'s buttons;
-  `FileDialogService`'s titles and filter; `VersionInfo.About`, a computed property for that
+  `FileDialogService`'s titles and filter; `AboutViewModel`, which reads the About window's
+  words when the window is built, and `ThirdParty.Components`, a computed property for that
   reason.
 
 The Romanian keeps the words the user documentation used while it was in Romanian (ADR 0041):
@@ -43,9 +52,13 @@ the divider is "linia", the canvas "pânza", the user "tu". The format puts the 
 and the depth after "pe", as that README wrote "PNG pe 16 biți"; `Bits` adds the "de" Romanian
 puts after a number whose last two digits are 0 or 20 to 99 ("32 de biți"). Left as they are in
 both: numbers, file names, `A` and `B`, `100%`, `×`, `—`, FITS keywords, `vs`, the name
-`Image Visual Compare`, and the licence itself, which stays the English `LICENSE` file; the
-About notice that points to it is translated. The messages of Windows and .NET (a codec's
-failure, a missing file) come in their own language.
+`Image Visual Compare`, the GPL's own name in the About window's link (`GNU General Public
+License v3`, as the suite's other About windows keep it), the names, licences, copyright lines
+and addresses of the components
+written by others, which `ThirdParty.cs` holds as their authors wrote them (the paragraph over
+them and their roles are `UiText`'s), and the licence itself, which stays the English `LICENSE`
+file; the About window's notice that points to it is translated. The messages of Windows and .NET
+(a codec's failure, a missing file) come in their own language.
 
 A new text is a new member of `UiText` in both languages, never a literal where it is shown.
 

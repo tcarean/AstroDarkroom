@@ -17,6 +17,8 @@
 
 using System.IO;
 using ImageVisualCompare.Core;
+using ImageVisualCompare.Wpf.Logging;
+using NLog;
 
 namespace ImageVisualCompare.Wpf.Imaging;
 
@@ -91,6 +93,9 @@ public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error, bool Wa
 /// <param name="loader">The decoder each file goes through.</param>
 public sealed class ImagePairLoader(IImageLoader loader)
 {
+    /// <summary>The load's lines in the diagnostic log (R-121).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Load);
+
     /// <summary>
     /// Loads a pair: both headers first, then, if their sizes differ, the question whether to
     /// pad, and only then the two decodes, one after the other.
@@ -135,6 +140,10 @@ public sealed class ImagePairLoader(IImageLoader loader)
     {
         string currentPath = beforePath;
 
+        // The load's start and done lines, with the time of each stage between them; a load that
+        // throws past the catches below leaves its stages too (R-121).
+        using RunClock clock = RunClock.Start(Log, "load", "A=" + beforePath + " B=" + afterPath + " mode=" + mode);
+
         try
         {
             // Both headers first. A pair that turns out to need a decision is then put to the
@@ -142,25 +151,40 @@ public sealed class ImagePairLoader(IImageLoader loader)
             // ~170 MB on pixels that may be about to be thrown away.
             ImageInfo beforeInfo = await Task.Run(() => loader.Probe(beforePath), cancellationToken)
                 .ConfigureAwait(false);
+            clock.Lap("probe A");
+            LogProbe("A", beforeInfo);
 
             currentPath = afterPath;
             ImageInfo afterInfo = await Task.Run(() => loader.Probe(afterPath), cancellationToken)
                 .ConfigureAwait(false);
+            clock.Lap("probe B");
+            LogProbe("B", afterInfo);
 
             PadPlan pad = ImagePairValidator.Inspect(beforeInfo, afterInfo);
 
             if (pad.RequiresPadding)
             {
+                string sizes = "the sizes differ: A " + LogText.Size(beforeInfo.PixelWidth, beforeInfo.PixelHeight)
+                    + ", B " + LogText.Size(afterInfo.PixelWidth, afterInfo.PixelHeight)
+                    + ", canvas " + LogText.Size(pad.Width, pad.Height);
                 if (confirmPadding is null)
                 {
+                    Log.Info(sizes + "; no one to ask, so the pair is refused");
+                    clock.Done("refused: the sizes differ");
                     return ImagePairLoadResult.Failure(
                         ImagePairValidator.DescribeMismatch(beforeInfo, afterInfo, pad));
                 }
 
-                if (!await confirmPadding(new PadRequest(beforeInfo, afterInfo, pad)).ConfigureAwait(false))
+                Log.Info(sizes + "; asking whether to pad");
+                bool padded = await confirmPadding(new PadRequest(beforeInfo, afterInfo, pad)).ConfigureAwait(false);
+                clock.Lap("question");
+                if (!padded)
                 {
+                    clock.Done("declined: the padding was answered no");
                     return ImagePairLoadResult.Declined;
                 }
+
+                Log.Info("the padding was answered yes");
             }
 
             // Sequentially, not in parallel: one decoder at a time, and the progress report names
@@ -173,30 +197,58 @@ public sealed class ImagePairLoader(IImageLoader loader)
             // own mode true to what is on screen.
             if (!beforeInfo.ShownAsStored || !afterInfo.ShownAsStored)
             {
+                if (mode != DisplayMode.Linear)
+                {
+                    Log.Debug("mode " + mode + " asked, Linear used: not both files are shown as stored");
+                }
+
                 mode = DisplayMode.Linear;
             }
 
             currentPath = beforePath;
             progress?.Report(new ImageLoadProgress(0, beforeInfo.FileName));
             LoadedImage before = await loader.LoadAsync(beforePath, mode, cancellationToken).ConfigureAwait(false);
+            clock.Lap("decode A");
+            Log.Info("decoded A: " + LogText.Decoded(before.Info, before.Mode));
 
             currentPath = afterPath;
             progress?.Report(new ImageLoadProgress(0.5, afterInfo.FileName));
             LoadedImage after = await loader.LoadAsync(afterPath, mode, cancellationToken).ConfigureAwait(false);
+            clock.Lap("decode B");
+            Log.Info("decoded B: " + LogText.Decoded(after.Info, after.Mode));
 
             progress?.Report(new ImageLoadProgress(1, null));
-            return ImagePairLoadResult.Success(new ImagePair(before, after, pad));
+            var pair = new ImagePair(before, after, pad);
+            clock.Done("mode=" + pair.Mode + " padded=" + LogText.Yes(pad.RequiresPadding)
+                + " canvas=" + LogText.Size(pair.PixelWidth, pair.PixelHeight) + " buffers=" + LogText.MiB(pair.DisplayBytes));
+            return ImagePairLoadResult.Success(pair);
         }
         catch (OperationCanceledException)
         {
+            // Asked for by the caller, so a line without a stack (R-121).
+            clock.Done("cancelled during " + currentPath);
             throw;
         }
         catch (Exception ex) when (IsExpectedLoadFailure(ex))
         {
-            return ImagePairLoadResult.Failure(
-                $"{UiText.Current.CouldNotRead(Path.GetFileName(currentPath))}{Environment.NewLine}{ex.Message}");
+            string message = $"{UiText.Current.CouldNotRead(Path.GetFileName(currentPath))}{Environment.NewLine}{ex.Message}";
+
+            // The exception with its type, its stack and its inner exception (a codec's own, ADR
+            // 0031), which the message leaves out, beside the message as the user reads it.
+            Log.Error(ex, "could not read " + currentPath + "; the user is told: " + LogText.OneLine(message));
+            clock.Done("failed on " + currentPath);
+            return ImagePairLoadResult.Failure(message);
         }
     }
+
+    /// <summary>
+    /// Writes what a probe found a file to be: its path and size, then the log's own words for
+    /// what <see cref="ImageInfo"/> holds.
+    /// </summary>
+    /// <param name="which">The image: <c>A</c> or <c>B</c>.</param>
+    /// <param name="info">What the probe found.</param>
+    private static void LogProbe(string which, ImageInfo info) =>
+        Log.Info("probed " + which + ": " + info.Path + " (" + LogText.FileMiB(info.Path) + ") " + LogText.Image(info));
 
     /// <summary>
     /// Tells a failure of the file from a defect of the program. A file the user picked can be

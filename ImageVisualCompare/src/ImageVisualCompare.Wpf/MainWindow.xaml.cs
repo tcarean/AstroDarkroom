@@ -19,12 +19,15 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ImageVisualCompare.Core;
 using ImageVisualCompare.Wpf.Imaging;
 using ImageVisualCompare.Wpf.Interop;
+using ImageVisualCompare.Wpf.Logging;
 using ImageVisualCompare.Wpf.Services;
+using NLog;
 
 namespace ImageVisualCompare.Wpf;
 
@@ -34,6 +37,9 @@ namespace ImageVisualCompare.Wpf;
 /// </summary>
 public partial class MainWindow : Window
 {
+    /// <summary>The user's actions and the window's answers, in the diagnostic log (R-121).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private readonly IFileDialogService _dialogs;
     private readonly ImagePairLoader _loader;
     private readonly DispatcherTimer _memoryTimer = new() { Interval = TimeSpan.FromSeconds(2) };
@@ -67,6 +73,11 @@ public partial class MainWindow : Window
 
         DarkTitleBar.Apply(this);
 
+        // How WPF draws, for a report of slowness: tier 0 is software rendering, as under Remote
+        // Desktop; WPF gives the tier in the high word (R-121).
+        Log.Debug("render tier " + LogText.Int(RenderCapability.Tier >> 16) + " of 2, process render mode "
+            + RenderOptions.ProcessRenderMode);
+
         // The words are the table's, in the language chosen at start-up (ADR 0038); the XAML
         // holds none of its own. The symbols, "−", "+" and "100%", are the same in both.
         UiText text = UiText.Current;
@@ -87,9 +98,12 @@ public partial class MainWindow : Window
         ActualSizeButton.Click += (_, _) => Compare.ZoomToActualSize();
         HistogramButton.Click += async (_, _) => await ToggleModeAsync(DisplayMode.Histogram);
         FalseColoursButton.Click += async (_, _) => await ToggleModeAsync(DisplayMode.FalseColours);
-        OpenButton.Click += async (_, _) => await OpenPairAsync();
+        OpenButton.Click += async (_, _) => await OpenPairAsync("the Open button");
         AboutButton.Click += (_, _) =>
-            MessageDialog.Show(this, UiText.Current.AboutTitle(VersionInfo.Banner), VersionInfo.About);
+        {
+            Log.Info("About opened");
+            new AboutWindow { Owner = this }.ShowDialog();
+        };
 
         // Every button is focusable, so a click leaves the keyboard focus on it and the
         // surface's shortcuts would go nowhere until the image is clicked again. One handler on
@@ -108,7 +122,7 @@ public partial class MainWindow : Window
         Loaded += async (_, _) =>
         {
             ReportUnknownLanguage();
-            await OpenPairAsync();
+            await OpenPairAsync("the start");
         };
         PreviewKeyDown += OnPreviewKeyDown;
     }
@@ -128,8 +142,9 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Opens another pair on Ctrl+O, and switches the display mode on H and F (R-114), wherever
-    /// the focus is; while a pair is being opened or switched they do nothing
-    /// (<see cref="OpenPairAsync"/>, <see cref="ToggleModeAsync"/>).
+    /// the focus is; a held H or F switches once (<see cref="OnModeKeyAsync"/>), and while a pair
+    /// is being opened or switched the three do nothing (<see cref="OpenPairAsync"/>,
+    /// <see cref="ToggleModeAsync"/>).
     /// </summary>
     /// <param name="sender">The window itself; not read.</param>
     /// <param name="e">The key; marked handled when it is one of the three.</param>
@@ -138,14 +153,32 @@ public partial class MainWindow : Window
         if (e.Key == Key.O && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
         {
             e.Handled = true;
-            await OpenPairAsync();
+
+            // A held key repeats some thirty times a second. While a pair is being opened a repeat
+            // of Ctrl+O would be ignored anyway; it is not passed on, so the log gets no line for each.
+            if (!(e.IsRepeat && _opening))
+            {
+                await OpenPairAsync("Ctrl+O");
+            }
         }
         else if (e.Key is Key.H or Key.F && Keyboard.Modifiers == ModifierKeys.None)
         {
             e.Handled = true;
-            await ToggleModeAsync(e.Key == Key.H ? DisplayMode.Histogram : DisplayMode.FalseColours);
+            await OnModeKeyAsync(e.Key == Key.H ? DisplayMode.Histogram : DisplayMode.FalseColours, e.IsRepeat);
         }
     }
+
+    /// <summary>
+    /// Takes a press of H or F (R-114): the first switches the mode, as
+    /// <see cref="ToggleModeAsync"/> does; a repeat of the key held down does nothing and writes
+    /// nothing, since each switch decodes the pair again and a held key repeats some thirty times a
+    /// second (ADR 0044). Separate from the key handler so a test can give it a repeat.
+    /// </summary>
+    /// <param name="mode">The mode of the key: <see cref="DisplayMode.Histogram"/> for H, <see cref="DisplayMode.FalseColours"/> for F.</param>
+    /// <param name="isRepeat">True for a repeat of a key held down.</param>
+    /// <returns>The switch, once it has ended; a completed task for a repeat.</returns>
+    internal Task OnModeKeyAsync(DisplayMode mode, bool isRepeat) =>
+        isRepeat ? Task.CompletedTask : ToggleModeAsync(mode);
 
     /// <summary>
     /// Switches the pair on screen into a display mode, or back to linear when that mode is
@@ -164,11 +197,15 @@ public partial class MainWindow : Window
         {
             if (_opening || _pair is null || _selection is null || !_pair.AllowsDisplayModes)
             {
+                Log.Debug("mode switch to " + mode + " refused: " + (_opening ? "a pair is being opened or switched"
+                    : _pair is null || _selection is null ? "no pair is shown"
+                    : "the pair is not shown as stored, so it is Linear only"));
                 return;
             }
 
             DisplayMode target = _mode == mode ? DisplayMode.Linear : mode;
             ImagePair shown = _pair;
+            Log.Info("mode switch " + _mode + " -> " + target);
 
             _opening = true;
             try
@@ -186,6 +223,8 @@ public partial class MainWindow : Window
                 }
                 else if (!result.WasDeclined)
                 {
+                    // The load logged the failure with its exception and the message.
+                    Log.Info("the mode switch failed: the message is shown, the pair on screen stays");
                     MessageDialog.Show(this, UiText.Current.CannotCompareTitle, result.Error!);
                 }
             }
@@ -219,16 +258,19 @@ public partial class MainWindow : Window
     /// no pair is shown closes the window; with a pair shown, that pair stays as it was. A call
     /// made while another is still opening a pair returns at once and asks for nothing.
     /// </summary>
-    private async Task OpenPairAsync()
+    /// <param name="from">What asked for the open, in English, for the diagnostic log: <c>the start</c>, <c>Ctrl+O</c>.</param>
+    private async Task OpenPairAsync(string from)
     {
         // The loading overlay stops only the mouse: Ctrl+O, or Space on the focused Open
         // button, would otherwise start a second open on top of this one, and two pairs would
         // decode at once (R-006).
         if (_opening)
         {
+            Log.Debug("open asked by " + from + " while a pair is being opened: ignored");
             return;
         }
 
+        Log.Info("open asked by " + from);
         _opening = true;
         try
         {
@@ -238,6 +280,9 @@ public partial class MainWindow : Window
             while (true)
             {
                 ImagePairSelection? selection = fromCommandLine ?? _dialogs.PickImagePair(_lastDirectory);
+                Log.Info(fromCommandLine is not null ? "the pair of the command line is opened"
+                    : selection is not null ? "the dialogs chose A=" + selection.BeforePath + " B=" + selection.AfterPath
+                    : "the dialogs were cancelled; " + (_pair is null ? "no pair is shown, so the window closes" : "the pair on screen stays"));
                 fromCommandLine = null;
 
                 if (selection is null)
@@ -269,7 +314,13 @@ public partial class MainWindow : Window
                 // so would only make the user dismiss their own decision.
                 if (!result.WasDeclined)
                 {
+                    // The load logged the failure with its exception and the message.
+                    Log.Info("the open failed: the message is shown, then the dialogs ask again");
                     MessageDialog.Show(this, UiText.Current.CannotCompareTitle, result.Error!);
+                }
+                else
+                {
+                    Log.Info("the padding was declined: the dialogs ask again");
                 }
             }
         }
@@ -366,7 +417,12 @@ public partial class MainWindow : Window
         }
 
         Compare.Focus();
+        Log.Info("shown A=" + pair.Before.Info.FileName + " B=" + pair.After.Info.FileName
+            + " mode=" + pair.Mode + " view=" + (keepView ? "kept" : "fit"));
 
+        // What the process held before the outgoing pair was released, for the memory line below;
+        // read only when that line is written.
+        long beforeRelease = 0;
         if (replacing)
         {
             // The incoming pair was decoded while the outgoing one stayed on screen, so both are
@@ -377,6 +433,11 @@ public partial class MainWindow : Window
             // real pair, 2026-10-26, ADR 0040). So one render pass is let through here, which
             // also puts the incoming pair on screen, and only then is the outgoing one released.
             Dispatcher.Invoke(static () => { }, DispatcherPriority.Render);
+            if (Log.IsDebugEnabled)
+            {
+                beforeRelease = MemoryHousekeeping.Snapshot().PrivateBytes;
+            }
+
             MemoryHousekeeping.ReleaseImageBuffers();
         }
 
@@ -394,7 +455,14 @@ public partial class MainWindow : Window
             $"{dimensions}  ·  A {pair.Before.Info.FormatDescription}  ·  B {pair.After.Info.FormatDescription}{modeSuffix}";
 
         UpdateZoomReadout();
-        StatusMemory.Text = MemoryHousekeeping.Snapshot().Describe();
+        MemorySnapshot memory = MemoryHousekeeping.Snapshot();
+        StatusMemory.Text = memory.Describe();
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug("memory: managed " + LogText.MiB(memory.ManagedBytes) + ", process " + LogText.MiB(memory.PrivateBytes)
+                + (replacing ? "; the process held " + LogText.MiB(beforeRelease) + " before the outgoing pair was released" : string.Empty));
+        }
+
         _memoryTimer.Start();
     }
 

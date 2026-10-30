@@ -25,8 +25,8 @@ namespace ImageVisualCompare.Tests;
 /// <summary>
 /// The version is bumped by hand. The source of truth is <c>&lt;Version&gt;</c> in
 /// Directory.Build.props (ADR 0004) - <see cref="VersionInfo"/> reads it from the assembly and
-/// does not hardcode it. These tests check the plumbing, and that the notices GPLv3 asks for
-/// really are in the texts the application shows.
+/// does not hardcode it. These tests check the plumbing; that the notices GPLv3 asks for really
+/// are in the About window is <c>AboutWindowTests</c>'s.
 /// </summary>
 public class VersionTests
 {
@@ -92,27 +92,5 @@ public class VersionTests
     public void R070_TheBannerIsTheNameAndTheVersion()
     {
         Assert.Equal($"Image Visual Compare {VersionInfo.Value}", VersionInfo.Banner);
-    }
-
-    [Fact]
-    public void R072_AboutStartsWithTheBannerAndTheCopyright()
-    {
-        string[] lines = VersionInfo.About.Replace("\r\n", "\n").Split('\n');
-
-        Assert.Equal(VersionInfo.Banner, lines[0]);
-        Assert.Equal(VersionInfo.Copyright, lines[1]);
-    }
-
-    /// <summary>
-    /// GPLv3 section 5(d): a program with an interactive interface must also display the
-    /// absence of warranty, not just the copyright, and say where the full licence is.
-    /// </summary>
-    [Fact]
-    public void R072_AboutCarriesTheWarrantyDisclaimerAndPointsAtTheLicence()
-    {
-        Assert.Contains("ABSOLUTELY NO WARRANTY", VersionInfo.About);
-        Assert.Contains("GNU General Public License", VersionInfo.About);
-        Assert.Contains("LICENSE", VersionInfo.About);
-        Assert.Contains("gnu.org/licenses/gpl-3.0.html", VersionInfo.About);
     }
 }

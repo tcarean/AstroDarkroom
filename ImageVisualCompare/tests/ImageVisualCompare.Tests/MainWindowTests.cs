@@ -136,6 +136,35 @@ public class MainWindowTests
             loader.Modes);
     }
 
+    /// <summary>
+    /// A held H switches once: its repeats, which come about thirty times a second, would each
+    /// decode the pair again once the switch before them has ended (R-114, ADR 0044). A test cannot
+    /// make a <c>KeyEventArgs</c> a repeat, so it calls what the key handler hands the repeat to.
+    /// </summary>
+    [Fact]
+    public async Task R114_AHeldModeKeySwitchesOnce_ItsRepeatsDoNothing()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(new CountingDialogs(), new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        Task switched = null!;
+        await WpfThread.RunAsync(() => switched = window.OnModeKeyAsync(DisplayMode.Histogram, isRepeat: false));
+        await switched;
+        await WpfThread.RunAsync(() => switched = window.OnModeKeyAsync(DisplayMode.Histogram, isRepeat: true));
+        await switched;
+        await WpfThread.RunAsync(() => switched = window.OnModeKeyAsync(DisplayMode.Histogram, isRepeat: true));
+        await switched;
+
+        await WpfThread.RunAsync(() => Assert.True(window.HistogramButton.IsChecked));
+        Assert.Equal([DisplayMode.Linear, DisplayMode.Linear, DisplayMode.Histogram, DisplayMode.Histogram], loader.Modes);
+    }
+
     [Fact]
     public async Task R114_TheModeAlreadyShown_SwitchesBackToLinear()
     {
