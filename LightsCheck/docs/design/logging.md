@@ -145,4 +145,7 @@ tests running beside it add nothing; one capture at a time per call tree. It is 
 window's test project. The file tests never touch that configuration: they build the
 applications' configuration with `LogSetup.Build` into a private `LogFactory`, which stands for one
 process. `R071_TheLogIsTheSameInBothLanguages` sorts the messages before comparing them, because
-the frames' threads write in any order.
+the frames' threads write in any order. One test starts the real console as a process,
+`R060_WithoutLangTheProgramSpeaksEnglish` with `--help`, and that process logs as any other, so
+every test run leaves its first and last lines in `log\lightscheck.log` beside the copy of the
+executable in the test project's build folder, rolled like any log.
