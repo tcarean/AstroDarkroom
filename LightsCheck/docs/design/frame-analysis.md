@@ -15,7 +15,9 @@ one from BITPIX, and hands `FrameAnalyzer` the double `Img`, which becomes a flo
 above black at once (a 24 MP frame is 96 MB as floats; four rasters live at the peak: the
 mosaic, the green, the residual and the smoothed residual, about 400 MB). Before the
 mosaic goes, `FrameRun.Measure` cuts its central `PatternCrop` for the series' sensor
-pattern (`series-analysis.md`); the single-frame run drops it.
+pattern (`series-analysis.md`); the single-frame run drops it. `Measure` writes every figure
+of the measurement to the diagnostic log at Debug, and times its `load`, `measure` and `crop`
+stages on the clock `FrameRun.Run` hands it (`logging.md`).
 
 1. **Channel levels** (`ChannelLevels`): the four CFA positions read as the prototype's
    `a[i::2, j::2][::4, ::4]`: the median of every 4th row and column of the position, the

@@ -37,7 +37,9 @@ report, and their posts may sit in the dispatcher's queue when the next run star
 `ConfigureAwait(true)` brings `Populate` back to the UI thread; a run whose
 token was cancelled returns before `Populate` so a stopped run leaves nothing. The three
 exception types the core throws for a bad folder become `ProblemText`; anything else is a
-bug and propagates.
+bug and propagates. Each run's start and outcome go to the diagnostic log, and a bug's exception
+is written there by an exception filter that returns false, before it leaves in the task nobody
+awaits; the window's log lines and the two logger names of `Loggers` are in `logging.md`.
 
 `Populate(SeriesResult)` arranges, it does not compute:
 
@@ -78,7 +80,8 @@ is `RunReport.Error`, the console's own, so a verdict word or the prefix changes
 alone (ADR 0020).
 
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
-console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`.
+console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`;
+`WriteAll` hands it each file as soon as the file is written, for the log's `wrote` line.
 
 ## The star cut-outs (`StarCrops`)
 

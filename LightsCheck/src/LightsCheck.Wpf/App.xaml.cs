@@ -18,12 +18,13 @@
 using System.Globalization;
 using System.Windows;
 using LightsCheck.Core;
+using NLog;
 
 namespace LightsCheck.Wpf;
 
 /// <summary>
-/// The window application: pins the number culture, opens the main window and starts it on the
-/// folder given on the command line, if any.
+/// The window application: starts and closes the diagnostic log, pins the number culture, opens
+/// the main window and starts it on the folder given on the command line, if any.
 /// </summary>
 public partial class App : Application
 {
@@ -33,13 +34,36 @@ public partial class App : Application
     private readonly string? _badLanguage;
 
     /// <summary>
-    /// Reads the language from the command line before anything else (R-060, R-063): App.xaml's
-    /// resources (the theme) and the first view load after this, and both carry texts.
+    /// Starts the diagnostic log first, so a failure while the resources load is in it too
+    /// (R-070 to R-073), and hooks the window thread's unhandled exceptions to it; then reads the
+    /// language from the command line before anything else (R-060, R-063): App.xaml's resources
+    /// (the theme) and the first view load after this, and both carry texts.
     /// </summary>
     public App()
     {
-        (_args, _badLanguage) = ApplyCommandLine(Environment.GetCommandLineArgs().Skip(1).ToArray());
+        string[] args = Environment.GetCommandLineArgs().Skip(1).ToArray();
+        // The log never stops the window: without it the session opens all the same.
+        try
+        {
+            LogSetup.Apply("LightsCheck.Wpf", args);
+        }
+        catch (Exception)
+        {
+            // the window goes on without a log
+        }
+
+        // Logged, not handled: the window closes on such an exception as it did (ADR 0029).
+        DispatcherUnhandledException += (_, e) =>
+            LogSetup.Fatal(e.Exception, "unhandled exception on the window's thread, the window closes");
+        (_args, _badLanguage) = ApplyCommandLine(args);
     }
+
+    /// <summary>
+    /// The diagnostic log: the start's choices. Fetched on use, not a static field: this is the
+    /// type whose constructor configures the log, and a logger its type initialiser created first
+    /// could make NLog load a stray <c>NLog.config</c> (ADR 0029, after FlatCheck's ADR 0072).
+    /// </summary>
+    private static Logger Log => LogManager.GetLogger(Loggers.App);
 
     /// <summary>
     /// Takes <c>--lang</c> out of the command line and sets <see cref="Ui.Default"/> to the
@@ -74,10 +98,30 @@ public partial class App : Application
         window.Show();
         if (_badLanguage is not null)
         {
+            Log.Warn("refused: " + LanguageArgument.BadValueMessage(_badLanguage) + "; the window goes on in English");
             MessageBox.Show(window, LanguageArgument.BadValueMessage(_badLanguage), WindowTexts.AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        window.Start(FolderFromArgs(_args));
+        string? folder = FolderFromArgs(_args);
+        Log.Info("language=" + (Ui.Default == UiLanguage.Romanian ? "ro" : "en") + " folder from the command line: "
+            + (folder ?? "none, the window asks for one"));
+        window.Start(folder);
+    }
+
+    /// <summary>Writes the diagnostic log's last line, with the exit code, and closes the log.</summary>
+    /// <param name="e">The exit's arguments, whose exit code the line reports.</param>
+    protected override void OnExit(ExitEventArgs e)
+    {
+        base.OnExit(e);
+        // Guarded like Apply: the log never stops the window, on the way out either.
+        try
+        {
+            LogSetup.Close(e.ApplicationExitCode);
+        }
+        catch (Exception)
+        {
+            // the log's last line is lost, the exit is not
+        }
     }
 
     /// <summary>

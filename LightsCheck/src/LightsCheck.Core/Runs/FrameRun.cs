@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using NLog;
 using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Core;
@@ -49,36 +50,58 @@ internal static class FrameRun
     /// <returns>The light, decoded and measured.</returns>
     internal static MeasuredFrame Run(string folder, int frameIndex)
     {
+        using RunClock clock = RunClock.Start(Log, "frame", folder + " index=" + LogText.Int(frameIndex));
         SessionFolder session = SessionFolder.Open(folder);
+        clock.Lap("open");
         if (frameIndex < 1 || frameIndex > session.Lights.Count)
         {
             throw new InvalidOperationException(T($"frame {frameIndex} does not exist: the session has {session.Lights.Count} frames in {session.LightsDir}", $"cadrul {frameIndex} nu exista: sesiunea are {session.Lights.Count} cadre in {session.LightsDir}"));
         }
 
         string path = session.Lights[frameIndex - 1];
-        return Measure(frameIndex, path);
+        MeasuredFrame frame = Measure(frameIndex, path, clock);
+        FrameMeasurement m = frame.Measurement;
+        clock.Done("detected=" + LogText.Int(m.Detected) + " fwhm=" + LogText.Num(m.FwhmMedian) + " elongation=" + LogText.Num(m.ElongationMedian));
+        return frame;
     }
 
     /// <summary>
     /// Decodes and measures one file; the metadata comes with the same load. A file the readers
-    /// cannot decode throws their exception.
+    /// cannot decode throws their exception. The measurement's figures go to the diagnostic log at
+    /// Debug (R-071).
     /// </summary>
     /// <param name="index">
     /// The frame's 1-based position in the session, carried into its metadata.
     /// </param>
     /// <param name="path">The frame's file, a camera raw or a FITS.</param>
+    /// <param name="clock">
+    /// The run's clock, whose <c>load</c>, <c>measure</c> and <c>crop</c> stages are timed; null
+    /// (the series, which measures frames in parallel) times nothing.
+    /// </param>
     /// <returns>The frame's metadata, figures and central crop.</returns>
-    internal static MeasuredFrame Measure(int index, string path)
+    internal static MeasuredFrame Measure(int index, string path, RunClock? clock = null)
     {
         LoadedFrame f = ImageLoader.Load(path);
         FrameInfo info = FrameInfo.From(index, path, f);
+        clock?.Lap("load");
         AduScale scale = f.Scale ?? AssumedScale(f.Bitpix);
         // The double mosaic (193 MB on 24 MP) is dropped as soon as the float raster exists.
         Raster raw = Raster.FromImg(f.Image, scale.Black);
         f.Image = null;
         FrameMeasurement m = FrameAnalyzer.Analyze(raw, scale, f.Cfa);
-        return new MeasuredFrame(info, m, PatternCrop.Cut(raw));
+        clock?.Lap("measure");
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug("frame " + LogText.Int(index) + " " + info.FileName + ": " + LogText.Measured(m));
+        }
+
+        PatternCrop crop = PatternCrop.Cut(raw);
+        clock?.Lap("crop");
+        return new MeasuredFrame(info, m, crop);
     }
+
+    /// <summary>The diagnostic log: the run's lines and each frame's figures (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(FrameRun));
 
     /// <summary>
     /// The scale a FITS is assumed to use, from its BITPIX: never a guess from the data.

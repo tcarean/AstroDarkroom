@@ -77,6 +77,12 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   A failure in the block leaves the lens fields null and the shot fields as read. `.pef` is the
   seventh extension. The comments are LightsCheck's: what the fields are for here is the
   inventory's lens line (`session-and-console.md`).
+- The diagnostic log (ADR 0029): `ImageLoader` writes the line per file read, the FITS
+  keywords at Debug and every card at Trace from what the reader returns, and `RawReader`
+  libraw's figures at Debug, composed by `FiguresLine` from plain values so no closure of a
+  libraw local is ever made (the mechanic below), and its lens block's failure at Warn;
+  `FitsReader` does not log, where FlatCheck's does since its ADR 0070, so the copy stays as it
+  was (`logging.md`).
 - Taken later from FlatCheck, the last sentence of its R-009 (469da9b, ADR 0025): `LoadHeader`'s
   comment says the header read does not check the data area, so a cut file still answers the
   metadata read and only the full load refuses it.

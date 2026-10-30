@@ -18,6 +18,7 @@
 using System.Globalization;
 using System.Text;
 using LightsCheck.Core;
+using NLog;
 using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Cli;
@@ -29,8 +30,19 @@ namespace LightsCheck.Cli;
 internal static class Program
 {
     /// <summary>
-    /// The entry point: switches the console's output to UTF-8 for the run, runs
-    /// <see cref="Run"/> on the real console, and puts the code page back.
+    /// The diagnostic log's console lines (R-071): the mode, the refusals, the files written, a run
+    /// that failed, the code page that could not be switched or put back. Fetched on use, not held
+    /// in a static field: this is the type whose <see cref="Main"/> configures the log, and a
+    /// logger its type initialiser created first could make NLog load a stray
+    /// <c>NLog.config</c> (ADR 0029, after FlatCheck's ADR 0072).
+    /// </summary>
+    private static Logger Log => LogManager.GetLogger("Cli");
+
+    /// <summary>
+    /// The entry point: starts the diagnostic log, switches the console's output to UTF-8 for the
+    /// run, runs <see cref="Run"/> on the real console, puts the code page back and writes the
+    /// log's last line. The log is configured here and not in <see cref="Run"/>, which the tests
+    /// call in-process (R-070 to R-073).
     /// </summary>
     /// <param name="args">The command line, as <see cref="Options.Parse"/> reads it.</param>
     /// <returns>
@@ -38,24 +50,32 @@ internal static class Program
     /// </returns>
     private static int Main(string[] args)
     {
+        // The log never stops the tool: a folder that cannot be probed, a broken NLog on this
+        // machine, and the run goes on without a log, stdout and stderr untouched (R-001, R-071).
+        try
+        {
+            LogSetup.Apply("lightscheck", args);
+        }
+        catch (Exception)
+        {
+            // the run goes on without a log
+        }
+
+        // Run's exit code, for the log's last line. A run that throws past RunIn's catch crashes:
+        // the hook's Fatal line, written first, is then the crash's line, and the process exits
+        // with the runtime's crash code, whether or not this finally still writes "exit 1".
+        int code = 1;
+
         // The report carries the SynScan arrows as symbols (R-040). A console window's own code
         // page would print them as '?', so it is switched to UTF-8 for the run and put back
         // after (the code page outlives the process otherwise); a run without a console, or
         // with its output in a file or a pipe, writes UTF-8 bytes either way.
-        Encoding? previous = null;
-        try
-        {
-            previous = Console.OutputEncoding;
-            Console.OutputEncoding = new UTF8Encoding(false);
-        }
-        catch (IOException)
-        {
-            // no console attached: nothing to switch
-        }
+        Encoding? previous = SwitchToUtf8(() => Console.OutputEncoding, enc => Console.OutputEncoding = enc);
 
         try
         {
-            return Run(args, Console.Out, Console.Error);
+            code = Run(args, Console.Out, Console.Error);
+            return code;
         }
         finally
         {
@@ -65,11 +85,46 @@ internal static class Program
                 {
                     Console.OutputEncoding = previous;
                 }
-                catch (IOException)
+                catch (IOException e)
                 {
                     // the console went away during the run
+                    Log.Debug(e, "the console's output encoding was not put back: the console went away during the run");
                 }
             }
+
+            // Guarded like Apply: the log never stops the tool, on the way out either.
+            try
+            {
+                LogSetup.Close(code);
+            }
+            catch (Exception)
+            {
+                // the log's last line is lost, the exit code is not
+            }
+        }
+    }
+
+    /// <summary>
+    /// Switches the console's output to UTF-8 for the run (R-040), through two delegates that stand
+    /// for <see cref="Console.OutputEncoding"/>, so a test can play a process without a console.
+    /// </summary>
+    /// <param name="get">Reads the console's output encoding.</param>
+    /// <param name="set">Sets it; throws <see cref="IOException"/> when no console is attached.</param>
+    /// <returns>The encoding to put back after the run; null when nothing was switched.</returns>
+    internal static Encoding? SwitchToUtf8(Func<Encoding> get, Action<Encoding> set)
+    {
+        try
+        {
+            Encoding previous = get();
+            set(new UTF8Encoding(false));
+            return previous;
+        }
+        catch (IOException e)
+        {
+            // No console attached: the getter answers but the setter throws, so nothing was
+            // switched and there is nothing to put back.
+            Log.Debug(e, "the console's output was not switched to UTF-8: no console is attached");
+            return null;
         }
     }
 
@@ -95,6 +150,7 @@ internal static class Program
         LanguageArgument lang = LanguageArgument.Extract(args);
         if (lang.BadValue is not null)
         {
+            Log.Warn("refused: " + LanguageArgument.BadValueMessage(lang.BadValue));
             stderr.WriteLine("ERROR: " + LanguageArgument.BadValueMessage(lang.BadValue));
             return 1;
         }
@@ -104,7 +160,9 @@ internal static class Program
     }
 
     /// <summary>
-    /// The console after the banner and the language: parses the rest and dispatches it.
+    /// The console after the banner and the language: parses the rest and dispatches it on
+    /// <see cref="Options.Mode"/>, writing the mode, the refusal, the files written or the failure
+    /// to the diagnostic log (R-071).
     /// </summary>
     /// <param name="args">The command line without <c>--lang</c>; not null.</param>
     /// <param name="stdout">Where the help and the report go; not null.</param>
@@ -113,27 +171,30 @@ internal static class Program
     private static int RunIn(string[] args, TextWriter stdout, TextWriter stderr)
     {
         Options o = Options.Parse(args);
-        if (o.Help)
+        if (o.Mode == RunMode.Help)
         {
+            Log.Info("mode=" + o.Mode);
             WriteUsage(stdout);
             return 0;
         }
 
-        if (o.Error is not null)
+        if (o.Mode == RunMode.Error)
         {
-            stderr.WriteLine(RunReport.Error(o.Error));
+            Log.Warn("refused the arguments: " + o.Error);
+            stderr.WriteLine(RunReport.Error(o.Error!));
             return 1;
         }
 
+        Log.Info("mode=" + o.Mode + " input=" + o.Folder + " lang=" + (Ui.IsRomanian ? "ro" : "en"));
         try
         {
-            if (o.Frame is int frame)
+            if (o.Mode == RunMode.Frame)
             {
-                FrameReport.Write(FrameRun.Run(o.Folder!, frame), stdout);
+                FrameReport.Write(FrameRun.Run(o.Folder!, o.Frame.GetValueOrDefault()), stdout);
                 return 0;
             }
 
-            if (o.Inventory)
+            if (o.Mode == RunMode.Inventory)
             {
                 Inventory inv = InventoryRun.Run(o.Folder!);
                 InventoryReport.Write(inv, stdout);
@@ -148,7 +209,9 @@ internal static class Program
             SeriesReport.Write(r, stdout);
             if (o.Out is not null)
             {
-                IReadOnlyList<string> written = SeriesOutputs.WriteAll(r, o.Out);
+                // Each file's line as soon as the file is written, so an export that fails
+                // part-way still names what it wrote (R-071).
+                IReadOnlyList<string> written = SeriesOutputs.WriteAll(r, o.Out, p => Log.Info("wrote " + p + " (" + LogText.FileKiB(p) + ")"));
                 stdout.WriteLine();
                 foreach (string p in written)
                 {
@@ -160,6 +223,8 @@ internal static class Program
         }
         catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
         {
+            // The stack lives in the log; stderr keeps its one line, the same the window shows.
+            Log.Error(e, "run failed: mode=" + o.Mode);
             stderr.WriteLine(RunReport.Error(e.Message));
             return 1;
         }
