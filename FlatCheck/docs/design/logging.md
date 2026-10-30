@@ -17,7 +17,7 @@
 
 `LogSetup.Apply` is the first call of `Program.Main` and of `App`'s constructor, each in a
 `try` that swallows anything it throws, because the log never stops the tool; `LogSetup.Close`
-is the last of `Main` (in a `finally`, guarded the same way) and of `App.OnExit`. `Apply` runs
+is the last of `Main` (in a `finally`) and of `App.OnExit`, guarded the same way. `Apply` runs
 once per process:
 
 1. `Plan` decides the place without configuring anything: the level from `FLATCHECK_LOG`
@@ -75,9 +75,12 @@ A line whose message costs something to build is guarded by `IsDebugEnabled` /
 `IsTraceEnabled`. A channel without a colour (no `BAYERPAT`, or mono) is written by its label
 (`CFA[0,0]`, `mono`), never by the analyzer's `'\0'`, which would put a NUL byte in the file.
 
-Every logger is declared the one way, `static readonly Logger Log = LogManager.GetLogger(...)`
-with `using NLog` (`NoLogLineGoesThroughTheTranslation` checks it, so its scan of the calls sees
-them all). Loggers are named, not taken from the stack: the class name for the core
+Every logger is a `Logger` named `Log`, taken from `LogManager.GetLogger` with `using NLog`
+(`NoLogLineGoesThroughTheTranslation` checks it, so its scan of the calls sees them all): a
+`static readonly` field everywhere but in three places. A tab's is an instance field, named
+after the tab (below); `LogSetup`'s and `App`'s are properties fetched on use, because those two
+types run before the configuration is set and a static logger there would make NLog load a
+stray `NLog.config` (step 2 above). Loggers are named, not taken from the stack: the class name for the core
 (`ImageLoader`, `FitsReader`, `RawReader`, `PreviewReader`, `ProfileLocator`, `LensfunReader`,
 `LensCatalog`, `LensIdentification`, every run in `Runs/`), and for the applications `Process`
 (the first and last lines, the crashes), `Cli`, and the window's names from `Loggers`: `App`,
@@ -114,7 +117,7 @@ of their own, and the first frame's own line counts that load as the others coun
 | `Runs/` | Info, Debug, Warn | through `RunClock`, as above; at Debug the result's figures (`LogText.Structure`, `Comparison`, `Light`, `LightSeries`, `Exposure`, `HistEq`, `Smooth`, `Advice`, `Synthetic`, `Against`, `Split`), one line per frame of a series; the raw beside the master that could not be read |
 | `App`, `MainWindow` | Info, Warn | the language and the folder from the command line, a `--lang` refused; the folder dialog, About, the Siril run asked and its end, the answer to the close question during a split |
 | `MainViewModel` | Info, Error, Debug | the session usable or refused with the problem; an opening that failed past the check (a folder that cannot be listed), at Error, with the card it shows; at Debug, after the card or the tabs are up, the master (and an older one ignored), the counts of flats, raw flats and lights (`unreadable (<Type>)` for a folder that cannot be listed), the reference raw; a chain cancelled while it waited for the gate |
-| `TabViewModel` | Info, Error, Debug | `run <n> started`, `done in` or `refused in` (a run that ended with an explanation shown), `cancelled after`; `failed` with the exception; a superseded run's failure at Debug; `Refuse`: `refused: <why>; the tab shows "<title>"` for the refusals a tab decides itself |
+| `TabViewModel` | Info, Error, Debug | `run <n> started`, `done in` or `refused in` (a run in which `Refuse` ran; a failure the tab worded itself through `Fail` is "done", its own line said what happened), `cancelled after`; `failed` with the exception; a superseded run's failure at Debug; `Refuse`: `refused: <why>; the tab shows "<title>"` for the refusals a tab decides itself |
 | the tabs | Info, Warn, Debug | every file written, one line each with its size; a write or a save that failed; an overwrite the user declined; the Synthetic prefill, and its cancellation; the Split phases, parts, failures and stop (times in seconds with one decimal); the conveniences that failed quietly (lens details, format note, free space, a file's size) at Debug |
 | `SirilInstall`, `SirilScriptRun`, `SirilRunViewModel`, `PreprocessViewModel` | Info, Debug, Trace, Warn, Error | where siril-cli, the config and the scripts were found, a path that could not be normalised; the command line started, as `ProcessStartInfo` holds it, with the settings copy; every output line at Debug, the progress lines at Trace (built only when Trace is on); the end with the exit code, the time and the command reached, as the window shows it (the script's text, or the verb Siril printed when the script could not be read); a run that could not start; a script that could not be read |
 

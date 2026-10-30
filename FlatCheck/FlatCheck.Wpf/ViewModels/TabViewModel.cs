@@ -130,11 +130,13 @@ namespace FlatCheck.Wpf
             string run = "run " + LogText.Int(gen);
             Log.Info(run + " started");
             BeginBusy(busyMessage);
+            _refused = false;
             try
             {
                 await work().ConfigureAwait(true);
-                // A run that ended with an explanation shown (Refuse) was refused, not done.
-                Log.Info(run + (HasError ? " refused in " : " done in ") + LogText.Ms(clock.ElapsedMilliseconds));
+                // A run that ended in Refuse was refused, not done; a failure the tab worded
+                // itself (Fail) is still "done", its own line said what happened.
+                Log.Info(run + (_refused ? " refused in " : " done in ") + LogText.Ms(clock.ElapsedMilliseconds));
             }
             catch (OperationCanceledException)
             {
@@ -275,8 +277,13 @@ namespace FlatCheck.Wpf
         protected void Refuse(string title, string text, string why)
         {
             Log.Info("refused: " + why + "; the tab shows \"" + title + "\"");
+            _refused = true;
             Fail(title, text);
         }
+
+        /// <summary>True once <see cref="Refuse"/> ran during the current run, so its last
+        /// line says <c>refused</c>; cleared when a run starts.</summary>
+        bool _refused;
 
         /// <summary>Removes the explanation, if one is shown.</summary>
         protected void ClearError()

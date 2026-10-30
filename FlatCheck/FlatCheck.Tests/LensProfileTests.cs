@@ -325,6 +325,31 @@ public class LensProfileReaderTests
     }
 
     /// <summary>
+    /// R-107: an Adobe root the user may not list at all is left out whole, with a Warn line
+    /// naming it, as the design note and ADR 0066 say; the enumeration's IgnoreInaccessible
+    /// must not swallow the root itself in silence (the review's finding of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R107_AnUnlistableRootIsLeftOutWithAWarnLine()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string root = Path.Combine(ws.Dir, "locked-root");
+        Directory.CreateDirectory(Path.Combine(root, "Canon"));
+        File.WriteAllText(Path.Combine(root, "Canon", "Canon (Canon EF 50mm f1.4 USM) - RAW.lcp"),
+            LensProfileTestData.LcpOneProfile("Canon", "Canon EF 50mm f/1.4 USM", "EF50mm f/1.4 USM", "198", "1", "50"));
+        using var deny = UnlistableFolder.Deny(root);
+        using var capture = LogCapture.Start();
+
+        var s = ProfileLocator.Locate(new[] { root, dir }, Path.Combine(dir, "lensfun"));
+
+        Assert.Equal(2, s.AdobeFiles);   // the second root's two, nothing of the first
+        var warned = Assert.Single(capture.Events, e => e.Level == NLog.LogLevel.Warn && e.Message.Contains("could not be listed"));
+        Assert.Contains(root, warned.Message);
+    }
+
+    /// <summary>
     /// A file that parses to no vignetting profile (the A3 lens) is a Debug line when the
     /// catalog parses it, so a report that says "no vignetting profile" can be traced to the
     /// file (the review of 2026-10-27, A8).

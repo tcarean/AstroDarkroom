@@ -190,7 +190,8 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   wins. The enumeration of one folder skips a subfolder the user may not list
   (`EnumerationOptions.IgnoreInaccessible`, with `AttributesToSkip` cleared so hidden and system
   files are still read), so only that subfolder's files are lost and the rest of the root is
-  read; a root that vanishes or fails with an I/O error part-way is lost whole, with a Warn
+  read; a root the user may not list (opened once without `IgnoreInaccessible` first, which
+  would otherwise skip it in silence), one that vanishes or an I/O error is lost whole, with a Warn
   line in the diagnostic log (`logging.md`), and the next folder is searched;
   `AdobeAppDirectories` swallows the same for the Program Files root. (Until 2026-10-27 the
   whole root was lost on a subfolder without list rights, though this note said otherwise: the

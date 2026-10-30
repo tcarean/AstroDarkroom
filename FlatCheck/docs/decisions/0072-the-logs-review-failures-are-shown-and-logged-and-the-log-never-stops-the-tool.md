@@ -31,9 +31,9 @@ could later ask "why?" about.
   its load, so a refusal decided after the load and a file that does not load both leave the
   run's start line.
 - **The log never stops the tool.** `LogSetup.Apply` and `Close` run in a `try` in both
-  applications, which then run without a log. `LogSetup`'s own logger is fetched on use, so the
-  configuration is set before any logger exists and NLog never loads an `NLog.config` it finds
-  beside the executable. Measured on 2026-10-27 with a scratch console beside an `NLog.config`
+  applications, which then run without a log. `LogSetup`'s own logger, and `App`'s, whose
+  constructor calls `Apply`, are fetched on use, so the configuration is set before any logger
+  exists and NLog never loads an `NLog.config` it finds beside the executable. Measured on 2026-10-27 with a scratch console beside an `NLog.config`
   naming an unknown target with `throwConfigExceptions="true"`: with the logger in a static
   field the process died in `TypeInitializationException` before `Main`'s body; fetched on use,
   it ran. The folder's probe also opens, for append, the file NLog will write next, so a

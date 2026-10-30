@@ -1137,8 +1137,6 @@ namespace FlatCheck.Wpf
             T($"analysing the {parts} parts and the whole",
               $"analizez cele {parts} parti si intregul");
 
-        /// <summary>The failure screen's title.</summary>
-        /// <returns>The title.</returns>
         /// <summary>The card's title when the folder passed the check but could not be read
         /// through (a folder the user may not list, a broken junction).</summary>
         /// <returns>The title.</returns>
@@ -1155,6 +1153,8 @@ namespace FlatCheck.Wpf
                  $"{folder} exista si arata ca o sesiune Siril, dar unul din folderele lui nu a putut fi listat:\n\n{message}\n\n"
                  + "Verifica drepturile pe foldere (flats/, process/, masters/) si deschide-l din nou. Detaliile sunt in log.");
 
+        /// <summary>The failure screen's title.</summary>
+        /// <returns>The title.</returns>
         internal static string SplitFailedTitle() => T("The split stopped",
                                                        "Impartirea s-a oprit");
 

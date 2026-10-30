@@ -56,8 +56,12 @@ namespace FlatCheck.Wpf
             _unknownLanguage = ApplyCommandLine(args);
         }
 
-        /// <summary>The diagnostic log: the start's choices.</summary>
-        static readonly Logger Log = LogManager.GetLogger(Loggers.App);
+        /// <summary>The diagnostic log: the start's choices. Fetched on use, not a static
+        /// field: this is the type whose constructor calls <see cref="LogSetup.Apply"/>, and a
+        /// logger created by its type initialiser could make NLog load a stray
+        /// <c>NLog.config</c> before the configuration is set (ADR 0072; the same reason as
+        /// <c>LogSetup</c>'s own logger).</summary>
+        static Logger Log => LogManager.GetLogger(Loggers.App);
 
         /// <summary>Forces invariant numbers, shows the main window, says a --lang it did not
         /// understand, and starts the window on the command line's folder.</summary>
@@ -89,7 +93,9 @@ namespace FlatCheck.Wpf
         protected override void OnExit(ExitEventArgs e)
         {
             base.OnExit(e);
-            LogSetup.Close(e.ApplicationExitCode);
+            // Guarded like Apply: the log never stops the window, on the way out either.
+            try { LogSetup.Close(e.ApplicationExitCode); }
+            catch (Exception) { }
         }
 
         /// <summary>

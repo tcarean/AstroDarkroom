@@ -178,11 +178,17 @@ namespace FlatCheck
                 // A subfolder the user may not list is skipped by the enumeration itself
                 // (IgnoreInaccessible), so the rest of the root is still read; AttributesToSkip
                 // is cleared because the default would leave out hidden and system files, which
-                // the SearchOption overload never did. The root itself vanishing, or an I/O
-                // error, still throws: the whole root is left out, with a line, and the next
-                // folder is searched.
+                // the SearchOption overload never did. IgnoreInaccessible would also skip the
+                // root itself in silence (measured 2026-10-30: files=0 and no line), so the root
+                // is opened once without it first: a root the user may not list, one that
+                // vanished or an I/O error throws there, the whole root is left out with a
+                // line, and the next folder is searched.
                 var options = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = 0 };
-                try { found = Directory.EnumerateFiles(dir, "*.lcp", options).OrderBy(f => f, StringComparer.Ordinal).ToList(); }
+                try
+                {
+                    Directory.EnumerateFileSystemEntries(dir).Any();
+                    found = Directory.EnumerateFiles(dir, "*.lcp", options).OrderBy(f => f, StringComparer.Ordinal).ToList();
+                }
                 catch (Exception e)
                 {
                     Log.Warn(e, "the Adobe folder " + dir + " could not be listed; its profiles are left out");

@@ -230,6 +230,16 @@ were partly right; A15 was a false comment as stated. What differs from the plan
   eight crefs to `ImageLoader.Load` had become ambiguous when D10 gave it a second overload,
   and the gate's incremental build had not shown it. They name `Load(string)` since the
   wrap-up commit; 97808e8 alone does not build clean.
+- **A subagent review of the branch (2026-10-30)** found seven points, none grave, all taken:
+  the window's `Close` was not guarded like `Apply`; `App`'s logger was a static field on the
+  type whose constructor calls `Apply`, now fetched on use like `LogSetup`'s; a doubled doc
+  comment in `SessionMessages`; an Adobe root the user may not list was skipped by
+  `IgnoreInaccessible` in silence (measured by `R107_AnUnlistableRootIsLeftOutWithAWarnLine`,
+  which failed before the fix: the root is opened once without the option first); the tab's
+  `refused` line tested `HasError`, which `Fail` sets too, now a flag `Refuse` sets; the
+  planned window test of the no-profile refusal was missing, added; and `logging.md`
+  contradicted itself on the logger declaration. Noticed, pre-existing and left alone:
+  `OpenAsync`'s `finally` clears `IsRunning` for a superseded chain too.
 - **Two CHANGELOG lines were left out at wrap-up**: the About window's "three components" and
   the card lost to the Debug line were never in a release (both came with the unreleased log),
   so they are not fixes a reader of the version history can meet.
