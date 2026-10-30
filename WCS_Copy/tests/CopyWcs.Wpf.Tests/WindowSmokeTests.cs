@@ -123,7 +123,7 @@ public partial class WindowSmokeTests
                 english.AddRange(TextsOf(window));
 
                 AboutWindow about = new();
-                Render((FrameworkElement)about.Content, 560, 420, "about-en");
+                Render((FrameworkElement)about.Content, 560, AboutHeight(about), "about-en");
                 english.Add(about.Title);
                 english.AddRange(TextsOf((FrameworkElement)about.Content));
                 Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
@@ -180,6 +180,22 @@ public partial class WindowSmokeTests
             PresentationTraceSources.DataBindingSource.Switch.Level = _before;
             _listener.Dispose();
         }
+    }
+
+    /// <summary>
+    /// The About window's content height at its 560 px width: the window sizes to its content
+    /// (<c>SizeToContent="Height"</c>), so a render at that height cuts nothing off, the
+    /// third-party card included. Measured twice: the card's items exist only after a first
+    /// layout pass has bound the list.
+    /// </summary>
+    private static int AboutHeight(AboutWindow about)
+    {
+        var content = (FrameworkElement)about.Content;
+        content.Measure(new Size(560, double.PositiveInfinity));
+        content.Arrange(new Rect(content.DesiredSize));
+        content.UpdateLayout();
+        content.Measure(new Size(560, double.PositiveInfinity));
+        return (int)Math.Ceiling(content.DesiredSize.Height);
     }
 
     internal static void Render(FrameworkElement el, int w = 720, int h = 560, string? name = null)
@@ -319,7 +335,7 @@ public partial class WindowSmokeTests
 
             // The content, not the window: an unshown Window renders transparent, while the
             // root panel inherits the DataContext and goes through the same bindings.
-            Render((FrameworkElement)about.Content, 560, 420, "about");
+            Render((FrameworkElement)about.Content, 560, AboutHeight(about), "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             BitmapSource logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);

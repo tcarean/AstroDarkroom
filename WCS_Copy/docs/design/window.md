@@ -129,7 +129,9 @@ assembly's language as the console's tests do; `AssemblyInfo` turns parallel col
 `InternalsVisibleTo`) and compare: the preview's cards with the dry run's lines, the copy's
 bytes with the console's on a second fixture, the refusal line with the console's stderr.
 `WindowSmokeTests` lay out and render both windows to a bitmap on the `StaFixture` thread
-(the window's background drawn first, or the labels on transparency come out dim in a PNG),
+(the window's background drawn first, or the labels on transparency come out dim in a PNG; the
+About window at its content's height, measured over two layout passes since the third-party
+card's items exist only after the first, as the real window sizes to its content),
 fail on any data-binding trace error, and in the English pass walk every `TextBlock` of the
 visual tree against a list of Romanian words; `COPYWCS_DUMP_SCREENS=<folder>` saves each
 render as a PNG. The R-038 theory finds the band upward from the banner's text block (the

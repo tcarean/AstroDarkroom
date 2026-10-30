@@ -780,3 +780,53 @@ Changed: `Directory.Packages.props`, the five `packages.lock.json`,
 
 Untouched: `WcsMetadataKeys.cs`, `Language/`, `VersionInfo.cs`, `LicenseInfo.cs`, `Options.cs`,
 the fixture, `docs/validation.*`, `kit.json`, the kit's folders.
+
+## Outcome and deviations (2026-10-30)
+
+Implemented as planned, on `claude/Log-CopyWcs-with-NLog`, by the planning session itself at the
+owner's word ("Da-i drumul la treaba"): the plan (77500f6); the packages, the notices and the
+About card (91c4307); `Logging/`, the capture and the two entry points (20bd130); the seams, R-040
+to R-046 implemented (cf16381); the docs (3766a46); the measurements and this section after them;
+the gate green at each commit, 186 + 45 tests at the end. ADR 0009 and `docs/design/logging.md`
+hold the result. What differs from the plan, and why:
+
+- **The component template is DarksCheck's as it is.** The plan asked for `TextWrapping` on its
+  licence and copyright lines; the `Faint` style they use already wraps (it is based on `Muted`),
+  and the render shows NLog's copyright on two lines.
+- **The About renders of `WindowSmokeTests` measure their height.** They were fixed at 560 x 420
+  and cut the new card off the dumped PNG (the test passed either way, its checks walk the whole
+  tree); `AboutHeight` measures the content twice (the card's items exist only after a first
+  layout pass) and renders at that height, 555 px today, so the dumps show the whole window.
+- **`LevelFrom` is a switch expression on the upper-case value**, where FlatCheck's is a switch
+  statement on the lower case; the same levels, without the analyzers' objections.
+- **A copy at Debug writes 12194 bytes**, measured on the Veil solve's 72 cards, where the plan
+  estimated some 9 KB; ADR 0009 says the measured figure.
+- **The `.tmp` left by a failed in-place write is documented behaviour**, not a finding:
+  `fits-header.md` says so ("On a failure before the move, the original is untouched and the
+  `.tmp` is left behind"). The log now names the temporary file before the write and the
+  failure after it; whether to clean it up stays the owner's call.
+- **Measured** (the kit's rule "Measured numbers"), 2026-10-30, the Release console of the
+  worktree:
+  - the Veil fixture against a header-only destination of 5601 x 3692: `selected 72 keys: 21
+    WCS, 40 SIP, 11 optical`, V-001's counts; the fixture's read line ending `NAXIS1=5601
+    NAXIS2=3692 NAXIS3=3 EXTEND=T CTYPE1='RA---TAN-SIP' CTYPE2='DEC--TAN-SIP'
+    ROWORDER='BOTTOM-UP' A_ORDER=3 PLTSOLVD=T`; `copy done previewed 72 keys (new 72, replaced 0,
+    identical 0) in 29 ms (source 4 ms, dest 0 ms, select 25 ms)` and, with `-o`, `copy done
+    copied 72 keys ... in 50 ms (source 3 ms, dest 1 ms, select 34 ms, write 12 ms)`;
+  - a text file as source: stderr's one line, and in the log the `WARN` with
+    `System.IO.InvalidDataException: Truncated file, or not a valid FITS (the END card is
+    missing).` and its stack through `FitsHeader.ReadFrom`, `ReadPrimary` and `WcsCopy.Run`, then
+    `copy done refused: cannot read the source in 22 ms (source 22 ms)` and `exit 1 after 0.1 s`;
+  - `COPYWCS_LOG=off` after deleting `log\`: no folder appeared; `COPYWCS_LOG=trace`: 102 Trace
+    lines, the fixture's 96 cards and the destination's 6;
+  - the cost, the fixture into `procesate\result.fit` (290 MB, `--force`, `-o` into the
+    scratchpad), alternated: off 1.52 s (cold), 0.49 s, 0.65 s; Debug 0.63 s, 0.56 s, 0.63 s, each
+    Debug run writing 12194 bytes; the stack's file untouched;
+  - the single-file console published as `kit.json` publishes it, copied alone and run with
+    `--help` from another folder: `log\copywcs.log` beside it, `cwd` the other folder; the lock
+    files unmoved;
+  - the published window's `NLog.dll` and `NLog.Targets.AtomicFile.dll` hash equal to
+    AstroDarkroom's 1.0.0 folder's (`B539A440...`, `FBECF655...`); no notices file in the publish;
+  - the About window rendered in both languages with the third-party card whole.
+- **Not done: the window by hand.** Starting it puts a window over the owner's work, and the owner
+  was at the PC; `App`'s constructor and `OnExit` are the only log calls no test runs.

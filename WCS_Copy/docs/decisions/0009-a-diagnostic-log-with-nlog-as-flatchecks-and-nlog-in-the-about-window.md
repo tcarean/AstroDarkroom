@@ -77,7 +77,8 @@ questions to the owner with a recommendation each; the owner chose both recommen
   lines between two processes (its ADR 0070).
 - **One file per process.** Five runs would fill the five files, and a report would come in pieces.
 - **The copied cards at Trace only.** The first log a user sends would not hold the one record a
-  wrong WCS can be diagnosed from; at about 110 bytes a card, a copy writes some 9 KB at Debug.
+  wrong WCS can be diagnosed from; at Debug a copy of the Veil solve's 72 cards wrote 12194
+  bytes (measured 2026-10-30, `docs/design/logging.md`), so the 5 MiB hold some 400 copies.
 - **A notices file beside each executable, About unchanged.** In the suite's flat folder one
   tool's notices would collide with another's or stand for them all, and an executable copied
   alone would carry no NLog notice, which BSD-3-Clause asks of a binary.

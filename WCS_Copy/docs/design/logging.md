@@ -65,6 +65,15 @@ file stand for two processes, each on a thread of its own released by a `Barrier
 (`CopyWcs.Wpf.log` 1048891 bytes, `CopyWcs.Wpf_01.log` 646977), and found 4000 and 4000 whole
 lines, none broken, interleaved both ways round.
 
+The cost, measured on 2026-10-30 with the Release console copying the Veil fixture's solve into
+the 290 MB stack `procesate\result.fit` of the same session (6016 x 4016, so with `--force`, `-o`
+into a scratch folder), the runs alternated: 1.52 s (the cold first run), 0.49 s and 0.65 s with
+`COPYWCS_LOG=off`; 0.63 s, 0.56 s and 0.63 s at Debug, each writing 12194 bytes of log. The log
+costs nothing measurable: a copy's time is the data stream (`write 309 ms` of a `328 ms` run).
+The single-file console published as `kit.json` publishes it, copied alone into a folder and run
+from another, wrote `log\copywcs.log` beside itself; the window's published `NLog.dll` and
+`NLog.Targets.AtomicFile.dll` hash equal to those in AstroDarkroom's 1.0.0 folder.
+
 ## The line
 
 `LineLayout`: `${longdate}` (local time to 0.1 ms; the time zone is in the first line), the level
