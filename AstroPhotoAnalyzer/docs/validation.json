@@ -1425,6 +1425,46 @@
         "save.maxDifference": 0,
         "save.hasWcs": true
       }
+    },
+    {
+      "id": "V-015",
+      "kind": "proof",
+      "image": "starless_rbf0.5_stretch0.17.fit",
+      "parameters": {
+        "icc": "Hahnemuhle PRBaryta.icm"
+      },
+      "tolerance": 0.01,
+      "measuredOn": "2026-10-30",
+      "expected": {
+        "proof.problem": "none",
+        "proof.description": "Hahnemuhle PRBaryta",
+        "proof.paperWhite.L": 97.1895,
+        "proof.paperWhite.a": -0.0145,
+        "proof.paperWhite.b": 1.1133,
+        "proof.paperWhite.srgb": "248,247,245",
+        "proof.paperBlackLstar": 3.4903,
+        "proof.dmax": 2.41,
+        "proof.width": 1946,
+        "proof.pctPaperGamut": 1.3704,
+        "proof.Perceptual.pctScreenGamut": 0.0198,
+        "proof.Perceptual.pctBoth": 0,
+        "proof.Perceptual.meanLstar": 16.9666,
+        "proof.Perceptual.simulated.pctScreenGamut": 0,
+        "proof.Perceptual.simulated.pctBoth": 0,
+        "proof.Perceptual.simulated.meanLstar": 18.0342,
+        "proof.Relative.pctScreenGamut": 0,
+        "proof.Relative.pctBoth": 0,
+        "proof.Relative.meanLstar": 19.6841,
+        "proof.Relative.simulated.pctScreenGamut": 0,
+        "proof.Relative.simulated.pctBoth": 0,
+        "proof.Relative.simulated.meanLstar": 20.3954,
+        "proof.RelativeNoBpc.pctScreenGamut": 0.0168,
+        "proof.RelativeNoBpc.pctBoth": 0,
+        "proof.RelativeNoBpc.meanLstar": 18.1776,
+        "proof.RelativeNoBpc.simulated.pctScreenGamut": 0,
+        "proof.RelativeNoBpc.simulated.pctBoth": 0,
+        "proof.RelativeNoBpc.simulated.meanLstar": 19.0818
+      }
     }
   ]
 }

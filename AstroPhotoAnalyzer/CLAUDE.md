@@ -50,10 +50,10 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   maths, statistics), `Analysis/` decides numbers (one class per measurement family), `Report/`
   decides words (English and Romanian, `Language.cs`) and the recommendations, `Runs/` chains
   them; both applications call `Runs/AnalysisRun.Execute`, and the window alone, after it,
-  `Runs/CurveRun.cs` (the suggested curves and the saved FITS, ADR 0032, ADR 0051), nothing
-  else. `Thresholds.cs`, `Parameters.cs`.
+  `Runs/CurveRun.cs` (the suggested curves and the saved FITS, ADR 0032, ADR 0051) and
+  `Runs/ProofRun.cs` (the soft proof, ADR 0066), nothing else. `Thresholds.cs`, `Parameters.cs`.
 - `AstroPhotoAnalyzer/` - the console: `Program.cs`, `Options.cs`, `AnalyzerCli.cs`. Nothing else.
-- `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, seven
+- `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, eight
   tabs out. Formats, never decides; view-models are public and cannot expose a core type.
 - `AstroPhotoAnalyzer.Tests/` (core + console, portable; `Golden/` holds the console snapshots;
   `testdata/manifest.json` hashes the reference image, which stays outside git) and
@@ -161,6 +161,8 @@ edit:
   is the 1 % rule, the simulation is a gamma curve that a real stretch undercuts).
 - `NoiseAnalyzer`, `QuantizationAnalyzer`: ADR 0015 (two tile criteria on purpose).
 - `JpegAnalyzer`: ADR 0019 (the mean error votes nothing).
+- `SoftProof`, `ProofRun`: `docs/design/soft-proof.md` and ADR 0066 (the table holds the paper's
+  colour, the display step is a scaling, the third intent is the Tonuri tab's model).
 - `ToneCurve`, `CurveAdvisor`, `GamutAnalyzer`, `FitsWriter`: ADR 0032 (the curve never moves
   the dust or the sky; the anchors are the upper part of the classes; the spline is Siril's; the
   gamut is a figure; the writer copies a FITS and never opens the input for writing).

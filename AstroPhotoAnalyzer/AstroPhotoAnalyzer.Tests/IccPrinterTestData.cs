@@ -30,18 +30,69 @@ namespace AstroPhotoAnalyzer.Tests;
 /// </summary>
 internal static class IccPrinterTestData
 {
-    /// <summary>A v2 printer profile (RGB or CMYK device, Lab PCS) whose colorimetric black is <paramref name="blackLstar"/>.</summary>
-    internal static byte[] V2Lut16(string description, double blackLstar, string deviceClass = "prtr", string space = "RGB ", double whiteY = 1.0)
+    /// <summary>
+    /// A v2 printer profile (RGB or CMYK device, Lab PCS) whose colorimetric black is
+    /// <paramref name="blackLstar"/>. With <paramref name="withB2A"/> it also carries the tables
+    /// towards the printer, the inverses of the A2B ones on L* alone (a* and b* are ignored, so
+    /// every colour prints as the grey of its L*): B2A1 with the kink at the black, B2A0 and
+    /// B2A2 with the black at L* 0; without them a reader that needs the printer's direction
+    /// refuses the profile. <paramref name="white"/> is the media white (wtpt) in XYZ, D50 times
+    /// <paramref name="whiteY"/> by default; <paramref name="withPerceptualB2A"/> false leaves
+    /// B2A0 out while keeping B2A1.
+    /// </summary>
+    internal static byte[] V2Lut16(string description, double blackLstar, string deviceClass = "prtr", string space = "RGB ", double whiteY = 1.0,
+        bool withB2A = true, double[]? white = null, bool withPerceptualB2A = true)
     {
         int channels = space == "CMYK" ? 4 : 3;
-        return Assemble(0x02400000, deviceClass, space, new (string, byte[])[]
+        bool inkIsDark = space == "CMYK";
+        white ??= new[] { 0.9642 * whiteY, whiteY, 0.8249 * whiteY };
+        var tags = new List<(string, byte[])>
         {
             ("desc", DescV2(description)),
-            ("wtpt", Xyz(0.9642 * whiteY, whiteY, 0.8249 * whiteY)),
-            ("A2B0", Lut16(channels, 0, space == "CMYK")),
-            ("A2B1", Lut16(channels, blackLstar, space == "CMYK")),
-            ("A2B2", Lut16(channels, 0, space == "CMYK")),
-        });
+            ("wtpt", Xyz(white[0], white[1], white[2])),
+            ("A2B0", Lut16(channels, 0, inkIsDark)),
+            ("A2B1", Lut16(channels, blackLstar, inkIsDark)),
+            ("A2B2", Lut16(channels, 0, inkIsDark)),
+        };
+        if (withB2A)
+        {
+            if (withPerceptualB2A) tags.Add(("B2A0", Lut16Inverse(channels, 0, inkIsDark)));
+            tags.Add(("B2A1", Lut16Inverse(channels, blackLstar, inkIsDark)));
+            tags.Add(("B2A2", Lut16Inverse(channels, 0, inkIsDark)));
+        }
+        return Assemble(0x02400000, deviceClass, space, tags.ToArray());
+    }
+
+    // lut16Type towards the printer: Lab in, the device out. The input table of L* turns the
+    // legacy 16-bit encoding (L* 100 at 0xFF00) into (L* - black) / (100 - black), clamped to
+    // 0..1, over 4096 entries, so the kink at the black is within 0.025 L* of its place; a* and
+    // b* pass through and are then ignored by a 2-point cube whose every output channel is the
+    // L* axis (1 - it on CMYK, where ink is dark). The output tables are the identity.
+    static byte[] Lut16Inverse(int channels, double blackLstar, bool inkIsDark)
+    {
+        const int entries = 4096;
+        var t = new byte[52 + 3 * entries * 2 + 8 * channels * 2 + channels * 2 * 2];
+        Ascii(t, 0, "mft2");
+        t[8] = 3; t[9] = (byte)channels; t[10] = 2;
+        S15(t, 12, 1); S15(t, 28, 1); S15(t, 44, 1);   // the identity matrix
+        U16(t, 48, entries); U16(t, 50, 2);
+        int p = 52;
+        for (int i = 0; i < entries; i++)
+        {
+            double lstar = i / (entries - 1.0) * 65535 / 652.8;
+            double u = Math.Clamp((lstar - blackLstar) / (100 - blackLstar), 0, 1);
+            U16(t, p, (int)Math.Round(u * 65535)); p += 2;
+        }
+        for (int c = 1; c < 3; c++)
+            for (int i = 0; i < entries; i++) { U16(t, p, (int)Math.Round(i / (entries - 1.0) * 65535)); p += 2; }
+        for (int n = 0; n < 8; n++)
+        {
+            int l = (n >> 2) & 1;   // the first input channel, L*, varies slowest
+            int v = (inkIsDark ? 1 - l : l) * 65535;
+            for (int c = 0; c < channels; c++) { U16(t, p, v); p += 2; }
+        }
+        for (int c = 0; c < channels; c++) { U16(t, p, 0); U16(t, p + 2, 65535); p += 4; }
+        return t;
     }
 
     /// <summary>A v4 RGB printer profile whose colorimetric black is <paramref name="blackLstar"/>, as a lutAToB of M curves, matrix and B curves.</summary>

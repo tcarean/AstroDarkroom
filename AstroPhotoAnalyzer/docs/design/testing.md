@@ -66,3 +66,16 @@ striped frame without a WCS, and the saved FITS against hand-built FITS and PNG 
 `Calculeaza`. `ValidationTests` has a third kind of case, `curves`: an analysis, a curve run
 for print (with the parameter `icc`, a profile beside the image, for the gamut figure) and a
 save of the last suggestion into a temporary folder, with the input hashed before and after.
+
+## The soft proof in the tests (ADR 0066)
+
+`SoftProofTests` runs the chain on the hand-built printer profile of `IccPrinterTestData`, which
+since this feature carries the tables towards the printer (B2A0, B2A1, B2A2, the inverses of the
+neutral model on L\* alone, and a `white` for a tinted media white; `withB2A: false` and
+`withPerceptualB2A: false` make the refused profiles): a grey ramp comes back to itself, the
+paper's white and black appear under the simulation, the third intent crushes the tones under
+the black, the perceptual table lands elsewhere than the colorimetric one, the warnings on a
+hand-built `ProofTable` and a `ProofProfile.ForTests`, the problems. `SoftProofTabTests` drives
+the tab through `Compute()`, the synchronous body, and the async paths through
+`ProofComputation`; `WindowSmokeTests.BindingErrors` is internal so that it can watch the tab's
+and the window's renders there too. `ValidationTests` has a fourth kind of case, `proof` (V-015).
