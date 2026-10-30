@@ -258,6 +258,11 @@ public class SoftProofTests
         ProofProfile p = ProofProfile.Open(Profile(ws, white: TintedWhite));
         Assert.Contains("Hartie de test", ProofTexts.ProfileLine(p));
         Assert.Contains("L* " + Fmt.F1(p.PaperWhiteLab.L), ProofTexts.PaperWhiteLine(p));
+        // A chroma that rounds to zero is written 0.0, never -0.0 (the lab's baryta has a* -0.01).
+        ProofProfile grey = ProofProfile.Open(Profile(ws, white: new[] { 0.9642 * 0.93 * 0.9999, 0.93, 0.8249 * 0.93 }, name: "gri.icc"));
+        Assert.InRange(grey.PaperWhiteLab.A, -0.05, 0);
+        Assert.Contains("a* 0.0,", ProofTexts.PaperWhiteLine(grey));
+        Assert.DoesNotContain("-0.0", ProofTexts.PaperWhiteLine(grey));
         Assert.Contains("Dmax 1.52", ProofTexts.PaperBlackLine(p));
         Assert.Contains("L* 20.0", ProofTexts.PaperBlackLine(p));
         Assert.Contains("1.4 %", ProofTexts.PaperGamutLegend(1.4));

@@ -286,10 +286,12 @@ public class SoftProofTabTests
         });
 
     [Fact]
-    public async Task R163_TheControlsFollowThePreparedSetNotTheProof()
+    public async Task R163_TheControlsStayWhileARenderRunsAndNoneShowWithoutASet()
     {
-        // Without a usable set there are no controls; with one they stay through a render of
-        // another intent, so an intent the core would refuse can be left for another.
+        // Without a usable set there are no controls; with one they stay while a render of
+        // another intent runs, "computing" shown meanwhile and the earlier proof still there.
+        // (A table the core refuses at build time, which would keep the controls with no image,
+        // is not reachable from the hand-built profile; that path is read, not tested.)
         var tab = new SoftProofTabViewModel();
         tab.Populate(Result(null));
         tab.Compute();
@@ -302,9 +304,15 @@ public class SoftProofTabTests
         Assert.True(usable.HasControls);
         Assert.True(usable.HasProof);
         usable.IsRelative = true;
+        Assert.True(usable.IsBusy);
+        Assert.True(usable.HasControls);
+        Assert.True(usable.HasProof);
+        Assert.Equal(ProofTexts.Computing, usable.Message);
+        Assert.False(usable.IsProblem);
         await usable.ProofComputation;
         Assert.True(usable.HasControls);
         Assert.True(usable.HasProof);
+        Assert.Null(usable.Message);
         Assert.Contains("Relativ", usable.Caption);
     }
 

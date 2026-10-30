@@ -99,7 +99,8 @@ pattern of the Editare Curbe tab (`_run`): a result that ends after a `Reset` (a
 clear, a newer computation) touches nothing. The controls follow `HasControls`, the prepared set,
 not the proof: they stay while a render runs and after one the core refused (a table with a
 `Problem` throws its reason, shown in red with no image, the set kept), so another intent can be
-chosen. `Compute()` is the synchronous body for the tests; `ProofComputation` the last task
+chosen; that refusal is not reachable from the hand-built profile, so the path is read, not tested.
+`Compute()` is the synchronous body for the tests; `ProofComputation` the last task
 started by either path, for whoever must wait (`MainViewModel.ProofComputation` is the one the
 run started). The controls keep their state from one image to the next and are
 not remembered between runs of the window (ADR 0066).
@@ -119,7 +120,8 @@ is a grid like `CurvesView`: the controls or the red message, the proof inside a
 background is the margin brush (a `Viewbox` that only shrinks), the sentences under it.
 `SoftProofWindow` is maximised and non-modal, over the tab's own view-model (so the window's
 state is the tab's): the controls and the caption in a bar at the top, the margin brush filling
-the window behind the image (a `Viewbox` that also enlarges), and the keys in `PreviewKeyDown`:
+the window behind the image (a `Viewbox` that also enlarges), the message ("computing" or a refused
+table's reason, red) under the caption, and the keys in `PreviewKeyDown`:
 Esc closes, P, G, M, O toggle the boxes and I moves to the next intent through
 `SoftProofTabViewModel.HandleKey`, ignored while the focus is in a text box or a modifier is held.
 

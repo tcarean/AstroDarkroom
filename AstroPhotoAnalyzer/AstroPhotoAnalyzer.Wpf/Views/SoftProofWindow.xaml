@@ -42,6 +42,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <StackPanel>
         <local:SoftProofControls ShowFullScreenButton="False" />
         <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" Style="{StaticResource Muted}" />
+        <!-- "computing", or the reason a table was refused, with the image gone (R-163). -->
+        <TextBlock Text="{Binding Message}" TextWrapping="Wrap">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                  <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
         <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
                    Text="{local:T En='Keys: P paper &amp; ink, G paper gamut, M screen gamut, O original, I next intent, Esc closes. A reduced copy; the pixels and the screen are assumed sRGB.', Ro='Taste: P hartie si cerneala, G gamut hartie, M gamut ecran, O originalul, I intentul urmator, Esc inchide. O copie redusa; pixelii si ecranul sunt presupusi sRGB.'}" />
       </StackPanel>

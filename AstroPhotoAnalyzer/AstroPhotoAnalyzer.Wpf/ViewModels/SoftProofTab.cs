@@ -25,7 +25,8 @@
 // proof is a run after the analysis: MainViewModel starts it once the other tabs are filled
 // (ADR 0051), a change of intent or of the simulation renders again on a pool thread, and the
 // other controls only choose what is shown. The bitmaps are made on the pool thread too, frozen:
-// three overlays over up to 2.7 MP would stall the window for a visible moment.
+// three overlays over the reduction (2.7 MP on the reference image, up to 2400 px on the long
+// side) would stall the window for a visible moment.
 
 using System;
 using System.Threading.Tasks;
@@ -70,6 +71,13 @@ namespace AstroPhotoAnalyzer.Wpf
         /// What one computation or render hands back from the pool thread: the set, the proof
         /// and the frozen bitmaps made from them (null bitmaps with a problem).
         /// </summary>
+        /// <param name="Set">The prepared set, with or without a problem.</param>
+        /// <param name="Proof">The proof; null when the set has a problem.</param>
+        /// <param name="Original">The reduced original's bitmap; null with a problem.</param>
+        /// <param name="Image">The proof's bitmap; null with a problem.</param>
+        /// <param name="Paper">The paper-gamut layer; null with a problem.</param>
+        /// <param name="Screen">The screen-gamut layer; null with a problem.</param>
+        /// <param name="Both">The layer of the pixels outside both; null with a problem.</param>
         sealed record Outcome(ProofSet Set, SoftProofResult Proof, BitmapSource Original, BitmapSource Image, BitmapSource Paper, BitmapSource Screen, BitmapSource Both);
 
         AnalysisResult _result;
@@ -276,7 +284,9 @@ namespace AstroPhotoAnalyzer.Wpf
         internal void Compute()
         {
             _run++;
-            Show(Prepare(_result, _intent, _simulate, null));
+            // A computation in flight is superseded: its finally will not touch these.
+            IsBusy = false; Message = null; IsProblem = false;
+            Show(Prepare(_result, _intent, _simulate));
         }
 
         /// <summary>
@@ -297,7 +307,7 @@ namespace AstroPhotoAnalyzer.Wpf
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                Outcome outcome = await Task.Run(() => Prepare(result, intent, simulate, null));
+                Outcome outcome = await Task.Run(() => Prepare(result, intent, simulate));
                 if (run != _run) return;
                 Show(outcome);
                 IsBusy = false;
@@ -324,11 +334,12 @@ namespace AstroPhotoAnalyzer.Wpf
         async Task RenderAsync()
         {
             ProofSet set = _set; ProofIntent intent = _intent; bool simulate = _simulate;
+            BitmapSource original = _original;   // read here, on the window's thread, as the set is
             int run = ++_run;
             IsBusy = true; IsProblem = false; Message = ProofTexts.Computing;
             try
             {
-                Outcome outcome = await Task.Run(() => Render(set, intent, simulate, _original));
+                Outcome outcome = await Task.Run(() => Render(set, intent, simulate, original));
                 if (run == _run) Show(outcome);
             }
             catch (Exception e)
@@ -345,16 +356,15 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>The core's two steps and the bitmaps, on whichever thread.</summary>
+        /// <summary>The core's two steps and the bitmaps, on whichever thread; a new set, so the original is made too.</summary>
         /// <param name="result">The analysis.</param>
         /// <param name="intent">The intent to render.</param>
         /// <param name="simulate">The simulation's state.</param>
-        /// <param name="original">The original's bitmap when already made for this set; null to make it.</param>
         /// <returns>The outcome; without a proof and bitmaps when the set has a problem.</returns>
-        static Outcome Prepare(AnalysisResult result, ProofIntent intent, bool simulate, BitmapSource original)
+        static Outcome Prepare(AnalysisResult result, ProofIntent intent, bool simulate)
         {
             ProofSet set = ProofRun.Prepare(result);
-            return set.Problem == null ? Render(set, intent, simulate, original) : new Outcome(set, null, null, null, null, null, null);
+            return set.Problem == null ? Render(set, intent, simulate, null) : new Outcome(set, null, null, null, null, null, null);
         }
 
         /// <summary>The core's render and the frozen bitmaps of its result, on whichever thread.</summary>
