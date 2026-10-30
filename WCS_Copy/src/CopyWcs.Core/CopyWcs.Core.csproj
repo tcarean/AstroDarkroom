@@ -1,13 +1,26 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- The core: the FITS header engine, the key lists, the copy run and its texts, the version
-       and the copyright read from the assembly. No Console, no UI, no entry point: a compile
-       boundary (the kit's ADR 0002; ADR 0001). The version and the copyright come from
+       and the copyright read from the assembly, the diagnostic log's configuration and its words
+       (Logging/), the third-party list the About window shows. No Console, no UI, no entry point:
+       a compile boundary (the kit's ADR 0002; ADR 0001). The version and the copyright come from
        Directory.Build.props, the same in every assembly. The number culture is the
        application's business: the console and the tests set InvariantGlobalization, a library
        cannot (the property has no effect without a runtimeconfig). -->
   <PropertyGroup>
     <RootNamespace>CopyWcs</RootNamespace>
   </PropertyGroup>
+
+  <!-- NLog, for the diagnostic log only (ADR 0009): the core logs at its seams (FitsHeader's
+       read and write, WcsCopy's run), and the two applications configure it, in code, through
+       Logging/LogSetup.cs. Without a configuration (a library use) every call writes nothing;
+       the test assemblies configure a capture at Trace (LogCapture). NLog.Targets.AtomicFile is
+       its file target with the operating system's atomic append, so two windows writing one log
+       lose no line. The console, the window and the tests get both packages through this
+       project. -->
+  <ItemGroup>
+    <PackageReference Include="NLog" />
+    <PackageReference Include="NLog.Targets.AtomicFile" />
+  </ItemGroup>
 
   <!-- The core stays internal: its consumers are in this repository and compile with it. -->
   <ItemGroup>

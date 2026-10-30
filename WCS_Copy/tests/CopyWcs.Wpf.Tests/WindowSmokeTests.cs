@@ -45,7 +45,7 @@ public partial class WindowSmokeTests
     // Words that only the Romanian texts hold, the console's (LanguageTests) and the window's
     // own (R-036); the paths of the fixture are temp folders named CopyWcsTests_ plus random
     // letters, so none of these can come from them.
-    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Copiate|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii)\b", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Copiate|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii|COMPONENTE|TERTE|componente|Unealta|jurnalului|leaga)\b", RegexOptions.CultureInvariant)]
     private static partial Regex RomanianWord();
 
     /// <summary>Every text a rendered tree shows: the text blocks (the buttons' and the check boxes' labels become ones), and the hints as strings.</summary>
@@ -222,8 +222,8 @@ public partial class WindowSmokeTests
     /// the window's one About button, which runs Help as F1 does, in each language.
     /// </summary>
     [Theory]
-    [InlineData(false, "Copies the plate solve (WCS) from a FITS solved in Siril into the same image processed elsewhere, card by card, without touching its pixels.", "About", "Version and licence (F1)")]
-    [InlineData(true, "Copiaza plate solve-ul (WCS) dintr-un FITS rezolvat in Siril in aceeasi imagine procesata in alta parte, card cu card, fara sa-i atinga pixelii.", "Despre", "Versiune si licenta (F1)")]
+    [InlineData(false, "Copies the plate solve (WCS) from a FITS solved in Siril into the same image processed elsewhere, card by card, without touching its pixels.", "About", "Version, licence, components (F1)")]
+    [InlineData(true, "Copiaza plate solve-ul (WCS) dintr-un FITS rezolvat in Siril in aceeasi imagine procesata in alta parte, card cu card, fara sa-i atinga pixelii.", "Despre", "Versiune, licenta, componente (F1)")]
     public void R038_TheBandShowsTheConsolesFirstTwoLinesTheExplanationAndTheOnlyAboutButton(bool romanian, string explanation, string about, string tip)
         => _sta.Invoke(() =>
         {
