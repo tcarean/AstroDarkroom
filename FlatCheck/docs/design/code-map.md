@@ -418,8 +418,16 @@ a library extraction and not a copy is ADR 0011.
     histograms - deliberately **not** routed through `Stats.Severity`: a red channel is
     not a worse channel; the neutral accent on an unknown order is ADR 0023),
     `HistogramCanvas` (the hand-drawn chart) and the value converters.
+  - `Presentation/AccessibleTabControl.cs` - the window's tabs (`Tabs` in `MainWindow.xaml`),
+    whose automation peer puts the selected tab's view under the tab's item (R-114, ADR 0074):
+    each tab's peer, a subclass of the stock one, adds the children of the template's presenter
+    `ContentHost` while its tab is selected, which the stock peer does only through the name
+    `PART_SelectedContentHost`, a name that would also move the keyboard focus into a tab on a
+    click on its header. The window's own tab style, with the trigger that shows the tabs, is
+    `BasedOn` the theme's, keyed by this class.
   - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
-    templates; why the converters and the `ToolTip` style live there is ADR 0037.
+    templates; why the converters and the `ToolTip` style live there is ADR 0037. The tabs'
+    style targets `AccessibleTabControl` and names its presenter `ContentHost` (ADR 0074).
   - `Interop/DarkTitleBar.cs` - the one P/Invoke: Windows draws the title bar, not WPF.
 - `FlatCheck.Tests/` - xUnit tests for the core and the console, reaching them via
   `InternalsVisibleTo`.

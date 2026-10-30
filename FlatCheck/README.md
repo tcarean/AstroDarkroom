@@ -1066,7 +1066,7 @@ notices surely travel with the program.
 | **Split** | splits the flats into 2 or 4 groups, runs the Siril script on each in a temporary session and puts the groups' masters beside the whole master: the five tests, the vignetting against the profile, the maps side by side; writes `Split result.txt` and `flatcheck-split.png` in the session folder | on its button, never by itself: it copies gigabytes and runs Siril N times |
 
 With `--lang ro` the tabs read Structura, End to end, Expunere, Histogram, Netezire, Sintetic and
-Split.
+Split. A screen reader such as Narrator reaches what each tab shows, not only the tabs' names.
 
 ### Structure
 

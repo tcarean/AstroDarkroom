@@ -7,7 +7,7 @@
 > no other home. **Covers:** in full, the table of what each application does with the core's
 > outputs (`FlatCheck/`) and `FlatCheck.Wpf/` `ViewModels` and `Views` (the tab mechanics below);
 > by pointer, `FlatCheck.Wpf/Session` (ADR 0033 to 0035, 0055), `Presentation` and `Theme`
-> (ADR 0036, 0037) and `Runs/RunOutcome.cs` (ADR 0011, 0036).
+> (ADR 0036, 0037; the tabs' control, ADR 0074) and `Runs/RunOutcome.cs` (ADR 0011, 0036).
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.

@@ -164,10 +164,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </Border>
 
-      <!-- the seven tabs -->
-      <TabControl>
-        <TabControl.Style>
-          <Style TargetType="TabControl" BasedOn="{StaticResource {x:Type TabControl}}">
+      <!-- the seven tabs; the theme's style is keyed by AccessibleTabControl's type, so this one
+           is based on that key (R-114, ADR 0074) -->
+      <local:AccessibleTabControl x:Name="Tabs">
+        <local:AccessibleTabControl.Style>
+          <Style TargetType="local:AccessibleTabControl" BasedOn="{StaticResource {x:Type local:AccessibleTabControl}}">
             <Setter Property="Visibility" Value="Collapsed" />
             <Style.Triggers>
               <MultiDataTrigger>
@@ -179,7 +180,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </MultiDataTrigger>
             </Style.Triggers>
           </Style>
-        </TabControl.Style>
+        </local:AccessibleTabControl.Style>
 
         <TabItem Header="{l:T En='Structure', Ro='Structura'}">
           <local:StructureView DataContext="{Binding Structure}" />
@@ -202,7 +203,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TabItem Header="Split">
           <local:SplitView DataContext="{Binding Split}" />
         </TabItem>
-      </TabControl>
+      </local:AccessibleTabControl>
     </Grid>
   </Grid>
 </Window>
