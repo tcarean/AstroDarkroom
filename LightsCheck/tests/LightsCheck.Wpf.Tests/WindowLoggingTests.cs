@@ -18,6 +18,8 @@
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
+using System.Windows.Documents;
+using System.Windows.Navigation;
 using LightsCheck.Core;
 using LightsCheck.Tests;
 using NLog;
@@ -30,16 +32,23 @@ namespace LightsCheck.Wpf.Tests;
 /// The window's side of the diagnostic log (R-071, R-073, ADR 0029): a session run's start and
 /// outcome, the refused folder with its exception while the card keeps the message, a stop, the
 /// files the export writes, a superseded run kept at Debug, an exception the window does not
-/// handle, the window's lines in both languages, and two writers on one file through the build of
-/// the atomic target the window ships. The view-model alone, without a window, as
-/// <c>MainViewModelTests</c> runs it.
+/// handle, a link the About window cannot open, the window's lines in both languages, and two
+/// writers on one file through the build of the atomic target the window ships. The view-model
+/// alone, without a window, as <c>MainViewModelTests</c> runs it, except the About window's link,
+/// which needs the UI thread.
 /// </summary>
+[Collection("window")]
 public class WindowLoggingTests
 {
+    private readonly StaFixture _sta;
     private readonly ITestOutputHelper _output;
 
-    /// <summary>The runner's output, for the measured file list.</summary>
-    public WindowLoggingTests(ITestOutputHelper output) => _output = output;
+    /// <summary>The UI thread, for the About window, and the runner's output, for the measured file list.</summary>
+    public WindowLoggingTests(StaFixture sta, ITestOutputHelper output)
+    {
+        _sta = sta;
+        _output = output;
+    }
 
     /// <summary>
     /// Two windows writing one log keep every line (R-073), checked here on the build of the atomic
@@ -211,4 +220,32 @@ public class WindowLoggingTests
         Assert.Equal("a task failed and nobody awaited it: the exception logged above", named.Message);
         Assert.Null(named.Exception);
     }
+
+    /// <summary>
+    /// A link the About window cannot open is a Debug line with the reason, and the window stays.
+    /// A relative link has no absolute address: asking for one throws before anything is started,
+    /// so no browser opens, and the line must not ask for it again, or the exception leaves the
+    /// handler for the window thread's hook, which logs it and lets the window close (the bug
+    /// CopyWcs fixed on 2026-10-30; latent here, every link of the window being absolute).
+    /// </summary>
+    [Fact]
+    public void R071_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays()
+        => _sta.Invoke(() =>
+        {
+            AboutWindow about = new();
+            RequestNavigateEventArgs args = new(new Uri("THIRD-PARTY-NOTICES.md", UriKind.Relative), null)
+            {
+                RoutedEvent = Hyperlink.RequestNavigateEvent,
+            };
+            using LogCapture capture = LogCapture.Start();
+
+            Exception? escaped = Record.Exception(() => about.RaiseEvent(args));
+
+            Assert.Null(escaped);
+            Assert.True(args.Handled);
+            LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == "Window");
+            Assert.Equal(LogLevel.Debug, line.Level);
+            Assert.Equal("the link THIRD-PARTY-NOTICES.md could not be opened in a browser", line.Message);
+            Assert.IsType<InvalidOperationException>(line.Exception);
+        });
 }

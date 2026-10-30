@@ -175,7 +175,10 @@ be given it before the handle is closed. Those processes, and the one of
 `R060_WithoutLangTheProgramSpeaksEnglish`, log as any other, so every test run leaves their lines
 in `log\lightscheck.log` beside the copy of the executable in the test project's build folder,
 rolled like any log. `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers, the
-title bar's and the About window's catches and the wiring of the hooks run in no test: no test
-builds `App`, crashes a process, lacks `dwmapi.dll` or follows a link. The hooks' bodies,
-`LogSetup.Fatal` and `LogSetup.Unobserved`, and the view-model's filter for an exception it does
-not handle, `MainViewModel.LogUnhandled`, are tested directly.
+title bar's catch and the wiring of the hooks run in no test: no test builds `App`, crashes a
+process or lacks `dwmapi.dll`. The hooks' bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, and
+the view-model's filter for an exception it does not handle, `MainViewModel.LogUnhandled`, are
+tested directly. The About window's catch runs in
+`R071_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays`, which raises `RequestNavigate` on
+the window, on the tests' UI thread, with a relative link: asking for its absolute address throws
+before any browser is started, so the test opens nothing.

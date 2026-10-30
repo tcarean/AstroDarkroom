@@ -41,7 +41,8 @@ public partial class AboutWindow : Window
 
     /// <summary>
     /// Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.
-    /// A browser that cannot be started is ignored.
+    /// A link that cannot be opened (no browser starts, or the link is relative and has no
+    /// absolute address) is a Debug line in the diagnostic log with the reason, and the window stays.
     /// </summary>
     /// <param name="sender">The hyperlink clicked.</param>
     /// <param name="e">The navigation request; marked handled, its URI opened.</param>
@@ -54,7 +55,9 @@ public partial class AboutWindow : Window
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-            Log.Debug(ex, "the link " + e.Uri.AbsoluteUri + " could not be opened in a browser");
+            // OriginalString, not AbsoluteUri: a relative link throws there, the very exception
+            // caught here, and the line must not throw it again out of the handler (R-071).
+            Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
         }
     }
 
