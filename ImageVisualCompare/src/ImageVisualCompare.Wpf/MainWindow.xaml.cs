@@ -79,7 +79,7 @@ public partial class MainWindow : Window
             + RenderOptions.ProcessRenderMode);
 
         // The words are the table's, in the language chosen at start-up (ADR 0038); the XAML
-        // holds none of its own. The symbols, "−", "+" and "100%", are the same in both.
+        // holds none of its own but the symbols, "−", "+", "100%" and "vs", the same in both.
         UiText text = UiText.Current;
         NavigationLabel.Text = text.Navigation;
         FitButton.Content = text.Fit;

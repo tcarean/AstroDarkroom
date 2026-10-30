@@ -14,17 +14,6 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   padding question is asked when the sizes differ. `Open…` and `Ctrl+O` still open a whole pair
   (R-009, R-065, ADR 0046).
 
-### Changed
-
-- Every toolbar and dialog button has the 10-pixel padding its style always declared; the
-  border hugged the text before.
-
-### Fixed
-
-- A switch of display mode gave the outgoing pair's memory back only at the next load, not after
-  its first render as intended, so the process carried two pairs in between: on the real FITS pair
-  the release left 665.9 MiB where it now leaves 403.8 MiB (R-081, R-113, ADR 0046).
-
 - A diagnostic log, for the day a problem is reported: `log\ImageVisualCompare.Wpf.log` beside
   the program (or `%LOCALAPPDATA%\ImageVisualCompare\log` when that folder cannot be written),
   in plain text, 1 MiB a file and the five most recent files kept, two windows writing into the
@@ -62,6 +51,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- Every toolbar and dialog button has the 10-pixel padding its style always declared; the
+  border hugged the text before.
 - `About` opens a window laid out as the About windows of the suite's other tools, in this
   tool's colours: the icon, the name, the version and the copyright, a card with the licence
   notice and a link to the GPL's text, a card with the components written by others, NLog with
@@ -82,6 +73,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A switch of display mode gave the outgoing pair's memory back only at the next load, not after
+  its first render as intended, so the process carried two pairs in between: on the real FITS pair
+  the release left 665.9 MiB where it now leaves 403.8 MiB (R-081, R-113, ADR 0046).
 - `LICENSE` now sits next to the program, in the build folder and in the publish folder, where
   the About window says the full licence text is (R-074, ADR 0027).
 - A file WIC fails with an error of its own, an image too large to decode or a damaged WebP,

@@ -76,13 +76,12 @@ breaks as ` | `.
 
 `ImagePairLoader.LoadAsync` holds a `RunClock` in a `using`: `RunClock.Start` writes
 `load start A=<path> B=<path> mode=<asked>`, `Lap` ends a stage (`probe A`, `probe B`, `question`
-while the padding is asked, `decode A`, `decode B`), and `Done` writes `load done <outcome> in N ms`.
-`ReplaceAsync` (R-009) holds one named `replace`: `replace start A=<path> B=<path> changes=A|B
-mode=<asked>`, the stages of the one side probed and decoded, `decode` of the other side only when
-the kept file is decoded again, which a line `the kept A|B was rendered in <m>, so it is decoded
-again in <m>` announces, and `replace done` with the same outcomes as a load. The load's lines
-continue: `Done` writes `load done <outcome> in N ms
-(<stages>)`. The outcomes: `mode=<m> padded=yes|no canvas=WxH buffers=<MiB>`, `declined`,
+while the padding is asked, `decode A`, `decode B`), and `Done` writes `load done <outcome> in N ms
+(<stages>)`. `ReplaceAsync` (R-009) holds one named `replace`: `replace start A=<path> B=<path>
+changes=A|B mode=<asked>`, the stages of the one side probed and decoded, `decode` of the other
+side only when the kept file is decoded again, which a line `the kept A|B was rendered in <m>, so
+it is decoded again in <m>` announces, and `replace done` with the same outcomes as a load. The
+outcomes, for a load and a replace alike: `mode=<m> padded=yes|no canvas=WxH buffers=<MiB>`, `declined`,
 `refused: the sizes differ` (no one to ask), `failed on <path>` after the `Error` line with the
 exception, `cancelled during <path>` without a stack. A load that throws past the catches, a defect,
 leaves `load ended without an outcome after N ms (<stages>)` from `Dispose`, and the crash hook

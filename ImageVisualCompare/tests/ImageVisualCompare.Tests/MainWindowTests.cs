@@ -99,6 +99,7 @@ public class MainWindowTests
 
         object? imageA = null;
         Task changed = null!;
+        Task switched = null!;
         await WpfThread.RunAsync(() =>
         {
             Assert.True(window.ChangeAfterButton.IsEnabled);
@@ -119,7 +120,12 @@ public class MainWindowTests
         Assert.Equal((1, 1), (dialogs.Asked, dialogs.AskedForOne));
         Assert.Equal(ImageSide.B, dialogs.SideAsked);
         Assert.Equal(@"C:\pair", dialogs.DirectoryAsked);
-        Assert.Equal(3, loader.Modes.Count);
+        Assert.Equal([@"C:\pair\a.png", @"C:\pair\b.png", @"C:\pair\c.png"], loader.Loaded);
+
+        // A switch of mode after the change decodes the pair now on screen, not the old file.
+        await WpfThread.RunAsync(() => switched = window.ToggleModeAsync(DisplayMode.Histogram));
+        await switched;
+        Assert.Equal([@"C:\pair\a.png", @"C:\pair\c.png"], loader.Loaded.Skip(3));
     }
 
     [Fact]
@@ -150,7 +156,11 @@ public class MainWindowTests
             Assert.Same(imageB, window.Compare.AfterImage.Source);
         });
         Assert.Equal(ImageSide.A, dialogs.SideAsked);
-        Assert.Equal(3, loader.Modes.Count);
+        Assert.Equal([@"C:\pair\a.png", @"C:\pair\b.png", @"C:\other\c.png"], loader.Loaded);
+
+        // Open… then starts in the folder of the image A chosen last, the change's (R-001).
+        await WpfThread.RunAsync(() => window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)));
+        Assert.Equal(@"C:\other", dialogs.PairDirectoryAsked);
     }
 
     [Fact]
@@ -172,7 +182,7 @@ public class MainWindowTests
 
         await WpfThread.RunAsync(() => Assert.Equal(("a.png", "b.png"), (window.BeforeName.Text, window.AfterName.Text)));
         Assert.Equal(1, dialogs.AskedForOne);
-        Assert.Equal(2, loader.Modes.Count);
+        Assert.Equal([@"C:\pair\a.png", @"C:\pair\b.png"], loader.Loaded);
     }
 
     [Fact]
@@ -197,8 +207,9 @@ public class MainWindowTests
     }
 
     /// <summary>
-    /// Picks the same pair whenever it is asked, and <c>c.png</c> for one image, and counts the
-    /// asking; with <see cref="CancelsTheChange"/> the dialog for one image is cancelled.
+    /// Picks the same pair whenever it is asked, and for one image <c>c.png</c>, in another
+    /// folder for A; counts the asking and keeps the folders asked for; with
+    /// <see cref="CancelsTheChange"/> the dialog for one image is cancelled.
     /// </summary>
     private sealed class CountingDialogs : IFileDialogService
     {
@@ -210,11 +221,14 @@ public class MainWindowTests
 
         public string? DirectoryAsked { get; private set; }
 
+        public string? PairDirectoryAsked { get; private set; }
+
         public bool CancelsTheChange { get; init; }
 
         public ImagePairSelection? PickImagePair(string? initialDirectory = null)
         {
             Asked++;
+            PairDirectoryAsked = initialDirectory;
             return new ImagePairSelection(@"C:\pair\a.png", @"C:\pair\b.png");
         }
 
@@ -223,7 +237,7 @@ public class MainWindowTests
             AskedForOne++;
             SideAsked = side;
             DirectoryAsked = initialDirectory;
-            return CancelsTheChange ? null : @"C:\pair\c.png";
+            return CancelsTheChange ? null : (side == ImageSide.A ? @"C:\other\c.png" : @"C:\pair\c.png");
         }
     }
 
@@ -376,11 +390,13 @@ public class MainWindowTests
 
     /// <summary>
     /// Probes every file as one small image, shown as stored or not, decodes it as a 2 x 2
-    /// bitmap at once, and records the mode of every load.
+    /// bitmap at once, and records the path and the mode of every load.
     /// </summary>
     private sealed class ModeLoader(bool shownAsStored) : IImageLoader
     {
         public List<DisplayMode> Modes { get; } = [];
+
+        public List<string> Loaded { get; } = [];
 
         public ImageInfo Probe(string path) =>
             new(path, 2, 2, 32, ColorChannels.Rgb, IsFloat: shownAsStored, ShownAsStored: shownAsStored);
@@ -391,6 +407,7 @@ public class MainWindowTests
             lock (Modes)
             {
                 Modes.Add(mode);
+                Loaded.Add(path);
             }
 
             var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Bgra32, null, new byte[16], 8);

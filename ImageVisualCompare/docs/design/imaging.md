@@ -207,8 +207,9 @@ decoded: it probes the new file alone, puts its header beside the kept image's `
 each belongs to, and goes through the same `SettlePaddingAsync` and `ModeFor`, so the question's
 wording, the refusal and the fallback are one code path for both; then it decodes the new file,
 and the kept image's file again only when the kept `LoadedImage` was rendered in another mode than
-the one the pair ends in, which happens when a FITS pair in `Histogram` takes a PNG, or a
-`Linear` pair of a FITS and a PNG has the PNG replaced by a FITS while `Histogram` is asked. The
+the one the pair ends in, which happens when a FITS pair in `Histogram` takes a PNG (the other
+way, a `Linear` pair asked for `Histogram` as one file changes, the API allows and the window
+never asks, since `_mode` is always the pair's rendered mode, `shell.md`). The
 kept `LoadedImage` is otherwise the very object of the pair on screen, bitmap included, which is
 what makes the change cost one decode and one buffer; `ImagePairLoaderTests` asserts the object is
 the same. Both methods end through `Done`, the done line and the success result, and `Failed`,

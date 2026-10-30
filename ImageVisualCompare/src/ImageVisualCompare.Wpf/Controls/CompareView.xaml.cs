@@ -180,10 +180,11 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Puts another rendering of the pair on screen in place of the one shown, the same files in
-    /// another display mode (R-113): the two bitmaps and the minimap's thumbnail change, the
-    /// zoom, the pan and the divider stay where they are. The canvas is the same size, since the
-    /// files are the same.
+    /// Puts another rendering on the same canvas in place of the one shown: the same files in
+    /// another display mode (R-113), or one file changed with the canvas size unchanged (R-065).
+    /// The two bitmaps and the minimap's thumbnail change, the zoom, the pan and the divider stay
+    /// where they are. The caller guarantees the canvas size: neither the backdrops nor the
+    /// viewport's content size are touched here.
     /// </summary>
     /// <param name="pair">The pair decoded again, both images frozen Bgra32.</param>
     public void ReplacePair(ImagePair pair)

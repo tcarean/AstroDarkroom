@@ -71,6 +71,11 @@ images.
   carry the open-file glyph of Segoe MDL2 Assets before their text (`ChangeButton` in
   `Theme.xaml`), asked for by the owner on 2026-10-30 so they stand out from the names; the glyph
   is a font character, not an image, so it draws crisp at every display scale and needs no asset.
+- The review of 2026-10-30 found that a horizontal `StackPanel`, which measures its children
+  without a limit, let two long names push `Change B…` past the column's clip (two names of
+  `de_printat_PRINT_preview_16bit.tif`'s length need about 1370 DIPs of toolbar). The label is
+  now a `PairLabelPanel`, and the names' widths are `PairLabelLayout`'s, a Core record with its
+  tests: the names give way, the longer first, never the buttons.
 - The first live run showed every toolbar button's border hugging its text: `ToolButton`'s and
   `ToolToggleButton`'s templates never handed the style's `Padding` to their content. The
   `ContentPresenter` now takes it as its margin, so every toolbar and dialog button is 20 DIPs

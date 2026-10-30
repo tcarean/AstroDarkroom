@@ -27,29 +27,30 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- The pair's names, each followed by the button that changes that image alone
-                     (R-065). Clipped to its column, so a long name never runs under the tools;
-                     each name is trimmed with an ellipsis past its width. -->
-                <StackPanel x:Name="PairPanel"
-                            Grid.Column="0"
-                            Orientation="Horizontal"
-                            HorizontalAlignment="Left"
-                            ClipToBounds="True">
+                     (R-065). The panel gives the two names the widths PairLabelLayout works out
+                     from the room left of the tools, so a long name is trimmed with an ellipsis
+                     and the buttons always fit; the clip is for the floor, where nothing more
+                     can give. -->
+                <controls:PairLabelPanel x:Name="PairPanel"
+                                         Grid.Column="0"
+                                         HorizontalAlignment="Left"
+                                         ClipToBounds="True">
                     <TextBlock x:Name="BeforeName"
+                               controls:PairLabelPanel.IsName="True"
                                Style="{StaticResource ToolLabel}"
                                Foreground="{StaticResource TextBrush}"
                                Margin="0,0,3,0"
-                               MaxWidth="360"
                                TextTrimming="CharacterEllipsis" />
                     <Button x:Name="ChangeBeforeButton" Style="{StaticResource ChangeButton}" IsEnabled="False" />
                     <TextBlock x:Name="VsLabel" Style="{StaticResource ToolLabel}" Margin="12,0" Text="vs" />
                     <TextBlock x:Name="AfterName"
+                               controls:PairLabelPanel.IsName="True"
                                Style="{StaticResource ToolLabel}"
                                Foreground="{StaticResource TextBrush}"
                                Margin="0,0,3,0"
-                               MaxWidth="360"
                                TextTrimming="CharacterEllipsis" />
                     <Button x:Name="ChangeAfterButton" Style="{StaticResource ChangeButton}" IsEnabled="False" />
-                </StackPanel>
+                </controls:PairLabelPanel>
 
                 <StackPanel x:Name="Toolbar" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock x:Name="NavigationLabel" Style="{StaticResource ToolLabel}" />

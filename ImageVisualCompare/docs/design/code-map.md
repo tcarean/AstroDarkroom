@@ -40,6 +40,8 @@
   - `UiText.cs`, `UiLanguage.cs` — every text the application shows, English and Romanian side
     by side, and the table in use (`UiText.Current`). See `language.md`, ADR 0038.
   - `ImageSide.cs` — `A` or `B`: which image a dialog asks for and a change replaces.
+  - `PairLabelLayout.cs` — the widths of the two file names in the toolbar's pair label, so the
+    names are trimmed before a change button is lost. See `shell.md`.
   - `StartupArguments.cs` — the command line: `--lang` and the candidates for the pair.
   - `PointD.cs`, `Geometry.cs` — `PointD`, `SizeD`, `RectD` and `AspectFit`, declared here
     so Core needs no `WindowsBase` reference. See ADR 0009.
@@ -92,6 +94,8 @@
   - `Controls/CompareView.xaml(.cs)` — the comparison surface. All input handling, the
     shared transform, the clip, the overlay, the scrollbars.
   - `Controls/MinimapView.xaml(.cs)` — thumbnail plus viewport rectangle, and click-to-jump.
+  - `Controls/PairLabelPanel.cs` — the row of the toolbar's pair label, whose two names take the
+    widths `PairLabelLayout` gives them. See `shell.md`.
   - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout.
   - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
     `Confirm` to ask yes or no.
