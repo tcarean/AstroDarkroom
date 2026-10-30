@@ -26,8 +26,9 @@
 // SUPERSEDED RUNS. The histogram tab leaves its list clickable while it computes, so a second
 // run can start over the first. RunGuardedAsync numbers its runs and lets only the latest one
 // close the state: a superseded run does not turn off the waiting screen (the new one owns it),
-// shows no error and does not clear the result. For the other tabs, which never overlap runs,
-// the check is always true and changes nothing.
+// shows no error and does not clear the result. For the button tabs, which never overlap runs,
+// the check is always true and changes nothing; the exposure tab's picks can overlap too, and
+// there the window's gate orders the runs' writes (ADR 0077).
 //
 // WHY these classes ARE PUBLIC, when the rest of the application is internal: the WPF binding
 // reads public properties through reflection. The consequence is useful, not only bureaucratic -

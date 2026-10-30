@@ -61,7 +61,7 @@ public class MainViewModelTests
         vm.HistEq.Selected = vm.HistEq.Files[0];
         Task histEq = vm.HistEq.Pending;
         vm.Exposure.Selected = raw;
-        Task expo = vm.Exposure.RecomputeAsync();
+        Task expo = vm.Exposure.Pending;
 
         Task any = Task.WhenAny(histEq, expo);
         Assert.NotSame(any, await Task.WhenAny(any, Task.Delay(1000)));
@@ -659,6 +659,46 @@ public class MainViewModelTests
 
         Assert.Equal(VersionInfo.Banner, vm.Banner);
         Assert.Equal(VersionInfo.Copyright, vm.Copyright);
+    }
+
+    /// <summary>
+    /// R-117: the folder button is locked while the Smoothing or the Synthetic tab is busy, as
+    /// it is during the opening chain: their main runs take longer than a folder change does
+    /// (measured 2026-10-30 on a 24 MP master, 6.4-6.7 s and about 8 s), and their file writes
+    /// have no business landing on another folder's tabs. The gate the test holds keeps each
+    /// run busy.
+    /// </summary>
+    [Fact]
+    public async Task R117_TheFolderButtonIsLockedDuringASmoothingOrSyntheticRun()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        using var ws = new TempWorkspace();
+        var gate = new HeavyRunGate();
+        var vm = new MainViewModel(null, null, _ => true,
+            locateProfiles: () => LensProfileTestData.Sources(ws), gate: gate);
+        var seen = new List<bool>();
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.CanChooseFolder)) seen.Add(vm.CanChooseFolder); };
+
+        await vm.OpenAsync(f.Root);
+        await vm.Synthetic.Pending;
+        Assert.True(vm.CanChooseFolder);
+
+        IDisposable held = await gate.EnterAsync(CancellationToken.None);
+        Task smooth = vm.Smooth.RunAsync();
+        Assert.False(vm.CanChooseFolder);
+        held.Dispose();
+        await smooth;
+        Assert.True(vm.CanChooseFolder);
+
+        held = await gate.EnterAsync(CancellationToken.None);
+        Task synthetic = vm.Synthetic.RunAsync();
+        Assert.False(vm.CanChooseFolder);
+        held.Dispose();
+        await synthetic;
+        Assert.True(vm.CanChooseFolder);
+
+        // the binding hears every change: false at each run, true at its end
+        Assert.Equal(new[] { false, true, false, true }, seen.Skip(seen.Count - 4));
     }
 }
 

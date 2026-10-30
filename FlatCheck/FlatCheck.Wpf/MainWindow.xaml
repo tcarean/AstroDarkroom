@@ -78,10 +78,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
 
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-          <!-- locked while it runs: changing the folder in the middle would cancel the work
-               started, and it is less confusing not to be able to than to lose it. -->
+          <!-- locked while the opening chain, a smoothing or a synthetic run goes: changing
+               the folder in the middle would cancel the work started, and it is less confusing
+               not to be able to than to lose it (R-117). -->
           <Button Content="{l:T En='Choose folder...', Ro='Alege folder...'}" Click="ChooseFolder"
-                  IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}" />
+                  IsEnabled="{Binding CanChooseFolder}" />
 
           <!-- rightmost, at the edge of the bar; it stays active during the analysis too, because
                it touches nothing of what runs -->

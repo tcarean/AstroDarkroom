@@ -5,7 +5,10 @@
 > stay here as numbered pointers, since other notes and tests cite them by number. **Covers:**
 > behaviour that is deliberate or not worth changing, by pointer in the files its items name:
 > `FitsReader.cs`, `ImageLoader.cs`, `RawReader.cs`, `PreviewReader.cs`, `Metrics.cs`,
-> `Stats.cs`, `Analysis/StructureAnalyzer.cs` and `PngWriter.cs`; read before "fixing" any of it.
+> `Stats.cs`, `Analysis/StructureAnalyzer.cs`, `PngWriter.cs` and, for item 9, the run bodies of
+> `FlatCheck.Wpf/ViewModels/ExposureTabViewModel.cs`, `SmoothTabViewModel.cs`,
+> `SyntheticTabViewModel.cs`, `HistEqTabViewModel.cs` and `SplitTabViewModel.cs`; read before
+> "fixing" any of it.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -55,3 +58,16 @@ correctness bugs that used to live here were fixed in phase 8.
    entropy decoding whatever the target) and the copy of the chosen preview's bytes that every
    raw load makes, in modes that never look at them; that is the price of opening the file
    once.
+9. **A folder change during an Exposure run lands the old folder's figures.** The folder button
+   is live during an Exposure run (`MainViewModel.CanChooseFolder` locks it only for the
+   opening chain and while the Smoothing or the Synthetic tab is busy, R-117), and the Exposure tab's run
+   lambda does not re-check its token after its computation: a run that was computing when the
+   folder changed writes its report, figures and `HasResult` on the tab the new folder reset,
+   under the new folder's list with nothing selected, until the next pick. Reproduced
+   deterministically on 2026-10-30; the owner left it as it is, since the run takes about four
+   seconds on a 24 MP raw, too short for the folder to be changed under it (ADR 0077, where
+   the one-line check is the alternative rejected). The Smoothing and Synthetic lambdas check
+   the token on the pool thread at the end of the computation and would land their figures the
+   same way in the narrower window between that check and the continuation, but the button is
+   locked while they run; the Histogram lambda and the Split's run body check after the hop
+   back and land nothing.

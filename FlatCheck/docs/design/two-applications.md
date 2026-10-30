@@ -165,6 +165,14 @@ generation counter of `RunGuardedAsync`), so a superseded run waiting beside the
 not write over its message; the Split puts the same text in its phase line. A tab attached
 without a gate (the tests) runs at once.
 
+**The folder button follows the long runs.** `MainViewModel.CanChooseFolder` is false during
+the opening chain (`IsRunning`) and while the Smoothing or the Synthetic tab is busy
+(`TabViewModel.IsIdle`, heard through their `PropertyChanged`), so a run that takes longer
+than a folder change cannot be cut by one and land on the new folder's tabs (R-117, ADR 0077
+for the measured times). The Exposure, Histogram and Split runs leave the button live: a
+folder change cancels their token, the Histogram and Split runs stop at the check after the
+hop back, and the Exposure run's few seconds are `known-issues.md` item 9.
+
 **An opening that fails past the check.** `SirilSession.Check()` looks only at what exists;
 listing `flats/` or `process/` can still throw afterwards (a folder the user may not list, a
 broken junction). `MainWindow` fires `OpenAsync` without awaiting it, so nothing else would
@@ -198,9 +206,18 @@ preselected and not run at open, the smoothed master as a third kind of row (chi
 - The loader covers the picture, not the tab: the list stays clickable, a new pick cancels the
   running frame's own token and starts over, and a superseded run may not touch the screen.
   That last part is general and lives in `TabViewModel.RunGuardedAsync`: it numbers its runs
-  and lets only the latest one clear the busy state, show an error or drop the result; the
-  other tabs never overlap runs, so for them nothing changes. `TabViewModelTests` pins it with a stub tab. Each view is a
-  bitmap made on the UI thread straight from the full-resolution raster (`RasterBitmaps`), with
+  and lets only the latest one clear the busy state, show an error or drop the result, and
+  nothing more: the run's own writes inside the work are the tab's; `TabViewModelTests` pins
+  it with a stub tab. The button tabs never overlap runs. The Exposure tab can start two: its
+  overlay covers the result column, so the list and the Sky switch stay clickable during a
+  run, and a second pick starts a run that queues at the gate while the first holds the lease
+  through its writes, so the latest pick lands last (measured 2026-10-30, ADR 0077;
+  `SemaphoreSlim` also serves its waiters in order, an implementation detail that matters only
+  when both picks queue behind the opening chain). Without a gate the first run's figures can
+  land after the second's, which is why the Exposure tab keeps the run its setters start in
+  `Pending`, as the Histogram tab does, and the tests await that run rather than start
+  another. Each view is a bitmap made on the UI thread straight from the full-resolution
+  raster (`RasterBitmaps`), with
   no PNG in between, and cached per chip and per state of the false-colours checkbox
   (`modes-histeq.md`, "The false colours").
 

@@ -92,7 +92,7 @@ public class ExposureTabTests
         vm.Attach(f.Session, CancellationToken.None, gate);
 
         vm.Selected = path;
-        Task run = vm.RecomputeAsync();
+        Task run = vm.Pending;
 
         Assert.NotSame(run, await Task.WhenAny(run, Task.Delay(1000)));
         Assert.True(vm.IsBusy);
@@ -115,7 +115,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.True(vm.HasResult);
         Assert.NotEmpty(vm.Centre);
@@ -135,11 +135,11 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
         string panelVerdict = vm.Verdict, level = vm.Centre;
 
         vm.Sky = true;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.Equal(level, vm.Centre);              // the same measurement
         Assert.NotEqual(panelVerdict, vm.Verdict);   // another reading
@@ -155,7 +155,7 @@ public class ExposureTabTests
         var vm = Attached(f);
         vm.Sky = true;
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.Contains("sky flat", vm.Advice, StringComparison.OrdinalIgnoreCase);
     }
@@ -169,13 +169,50 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = bright;
-        await vm.RecomputeAsync();
+        await vm.Pending;
         string first = vm.Centre;
 
         vm.Selected = dim;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.NotEqual(first, vm.Centre);
+    }
+
+    /// <summary>
+    /// A pick's run is the one in Pending, so a test awaits that run and never starts a second
+    /// one beside it: two runs of the same tab at once (the other tests attach no gate) let the
+    /// first one's figures land after the second one's, which is how
+    /// PickingAnotherFileRecomputes flaked on 2026-10-27 (ADR 0077). The Sky switch's run is
+    /// kept the same way. The test holds the gate while it looks at the run, so "not yet
+    /// landed" rests on no timing.
+    /// </summary>
+    [Fact]
+    public async Task APickKeepsItsRunInPendingUntilItLands()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit");
+        var gate = new HeavyRunGate();
+        IDisposable held = await gate.EnterAsync(CancellationToken.None);
+        var vm = new ExposureTabViewModel();
+        vm.Attach(f.Session, CancellationToken.None, gate);
+        Assert.True(vm.Pending.IsCompleted);     // nothing picked, nothing running
+
+        vm.Selected = path;
+        Task pick = vm.Pending;
+
+        Assert.False(pick.IsCompleted);
+        Assert.True(vm.IsBusy);
+        held.Dispose();
+        await pick;
+        Assert.True(vm.HasResult);
+        Assert.False(vm.IsBusy);
+
+        vm.Sky = true;
+        Task sky = vm.Pending;
+
+        Assert.NotSame(pick, sky);
+        await sky;
+        Assert.True(vm.HasResult);
     }
 
     /// <summary>
@@ -192,7 +229,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.True(vm.HasResult);       // it ran
         Assert.False(vm.IsRawFlat);      // but the file is not what the mode asks for
@@ -210,7 +247,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.False(vm.HasResult);
         Assert.True(vm.HasError);
@@ -225,7 +262,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         var expected = new StringWriter();
         RunReport.WriteBanner(expected);
@@ -249,7 +286,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.Equal(4, vm.Histograms.Count);
         Assert.Single(vm.Histograms.Where(r => r.IsBrightest));
@@ -275,7 +312,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.Equal(new[] { "CFA[0,0]", "CFA[0,1]", "CFA[1,0]", "CFA[1,1]" },
                      vm.Histograms.Select(r => r.Label));
@@ -294,7 +331,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.Equal(new[] { "R", "G1", "G2", "B" }, vm.Histograms.Select(r => r.Label));
         Assert.Equal("CFA[0,1]", vm.Histograms[1].Position);
@@ -316,7 +353,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.All(vm.Histograms, r =>
         {
@@ -326,7 +363,7 @@ public class ExposureTabTests
         });
 
         vm.Sky = true;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.All(vm.Histograms, r =>
         {
@@ -346,7 +383,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         var bright = vm.Histograms.First(r => r.IsBrightest);
         Assert.Equal(vm.Centre, $"{bright.Marker:F1} %");
@@ -361,7 +398,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.NotEmpty(vm.Reading);
         Assert.Contains("G1", vm.Reading);
@@ -378,7 +415,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         var only = Assert.Single(vm.Histograms);
         Assert.Equal("mono", only.Label);
@@ -426,7 +463,7 @@ public class ExposureTabTests
 
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.False(vm.Source.IsEnabled);
         Assert.False(vm.Source.IsPreviewSelected);
@@ -570,7 +607,7 @@ public class ExposureTabTests
         string path = f.WriteAnalysableRawFlat("flat.fit");
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
         vm.HistogramGuide.IsExpanded = true;
 
         vm.Reset();
@@ -589,7 +626,7 @@ public class ExposureTabTests
         string path = f.WriteAnalysableRawFlat("flat.fit");
         var vm = Attached(f);
         vm.Selected = path;
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         vm.Reset();
 

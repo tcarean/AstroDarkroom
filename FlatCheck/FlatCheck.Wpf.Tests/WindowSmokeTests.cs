@@ -725,7 +725,7 @@ public class WindowSmokeTests
         {
             vm.Attach(f.Session, CancellationToken.None);
             vm.Selected = path;
-            await vm.RecomputeAsync();
+            await vm.Pending;
 
             using var errors = new BindingErrors();
             Render(new ExposureView { DataContext = vm }, name: "tab-expunere-rezultat");
@@ -789,7 +789,7 @@ public class WindowSmokeTests
         {
             vm.Attach(f.Session, CancellationToken.None);
             vm.Selected = path;
-            await vm.RecomputeAsync();
+            await vm.Pending;
 
             using var errors = new BindingErrors();
             Render(new ExposureView { DataContext = vm }, name: "tab-expunere-mono");

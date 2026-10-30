@@ -29,7 +29,9 @@
 //
 // NEW FOLDER = CANCELLATION. When another folder is chosen while something runs, the old work is
 // cancelled and the tabs empty, instead of leaving results from the previous folder beside the
-// new ones. The cancellation is caught between frames, so it answers in under a second.
+// new ones. The cancellation is caught between frames, so it answers in under a second. The
+// folder button itself is locked during the opening chain and while the Smoothing or the
+// Synthetic tab is busy (CanChooseFolder, R-117), so this applies to the other tabs' runs.
 
 using System;
 using System.Collections.Generic;
@@ -119,6 +121,11 @@ namespace FlatCheck.Wpf
             // other; FileWritten ignores by itself a path that is not the current session's, so
             // a change of folder has nothing to unwire.
             Smooth.Saved += HistEq.FileWritten;
+
+            // The folder button follows the two tabs whose main runs take longer than a folder
+            // change (R-117, ADR 0077): their busy state is part of CanChooseFolder.
+            Smooth.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(TabViewModel.IsIdle)) Raise(nameof(CanChooseFolder)); };
+            Synthetic.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(TabViewModel.IsIdle)) Raise(nameof(CanChooseFolder)); };
         }
 
         /// <summary>Asks a yes/no question in a MessageBox, No by default.</summary>
@@ -169,7 +176,21 @@ namespace FlatCheck.Wpf
         public bool HasProblem => !string.IsNullOrEmpty(_problemText);
 
         /// <summary>True while the analyses started by opening the folder run.</summary>
-        public bool IsRunning { get => _running; private set => Set(ref _running, value); }
+        public bool IsRunning
+        {
+            get => _running;
+            private set { if (Set(ref _running, value)) Raise(nameof(CanChooseFolder)); }
+        }
+
+        /// <summary>
+        /// Whether the folder button is live: not during the opening chain, and not while the
+        /// Smoothing or the Synthetic tab is busy, the two tabs whose main runs are long enough
+        /// for a folder change to land on the new folder's tabs (measured 2026-10-30 on a 24 MP
+        /// master: 6.4-6.7 s and about 8 s; R-117, ADR 0077). The lock is per tab, so their
+        /// shorter runs (the proposal, the stand-alone comparison) lock it too. The other tabs'
+        /// runs take a few seconds and leave the button alone.
+        /// </summary>
+        public bool CanChooseFolder => !_running && Smooth.IsIdle && Synthetic.IsIdle;
 
         /// <summary>The version and the copyright, the same as what the console writes on its
         /// first two lines.</summary>

@@ -78,6 +78,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The window's folder button is disabled while the Smoothing or the Synthetic tab is busy, as
+  it is during the opening chain (R-117, ADR 0077): measured on a 24 MP master, their main
+  runs take 6.4-6.7 s and about 8 s, long enough for a folder change to land on the new
+  folder's tabs; an Exposure pick, about 4 s, leaves it live.
 - `README.md`, the user guide, is in English (ADR 0069), up to date (two packages, five projects,
   the SDK the build needs, how to publish both applications, the lens read from the raw on every
   mount) and holds only what a user needs: the development process, the parity goldens and the
@@ -201,6 +205,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The Exposure tab keeps the run a pick or the Sky switch starts in `Pending`, as the Histogram
+  tab does, and the window tests await that run instead of starting a second one beside it: the
+  two runs computed at once and the first one's figures could land last, which is how
+  `PickingAnotherFileRecomputes` failed once on 2026-10-27 (ADR 0077).
 - NLog 6.2.2 is the fifth third-party component, with its `NLog.Targets.AtomicFile` package so two
   windows writing one log lose no line (BSD-3-Clause, R-112, ADR 0070); the core logs at its seams
   and never in `Analysis/` or `Report/`, and every test runs every log line on its path.
