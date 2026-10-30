@@ -17,13 +17,15 @@
 
 using System.Windows;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace AstroPhotoAnalyzer.Wpf.Tests;
 
 /// <summary>
 /// R-164: the soft proof's full-screen window covers the screen, its panel hides until the
-/// mouse is over its band, and its Close button leaves it. The hover itself is WPF's
-/// MouseEnter / MouseLeave on the band; the tests drive the window's state, not the mouse.
+/// mouse is over its band, and its Close button leaves it. The band's MouseEnter and
+/// MouseLeave are raised here by hand, on a window never shown: whether the three window
+/// attributes cover the taskbar is Windows' doing and is checked on a live run, not here.
 /// </summary>
 [Collection("fereastra")]
 public class SoftProofWindowTests
@@ -32,8 +34,11 @@ public class SoftProofWindowTests
 
     public SoftProofWindowTests(StaFixture sta) => _sta = sta;
 
+    static void Mouse(UIElement on, RoutedEvent what)
+        => on.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = what });
+
     [Fact]
-    public void R164_TheWindowIsBorderlessAndItsPanelHidesUntilShown()
+    public void R164_TheWindowIsBorderlessAndItsPanelHidesUntilTheMouseIsOverItsBand()
         => _sta.Invoke(() =>
         {
             var tab = new SoftProofTabViewModel();
@@ -51,21 +56,32 @@ public class SoftProofWindowTests
                 // The panel starts hidden; its band keeps the panel's height, so there is
                 // something at the top to point at.
                 Assert.False(window.PanelShown);
-                Assert.Equal(Visibility.Hidden, window.Panel.Visibility);
+                Assert.Equal(Visibility.Hidden, window.HoverPanel.Visibility);
                 Assert.True(window.PanelZone.ActualHeight > 0);
-                Assert.Equal(window.Panel.ActualHeight, window.PanelZone.ActualHeight);
+                Assert.Equal(window.HoverPanel.ActualHeight, window.PanelZone.ActualHeight);
                 Assert.Equal(VerticalAlignment.Top, window.PanelZone.VerticalAlignment);
                 // The band is hit-testable while the panel is hidden: a background of its own.
                 Assert.NotNull(window.PanelZone.Background);
                 // The proof fills the whole window behind the band, not the part under it.
                 Assert.Equal(content.ActualHeight, window.Proof.ActualHeight);
+                // The controls (without "Ecran intreg") and the Close button are in the panel,
+                // so they hide with it.
+                Assert.True(window.HoverPanel.IsAncestorOf(window.Controls));
+                Assert.False(window.Controls.ShowFullScreenButton);
+                Assert.True(window.HoverPanel.IsAncestorOf(window.CloseButton));
 
-                window.PanelShown = true;
+                // The mouse enters the band: the panel shows; it leaves: the panel hides.
+                Mouse(window.PanelZone, UIElement.MouseEnterEvent);
                 Layout(content);
-                Assert.Equal(Visibility.Visible, window.Panel.Visibility);
-                window.PanelShown = false;
+                Assert.True(window.PanelShown);
+                Assert.Equal(Visibility.Visible, window.HoverPanel.Visibility);
+                Mouse(window.PanelZone, UIElement.MouseLeaveEvent);
                 Layout(content);
-                Assert.Equal(Visibility.Hidden, window.Panel.Visibility);
+                Assert.False(window.PanelShown);
+                Assert.Equal(Visibility.Hidden, window.HoverPanel.Visibility);
+                // The hold while the margin list is open is not reachable here: a ComboBox that
+                // is not loaded coerces IsDropDownOpen back to false, and the tests show no
+                // window. That path is read, and checked on a live run.
             }
             finally
             {
@@ -83,8 +99,6 @@ public class SoftProofWindowTests
             {
                 Layout((FrameworkElement)window.Content);
                 Assert.Equal("Inchide", (string)window.CloseButton.Content);   // the tests run in Romanian
-                using (Tr.Use(UiLanguage.English))
-                    Assert.Equal("Close", (string)new SoftProofWindow { DataContext = tab }.CloseButton.Content);
                 bool closing = false;
                 window.Closing += (_, _) => closing = true;
                 window.CloseButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
@@ -93,6 +107,18 @@ public class SoftProofWindowTests
             finally
             {
                 window.DataContext = null;
+            }
+            using (Tr.Use(UiLanguage.English))
+            {
+                var english = new SoftProofWindow { DataContext = tab };
+                try
+                {
+                    Assert.Equal("Close", (string)english.CloseButton.Content);
+                }
+                finally
+                {
+                    english.DataContext = null;
+                }
             }
         });
 

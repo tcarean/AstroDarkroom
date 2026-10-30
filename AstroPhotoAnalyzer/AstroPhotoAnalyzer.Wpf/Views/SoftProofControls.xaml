@@ -45,7 +45,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               ToolTip="{local:T En='The image as it is, inside the same margin, for comparison; the warning is not painted over it. Key O.', Ro='Imaginea asa cum e, in aceeasi margine, pentru comparatie; avertismentul nu se picteaza peste ea. Tasta O.'}" />
     <StackPanel Orientation="Horizontal" Margin="0,0,20,4" VerticalAlignment="Center">
       <TextBlock Text="{local:T En='Margin:', Ro='Margine:'}" VerticalAlignment="Center" Margin="0,0,8,0" />
-      <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding Margin}" MinWidth="120" VerticalAlignment="Center"
+      <!-- Named: the full-screen window keeps its panel shown while this list is open (R-164). -->
+      <ComboBox x:Name="MarginList" SelectedValuePath="Tag" SelectedValue="{Binding Margin}" MinWidth="120" VerticalAlignment="Center"
                 ToolTip="{local:T En='The background around the image: the white of the paper, the one the white of the image becomes, or a fixed grey, white to black', Ro='Fundalul din jurul imaginii: albul hartiei, cel in care se transforma albul imaginii, sau un gri fix, de la alb la negru'}">
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.PaperWhite}" Content="{local:T En='Paper white', Ro='Albul hartiei'}" />
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.White}" Content="{local:T En='White', Ro='Alb'}" />
@@ -57,6 +58,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </StackPanel>
     <Button Content="{local:T En='Full screen', Ro='Ecran intreg'}" Command="{Binding FullScreen}" Padding="14,3" VerticalAlignment="Center" Margin="0,0,0,4"
             Visibility="{Binding ShowFullScreenButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
-            ToolTip="{local:T En='The same proof on the whole screen, nothing else; the controls appear while the mouse is at the top; Esc or Close leaves it', Ro='Acelasi proof pe tot ecranul, nimic altceva; controalele apar cat timp mouse-ul e sus; Esc sau Inchide iese'}" />
+            ToolTip="{local:T En='The same proof over the whole screen; the controls appear while the mouse is at the top; Esc or Close leaves it', Ro='Acelasi proof pe tot ecranul; controalele apar cat timp mouse-ul e sus; Esc sau Inchide iese'}" />
   </WrapPanel>
 </UserControl>

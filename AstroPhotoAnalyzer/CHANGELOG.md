@@ -86,7 +86,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - The **Preview** tab of the window (the centre at 100 % and 200 %, the four corners, the
   whole frame, the print simulation, the crop, and the screen-versus-paper step-back rule): the
-  **Soft proof** tab shows the whole image through the paper's profile, maximised, with zoom
+  **Soft proof** tab shows the whole image through the paper's profile, full screen, with zoom
   and pan, and supersedes it. With it go the step-back figures and the monitor pixel pitch
   (`ScreenPixelMm`), which nothing else read. The report's two edge-region sentences that sent
   the reader to the Preview now say to look at the edges before correcting anything. The

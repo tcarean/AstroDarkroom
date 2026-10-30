@@ -21,9 +21,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      whole screen, over the tab's own view-model, the margin filling the screen behind the
      image. The tab's controls, the caption, the message, the key hint and a Close button sit
      in a panel laid over the top of the image, hidden until the mouse is over the band the
-     panel occupies (PanelShown, in the code-behind, from the band's MouseEnter / MouseLeave);
-     the band keeps its height while hidden, so there is something to point at. The keys G, O,
-     I and Esc are in the code-behind. No figure is computed here. -->
+     panel occupies (PanelShown, in the code-behind, from the band's MouseEnter / MouseLeave,
+     held while the margin list is open); the band keeps its height while hidden, so there is
+     something to point at. The keys G, O, I and Esc are in the code-behind. No figure is
+     computed here. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.SoftProofWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -48,7 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <!-- The band at the top: transparent, so the mouse is seen over it while the panel is
          hidden; Hidden, not Collapsed, keeps the panel's height in the band. -->
     <Border x:Name="PanelZone" VerticalAlignment="Top" Background="Transparent">
-      <Border x:Name="Panel" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1" Padding="16,8">
+      <Border x:Name="HoverPanel" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1" Padding="16,8">
         <Border.Style>
           <Style TargetType="Border">
             <Setter Property="Visibility" Value="Hidden" />
@@ -64,7 +65,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Button x:Name="CloseButton" DockPanel.Dock="Right" Content="{local:T En='Close', Ro='Inchide'}" Click="CloseClicked"
                     Padding="14,3" VerticalAlignment="Top" Margin="16,0,0,4"
                     ToolTip="{local:T En='Leaves the full screen; Esc does the same', Ro='Iese din ecranul intreg; Esc face la fel'}" />
-            <local:SoftProofControls ShowFullScreenButton="False" />
+            <local:SoftProofControls x:Name="Controls" ShowFullScreenButton="False" />
           </DockPanel>
           <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" Style="{StaticResource Muted}" />
           <!-- "computing", or the reason a table was refused, with the image gone (R-163). -->

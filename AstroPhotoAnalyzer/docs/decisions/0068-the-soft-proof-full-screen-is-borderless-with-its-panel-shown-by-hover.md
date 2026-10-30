@@ -16,9 +16,10 @@ the image and put the program's chrome beside the paper's white.
 ## Decision
 
 `SoftProofWindow` is a borderless window over the whole screen (`WindowStyle` `None`,
-`WindowState` `Maximized`, `ResizeMode` `NoResize`: the combination WPF fills the screen with,
-taskbar included, without any extent past the screen's edge). The proof and its margin fill the
-window. The former bar becomes a panel laid over the top of the image, with the button
+`WindowState` `Maximized`, `ResizeMode` `NoResize`: no caption, no thick frame, so Windows
+maximises it to the whole monitor, taskbar covered, with nothing past the edge; WPF's
+documented behaviour, not measured in the task's session, so the first run by the owner is the
+check). The proof and its margin fill the window. The former bar becomes a panel laid over the top of the image, with the button
 `Inchide` (`Close`) at its right end, and is hidden until the mouse is over the band it
 occupies (R-164).
 
@@ -26,7 +27,11 @@ The band is the panel's own area: a transparent `Border` at the top of the windo
 panel, whose `Visibility` is `Hidden` rather than `Collapsed`, so the band keeps the panel's
 height and there is something to point at. The band's `MouseEnter` and `MouseLeave` set the
 window's `PanelShown`: the panel shows the moment the mouse enters the band and hides the
-moment it leaves. No delay, no fade, no timer, no toggle key.
+moment it leaves. No delay, no fade, no timer, no toggle key. One exception: while the margin
+list's drop-down is open the panel stays, since the list is taller than the band and the mouse
+can leave past it; it hides when the list closes with the mouse outside the band. When the
+panel hides, the window takes the keyboard focus back from it, so no hidden control answers
+the arrow keys.
 
 Esc still closes (R-163); `Inchide` does the same, for whoever reaches for the mouse. The
 window keeps its title, which the taskbar shows.
@@ -53,6 +58,11 @@ window keeps its title, which the taskbar shows.
   itself is WPF's and is not driven in the tests.
 - The dark title bar helper is no longer called for this window: there is no title bar.
 - The smoke test renders the window with `PanelShown` true, so the PNG shows the panel.
-- A tooltip or the margin list's drop-down opened from the panel is part of the band's subtree
-  for `IsMouseOver`, so hovering them keeps the panel shown; this was not measured on a live
-  window in the task's session, and is the first thing to check if the panel is seen to flicker.
+- The margin list's drop-down is part of the band's subtree for `IsMouseOver`, so hovering it
+  keeps the panel shown, and the list being open holds the panel anyway. A tooltip's popup has
+  no such link to its owner: hovering one may hide the panel, which closes the tooltip, which
+  puts the mouse back over the band; a flicker at worst, and tooltips open beside the cursor,
+  not under it. Neither was measured on a live window in the task's session: the first thing
+  to check if the panel is seen to flicker.
+- The wheel and a drag begun inside the band go to the band, not to the viewer: the top band
+  is the panel's, shown or hidden.

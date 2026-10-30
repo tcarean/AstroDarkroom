@@ -70,7 +70,7 @@ unusable one, the core's reason), the image reduced so that its long side is at 
 `ProofMaxSide` (`RasterOps.Subsample` at the integer stride), the gamut table of R-144 and the
 paper mask with its share. `Render(set, intent, simulate)` builds the intent's table on its first
 use and renders. The reduction is larger than the preview's (`PreviewMaxSide`, 1600) because the
-proof is shown maximised on a 4K screen too.
+proof is shown full screen on a 4K screen too.
 
 ## The texts (`Report/ProofTexts.cs`)
 
@@ -135,10 +135,17 @@ the image (the same `ZoomPanViewer`), and over its top a panel with the controls
 the message ("computing" or a refused table's reason, red), the key hint and the `Close` button
 (`CloseClicked` closes). The panel sits in a transparent `Border`, the band, aligned to the top;
 a style trigger keeps the panel `Hidden` (not `Collapsed`, so the band keeps its height) unless
-the window's `PanelShown` dependency property is true, which the band's `MouseEnter` and
-`MouseLeave` set and clear. The keys are in `PreviewKeyDown`: Esc closes, G and O toggle the
-boxes and I moves to the next intent through `SoftProofTabViewModel.HandleKey`, ignored while
-the focus is in a text box or a modifier is held.
+the window's `PanelShown` dependency property is true, which the band's `MouseEnter` sets and
+`MouseLeave` clears (`HidePanel`), except while the margin list's drop-down is open, since the
+list is taller than the band and the mouse can leave past it; the list's `DropDownClosed` then
+hides the panel if the mouse is no longer over the band. `HidePanel` also takes the keyboard
+focus back to the window when a control of the panel holds it, so no hidden control answers
+the arrow keys. Two things follow from the band being hit-testable: the panel appears on the
+first mouse move after the window opens, not before, and a wheel notch or a drag begun inside
+the band goes to the band, not to the viewer. The keys are in `PreviewKeyDown`: Esc closes
+(the window, even with the margin list open, since the window sees the key first), G and O
+toggle the boxes and I moves to the next intent through `SoftProofTabViewModel.HandleKey`,
+ignored while the focus is in a text box or a modifier is held.
 
 ## What was measured
 
