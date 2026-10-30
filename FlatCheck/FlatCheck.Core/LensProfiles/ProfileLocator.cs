@@ -55,8 +55,8 @@ namespace FlatCheck
         /// <param name="lensfunDir">The lensfun folder looked at.</param>
         /// <param name="lensfunPresent">Whether it holds any .xml file.</param>
         /// <param name="lensfunUnreadable">Whether the folder is there but could not be listed
-        /// (a deny rule, broken permissions): then no lens of it was read and
-        /// <paramref name="lensfunPresent"/> is false (R-115).</param>
+        /// (a deny rule, broken permissions): then no lens of it was read, its version file was
+        /// not read either and <paramref name="lensfunPresent"/> is false (R-115).</param>
         /// <param name="lensfunVersion">The text of its version file; null when there is
         /// none.</param>
         /// <param name="catalog">Every lens found, from both sources.</param>
@@ -228,9 +228,12 @@ namespace FlatCheck
                 lf = LensfunData.Empty;
             }
             profiles.AddRange(lf.Profiles);
+            // A file inside a folder the user may not list can still be opened by name (a deny
+            // on listing does not deny traverse, measured 2026-10-30), so the version is not
+            // read for an unreadable folder: it is left out whole, version included.
             string version = null;
             string vf = Path.Combine(lensfunDir, LensfunVersionFile);
-            if (File.Exists(vf))
+            if (!lfUnreadable && File.Exists(vf))
             {
                 try { version = File.ReadAllText(vf).Trim(); }
                 catch (Exception e)

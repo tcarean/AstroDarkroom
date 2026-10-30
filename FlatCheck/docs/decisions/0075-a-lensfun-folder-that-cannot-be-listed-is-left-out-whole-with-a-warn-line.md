@@ -8,13 +8,14 @@ Status: accepted 2026-10-30
 `ProfileLocator.Locate` decided whether lensfun was present with one unguarded enumeration of
 the `lensfun/` folder beside the executable. A folder that exists but cannot be listed (a deny
 rule, broken permissions after a copy) threw there, and because one `Sources(o)` serves every
-console mode that locates the profiles, `--raw`, `--lens`, `--lenses`, `--synthetic` and
-`--against` printed `ERROR: Access to the path '...\lensfun' is denied.` and exited 1; in the
+console mode that locates the profiles, the structure mode with `--raw` or `--lens`, `--lenses`
+and `--synthetic` (`--against` compares two flats and locates none) printed `ERROR: Access to
+the path '...\lensfun' is denied.` and exited 1; in the
 window the shared `ProfileCatalog` threw the same into every Structure run with a raw in
 `flats/` ("The analysis failed", no five tests, no card) and into the Sintetic prefill. The
-Adobe roots had been made tolerant of this on 2026-10-27 and 2026-10-30 (ADR 0066 corrected,
-ADR 0072): a root that cannot be listed is lost whole, with one Warn line, and the search goes
-on. ADR 0028's consequence, "without the folder every mode runs", did not hold for a folder
+Adobe roots had been made tolerant of this on 2026-10-27 (ADR 0066's dated correction) and
+2026-10-30 (the review of the task that says when Adobe's profiles are missing, R-107's root
+test): a root that cannot be listed is lost whole, with one Warn line, and the search goes on. ADR 0028's consequence, "without the folder every mode runs", did not hold for a folder
 that is there and unreadable.
 
 Measured 2026-10-30 in the task worktree: two tests with `UnlistableFolder` (a deny rule on
@@ -28,8 +29,13 @@ recommendation; the owner chose the third the same day.
 - `Locate` wraps the check and the read of the lensfun folder in one `try`: on any exception
   the folder is left out whole, a Warn line names it (`the lensfun folder <dir> could not be
   listed; its lenses are left out`), `LensfunPresent` is false and a new flag,
-  `ProfileSources.LensfunUnreadable`, is true. The search goes on with the Adobe files and every
-  mode runs as it would without the folder.
+  `ProfileSources.LensfunUnreadable`, is true. The version file is not read either, though a
+  file inside such a folder can still be opened by name (a deny on listing does not deny
+  traverse, measured 2026-10-30 in the task's review): the folder is left out whole,
+  `LensfunVersion` null, so the Sintetic tab's panel shows no version for it. The search goes
+  on with the Adobe files and every mode runs as it would without the folder. In the window
+  that is a load that succeeded, kept by `ProfileCatalog` for the life of the window: a
+  permission fixed afterwards needs a restart, as installing Adobe's profiles does (R-113).
 - The one line that speaks of the folder, `SyntheticReport.SourcesSummary`, printed by
   `--lenses` and shown on the Sintetic tab, ends with ` - the folder could not be read` /
   ` - folderul nu a putut fi citit` in that state, where a missing or empty folder keeps
@@ -58,6 +64,6 @@ recommendation; the owner chose the third the same day.
   `R115_Lenses_AnUnlistableLensfunFolderIsSaidSo_AndTheListStillComes` and the window's
   `R115_AnUnlistableLensfunFolderDoesNotFailTheStructureRun` pin this; the first and the last
   two use `UnlistableFolder` and return on another OS.
-- `ProfileSources` gains a constructor parameter; the two tests that build one by hand pass
-  `false`. The mechanics are in `docs/design/lens-profiles.md` (section 5) and the Warn line
+- `ProfileSources` gains a constructor parameter; the three test call sites that build one by
+  hand pass `false`. The mechanics are in `docs/design/lens-profiles.md` (section 5) and the Warn line
   in `docs/design/logging.md`'s `ProfileLocator` row.

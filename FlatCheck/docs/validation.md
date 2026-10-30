@@ -188,7 +188,9 @@ Every case also prints its measured figures as a JSON line, and appends it to th
   `Report/SyntheticReport.cs` (`SourcesSummary`) and a `try` to `ProfileLocator.Locate`: the 36
   large files present with their hashes, 48 passed in 2 min 26 s, and with the dump compared to
   `validation.json` case by case, every figure and verdict of V-001 to V-040 equal to the recorded
-  one (3 min 12 s, the second run). No figure changed; no formula moved.
+  one (3 min 12 s, the second run). Again after the code review's fixes to the same files (the
+  version file skipped for an unreadable folder, a comment): 48 passed, every measured line
+  identical to the first run's, 2 min 56 s. No figure changed; no formula moved.
 
 - 2026-10-28: re-measured at the wrap-up of the task that says on the Structure tab when Adobe's
   lens profiles are missing (R-113, ADR 0073), which added texts to `Report/StructureReport.cs`

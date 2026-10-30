@@ -431,8 +431,9 @@ namespace FlatCheck
             if (s == null || s.AdobeFiles > 0) return "";
             string missing = T("Adobe's lens profiles were not found on this computer.",
                                "Profilele de obiectiv Adobe nu au fost gasite pe acest calculator.");
-            // The gap's own condition: no lensfun lens read, whether the folder is missing or
-            // none of its files could be read (it then counts as present).
+            // The gap's own condition: no lensfun lens read, whether the folder is missing,
+            // cannot be listed (R-115) or none of its files could be read (it then counts as
+            // present).
             return s.LensfunLenses == 0 ? missing
                  : missing + " " + T("Without them the lens is looked for in lensfun alone, the database that ships with FlatCheck: "
                                      + "one database instead of two, and a raw that names no lens (a Nikon writes only an ID) "
