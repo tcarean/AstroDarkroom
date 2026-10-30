@@ -22,4 +22,5 @@ the same task as the code it covers.
 
 | Area | Note | Read before editing |
 | --- | --- | --- |
-| The launcher: the catalogue, where an app is, the plan of a start, `release.json`, the two windows and the icons | `launcher.md` | anything in `src/AstroDarkroom.Core/` or `src/AstroDarkroom.Wpf/`, anything in `Icon/`, any text the window shows, in either language |
+| The launcher: the catalogue, where an app is, the plan of a start, `release.json`, the third-party list, the two windows and the icons | `launcher.md` | anything in `src/AstroDarkroom.Core/` or `src/AstroDarkroom.Wpf/`, anything in `Icon/`, any text the window shows, in either language |
+| The diagnostic log: where the files go and how they roll, the level, the line, what the launcher writes and where | `logging.md` | anything in `src/AstroDarkroom.Core/Logging/`, `App.xaml.cs`, any log line, the logging tests |

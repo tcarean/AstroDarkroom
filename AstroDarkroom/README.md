@@ -27,6 +27,7 @@ folder with every executable side by side and the .NET 8 runtime included (nothi
 and `AstroDarkroom.exe`, the launcher: a window with one row per tool (its icon, title,
 description and version) and an **Open** button. A row whose executable is missing from the
 folder is disabled and names the missing file. **About** (F1) shows the suite's version, its date, the licence, the
+component written by others that the launcher uses (see "Third-party components"), the
 requirements below and the version of every component.
 
 The launcher speaks English or Romanian: the two buttons with a flag in the bottom bar,
@@ -82,6 +83,43 @@ during the download or is not the published one.
 | --- | --- | --- | --- |
 | (none yet) | | | |
 
+## Logs
+
+The launcher keeps a log of what it did, for the day something goes wrong. To report a problem,
+attach the whole `log` folder beside `AstroDarkroom.exe`: it holds the launcher's log and those
+of the tools that keep one, each under its own name (`FlatCheck.Wpf.log`,
+`LightsCheck.Wpf.log`, ...), so one folder shows what happened from the click in the launcher to
+the tool it opened.
+
+**Where it is.** In the folder `log` beside the launcher: `log\AstroDarkroom.log`. When that
+folder cannot be written (a suite folder under Program Files, a read-only drive), the log goes
+to `%LOCALAPPDATA%\AstroDarkroom\log` instead, and its first line says so; a tool that cannot
+write there goes to a folder of its own name under `%LOCALAPPDATA%`. Past 1 MiB (1,048,576
+bytes, so a file ends one line past that) a file is left and the next one is started
+(`AstroDarkroom_01.log`, `AstroDarkroom_02.log`, ...); the five most recent files are kept and
+the older ones deleted, so the launcher's log takes about 5 MiB at most. Two launchers open at
+the same time write into the same file, each line marked with its process.
+
+**What is in it.** One line per event, numbers with a point: at the start the version, the
+command line, the Windows and .NET versions, the processors and the memory, the culture and the
+time zone, and the folders; the language and where it came from; what `release.json` says, the
+version and commit of every component, or why it could not be read; how many of the six tools
+are in the folder and which are missing; the window's size and place on the screen; each change
+of language; each tool you open, with its file, its arguments and the process it became, or the
+error Windows gave; when **About** was opened and closed; every error with its technical
+details, those the launcher works around without a word included (a `release.json` or a
+settings file it cannot read, a setting it cannot save); at the end the exit code and how long
+the launcher was open. The log's own words are English whatever the window's language; an
+error's message appears as you saw it. It holds the paths of the suite folder, of the working
+folder and of the settings file, which is under your Windows account's folder and so names the
+account, and nothing of your images.
+
+**How much.** The environment variable `ASTRODARKROOM_LOG` sets the level: `off`, `fatal`,
+`error`, `warn`, `info`, `debug` (the default) or `trace`; `debug` already writes everything
+above, `off` writes no log and creates no folder. Set it once for your account with
+`setx ASTRODARKROOM_LOG warn` (or in Windows' environment variables) and start the launcher
+again; a program already open keeps the value it started with.
+
 ## How a release is made
 
 From Claude Code, in the `AstroDarkroom` folder of the main checkout, on `main`, with every
@@ -108,9 +146,23 @@ The launcher alone, from the build folder, sees every tool as missing: it is mad
 the suite's folder, `artifacts/X.Y.Z/`, after a `scripts/release.ps1 -Version X.Y.Z -PublishOnly`
 (the steps are in the `README.md` at the repository's root).
 
+## Third-party components
+
+The launcher links one component written by others; **About** names it with its licence, its
+copyright line and its address, and `THIRD-PARTY-NOTICES.md` holds the licence's whole text and
+why it is compatible with the GPLv3 (ADR 0013).
+
+| Component | Used for | Licence |
+| --- | --- | --- |
+| NLog and NLog.Targets.AtomicFile 6.2.x | writing the log (see "Logs"), two launchers into one file | BSD-3-Clause |
+
+FlatCheck's and LightsCheck's windows ship the same two files at the same version, so the suite
+folder holds one copy of each.
+
 ## For developers
 
 The working rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`, the requirements with
 IDs in `docs/requirements.md`, the decisions in `docs/decisions/`, how the launcher is made in
-`docs/design/launcher.md`. The plan of the whole suite is in the kit:
+`docs/design/launcher.md` and how its log is made in `docs/design/logging.md`. The plan of the
+whole suite is in the kit:
 `ClaudeCodeStarterKit/docs/plans/2026-10-24-build-the-astro-darkroom-suite.md`.

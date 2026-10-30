@@ -14,6 +14,19 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Added
 
+- A diagnostic log, for bug reports (R-011 to R-014, ADR 0012): the launcher writes
+  `log\AstroDarkroom.log` beside `AstroDarkroom.exe`, in the same `log` folder as the tools'
+  logs (or under `%LOCALAPPDATA%\AstroDarkroom\log` when that folder cannot be written), at most
+  5 files of 1 MiB each, rolled by NLog. It holds the version, the arguments, the machine and the
+  runtime, what `release.json` says or why it could not be read, the language setting read and
+  written, the tools present and missing, the window's size and screens, each language switch,
+  each tool opened with the process it became or the error, "Despre", and every exception with
+  its stack, those the launcher recovers from included. The log's own words are English
+  whatever the language. `ASTRODARKROOM_LOG=off|fatal|error|warn|info|debug|trace` sets the
+  level, Debug by default.
+- "Despre" lists the component written by others the launcher now ships, NLog, with its role,
+  licence, copyright line and address, under "Third-party components" / "Componente terte"
+  (R-015, ADR 0013); `THIRD-PARTY-NOTICES.md` holds its licence's whole text.
 - Each row of the launcher shows its tool's own icon, dimmed when the tool is missing from
   the suite folder (R-010, ADR 0011); the icons are copies of the components' files, kept
   equal to them by `SuiteTests`.
@@ -52,3 +65,11 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 - The "unreleased changes" note is no longer shown, in the rows or in "Despre";
   `release.json` keeps its `unreleased` key (ADR 0007).
+
+### Internal
+
+- NLog 6.2.2 and NLog.Targets.AtomicFile 6.2.2 are the launcher's first packages, at
+  FlatCheck's and LightsCheck's version, so the suite folder keeps one copy of each DLL;
+  `SuiteTests` now compares the launcher's lock files with the components', and the test
+  project targets `net8.0-windows`, so its tests load the build of the atomic target the window
+  ships (ADR 0012).
