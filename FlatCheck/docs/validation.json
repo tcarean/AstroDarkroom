@@ -1,5 +1,5 @@
 {
-  "$comment": "Acceptance figures on the real masters, machine-readable. ValidationTests (trait Category=Validation, not in the gate, ADR 0004) reads this file; docs/validation.md explains each case and records every change. Kinds: structure (StructureRun on the master), profile (the sixth test with the raw beside the master, nearest profile), smooth (SmoothRun at scalePx), against (AgainstRun on the master and the synthetic written from the named lens at focalMm/fstop/crop). Paths are manifest names under FLATCHECK_TESTDATA_LARGE. tolerance applies to every numeric field of expected (percent points, or stops for the profile and against kinds). Change a figure here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "$comment": "Acceptance figures on the real masters, machine-readable. ValidationTests (trait Category=Validation, not in the gate, ADR 0004) reads this file; docs/validation.md explains each case and records every change. Kinds: structure (StructureRun on the master), profile (the sixth test with the raw beside the master, nearest profile), smooth (SmoothRun at scalePx), against (AgainstRun on the master and the synthetic written from the named lens at focalMm/fstop/crop). Paths are manifest names under FLATCHECK_TESTDATA_LARGE. A profile case with sources: lensfun searches no Adobe folder, only the shipped lensfun copy (a computer without Adobe's profiles). tolerance applies to every numeric field of expected (percent points, or stops for the profile and against kinds). Change a figure here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
   "cases": [
     {
       "id": "V-001",
@@ -724,6 +724,24 @@
         "ratioResidualPtpPct": 2.833,
         "shapeVerdict": "BUN",
         "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-049",
+      "kind": "profile",
+      "master": "Nikkor 35mm DX/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
+      "raw": "Nikkor 35mm DX/ISO400/f2.8-sky/flats/DSC_0031.NEF",
+      "sources": "lensfun",
+      "tolerance": 0.02,
+      "measuredOn": "2026-10-30",
+      "expected": {
+        "masterStops": 0.63,
+        "shapeVerdict": "BUN",
+        "verdict": "ACCEPTABIL",
+        "diffStops": 0.207,
+        "nearest": "Nikon AF-S DX Nikkor 35mm f/1.8G [Nikon F AF, calibrat pe full frame 1]",
+        "depthVerdict": "ACCEPTABIL",
+        "profiles": 3
       }
     }
   ]

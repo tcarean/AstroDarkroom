@@ -323,11 +323,74 @@ internal static class LensProfileTestData
 </lensdatabase>";
 
     /// <summary>
+    /// The mount definitions and the lenses of the mount test (R-116): lensfun's own
+    /// <c>Nikon F AF</c> and <c>Nikon Z</c> entries (slr-nikon.xml, mil-nikon.xml; the F body's
+    /// compat list names the older F mounts and the adapter mounts, never Z, while the Z body's
+    /// names every F mount), a Tokina of the D3300 raw's range on <c>Nikon Z</c>, which the
+    /// camera's first word lets through ("Nikon Z Tokina" contains "NIKON"), and one on
+    /// <c>Nikon F AI</c>, which only the compat list admits.
+    /// </summary>
+    internal const string LensfunMountsXml = @"<!DOCTYPE lensdatabase SYSTEM ""lensfun-database.dtd"">
+<lensdatabase version=""2"">
+    <mount>
+        <name>Nikon F AF</name>
+        <compat>Nikon F</compat>
+        <compat>Nikon F AI</compat>
+        <compat>Nikon F AI-S</compat>
+        <compat>M42</compat>
+        <compat>M39/1</compat>
+        <compat>DKL</compat>
+        <compat>T2</compat>
+        <compat>Generic</compat>
+    </mount>
+    <mount>
+        <name>Nikon Z</name>
+        <compat>Nikon F</compat>
+        <compat>Nikon F AI</compat>
+        <compat>Nikon F AI-S</compat>
+        <compat>Nikon F AF</compat>
+        <compat>M42</compat>
+        <compat>M39/1</compat>
+        <compat>DKL</compat>
+        <compat>T2</compat>
+        <compat>Generic</compat>
+    </mount>
+    <camera>
+        <maker>Nikon Corporation</maker>
+        <maker lang=""en"">Nikon</maker>
+        <model>Nikon Z 7</model>
+        <model lang=""en"">Z 7</model>
+        <mount>Nikon Z</mount>
+        <cropfactor>1.0</cropfactor>
+    </camera>
+    <lens>
+        <maker>Tokina</maker>
+        <model>Tokina atx-m 11-20mm f/2.8 Z</model>
+        <mount>Nikon Z</mount>
+        <cropfactor>1.5</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""11"" aperture=""2.8"" distance=""1000"" k1=""-0.9000"" k2=""0.3000"" k3=""-0.1000""/>
+        </calibration>
+    </lens>
+    <lens>
+        <maker>Tokina</maker>
+        <model>Tokina AT-X 11-20mm f/2.8 AI</model>
+        <mount>Nikon F AI</mount>
+        <cropfactor>1.5</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""11"" aperture=""2.8"" distance=""1000"" k1=""-0.7000"" k2=""0.2000"" k3=""-0.0800""/>
+        </calibration>
+    </lens>
+</lensdatabase>";
+
+    /// <summary>
     /// A profiles folder as --profiles expects it: an .lcp anywhere in it, and lensfun/ beneath.
     /// With <paramref name="tokinaOnTwoFormats"/> the lensfun half also carries the Tokina's
     /// full-frame calibration, so the same lens is listed twice, once per calibration format.
+    /// With <paramref name="mounts"/> it also carries <see cref="LensfunMountsXml"/>: the Nikon
+    /// mount definitions and two Tokinas of the raw's range on mounts the D3300 does not take.
     /// </summary>
-    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false)
+    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool mounts = false)
     {
         string dir = Path.Combine(ws.Dir, "profiles");
         Directory.CreateDirectory(Path.Combine(dir, "Tokina"));
@@ -364,6 +427,8 @@ internal static class LensProfileTestData
                 LcpOneProfile("PENTAX", PentaxDa18135, PentaxDa18135, "8 215", "1.5", "18"));
             File.WriteAllText(Path.Combine(dir, "lensfun", "other-mounts.xml"), LensfunOtherMountsXml);
         }
+        if (mounts)
+            File.WriteAllText(Path.Combine(dir, "lensfun", "slr-mounts.xml"), LensfunMountsXml);
         File.WriteAllText(Path.Combine(dir, "lensfun", "LENSFUN-VERSION.txt"), "lensfun database snapshot\nupstream commit: test\n");
         return dir;
     }
@@ -371,11 +436,12 @@ internal static class LensProfileTestData
     /// <summary>
     /// The sources located on <see cref="ProfilesDir"/>. Without <paramref name="withAdobe"/> the
     /// Adobe folder searched is one that does not exist, so only lensfun/ is read: a computer
-    /// without Adobe software (R-113).
+    /// without Adobe software (R-113). With <paramref name="mounts"/> the lensfun half carries the
+    /// Nikon mount definitions and the two Tokinas on other mounts (R-116).
     /// </summary>
-    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool withAdobe = true)
+    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool withAdobe = true, bool mounts = false)
     {
-        string dir = ProfilesDir(ws, tokinaOnTwoFormats, otherMounts);
+        string dir = ProfilesDir(ws, tokinaOnTwoFormats, otherMounts, mounts);
         string adobe = withAdobe ? dir : Path.Combine(ws.Dir, "no-adobe");
         return ProfileLocator.Locate(new[] { adobe }, Path.Combine(dir, "lensfun"));
     }

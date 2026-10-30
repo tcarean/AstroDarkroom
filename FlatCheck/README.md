@@ -286,9 +286,11 @@ Measured on the author's library (D3300, `--raw` with the first raw of `flats/`;
 
 What it cannot know: the profile is the model of the lens, not your copy of it, and it is
 achromatic; the master is the 2x2 mean of the mosaic. **A manual lens** (the Samyang) carries no
-lens ID that any profile knows; then the candidates are the lenses of the mount whose name states
-exactly the range in the raw (135 mm f/2.0), and the report says the list may hold another lens of
-the same range: read your lens's row. With no raw beside the master and no `--lens` there is no
+lens ID that any profile knows; then the candidates are the lenses on your camera's mount (for
+a lensfun lens, the mount lensfun's camera table gives the body or one it says fits it; for an
+Adobe file, the camera's maker in its name) whose name states exactly the range in the raw
+(135 mm f/2.0), and the report says the list may hold another lens of the same range: read your
+lens's row. With no raw beside the master and no `--lens` there is no
 comparison: the block says why, and the verdict stays the five tests'. A raw that says nothing
 about its lens (a camera on a telescope, or a lens without contacts: no lens ID, no name, no
 focal range) is named as such, and the report says what to give: `--lens <text>`, plus `--focal`

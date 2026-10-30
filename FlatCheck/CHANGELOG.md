@@ -127,6 +127,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A lensfun lens is a candidate for the raw's camera only on a mount the camera takes, by lensfun's
+  own camera and mount tables (R-116, ADR 0076): on a computer without Adobe's profiles the Nikkor
+  35 DX master was compared against the Viltrox, MEKE and Nikkor Z 35 f/1.8 lenses too, because
+  the rule was the camera's first word in the lens's mount or maker, and the verdict came from the
+  Viltrox Z. The word stays (an Adobe file carries no mount; a camera lensfun does not know keeps
+  it alone); the Z lenses go, on the range-only path and on the join beside an Adobe ID hit alike.
 - A `lensfun/` folder beside the executable that cannot be listed (a deny rule, broken
   permissions) no longer fails the profile search, and with it the console's structure mode
   with `--raw` or `--lens`, `--lenses` and `--synthetic` (exit 1) and the window's Structure and

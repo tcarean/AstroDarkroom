@@ -1355,6 +1355,89 @@ public class LensIdentificationTests
         Assert.False(id.CandidatesByRangeOnly);
     }
 
+    /// <summary>
+    /// The camera's first word is not a mount: "Nikon Z Tokina" contains "NIKON", and on a
+    /// machine without Adobe's profiles the Nikkor 35 DX master got its verdict from a Viltrox
+    /// Z lens (2026-10-28). A lensfun lens on the range path must also sit on the mount lensfun
+    /// gives the body, or on one that mount's definition calls compatible (R-116, ADR 0076); a
+    /// body the table does not know keeps the first-word rule alone.
+    /// </summary>
+    [Fact]
+    public void R116_ARangeOnlyCandidateFitsTheCamerasLensfunMount()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, mounts: true);
+        var manual = Raw();
+        manual.LensId = 999;                                   // no profile carries it
+
+        ShotIdentity id = LensIdentification.Identify(Master(), manual, sources, rawName: "x.NEF");
+
+        Assert.True(id.CandidatesByRangeOnly);
+        // the Nikon Adobe file, the lensfun Tokina on Nikon F AF and the one on Nikon F AI (compat); not the Z
+        Assert.Equal(3, id.Candidates.Count);
+        Assert.DoesNotContain(id.Candidates, c => c.Mount.Contains("Nikon Z"));
+        Assert.Contains(id.Candidates, c => c.Mount == "Nikon F AI");
+        Assert.Contains(id.Candidates, c => c.Mount == "Canon EF / Nikon F AF");
+
+        // a body lensfun does not know: the first word alone, as before, and the Z lens is back
+        var unknownBody = Raw();
+        unknownBody.LensId = 999;
+        unknownBody.Camera = "NIKON D9999";
+        var master = Master();
+        master.Camera = "NIKON D9999";
+        id = LensIdentification.Identify(master, unknownBody, sources, rawName: "x.NEF");
+        Assert.True(id.CandidatesByRangeOnly);
+        Assert.Equal(4, id.Candidates.Count);
+        Assert.Contains(id.Candidates, c => c.Mount == "Nikon Z");
+
+        // a Z body takes every F lens: its compat list names them
+        var zBody = Raw();
+        zBody.LensId = 999;
+        zBody.Camera = "NIKON Z 7";
+        master.Camera = "NIKON Z 7";
+        id = LensIdentification.Identify(master, zBody, sources, rawName: "x.NEF");
+        Assert.Equal(4, id.Candidates.Count);
+    }
+
+    /// <summary>
+    /// The same rule on the ID path: beside an Adobe hit the lensfun lenses of its maker join
+    /// by range (ADR 0030), and on the owner's machine that put the Nikkor Z 35 f/1.8 S beside
+    /// the Nikkor 35 DX. One rule for both paths (R-116).
+    /// </summary>
+    [Fact]
+    public void R116_TheLensfunLensesThatJoinAnIdHitFitTheCamerasMountToo()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, mounts: true);
+
+        ShotIdentity id = LensIdentification.Identify(Master(), Raw(), sources, rawName: "x.NEF");
+
+        Assert.False(id.CandidatesByRangeOnly);
+        Assert.Equal(3, id.Candidates.Count);                  // the Adobe file by ID 139, the F AF and the F AI Tokinas
+        Assert.DoesNotContain(id.Candidates, c => c.Mount.Contains("Nikon Z"));
+        Assert.Equal(ProfileSource.Adobe, id.Candidates[0].Source);
+    }
+
+    [Fact]
+    public void Lensfun_MountsOfIsTheCamerasMountAndItsCompatList()
+    {
+        var d = LensfunReader.ReadXml(LensProfileTestData.LensfunMountsXml, "x.xml");
+        Assert.Equal(2, d.Mounts.Count);
+        var z = d.MountsOf("NIKON Z 7");
+        Assert.Contains("Nikon Z", z);
+        Assert.Contains("Nikon F AF", z);
+        Assert.Equal(10, z.Count);
+        Assert.Null(d.MountsOf("NIKON D3300"));                // not in this document
+        Assert.Null(d.MountsOf(null));
+
+        // a mount without a definition is itself alone; a camera without a mount gives none
+        var f = LensfunReader.ReadXml(LensProfileTestData.LensfunXml, "y.xml");
+        Assert.Empty(f.Mounts);
+        Assert.Equal(new[] { "Nikon F AF" }, f.MountsOf("NIKON D3300"));
+        var noMount = LensfunReader.ReadXml(LensProfileTestData.LensfunXml.Replace("<mount>Nikon F AF</mount>", ""), "z.xml");
+        Assert.Null(noMount.MountsOf("NIKON D3300"));
+    }
+
     [Fact]
     public void FirstRawIsTheRuleBothTabsShare()
     {

@@ -148,10 +148,15 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   file, with a Warn line in the diagnostic log (`logging.md`). `Make`/`CameraPrettyName` becomes the mount label ("NIKON CORPORATION"),
   `LensPrettyName` the name, the first word of it the maker.
 - **lensfun** (`LensfunReader.ReadXml`): `<camera>` (maker, model + `lang` aliases, mount,
-  cropfactor) and `<lens>` (same, plus `<calibration><vignetting model="pa" .../>`);
+  cropfactor), `<lens>` (same, plus `<calibration><vignetting model="pa" .../>`) and the
+  `<mount>` definitions at a file's root (`<name>` and its `<compat>` list, `LensfunMount`);
   lenses without vignetting are dropped. `LensfunData.CropOf(name)` matches the camera
   model or an alias by containment on letters and digits only, longest match wins
-  ("NIKON D3300" → 1.523).
+  ("NIKON D3300" → 1.523); `MountsOf(name)` finds the camera the same way and gives its mount
+  plus that mount's compat list ("NIKON D3300" → `Nikon F AF` with `Nikon F`, `Nikon F AI`,
+  `Nikon F AI-S`, `M42`, `M39/1`, `DKL`, `T2`, `Generic`; a mount without a definition is
+  itself alone), or null for a camera the table does not know or knows without a mount
+  (R-116, ADR 0076).
 - **The calibration crop is part of a lensfun lens's identity** (ADR 0029, the owner's
   decision of 2026-09-18; the Nikkor 35/1.8G DX case that found it is section 8).
   `LensChoice.Calibration` is the nominal format from `SensorFormats.LabelOf` plus the exact
@@ -235,7 +240,17 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   maker is "smc"). On the name path there is no join: the name found the lensfun entry itself,
   and a join by range would add another lens of the same range (the A-mount 16-35 f/2.8 beside
   the FE). Adobe first, then lensfun, by name. The window passes the chosen `LensChoice`
-  directly and skips this, but its prefill starts from the same `CandidatesFromRaw`.
+  directly and skips this, but its prefill starts from the same `CandidatesFromRaw`. A lensfun
+  lens admitted by range, on this join or on the range-only path of an ID no profile carries
+  (`CandidatesByRange`), must also fit the camera's mount (`FitsMount`, R-116, ADR 0076): one
+  of its mounts is in `LensfunData.MountsOf(camera)`, beside the older rule that the camera's
+  first word appears in the lens's mount or maker, which alone let `Nikon Z` lenses through
+  for a D3300 ("Nikon Z Viltrox" contains "NIKON"). An Adobe file has no mount and keeps the
+  first-word rule; a camera lensfun does not know gives no mount set, and then the first word
+  alone decides, with a Debug line in the log when a lensfun copy was read (`LensfunPresent`;
+  without one every body is unknown, and ADR 0075's Warn line says why). The window's prefill
+  calls `Identify`, so it
+  gets the same list.
 - **Narrowing by name** (`LensSpec`; why, and the Tokina raw that preselected a Nikkor, are
   ADR 0030): `LensSpec.Parse(name)` reads the focal range (first `<n>[-<m>]mm`) and the
   maximum aperture (first `f/<n>`, `F<n>` or `f<n>-<m>` not preceded by a letter, so `AF-S`
@@ -498,6 +513,21 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   Canon EOS R5 Mark II:  "the lens "RF135mm F1.8 L IS USM" (ID 303) from the raw (Canon RF, 135 mm f/1.8)" matches 2 lenses
                          Canon RF 135mm F1.8 L IS USM [Canon] (Adobe), Canon RF 135mm F1.8L IS USM [Canon RF, calibrated on full frame 1] (lensfun)
   ```
+- **The Nikkor 35 DX without Adobe's profiles, 2026-10-28 and 2026-10-30** (the measurement
+  behind ADR 0076): `--profiles` on a folder holding only a copy of `lensfun/`, the raw ID 159
+  matching no lensfun entry, so the range 35 mm f/1.8 names the candidates. Before the rule:
+  six rows, the verdict ACCEPTABLE from the `Viltrox AF 35mm f/1.8 Z [Nikon Z / Sony E]`
+  (+0.20 stops = 14.7 %), the `MEKE SL 35mm F1.8 STM PRO [Leica L / Sony E / Nikon Z]` +0.26,
+  the `Nikkor Z 35mm f/1.8 S [Nikon Z]` +0.33 REDO, the lens itself +0.47 (APS-C 1.528
+  calibration) and +0.21 = 15.4 % (full frame), the `Tamron SP 35mm f/1.8 [Canon EF / Nikon F
+  AF / Sony Alpha]` +0.36. After: three rows, the three Z lenses out, the verdict ACCEPTABLE
+  from the lens's full-frame row (+0.21 = 15.4 %), exit 2 as before. With Adobe present, four
+  rows became three (the `Nikkor Z 35mm f/1.8 S` had joined the ID hit by maker and range), the
+  Adobe D90 file nearest as before (+0.11, V-016). The Tokina control (ID 139) and the Samyang
+  (ID 74, by range) print the same lines with or without the rule. Over the 712 lensfun lenses
+  with vignetting, the rule leaves 35/1.8 at 3 of 6, 11-20/2.8 at 2 of 2, 135/2 at 1 of 1,
+  50/1.4 at 6 of 7, 85/1.8 at 4 of 6, 24/1.4 at 2 of 2 for a D3300. V-049 pins the
+  lensfun-only Nikkor case.
 - **The three Adobe folders on the author's machine, 2026-10-26** (the measurement behind ADR
   0066): `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` holds 3531 files (446 MB, folder
   created 2026-04-16 by the DNG Converter 18.3, newest file 2026-06-04); `Adobe Lightroom
@@ -626,7 +656,15 @@ mid-field excess of section 8; it needs a new box measurement on the master.
   happens past the calibration corner, and the per-body file as the fix, are ADR 0029.
 - A camera missing from the lensfun table gets its crop from a sensor-format chip or by
   hand; the nominal crops are within 1-2 % of the real ones. The chips otherwise only show
-  the format of the crop in the box; the exact value stays the table's.
+  the format of the crop in the box; the exact value stays the table's. Such a camera has no
+  mount set either, so its range candidates are filtered by its first word alone (ADR 0076).
+- An Adobe file carries no mount: its name says the maker (`NIKON CORPORATION`), and the
+  calibration body inside (`stCamera:Model`, a `Z 7` on the 30 Viltrox and Laowa Z files
+  measured 2026-10-30) is not a mount, since an F lens profiled through the FTZ would say the
+  same. On the range path an Adobe file of a Z lens with the body's maker and range would still
+  be a candidate for an F body; none of the owner's three lenses meets one (ADR 0076).
+- A lensfun lens whose `<mount>` is misspelt (`Pentak K`, `M39` in the shipped copy) fits no
+  body's mount set and is left out of the range candidates; a fix for the database.
 - The window prefill reads the first raw in `flats/` once per session, as soon as the catalog
   is loaded, without waiting for the opening chain, through `ImageLoader.LoadInfo` (metadata
   only, no pixel decoded, ADR 0030); a raw libraw cannot open leaves the f-stop empty and says
