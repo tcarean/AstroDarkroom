@@ -129,7 +129,9 @@ The launcher, `AstroDarkroom.exe`, is a small window with one row per tool, in t
 session, each with its description, its version and a button that opens it; a tool whose
 executable is missing from the folder is shown disabled, with the missing file's name. **About**
 (F1) shows the suite's version and date, the licence and the version of every tool. The launcher
-computes nothing itself.
+computes nothing itself. It keeps a log, `log\AstroDarkroom.log` beside it, in the same `log`
+folder as the tools' own logs: to report a problem, attach that folder (the launcher's
+`README.md`, "Logs").
 
 The launcher and the tools speak English or Romanian. The launcher's two language buttons switch
 every text at once, and the choice is remembered; a tool opened from the launcher starts in the

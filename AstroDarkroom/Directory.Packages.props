@@ -2,7 +2,22 @@
   <!-- Central Package Management: every package version lives here, once.
        The kit's rule "Packages": no new package without asking, and every package gets a
        one-line "why" comment. Removing a package is a change worth a CHANGELOG line.
-       The launcher itself references no package: the test host and runner are all there is. -->
+       A package the launcher ships is also a component in ThirdParty.cs and a section in
+       THIRD-PARTY-NOTICES.md (ThirdPartyTests, R-015), and a package a component also ships
+       takes the component's version: the suite folder holds one copy of each DLL, and
+       scripts/merge-publish.ps1 refuses a second one with other bytes (SuiteTests). -->
+  <ItemGroup>
+    <!-- The diagnostic log beside the launcher (R-011 to R-014, ADR 0012): configured in code,
+         a size-rolled text file, BSD-3-Clause, purely managed. The owner asked for NLog by name
+         on 2026-10-30; the version is FlatCheck's and LightsCheck's, whose windows ship the same
+         DLL into the suite folder. -->
+    <PackageVersion Include="NLog" Version="6.2.2" />
+    <!-- NLog's own file target with the operating system's atomic append, so two launchers
+         writing one log at once lose no line (R-014): FlatCheck measured NLog's plain target
+         losing 33 to 48 lines of 4000 and this one none (its ADR 0070). Same project, commit and
+         licence as NLog, no native file of its own. Keep its version equal to NLog's. -->
+    <PackageVersion Include="NLog.Targets.AtomicFile" Version="6.2.2" />
+  </ItemGroup>
   <ItemGroup>
     <!-- Test host and runner. -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />

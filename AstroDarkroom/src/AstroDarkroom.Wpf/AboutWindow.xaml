@@ -17,11 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- AboutWindow: the icon, the banner, the copyright, the GPLv3 notice (section 5(d)), what
-     the suite needs on the machine (R-009), the suite's date and the version of every
-     component bundled, from release.json. Modal; Enter and Esc close it. Every text is
-     assigned by the code behind in the current language; the product name is the same in
-     both. -->
+<!-- AboutWindow: the icon, the banner, the copyright, the GPLv3 notice (section 5(d)), the
+     components written by others that the launcher ships (R-015), what the suite needs on the
+     machine (R-009), the suite's date and the version of every component bundled, from
+     release.json. Modal; Enter and Esc close it. Every text is assigned by the code behind in
+     the current language; the product name is the same in both. As tall as its content, but no
+     taller than its screen's work area, which the code behind sets as its MaxHeight: then the
+     cards scroll and the Close button, in a row of its own, stays in view (R-016). -->
 
 <Window x:Class="AstroDarkroom.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -33,65 +35,107 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display">
 
-  <StackPanel Margin="24,20,24,20">
-    <Grid>
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="*" />
-      </Grid.ColumnDefinitions>
-      <Image x:Name="Logo" Grid.Column="0" Width="72" Height="72" VerticalAlignment="Top" Margin="0,2,20,0"
-             RenderOptions.BitmapScalingMode="HighQuality" />
-      <StackPanel Grid.Column="1" VerticalAlignment="Center">
-        <TextBlock Text="Astro Darkroom" FontSize="22" FontWeight="SemiBold" />
-        <TextBlock x:Name="Tagline" Style="{StaticResource Muted}" Margin="0,4,0,0" />
-        <TextBlock x:Name="Banner" Margin="0,10,0,0" FontFamily="{StaticResource MonoFont}" />
-        <TextBlock x:Name="Copyright" Style="{StaticResource Faint}" Margin="0,2,0,0" />
-      </StackPanel>
-    </Grid>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
 
-    <Border Style="{StaticResource Card}" Margin="0,18,0,0">
-      <StackPanel>
-        <TextBlock x:Name="LicenceHeading" Style="{StaticResource Heading}" />
-        <TextBlock x:Name="Warranty" Style="{StaticResource Muted}" />
-      </StackPanel>
-    </Border>
+    <!-- Transparent, not null: the wheel scrolls over the margins and the gaps between the cards
+         too, which a null background leaves to the window. The keys reach it from the window's
+         PreviewKeyDown, since nothing in it takes the focus. -->
+    <ScrollViewer x:Name="Cards" Grid.Row="0" VerticalScrollBarVisibility="Auto" Focusable="False" Background="Transparent">
+      <StackPanel Margin="24,20,24,0">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Image x:Name="Logo" Grid.Column="0" Width="72" Height="72" VerticalAlignment="Top" Margin="0,2,20,0"
+                 RenderOptions.BitmapScalingMode="HighQuality" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <TextBlock Text="Astro Darkroom" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock x:Name="Tagline" Style="{StaticResource Muted}" Margin="0,4,0,0" />
+            <TextBlock x:Name="Banner" Margin="0,10,0,0" FontFamily="{StaticResource MonoFont}" />
+            <TextBlock x:Name="Copyright" Style="{StaticResource Faint}" Margin="0,2,0,0" />
+          </StackPanel>
+        </Grid>
 
-    <!-- What the suite needs on the machine (R-009): three paragraphs from the core. -->
-    <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-      <StackPanel>
-        <TextBlock x:Name="PrerequisitesHeading" Style="{StaticResource Heading}" />
-        <ItemsControl x:Name="PrerequisitesList" Focusable="False">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,6" Text="{Binding Mode=OneWay}" />
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
-    </Border>
+        <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+          <StackPanel>
+            <TextBlock x:Name="LicenceHeading" Style="{StaticResource Heading}" />
+            <TextBlock x:Name="Warranty" Style="{StaticResource Muted}" />
+          </StackPanel>
+        </Border>
 
-    <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-      <StackPanel>
-        <TextBlock x:Name="ComponentsHeading" Style="{StaticResource Heading}" />
-        <TextBlock x:Name="ReleaseLine" Style="{StaticResource Muted}" Margin="0,0,0,10" />
-        <ItemsControl x:Name="Components" Focusable="False">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate>
-              <Grid Margin="0,0,0,4">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="200" />
-                  <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="{Binding Name, Mode=OneWay}" />
-                <TextBlock Grid.Column="1" FontFamily="{StaticResource MonoFont}" Text="{Binding Version, Mode=OneWay}" />
-              </Grid>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
-    </Border>
+        <!-- The components written by others (R-015): the name and the role on the first line, the
+             licence and the project's address on the second, the copyright line under them, which
+             the licence asks to go with the program; where the whole text is, in the lead. Kept
+             short: "Despre" grows by this card on every screen (ADR 0013). -->
+        <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock x:Name="ThirdPartyHeading" Style="{StaticResource Heading}" />
+            <TextBlock x:Name="ThirdPartyLead" Style="{StaticResource Muted}" Margin="0,0,0,8" />
+            <ItemsControl x:Name="ThirdPartyList" Focusable="False">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel>
+                    <TextBlock TextWrapping="Wrap">
+                      <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" />
+                      <Run Text=" - " Foreground="{StaticResource FaintBr}" />
+                      <Run Text="{Binding Role, Mode=OneWay}" Foreground="{StaticResource MutedBr}" FontSize="12" />
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0">
+                      <Run Text="{Binding Licence, Mode=OneWay}" />
+                      <Run Text=" - " />
+                      <Run Text="{Binding Url, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock Style="{StaticResource Faint}" Text="{Binding Copyright, Mode=OneWay}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
 
-    <Button x:Name="CloseButton" IsCancel="True" IsDefault="True" Click="CloseClick"
-            HorizontalAlignment="Right" Margin="0,16,0,0" MinWidth="96" />
-  </StackPanel>
+        <!-- What the suite needs on the machine (R-009): three paragraphs from the core. -->
+        <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock x:Name="PrerequisitesHeading" Style="{StaticResource Heading}" />
+            <ItemsControl x:Name="PrerequisitesList" Focusable="False">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,6" Text="{Binding Mode=OneWay}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock x:Name="ComponentsHeading" Style="{StaticResource Heading}" />
+            <TextBlock x:Name="ReleaseLine" Style="{StaticResource Muted}" Margin="0,0,0,10" />
+            <ItemsControl x:Name="Components" Focusable="False">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="200" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding Name, Mode=OneWay}" />
+                    <TextBlock Grid.Column="1" FontFamily="{StaticResource MonoFont}" Text="{Binding Version, Mode=OneWay}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Button x:Name="CloseButton" Grid.Row="1" IsCancel="True" IsDefault="True" Click="CloseClick"
+            HorizontalAlignment="Right" Margin="24,16,24,20" MinWidth="96" />
+  </Grid>
 </Window>

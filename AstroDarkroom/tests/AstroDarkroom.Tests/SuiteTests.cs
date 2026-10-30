@@ -100,12 +100,13 @@ public partial class SuiteTests
     }
 
     /// <summary>
-    /// Every lock file under a component's code folders (kit.json codeFolders; the test folders
-    /// do not ship) is keyed net8.0 only, and a package two components both resolve has one
-    /// resolved version, so the flat suite folder holds one copy of every library.
+    /// Every lock file under the code folders (kit.json codeFolders; the test folders do not
+    /// ship) of each component and of the launcher itself is keyed net8.0 only, and a package two
+    /// of them both resolve has one resolved version, so the flat suite folder holds one copy of
+    /// every library: the launcher's NLog is the components' (ADR 0012).
     /// </summary>
     [Fact]
-    public void EveryComponent_TargetsNet8_AndSharedPackagesResolveToOneVersion()
+    public void EveryComponentAndTheLauncher_TargetNet8_AndSharedPackagesResolveToOneVersion()
     {
         List<ComponentEntry> entries = ComponentEntries();
         if (!SiblingsPresent(entries))
@@ -113,11 +114,17 @@ public partial class SuiteTests
             return;   // the sibling projects are not beside this one
         }
 
+        // The launcher under its folder's name, beside the components: it publishes into the
+        // same flat folder, so its packages count as theirs do.
+        IEnumerable<(string Component, string Root)> projects = entries
+            .Select(e => e.Component)
+            .Distinct(StringComparer.Ordinal)
+            .Select(c => (c, Sibling(c)))
+            .Prepend((Path.GetFileName(Root), Root));
         Dictionary<string, Dictionary<string, string>> resolved = new(StringComparer.Ordinal);   // package -> component -> version
         List<string> problems = [];
-        foreach (string component in entries.Select(e => e.Component).Distinct(StringComparer.Ordinal))
+        foreach ((string component, string root) in projects)
         {
-            string root = Sibling(component);
             foreach (string lockFile in LockFiles(root))
             {
                 string shown = Path.GetRelativePath(Path.GetDirectoryName(Root)!, lockFile).Replace('\\', '/');
