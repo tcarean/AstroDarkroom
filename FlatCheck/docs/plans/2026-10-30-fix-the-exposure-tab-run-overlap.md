@@ -59,3 +59,29 @@ second run. No token check after the await, no lock on the folder button.
    not the overlay, orders two picks on the Exposure tab. ADR 0077. A CHANGELOG line under
    `Internal`.
 5. The gate, the commit on the branch, the merge proposal.
+
+## Addendum, 2026-10-30, after the two reviews
+
+The first review found that the Smoothing and Synthetic lambdas share the folder-change hole
+in a narrower window (fact 4). Put to the owner, who decided: the Exposure case stays as it
+is, since the run takes a few seconds, too short for the folder to be changed under it, and
+that is recorded in ADR 0077; the Synthetic run is to be timed, and if it takes more than 4-5
+seconds the folder button is disabled while it runs, the simplest fix.
+
+Measured 2026-10-30 on a copy of the Tokina sky master (24 MP, V-037's session), the Release
+console from the task worktree, wall time of the whole process, three runs each: the synthetic
+write 10.1 s cold then 3.6-4.0 s warm; the comparison the window runs after it 4.0-4.4 s; the
+exposure of its first NEF 3.9-4.1 s; the smoothing 6.4-6.7 s; the structure run with the raw
+8.1 s (the opening chain, where the button was already locked). The window's Synthetic button
+is the write and the comparison, about 8 s warm and 14 s cold.
+
+Steps added:
+
+6. R-117: `MainViewModel.CanChooseFolder`, false during the opening chain and while the
+   Smoothing or the Synthetic tab is busy; the button binds to it. Smoothing is included by
+   the owner's rule (over 4-5 s), the assistant's extension, stated at wrap-up.
+   `R117_TheFolderButtonIsLockedDuringASmoothingOrSyntheticRun` holds the gate to see the
+   button locked and released.
+7. ADR 0077 renamed and extended with the owner's decision and the figures; known issue 9
+   narrowed to the Exposure run; `two-applications.md` and the CHANGELOG say what the button
+   follows.

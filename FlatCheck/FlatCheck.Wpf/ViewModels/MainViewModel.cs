@@ -119,6 +119,11 @@ namespace FlatCheck.Wpf
             // other; FileWritten ignores by itself a path that is not the current session's, so
             // a change of folder has nothing to unwire.
             Smooth.Saved += HistEq.FileWritten;
+
+            // The folder button follows the two runs that take longer than a folder change
+            // (R-117, ADR 0077): their busy state is part of CanChooseFolder.
+            Smooth.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(TabViewModel.IsIdle)) Raise(nameof(CanChooseFolder)); };
+            Synthetic.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(TabViewModel.IsIdle)) Raise(nameof(CanChooseFolder)); };
         }
 
         /// <summary>Asks a yes/no question in a MessageBox, No by default.</summary>
@@ -169,7 +174,20 @@ namespace FlatCheck.Wpf
         public bool HasProblem => !string.IsNullOrEmpty(_problemText);
 
         /// <summary>True while the analyses started by opening the folder run.</summary>
-        public bool IsRunning { get => _running; private set => Set(ref _running, value); }
+        public bool IsRunning
+        {
+            get => _running;
+            private set { if (Set(ref _running, value)) Raise(nameof(CanChooseFolder)); }
+        }
+
+        /// <summary>
+        /// Whether the folder button is live: not during the opening chain, and not while the
+        /// Smoothing or the Synthetic tab runs, the two click-runs long enough for a folder
+        /// change to land on the new folder's tabs (measured 2026-10-30 on a 24 MP master:
+        /// 6.4-6.7 s and about 8 s; R-117, ADR 0077). The other tabs' runs take a few seconds
+        /// and leave the button alone.
+        /// </summary>
+        public bool CanChooseFolder => !_running && Smooth.IsIdle && Synthetic.IsIdle;
 
         /// <summary>The version and the copyright, the same as what the console writes on its
         /// first two lines.</summary>

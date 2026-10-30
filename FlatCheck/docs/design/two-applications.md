@@ -165,6 +165,14 @@ generation counter of `RunGuardedAsync`), so a superseded run waiting beside the
 not write over its message; the Split puts the same text in its phase line. A tab attached
 without a gate (the tests) runs at once.
 
+**The folder button follows the long runs.** `MainViewModel.CanChooseFolder` is false during
+the opening chain (`IsRunning`) and while the Smoothing or the Synthetic tab is busy
+(`TabViewModel.IsIdle`, heard through their `PropertyChanged`), so a run that takes longer
+than a folder change cannot be cut by one and land on the new folder's tabs (R-117, ADR 0077
+for the measured times). The Exposure, Histogram and Split runs leave the button live: a
+folder change cancels their token, the Histogram and Split runs stop at the check after the
+hop back, and the Exposure run's few seconds are `known-issues.md` item 9.
+
 **An opening that fails past the check.** `SirilSession.Check()` looks only at what exists;
 listing `flats/` or `process/` can still throw afterwards (a folder the user may not list, a
 broken junction). `MainWindow` fires `OpenAsync` without awaiting it, so nothing else would

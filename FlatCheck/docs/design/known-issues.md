@@ -59,16 +59,15 @@ correctness bugs that used to live here were fixed in phase 8.
    raw load makes, in modes that never look at them; that is the price of opening the file
    once.
 9. **A folder change during an Exposure run lands the old folder's figures.** The folder button
-   is disabled only by the opening chain (`MainViewModel.IsRunning`), and the Exposure tab's run
+   is live during an Exposure run (`MainViewModel.CanChooseFolder` locks it only for the
+   opening chain, a Smoothing run and a Synthetic run, R-117), and the Exposure tab's run
    lambda does not re-check its token after its computation: a run that was computing when the
    folder changed writes its report, figures and `HasResult` on the tab the new folder reset,
-   under the new folder's list with nothing selected, until the next pick. The Smoothing and
-   Synthetic lambdas check the token on the pool thread at the end of the computation, so a
-   cancellation between that check and the continuation lands their figures too: the proposal
-   and the comparison exactly as Exposure does; the two runs that write a file land them, may
-   first ask the overwrite question about the old folder's file, then end as cancelled when
-   the write's `Task.Run` refuses the cancelled token, which hides the figures again
-   (`HasResult` false). The Histogram lambda and the Split's run body check after the hop back
-   and land nothing. Reproduced deterministically on the Exposure tab on 2026-10-30; the owner
-   left it as it is (ADR 0077, where the one-line check and the button lock are the
-   alternatives rejected).
+   under the new folder's list with nothing selected, until the next pick. Reproduced
+   deterministically on 2026-10-30; the owner left it as it is, since the run takes about four
+   seconds on a 24 MP raw, too short for the folder to be changed under it (ADR 0077, where
+   the one-line check is the alternative rejected). The Smoothing and Synthetic lambdas check
+   the token on the pool thread at the end of the computation and would land their figures the
+   same way in the narrower window between that check and the continuation, but the button is
+   locked while they run; the Histogram lambda and the Split's run body check after the hop
+   back and land nothing.
