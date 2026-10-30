@@ -26,9 +26,11 @@ namespace AstroDarkroom.Wpf;
 /// <summary>
 /// The work area of the screen a window is on (R-016): WPF knows the primary screen's only
 /// (<see cref="SystemParameters.WorkArea"/>), so Windows is asked for the screen nearest the
-/// window and its area without the taskbar, which comes back in physical pixels and is turned into
-/// the window's device-independent pixels by its DPI. The primary screen's area stands in when the
-/// window has no handle yet or Windows gives no answer.
+/// window and its area without the taskbar. That comes back in the pixels Windows gives this
+/// process: physical ones for a per-monitor aware process, the system DPI's for a system aware
+/// one, which WPF makes the launcher by default. It is turned into the window's
+/// device-independent pixels by the window's DPI scale, which is the same DPI either way. The
+/// primary screen's area stands in when the window has no handle yet or Windows gives no answer.
 /// </summary>
 internal static partial class ScreenArea
 {
@@ -91,7 +93,7 @@ internal static partial class ScreenArea
         }
     }
 
-    /// <summary>A screen rectangle in physical pixels, as Windows gives it (RECT).</summary>
+    /// <summary>A screen rectangle in the pixels Windows gives this process (RECT).</summary>
     [StructLayout(LayoutKind.Sequential)]
     private struct NativeRect
     {

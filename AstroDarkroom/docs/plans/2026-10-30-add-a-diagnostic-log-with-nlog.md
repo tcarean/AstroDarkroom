@@ -206,3 +206,15 @@ Branch `claude/Log-AstroDarkroom-with-NLog`, worktree
   offscreen: unchanged at 931 and 946 DIP where it fits; in a 700 DIP work area 700 DIP high with
   the cards scrolling by 246 DIP; `ScreenArea` on hidden windows over the three screens gave each
   screen's own area. Not seen on a real small screen.
+- **The second review** (a subagent, on the two commits after the first) found no crash or data
+  bug. Taken: the keys scroll the cards (the window passes Up, Down, Page Up, Page Down, Home and
+  End to them, nothing in them taking the focus), the wheel scrolls them over the gaps too (a
+  transparent background), the scroll bar style is LightsCheck's whole (it is application-wide,
+  so its horizontal form came back), the fallback test asserts the whole wording, R-012 names the
+  log's own start and end as the last exception, and the docs say what WPF does: read in its .NET
+  8 source on 2026-10-30, a window centred on its owner is already clamped into the owner screen's
+  work area, top limit last, so the bottom, not the title bar, used to leave a small screen, and
+  `WindowFit.Top` stays as a guard. Put to the owner, not taken: the windows of the suite are
+  system DPI aware, not per monitor, though their project files name `PerMonitorV2`
+  (`ApplicationHighDpiMode` is read by WinForms only); ImageVisualCompare has the manifest that
+  makes it per monitor.

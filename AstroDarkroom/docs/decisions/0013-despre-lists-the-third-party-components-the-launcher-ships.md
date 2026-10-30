@@ -40,10 +40,14 @@ make the window fit its screen.
   carrying its copyright line, and that NLog's section holds the BSD conditions and disclaimer.
 - **The window fits its screen** (R-016). Its height is capped at the work area of the screen
   the main window is on, which `ScreenArea` asks Windows for, since WPF knows only the primary
-  screen's; its cards are in a scroll viewer, with LightsCheck's dark scroll bar, and its Close
-  button in a row of its own under them, so it stays in view; once laid out, the window's top is
-  moved inside the area by `WindowFit.Top` in the core, where its place centred on the main
-  window would run past the area's top or bottom. On a screen where it fits, nothing changes.
+  screen's; its cards are in a scroll viewer, with LightsCheck's dark scroll bar, that the mouse
+  wheel scrolls anywhere over it and the arrow, page, Home and End keys scroll from the window,
+  and its Close button is in a row of its own under them, so it stays in view. WPF already places
+  a window centred on its owner inside the owner screen's work area, its top limit applied last
+  (`Window.CalculateWindowLocation` in .NET 8, read on 2026-10-30), which is why the bottom, not
+  the title bar, used to leave a small screen; once the window is laid out, `WindowFit.Top` in
+  the core holds that place as a guard, so R-016 does not rest on WPF's placement alone. On a
+  screen where the window fits, nothing changes.
 
 ## Alternatives rejected
 
@@ -54,7 +58,9 @@ make the window fit its screen.
   tools keep theirs out of it.
 - **Nothing in the launcher, since FlatCheck's "Despre" names NLog already.** The launcher's
   window links the DLLs itself, and the suite may one day bundle no tool that names them.
-- **The taller window as it is.** Its title bar and its Close button would leave a 125 % screen.
+- **The taller window as it is.** Its bottom, with the Close button and the components'
+  versions, would leave a 125 % screen; WPF keeps the top of a window centred on its owner on
+  the screen, not its bottom.
 - **The card dropped, as the plan had it.** The 150 % screen had no room for the window before.
 - **The primary screen's work area (`SystemParameters.WorkArea`).** It is the wrong screen when the
   main window is on another one, of another size, height or place.
@@ -69,4 +75,5 @@ for hidden windows placed over the owner's three screens, each screen's own work
 `ThirdParty.cs` and a section in `THIRD-PARTY-NOTICES.md`, or `ThirdPartyTests` fails;
 `Directory.Packages.props` says so beside the packages. The window's fit runs in no test (ADR
 0001): `WindowFit.Top` is tested in the core, the rest is checked by opening the window on a
-small screen.
+small screen. The scroll bar style is `App.xaml`'s implicit one, LightsCheck's whole, so a
+horizontal bar elsewhere gets its own form.

@@ -102,7 +102,9 @@ public partial class LoggingTests
         Assert.Equal(Path.Combine(fallbackRoot, "AstroDarkroom", "log"), folder);
         Assert.True(Directory.Exists(folder));
         Assert.Empty(Directory.GetFileSystemEntries(folder));
-        Assert.Contains("(fallback", LogSetup.StartupLine(Exe, [], folder, true, LogLevel.Debug), StringComparison.Ordinal);
+        // The first line names both of the probe's causes, as R-011 says: it cannot tell which.
+        Assert.Contains("; log=" + folder + " (fallback: the log folder beside the executable, or its newest file, cannot be written); level=",
+            LogSetup.StartupLine(Exe, [], folder, true, LogLevel.Debug), StringComparison.Ordinal);
     }
 
     [Fact]

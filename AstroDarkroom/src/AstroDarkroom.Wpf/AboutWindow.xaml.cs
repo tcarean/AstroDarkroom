@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Windows;
+using System.Windows.Input;
 using AstroDarkroom.Core;
 using NLog;
 using static AstroDarkroom.Core.Ui;
@@ -36,7 +37,8 @@ public sealed record ComponentLine(string Name, string Version);
 /// core and from release.json, worded in the language current when it opens (R-006); it is
 /// modal and made anew at every open, so it never has to switch. The unreleased flag of
 /// release.json is not shown (ADR 0007). It fits the work area of its screen: no taller than it,
-/// its cards scrolling when they need more, and moved inside it once laid out (R-016).
+/// its cards scrolling with the wheel and the keys when they need more, kept inside it once laid
+/// out (R-016).
 /// </summary>
 public partial class AboutWindow : Window
 {
@@ -49,7 +51,7 @@ public partial class AboutWindow : Window
     /// <param name="release">What release.json says, or null when the folder has none the launcher could read.</param>
     /// <param name="workArea">
     /// The work area of the screen the window opens on, in device-independent pixels: the window
-    /// is no taller than it and is moved inside it (R-016).
+    /// is no taller than it and is kept inside it (R-016).
     /// </param>
     public AboutWindow(ReleaseInfo? release, Rect workArea)
     {
@@ -57,6 +59,7 @@ public partial class AboutWindow : Window
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         MaxHeight = workArea.Height;
         Loaded += (_, _) => FitInto(workArea);
+        PreviewKeyDown += ScrollCards;
         Title = T("About Astro Darkroom", "Despre Astro Darkroom");
         Logo.Source = Icons.LargestFrame(Icons.Launcher);
         Tagline.Text = T(
@@ -110,9 +113,10 @@ public partial class AboutWindow : Window
         => AppCatalogue.Apps.FirstOrDefault(a => a.Folder == name)?.Title ?? name;
 
     /// <summary>
-    /// Moves the laid-out window inside its screen's work area, where its place centred on the
-    /// main window would run past the area's top or bottom (R-016), and writes its size and place
-    /// and whether its cards scroll to the diagnostic log.
+    /// Keeps the laid-out window inside its screen's work area (R-016), and writes its size and
+    /// place and whether its cards scroll to the diagnostic log. WPF has placed it there already
+    /// (a window centred on its owner is clamped into the owner screen's work area); the move
+    /// holds that place as a guard, so the requirement does not rest on WPF's placement alone.
     /// </summary>
     /// <param name="workArea">The work area of the window's screen, in device-independent pixels.</param>
     private void FitInto(Rect workArea)
@@ -124,6 +128,42 @@ public partial class AboutWindow : Window
                 $"About shown {ActualWidth:0}x{ActualHeight:0} at ({Left:0},{Top:0}); work area {workArea.Width:0}x{workArea.Height:0} at ({workArea.Left:0},{workArea.Top:0}); ")
                 + "cards scroll: " + (Cards.ScrollableHeight > 0 ? "yes" : "no"));
         }
+    }
+
+    /// <summary>
+    /// Scrolls the cards from the keyboard (R-016): nothing in them takes the focus, which stays
+    /// on the Close button, so the keys a scroll viewer answers are passed to it here. Enter and
+    /// Esc go on to the button as before.
+    /// </summary>
+    /// <param name="sender">The window; not read.</param>
+    /// <param name="e">The key; marked handled when it scrolled the cards.</param>
+    private void ScrollCards(object sender, KeyEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case Key.Down:
+                Cards.LineDown();
+                break;
+            case Key.Up:
+                Cards.LineUp();
+                break;
+            case Key.PageDown:
+                Cards.PageDown();
+                break;
+            case Key.PageUp:
+                Cards.PageUp();
+                break;
+            case Key.End:
+                Cards.ScrollToBottom();
+                break;
+            case Key.Home:
+                Cards.ScrollToTop();
+                break;
+            default:
+                return;
+        }
+
+        e.Handled = true;
     }
 
     /// <summary>Closes the window.</summary>

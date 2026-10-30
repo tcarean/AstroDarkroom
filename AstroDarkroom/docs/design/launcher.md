@@ -82,7 +82,8 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 - `WindowFit.Top(top, height, areaTop, areaHeight)` keeps a window inside a work area (R-016,
   ADR 0013): its own top when it fits, the area's top or the top that puts its bottom on the
   area's when it runs past one edge, the area's top when it is as tall as the area or taller.
-  Plain numbers in device-independent pixels; the window brings the area.
+  Plain numbers in device-independent pixels; the window brings the area. It is a guard: WPF
+  places "Despre" there already (below).
 
 ## The window
 
@@ -144,17 +145,25 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   unknown. Enter and Esc close it (`IsDefault` and `IsCancel` on one button).
 - `AboutWindow` fits its screen (R-016, ADR 0013). `MainWindow` hands it the work area of the
   screen the main window is on, from `ScreenArea.WorkAreaOf`: Windows' `MonitorFromWindow`
-  (the screen nearest the window) and `GetMonitorInfoW` (its work area, in physical pixels),
+  (the screen nearest the window) and `GetMonitorInfoW` (its work area, in the pixels Windows
+  gives the process: the system DPI's, since WPF makes the launcher system aware by default),
   divided by the window's DPI scale, since `SystemParameters.WorkArea` is the primary screen's;
   the primary screen's stands in when the window has no handle or the call fails. The about
   window sets its `MaxHeight` to the area's height, so `SizeToContent` stops there. Its content
   is a grid of two rows: a `ScrollViewer` named `Cards`, with the header and the cards, in the
   star row, and the Close button in the auto row, so the button stays in view and only the cards
   scroll; with the window sized to its content the star row is as tall as the cards, so on a
-  screen where everything fits nothing changes. On `Loaded`, laid out and centred on its owner,
-  the window's `Top` goes through `WindowFit.Top`, and a Debug line writes its size and place, the
-  area and whether the cards scroll. The scroll bar is `App.xaml`'s implicit style, the vertical
-  half of LightsCheck's dark one: a thin rounded thumb, page buttons with no opacity.
+  screen where everything fits nothing changes. `Cards` has a transparent background, so the
+  mouse wheel scrolls it over the margins and the gaps between the cards too, which a null
+  background would leave to the window; nothing in it takes the focus, which stays on the Close
+  button, so the window's `PreviewKeyDown` passes Up, Down, Page Up, Page Down, Home and End to
+  it (`ScrollCards`) and leaves Enter and Esc to the button. WPF places a window centred on its
+  owner inside the owner screen's work area, applying the top limit last
+  (`Window.CalculateWindowLocation`, .NET 8), so a window taller than the area used to keep its
+  title bar and lose its bottom; on `Loaded` the window's `Top` goes through `WindowFit.Top` as a
+  guard of that place, and a Debug line writes its size and place, the area and whether the cards
+  scroll. The scroll bar is `App.xaml`'s implicit style, LightsCheck's dark one whole: a thin
+  rounded thumb, page buttons with no opacity, and its horizontal form.
 - The palette and the button, tooltip and card styles are in `App.xaml`, the same colours as
   LightsCheck's dark theme reduced to what two windows need. Both windows darken their title
   bar on `SourceInitialized`, when the handle exists, through `DarkTitleBar`, a copy of

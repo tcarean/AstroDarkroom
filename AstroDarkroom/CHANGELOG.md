@@ -22,8 +22,8 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
   written, the tools present and missing, the window's size and screens, each language switch,
   each tool opened with the process it became or the error, "Despre", and every exception with
   its stack, those the launcher recovers from included (not the log's own probes, whose outcome
-  is in the line they serve). The log's own words are English
-  whatever the language. `ASTRODARKROOM_LOG=off|fatal|error|warn|info|debug|trace` sets the
+  is in the line they serve, nor a failure of the log itself, which has no log to go to). The
+  log's own words are English whatever the language. `ASTRODARKROOM_LOG=off|fatal|error|warn|info|debug|trace` sets the
   level, Debug by default.
 - "Despre" lists the component written by others the launcher now ships, NLog, with its role,
   licence, copyright line and address, under "Third-party components" / "Componente terte"
@@ -70,10 +70,10 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 ### Fixed
 
 - "Despre" fits the screen it opens on (R-016, ADR 0013): it is no taller than that screen's
-  work area, its cards scroll, with a dark scroll bar, when they need more room, the Close button
-  stays in view under them, and it is moved inside the screen when centring it on the main window
-  would push it past an edge. It used to be as tall as its content, which could run past the
-  bottom of a small screen.
+  work area, its cards scroll, with a dark scroll bar, the mouse wheel or the arrow, page, Home
+  and End keys, when they need more room, and the Close button stays in view under them. It used
+  to be as tall as its content, whose bottom, with the Close button, could run past the bottom of
+  a small screen.
 
 ### Internal
 

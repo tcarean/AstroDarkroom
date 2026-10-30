@@ -41,7 +41,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
 
-    <ScrollViewer x:Name="Cards" Grid.Row="0" VerticalScrollBarVisibility="Auto" Focusable="False">
+    <!-- Transparent, not null: the wheel scrolls over the margins and the gaps between the cards
+         too, which a null background leaves to the window. The keys reach it from the window's
+         PreviewKeyDown, since nothing in it takes the focus. -->
+    <ScrollViewer x:Name="Cards" Grid.Row="0" VerticalScrollBarVisibility="Auto" Focusable="False" Background="Transparent">
       <StackPanel Margin="24,20,24,0">
         <Grid>
           <Grid.ColumnDefinitions>
