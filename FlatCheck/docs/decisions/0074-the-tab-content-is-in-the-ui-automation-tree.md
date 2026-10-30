@@ -3,6 +3,10 @@
 Date: 2026-10-29
 Status: accepted 2026-10-29
 
+Numbered 0074 while `main` held 0070: 0071 to 0073 were taken by branches open on 2026-10-29
+(the diagnostic log's review fixes, the missing Adobe profiles), so the numbers do not collide
+at their merges.
+
 ## Context
 
 The window's tab content was missing from the UI Automation tree, the one a screen reader such as
