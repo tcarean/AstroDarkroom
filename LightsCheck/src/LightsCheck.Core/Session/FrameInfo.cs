@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using NLog;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -91,6 +93,9 @@ internal sealed record FrameInfo(
     double? LensMaxAperture,
     string? Error)
 {
+    /// <summary>The diagnostic log: a frame whose metadata could not be read, with its exception (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(FrameInfo));
+
     internal string FileName => System.IO.Path.GetFileName(Path);
 
     /// <summary>
@@ -127,7 +132,9 @@ internal sealed record FrameInfo(
         catch (Exception e)
         {
             // Anything the file makes the readers throw, libraw's own exception type included,
-            // is this frame's error, never the run's: the other frames are still listed.
+            // is this frame's error, never the run's: the other frames are still listed. The
+            // log keeps the exception whole, which the row cannot (R-071).
+            Log.Warn(e, "frame " + LogText.Int(index) + " " + path + " could not be read; its row carries the error");
             return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, e.Message);
         }
     }

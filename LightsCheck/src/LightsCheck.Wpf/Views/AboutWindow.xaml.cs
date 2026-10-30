@@ -18,6 +18,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
+using NLog;
 
 namespace LightsCheck.Wpf;
 
@@ -51,13 +52,14 @@ public partial class AboutWindow : Window
         {
             Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-        }
-        catch (InvalidOperationException)
-        {
+            Log.Debug(ex, "the link " + e.Uri.AbsoluteUri + " could not be opened in a browser");
         }
     }
+
+    /// <summary>The diagnostic log: a link the system could not open (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     /// <summary>The "Inchide" button: closes the window.</summary>
     /// <param name="sender">The button clicked.</param>

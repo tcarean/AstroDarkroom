@@ -18,6 +18,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using NLog;
 
 namespace LightsCheck.Wpf;
 
@@ -27,6 +28,9 @@ namespace LightsCheck.Wpf;
 /// </summary>
 internal static partial class DarkTitleBar
 {
+    /// <summary>The diagnostic log: the title bar that stays light (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private const int UseImmersiveDarkModeBefore20H1 = 19;
     private const int UseImmersiveDarkMode = 20;
 
@@ -60,12 +64,11 @@ internal static partial class DarkTitleBar
                 DwmSetWindowAttribute(hwnd, UseImmersiveDarkModeBefore20H1, ref on, sizeof(int));
             }
         }
-        catch (DllNotFoundException)
+        catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException)
         {
-            // No compositor: the bar stays light, the application still starts.
-        }
-        catch (EntryPointNotFoundException)
-        {
+            // No compositor: the bar stays light, the application still starts. FlatCheck's copy
+            // logs the same line (its R-110).
+            Log.Debug(e, "the title bar cannot be darkened on this system");
         }
     }
 }

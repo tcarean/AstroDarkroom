@@ -32,8 +32,12 @@
 // The native DLLs come from the Sdcb.LibRaw.runtime.* packages and sit beside the executable.
 // When they are missing, a FITS run is unaffected (this type is loaded only when a raw is
 // asked for) and a raw run fails with a message naming what is missing.
+//
+// The diagnostic log (ADR 0029) gets libraw's own figures at Debug and the lens block that
+// could not be read at Warn; the file's line is ImageLoader's, a failure's line its caller's.
 
 using System.Runtime.InteropServices;
+using NLog;
 using Sdcb.LibRaw;
 using Sdcb.LibRaw.Natives;
 using static LightsCheck.Core.Ui;
@@ -50,6 +54,9 @@ namespace LightsCheck.Core
         // type is loaded, and the type is loaded on every run, FITS included; method bodies
         // only at JIT time. Measured in FlatCheck, pinned by RawReaderTests.
         static readonly IReadOnlyDictionary<string, string> NoHeader = new Dictionary<string, string>();
+
+        /// <summary>The diagnostic log: libraw's figures of a decode, the lens block that failed (R-071).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(RawReader));
 
         // FlatCheck's six extensions plus .pef (Pentax; FlatCheck's R-108, 2026-10-26: a K-70
         // sample read fine through libraw and was refused by this list alone; here R-065). Only
@@ -239,6 +246,18 @@ namespace LightsCheck.Core
                 blacks.Add(c.Black + (c.CBlack != null && i < c.CBlack.Length ? c.CBlack[i] : 0));
             double black = Stats.Percentile(blacks, 50);
 
+            // Before the scale is judged, so a refused scale leaves its figures. No lambda here:
+            // one capturing a local of a libraw type would put that type in a field of its
+            // closure class (see the note at the top).
+            if (Log.IsDebugEnabled)
+                Log.Debug("libraw on " + path + ": visible " + LogText.Int(w) + "x" + LogText.Int(h)
+                          + " raw " + LogText.Int(s.RawWidth) + "x" + LogText.Int(s.RawHeight)
+                          + " margins top " + LogText.Int(s.TopMargin) + " left " + LogText.Int(s.LeftMargin)
+                          + " pitch " + LogText.Int(s.RawPitch) + " filters 0x" + ip.Filters.ToString("X8")
+                          + " cdesc " + LogText.Str(ip.Cdesc) + " cfa " + cfa.Letters
+                          + " maximum " + LogText.Num(white) + " black " + LogText.Num(c.Black)
+                          + " per channel " + LogText.List(blacks.ConvertAll(LogText.Num)) + " median " + LogText.Num(black));
+
             if (!(white > black))
                 throw new InvalidOperationException(T(
                     $"{path}: libraw gives an impossible scale (white {white:F0} <= black {black:F0}).",
@@ -314,8 +333,9 @@ namespace LightsCheck.Core
                     RangeOf(notes.MinFocal, notes.MaxFocal, notes.MaxAperture4MinFocal, notes.MaxAperture, li.MinFocal, li.MaxFocal, li.MaxAperture4MinFocal,
                             other.FocalLength);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Warn(e, "the raw's lens block could not be read; the lens stays unknown");
                 f.FocalLength35Mm = null;
                 f.LensId = null;
                 f.LensMount = null;

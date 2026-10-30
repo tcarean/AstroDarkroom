@@ -15,10 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LightsCheck.Core;
+using NLog;
 
 namespace LightsCheck.Wpf;
 
@@ -125,6 +127,9 @@ public sealed record CropVm(string Caption, BitmapSource Image);
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
+    /// <summary>The diagnostic log: the session runs, the export, the cut-outs (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private CancellationTokenSource? _cts;
     private string _folder = "";
     private string? _problemText;
@@ -351,7 +356,9 @@ public sealed class MainViewModel : ObservableObject
     /// that it was stopped; its progress reports still queued when the next run starts are
     /// dropped. A folder the core refuses (an IO, format, state or argument error,
     /// or a refused access) becomes the problem card and the tabs stay hidden; any other
-    /// exception propagates.
+    /// exception propagates. The diagnostic log gets the run's start and its outcome (done,
+    /// stopped, refused with the exception), and an exception that propagates with its stack
+    /// before it leaves (R-071).
     /// </summary>
     /// <param name="folder">
     /// The session folder to analyse, as chosen or given on the command line.
@@ -369,6 +376,10 @@ public sealed class MainViewModel : ObservableObject
         Progress = 0;
         BusyMessage = WindowTexts.Busy(0, 0);
         SeriesOptions options = Options;
+        ArrowKeys arrows = options.Arrows ?? ArrowKeys.Default;
+        Stopwatch clock = Stopwatch.StartNew();
+        Log.Info("session " + folder + ": run started pixel=" + LogText.Num(options.PixelSizeUm) + " threads="
+            + (options.Threads > 0 ? LogText.Int(options.Threads) : "default") + " east=" + arrows.East + " north=" + arrows.North);
         Progress<(int Done, int Total)> progress = new(p =>
         {
             // A report of a run that was stopped or replaced may still be queued when the next
@@ -387,17 +398,33 @@ public sealed class MainViewModel : ObservableObject
             if (!cts.IsCancellationRequested)
             {
                 Populate(r);
+                Log.Info("session " + folder + ": done in " + LogText.Seconds(clock.Elapsed) + "; the tabs show the result");
+            }
+            else
+            {
+                LogStopped(folder, cts, clock);
             }
         }
         catch (OperationCanceledException)
         {
+            LogStopped(folder, cts, clock);
         }
         catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
         {
             if (IsCurrent(cts))
             {
                 ProblemText = e.Message;
+                Log.Warn(e, "session " + folder + ": refused after " + LogText.Seconds(clock.Elapsed) + "; the card shows the message");
             }
+            else
+            {
+                Log.Debug(e, "session " + folder + ": failed after a newer run started; nothing is shown");
+            }
+        }
+        catch (Exception e) when (LogUnhandled(folder, e))
+        {
+            // Never entered: the filter writes the exception and returns false, so it leaves this
+            // method in the returned task as it always did.
         }
         finally
         {
@@ -427,6 +454,41 @@ public sealed class MainViewModel : ObservableObject
     /// <returns>True while that source is the current one.</returns>
     private bool IsCurrent(CancellationTokenSource cts) => ReferenceEquals(_cts, cts);
 
+    /// <summary>
+    /// Writes the line of a run that was stopped: at Info when it is still the current run (the
+    /// user pressed Stop, or the window is closing), at Debug when a newer run replaced it. A
+    /// cancellation the user asked for is no exception of the log's (R-071).
+    /// </summary>
+    /// <param name="folder">The run's folder.</param>
+    /// <param name="cts">The run's own cancellation source.</param>
+    /// <param name="clock">Runs from the run's start.</param>
+    private void LogStopped(string folder, CancellationTokenSource cts, Stopwatch clock)
+    {
+        if (IsCurrent(cts))
+        {
+            Log.Info("session " + folder + ": stopped after " + LogText.Seconds(clock.Elapsed));
+        }
+        else
+        {
+            Log.Debug("session " + folder + ": stopped after " + LogText.Seconds(clock.Elapsed) + " by a newer run; nothing is shown");
+        }
+    }
+
+    /// <summary>
+    /// Writes, at Error with its stack, an exception the window does not handle, while it leaves
+    /// <see cref="OpenAsync"/> in a task nobody awaits, where it would otherwise surface, if ever,
+    /// only when the task is collected (R-071). Used as an exception filter, it changes nothing:
+    /// it returns false.
+    /// </summary>
+    /// <param name="folder">The run's folder.</param>
+    /// <param name="e">The exception.</param>
+    /// <returns>False, always.</returns>
+    private static bool LogUnhandled(string folder, Exception e)
+    {
+        Log.Error(e, "session " + folder + ": failed with an exception the window does not handle; it shows no result");
+        return false;
+    }
+
     /// <summary>Stops the run in flight, if any.</summary>
     public void CancelPending()
     {
@@ -453,10 +515,17 @@ public sealed class MainViewModel : ObservableObject
 
         try
         {
-            Status = WindowTexts.Written(SeriesOutputs.WriteAll(_result, dir));
+            IReadOnlyList<string> written = SeriesOutputs.WriteAll(_result, dir);
+            foreach (string p in written)
+            {
+                Log.Info("wrote " + p + " (" + LogText.FileKiB(p) + ")");
+            }
+
+            Status = WindowTexts.Written(written);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
         {
+            Log.Warn(e, "the export into " + dir + " failed; the status line shows the message");
             Status = RunReport.Error(e.Message);
         }
     }
@@ -586,16 +655,20 @@ public sealed class MainViewModel : ObservableObject
 
         CropsNote = WindowTexts.CropsBusy;
         string path = row.Path;
+        string frame = "cut-outs of frame " + LogText.Int(row.Index) + " " + path;
+        Stopwatch clock = Stopwatch.StartNew();
         try
         {
             IReadOnlyList<StarCrop> crops = await Task.Run(() => StarCrops.Build(path, m)).ConfigureAwait(true);
             if (!ReferenceEquals(_selectedFrame, row))
             {
+                Log.Debug(frame + ": done after another frame was selected; nothing is shown");
                 return;
             }
 
             Crops = crops.Select(c => new CropVm(SeriesReport.CropCaption(c), RasterBitmaps.Grey(c.Grey, c.Width, c.Height))).ToList();
             CropsNote = crops.Count == 0 ? WindowTexts.NoCrops : null;
+            Log.Debug(frame + ": " + LogText.Int(crops.Count) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
@@ -605,6 +678,11 @@ public sealed class MainViewModel : ObservableObject
             if (ReferenceEquals(_selectedFrame, row))
             {
                 CropsNote = RunReport.Error(e.Message);
+                Log.Warn(e, frame + " failed; the note shows the message");
+            }
+            else
+            {
+                Log.Debug(e, frame + " failed after another frame was selected; nothing is shown");
             }
         }
     }

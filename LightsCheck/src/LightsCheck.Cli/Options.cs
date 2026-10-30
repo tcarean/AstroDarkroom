@@ -21,6 +21,25 @@ using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Cli;
 
+/// <summary>What the console does with its arguments, in the order <see cref="Options.Mode"/> decides it.</summary>
+internal enum RunMode
+{
+    /// <summary>The usage text: no arguments, <c>-h</c> or <c>--help</c>.</summary>
+    Help,
+
+    /// <summary>An argument the console refuses; <see cref="Options.Error"/> says which.</summary>
+    Error,
+
+    /// <summary>One frame measured: <c>--frame N</c>.</summary>
+    Frame,
+
+    /// <summary>The frames' metadata only: <c>--inventory</c>.</summary>
+    Inventory,
+
+    /// <summary>The whole series, without a mode option.</summary>
+    Series,
+}
+
 /// <summary>
 /// The console's arguments: one folder, the mode (the whole series by default,
 /// <c>--inventory</c>, <c>--frame N</c>), <c>--out DIR</c>, <c>--threads N</c>,
@@ -39,6 +58,17 @@ internal sealed class Options
     internal ArrowKeys Arrows { get; private set; } = ArrowKeys.Default;
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
+
+    /// <summary>
+    /// The mode, decided once from what <see cref="Parse"/> read: help first, then an error, then
+    /// <c>--frame</c>, then <c>--inventory</c>, else the series. The dispatch and the diagnostic
+    /// log's <c>mode=</c> line both read it, so the two cannot disagree (FlatCheck's ADR 0072).
+    /// </summary>
+    internal RunMode Mode => Help ? RunMode.Help
+        : Error is not null ? RunMode.Error
+        : Frame is not null ? RunMode.Frame
+        : Inventory ? RunMode.Inventory
+        : RunMode.Series;
 
     /// <summary>
     /// Reads the command line. No argument, <c>-h</c> or <c>--help</c> sets

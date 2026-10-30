@@ -17,6 +17,7 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using NLog;
 
 namespace LightsCheck.Wpf;
 
@@ -29,6 +30,9 @@ namespace LightsCheck.Wpf;
 /// </summary>
 public static class UserSettings
 {
+    /// <summary>The diagnostic log: a settings file that could not be read or written (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     /// <summary>
     /// The file read and written; null = the default location under the local application data.
     /// </summary>
@@ -63,6 +67,7 @@ public static class UserSettings
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
+            Log.Debug(e, "the settings " + FilePath + " could not be read; the arrows take their defaults");
             return (null, null);
         }
     }
@@ -89,6 +94,7 @@ public static class UserSettings
         {
             // A setting that cannot be written is picked again next time; nothing else depends
             // on it.
+            Log.Debug(e, "the settings " + FilePath + " could not be written; the arrows are asked again next time");
         }
     }
 

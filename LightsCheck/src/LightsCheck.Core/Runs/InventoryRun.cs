@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using NLog;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -45,13 +47,28 @@ internal static class InventoryRun
     /// <returns>The session's inventory.</returns>
     internal static Inventory Run(string folder)
     {
+        using RunClock clock = RunClock.Start(Log, "inventory", folder);
         SessionFolder session = SessionFolder.Open(folder);
+        clock.Lap("open");
         FrameInfo[] lights = new FrameInfo[session.Lights.Count];
         for (int i = 0; i < lights.Length; i++)
         {
             lights[i] = FrameInfo.Read(i + 1, session.Lights[i]);
         }
 
-        return new Inventory(session, lights, CadenceAnalyzer.Analyze(lights));
+        clock.Lap("read");
+        Cadence cadence = CadenceAnalyzer.Analyze(lights);
+        clock.Lap("cadence");
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug("cadence: " + LogText.Timing(cadence));
+        }
+
+        Inventory inventory = new(session, lights, cadence);
+        clock.Done("lights=" + LogText.Int(lights.Length) + " errors=" + LogText.Int(lights.Count(f => f.Error is not null)));
+        return inventory;
     }
+
+    /// <summary>The diagnostic log: the run's lines (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(InventoryRun));
 }

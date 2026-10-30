@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
+using NLog;
 using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Core;
@@ -165,29 +167,40 @@ internal static class SeriesRun
     internal static SeriesResult Run(string folder, SeriesOptions options, IProgress<(int Done, int Total)>? progress = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(options);
+        int threads = options.Threads > 0 ? options.Threads : Math.Max(1, Environment.ProcessorCount / 2);
+        ArrowKeys arrows = options.Arrows ?? ArrowKeys.Default;
+        using RunClock clock = RunClock.Start(Log, "series", folder + " pixel=" + LogText.Num(options.PixelSizeUm)
+            + " threads=" + LogText.Int(threads) + " east=" + arrows.East + " north=" + arrows.North);
         SessionFolder session = SessionFolder.Open(folder);
+        clock.Lap("open");
         int n = session.Lights.Count;
         AnalyzedFrame[] frames = new AnalyzedFrame[n];
         PatternCrop?[] crops = new PatternCrop?[n];
         int done = 0;
-        int threads = options.Threads > 0 ? options.Threads : Math.Max(1, Environment.ProcessorCount / 2);
         ParallelOptions po = new() { MaxDegreeOfParallelism = threads, CancellationToken = cancel };
         Parallel.For(0, n, po, i =>
         {
             string path = session.Lights[i];
+            Stopwatch one = Stopwatch.StartNew();
             try
             {
                 MeasuredFrame m = FrameRun.Measure(i + 1, path);
                 frames[i] = new AnalyzedFrame(m.Info, m.Measurement, null, null);
                 crops[i] = m.Crop;
+                Log.Info("frame " + LogText.Int(i + 1) + "/" + LogText.Int(n) + " " + m.Info.FileName
+                    + " detected=" + LogText.Int(m.Measurement.Detected) + " fwhm=" + LogText.Num(m.Measurement.FwhmMedian)
+                    + " elongation=" + LogText.Num(m.Measurement.ElongationMedian) + " in " + LogText.Ms(one.ElapsedMilliseconds));
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
+                Log.Warn(e, "frame " + LogText.Int(i + 1) + "/" + LogText.Int(n) + " " + path + " could not be measured after "
+                    + LogText.Ms(one.ElapsedMilliseconds) + "; its row carries the error");
                 frames[i] = new AnalyzedFrame(FrameInfo.Read(i + 1, path), null, null, e.Message);
             }
 
             progress?.Report((Interlocked.Increment(ref done), n));
         });
+        clock.Lap("measure");
 
         // Registration against the first measured frame.
         int refIndex = Array.FindIndex(frames, f => f.Measurement is not null);
@@ -204,14 +217,29 @@ internal static class SeriesRun
             });
         }
 
+        clock.Lap("register");
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug("reference frame=" + (refIndex >= 0 ? LogText.Int(refIndex + 1) : "none"));
+            for (int i = 0; i < n; i++)
+            {
+                if (frames[i].Registration is RegistrationResult r)
+                {
+                    Log.Debug("registered frame " + LogText.Int(i + 1) + ": " + LogText.Registered(r));
+                }
+            }
+        }
+
         List<FrameInfo> infos = frames.Select(f => f.Info).ToList();
         Cadence cadence = CadenceAnalyzer.Analyze(infos);
         double?[] x = frames.Select(f => f.Registration is { Ok: true } r ? r.Dx : (double?)null).ToArray();
         double?[] y = frames.Select(f => f.Registration is { Ok: true } r ? r.Dy : (double?)null).ToArray();
         DitherAnalysis dither = DitherAnalyzer.Analyze(x, y, cadence.PauseSeconds);
+        clock.Lap("dither");
         // The crops (1 MB apiece) are dropped once the pattern is read.
         SensorPattern pattern = PatternAnalyzer.Analyze(crops, frames.Select(f => f.Measurement?.Channels).ToList(), dither);
         Array.Clear(crops);
+        clock.Lap("pattern");
 
         // The pixel scale: the files' XPIXSZ, else the typed size, else the raw's own, else the
         // D3300's (R-066); the words are the report's, the choice is PixelPitch's.
@@ -227,13 +255,60 @@ internal static class SeriesRun
         double? scale = focal is double fm && fm > 0 ? 206.265 * pixel / fm : null;
 
         IReadOnlyList<ReadNoise>? readNoise = ReadNoise(session, cancel);
+        clock.Lap("noise");
         // Raws are read top-down against Siril's bottom-up solve; FITS lights are stored as the
         // solve is (ADR 0023).
         Wcs? wcs = ReadWcs(session.Root) is Wcs solve ? solve with { FramesFlipped = session.LightsAreRaws } : null;
         SeriesAnalysis series = SeriesAnalyzer.Analyze(frames, cadence, dither, readNoise, wcs, scale);
+        clock.Lap("analyze");
+        if (Log.IsDebugEnabled)
+        {
+            LogFigures(frames, cadence, dither, pattern, pixel, source, focal, scale, readNoise, wcs, series);
+        }
 
-        return new SeriesResult(session, frames, cadence, dither, series, pattern, pixel, pixelSource, scale, refIndex + 1, options.Arrows ?? ArrowKeys.Default);
+        clock.Done("frames=" + LogText.Int(n) + " measured=" + LogText.Int(frames.Count(f => f.Measurement is not null))
+            + " errors=" + LogText.Int(frames.Count(f => f.Error is not null)) + " good=" + LogText.Int(series.GoodCount)
+            + " marginal=" + LogText.Int(series.MarginalCount) + " bad=" + LogText.Int(series.BadCount)
+            + " unknown=" + LogText.Int(series.UnknownCount) + " walking=" + series.WalkingNoise + " polar=" + series.PolarAlignment);
+        return new SeriesResult(session, frames, cadence, dither, series, pattern, pixel, pixelSource, scale, refIndex + 1, arrows);
     }
+
+    /// <summary>
+    /// Writes, at Debug, the figures every verdict of the series rests on (R-071): the cadence, the
+    /// dithering, the sensor's pattern, the pixel size and its source, the read noise, the WCS, the
+    /// series analysis, and each frame's class with its flags.
+    /// </summary>
+    /// <param name="frames">The frames, in the session's order.</param>
+    /// <param name="cadence">The timing of the series.</param>
+    /// <param name="dither">The dithering.</param>
+    /// <param name="pattern">The sensor's pattern.</param>
+    /// <param name="pixel">The pixel size used, in microns.</param>
+    /// <param name="source">Where the pixel size came from.</param>
+    /// <param name="focal">The focal length the scale was computed with, in mm; null when no file gives one.</param>
+    /// <param name="scale">The pixel scale in arcseconds per pixel; null without a focal length.</param>
+    /// <param name="readNoise">The read noise from the biases; null without two readable ones.</param>
+    /// <param name="wcs">The plate solve's WCS as the analysis read it; null without one.</param>
+    /// <param name="series">The series analysis.</param>
+    private static void LogFigures(AnalyzedFrame[] frames, Cadence cadence, DitherAnalysis dither, SensorPattern pattern, double pixel,
+        PixelPitchSource source, double? focal, double? scale, IReadOnlyList<ReadNoise>? readNoise, Wcs? wcs, SeriesAnalysis series)
+    {
+        Log.Debug("cadence: " + LogText.Timing(cadence));
+        Log.Debug("dither: " + LogText.Dither(dither));
+        Log.Debug("pattern: " + LogText.Pattern(pattern));
+        Log.Debug("pixel size " + LogText.Num(pixel) + " um source=" + source + " focal=" + LogText.Num(focal) + " mm scale="
+            + LogText.Num(scale) + " arcsec/px");
+        Log.Debug("read noise: " + LogText.Noise(readNoise));
+        Log.Debug("wcs: " + LogText.Solve(wcs));
+        Log.Debug("series: " + LogText.Series(series));
+        for (int i = 0; i < frames.Length; i++)
+        {
+            Log.Debug("classified frame " + LogText.Int(i + 1) + ": " + LogText.Classified(series.Classes[i], series.Flags[i],
+                i < series.MountMoves.Count ? series.MountMoves[i] : null));
+        }
+    }
+
+    /// <summary>The diagnostic log: the run's lines, each frame's, the figures behind the verdicts (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(SeriesRun));
 
     /// <summary>
     /// The read noise from the first two biases, or null without two readable ones.
@@ -245,6 +320,7 @@ internal static class SeriesRun
     {
         if (session.Biases.Count < 2)
         {
+            Log.Debug("read noise: " + LogText.Int(session.Biases.Count) + " bias(es), two are needed; none measured");
             return null;
         }
 
@@ -263,6 +339,7 @@ internal static class SeriesRun
         }
         catch (Exception e) when (e is not OperationCanceledException)
         {
+            Log.Warn(e, "the read noise could not be measured from " + session.Biases[0] + " and " + session.Biases[1] + "; the report has none");
             return null;
         }
     }
@@ -305,10 +382,13 @@ internal static class SeriesRun
                 }
 
                 double crval2 = FitsReader.HDbl(h, "CRVAL2", double.NaN);
-                return double.IsNaN(crval2) ? w : w with { DecDeg = crval2 };
+                Wcs found = double.IsNaN(crval2) ? w : w with { DecDeg = crval2 };
+                Log.Debug("wcs from " + f + ": " + LogText.Solve(found));
+                return found;
             }
             catch (Exception e) when (e is IOException or InvalidDataException)
             {
+                Log.Debug(e, f + " could not be read; skipped as a WCS source");
                 continue;
             }
         }

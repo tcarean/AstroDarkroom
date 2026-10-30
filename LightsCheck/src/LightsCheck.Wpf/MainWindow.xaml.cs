@@ -17,6 +17,7 @@
 
 using System.Windows;
 using System.Windows.Input;
+using NLog;
 
 namespace LightsCheck.Wpf;
 
@@ -26,6 +27,9 @@ namespace LightsCheck.Wpf;
 /// </summary>
 public partial class MainWindow : Window
 {
+    /// <summary>The diagnostic log: the dialogs and the buttons the user pressed (R-071).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private readonly MainViewModel _vm;
 
     /// <summary>The window over a new view-model, as the application opens it.</summary>
@@ -73,14 +77,22 @@ public partial class MainWindow : Window
     /// <summary>The "Opreste" buttons: stops the run in flight, if any.</summary>
     /// <param name="sender">The button clicked.</param>
     /// <param name="e">The click's arguments, not used.</param>
-    private void Stop(object sender, RoutedEventArgs e) => _vm.CancelPending();
+    private void Stop(object sender, RoutedEventArgs e)
+    {
+        Log.Info("stop pressed");
+        _vm.CancelPending();
+    }
 
     /// <summary>
     /// The Help command (the "Despre" button or F1): shows the About window, modal.
     /// </summary>
     /// <param name="sender">The element the command was executed on.</param>
     /// <param name="e">The command's arguments, not used.</param>
-    private void ShowAbout(object sender, ExecutedRoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
+    private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
+    {
+        Log.Info("About opened");
+        new AboutWindow { Owner = this }.ShowDialog();
+    }
 
     /// <summary>
     /// The export folder is asked for, the session root proposed (ADR 0002: beside the session,
@@ -98,7 +110,12 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog(this) == true)
         {
+            Log.Info("export dialog: chose " + dlg.FolderName);
             _vm.Export(dlg.FolderName);
+        }
+        else
+        {
+            Log.Info("export dialog: cancelled");
         }
     }
 
@@ -110,7 +127,12 @@ public partial class MainWindow : Window
         Microsoft.Win32.OpenFolderDialog dlg = new() { Title = WindowTexts.ChooseTitle, Multiselect = false };
         if (dlg.ShowDialog(this) == true)
         {
+            Log.Info("folder dialog: chose " + dlg.FolderName);
             _ = _vm.OpenAsync(dlg.FolderName);
+        }
+        else
+        {
+            Log.Info("folder dialog: cancelled");
         }
     }
 }

@@ -43,5 +43,8 @@
     <Compile Include="..\LightsCheck.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
     <Compile Include="..\LightsCheck.Tests\TestData.cs" Link="Shared\TestData.cs" />
     <Compile Include="..\LightsCheck.Tests\RomanianByDefault.cs" Link="Shared\RomanianByDefault.cs" />
+    <!-- LogCapture configures the diagnostic log for the whole test assembly and lets a test read
+         its own lines, here as in LightsCheck.Tests (ADR 0029). -->
+    <Compile Include="..\LightsCheck.Tests\LogCapture.cs" Link="Shared\LogCapture.cs" />
   </ItemGroup>
 </Project>
