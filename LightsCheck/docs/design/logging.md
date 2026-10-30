@@ -1,6 +1,6 @@
 # The diagnostic log
 
-**Covers:** `src/LightsCheck.Core/Logging/LogSetup.cs`, `src/LightsCheck.Core/Logging/LogText.cs`, `src/LightsCheck.Core/Logging/RunClock.cs`, `src/LightsCheck.Wpf/Loggers.cs`, `tests/LightsCheck.Tests/LogCapture.cs`, `tests/LightsCheck.Tests/LoggingTests.cs`, `tests/LightsCheck.Wpf.Tests/WindowLoggingTests.cs`, and the log lines of the seams the table below lists.
+**Covers:** `src/LightsCheck.Core/Logging/LogSetup.cs`, `src/LightsCheck.Core/Logging/LogText.cs`, `src/LightsCheck.Core/Logging/RunClock.cs`, `src/LightsCheck.Wpf/Loggers.cs`, `tests/LightsCheck.Tests/LogCapture.cs`, `tests/LightsCheck.Tests/LogFiles.cs`, `tests/LightsCheck.Tests/LoggingTests.cs`, `tests/LightsCheck.Wpf.Tests/WindowLoggingTests.cs`, and the log lines of the seams the table below lists.
 
 The behaviour is R-070 to R-073 and the decisions are ADR 0029, which takes FlatCheck's (its ADRs
 0070 and 0072); this note is the mechanics. FlatCheck's `docs/design/logging.md` describes the
@@ -31,7 +31,11 @@ the same way. `Apply` runs once per process:
 3. The hooks: `AppDomain.UnhandledException` and `TaskScheduler.UnobservedTaskException`; the
    window adds its `DispatcherUnhandledException` in `App`'s constructor. `LogSetup.Fatal`
    writes the exception, and names the same exception seen a second time instead of writing it
-   again (the dispatcher's hook, then the process's).
+   again (the dispatcher's hook, then the process's). `LogSetup.Unobserved` does the same for a
+   task nobody awaited: an exception a line already wrote where it was met, and recorded with
+   `LogSetup.Wrote` in a weak table, is named, any other written whole. The window's unhandled
+   exception is such a one: written by `MainViewModel` before it leaves `OpenAsync` in a task the
+   window never awaits.
 4. The first line, `StartupLine`, at Info.
 
 `Program.Run`, the console the tests call in-process, configures nothing; neither does the window
@@ -49,7 +53,9 @@ through the console's configuration; measured on 2026-10-30 it leaves:
 | `lightscheck_03.log` to `lightscheck_06.log` | 1049286 each | the same |
 | `lightscheck_07.log` | 980211, the last line in it | 984336 |
 
-The second process appends to `_07`, which grows, and the five names stay.
+The second process appends to `_07`, which grows, and the five names stay. The byte counts move
+by a few hundred from one run to the next: every line carries the process and thread ids, whose
+digits vary (the review's run of the same test left 1049028 and 979969 bytes).
 The window's files, rolled once, survive the console's rolls in the same folder
 (`R070_OneExecutablesRollingLeavesTheOthersFilesAlone`): NLog matches its own name and number only.
 
@@ -58,7 +64,10 @@ released by a `Barrier` so they do overlap: `R073_TwoProcessesWritingAtFullSpeed
 writes 4000 lines from each, crossing the 1 MiB roll, and asks for every line, whole, once, and
 for lines of both writers interleaved both ways round; measured on 2026-10-30 it left
 `LightsCheck.Wpf.log` (1048915 bytes) and `LightsCheck.Wpf_01.log` (646953 bytes) with 4000 whole
-lines of each writer and none broken.
+lines of each writer and none broken. The console's tests load the `net8.0` build of the atomic
+target, the window's tests its `net8.0-windows` build, a binary of its own, which the window
+ships: `R073_TheWindowsBuildOfTheAtomicTargetKeepsEveryLineOfTwoWindows` runs the same check
+(`LogFiles.TwoWritersKeepEveryLine`) on it.
 
 A line costs the same on the hard disk the sessions live on as on the SSD: 0.03 to 0.08 ms,
 measured on 2026-10-30 through the same configuration, one writer and four at once. `AutoFlush`
@@ -74,6 +83,12 @@ with six significant digits, `none` for a missing value, sizes in KiB and MiB, a
 `Ms`, `1141 ms`, or `Seconds`, `12.9 s`, an enum by its name) and logged as plain strings, so
 NLog never parses them as message templates and a `{` in a path is harmless. A line whose message
 costs something to build is guarded by `IsDebugEnabled` or `IsTraceEnabled`.
+
+A line never throws: a value it may not have is written `none`. A line that threw would change
+what a run does at one level only, at the default one among them: libraw's line once read the
+CFA order of every raw, and a raw without a Bayer mosaic (an X-Trans RAF, a monochrome DNG) has
+none, so every such frame became unreadable at Debug and not at Info. `RawReader.FiguresLine`
+composes that line from plain values, so a test reaches it without such a raw.
 
 `LogText` never writes a text the report words in the run's language: a FITS frame's scale is
 `none` in its `loaded` line (`FrameRun` assumes it from BITPIX, in the run's language) and its
@@ -107,19 +122,19 @@ three timed inside `FrameRun.Measure` by the clock it is handed; `open`, `measur
 
 | Seam | Level | What |
 | --- | --- | --- |
-| `LogSetup` | Info, Fatal, Error | the first line, the last line; the unhandled exceptions; a task that failed and nobody awaited |
-| `Program` (`Cli`) | Info, Warn, Error | `mode=<Mode> input=<folder> lang=<en/ro>`, or `mode=Help`; a refused `--lang` and refused arguments, with the message as shown; `wrote <file> (<KiB>)` per file of `--out`; `run failed: mode=<Mode>` with the exception, before the one `ERROR:` line of stderr |
+| `LogSetup` (`Process`) | Info, Fatal, Error | the first line, the last line; the unhandled exceptions, the window thread's included; a task that failed and nobody awaited |
+| `Program` (`Cli`) | Info, Warn, Error, Debug | `mode=<Mode> input=<folder> lang=<en/ro>`, or `mode=Help`; a refused `--lang` and refused arguments, with the message as shown; `wrote <file> (<KiB>)` per file of `--out`, as soon as the file is written (`SeriesOutputs.WriteAll`'s callback); `run failed: mode=<Mode>` with the exception, before the one `ERROR:` line of stderr; the code page that could not be switched or put back, at Debug |
 | `SessionFolder.Open` | Info | `session root=... lights=<dir> (<n> frames, <ext>) biases=<dir> (<n>) darks=<dir> (<n>)`; a refused folder is its caller's exception |
 | `ImageLoader.Load` / `LoadInfo` | Info, Debug, Trace | `loaded <LogText.Frame> in <ms>` for a full load (Info), `read the header of ...` for a metadata read (Debug); the FITS keywords that decide the reading (`LogText.FitsKeys`) at Debug; every card at Trace, from a full load only |
-| `RawReader` | Debug, Warn | libraw's visible and raw sizes, margins, pitch, filters, `cdesc`, the CFA order, the maximum, the black and the per-channel blacks and their median, before the scale is judged; the lens block that could not be read, with the exception |
-| `FrameInfo.Read` | Warn | a frame whose metadata could not be read, with the exception; its row carries the message |
+| `RawReader` | Debug, Warn | through `FiguresLine`, libraw's visible and raw sizes, margins, pitch, filters, `cdesc`, the CFA order or `none`, the maximum, the black and the per-channel blacks and their median, before the scale is judged; the lens block that could not be read, with the exception |
+| `FrameInfo.Read` | Warn | a frame whose metadata could not be read, with the exception; its row carries the message; not when its caller writes the frame's one line itself (the series) |
 | `InventoryRun` | Info, Debug | through `RunClock`, `inventory done lights=<n> errors=<n>`; the cadence at Debug |
 | `FrameRun` | Info, Debug | through `RunClock`, `frame done detected=<n> fwhm=<v> elongation=<v>`; in `Measure`, every figure of the frame's measurement (`LogText.Measured`) at Debug, for the series' frames too |
-| `SeriesRun` | Info, Debug, Warn | through `RunClock`, `series done frames= measured= errors= good= marginal= bad= unknown= walking= polar=`; `frame <i>/<n> <file> detected= fwhm= elongation= in <ms>` per frame measured, from its worker thread; a frame that could not be measured, with the exception; at Debug the reference frame, each frame's registration, the cadence, the dithering, the pattern, the pixel size and its source (`PixelPitchSource`), the read noise, the WCS, the series analysis and each frame's class with its flags and the mount's move; the read noise that could not be measured (Warn) or had fewer than two biases (Debug); a WCS candidate that could not be read, and the solve found (Debug) |
-| `App` | Info, Warn, Fatal | the language and the folder from the command line; a `--lang` refused; the window thread's unhandled exception |
+| `SeriesRun` | Info, Debug, Warn | through `RunClock`, `series done frames= measured= errors= good= marginal= bad= unknown= walking= polar=`; `frame <i>/<n> <file> detected= fwhm= elongation= in <ms>` per frame measured, from its worker thread; a frame that could not be measured, with the exception, in one line that also says whether its metadata could be read; at Debug the reference frame, each frame's registration, the cadence, the dithering, the pattern, the pixel size and its source (`PixelPitchSource`), the read noise, the WCS with the flip the analysis uses, the series analysis and each frame's class with its flags and the mount's move; the read noise that could not be measured (Warn) or had fewer than two biases (Debug); each WCS candidate at the root skipped and why (no RA axis, a zero matrix row, a file that could not be read) and the one read (Debug) |
+| `App` | Info, Warn | the language and the folder from the command line; a `--lang` refused; it hooks the window thread's unhandled exception, which `LogSetup` writes |
 | `MainWindow` | Info | the folder and export dialogs, chosen or cancelled; Stop; About |
-| `MainViewModel` | Info, Warn, Debug, Error | `session <folder>: run started pixel= threads= east= north=`; `done in`, `stopped after`, or `refused after ...; the card shows the message` with the exception; a run a newer one replaced, at Debug; an exception the window does not handle, at Error, from an exception filter that returns false; every file the export writes, and an export that failed; the cut-outs of a frame, and a decode that failed (Warn), at Debug when another frame was selected meanwhile |
-| `UserSettings`, `DarkTitleBar`, `AboutWindow` | Debug | a settings file that could not be read or written; a title bar that stays light; a link the system could not open; each with the exception |
+| `MainViewModel` | Info, Warn, Debug, Error | `session <folder>: run started pixel= threads= east= north=`; `done in`, `stopped after`, or `refused after ...; the card shows the message` with the exception; a run a newer one replaced, at Debug; an exception the window does not handle, at Error, from an exception filter that returns false and records it with `LogSetup.Wrote`; every file the export writes, as soon as it is written, and an export that failed; the cut-outs of a frame, and a decode that failed (Warn), at Debug when another frame was selected meanwhile |
+| `UserSettings`, `DarkTitleBar`, `AboutWindow` | Debug | the settings file written, with its size, and one that could not be read or written; a title bar that stays light; a link the system could not open; each failure with its exception |
 
 Not logged: pixels, a FITS card below Trace, a progress tick (the frame lines are the progress),
 the cancellation of `CancelPending` racing the window's close.
@@ -127,7 +142,9 @@ the cancellation of `CancelPending` racing the window's close.
 ## Reading a log
 
 A process begins at its `Process <name> <version> starting` line and ends at `Process exit <code>
-after <s>`; a crash ends instead at a `FATAL` line. Two processes writing at once interleave, and
+after <s>`. A crash writes a `FATAL` line with the exception first; whether an `exit` line still
+follows it is the runtime's, as it runs the entry point's `finally` or not, so a crash is read
+from its `FATAL` line. Two processes writing at once interleave, and
 the `[pid:thread]` field separates them; within a series, the frames' worker threads interleave
 too, and each frame's lines carry its index and file. A run is found by its `<run> start` and
 `<run> done` lines, whose stage times say where the time went, or its `ended without an outcome`
@@ -142,10 +159,19 @@ at Trace that renders every event: every test thus runs every log line on its pa
 that throws fails the test that reaches it. A test that reads the lines opens a capture with
 `LogCapture.Start`, an `AsyncLocal` scope like `Ui.Use`, which sees only its own call tree, so the
 tests running beside it add nothing; one capture at a time per call tree. It is linked into the
-window's test project. The file tests never touch that configuration: they build the
-applications' configuration with `LogSetup.Build` into a private `LogFactory`, which stands for one
-process. `R071_TheLogIsTheSameInBothLanguages` sorts the messages before comparing them, because
-the frames' threads write in any order. One test starts the real console as a process,
-`R060_WithoutLangTheProgramSpeaksEnglish` with `--help`, and that process logs as any other, so
-every test run leaves its first and last lines in `log\lightscheck.log` beside the copy of the
-executable in the test project's build folder, rolled like any log.
+window's test project, and so is `LogFiles`, the file side: the start of a line, the files of one
+executable, a private factory, an elapsed time, the two-writer check. The file tests never touch
+the assembly's configuration: they build the applications' configuration with `LogSetup.Build`
+into a private `LogFactory`, which stands for one process. `R071_TheLogIsTheSameInBothLanguages`
+and `R071_TheWindowsLinesAreTheSameInBothLanguages` sort the messages before comparing them,
+because the frames' threads write in any order.
+
+What only the entry points do, `Apply` and `Close`, is tested on the real console started as a
+process: `R071_TheRealConsoleWritesItsFirstAndItsLastLine` and
+`R072_TheRealConsoleTakesItsLevelFromLIGHTSCHECK_LOG` find its lines by its process id, after its
+start, since a process id of an older run may come back. Those processes, and the one of
+`R060_WithoutLangTheProgramSpeaksEnglish`, log as any other, so every test run leaves their lines
+in `log\lightscheck.log` beside the copy of the executable in the test project's build folder,
+rolled like any log. `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers and
+the wiring of the hooks run in no test, since no test builds `App` or crashes a process; the hooks'
+bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, are tested directly.

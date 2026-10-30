@@ -193,9 +193,13 @@ internal static class SeriesRun
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
+                // One line per frame, with the measurement's exception: the metadata read that
+                // follows meets the same file, so its outcome is said here, not in a second stack.
+                long ms = one.ElapsedMilliseconds;
+                FrameInfo info = FrameInfo.Read(i + 1, path, logFailure: false);
                 Log.Warn(e, "frame " + LogText.Int(i + 1) + "/" + LogText.Int(n) + " " + path + " could not be measured after "
-                    + LogText.Ms(one.ElapsedMilliseconds) + "; its row carries the error");
-                frames[i] = new AnalyzedFrame(FrameInfo.Read(i + 1, path), null, null, e.Message);
+                    + LogText.Ms(ms) + "; its metadata " + (info.Error is null ? "was read" : "could not be read either") + "; its row carries the error");
+                frames[i] = new AnalyzedFrame(info, null, null, e.Message);
             }
 
             progress?.Report((Interlocked.Increment(ref done), n));
@@ -369,6 +373,7 @@ internal static class SeriesRun
                 IReadOnlyDictionary<string, string> h = FitsReader.LoadHeader(f);
                 if (!FitsReader.HStr(h, "CTYPE1", "").StartsWith("RA", StringComparison.OrdinalIgnoreCase))
                 {
+                    Log.Debug(f + " skipped as a WCS source: CTYPE1=" + LogText.Str(FitsReader.HStr(h, "CTYPE1", "")) + " is no RA axis");
                     continue;
                 }
 
@@ -378,13 +383,15 @@ internal static class SeriesRun
                     : new Wcs(1, 1, FitsReader.HDbl(h, "CD1_1", 0), FitsReader.HDbl(h, "CD1_2", 0), FitsReader.HDbl(h, "CD2_1", 0), FitsReader.HDbl(h, "CD2_2", 0));
                 if (w.Pc11 == 0 && w.Pc12 == 0)
                 {
+                    Log.Debug(f + " skipped as a WCS source: its first PC or CD row is zero");
                     continue;
                 }
 
+                // The file alone: the flip of the lights against the solve is the caller's to set
+                // (ADR 0023), and the run's own "wcs:" line has the values with it.
+                Log.Debug("wcs read from " + f);
                 double crval2 = FitsReader.HDbl(h, "CRVAL2", double.NaN);
-                Wcs found = double.IsNaN(crval2) ? w : w with { DecDeg = crval2 };
-                Log.Debug("wcs from " + f + ": " + LogText.Solve(found));
-                return found;
+                return double.IsNaN(crval2) ? w : w with { DecDeg = crval2 };
             }
             catch (Exception e) when (e is IOException or InvalidDataException)
             {

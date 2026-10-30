@@ -486,6 +486,9 @@ public sealed class MainViewModel : ObservableObject
     private static bool LogUnhandled(string folder, Exception e)
     {
         Log.Error(e, "session " + folder + ": failed with an exception the window does not handle; it shows no result");
+        // Its task is never awaited: the hook that meets it when the task is collected names it
+        // instead of writing the stack a second time.
+        LogSetup.Wrote(e);
         return false;
     }
 
@@ -515,13 +518,9 @@ public sealed class MainViewModel : ObservableObject
 
         try
         {
-            IReadOnlyList<string> written = SeriesOutputs.WriteAll(_result, dir);
-            foreach (string p in written)
-            {
-                Log.Info("wrote " + p + " (" + LogText.FileKiB(p) + ")");
-            }
-
-            Status = WindowTexts.Written(written);
+            // Each file's line as soon as the file is written, so an export that fails part-way
+            // still names what it wrote (R-071).
+            Status = WindowTexts.Written(SeriesOutputs.WriteAll(_result, dir, p => Log.Info("wrote " + p + " (" + LogText.FileKiB(p) + ")")));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
         {

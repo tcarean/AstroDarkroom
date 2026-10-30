@@ -39,10 +39,14 @@ internal static class SeriesOutputs
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <param name="dir">The folder to write into, created when missing; not null or blank.</param>
+    /// <param name="written">
+    /// Told each file's path as soon as that file is written, so a caller can say which files an
+    /// export that fails part-way did write (the diagnostic log, R-071); null for none.
+    /// </param>
     /// <returns>
     /// The paths of the report, the CSV and the list of rejected frames, in that order.
     /// </returns>
-    internal static IReadOnlyList<string> WriteAll(SeriesResult r, string dir)
+    internal static IReadOnlyList<string> WriteAll(SeriesResult r, string dir, Action<string>? written = null)
     {
         ArgumentNullException.ThrowIfNull(r);
         ArgumentException.ThrowIfNullOrWhiteSpace(dir);
@@ -54,8 +58,11 @@ internal static class SeriesOutputs
             SeriesReport.Write(r, w);
         }
 
+        written?.Invoke(report);
         File.WriteAllText(csv, Csv(r), new UTF8Encoding(false));
+        written?.Invoke(csv);
         File.WriteAllText(rejected, Rejected(r), new UTF8Encoding(false));
+        written?.Invoke(rejected);
         return [report, csv, rejected];
     }
 

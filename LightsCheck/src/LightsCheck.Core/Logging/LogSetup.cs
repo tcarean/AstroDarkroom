@@ -26,6 +26,7 @@
 
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using NLog;
@@ -106,6 +107,16 @@ internal static class LogSetup
     private static Exception? _lastFatal;
 
     /// <summary>
+    /// The exceptions a line already wrote with their stack where they were met (<see cref="Wrote"/>),
+    /// so the hook of a task nobody awaited names them instead of writing them again; held weakly,
+    /// so they are collected as before.
+    /// </summary>
+    private static readonly ConditionalWeakTable<Exception, object> Written = new();
+
+    /// <summary>The value <see cref="Written"/> keeps for each exception, which it needs one of.</summary>
+    private static readonly object Seen = new();
+
+    /// <summary>
     /// The logger of the process's own lines: the first, the last, the crashes. Fetched on use, not
     /// held in a static field: creating a logger makes NLog load an <c>NLog.config</c> it finds
     /// beside the executable, and <see cref="Apply"/> must have set the configuration before that
@@ -154,7 +165,7 @@ internal static class LogSetup
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             Fatal(e.ExceptionObject as Exception, "unhandled exception, the process ends"
                 + (e.ExceptionObject is Exception ? "" : ": " + e.ExceptionObject));
-        TaskScheduler.UnobservedTaskException += (_, e) => Log.Error(e.Exception, "a task failed and nobody awaited it");
+        TaskScheduler.UnobservedTaskException += (_, e) => Unobserved(e.Exception);
 
         Log.Info(StartupLine(place.ExecutableName, args, place.Folder, place.FellBack, place.Level));
     }
@@ -223,6 +234,36 @@ internal static class LogSetup
         }
 
         LogManager.Flush();
+    }
+
+    /// <summary>
+    /// Records that a line wrote <paramref name="e"/> with its stack where it was met, so the hook
+    /// of a task nobody awaited names it later instead of writing it again (the window's unhandled
+    /// exception, which leaves its method in such a task).
+    /// </summary>
+    /// <param name="e">The exception just written; not null.</param>
+    internal static void Wrote(Exception e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        Written.AddOrUpdate(e, Seen);
+    }
+
+    /// <summary>
+    /// Writes the exception of a task nobody awaited, at <c>Error</c>, when the runtime reports it:
+    /// named when a line already wrote it with its stack (<see cref="Wrote"/>), whole otherwise.
+    /// </summary>
+    /// <param name="e">The task's exceptions, as the runtime hands them; not null.</param>
+    internal static void Unobserved(AggregateException e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+        if (e.InnerExceptions.Count > 0 && e.InnerExceptions.All(x => Written.TryGetValue(x, out _)))
+        {
+            Log.Error("a task failed and nobody awaited it: the exception logged above");
+        }
+        else
+        {
+            Log.Error(e, "a task failed and nobody awaited it");
+        }
     }
 
     /// <summary>

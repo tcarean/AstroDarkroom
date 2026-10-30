@@ -369,8 +369,9 @@ closes); at the end the exit code and the time taken. The log's own words are En
 `--lang ro`. It holds the paths of your files and the figures measured on them, not their pixels.
 
 **How much.** The environment variable `LIGHTSCHECK_LOG` sets the level: `off`, `fatal`, `error`,
-`warn`, `info`, `debug` (the default) or `trace`, which adds every FITS header card; `off` writes
-no log and creates no folder. In a command window, `set LIGHTSCHECK_LOG=trace` holds for the
+`warn`, `info`, `debug` (the default) or `trace`, which adds every header card of each FITS frame
+the analysis decodes (`--inventory` reads headers only, so it adds none); `off` writes no log and
+creates no folder. In a command window, `set LIGHTSCHECK_LOG=trace` holds for the
 programs started from that window; for the window started from a shortcut or from Astro Darkroom,
 set it once with `setx LIGHTSCHECK_LOG trace` (or in Windows' environment variables) and start the
 program, or Astro Darkroom, again.

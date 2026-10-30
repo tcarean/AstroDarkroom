@@ -118,12 +118,17 @@ internal sealed record FrameInfo(
     /// </summary>
     /// <param name="index">The frame's 1-based position in the session.</param>
     /// <param name="path">The frame's file, a camera raw or a FITS.</param>
+    /// <param name="logFailure">
+    /// True to write a failure to the diagnostic log with its exception (R-071); false when the
+    /// caller writes one line for the frame itself (the series, whose measurement of the same file
+    /// failed first).
+    /// </param>
     /// <returns>
     /// The frame's metadata, or a record with every shot field null and <see cref="Error"/> set
     /// when the file cannot be read; a `.fit` that is not a FITS is refused by the reader itself
     /// (`FITS: the file does not begin with SIMPLE.`, R-008), so no guess is made here.
     /// </returns>
-    internal static FrameInfo Read(int index, string path)
+    internal static FrameInfo Read(int index, string path, bool logFailure = true)
     {
         try
         {
@@ -134,7 +139,11 @@ internal sealed record FrameInfo(
             // Anything the file makes the readers throw, libraw's own exception type included,
             // is this frame's error, never the run's: the other frames are still listed. The
             // log keeps the exception whole, which the row cannot (R-071).
-            Log.Warn(e, "frame " + LogText.Int(index) + " " + path + " could not be read; its row carries the error");
+            if (logFailure)
+            {
+                Log.Warn(e, "frame " + LogText.Int(index) + " " + path + " could not be read; its row carries the error");
+            }
+
             return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, e.Message);
         }
     }

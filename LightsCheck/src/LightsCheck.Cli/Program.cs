@@ -60,8 +60,9 @@ internal static class Program
             // the run goes on without a log
         }
 
-        // What the log's last line reports when the run throws past RunIn's catch; the process
-        // itself then exits with the runtime's crash code, not with this.
+        // Run's exit code, for the log's last line. A run that throws past RunIn's catch crashes:
+        // the hook's Fatal line, written first, is then the crash's line, and the process exits
+        // with the runtime's crash code, whether or not this finally still writes "exit 1".
         int code = 1;
 
         // The report carries the SynScan arrows as symbols (R-040). A console window's own code
@@ -74,9 +75,10 @@ internal static class Program
             previous = Console.OutputEncoding;
             Console.OutputEncoding = new UTF8Encoding(false);
         }
-        catch (IOException)
+        catch (IOException e)
         {
             // no console attached: nothing to switch
+            Log.Debug(e, "the console's output was not switched to UTF-8: no console is attached");
         }
 
         try
@@ -92,9 +94,10 @@ internal static class Program
                 {
                     Console.OutputEncoding = previous;
                 }
-                catch (IOException)
+                catch (IOException e)
                 {
                     // the console went away during the run
+                    Log.Debug(e, "the console's output encoding was not put back: the console went away during the run");
                 }
             }
 
@@ -191,11 +194,12 @@ internal static class Program
             SeriesReport.Write(r, stdout);
             if (o.Out is not null)
             {
-                IReadOnlyList<string> written = SeriesOutputs.WriteAll(r, o.Out);
+                // Each file's line as soon as the file is written, so an export that fails
+                // part-way still names what it wrote (R-071).
+                IReadOnlyList<string> written = SeriesOutputs.WriteAll(r, o.Out, p => Log.Info("wrote " + p + " (" + LogText.FileKiB(p) + ")"));
                 stdout.WriteLine();
                 foreach (string p in written)
                 {
-                    Log.Info("wrote " + p + " (" + LogText.FileKiB(p) + ")");
                     stdout.WriteLine(T($"    -> written: {p}", $"    -> scris: {p}"));
                 }
             }

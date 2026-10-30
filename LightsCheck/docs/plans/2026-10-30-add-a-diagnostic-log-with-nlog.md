@@ -594,6 +594,10 @@ docs (f10093f); `Logging/` named in `CLAUDE.md`'s layout (345ec8a); the gate gre
 - **The README's settings sentence was corrected**: `%LOCALAPPDATA%\LightsCheck` holds the log too
   when the folder beside the program cannot be written.
 - **One more test than the plan**, `R071_TheArgumentsTheConsoleRefusesAreLoggedAsTheUserSawThem`.
+- **The console's `mode=` line carries the mode, the input and the language only**, not the
+  plan's `frame=`, `out=`, `threads=`, `pixel=`, `east=` and `north=`: FlatCheck dropped the same
+  options from its line (its ADR 0072), since the first line has the arguments verbatim and each
+  run's start line its options.
 - **Measured (L8)**, 2026-10-30, the Release console on `E:\Photografie\Astro\Veil\2026-10-06-3h`
   (87 NEF lights, 30 biases, 4 threads), runs alternated, the owner using the PC meanwhile:
 
@@ -643,6 +647,42 @@ docs (f10093f); `Logging/` named in `CLAUDE.md`'s layout (345ec8a); the gate gre
   - **not done**: the window by hand (its start and exit lines, two windows into one file). Both
     times it was checked, the owner was at the PC (Firefox, then Claude in the foreground, under 5 s
     since the last input), and a window started over their work is an action on their desktop.
-    The window's lines are tested in process by `WindowLoggingTests`, and the two-processes file
-    by `R073_TwoProcessesWritingAtFullSpeedKeepEveryLine`; `App`'s constructor and `OnExit` are the
-    only lines no test runs.
+    The view-model's lines are tested in process by `WindowLoggingTests`, and the two-processes
+    file on the window's build of the atomic target since the review (below). No test runs
+    `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers, `MainViewModel`'s
+    filter for an unhandled exception, the title bar's and the About window's catches, or the
+    wiring of the crash hooks (corrected after the review: this line first named `App`'s
+    constructor and `OnExit` alone).
+- **The review of 2026-10-30** (a subagent on `git diff main...HEAD`) reported ten findings; each
+  was checked in the code and held; eight were applied, one was kept with its reason, and one is
+  the owner's to judge:
+  - a bug: libraw's Debug line read the CFA order of every raw, and a raw without a Bayer mosaic
+    (X-Trans, mono) has none, so at the default level every such frame became unreadable and
+    `--frame` crashed; the line is now `RawReader.FiguresLine`, which writes `none`, and
+    `R071_LibrawsLineNamesNoCfaForARawWithoutABayerMosaic` failed with a `NullReferenceException`
+    before the fix;
+  - the WCS candidates skipped on their header left no line, and the file's line said
+    `framesFlipped=yes` before the run set the flip: each skip now says why, the file's line names
+    the file alone, the run's `wcs:` line has the values
+    (`R071_ThePlateSolveCandidatesSayWhichWasReadAndWhyTheOthersWereSkipped`, red before);
+  - an export that failed part-way named none of the files it had written: `WriteAll` now tells a
+    callback each file as it is written (`R071_AnExportThatFailsPartWayNamesTheFilesItWrote`, red
+    before); the window's `settings.json` written and the console's code-page catches now have
+    their lines;
+  - what only the entry points do had no test: two tests run the real console, its first and last
+    lines and its level from `LIGHTSCHECK_LOG` written out by name; R-073 also runs on the
+    window's `net8.0-windows` build of the atomic target, a binary of its own;
+  - a frame the series cannot measure wrote two stacks (the measurement's, then the metadata
+    read's): one line now, which says whether the metadata could be read; and an unhandled
+    exception of the window is named, not written again, when its task is collected
+    (`LogSetup.Wrote`, `LogSetup.Unobserved`);
+  - the translation check now scans the run clocks' texts too, and the window's lines are compared
+    in both languages at run time;
+  - docs: Trace adds the cards of the frames read whole, not of the inventory's header reads
+    (R-072, README); the `App` row of the seam table, the crash wording, the byte counts, which
+    move with the digits of the ids, the title bar's summary, the `mode=` line above;
+  - left to the owner: CLAUDE.md's rule "Computed only in the core" against the applications'
+    own timings and lines; ADR 0029 now records the reading FlatCheck already lives by, that a
+    log line is no figure of the analysis, and CLAUDE.md is unchanged;
+  - kept as it is: the test that starts the real console writes into the test build folder's
+    `log`, where every real process of the tests logs by design.

@@ -23,8 +23,8 @@ using NLog;
 namespace LightsCheck.Wpf;
 
 /// <summary>
-/// Asks the window manager for a dark title bar; silently nothing on a Windows without the
-/// attribute.
+/// Asks the window manager for a dark title bar; on a Windows without the attribute, nothing on
+/// screen and a Debug line in the diagnostic log.
 /// </summary>
 internal static partial class DarkTitleBar
 {

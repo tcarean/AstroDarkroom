@@ -80,7 +80,8 @@ is `RunReport.Error`, the console's own, so a verdict word or the prefix changes
 alone (ADR 0020).
 
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
-console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`.
+console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`;
+`WriteAll` hands it each file as soon as the file is written, for the log's `wrote` line.
 
 ## The star cut-outs (`StarCrops`)
 

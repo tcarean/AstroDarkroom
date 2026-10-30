@@ -34,7 +34,9 @@ recommendation; the owner approved it as written on 2026-10-30.
   ids, the logger, the message, and the exception's `ToString()` below it. The level: Debug, or
   what an environment variable names. The words: English, invariant numbers, an enum by its name;
   an exception's or a refusal's message as the user saw it. Crashes: logged at Fatal, the same
-  exception once, the behaviour unchanged. The log never stops the tool: `Apply` and `Close` are
+  exception once, the behaviour unchanged; likewise an exception a line already wrote where it was
+  met is named, not written again, by the hook of a task nobody awaited (`LogSetup.Wrote`). The log
+  never stops the tool: `Apply` and `Close` are
   guarded, and the loggers of the types that run before the configuration exists are fetched on
   use.
 - **`Logging/` is LightsCheck's own code**: FlatCheck's `LogSetup`, `LogText` and `RunClock`
@@ -58,7 +60,15 @@ recommendation; the owner approved it as written on 2026-10-30.
   the read noise, the WCS and the series analysis at Debug; no line per progress tick, the frame
   lines being the progress. Each run's start and done lines carry the time of its stages. A value
   the report words in the run's language (an assumed scale's source, the RA axis's source, an
-  unreadable frame's error in its flag) is left out of the log's own words.
+  unreadable frame's error in its flag) is left out of the log's own words. A failure is written
+  once with its stack: a frame the series cannot measure is one line, which also says whether its
+  metadata could be read; and a file is named as soon as it is written, so an export that fails
+  part-way names what it wrote.
+- **The applications' lines are no figure of the analysis.** The console and the window compose
+  their own lines and time their own runs: the rule "Computed only in the core" keeps to what the
+  reports and the window show, as in FlatCheck, whose window times its runs in its view-models
+  under the same rule. What a line says about the frames (a figure, a class, a threshold) comes
+  from the core.
 - **One mode.** `Options.Mode`, decided once by the dispatch's precedence (help, then an error,
   then `--frame`, then `--inventory`, else the series), is what the console dispatches on and what
   its `mode=` line writes, as FlatCheck decided in its ADR 0072.
@@ -69,7 +79,8 @@ recommendation; the owner approved it as written on 2026-10-30.
   change.
 - **Measured here: the tests and the cost.** FlatCheck's measurements of the file targets are not
   repeated; the tests that pin them are (the rolling and its file names, the two writers across
-  the roll, the read-only newest file, the file another process holds open). The cost, measured
+  the roll on both builds of the atomic target, the console's `net8.0` one and the window's
+  `net8.0-windows` one, the read-only newest file, the file another process holds open). The cost, measured
   on 2026-10-30 on the Veil session (87 NEF lights, 30 biases, 4 threads, on a hard disk), the
   Release console, three series runs each, alternated, while the owner used the PC:
 

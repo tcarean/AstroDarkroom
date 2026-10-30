@@ -121,5 +121,5 @@ then an error, then `--frame`, then `--inventory`, else the series. `RunIn` disp
 the diagnostic log's `mode=` line reads it, so the two cannot disagree. `Main` starts the log
 before anything else and closes it last, after the code page is put back; `Run` and `RunIn`
 configure nothing, so the tests call them in-process. `SessionFolder.Open` writes the session's
-line, `FrameInfo.Read` a frame whose metadata could not be read, and `InventoryRun` its start and
-done lines (`logging.md`).
+line, `FrameInfo.Read` a frame whose metadata could not be read (unless its caller, the series,
+writes the frame's one line itself), and `InventoryRun` its start and done lines (`logging.md`).

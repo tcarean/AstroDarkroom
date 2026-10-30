@@ -17,6 +17,7 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using LightsCheck.Core;
 using NLog;
 
 namespace LightsCheck.Wpf;
@@ -89,6 +90,7 @@ public static class UserSettings
             }
 
             File.WriteAllText(FilePath, JsonSerializer.Serialize(new Stored(east, north), Json));
+            Log.Debug("wrote " + FilePath + " (" + LogText.FileKiB(FilePath) + ")");
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {

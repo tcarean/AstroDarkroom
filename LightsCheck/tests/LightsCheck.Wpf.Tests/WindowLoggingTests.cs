@@ -15,20 +15,86 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Reflection;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
+using LightsCheck.Core;
 using LightsCheck.Tests;
 using NLog;
+using NLog.Targets;
+using Xunit.Abstractions;
 
 namespace LightsCheck.Wpf.Tests;
 
 /// <summary>
-/// The window's side of the diagnostic log (R-071, ADR 0029): a session run's start and outcome,
-/// the refused folder with its exception while the card keeps the message, a stop, the files the
-/// export writes, a superseded run kept at Debug. The view-model alone, without a window, as
-/// <c>MainViewModelTests</c> runs it.
+/// The window's side of the diagnostic log (R-071, R-073, ADR 0029): a session run's start and
+/// outcome, the refused folder with its exception while the card keeps the message, a stop, the
+/// files the export writes, a superseded run kept at Debug, the window's lines in both languages,
+/// and two writers on one file through the build of the atomic target the window ships. The
+/// view-model alone, without a window, as <c>MainViewModelTests</c> runs it.
 /// </summary>
 public class WindowLoggingTests
 {
+    private readonly ITestOutputHelper _output;
+
+    /// <summary>The runner's output, for the measured file list.</summary>
+    public WindowLoggingTests(ITestOutputHelper output) => _output = output;
+
+    /// <summary>
+    /// Two windows writing one log keep every line (R-073), checked here on the build of the atomic
+    /// target the window ships, <c>net8.0-windows</c>, a binary of its own that the core's tests do
+    /// not load (the review of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R073_TheWindowsBuildOfTheAtomicTargetKeepsEveryLineOfTwoWindows()
+    {
+        Assert.Equal("Windows7.0", typeof(AtomicFileTarget).Assembly.GetCustomAttribute<TargetPlatformAttribute>()?.PlatformName);
+        using TempWorkspace ws = new();
+
+        LogFiles.TwoWritersKeepEveryLine(Path.Combine(ws.Dir, "log"), "LightsCheck.Wpf", _output);
+    }
+
+    /// <summary>
+    /// The window's own lines are English whatever the interface's language (R-071): a session
+    /// opened, a frame selected for its cut-outs and the files exported write the same messages in
+    /// English and in Romanian, the times, the export folder, the order of the frames' lines and the
+    /// exported files' sizes aside, since the report in them is in the run's language (the review
+    /// of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public async Task R071_TheWindowsLinesAreTheSameInBothLanguages()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+
+        string[] en = await MessagesOf(f.Root, UiLanguage.English);
+        string[] ro = await MessagesOf(f.Root, UiLanguage.Romanian);
+
+        Assert.Contains(en, m => m.StartsWith("cut-outs of frame 1 ", StringComparison.Ordinal));
+        Assert.Contains(en, m => m.StartsWith("wrote <out>", StringComparison.Ordinal));
+        Assert.Equal(en, ro);
+    }
+
+    /// <summary>The window's messages for one session in one language, in a fixed order, the times, the export folder and the files' sizes made equal.</summary>
+    private static async Task<string[]> MessagesOf(string root, UiLanguage language)
+    {
+        using TempWorkspace ws = new();
+        using IDisposable scope = Ui.Use(language);
+        MainViewModel vm = new();
+        using LogCapture capture = LogCapture.Start();
+
+        await vm.OpenAsync(root);
+        vm.SelectedFrame = vm.Frames[0];
+        await vm.CropsPending;
+        vm.Export(ws.Dir);
+
+        return capture.Messages
+            .Select(m => LogFiles.ElapsedTime().Replace(m, "#"))
+            .Select(m => m.Replace(ws.Dir, "<out>", StringComparison.Ordinal))
+            .Select(m => Regex.Replace(m, @"\(\d+\.\d KiB\)$", "(# KiB)"))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+    }
+
     [Fact]
     public async Task R071_ASessionRunLogsItsStartAndItsOutcome()
     {

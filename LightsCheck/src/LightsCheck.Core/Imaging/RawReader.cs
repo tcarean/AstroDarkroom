@@ -246,17 +246,10 @@ namespace LightsCheck.Core
                 blacks.Add(c.Black + (c.CBlack != null && i < c.CBlack.Length ? c.CBlack[i] : 0));
             double black = Stats.Percentile(blacks, 50);
 
-            // Before the scale is judged, so a refused scale leaves its figures. No lambda here:
-            // one capturing a local of a libraw type would put that type in a field of its
-            // closure class (see the note at the top).
+            // Before the scale is judged, so a refused scale leaves its figures.
             if (Log.IsDebugEnabled)
-                Log.Debug("libraw on " + path + ": visible " + LogText.Int(w) + "x" + LogText.Int(h)
-                          + " raw " + LogText.Int(s.RawWidth) + "x" + LogText.Int(s.RawHeight)
-                          + " margins top " + LogText.Int(s.TopMargin) + " left " + LogText.Int(s.LeftMargin)
-                          + " pitch " + LogText.Int(s.RawPitch) + " filters 0x" + ip.Filters.ToString("X8")
-                          + " cdesc " + LogText.Str(ip.Cdesc) + " cfa " + cfa.Letters
-                          + " maximum " + LogText.Num(white) + " black " + LogText.Num(c.Black)
-                          + " per channel " + LogText.List(blacks.ConvertAll(LogText.Num)) + " median " + LogText.Num(black));
+                Log.Debug(FiguresLine(path, w, h, s.RawWidth, s.RawHeight, s.TopMargin, s.LeftMargin, s.RawPitch,
+                                      ip.Filters, ip.Cdesc, cfa, white, c.Black, blacks, black));
 
             if (!(white > black))
                 throw new InvalidOperationException(T(
@@ -276,6 +269,40 @@ namespace LightsCheck.Core
             FillShootingInfo(f, ctx, ip);
             return f;
         }
+
+        /// <summary>
+        /// libraw's figures of one decode, as the diagnostic log writes them at Debug: the visible
+        /// and raw sizes, the margins, the pitch, the filters mask and <c>cdesc</c>, the CFA order
+        /// evaluated at the visible origin, the maximum and the blacks. It takes plain values only,
+        /// no libraw type, so the tests can call it and no closure of a libraw local is ever made
+        /// (see the note at the top).
+        /// </summary>
+        /// <param name="path">The raw file.</param>
+        /// <param name="w">The visible width, in pixels.</param>
+        /// <param name="h">The visible height, in pixels.</param>
+        /// <param name="rawWidth">The raw width, margins included, in pixels.</param>
+        /// <param name="rawHeight">The raw height, margins included, in pixels.</param>
+        /// <param name="topMargin">The first visible row.</param>
+        /// <param name="leftMargin">The first visible column.</param>
+        /// <param name="rawPitch">libraw's row pitch, in bytes; 0 when libraw gives none.</param>
+        /// <param name="filters">libraw's <c>filters</c> mask.</param>
+        /// <param name="cdesc">libraw's colour description; null allowed.</param>
+        /// <param name="cfa">The CFA order; null for a raw without a Bayer mosaic (mono, Leaf, X-Trans).</param>
+        /// <param name="maximum">libraw's <c>color.maximum</c>, the white, in ADU.</param>
+        /// <param name="black0">libraw's global <c>color.black</c>, in ADU.</param>
+        /// <param name="blacks">The four channels' blacks, global plus per channel, in ADU.</param>
+        /// <param name="black">Their median, the black the frame is read with, in ADU.</param>
+        /// <returns>The line's text.</returns>
+        internal static string FiguresLine(string path, int w, int h, int rawWidth, int rawHeight, int topMargin, int leftMargin,
+                                           long rawPitch, uint filters, string cdesc, CfaPattern cfa, double maximum, double black0,
+                                           List<double> blacks, double black)
+            => "libraw on " + path + ": visible " + LogText.Int(w) + "x" + LogText.Int(h)
+             + " raw " + LogText.Int(rawWidth) + "x" + LogText.Int(rawHeight)
+             + " margins top " + LogText.Int(topMargin) + " left " + LogText.Int(leftMargin)
+             + " pitch " + LogText.Int(rawPitch) + " filters 0x" + filters.ToString("X8")
+             + " cdesc " + LogText.Str(cdesc) + " cfa " + (cfa != null ? cfa.Letters : "none")
+             + " maximum " + LogText.Num(maximum) + " black " + LogText.Num(black0)
+             + " per channel " + LogText.List(blacks.ConvertAll(LogText.Num)) + " median " + LogText.Num(black);
 
         /// <summary>
         /// Fills <paramref name="f"/> with what libraw knows about the shot: focal length,
