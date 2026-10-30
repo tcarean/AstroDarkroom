@@ -47,11 +47,15 @@ internal static class DarkOutputs
     /// </summary>
     /// <param name="r">The run's result; not null.</param>
     /// <param name="dir">The output folder.</param>
+    /// <param name="wrote">
+    /// Told each file's path as soon as that file is written, so a caller can say which files an
+    /// export that fails part-way did write (the diagnostic log, R-101); null for none.
+    /// </param>
     /// <returns>The paths written, in order; the CSVs of biases and lights and the maps only when
     /// there is something to write.</returns>
     /// <exception cref="InvalidOperationException">The folder is the session's or the partner's, or
     /// lies inside one.</exception>
-    internal static IReadOnlyList<string> WriteAll(DarkSeriesResult r, string dir)
+    internal static IReadOnlyList<string> WriteAll(DarkSeriesResult r, string dir, Action<string>? wrote = null)
     {
         ArgumentNullException.ThrowIfNull(r);
         CheckOutDir(r.Inventory.Session.Root, dir);
@@ -76,36 +80,36 @@ internal static class DarkOutputs
             DarkReport.Write(r, w);
         }
 
-        written.Add(report);
+        Add(written, report, wrote);
 
         string darksCsv = Path.Combine(dir, DarksCsvName);
         File.WriteAllText(darksCsv, DarksCsv(r), new UTF8Encoding(false));
-        written.Add(darksCsv);
+        Add(written, darksCsv, wrote);
 
         if (r.Biases is BiasAnalysis b)
         {
             string biasesCsv = Path.Combine(dir, BiasesCsvName);
             File.WriteAllText(biasesCsv, BiasesCsv(b), new UTF8Encoding(false));
-            written.Add(biasesCsv);
+            Add(written, biasesCsv, wrote);
         }
 
         if (r.Lights is LightsAnalysis l)
         {
             string lightsCsv = Path.Combine(dir, LightsCsvName);
             File.WriteAllText(lightsCsv, LightsCsv(l, r.Darks.PlaneNames), new UTF8Encoding(false));
-            written.Add(lightsCsv);
+            Add(written, lightsCsv, wrote);
         }
 
         int rp = r.ReferencePlane;
-        Add(written, WriteMap(Path.Combine(dir, DarkMapName), r.Darks.MeanMaps[rp]));
+        Add(written, WriteMap(Path.Combine(dir, DarkMapName), r.Darks.MeanMaps[rp]), wrote);
         if (r.Biases is BiasAnalysis bb)
         {
-            Add(written, WriteMap(Path.Combine(dir, BiasMapName), bb.MeanMaps[rp]));
+            Add(written, WriteMap(Path.Combine(dir, BiasMapName), bb.MeanMaps[rp]), wrote);
         }
 
         if (r.DarkCurrent is DarkCurrent dc)
         {
-            Add(written, WriteMap(Path.Combine(dir, DarkMinusBiasMapName), dc.Maps[rp]));
+            Add(written, WriteMap(Path.Combine(dir, DarkMinusBiasMapName), dc.Maps[rp]), wrote);
         }
 
         return written;
@@ -260,15 +264,18 @@ internal static class DarkOutputs
     }
 
     /// <summary>
-    /// Adds a written path to the list; a null path (nothing written) is left out.
+    /// Adds a written path to the list and tells the caller; a null path (nothing written) is left
+    /// out.
     /// </summary>
     /// <param name="written">The list of paths written.</param>
     /// <param name="path">The path, or null.</param>
-    private static void Add(List<string> written, string? path)
+    /// <param name="wrote">Told the path when there is one; null for none.</param>
+    private static void Add(List<string> written, string? path, Action<string>? wrote)
     {
         if (path is not null)
         {
             written.Add(path);
+            wrote?.Invoke(path);
         }
     }
 

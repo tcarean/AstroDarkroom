@@ -17,6 +17,7 @@
 
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using DarksCheck.Core;
 using NLog;
 using NLog.Config;
@@ -319,6 +320,291 @@ public partial class LoggingTests
         Assert.Equal(expected, lines);
     }
 
+    // ---------------------------------------------------------------- R-101: the core's seams
+
+    /// <summary>
+    /// A darks run with biases, lights and a partner writes its start line with its options, each
+    /// folder opened, each file read and each frame decoded with the process's working set, each
+    /// stack, the figures of every dark, bias and light, the series, the verdicts, the index, the
+    /// lights and the partner, and its done line with the verdicts and the time of every stage
+    /// (R-101, D4 and D8 of ADR 0025).
+    /// </summary>
+    [Fact]
+    public void R101_ADarksRunLogsEveryFrameTheVerdictsTheIndexAndTheStageTimes()
+    {
+        using SessionFixture p = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, inSubfolder: false);
+        using SessionFixture s = new SessionFixture()
+            .WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, biases: 2)
+            .WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, Stars = SyntheticLight.ThreeStars });
+        using LogCapture capture = LogCapture.Start();
+
+        DarkSeriesResult r = DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, Against: p.Root));
+
+        string[] m = Timeless(capture);
+        Assert.Equal("darks start folder=" + s.Root + " threads=2 maxFrames=60 against=" + p.Root + " isoFactor=2 doubling=6", m[0]);
+        Assert.Contains("opened root=" + s.Root + " kind=session darks=" + s.DarksDir + " (4 frames, .fit) biases=" + s.BiasesDir + " (2) lights=" + s.LightsDir + " (3)", m);
+        Assert.Contains("opened root=" + p.Root + " kind=library darks=" + p.Root + " (3 frames, .fit) biases=none (0) lights=none (0)", m);
+        Assert.Contains("inventory done darks=4 biases=2 lights=3 errors=0 in # (open #, darks #, biases #, lights #, cadence #)", m);
+        // every file read whole has its line: the darks, the biases, the lights and the partner's darks
+        Assert.Equal(12, m.Count(x => x.StartsWith("loaded ", StringComparison.Ordinal)));
+        // every frame a stack decoded has its line with the working set: the darks, the biases and the partner's
+        Assert.Equal(9, m.Count(x => DecodedLine().IsMatch(x)));
+        Assert.Contains("stack of 2 files: 2 decoded, 0 failed, 0 skipped; 256x192 black=200 (the median of frame 1) white=65535 (from BITPIX) cfa=RGGB norm=1.66667E-06 in #", m);
+        Assert.Contains("stack of 4 files: 4 decoded, 0 failed, 0 skipped; 256x192 black=200 (the biases') white=65535 (from BITPIX) cfa=RGGB norm=1 in #", m);
+        Assert.Equal(4, m.Count(x => DarkLine().IsMatch(x)));
+        Assert.Equal(2, m.Count(x => x.StartsWith("bias ", StringComparison.Ordinal) && x.Contains(": planes=[(name=R ", StringComparison.Ordinal)));
+        Assert.Equal(3, m.Count(x => LightLine().IsMatch(x)));
+        Assert.Single(m, x => x.StartsWith("series: width=256 height=192 black=200 white=65535 cfaLetters=RGGB norm=1 ", StringComparison.Ordinal));
+        Assert.Single(m, x => x.StartsWith("verdicts: leak=(verdict=" + r.Verdicts.Leak.Verdict + " offsetAdu=", StringComparison.Ordinal));
+        Assert.Contains("index: " + LogText.Figures(r.Index) + " label=" + r.Label, m);
+        Assert.Single(m, x => x.StartsWith("lights: used=3 ", StringComparison.Ordinal));
+        Assert.Single(m, x => x.StartsWith("partner: folder=" + p.Root + " frames=3 used=3 ", StringComparison.Ordinal));
+        Assert.Equal("darks done " + DarkSeriesRun.Outcome(r) + " in # (inventory #, biases #, darks #, measure #, verdicts #, lights #, partner #)", m[^1]);
+        Assert.StartsWith("darks done leak=Ok drift=Ok noise=Ok pattern=Ok deadSat=Ok enough=Warning index=", m[^1], StringComparison.Ordinal);
+        Assert.Contains(" frames darks=4/4 biases=2/2 lights=3/3 partner=3/3 errors=no in ", m[^1], StringComparison.Ordinal);
+        Assert.DoesNotContain(capture.Events, e => e.Level >= LogLevel.Warn);
+    }
+
+    [Fact]
+    public void R101_AnInventoryRunLogsEveryFrameReadAndTheCadence()
+    {
+        using SessionFixture s = new SessionFixture().WithDarks(3, biases: 2, lights: 2);
+        using LogCapture capture = LogCapture.Start();
+
+        InventoryRun.Run(s.Root);
+
+        string[] m = Timeless(capture);
+        string first = Path.Combine(s.DarksDir, "DSC_0001.fit");
+        Assert.Equal("inventory start folder=" + s.Root, m[0]);
+        Assert.Equal(7, m.Count(x => x.StartsWith("read the header of ", StringComparison.Ordinal)));
+        Assert.Contains(m, x => x.StartsWith("read the header of " + first + " (0.0 MiB) reader=fits no pixels planes=1 bitpix=16 cfa=none scale=none camera=NIKON D3300 ", StringComparison.Ordinal)
+            && x.Contains(" exposure=119.2 iso=400 time=2026-08-13 00:48:53 ", StringComparison.Ordinal));
+        Assert.Contains(m, x => x.StartsWith("header of " + first + ": XTENSION=none NAXIS=2 NAXIS1=32 NAXIS2=24 ", StringComparison.Ordinal)
+            && x.Contains(" EXPTIME=119.2 ISOSPEED=400 DATE-OBS=2026-08-13T00:48:53 ", StringComparison.Ordinal));
+        Assert.Contains("cadence of the darks: start=2026-08-13 00:48:53 end=2026-08-13 00:54:52 spanSeconds=359.2 integrationSeconds=357.6 timedFrames=3 medianIntervalSeconds=120 pauseSeconds=[none, 0.8, 0.8] longPauses=[]", m);
+        Assert.Contains("match: darks=(exposureSeconds=119.2 iso=400 frames=3 readable=3 uniform=yes) biases=(exposureSeconds=0.0002 iso=400 frames=2 readable=2 uniform=yes) "
+            + "lights=(exposureSeconds=119.2 iso=400 frames=2 readable=2 uniform=yes) darksVsLights=Ok bias=Ok", m);
+        Assert.Equal("inventory done darks=3 biases=2 lights=2 errors=0 in # (open #, darks #, biases #, lights #, cadence #)", m[^1]);
+    }
+
+    /// <summary>
+    /// A file whose metadata cannot be read is a Warn line with the exception, which only the log
+    /// keeps: the row carries the message alone. A file that is no FITS at all is a Warn line
+    /// without one, since nothing threw. The inventory goes on and counts both (R-101).
+    /// </summary>
+    [Fact]
+    public void R101_AFrameThatCannotBeReadIsLoggedWithItsExceptionAndTheRunGoesOn()
+    {
+        using SessionFixture raw = new SessionFixture().WithDarks(1);
+        string nef = Path.Combine(raw.DarksDir, "DSC_0002.NEF");
+        File.WriteAllBytes(nef, new byte[4096]);
+        using SessionFixture fits = new SessionFixture().WithDarks(2);
+        string junk = Path.Combine(fits.DarksDir, "DSC_0003.fit");
+        File.WriteAllBytes(junk, new byte[100]);
+        using LogCapture capture = LogCapture.Start();
+
+        InventoryRun.Run(raw.DarksDir);
+        InventoryRun.Run(fits.Root);
+
+        LogCapture.Captured unreadable = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn && e.Exception is not null);
+        Assert.Equal("FrameInfo", unreadable.Logger);
+        Assert.Equal("frame 1 " + nef + " could not be read; its row carries the error", unreadable.Message);
+        Assert.Contains("   at DarksCheck.Core.RawReader.", unreadable.Line, StringComparison.Ordinal);
+        LogCapture.Captured notFits = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn && e.Exception is null);
+        Assert.Equal("frame 3 " + junk + " is no FITS file (it does not begin with SIMPLE); its row says so", notFits.Message);
+        string[] m = Timeless(capture);
+        Assert.Contains(m, x => x.StartsWith("inventory done darks=1 biases=0 lights=0 errors=1 in ", StringComparison.Ordinal));
+        Assert.Contains(m, x => x.StartsWith("inventory done darks=3 biases=0 lights=0 errors=1 in ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A frame that cannot be decoded is a Warn line with its exception where the loop catches it,
+    /// the only place its stack exists: the darks' loop in FrameStack and the lights' loop in
+    /// LightsAnalyzer. The line says whether the metadata was read, and the run goes on (R-101, D4
+    /// of ADR 0025).
+    /// </summary>
+    [Fact]
+    public void R101_AFrameThatCannotBeDecodedIsLoggedWhereItIsCaught()
+    {
+        using SessionFixture s = new SessionFixture()
+            .WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice })
+            .WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, Stars = SyntheticLight.ThreeStars });
+        string dark = Path.Combine(s.DarksDir, "DSC_0005.fit");
+        File.WriteAllBytes(dark, File.ReadAllBytes(Path.Combine(s.DarksDir, "DSC_0001.fit")).Take(FitsTestData.BlockSize + 100).ToArray());
+        string light = Path.Combine(s.LightsDir, "light_0004.fit");
+        File.WriteAllBytes(light, File.ReadAllBytes(Path.Combine(s.LightsDir, "light_0001.fit")).Take(FitsTestData.BlockSize + 100).ToArray());
+        using LogCapture capture = LogCapture.Start();
+
+        DarkSeriesResult r = DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2));
+
+        LogCapture.Captured darkLine = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn && e.Logger == "FrameStack");
+        Assert.IsType<InvalidDataException>(darkLine.Exception);
+        Assert.Equal("frame 5/5 " + dark + " could not be decoded after #; its metadata was read; its row carries the error", LogFiles.ElapsedTime().Replace(darkLine.Message, "#"));
+        Assert.Contains("   at DarksCheck.Core.FitsReader.LoadFull(", darkLine.Line, StringComparison.Ordinal);
+        LogCapture.Captured lightLine = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn && e.Logger == "LightsAnalyzer");
+        Assert.IsType<InvalidDataException>(lightLine.Exception);
+        Assert.Equal("frame 4/4 " + light + " could not be decoded after #; its metadata was read; its row carries the error", LogFiles.ElapsedTime().Replace(lightLine.Message, "#"));
+        Assert.Contains(" frames darks=4/5 biases=none lights=3/4 partner=none errors=yes in ", Timeless(capture)[^1], StringComparison.Ordinal);
+        Assert.Equal(4, r.Darks.Used);
+    }
+
+    /// <summary>
+    /// A frame left out of a stack for its size or its settings, and a light of another size, are
+    /// Warn lines in the log's own words, with the figures that kept them out; the rows keep the
+    /// report's words (R-101).
+    /// </summary>
+    [Fact]
+    public void R101_AFrameLeftOutForItsSizeOrSettingsIsAWarnLineInTheLogsWords()
+    {
+        using SessionFixture s = new SessionFixture()
+            .WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice })
+            .WithLights(2, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice });
+        string small = Path.Combine(s.DarksDir, "DSC_0004.fit");
+        File.WriteAllBytes(small, new SyntheticDark { Seed = 1, Width = 128, Height = 96 }.Build(SessionFixture.FirstStart.AddSeconds(480)));
+        string iso = Path.Combine(s.DarksDir, "DSC_0005.fit");
+        File.WriteAllBytes(iso, new SyntheticDark { Seed = 2 }.Build(SessionFixture.FirstStart.AddSeconds(600), 120, 800));
+        string light = Path.Combine(s.LightsDir, "light_0003.fit");
+        File.WriteAllBytes(light, new SyntheticLight { Seed = 3, Width = 128, Height = 96 }.Build(SessionFixture.FirstStart));
+        using LogCapture capture = LogCapture.Start();
+
+        DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2));
+
+        string[] warned = capture.Events.Where(e => e.Level == LogLevel.Warn).Select(e => e.Logger + ": " + e.Message).Order(StringComparer.Ordinal).ToArray();
+        string[] expected =
+        [
+            "FrameStack: frame 3 " + light + " left out: 128x96 instead of 256x192; its row says so",
+            "FrameStack: frame 4/5 " + small + " left out: 128x96 instead of 256x192; its row says so",
+            "FrameStack: frame 5/5 " + iso + " left out: ISO 800 and 120 s, the first frame ISO 400 and 120 s; its row says so",
+        ];
+        Assert.Equal(expected, warned);
+        Assert.DoesNotContain(capture.Events, e => e.Level == LogLevel.Warn && e.Exception is not null);
+    }
+
+    /// <summary>
+    /// A run that throws leaves its start line and, from its clock, the stages it reached; the
+    /// exception is its caller's line (R-101). No dark decodes, so the run throws after the darks'
+    /// stage.
+    /// </summary>
+    [Fact]
+    public void R101_ARunThatThrowsLeavesItsStartLineAndTheStagesItReached()
+    {
+        using SessionFixture s = new SessionFixture().WithDarks(1);
+        for (int i = 1; i <= 3; i++)
+        {
+            File.WriteAllBytes(Path.Combine(s.DarksDir, $"DSC_000{i}.fit"), new byte[100]);
+        }
+
+        using LogCapture capture = LogCapture.Start();
+
+        Assert.Throws<InvalidOperationException>(() => DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2)));
+
+        string[] m = Timeless(capture);
+        Assert.StartsWith("darks start folder=" + s.Root + " ", m[0], StringComparison.Ordinal);
+        Assert.Contains("stack of 3 files: none decoded; 0 decoded, 3 failed, 0 skipped in #", m);
+        Assert.Equal("darks ended without an outcome after # (inventory #, darks #)", m[^1]);
+    }
+
+    /// <summary>
+    /// A group that fails is a Warn line with its exception where the run catches it, and the run
+    /// goes on to its done line: biases of another size leave the dark current out, a partner that
+    /// does not exist leaves the partner out (R-101).
+    /// </summary>
+    [Fact]
+    public void R101_AGroupThatFailsIsLoggedWithItsExceptionAndTheRunGoesOn()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i }, biases: 2,
+            bias: i => new SyntheticDark { Seed = 500 + i, Width = 128, Height = 96 });
+        using TempWorkspace ws = new();
+        string missing = Path.Combine(ws.Dir, "missing");
+        using LogCapture capture = LogCapture.Start();
+
+        DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, Against: missing));
+
+        List<LogCapture.Captured> warned = capture.Events.Where(e => e.Level == LogLevel.Warn && e.Logger == "DarkSeriesRun").ToList();
+        Assert.Equal(2, warned.Count);
+        Assert.Equal("the dark current could not be measured; the biases are left out of the run", warned[0].Message);
+        Assert.IsType<InvalidOperationException>(warned[0].Exception);
+        Assert.Equal("the partner " + missing + " could not be used; the report says why", warned[1].Message);
+        Assert.IsType<DirectoryNotFoundException>(warned[1].Exception);
+        Assert.Contains(" frames darks=3/3 biases=none lights=none partner=none errors=yes in ", Timeless(capture)[^1], StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The core's lines are English whatever the language of the run: the same run writes the same
+    /// messages under English and under Romanian, the times and the working set aside (R-101). The
+    /// exceptions' own messages, in the run's language as the user saw them, are on the lines below
+    /// a message, not in it.
+    /// </summary>
+    [Fact]
+    public void R101_TheLogIsTheSameInBothLanguages()
+    {
+        using SessionFixture s = new SessionFixture()
+            .WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice }, biases: 2)
+            .WithLights(2, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, Stars = SyntheticLight.ThreeStars });
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0005.fit"), new byte[100]);
+
+        string[] en = CoreMessages(s.Root, UiLanguage.English);
+        string[] ro = CoreMessages(s.Root, UiLanguage.Romanian);
+
+        Assert.Contains(en, x => x.StartsWith("frame 5/5 ", StringComparison.Ordinal));
+        Assert.Equal(en, ro);
+    }
+
+    /// <summary>
+    /// The export tells its caller each file as soon as that file is written, so the console and
+    /// the window write one line per file with its size, and an export that fails part-way names
+    /// the files it did write (R-101).
+    /// </summary>
+    [Fact]
+    public void R101_TheExportTellsEachFileAsSoonAsItIsWritten()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i }, biases: 2);
+        using TempWorkspace ws = new();
+        DarkSeriesResult r = DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2));
+        List<string> told = [];
+
+        IReadOnlyList<string> written = DarkOutputs.WriteAll(r, ws.Dir, path =>
+        {
+            Assert.True(File.Exists(path), path + " was told before it was written");
+            told.Add(path);
+        });
+
+        Assert.Equal(written, told);
+        Assert.Matches(@"^wrote .+darkscheck-report\.txt \(\d+\.\d KiB\)$", LogText.Wrote(written[0]));
+    }
+
+    /// <summary>
+    /// The figures of a record follow one rule: every public property by its name in camelCase, a
+    /// number with six significant digits, a flag as yes or no, an enum by its name, a missing value
+    /// as none, a record in parentheses, a list whole up to twelve items, else its first and last
+    /// and its count (ADR 0025).
+    /// </summary>
+    [Fact]
+    public void R101_TheFiguresOfARecordFollowOneRule()
+    {
+        Probe probe = new("x", null, true, Verdict.Warning, new Pair(0.123456789, 3), [1, 2], Enumerable.Range(0, 20).Select(i => (double)i).ToArray(),
+            new DateTime(2026, 8, 13, 0, 48, 53, DateTimeKind.Utc));
+
+        Assert.Equal("name=x missing=none flag=yes verdict=Warning pair=(a=0.123457 b=3) few=[1, 2] many=[0, ..., 19] (20 items) when=2026-08-13 00:48:53",
+            LogText.Figures(probe));
+        Assert.Equal("flag=yes when=2026-08-13 00:48:53", LogText.Figures(probe, "Name", "Missing", "Verdict", "Pair", "Few", "Many"));
+        Assert.Equal("none", LogText.Figures(null));
+    }
+
+    /// <summary>
+    /// A raw without a Bayer mosaic (mono, Leaf, X-Trans) reaches libraw's Debug line with a null
+    /// CFA order: the line names it <c>none</c> (LightsCheck's review of 2026-10-30, whose line threw
+    /// there and made every such frame unreadable at the default level).
+    /// </summary>
+    [Fact]
+    public void R101_LibrawsLineNamesNoCfaForARawWithoutABayerMosaic()
+    {
+        string line = RawReader.FiguresLine(@"D:\xtrans\DSCF0001.RAF", 6000, 4000, 6048, 4032, 0, 0, 12096, 9, "RGBG", null,
+            16383, 1024, [1024, 1024, 1024, 1024], 1024);
+
+        Assert.Contains(" filters 0x00000009 cdesc RGBG cfa none maximum 16383 black 1024 ", line, StringComparison.Ordinal);
+    }
+
     /// <summary>The log writes an elapsed time in two forms only: milliseconds, or seconds with one decimal; never whole seconds.</summary>
     [Fact]
     public void TheElapsedTimeHasTwoForms_MillisecondsAndSecondsWithOneDecimal()
@@ -362,6 +648,36 @@ public partial class LoggingTests
         Assert.Equal(Path.Combine(ws.Dir, "log"), trace.Folder);
     }
 
+    /// <summary>
+    /// Trace adds every card of a FITS frame read whole, below the keywords that decide the reading,
+    /// which are at Debug; a metadata read keeps no cards, so it adds none (R-102).
+    /// </summary>
+    [Fact]
+    public void R102_TraceHoldsEveryFitsHeaderCard()
+    {
+        using TempWorkspace ws = new();
+        string dark = ws.WriteFile("dark.fit", SessionFixture.Frame(SessionFixture.FirstStart, 120, 400));
+        using (LogCapture capture = LogCapture.Start())
+        {
+            ImageLoader.Load(dark);
+
+            string[] cards = capture.Events.Where(e => e.Level == LogLevel.Trace && e.Logger == "ImageLoader").Select(e => e.Message).ToArray();
+            Assert.Contains("card BITPIX  =                   16", cards);
+            Assert.Contains(cards, c => c.StartsWith("card EXPTIME = ", StringComparison.Ordinal));
+            Assert.DoesNotContain(capture.Events, e => e.Level == LogLevel.Debug && e.Message.StartsWith("card ", StringComparison.Ordinal));
+            Assert.Contains(capture.Events, e => e.Level == LogLevel.Debug && e.Message.StartsWith("header of " + dark + ": ", StringComparison.Ordinal)
+                && e.Message.Contains(" BITPIX=16 ", StringComparison.Ordinal) && e.Message.Contains(" EXPTIME=120 ", StringComparison.Ordinal));
+        }
+
+        using (LogCapture capture = LogCapture.Start())
+        {
+            ImageLoader.LoadInfo(dark);
+
+            Assert.DoesNotContain(capture.Events, e => e.Level == LogLevel.Trace);
+            Assert.Contains(capture.Events, e => e.Level == LogLevel.Debug && e.Message.StartsWith("header of " + dark + ": ", StringComparison.Ordinal));
+        }
+    }
+
     // ---------------------------------------------------------------- R-103: two processes
 
     /// <summary>
@@ -379,6 +695,43 @@ public partial class LoggingTests
     }
 
     // ---------------------------------------------------------------- helpers
+
+    /// <summary>A record for the figures' rule: every kind of value it writes.</summary>
+    private sealed record Probe(string? Name, double? Missing, bool Flag, Verdict Verdict, Pair Pair, IReadOnlyList<int> Few, IReadOnlyList<double> Many, DateTime When);
+
+    /// <summary>A record held by <see cref="Probe"/>.</summary>
+    private sealed record Pair(double A, int B);
+
+    /// <summary>A frame a stack decoded, its time and its working set.</summary>
+    [GeneratedRegex(@"^decoded frame \d/\d .+\.fit: 256x192 black=none white=65535 norm=\S+ in #; working set \d+\.\d MiB$")]
+    private static partial Regex DecodedLine();
+
+    /// <summary>A dark's figures, its four planes first.</summary>
+    [GeneratedRegex(@"^dark \d DSC_000\d\.fit: planes=\[\(name=R median=")]
+    private static partial Regex DarkLine();
+
+    /// <summary>A light measured, its time, its working set and its figures.</summary>
+    [GeneratedRegex(@"^light \d/3 .+light_000\d\.fit measured in #; working set \d+\.\d MiB; assumedSettings=no skyMedian=\[")]
+    private static partial Regex LightLine();
+
+    /// <summary>The working set as the log writes it.</summary>
+    [GeneratedRegex(@"working set \d+\.\d MiB")]
+    private static partial Regex WorkingSet();
+
+    /// <summary>A capture's messages, each elapsed time written as <c>#</c>.</summary>
+    private static string[] Timeless(LogCapture capture) => capture.Messages.Select(x => LogFiles.ElapsedTime().Replace(x, "#")).ToArray();
+
+    /// <summary>The messages one darks run writes in one language, times and working sets made equal, in a fixed order.</summary>
+    private static string[] CoreMessages(string root, UiLanguage language)
+    {
+        using IDisposable scope = Ui.Use(language);
+        using LogCapture capture = LogCapture.Start();
+        DarkSeriesRun.Run(root, new DarkOptions(Threads: 2));
+        return Timeless(capture)
+            .Select(x => WorkingSet().Replace(x, "working set #"))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+    }
 
     /// <summary>Writes <paramref name="bytes"/> of lines through one executable's configuration and closes it.</summary>
     private static void WriteThrough(string folder, string executable, long bytes, string tag)

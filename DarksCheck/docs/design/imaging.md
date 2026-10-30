@@ -62,6 +62,21 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   `Close` as FlatCheck's `LensSpec.Close`: 1 mm or 5 %). A failure in the block leaves the lens
   fields null and the shot fields as read. `.pef` is the seventh extension. The next refresh
   from LightsCheck must carry this hunk or wait until LightsCheck takes it.
+- Taken later from LightsCheck: the diagnostic log's hunk of its ADR 0029 (its commits
+  5fa43622 and 80ac6867, merged into its `main` as ad721aaf on 2026-10-30; here ADR 0025).
+  `ImageLoader` picks the reader in `ReaderFor` and writes one line per file read: `loaded` at
+  Info for a decode, `read the header of` at Debug for a metadata read (both from
+  `LogText.Frame`), the FITS keywords that decide the reading at Debug (`LogText.FitsKeys`) and,
+  at Trace, every card a full load keeps; a metadata read keeps no cards. `RawReader` writes
+  libraw's figures of a decode at Debug (`FiguresLine`, which takes plain values only, so no
+  libraw type reaches a field or a closure) before the scale is judged, and the lens block that
+  failed at Warn with its exception. A file that fails writes nothing here: its caller's line
+  has the exception. `FitsReader` stays as it was. Two later LightsCheck hunks of the same two
+  files are not taken, since they serve features DarksCheck does not have: `RawReader.Unreadable`,
+  which turns libraw's refusal into an `InvalidDataException` for LightsCheck's `--frame` mode
+  (321ab4aa), and the fields `FocalLength35Mm`, `Width` and `Height` of LightsCheck's pixel size
+  from the 35 mm-equivalent focal length (its R-066, 7fa82a12). A whole refresh from LightsCheck
+  would bring both.
 - Taken later, the messages' English: every message the readers throw is a `T(english,
   romanian)` pair (ADR 0021). `FitsReader`'s English is FlatCheck's, word for word;
   `RawReader`'s messages are LightsCheck's adaptations and their English was written here, for

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using NLog;
 using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core;
@@ -134,8 +135,10 @@ internal static class DarkSeriesRun
     internal static DarkSeriesResult Run(string folder, DarkOptions options, IProgress<RunProgress>? progress = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(options);
-        Inventory inv = InventoryRun.Run(folder);
         int threads = options.EffectiveThreads;
+        using RunClock clock = RunClock.Start(Log, "darks", "folder=" + folder + " threads=" + LogText.Int(threads) + " maxFrames=" + LogText.Int(options.MaxFrames)
+            + " against=" + LogText.Str(options.Against) + " isoFactor=" + LogText.Num(options.IsoFactorPerStop) + " doubling=" + LogText.Num(options.DoublingCelsius));
+        Inventory inv = InventoryRun.Run(folder);
         Normalisation nz = new(options.IsoFactorPerStop, options.DoublingCelsius);
 
         // A session with lights and no darks takes the partner's darks as its own (R-054, ADR
@@ -167,7 +170,14 @@ internal static class DarkSeriesRun
             labelSession = partnerSession;
             darksFromPartner = partnerSession.Root;
             inv = inv with { Match = MatchAnalyzer.Analyze(partnerDarks, inv.Biases, inv.Lights), DarksFromPartner = partnerSession.Root, PartnerDarks = partnerDarks };
+            Log.Info("the partner's darks stand in for the session's (R-054): " + partnerSession.Root + ", " + LogText.Int(partnerDarks.Length) + " darks");
+            if (Log.IsDebugEnabled)
+            {
+                Log.Debug("match against the partner's darks: " + LogText.Figures(inv.Match));
+            }
         }
+
+        clock.Lap("inventory");
 
         // The biases first: a FITS carries no black level, and the biases' median is the camera's
         // pedestal, which the darks' median would overstate by the dark current (ADR 0007).
@@ -184,32 +194,61 @@ internal static class DarkSeriesRun
             }
             catch (InvalidOperationException e)
             {
+                Log.Warn(e, "the biases could not be used; the report says why");
                 biasError = e.Message;
             }
 
             // The biases' stack (16-bit mosaics, 48 MB each at 24 MP) is garbage now; collected
             // here, before the darks are decoded, so the peak memory is one stack, not two.
             GC.Collect();
+            Released("the biases were released");
+            clock.Lap("biases");
+            if (biases is not null && Log.IsDebugEnabled)
+            {
+                Log.Debug("biases: " + LogText.Figures(biases, "Frames", "MeanMaster"));
+                foreach (BiasFrameFigures f in biases.Frames.Where(x => x.Error is null))
+                {
+                    Log.Debug("bias " + LogText.Int(f.Info.Index) + " " + f.Info.FileName + ": " + LogText.Figures(f, "Info", "Error", "Skipped"));
+                }
+            }
         }
 
         DarkSeriesAnalysis darks;
         int refPlane;
         {
             FrameStack stack = FrameStack.Load(darkPaths, threads, options.MaxFrames, Phase(darksFromPartner is null ? T("decoding darks", "decodare dark-uri") : T("decoding darks (partner)", "decodare dark-uri (partener)"), progress), biasBlack, nz, cancel);
+            clock.Lap("darks");
             darks = DarkSeriesAnalyzer.Analyze(stack, threads, Phase(T("measuring darks", "masurare dark-uri"), progress));
             refPlane = stack.ReferencePlane;
+            clock.Lap("measure");
         }
 
         GC.Collect();
+        Released("the darks' stack was released");
+        if (Log.IsDebugEnabled)
+        {
+            // The scale's source is the report's words, in the run's language; the stack's line has it in the log's.
+            Log.Debug("series: " + LogText.Figures(darks, "Frames", "MedianMaster", "MeanMaster", "ScaleSource"));
+            foreach (DarkFrameFigures f in darks.Frames.Where(x => x.Error is null))
+            {
+                Log.Debug("dark " + LogText.Int(f.Info.Index) + " " + f.Info.FileName + ": " + LogText.Figures(f, "Info", "Error", "Skipped"));
+            }
+        }
+
         DarkCurrent? dc = null;
         if (biases is not null)
         {
             try
             {
                 dc = BiasAnalyzer.DarkMinusBias(darks, biases, refPlane);
+                if (Log.IsDebugEnabled)
+                {
+                    Log.Debug("dark current: " + LogText.Figures(dc));
+                }
             }
             catch (InvalidOperationException e)
             {
+                Log.Warn(e, "the dark current could not be measured; the biases are left out of the run");
                 biasError = e.Message;
                 biases = null;
             }
@@ -218,6 +257,12 @@ internal static class DarkSeriesRun
         DarkVerdicts verdicts = DarkVerdictAnalyzer.Judge(darks, biases, dc, refPlane);
         IndexFigures index = IndexAnalyzer.RankIndex(darks.MedianMaster, darks.Black, darks.White, darks.Norm, darks.Width, darks.Height);
         string label = IndexAnalyzer.Label(labelSession, index);
+        clock.Lap("verdicts");
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug("verdicts: " + LogText.Figures(verdicts));
+            Log.Debug("index: " + LogText.Figures(index) + " label=" + label);
+        }
 
         LightsAnalysis? lights = null;
         string? lightsError = null;
@@ -229,10 +274,17 @@ internal static class DarkSeriesRun
             }
             catch (InvalidOperationException e)
             {
+                Log.Warn(e, "the lights could not be measured; the report says why");
                 lightsError = e.Message;
             }
 
             GC.Collect();
+            Released("the lights were released");
+            clock.Lap("lights");
+            if (lights is not null && Log.IsDebugEnabled)
+            {
+                Log.Debug("lights: " + LogText.Figures(lights, "Frames"));
+            }
         }
 
         PartnerAnalysis? partner = null;
@@ -245,15 +297,62 @@ internal static class DarkSeriesRun
             }
             catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
             {
+                Log.Warn(e, "the partner " + options.Against + " could not be used; the report says why");
                 partnerError = e.Message;
             }
 
             GC.Collect();
+            Released("the partner's stack was released");
+            clock.Lap("partner");
+            if (partner is not null && Log.IsDebugEnabled)
+            {
+                // The first error is the report's words; the partner's frames wrote their own lines.
+                Log.Debug("partner: " + LogText.Figures(partner, "FirstError"));
+            }
         }
 
         double lightsIndex = lights is null ? double.NaN : IndexAnalyzer.EquivalentIndex(index, lights.LightsOverDark);
-        return new DarkSeriesResult(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner);
+        DarkSeriesResult result = new(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner);
+        clock.Done(Outcome(result));
+        return result;
     }
+
+    /// <summary>
+    /// The run's outcome as its last line writes it: the six verdicts by their names, the index,
+    /// the label, the lights' equivalent index, each group's frames decoded out of its files, and
+    /// whether the run met an error (R-101).
+    /// </summary>
+    /// <param name="r">The run's result; not null.</param>
+    /// <returns>The text.</returns>
+    internal static string Outcome(DarkSeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        DarkVerdicts v = r.Verdicts;
+        return "leak=" + v.Leak.Verdict + " drift=" + v.Drift.Verdict + " noise=" + v.Noise.Verdict + " pattern=" + v.Pattern.Verdict
+            + " deadSat=" + v.DeadSat.Verdict + " enough=" + v.Enough.Verdict
+            + " index=" + LogText.Num(r.Index.Index) + " label=" + r.Label + " lightsIndex=" + LogText.Num(double.IsNaN(r.LightsIndex) ? null : r.LightsIndex)
+            + " frames darks=" + LogText.Int(r.Darks.Used) + "/" + LogText.Int(r.Darks.Frames.Count)
+            + " biases=" + (r.Biases is null ? "none" : LogText.Int(r.Biases.Used) + "/" + LogText.Int(r.Biases.Frames.Count))
+            + " lights=" + (r.Lights is null ? "none" : LogText.Int(r.Lights.Used) + "/" + LogText.Int(r.Lights.Frames.Count))
+            + " partner=" + (r.Partner is null ? "none" : LogText.Int(r.Partner.Used) + "/" + LogText.Int(r.Partner.Frames))
+            + " errors=" + LogText.Yes(r.HasErrors);
+    }
+
+    /// <summary>
+    /// Writes the process's working set after a group's frames were released and collected, at
+    /// Debug, beside the per-frame figures of the decoding loops (ADR 0007's memory trap).
+    /// </summary>
+    /// <param name="what">What was released, in the log's words: <c>the biases were released</c>.</param>
+    private static void Released(string what)
+    {
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug("working set " + LogText.WorkingSet() + " after " + what);
+        }
+    }
+
+    /// <summary>The diagnostic log: the run's lines, the groups that fail, the figures behind every verdict (R-101).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(DarkSeriesRun));
 
     /// <summary>
     /// The partner folder (a session or a library) decoded to its median master: its index, the

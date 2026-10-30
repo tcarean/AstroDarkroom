@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
+using NLog;
 using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core;
@@ -45,6 +47,13 @@ internal sealed record StackFrame(FrameInfo Info, ushort[]? Pixels, string? Erro
 /// </summary>
 internal sealed class FrameStack
 {
+    /// <summary>
+    /// The diagnostic log: each frame decoded with its time and the process's working set, each
+    /// frame left out or failed with its exception, and the stack as it came out (R-101, ADR 0025).
+    /// The figures stay pure: nothing else in this file writes to the log.
+    /// </summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(FrameStack));
+
     internal IReadOnlyList<StackFrame> Frames { get; }
     internal int Width { get; }
     internal int Height { get; }
@@ -152,6 +161,7 @@ internal sealed class FrameStack
     internal static FrameStack Load(IReadOnlyList<string> paths, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, double? fitsBlack = null, Normalisation? normalisation = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(paths);
+        Stopwatch total = Stopwatch.StartNew();
         Normalisation nz = normalisation ?? Normalisation.Default;
         int n = paths.Count;
         int step = n > maxFrames ? (int)Math.Ceiling(n / (double)maxFrames) : 1;
@@ -174,6 +184,7 @@ internal sealed class FrameStack
                 return;
             }
 
+            Stopwatch one = Stopwatch.StartNew();
             try
             {
                 LoadedFrame f = ImageLoader.Load(path);
@@ -191,6 +202,7 @@ internal sealed class FrameStack
                     : !SameSettings(info, firstInfo)
                         ? new StackFrame(info, null, T($"settings differ from the first frame: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s", $"setari diferite de primul cadru: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s"))
                         : new StackFrame(info, px, null);
+                int fw = f.Image.W, fh = f.Image.H;
                 f = null!;
 
                 // The decoder's raster (194 MB of doubles at 24 MP) is garbage now, but on a
@@ -199,10 +211,14 @@ internal sealed class FrameStack
                 // (ADR 0007). One collection per decoded frame costs milliseconds against a
                 // second of decoding and keeps the peak at the frames kept plus those in flight.
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: false);
+                LogDecoded(i + 1, n, frames[i], firstInfo!, fw, fh, w, h, black, white, nz, one.ElapsedMilliseconds);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, e.Message);
+                long ms = one.ElapsedMilliseconds;
+                FrameInfo info = FrameInfo.Read(i + 1, path, out Exception? metadata);
+                LogFailed(Log, i + 1, n, path, ms, e, info, metadata);
+                frames[i] = new StackFrame(info, null, e.Message);
             }
 
             progress?.Report((Interlocked.Increment(ref done), n));
@@ -220,6 +236,7 @@ internal sealed class FrameStack
 
         if (geometry is null)
         {
+            Log.Warn("stack of " + LogText.Int(n) + " files: none decoded; " + Counts(frames) + " in " + LogText.Ms(total.ElapsedMilliseconds));
             return new FrameStack(frames, 0, 0, 0, 0, null, T("no frame decoded", "niciun cadru decodat"), 1, nz);
         }
 
@@ -242,8 +259,92 @@ internal sealed class FrameStack
             }
         }
 
+        // The scale's origin in the log's own words: the report's source is in the run's language.
+        string blackFrom = !double.IsNaN(gb) ? "the file's"
+            : fitsBlack is not null ? "the biases'"
+            : "the median of frame " + LogText.Int(frames.First(f => f.Pixels is not null).Info.Index);
+        Log.Info("stack of " + LogText.Int(n) + " files: " + Counts(frames) + "; " + LogText.Int(gw) + "x" + LogText.Int(gh)
+            + " black=" + LogText.Num(stack.Black) + " (" + blackFrom + ") white=" + LogText.Num(gwhite) + (double.IsNaN(gb) ? " (from BITPIX)" : " (the file's)")
+            + " cfa=" + (gcfa?.Letters ?? "none") + " norm=" + LogText.Num(gnorm) + " in " + LogText.Ms(total.ElapsedMilliseconds));
         return stack;
     }
+
+    /// <summary>
+    /// Writes a frame the decoding loop kept or left out: at Debug, a decoded frame's size, scale,
+    /// normalisation, time and the process's working set after the collection that follows it (the
+    /// figure ADR 0007's memory trap needed); at Warn, a frame left out for its size or its
+    /// settings, in the log's words, the row keeping the report's.
+    /// </summary>
+    /// <param name="index">The frame's 1-based position in its group.</param>
+    /// <param name="count">The group's number of files.</param>
+    /// <param name="frame">The frame as the stack keeps it; not null.</param>
+    /// <param name="first">The first decoded frame's metadata, whose settings the others must have; not null.</param>
+    /// <param name="fw">The frame's width, in pixels.</param>
+    /// <param name="fh">The frame's height, in pixels.</param>
+    /// <param name="w">The stack's width, in pixels.</param>
+    /// <param name="h">The stack's height, in pixels.</param>
+    /// <param name="black">The file's black level, in ADU; NaN for a FITS, which carries none.</param>
+    /// <param name="white">The white level the frame was read with, in ADU.</param>
+    /// <param name="nz">The normalisation settings.</param>
+    /// <param name="ms">The milliseconds the frame took, its read, conversion and collection.</param>
+    private static void LogDecoded(int index, int count, StackFrame frame, FrameInfo first, int fw, int fh, int w, int h, double black, double white, Normalisation nz, long ms)
+    {
+        string what = "frame " + LogText.Int(index) + "/" + LogText.Int(count) + " " + frame.Info.Path;
+        if (fw != w || fh != h)
+        {
+            Log.Warn(what + " left out: " + LogText.Int(fw) + "x" + LogText.Int(fh) + " instead of " + LogText.Int(w) + "x" + LogText.Int(h) + "; its row says so");
+        }
+        else if (frame.Pixels is null)
+        {
+            Log.Warn(what + " left out: ISO " + LogText.Num(frame.Info.Iso) + " and " + LogText.Num(frame.Info.ExposureSeconds) + " s, the first frame ISO "
+                + LogText.Num(first.Iso) + " and " + LogText.Num(first.ExposureSeconds) + " s; its row says so");
+        }
+        else if (Log.IsDebugEnabled)
+        {
+            Log.Debug("decoded " + what + ": " + LogText.Int(fw) + "x" + LogText.Int(fh) + " black=" + LogText.Num(double.IsNaN(black) ? null : black)
+                + " white=" + LogText.Num(white) + " norm=" + LogText.Num(nz.NormOf(frame.Info)) + " in " + LogText.Ms(ms) + "; working set " + LogText.WorkingSet());
+        }
+    }
+
+    /// <summary>
+    /// Writes a frame a decoding loop could not decode, at Warn with the decode's exception, in one
+    /// line that also says whether its metadata could then be read; the metadata read's exception
+    /// follows on a line of its own when it is another error than the decode's (another type or
+    /// message), so each exception is written once with its stack (R-101; LightsCheck's
+    /// LogFailedFrame). Both loops call it, the darks' here and the lights'.
+    /// </summary>
+    /// <param name="log">The loop's logger; not null.</param>
+    /// <param name="index">The frame's 1-based position in its group.</param>
+    /// <param name="count">The group's number of files.</param>
+    /// <param name="path">The frame's file.</param>
+    /// <param name="ms">The milliseconds the decode ran before it failed.</param>
+    /// <param name="decoding">The decode's exception; not null.</param>
+    /// <param name="info">The metadata read after it; not null.</param>
+    /// <param name="metadata">The metadata read's exception, or null when the metadata was read.</param>
+    internal static void LogFailed(Logger log, int index, int count, string path, long ms, Exception decoding, FrameInfo info, Exception? metadata)
+    {
+        ArgumentNullException.ThrowIfNull(log);
+        ArgumentNullException.ThrowIfNull(decoding);
+        ArgumentNullException.ThrowIfNull(info);
+        string frame = "frame " + LogText.Int(index) + "/" + LogText.Int(count) + " " + path;
+        bool another = metadata is not null && (metadata.GetType() != decoding.GetType() || metadata.Message != decoding.Message);
+        string outcome = metadata is null ? info.Error is null ? "was read" : "says it is no FITS file"
+            : another ? "could not be read either, with another error, on its own line"
+            : "could not be read either, with the same error";
+        log.Warn(decoding, frame + " could not be decoded after " + LogText.Ms(ms) + "; its metadata " + outcome + "; its row carries the error");
+        if (another)
+        {
+            log.Warn(metadata, frame + ": its metadata could not be read");
+        }
+    }
+
+    /// <summary>A stack's frames counted: <c>28 decoded, 1 failed, 1 skipped</c>; a frame left out for its size or settings counts as failed.</summary>
+    /// <param name="frames">The frames.</param>
+    /// <returns>The text.</returns>
+    private static string Counts(IReadOnlyList<StackFrame> frames) =>
+        LogText.Int(frames.Count(f => f.Pixels is not null)) + " decoded, "
+        + LogText.Int(frames.Count(f => f.Pixels is null && !f.Skipped)) + " failed, "
+        + LogText.Int(frames.Count(f => f.Skipped)) + " skipped";
 
     /// <summary>
     /// One file decoded on its own, for a group that is never stacked (the lights): the frame
@@ -262,9 +363,14 @@ internal sealed class FrameStack
         LoadedFrame f = ImageLoader.Load(path);
         FrameInfo info = FrameInfo.From(index, path, f);
         (ushort[] px, double black, double white, _) = ToUshort(f);
-        return f.Image.W == w && f.Image.H == h
-            ? (new StackFrame(info, px, null), black, white)
-            : (new StackFrame(info, null, T($"different size: {f.Image.W} x {f.Image.H} instead of {w} x {h}", $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}")), black, white);
+        if (f.Image.W == w && f.Image.H == h)
+        {
+            return (new StackFrame(info, px, null), black, white);
+        }
+
+        Log.Warn("frame " + LogText.Int(index) + " " + path + " left out: " + LogText.Int(f.Image.W) + "x" + LogText.Int(f.Image.H)
+            + " instead of " + LogText.Int(w) + "x" + LogText.Int(h) + "; its row says so");
+        return (new StackFrame(info, null, T($"different size: {f.Image.W} x {f.Image.H} instead of {w} x {h}", $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}")), black, white);
     }
 
     /// <summary>A setting for an error message: up to three decimals, invariant culture.</summary>

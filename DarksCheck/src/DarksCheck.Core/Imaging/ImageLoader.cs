@@ -20,7 +20,11 @@
 
 // ImageLoader.cs - the ONE place that decides whether a file is FITS or a camera raw. From
 // here down nothing knows where the pixels came from. Adapted from FlatCheck (ADR 0003): the
-// embedded preview is gone, the shot metadata the inventory needs is added.
+// embedded preview is gone, the shot metadata the inventory needs is added, and the diagnostic
+// log gets one line per file read here, the FITS reader being a copy left as it is (ADR 0025).
+
+using System.Diagnostics;
+using NLog;
 
 namespace DarksCheck.Core
 {
@@ -133,18 +137,26 @@ namespace DarksCheck.Core
         static readonly FitsReader Fits = new FitsReader();
         static readonly IFrameReader[] Readers = { new RawReader(), Fits };
 
+        /// <summary>
+        /// The diagnostic log: one line per file read (R-101), the FITS keywords that decide the
+        /// reading at Debug and every card at Trace (R-102). A file that does not load writes
+        /// nothing here: its caller logs the exception.
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(ImageLoader));
+
         /// <summary>Loads a frame with its pixels and everything the file says about it.</summary>
         /// <param name="path">A camera raw, a FITS, or any other file, which is read as a
         /// FITS.</param>
         /// <returns>The frame, its image filled.</returns>
         internal static LoadedFrame Load(string path)
         {
-            foreach (IFrameReader r in Readers)
-                if (r.Handles(path)) return r.Load(path);
-
-            // What nobody claims goes to FITS: a .jpg given by mistake fails with a FITS
-            // parse error that names the file, instead of "unrecognised format".
-            return Fits.Load(path);
+            var clock = Stopwatch.StartNew();
+            IFrameReader reader = ReaderFor(path);
+            LoadedFrame f = reader.Load(path);
+            if (Log.IsInfoEnabled)
+                Log.Info("loaded " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
+            LogHeader(path, f);
+            return f;
         }
 
         /// <summary>The pixels only, through <see cref="Load"/>.</summary>
@@ -160,9 +172,46 @@ namespace DarksCheck.Core
         /// <returns>The frame's metadata.</returns>
         internal static LoadedFrame LoadInfo(string path)
         {
+            var clock = Stopwatch.StartNew();
+            IFrameReader reader = ReaderFor(path);
+            LoadedFrame f = reader.LoadInfo(path);
+            if (Log.IsDebugEnabled)
+                Log.Debug("read the header of " + LogText.Frame(path, f, NameOf(reader)) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
+            LogHeader(path, f);
+            return f;
+        }
+
+        /// <summary>The reader that claims a file.</summary>
+        /// <param name="path">The file to read.</param>
+        /// <returns>The first reader whose Handles says so; the FITS reader for any other file.</returns>
+        static IFrameReader ReaderFor(string path)
+        {
             foreach (IFrameReader r in Readers)
-                if (r.Handles(path)) return r.LoadInfo(path);
-            return Fits.LoadInfo(path);
+                if (r.Handles(path)) return r;
+
+            // What nobody claims goes to FITS: a .jpg given by mistake fails with a FITS
+            // parse error that names the file, instead of "unrecognised format".
+            return Fits;
+        }
+
+        /// <summary>A reader's name in the log.</summary>
+        /// <param name="reader">The reader that read the file.</param>
+        /// <returns><c>raw</c> or <c>fits</c>.</returns>
+        static string NameOf(IFrameReader reader) => reader is RawReader ? "raw" : "fits";
+
+        /// <summary>
+        /// Writes a FITS header to the log: the keywords that decide the reading at Debug, every
+        /// card at Trace (the cards are kept by a full load only). A raw has neither.
+        /// </summary>
+        /// <param name="path">The file read.</param>
+        /// <param name="f">The frame read from it.</param>
+        static void LogHeader(string path, LoadedFrame f)
+        {
+            if (f.Header != null && f.Header.Count > 0 && Log.IsDebugEnabled)
+                Log.Debug("header of " + path + ": " + LogText.FitsKeys(f.Header));
+            if (Log.IsTraceEnabled)
+                foreach (string card in f.Cards)
+                    Log.Trace("card " + card.TrimEnd());
         }
     }
 }

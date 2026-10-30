@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
+using NLog;
 using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core;
@@ -107,6 +109,13 @@ internal sealed record LightsAnalysis(
 /// </summary>
 internal static class LightsAnalyzer
 {
+    /// <summary>
+    /// The diagnostic log: each light measured, with its time, the process's working set and its
+    /// figures, and each light that failed, with its exception (R-101, ADR 0025). Only the loop of
+    /// <see cref="Analyze"/> writes to it; the figures stay pure.
+    /// </summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(LightsAnalyzer));
+
     /// <summary>Reads the lights one by one against the dark master.</summary>
     /// <param name="paths">The lights' files, in order; not null.</param>
     /// <param name="darks">The darks' figures, with the median master; not null.</param>
@@ -154,6 +163,7 @@ internal static class LightsAnalyzer
                 return;
             }
 
+            Stopwatch one = Stopwatch.StartNew();
             try
             {
                 (StackFrame frame, double black, double white) = FrameStack.DecodeOne(i + 1, path, w, h);
@@ -182,10 +192,18 @@ internal static class LightsAnalyzer
                 }
 
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: false);
+                if (frame.Pixels is not null && Log.IsDebugEnabled)
+                {
+                    Log.Debug("light " + LogText.Int(i + 1) + "/" + LogText.Int(n) + " " + path + " measured in " + LogText.Ms(one.ElapsedMilliseconds)
+                        + "; working set " + LogText.WorkingSet() + "; " + LogText.Figures(frames[i], "Info", "Error", "Skipped"));
+                }
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), e.Message, false, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                long ms = one.ElapsedMilliseconds;
+                FrameInfo info = FrameInfo.Read(i + 1, path, out Exception? metadata);
+                FrameStack.LogFailed(Log, i + 1, n, path, ms, e, info, metadata);
+                frames[i] = new LightFigures(info, e.Message, false, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
             }
 
             progress?.Report((Interlocked.Increment(ref done), n));
