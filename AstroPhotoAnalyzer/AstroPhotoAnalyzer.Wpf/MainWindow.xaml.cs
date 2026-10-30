@@ -53,6 +53,8 @@ namespace AstroPhotoAnalyzer.Wpf
             // The Editare Curbe tab (R-146, R-147): the curve window, the save dialog and the arrow keys.
             _vm.Curves.CurveRequested += c => new CurveWindow { Owner = this, DataContext = c }.Show();
             _vm.Curves.SaveRequested += SaveCurve;
+            // The Soft proof tab (R-163): its full-screen window, over the tab's own view-model.
+            _vm.SoftProof.ProofRequested += p => new SoftProofWindow { Owner = this, DataContext = p }.Show();
             PreviewKeyDown += GalleryKeys;
         }
 

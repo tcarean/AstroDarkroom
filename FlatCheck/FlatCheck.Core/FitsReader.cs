@@ -197,7 +197,8 @@ namespace FlatCheck
                 Bitpix = bitpix,
             };
             FillShootingInfo(f, hdr);
-            if (Log.IsDebugEnabled) Log.Debug("header of " + path + ": " + LogText.FitsKeys(hdr));
+            // The keywords that decide the reading are ImageLoader's Debug line (one per file,
+            // or one per series); every card is here, at Trace.
             if (Log.IsTraceEnabled)
                 foreach (string card in cards) Log.Trace("card " + card.TrimEnd());
             return f;

@@ -46,8 +46,10 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// The sources, loaded in the background on the first request and remembered. A load
-        /// that failed (an inaccessible folder) is retried on the next request, it does not
-        /// stay failed for the whole life of the window.
+        /// that threw is retried on the next request, it does not stay failed for the whole
+        /// life of the window; a folder that could not be listed is not such a failure since
+        /// R-115: the locator leaves it out and the load succeeds, and what it found is kept
+        /// until the window restarts, as the Structure card says of Adobe's profiles.
         /// </summary>
         /// <returns>The loading task, shared by every caller until it fails or is
         /// cancelled.</returns>

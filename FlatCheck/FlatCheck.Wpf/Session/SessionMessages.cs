@@ -1137,6 +1137,22 @@ namespace FlatCheck.Wpf
             T($"analysing the {parts} parts and the whole",
               $"analizez cele {parts} parti si intregul");
 
+        /// <summary>The card's title when the folder passed the check but could not be read
+        /// through (a folder the user may not list, a broken junction).</summary>
+        /// <returns>The title.</returns>
+        internal static string FolderUnreadableTitle() => T("The folder could not be read", "Folderul nu a putut fi citit");
+
+        /// <summary>The card's text for <see cref="FolderUnreadableTitle"/>: the folder, the
+        /// exception's message, and where the details are.</summary>
+        /// <param name="folder">The session folder.</param>
+        /// <param name="message">The exception's message, with its causes.</param>
+        /// <returns>The text.</returns>
+        internal static string FolderUnreadable(string folder, string message)
+            => T($"{folder} exists and looks like a Siril session, but one of its folders could not be listed:\n\n{message}\n\n"
+                 + "Check the folder's permissions (flats/, process/, masters/) and open it again. The details are in the log.",
+                 $"{folder} exista si arata ca o sesiune Siril, dar unul din folderele lui nu a putut fi listat:\n\n{message}\n\n"
+                 + "Verifica drepturile pe foldere (flats/, process/, masters/) si deschide-l din nou. Detaliile sunt in log.");
+
         /// <summary>The failure screen's title.</summary>
         /// <returns>The title.</returns>
         internal static string SplitFailedTitle() => T("The split stopped",
@@ -1234,16 +1250,38 @@ namespace FlatCheck.Wpf
         /// the program shows its own copyright, and an exe copied alone has no notices file
         /// beside it. The compatibility reasons stay in the file.
         /// </summary>
+        /// <param name="linked">How many components are linked into the executable, from the
+        /// core's list: the database it ships is named apart.</param>
         /// <returns>The lead above the list.</returns>
-        internal static string AboutThirdPartyLead() =>
-            T("The tool links three components written by others, all compatible with GPLv3. "
+        internal static string AboutThirdPartyLead(int linked) =>
+            T($"The tool links {CountWord(linked)} components written by others and ships a database made by "
+            + "others, all compatible with GPLv3. "
             + "The FITS reader, the PNG encoder, every computation and every threshold are written "
             + "by hand. Why each licence is compatible is in "
             + "THIRD-PARTY-NOTICES.md, beside the source.",
-              "Unealta leaga trei componente scrise de altii, toate compatibile cu GPLv3. "
+              $"Unealta leaga {CountWord(linked)} componente scrise de altii si livreaza o baza de date facuta de "
+            + "altii, toate compatibile cu GPLv3. "
             + "Cititorul FITS, encoderul PNG, toate calculele si toate pragurile sunt scrise "
             + "de mana. Motivele pentru care fiecare licenta e compatibila sunt in "
             + "THIRD-PARTY-NOTICES.md, langa sursa.");
+
+        /// <summary>A small count as a word, for a sentence: <c>four</c> / <c>patru</c>; the
+        /// digits past nine.</summary>
+        /// <param name="n">The count.</param>
+        /// <returns>The word in the window's language.</returns>
+        internal static string CountWord(int n) => n switch
+        {
+            1 => T("one", "una"),
+            2 => T("two", "doua"),
+            3 => T("three", "trei"),
+            4 => T("four", "patru"),
+            5 => T("five", "cinci"),
+            6 => T("six", "sase"),
+            7 => T("seven", "sapte"),
+            8 => T("eight", "opt"),
+            9 => T("nine", "noua"),
+            _ => n.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        };
 
         // ------------------------------------------------------------ the End to end tab
         // The tab explains itself in place (R-105, ADR 0064): a line under each series figure,

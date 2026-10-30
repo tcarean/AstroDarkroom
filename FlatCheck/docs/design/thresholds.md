@@ -86,7 +86,8 @@ written, 1 that it could not be. `--smooth` likewise: 0 means the smoothed flat 
 maps were written, 1 that the input was refused (raw, cube) or the file could not be;
 with `--scale auto`, 2 means no file was written because there was nothing to smooth or
 the scale was undetermined - "read this before you decide", the meaning 2 has elsewhere.
-`--synthetic` follows the same shape: 0 written, 1 refused (a colour cube, or a focal
-length, f-stop or crop factor nobody could supply), 2 the lens could not be chosen from
+`--synthetic` follows the same shape: 0 written, 1 refused (a colour cube, a focal
+length, f-stop or crop factor nobody could supply, or a lens whose file carries no
+vignetting model, ADR 0071), 2 the lens could not be chosen from
 the text (none, or several - the candidates are printed). `--lenses` is always 0.
 `--against` goes through `ExitFor` on the verdict of the *difference*.

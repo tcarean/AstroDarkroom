@@ -1,0 +1,62 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- SoftProofControls - the controls of the soft proof (R-163), the same in the tab and in the
+     full-screen window over the same view-model: the three intents, the two boxes, the margin
+     and "Full screen". The radio buttons have no GroupName: a GroupName would join every
+     instance in the process into one group (docs/design/testing.md), and each instance's
+     panel already makes a group of its own. -->
+
+<UserControl x:Class="AstroPhotoAnalyzer.Wpf.SoftProofControls"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf">
+  <WrapPanel Orientation="Horizontal" Margin="0,0,0,4">
+    <StackPanel Orientation="Horizontal" Margin="0,0,20,4" VerticalAlignment="Center">
+      <TextBlock Text="{local:T En='Intent:', Ro='Intent:'}" VerticalAlignment="Center" Margin="0,0,10,0" />
+      <RadioButton Content="{Binding PerceptualName}" IsChecked="{Binding IsPerceptual}" ToolTip="{Binding PerceptualHelp}"
+                   Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <RadioButton Content="{Binding RelativeName}" IsChecked="{Binding IsRelative}" ToolTip="{Binding RelativeHelp}"
+                   Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <RadioButton Content="{Binding RelativeNoBpcName}" IsChecked="{Binding IsRelativeNoBpc}" ToolTip="{Binding RelativeNoBpcHelp}"
+                   Foreground="{StaticResource TextBr}" VerticalAlignment="Center" />
+    </StackPanel>
+    <CheckBox IsChecked="{Binding ShowPaperGamut}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,16,4"
+              Content="{local:T En='Paper gamut warning', Ro='Avertisment gamut hartie'}"
+              ToolTip="{local:T En='Paints in red the pixels whose colour the paper does not reproduce, by the rule of the Curves Editing tab. Key G in the full-screen window.', Ro='Picteaza cu rosu pixelii a caror culoare hartia nu o reda, dupa regula din tabul Editare Curbe. Tasta G in fereastra pe tot ecranul.'}" />
+    <CheckBox IsChecked="{Binding ShowOriginal}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,20,4"
+              Content="{local:T En='Original', Ro='Originalul'}"
+              ToolTip="{local:T En='The image as it is, inside the same margin, for comparison; the warning is not painted over it. Key O.', Ro='Imaginea asa cum e, in aceeasi margine, pentru comparatie; avertismentul nu se picteaza peste ea. Tasta O.'}" />
+    <StackPanel Orientation="Horizontal" Margin="0,0,20,4" VerticalAlignment="Center">
+      <TextBlock Text="{local:T En='Margin:', Ro='Margine:'}" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <ComboBox SelectedValuePath="Tag" SelectedValue="{Binding Margin}" MinWidth="120" VerticalAlignment="Center"
+                ToolTip="{local:T En='The background around the image: the white of the paper, the one the white of the image becomes, or a fixed grey, white to black', Ro='Fundalul din jurul imaginii: albul hartiei, cel in care se transforma albul imaginii, sau un gri fix, de la alb la negru'}">
+        <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.PaperWhite}" Content="{local:T En='Paper white', Ro='Albul hartiei'}" />
+        <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.White}" Content="{local:T En='White', Ro='Alb'}" />
+        <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.LightGrey}" Content="{local:T En='Light grey', Ro='Gri deschis'}" />
+        <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.Grey}" Content="{local:T En='Grey', Ro='Gri'}" />
+        <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.DarkGrey}" Content="{local:T En='Dark grey', Ro='Gri inchis'}" />
+        <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.Black}" Content="{local:T En='Black', Ro='Negru'}" />
+      </ComboBox>
+    </StackPanel>
+    <Button Content="{local:T En='Full screen', Ro='Ecran intreg'}" Command="{Binding FullScreen}" Padding="14,3" VerticalAlignment="Center" Margin="0,0,0,4"
+            Visibility="{Binding ShowFullScreenButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
+            ToolTip="{local:T En='The same proof in a maximised window; Esc closes it', Ro='Acelasi proof intr-o fereastra maximizata; Esc o inchide'}" />
+  </WrapPanel>
+</UserControl>

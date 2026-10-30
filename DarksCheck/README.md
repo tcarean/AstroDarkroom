@@ -480,7 +480,8 @@ tabs:
 - **Report**: the console's text, the same to the byte.
 
 With `--lang ro` the tabs are Rezumat, Cadre, Harti, Pixeli fierbinti, Lights, Index, Explicatii
-scara ADU and Raport.
+scara ADU and Raport. A screen reader such as Narrator reaches what each tab shows, not only the
+tabs' names.
 
 The top bar holds four settings: `THREADS`, how many frames are decoded in parallel (empty =
 half the cores); `MAX FRAMES`, how many frames are held in memory and how many lights are

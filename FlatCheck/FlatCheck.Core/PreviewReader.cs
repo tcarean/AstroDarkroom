@@ -48,6 +48,7 @@
 // RawReader; TargetSize is the safety net for the cameras that have only a large one.
 
 using System;
+using NLog;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
@@ -100,7 +101,7 @@ namespace FlatCheck
         }
 
         /// <summary>The diagnostic log: the previews that did not decode.</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(PreviewReader));
+        static readonly Logger Log = LogManager.GetLogger(nameof(PreviewReader));
 
         /// <summary>
         /// Decodes a JPEG preview into RGB, shrunk to about <see cref="TargetLongSide"/> only

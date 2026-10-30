@@ -18,6 +18,7 @@
 // ExposureRun.cs - mode 4 end to end: a raw flat -> level + verdict + text.
 
 using System.IO;
+using NLog;
 
 namespace FlatCheck
 {
@@ -58,7 +59,7 @@ namespace FlatCheck
             string path, double? sat, double? black, bool sky, TextWriter report,
             bool withPreview = false)
         {
-            RunClock clock = RunClock.Start(Log, "expo", path + " sat=" + LogText.Num(sat) + " black=" + LogText.Num(black)
+            using RunClock clock = RunClock.Start(Log, "expo", path + " sat=" + LogText.Num(sat) + " black=" + LogText.Num(black)
                                                    + " sky=" + LogText.Yes(sky) + " preview=" + LogText.Yes(withPreview));
             LoadedFrame f = ImageLoader.Load(path);
             clock.Lap("load");
@@ -74,6 +75,6 @@ namespace FlatCheck
         }
 
         /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(ExposureRun));
+        static readonly Logger Log = LogManager.GetLogger(nameof(ExposureRun));
     }
 }

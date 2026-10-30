@@ -23,8 +23,8 @@
 // also has the "piecewise" table, a nested rdf:Description.
 //
 // What is NOT read: the distortion, the chromatic aberration, the fisheye profiles without a
-// VignetteModel. A broken file stops nothing - it is skipped and counted, so that the list is
-// made from what works; it is someone else's file.
+// VignetteModel. A broken file stops nothing - the catalog parses it to no profile, with a
+// line in the log, so that the list is made from what works; it is someone else's file.
 //
 // The aperture is in APEX (ApertureValue): f = 2^(Av/2); 2.970854 -> 2.80. The focal length and
 // the SFF are the profile's, not those of the user's EXIF.

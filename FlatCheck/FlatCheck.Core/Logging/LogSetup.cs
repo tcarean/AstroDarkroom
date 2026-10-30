@@ -16,10 +16,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // LogSetup.cs - the one place that knows how the diagnostic log is configured (ADR 0070,
-// R-109 to R-111): the folder, the file names, the rolling, the level, the line layout, the
+// R-109 to R-112): the folder, the file names, the rolling, the level, the line layout, the
 // first and the last line of a process. The two applications call Apply first and Close last;
-// nothing else configures NLog, so the core and the tests, which never call Apply, log into
-// nothing. docs/design/logging.md holds how the parts fit and what was measured.
+// nothing else configures NLog for a user's run. The core used as a library logs into nothing;
+// the test assemblies configure a capture at Trace (LogCapture), so every test runs every log
+// line on its path. docs/design/logging.md holds how the parts fit and what was measured.
 
 using System;
 using System.Collections.Generic;
@@ -88,15 +89,16 @@ namespace FlatCheck
             "${longdate} ${level:uppercase=true:padding=-5} [${processid}:${threadid}] ${logger} ${message}"
             + "${onexception:inner=${newline}${exception:format=ToString}}";
 
-        /// <summary>The logger of the process's own lines: the first, the last, the crashes.</summary>
-        private static readonly Logger Log = LogManager.GetLogger("Process");
+        /// <summary>The logger of the process's own lines: the first, the last, the crashes.
+        /// Fetched on use, not held in a static field: creating a logger makes NLog load an
+        /// <c>NLog.config</c> it finds beside the executable, and <see cref="Apply"/> must have
+        /// set the configuration before that (measured on 2026-10-27, docs/design/logging.md).
+        /// NLog caches the logger, so this costs a lookup.</summary>
+        private static Logger Log => LogManager.GetLogger("Process");
 
-        /// <summary>1 once <see cref="Apply"/> ran in this process; a second call does
-        /// nothing.</summary>
-        private static int applied;
-
-        /// <summary>Runs from <see cref="Apply"/>, for the elapsed time of the last
-        /// line.</summary>
+        /// <summary>Runs from <see cref="Apply"/>, for the elapsed time of the last line; null
+        /// until then, which is how a second <see cref="Apply"/> and a <see cref="Close"/>
+        /// without <see cref="Apply"/> know to do nothing.</summary>
         private static Stopwatch clock;
 
         /// <summary>The last exception logged as fatal, so the same crash seen by two handlers
@@ -115,22 +117,20 @@ namespace FlatCheck
         /// <param name="args">The command line, logged verbatim; never null.</param>
         internal static void Apply(string entryName, IReadOnlyList<string> args)
         {
-            if (Interlocked.Exchange(ref applied, 1) == 1) return;
-            clock = Stopwatch.StartNew();
+            if (Interlocked.CompareExchange(ref clock, Stopwatch.StartNew(), null) != null) return;
 
             string fallbackRoot = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             if (string.IsNullOrEmpty(fallbackRoot)) fallbackRoot = Path.GetTempPath();
             LogPlace place = Plan(entryName, Environment.ProcessPath, AppContext.BaseDirectory, fallbackRoot,
                                   Environment.GetEnvironmentVariable(LevelVariable));
-            if (place.Folder == null)
-            {
-                // Off: an empty configuration, so NLog does not go looking for an NLog.config.
-                LogManager.Configuration = new LoggingConfiguration();
-                return;
-            }
 
+            // The configuration is set before any logger exists (Log is fetched on use), so
+            // NLog never goes looking for an NLog.config beside the executable; Off gives a
+            // configuration without targets, and then nothing else is hooked or written.
             LogManager.ThrowExceptions = false;
             LogManager.Configuration = Build(place.ExecutableName, place.Folder, place.Level);
+            if (place.Folder == null) return;
+
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
                 Fatal(e.ExceptionObject as Exception, "unhandled exception, the process ends"
                       + (e.ExceptionObject is Exception ? "" : ": " + e.ExceptionObject));
@@ -170,8 +170,9 @@ namespace FlatCheck
         /// <param name="exitCode">The process's exit code.</param>
         internal static void Close(int exitCode)
         {
-            if (Volatile.Read(ref applied) == 0) return;
-            Log.Info(FormattableString.Invariant($"exit {exitCode} after {clock.Elapsed.TotalSeconds:F1} s"));
+            Stopwatch started = Volatile.Read(ref clock);
+            if (started == null) return;
+            Log.Info("exit " + LogText.Int(exitCode) + " after " + LogText.Seconds(started.Elapsed));
             LogManager.Shutdown();
         }
 
@@ -251,11 +252,14 @@ namespace FlatCheck
             return fallback;
         }
 
-        /// <summary>Creates <paramref name="folder"/> and a file in it, deleted when
-        /// closed.</summary>
+        /// <summary>Creates <paramref name="folder"/> and a file in it, deleted when closed,
+        /// and opens for append the file NLog will write next, when there is one: a read-only
+        /// or locked newest file would pass the folder's probe and lose every line in
+        /// silence.</summary>
         /// <param name="folder">The folder to check.</param>
         /// <param name="executableName">The start of the probe file's name.</param>
-        /// <returns>True when both could be created.</returns>
+        /// <returns>True when the folder, the probe and the newest file can all be
+        /// written.</returns>
         private static bool CanWrite(string folder, string executableName)
         {
             try
@@ -264,6 +268,11 @@ namespace FlatCheck
                 string probe = Path.Combine(folder, FormattableString.Invariant(
                     $"{executableName}.probe-{Environment.ProcessId}-{Guid.NewGuid():N}.tmp"));
                 using (new FileStream(probe, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose)) { }
+                string newest = NewestLog(folder, executableName);
+                if (newest != null)
+                    // The share mode the atomic target leaves: another process of the same
+                    // executable may hold the file open (R-112), and that is no reason to fall back.
+                    using (new FileStream(newest, FileMode.Append, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete)) { }
                 return true;
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException
@@ -271,6 +280,32 @@ namespace FlatCheck
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// The file NLog appends to next, by its own rolling (R-109): the highest-numbered
+        /// <c>&lt;name&gt;_NN.log</c> when the log has rolled, else <c>&lt;name&gt;.log</c>.
+        /// </summary>
+        /// <param name="folder">The log folder; must exist.</param>
+        /// <param name="executableName">The start of the files' names.</param>
+        /// <returns>The file's path, or null when the executable has no file there yet.</returns>
+        internal static string NewestLog(string folder, string executableName)
+        {
+            string best = null;
+            int bestNumber = -1;
+            foreach (string f in Directory.EnumerateFiles(folder, executableName + "_*.log"))
+            {
+                string stem = Path.GetFileNameWithoutExtension(f);
+                if (stem.Length <= executableName.Length + 1) continue;
+                if (int.TryParse(stem.Substring(executableName.Length + 1), NumberStyles.None, CultureInfo.InvariantCulture, out int n) && n > bestNumber)
+                {
+                    bestNumber = n;
+                    best = f;
+                }
+            }
+            if (best != null) return best;
+            string plain = Path.Combine(folder, executableName + ".log");
+            return File.Exists(plain) ? plain : null;
         }
 
         /// <summary>

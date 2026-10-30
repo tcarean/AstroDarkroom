@@ -7,7 +7,7 @@
 > no other home. **Covers:** in full, the table of what each application does with the core's
 > outputs (`FlatCheck/`) and `FlatCheck.Wpf/` `ViewModels` and `Views` (the tab mechanics below);
 > by pointer, `FlatCheck.Wpf/Session` (ADR 0033 to 0035, 0055), `Presentation` and `Theme`
-> (ADR 0036, 0037) and `Runs/RunOutcome.cs` (ADR 0011, 0036).
+> (ADR 0036, 0037; the tabs' control, ADR 0074) and `Runs/RunOutcome.cs` (ADR 0011, 0036).
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -101,6 +101,18 @@ Netezire tab, which reuses `StructureRows.Tests`, are untouched. `Populate` is
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
 
+**Without Adobe's profiles the card says so first** (R-113, ADR 0073). `Populate` takes the
+sources the run searched (`query.Sources`; null without a raw, when the run compares nothing and
+does not wait for the catalog, which the Sintetic tab's prefill loads at every opening anyway)
+and shows the core's `AdobeMissing` and `AdobeSearched`, empty unless that search found no Adobe
+file. The block sits at the top of the card's `StackPanel`, above the rows or the gap: the
+paragraph in the window's red for a message (`#F0857E`), then `AdobeInstall`, the link to
+`AdobeDngConverterUrl` and the folders searched. The link is a `Hyperlink`, whose
+`RequestNavigate` bubbles to `MainWindow` and is opened by `Presentation/ExternalLink`, the
+code the "Despre" window's links use too (ADR 0037: links are handled once, on their window).
+The console prints none of it, so the saved report stays the console's. `ProfileCatalog`
+searches once per window, so the text asks for a restart after an install.
+
 #### Two places for the master
 
 ADR 0034 holds the whole of it: Siril's two conventions for where `pp_flat_stacked.fit` lands
@@ -152,6 +164,18 @@ held at entry and puts the run's message back once in, and only for the latest r
 generation counter of `RunGuardedAsync`), so a superseded run waiting beside the new one does
 not write over its message; the Split puts the same text in its phase line. A tab attached
 without a gate (the tests) runs at once.
+
+**An opening that fails past the check.** `SirilSession.Check()` looks only at what exists;
+listing `flats/` or `process/` can still throw afterwards (a folder the user may not list, a
+broken junction). `MainWindow` fires `OpenAsync` without awaiting it, so nothing else would
+see such an exception: `OpenAsync` runs the tabs' `Attach` and the opening chain in one `try`,
+and an exception there is logged at Error and shown as a card
+(`SessionMessages.FolderUnreadableTitle` / `FolderUnreadable`, with the message and its
+causes), the tabs reset and the session dropped, unless another folder was opened meanwhile
+(then a Debug line only). The Debug line that describes the folder runs after the card or the
+tabs are up and writes a folder it cannot list as `unreadable`, so it never takes the card
+down with it (R-080, R-110; why a card and not a crash is ADR 0072). The Synthetic prefill reads the reference raw inside its own
+`try` for the same reason: it is a task nobody awaits.
 
 **The Histogram tab lists the flat master first, then the smoothed master when it exists,
 then `flats/`, and lets a click interrupt a click.** The list and its order, the master not

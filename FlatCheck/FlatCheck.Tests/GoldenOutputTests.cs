@@ -919,6 +919,28 @@ public class GoldenOutputTests
     }
 
     /// <summary>
+    /// R-115: a lensfun/ folder the user may not list does not fail the console: the list comes
+    /// with the Adobe half, exit 0, and the lensfun line says the folder could not be read.
+    /// Before, every mode that locates the profiles printed ERROR and exited 1 (2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R115_Lenses_AnUnlistableLensfunFolderIsSaidSo_AndTheListStillComes()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+        string lensfun = Path.Combine(profiles, "lensfun");
+        using var deny = UnlistableFolder.Deny(lensfun);
+
+        var (output, exit) = RunCli(ws, "--lenses", "--lens", "tokina", "--profiles", profiles, "--lang", "en");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("Adobe  : 2 lenses from 2 files", output);
+        Assert.Contains("lensfun: 0 lenses from <TMP>/profiles" + Path.DirectorySeparatorChar + "lensfun - the folder could not be read", output);   // RunCli scrubs the workspace path
+        Assert.DoesNotContain("ERROR", output);
+    }
+
+    /// <summary>
     /// A flat against a deeper copy of itself: the ratio is radial (the shape is PERFECT) and the
     /// vignetting line reads the depth difference - 0.30 stops, which is 23 % in the corner of a
     /// calibrated light, REFA on the depth and therefore on the whole, exit 3.

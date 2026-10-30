@@ -29,16 +29,48 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
+    /// <summary>The mode a command line asks for, by R-003's precedence: the first of these
+    /// whose flag is set wins, from <see cref="Lenses"/> down to <see cref="Structure"/>, the
+    /// default without a flag.</summary>
+    internal enum Mode
+    {
+        /// <summary>Structure, the default: no mode flag.</summary>
+        Structure,
+        /// <summary><c>--light</c>, on a frame or a folder.</summary>
+        Light,
+        /// <summary><c>--expo</c>.</summary>
+        Expo,
+        /// <summary><c>--histeq</c>.</summary>
+        Histeq,
+        /// <summary><c>--smooth</c>.</summary>
+        Smooth,
+        /// <summary><c>--against</c>.</summary>
+        Against,
+        /// <summary><c>--synthetic</c>.</summary>
+        Synthetic,
+        /// <summary><c>--lenses</c>.</summary>
+        Lenses,
+    }
+
     /// <summary>
     /// The console's command line, parsed: the input file, the mode flags and their values,
     /// or the error that stopped the parse.
     /// </summary>
     internal sealed class Options
     {
+        /// <summary>The diagnostic log: the paths that could not be normalised (R-110).</summary>
+        static readonly Logger Log = LogManager.GetLogger("Cli");
+
+        /// <summary>The mode the flags ask for, decided once by <see cref="Parse"/> (R-003);
+        /// the dispatch and the log's <c>mode=</c> line both read it, so a mode cannot be in one
+        /// and not the other.</summary>
+        internal Mode Mode;
+
         internal string Image;
         internal bool Light;
         internal bool Expo;
@@ -232,8 +264,24 @@ namespace FlatCheck
             if (o.Sat.HasValue && o.Sat.Value <= black)
                 return o.Fail(T($"--sat ({o.Sat.Value:F0}) must be greater than --black ({black:F0})", $"--sat ({o.Sat.Value:F0}) trebuie sa fie mai mare decat --black ({black:F0})"));
 
+            o.Mode = ModeOf(o);
             return o;
         }
+
+        /// <summary>The mode the flags ask for, by R-003's precedence: the first match in a
+        /// fixed order, which is the mutual exclusion the requirement promises. A new mode is
+        /// one more line here, where its precedence belongs.</summary>
+        /// <param name="o">The parsed flags.</param>
+        /// <returns>The mode.</returns>
+        static Mode ModeOf(Options o)
+            => o.Lenses ? Mode.Lenses
+             : o.Synthetic != null ? Mode.Synthetic
+             : o.Against != null ? Mode.Against
+             : o.Smooth != null ? Mode.Smooth
+             : o.Histeq ? Mode.Histeq
+             : o.Expo ? Mode.Expo
+             : o.Light ? Mode.Light
+             : Mode.Structure;
 
         /// <summary>Records the parse error.</summary>
         /// <param name="message">The error, in the run's language, as the user will read it.</param>
@@ -251,7 +299,11 @@ namespace FlatCheck
             if (a == null || b == null) return false;
             string fa, fb;
             try { fa = System.IO.Path.GetFullPath(a); fb = System.IO.Path.GetFullPath(b); }
-            catch (Exception) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
+            catch (Exception e)
+            {
+                Log.Debug(e, "a path could not be normalised (" + a + ", " + b + "); compared as text");
+                return string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+            }
             var cmp = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             return string.Equals(fa, fb, cmp);
         }

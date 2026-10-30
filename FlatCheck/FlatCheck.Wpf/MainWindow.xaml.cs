@@ -19,13 +19,15 @@
 //
 // Everything that means a decision sits in MainViewModel. Here remain only the main window's
 // own dialogs and child windows (the folder dialog, the "Despre" window, the Siril run window,
-// the question when closing during a split) and the request to DWM to darken the title bar.
+// the question when closing during a split), the links the tabs show, opened in the browser,
+// and the request to DWM to darken the title bar.
 // The other dialogs live in their views (SirilRunWindow's stop question), or reach a
 // view-model only as a delegate it is given (the Netezire and Sintetic
 // tabs' overwrite question, MainViewModel.AskOnScreen by default), so that a test can answer
 // it.
 
 using System.Windows;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
@@ -117,8 +119,14 @@ namespace FlatCheck.Wpf
             new AboutWindow { Owner = this }.ShowDialog();
         }
 
+        /// <summary>A link clicked in a tab - the Structure tab's link to Adobe's DNG Converter
+        /// (R-113) - opened in the browser through <see cref="ExternalLink.Open"/>.</summary>
+        /// <param name="sender">The window, where the link's event arrives.</param>
+        /// <param name="e">The navigation; marked handled.</param>
+        void OpenLink(object sender, System.Windows.Navigation.RequestNavigateEventArgs e) => ExternalLink.Open(e);
+
         /// <summary>The diagnostic log of the user's actions in the main window (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("Window");
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         /// <summary>
         /// The button on the problem screen: starts the chosen script in siril-cli, modal, with

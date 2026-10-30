@@ -69,6 +69,23 @@ owner, who chose the second package the same day.
 
 ## Alternatives rejected
 
+(Corrected 2026-10-27: the Decision's table says "33, 33 and 42 lines lost of 4000" for the
+plain target closed between lines; the three runs lost 48, 33 and 42, the first 48, as R-112,
+the package notice and the plan say.)
+
+(Restated 2026-10-27: the Decision's "`Analysis/`, `Report/`, ... never log" means they write
+no log line and hold no logger; the lens catalog they call to read a profile may warn about an
+Adobe file it cannot read, which is the catalog's line, not theirs.)
+
+(Restated 2026-10-27: the Decision's "Without a configuration, which is the case of the tests
+and of any library use, every call writes nothing" holds for a library use only; the test
+assemblies configure a capture at Trace, as the Consequences say, so every test runs every log
+line on its path.)
+
+(Restated 2026-10-27: the Decision's "every exception, those recovered from included" excepts
+a cancellation the user asked for, a race at the window's close and the log's own probes,
+whose outcome is their own line; R-110 names the three.)
+
 - **`Microsoft.Extensions.Logging` with a provider.** Two packages for one file sink, and the
   owner asked for NLog by name.
 - **An `NLog.config` beside the executable.** One more file to ship and keep in step with the

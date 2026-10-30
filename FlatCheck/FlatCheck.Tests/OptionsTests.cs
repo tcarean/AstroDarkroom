@@ -24,6 +24,25 @@ namespace FlatCheck.Tests;
 /// </summary>
 public class OptionsTests
 {
+    /// <summary>R-003: the mode is decided once, in Parse, by the precedence of the flags;
+    /// the dispatch and the log read the same value (the review of 2026-10-27, D1).</summary>
+    [Theory]
+    [InlineData("--lenses --synthetic s.fit --histeq", "Lenses")]
+    [InlineData("--synthetic s.fit --against b.fit", "Synthetic")]
+    [InlineData("--against b.fit --smooth s.fit", "Against")]
+    [InlineData("--smooth s.fit --histeq", "Smooth")]
+    [InlineData("--histeq --expo", "Histeq")]
+    [InlineData("--expo --light", "Expo")]
+    [InlineData("--light", "Light")]
+    [InlineData("", "Structure")]
+    public void R003_TheModeIsDecidedOnceByThePrecedenceOfTheFlags(string flags, string expected)
+    {
+        var o = Options.Parse(("flat.fit " + flags).Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+        Assert.Null(o.Error);
+        Assert.Equal(Enum.Parse<Mode>(expected), o.Mode);
+    }
+
     [Fact]
     public void NoArgs_RequestsHelp()
     {

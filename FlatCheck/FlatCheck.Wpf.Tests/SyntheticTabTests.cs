@@ -81,6 +81,35 @@ public class SyntheticTabTests
     /// offers no candidate, and the note under the fields says why (R-106): before, the fields
     /// stayed empty without a word.
     /// </summary>
+    /// <summary>R-071: a lens whose Adobe file carries no vignetting model is in the list and
+    /// is refused when chosen, with the reason on the tab, not "The analysis failed"
+    /// (ADR 0071).</summary>
+    [Fact]
+    public async Task ALensWhoseFileHasNoVignettingModelIsRefusedOnTheTab()
+    {
+        using var f = Fixture();
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        const string Name = "Canon RF 100-400mm F5.6-8 IS USM + EXTENDER RF2x";
+        File.WriteAllText(Path.Combine(dir, "Tokina", $"Canon ({Name}) - RAW.lcp"),
+            LensProfileTestData.LcpWithoutVignette("Canon", Name, "RF100-400mm F5.6-8 IS USM + RF2x", "61182", "1", "200"));
+        var sources = ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
+        var vm = new SyntheticTabViewModel(null, () => sources, ImageLoader.LoadInfo);
+        vm.Attach(f.Session, CancellationToken.None);
+        await vm.Pending;
+        vm.Search = "EXTENDER";
+        vm.SelectedLens = vm.Lenses.Single();
+        vm.FStopText = "8";
+
+        await vm.RunAsync();
+
+        Assert.True(vm.HasError);
+        Assert.False(vm.HasResult);
+        Assert.Equal(SessionMessages.SyntheticRefusedTitle(), vm.ErrorTitle);
+        Assert.Contains("nu are profil de vignetare", vm.ErrorText);
+        Assert.False(File.Exists(vm.Target));
+    }
+
     [Fact]
     public async Task ARawThatCarriesNoLensLeavesTheFStopEmptyAndSaysWhy()
     {

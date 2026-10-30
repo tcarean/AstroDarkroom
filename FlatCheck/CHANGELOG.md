@@ -8,15 +8,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
-- A diagnostic log, for bug reports (R-109 to R-111, ADR 0070): each application writes
+- A diagnostic log, for bug reports (R-109 to R-112, ADR 0070): each application writes
   `log\flatcheck.log` or `log\FlatCheck.Wpf.log` beside its executable (or under
   `%LOCALAPPDATA%\FlatCheck\log` when that folder cannot be written), at most 5 files of 1 MiB
   each, rolled by NLog. It holds the arguments, the machine and the runtime, every file read, each
   run's inputs, figures, verdict and stage times, the lens profiles and candidates, every file
   written, the window's session, tab runs and actions, siril-cli's output, and every exception with
-  its stack, those the program recovers from included. English whatever `--lang` says; nothing
-  more on stdout or stderr. `FLATCHECK_LOG=off|error|warn|info|debug|trace` sets the level, Debug
-  by default.
+  its stack, those the program recovers from included (not a cancellation the user asked for, nor
+  a race at the window's close). The log's own words are English whatever `--lang` says, an
+  error's or a refusal's message as the user saw it; nothing more on stdout or stderr.
+  `FLATCHECK_LOG=off|fatal|error|warn|info|debug|trace` sets the level, Debug by default.
 - The lens is identified from a raw of any make, not only a Nikon (R-018, R-108, ADR 0068): the
   maker's lens ID is read by mount (Nikon's own field on a Nikon body, the MakerNote's on Canon,
   Sony, Pentax and the rest; Adobe's two-number Pentax IDs read as libraw does), and the lens's
@@ -69,6 +70,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   files now, `Golden/parity_*.txt`, captured on 2026-09-26 while `flatcheck.py` still agreed on
   every number (43 scenarios, 0 numeric differences). They carry the prototype's last confirmed
   figures into the gate; a re-approval there is a C#-only decision (ADR 0047).
+- The window's Structure tab says in red, at the top of the card "VIGNETTING against the lens
+  profile", when `flats/` holds a raw and no Adobe lens profile was found on the computer, and
+  how to get them: the free Adobe DNG Converter (a link to Adobe's page), or Lightroom Classic,
+  Lightroom or Photoshop's Camera Raw, then a restart; and the folders it looked in (R-113, ADR
+  0073). The console's report is unchanged.
 
 ### Changed
 
@@ -127,6 +133,24 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the rule was the camera's first word in the lens's mount or maker, and the verdict came from the
   Viltrox Z. The word stays (an Adobe file carries no mount; a camera lensfun does not know keeps
   it alone); the Z lenses go, on the range-only path and on the join beside an Adobe ID hit alike.
+- A `lensfun/` folder beside the executable that cannot be listed (a deny rule, broken
+  permissions) no longer fails the profile search, and with it the console's structure mode
+  with `--raw` or `--lens`, `--lenses` and `--synthetic` (exit 1) and the window's Structure and
+  Split runs with a raw in `flats/` ("The analysis failed"): the folder is left out whole, with
+  a Warn line in the log, as
+  an Adobe root that cannot be listed is, and the lens list says "the folder could not be read"
+  instead of "missing or empty" (R-115, ADR 0075).
+- The content of the window's tabs is in the UI Automation tree: a screen reader such as
+  Narrator, or a UI Automation tool, now reaches the controls inside a tab, where it found only
+  the seven tab headers before (R-114, ADR 0074).
+- `--synthetic` on a lens whose Adobe file carries no vignetting model (a lens measured for
+  distortion or colour only; 1275 of the 3531 files on the author's machine) refuses with the
+  reason and exit 1, where it failed with `ERROR: Object reference not set to an instance of an
+  object.` (R-071, ADR 0071). The window shows the same refusal.
+- The window: a session folder with a subfolder the user cannot list (a deny rule, a broken
+  junction) shows a card naming the folder and the error instead of seven empty tabs (R-080).
+- A subfolder of an Adobe profile folder without list rights loses its own files only; before,
+  the whole root's 3500 profiles were left out (R-107, ADR 0066 corrected).
 - The note under the illumination offset in the structure report no longer says the offset falls
   back toward 0 past a threshold: since ADR 0014 the row reads `undetermined` / `nedeterminat` once
   the peak leaves the frame, and the note now says so (R-013). Every structure golden changes in

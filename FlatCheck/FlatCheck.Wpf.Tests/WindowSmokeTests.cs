@@ -29,14 +29,20 @@
 // start. Now it would fail here.
 //
 // What is checked: the window is built, laid out, rendered into a bitmap, and produces no
-// binding error on the way. What is not checked: how it looks.
+// binding error on the way; for the Structure tab's message without Adobe (R-113), also that it
+// is on screen in its red above the rows or the gap, hidden with Adobe, and that its link leaves
+// the tab. What is not checked: how it looks.
 
 using FlatCheck.Tests;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 
 namespace FlatCheck.Wpf.Tests;
 
@@ -269,6 +275,135 @@ public class WindowSmokeTests
 
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
+    }
+
+    /// <summary>
+    /// The structure tab on a computer without Adobe software (R-113): the red paragraph, the
+    /// instructions, the link to the DNG Converter and the folders searched, above the lensfun
+    /// rows, and above the gap when there is no profile at all; with Adobe's files the block is
+    /// collapsed, instructions and link included. The result comes through Populate, with the
+    /// sources the run searched.
+    /// </summary>
+    [Fact]
+    public void R113_TheAdobeBlockRendersAboveTheRowsOrTheGapAndHidesWithAdobe()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, withAdobe: false);
+        var none = ProfileLocator.Locate(new[] { Path.Combine(ws.Dir, "no-adobe") }, Path.Combine(ws.Dir, "no-lensfun"));
+        var withAdobe = LensProfileTestData.Sources(ws);
+        var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
+        var master = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" }, FocalMm = 20, Camera = "Nikon D3300" };
+        var raw = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(),
+            FocalMm = 20,
+            FNumber = 2.8,
+            Camera = "NIKON D3300",
+            LensId = 139,
+            LensMinFocalMm = 11,
+            LensMaxFocalMm = 20,
+            LensMaxAperture = 2.8,
+        };
+        StructureOutcome compared = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw });
+        StructureOutcome noProfile = StructureRun.Compare(r, master, new StructureQuery { Sources = none, RawPath = "x.NEF", LoadInfo = _ => raw });
+        StructureOutcome adobe = StructureRun.Compare(r, master, new StructureQuery { Sources = withAdobe, RawPath = "x.NEF", LoadInfo = _ => raw });
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+
+            var vm = new StructureTabViewModel();
+            vm.Populate(compared, null, sources);
+            var view = new StructureView { DataContext = vm };
+            Render(view, h: 1800, name: "tab-structura-fara-adobe");
+            Assert.NotEmpty(vm.AdobeMissing);
+            Assert.True(vm.HasProfileRows);
+
+            // On screen, in the window's red for a message, above the first profile row.
+            TextBlock red = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.AdobeMissing);
+            Assert.Equal(Visibility.Visible, ((UIElement)VisualTreeHelper.GetParent(red)).Visibility);
+            Assert.True(red.ActualHeight > 0);
+            Assert.Equal(Color.FromRgb(0xF0, 0x85, 0x7E), ((SolidColorBrush)red.Foreground).Color);
+            TextBlock firstRow = Descendants(view).OfType<TextBlock>().First(t => t.Text == vm.ProfileRows[0].Lens);
+            Assert.True(red.TranslatePoint(new Point(), view).Y < firstRow.TranslatePoint(new Point(), view).Y);
+
+            // No profile at all: above the gap that says so.
+            vm.Populate(noProfile, null, none);
+            Render(view, h: 1800, name: "tab-structura-fara-profile");
+            Assert.NotEmpty(vm.ProfileGap);
+            red = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.AdobeMissing);
+            TextBlock gap = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.ProfileGap);
+            Assert.True(red.ActualHeight > 0);
+            Assert.True(red.TranslatePoint(new Point(), view).Y < gap.TranslatePoint(new Point(), view).Y);
+
+            // With Adobe's files the whole block is collapsed, the constant instructions too.
+            vm.Populate(adobe, null, withAdobe);
+            Render(view, h: 1800);
+            Assert.Empty(vm.AdobeMissing);
+            TextBlock install = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.AdobeInstall);
+            Assert.Equal(Visibility.Collapsed, ((UIElement)VisualTreeHelper.GetParent(install)).Visibility);
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+    }
+
+    /// <summary>
+    /// The card's link carries Adobe's DNG Converter page, and its RequestNavigate leaves the
+    /// tab unhandled, so it reaches the window around it (R-113). A stand-in root catches it
+    /// here: MainWindow's own handler would open the browser.
+    /// </summary>
+    [Fact]
+    public void R113_TheCardsLinkCarriesAdobesPageOutOfTheTab()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, withAdobe: false);
+        var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
+        StructureOutcome plain = new(r, null, null, null);
+
+        _sta.Invoke(() =>
+        {
+            var vm = new StructureTabViewModel();
+            vm.Populate(plain, null, sources);
+            var view = new StructureView { DataContext = vm };
+            var root = new Border { Child = view };
+            Uri? reached = null;
+            root.AddHandler(Hyperlink.RequestNavigateEvent, new RequestNavigateEventHandler((_, e) => { reached = e.Uri; e.Handled = true; }));
+            Render(root, h: 1800);
+
+            Hyperlink link = Assert.Single(Descendants(view).OfType<TextBlock>().SelectMany(t => t.Inlines.OfType<Hyperlink>()));
+            Assert.Equal(StructureReport.AdobeDngConverterUrl, link.NavigateUri.AbsoluteUri);
+            link.RaiseEvent(new RequestNavigateEventArgs(link.NavigateUri, null) { RoutedEvent = Hyperlink.RequestNavigateEvent, Source = link });
+            Assert.Equal(link.NavigateUri, reached);
+        });
+    }
+
+    /// <summary>
+    /// The main window catches the links its tabs raise and opens them through ExternalLink
+    /// (R-113). A text check: raising the event in a real window would start the browser.
+    /// </summary>
+    [Fact]
+    public void R113_TheMainWindowOpensTheLinksItsTabsRaise()
+    {
+        string dir = Path.Combine(RepoDir(), "FlatCheck.Wpf");
+
+        Assert.Contains("Hyperlink.RequestNavigate=\"OpenLink\"", File.ReadAllText(Path.Combine(dir, "MainWindow.xaml")));
+        Assert.Contains("RequestNavigateEventArgs e) => ExternalLink.Open(e);", File.ReadAllText(Path.Combine(dir, "MainWindow.xaml.cs")));
+    }
+
+    /// <summary>The FlatCheck folder, two levels above this file, as in IconTests.</summary>
+    static string RepoDir([CallerFilePath] string thisFile = "")
+        => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
+
+    /// <summary>Every element under <paramref name="node"/> in the visual tree, depth
+    /// first.</summary>
+    static IEnumerable<DependencyObject> Descendants(DependencyObject node)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(node, i);
+            yield return child;
+            foreach (var d in Descendants(child)) yield return d;
+        }
     }
 
     /// <summary>

@@ -27,6 +27,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using NLog;
 using static FlatCheck.Ui;
 
 namespace FlatCheck
@@ -105,7 +106,7 @@ namespace FlatCheck
         /// <summary>
         /// Loads the file and, unless it is refused, smooths it at the given scale and writes
         /// the report; on a refusal writes only the refusal's text. Writes no file
-        /// (<see cref="WriteFits"/> does). Throws what <see cref="ImageLoader.Load"/> throws.
+        /// (<see cref="WriteFits"/> does). Throws what <see cref="ImageLoader.Load(string)"/> throws.
         /// </summary>
         /// <param name="path">A FITS master.</param>
         /// <param name="scalePx">The smoothing scale, the kernel's sigma in sensor pixels
@@ -114,47 +115,51 @@ namespace FlatCheck
         /// <returns>The smoothing with its two maps, or the refusal.</returns>
         internal static SmoothRunOutcome Execute(string path, double scalePx, TextWriter report)
         {
+            // The clock starts before the load, so a refusal and a file that does not load both
+            // leave the run's start line and the load stage (R-110).
+            using RunClock clock = RunClock.Start(Log, "smooth", Inputs(path, scalePx));
             LoadedFrame f = ImageLoader.Load(path);
-            string refusal = Refusal(f, path);
+            clock.Lap("load");
+            string refusal = Refusal(f, path, out string why);
             if (refusal != null)
             {
-                Log.Info("smooth refused " + path + ": " + RefusalKind(f));
                 report.WriteLine();
                 report.WriteLine(refusal);
+                clock.Done("refused: " + why);
                 return new SmoothRunOutcome(null, null, null, null, refusal);
             }
-            return Execute(f, path, scalePx, report);
+            return Execute(f, path, scalePx, report, clock);
         }
 
         /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger(nameof(SmoothRun));
+        static readonly Logger Log = LogManager.GetLogger(nameof(SmoothRun));
 
-        /// <summary>Why a frame is refused, in English, for the log.</summary>
-        /// <param name="f">A frame <see cref="Refusal"/> refused.</param>
-        /// <returns>The reason.</returns>
-        static string RefusalKind(LoadedFrame f)
-            => f.Cards.Count == 0 ? "a raw, which has no FITS cards to write back" : "a cube of " + LogText.Int(f.Planes) + " planes";
+        /// <summary>The run's inputs for its start line.</summary>
+        /// <param name="path">The file.</param>
+        /// <param name="scalePx">The smoothing scale.</param>
+        /// <returns>The text.</returns>
+        static string Inputs(string path, double scalePx) => path + " scalePx=" + LogText.Num(scalePx);
 
         /// <summary>
         /// The scale proposal: loads, refuses what Execute refuses too, otherwise runs the
         /// advisor and writes its table. The frame stays in the result, so a smoothing at the
         /// proposed scale starts without a second read of the 96 MB file. Throws what
-        /// <see cref="ImageLoader.Load"/> throws.
+        /// <see cref="ImageLoader.Load(string)"/> throws.
         /// </summary>
         /// <param name="path">A FITS master.</param>
         /// <param name="report">Where the advice's table is written.</param>
         /// <returns>The proposal with the loaded frame, or the refusal.</returns>
         internal static SmoothAdviceOutcome Advise(string path, TextWriter report)
         {
-            RunClock clock = RunClock.Start(Log, "smooth advice", path);
+            using RunClock clock = RunClock.Start(Log, "smooth advice", path);
             LoadedFrame f = ImageLoader.Load(path);
             clock.Lap("load");
-            string refusal = Refusal(f, path);
+            string refusal = Refusal(f, path, out string why);
             if (refusal != null)
             {
                 report.WriteLine();
                 report.WriteLine(refusal);
-                clock.Done("refused: " + RefusalKind(f));
+                clock.Done("refused: " + why);
                 return new SmoothAdviceOutcome(null, null, refusal);
             }
             SmoothScaleAdvice a = SmoothScaleAdvisor.Advise(f.Image);
@@ -174,13 +179,27 @@ namespace FlatCheck
         /// </summary>
         /// <param name="f">The loaded frame.</param>
         /// <param name="path">Its path, quoted in the refusal.</param>
+        /// <param name="why">The reason in the log's words, English; null when not
+        /// refused.</param>
         /// <returns>The refusal's text, or null when the frame can be smoothed.</returns>
-        static string Refusal(LoadedFrame f, string path)
-            => f.Cards.Count == 0 ? SmoothReport.RefusalRaw(path)
-             : f.Planes > 1 ? SmoothReport.RefusalCube(path, f.Planes)
-             : null;
+        static string Refusal(LoadedFrame f, string path, out string why)
+        {
+            if (f.Cards.Count == 0)
+            {
+                why = "a raw, which has no FITS cards to write back";
+                return SmoothReport.RefusalRaw(path);
+            }
+            if (f.Planes > 1)
+            {
+                why = "a cube of " + LogText.Int(f.Planes) + " planes";
+                return SmoothReport.RefusalCube(path, f.Planes);
+            }
+            why = null;
+            return null;
+        }
 
-        /// <summary>The smoothing of a frame already loaded and already accepted.</summary>
+        /// <summary>The smoothing of a frame already loaded and already accepted (the
+        /// console's <c>--scale auto</c>, after <see cref="Advise"/>).</summary>
         /// <param name="f">The loaded frame, a single-plane FITS (not refused).</param>
         /// <param name="path">Its path, for the report.</param>
         /// <param name="scalePx">The kernel's sigma, sensor pixels.</param>
@@ -188,7 +207,20 @@ namespace FlatCheck
         /// <returns>The smoothing with its two maps.</returns>
         internal static SmoothRunOutcome Execute(LoadedFrame f, string path, double scalePx, TextWriter report)
         {
-            RunClock clock = RunClock.Start(Log, "smooth", path + " scalePx=" + LogText.Num(scalePx));
+            using RunClock clock = RunClock.Start(Log, "smooth", Inputs(path, scalePx));
+            return Execute(f, path, scalePx, report, clock);
+        }
+
+        /// <summary>The smoothing itself, on a clock already started by one of the two
+        /// overloads above, so each run has one start line.</summary>
+        /// <param name="f">The loaded frame, accepted.</param>
+        /// <param name="path">Its path, for the report.</param>
+        /// <param name="scalePx">The kernel's sigma, sensor pixels.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <param name="clock">The run's clock, started.</param>
+        /// <returns>The smoothing with its two maps.</returns>
+        static SmoothRunOutcome Execute(LoadedFrame f, string path, double scalePx, TextWriter report, RunClock clock)
+        {
             var r = SmoothAnalyzer.Analyze(f.Image, scalePx);
             clock.Lap("analyze");
             if (Log.IsDebugEnabled) Log.Debug("smoothing of " + path + ": " + LogText.Smooth(r));

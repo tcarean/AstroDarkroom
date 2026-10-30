@@ -39,10 +39,10 @@ namespace FlatCheck
     {
         internal readonly IReadOnlyList<string> AdobeDirectories;
         internal readonly int AdobeFiles;
-        internal readonly int AdobeFilesSkipped;
         internal readonly int AdobeFilesDuplicate;
         internal readonly string LensfunDirectory;
         internal readonly bool LensfunPresent;
+        internal readonly bool LensfunUnreadable;
         internal readonly string LensfunVersion;
         internal readonly LensCatalog Catalog;
         internal readonly LensfunData Lensfun;
@@ -50,25 +50,27 @@ namespace FlatCheck
         /// <summary>The result of a search for profiles.</summary>
         /// <param name="adobeDirs">The folders searched for .lcp files.</param>
         /// <param name="adobeFiles">How many .lcp files were kept, each relative name once.</param>
-        /// <param name="adobeSkipped">How many of them could not be read.</param>
         /// <param name="adobeDuplicate">How many .lcp files were skipped because an earlier folder
         /// held the same relative name.</param>
         /// <param name="lensfunDir">The lensfun folder looked at.</param>
         /// <param name="lensfunPresent">Whether it holds any .xml file.</param>
+        /// <param name="lensfunUnreadable">Whether the folder is there but could not be listed
+        /// (a deny rule, broken permissions): then no lens of it was read, its version file was
+        /// not read either and <paramref name="lensfunPresent"/> is false (R-115).</param>
         /// <param name="lensfunVersion">The text of its version file; null when there is
-        /// none.</param>
+        /// none, or when the folder could not be listed.</param>
         /// <param name="catalog">Every lens found, from both sources.</param>
         /// <param name="lensfun">The lensfun database read, cameras included.</param>
-        internal ProfileSources(IReadOnlyList<string> adobeDirs, int adobeFiles, int adobeSkipped, int adobeDuplicate,
-                                string lensfunDir, bool lensfunPresent, string lensfunVersion,
+        internal ProfileSources(IReadOnlyList<string> adobeDirs, int adobeFiles, int adobeDuplicate,
+                                string lensfunDir, bool lensfunPresent, bool lensfunUnreadable, string lensfunVersion,
                                 LensCatalog catalog, LensfunData lensfun)
         {
             AdobeDirectories = adobeDirs;
             AdobeFiles = adobeFiles;
-            AdobeFilesSkipped = adobeSkipped;
             AdobeFilesDuplicate = adobeDuplicate;
             LensfunDirectory = lensfunDir;
             LensfunPresent = lensfunPresent;
+            LensfunUnreadable = lensfunUnreadable;
             LensfunVersion = lensfunVersion;
             Catalog = catalog;
             Lensfun = lensfun;
@@ -153,11 +155,12 @@ namespace FlatCheck
             => Locate(DefaultAdobeDirectories(), DefaultLensfunDirectory());
 
         /// <summary>
-        /// Searches the given places in order: every .lcp under the Adobe folders (by file name,
-        /// read later; a name of an unexpected form is read now), and the lensfun folder's XML. A
-        /// missing folder is skipped, an unreadable .lcp counted, and a file whose path relative
-        /// to its folder was already found under an earlier folder is skipped and counted as a
-        /// duplicate.
+        /// Searches the given places in order: every .lcp under the Adobe folders, by file name
+        /// only (the file is read when its lens is asked for; <see cref="LensCatalog"/> logs
+        /// one it cannot read), and the lensfun folder's XML. A missing folder is skipped, one
+        /// that cannot be listed is left out whole with a Warn line (the lensfun one is then
+        /// marked unreadable), and a file whose path relative to its folder was already found
+        /// under an earlier folder is skipped and counted as a duplicate.
         /// </summary>
         /// <param name="adobeDirs">The folders to search for .lcp files, recursively, first
         /// wins.</param>
@@ -167,20 +170,31 @@ namespace FlatCheck
         {
             var clock = Stopwatch.StartNew();
             // Adobe: only the file names - 3531 on the author's machine, 36 s to parse them all.
-            // A name that does not have the expected form is parsed on the spot, so that it is
-            // not missing. Lightroom's folder repeats the DNG Converter's files under the same
-            // relative names (ADR 0066): the catalogue would list and parse each twice otherwise.
+            // FromName reads any name (a stub, never null). Lightroom's folder repeats the DNG
+            // Converter's files under the same relative names (ADR 0066): the catalogue would
+            // list and parse each twice otherwise.
             var profiles = new List<LensProfile>();
             var stubs = new List<AdobeProfileFile>();
             var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            int files = 0, skipped = 0, duplicates = 0;
+            int files = 0, duplicates = 0;
             foreach (string dir in adobeDirs)
             {
                 if (!Directory.Exists(dir)) continue;
-                IEnumerable<string> found;
-                // The enumeration is lazy and throws on a subfolder without list rights; the files
-                // found before it stay, the rest of this folder is lost, the next folder is searched.
-                try { found = Directory.EnumerateFiles(dir, "*.lcp", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal).ToList(); }
+                List<string> found;
+                // A subfolder the user may not list is skipped by the enumeration itself
+                // (IgnoreInaccessible), so the rest of the root is still read; AttributesToSkip
+                // is cleared because the default would leave out hidden and system files, which
+                // the SearchOption overload never did. IgnoreInaccessible would also skip the
+                // root itself in silence (measured 2026-10-30: files=0 and no line), so the root
+                // is opened once without it first: a root the user may not list, one that
+                // vanished or an I/O error throws there, the whole root is left out with a
+                // line, and the next folder is searched.
+                var options = new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true, AttributesToSkip = 0 };
+                try
+                {
+                    Directory.EnumerateFileSystemEntries(dir).Any();
+                    found = Directory.EnumerateFiles(dir, "*.lcp", options).OrderBy(f => f, StringComparer.Ordinal).ToList();
+                }
                 catch (Exception e)
                 {
                     Log.Warn(e, "the Adobe folder " + dir + " could not be listed; its profiles are left out");
@@ -190,22 +204,36 @@ namespace FlatCheck
                 {
                     if (!seen.Add(Path.GetRelativePath(dir, f))) { duplicates++; continue; }
                     files++;
-                    AdobeProfileFile stub = AdobeProfileFile.FromName(f);
-                    if (stub != null) { stubs.Add(stub); continue; }
-                    try { profiles.AddRange(LcpReader.Read(f)); }
-                    catch (Exception e)
-                    {
-                        Log.Debug(e, "the Adobe profile " + f + " could not be read; it is counted as skipped");
-                        skipped++;
-                    }
+                    stubs.Add(AdobeProfileFile.FromName(f));
                 }
             }
-            bool lfPresent = Directory.Exists(lensfunDir) && Directory.EnumerateFiles(lensfunDir, "*.xml").Any();
-            LensfunData lf = lfPresent ? LensfunReader.ReadDirectory(lensfunDir) : LensfunData.Empty;
+            // The lensfun folder goes the way of an Adobe root: one the user may not list (a
+            // deny rule, broken permissions) is left out whole, with a Warn line, and the search
+            // goes on with the Adobe half; the sources then say the folder could not be read,
+            // which is not "missing or empty" (R-115, ADR 0075). The read is inside the same try,
+            // so a folder that turns unlistable between the check and the read lands in the
+            // same state.
+            bool lfPresent = false, lfUnreadable = false;
+            LensfunData lf = LensfunData.Empty;
+            try
+            {
+                lfPresent = Directory.Exists(lensfunDir) && Directory.EnumerateFiles(lensfunDir, "*.xml").Any();
+                if (lfPresent) lf = LensfunReader.ReadDirectory(lensfunDir);
+            }
+            catch (Exception e)
+            {
+                Log.Warn(e, "the lensfun folder " + lensfunDir + " could not be listed; its lenses are left out");
+                lfPresent = false;
+                lfUnreadable = true;
+                lf = LensfunData.Empty;
+            }
             profiles.AddRange(lf.Profiles);
+            // A file inside a folder the user may not list can still be opened by name (a deny
+            // on listing does not deny traverse, measured 2026-10-30), so the version is not
+            // read for an unreadable folder: it is left out whole, version included.
             string version = null;
             string vf = Path.Combine(lensfunDir, LensfunVersionFile);
-            if (File.Exists(vf))
+            if (!lfUnreadable && File.Exists(vf))
             {
                 try { version = File.ReadAllText(vf).Trim(); }
                 catch (Exception e)
@@ -214,13 +242,13 @@ namespace FlatCheck
                     version = null;
                 }
             }
-            var sources = new ProfileSources(adobeDirs, files, skipped, duplicates, lensfunDir, lfPresent, version, new LensCatalog(profiles, stubs), lf);
+            var sources = new ProfileSources(adobeDirs, files, duplicates, lensfunDir, lfPresent, lfUnreadable, version, new LensCatalog(profiles, stubs), lf);
             if (Log.IsInfoEnabled)
                 Log.Info("profiles: adobe folders " + LogText.List(adobeDirs.Select(d => d + (Directory.Exists(d) ? "" : " (missing)")))
-                         + " files=" + LogText.Int(files) + " skipped=" + LogText.Int(skipped) + " duplicate=" + LogText.Int(duplicates)
-                         + "; lensfun " + (lfPresent ? "present" : "absent") + " version=" + LogText.Str(version?.Split('\n')[0].Trim())
+                         + " files=" + LogText.Int(files) + " duplicate=" + LogText.Int(duplicates)
+                         + "; lensfun " + (lfPresent ? "present" : lfUnreadable ? "unreadable" : "absent") + " version=" + LogText.Str(version?.Split('\n')[0].Trim())
                          + " at " + lensfunDir + "; lenses adobe=" + LogText.Int(sources.AdobeLenses) + " lensfun=" + LogText.Int(sources.LensfunLenses)
-                         + " in " + LogText.Int(clock.ElapsedMilliseconds) + " ms");
+                         + " in " + LogText.Ms(clock.ElapsedMilliseconds));
             return sources;
         }
     }

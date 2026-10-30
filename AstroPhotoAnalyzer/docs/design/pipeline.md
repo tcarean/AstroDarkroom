@@ -3,6 +3,7 @@
 > Moved unchanged on 2026-10-02 (ADR 0001) from `docs/specification.md` §2, which no longer
 > exists. The behaviour is stated with IDs in `../requirements.md`; the structure is ADR 0007,
 > the raster ADR 0010. **Covers:** `AstroPhotoAnalyzer.Core/Runs/AnalysisRun.cs`,
+> `AstroPhotoAnalyzer.Core/Runs/ProofRun.cs`,
 > `AstroPhotoAnalyzer.Core/Runs/CurveRun.cs` and the solution `AstroPhotoAnalyzer.sln`. A change to the code this describes means this note is
 > updated in the same task, or deleted with the decision it explains.
 
@@ -77,6 +78,15 @@ derives the screen set from a print set by dropping them, which is how the windo
 purpose without computing anything. `CurveExport.Save` is the one
 place that writes an image: it refuses the input's own path, then hands the raster, the curve
 and the `HISTORY` text to `FitsWriter` (`input.md`).
+
+### The third run (`Runs/ProofRun.cs`, ADR 0066)
+
+`ProofRun.Prepare(AnalysisResult)` and `ProofRun.Render(set, intent, simulate)` are the soft
+proof's run, started by the window beside the curves' once the tabs are filled and again on a
+change of intent or of the simulation; the console never calls it. Prepare opens the profile the
+Dmax came from, reduces the image to `ProofMaxSide` and marks the pixels outside the paper's
+gamut once (the rule of R-144); Render proofs the reduction through the intent's table, built on
+its first use and kept on the profile. The chain itself is in `soft-proof.md`.
 
 Timing (Release, 2026-10-05): the two validation cases V-008 and V-009, each an analysis of a
 23 MP image, a curve run and a save of the full image, take 85 s together.

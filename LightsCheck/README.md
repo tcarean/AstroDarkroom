@@ -328,6 +328,8 @@ The analysis starts by itself, the same as `lightscheck <folder>`, with a progre
   on the Summary tab.
 - **Report**: the console's text, the same to the byte.
 
+A screen reader such as Narrator reaches what each tab shows, not only the tabs' names.
+
 The top bar holds the inputs, read when a folder is opened: `PIXEL (um)`, the pixel size, blank
 by default, when the files' `XPIXSZ` or the raw's own figure decide, as for `--pixel`; `THREADS`, how many frames are measured in parallel
 (empty = half the cores); and `EAST` and `NORTH`, the SynScan arrows that move the mount east and

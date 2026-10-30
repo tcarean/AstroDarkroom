@@ -192,10 +192,24 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   under `%APPDATA%` in Adobe's layout (`LensProfiles\1.0\<maker>\`) never collides with an
   installed one by that rule, which is what one wants: it is theirs; a copy put directly under
   `LensProfiles\<maker>\` with an installed file's name is its duplicate, and the installed one
-  wins. The enumeration of one folder is lazy: an exception part-way (a subfolder without list
-  rights) is caught per folder, the files found before it stay, the rest of that folder is
-  lost, and the next folder is searched; `AdobeAppDirectories` swallows the same for the
-  Program Files root. Each such loss is a Warn line in the diagnostic log (`logging.md`). `--profiles <dir>` replaces the whole list.
+  wins. The enumeration of one folder skips a subfolder the user may not list
+  (`EnumerationOptions.IgnoreInaccessible`, with `AttributesToSkip` cleared so hidden and system
+  files are still read), so only that subfolder's files are lost and the rest of the root is
+  read; a root the user may not list (opened once without `IgnoreInaccessible` first, which
+  would otherwise skip it in silence), one that vanishes or an I/O error is lost whole, with a Warn
+  line in the diagnostic log (`logging.md`), and the next folder is searched;
+  `AdobeAppDirectories` swallows the same for the Program Files root. (Until 2026-10-27 the
+  whole root was lost on a subfolder without list rights, though this note said otherwise: the
+  review's A7.) The lensfun folder goes the same way: one that is there but cannot be listed
+  is left out whole with its Warn line, `LensfunPresent` false, `LensfunUnreadable` true and
+  `LensfunVersion` null (the version file could still be opened by name past a deny on
+  listing, so it is skipped on purpose), and `SourcesSummary` ends its line with "the folder
+  could not be read" rather than "missing or empty" (R-115, ADR 0075); the read of its files is
+  inside the same `try` as the check, so a folder that turns unlistable between the two lands
+  in the same state. Nothing else looks at the flag: the Structure card never names lensfun
+  when an Adobe file was found, and R-113's first sentence covers the case without one. In the
+  window the load succeeded, so `ProfileCatalog` keeps it: a permission fixed afterwards needs
+  a restart. `--profiles <dir>` replaces the whole list.
 - **Search**: every word of the text must appear in name + maker + mount (+ known
   aliases), case-insensitive; empty text lists everything; `--source` restricts.
 - **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the
@@ -548,6 +562,8 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   mounts and a lensfun file with the Tokina, a lens without vignetting and the D3300
   camera; the golden files `synthetic_written`, `synthetic_lensfun`,
   `synthetic_ambiguous`, `lenses`, `against_radial` pin the console output on them.
+  `Sources(..., withAdobe: false)` searches an Adobe folder that does not exist beside the same
+  lensfun file: a computer without Adobe software (R-113).
 
 ## 11. The master against the profiles, inside the structure mode
 
@@ -583,6 +599,9 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
   0065). Since 2026-10-26 the lens ID is read by mount and the camera's name of the lens is the
   first key (ADR 0068, section 10), so a Canon with an EF lens is identified, not reported as a
   raw that says nothing; a raw with an ID or a name is never this case.
+- A search that found no Adobe file is said on the window's card only, above the rows or the
+  gap, with what to install (R-113, ADR 0073); the texts are in `modes-structure.md`, the card
+  in `two-applications.md`.
 
 **Measured** (corner, stops; "nearest" is the profile that gives the verdict):
 

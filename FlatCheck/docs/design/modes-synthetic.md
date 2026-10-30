@@ -59,7 +59,10 @@ the first key, on Canon, Sony and Pentax too, are ADR 0068 (the mechanics in
 **The file and the list.** Output: float, 1.0 on the axis, the reference frame's cards
 minus the structural ones (`BAYERPAT` included, so Siril takes it as a CFA master),
 `HISTORY` naming source, lens, profile and model; nothing renormalised. Exit 0 written,
-1 refused (cube, or focal / f-stop / crop unknown), 2 the lens could not be chosen.
+1 refused (cube, focal / f-stop / crop unknown, or a lens whose file carries no vignetting
+model: the lens is listed by its file's name and only parsed when chosen, so the run parses
+its profiles before building and refuses an empty list, ADR 0071), 2 the lens could not be
+chosen.
 `--lenses` lists lenses with focals, apertures and distances (`SyntheticReport.LensDetails`:
 metres ascending, then "infinit", then "nespecificata" for the collapsed lensfun pair, plus
 the profile count) only when the filtered list is at most `SyntheticReport.ListDetailsMax`

@@ -91,7 +91,8 @@ over its surroundings, so the grain of a stretched sky is not counted as one; fa
 left out with it, and the resolution is the bright stars'.
 
 **On the right, seven tabs.** Most figures have a line under them saying what they measure and,
-where one applies, the threshold they are judged by.
+where one applies, the threshold they are judged by. A screen reader such as Narrator reaches
+what each tab shows, not only the tabs' names.
 
 | Tab | What it shows |
 | --- | --- |
@@ -102,6 +103,7 @@ where one applies, the threshold they are judged by.
 | **Colour** | The background colour, R / G / B, taken on the sky patches, with its chroma in L\*a\*b\*, which decides the cast, and the two level figures that name its direction; the four corners and the four edges against it, each on its own sky pixels, a flagged one marked "! coloured" or "! neutral"; how to read them. |
 | **Preview** | The centre at 100 % and 200 %, the four corners at 100 %, the whole frame, the print simulation (at the extra target background, or else at the recommended one, when it is not the image as it is) and, when the target ratio cuts, the crop, each with what to look for in it; the rule of screen against paper, with the step back computed for this image. |
 | **Curves Editing** | Suggested contrast curves, computed with the analysis: see below. |
+| **Soft proof** | What the paper would do to the image, through its ICC profile, the way Lightroom soft-proofs: see below. |
 
 **Save the report...** writes `Report.txt` beside the image by default (`Raport.txt` in
 Romanian), byte for byte what the console writes with `-o`, and says under the buttons where it
@@ -167,6 +169,37 @@ Two buttons under the image:
   it is written from the bottom up with `ROWORDER = 'BOTTOM-UP'`, so that Siril shows the new
   file exactly as it was analysed. The input image is never modified, and saving over it is
   refused.
+
+### Soft proofing
+
+The **Soft proof** tab shows what the paper would do to the image, through the ICC printer
+profile chosen for the Dmax (**From ICC profile...**); without one it shows only a sentence
+saying so. It is modelled on Lightroom Classic's soft proofing and, like it, is for looking only:
+nothing is edited, nothing is written. The proof is computed right after the analysis.
+
+- **Intent**: **Perceptual** (the profile's own perceptual table, Lightroom's default),
+  **Relative** (the colorimetric table with black point compensation, so the image's black lands
+  on the paper's black, as Lightroom's Relative), and a third Lightroom does not have,
+  **Relative, no black point compensation**: every tone darker than the paper's black prints as
+  that black, which is what the **Tones** tab counts as "under paper black".
+- The paper's white shows as its own colour and its black as its own grey, always: the print
+  as it will look beside a white. The margin around the image is that white by default, so the
+  eye has it to adapt to.
+- **Paper gamut warning** paints in red the pixels whose colour the paper does not reproduce, by
+  the rule of the **Curves Editing** tab, so its share, in the legend under the image, is the
+  same figure.
+- **Original** shows the image as it is inside the same margin, for comparison.
+- **Margin**: **Paper white** by default; the others are fixed greys, white to black.
+- In the tab and in the window, the mouse wheel zooms around the cursor, up to 8:1 at 100 % display scaling, dragging
+  with the left button pans, and a double click fits the image again.
+- **Full screen** opens the same proof maximised, with the same controls at the top and the
+  margin filling the window; the keys G and O toggle the two boxes, I moves to the next
+  intent, Esc closes.
+
+Under the image: the profile's name, its paper white in L\*a\*b\* (what the image's white
+becomes), its paper black in L\* and Dmax, and the warning's share.
+The pixels and the screen are assumed sRGB, as everywhere in the tool; the proof is a reduced
+copy. The controls keep their state from one image to the next and start afresh with the window.
 
 ## The console
 
@@ -417,5 +450,5 @@ compatible with the GPL:
 | Component | What it does here | Licence |
 | --- | --- | --- |
 | SixLabors.ImageSharp | reads TIFF, PNG and JPEG, and encodes the JPEGs and the 8-bit TIFF of the compression table | Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software) |
-| Wacton.Unicolour | evaluates the tables of a printer ICC profile, for the paper's Dmax and for the out-of-gamut figure of the Curves Editing tab | MIT |
+| Wacton.Unicolour | evaluates the tables of a printer ICC profile, for the paper's Dmax, for the out-of-gamut figure of the Curves Editing tab and for the Soft proof tab | MIT |
 | Lynds' Catalogue of Dark Nebulae (data, not code) | the catalogue of dust clouds (LDN, 1962) by which the clouds of a plate-solved FITS are recognized | published data (Lynds 1962, ApJS 7, 1), the ADC/NASA version of 1979 distributed by CDS/VizieR as VII/7A; citing the source is the only condition |

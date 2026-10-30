@@ -26,6 +26,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Windows;
+using NLog;
 
 namespace FlatCheck.Wpf
 {
@@ -39,7 +40,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// Starts the diagnostic log first, so a failure while the resources load is in it too
-        /// (R-109 to R-111), then sets the interface language from the command line (R-101)
+        /// (R-109 to R-112), then sets the interface language from the command line (R-101)
         /// before anything else: the constructor runs before App.xaml's resources and the first
         /// view load, and both may carry texts.
         /// </summary>
@@ -47,14 +48,20 @@ namespace FlatCheck.Wpf
         {
             string[] all = Environment.GetCommandLineArgs();
             string[] args = all.Length > 1 ? all[1..] : Array.Empty<string>();
-            LogSetup.Apply("FlatCheck.Wpf", args);
+            // The log never stops the window: without it the session opens all the same.
+            try { LogSetup.Apply("FlatCheck.Wpf", args); }
+            catch (Exception) { }
             DispatcherUnhandledException += (s, e) =>
                 LogSetup.Fatal(e.Exception, "unhandled exception on the window's thread, the window closes");
             _unknownLanguage = ApplyCommandLine(args);
         }
 
-        /// <summary>The diagnostic log: the start's choices.</summary>
-        static readonly NLog.Logger Log = NLog.LogManager.GetLogger("App");
+        /// <summary>The diagnostic log: the start's choices. Fetched on use, not a static
+        /// field: this is the type whose constructor calls <see cref="LogSetup.Apply"/>, and a
+        /// logger created by its type initialiser could make NLog load a stray
+        /// <c>NLog.config</c> before the configuration is set (ADR 0072; the same reason as
+        /// <c>LogSetup</c>'s own logger).</summary>
+        static Logger Log => LogManager.GetLogger(Loggers.App);
 
         /// <summary>Forces invariant numbers, shows the main window, says a --lang it did not
         /// understand, and starts the window on the command line's folder.</summary>
@@ -86,7 +93,9 @@ namespace FlatCheck.Wpf
         protected override void OnExit(ExitEventArgs e)
         {
             base.OnExit(e);
-            LogSetup.Close(e.ApplicationExitCode);
+            // Guarded like Apply: the log never stops the window, on the way out either.
+            try { LogSetup.Close(e.ApplicationExitCode); }
+            catch (Exception) { }
         }
 
         /// <summary>

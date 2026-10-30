@@ -61,8 +61,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version
 - `artifacts/X.Y.Z/wpf/FlatCheck.Wpf.exe`, with its files.
 
 Each has a `lensfun/` folder beside it: copy it along with the executable. Without it everything
-works, but the list of lens profiles holds only Adobe's, and says which folder it looked in. The
-two `dotnet publish` commands the script runs are under "Development".
+works, but the list of lens profiles holds only Adobe's, and says which folder it looked in. A
+folder that is there but cannot be read (a permission) counts the same, and the list says so:
+"the folder could not be read"; the diagnostic log has the reason, and the window looks for the
+profiles only once while it runs, so fix the permission and restart it. The two `dotnet publish`
+commands the script runs are under "Development".
 
 **What FlatCheck works with:**
 
@@ -827,9 +830,11 @@ The severity is monotonic, so "anything but 0" means "not clean, look". The mode
 - `--smooth`: 0 when it wrote the smoothed flat and the maps, 1 when it refused the input (a raw, a
   colour cube) or could not write; with `--scale auto`, 2 when it wrote nothing because there is
   nothing to smooth or the scale is undetermined.
-- `--synthetic`: 0 when it wrote the flat, 1 when it refused the reference or could not learn the
-  focal length, the aperture or the crop, 2 when the lens could not be chosen (none, or too many:
-  the list is printed).
+- `--synthetic`: 0 when it wrote the flat, 1 when it refused the reference, could not learn the
+  focal length, the aperture or the crop, or the lens chosen has no vignetting profile (Adobe ships
+  files for some lenses with only their distortion or colour measured; they are in the list, and
+  are refused when chosen), 2 when the lens could not be chosen (none, or too many: the list is
+  printed).
 - `--lenses`: always 0.
 
 `--against` exits like the structure mode, on the verdict of the *difference*. Structure with
@@ -1006,6 +1011,10 @@ says it has no series.
 If the master is in neither place, the window does not open the folder and says what to do: run the
 preprocessing script in Siril. That file is the structure mode's input, by convention.
 
+If the folder is there but one of its folders cannot be read (permissions that deny listing it, a
+link to a drive that is gone), the window says so in a card, with the folder and the system's
+message, instead of opening empty tabs; the details are in the log (see "Logs").
+
 #### Running the Siril script from the window
 
 On that same screen a **Run in Siril** button runs the script without opening Siril: it starts
@@ -1068,7 +1077,7 @@ notices surely travel with the program.
 | **Split** | splits the flats into 2 or 4 groups, runs the Siril script on each in a temporary session and puts the groups' masters beside the whole master: the five tests, the vignetting against the profile, the maps side by side; writes `Split result.txt` and `flatcheck-split.png` in the session folder | on its button, never by itself: it copies gigabytes and runs Siril N times |
 
 With `--lang ro` the tabs read Structura, End to end, Expunere, Histogram, Netezire, Sintetic and
-Split.
+Split. A screen reader such as Narrator reaches what each tab shows, not only the tabs' names.
 
 ### Structure
 
@@ -1086,6 +1095,14 @@ could be compared, and the report stays the plain one. A raw that says nothing a
 camera on a telescope, or a lens without contacts: focal length 0, no ID, no name, no range) is named
 as such, with what it lacks, not as a missing raw; the comparison is then made by naming the lens in
 the Synthetic tab, or in the console with `--lens`, `--focal` and `--fstop`.
+
+When `flats/` holds a raw and no Adobe lens profile is found on the computer, the card opens with a
+red paragraph that says so and, when the `lensfun/` folder beside the program could be read, what
+that leaves: lensfun's profiles alone, and a raw that names no lens (a Nikon writes only an ID)
+matched by its focal range alone. Under it: install the free Adobe DNG Converter (the link opens
+Adobe's page in the browser), or Lightroom Classic, Lightroom or Photoshop's Camera Raw, then
+restart FlatCheck; and the folders it looked in. The console's report does not carry this
+paragraph.
 
 It saves in the session folder:
 
@@ -1373,30 +1390,42 @@ problem, attach the whole `log` folder: it holds what is needed to see what happ
 **Where it is.** In a folder named `log` beside the program: `log\flatcheck.log` beside
 `flatcheck.exe`, `log\FlatCheck.Wpf.log` beside `FlatCheck.Wpf.exe`. When that folder cannot be
 written (a program under Program Files, a read-only drive), the log goes to
-`%LOCALAPPDATA%\FlatCheck\log` instead, and its first line says so. Past 1 MB a file is left and
-the next one is started (`flatcheck_01.log`, `flatcheck_02.log`, ...); the five most recent files
-are kept and the older ones deleted, so the folder never holds more than 5 MB per program. Two
-windows open at the same time write into the same file, each line marked with its process.
+`%LOCALAPPDATA%\FlatCheck\log` instead, and its first line says so. Past 1 MiB (1,048,576
+bytes, so a file ends one line past that) a file is left and the next one is started
+(`flatcheck_01.log`, `flatcheck_02.log`, ...); the five most recent files are kept and the older
+ones deleted, so the folder holds about 5 MiB per program at most. Two windows open at the same
+time write into the same file, each line marked with its process.
 
-**What is in it.** One line per event, in English whatever `--lang` says, numbers with a point:
-at the start the version, the command line, the Windows and .NET versions and the folders; every
-file read, with its size, its dimensions and what its header or the camera says (camera, lens,
-focal length, aperture); for each run its options, the figures behind the verdict, the verdict and
-the time each stage took; the lens profiles found and the lenses that matched; every file
-written; in the window, the session opened, each tab's run and the buttons pressed, and the whole
-output of a Siril run; every error with its technical details, those the program works around
-without a word included; at the end the exit code and the time taken. It holds the paths of
-your files and the figures measured on them, not their pixels.
+**What is in it.** One line per event, numbers with a point: at the start the version, the
+command line, the Windows and .NET versions and the folders; every file read, with its size, its
+dimensions and what its header or the camera says (camera, lens, focal length, aperture); for
+each run its options, the figures behind the verdict, the verdict and the time each stage took;
+the lens profiles found and the lenses that matched; every file written; in the window, the
+session opened, each tab's run and the buttons pressed, and the whole output of a Siril run;
+every error with its technical details, those the program works around without a word included
+(not a run you cancelled yourself, nor what the window drops while it closes); at the end the
+exit code and the time taken. The log's own words are English whatever `--lang` says; an error's
+or a refusal's message appears as you saw it, so in Romanian under `--lang ro`. It holds the
+paths of your files and the figures measured on them, not their pixels.
 
-**How much.** The environment variable `FLATCHECK_LOG` sets the level:
+**How much.** The environment variable `FLATCHECK_LOG` sets the level. For a program started
+from a command window, set it there first:
 
 ```
 set FLATCHECK_LOG=trace
 ```
 
+That reaches only the programs started from that window. For the window started from the Start
+menu or from AstroDarkroom, set it for your account, once (new programs see it; the ones already
+open do not):
+
+```
+setx FLATCHECK_LOG trace
+```
+
 `debug`, the default, writes everything above; `trace` adds every FITS header card and Siril's
-progress lines; `info`, `warn` and `error` write less and less; `off` writes nothing and creates
-no folder.
+progress lines; `info`, `warn`, `error` and `fatal` write less and less; `off` writes nothing
+and creates no folder.
 
 ## Development
 

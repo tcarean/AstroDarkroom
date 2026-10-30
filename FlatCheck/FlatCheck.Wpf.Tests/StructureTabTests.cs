@@ -456,6 +456,33 @@ public class StructureTabTests
     }
 
     /// <summary>
+    /// R-115: a lensfun/ folder the user may not list does not take the Structure run down with
+    /// it: the five tests and the profile card still come, with the Adobe rows the raw's lens ID
+    /// finds and no red paragraph. Before, the shared catalog's load threw from the folder's
+    /// enumeration and the tab showed "The analysis failed" whenever flats/ held a raw
+    /// (2026-10-30).
+    /// </summary>
+    [Fact]
+    public async Task R115_AnUnlistableLensfunFolderDoesNotFailTheStructureRun()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        string dir = LensProfileTestData.ProfilesDir(ws);
+        string lensfun = Path.Combine(dir, "lensfun");
+        using var deny = UnlistableFolder.Deny(lensfun);
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => ProfileLocator.Locate(new[] { dir }, lensfun)),
+                                           path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasError);
+        Assert.True(vm.HasProfileRows);
+        Assert.Equal("", vm.AdobeMissing);
+    }
+
+    /// <summary>
     /// A lensfun lens calibrated on two formats is two rows in the table, with the same name
     /// and the calibration format beside the mount, so the user can tell which one the master
     /// agrees with; an Adobe row shows the mount alone.
@@ -556,6 +583,146 @@ public class StructureTabTests
         Assert.Empty(vm.ProfileGap);
         Assert.Empty(vm.ProfileMaster);
         Assert.Empty(vm.VerdictDetail);
+    }
+
+    // ------------------------------------------ without Adobe's profiles (R-113)
+
+    /// <summary>The tab on <paramref name="sources"/>, with the fabricated raw in flats/.</summary>
+    static async Task<StructureTabViewModel> RunOn(SessionFixture f, ProfileSources sources)
+    {
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        await vm.RunAsync(f.Session, CancellationToken.None);
+        return vm;
+    }
+
+    /// <summary>
+    /// On a computer without Adobe software the comparison runs on lensfun alone; the card then
+    /// says the Adobe profiles were not found, what to install, the link and the folders
+    /// searched, all in the core's words, while the saved report stays the console's.
+    /// </summary>
+    [Fact]
+    public async Task R113_WithoutAdobeFilesTheCardSaysSoAndHowToGetThem()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, withAdobe: false);
+
+        var vm = await RunOn(f, sources);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(0, sources.AdobeFiles);
+        Assert.StartsWith("Profilele de obiectiv Adobe nu au fost gasite", vm.AdobeMissing);
+        Assert.Equal(StructureReport.AdobeMissing(sources), vm.AdobeMissing);
+        Assert.Equal(StructureReport.AdobeInstall(), vm.AdobeInstall);
+        Assert.Equal(StructureReport.AdobeDngConverterUrl, vm.AdobeLink);
+        Assert.Equal(StructureReport.AdobeSearched(sources), vm.AdobeSearched);
+        Assert.Contains(sources.AdobeDirectories[0], vm.AdobeSearched);
+        Assert.True(vm.HasProfileRows);                                // lensfun alone still compares
+        Assert.All(vm.ProfileRows, r => Assert.Equal("lensfun", r.Source));
+
+        var expected = new StringWriter();
+        RunReport.WriteBanner(expected);
+        StructureRun.Execute(f.Session.FlatMasterPath, expected,
+            new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => RawFrame() });
+        RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
+        Assert.Equal(expected.ToString(), File.ReadAllText(f.Session.ResultTextPath));
+        Assert.DoesNotContain("DNG Converter", vm.Report);             // the window's card only
+        Assert.DoesNotContain(vm.AdobeMissing, vm.Report);
+        Assert.DoesNotContain(vm.AdobeSearched, vm.Report);
+    }
+
+    /// <summary>With one Adobe file found there is nothing to say about Adobe.</summary>
+    [Fact]
+    public async Task R113_WithAdobeFilesTheCardSaysNothingAboutThem()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, sources) = await RunWithProfiles(f, ws);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.True(sources.AdobeFiles > 0);
+        Assert.Empty(vm.AdobeMissing);
+        Assert.Empty(vm.AdobeSearched);
+    }
+
+    /// <summary>
+    /// Without a raw in flats/ the tab's run searches no profile and does not wait for the
+    /// catalog (in the window the Sintetic tab's prefill loads it anyway), so it says nothing
+    /// about Adobe; the card says why it cannot compare.
+    /// </summary>
+    [Fact]
+    public async Task R113_WithoutARawTheRunSearchesNothingSoNothingIsSaidAboutAdobe()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        using var ws = new TempWorkspace();
+        int searches = 0;
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => { searches++; return LensProfileTestData.Sources(ws, withAdobe: false); }), ImageLoader.LoadInfo);
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(0, searches);
+        Assert.Empty(vm.AdobeMissing);
+        Assert.Empty(vm.AdobeSearched);
+        Assert.Contains("niciun raw langa master", vm.ProfileGap);
+    }
+
+    /// <summary>
+    /// In the window the catalog is already loaded when the tab runs without a raw (the Sintetic
+    /// tab's prefill loads it at every opening): the card still says nothing about Adobe, since
+    /// the owner chose no message without a raw (ADR 0073).
+    /// </summary>
+    [Fact]
+    public async Task R113_WithoutARawTheCardSaysNothingEvenWithTheCatalogLoaded()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        using var ws = new TempWorkspace();
+        var catalog = new ProfileCatalog(() => LensProfileTestData.Sources(ws, withAdobe: false));
+        Assert.Equal(0, (await catalog.EnsureAsync()).AdobeFiles);   // as the Sintetic tab's prefill leaves it
+        var vm = new StructureTabViewModel(catalog, ImageLoader.LoadInfo);
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Empty(vm.AdobeMissing);
+        Assert.Empty(vm.AdobeSearched);
+        Assert.Contains("niciun raw langa master", vm.ProfileGap);
+    }
+
+    /// <summary>
+    /// With no profile at all, the card says Adobe's were not found and, in its gap, that there
+    /// is no profile on this machine; the red paragraph does not claim lensfun is searched, since
+    /// the gap says its folder is missing too. Where the block sits is the render test's.
+    /// </summary>
+    [Fact]
+    public async Task R113_WithNoProfileAtAllTheCardSaysSoAndTheGapToo()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var none = ProfileLocator.Locate(new[] { Path.Combine(ws.Dir, "no-adobe") }, Path.Combine(ws.Dir, "no-lensfun"));
+
+        var vm = await RunOn(f, none);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(StructureReport.AdobeMissing(none), vm.AdobeMissing);
+        Assert.NotEmpty(vm.AdobeMissing);
+        Assert.DoesNotContain("lensfun", vm.AdobeMissing);
+        Assert.False(vm.HasProfileRows);
+        Assert.Contains("niciun profil de obiectiv pe masina", vm.ProfileGap);
+    }
+
+    [Fact]
+    public async Task R113_ResetClearsTheAdobeMessage()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var vm = await RunOn(f, LensProfileTestData.Sources(ws, withAdobe: false));
+        Assert.NotEmpty(vm.AdobeMissing);
+
+        vm.Reset();
+
+        Assert.Empty(vm.AdobeMissing);
+        Assert.Empty(vm.AdobeSearched);
     }
 
     // -------------------------------------------------------- the map scale

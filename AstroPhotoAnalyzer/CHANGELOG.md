@@ -8,6 +8,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A **Soft proof** tab, the eighth, modelled on Lightroom Classic's soft proofing and for
+  looking only: the image through the ICC printer profile chosen for the Dmax, with the intent
+  (**Perceptual**, **Relative** with black point compensation, and **Relative, no black point
+  compensation**, the Tones tab's own model), the paper's white and black shown as they are, a paper gamut warning
+  (the Curves Editing figure, in red), the original for comparison, a margin that is the paper's white by default or a fixed grey, wheel
+  zoom and drag pan on the image, and a maximised window with keys. Without a profile the tab shows only a sentence saying so
+  (R-160 to R-163; ADR 0066).
+
 - The window shows the ICC profile in use in its top bar, under the image's name, with a
   **Clear** button beside it; choosing a profile or clearing it runs the analysis again by
   itself, and the chosen profile is remembered in `%LOCALAPPDATA%\AstroPhotoAnalyzer\settings.json`
@@ -80,6 +88,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The content of the window's tabs is in the UI Automation tree: a screen reader such as
+  Narrator, or a UI Automation tool, now reaches the controls inside a tab, where it found only
+  the seven tab headers before (R-157; ADR 0065).
 - An edge region darker than the sky on every channel was called "warm (horizon glow / light
   pollution)"; it is now named a darkening, browner or bluer by the channel missing most, read
   as dust at the frame's edge or a gradient left over, to check in Preview; on the bottom row,

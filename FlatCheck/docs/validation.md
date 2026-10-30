@@ -191,6 +191,28 @@ Every case also prints its measured figures as a JSON line, and appends it to th
   (+0.20, 6 profiles, measured 2026-10-28 and again on 2026-10-30 before the fix). The 48
   recorded cases re-measured with the fix in `LensProfiles/` (no formula moved; the 36 large
   files present): 48 passed, no drift, 3 min 40 s; V-049 measured in a second run, 15 s.
+- 2026-10-30: re-measured at the wrap-up of the task that leaves an unlistable `lensfun/` folder
+  out of the profile search (R-115, ADR 0075), which added a text suffix to
+  `Report/SyntheticReport.cs` (`SourcesSummary`) and a `try` to `ProfileLocator.Locate`: the 36
+  large files present with their hashes, 48 passed in 2 min 26 s, and with the dump compared to
+  `validation.json` case by case, every figure and verdict of V-001 to V-040 equal to the recorded
+  one (3 min 12 s, the second run). Again after the code review's fixes to the same files (the
+  version file skipped for an unreadable folder, a comment): 48 passed, every measured line
+  identical to the first run's, 2 min 56 s. No figure changed; no formula moved.
+
+- 2026-10-28: re-measured at the wrap-up of the task that says on the Structure tab when Adobe's
+  lens profiles are missing (R-113, ADR 0073), which added texts to `Report/StructureReport.cs`
+  that the console does not print: the 36 large files present with their hashes, 48 passed, no
+  drift (every figure of V-001 to V-040 equal to the recorded one), 5.0 minutes. Again after the
+  code review's fix to the same file (046f3e3): 48 passed, every measured line identical to the
+  first run's, 4.3 minutes; and after the second review's (4589022): the same, 4.4 minutes. No
+  figure changed; no formula moved.
+
+- 2026-10-27: all 48 cases re-measured at the wrap-up of the diagnostic log's review fixes
+  (`claude/Fix-the-diagnostic-log-review-findings`, after 97808e8), which touched `Report/` with
+  a new refusal text (`SyntheticReport.NoProfile`, ADR 0071), a dead `(N skipped)` branch
+  removed and `StructureReport.CornerName` written through `EnglishCorner`: 48 passed, every
+  figure and verdict of V-001 to V-040 equal to the recorded one, 2 min 48 s. No formula moved.
 
 - 2026-10-26: all 48 cases re-measured on `main` at 876782d (the merge of ADR 0068) while the
   README was rewritten in English (ADR 0069), whose tables quote V-016 to V-040: 48 passed, no

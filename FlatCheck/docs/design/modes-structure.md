@@ -82,4 +82,14 @@ library figures of 2026-09-18 and the guards. ADR 0030 holds how the lens is ide
   0065, named with the file and the remedy, `StructureReport.RawWithoutLensRemedy` asking only
   for what is still unknown), an ID nothing matches, no focal, no f-stop (Siril writes none), or
   lensfun-only profiles without a crop. Unknown is not a refusal, the `--light` rule.
+- What the search left out is said on the window's card only (R-113, ADR 0073):
+  `StructureReport.AdobeMissing` and `AdobeSearched` take the sources the run searched and give
+  text only when that search found no Adobe file (`ProfileSources.AdobeFiles == 0`), "" when it
+  found one or when the run searched nothing (null, no raw). With no lensfun lens read
+  (`ProfileSources.LensfunLenses == 0`: the folder missing, or none of its files readable, which
+  still counts as present) `AdobeMissing` keeps its first sentence only: that is the gap's own
+  condition, and the gap under it then says no profile is on the machine. `AdobeInstall` and
+  `AdobeDngConverterUrl` are the instructions and the link under them. `Write` prints none of
+  them: R-113 adds no line to the console's report, and a window test checks the saved report
+  holds neither the paragraph nor the folders line.
 - `--help` moved when the flags were added, and was re-approved.

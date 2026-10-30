@@ -730,5 +730,24 @@ namespace AstroPhotoAnalyzer
         /// the plate-solved FITS with both of the workshop's profiles and on de_printat.png).
         /// </summary>
         internal const double CurveGamutExactMargin = 1.0;
+
+        /// <summary>
+        /// The nodes per channel of the soft proof's table (R-160, ADR 0066): the colour the paper
+        /// shows for each sRGB node, through the profile's tables of the intent, read per pixel by
+        /// trilinear interpolation. Measured on 2026-10-30 against the exact per-pixel proof on
+        /// 8 000 colours, half of them dark and nearly neutral as a sky is: 65 nodes stay within
+        /// Delta E76 1.0 at the 99th percentile on both lab profiles (max 0.7 on the baryta, 1.4
+        /// on the canvas), where 33 nodes reach 2.4 to 5.2 at the maximum on the canvas; a table
+        /// of 65 builds in 1.6 to 2.2 s with the rows in parallel.
+        /// </summary>
+        internal const int ProofGrid = 65;
+
+        /// <summary>
+        /// The longest side of the reduced copy the soft proof is made on (R-160). The preview's
+        /// PreviewMaxSide (1600) fits a Full HD render; the proof is shown maximised on a 4K screen
+        /// too, so a long side under the screen's would be enlarged there. 2400 is a presumption
+        /// about the screen, not a measurement; a 23 MP image reduces to 2.7 MP.
+        /// </summary>
+        internal const int ProofMaxSide = 2400;
     }
 }

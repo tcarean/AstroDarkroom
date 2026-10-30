@@ -31,16 +31,14 @@ namespace FlatCheck.Tests;
 /// line on its path, and a line that throws fails the test that reaches it instead of a user's
 /// run. A test that reads the lines opens a capture with <see cref="Start"/>; it sees only the
 /// events of its own call tree (an <see cref="AsyncLocal{T}"/> scope, the same mechanism as
-/// <see cref="Ui.Use"/>), so the tests running beside it add nothing. The tests never call
-/// <see cref="LogSetup.Apply"/>: only the two entry points do.
+/// <see cref="Ui.Use"/>), so the tests running beside it add nothing; one capture at a time
+/// per call tree. The tests never call <see cref="LogSetup.Apply"/>: only the two entry points
+/// do.
 /// </summary>
 internal sealed class LogCapture : IDisposable
 {
     /// <summary>The capture open in this call tree, or null.</summary>
     private static readonly AsyncLocal<LogCapture?> current = new();
-
-    /// <summary>The capture this one replaced, put back by <see cref="Dispose"/>.</summary>
-    private readonly LogCapture? previous;
 
     /// <summary>The events seen, in the order they were written.</summary>
     private readonly ConcurrentQueue<Captured> events = new();
@@ -65,17 +63,20 @@ internal sealed class LogCapture : IDisposable
     /// <summary>Opens a capture for the calling test's call tree.</summary>
     private LogCapture()
     {
-        previous = current.Value;
         current.Value = this;
     }
 
     /// <summary>Opens a capture: from now until <see cref="Dispose"/>, the events of this call
-    /// tree are kept.</summary>
+    /// tree are kept. Not nested: a test opens one at a time.</summary>
     /// <returns>The capture.</returns>
-    internal static LogCapture Start() => new();
+    internal static LogCapture Start()
+    {
+        if (current.Value != null) throw new InvalidOperationException("a capture is already open in this call tree");
+        return new();
+    }
 
     /// <summary>Closes the capture; the events stay readable.</summary>
-    public void Dispose() => current.Value = previous;
+    public void Dispose() => current.Value = null;
 
     /// <summary>The events seen so far.</summary>
     internal IReadOnlyList<Captured> Events => events.ToArray();
@@ -100,10 +101,7 @@ internal sealed class LogCapture : IDisposable
         protected override void Write(LogEventInfo logEvent)
         {
             string line = RenderLogEvent(Layout, logEvent);
-            var seen = new Captured(logEvent.Level, logEvent.LoggerName ?? "", logEvent.FormattedMessage ?? "", line, logEvent.Exception);
-            // A capture opened inside another sees the event, and so do the ones around it.
-            for (LogCapture? c = current.Value; c != null; c = c.previous)
-                c.events.Enqueue(seen);
+            current.Value?.events.Enqueue(new Captured(logEvent.Level, logEvent.LoggerName ?? "", logEvent.FormattedMessage ?? "", line, logEvent.Exception));
         }
     }
 }

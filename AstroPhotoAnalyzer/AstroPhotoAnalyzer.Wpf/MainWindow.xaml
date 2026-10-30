@@ -221,7 +221,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </StackPanel>
         </Border>
 
-        <TabControl x:Name="Tabs" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+        <local:AccessibleTabControl x:Name="Tabs" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
           <TabItem Header="{local:T En='Report', Ro='Raport'}">
             <local:ReportView DataContext="{Binding Report}" />
           </TabItem>
@@ -243,7 +243,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TabItem x:Name="CurvesTabItem" Header="{local:T En='Curves Editing', Ro='Editare Curbe'}">
             <local:CurvesView DataContext="{Binding Curves}" />
           </TabItem>
-        </TabControl>
+          <TabItem Header="Soft proof">
+            <local:SoftProofView DataContext="{Binding SoftProof}" />
+          </TabItem>
+        </local:AccessibleTabControl>
 
         <local:BusyOverlay />
       </Grid>

@@ -160,6 +160,16 @@ public class WindowEnglishTests
             vm.Curves.CurveRequested += c => curve = c;
             vm.Curves.OpenCurve.Execute(null);
             AssertEnglish("the curve window", await TextsOfAsync(new CurveWindow { DataContext = curve }, "fereastra-curba", 1280, 760));
+            // R-163: the Soft proof tab without a profile, then with the fixture's, and its window.
+            await vm.ProofComputation;
+            AssertEnglish("Soft proof without a profile", TextsOf(new SoftProofView { DataContext = vm.SoftProof }, "tab-soft-proof-fara-profil"));
+            Assert.True(vm.Parameters.UseProfile(new IccProfileRow(IccPaperBlack.Read(ws.PathTo("baryta.icc")))));
+            await vm.RunAsync();
+            await vm.ProofComputation;
+            Assert.True(vm.SoftProof.HasProof, vm.SoftProof.Message);
+            AssertEnglish("Soft proof", TextsOf(new SoftProofView { DataContext = vm.SoftProof }, "tab-soft-proof"));
+            AssertEnglish("the soft proof window", await TextsOfAsync(new SoftProofWindow { DataContext = vm.SoftProof }, "fereastra-soft-proof"));
+            AssertEnglish("the soft proof help", string.Join("\n", vm.SoftProof.PerceptualHelp, vm.SoftProof.RelativeHelp, vm.SoftProof.RelativeNoBpcHelp, vm.SoftProof.RelativeNoBpcName));
             var mapWindow = new MapWindow { DataContext = vm.Tones.BuildMap() };
             string mapTexts = await TextsOfAsync(mapWindow, "harta-praf-cer");
             Assert.StartsWith("Dust / sky map", mapWindow.Title);
