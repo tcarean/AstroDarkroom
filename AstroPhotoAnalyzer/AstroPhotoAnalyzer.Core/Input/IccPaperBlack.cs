@@ -37,9 +37,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using NLog;
 using Wacton.Unicolour;
 using Wacton.Unicolour.Icc;
 
@@ -90,6 +92,12 @@ namespace AstroPhotoAnalyzer
         static readonly string[] Extensions = { ".icc", ".icm" };
 
         /// <summary>
+        /// The diagnostic log: one line per profile read, with its Dmax or its problem, the
+        /// folder listed, and every exception swallowed into a problem (R-171, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger("IccPaperBlack");
+
+        /// <summary>
         /// The paper's black in the profile of a file, as <see cref="Read(byte[], string)"/>
         /// reads it; a file that cannot be read gives a <see cref="IccBlack.Problem"/>, not an
         /// exception.
@@ -105,6 +113,7 @@ namespace AstroPhotoAnalyzer
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {
+                Log.Warn(e, "profile " + path + " cannot be read");
                 return new IccBlack { Path = path, Description = System.IO.Path.GetFileName(path), Problem = Tr.Pick("the file cannot be read: ", "fisierul nu se poate citi: ") + e.Message };
             }
             return Read(bytes, path);
@@ -123,6 +132,21 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <returns>The black and its Dmax, or the problem.</returns>
         internal static IccBlack Read(byte[] bytes, string path)
+        {
+            IccBlack b = ReadBytes(bytes, path);
+            Log.Info("profile " + path + " (" + LogText.Int(bytes?.Length ?? 0) + " bytes): " + LogText.Figures(b, "Path"));
+            return b;
+        }
+
+        /// <summary>
+        /// <see cref="Read(byte[], string)"/> without its log line: the header checked, the black
+        /// read, every refusal a <see cref="IccBlack.Problem"/>; the package's exception, which
+        /// becomes a problem too, is logged with its stack.
+        /// </summary>
+        /// <param name="bytes">The file's bytes; null is not a profile.</param>
+        /// <param name="path">The file's path, kept on the result.</param>
+        /// <returns>The black and its Dmax, or the problem.</returns>
+        static IccBlack ReadBytes(byte[] bytes, string path)
         {
             string file = System.IO.Path.GetFileName(path);
             var result = new IccBlack { Path = path, Description = IccProfileInfo.Describe(bytes) ?? file };
@@ -165,6 +189,7 @@ namespace AstroPhotoAnalyzer
             {
                 // The package throws ArgumentException, with the cause inside, on a damaged
                 // profile.
+                Log.Warn(e, "profile " + path + ": the package could not evaluate its colorimetric table");
                 return result with { Problem = Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ") + (e.InnerException ?? e).Message };
             }
         }
@@ -183,7 +208,13 @@ namespace AstroPhotoAnalyzer
         internal static IReadOnlyList<IccBlack> Installed(string folder = null)
         {
             folder ??= InstalledFolder;
-            if (!Directory.Exists(folder)) return Array.Empty<IccBlack>();
+            if (!Directory.Exists(folder))
+            {
+                Log.Info("profiles folder " + folder + " does not exist");
+                return Array.Empty<IccBlack>();
+            }
+
+            var clock = Stopwatch.StartNew();
             string[] files;
             try
             {
@@ -193,6 +224,7 @@ namespace AstroPhotoAnalyzer
             {
                 // A folder that will not be listed is like an empty one: the window says
                 // "niciun profil" and keeps "Alege fisier...".
+                Log.Warn(e, "profiles folder " + folder + " cannot be listed");
                 return Array.Empty<IccBlack>();
             }
             var found = new List<IccBlack>();
@@ -200,10 +232,15 @@ namespace AstroPhotoAnalyzer
             {
                 byte[] bytes;
                 try { bytes = File.ReadAllBytes(path); }
-                catch (Exception e) when (e is IOException or UnauthorizedAccessException) { continue; }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    Log.Debug(e, "profile " + path + " skipped: it cannot be read");
+                    continue;
+                }
                 if (!IsProfile(bytes) || Signature(bytes, 12) != "prtr") continue;
                 found.Add(Read(bytes, path));
             }
+            Log.Info("profiles in " + folder + ": " + LogText.Int(found.Count) + " printer profiles of " + LogText.Int(files.Length) + " files in " + LogText.Ms(clock.ElapsedMilliseconds));
             return found.OrderBy(p => p.Description, StringComparer.OrdinalIgnoreCase).ThenBy(p => p.Path, StringComparer.OrdinalIgnoreCase).ToList();
         }
 

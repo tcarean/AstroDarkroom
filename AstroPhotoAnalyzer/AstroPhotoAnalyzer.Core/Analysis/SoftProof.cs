@@ -136,6 +136,12 @@ namespace AstroPhotoAnalyzer
         /// <summary>Why the profile cannot be proofed, for the user; null when it can.</summary>
         internal string Problem { get; private set; }
 
+        /// <summary>
+        /// The exception behind <see cref="Problem"/>, for the diagnostic log, which writes its
+        /// stack (ADR 0069); null when the problem had none or there is no problem.
+        /// </summary>
+        internal Exception Cause { get; private set; }
+
         /// <summary>The media white of the 'wtpt' tag, XYZ; D50 when the tag is absent.</summary>
         internal double[] MediaWhite { get; private set; }
 
@@ -240,6 +246,7 @@ namespace AstroPhotoAnalyzer
             catch (Exception e)
             {
                 p.Problem = Unreadable + (e.InnerException ?? e).Message;
+                p.Cause = e;
                 return p;
             }
         }

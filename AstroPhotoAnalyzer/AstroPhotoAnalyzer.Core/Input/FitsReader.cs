@@ -37,6 +37,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using NLog;
 
 namespace AstroPhotoAnalyzer
 {
@@ -49,6 +50,12 @@ namespace AstroPhotoAnalyzer
     internal sealed class FitsReader : IFrameReader
     {
         static readonly string[] Exts = { ".fit", ".fits", ".fts" };
+
+        /// <summary>
+        /// The diagnostic log: the keywords that decide the reading at Debug, every card at Trace
+        /// (R-172, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger("FitsReader");
 
         public IReadOnlyList<string> Extensions => Exts;
 
@@ -76,6 +83,7 @@ namespace AstroPhotoAnalyzer
         {
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16);
             var (raster, hdr, bitpix, planes, note) = LoadFrom(fs);
+            if (Log.IsDebugEnabled) Log.Debug("header of " + path + ": " + LogText.FitsKeys(hdr));
             raster.Source = new SourceInfo
             {
                 Path = path,
@@ -110,7 +118,11 @@ namespace AstroPhotoAnalyzer
                 if (hdr == null) throw new Exception(Tr.Pick("FITS: no HDU with an image found.", "FITS: niciun HDU cu imagine gasit."));
                 int naxis = HInt(hdr, "NAXIS", 0);
                 int n1 = HInt(hdr, "NAXIS1", 0), n2 = HInt(hdr, "NAXIS2", 0);
-                if (naxis >= 2 && n1 > 0 && n2 > 0) return (hdr, n1, n2);
+                if (naxis >= 2 && n1 > 0 && n2 > 0)
+                {
+                    if (Log.IsDebugEnabled) Log.Debug("header of " + path + ": " + LogText.FitsKeys(hdr));
+                    return (hdr, n1, n2);
+                }
 
                 long npix = naxis == 0 ? 0 : 1;
                 for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
@@ -186,6 +198,21 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
+        /// Writes one header card to the diagnostic log at Trace, as the file holds it (R-172):
+        /// HISTORY and COMMENT included, the blank cards left out, a control character written
+        /// <c>?</c> so a damaged header puts no control byte in the log.
+        /// </summary>
+        /// <param name="card">The card's 80 characters, as ASCII decoded them.</param>
+        static void TraceCard(string card)
+        {
+            string text = card.TrimEnd();
+            if (text.Length == 0) return;
+            var sb = new StringBuilder(text.Length);
+            foreach (char ch in text) sb.Append(ch < ' ' || ch == (char)127 ? '?' : ch);
+            Log.Trace("card " + sb);
+        }
+
+        /// <summary>
         /// The cards up to END, as a dictionary; null at the end of the file. Cards without a
         /// value (HISTORY, COMMENT, blank) are skipped, and a keyword met twice keeps its last
         /// value. Throws when the file ends inside a header after its first block; one that ends
@@ -212,6 +239,7 @@ namespace AstroPhotoAnalyzer
                 for (int c = 0; c < 36; c++)
                 {
                     string card = Encoding.ASCII.GetString(block, c * 80, 80);
+                    if (Log.IsTraceEnabled) TraceCard(card);
                     string key = card.Substring(0, 8).Trim();
                     if (key == "END") return hdr;
                     if (key.Length == 0 || card[8] != '=') continue;

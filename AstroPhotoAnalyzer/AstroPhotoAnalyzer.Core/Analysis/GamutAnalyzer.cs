@@ -80,6 +80,12 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Why it could not be built, for the user; null when it could.</summary>
         internal string Problem;
+
+        /// <summary>
+        /// The exception behind <see cref="Problem"/>, for the diagnostic log, which writes its
+        /// stack (ADR 0069); null when the problem had none or there is no problem.
+        /// </summary>
+        internal Exception Cause;
     }
 
     /// <summary>
@@ -124,7 +130,7 @@ namespace AstroPhotoAnalyzer
             }
             catch (Exception e)
             {
-                return new GamutTable { Problem = Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ") + e.Message };
+                return new GamutTable { Problem = Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ") + e.Message, Cause = e };
             }
         }
 

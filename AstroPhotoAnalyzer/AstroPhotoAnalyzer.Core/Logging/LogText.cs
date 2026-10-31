@@ -118,6 +118,11 @@ namespace AstroPhotoAnalyzer
         /// <returns>The text.</returns>
         internal static string List(IEnumerable<string> items) => "[" + string.Join(", ", items ?? Enumerable.Empty<string>()) + "]";
 
+        /// <summary>A list of numbers as <c>[a, b, c]</c>, each as <see cref="Num(double)"/> writes it.</summary>
+        /// <param name="values">The numbers; null gives <c>[]</c>.</param>
+        /// <returns>The text.</returns>
+        internal static string Nums(IEnumerable<double> values) => List(values?.Select(Num));
+
         /// <summary>The process's working set, the memory it holds, in mebibytes: <c>1712.3 MiB</c>.</summary>
         /// <returns>The text.</returns>
         internal static string WorkingSet() => MiB(Environment.WorkingSet);

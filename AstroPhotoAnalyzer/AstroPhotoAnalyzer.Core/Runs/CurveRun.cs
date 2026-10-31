@@ -27,6 +27,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using NLog;
 
 namespace AstroPhotoAnalyzer
 {
@@ -68,6 +69,13 @@ namespace AstroPhotoAnalyzer
     internal static class CurveRun
     {
         /// <summary>
+        /// The diagnostic log: the run's start and done lines with the time of each stage, the
+        /// anchors and every suggestion's curve and evidence at Debug, a gamut table that cannot be
+        /// built with its cause (R-171, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger("CurveRun");
+
+        /// <summary>
         /// The integer step that brings the image into <paramref name="maxWidth"/> x
         /// <paramref name="maxHeight"/>.
         /// </summary>
@@ -99,6 +107,8 @@ namespace AstroPhotoAnalyzer
         /// </returns>
         internal static CurveSet Execute(AnalysisResult a, CurvePurpose purpose, int maxWidth, int maxHeight, IProgress<string> progress = null)
         {
+            using RunClock clock = RunClock.Start(Log, "curves", "path=" + LogText.Str(a.Path) + " purpose=" + purpose
+                + " preview=" + LogText.Int(maxWidth) + "x" + LogText.Int(maxHeight));
             Raster r = a.Raster;
             SimulationResult sim = a.Simulation;
             DustMap map = sim.Map;
@@ -119,11 +129,23 @@ namespace AstroPhotoAnalyzer
                 OriginalPreview = original,
                 SourceSentence = CurveTexts.AnchorSource(map, sim.MethodNote),
             };
+            clock.Lap("anchors");
+            if (Log.IsDebugEnabled)
+                Log.Debug("anchors: " + LogText.Figures(anchors) + " method=" + map.Method + " classLevels=" + LogText.Nums(before));
 
+            // A refusal is the run's outcome, written as the tab shows it.
             string problem = CurveAdvisor.Problem(anchors, labels);
-            if (problem != null) return set with { Problem = problem };
+            if (problem != null)
+            {
+                clock.Done("refused: " + problem);
+                return set with { Problem = problem };
+            }
             IReadOnlyList<(string Name, ToneCurve Curve)> curves = CurveAdvisor.Curves(anchors, labels);
-            if (curves.Count == 0) return set with { Problem = CurveTexts.NoMonotoneCurve };
+            if (curves.Count == 0)
+            {
+                clock.Done("refused: " + CurveTexts.NoMonotoneCurve);
+                return set with { Problem = CurveTexts.NoMonotoneCurve };
+            }
 
             // The gamut: only for print and only with the profile the Dmax came from.
             GamutTable gamut = null; string gamutNote = null; GamutFigure gamutBefore = null;
@@ -135,7 +157,13 @@ namespace AstroPhotoAnalyzer
                 {
                     progress?.Report("gamut");
                     gamut = GamutAnalyzer.Build(profile);
-                    if (gamut.Problem != null) { gamutNote = CurveTexts.GamutUnreadable(gamut.Problem); gamut = null; }
+                    clock.Lap("gamut");
+                    if (gamut.Problem != null)
+                    {
+                        Log.Warn(gamut.Cause, "the gamut table of " + profile + " cannot be built: " + gamut.Problem);
+                        gamutNote = CurveTexts.GamutUnreadable(gamut.Problem);
+                        gamut = null;
+                    }
                     else gamutBefore = GamutAnalyzer.Measure(gamut, sub, map);
                 }
             }
@@ -156,7 +184,12 @@ namespace AstroPhotoAnalyzer
                         GamutNote = gamutNote,
                     };
                 suggestions.Add(new CurveSuggestion { Name = name, Curve = curve, Preview = curve.Apply(original), Evidence = e });
+                // The curve's name, the paper checks and the gamut note as the tab shows them.
+                if (Log.IsDebugEnabled)
+                    Log.Debug("curve " + LogText.Int(suggestions.Count) + " " + name + ": " + LogText.Figures(curve, "Label") + " " + LogText.Figures(e, "Labels"));
             }
+            clock.Lap("suggestions");
+            clock.Done("suggestions=" + LogText.Int(suggestions.Count));
             return set with { Suggestions = suggestions };
         }
 
@@ -182,6 +215,9 @@ namespace AstroPhotoAnalyzer
     /// <summary>Saves a suggested curve applied to the whole image as a new FITS (R-145).</summary>
     internal static class CurveExport
     {
+        /// <summary>The diagnostic log: every FITS written, with its size (R-171, ADR 0069).</summary>
+        static readonly Logger Log = LogManager.GetLogger("CurveExport");
+
         /// <summary>
         /// Writes to <paramref name="targetPath"/> a new FITS with the suggestion's curve applied
         /// to the whole image (R-145).
@@ -216,6 +252,7 @@ namespace AstroPhotoAnalyzer
                 // A raster from memory (the tests): it has no file to protect and no header to
                 // keep.
                 FitsWriter.Save(r, s.Curve, null, history, target);
+                Log.Info("wrote " + target + " (" + LogText.FileMiB(target) + ") curve=" + s.Name + " header from=none");
                 return;
             }
             if (!File.Exists(input)) throw new Exception(CurveTexts.InputGone(input));
@@ -224,7 +261,9 @@ namespace AstroPhotoAnalyzer
             using var hold = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read, 1);
             try
             {
-                FitsWriter.Save(r, s.Curve, r.Source?.Format == "FITS" ? input : null, history, target);
+                string sourceFits = r.Source?.Format == "FITS" ? input : null;
+                FitsWriter.Save(r, s.Curve, sourceFits, history, target);
+                Log.Info("wrote " + target + " (" + LogText.FileMiB(target) + ") curve=" + s.Name + " header from=" + LogText.Str(sourceFits));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
