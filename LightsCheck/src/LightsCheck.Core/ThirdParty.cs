@@ -38,7 +38,7 @@ internal sealed record ThirdPartyComponent(
     IReadOnlyList<string> Packages);
 
 /// <summary>
-/// The components written by others, as a value: what the "Despre" window shows. LGPL-2.1 §6
+/// The components written by others, as a value: what the "About" window shows. LGPL-2.1 §6
 /// asks that LibRaw's notice appear where the program displays its own copyright, and the
 /// reasons for GPLv3 compatibility are in THIRD-PARTY-NOTICES.md, which does not travel with
 /// a single executable. A new package needs an entry here and one in the notices file;

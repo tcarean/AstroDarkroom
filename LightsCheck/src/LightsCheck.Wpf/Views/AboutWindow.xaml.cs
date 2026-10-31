@@ -23,7 +23,7 @@ using NLog;
 namespace LightsCheck.Wpf;
 
 /// <summary>
-/// The "Despre" window: version, copyright, the GPLv3 notice and the third-party list.
+/// The "About" window: version, copyright, the GPLv3 notice and the third-party list.
 /// </summary>
 public partial class AboutWindow : Window
 {
@@ -65,7 +65,7 @@ public partial class AboutWindow : Window
     /// <summary>The diagnostic log: a link that could not be opened (R-071).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
-    /// <summary>The "Inchide" button: closes the window.</summary>
+    /// <summary>The "Close" button: closes the window.</summary>
     /// <param name="sender">The button clicked.</param>
     /// <param name="e">The click's arguments, not used.</param>
     private void CloseClick(object sender, RoutedEventArgs e) => Close();

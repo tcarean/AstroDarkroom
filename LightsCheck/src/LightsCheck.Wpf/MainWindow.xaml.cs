@@ -67,14 +67,14 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The "Alege folder..." and "Alege alt folder..." buttons: asks for a session folder and opens
-    /// it.
+    /// The "Choose folder..." and "Choose another folder..." buttons: asks for a session folder
+    /// and opens it.
     /// </summary>
     /// <param name="sender">The button clicked.</param>
     /// <param name="e">The click's arguments, not used.</param>
     private void ChooseFolder(object sender, RoutedEventArgs e) => Choose();
 
-    /// <summary>The "Opreste" buttons: stops the run in flight, if any.</summary>
+    /// <summary>The "Stop" buttons: stops the run in flight, if any.</summary>
     /// <param name="sender">The button clicked.</param>
     /// <param name="e">The click's arguments, not used.</param>
     private void Stop(object sender, RoutedEventArgs e)
@@ -84,7 +84,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The Help command (the "Despre" button or F1): shows the About window, modal.
+    /// The Help command (the "About" button or F1): shows the About window, modal.
     /// </summary>
     /// <param name="sender">The element the command was executed on.</param>
     /// <param name="e">The command's arguments, not used.</param>
@@ -98,7 +98,7 @@ public partial class MainWindow : Window
     /// The export folder is asked for, the session root proposed (ADR 0002: beside the session,
     /// never in lights/), and the files are written there.
     /// </summary>
-    /// <param name="sender">The "Scrie fisierele..." button.</param>
+    /// <param name="sender">The "Write the files..." button.</param>
     /// <param name="e">The click's arguments, not used.</param>
     private void ExportFiles(object sender, RoutedEventArgs e)
     {

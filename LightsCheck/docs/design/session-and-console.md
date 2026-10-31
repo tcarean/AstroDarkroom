@@ -18,8 +18,8 @@ camera raws (`RawReader.IsRawPath`) when there are any, else the FITS files
 `DSC_0010` follows `DSC_0009` and a lower-case extension changes nothing. No frames at all
 throws `InvalidOperationException` naming the folder and the extensions looked for.
 `biases/` and `darks/` go through the same `FramesIn`; `BiasesDir` and `DarksDir` are null
-when the folder is absent or empty, and the report prints `(lipsa)`. The darks are only
-counted (R-042): the `pattern fix` row of the series report says whether Siril will subtract
+when the folder is absent or empty, and the report prints `(missing)`. The darks are only
+counted (R-042): the `fixed pattern` row of the series report says whether Siril will subtract
 the sensor's pattern, and no dark is ever opened. The record exposes `Root`, `LightsDir`,
 `BiasesDir`, `DarksDir`, `Lights`, `Biases` and `Darks` as full paths, and `LightsAreRaws`,
 true when the lights are camera raws rather than FITS files (one file decides, since
@@ -59,16 +59,16 @@ nothing is timed.
 returns `Inventory(Session, Lights, Cadence)`; `HasErrors` is true when any light carries an
 error, which is what makes the console exit 1. `InventoryReport.Write` prints the header and
 the table. `WriteHeader` is shared: the series report opens with the same session lines
-(folders with their frame counts and extension, camera, lens, exposure, interval, and an
-`ATENTIE` line when frames could not be read). The lens line puts the shot's focal length
-and f-number first, then the lens as its chip declares it (`obiectiv 135 mm f/2.0`, a range
+(folders with their frame counts and extension, camera, lens, exposure, interval, and a
+`WARNING` line when frames could not be read). The lens line puts the shot's focal length
+and f-number first, then the lens as its chip declares it (`lens 135 mm f/2.0`, a range
 for a zoom) and the lens as the raw names it: the name in quotes, then the ID and the mount in
 one parenthesis (`"EF50mm f/1.4 USM" (ID 198, Canon EF)`), or the ID with the mount when the
 raw gives no name (`ID 74 (Nikon F)`), nothing for a mount alone (R-065); the frame read is the
 first readable one with a focal length, an ID or a name; the exposure line lists each distinct exposure and ISO
-pair and says `(expuneri diferite)` when there is more than one; the interval line is start,
+pair and says `(different exposures)` when there is more than one; the interval line is start,
 end, span, integration, timed frame count and duty. The table prints one row per light with
-`-` for a missing field and `eroare: <message>` in place of the fields for a frame that
+`-` for a missing field and `error: <message>` in place of the fields for a frame that
 could not be read. File names are cut at 20 characters.
 
 ## The lines every run shares (`RunReport`)

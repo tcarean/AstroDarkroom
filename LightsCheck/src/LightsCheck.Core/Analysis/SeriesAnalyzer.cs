@@ -255,7 +255,7 @@ internal enum PolarAlignment
 /// The image axis RA runs along, from the WCS or else from the trails; unknown otherwise.
 /// </param>
 /// <param name="AxisSource">
-/// How <paramref name="RaAxis"/> was decided, in the Romanian words the report prints.
+/// How <paramref name="RaAxis"/> was decided, as the report prints it, in the run's language.
 /// </param>
 /// <param name="TrailAngleDeg">
 /// The mean angle of the bad frames whose stars agree better than

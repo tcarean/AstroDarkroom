@@ -171,7 +171,7 @@ Veil frames about 3 of the 21 ADU of green noise survive in the median and the m
 `SensorPattern` holds the position names, the sigmas, the frame sigmas, the hot count and
 the pixels read; `FractionOfFrame` and `HotPerMpx` derive the fraction and the rate. There
 is no count at a low threshold on purpose (ADR 0015: it sat on the steep tail). The raws carry the pattern whether
-or not the session has darks; the report's `pattern fix` row adds what the `darks/` folder says
+or not the session has darks; the report's `fixed pattern` row adds what the `darks/` folder says
 (`SessionFolder.Darks`, counted and never read, R-042).
 
 ## Classes, trends, drift, axes (`SeriesAnalyzer`)
@@ -237,21 +237,21 @@ Each section is a list of `ReportRow(Label, Value, Verdict)` built by a producer
 verdict word and the value, and the window binds the same rows (ADR 0008). A section's text
 therefore has one label column; a label longer than the field pushes its colon right.
 `FrameRows` formats the table's cells once for the console and the window (`SpotCell` the
-`k/n de la f` cell of a run, `-` outside one), `RejectedRows` and `RejectedHeading` the
-RESPINSE block, `CropCaption` the caption of a star cut-out (`StarCrops` cuts, this file
-words). `Reason` words a trailing flag as `alungire v (prag t)` plus `TrailSuffix`: `, dara pe
-RA (a grade)` when the flag has an axis (`AxisWord`), `, dara la a grade` when it has only the
-angle. `RejectedExplanation` is the list of `ReportParagraph`s the window shows under
-RESPINSE, one with `Emphasis` for the bold line, built once from `Th` so the thresholds it
-quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`, `oblic` or empty), the
+`k/n from f` cell of a run, `-` outside one), `RejectedRows` and `RejectedHeading` the
+REJECTED block, `CropCaption` the caption of a star cut-out (`StarCrops` cuts, this file
+words). `Reason` words a trailing flag as `elongation v (threshold t)` plus `TrailSuffix`:
+`, trail on RA (a degrees)` when the flag has an axis (`AxisWord`), `, trail at a degrees` when
+it has only the angle. `RejectedExplanation` is the list of `ReportParagraph`s the window shows
+under REJECTED, one with `Emphasis` for the bold line, built once from `Th` so the thresholds it
+quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`, `oblique` or empty), the
 three `spot_run_*` columns and the three `move_*` columns (signed pixels east and north, and
-the arrow symbols). `MoveCell` words a `MountMove` as `RA 15 px ← V, DEC 12 px ↓ S` under
+the arrow symbols). `MoveCell` words a `MountMove` as `RA 15 px ← W, DEC 12 px ↓ S` under
 an `ArrowKeys` (which SynScan arrow moves the mount east and which north, the other two
 following; `SeriesOptions.Arrows`, carried by the result, `ArrowKeys.Default` = right east and
 up north, ADR 0014): a component under `Th.AxisStep` is dropped, the arrow symbol and the sense
 letter appear only when the move is signed, `MoveArrows` gives the symbols alone for the CSV
 (quoted there, two being joined with a comma); both read the one `MoveComponents` rule;
-`FrameRows` also fills `StepTip`, the bar tooltip `cadrul 5: pas 15.3 px; <cell>`, null when
+`FrameRows` also fills `StepTip`, the bar tooltip `frame 5: step 15.3 px; <cell>`, null when
 the frame has no step.
 
 Beside the rows, the report gives the window shapes it cannot derive from prose (ADR 0012):
@@ -261,21 +261,21 @@ from the same `DitherAnalysis` figures the `DitherRows` print, through the helpe
 (`SizeWord`, `FramesWord`, `TimesWord`, `PausesRow`, `LongestRow`, `HowOften` for the
 no-move words) so a wording lives once; the runs table has its own `RunRows` and
 `MinutesCell` beside the rows' `Runs` and `Minutes`, which differ in shape, not in words.
-`DitherScalarRows` is the DITHERING rows that are not tables, plus the `axe` row that names
-the RA axis and its source, which the console carries on its `directie` row; both end with
+`DitherScalarRows` is the DITHERING rows that are not tables, plus the `axes` row that names
+the RA axis and its source, which the console carries on its `direction` row; both end with
 `ScaleRow` (what a move of `Th.DitherStep` and `Th.CoverageLoose` is in arcseconds at the
 session's scale, R-044), `SurvivingRow` (the surviving fraction against `1 / n`, R-048),
 `PatternRow` (the `SensorPattern` by its status, the sigmas with their fractions, the hot
 rate and the darks clause, R-046) and the verdict. `DriftRows` adds `DriftPerExposure`, the drift over the median
-exposure on its axis (`DriftAxisWord`) and the dash of `Streak`, `nicio dara` without a run;
-its first row names the pairs through `PairsWord` (`fara pauza`, or `cu pauza, aproximativ`
+exposure on its axis (`DriftAxisWord`) and the dash of `Streak`, `no walking-noise streak` without a run;
+its first row names the pairs through `PairsWord` (`without a pause`, or `with a pause, approximate`
 for the fallback), and it closes with `PolarRow` (the bracket of `PolarBounds` with what gave
 each bound, the drift per exposure and the elongation, or the lower bound alone without a
 solve) and `RaDriftRow` (the RA drift with the stars' sense when signed, the alignment's share
 and whether the rest is the tracking). `PolarReason` is the one place that words why the
 alignment is not measured (no registered pair, under three drift pairs, no axis, no scale),
 `NoUpperBound` why the lower bound stands alone (no solve, or a span under an hour), and
-`PolarSummary` the REZUMAT row with its verdict word, `OK`, `LA LIMITA` or `ATENTIE`, none
+`PolarSummary` the SUMMARY row with its verdict word, `OK`, `MARGINAL` or `WARNING`, none
 when unknown.
 `DitherExplanation` is the list of paragraphs the window's Dithering card shows under its
 tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a

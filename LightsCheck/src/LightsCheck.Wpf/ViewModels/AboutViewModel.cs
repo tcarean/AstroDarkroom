@@ -19,7 +19,7 @@ using LightsCheck.Core;
 
 namespace LightsCheck.Wpf;
 
-/// <summary>A third-party component as the "Despre" window lists it.</summary>
+/// <summary>A third-party component as the "About" window lists it.</summary>
 /// <param name="Name">The component's name.</param>
 /// <param name="Role">What LightsCheck uses it for.</param>
 /// <param name="Licence">The licence it is taken under.</param>
@@ -28,7 +28,7 @@ namespace LightsCheck.Wpf;
 public sealed record ComponentRow(string Name, string Role, string Licence, string Copyright, string Url);
 
 /// <summary>
-/// The "Despre" window: the banner, the GPLv3 notice and the third-party list, all from the core.
+/// The "About" window: the banner, the GPLv3 notice and the third-party list, all from the core.
 /// </summary>
 public sealed class AboutViewModel
 {
