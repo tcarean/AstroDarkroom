@@ -75,7 +75,45 @@ public class PairLabelPanelTests
                     Assert.Equal(Natural(button), button.DesiredSize.Width, 0.5);
                 }
             }
+
+            // The row is laid out left to right and the last button ends inside the room.
+            double x = -1;
+            foreach (UIElement child in panel.Children)
+            {
+                double left = VisualTreeHelper.GetOffset(child).X;
+                Assert.True(left > x, $"a child at {left} after one at {x}");
+                x = left;
+            }
+
+            Assert.True(RightEdge(panel) <= available + 0.5, "the last button ends past the room");
         });
+    }
+
+    [Fact]
+    public async Task R065_AtTheFloor_TheNamesStopAt48_AndTheLabelIsClipped()
+    {
+        await WpfThread.RunAsync(() =>
+        {
+            (PairLabelPanel panel, TextBlock nameA, TextBlock nameB, double fixedWidth) = Label();
+            double available = fixedWidth + 40;
+
+            panel.Measure(new Size(available, 26));
+            panel.Arrange(new Rect(0, 0, panel.DesiredSize.Width, 26));
+
+            // A trimmed name ends at a character boundary, so it can measure a little under the
+            // 48 it was given, never over it.
+            Assert.InRange(nameA.DesiredSize.Width, PairLabelLayout.MinName - 10, PairLabelLayout.MinName + 0.5);
+            Assert.InRange(nameB.DesiredSize.Width, PairLabelLayout.MinName - 10, PairLabelLayout.MinName + 0.5);
+            Assert.Equal(available, panel.DesiredSize.Width, 0.5);
+            Assert.True(RightEdge(panel) > available, "the last button is not past the clip");
+        });
+    }
+
+    /// <summary>Where the last child's border ends, in the panel: its offset, its width and its right margin.</summary>
+    private static double RightEdge(PairLabelPanel panel)
+    {
+        var last = (FrameworkElement)panel.Children[panel.Children.Count - 1];
+        return VisualTreeHelper.GetOffset(last).X + last.ActualWidth + last.Margin.Right;
     }
 
     /// <summary>

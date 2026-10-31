@@ -43,7 +43,8 @@ has none. Everything on screen is dark, whatever the system theme (ADR 0018).
   `DisplayRenderer.cs`, `SampleHistogram.cs`, `LevelLookup.cs`, `RainbowTable.cs`; ADR 0040), a float TIFF's samples shown as a
   FITS's (`FloatSamples.cs`), and the layout
   records the controls assign without arithmetic of their own (`RenderPlan.cs`,
-  `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `Geometry.cs`, `PointD.cs`),
+  `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `PairLabelLayout.cs`,
+  `Geometry.cs`, `PointD.cs`),
   and every text the application shows, in English and Romanian, with the command line that
   chooses between them (`UiText.cs`, `StartupArguments.cs`).
   All of it unit tested.
@@ -163,7 +164,8 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. ImageVisualCompare
 edit:
 
 - Anything in `Controls/`: `docs/design/rendering.md` and ADR 0010 to ADR 0013, ADR 0019 (the
-  shared transform, the two pixel spaces, `Canvas`, the clip, the backdrop, the floating bars).
+  shared transform, the two pixel spaces, `Canvas`, the clip, the backdrop, the floating bars);
+  `Controls/PairLabelPanel.cs`, the toolbar's pair label, is `docs/design/shell.md`'s.
 - Anything in `Imaging/`, or a package: `docs/design/imaging.md` and ADR 0008, ADR 0014 to
   ADR 0016 (probe first, decode sequentially, release through the finaliser pass).
 - `Directory.Build.props`, a new `Window`, the About window: `docs/design/shell.md` and ADR 0017,

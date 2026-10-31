@@ -57,9 +57,10 @@ public readonly record struct PairLabelLayout(double NameAWidth, double NameBWid
         ArgumentOutOfRangeException.ThrowIfNegative(nameA);
         ArgumentOutOfRangeException.ThrowIfNegative(nameB);
         ArgumentOutOfRangeException.ThrowIfNegative(fixedWidth);
-        if (double.IsNaN(available) || double.IsNaN(nameA) || double.IsNaN(nameB) || double.IsNaN(fixedWidth))
+        // A NaN name or fixed width is already refused above, since NaN carries the sign bit.
+        if (double.IsNaN(available))
         {
-            throw new ArgumentOutOfRangeException(nameof(available), "A width cannot be NaN.");
+            throw new ArgumentOutOfRangeException(nameof(available), "The width available cannot be NaN.");
         }
 
         double a = Math.Min(nameA, MaxName);
@@ -71,11 +72,12 @@ public readonly record struct PairLabelLayout(double NameAWidth, double NameBWid
         }
 
         // The longer name gives first: cut to what the shorter leaves, when that still keeps it
-        // at least as long as the shorter one.
+        // at least as long as the shorter one, and never below its floor (the second review of
+        // 2026-10-30: a short name beside a long one in little room cut the long one under 48).
         double shorter = Math.Min(a, b);
         if (room - shorter >= shorter)
         {
-            double longer = room - shorter;
+            double longer = Math.Max(room - shorter, Math.Min(MinName, Math.Max(a, b)));
             return a >= b ? new PairLabelLayout(longer, b) : new PairLabelLayout(a, longer);
         }
 

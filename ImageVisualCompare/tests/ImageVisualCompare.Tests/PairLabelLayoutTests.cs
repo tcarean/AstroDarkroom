@@ -45,6 +45,17 @@ public class PairLabelLayoutTests
         // 340 of room for the names: 300 + 100 do not fit, and the longer is cut to the 240 left.
         Assert.Equal(new PairLabelLayout(240, 100), PairLabelLayout.For(600, 300, 100, 260));
         Assert.Equal(new PairLabelLayout(100, 240), PairLabelLayout.For(600, 100, 300, 260));
+
+        // 200 of room: the longer is cut down to the shorter's own 100, the last point of this rule.
+        Assert.Equal(new PairLabelLayout(100, 100), PairLabelLayout.For(460, 300, 100, 260));
+    }
+
+    [Fact]
+    public void R065_TheLongerNameGivesFirst_ButNotBelow48()
+    {
+        // 70 of room beside a name of 30: what the shorter leaves is 40, and the longer stops at
+        // 48 instead, so the label is clipped rather than a name cut to nothing.
+        Assert.Equal(new PairLabelLayout(48, 30), PairLabelLayout.For(330, 300, 30, 260));
     }
 
     [Fact]
@@ -53,6 +64,9 @@ public class PairLabelLayoutTests
         // 140 of room: the longer cut to what the shorter leaves would be shorter than it, so
         // each takes half.
         Assert.Equal(new PairLabelLayout(70, 70), PairLabelLayout.For(400, 300, 200, 260));
+
+        // Two names of 300 in 340 of room: half each.
+        Assert.Equal(new PairLabelLayout(170, 170), PairLabelLayout.For(600, 300, 300, 260));
     }
 
     [Fact]

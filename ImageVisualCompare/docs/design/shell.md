@@ -75,12 +75,7 @@ one.
 A change of one image (R-065, ADR 0046) is the third kind of load through the same field.
 `ChangeImageAsync(side, from)`, reached from `ChangeBeforeButton` and `ChangeAfterButton`, the
 two buttons after the file names in `PairPanel`, the left column of the toolbar's grid, returns at
-once while `_opening` is set or with no pair shown. `PairPanel` is a `PairLabelPanel`
-(`Controls/`), a row whose two children marked `IsName` are measured again at the widths
-`PairLabelLayout.For` gives them from the panel's room and the other children's widths: a
-`StackPanel` measures without a limit, and two long names pushed `Change B…` past the column's
-clip (the review of 2026-10-30). The widths are the record's, tested in Core (R-065); the panel
-only assigns them and lays the row out. Otherwise it asks `IFileDialogService.PickImage`
+once while `_opening` is set or with no pair shown. Otherwise it asks `IFileDialogService.PickImage`
 for one file, in the folder of the file it replaces, and hands the pair on screen, the side and the
 file to `ImagePairLoader.ReplaceAsync` through `LoadWithOverlayAsync`, with
 `ConfirmPaddingAsync` for the question and `_mode` for the mode, as an open does; the loader
@@ -104,6 +99,19 @@ switch and a change alike. `MainWindowTests` changes B and A with dialogs that p
 image, and reads the names, the title, the divider and the other image's `Source`, the same bitmap
 object, back; it also cancels the one dialog and clicks the buttons before a pair and while one
 loads.
+
+## The pair label
+
+`PairPanel` is a `PairLabelPanel` (`Controls/`), a row whose two children marked `IsName`, the
+file names, are given the widths `PairLabelLayout.For` works out from the panel's room and the
+other children's widths: a `StackPanel` measures without a limit, and two long names pushed
+`Change B…` past the column's clip (the review of 2026-10-30). The widths are the record's, tested
+in Core (R-065); the panel only assigns them and lays the row out. It measures a name that fits at
+the panel's whole width and measures again only to trim: WPF re-measures a child whose text
+changed with its last constraint, and asks the panel only when the child's desired size changed,
+so a name last measured at its own width could never grow, and the names, empty when the
+toolbar is first laid out, stayed invisible (`PairLabelPanelTests` sets the text after the
+first layout). The buttons leave the clip only at the floor, where both names are at 48 DIPs.
 
 ## The focus after a toolbar click
 

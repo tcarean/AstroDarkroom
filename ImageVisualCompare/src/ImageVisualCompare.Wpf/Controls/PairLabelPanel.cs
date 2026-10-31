@@ -26,7 +26,8 @@ namespace ImageVisualCompare.Wpf.Controls;
 /// <see cref="IsNameProperty"/> are the file names, given the widths <see cref="PairLabelLayout"/>
 /// works out from the room the panel has, so they are trimmed before a button is lost; every
 /// other child keeps its own width. A <c>StackPanel</c> measures its children without a limit
-/// and would let a long name push the last button out of the panel's clip.
+/// and would let a long name push the last button out of the panel's clip. With other than two
+/// children marked as names nothing is trimmed: the row is then a plain stack.
 /// </summary>
 public sealed class PairLabelPanel : Panel
 {

@@ -158,9 +158,11 @@ public class MainWindowTests
         Assert.Equal(ImageSide.A, dialogs.SideAsked);
         Assert.Equal([@"C:\pair\a.png", @"C:\pair\b.png", @"C:\other\c.png"], loader.Loaded);
 
-        // Open… then starts in the folder of the image A chosen last, the change's (R-001).
+        // Open… then starts in the folder of the image A chosen last, the change's (R-001); the
+        // open it starts is waited for, so nothing of it runs on into the next test.
         await WpfThread.RunAsync(() => window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)));
         Assert.Equal(@"C:\other", dialogs.PairDirectoryAsked);
+        await WaitUntilAsync(window, w => w.BeforeName.Text == "a.png", "the pair opened again");
     }
 
     [Fact]
@@ -371,13 +373,17 @@ public class MainWindowTests
     /// Waits for the open the test started to put its pair on screen: the open runs on through
     /// the dispatcher once the test's body returns, so the window is looked at between pumps.
     /// </summary>
-    private static async Task WaitForPairAsync(MainWindow window)
+    private static Task WaitForPairAsync(MainWindow window) =>
+        WaitUntilAsync(window, w => w.StatusPair.Text.Length > 0, "the pair was shown");
+
+    /// <summary>Waits up to 5 s, between pumps of the dispatcher, for the window to satisfy a condition.</summary>
+    private static async Task WaitUntilAsync(MainWindow window, Func<MainWindow, bool> condition, string what)
     {
         for (int i = 0; i < 100; i++)
         {
-            bool shown = false;
-            await WpfThread.RunAsync(() => shown = window.StatusPair.Text.Length > 0);
-            if (shown)
+            bool satisfied = false;
+            await WpfThread.RunAsync(() => satisfied = condition(window));
+            if (satisfied)
             {
                 return;
             }
@@ -385,7 +391,7 @@ public class MainWindowTests
             await Task.Delay(50);
         }
 
-        Assert.Fail("the pair was not shown within 5 s");
+        Assert.Fail($"not within 5 s: {what}");
     }
 
     /// <summary>
