@@ -121,7 +121,8 @@ the MIT text with its template's year and name left unfilled; it follows as it i
 - Licence: LGPL-2.1-only, of LibRaw's two (LGPL-2.1-only OR CDDL-1.0)
 - Project: <https://www.libraw.org/>
 - Source: LibRaw 0.21.1, built with LibRaw-cmake at `6e26c9e` by vcpkg's `libraw` port at
-  `2e3b958` (the links are under "Licence and compatibility")
+  `2e3b958`, as `libraw[dng-lossy,openmp]:x64-windows` (the links are under "Licence and
+  compatibility")
 
 **Role.** Reads the camera raw files (NEF, CR2, CR3, ARW, DNG and the others) for DarksCheck,
 FlatCheck and LightsCheck, through the binding of the previous section. `raw_r.dll` reports itself
@@ -143,7 +144,10 @@ tool that ships it shows LibRaw's copyright. Its source is LibRaw 0.21.1,
 <https://github.com/microsoft/vcpkg/tree/2e3b958ff00e01b26e82d139bb4765586f349f07/ports/libraw>,
 compiles with the CMake files of LibRaw-cmake at commit `6e26c9e`,
 <https://github.com/LibRaw/LibRaw-cmake/tree/6e26c9e73677dc04f9eb236a97c6a4dc225ba7e8>, after
-applying the port's two patches to them (`dependencies.patch`, `fix-install.patch`). The package
+applying the port's two patches to them (`dependencies.patch`, `fix-install.patch`). It was
+installed with the port's two features, both off by default, as
+`libraw[dng-lossy,openmp]:x64-windows`: `raw_r.dll` imports ten functions of `jpeg8.dll`, which
+`dng-lossy` brings in, and ten of OpenMP's `VCOMP140.DLL`, which `openmp` turns on. The package
 records no vcpkg commit: `raw_r.dll` was linked on 2023-05-31, and the only `libraw` port that
 built LibRaw 0.21.1 before that day is the one of commit `2e3b958` (2023-02-16).
 

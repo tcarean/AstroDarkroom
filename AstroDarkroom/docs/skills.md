@@ -31,8 +31,10 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   version (R-017, ADR 0014): `SuiteTests` is red until the `Packages:` and `Programs:` lines
   match the windows' lock files, and `ThirdPartyTests` until the new section's licence phrases
   join `LicenceTexts`. A new version of `Sdcb.LibRaw.runtime.win64` also means reading again what
-  its four DLLs report (LibRaw, libjpeg-turbo, Little CMS, zlib), their texts, and from
-  `raw_r.dll`'s link date the vcpkg `libraw` port that built it, for LibRaw's source links.
+  its four DLLs report (LibRaw, libjpeg-turbo, Little CMS, zlib), their texts, and, for
+  LibRaw's source links, the vcpkg `libraw` port that built it, from `raw_r.dll`'s link date,
+  and the port's features it was installed with, from its imports (`jpeg8.dll` for
+  `dng-lossy`, `VCOMP140.DLL` for `openmp`).
 
 ## /wrap-up
 
@@ -48,6 +50,11 @@ Values (the solution, the folders, the publish list, what the auditor may also r
 
 ## /release
 
+- At step 2, first: the About windows of DarksCheck, FlatCheck and LightsCheck, which show
+  LibRaw's notice, must send the user to `THIRD-PARTY-NOTICES.txt`, where its licence's copy is
+  (LGPL-2.1 section 6, ADR 0014). Search each tool's window texts for `THIRD-PARTY-NOTICES`; if
+  one still names `THIRD-PARTY-NOTICES.md`, stop and say so: that tool's follow-up task comes
+  before the release.
 - At step 2: this release is the suite's. Read each component's `CHANGELOG.md`
   (`../DarksCheck`, `../FlatCheck`, `../LightsCheck`, `../ImageVisualCompare`,
   `../WCS_Copy`, `../AstroPhotoAnalyzer`) and list the ones whose `[Unreleased]` has content:

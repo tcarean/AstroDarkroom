@@ -48,8 +48,11 @@ Sdcb.LibRaw's repository: their debug paths name vcpkg's build folders (`buildtr
 the like), and the package records no vcpkg commit. `raw_r.dll` was linked on 2023-05-31; the
 only `libraw` port that built LibRaw 0.21.1 before that day is the one of vcpkg's commit
 `2e3b958` (2023-02-16), which compiles LibRaw 0.21.1 with the CMake files of LibRaw-cmake at
-`6e26c9e`, after two patches of its own to them. LGPL-2.1 counts the scripts that control
-compilation as part of a library's source, so a link to LibRaw's tag alone does not give them.
+`6e26c9e`, after two patches of its own to them; and the DLL's imports, ten functions of
+`jpeg8.dll` and ten of OpenMP's `VCOMP140.DLL`, show it was installed with the port's two
+features that are off by default, as `libraw[dng-lossy,openmp]:x64-windows`. LGPL-2.1 counts the
+scripts that control compilation as part of a library's source, so a link to LibRaw's tag alone
+does not give them.
 Put to the owner again the same day, with the source archive beside the zip as the
 recommendation, the owner chose exact links only.
 
@@ -76,11 +79,13 @@ recommendation, the owner chose exact links only.
   unchanged, as `DOTNET-LICENSE.txt` and `DOTNET-THIRD-PARTY-NOTICES.txt`, found through the
   runtime pack the publish resolved, and stops with an error when they are missing. The
   WindowsDesktop pack's `LICENSE` is not shipped a second time; WPF's own notices, which its pack
-  does not carry, are linked at the tag of the runtime's version.
+  does not carry, are linked at the tag of the runtime's version, which a test keeps equal to the
+  WindowsDesktop pack the publish takes.
 - **LibRaw's source by exact links**, the owner's choice: LibRaw is used under the LGPL-2.1, as a
   library of its own that a build with the same interface can replace, and its section links
   what `raw_r.dll` was built from, LibRaw 0.21.1, LibRaw-cmake at `6e26c9e` and vcpkg's `libraw`
-  port at `2e3b958`, saying that the package records no vcpkg commit and how the port was found.
+  port at `2e3b958`, names the install, `libraw[dng-lossy,openmp]:x64-windows`, and says that the
+  package records no vcpkg commit and how the port and its features were found.
 - **"Despre" points at the shipped file.** Its lead names `THIRD-PARTY-NOTICES.txt` beside the
   program; the lead and the name are in the core (`ThirdParty.Lead`, `ThirdParty.NoticesFile`),
   where the tests pin them, and the window shows the lead. The card still lists the launcher's
@@ -91,7 +96,10 @@ recommendation, the owner chose exact links only.
   section's `Programs:` line names exactly the windows that resolve its packages; `ThirdPartyTests`
   checks phrases of each section's licence texts, that every section is among those it checks,
   the native libraries' sections, the publish's items in the window project, the publish list
-  MSBuild computes for win-x64 (`ComputeResolvedFilesToPublishList`), and the lead.
+  MSBuild computes for win-x64 with the switches of `kit.json` (`ComputeResolvedFilesToPublishList`),
+  the WPF link against the runtime that list takes, and the lead. Before a suite release,
+  `/release` stops while a tool that ships LibRaw still points its About window at a notices
+  file the folder does not have (`docs/skills.md`).
 
 ## Alternatives rejected
 
@@ -112,8 +120,8 @@ recommendation, the owner chose exact links only.
   after the review), **or a written offer for three years** (the first recommendation): the owner
   chose links, twice.
 - **A publish inside the tests, to check the files it writes**: about a minute per run of the
-  gate; MSBuild's publish list for win-x64 gives the same answer in about a second, copying
-  nothing.
+  gate; MSBuild's publish list for win-x64 answers for these files in about a second, copying
+  nothing (it leaves out the referenced projects' outputs, which no check here needs).
 
 ## Consequences
 
@@ -123,11 +131,13 @@ that adds a package, or updates one, turns this project's gate red until the fil
 the new version, as a redrawn icon does (ADR 0011); a new version of the LibRaw runtime package
 also means reading the four DLLs' versions and texts again, and finding again, from their link
 date, the vcpkg port that built them, which no test can. A runtime package for another system is
-named too, since the lock files list it. The publish-list test runs MSBuild from the tests,
-about a second once the window is built. The tools' own About windows still point at their
-notices beside their source: pointing them at the suite's file, and listing libjpeg-turbo,
-Little CMS and zlib apart from LibRaw in the three tools that ship them, is a task in each tool,
-due before the next suite release, since LGPL-2.1 asks a program that shows LibRaw's notice to
-point at the licence's copy. The texts of Chromium and SharpZipLib are those of their licence
+named too, since the lock files list it. The publish-list tests run MSBuild from the tests,
+about a second once the window is built, and a new SDK patch that moves the 8.0 runtime turns
+the WPF link's test red until the link names the new tag. The tools' own About windows still
+point at their notices beside their source: pointing them at the suite's file, listing
+libjpeg-turbo, Little CMS and zlib apart from LibRaw in the three tools that ship them, and
+naming ImageSharp's licence Apache-2.0 in FlatCheck's and AstroPhotoAnalyzer's, as the Split
+License asks, is a task in each tool, due before the next suite release, since LGPL-2.1 asks a
+program that shows LibRaw's notice to point at the licence's copy (`/release` checks that one). The texts of Chromium and SharpZipLib are those of their licence
 files at the commits `d522fb7` and `ff2d7c3` read on 2026-10-31, the projects ImageSharp adapted
 code from.

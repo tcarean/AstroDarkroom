@@ -143,7 +143,8 @@ public partial class ThirdPartyTests
                      "Copyright (c) 2005 Adobe Systems Incorporated",
                      "https://github.com/LibRaw/LibRaw/tree/0.21.1",
                      "https://github.com/LibRaw/LibRaw-cmake/tree/6e26c9e73677dc04f9eb236a97c6a4dc225ba7e8",
-                     "https://github.com/microsoft/vcpkg/tree/2e3b958ff00e01b26e82d139bb4765586f349f07/ports/libraw"] },
+                     "https://github.com/microsoft/vcpkg/tree/2e3b958ff00e01b26e82d139bb4765586f349f07/ports/libraw",
+                     "libraw[dng-lossy,openmp]:x64-windows"] },
         { "libjpeg-turbo", [.. Bsd, "This software is based in part on the work of the Independent JPEG Group.",
                             "This software is copyright (C) 1991-2020, Thomas G. Lane, Guido Vollbeding.",
                             "(2) If only executable code is distributed, then the accompanying documentation must state that",
@@ -182,14 +183,15 @@ public partial class ThirdPartyTests
     }
 
     /// <summary>
-    /// Every section of the file is one whose licence text the theory above checks, and the
-    /// reverse: a section added for a new package, with only its Packages and Programs lines,
-    /// would satisfy SuiteTests and no test would ask for its licence (R-017).
+    /// Every section of the file is one whose licence text the theory above checks, with at least
+    /// one phrase, and the reverse: a section added for a new package, with only its Packages and
+    /// Programs lines, would satisfy SuiteTests and no test would ask for its licence (R-017).
     /// </summary>
     [Fact]
     public void R017_EverySectionOfTheFileHasItsLicenceTextChecked()
     {
-        IEnumerable<string> checkedHeadings = LicenceTexts.Select(row => (string)row[0]);
+        Assert.All(LicenceTexts, row => Assert.NotEmpty((string[])row[1]!));
+        IEnumerable<string> checkedHeadings = LicenceTexts.Select(row => (string)row[0]!);
         Assert.Equal(checkedHeadings.Order(StringComparer.Ordinal), Notices.Sections().Keys.Order(StringComparer.Ordinal));
     }
 
@@ -236,19 +238,72 @@ public partial class ThirdPartyTests
     }
 
     /// <summary>
-    /// What the launcher's self-contained publish would copy, asked of MSBuild without publishing:
-    /// the window project's publish list for win-x64, as release.publish builds it, about a second
-    /// once the project is built (R-017). It holds the notices file under its suite name and the
-    /// runtime pack's two texts under theirs, each copied, the two from files of the
-    /// Microsoft.NETCore.App runtime pack that exist; a target that stopped running, or an item
-    /// no longer copied, which the project file's test above cannot see, turns it red.
+    /// What the launcher's self-contained publish would copy, asked of MSBuild without publishing
+    /// (ReadPublishList): it holds the notices file under its suite name and the runtime pack's two
+    /// texts under theirs, each copied, the two from files of the Microsoft.NETCore.App runtime
+    /// pack that exist (R-017). A target that stopped running, or an item no longer copied, which
+    /// the project file's test above cannot see, turns it red.
     /// </summary>
     [Fact]
     public async Task R017_ThePublishListHoldsTheNoticesFileAndTheRuntimesTwoTexts()
     {
+        Dictionary<string, (string Source, string Copy)> published = await PublishList.Value;
+        string[] copied = ["PreserveNewest", "Always"];
+        Assert.True(published.TryGetValue(ThirdParty.NoticesFile, out (string Source, string Copy) notices), $"no {ThirdParty.NoticesFile} in the publish list");
+        Assert.EndsWith("THIRD-PARTY-NOTICES.md", notices.Source, StringComparison.Ordinal);
+        Assert.Contains(notices.Copy, copied);
+        foreach ((string name, string packFile) in new[] { ("DOTNET-LICENSE.txt", "LICENSE.TXT"), ("DOTNET-THIRD-PARTY-NOTICES.txt", "THIRD-PARTY-NOTICES.TXT") })
+        {
+            Assert.True(published.TryGetValue(name, out (string Source, string Copy) text), $"no {name} in the publish list");
+            Assert.Equal(packFile, Path.GetFileName(text.Source));
+            Assert.Contains("microsoft.netcore.app.runtime.win-x64", text.Source, StringComparison.OrdinalIgnoreCase);
+            Assert.True(File.Exists(text.Source), $"{name} comes from {text.Source}, which does not exist");
+            Assert.Contains(text.Copy, copied);
+        }
+    }
+
+    /// <summary>
+    /// The notices file links WPF's own third-party notices at the tag of the WindowsDesktop
+    /// runtime pack the publish takes (R-017), a version a new SDK patch moves: the link would then
+    /// name a runtime the suite no longer ships, until it is updated.
+    /// </summary>
+    [Fact]
+    public async Task R017_TheWpfNoticesLinkNamesTheRuntimeThePublishTakes()
+    {
+        Dictionary<string, (string Source, string Copy)> published = await PublishList.Value;
+        string? version = published.Values.Select(v => WindowsDesktopPack().Match(v.Source))
+            .Where(m => m.Success).Select(m => m.Groups[1].Value).FirstOrDefault();
+        Assert.True(version is not null, "no file of the Microsoft.WindowsDesktop.App runtime pack in the publish list");
+        string link = $"https://github.com/dotnet/wpf/blob/v{version}/THIRD-PARTY-NOTICES.TXT";
+        Assert.True(Notices.Text.Contains(link, StringComparison.Ordinal),
+            $"THIRD-PARTY-NOTICES.md does not link {link}, WPF's notices at the runtime {version} the publish takes");
+    }
+
+    /// <summary>The window project's publish list, asked of MSBuild once for the tests that read it.</summary>
+    private static readonly Lazy<Task<Dictionary<string, (string Source, string Copy)>>> PublishList = new(ReadPublishList);
+
+    /// <summary>
+    /// Asks MSBuild what the launcher's publish would copy, without publishing: the window
+    /// project's ComputeResolvedFilesToPublishList for win-x64, self-contained, the switches of its
+    /// release.publish entry in kit.json (checked here), about a second once the project is built.
+    /// The list holds what the publish takes from the project itself and from the runtime packs;
+    /// the referenced projects' outputs, which that target alone does not resolve, are not in it.
+    /// </summary>
+    /// <returns>Each file of the list, by its path in the publish folder, with the file it is copied from and its CopyToPublishDirectory.</returns>
+    private static async Task<Dictionary<string, (string Source, string Copy)>> ReadPublishList()
+    {
+        string root = TestData.FindRepoRoot();
+        using (JsonDocument kit = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "kit.json"))))
+        {
+            JsonElement launcher = kit.RootElement.GetProperty("release").GetProperty("publish").EnumerateArray()
+                .Single(e => e.GetProperty("project").GetString() == "src/AstroDarkroom.Wpf/AstroDarkroom.Wpf.csproj");
+            string[] switches = ["-r", "win-x64", "--self-contained"];
+            Assert.Equal(switches, launcher.GetProperty("args").EnumerateArray().Select(a => a.GetString() ?? ""));
+        }
+
         ProcessStartInfo start = new(Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet")
         {
-            WorkingDirectory = TestData.FindRepoRoot(),
+            WorkingDirectory = root,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
@@ -288,18 +343,7 @@ public partial class ThirdPartyTests
             published[relative] = (item.GetProperty("Identity").GetString() ?? "", copy);
         }
 
-        string[] copied = ["PreserveNewest", "Always"];
-        Assert.True(published.TryGetValue(ThirdParty.NoticesFile, out (string Source, string Copy) notices), $"no {ThirdParty.NoticesFile} in the publish list");
-        Assert.EndsWith("THIRD-PARTY-NOTICES.md", notices.Source, StringComparison.Ordinal);
-        Assert.Contains(notices.Copy, copied);
-        foreach ((string name, string packFile) in new[] { ("DOTNET-LICENSE.txt", "LICENSE.TXT"), ("DOTNET-THIRD-PARTY-NOTICES.txt", "THIRD-PARTY-NOTICES.TXT") })
-        {
-            Assert.True(published.TryGetValue(name, out (string Source, string Copy) text), $"no {name} in the publish list");
-            Assert.Equal(packFile, Path.GetFileName(text.Source));
-            Assert.Contains("microsoft.netcore.app.runtime.win-x64", text.Source, StringComparison.OrdinalIgnoreCase);
-            Assert.True(File.Exists(text.Source), $"{name} comes from {text.Source}, which does not exist");
-            Assert.Contains(text.Copy, copied);
-        }
+        return published;
     }
 
     /// <summary>BSD-3-Clause's two conditions on copies, the start of its disclaimer and its last words.</summary>
@@ -353,4 +397,8 @@ public partial class ThirdPartyTests
 
     [GeneratedRegex(@"^##\s+(.+)$", RegexOptions.Multiline)]
     private static partial Regex Heading();
+
+    /// <summary>The version folder of a file of the WindowsDesktop runtime pack in the NuGet cache.</summary>
+    [GeneratedRegex(@"microsoft\.windowsdesktop\.app\.runtime\.win-x64[\\/]([^\\/]+)[\\/]", RegexOptions.IgnoreCase)]
+    private static partial Regex WindowsDesktopPack();
 }

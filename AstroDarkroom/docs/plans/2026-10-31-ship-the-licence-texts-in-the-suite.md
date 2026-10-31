@@ -142,3 +142,14 @@ and AstroPhotoAnalyzer point "Despre" at the suite's file.
   asks; WPF's own notices linked; "nothing has to be installed" narrowed to .NET, since
   `raw_r.dll` needs the Visual C++ runtime the folder lacks; continued list lines joined by
   `Notices.Field`; stale summaries in `SuiteTests`, `CLAUDE.md` and `docs/skills.md`.
+- **The second review** (of the fix commit only; two risks, six nits). Taken: the install the
+  DLL came from, `libraw[dng-lossy,openmp]:x64-windows`, both features off by default (measured:
+  `raw_r.dll` imports ten functions of `jpeg8.dll` by ordinal and ten of `VCOMP140.DLL`); a stop
+  in `/release` while a LibRaw tool's About window still names `THIRD-PARTY-NOTICES.md`; the
+  README's "(nothing to install)" narrowed to .NET, as the root README has it; ImageSharp's
+  licence naming in FlatCheck's and AstroPhotoAnalyzer's About windows added to the per-tool
+  follow-ups; a test that the WPF link names the WindowsDesktop pack the publish takes (red with
+  `v8.0.32`); the publish-list query's switches checked against `kit.json` and its wording made
+  exact (it leaves out the referenced projects' outputs); at least one phrase per checked
+  section. Left: the plan's own step 4, which still says "Sdcb.LibRaw's build", records what was
+  approved, and this section what changed.

@@ -200,12 +200,17 @@ left out: its `LICENSE` has the same words, and it has no notices file (the noti
 WPF's repository's one instead).
 
 `ThirdPartyTests` reads the project file for the notices item's `Link`, the two published names and
-the error, and asks MSBuild what the publish would copy without publishing: `dotnet build` of the
-window project with the target `ComputeResolvedFilesToPublishList`, `RuntimeIdentifier=win-x64`,
-`SelfContained=true` and `-getItem:ResolvedFileToPublish`, whose JSON lists every file with its
-`RelativePath` and `CopyToPublishDirectory`, in about a second once the project is built; a
-whole publish would cost the gate about a minute. An item left without `CopyToPublishDirectory`
-is listed as `Always`, so it is still copied. `SuiteTests` binds the notices file's `Packages:`
+the error, and asks MSBuild what the publish would copy without publishing (`ReadPublishList`,
+run once for its two tests): `dotnet build` of the window project with the target
+`ComputeResolvedFilesToPublishList`, `RuntimeIdentifier=win-x64` and `SelfContained=true`, the
+switches of the launcher's `release.publish` entry, which the test compares with `kit.json`, and
+`-getItem:ResolvedFileToPublish`, whose JSON lists what the publish takes from the project and
+from the runtime packs, each with its `RelativePath` and `CopyToPublishDirectory`, in about a
+second once the project is built (the referenced projects' outputs are not in it: that target
+alone does not resolve them); a whole publish would cost the gate about a minute. An item left
+without `CopyToPublishDirectory` is listed as `Always`, so it is still copied. The second test
+takes the WindowsDesktop pack's version from the list's paths and checks that the notices file
+links WPF's notices at that tag. `SuiteTests` binds the notices file's `Packages:`
 and `Programs:` lines to the lock file beside each window project of `release.publish`, which
 holds the packages of the projects that window references too; a list item may go on over
 indented lines, which `Notices.Field` joins.
