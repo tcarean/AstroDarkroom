@@ -25,7 +25,7 @@ using NLog;
 namespace LightsCheck.Wpf;
 
 /// <summary>
-/// One paragraph of an explanation the core words: the Respinse tab's (R-037) or the Dithering
+/// One paragraph of an explanation the core words: the Rejected tab's (R-037) or the Dithering
 /// card's (R-047); the window sets the emphasised one in bold.
 /// </summary>
 /// <param name="Text">The paragraph, as the core wrote it (Romanian).</param>
@@ -121,7 +121,7 @@ public sealed record CropVm(string Caption, BitmapSource Image);
 /// <summary>
 /// The window's state (R-029 to R-032): the folder, the inputs, the run with its progress and
 /// cancellation, and the result shaped for the tabs. Every figure and every sentence comes from
-/// the core, the verdict words, the `scara` label and the `EROARE: ` line included; the
+/// the core, the verdict words, the `scale` label and the `ERROR: ` line included; the
 /// view-model arranges them, and its few words of its own (the guide lines' labels) are
 /// <see cref="WindowTexts"/>'.
 /// </summary>

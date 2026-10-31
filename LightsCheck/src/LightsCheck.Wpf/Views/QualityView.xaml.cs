@@ -20,7 +20,7 @@ using System.Windows.Controls;
 namespace LightsCheck.Wpf;
 
 /// <summary>
-/// The Calitate tab: FWHM, elongation, star count and background, frame by frame; all bound to <see
+/// The Quality tab: FWHM, elongation, star count and background, frame by frame; all bound to <see
 /// cref="MainViewModel"/>, no code of its own.
 /// </summary>
 public partial class QualityView : UserControl
