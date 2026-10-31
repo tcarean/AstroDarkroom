@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- The console, copywcs.exe: options, dispatch, exit code, printing. Everything that reads,
        selects or writes a card is in CopyWcs.Core; CopyWcsCli.Run(args, stdout, stderr) is what
-       the tests drive, and Main is a one-line shim to it. -->
+       the tests drive, and Main is a shim around it that opens and closes the diagnostic log
+       (ADR 0009). -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>CopyWcs</RootNamespace>

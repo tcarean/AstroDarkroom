@@ -273,7 +273,64 @@ public class WindowSmokeTests
             Assert.False(vm.HasProfileRows);
             Assert.NotEmpty(vm.ProfileGap);
 
+            // R-118: the "no filters" box unchecked - the master's own depth, the paragraph
+            // saying why nothing is compared, no row and no gap.
+            vm.NoFilters = false;
+            vm.Populate(new StructureOutcome(r, null, null, null));
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structura-filtru");
+            Assert.False(vm.HasProfileRows);
+            Assert.Empty(vm.ProfileGap);
+            Assert.NotEmpty(vm.ProfileMaster);
+            Assert.NotEmpty(vm.FilteredNote);
+
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+    }
+
+    /// <summary>
+    /// The opening panel (R-120): the window while the opening runs, held at the catalog so
+    /// the structure and the prefill rows say "running" and the series row "waiting"; the tabs
+    /// are collapsed meanwhile and the panel is up. Then, once everything has ended, the panel
+    /// is gone and the tabs are back.
+    /// </summary>
+    [Fact]
+    public async Task R120_TheOpeningPanelRendersWhileTheOpeningRuns()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0101.NEF");
+        using var ws = new TempWorkspace();
+        using var hold = new ManualResetEventSlim(false);
+        var sources = LensProfileTestData.Sources(ws);
+        var raw = new LoadedFrame { Header = new Dictionary<string, string>(), FocalMm = 20, FNumber = 2.8, Camera = "NIKON D3300", LensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8 };
+        var vm = new MainViewModel(null, null, null,
+            locateProfiles: () => { hold.Wait(); return sources; },
+            loadInfo: path => RawReader.IsRawPath(path) ? raw : ImageLoader.LoadInfo(path));
+
+        Task open = vm.OpenAsync(f.Root);   // waits at the catalog
+        Assert.True(vm.IsRunning);
+        Assert.True(vm.OpeningSteps[0].IsRunning);
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+            // The window's content, as the problem-screen render does: a Window itself draws
+            // nothing into a bitmap.
+            var window = new MainWindow { DataContext = vm };
+            Render((FrameworkElement)window.Content, 1360, 820, "deschidere");
+            Assert.Equal(Visibility.Visible, ((FrameworkElement)window.FindName("Opening")).Visibility);
+            Assert.Equal(Visibility.Collapsed, ((FrameworkElement)window.FindName("Tabs")).Visibility);
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+
+        hold.Set();
+        await open;
+        Assert.False(vm.IsRunning);
+
+        _sta.Invoke(() =>
+        {
+            var window = new MainWindow { DataContext = vm };
+            Render((FrameworkElement)window.Content, 1360, 820);
+            Assert.Equal(Visibility.Collapsed, ((FrameworkElement)window.FindName("Opening")).Visibility);
+            Assert.Equal(Visibility.Visible, ((FrameworkElement)window.FindName("Tabs")).Visibility);
         });
     }
 

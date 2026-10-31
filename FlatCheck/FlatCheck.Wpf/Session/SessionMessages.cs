@@ -110,16 +110,17 @@ namespace FlatCheck.Wpf
 
         // ------------------------------------------------------- the waiting screen
         //
-        // A run a click starts waits for the opening chain (the "sequential, not parallel" rule
-        // of MainViewModel); while it waits, the waiting screen says that and not the run's own
-        // message, which would claim work that has not begun.
+        // A run a click starts waits for the gate another run holds (ADR 0061; since R-120 the
+        // tabs are not on screen while the opening chain holds it, so the other run is another
+        // click's); while it waits, the waiting screen says that and not the run's own message,
+        // which would claim work that has not begun.
 
-        /// <summary>The waiting screen's first line while a click-run waits for the analyses
-        /// started by opening the folder.</summary>
+        /// <summary>The waiting screen's first line while a click-run waits for the gate another
+        /// run holds.</summary>
         /// <returns>The line.</returns>
-        internal static string WaitingForOpeningChain() =>
-            T("Waiting for the analyses started when the folder was opened to finish...",
-              "Astept sa se termine analizele pornite la deschiderea folderului...");
+        internal static string WaitingForRunningAnalysis() =>
+            T("Waiting for the analysis that is running to finish...",
+              "Astept sa se termine analiza care ruleaza...");
 
         /// <summary>
         /// The master exists both in masters/ and in process/: two preprocessings on the same

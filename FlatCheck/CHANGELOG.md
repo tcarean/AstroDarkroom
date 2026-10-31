@@ -8,6 +8,18 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The Structure tab's card `VIGNETTING against the lens profile` opens with the box `I didn't use
+  any filters on my lens`, ticked by default (R-118, ADR 0078). Unticked, the run is the plain
+  `flatcheck master`: the verdict is the five tests' alone, `Test result.txt` is the plain report,
+  and the card keeps only the master's depth with a line saying why a filter voids the comparison.
+  Flipping the box redoes the comparison and the verdict on the kept result, without reloading the
+  master (measured on the real masters: load and analysis 2.6-5.2 s, the comparison 24-322 ms).
+- The window remembers that box and the Exposure tab's `Sky flat` box per session folder, in
+  `flatcheck.json` in its root (R-119): read when the folder opens, written when one changes, never
+  when none did; a file that cannot be read gives the defaults.
+- While the analyses started by opening a folder run, the window shows a panel listing them -
+  the structure, the end-to-end test, the Synthetic tab's lens list - with each one's state and
+  progress, instead of the tabs; the tabs appear once all three have ended (R-120, ADR 0079).
 - A diagnostic log, for bug reports (R-109 to R-112, ADR 0070): each application writes
   `log\flatcheck.log` or `log\FlatCheck.Wpf.log` beside its executable (or under
   `%LOCALAPPDATA%\FlatCheck\log` when that folder cannot be written), at most 5 files of 1 MiB

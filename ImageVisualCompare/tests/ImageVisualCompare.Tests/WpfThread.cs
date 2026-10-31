@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Windows;
 using System.Windows.Threading;
-using ImageVisualCompare.Wpf;
 
 namespace ImageVisualCompare.Tests;
 
 /// <summary>
 /// Runs a test body that needs WPF objects, a window or a control, on one STA thread of the test
-/// run, where the application's resources are loaded and nothing is ever shown (ADR 0032). The
-/// bodies run one at a time on that thread's dispatcher.
+/// run, where the application's theme is loaded into a plain application object and nothing is
+/// ever shown (ADR 0032, ADR 0046). The bodies run one at a time on that thread's dispatcher.
 /// </summary>
 internal static class WpfThread
 {
@@ -41,9 +41,22 @@ internal static class WpfThread
         {
             try
             {
-                // The application's own resources, Theme.xaml among them, for the windows and
-                // controls to find. Run is never called, so StartupUri opens nothing.
-                new App().InitializeComponent();
+                // A plain Application with the application's theme, for the windows and controls
+                // to find, never the application's own App: WPF's Application constructor queues
+                // the application's start, which runs at the dispatcher's first pass even though
+                // Application.Run is never called, and App's would read the test host's arguments
+                // for the language and open its StartupUri window (ADR 0046). The URI names the
+                // assembly, since a plain application's own is the test host's. It shuts down only
+                // when told to: AboutWindowTests close the windows they build, and under the
+                // default, OnLastWindowClose, closing the thread's last window ends the
+                // application, the next window failing with "The Application object is being
+                // shut down"; the dispatcher runs on either way, since Application.Run is never
+                // called.
+                var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+                application.Resources.MergedDictionaries.Add(new ResourceDictionary
+                {
+                    Source = new Uri("pack://application:,,,/ImageVisualCompare.Wpf;component/Theme.xaml"),
+                });
                 started.SetResult(Dispatcher.CurrentDispatcher);
             }
             catch (Exception ex)

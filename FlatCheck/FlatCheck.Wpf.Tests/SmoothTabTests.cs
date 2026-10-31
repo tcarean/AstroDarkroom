@@ -284,10 +284,11 @@ public class SmoothTabTests
         Assert.False(vm.Advise.CanExecute(null));
     }
 
-    /// <summary>The button waits for the opening chain: pressed during the structure, it does not
-    /// overlap it.</summary>
+    /// <summary>The button waits for the gate another run holds: pressed while one computes, it
+    /// does not overlap it (here the opening chain, by a direct call the screen cannot
+    /// make).</summary>
     [Fact]
-    public async Task TheButtonWaitsForTheOpeningChain()
+    public async Task TheButtonWaitsForTheGateAnotherRunHolds()
     {
         using var f = new SessionFixture().WithFlatMaster().WithLightSeries(5);
         var vm = new MainViewModel(null, null, _ => true);

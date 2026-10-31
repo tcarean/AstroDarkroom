@@ -4,20 +4,22 @@
 `src/AstroDarkroom.Core/SuiteFolder.cs`, `src/AstroDarkroom.Core/Launcher.cs`,
 `src/AstroDarkroom.Core/ReleaseManifest.cs`, `src/AstroDarkroom.Core/LicenseInfo.cs`,
 `src/AstroDarkroom.Core/Prerequisites.cs`, `src/AstroDarkroom.Core/Version.cs`,
+`src/AstroDarkroom.Core/ThirdParty.cs`, `src/AstroDarkroom.Core/WindowFit.cs`,
 `src/AstroDarkroom.Core/Language/Ui.cs`,
 `src/AstroDarkroom.Core/Language/LanguageSetting.cs`, `src/AstroDarkroom.Wpf/App.xaml.cs`,
 `src/AstroDarkroom.Wpf/Icons.cs`, `src/AstroDarkroom.Wpf/AppRow.cs`,
-`src/AstroDarkroom.Wpf/MainWindow.xaml.cs`,
-`src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`, `Icon/make_icon.py` and the icon files in
-`Icon/`.
+`src/AstroDarkroom.Wpf/MainWindow.xaml.cs`, `src/AstroDarkroom.Wpf/DarkTitleBar.cs`,
+`src/AstroDarkroom.Wpf/ScreenArea.cs`, `src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`,
+`Icon/make_icon.py` and the icon files in `Icon/`.
 
 The launcher is two layers: a core that answers three questions about a folder (which apps
 exist, which of them are there, how to start one), reads two files (`release.json`, the
 language setting) and words every answer in one of two languages, and a window that asks those
 questions at start-up and at every change of language and shows the answers. The requirements
-are R-001 to R-008 in `docs/requirements.md`; the choice of a compiled-in catalogue over a scan
-of the folder is ADR 0002, the split with no test project for the window is ADR 0001, the two
-languages and the live switch are ADR 0006.
+are R-001 to R-010, R-015 and R-016 in `docs/requirements.md`; the choice of a compiled-in catalogue
+over a scan of the folder is ADR 0002, the split with no test project for the window is ADR
+0001, the two languages and the live switch are ADR 0006. What the launcher writes to its
+diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 
 ## The core
 
@@ -31,8 +33,8 @@ languages and the live switch are ADR 0006.
   `{"language":"ro"}`, read through `ReleaseManifest.Text`, the same tolerant key read as
   `release.json` (no model binding, a type check on the value), null for anything it cannot
   read. The write goes to `settings.json.tmp` and then replaces the file in one `File.Move`,
-  so an interruption leaves the last good file; a failed write is swallowed. The core knows no
-  path; the window gives it `%LOCALAPPDATA%\AstroDarkroom\settings.json`.
+  so an interruption leaves the last good file; a failed write is swallowed, and logged. The
+  core knows no path; the window gives it `%LOCALAPPDATA%\AstroDarkroom\settings.json`.
 - `SuiteApp` is one app: its folder name in the repository (also its name in `release.json`),
   its title (the component's name), its description in one language, its window exe and the
   file name of its icon in `Icon/` (R-010). The suite ships windows only, so there is no
@@ -60,8 +62,9 @@ languages and the live switch are ADR 0006.
   `unreleased`, `clean`) with `System.Text.Json` and no model binding: every key is read with
   `TryGetProperty` and a type check, a string key that is wrong reads as `""`, a boolean one
   as `false`, a component that is not an object is skipped. Only three things make it return
-  null: no file, no JSON object, no `components` array. `ReleaseInfo.Find(name)` is the lookup
-  the rows use, by `SuiteApp.Folder`.
+  null: no file, no JSON object, no `components` array, besides a file it cannot read; each
+  read leaves one line in the diagnostic log, the versions or why there are none.
+  `ReleaseInfo.Find(name)` is the lookup the rows use, by `SuiteApp.Folder`.
 - `VersionInfo` reads `<Version>` and `<Copyright>` back from the assembly attributes MSBuild
   writes from `Directory.Build.props`; `Banner` is `"Astro Darkroom " + Value`. `LicenseInfo`
   holds the warranty paragraph, a pair picked at each read, and the licence URL for the about
@@ -70,12 +73,25 @@ languages and the live switch are ADR 0006.
   `Summary`, one line for the main window, and `Details`, three paragraphs for the about
   window (the Siril session folder, Siril 1.4.4 or newer, the optional Adobe lens profiles for
   FlatCheck), each a pair picked at each read. The core checks nothing of it.
+- `ThirdParty.Components` is the list of the components written by others that the launcher
+  ships, for the about window (R-015, ADR 0013): today one, NLog, which two packages bring. A
+  `ThirdPartyComponent` has a name, a role (a pair picked at each read of the list), a licence
+  identifier, a copyright line, an address and its packages; all but the role are the same in
+  both languages. `ThirdPartyTests` binds the list to the packages of the projects under `src/`
+  and to the sections of `THIRD-PARTY-NOTICES.md`, which holds each licence's whole text.
+- `WindowFit.Top(top, height, areaTop, areaHeight)` keeps a window inside a work area (R-016,
+  ADR 0013): its own top when it fits, the area's top or the top that puts its bottom on the
+  area's when it runs past one edge, the area's top when it is as tall as the area or taller.
+  Plain numbers in device-independent pixels; the window brings the area. It is a guard: WPF
+  places "Despre" there already (below).
 
 ## The window
 
-- `App.OnStartup` reads the setting file into `Ui.Default` (English when it gives none), makes
+- `App`'s constructor starts the diagnostic log and `App.OnExit` closes it (`logging.md`).
+  `App.OnStartup` reads the setting file into `Ui.Default` (English when it gives none), makes
   one `SuiteFolder` from `AppContext.BaseDirectory`, the folder the executable runs from, and
-  opens `MainWindow` on it and on the setting's path. Nothing is read from the command line.
+  opens `MainWindow` on it and on the setting's path. Nothing is read from the command line,
+  which the log's first line records as it was.
 - `Icons` is the `.ico` resources of `Icon/`: `LargestFrame(fileName)` is the widest frame
   of that file (its pack URI from the private `Source`), decoded once and kept in a
   dictionary (the rows are rebuilt at every change of language), since the first frame of an
@@ -110,9 +126,15 @@ languages and the live switch are ADR 0006.
   once (the started app is not affected). The bottom line shows the base directory without its
   trailing separator. `Win32Exception` (Windows refused the start) and
   `InvalidOperationException` (the file went away) end in a message box with the row's title.
+  The start asked for and its outcome go to the diagnostic log; the started process's id is
+  read through `IdOf`, which never throws, so the log line cannot turn a start that worked into
+  the message box of one that failed.
 - `AboutWindow` takes the `ReleaseInfo` the main window read and words itself once, in its
   constructor, in the language of that moment (it is modal and made anew at every open): the
-  title, the tagline, the headings, the banner, the copyright, the warranty, the prerequisites
+  title, the tagline, the headings, the banner, the copyright, the warranty, the third-party
+  card after the licence's (a one-line `Muted` lead, then an `ItemsControl` over
+  `ThirdParty.Components`, each the name and the role on one line, the licence and the address
+  on a `Faint` line under it and the copyright line under that; R-015, ADR 0013), the prerequisites
   card (an `ItemsControl` of `Muted` paragraphs over `Prerequisites.Details`), the release line
   and the component list from `release.json` without the launcher's own entry (`Name` equal to
   the release's `name`), each as a `ComponentLine` under the catalogue's title for that name
@@ -121,12 +143,35 @@ languages and the live switch are ADR 0006.
   flag of the file is not shown (ADR 0007). Without a file, or with one that names no
   component, the list is the catalogue's titles with `?` and the line says the versions are
   unknown. Enter and Esc close it (`IsDefault` and `IsCancel` on one button).
+- `AboutWindow` fits its screen (R-016, ADR 0013). `MainWindow` hands it the work area of the
+  screen the main window is on, from `ScreenArea.WorkAreaOf`: Windows' `MonitorFromWindow`
+  (the screen nearest the window) and `GetMonitorInfoW` (its work area, in the pixels Windows
+  gives the process: the system DPI's, since WPF makes the launcher system aware by default),
+  divided by the window's DPI scale, since `SystemParameters.WorkArea` is the primary screen's;
+  the primary screen's stands in when the window has no handle or the call fails. The about
+  window sets its `MaxHeight` to the area's height, so `SizeToContent` stops there. Its content
+  is a grid of two rows: a `ScrollViewer` named `Cards`, with the header and the cards, in the
+  star row, and the Close button in the auto row, so the button stays in view and only the cards
+  scroll; with the window sized to its content the star row is as tall as the cards, so on a
+  screen where everything fits nothing changes. `Cards` has a transparent background, so the
+  mouse wheel scrolls it over the margins and the gaps between the cards too, which a null
+  background would leave to the window; nothing in it takes the focus, which stays on the Close
+  button, so the window's `PreviewKeyDown` passes Up, Down, Page Up, Page Down, Home and End to
+  it (`ScrollCards`) and leaves Enter and Esc to the button. WPF places a window centred on its
+  owner inside the owner screen's work area, applying the top limit last
+  (`Window.CalculateWindowLocation`, .NET 8), so a window taller than the area used to keep its
+  title bar and lose its bottom; on `Loaded` the window's `Top` goes through `WindowFit.Top` as a
+  guard of that place, and a Debug line writes its size and place, the area and whether the cards
+  scroll. The scroll bar is `App.xaml`'s implicit style, LightsCheck's dark one whole: a thin
+  rounded thumb, page buttons with no opacity, and its horizontal form.
 - The palette and the button, tooltip and card styles are in `App.xaml`, the same colours as
   LightsCheck's dark theme reduced to what two windows need. Both windows darken their title
   bar on `SourceInitialized`, when the handle exists, through `DarkTitleBar`, a copy of
   LightsCheck's: one `LibraryImport` of `DwmSetWindowAttribute` with attribute 20, then 19 for
-  the Windows 10 builds before 20H1; a Windows without either keeps the light bar (ADR 0004).
-  Message boxes are the system's and keep its bar.
+  the Windows 10 builds before 20H1; a Windows without either keeps the light bar (ADR 0004),
+  and a call that cannot be made at all (no `dwmapi.dll`, or no such entry point) leaves a
+  Debug line in the log, as LightsCheck's copy does. Message boxes are the system's and keep
+  its bar.
 
 ## The icons
 

@@ -17,8 +17,11 @@
 
 // WcsCopy.cs - the copy run, shared by the console and the window: reads both headers, checks
 // the pixel grid, selects the cards, lists or copies them, and returns what happened as lines
-// already worded, so that each application only prints or shows them (ADR 0001, ADR 0007).
+// already worded, so that each application only prints or shows them (ADR 0001, ADR 0007). The
+// run also writes its own lines to the diagnostic log, in English, never the worded ones (R-042,
+// R-046, ADR 0009).
 
+using NLog;
 using static CopyWcs.Ui;
 
 namespace CopyWcs;
@@ -72,11 +75,15 @@ internal sealed record WcsCopyOutcome(
 /// <summary>The copy run: the one sequence both applications call.</summary>
 internal static class WcsCopy
 {
+    /// <summary>The copy run's lines in the diagnostic log: its start and done lines, the selection, every card, the refusals and the warnings (R-042).</summary>
+    private static readonly Logger Log = LogManager.GetLogger("WcsCopy");
+
     /// <summary>
     /// Runs a copy: reads both headers, refuses a pixel grid that differs unless forced, warns
     /// about a source without <c>CTYPE1</c>, selects the cards, and either lists them (a dry
     /// run) or copies them verbatim, appends a HISTORY card and writes the target with the
-    /// destination's data.
+    /// destination's data. Every step writes its line to the diagnostic log (R-042); a refusal's
+    /// exception goes there with its stack, the outcome keeps its message only.
     /// </summary>
     /// <param name="request">What to copy, from where to where, and how; not null.</param>
     /// <returns>The outcome, with every line the applications print.</returns>
@@ -84,6 +91,9 @@ internal static class WcsCopy
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // The start line holds the request; the done line, or the "ended without an outcome"
+        // line of a run that threw, closes it with the time of each stage reached.
+        using RunClock clock = RunClock.Start(Log, "copy", LogText.Request(request));
         var warnings = new List<string>();
 
         FitsHeader source;
@@ -93,9 +103,14 @@ internal static class WcsCopy
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         {
+            Log.Warn(ex, "cannot read the source " + request.Source);
+            clock.Lap("source");
+            clock.Done("refused: cannot read the source");
             return Refused(T($"Cannot read the source '{request.Source}': {ex.Message}",
                 $"Nu pot citi sursa '{request.Source}': {ex.Message}"), warnings);
         }
+
+        clock.Lap("source");
 
         FitsHeader dest;
         try
@@ -104,29 +119,41 @@ internal static class WcsCopy
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         {
+            Log.Warn(ex, "cannot read the destination " + request.Dest);
+            clock.Lap("dest");
+            clock.Done("refused: cannot read the destination");
             return Refused(T($"Cannot read the destination '{request.Dest}': {ex.Message}",
                 $"Nu pot citi destinatia '{request.Dest}': {ex.Message}"), warnings);
         }
+
+        clock.Lap("dest");
 
         // The WCS holds only on the same pixel grid.
         var srcDim = (source.GetInt("NAXIS1"), source.GetInt("NAXIS2"));
         var dstDim = (dest.GetInt("NAXIS1"), dest.GetInt("NAXIS2"));
         if (srcDim != dstDim)
         {
+            string sizes = "source " + LogText.Dimensions(srcDim.Item1, srcDim.Item2)
+                           + ", destination " + LogText.Dimensions(dstDim.Item1, dstDim.Item2);
             var msg = T(
                 $"Different dimensions: source ({srcDim.Item1}, {srcDim.Item2}) vs destination ({dstDim.Item1}, {dstDim.Item2}).",
                 $"Dimensiuni diferite: sursa ({srcDim.Item1}, {srcDim.Item2}) vs destinatie ({dstDim.Item1}, {dstDim.Item2}).");
             if (!request.Force)
             {
+                Log.Warn("dimensions differ: " + sizes + "; not forced, nothing is written");
+                clock.Lap("select");
+                clock.Done("refused: dimensions differ (" + sizes + ")");
                 return Refused(msg + T(" The WCS would be wrong. Use --force if you know what you are doing.",
                     " WCS-ul ar fi gresit. Foloseste --force daca stii ce faci."), warnings);
             }
 
+            Log.Warn("dimensions differ: " + sizes + "; forced, the copy goes on");
             warnings.Add(T($"WARNING: {msg} Continuing anyway (--force).", $"ATENTIE: {msg} Continui oricum (--force)."));
         }
 
         if (!source.Contains("CTYPE1"))
         {
+            Log.Warn("the source has no CTYPE1, it does not look plate-solved; the copy goes on");
             warnings.Add(T("WARNING: the source does not look plate-solved (CTYPE1 is missing).",
                 "ATENTIE: sursa nu pare plate-solved (lipseste CTYPE1)."));
         }
@@ -134,14 +161,20 @@ internal static class WcsCopy
         var present = WcsMetadataKeys.SelectKeysToCopy(source, request.IncludeOptical);
         if (present.Count == 0)
         {
+            Log.Warn("no relevant key in the source; nothing is written");
+            clock.Lap("select");
+            clock.Done("refused: no relevant key in the source");
             return Refused(T("No relevant key found in the source. Nothing to copy.",
                 "Nicio cheie relevanta gasita in sursa. Nimic de copiat."), warnings);
         }
 
         var cards = present.Select(k => source.GetCard(k)!).ToList();
+        string counts = LogSelection(present, cards, dest, request.IncludeOptical);
+        clock.Lap("select");
 
         if (request.DryRun)
         {
+            clock.Done("previewed " + LogText.Int(cards.Count) + " keys " + counts);
             return new WcsCopyOutcome(WcsCopyKind.Previewed, null, warnings, cards, null,
                 [T($"Keys that would be copied ({cards.Count}):", $"Chei care ar fi copiate ({cards.Count}):")]);
         }
@@ -164,9 +197,14 @@ internal static class WcsCopy
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
         {
+            Log.Error(ex, "the write of " + target + " failed");
+            clock.Lap("write");
+            clock.Done("refused: the write failed");
             return Refused(T($"Write error: {ex.Message}", $"Eroare la scriere: {ex.Message}"), warnings);
         }
 
+        clock.Lap("write");
+        clock.Done("copied " + LogText.Int(cards.Count) + " keys into " + target + " " + counts);
         return new WcsCopyOutcome(WcsCopyKind.Copied, null, warnings, cards, target,
         [
             T($"Copied {cards.Count} keys into {target}.", $"Copiate {cards.Count} chei in {target}."),
@@ -175,6 +213,55 @@ internal static class WcsCopy
               "Verifica vizual adnotarea: daca imaginea a fost oglindita/flip-uita " +
               "pe parcursul procesarii, WCS-ul copiat va fi gresit fara sa dea eroare."),
         ]);
+    }
+
+    /// <summary>
+    /// Writes the selection to the diagnostic log, before any card is set: the count of keys per
+    /// list, and at Debug one line per key with the source's card and the destination's card it
+    /// replaces (<c>none</c>, <c>same</c>, or that card), the one record a wrong WCS can be
+    /// diagnosed from (R-042).
+    /// </summary>
+    /// <param name="present">The keys selected, in the copy's order.</param>
+    /// <param name="cards">The source's cards of those keys, in the same order.</param>
+    /// <param name="dest">The destination's header, still as read.</param>
+    /// <param name="includeOptical">True when the optical keys were asked for.</param>
+    /// <returns>The counts for the done line: <c>(new 14, replaced 1, identical 0)</c>.</returns>
+    private static string LogSelection(List<string> present, List<string> cards, FitsHeader dest, bool includeOptical)
+    {
+        int wcs = present.Count(k => WcsMetadataKeys.WcsKeys.Contains(k));
+        int optical = present.Count(k => WcsMetadataKeys.OpticalKeys.Contains(k));
+        Log.Debug("selected " + LogText.Int(present.Count) + " keys: " + LogText.Int(wcs) + " WCS, "
+                  + LogText.Int(present.Count - wcs - optical) + " SIP, " + LogText.Int(optical)
+                  + " optical (optical keys asked: " + LogText.Yes(includeOptical) + ")");
+
+        int added = 0, replaced = 0, identical = 0;
+        for (var i = 0; i < present.Count; i++)
+        {
+            string? old = dest.GetCard(present[i]);
+            string was;
+            if (old is null)
+            {
+                added++;
+                was = "none";
+            }
+            else if (string.Equals(old, cards[i], StringComparison.Ordinal))
+            {
+                identical++;
+                was = "same";
+            }
+            else
+            {
+                replaced++;
+                was = LogText.Card(old);
+            }
+
+            if (Log.IsDebugEnabled)
+            {
+                Log.Debug("card " + present[i] + ": " + LogText.Card(cards[i]) + " | dest: " + was);
+            }
+        }
+
+        return "(new " + LogText.Int(added) + ", replaced " + LogText.Int(replaced) + ", identical " + LogText.Int(identical) + ")";
     }
 
     /// <summary>A refused outcome: the error line and the warnings raised before it.</summary>

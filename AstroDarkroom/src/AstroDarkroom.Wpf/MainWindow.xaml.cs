@@ -17,11 +17,14 @@
 
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using AstroDarkroom.Core;
+using NLog;
 using static AstroDarkroom.Core.Ui;
 
 namespace AstroDarkroom.Wpf;
@@ -31,10 +34,13 @@ namespace AstroDarkroom.Wpf;
 /// language selector and the about button. It shows what the core says about the suite folder
 /// and starts what the core plans (R-002, R-003); it decides nothing itself. Every label is
 /// assigned in <see cref="Relabel"/>, in the current language, which is what lets a change of
-/// language apply at once (R-006).
+/// language apply at once (R-006). What it does goes to the diagnostic log (R-012).
 /// </summary>
 public partial class MainWindow : Window
 {
+    /// <summary>The diagnostic log: the suite folder, the window, the language switches, the starts, About (R-012).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private readonly SuiteFolder _folder;
     private readonly string _settingsPath;
     private readonly ReleaseInfo? _release;
@@ -49,6 +55,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        Loaded += (_, _) => LogShown();
+        Closing += (_, _) => Log.Info("window closing");
         _folder = folder;
         _settingsPath = settingsPath;
         _release = ReleaseManifest.TryRead(folder.ManifestPath);
@@ -82,6 +90,30 @@ public partial class MainWindow : Window
         Rows.ItemsSource = AppCatalogue.Apps
             .Select(app => new AppRow(app, _folder.Locate(app), _release?.Find(app.Folder)))
             .ToList();
+        Log.Info(LogText.Presence(_folder, AppCatalogue.Apps));
+    }
+
+    /// <summary>
+    /// Writes, once the window is shown, its size and place, the primary screen's work area, the
+    /// whole desktop's and the window's DPI, all in device-independent pixels but the DPI: what a
+    /// report of a window cut off or off the screen needs (R-012). The work area is the primary
+    /// screen's, whichever screen the window is on, and with screens of different DPIs its pixels
+    /// and the window's are not the same size; the line says "primary" so no reader takes it for
+    /// the window's own screen.
+    /// </summary>
+    private void LogShown()
+    {
+        if (!Log.IsDebugEnabled)
+        {
+            return;
+        }
+
+        Rect area = SystemParameters.WorkArea;
+        DpiScale dpi = VisualTreeHelper.GetDpi(this);
+        Log.Debug(FormattableString.Invariant(
+            $"window shown {ActualWidth:0}x{ActualHeight:0} at ({Left:0},{Top:0}); primary work area {area.Width:0}x{area.Height:0} at ({area.Left:0},{area.Top:0}); ")
+            + FormattableString.Invariant(
+            $"desktop {SystemParameters.VirtualScreenWidth:0}x{SystemParameters.VirtualScreenHeight:0} at ({SystemParameters.VirtualScreenLeft:0},{SystemParameters.VirtualScreenTop:0}); dpi {dpi.PixelsPerInchX:0}x{dpi.PixelsPerInchY:0}"));
     }
 
     /// <summary>
@@ -99,6 +131,7 @@ public partial class MainWindow : Window
         }
 
         Ui.Default = language;
+        Log.Info("language switched to " + Ui.Code(language));
         LanguageSetting.Write(_settingsPath, language);
         Relabel();
     }
@@ -107,6 +140,8 @@ public partial class MainWindow : Window
     /// Starts the app of the clicked row, from the suite folder, in the launcher's language,
     /// through the shell (R-003, R-008). A start that fails (the file went away since the
     /// window opened, or Windows refused it) is told in a message box; the launcher stays open.
+    /// The diagnostic log has the start asked for and its outcome: the process's id, or the
+    /// exception (R-012).
     /// </summary>
     /// <param name="sender">The row's button; its DataContext is the row.</param>
     /// <param name="e">The click; not read.</param>
@@ -120,6 +155,7 @@ public partial class MainWindow : Window
         try
         {
             LaunchPlan plan = Launcher.Plan(row.App, _folder);
+            Log.Info(LogText.Open(row.App, plan));
             // The Process object is only a handle to the started app; disposing it does not touch the app.
             using Process? started = Process.Start(new ProcessStartInfo(plan.FileName)
             {
@@ -127,15 +163,36 @@ public partial class MainWindow : Window
                 WorkingDirectory = plan.WorkingDirectory,
                 Arguments = plan.Arguments,
             });
+            Log.Info("started " + row.App.WindowExe + (started is null ? "; Windows gave no process back" : ", process " + IdOf(started)));
         }
         catch (InvalidOperationException ex)
         {
+            Log.Error(ex, "open " + row.Title + " refused; the message box shows the reason");
             MessageBox.Show(this, ex.Message, row.Title, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         catch (Win32Exception ex)
         {
+            Log.Error(ex, "open " + row.Title + " failed: Windows refused to start " + row.App.WindowExe + "; the message box says so");
             MessageBox.Show(this, T($"{row.App.WindowExe} could not start: {ex.Message}", $"{row.App.WindowExe} nu a putut porni: {ex.Message}"),
                 row.Title, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    /// <summary>
+    /// The id of a process just started, for the log; <c>unknown</c> when Windows gave none to
+    /// read, so the line never turns a start that worked into the message box of one that failed.
+    /// </summary>
+    /// <param name="process">The handle <see cref="Process.Start(ProcessStartInfo)"/> returned.</param>
+    /// <returns>The id, invariant, or <c>unknown</c>.</returns>
+    private static string IdOf(Process process)
+    {
+        try
+        {
+            return process.Id.ToString(CultureInfo.InvariantCulture);
+        }
+        catch (InvalidOperationException)
+        {
+            return "unknown";
         }
     }
 
@@ -144,7 +201,9 @@ public partial class MainWindow : Window
     /// <param name="e">The command; not read.</param>
     private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
     {
-        AboutWindow about = new(_release) { Owner = this };
+        Log.Info("About opened");
+        AboutWindow about = new(_release, ScreenArea.WorkAreaOf(this)) { Owner = this };
         about.ShowDialog();
+        Log.Info("About closed");
     }
 }

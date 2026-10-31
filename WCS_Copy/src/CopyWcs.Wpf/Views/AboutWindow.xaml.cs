@@ -15,11 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Copied from DarksCheck (which copied LightsCheck); a fix goes there first (ADR 0007).
+// Copied from DarksCheck (which copied LightsCheck); a fix goes there first (ADR 0007). The
+// link's one filtered catch writes a Debug line with the link's OriginalString, as
+// ImageVisualCompare's does since its log (ADR 0009); LightsCheck's reads AbsoluteUri there,
+// which throws for a relative link, a fix recorded for LightsCheck in this task's plan.
 
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
+using NLog;
 
 namespace CopyWcs.Wpf;
 
@@ -29,6 +34,9 @@ namespace CopyWcs.Wpf;
 /// </summary>
 public partial class AboutWindow : Window
 {
+    /// <summary>The About window's line in the diagnostic log: a link that would not open (R-043).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     /// <summary>
     /// The window over a new <see cref="AboutViewModel"/>, with the icon's largest frame as its
     /// logo and the dark title bar once it has a handle.
@@ -43,7 +51,8 @@ public partial class AboutWindow : Window
 
     /// <summary>
     /// Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.
-    /// A refused start is ignored: the link stays on screen to be copied by hand.
+    /// A refused start leaves the link on screen to be copied by hand, and a Debug line in the
+    /// diagnostic log with the reason.
     /// </summary>
     /// <param name="sender">The hyperlink.</param>
     /// <param name="e">The navigation request; marked handled.</param>
@@ -54,11 +63,11 @@ public partial class AboutWindow : Window
         {
             Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
         {
-        }
-        catch (InvalidOperationException)
-        {
+            // OriginalString, never AbsoluteUri again: a relative link throws there, which is
+            // what landed here, and a value the log reads must never throw (ADR 0009).
+            Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened");
         }
     }
 

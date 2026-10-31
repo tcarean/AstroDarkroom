@@ -26,6 +26,11 @@ Values, not prose, go in `kit.json` (the solution, the folders, the publish list
   list in `tests/CopyWcs.Wpf.Tests/WindowSmokeTests.cs`, so `R036_` keeps the English pass
   clean. A behaviour of the window gets its row in the block R-030 to R-039 and its test in
   `MainViewModelTests` (against the console) or `WindowSmokeTests` (the rendering).
+- A new log line is English, composed from `LogText`, never through `T(...)`
+  (`NoLogLineGoesThroughTheTranslation`); a new seam's lines join the table in
+  `docs/design/logging.md`, a line of the copy run joins R-042 and its test in `LoggingTests`.
+  A new package is a component in `ThirdParty.cs` and a section in `THIRD-PARTY-NOTICES.md`
+  (`ThirdPartyTests`); a package FlatCheck also ships takes FlatCheck's version (ADR 0009).
 
 ## /wrap-up
 

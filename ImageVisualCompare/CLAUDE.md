@@ -59,8 +59,8 @@ has none. Everything on screen is dark, whatever the system theme (ADR 0018).
   (R-075).
 - `tests/ImageVisualCompare.Tests/` - `net8.0-windows` with `UseWPF`: Core, the imaging layer
   on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`), a
-  defect of a window or a control on one STA thread, never shown (`WpfThread`, ADR 0032; the
-  `App` start WPF runs on that thread does show its own window, ADR 0043), the log of every
+  defect of a window or a control on one STA thread, never shown, under a plain `Application`
+  with the theme (`WpfThread`, ADR 0032, ADR 0046), the log of every
   test captured at `Trace` (`LogCapture`), `RepoInvariantTests`, `ValidationTests` (trait
   `Category=Validation`), `LicenseHeaderTests`, `VersionTests`, `ThirdPartyTests`,
   `AboutWindowTests`.
@@ -98,8 +98,8 @@ or varies a kit rule names it.
   in `THIRD-PARTY-NOTICES.md` (R-075).
 - **The log is English, starts in `Program.Main`, and never stops the tool.** Every log line is
   composed through `LogText`, never through `UiText`; a message the user was shown is logged
-  as shown. Only `Program.Main` calls `LogSetup.Apply` and `Close`, each in a `try`: the WPF
-  test thread builds an `App`, and WPF runs its start there. Every logger is a `static readonly
+  as shown. Only `Program.Main` calls `LogSetup.Apply` and `Close`, before the application object
+  exists and after its run, each in a `try`. Every logger is a `static readonly
   Logger Log` with a name of `Loggers`, but `LogSetup`'s, a property fetched on use; nothing in
   Core logs (ADR 0043).
 - **A FITS, and a float TIFF, is shown as stored.** No stretch, and the 8-bit level is the one
@@ -136,8 +136,7 @@ or varies a kit rule names it.
 - **Run the application when the WPF layer changes.** Both real defects lived in the untested
   layer and were found on a screenshot; a green suite says little about `Controls/`,
   `MainWindow`, `Program.cs` or `Directory.Build.props`, whose few tests reproduce single
-  defects in windows they never show (ADR 0026, ADR 0032; the `App` start WPF runs on the test
-  thread does show its own, ADR 0043).
+  defects in windows they never show (ADR 0026, ADR 0032, ADR 0046).
 - **Licence headers.** Every `.cs` file starts with the GPL notice, `.xaml` files do not;
   `LicenseHeaderTests` fails otherwise, and its project list is explicit, so adding a project
   is a decision (ADR 0024).

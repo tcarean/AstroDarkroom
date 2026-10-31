@@ -21,7 +21,9 @@ zip; it is not a seventh analysis tool and never changes a component.
 - One test: `dotnet test AstroDarkroom.sln --filter "FullyQualifiedName~R001"`
 - Format: `dotnet format AstroDarkroom.sln` (check only: `--verify-no-changes`)
 - Window: `dotnet run --project src/AstroDarkroom.Wpf` (from the build folder every app is
-  "missing"; the launcher is meant to run from a suite folder, `artifacts/<version>/`)
+  "missing"; the launcher is meant to run from a suite folder, `artifacts/<version>/`). Its log
+  is `log\AstroDarkroom.log` beside the executable; another level for one run:
+  `$env:ASTRODARKROOM_LOG = 'trace'` before it, in PowerShell
 - Test data hashes after an intentional fixture change: `scripts/check-testdata.ps1 -Update`
 - Design notes a branch touched (the index and Covers paths are a gate step):
   `scripts/check-design.ps1 -Since main`
@@ -36,15 +38,21 @@ zip; it is not a seventh analysis tool and never changes a component.
 ## Layout
 
 - `src/AstroDarkroom.Core/` - the catalogue of the apps, where each is in the suite folder,
-  the plan of a start, the reading of `release.json`, the version, the licence and the
-  prerequisites texts. No Console, no UI, no entry point: a compile boundary.
+  the plan of a start, the reading of `release.json`, the version, the licence, the
+  prerequisites texts and the third-party list, and the diagnostic log's configuration and
+  words (`Logging/`, ADR 0012). No Console, no UI, no entry point: a compile boundary.
 - `src/AstroDarkroom.Wpf/` - the window, `AstroDarkroom.exe`: one row per app with its button,
-  and the "Despre" window. A thin adapter over the core (ADR 0001); it has no test project.
+  and the "Despre" window. A thin adapter over the core (ADR 0001); it has no test project. Its
+  `App` starts and closes the diagnostic log.
 - `tests/AstroDarkroom.Tests/` - the requirement tests (`R###_...`), the suite checks
-  (`SuiteTests`: the catalogue against `kit.json`, the components' frameworks and packages,
-  the icon copies against the components' files, R-010),
-  repo rules (`RepoInvariantTests`, `LicenseHeaderTests`, `VersionTests`). `tests/testdata/`
-  holds only the manifest.
+  (`SuiteTests`: the catalogue against `kit.json`, the components' frameworks and packages and
+  the launcher's against theirs, the icon copies against the components' files, R-010),
+  repo rules (`RepoInvariantTests`, `LicenseHeaderTests`, `VersionTests`), the log's tests
+  (`LoggingTests`; `LogCapture` configures the log at Trace for the whole assembly). It
+  targets `net8.0-windows`, the window's framework (ADR 0012). `tests/testdata/` holds only the
+  manifest.
+- `THIRD-PARTY-NOTICES.md` - the licence of each component written by others that the launcher
+  ships, whole, and why it is compatible with the GPLv3 (ADR 0013).
 - `Icon/` - the launcher's icon, drawn per size by `make_icon.py`, and a copy of each
   component's icon, shown beside its row and kept equal to the component's file by
   `SuiteTests` (ADR 0011); never drawn here.
@@ -79,13 +87,18 @@ varies a kit rule names it.
   ADRs 0003, 0006 and 0009). Every text the user sees in the windows is a pair
   `T("english", "romana")` where it is composed, the Romanian without diacritics, never a single
   literal; the only single literals are the product name `Astro Darkroom`, the language
-  selector's own labels (each language named in itself) and symbols such as `?`. The window
-  switches between the two live and remembers the choice. `README.md`, code, comments, tests,
-  docs, commits and the CHANGELOG are English; the Romanian wordings and the tests and docs that
-  quote them are the one exception. Never leave a file in two languages otherwise.
+  selector's own labels (each language named in itself), symbols such as `?`, and a third-party
+  component's name, licence identifier, copyright line and address (ADR 0013). The window
+  switches between the two live and remembers the choice. The diagnostic log is English
+  whatever the language: no log line goes through `T` (R-012, `LoggingTests`). `README.md`,
+  code, comments, tests, docs, commits and the CHANGELOG are English; the Romanian wordings and
+  the tests and docs that quote them are the one exception. Never leave a file in two languages
+  otherwise.
 - **Same .NET and same packages across the suite.** Every component targets .NET 8 and a
-  package two components share resolves to one version; `SuiteTests` reads the components'
-  lock files. A component that drifts is fixed in that component, never worked around here.
+  package two components share resolves to one version, the launcher's included, so the suite
+  folder holds one copy of each DLL: a package the launcher shares with a component takes the
+  component's version. `SuiteTests` reads the components' lock files and the launcher's. A
+  component that drifts is fixed in that component, never worked around here.
 
 ## Workflow
 
@@ -98,7 +111,8 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. AstroDarkroom adds
 ## Read before touching
 
 `docs/design/README.md` maps every area to its note. Read `docs/design/launcher.md` before
-editing the core or the window.
+editing the core or the window, and `docs/design/logging.md` before touching `Logging/`,
+`App.xaml.cs` or a log line.
 
 ## Style
 

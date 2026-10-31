@@ -328,7 +328,7 @@ namespace FlatCheck.Wpf
         async Task<IDisposable> EnterGateForPhaseAsync(HeavyRunGate gate, CancellationToken ct)
         {
             if (gate == null) return null;
-            if (gate.IsHeld) Phase = SessionMessages.WaitingForOpeningChain();
+            if (gate.IsHeld) Phase = SessionMessages.WaitingForRunningAnalysis();
             return await gate.EnterAsync(ct).ConfigureAwait(true);
         }
 
@@ -461,7 +461,7 @@ namespace FlatCheck.Wpf
 
             try
             {
-                // Nothing heavy runs when the copies start (the opening chain, say), as before
+                // Nothing heavy runs when the copies start (another click's run, say), as before
                 // the gate; the gate is not held through the Siril runs, which are other
                 // processes, so the other tabs stay usable meanwhile. The analysis below takes it
                 // again, around the part masters (ADR 0061).

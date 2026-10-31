@@ -15,14 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using NLog;
+
 namespace CopyWcs;
 
 /// <summary>
 /// The console, testable in process: the banner, the language, the options, the copy run of
-/// the core and the printing of its outcome, with the exit code.
+/// the core and the printing of its outcome, with the exit code. It configures no log: the
+/// entry point does (ADR 0009).
 /// </summary>
 internal static class CopyWcsCli
 {
+    /// <summary>The console's own lines in the diagnostic log: a refused <c>--lang</c>, a usage error, the help (R-043); the run logs itself.</summary>
+    private static readonly Logger Log = LogManager.GetLogger("Cli");
+
     /// <summary>
     /// Runs the console once: prints the banner and the copyright, reads <c>--lang</c>, parses
     /// the options, runs the copy and prints what happened.
@@ -49,7 +55,9 @@ internal static class CopyWcsCli
         var lang = LanguageArgument.Extract(args);
         if (lang.BadValue is not null)
         {
-            stderr.WriteLine("ERROR: " + LanguageArgument.BadValueMessage(lang.BadValue));
+            string message = LanguageArgument.BadValueMessage(lang.BadValue);
+            stderr.WriteLine("ERROR: " + message);
+            Log.Warn("refused (exit 1): " + message);
             return 1;
         }
 
@@ -74,6 +82,8 @@ internal static class CopyWcsCli
         catch (ArgumentException ex)
         {
             stderr.WriteLine(ex.Message);
+            // The line as the user saw it, in the run's language (R-046).
+            Log.Warn("usage error (exit 2): " + ex.Message);
             Options.PrintUsage(stdout);
             return 2;
         }
@@ -81,6 +91,7 @@ internal static class CopyWcsCli
         if (opt.ShowHelp)
         {
             Options.PrintUsage(stdout);
+            Log.Info("help shown (exit 0)");
             return 0;
         }
 

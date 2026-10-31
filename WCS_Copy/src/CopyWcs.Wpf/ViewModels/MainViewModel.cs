@@ -20,6 +20,7 @@
 // WcsCopyOutcome is shown as the core gives it. No sentence about the copy is composed here; the
 // band's two lines are the core's banner and copyright, passed through (ADR 0008).
 
+using NLog;
 using static CopyWcs.Ui;
 
 namespace CopyWcs.Wpf;
@@ -30,6 +31,9 @@ namespace CopyWcs.Wpf;
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
+    /// <summary>The view-model's line in the diagnostic log: a header whose facts could not be read (R-043); a run logs itself, in the core.</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private string _source = "";
     private string _dest = "";
     private string _output = "";
@@ -270,6 +274,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         {
+            Log.Debug(ex, "no facts under the " + (source ? "source" : "destination") + " box: the header of " + path + " could not be read");
             return "";
         }
 
@@ -278,6 +283,7 @@ public sealed class MainViewModel : ObservableObject
         int height = header.GetInt("NAXIS2");
         if (width < 0 || height < 0)
         {
+            Log.Debug("no facts under the " + (source ? "source" : "destination") + " box: " + path + " has no NAXIS1 or NAXIS2");
             return "";
         }
 

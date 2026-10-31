@@ -258,6 +258,33 @@ namespace FlatCheck
         /// centre.</returns>
         internal static string MasterDepth(VignettingComparison c) => Depth(c.MasterStops);
 
+        /// <summary>
+        /// The master's depth without a comparison (R-118): the same figure, from the structure
+        /// result itself - what the comparison carries as <see cref="VignettingComparison.MasterStops"/>.
+        /// </summary>
+        /// <param name="r">The five tests on the master.</param>
+        /// <returns>The master's depth in stops and as the corner's percent of the
+        /// centre.</returns>
+        internal static string MasterDepth(StructureResult r) => Depth(r.VignetteStops);
+
+        /// <summary>
+        /// Why nothing is compared when a filter was on the lens (R-118, ADR 0078): the
+        /// paragraph under the master's depth on the window's card. The console never prints it:
+        /// its user leaves <c>--raw</c> out.
+        /// </summary>
+        /// <returns>The paragraph, in the interface language.</returns>
+        internal static string FilteredLensNote()
+            => T("With a filter on the lens the comparison has no meaning. Any filter changes the vignetting - "
+               + "a mount shades the corners, a glass darkens the edges, a stack of rings does both - so the "
+               + "master's depth is no longer the lens's published profile plus the error of the flat, and "
+               + "nothing can be compared. The verdict is the five tests' alone; the depth above is shown for "
+               + "information.",
+                 "Cu un filtru pe obiectiv comparatia nu are sens. Orice filtru schimba vignetarea - inelul "
+               + "umbreste colturile, sticla intuneca marginile, un teanc de inele le face pe amandoua - deci "
+               + "adancimea masterului nu mai e profilul publicat al obiectivului plus eroarea flatului, si nu "
+               + "se mai poate compara nimic. Verdictul e doar al celor cinci teste; adancimea de mai sus e "
+               + "pur informativa.");
+
         /// <summary>A depth in stops, with the corner's level as a percent of the centre.</summary>
         /// <param name="stops">The depth, stops.</param>
         /// <returns>"N.NN stopuri (colt = N % din centru)".</returns>

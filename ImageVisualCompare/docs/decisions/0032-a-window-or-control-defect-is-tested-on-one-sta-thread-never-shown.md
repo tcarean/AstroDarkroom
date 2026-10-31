@@ -1,7 +1,7 @@
 # 0032. A defect a window or control shows without being shown is tested on one STA thread of the test project
 
 Date: 2026-10-22
-Status: accepted 2026-10-22
+Status: accepted 2026-10-22; the real `App` created on the test thread superseded by 0046
 Supersedes: 0026 in part (the WPF layer untested by design)
 
 ## Context

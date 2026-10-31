@@ -78,8 +78,8 @@ The window computes nothing of its own: Preview lists exactly the cards `copywcs
 would print, Copy writes exactly the bytes the console writes, and a refusal or a warning is
 shown with the console's words (a refused copy writes nothing). The band at the top shows the
 version, the copyright and one sentence on what the tool does; its **About** button (or F1)
-opens the version, the copyright and the GPLv3 notice. The window is Windows-only; the console
-builds anywhere.
+opens the version, the copyright, the GPLv3 notice and the third-party components. The window is
+Windows-only; the console builds anywhere.
 
 ## The two languages
 
@@ -88,6 +88,51 @@ the console and in the window alike; a `--lang` value that is not `en` or `ro` s
 console with exit 1 and opens the window in English with a message saying so. The `HISTORY`
 card written into the file is English in both languages: it is data other programs read, not
 interface text. Numbers never change with the language.
+
+## Logs
+
+Both programs keep a log of what they did, for the day something goes wrong. To report a
+problem, attach the whole `log` folder: it holds what is needed to see what happened.
+
+**Where it is.** In a folder named `log` beside the program: `log\copywcs.log` beside
+`copywcs.exe`, `log\CopyWcs.Wpf.log` beside `CopyWcs.Wpf.exe`. When that folder cannot be
+written (a program under Program Files, a read-only drive), the log goes to
+`%LOCALAPPDATA%\CopyWcs\log` instead, and its first line says so. Past 1 MiB (1,048,576 bytes,
+so a file ends one line past that) a file is left and the next one is started
+(`copywcs_01.log`, `copywcs_02.log`, ...); the five most recent files are kept and the older ones
+deleted, so the folder holds about 5 MiB per program at most. Two windows open at the same time
+write into the same file, each line marked with its process.
+
+**What is in it.** One line per event, numbers with a point: at the start the version, the
+command line, the Windows and .NET versions and the folders; every file read, with its size and
+the header keys that say what it is (`BITPIX`, `NAXIS`, the sizes, `EXTEND`, `CTYPE`,
+`ROWORDER`, the SIP order, `PLTSOLVD`); the options of each copy, every card copied and the card
+of the destination it replaced, the file written and the time each stage took; the warnings, the
+refusals with their reasons and every error with its technical details; in the window the
+language, the files picked and the About window; at the end the exit code and the time taken.
+The log's own words are English whatever `--lang` says; an error's message appears as you saw
+it, so in Romanian under `--lang ro`. It holds the paths of your files and the header cards
+copied, which include the site's latitude and longitude when the source has them: read it before
+you send it. It holds no pixel.
+
+**How much.** The environment variable `COPYWCS_LOG` sets the level. For a program started from
+a command window, set it there first:
+
+```
+set COPYWCS_LOG=trace
+```
+
+That reaches only the programs started from that window. For the window started from the Start
+menu or from AstroDarkroom, set it for your account, once (new programs see it; the ones already
+open do not):
+
+```
+setx COPYWCS_LOG trace
+```
+
+`debug`, the default, writes everything above; `trace` adds every card of every header read and
+written; `info`, `warn`, `error` and `fatal` write less and less; `off` writes nothing and
+creates no folder.
 
 ## Building from the checkout
 
@@ -102,6 +147,16 @@ The console is `src/CopyWcs.Cli/bin/Release/net8.0/copywcs.exe`, the window
 `src/CopyWcs.Wpf/bin/Release/net8.0-windows/CopyWcs.Wpf.exe`, with `LICENSE` beside it. The
 development process (requirements with IDs, decisions, the gate) is described in `CLAUDE.md`
 and `docs/`.
+
+## Third-party components
+
+| Component | What it does here | Licence |
+| --- | --- | --- |
+| [NLog](https://nlog-project.org/) (`NLog`, `NLog.Targets.AtomicFile`) | writes the diagnostic log | BSD-3-Clause |
+
+The FITS header is read and written by hand; nothing else comes from a package. The licence's
+full text and why it is compatible with the GPLv3 are in `THIRD-PARTY-NOTICES.md`; the window's
+About lists the same component.
 
 ## Licence
 

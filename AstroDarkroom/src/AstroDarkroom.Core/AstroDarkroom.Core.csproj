@@ -4,6 +4,16 @@
   <PropertyGroup>
     <RootNamespace>AstroDarkroom.Core</RootNamespace>
   </PropertyGroup>
+  <!-- NLog, for the diagnostic log only (ADR 0012): the core logs at its seams (the reading of
+       release.json and of the language setting) and words the window's lines about the suite
+       (Logging/LogText.cs); the window configures it, in code, through Logging/LogSetup.cs.
+       Without a configuration (a library use) every call is a no-op; the tests configure a
+       capture at Trace (LogCapture). NLog.Targets.AtomicFile is its file target with the
+       operating system's atomic append, so two launchers writing one log lose no line (R-014). -->
+  <ItemGroup>
+    <PackageReference Include="NLog" />
+    <PackageReference Include="NLog.Targets.AtomicFile" />
+  </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="AstroDarkroom.Tests" />
   </ItemGroup>

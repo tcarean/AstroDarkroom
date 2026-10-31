@@ -67,7 +67,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
         <!-- as wide as the Browse buttons under it, so the two columns line up -->
         <Button Grid.Column="2" MinWidth="88" VerticalAlignment="Center" Command="Help"
-                Content="{l:T En='About', Ro='Despre'}" ToolTip="{l:T En='Version and licence (F1)', Ro='Versiune si licenta (F1)'}" />
+                Content="{l:T En='About', Ro='Despre'}" ToolTip="{l:T En='Version, licence, components (F1)', Ro='Versiune, licenta, componente (F1)'}" />
       </Grid>
     </Border>
 

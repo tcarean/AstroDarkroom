@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Text.Json;
+using NLog;
 
 namespace AstroDarkroom.Core;
 
@@ -50,13 +51,19 @@ public sealed record ReleaseInfo(string Name, string Version, string Date, strin
 
 /// <summary>
 /// Reads release.json tolerantly (R-004): the launcher must run the same from a folder that
-/// has none, or one a hand edit broke, so nothing here throws for a bad file.
+/// has none, or one a hand edit broke, so nothing here throws for a bad file; the diagnostic log
+/// says what the file gave, or why it gave nothing (R-012).
 /// </summary>
 public static class ReleaseManifest
 {
+    /// <summary>The diagnostic log: the file read with every version, or why it gave nothing (R-012).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(ReleaseManifest));
+
     /// <summary>
     /// Reads the file. Every key is optional but the components array; a string key that is
-    /// missing or not a string reads as "", a boolean one as false.
+    /// missing or not a string reads as "", a boolean one as false. One line of the diagnostic
+    /// log says what came of it: the versions at Info, a missing file at Info, a file that gives
+    /// nothing at Warn, with the exception when it could not be read.
     /// </summary>
     /// <param name="path">The full path of release.json; may name a file that does not exist.</param>
     /// <returns>What the file says, or null when it is missing, unreadable, not a JSON object or has no components array.</returns>
@@ -64,6 +71,7 @@ public static class ReleaseManifest
     {
         if (!File.Exists(path))
         {
+            Log.Info("no file at " + path + "; the versions are unknown");
             return null;
         }
 
@@ -75,6 +83,8 @@ public static class ReleaseManifest
                 || !root.TryGetProperty("components", out JsonElement components)
                 || components.ValueKind != JsonValueKind.Array)
             {
+                Log.Warn(path + " is not a release manifest ("
+                    + (root.ValueKind == JsonValueKind.Object ? "no components array" : "no JSON object") + "); the versions are unknown");
                 return null;
             }
 
@@ -87,18 +97,13 @@ public static class ReleaseManifest
                 }
             }
 
-            return new ReleaseInfo(Text(root, "name"), Text(root, "version"), Text(root, "date"), Text(root, "commit"), list);
+            ReleaseInfo info = new(Text(root, "name"), Text(root, "version"), Text(root, "date"), Text(root, "commit"), list);
+            Log.Info(LogText.Release(path, info));
+            return info;
         }
-        catch (JsonException)
+        catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
         {
-            return null;
-        }
-        catch (IOException)
-        {
-            return null;
-        }
-        catch (UnauthorizedAccessException)
-        {
+            Log.Warn(e, path + " could not be read; the versions are unknown");
             return null;
         }
     }

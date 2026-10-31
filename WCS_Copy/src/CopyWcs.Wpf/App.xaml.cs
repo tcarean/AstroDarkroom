@@ -15,13 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// App.xaml.cs - the application's start, after DarksCheck's and FlatCheck's: the command line
-// read once, in the constructor, for the language from --lang before the first view and for the
-// two files (R-034), so a shortcut or a "send to" can open the window on a pair; the invariant
-// number culture by hand.
+// App.xaml.cs - the application's start, after DarksCheck's and FlatCheck's: the diagnostic log
+// first, so a failure while the resources load is in it too (ADR 0009); the command line read
+// once, in the constructor, for the language from --lang before the first view and for the two
+// files (R-034), so a shortcut or a "send to" can open the window on a pair; the invariant number
+// culture by hand; the log's last line on the way out.
 
 using System.Globalization;
 using System.Windows;
+using NLog;
 
 namespace CopyWcs.Wpf;
 
@@ -41,16 +43,34 @@ public partial class App : Application
     private readonly StartArgs _start;
 
     /// <summary>
-    /// Reads the command line and sets the interface language (R-034) before anything else:
-    /// the constructor runs before App.xaml's resources and the first view load, and both carry
-    /// texts.
+    /// Starts the diagnostic log first (R-040 to R-046), then reads the command line and sets the
+    /// interface language (R-034) before anything else: the constructor runs before App.xaml's
+    /// resources and the first view load, and both carry texts.
     /// </summary>
     public App()
     {
         string[] all = Environment.GetCommandLineArgs();
-        _start = Parse(all.Length > 1 ? all[1..] : []);
+        string[] args = all.Length > 1 ? all[1..] : [];
+
+        // The log never stops the window: without it the window opens all the same (R-041).
+        try { LogSetup.Apply("CopyWcs.Wpf", args); }
+        catch (Exception) { }
+
+        // Logged, not handled: a crash on the window's thread still ends the window (ADR 0009).
+        DispatcherUnhandledException += (_, e) =>
+            LogSetup.Fatal(e.Exception, "unhandled exception on the window's thread, the window closes");
+
+        _start = Parse(args);
         Ui.Default = _start.Language;
     }
+
+    /// <summary>
+    /// The diagnostic log: the start's choices. Fetched on use, not a static field: this is the
+    /// type whose constructor calls <see cref="LogSetup.Apply"/>, and a logger created by its type
+    /// initialiser could make NLog load a stray <c>NLog.config</c> before the configuration is set
+    /// (ADR 0009; FlatCheck's ADR 0072, the same reason as <c>LogSetup</c>'s own logger).
+    /// </summary>
+    private static Logger Log => LogManager.GetLogger(Loggers.App);
 
     /// <summary>
     /// Sets the invariant number culture, shows <see cref="CopyWcs.Wpf.MainWindow"/>, says a
@@ -71,10 +91,32 @@ public partial class App : Application
         // (R-034).
         if (_start.BadLanguage is not null)
         {
-            MessageBox.Show(window, LanguageArgument.BadValueMessage(_start.BadLanguage), "CopyWcs", MessageBoxButton.OK, MessageBoxImage.Warning);
+            string message = LanguageArgument.BadValueMessage(_start.BadLanguage);
+            Log.Warn("refused: " + message + "; the window goes on in English");
+            MessageBox.Show(window, message, "CopyWcs", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
+        Log.Info(StartLine(_start));
         window.Start(_start.Source, _start.Dest);
+    }
+
+    /// <summary>The diagnostic log's line of what the command line asked (R-043): the language and the two files, <c>none</c> for one not given.</summary>
+    /// <param name="start">The command line as <see cref="Parse"/> read it.</param>
+    /// <returns>The line: <c>language=ro source from the command line: a.fit dest: b.fit</c>.</returns>
+    internal static string StartLine(StartArgs start)
+        => "language=" + (start.Language == UiLanguage.Romanian ? "ro" : "en")
+           + " source from the command line: " + LogText.Str(start.Source)
+           + " dest: " + LogText.Str(start.Dest);
+
+    /// <summary>Writes the diagnostic log's last line, with the exit code, and closes it.</summary>
+    /// <param name="e">The exit's arguments.</param>
+    protected override void OnExit(ExitEventArgs e)
+    {
+        base.OnExit(e);
+
+        // Guarded like Apply: the log never stops the window, on the way out either.
+        try { LogSetup.Close(e.ApplicationExitCode); }
+        catch (Exception) { }
     }
 
     /// <summary>

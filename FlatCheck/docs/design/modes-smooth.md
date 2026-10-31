@@ -35,5 +35,5 @@ two limits the report and the tab keep stating (lens versus source; dust may be 
   (`FlatCheckCli.AfterMapPath`, R-006) the smoothed flat's own residual.
 - **The scale can be proposed** (`--scale auto`, the tab's `Propune scara`): ADR 0027 holds the
   rule, the two guards, the three thresholds, what was tried as a guard and failed, the picks on
-  the five masters and the known limits. The window's button waits for the opening chain like
-  the other one (ADR 0036, R-086), selects the chip and writes nothing.
+  the five masters and the known limits. The window's button waits for the gate like the other
+  one (ADR 0036, ADR 0061, R-086), selects the chip and writes nothing.

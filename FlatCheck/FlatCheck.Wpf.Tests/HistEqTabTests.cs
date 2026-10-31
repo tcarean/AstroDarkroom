@@ -419,7 +419,7 @@ public class HistEqTabTests
     }
 
     /// <summary>
-    /// A pick made while another heavy run holds the gate - the opening chain reading the very
+    /// A pick made while another heavy run holds the gate - another tab's run reading the very
     /// master this list offers first - waits for it instead of loading the 24 MP file beside
     /// it (R-081, ADR 0061); the waiting screen says so. A second pick while the first still
     /// waits supersedes it: the first leaves the queue without computing, and when the gate
@@ -431,7 +431,7 @@ public class HistEqTabTests
         using var f = new SessionFixture().WithFlatMaster();
         f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var gate = new HeavyRunGate();
-        IDisposable chain = await gate.EnterAsync(CancellationToken.None);
+        IDisposable other = await gate.EnterAsync(CancellationToken.None);
         var vm = new HistEqTabViewModel();
         vm.Attach(f.Session, CancellationToken.None, gate);
 
@@ -439,7 +439,7 @@ public class HistEqTabTests
         Task first = vm.Pending;
         Assert.NotSame(first, await Task.WhenAny(first, Task.Delay(1000)));
         Assert.True(vm.IsBusy);
-        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.BusyMessage);
+        Assert.Equal(SessionMessages.WaitingForRunningAnalysis(), vm.BusyMessage);
 
         vm.Selected = vm.Files[1];          // over it: the frame
         Task second = vm.Pending;
@@ -447,7 +447,7 @@ public class HistEqTabTests
         Assert.False(second.IsCompleted);
         Assert.False(vm.HasResult);
 
-        chain.Dispose();
+        other.Dispose();
         await second;
 
         Assert.True(vm.HasResult);

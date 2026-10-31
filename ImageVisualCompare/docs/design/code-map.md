@@ -124,7 +124,8 @@
     embeds it. See `rendering.md`, ADR 0034.
 - `tests/ImageVisualCompare.Tests/` — `net8.0-windows` with `UseWPF`, because the imaging
   tests drive the real WIC codecs. References both other projects. `WpfThread` runs the tests
-  of a window or a control on one STA thread (ADR 0032). `LogCapture` configures the log of the
+  of a window or a control on one STA thread, under a plain `Application` with the theme (ADR
+  0032, ADR 0046). `LogCapture` configures the log of the
   whole test run, at `Trace`, and lets a test read the lines of its own call tree (ADR 0043).
 - `THIRD-PARTY-NOTICES.md` — the components written by others that the application ships,
   NLog's two packages, with their licence's whole text and why it is compatible with GPLv3; it

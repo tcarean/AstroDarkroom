@@ -572,6 +572,8 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
 Code: `Analysis/VignettingComparison.cs`, `LensProfiles/LensIdentification.cs`,
 `Runs/StructureRun.cs` (`StructureQuery`, `StructureOutcome`), the profile block of
 `Report/StructureReport.cs`; window `StructureTabViewModel` + `Session/ProfileCatalog.cs`.
+The window turns the comparison off when a filter was on the lens (R-118, ADR 0078,
+`two-applications.md`): the profile is the bare lens's, so nothing is compared then.
 Measured 2026-09-18 on the library below with the Debug build, `--raw` on the first raw of
 each session's `flats/`.
 

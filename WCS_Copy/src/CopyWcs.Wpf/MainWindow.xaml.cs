@@ -18,6 +18,7 @@
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Win32;
+using NLog;
 using static CopyWcs.Ui;
 
 namespace CopyWcs.Wpf;
@@ -32,6 +33,9 @@ public partial class MainWindow : Window
     // The dialogs' filter: FITS first, everything else second; the FITS label reads the same
     // in both languages.
     private const string FitsPattern = "*.fit;*.fits;*.fts";
+
+    /// <summary>The window's lines in the diagnostic log: the files picked in the dialogs, the About window (R-043).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     private readonly MainViewModel _vm;
 
@@ -77,7 +81,12 @@ public partial class MainWindow : Window
         OpenFileDialog dlg = Open(T("Plate-solved source (FITS)", "Sursa plate-solved (FITS)"), _vm.Source);
         if (dlg.ShowDialog(this) == true)
         {
+            Log.Info("source picked in the dialog: " + dlg.FileName);
             _vm.Source = dlg.FileName;
+        }
+        else
+        {
+            Log.Debug("source dialog closed without a file");
         }
     }
 
@@ -89,7 +98,12 @@ public partial class MainWindow : Window
         OpenFileDialog dlg = Open(T("Destination (FITS)", "Destinatia (FITS)"), _vm.Dest);
         if (dlg.ShowDialog(this) == true)
         {
+            Log.Info("destination picked in the dialog: " + dlg.FileName);
             _vm.Dest = dlg.FileName;
+        }
+        else
+        {
+            Log.Debug("destination dialog closed without a file");
         }
     }
 
@@ -114,7 +128,12 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog(this) == true)
         {
+            Log.Info("new file picked in the dialog: " + dlg.FileName);
             _vm.Output = dlg.FileName;
+        }
+        else
+        {
+            Log.Debug("new file dialog closed without a file");
         }
     }
 
@@ -131,7 +150,11 @@ public partial class MainWindow : Window
     /// <summary>The Help command, run by the band's About button and by F1: the About window, modal, over this one (R-035, R-038).</summary>
     /// <param name="sender">The window, whose command binding caught the command.</param>
     /// <param name="e">The executed command.</param>
-    private void ShowAbout(object sender, ExecutedRoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
+    private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
+    {
+        Log.Info("About opened");
+        new AboutWindow { Owner = this }.ShowDialog();
+    }
 
     /// <summary>An open-file dialog for FITS files, starting in the folder of a path when it has one.</summary>
     /// <param name="title">The dialog's title, in the run's language.</param>

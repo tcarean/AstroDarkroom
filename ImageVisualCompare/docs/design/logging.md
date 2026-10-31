@@ -133,8 +133,9 @@ the lines opens a capture with `LogCapture.Start`, an `AsyncLocal` scope that se
 tree, so the tests running beside it add nothing; the scope flows into `Task.Run` and into a
 dispatcher operation of the WPF test thread, which runs in the execution context of the call that
 queued it. The WPF test thread itself is created in the execution context of the test that first
-uses it, and the start WPF runs on it, the `App`'s own (`testing.md`), runs there too: a window
-test therefore runs one empty body on the thread before it opens its capture, and leaves the lines
+uses it, and what WPF runs on it of its own, outside any operation a test queued, runs in that
+context: a window test therefore runs one empty body on the thread before it opens its capture,
+and leaves the lines
 that report a state, the render tier and the memory, out of the lists it compares. The file tests
 never touch that configuration: they build the application's with `LogSetup.Build` into a private
 `LogFactory`, which stands for one process. `LanguageLoggingTests` runs with the other tests of the

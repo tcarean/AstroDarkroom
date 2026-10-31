@@ -18,10 +18,19 @@ Values (the solution, the folders, the publish list, what the auditor may also r
 - At step 2: the core is tested in `tests/AstroDarkroom.Tests` with a temp folder of empty
   files named like the executables (`TempWorkspace`); the window has no tests (ADR 0001) and
   is checked by starting it from a published suite folder.
+- A new log line is English and never goes through `T(...)` (`NoLogLineGoesThroughTheTranslation`);
+  a line about the suite takes its words from `LogText` in the core, so a test pins them, and a
+  new seam's lines join the table in `docs/design/logging.md` and R-012. A new package is a
+  component in `ThirdParty.cs` and a section in `THIRD-PARTY-NOTICES.md` (`ThirdPartyTests`,
+  ADR 0013); a package a component also ships takes the component's version (`SuiteTests`).
 
 ## /wrap-up
 
-(none)
+- At step 1, after the gate: a change under `src/AstroDarkroom.Wpf/` is checked by starting the
+  launcher from a published suite folder (`scripts/release.ps1 -Version X.Y.Z -PublishOnly`),
+  only when the owner is not using the PC, and reading `log\AstroDarkroom.log` there: the first
+  line, a line for each thing the check did, `exit 0`, and no `ERROR` or `WARN` the check did
+  not mean to cause (ADR 0012).
 
 ## /validate
 
@@ -41,7 +50,8 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   publishes write with different bytes stops the release (the kit's ADR 0036). The consoles
   are not bundled: their base runtime differs from the desktop one in three files (ADR 0002).
   `release.json` and the zip `AstroDarkroom-<version>-win-x64.zip` with its `.sha256` land in
-  `artifacts/`. The tag is `astrodarkroom-vX.Y.Z`.
+  `artifacts/`. The tag is `astrodarkroom-vX.Y.Z`. No `log` folder goes into the zip: the
+  publish starts no program, and it deletes the folder a test run of the suite left first.
 - At step 7: the owner uploads the zip to their Google Drive by hand and shares it as "Anyone
   with the link"; nothing here uploads it or asks for Drive access (ADR 0005). With the link
   the owner gives, propose a new first row of the table under `## Download` in `README.md`,

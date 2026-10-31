@@ -886,4 +886,193 @@ public class StructureTabTests
 
         Assert.True(vm.MapGuide.IsExpanded);
     }
+
+    // ------------------------------------------------- the "no filters" box (R-118)
+
+    /// <summary>The console's plain report for the fixture master, banner and map line
+    /// included: what the saved file must hold whenever nothing is compared.</summary>
+    static string PlainReport(SessionFixture f)
+    {
+        var expected = new StringWriter();
+        RunReport.WriteBanner(expected);
+        StructureRun.Execute(f.Session.FlatMasterPath, expected);
+        RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
+        return expected.ToString();
+    }
+
+    /// <summary>The console's report with --raw for the fixture master and the fabricated
+    /// raw: what the saved file must hold whenever the comparison is on.</summary>
+    static string ComparedReport(SessionFixture f, ProfileSources sources)
+    {
+        var expected = new StringWriter();
+        RunReport.WriteBanner(expected);
+        StructureRun.Execute(f.Session.FlatMasterPath, expected,
+            new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => RawFrame() });
+        RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
+        return expected.ToString();
+    }
+
+    /// <summary>The worse of the five tests' verdicts, the shape's verdict.</summary>
+    static string ShapeVerdict(StructureTabViewModel vm)
+        => vm.Tests.Select(t => t.Verdict).OrderByDescending(Stats.Severity).First();
+
+    /// <summary>
+    /// R-118: the box is on by default; off before the run, the run is the plain console one
+    /// even with a raw and a catalog - no profile row, no gap, no Adobe paragraph, the five
+    /// tests' verdict, the master's own depth and the paragraph saying why - and the saved
+    /// file is the plain report, byte for byte.
+    /// </summary>
+    [Fact]
+    public async Task R118_UncheckedTheRunIsThePlainOneWithTheMastersDepthAndTheNote()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, withAdobe: false);
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        Assert.True(vm.NoFilters);
+
+        vm.NoFilters = false;
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasProfileRows);
+        Assert.Empty(vm.ProfileGap);
+        Assert.Equal("", vm.AdobeMissing);
+        Assert.Empty(vm.VerdictDetail);
+        Assert.Equal(ShapeVerdict(vm), vm.Verdict);
+        Assert.Equal(StructureReport.Advice(vm.Verdict), vm.Advice);
+        Assert.Contains("stopuri", vm.ProfileMaster);
+        Assert.NotEmpty(vm.FilteredNote);
+        Assert.Contains("filtru", vm.FilteredNote);
+        Assert.DoesNotContain(StructureReport.ProfilesHeading, vm.Report);
+        Assert.Equal(PlainReport(f), File.ReadAllText(f.Session.ResultTextPath));
+    }
+
+    /// <summary>
+    /// R-118: unchecking the box with a compared result on screen redoes the comparison and
+    /// the verdict - every row goes, the five tests' verdict stands, the file is saved again as
+    /// the plain report - and the master is not reloaded: the map stays the same bytes.
+    /// </summary>
+    [Fact]
+    public async Task R118_UncheckingItWithAResultOnScreenDropsTheRowsAndTheDepthFromTheVerdict()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+        Assert.True(vm.HasProfileRows);
+        string shape = ShapeVerdict(vm);
+        Assert.NotEqual(shape, vm.Verdict);                            // the depth carried it
+        byte[] map = vm.Map;
+
+        vm.NoFilters = false;
+        await vm.Pending;
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasProfileRows);
+        Assert.Empty(vm.ProfileGap);
+        Assert.Equal(shape, vm.Verdict);
+        Assert.Empty(vm.VerdictDetail);
+        Assert.Contains("stopuri", vm.ProfileMaster);
+        Assert.NotEmpty(vm.FilteredNote);
+        Assert.Same(map, vm.Map);
+        Assert.Equal(PlainReport(f), File.ReadAllText(f.Session.ResultTextPath));
+        Assert.Equal(PlainReport(f), vm.Report);
+    }
+
+    /// <summary>
+    /// R-118: checking the box with a plain result on screen builds the table and counts the
+    /// depth in the verdict, and the file is saved again as the console's --raw report.
+    /// </summary>
+    [Fact]
+    public async Task R118_CheckingItWithAResultOnScreenComparesAndCountsTheDepth()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        vm.NoFilters = false;
+        await vm.RunAsync(f.Session, CancellationToken.None);
+        Assert.False(vm.HasProfileRows);
+        string shape = vm.Verdict;
+        byte[] map = vm.Map;
+
+        vm.NoFilters = true;
+        await vm.Pending;
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(2, vm.ProfileRows.Count);
+        Assert.Equal(vm.ProfileRows.Single(r => r.IsNearest).Verdict, vm.Verdict);
+        Assert.NotEqual(shape, vm.Verdict);
+        Assert.Contains("adancimea", vm.VerdictDetail);
+        Assert.Empty(vm.FilteredNote);
+        Assert.Same(map, vm.Map);
+        Assert.Equal(ComparedReport(f, sources), File.ReadAllText(f.Session.ResultTextPath));
+    }
+
+    /// <summary>R-118: the box is a setting of the folder, not a result: Reset leaves it as
+    /// it was, and the next folder's file sets it.</summary>
+    [Fact]
+    public async Task R118_ResetLeavesTheBoxAndClearsTheNote()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = new StructureTabViewModel();
+        vm.NoFilters = false;
+        await vm.RunAsync(f.Session, CancellationToken.None);
+        Assert.NotEmpty(vm.FilteredNote);
+
+        vm.Reset();
+
+        Assert.False(vm.NoFilters);
+        Assert.Empty(vm.FilteredNote);
+        Assert.Empty(vm.ProfileMaster);
+    }
+
+    /// <summary>R-118: a flip shows the waiting screen at once, before anything is awaited, so
+    /// the box (bound to the busy flag) is locked for the whole recompare.</summary>
+    [Fact]
+    public async Task R118_AFlipShowsTheBusyScreenAtOnce()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = new StructureTabViewModel();
+        await vm.RunAsync(f.Session, CancellationToken.None);
+        Assert.False(vm.IsBusy);
+
+        vm.NoFilters = false;
+
+        Assert.True(vm.IsBusy);
+        await vm.Pending;
+        Assert.False(vm.IsBusy);
+        Assert.NotEmpty(vm.FilteredNote);
+    }
+
+    /// <summary>
+    /// R-118 (the review of 2026-10-30, finding 1): a folder closed while a recompare runs -
+    /// Reset, as another folder's opening does - leaves nothing of it on screen and rewrites no
+    /// file: the result returns to a tab whose session is gone and is dropped.
+    /// </summary>
+    [Fact]
+    public async Task R118_AFolderClosedDuringARecompareLeavesNothingOnScreen()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        using var hold = new ManualResetEventSlim(false);
+        bool block = false;
+        var vm = new StructureTabViewModel(null, path => { if (block) hold.Wait(); return ImageLoader.LoadInfo(path); });
+        await vm.RunAsync(f.Session, CancellationToken.None);
+        string report = File.ReadAllText(f.Session.ResultTextPath);
+        DateTime written = File.GetLastWriteTimeUtc(f.Session.ResultTextPath);
+
+        block = true;
+        vm.NoFilters = false;                 // the recompare blocks in the worker on the master's header
+        Task pending = vm.Pending;
+        vm.Reset();                           // the folder is closed meanwhile
+        hold.Set();
+        await pending;
+
+        Assert.False(vm.HasResult);
+        Assert.Empty(vm.Verdict);
+        Assert.Empty(vm.Report);
+        Assert.Empty(vm.FilteredNote);
+        Assert.Equal(report, File.ReadAllText(f.Session.ResultTextPath));
+        Assert.Equal(written, File.GetLastWriteTimeUtc(f.Session.ResultTextPath));
+    }
 }

@@ -20,6 +20,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -45,7 +46,7 @@ public partial class WindowSmokeTests
     // Words that only the Romanian texts hold, the console's (LanguageTests) and the window's
     // own (R-036); the paths of the fixture are temp folders named CopyWcsTests_ plus random
     // letters, so none of these can come from them.
-    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Copiate|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii)\b", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Copiate|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii|COMPONENTE|TERTE|componente|Unealta|jurnalului|leaga)\b", RegexOptions.CultureInvariant)]
     private static partial Regex RomanianWord();
 
     /// <summary>Every text a rendered tree shows: the text blocks (the buttons' and the check boxes' labels become ones), and the hints as strings.</summary>
@@ -53,9 +54,12 @@ public partial class WindowSmokeTests
     {
         foreach (DependencyObject d in Descendants(root))
         {
-            if (d is TextBlock t && !string.IsNullOrEmpty(t.Text))
+            // The text the block displays: TextBlock.Text misses the inline runs of a template's
+            // blocks (the About window's component row, the second review of 2026-10-30).
+            string shown = d is TextBlock t ? new TextRange(t.ContentStart, t.ContentEnd).Text : "";
+            if (shown.Length > 0)
             {
-                yield return t.Text;
+                yield return shown;
             }
 
             if (d is FrameworkElement fe && fe.ToolTip is string tip)
@@ -123,7 +127,7 @@ public partial class WindowSmokeTests
                 english.AddRange(TextsOf(window));
 
                 AboutWindow about = new();
-                Render((FrameworkElement)about.Content, 560, 420, "about-en");
+                Render((FrameworkElement)about.Content, 560, AboutHeight(about), "about-en");
                 english.Add(about.Title);
                 english.AddRange(TextsOf((FrameworkElement)about.Content));
                 Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
@@ -182,6 +186,22 @@ public partial class WindowSmokeTests
         }
     }
 
+    /// <summary>
+    /// The About window's content height at its 560 px width: the window sizes to its content
+    /// (<c>SizeToContent="Height"</c>), so a render at that height cuts nothing off, the
+    /// third-party card included. Measured twice: the card's items exist only after a first
+    /// layout pass has bound the list.
+    /// </summary>
+    private static int AboutHeight(AboutWindow about)
+    {
+        var content = (FrameworkElement)about.Content;
+        content.Measure(new Size(560, double.PositiveInfinity));
+        content.Arrange(new Rect(content.DesiredSize));
+        content.UpdateLayout();
+        content.Measure(new Size(560, double.PositiveInfinity));
+        return (int)Math.Ceiling(content.DesiredSize.Height);
+    }
+
     internal static void Render(FrameworkElement el, int w = 720, int h = 560, string? name = null)
     {
         el.Measure(new Size(w, h));
@@ -222,8 +242,8 @@ public partial class WindowSmokeTests
     /// the window's one About button, which runs Help as F1 does, in each language.
     /// </summary>
     [Theory]
-    [InlineData(false, "Copies the plate solve (WCS) from a FITS solved in Siril into the same image processed elsewhere, card by card, without touching its pixels.", "About", "Version and licence (F1)")]
-    [InlineData(true, "Copiaza plate solve-ul (WCS) dintr-un FITS rezolvat in Siril in aceeasi imagine procesata in alta parte, card cu card, fara sa-i atinga pixelii.", "Despre", "Versiune si licenta (F1)")]
+    [InlineData(false, "Copies the plate solve (WCS) from a FITS solved in Siril into the same image processed elsewhere, card by card, without touching its pixels.", "About", "Version, licence, components (F1)")]
+    [InlineData(true, "Copiaza plate solve-ul (WCS) dintr-un FITS rezolvat in Siril in aceeasi imagine procesata in alta parte, card cu card, fara sa-i atinga pixelii.", "Despre", "Versiune, licenta, componente (F1)")]
     public void R038_TheBandShowsTheConsolesFirstTwoLinesTheExplanationAndTheOnlyAboutButton(bool romanian, string explanation, string about, string tip)
         => _sta.Invoke(() =>
         {
@@ -319,8 +339,21 @@ public partial class WindowSmokeTests
 
             // The content, not the window: an unshown Window renders transparent, while the
             // root panel inherits the DataContext and goes through the same bindings.
-            Render((FrameworkElement)about.Content, 560, 420, "about");
+            Render((FrameworkElement)about.Content, 560, AboutHeight(about), "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+
+            // The third-party card is on screen, not only in the view-model (R-035): its heading,
+            // its sentence, and the row's name and role, licence, copyright line and link.
+            List<string> shown = TextsOf((FrameworkElement)about.Content).ToList();
+            ThirdPartyComponent nlog = Assert.Single(ThirdParty.Components);
+            Assert.Contains("COMPONENTE TERTE", shown);
+            Assert.Contains(((AboutViewModel)about.DataContext).ThirdPartyLead, shown);
+            // (the XAML's line breaks between the runs read as spaces around the dash)
+            Assert.Contains(shown, t => t.StartsWith("NLog", StringComparison.Ordinal)
+                                        && t.Contains("scrierea jurnalului de diagnostic", StringComparison.Ordinal));
+            Assert.Contains("BSD-3-Clause", shown);
+            Assert.Contains(nlog.Copyright, shown);
+            Assert.Contains("https://nlog-project.org/", shown);
 
             BitmapSource logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);
             Assert.Equal(256, logo.PixelWidth);

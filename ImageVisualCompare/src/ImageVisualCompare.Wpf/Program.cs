@@ -36,8 +36,8 @@ internal static class Program
     /// Starts the diagnostic log, runs the application until its last window closes, and ends the
     /// log with the exit code. The log starts here and nowhere else: before <see cref="App"/>, its
     /// resources and its first window, so that everything after it is in it, and in no test,
-    /// since no test runs this (the WPF test thread builds an <see cref="App"/> of its own, ADR
-    /// 0032). The log never stops the application: without it the pair opens all the same.
+    /// since no test runs this (ADR 0043). The log never stops the application: without it the
+    /// pair opens all the same.
     /// </summary>
     /// <param name="args">
     /// The command line: image A's path, then image B's, with a <c>--lang</c> anywhere among them

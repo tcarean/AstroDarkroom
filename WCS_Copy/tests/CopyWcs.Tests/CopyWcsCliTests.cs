@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Text;
+
 namespace CopyWcs.Tests;
 
 public class CopyWcsCliTests
@@ -82,6 +84,31 @@ public class CopyWcsCliTests
         var expectedCtype1Card = sourceCards.Single(c => c.StartsWith("CTYPE1"));
         var rewritten = FitsHeader.ReadPrimary(destPath);
         Assert.Equal(expectedCtype1Card, rewritten.GetCard("CTYPE1"));
+    }
+
+    /// <summary>
+    /// The header is ASCII, as FITS defines it: a byte above 0x7F in a copied card, which a valid
+    /// header never holds, reaches the destination as a question mark, the rest of the card
+    /// verbatim (the third review of 2026-10-30 measured 0xC5 written back as <c>?</c>).
+    /// </summary>
+    [Fact]
+    public void R010_Run_AByteAboveAsciiInACopiedCard_IsWrittenAsAQuestionMark()
+    {
+        using var ws = new TempWorkspace();
+        var data = FitsTestData.DeterministicData(100);
+        var sourceCards = FitsTestData.PlateSolvedCards();
+        var obj = sourceCards.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        sourceCards[obj] = FitsTestData.Card("OBJECT", "'M42'", "Orion #");
+        var source = FitsTestData.MinimalFitsFile(sourceCards, data);
+        // The marker's byte becomes 0xC5 (A-ring in Latin-1), which no ASCII string holds.
+        source[Encoding.Latin1.GetString(source).IndexOf("Orion #", StringComparison.Ordinal) + "Orion ".Length] = 0xC5;
+        var sourcePath = ws.WriteFile("source.fit", source);
+        var destPath = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), data));
+
+        Assert.Equal(0, Run(sourcePath, destPath).ExitCode);
+
+        var written = Encoding.Latin1.GetString(File.ReadAllBytes(destPath));
+        Assert.Contains(FitsTestData.Card("OBJECT", "'M42'", "Orion ?"), written, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -32,7 +32,7 @@ are in `kit.json`, not here.
   on the real pair, before the commit (the rule "Run the application"), and reads the run's log
   beside the executable: the first line, the `load done` line with its stages, `exit 0`, and no
   `ERROR` the run did not mean to cause (ADR 0043). Launch it only when the owner is not using
-  the PC; a test run that uses the WPF test thread also shows a window of its own (ADR 0043).
+  the PC.
 
 ## /validate
 
