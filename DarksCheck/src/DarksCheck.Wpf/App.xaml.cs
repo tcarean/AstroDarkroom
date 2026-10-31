@@ -44,7 +44,8 @@ public partial class App : Application
         string[] all = Environment.GetCommandLineArgs();
         string[] args = all.Length > 1 ? all[1..] : [];
 
-        // A log that cannot be set up never stops the window: the session opens all the same.
+        // Whatever Apply throws, the window goes on and the session opens all the same; NLog's own
+        // assembly is no such case: like the core's, it must be there.
         try
         {
             LogSetup.Apply("DarksCheck.Wpf", args);
@@ -102,7 +103,7 @@ public partial class App : Application
     {
         base.OnExit(e);
 
-        // Guarded like Apply: the log never stops the window, on the way out either.
+        // Guarded like Apply: whatever Close throws, the window still exits.
         try
         {
             LogSetup.Close(e.ApplicationExitCode);

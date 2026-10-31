@@ -11,9 +11,13 @@ holds here: the same packages, the same settings.
 ## How the parts fit
 
 `LogSetup.Apply` is the first call of `Program.Main` and of `App`'s constructor, each in a `try`
-that swallows anything it throws, because the log never stops the tool; `LogSetup.Close` is the
-last of `Main` (in its `finally`) and of `App.OnExit`, guarded the same way. `Apply` runs once
-per process:
+that swallows anything it throws, so a log that cannot be set up never stops the tool;
+`LogSetup.Close` is the last of `Main` (in its `finally`) and of `App.OnExit`, guarded the same
+way. A folder that cannot be written never reaches those catches (`ResolveFolder` falls back
+itself), nor a configuration NLog refuses (`LogManager.ThrowExceptions` is false). NLog's own
+assembly is no such case: like the core's it must sit beside the executable (the single-file
+publish embeds it), since without it the core's first logger throws
+`TypeInitializationException`. `Apply` runs once per process:
 
 1. `Plan` decides the place without configuring anything: the level from `DARKSCHECK_LOG`
    (`LevelFrom`), the executable's name (`ExecutableName`: the process path's file name, the

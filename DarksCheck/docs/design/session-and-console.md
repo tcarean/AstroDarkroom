@@ -93,8 +93,8 @@ metadata-only run; `--out`, `--threads`, `--max-frames` and `--against` are pass
 decoding. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
 turned into `ERROR:` on stderr and exit 1. `Main` runs `Program.Run` between the diagnostic log's
-first and last lines (`LogSetup.Apply` and `LogSetup.Close`, each guarded, since the log never
-stops the console); `Run`, which the tests call in-process, configures nothing. Its lines (the
+first and last lines (`LogSetup.Apply` and `LogSetup.Close`, each guarded, so a log that cannot be
+set up never stops the console); `Run`, which the tests call in-process, configures nothing. Its lines (the
 mode and the options, a refusal as the user saw it, every file `--out` writes, a run that failed
 with its exception before the one `ERROR:` line), and those of `SessionFolder.Open`,
 `FrameInfo.Read` and `InventoryRun`, are in `logging.md` (ADR 0025).

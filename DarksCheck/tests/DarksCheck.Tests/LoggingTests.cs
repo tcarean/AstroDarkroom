@@ -842,9 +842,12 @@ public partial class LoggingTests
     /// The log's own words are English whatever the language (R-101): no log call composes its
     /// message through the T(english, romanian) pair, whichever logger it goes through and however
     /// many lines the call spans. And every logger is declared one way, a <c>Logger</c> field or
-    /// property named <c>Log</c> taken from <c>LogManager.GetLogger</c> with <c>using NLog</c>, so
-    /// the first check, which scans the calls of names ending in <c>log</c>, sees every call (the
-    /// first review of the branch: any name passed before).
+    /// property named <c>Log</c> taken from <c>LogManager.GetLogger</c> with <c>using NLog</c>: a
+    /// <c>LogManager.Get...</c> call of any other shape, a <c>Logger</c> variable of another name
+    /// and a qualified NLog name are refused, so the first check, which scans the calls of names
+    /// ending in <c>log</c>, <c>Log(level, ...)</c> among them, sees every call (the branch's two
+    /// reviews: before them a logger of another name, or one from <c>GetCurrentClassLogger</c>,
+    /// passed unseen).
     /// </summary>
     [Fact]
     public void NoLogLineGoesThroughTheTranslation()
@@ -867,9 +870,10 @@ public partial class LoggingTests
             string[] lines = File.ReadAllLines(f);
             for (int i = 0; i < lines.Length; i++)
             {
-                bool inline = lines[i].Contains("GetLogger(", StringComparison.Ordinal) && !Declaration().IsMatch(lines[i]);
+                bool inline = lines[i].Contains("LogManager.Get", StringComparison.Ordinal) && !Declaration().IsMatch(lines[i]);
                 bool qualified = lines[i].Contains("NLog.Logger", StringComparison.Ordinal) || lines[i].Contains("NLog.LogManager", StringComparison.Ordinal);
-                if (inline || qualified)
+                bool renamed = LoggerVariable().Match(lines[i]) is { Success: true } v && v.Groups[1].Value != "Log";
+                if (inline || qualified || renamed)
                 {
                     declarations.Add(Rel(f) + ":" + (i + 1).ToString(CultureInfo.InvariantCulture));
                 }
@@ -915,8 +919,12 @@ public partial class LoggingTests
     private static partial Regex SetsConfiguration();
 
     /// <summary>A call that composes a log line's text: a logger's, or a run clock's start, lap or outcome.</summary>
-    [GeneratedRegex(@"\b\w*[Ll]og\.(Trace|Debug|Info|Warn|Error|Fatal)\(|\bRunClock\.Start\(|\b\w*[Cc]lock\??\.(Lap|Done)\(")]
+    [GeneratedRegex(@"\b\w*[Ll]og\.(Trace|Debug|Info|Warn|Error|Fatal|Log)\(|\bRunClock\.Start\(|\b\w*[Cc]lock\??\.(Lap|Done)\(")]
     private static partial Regex LogCall();
+
+    /// <summary>A variable, field or property of type <c>Logger</c> given a value, and its name.</summary>
+    [GeneratedRegex(@"\bLogger\s+(\w+)\s*=")]
+    private static partial Regex LoggerVariable();
 
     [GeneratedRegex(@"\)\s*;")]
     private static partial Regex CallEnd();

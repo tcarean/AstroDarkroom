@@ -522,7 +522,7 @@ exposure, ISO, time), and for a raw libraw's own figures; every frame decoded, w
 took and the memory the program held after it; for each run its options, its outcome and the time
 each stage took; the figures behind every verdict: each dark's, bias's and light's figures, the
 masters, the noise curve, the warming, the maps' regions, the six verdicts, the index, the lights
-and the partner; every file written; in the window, the folder opened, each run's end, the dialogs
+and the partner; every file it writes for you; in the window, the folder opened, each run's end, the dialogs
 and the buttons pressed; every error with its technical details, those the program works around
 without a word included (not a run you stopped yourself, nor what the window drops while it
 closes); at the end the exit code and the time taken. The log's own words are English whatever

@@ -14,7 +14,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   each, rolled by NLog, two windows writing into one file without losing a line. It holds the
   start (version, command line, machine), each folder opened, each file read with what its header
   or the camera says, each frame decoded with its time and the memory held after it, each run's
-  options, stages and outcome, the figures behind every verdict, every file written, the
+  options, stages and outcome, the figures behind every verdict, every output file written, the
   window's runs, dialogs and buttons, every error with its stack, those worked around included
   (not a stop the user asked for), and the exit code. The log's own words are English whatever
   `--lang` says; an error's or a refusal's message appears as it was shown.

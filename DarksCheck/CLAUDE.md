@@ -86,7 +86,8 @@ varies a kit rule names it.
   applications write and time their own lines (ADR 0025).
 - **Read-only input.** Nothing is ever written into the session folder or the library folder:
   the frames are read, never modified, moved or renamed; the label is shown, never written
-  (ADR 0002).
+  (ADR 0002). The diagnostic log goes beside the executable, so the program is kept outside
+  those folders (ADR 0025).
 - **Golden files** (extends the kit's rule "No test edited to pass", the kit's ADR 0033). The
   golden files are the console snapshots `tests/DarksCheck.Tests/Golden/*.txt`, regenerated
   with `DARKSCHECK_UPDATE_GOLDEN=1` and `--filter GoldenOutputTests`. None carries confirmed

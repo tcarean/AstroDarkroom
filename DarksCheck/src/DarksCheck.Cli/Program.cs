@@ -45,9 +45,10 @@ internal static class Program
     /// <returns>The exit code: 0 on a clean run or for --help, 1 otherwise.</returns>
     private static int Main(string[] args)
     {
-        // A log that cannot be set up never stops the tool: when no folder can be probed or NLog
-        // refuses its configuration, the run goes on without a log, stdout and stderr untouched
-        // (R-001, R-101). NLog's own assembly is no such case: like the core's, it must be there.
+        // Whatever Apply throws, the run goes on, with the log as far as it was set up, stdout and
+        // stderr untouched (R-001, R-101). A folder that cannot be written does not end here (Apply
+        // falls back to %LOCALAPPDATA% itself), and NLog's own assembly is no such case: like the
+        // core's it must be there, since without it the core's first logger throws.
         try
         {
             LogSetup.Apply("darkscheck", args);
@@ -67,7 +68,7 @@ internal static class Program
         }
         finally
         {
-            // Guarded like Apply: the log never stops the tool, on the way out either.
+            // Guarded like Apply: whatever Close throws, the exit code is kept.
             try
             {
                 LogSetup.Close(code);

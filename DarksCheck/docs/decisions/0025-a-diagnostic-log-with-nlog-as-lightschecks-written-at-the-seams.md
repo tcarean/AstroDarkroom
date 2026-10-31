@@ -25,7 +25,8 @@ to the owner, each with a recommendation, and the owner approved it as written o
 
 - **FlatCheck's log, as LightsCheck took it.** NLog 6.2.2 and `NLog.Targets.AtomicFile` 6.2.2,
   referenced by the core alone (D1, D2). The two applications configure it in code, through
-  `LogSetup.Apply` first and `LogSetup.Close` last, both guarded so the log never stops the tool;
+  `LogSetup.Apply` first and `LogSetup.Close` last, both guarded so a log that cannot be set up
+  never stops the tool (NLog's own assembly is no such case: like the core's, it must be there);
   there is no `NLog.config`, and without a configuration (a library use) every call writes
   nothing. The files: `<executable>.log` in `log` beside the executable, rolled forward by NLog
   past 1 MiB to `<executable>_01.log`, `_02`, ..., 5 files kept (NLog 6.2.2's `MaxArchiveFiles`
@@ -156,6 +157,13 @@ to the owner, each with a recommendation, and the owner approved it as written o
   itself); `ThirdPartyTests` counts three. The two versions move together.
 - The log is the first thing to ask a reporter for: the README's "Logs" section says where it is
   and what it holds.
+- The log is written beside the executable, wherever that is: a program placed inside a session
+  or library folder writes its `log` folder there, against the rule "Read-only input". The
+  README's "Logs" and the rule in `CLAUDE.md` say to keep the program outside those folders; no
+  check is made, since `Apply` sets the log up before any argument is read, and a check after the
+  parsing would find the folder made and the first line in it (the branch's second review, on
+  2026-10-31). `--help` and R-026 keep saying that nothing is written into the folder: the
+  analysis writes nothing there.
 - Every test runs every log line on its path: the test assemblies configure NLog once, at Trace,
   into a target that renders each event (`LogCapture`, linked into the window's tests), so a log
   line that throws fails a test, not a user's run. Guarded by the `R100_` to `R103_` tests of
