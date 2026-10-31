@@ -233,7 +233,10 @@ public class ImagePairLoaderTests : IDisposable
         Assert.Equal(1, loader.MaxConcurrentLoads);
     }
 
-    /// <summary>A loader that answers from canned metadata and counts what was asked of it.</summary>
+    /// <summary>
+    /// A loader that answers from canned metadata, by call order and not by path, and records
+    /// what was asked of it: the counts, the paths probed and loaded, and the modes.
+    /// </summary>
     private sealed class RecordingLoader(ImageInfo first, ImageInfo second) : IImageLoader
     {
         private int _concurrentLoads;
@@ -242,6 +245,10 @@ public class ImagePairLoaderTests : IDisposable
 
         public int LoadCount { get; private set; }
 
+        public List<string> Probed { get; } = [];
+
+        public List<string> Loaded { get; } = [];
+
         public List<DisplayMode> Modes { get; } = [];
 
         public int MaxConcurrentLoads { get; private set; }
@@ -249,6 +256,7 @@ public class ImagePairLoaderTests : IDisposable
         public ImageInfo Probe(string path)
         {
             ProbeCount++;
+            Probed.Add(path);
             return ProbeCount == 1 ? first : second;
         }
 
@@ -258,6 +266,7 @@ public class ImagePairLoaderTests : IDisposable
             int running = Interlocked.Increment(ref _concurrentLoads);
             MaxConcurrentLoads = Math.Max(MaxConcurrentLoads, running);
             LoadCount++;
+            Loaded.Add(path);
 
             await Task.Delay(10, cancellationToken);
 
@@ -307,5 +316,172 @@ public class ImagePairLoaderTests : IDisposable
         Assert.Equal([DisplayMode.Linear, DisplayMode.Linear], loader.Modes);
         Assert.Equal(DisplayMode.Linear, result.Pair!.Mode);
         Assert.False(result.Pair.AllowsDisplayModes);
+    }
+
+    // Changing one image of a pair on screen (R-009): the other is kept as decoded.
+
+    [Fact]
+    public async Task R009_ChangingImageB_ProbesAndDecodesOnlyTheNewFile_AndKeepsImageA()
+    {
+        ImagePair shown = Shown(
+            new ImageInfo("a.png", 100, 100, 8, ColorChannels.Rgb),
+            new ImageInfo("b.png", 100, 100, 8, ColorChannels.Rgb));
+        var loader = new RecordingLoader(new ImageInfo("c.png", 100, 100, 16, ColorChannels.Rgb), shown.Before.Info);
+        var progress = new RecordingProgress();
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).ReplaceAsync(shown, ImageSide.B, "c.png", progress);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["c.png"], loader.Probed);
+        Assert.Equal(["c.png"], loader.Loaded);
+        Assert.Same(shown.Before, result.Pair!.Before);
+        Assert.Equal("c.png", result.Pair.After.Info.FileName);
+        Assert.False(result.Pair.Pad.RequiresPadding);
+        Assert.Equal([(0.0, "c.png"), (1.0, (string?)null)], progress.Reported.Select(p => (p.Fraction, p.FileName)));
+    }
+
+    [Fact]
+    public async Task R009_ChangingImageA_KeepsImageB()
+    {
+        ImagePair shown = Shown(
+            new ImageInfo("a.png", 100, 100, 8, ColorChannels.Rgb),
+            new ImageInfo("b.png", 100, 100, 8, ColorChannels.Rgb));
+        var loader = new RecordingLoader(new ImageInfo("c.png", 100, 100, 8, ColorChannels.Rgb), shown.After.Info);
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).ReplaceAsync(shown, ImageSide.A, "c.png");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(["c.png"], loader.Probed);
+        Assert.Equal(["c.png"], loader.Loaded);
+        Assert.Same(shown.After, result.Pair!.After);
+        Assert.Equal("c.png", result.Pair.Before.Info.FileName);
+    }
+
+    [Fact]
+    public async Task R009_ANewFileOfAnotherSize_AsksWithTheKeptImageOnItsSide_AndPadsToBoth()
+    {
+        ImagePair shown = Shown(
+            new ImageInfo(@"C:\astro\a.png", 100, 200, 8, ColorChannels.Rgb),
+            new ImageInfo(@"C:\astro\b.png", 100, 200, 8, ColorChannels.Rgb));
+        var loader = new RecordingLoader(new ImageInfo(@"C:\astro\c.png", 300, 50, 8, ColorChannels.Rgb), shown.Before.Info);
+        PadRequest? asked = null;
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).ReplaceAsync(
+            shown, ImageSide.B, @"C:\astro\c.png", confirmPadding: request =>
+            {
+                asked = request;
+                return Task.FromResult(true);
+            });
+
+        Assert.NotNull(asked);
+        Assert.Equal(shown.Before.Info, asked!.Value.Before);
+        Assert.Equal("c.png", asked.Value.After.FileName);
+        Assert.Contains("A: a.png — 100 × 200", asked.Value.Message);
+        Assert.Contains("B: c.png — 300 × 50", asked.Value.Message);
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Pair!.Pad.RequiresPadding);
+        Assert.Equal((300, 200), (result.Pair.PixelWidth, result.Pair.PixelHeight));
+        Assert.Same(shown.Before, result.Pair.Before);
+    }
+
+    [Fact]
+    public async Task R009_DecliningThePadding_DecodesNothing_AndIsNotAnError()
+    {
+        ImagePair shown = Shown(
+            new ImageInfo("a.png", 100, 200, 8, ColorChannels.Rgb),
+            new ImageInfo("b.png", 100, 200, 8, ColorChannels.Rgb));
+        var loader = new RecordingLoader(new ImageInfo("c.png", 300, 50, 8, ColorChannels.Rgb), shown.After.Info);
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).ReplaceAsync(
+            shown, ImageSide.A, "c.png", confirmPadding: _ => Task.FromResult(false));
+
+        Assert.True(result.WasDeclined);
+        Assert.Null(result.Error);
+        Assert.Equal(0, loader.LoadCount);
+    }
+
+    [Fact]
+    public async Task R009_WithNoOneToAsk_TheMismatchIsTheError()
+    {
+        ImagePair shown = Shown(
+            new ImageInfo("a.png", 100, 200, 8, ColorChannels.Rgb),
+            new ImageInfo("b.png", 100, 200, 8, ColorChannels.Rgb));
+        var loader = new RecordingLoader(new ImageInfo("c.png", 300, 50, 8, ColorChannels.Rgb), shown.Before.Info);
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).ReplaceAsync(shown, ImageSide.B, "c.png");
+
+        Assert.False(result.IsSuccess);
+        Assert.False(result.WasDeclined);
+        Assert.Contains("300 × 200", result.Error);
+        Assert.Equal(0, loader.LoadCount);
+    }
+
+    [Fact]
+    public async Task R009_TheModeHolds_WhenTheKeptImageAndTheNewFileAreShownAsStored()
+    {
+        var stored = new ImageInfo("a.fit", 4, 4, 32, ColorChannels.Rgb, IsFloat: true, ShownAsStored: true);
+        ImagePair shown = Shown(stored, stored with { Path = "b.fit" }, DisplayMode.Histogram);
+        var loader = new RecordingLoader(stored with { Path = "c.fit" }, stored);
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader)
+            .ReplaceAsync(shown, ImageSide.B, "c.fit", mode: DisplayMode.Histogram);
+
+        Assert.Equal(["c.fit"], loader.Loaded);
+        Assert.Equal([DisplayMode.Histogram], loader.Modes);
+        Assert.Equal(DisplayMode.Histogram, result.Pair!.Mode);
+        Assert.Same(shown.Before, result.Pair.Before);
+        Assert.True(result.Pair.AllowsDisplayModes);
+    }
+
+    [Fact]
+    public async Task R009_AModeTheNewPairCannotShow_DecodesTheKeptFileAgainInLinear()
+    {
+        var stored = new ImageInfo("a.fit", 4, 4, 32, ColorChannels.Rgb, IsFloat: true, ShownAsStored: true);
+        ImagePair shown = Shown(stored, stored with { Path = "b.fit" }, DisplayMode.Histogram);
+        var png = new ImageInfo("c.png", 4, 4, 16, ColorChannels.Rgb);
+        var loader = new RecordingLoader(png, stored);
+        var progress = new RecordingProgress();
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader)
+            .ReplaceAsync(shown, ImageSide.B, "c.png", progress, mode: DisplayMode.Histogram);
+
+        // The new file first, then the kept one in the mode the pair ends in, so the two are
+        // never shown one equalised and one linear.
+        Assert.Equal(["c.png", "a.fit"], loader.Loaded);
+        Assert.Equal([DisplayMode.Linear, DisplayMode.Linear], loader.Modes);
+        Assert.Equal(["c.png"], loader.Probed);
+        Assert.Equal(
+            [(0.0, "c.png"), (0.5, "a.fit"), (1.0, (string?)null)],
+            progress.Reported.Select(p => (p.Fraction, p.FileName)));
+        Assert.NotSame(shown.Before, result.Pair!.Before);
+        Assert.Equal("a.fit", result.Pair.Before.Info.FileName);
+        Assert.Equal(DisplayMode.Linear, result.Pair.Before.Mode);
+        Assert.Equal("c.png", result.Pair.After.Info.FileName);
+        Assert.False(result.Pair.AllowsDisplayModes);
+    }
+
+    [Fact]
+    public async Task R009_AFileThatCannotBeRead_IsAMessageNamingIt_AndThePairIsNotChanged()
+    {
+        string before = _images.WritePng("before.png", PixelFormats.Bgr24, 32, 32);
+        string after = _images.WritePng("after.png", PixelFormats.Bgr24, 32, 32);
+        ImagePair shown = (await Real().LoadAsync(before, after)).Pair!;
+        string corrupt = _images.WriteCorrupt("broken.png");
+
+        ImagePairLoadResult result = await Real().ReplaceAsync(shown, ImageSide.A, corrupt);
+
+        Assert.False(result.IsSuccess);
+        Assert.StartsWith("Could not read broken.png.", result.Error);
+    }
+
+    /// <summary>A pair as if on screen: both images decoded, each a 1 x 1 bitmap, in one mode.</summary>
+    private static ImagePair Shown(ImageInfo before, ImageInfo after, DisplayMode mode = DisplayMode.Linear)
+    {
+        var bitmap = BitmapSource.Create(1, 1, 96, 96, PixelFormats.Bgra32, null, new byte[4], 4);
+        bitmap.Freeze();
+        return new ImagePair(
+            new LoadedImage(before, bitmap, mode),
+            new LoadedImage(after, bitmap, mode),
+            ImagePairValidator.Inspect(before, after));
     }
 }

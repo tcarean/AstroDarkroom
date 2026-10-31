@@ -216,6 +216,9 @@ ot-here.png"]);
 
         Assert.Equal("Alege imaginea A  —  afișată în stânga liniei", ro.SelectImageA);
         Assert.Equal("Alege imaginea B  —  afișată în dreapta liniei", ro.SelectImageB);
+        Assert.Equal((ro.SelectImageA, ro.SelectImageB), (ro.SelectImage(ImageSide.A), ro.SelectImage(ImageSide.B)));
+        Assert.Equal(("Schimbă A…", "Schimbă B…"), (ro.ChangeA, ro.ChangeB));
+        Assert.Equal((ro.ChangeA, ro.ChangeB), (ro.ChangeImage(ImageSide.A), ro.ChangeImage(ImageSide.B)));
         Assert.StartsWith("Imagini (*.png;*.tif;*.tiff;*.fit;*.fits;*.fts)|", ro.FileFilter);
         Assert.EndsWith("|Toate fișierele (*.*)|*.*", ro.FileFilter);
         Assert.Equal("Fișierele nu pot fi comparate", ro.CannotCompareTitle);
@@ -239,6 +242,8 @@ ot-here.png"]);
             Assert.Equal("Încadrează", window.FitButton.Content);
             Assert.Equal("100%", window.ActualSizeButton.Content);
             Assert.Equal("Deschide…", window.OpenButton.Content);
+            Assert.Equal("Schimbă A…", window.ChangeBeforeButton.Content);
+            Assert.Equal("Schimbă B…", window.ChangeAfterButton.Content);
             Assert.Equal("Despre", window.AboutButton.Content);
             Assert.Equal(
                 "rotița: zoom · trage linia: o muți · trage în afara liniei: pan · ←/→: mută linia fin · Ctrl+O: deschide · H: histogramă · F: culori false",
@@ -276,5 +281,7 @@ ot-here.png"]);
     private sealed class NoDialogs : IFileDialogService
     {
         public ImagePairSelection? PickImagePair(string? initialDirectory = null) => null;
+
+        public string? PickImage(ImageSide side, string? initialDirectory = null) => null;
     }
 }

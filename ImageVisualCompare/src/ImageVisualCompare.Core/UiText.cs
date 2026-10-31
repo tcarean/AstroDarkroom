@@ -57,6 +57,21 @@ public sealed class UiText
 
     public string About => Pick("About", "Despre");
 
+    // The two buttons beside the pair's names, each changing that image alone (R-065).
+    public string ChangeA => Pick("Change A…", "Schimbă A…");
+
+    public string ChangeB => Pick("Change B…", "Schimbă B…");
+
+    /// <summary>Names the button that changes one image alone (R-065).</summary>
+    /// <param name="side">The image the button changes.</param>
+    /// <returns><see cref="ChangeA"/> or <see cref="ChangeB"/>.</returns>
+    public string ChangeImage(ImageSide side) => side == ImageSide.A ? ChangeA : ChangeB;
+
+    /// <summary>Titles the open dialog of one image (R-001, R-065).</summary>
+    /// <param name="side">The image the dialog asks for.</param>
+    /// <returns><see cref="SelectImageA"/> or <see cref="SelectImageB"/>.</returns>
+    public string SelectImage(ImageSide side) => side == ImageSide.A ? SelectImageA : SelectImageB;
+
     // The two display-mode toggles (R-114), and the words the status bar's pair line ends with
     // in those modes.
     public string Histogram => Pick("Histogram", "Histogramă");

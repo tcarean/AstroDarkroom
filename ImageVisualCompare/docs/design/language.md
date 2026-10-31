@@ -60,7 +60,10 @@ them and their roles are `UiText`'s), and the licence itself, which stays the En
 file; the About window's notice that points to it is translated. The messages of Windows and .NET
 (a codec's failure, a missing file) come in their own language.
 
-A new text is a new member of `UiText` in both languages, never a literal where it is shown.
+A new text is a new member of `UiText` in both languages, never a literal where it is shown. A
+text that exists per image, the dialog title and the change button of A and of B, has a member
+for each and a method that picks one by `ImageSide` (`SelectImage`, `ChangeImage`), so the
+window and the dialogs never choose a side by hand.
 
 ## Tests
 

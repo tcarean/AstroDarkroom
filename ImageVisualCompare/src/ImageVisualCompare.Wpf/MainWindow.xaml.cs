@@ -79,7 +79,7 @@ public partial class MainWindow : Window
             + RenderOptions.ProcessRenderMode);
 
         // The words are the table's, in the language chosen at start-up (ADR 0038); the XAML
-        // holds none of its own. The symbols, "−", "+" and "100%", are the same in both.
+        // holds none of its own but the symbols, "−", "+", "100%" and "vs", the same in both.
         UiText text = UiText.Current;
         NavigationLabel.Text = text.Navigation;
         FitButton.Content = text.Fit;
@@ -87,6 +87,8 @@ public partial class MainWindow : Window
         FalseColoursButton.Content = text.FalseColours;
         OpenButton.Content = text.Open;
         AboutButton.Content = text.About;
+        ChangeBeforeButton.Content = text.ChangeA;
+        ChangeAfterButton.Content = text.ChangeB;
         HintText.Text = text.Hint;
 
         Compare.ViewChanged += (_, _) => UpdateZoomReadout();
@@ -99,6 +101,8 @@ public partial class MainWindow : Window
         HistogramButton.Click += async (_, _) => await ToggleModeAsync(DisplayMode.Histogram);
         FalseColoursButton.Click += async (_, _) => await ToggleModeAsync(DisplayMode.FalseColours);
         OpenButton.Click += async (_, _) => await OpenPairAsync("the Open button");
+        ChangeBeforeButton.Click += async (_, _) => await ChangeImageAsync(ImageSide.A, "the Change A button");
+        ChangeAfterButton.Click += async (_, _) => await ChangeImageAsync(ImageSide.B, "the Change B button");
         AboutButton.Click += (_, _) =>
         {
             Log.Info("About opened");
@@ -107,9 +111,11 @@ public partial class MainWindow : Window
 
         // Every button is focusable, so a click leaves the keyboard focus on it and the
         // surface's shortcuts would go nowhere until the image is clicked again. One handler on
-        // the panel, reached after the clicked button's own, hands the focus back (R-063, ADR
+        // each panel, reached after the clicked button's own, hands the focus back (R-063, ADR
         // 0042).
-        Toolbar.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler((_, _) => Compare.Focus()));
+        var focusBack = new RoutedEventHandler((_, _) => Compare.Focus());
+        Toolbar.AddHandler(ButtonBase.ClickEvent, focusBack);
+        PairPanel.AddHandler(ButtonBase.ClickEvent, focusBack);
 
         Title = VersionInfo.Banner;
         StatusLegal.Text = $"{VersionInfo.Banner} · {VersionInfo.Copyright}";
@@ -204,7 +210,12 @@ public partial class MainWindow : Window
             }
 
             DisplayMode target = _mode == mode ? DisplayMode.Linear : mode;
-            ImagePair shown = _pair;
+
+            // Only the canvas's size, never the pair: a local holding it would be hoisted into
+            // this method's state machine and keep the outgoing pair alive through ShowPair's
+            // release, which then freed nothing (measured on 2026-10-30: 667.6 MiB before the
+            // release, 665.9 after, 176 MiB outgoing; ADR 0047).
+            (int width, int height) canvas = (_pair.PixelWidth, _pair.PixelHeight);
             Log.Info("mode switch " + _mode + " -> " + target);
 
             _opening = true;
@@ -212,14 +223,16 @@ public partial class MainWindow : Window
             {
                 // The padding was agreed when the pair was opened; the same two files need no
                 // second question (R-113).
-                ImagePairLoadResult result = await LoadWithOverlayAsync(_selection, target, _ => Task.FromResult(true));
+                ImagePairSelection selection = _selection;
+                ImagePairLoadResult result = await LoadWithOverlayAsync(progress =>
+                    _loader.LoadAsync(selection.BeforePath, selection.AfterPath, progress, _ => Task.FromResult(true), target));
 
                 if (result.IsSuccess)
                 {
                     // The same files have the same canvas; should one have changed on disk in
                     // between, the view is not worth keeping over a wrong canvas.
                     ImagePair pair = result.Pair!;
-                    ShowPair(pair, keepView: pair.PixelWidth == shown.PixelWidth && pair.PixelHeight == shown.PixelHeight);
+                    ShowPair(pair, keepView: pair.PixelWidth == canvas.width && pair.PixelHeight == canvas.height);
                 }
                 else if (!result.WasDeclined)
                 {
@@ -301,7 +314,8 @@ public partial class MainWindow : Window
 
                 // The mode in use holds for the next pair when that pair allows it (R-113); the
                 // loader falls back to linear when it does not.
-                ImagePairLoadResult result = await LoadWithOverlayAsync(selection, _mode, ConfirmPaddingAsync);
+                ImagePairLoadResult result = await LoadWithOverlayAsync(progress =>
+                    _loader.LoadAsync(selection.BeforePath, selection.AfterPath, progress, ConfirmPaddingAsync, _mode));
 
                 if (result.IsSuccess)
                 {
@@ -331,18 +345,106 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Loads a pair behind the progress overlay, which shows the file being decoded and comes
+    /// Changes one image of the pair on screen and keeps the other (R-065): one dialog for the
+    /// new file, in the folder of the file it replaces, then the load behind the overlay and the
+    /// new pair in place of the old. Cancelling the dialog, declining the padding or a file that
+    /// cannot be read (its message shown, the dialog not opened again) leave the pair as it was.
+    /// Nothing happens while a pair is being opened, changed or switched, or with no pair shown.
+    /// </summary>
+    /// <param name="side">The image to change.</param>
+    /// <param name="from">What asked for the change, in English, for the diagnostic log: <c>the Change A button</c>.</param>
+    internal async Task ChangeImageAsync(ImageSide side, string from)
+    {
+        if (_opening || _pair is null || _selection is null)
+        {
+            Log.Debug("change of " + side + " asked by " + from + (_opening ? " while a pair is being opened" : " with no pair shown") + ": ignored");
+            return;
+        }
+
+        Log.Info("change of " + side + " asked by " + from);
+        _opening = true;
+        try
+        {
+            // The outgoing pair must be unreferenced when ShowPair releases it: a local holding
+            // it here would be hoisted into this method's state machine, live across the await
+            // and through ShowPair, and the collection would free nothing (measured on
+            // 2026-10-30: 552.9 MiB before the release, 552.6 after, with a 92 MiB bitmap
+            // outgoing). So only the canvas's size is kept, and the pair is read when the load
+            // starts (ReplaceShownAsync).
+            (int width, int height) canvas = (_pair.PixelWidth, _pair.PixelHeight);
+            ImagePairSelection selection = _selection;
+            string replaced = side == ImageSide.A ? selection.BeforePath : selection.AfterPath;
+            string? path = _dialogs.PickImage(side, Path.GetDirectoryName(replaced));
+            if (path is null)
+            {
+                Log.Info("the dialog was cancelled; the pair on screen stays");
+                return;
+            }
+
+            Log.Info("the dialog chose " + side + "=" + path);
+
+            // Open…'s first dialog follows the image A chosen last, a change of A included (R-001).
+            if (side == ImageSide.A)
+            {
+                _lastDirectory = Path.GetDirectoryName(path);
+            }
+
+            ImagePairLoadResult result = await LoadWithOverlayAsync(progress => ReplaceShownAsync(side, path, progress));
+
+            if (result.IsSuccess)
+            {
+                ImagePair pair = result.Pair!;
+                _selection = side == ImageSide.A
+                    ? selection with { BeforePath = path }
+                    : selection with { AfterPath = path };
+
+                // The place being looked at is kept when the canvas is the same; offsets into a
+                // canvas of another size would mean nothing.
+                ShowPair(pair, keepView: pair.PixelWidth == canvas.width && pair.PixelHeight == canvas.height);
+            }
+            else if (!result.WasDeclined)
+            {
+                // The load logged the failure with its exception and the message.
+                Log.Info("the change failed: the message is shown, the pair on screen stays");
+                MessageDialog.Show(this, UiText.Current.CannotCompareTitle, result.Error!);
+            }
+            else
+            {
+                Log.Info("the padding was declined: the pair on screen stays");
+            }
+        }
+        finally
+        {
+            _opening = false;
+        }
+    }
+
+    /// <summary>
+    /// Starts the change of one image of the pair on screen (<see cref="ImagePairLoader.ReplaceAsync"/>),
+    /// reading the pair here, in a method of its own, so that no frame of
+    /// <see cref="ChangeImageAsync"/> holds the outgoing pair when it is released.
+    /// </summary>
+    /// <param name="side">The image to change.</param>
+    /// <param name="path">The new file.</param>
+    /// <param name="progress">The overlay's progress.</param>
+    /// <returns>The loader's result.</returns>
+    private Task<ImagePairLoadResult> ReplaceShownAsync(ImageSide side, string path, IProgress<ImageLoadProgress> progress)
+    {
+        ImagePair shown = _pair ?? throw new InvalidOperationException("No pair is shown.");
+        return _loader.ReplaceAsync(shown, side, path, progress, ConfirmPaddingAsync, _mode);
+    }
+
+    /// <summary>
+    /// Runs a load behind the progress overlay, which shows the file being decoded and comes
     /// down again whatever happens.
     /// </summary>
-    /// <param name="selection">The two files.</param>
-    /// <param name="mode">The display mode asked of the loader (R-110).</param>
-    /// <param name="confirmPadding">
-    /// The padding question, when the two differ in size: <see cref="ConfirmPaddingAsync"/> for
-    /// an open, an answer of yes for a switch of mode on a pair already shown.
+    /// <param name="load">
+    /// The load, given the overlay's progress: a pair (<see cref="ImagePairLoader.LoadAsync"/>)
+    /// or one image of it (<see cref="ImagePairLoader.ReplaceAsync"/>).
     /// </param>
     /// <returns>The loader's result: the pair, a failure with its message, or declined.</returns>
     private async Task<ImagePairLoadResult> LoadWithOverlayAsync(
-        ImagePairSelection selection, DisplayMode mode, Func<PadRequest, Task<bool>> confirmPadding)
+        Func<IProgress<ImageLoadProgress>, Task<ImagePairLoadResult>> load)
     {
         LoadingOverlay.Visibility = Visibility.Visible;
         LoadingBar.Value = 0;
@@ -356,8 +458,7 @@ public partial class MainWindow : Window
 
         try
         {
-            return await _loader.LoadAsync(
-                selection.BeforePath, selection.AfterPath, progress, confirmPadding, mode);
+            return await load(progress);
         }
         finally
         {
@@ -396,8 +497,9 @@ public partial class MainWindow : Window
     /// </summary>
     /// <param name="pair">The pair just loaded.</param>
     /// <param name="keepView">
-    /// True for the same files in another display mode: the zoom, the pan and the divider stay
-    /// (R-113); false for a new pair, shown zoomed to fit with the divider in the middle.
+    /// True for the same files in another display mode (R-113), and for one image changed on a
+    /// canvas of the same size (R-065): the zoom, the pan and the divider stay; false for a new
+    /// pair, shown zoomed to fit with the divider in the middle.
     /// </param>
     private void ShowPair(ImagePair pair, bool keepView = false)
     {
@@ -442,7 +544,10 @@ public partial class MainWindow : Window
         }
 
         Title = $"{pair.Before.Info.FileName}  vs  {pair.After.Info.FileName}  —  {VersionInfo.Banner}";
-        ToolbarTitle.Text = $"{pair.Before.Info.FileName}   vs   {pair.After.Info.FileName}";
+        BeforeName.Text = pair.Before.Info.FileName;
+        AfterName.Text = pair.After.Info.FileName;
+        ChangeBeforeButton.IsEnabled = true;
+        ChangeAfterButton.IsEnabled = true;
         // When the pair had to be padded, the canvas size alone would be a half-truth: neither
         // image is that size. Both originals are named instead.
         string dimensions = pair.Pad.RequiresPadding

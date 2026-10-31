@@ -139,6 +139,16 @@ folder of the last image A.
 Cancelling either dialog closes the application when no pair is on screen yet; with a pair on
 screen, that pair stays.
 
+To change only one of the two, there is a `Change A…` button (`Schimbă A…`) after image A's
+name in the toolbar and a `Change B…` button (`Schimbă B…`) after image B's: each opens one
+dialog, in the folder of the file it replaces, and the file chosen takes that image's place while
+the other image stays as it is, not read again. The zoom, the position and the line stay where
+they were when the new file has the same size as the one it replaces (or when the padded canvas
+keeps its size), so the same place can be looked at in another variant; a canvas of another size
+is shown at fit, as a new pair is. If the new file's size differs from the kept image's, the same
+question as above is asked first. Cancelling the dialog, answering `No`, or a file that cannot be
+read (its message is shown) leaves the pair as it was. `Open…` and `Ctrl+O` still replace both.
+
 With two paths as arguments, it skips the dialogs:
 
 ```
@@ -190,6 +200,7 @@ the one the Romanian interface shows.
 | histogram (FITS, float TIFF) | `H`, or the `Histogram` button (`Histogramă`); once more goes back to linear; held down, the key switches once |
 | false colours (FITS, float TIFF) | `F`, or the `False colours` button (`Culori false`); once more goes back to linear; held down, the key switches once |
 | open another pair | `Ctrl+O`, or the `Open…` button (`Deschide…`); not while a pair is opening |
+| change one image, keep the other | the `Change A…` button (`Schimbă A…`) after image A's name, or `Change B…` (`Schimbă B…`) after image B's; the view stays where it was when the size does not change; not while a pair is opening |
 
 The keyboard shortcuts work while the comparison area has the keyboard focus. It takes the focus
 when a pair loads and at any click in it, and gets it back after a click on a toolbar button, so
@@ -218,9 +229,11 @@ are drawn nearest-neighbour, so you see the real pixels as squares, not an inter
 
 ## What the window shows
 
-The toolbar names the pair, `A   vs   B` with the two file names. On its right, after the label
-`Navigation` (`Navigare`), come the buttons `−` and `+` around the zoom in percent, then `Fit`,
-`100%`, `Open…` and `About` (`Despre`). The title bar names the pair too, followed by the
+The toolbar names the pair, the two file names around `vs`, each followed by the button that
+changes that image alone, `Change A…` and `Change B…` (`Schimbă A…`, `Schimbă B…`), disabled
+until a pair is on screen. On its right, after the label `Navigation` (`Navigare`), come the
+buttons `−` and `+` around the zoom in percent, then `Fit`, `100%`, `Histogram`, `False colours`,
+`Open…` and `About` (`Despre`). The title bar names the pair too, followed by the
 program's name and version. The zoom is also shown in a badge at the top right of the comparison
 area.
 

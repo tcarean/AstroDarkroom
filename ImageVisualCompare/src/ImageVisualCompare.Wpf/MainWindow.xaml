@@ -21,13 +21,38 @@
                 BorderThickness="0,0,0,1"
                 Padding="12,8">
             <Grid>
-                <TextBlock x:Name="ToolbarTitle"
-                           Style="{StaticResource ToolLabel}"
-                           Foreground="{StaticResource TextBrush}"
-                           HorizontalAlignment="Left"
-                           TextTrimming="CharacterEllipsis" />
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-                <StackPanel x:Name="Toolbar" Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- The pair's names, each followed by the button that changes that image alone
+                     (R-065). The panel gives the two names the widths PairLabelLayout works out
+                     from the room left of the tools, so a long name is trimmed with an ellipsis
+                     and the buttons always fit; the clip is for the floor, where nothing more
+                     can give. -->
+                <controls:PairLabelPanel x:Name="PairPanel"
+                                         Grid.Column="0"
+                                         HorizontalAlignment="Left"
+                                         ClipToBounds="True">
+                    <TextBlock x:Name="BeforeName"
+                               controls:PairLabelPanel.IsName="True"
+                               Style="{StaticResource ToolLabel}"
+                               Foreground="{StaticResource TextBrush}"
+                               Margin="0,0,3,0"
+                               TextTrimming="CharacterEllipsis" />
+                    <Button x:Name="ChangeBeforeButton" Style="{StaticResource ChangeButton}" IsEnabled="False" />
+                    <TextBlock x:Name="VsLabel" Style="{StaticResource ToolLabel}" Margin="12,0" Text="vs" />
+                    <TextBlock x:Name="AfterName"
+                               controls:PairLabelPanel.IsName="True"
+                               Style="{StaticResource ToolLabel}"
+                               Foreground="{StaticResource TextBrush}"
+                               Margin="0,0,3,0"
+                               TextTrimming="CharacterEllipsis" />
+                    <Button x:Name="ChangeAfterButton" Style="{StaticResource ChangeButton}" IsEnabled="False" />
+                </controls:PairLabelPanel>
+
+                <StackPanel x:Name="Toolbar" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
                     <TextBlock x:Name="NavigationLabel" Style="{StaticResource ToolLabel}" />
                     <Button x:Name="ZoomOutButton" Style="{StaticResource ToolButton}" Content="−" />
                     <TextBlock x:Name="ZoomLabel"

@@ -39,6 +39,9 @@
     the user if it did.
   - `UiText.cs`, `UiLanguage.cs` — every text the application shows, English and Romanian side
     by side, and the table in use (`UiText.Current`). See `language.md`, ADR 0038.
+  - `ImageSide.cs` — `A` or `B`: which image a dialog asks for and a change replaces.
+  - `PairLabelLayout.cs` — the widths of the two file names in the toolbar's pair label, so the
+    names are trimmed before a change button is lost. See `shell.md`.
   - `StartupArguments.cs` — the command line: `--lang` and the candidates for the pair.
   - `PointD.cs`, `Geometry.cs` — `PointD`, `SizeD`, `RectD` and `AspectFit`, declared here
     so Core needs no `WindowsBase` reference. See ADR 0009.
@@ -78,17 +81,21 @@
     which is what anything headless wants. Decodes sequentially, never in parallel, to keep
     the peak down (the 2026-09-08 measurement found no transient spike to keep down; the
     loader's comment says why the order stays, ADR 0015). Turns every expected file failure into
-    a message rather than a crash. See ADR 0015.
+    a message rather than a crash. `ReplaceAsync` changes one image of a pair on screen and
+    keeps the other as decoded. See ADR 0015, ADR 0047, `imaging.md`.
   - `Imaging/MemoryHousekeeping.cs` — the release path when a pair is replaced, and the
     process memory readout.
-  - `Services/FileDialogService.cs` — the two open dialogs and the file filter. These are
-    the Windows common dialogs and follow the *system* theme, which is the one place the
-    palette is not ours to choose. See ADR 0018.
+  - `Services/FileDialogService.cs` — the two open dialogs of a pair, the one dialog of a
+    change (`PickImage`, titled for its side) and the file filter. These are the Windows common
+    dialogs and follow the *system* theme, which is the one place the palette is not ours to
+    choose. See ADR 0018.
   - `Interop/DarkTitleBar.cs` — the DWM opt-in that makes a window's caption dark. Every
     `Window` in the application calls `Apply` in its constructor. See ADR 0018.
   - `Controls/CompareView.xaml(.cs)` — the comparison surface. All input handling, the
     shared transform, the clip, the overlay, the scrollbars.
   - `Controls/MinimapView.xaml(.cs)` — thumbnail plus viewport rectangle, and click-to-jump.
+  - `Controls/PairLabelPanel.cs` — the row of the toolbar's pair label, whose two names take the
+    widths `PairLabelLayout` gives them. See `shell.md`.
   - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout.
   - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
     `Confirm` to ask yes or no.

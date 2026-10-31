@@ -42,6 +42,8 @@ public class MainWindowTests
     [InlineData("HistogramButton")]
     [InlineData("FalseColoursButton")]
     [InlineData("OpenButton")]
+    [InlineData("ChangeBeforeButton")]
+    [InlineData("ChangeAfterButton")]
     public async Task R063_AToolbarClick_HandsTheFocusBackToTheComparisonSurface(string buttonName)
     {
         object? surface = null;
@@ -82,15 +84,162 @@ public class MainWindowTests
         Assert.Equal(1, dialogs.Asked);
     }
 
-    /// <summary>Picks the same pair whenever it is asked, and counts the asking.</summary>
+    [Fact]
+    public async Task R065_ChangingImageB_ReplacesItAlone_AndKeepsTheView()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        var dialogs = new CountingDialogs();
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(dialogs, new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        object? imageA = null;
+        Task changed = null!;
+        Task switched = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.True(window.ChangeAfterButton.IsEnabled);
+            imageA = window.Compare.BeforeImage.Source;
+            window.Compare.Divider.Position = 0.3;
+            changed = window.ChangeImageAsync(ImageSide.B, "the test");
+        });
+        await changed;
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.Equal(("a.png", "c.png"), (window.BeforeName.Text, window.AfterName.Text));
+            Assert.StartsWith("a.png  vs  c.png  —  ", window.Title);
+            Assert.Same(imageA, window.Compare.BeforeImage.Source);
+            Assert.Equal(0.3, window.Compare.Divider.Position);
+            Assert.True(window.HistogramButton.IsEnabled);
+        });
+        Assert.Equal((1, 1), (dialogs.Asked, dialogs.AskedForOne));
+        Assert.Equal(ImageSide.B, dialogs.SideAsked);
+        Assert.Equal(@"C:\pair", dialogs.DirectoryAsked);
+        Assert.Equal([@"C:\pair\a.png", @"C:\pair\b.png", @"C:\pair\c.png"], loader.Loaded);
+
+        // A switch of mode after the change decodes the pair now on screen, not the old file.
+        await WpfThread.RunAsync(() => switched = window.ToggleModeAsync(DisplayMode.Histogram));
+        await switched;
+        Assert.Equal([@"C:\pair\a.png", @"C:\pair\c.png"], loader.Loaded.Skip(3));
+    }
+
+    [Fact]
+    public async Task R065_ChangingImageA_ReplacesItAlone()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        var dialogs = new CountingDialogs();
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(dialogs, new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        object? imageB = null;
+        Task changed = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            imageB = window.Compare.AfterImage.Source;
+            changed = window.ChangeImageAsync(ImageSide.A, "the test");
+        });
+        await changed;
+
+        await WpfThread.RunAsync(() =>
+        {
+            Assert.Equal(("c.png", "b.png"), (window.BeforeName.Text, window.AfterName.Text));
+            Assert.Same(imageB, window.Compare.AfterImage.Source);
+        });
+        Assert.Equal(ImageSide.A, dialogs.SideAsked);
+        Assert.Equal([@"C:\pair\a.png", @"C:\pair\b.png", @"C:\other\c.png"], loader.Loaded);
+
+        // Open… then starts in the folder of the image A chosen last, the change's (R-001); the
+        // open it starts is waited for, so nothing of it runs on into the next test.
+        await WpfThread.RunAsync(() => window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)));
+        Assert.Equal(@"C:\other", dialogs.PairDirectoryAsked);
+        await WaitUntilAsync(window, w => w.BeforeName.Text == "a.png", "the pair opened again");
+    }
+
+    [Fact]
+    public async Task R065_CancellingTheDialog_LeavesThePairAsItWas()
+    {
+        var loader = new ModeLoader(shownAsStored: true);
+        var dialogs = new CountingDialogs { CancelsTheChange = true };
+        MainWindow window = null!;
+        await WpfThread.RunAsync(() =>
+        {
+            window = new MainWindow(dialogs, new ImagePairLoader(loader));
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+        await WaitForPairAsync(window);
+
+        Task changed = null!;
+        await WpfThread.RunAsync(() => changed = window.ChangeImageAsync(ImageSide.B, "the test"));
+        await changed;
+
+        await WpfThread.RunAsync(() => Assert.Equal(("a.png", "b.png"), (window.BeforeName.Text, window.AfterName.Text)));
+        Assert.Equal(1, dialogs.AskedForOne);
+        Assert.Equal([@"C:\pair\a.png", @"C:\pair\b.png"], loader.Loaded);
+    }
+
+    [Fact]
+    public async Task R065_AChangeWhileAPairLoads_OrWithNoPair_AsksForNothing()
+    {
+        var dialogs = new CountingDialogs();
+
+        await WpfThread.RunAsync(() =>
+        {
+            var window = new MainWindow(dialogs, new ImagePairLoader(new StalledLoader()));
+
+            Assert.False(window.ChangeBeforeButton.IsEnabled);
+            Assert.False(window.ChangeAfterButton.IsEnabled);
+            window.ChangeAfterButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+
+            // The open is still loading, suspended at its first await, when the change comes.
+            window.OpenButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+            window.ChangeBeforeButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        });
+
+        Assert.Equal((1, 0), (dialogs.Asked, dialogs.AskedForOne));
+    }
+
+    /// <summary>
+    /// Picks the same pair whenever it is asked, and for one image <c>c.png</c>, in another
+    /// folder for A; counts the asking and keeps the folders asked for; with
+    /// <see cref="CancelsTheChange"/> the dialog for one image is cancelled.
+    /// </summary>
     private sealed class CountingDialogs : IFileDialogService
     {
         public int Asked { get; private set; }
 
+        public int AskedForOne { get; private set; }
+
+        public ImageSide? SideAsked { get; private set; }
+
+        public string? DirectoryAsked { get; private set; }
+
+        public string? PairDirectoryAsked { get; private set; }
+
+        public bool CancelsTheChange { get; init; }
+
         public ImagePairSelection? PickImagePair(string? initialDirectory = null)
         {
             Asked++;
+            PairDirectoryAsked = initialDirectory;
             return new ImagePairSelection(@"C:\pair\a.png", @"C:\pair\b.png");
+        }
+
+        public string? PickImage(ImageSide side, string? initialDirectory = null)
+        {
+            AskedForOne++;
+            SideAsked = side;
+            DirectoryAsked = initialDirectory;
+            return CancelsTheChange ? null : (side == ImageSide.A ? @"C:\other\c.png" : @"C:\pair\c.png");
         }
     }
 
@@ -224,13 +373,17 @@ public class MainWindowTests
     /// Waits for the open the test started to put its pair on screen: the open runs on through
     /// the dispatcher once the test's body returns, so the window is looked at between pumps.
     /// </summary>
-    private static async Task WaitForPairAsync(MainWindow window)
+    private static Task WaitForPairAsync(MainWindow window) =>
+        WaitUntilAsync(window, w => w.StatusPair.Text.Length > 0, "the pair was shown");
+
+    /// <summary>Waits up to 5 s, between pumps of the dispatcher, for the window to satisfy a condition.</summary>
+    private static async Task WaitUntilAsync(MainWindow window, Func<MainWindow, bool> condition, string what)
     {
         for (int i = 0; i < 100; i++)
         {
-            bool shown = false;
-            await WpfThread.RunAsync(() => shown = window.StatusPair.Text.Length > 0);
-            if (shown)
+            bool satisfied = false;
+            await WpfThread.RunAsync(() => satisfied = condition(window));
+            if (satisfied)
             {
                 return;
             }
@@ -238,16 +391,18 @@ public class MainWindowTests
             await Task.Delay(50);
         }
 
-        Assert.Fail("the pair was not shown within 5 s");
+        Assert.Fail($"not within 5 s: {what}");
     }
 
     /// <summary>
     /// Probes every file as one small image, shown as stored or not, decodes it as a 2 x 2
-    /// bitmap at once, and records the mode of every load.
+    /// bitmap at once, and records the path and the mode of every load.
     /// </summary>
     private sealed class ModeLoader(bool shownAsStored) : IImageLoader
     {
         public List<DisplayMode> Modes { get; } = [];
+
+        public List<string> Loaded { get; } = [];
 
         public ImageInfo Probe(string path) =>
             new(path, 2, 2, 32, ColorChannels.Rgb, IsFloat: shownAsStored, ShownAsStored: shownAsStored);
@@ -258,6 +413,7 @@ public class MainWindowTests
             lock (Modes)
             {
                 Modes.Add(mode);
+                Loaded.Add(path);
             }
 
             var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Bgra32, null, new byte[16], 8);
