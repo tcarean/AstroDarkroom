@@ -45,7 +45,7 @@ public partial class AboutWindow : Window
     /// absolute address) is a Debug line in the diagnostic log with the reason, and the window stays.
     /// </summary>
     /// <param name="sender">The hyperlink clicked.</param>
-    /// <param name="e">The navigation request; marked handled, its URI opened.</param>
+    /// <param name="e">The navigation request; marked handled, its URI opened when it can be.</param>
     private void OpenLink(object sender, RequestNavigateEventArgs e)
     {
         e.Handled = true;
@@ -56,12 +56,12 @@ public partial class AboutWindow : Window
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
             // OriginalString, not AbsoluteUri: a relative link throws there, the very exception
-            // caught here, and the line must not throw it again out of the handler (R-071).
+            // caught here, and the line must not throw it again out of the handler (ADR 0029).
             Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
         }
     }
 
-    /// <summary>The diagnostic log: a link the system could not open (R-071).</summary>
+    /// <summary>The diagnostic log: a link that could not be opened (R-071).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     /// <summary>The "Inchide" button: closes the window.</summary>
