@@ -84,11 +84,15 @@ with six significant digits, `none` for a missing value, sizes in KiB and MiB, a
 NLog never parses them as message templates and a `{` in a path is harmless. A line whose message
 costs something to build is guarded by `IsDebugEnabled` or `IsTraceEnabled`.
 
-A line never throws: a value it may not have is written `none`. A line that threw would change
-what a run does at one level only, at the default one among them: libraw's line once read the
-CFA order of every raw, and a raw without a Bayer mosaic (an X-Trans RAF, a monochrome DNG) has
-none, so every such frame became unreadable at Debug and not at Info. `RawReader.FiguresLine`
-composes that line from plain values, so a test reaches it without such a raw.
+A line never throws: a value it may not have is written `none`. A guarded line that threw would
+change what a run does at one level only, at the default one among them: libraw's line once read
+the CFA order of every raw, and a raw without a Bayer mosaic (an X-Trans RAF, a monochrome DNG)
+has none, so every such frame became unreadable at Debug and not at Info. `RawReader.FiguresLine`
+composes that line from plain values, so a test reaches it without such a raw. An unguarded line
+builds its message before the logger looks at the level, so one that threw would throw at every
+level, `off` included: the About window's link line once asked a relative link for its absolute
+address, the failure its catch had just taken, and the window would have closed; it now names the
+link as written.
 
 `LogText` never writes a text the report words in the run's language: a FITS frame's scale is
 `none` in its `loaded` line (`FrameRun` assumes it from BITPIX, in the run's language) and its

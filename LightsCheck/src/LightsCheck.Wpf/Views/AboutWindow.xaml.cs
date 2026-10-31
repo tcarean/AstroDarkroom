@@ -44,7 +44,7 @@ public partial class AboutWindow : Window
     /// A link that cannot be opened (no browser starts, or the link is relative and has no
     /// absolute address) is a Debug line in the diagnostic log with the reason, and the window stays.
     /// </summary>
-    /// <param name="sender">The hyperlink clicked.</param>
+    /// <param name="sender">This window, on which the handler is set; not used.</param>
     /// <param name="e">The navigation request; marked handled, its URI opened when it can be.</param>
     private void OpenLink(object sender, RequestNavigateEventArgs e)
     {
@@ -55,8 +55,9 @@ public partial class AboutWindow : Window
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-            // OriginalString, not AbsoluteUri: a relative link throws there, the very exception
-            // caught here, and the line must not throw it again out of the handler (ADR 0029).
+            // OriginalString, not AbsoluteUri: a relative link throws there, which is what this
+            // catch took, and would throw again out of the handler; the log never stops the
+            // window (ADR 0029).
             Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
         }
     }
