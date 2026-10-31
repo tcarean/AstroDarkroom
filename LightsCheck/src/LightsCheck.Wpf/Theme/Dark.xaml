@@ -114,7 +114,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="FontSize" Value="11" />
   </Style>
 
-  <!-- The links in "About". By default WPF makes them dark blue on a black background, that
+  <!-- The links in "Despre". By default WPF makes them dark blue on a black background, that
        is unreadable; the theme's accent, underlined only when the mouse passes over. -->
   <Style TargetType="Hyperlink">
     <Setter Property="Foreground" Value="{StaticResource AccentBr}" />
@@ -595,7 +595,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   </Style>
 
 
-  <!-- A third-party component in "About": the name and the role on the first line, the licence
+  <!-- A third-party component in "Despre": the name and the role on the first line, the licence
        and the copyright under it, the link to the project last. The licence is what the LGPL
        asks to show, so it sits on its own line, not in a tooltip. The link has no handler here
        - a resource dictionary has no code-behind - the window catches it, through the routed

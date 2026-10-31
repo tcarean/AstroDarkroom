@@ -53,7 +53,7 @@ internal static class VerdictPalette
             return v is "DA" or "YES" ? 2 : 0;
         }
 
-        // The dithering verdict opens with its worst part; NO / FARA (no walking noise) is as
+        // The dithering verdict opens with its worst part; FARA / NO (no walking noise) is as
         // good as OK.
         if (StartsWithAny(v, "FARA", "OK", "NO "))
         {

@@ -74,7 +74,7 @@ internal sealed record ReportTable(string Title, IReadOnlyList<string> Columns, 
 /// The registered y offset from the reference frame in pixels, one decimal.
 /// </param>
 /// <param name="Move">The `dithering` cell, the mount's move on each axis.</param>
-/// <param name="Spot">The cell of the frame's run at 10 px, `k/n de la f`.</param>
+/// <param name="Spot">The cell of the frame's run at 10 px, `k/n from f`.</param>
 /// <param name="Reasons">The frame's flags in words; empty when it has none.</param>
 /// <param name="StepTip">The tooltip of the step cell; null when the frame has no step.</param>
 internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Move, string Spot, string Reasons, string? StepTip);
@@ -329,7 +329,7 @@ internal static class SeriesReport
     // ------------------------------------------------------------------ the sections
 
     /// <summary>
-    /// The SUMMARY section: focus, exposure, dew, the moved frames, dithering, polar alignment,
+    /// The SUMMARY section: focus, exposure, dew, the trailed frames, dithering, polar alignment,
     /// each with its verdict, and the frames to leave out of the stack.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
@@ -881,7 +881,7 @@ internal static class SeriesReport
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The `pattern fix` row: the figures when the pattern was measured, else why not, and in
+    /// The `fixed pattern` row: the figures when the pattern was measured, else why not, and in
     /// both cases what the session's darks do.
     /// </returns>
     private static ReportRow PatternRow(SeriesResult r)

@@ -28,7 +28,7 @@ namespace LightsCheck.Wpf;
 /// One paragraph of an explanation the core words: the Rejected tab's (R-037) or the Dithering
 /// card's (R-047); the window sets the emphasised one in bold.
 /// </summary>
-/// <param name="Text">The paragraph, as the core wrote it (Romanian).</param>
+/// <param name="Text">The paragraph, as the core wrote it, in the run's language.</param>
 /// <param name="Emphasis">True for the paragraph the window sets in bold.</param>
 public sealed record ParagraphVm(string Text, bool Emphasis);
 

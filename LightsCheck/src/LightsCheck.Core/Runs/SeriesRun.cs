@@ -116,7 +116,7 @@ internal sealed record ArrowKeys(Arrow East, Arrow North)
 /// <param name="Pattern">The sensor's fixed pattern read from the lights' central crops.</param>
 /// <param name="PixelSizeUm">The pixel size used, in microns.</param>
 /// <param name="PixelSizeSource">
-/// Where the pixel size came from, as the report prints it (Romanian).
+/// Where the pixel size came from, as the report prints it, in the run's language.
 /// </param>
 /// <param name="ArcsecPerPixel">
 /// The pixel scale in arcseconds per pixel; null when no file gives a focal length.

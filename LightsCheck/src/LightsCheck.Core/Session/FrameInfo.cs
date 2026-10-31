@@ -70,7 +70,7 @@ namespace LightsCheck.Core;
 /// The lens's widest f-number at its shortest focal length, from libraw; null when absent.
 /// </param>
 /// <param name="Error">
-/// Why the file could not be read (Romanian, shown to the user); null for a readable file.
+/// Why the file could not be read, as the user is shown it; null for a readable file.
 /// </param>
 internal sealed record FrameInfo(
     int Index,

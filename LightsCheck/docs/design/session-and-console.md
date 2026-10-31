@@ -59,7 +59,7 @@ nothing is timed.
 returns `Inventory(Session, Lights, Cadence)`; `HasErrors` is true when any light carries an
 error, which is what makes the console exit 1. `InventoryReport.Write` prints the header and
 the table. `WriteHeader` is shared: the series report opens with the same session lines
-(folders with their frame counts and extension, camera, lens, exposure, interval, and an
+(folders with their frame counts and extension, camera, lens, exposure, interval, and a
 `WARNING` line when frames could not be read). The lens line puts the shot's focal length
 and f-number first, then the lens as its chip declares it (`lens 135 mm f/2.0`, a range
 for a zoom) and the lens as the raw names it: the name in quotes, then the ID and the mount in

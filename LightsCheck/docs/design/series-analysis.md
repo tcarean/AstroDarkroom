@@ -171,7 +171,7 @@ Veil frames about 3 of the 21 ADU of green noise survive in the median and the m
 `SensorPattern` holds the position names, the sigmas, the frame sigmas, the hot count and
 the pixels read; `FractionOfFrame` and `HotPerMpx` derive the fraction and the rate. There
 is no count at a low threshold on purpose (ADR 0015: it sat on the steep tail). The raws carry the pattern whether
-or not the session has darks; the report's `pattern fix` row adds what the `darks/` folder says
+or not the session has darks; the report's `fixed pattern` row adds what the `darks/` folder says
 (`SessionFolder.Darks`, counted and never read, R-042).
 
 ## Classes, trends, drift, axes (`SeriesAnalyzer`)
