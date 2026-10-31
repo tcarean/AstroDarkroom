@@ -32,6 +32,15 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 - "Despre" lists the component written by others the launcher now ships, NLog, with its role,
   licence, copyright line and address, under "Third-party components" / "Componente terte"
   (R-015, ADR 0013); `THIRD-PARTY-NOTICES.md` holds its licence's whole text.
+- The suite folder carries the licences of everything in it that others wrote (R-017, ADR 0014):
+  `THIRD-PARTY-NOTICES.txt`, beside `AstroDarkroom.exe`, gives for NLog, Sdcb.LibRaw, LibRaw and
+  the three libraries it calls (libjpeg-turbo, Little CMS, zlib), ImageSharp, Unicolour, the
+  lensfun database, the Lynds catalogue and .NET with WPF the programs that ship each, its
+  copyright notices and its licence's whole text, with those of the code of others it contains,
+  and LibRaw's section links what its DLL was built from (LibRaw 0.21.1, LibRaw-cmake, vcpkg's
+  port); `DOTNET-LICENSE.txt` and
+  `DOTNET-THIRD-PARTY-NOTICES.txt` are the .NET runtime's own, copied from the runtime pack the
+  suite is built with. "Despre" points at `THIRD-PARTY-NOTICES.txt` beside the program.
 - Each row of the launcher shows its tool's own icon, dimmed when the tool is missing from
   the suite folder (R-010, ADR 0011); the icons are copies of the components' files, kept
   equal to them by `SuiteTests`.

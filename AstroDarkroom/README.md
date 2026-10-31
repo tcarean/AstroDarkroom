@@ -23,7 +23,7 @@ later ([LICENSE](LICENSE)).
 ## What you get
 
 A zip, `AstroDarkroom-X.Y.Z-win-x64.zip`, with a `.sha256` file beside it. Unzipped, it is one
-folder with every executable side by side and the .NET 8 runtime included (nothing to install),
+folder with every executable side by side and the .NET 8 runtime included (no .NET to install),
 and `AstroDarkroom.exe`, the launcher: a window with one row per tool (its icon, title,
 description and version) and an **Open** button. A row whose executable is missing from the
 folder is disabled and names the missing file. **About** (F1) shows the suite's version, its date, the licence, the
@@ -41,6 +41,11 @@ A tool opened from the launcher starts in the launcher's language (it receives `
 `release.json`, in the same folder, says the same in a form programs read: the suite's version,
 its date, its commit, and for each component its version, its commit and whether it had
 unreleased changes.
+
+`LICENSE`, beside it, is the GPLv3 every program is under. `THIRD-PARTY-NOTICES.txt` names what
+the folder holds that others wrote, which programs ship it, its copyright notices and its
+licence's whole text (see "Third-party components"); `DOTNET-LICENSE.txt` and
+`DOTNET-THIRD-PARTY-NOTICES.txt` are the .NET runtime's own.
 
 The executables are not signed: on another computer, SmartScreen asks at the first start.
 
@@ -150,16 +155,29 @@ the suite's folder, `artifacts/X.Y.Z/`, after a `scripts/release.ps1 -Version X.
 
 ## Third-party components
 
-The launcher links one component written by others; **About** names it with its licence, its
-copyright line and its address, and `THIRD-PARTY-NOTICES.md` holds the licence's whole text and
-why it is compatible with the GPLv3 (ADR 0013).
+The programs of the suite ship code and data written by others. `THIRD-PARTY-NOTICES.md`, in this
+folder, gives for each its copyright notices, its licence's whole text, with those of the code of
+others it contains, and why the licence is compatible with the GPLv3; the launcher publishes it
+into the suite folder as `THIRD-PARTY-NOTICES.txt`, beside the .NET runtime's own two files,
+`DOTNET-LICENSE.txt` and `DOTNET-THIRD-PARTY-NOTICES.txt`, copied from the runtime pack the
+suite is built with (R-017, ADR 0014). The launcher's **About** names the component it links,
+NLog, with its licence, its copyright line and its address (ADR 0013); each tool's names its own.
 
-| Component | Used for | Licence |
-| --- | --- | --- |
-| NLog and NLog.Targets.AtomicFile 6.2.x | writing the log (see "Logs"), two launchers into one file | BSD-3-Clause |
+| Component | Used for | Shipped by | Licence |
+| --- | --- | --- | --- |
+| NLog and NLog.Targets.AtomicFile | the diagnostic logs (see "Logs") | the launcher, DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare, CopyWcs | BSD-3-Clause |
+| Sdcb.LibRaw | the .NET binding to LibRaw | DarksCheck, FlatCheck, LightsCheck | MIT |
+| LibRaw (`raw_r.dll`) | reading camera raw files | DarksCheck, FlatCheck, LightsCheck | LGPL-2.1 |
+| libjpeg-turbo (`jpeg8.dll`) | JPEG data in raw files, for LibRaw | DarksCheck, FlatCheck, LightsCheck | IJG, BSD-3-Clause, zlib |
+| Little CMS (`lcms2.dll`) | colour management, for LibRaw | DarksCheck, FlatCheck, LightsCheck | MIT |
+| zlib (`zlib1.dll`) | Deflate data in raw files, for LibRaw | DarksCheck, FlatCheck, LightsCheck | zlib |
+| SixLabors.ImageSharp | reading and writing image files | FlatCheck, AstroPhotoAnalyzer | Apache-2.0 |
+| Wacton.Unicolour | a printer's ICC profile | AstroPhotoAnalyzer | MIT |
+| The lensfun database | lens vignetting profiles | FlatCheck | CC BY-SA 3.0 |
+| Lynds' Catalogue of Dark Nebulae | naming the dark nebulae in a frame | AstroPhotoAnalyzer | a citation |
+| .NET 8 and WPF | running the programs | every program | MIT |
 
-FlatCheck's and LightsCheck's windows ship the same two files at the same version, so the suite
-folder holds one copy of each.
+A package two programs ship is one file in the suite folder, at one version.
 
 ## For developers
 

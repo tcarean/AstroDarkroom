@@ -31,7 +31,7 @@ namespace FlatCheck
 {
     /// <summary>
     /// The geometry of a flat (the paraboloid fit, the radial model) and the metrics the
-    /// structure, light and smoothing analyzers compute on it. Every metric is a ratio or
+    /// structure and light analyzers compute on it. Every metric is a ratio or
     /// a fraction, so ISO and gain cancel.
     /// </summary>
     internal static class Metrics
@@ -431,103 +431,6 @@ namespace FlatCheck
         }
 
         // ========================================================= metrics
-        /// <summary>
-        /// How much FINE TEXTURE a raster has: the structured part of the fine component, in
-        /// percent. The fine component is <c>raster / smooth - 1</c>, where "smooth" is the
-        /// raster passed twice through a box filter of <c>box</c> px (a box applied twice is a
-        /// triangle - close enough to a Gaussian for a DETECTOR, and without any dependency). The
-        /// pixel noise is estimated from the differences between horizontal neighbours (divided
-        /// by the square root of 2) and subtracted in quadrature, so that only what is spatially
-        /// correlated is left: the diffuser's texture, not the grain. The border of
-        /// <c>inset</c> px does not enter the statistic, because there the box is truncated.
-        ///
-        /// It exists for the smoothing mode's scale proposal: on the analysis raster of a 6016 px
-        /// sensor (1504 px, 4 sensor px per pixel) the box is 32 px, that is 128 px on the
-        /// sensor, and the ~300 px cells of a diffuser placed on a monitor come out at 0.69 %
-        /// against 0.04-0.06 % on a master without texture. Measured on five real masters; the
-        /// thresholds are in Th.SmoothTexture*.
-        ///
-        /// The box and the border are RELATIVE to the raster's width (1/47 and 1/15 of it), not
-        /// fixed in pixels: with a fixed 32 px on a 256 px fixture the box was an eighth of the
-        /// frame, the vignetting's curvature leaked into the "texture" with 0.14 % and nothing
-        /// passed any threshold any more. On the real raster the two definitions coincide (32
-        /// and 100).
-        ///
-        /// NOT through BlockMean scaled back up: the block grid puts its own edges into the fine
-        /// component (measured: periods of 32 px that were the blocks, not the texture).
-        /// </summary>
-        /// <param name="a">The analysis raster (<see cref="Img.Prepare"/>).</param>
-        /// <returns>The fine texture, in percent; 0 on a raster too small to measure.</returns>
-        internal static double FineTexture(Img a)
-        {
-            int box = Math.Max(4, (int)Math.Round(a.W / 47.0));
-            int inset = Math.Max(box, (int)(a.W / 15.0));
-            Img smooth = BoxBlur(BoxBlur(a, box), box);
-            int iy = Math.Min(inset, a.H / 4), ix = Math.Min(inset, a.W / 4);
-            double sum = 0, sumSq = 0, dSumSq = 0;
-            long n = 0, dn = 0;
-            for (int y = iy; y < a.H - iy; y++)
-            {
-                double prev = double.NaN;
-                for (int x = ix; x < a.W - ix; x++)
-                {
-                    double s = smooth.At(y, x);
-                    double f = s > 0 ? a.At(y, x) / s - 1 : 0;
-                    sum += f; sumSq += f * f; n++;
-                    if (!double.IsNaN(prev)) { double d = f - prev; dSumSq += d * d; dn++; }
-                    prev = f;
-                }
-            }
-            if (n < 2) return 0;
-            double mean = sum / n;
-            double var = sumSq / n - mean * mean;
-            double noiseVar = dn > 0 ? dSumSq / dn / 2 : 0;
-            return Math.Sqrt(Math.Max(var - noiseVar, 0)) * 100;
-        }
-
-        /// <summary>
-        /// The mean over a box of <paramref name="box"/> px centred on each pixel, through
-        /// sliding sums along the rows and then along the columns; at the edges the box is
-        /// truncated and divided by how many pixels it covered. Separable, so O(pixels), however
-        /// large the box.
-        /// </summary>
-        /// <param name="a">The raster to blur.</param>
-        /// <param name="box">The box's side in pixels; its half, rounded down, reaches each
-        /// way.</param>
-        /// <returns>A new raster of the same size.</returns>
-        internal static Img BoxBlur(Img a, int box)
-        {
-            int r = box / 2;
-            var tmp = new Img(a.H, a.W);
-            for (int y = 0; y < a.H; y++)
-            {
-                double s = 0; int cnt = 0;
-                for (int x = 0; x < Math.Min(a.W, r); x++) { s += a.At(y, x); cnt++; }
-                for (int x = 0; x < a.W; x++)
-                {
-                    int add = x + r, drop = x - r - 1;
-                    if (add < a.W) { s += a.At(y, add); cnt++; }
-                    if (drop >= 0) { s -= a.At(y, drop); cnt--; }
-                    tmp.Set(y, x, s / cnt);
-                }
-            }
-            var o = new Img(a.H, a.W);
-            var col = new double[a.H];
-            for (int x = 0; x < a.W; x++)
-            {
-                double s = 0; int cnt = 0;
-                for (int y = 0; y < Math.Min(a.H, r); y++) { s += tmp.At(y, x); cnt++; }
-                for (int y = 0; y < a.H; y++)
-                {
-                    int add = y + r, drop = y - r - 1;
-                    if (add < a.H) { s += tmp.At(add, x); cnt++; }
-                    if (drop >= 0) { s -= tmp.At(drop, x); cnt--; }
-                    o.Set(y, x, s / cnt);
-                }
-            }
-            return o;
-        }
-
         /// <summary>
         /// The median of each corner's box and of the centre's, the boxes a fraction
         /// <paramref name="frac"/> of the frame's sides (at least 4 px); the centre's box is twice

@@ -525,7 +525,7 @@ namespace FlatCheck.Wpf
         {
             Populate(o.Structure);
             // Internal and with HasResult, so the rendering test can show the tab from a result,
-            // without a session - as on the smoothing tab.
+            // without a session - as on the Synthetic tab.
             HasResult = true;
 
             // A search that found no Adobe file says so above the card (R-113); the core decides.
@@ -637,12 +637,12 @@ namespace FlatCheck.Wpf
             // "0 / 0", and the window and the console must say the same thing.
             Levels = $"median / max ADU  {StructureReport.Levels(r)}";
 
-            // The five rows are built in StructureRows, where the Netezire tab takes them from too:
-            // it is the same battery, and two compositions of it have already diverged once.
+            // The five rows are built in StructureRows, not here: two compositions of the same
+            // battery have already diverged once.
             Tests.Clear();
             foreach (var row in StructureRows.Tests(r)) Tests.Add(row);
 
-            // The informative rows come from StructureRows too, also for both tabs.
+            // The informative rows come from StructureRows too.
             Informative.Clear();
             foreach (var row in StructureRows.Informative(r)) Informative.Add(row);
 

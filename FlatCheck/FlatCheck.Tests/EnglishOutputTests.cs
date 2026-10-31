@@ -41,8 +41,7 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
         "structure_clean", "structure_gradient", "structure_reshoot",
         "light_undercorrected", "light_rejected_wide_field", "light_series_conclusive", "light_series_undetermined",
         "histeq_cfa", "histeq_mono", "histeq_rainbow", "expo_cfa", "expo_cfa_bayerpat", "expo_cfa_sky", "expo_rejects_debayered",
-        "expo_manual_scale", "help", "smooth_clean", "smooth_textured", "smooth_refuses_cube", "smooth_auto_proposed",
-        "smooth_auto_no_texture", "structure_with_profiles", "structure_lens_no_fstop", "synthetic_written",
+        "expo_manual_scale", "help", "structure_with_profiles", "structure_lens_no_fstop", "synthetic_written",
         "synthetic_lensfun", "synthetic_far_request", "synthetic_ambiguous", "lenses", "against_radial",
     };
 
@@ -86,21 +85,6 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
             case "expo_rejects_debayered": return new[] { Flat(ws, "debayered.fit", radial), "--expo" };
             case "expo_manual_scale": return new[] { Cfa("raw12bit.fit", 3600), "--expo", "--sat", "4095", "--black", "150" };
             case "help": return Array.Empty<string>();
-            case "smooth_clean":
-                return new[] { Flat(ws, "clean.fit", radial), "--smooth", ws.PathTo("netezit.fit"), "--scale", "50", "-o", Out() };
-            case "smooth_textured":
-                return new[] { Flat(ws, "textured.fit", (x, y) => radial(x, y)
-                        * (1 + 0.03 * Math.Sin(x / 6.0) * Math.Cos(y / 7.0))
-                        * (1 - 0.15 * Math.Exp(-((x - 400) * (x - 400) + (y - 120) * (y - 120)) / (2 * 8.0 * 8.0)))),
-                    "--smooth", ws.PathTo("netezit.fit"), "--scale", "50", "-o", Out() };
-            case "smooth_refuses_cube":
-                return new[] { ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(64, 64, 3, (x, y, p) => 1000 + p)),
-                               "--smooth", ws.PathTo("netezit.fit"), "-o", Out() };
-            case "smooth_auto_proposed":
-                return new[] { Flat(ws, "textured.fit", (x, y) => radial(x, y) * (1 + 0.03 * Math.Sin(x / 2.0) * Math.Cos(y / 2.3))),
-                               "--smooth", ws.PathTo("netezit.fit"), "--scale", "auto", "-o", Out() };
-            case "smooth_auto_no_texture":
-                return new[] { Flat(ws, "clean.fit", radial), "--smooth", ws.PathTo("netezit.fit"), "--scale", "auto", "-o", Out() };
             case "structure_with_profiles":
                 return new[] { Reference(ws, k: 0.6), "--lens", "Tokina", "--fstop", "2.8",
                                "--profiles", LensProfileTestData.ProfilesDir(ws), "-o", Out() };
@@ -192,7 +176,7 @@ public class EnglishOutputTests : IClassFixture<ParityGoldenTests.Fixtures>
     {
         " si ", " sau ", " nu ", " din ", " cu ", " pe ", " de ", " la ", " este ", " fara ", " mai ",
         "stopuri", "eroare", "EROARE", "ATENTIE", "colt", "cadre", "harta", "obiectiv", "vignetare",
-        "netezire", "reziduu", "verdictul", "fisier", "diferenta",
+        "reziduu", "verdictul", "fisier", "diferenta",
     };
 
     /// <summary>The English text holds none of the Romanian words, outside the workspace paths

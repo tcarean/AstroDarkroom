@@ -18,8 +18,8 @@
 // The synthetic flat's chain: the reference frame (size, cards, what it knows about the shot)
 // -> the completed request (focal length, aperture, crop, each with its source) -> the choice
 // of the lens and of the profile -> raster -> report. The file is written by the caller,
-// through WriteFits, after it has answered the overwrite question - the same reason as for
-// --smooth. The refusals are text, as in the other runs, and do not throw.
+// through WriteFits, after it has answered the overwrite question - the mode does not know
+// where the caller wants the file. The refusals are text, as in the other runs, and do not throw.
 
 using System;
 using System.Collections.Generic;

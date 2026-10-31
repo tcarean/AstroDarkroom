@@ -23,13 +23,12 @@ a path of its own. What differs is only what each application does with the thre
 
 | | console | window |
 |---|---|---|
-| input | one file (or a folder, with `--light`) | one Siril session folder; the Histogram tab lists the flat master and every raw or FITS in `flats/`; the Netezire tab takes the session's master and writes beside it. A folder without a master in either `masters/` or `process/` can be preprocessed from the window, through the user's own `siril-cli` |
+| input | one file (or a folder, with `--light`) | one Siril session folder; the Histogram tab lists the flat master and every raw or FITS in `flats/`; the Sintetic tab takes the session's master and writes beside it. A folder without a master in either `masters/` or `process/` can be preprocessed from the window, through the user's own `siril-cli` |
 | report | written to stdout | shown as panels, saved as `Test result.txt` |
-| map | written to `-o <path>` (`--smooth` writes a second, `-after`), always on the automatic scale | shown from memory (the Netezire tab offers both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
-| smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_smoothed.fit` beside the master, on a button, after asking about an existing file |
+| map | written to `-o <path>`, always on the automatic scale | shown from memory, on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
 | synthetic flat | written to `--synthetic <path>`, the lens from `--lens` text; `--against` compares two files | written to `pp_flat_stacked_synthetic.fit` beside the master, the lens from a searchable list, focal / f-stop / crop prefilled from the master's header and a raw in `flats/`; the comparison against the file follows the write by itself, and "Compara cu masterul" runs it alone on a file written earlier |
 | result | exit code | coloured verdict |
-| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--rainbow`, `--scale`, `--lens`, `--raw`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the false colours (a checkbox on the Histogram tab, ADR 0063), the smoothing scale (three chips), the lens list, its three prefilled fields and the sensor-format chips behind the crop; the Structure tab's profile comparison takes the first raw in `flats/` by itself |
+| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--rainbow`, `--lens`, `--raw`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the false colours (a checkbox on the Histogram tab, ADR 0063), the lens list, its three prefilled fields and the sensor-format chips behind the crop; the Structure tab's profile comparison takes the first raw in `flats/` by itself |
 
 The console keeps the options because it is the scriptable one (ADR 0033); `--fov` and
 `--sat` exist for telling the tool something the header does not say, and adding them to the
@@ -99,8 +98,8 @@ on the first open, under the busy overlay, which says so). Without a raw the run
 one, the report identical to `flatcheck master`, and the card under TESTE shows
 `StructureReport.GapText` computed by `StructureRun.Compare` on the master's header alone.
 The rows are `LensProfileRow` (public copy of the core's `ProfileRow`), rendered by a
-template local to `StructureView.xaml`; `Tests` stays five, so the scale heading and the
-Netezire tab, which reuses `StructureRows.Tests`, are untouched. `Populate` is
+template local to `StructureView.xaml`; `Tests` stays five, so the scale heading is
+untouched. `Populate` is
 `internal` and sets `HasResult` for the smoke test. The one thing the window cannot do
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
@@ -236,7 +235,7 @@ because `{Binding}` resolves through the DataContext and never sees a static one
 every tab's `Attach`; `RunChainAsync` holds it from the structure run to the end of the series
 (one lease, so a click during the chain waits for the whole chain), and each click-run takes it
 around its computation through `TabViewModel.EnterGateAsync`, in a `using`: Expo,
-Histogram, Netezire (run and proposal), Sintetic (write and comparison). The Split, which has
+Histogram, Sintetic (write and comparison). The Split, which has
 no overlay, waits for the gate before its copies start and holds it only around its analysis
 of the part masters, not through the Siril runs. The gate wait takes the run's own token, so a
 run superseded or cancelled while queued leaves the queue without computing; the chain's wait,
@@ -249,8 +248,8 @@ not write over its message; the Split puts the same text in its phase line. A ta
 without a gate (the tests) runs at once.
 
 **The folder button follows the long runs.** `MainViewModel.CanChooseFolder` is false during
-the opening chain (`IsRunning`) and while the Smoothing or the Synthetic tab is busy
-(`TabViewModel.IsIdle`, heard through their `PropertyChanged`), so a run that takes longer
+the opening chain (`IsRunning`) and while the Synthetic tab is busy
+(`TabViewModel.IsIdle`, heard through its `PropertyChanged`), so a run that takes longer
 than a folder change cannot be cut by one and land on the new folder's tabs (R-117, ADR 0077
 for the measured times). The Exposure, Histogram and Split runs leave the button live: a
 folder change cancels their token, the Histogram and Split runs stop at the check after the
@@ -269,24 +268,16 @@ down with it (R-080, R-110; why a card and not a crash is ADR 0072). The Synthet
 `try` for the same reason: it is awaited only at the end of `OpenAsync`, through a watcher that
 assumes it never faults (R-120).
 
-**The Histogram tab lists the flat master first, then the smoothed master when it exists,
-then `flats/`, and lets a click interrupt a click.** The list and its order, the master not
-preselected and not run at open, the smoothed master as a third kind of row (chip `SMOOTHED`, Romanian `NETEZIT`,
-`IsMaster` false) found by exact path, and the one wire from `SmoothTabViewModel.Saved` to
-`HistEq.FileWritten` are ADR 0033 and ADR 0036. What they do not say:
+**The Histogram tab lists the flat master first, then `flats/`, and lets a click interrupt a
+click.** The list and its order, the master not preselected and not run at open, are ADR 0033
+and ADR 0036 (the smoothed master, a third kind of row between them, and the wire that rebuilt
+the list when the Smoothing tab wrote, left with the mode, ADR 0080). What they do not say:
 
 - The master is there for one question - did what the individual frames show average out? -
   and it is not run at folder open because the Structure run is reading that same 24 MP file
-  at that moment; a click on it during the chain waits for the gate (R-085). The smoothed one is there for the other question - what did the smoothing
-  take out, what did it leave - and has its own note under the picture
-  (`HistEqReport.SmoothedVersusMaster`, which also says why a smoothed flat looks *noisier*
-  under a rank-based transform).
-- `FileWritten` rebuilds the list from `HistEqCandidates()` (one definition of the list),
-  keeps the selection by path without re-running, and re-runs only if the selected file *is*
-  the one rewritten - the picture would otherwise be of bytes no longer on disk. It ignores
-  any other path and a missing session, and `Reset` drops the session for that reason.
-  Rebuild, not insert: `ClosesGroup` (the separator under the last of master + smoothed) is an
-  `init` flag set by whoever sees the whole list.
+  at that moment; a click on it during the chain waits for the gate (R-085). The list is read
+  once, from `HistEqCandidates()` (one definition of it), when the folder opens; the separator
+  under the master is the view's `IsMaster` trigger.
 - The loader covers the picture, not the tab: the list stays clickable, a new pick cancels the
   running frame's own token and starts over, and a superseded run may not touch the screen.
   That last part is general and lives in `TabViewModel.RunGuardedAsync`: it numbers its runs
@@ -304,25 +295,6 @@ preselected and not run at open, the smoothed master as a third kind of row (chi
   raster (`RasterBitmaps`), with
   no PNG in between, and cached per chip and per state of the false-colours checkbox
   (`modes-histeq.md`, "The false colours").
-
-**The Netezire tab runs on a button and never on open**, waits for the gate, writes
-after the numbers are on screen, asks about an existing file, and its output never becomes the
-session's master: ADR 0036. Mechanics the ADR does not spell out:
-
-- Its guide (`SessionMessages.SmoothGuideRows`, mirrored in the README by hand) is the one
-  guide that starts *expanded*: it is the button's precondition.
-- Three scale chips (`SmoothScaleViewModel`; ADR 0027 for the ladder) and the button; the
-  output is `pp_flat_stacked_smoothed.fit` in the master's own folder
-  (`SirilSession.SmoothedMasterPath`, `SmoothedSuffix`).
-- The tab keeps the two rasters (removed component, smoothed flat's residual) behind a radio
-  toggle, cached per (map, cap); `MapScaleViewModel` took a constructor argument
-  for its default cap so this tab can start at ±2 %, where at ±10 % the map would be white.
-  `Populate` is `internal` and sets `HasResult`, so the smoke test renders the tab from an
-  analyzer result without writing a file.
-- The second button, `Propune scara`, runs `SmoothRun.Advise` the same guarded way, fills the
-  rung rows and the verdict from `SmoothReport`'s advice strings, selects the proposed chip
-  through `SmoothScaleViewModel.SelectScale`, and writes nothing; `PopulateAdvice` is
-  `internal` for the smoke test.
 
 **The Split tab is a workflow over the other pieces** (ADR 0054 holds the decisions: the copy
 list, the two lights, the reference profile, the labelled mosaic on one scale, the temp folder

@@ -42,10 +42,6 @@ wording is in `RunReport` (`MapScaleLabel`, `MapLegend`), which is also why thos
 have no console caller today. `EncodeResidualMapWithTheAutoRangeIsByteIdenticalToTheOldEntryPoint`
 pins that the parameterless overload still encodes what it always did.
 
-`--smooth`'s two maps (the removed component at the `-o` path, the smoothed flat's residual
-beside it with the `-after` suffix from `FlatCheckCli.AfterMapPath`) are `modes-smooth.md`'s; the window
-offers the same two behind a radio toggle, from `SmoothRunOutcome.Png` / `SecondaryPng`.
-
 The encoder writes signature + IHDR (8-bit, colour type 2 = RGB) + a single IDAT
 (each row prefixed with filter byte 0, deflated via `ZLibStream`) + IEND, with a
 hand-rolled CRC-32. ADR 0008 holds why it stays hand-rolled and the three ways `PngWriterTests`

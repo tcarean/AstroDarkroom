@@ -16,9 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // The Sintetic tab: a flat written from the lens's vignetting profile, and the comparison of the
-// photographed master with it. On the model of the Netezire tab: nothing runs by itself, the
-// button writes a file beside the master after the overwrite question, the file does not become
-// the session's master.
+// photographed master with it. Nothing runs by itself, the button writes a file beside the
+// master after the overwrite question, the file does not become the session's master.
 //
 // What the tab decides: nothing. The lens list comes from ProfileLocator (Adobe from the machine,
 // lensfun/ from beside the exe), the choice of profile and the figures from SyntheticRun, the

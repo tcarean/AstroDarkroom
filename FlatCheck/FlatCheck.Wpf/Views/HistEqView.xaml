@@ -20,8 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <!-- HistEqView - the "Histogram" tab.
 
      The list on the left: the master from masters/ or process/ in the first position, marked,
-     the smoothed flat right after it when there is one, then the frames from flats/. The
-     picture on the right, with the view switch above it.
+     then the frames from flats/. The picture on the right, with the view switch above it.
 
      The waiting screen sits in the RIGHT column, not over the whole tab: the list stays
      clickable while it computes, and a click on another file starts another run over the
@@ -47,16 +46,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel DockPanel.Dock="Top">
           <TextBlock Style="{StaticResource Heading}" Margin="0,0,0,8" Text="{l:T En='THE MASTER AND THE FLATS', Ro='MASTERUL SI FLAT-URILE'}" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,0,0,10"
-                     Text="{l:T En='The master is the stack of the frames under it: compare it with them to see what was averaged out and what stayed. When it exists, the smoothed flat made from it sits beside it.', Ro='Masterul e stiva cadrelor de sub el: compara-l cu ele ca sa vezi ce s-a mediat si ce a ramas. Cand exista, flat-ul netezit facut din el sta langa el.'}" />
+                     Text="{l:T En='The master is the stack of the frames under it: compare it with them to see what was averaged out and what stayed.', Ro='Masterul e stiva cadrelor de sub el: compara-l cu ele ca sa vezi ce s-a mediat si ce a ramas.'}" />
         </StackPanel>
 
         <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding Selected, Mode=TwoWay}">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <!-- The master and, when there is one, the smoothed flat are set apart from the
-                   frames by a line under the last of them and a chip each, not by a second list: it
-                   is the same kind of choice, with another meaning. The NETEZIT chip is dimmed, so
-                   that it does not look like a second master. -->
+              <!-- The master is set apart from the frames by a line under it and a chip, not by a
+                   second list: it is the same kind of choice, with another meaning. -->
               <Border x:Name="row" BorderBrush="{StaticResource BorderBr}" BorderThickness="0">
                 <StackPanel>
                   <StackPanel Orientation="Horizontal">
@@ -72,13 +69,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 </StackPanel>
               </Border>
               <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding ClosesGroup}" Value="True">
+                <DataTrigger Binding="{Binding IsMaster}" Value="True">
                   <Setter TargetName="row" Property="BorderThickness" Value="0,0,0,1" />
                   <Setter TargetName="row" Property="Padding" Value="0,0,0,8" />
                   <Setter TargetName="row" Property="Margin" Value="0,0,0,4" />
-                </DataTrigger>
-                <DataTrigger Binding="{Binding IsSmoothed}" Value="True">
-                  <Setter TargetName="chip" Property="Background" Value="{StaticResource MutedBr}" />
                 </DataTrigger>
               </DataTemplate.Triggers>
             </DataTemplate>

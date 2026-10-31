@@ -3,9 +3,10 @@
        The kit's rule "Packages": no new package without asking, and every package gets a
        one-line "why" comment. Removing a package is a change worth a CHANGELOG line.
        A package the launcher ships is also a component in ThirdParty.cs and a section in
-       THIRD-PARTY-NOTICES.md (ThirdPartyTests, R-015), and a package a component also ships
-       takes the component's version: the suite folder holds one copy of each DLL, and
-       scripts/merge-publish.ps1 refuses a second one with other bytes (SuiteTests). -->
+       THIRD-PARTY-NOTICES.md (ThirdPartyTests, R-015), at the version it resolves (SuiteTests,
+       R-017), and a package a component also ships takes the component's version: the suite
+       folder holds one copy of each DLL, and scripts/merge-publish.ps1 refuses a second one with
+       other bytes (SuiteTests). -->
   <ItemGroup>
     <!-- The diagnostic log beside the launcher (R-011 to R-014, ADR 0012): configured in code,
          a size-rolled text file, BSD-3-Clause, purely managed. The owner asked for NLog by name

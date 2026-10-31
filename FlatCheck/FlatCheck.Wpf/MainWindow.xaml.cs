@@ -22,8 +22,8 @@
 // the question when closing during a split), the links the tabs show, opened in the browser,
 // and the request to DWM to darken the title bar.
 // The other dialogs live in their views (SirilRunWindow's stop question), or reach a
-// view-model only as a delegate it is given (the Netezire and Sintetic
-// tabs' overwrite question, MainViewModel.AskOnScreen by default), so that a test can answer
+// view-model only as a delegate it is given (the Sintetic tab's overwrite
+// question, MainViewModel.AskOnScreen by default), so that a test can answer
 // it.
 
 using System.Windows;
