@@ -69,20 +69,19 @@ details under **About**) because the tools expect them:
 
 ## Download
 
-Each version's zip sits in the owner's Google Drive, shared with "Anyone with the link"; here
-are its link and its SHA-256, the newest version first (ADR 0005). After the download, check the
-hash before you unzip:
+Each version is a GitHub Release of this repository, tagged `astrodarkroom-vX.Y.Z`, with the zip
+and its `.sha256` attached (ADR 0015). The latest is at
+<https://github.com/tcarean/AstroDarkroom/releases/latest>, and the repository's
+[Releases page](https://github.com/tcarean/AstroDarkroom/releases) lists every version. The
+repository is public: the download needs no account. After the download, check the hash before
+you unzip:
 
 ```
 certutil -hashfile AstroDarkroom-X.Y.Z-win-x64.zip SHA256
 ```
 
-The result must be identical to the SHA-256 column of your version; otherwise the zip broke
-during the download or is not the published one.
-
-| Version | Date | Zip | SHA-256 |
-| --- | --- | --- | --- |
-| (none yet) | | | |
+The result must be identical to the SHA-256 on the release page, beside the zip and in the
+release's notes; otherwise the zip broke during the download or is not the published one.
 
 ## Logs
 
@@ -129,12 +128,14 @@ folder clean: `/release`. The script (`scripts/release.ps1`) checks, writes the 
 the windows of the six components, as they are on `main`, into `artifacts/X.Y.Z/` (a file that
 two publishes would write with different contents stops the release), and writes
 `release.json` and the zip with its `.sha256` into `artifacts/`. The owner makes the commit and
-the tag `astrodarkroom-vX.Y.Z`, as the skill proposes them. The zip is uploaded to Google Drive
-by hand, shared with "Anyone with the link"; then the link and the hash from the `.sha256` go in
-as a new first row of the table under "Download" and as the only row of the "Download" table of
-the `README.md` at the repository's root, its Bitbucket page (ADR 0008), in one commit of the
-two files. The components need not be released first: `release.json` says which version and
-which commit of each went in.
+the tag `astrodarkroom-vX.Y.Z`, as the skill proposes them, and pushes both to GitHub. Then the
+owner creates the GitHub Release of that tag by hand, on the web, with the title and the notes
+the skill proposes (the version's changes and the zip's line from its `.sha256`), and attaches
+the zip and its `.sha256` (ADR 0015); the skill checks, through GitHub's public API, that the
+SHA-256 GitHub computed for the uploaded zip is the one in the `.sha256`. Nothing else is
+committed: neither README names a version, and the `README.md` at the repository's root, its
+GitHub front page (ADR 0008), links the latest release. The components need not be released
+first: `release.json` says which version and which commit of each went in.
 
 The suite's version is `<Version>` in this folder's `Directory.Build.props`; the first real
 version, 1.0.0, is set at the owner's word.

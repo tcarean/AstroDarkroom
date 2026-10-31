@@ -3,28 +3,24 @@
 ## Download
 
 The latest release of Astro Darkroom: one zip for Windows 10 or 11 (x64) with the six tools, the
-launcher and the .NET 8 runtime inside. No installer, and no .NET to install.
+launcher and the .NET 8 runtime inside. No installer, and no .NET to install. Download
+`AstroDarkroom-X.Y.Z-win-x64.zip` from the release page:
 
-| Version | Date | Zip | SHA-256 |
-| --- | --- | --- | --- |
-| (none yet) | | | |
+**<https://github.com/tcarean/AstroDarkroom/releases/latest>**
 
 Unzip it into any folder and start `AstroDarkroom.exe`. The tools work on the session folders
-Siril lays out and expect Siril 1.4.4 or newer: see
-[What the tools need](#markdown-header-what-the-tools-need).
+Siril lays out and expect Siril 1.4.4 or newer: see [What the tools need](#what-the-tools-need).
 
-Before you unzip, check the hash. This command prints the zip's SHA-256, which must be the one in
-the table; otherwise the download broke or the file is not the published one:
+Before you unzip, check the hash. This command prints the zip's SHA-256, which must be the one on
+the release page, beside the zip and in the release's notes; otherwise the download broke or the
+file is not the published one:
 
 ```
 certutil -hashfile AstroDarkroom-X.Y.Z-win-x64.zip SHA256
 ```
 
 The executables are not signed, so on a new computer Windows SmartScreen asks before the first
-start. Older versions, each with its hash, are listed in
-[AstroDarkroom/README.md](AstroDarkroom/README.md), section "Download".
-
-[TOC]
+start. Every earlier version is on the repository's Releases page, with its own zip and hash.
 
 ## Build the suite from a checkout
 
@@ -50,7 +46,7 @@ Visual Studio is not needed.
 **1. Get the sources**, into a folder with a short path (see "A short path" below):
 
 ```
-git clone https://bitbucket.org/tcarean/photo.git C:\src\photo
+git clone https://github.com/tcarean/AstroDarkroom.git C:\src\photo
 ```
 
 Or bring a checkout you already have up to date. Each tool is built from its folder as it is in
