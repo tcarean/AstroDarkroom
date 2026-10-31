@@ -657,8 +657,8 @@ public sealed class LoggingTests : IDisposable
     /// <summary>
     /// Only the application's entry point configures the log for a user's run, and nothing but
     /// LogSetup (for it) and LogCapture (for the tests) sets NLog's configuration at all (ADR
-    /// 0043). The entry point is Program.Main, not App: the WPF test thread builds an App, and
-    /// WPF runs its start there.
+    /// 0043). The entry point is Program.Main, not App, so that the log starts before the
+    /// application object.
     /// </summary>
     [Fact]
     public void OnlyTheEntryPointConfiguresTheLog()

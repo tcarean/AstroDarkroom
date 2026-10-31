@@ -95,6 +95,11 @@ FlatCheck does, the owner chose the same here.
   the rule "No imaging dependency" and the mutation runs want it.
 - **The log started by `App`, in its constructor or in `OnStartup`, as the plan said.** It starts in
   every test run (the Context), in the test host's folder and over the tests' capture.
+
+  (Restated 2026-10-30: "It starts in every test run" no longer holds: since ADR 0046 the WPF test
+  thread runs a plain `Application`, and `App` starts in no test run. The decision stands on the
+  reason that holds, which the owner confirmed that day: a process's first line belongs before
+  the application object, its resources and its first window.)
 - **The log started by `App`, skipped when the entry assembly is not the application.** The
   application would ask whether it runs under a test, which none of its other code does, and its
   first line would still come after `App` and its resources.
@@ -103,6 +108,11 @@ FlatCheck does, the owner chose the same here.
   edited to pass" leaves to the owner; and a process's first line belongs before the application
   object anyway. The owner chose to have the fixture's own defect, a real window during the tests,
   fixed in a task of its own after this branch's merge (Consequences).
+
+  (Restated 2026-10-30: its first reason, that it "changes the fixture of ADR 0032", which only
+  the owner could change, no longer holds: the owner had the fixture changed, and since ADR 0046
+  the test thread runs this plain `Application`, for the fixture alone. Its second reason holds,
+  and with it the decision: a process's first line belongs before the application object.)
 - **The notices beside the executable as `THIRD-PARTY-NOTICES.md`, About unchanged, as the plan
   said.** The first other tool to ship its own under that name would make the suite's release
   refuse the folder.

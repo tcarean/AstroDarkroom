@@ -37,8 +37,8 @@ public class WindowLoggingTests
 {
     /// <summary>
     /// Run on the WPF test thread before a capture opens, so that the thread exists by then: it
-    /// is created in the execution context of the test that first uses it, and what WPF starts
-    /// on it then (the App's own start, which builds a window of its own) would otherwise write
+    /// is created in the execution context of the test that first uses it, and what WPF runs on
+    /// it of its own, outside any operation a test queued, would run in that context and write
     /// into that test's capture.
     /// </summary>
     private static readonly Action StartOutsideTheCapture = () => { };
