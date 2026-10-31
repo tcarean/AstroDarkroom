@@ -9,7 +9,9 @@ launcher and the .NET 8 runtime inside. No installer, and no .NET to install. Do
 **<https://github.com/tcarean/AstroDarkroom/releases/latest>**
 
 Unzip it into any folder and start `AstroDarkroom.exe`. The tools work on the session folders
-Siril lays out and expect Siril 1.4.4 or newer: see [What the tools need](#what-the-tools-need).
+Siril lays out and expect Siril 1.4.4 or newer; the three that read camera raw files also need
+Microsoft's Visual C++ runtime, which most computers have and the launcher checks for: see
+[What the tools need](#what-the-tools-need).
 
 Before you unzip, check the hash. This command prints the zip's SHA-256, which must be the one on
 the release page, beside the zip and in the release's notes; otherwise the download broke or the
@@ -250,6 +252,14 @@ entry in the registry, then in `C:\Program Files\Siril\bin`) with a script from 
 menu; it proposes `OSC_Preprocessing_WithoutDark.ssf`, from the scripts repository Siril
 downloads. It gives `siril-cli` a private copy of your Siril settings, so your own
 `config.1.4.ini` is only read, never rewritten.
+
+### Microsoft's Visual C++ runtime
+
+DarksCheck, FlatCheck and LightsCheck read camera raw files through LibRaw, whose DLLs need
+Microsoft's Visual C++ 2015-2022 runtime for x64. Most computers already have it, installed by
+other programs; the zip does not include it. Without it those three tools cannot read raw files
+(their FITS modes still work), and `AstroDarkroom.exe` says so on its window, with Microsoft's
+download: <https://aka.ms/vc14/vc_redist.x64.exe>.
 
 ### Optional, for FlatCheck: Adobe's lens profiles
 

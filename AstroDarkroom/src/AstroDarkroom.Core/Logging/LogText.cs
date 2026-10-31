@@ -101,6 +101,20 @@ public static class LogText
         return "open " + app.Title + ": " + plan.FileName + " " + plan.Arguments + " in " + plan.WorkingDirectory;
     }
 
+    /// <summary>
+    /// The launcher's line about the Visual C++ runtime at start (R-018): its four DLLs loading,
+    /// or those that do not, and what that stops.
+    /// </summary>
+    /// <param name="missing">The DLLs that do not load, as <see cref="Core.VcRuntime.Missing"/> gave them; not null, empty when all load.</param>
+    /// <returns>The line, <c>Visual C++ runtime: missing vcomp140.dll; DarksCheck, ...</c>.</returns>
+    public static string VcRuntime(IReadOnlyList<string> missing)
+    {
+        ArgumentNullException.ThrowIfNull(missing);
+        return missing.Count == 0
+            ? "Visual C++ runtime: " + string.Join(", ", global::AstroDarkroom.Core.VcRuntime.Files) + " load"
+            : "Visual C++ runtime: missing " + string.Join(", ", missing) + "; DarksCheck, FlatCheck and LightsCheck cannot read camera raw files";
+    }
+
     /// <summary>One component of release.json, for <see cref="Release"/>.</summary>
     /// <param name="c">The component.</param>
     /// <returns>Its name, then <c>version=</c>, <c>commit=</c>, <c>unreleased=</c> and <c>clean=</c>.</returns>

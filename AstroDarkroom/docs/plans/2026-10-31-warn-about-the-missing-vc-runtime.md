@@ -83,4 +83,15 @@ libraw" message names the Visual C++ runtime and its link instead of advice abou
 
 ## What deviated
 
-(filled at wrap-up)
+- **The link's failure path.** Beyond the plan, a browser that will not start leaves a message
+  box with the address (in both languages) and an Error line, as `OpenApp` does for an app;
+  R-018 says so.
+- **Measured for the ADR:** the four loads take 15.2 to 17.2 ms in a fresh process (three runs),
+  most of it `vcruntime140_1.dll`.
+- **Verification.** Gate green (108 tests); a `Missing` that ignores its loader and a warning
+  without the three tools' names each turned an R-018 test red; the suite published from the
+  worktree (370 files, no collision); the main window rendered offscreen: 704 DIP of content
+  without the warning, 740 with it (the line wraps to two, 30 DIP), the same in both languages;
+  "Despre" 997 DIP with its fourth paragraph (931 / 946 before), under a 1080p screen's 1040 DIP
+  work area. The live start of the launcher from the published folder waited: the owner was at
+  the PC. The probe's own call was measured in a scratch process (all four DLLs load here).

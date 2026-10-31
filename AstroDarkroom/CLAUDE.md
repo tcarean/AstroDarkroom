@@ -39,7 +39,8 @@ a seventh analysis tool and never changes a component.
 
 - `src/AstroDarkroom.Core/` - the catalogue of the apps, where each is in the suite folder,
   the plan of a start, the reading of `release.json`, the version, the licence, the
-  prerequisites texts and the third-party list, and the diagnostic log's configuration and
+  prerequisites texts, the Visual C++ runtime the raw tools need (`VcRuntime`, which the window
+  checks at start, ADR 0016) and the third-party list, and the diagnostic log's configuration and
   words (`Logging/`, ADR 0012). No Console, no UI, no entry point: a compile boundary.
 - `src/AstroDarkroom.Wpf/` - the window, `AstroDarkroom.exe`: one row per app with its button,
   and the "Despre" window. A thin adapter over the core (ADR 0001); it has no test project. Its

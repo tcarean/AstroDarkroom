@@ -61,6 +61,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock x:Name="Subtitle" Style="{StaticResource Muted}" Margin="0,2,0,0" />
           <!-- What the suite needs on the machine, in one line (R-009); the details are in About. -->
           <TextBlock x:Name="PrerequisitesLine" Style="{StaticResource Faint}" Margin="0,4,0,0" />
+          <!-- The Visual C++ runtime LibRaw's DLLs need, shown only when Windows could not load it
+               at start (R-018): the text, then Microsoft's link. The runs touch, so no space slips in. -->
+          <TextBlock x:Name="RuntimeWarning" Style="{StaticResource Muted}" Foreground="{StaticResource WarnBr}"
+                     Margin="0,6,0,0" Visibility="Collapsed"><Run x:Name="RuntimeWarningText" /><Hyperlink x:Name="RuntimeLink" Foreground="{StaticResource AccentBr}" RequestNavigate="OpenRuntimeLink"><Run x:Name="RuntimeLinkText" /></Hyperlink></TextBlock>
         </StackPanel>
       </Grid>
     </Border>

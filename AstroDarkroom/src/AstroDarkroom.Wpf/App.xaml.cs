@@ -58,8 +58,9 @@ public partial class App : Application
     private static Logger Log => LogManager.GetLogger(Loggers.App);
 
     /// <summary>
-    /// Reads the language the last run chose (R-007), English when there is none, then opens
-    /// the main window on the suite folder, the launcher's own base directory (R-002).
+    /// Reads the language the last run chose (R-007), English when there is none, asks Windows
+    /// once for the Visual C++ runtime LibRaw's DLLs need (R-018), then opens the main window on
+    /// the suite folder, the launcher's own base directory (R-002).
     /// </summary>
     /// <param name="e">The start-up arguments; not read, the launcher takes none.</param>
     protected override void OnStartup(StartupEventArgs e)
@@ -72,7 +73,17 @@ public partial class App : Application
         string suiteFolder = AppContext.BaseDirectory;
         Log.Info("language=" + Ui.Code(Ui.Default) + (remembered is null ? " (the start-up default)" : " (the setting)")
             + "; settings=" + settingsPath + "; suite folder=" + suiteFolder);
-        MainWindow window = new(new SuiteFolder(suiteFolder), settingsPath);
+        IReadOnlyList<string> missingRuntime = VcRuntime.Missing(NativeProbe.CanLoad);
+        if (missingRuntime.Count == 0)
+        {
+            Log.Info(LogText.VcRuntime(missingRuntime));
+        }
+        else
+        {
+            Log.Warn(LogText.VcRuntime(missingRuntime));
+        }
+
+        MainWindow window = new(new SuiteFolder(suiteFolder), settingsPath, missingRuntime);
         MainWindow = window;
         window.Show();
     }

@@ -90,7 +90,8 @@ window's two, from `Loggers`), `ReleaseManifest` and `LanguageSetting` (the core
 | Seam | Logger | Level | What |
 | --- | --- | --- | --- |
 | `LogSetup` | `Process` | Info, Fatal, Error | the first line; `exit <code> after <s>`; an unhandled exception, the window thread's included, once; a task nobody awaited |
-| `App.OnStartup` | `App` | Info | `language=<code> (the setting)` or `(the start-up default)`, then `settings=<path>; suite folder=<dir>` |
+| `App.OnStartup` | `App` | Info, Warn | `language=<code> (the setting)` or `(the start-up default)`, then `settings=<path>; suite folder=<dir>`; then the Visual C++ runtime's check (`LogText.VcRuntime`, R-018): `Visual C++ runtime: vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, vcomp140.dll load` at Info, or `Visual C++ runtime: missing <files>; DarksCheck, FlatCheck and LightsCheck cannot read camera raw files` at Warn |
+| `MainWindow.OpenRuntimeLink` | `Window` | Info, Error | `opened <address>` when the warning's link starts the browser; `open <address> failed: ...` with the exception when Windows refuses it (R-018) |
 | `LanguageSetting` | `LanguageSetting` | Debug, Warn | the file missing, read (`language=<code>`) or written, at Debug; a file that is no JSON object or holds no known code, an unreadable file and a failed write, at Warn, the last two with the exception |
 | `ReleaseManifest.TryRead` | `ReleaseManifest` | Info, Warn | `read <path>: name= version= date= commit=; N components: <name> version= commit= unreleased= clean=; ...` (`LogText.Release`), or `no file at <path>`, at Info; a file that is not a manifest, and an unreadable one with the exception, at Warn |
 | `MainWindow.Relabel` | `Window` | Info | `suite folder <dir>: N of 6 apps present; missing <exes>` (`LogText.Presence`), at the start and at every language switch |
