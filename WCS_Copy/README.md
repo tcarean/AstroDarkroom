@@ -87,7 +87,9 @@ The texts are English unless `--lang ro` asks for Romanian (written without diac
 the console and in the window alike; a `--lang` value that is not `en` or `ro` stops the
 console with exit 1 and opens the window in English with a message saying so. The `HISTORY`
 card written into the file is English in both languages: it is data other programs read, not
-interface text. Numbers never change with the language.
+interface text; it is also plain ASCII, as the FITS standard asks, so a letter with a diacritic
+in the source's name appears in it as its base letter (`Nebula.fit` for a name with a-breve).
+Numbers never change with the language.
 
 ## Logs
 

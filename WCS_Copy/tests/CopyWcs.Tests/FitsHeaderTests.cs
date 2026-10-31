@@ -239,6 +239,44 @@ public class FitsHeaderTests
         Assert.Equal("HISTORY short note".PadRight(80), header.GetCard("HISTORY"));
     }
 
+    /// <summary>
+    /// The HISTORY card is ASCII: each letter with a diacritic is written as its base letter, the
+    /// seven of R-011 by their code points so this file stays ASCII (ADR 0010).
+    /// </summary>
+    [Fact]
+    public void R011_AddHistory_ALetterWithADiacritic_IsWrittenAsItsBaseLetter()
+    {
+        var header = ReadHeader();
+        // a-breve, s-comma, t-comma, i-circumflex, a-circumflex, e-acute, A-ring.
+        var text = "WCS copied from " + (char)0x0103 + (char)0x0219 + (char)0x021B + (char)0x00EE + (char)0x00E2 + (char)0x00E9 + (char)0x00C5 + ".fit";
+
+        header.AddHistory(text);
+
+        Assert.Equal("HISTORY WCS copied from astiaeA.fit".PadRight(80), header.GetCard("HISTORY"));
+    }
+
+    /// <summary>A character with no ASCII form (here an emoji, one character of two UTF-16 units) is one <c>?</c> in the card (ADR 0010).</summary>
+    [Fact]
+    public void R011_AddHistory_ACharacterWithNoAsciiForm_IsOneQuestionMark()
+    {
+        var header = ReadHeader();
+
+        header.AddHistory("WCS copied from " + char.ConvertFromUtf32(0x1F30C) + ".fit");
+
+        Assert.Equal("HISTORY WCS copied from ?.fit".PadRight(80), header.GetCard("HISTORY"));
+    }
+
+    /// <summary>The cut at 72 counts the ASCII characters written, after the transliteration (ADR 0010).</summary>
+    [Fact]
+    public void R011_AddHistory_TheCutAt72_CountsTheCharactersWritten()
+    {
+        var header = ReadHeader();
+
+        header.AddHistory(new string((char)0x0103, 100));
+
+        Assert.Equal("HISTORY " + new string('a', 72), header.GetCard("HISTORY"));
+    }
+
     [Fact]
     public void Keywords_SkipsBlankCommentaryCards()
     {

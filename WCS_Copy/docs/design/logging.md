@@ -106,12 +106,12 @@ padded to five, `[pid:thread]`, the logger's name, the message, and on the next 
 `Exception.ToString()` when there is one. Messages are composed from `LogText` and logged as plain
 strings, so NLog never parses them as message templates and a `{` in a path is harmless; a line
 whose message costs a loop is guarded by `IsDebugEnabled` or `IsTraceEnabled`. A card is written
-by `LogText.Card` as the header holds it: no trailing spaces, a control character as `\xNN`, so a
-NUL in a malformed header never reaches the log, and a character outside ASCII as `?`, which is
-what the writer's ASCII encoding puts in the file written (a HISTORY card built from a file name
-is the one such card it writes) and what the reader's ASCII decoding already made of a byte above
-0x7F in a file read; such a byte is not valid in a FITS header, and the copy writes it back as `?`
-too. A value is written by `LogText.Value` (the text of a value card up to its comment, a quoted
+by `LogText.Card` as the header holds it: no trailing spaces, a control character and a byte
+above 0x7F each as `\xNN`, so a NUL in a malformed header never reaches the log and a byte the
+standard forbids, which the copy keeps as it is (R-010, ADR 0010), is named by its code with the
+log itself staying ASCII (a card's characters are its bytes one to one, so the code is the byte's;
+`R042_AByteAboveAsciiInACardIsLoggedAsItsHexCode` reads `Orion \xC5`). The HISTORY card the tool
+builds is ASCII before it is logged (`AsciiText`, R-011). A value is written by `LogText.Value` (the text of a value card up to its comment, a quoted
 string whole). Neither feeds the copy, which stays the card as read (R-010).
 
 Every logger is a `Logger` named `Log`, taken from `LogManager.GetLogger` with `using NLog`: a

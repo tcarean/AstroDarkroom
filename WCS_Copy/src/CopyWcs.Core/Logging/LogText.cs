@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // LogText.cs - how a value is written in the diagnostic log: English, invariant numbers, a
-// missing value as "none", sizes in KiB and MiB, a card as its text. The log's lines are composed
+// missing value as "none", sizes in KiB and MiB, a card as its text with each byte outside
+// printable ASCII as \xNN. The log's lines are composed
 // at the seams (FitsHeader, WcsCopy, the applications) from these pieces, never through
 // T(english, romanian): the log reads the same whatever --lang says (R-046). The general pieces
 // are FlatCheck's (its Logging/LogText.cs); the card, the value and the keys are CopyWcs's own.
@@ -93,11 +94,10 @@ internal static class LogText
 
     /// <summary>
     /// A header card as the log writes it, which is as the header holds it: its text without the
-    /// trailing spaces, each control character written as <c>\xNN</c>, so a malformed header
-    /// never puts a NUL byte in the log, and each character ASCII cannot hold written as
-    /// <c>?</c>: what the writer's ASCII encoding puts in a file written, and what the reader made
-    /// of such a byte in a file read (a HISTORY card built from a source whose name holds a letter
-    /// outside ASCII has a <c>?</c> for it in the log and in the file).
+    /// trailing spaces, each control character and each byte above 0x7F written as <c>\xNN</c>,
+    /// so a malformed header never puts a NUL byte in the log, and a header holding a byte the
+    /// standard forbids, which the copy keeps as it is (R-010), is logged as that byte's code with
+    /// the log itself staying ASCII (ADR 0010).
     /// </summary>
     /// <param name="card">The card, normally 80 characters.</param>
     /// <returns>The text.</returns>
@@ -108,7 +108,7 @@ internal static class LogText
     /// from column 11, its leading spaces trimmed, a quoted string up to and including its closing
     /// quote (a doubled quote inside is part of it), anything else up to the first <c>/</c>,
     /// trimmed; otherwise the text from column 9, trimmed. Written as <see cref="Card"/> writes a
-    /// card: control characters as <c>\xNN</c>, characters outside ASCII as <c>?</c>.
+    /// card: control characters and bytes above 0x7F as <c>\xNN</c>.
     /// </summary>
     /// <param name="card">The card; null when the header has none.</param>
     /// <returns>The value's text, or <c>none</c> for a missing card or an empty value.</returns>
@@ -164,15 +164,15 @@ internal static class LogText
         + " optical=" + Yes(r.IncludeOptical) + " force=" + Yes(r.Force) + " dryRun=" + Yes(r.DryRun);
 
     /// <summary>
-    /// A card's text as the header holds it: each character below 0x20, and 0x7F, written as
-    /// <c>\xNN</c>, and each one above 0x7F as <c>?</c>, as <c>Encoding.ASCII</c> writes it to a
-    /// file and has already made of such a byte in a file read.
+    /// A card's text as the header holds it: each character below 0x20, 0x7F, and each one above
+    /// 0x7F written as <c>\xNN</c>, the code of the byte the file holds (a card's characters are
+    /// its bytes one to one, R-010), so the log stays ASCII whatever a header holds.
     /// </summary>
     /// <param name="s">The text.</param>
     /// <returns>The text, unchanged when it holds no such character.</returns>
     private static string Escape(string s)
     {
-        if (!s.Any(c => IsControl(c) || c > 0x7F))
+        if (!s.Any(IsEscaped))
         {
             return s;
         }
@@ -180,21 +180,21 @@ internal static class LogText
         var sb = new StringBuilder(s.Length + 8);
         foreach (char c in s)
         {
-            if (IsControl(c))
+            if (IsEscaped(c))
             {
                 sb.Append("\\x").Append(((int)c).ToString("X2", Inv));
             }
             else
             {
-                sb.Append(c > 0x7F ? '?' : c);
+                sb.Append(c);
             }
         }
 
         return sb.ToString();
     }
 
-    /// <summary>Whether a character is one the log writes escaped.</summary>
+    /// <summary>Whether a character is one the log writes as <c>\xNN</c>: a control character or one above 0x7F.</summary>
     /// <param name="c">The character.</param>
-    /// <returns>True below 0x20 and for 0x7F.</returns>
-    private static bool IsControl(char c) => c < 0x20 || c == 0x7F;
+    /// <returns>True below 0x20, for 0x7F and above it.</returns>
+    private static bool IsEscaped(char c) => c < 0x20 || c >= 0x7F;
 }

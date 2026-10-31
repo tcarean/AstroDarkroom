@@ -1,9 +1,12 @@
 # The FITS header engine and the key lists
 
-**Covers:** `src/CopyWcs.Core/FitsHeader.cs` and `src/CopyWcs.Core/WcsMetadataKeys.cs`.
+**Covers:** `src/CopyWcs.Core/FitsHeader.cs`, `src/CopyWcs.Core/AsciiText.cs` and
+`src/CopyWcs.Core/WcsMetadataKeys.cs`.
 
-How the header is read, changed and written back by hand, and which keys a copy takes. What
-the tool does with them is in `run-and-console.md`; why there is no FITS library is ADR 0001.
+How the header is read, changed and written back by hand, how the one card the tool composes is
+kept ASCII, and which keys a copy takes. What the tool does with them is in
+`run-and-console.md`; why there is no FITS library is ADR 0001; why the bytes are kept as they
+are and the HISTORY card is ASCII is ADR 0010.
 
 ## The card and block model
 
@@ -30,7 +33,32 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
 - `SetCard(key, raw)` replaces the first card of that keyword in place, keeping its position,
   or appends when there is none; the raw text is padded to 80 or cut at 80 by `Pad`. This is
   the verbatim copy of R-010: the caller passes the source's card, and nothing is reparsed.
-- `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of text (R-011).
+- `AddHistory(text)` appends `HISTORY ` plus at most 72 characters of `AsciiText.Of(text)`
+  (R-011): the text is made ASCII first, then cut, so the cut counts the characters written.
+
+## The ASCII of a card the tool composes
+
+`AsciiText.Of` is the one place a text the tool composes (today the source's file name in the
+HISTORY card) becomes ASCII. It walks the text by runes: a rune below 0x80 is itself; one the
+table `BaseCharacters` holds becomes its base character; a combining mark standing alone
+(`Rune.GetUnicodeCategory` is `NonSpacingMark`, a name already in decomposed form) is dropped;
+any other rune becomes one `?`, an emoji's two UTF-16 units included. A text that is already
+ASCII is returned as the same instance.
+
+The table is a `const string` of pairs, the character then its base, read once into a
+`Dictionary<char, char>`: the 495 characters of the Basic Multilingual Plane whose FormD
+decomposition is one ASCII character followed by combining marks only. It was generated on
+2026-10-31 on .NET 8.0.33 by a scratch console without `InvariantGlobalization` that, for each
+code point 0x80 to 0xFFFF outside the surrogates, took `Normalize(NormalizationForm.FormD)` of
+the one-character string (an `ArgumentException`, thrown for a non-character, skipped it),
+kept it when it differed by ordinal comparison, its first character was below 0x80 and every
+later one was a `NonSpacingMark`, and printed the pairs as `\uXXXX` escapes twelve to a line;
+no character had anything but marks after an ASCII base. The table is frozen rather than asked
+of the runtime because the console's `string.Normalize` is a no-op under
+`InvariantGlobalization` (ADR 0010 has the probe). `AsciiTextTests` in the window's test
+project, which runs with culture data, repeats the enumeration against the runtime's FormD and
+compares every character's expectation with `AsciiText.Of`, counting 495 with a base: when a
+runtime's Unicode data moves, that test says so, and the table is generated again the same way.
 
 ## Writing back
 
@@ -43,10 +71,18 @@ end (R-012, R-013). On a failure before the move, the original is untouched and 
 is left behind; on success it is gone. The data area is copied as bytes: `BITPIX`, `NAXIS3`,
 extensions and padding travel unchanged.
 
-The cards are decoded and encoded as ASCII: a byte above 0x7F, which a FITS header may not hold,
-reads as `?` and is written back as `?`, so the verbatim copy of R-010 holds for the characters
-the standard allows, as R-010 says (measured by the second review of 2026-10-30: 0xC5 decodes to
-U+003F; `R010_Run_AByteAboveAsciiInACopiedCard_IsWrittenAsAQuestionMark` pins it).
+The cards are decoded and encoded with `Encoding.Latin1` (`CardEncoding`): each byte 0x00 to
+0xFF is the character of that code and is written back as the same byte, so a byte above 0x7F,
+which a FITS header may not hold but a file may, goes through the read, the `SetCard` and the
+write untouched, in a copied card and in a card of the destination the copy never selected
+alike (R-010, ADR 0010; until 2026-10-31 the cards went through `Encoding.ASCII`, which made
+such a byte `?`). A header that is all ASCII is unchanged by the switch: the Release console's
+copy of the V-001 fixture's solve into a copy of the fixture, with `-o` and in place, built from
+`main` before the change and from the branch after it, gave the same SHA-256
+`ea8aa7cebf3910de495d95d9fd275f42ea725982df4aa570f2794476371a629c` all four times (2026-10-31).
+`R010_Run_AByteAboveAsciiInACopiedCard_IsCopiedAsItIs` and
+`R010_Run_AByteAboveAsciiInADestinationCardNotCopied_StaysAsItIs` put a 0xC5 into a file's
+bytes and read the file written back as Latin-1.
 
 `ReadPrimary`, `AddHistory` and `WriteWithDataFrom` also write their lines to the diagnostic log
 (the read line, the card appended, the write with its temporary file, the file written, and at

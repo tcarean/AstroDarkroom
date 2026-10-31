@@ -23,14 +23,22 @@ namespace CopyWcs;
 
 /// <summary>
 /// The header of the primary HDU, as a list of raw 80-character cards, read and written by
-/// hand: no FITS library (ADR 0001). How the cards, the blocks and the in-place write fit
-/// together is in <c>docs/design/fits-header.md</c>; the lines it writes to the diagnostic log,
-/// in <c>docs/design/logging.md</c>.
+/// hand: no FITS library (ADR 0001). Each card is the file's bytes one to one, through Latin-1,
+/// so a byte above 0x7F comes back as it was read (R-010, ADR 0010). How the cards, the blocks
+/// and the in-place write fit together is in <c>docs/design/fits-header.md</c>; the lines it
+/// writes to the diagnostic log, in <c>docs/design/logging.md</c>.
 /// </summary>
 internal sealed class FitsHeader
 {
     private const int CardSize = 80;
     private const int BlockSize = 2880;
+
+    /// <summary>
+    /// The encoding of the cards: each byte 0x00 to 0xFF is the character of that code, and
+    /// each such character is written back as the same byte, so no byte of a header is changed
+    /// by the round trip (R-010, ADR 0010); an all-ASCII header reads and writes as under ASCII.
+    /// </summary>
+    private static readonly Encoding CardEncoding = Encoding.Latin1;
 
     /// <summary>The header engine's lines in the diagnostic log: the reads, the writes and, at Trace, every card (R-042, R-044).</summary>
     private static readonly Logger Log = LogManager.GetLogger("FitsHeader");
@@ -109,7 +117,8 @@ internal sealed class FitsHeader
 
     /// <summary>
     /// Reads a primary header from the start of a stream: whole 2880-byte blocks, card by
-    /// card, up to and including the block that holds END.
+    /// card, up to and including the block that holds END; each card's bytes become its
+    /// characters one to one (<see cref="CardEncoding"/>).
     /// </summary>
     /// <param name="stream">The stream, positioned at the first byte of the file; read in full blocks.</param>
     /// <returns>The header; the stream is left after the last header block.</returns>
@@ -137,7 +146,7 @@ internal sealed class FitsHeader
 
             for (var i = 0; i < BlockSize; i += CardSize)
             {
-                var card = Encoding.ASCII.GetString(block, i, CardSize);
+                var card = CardEncoding.GetString(block, i, CardSize);
                 if (KeywordOf(card) == "END")
                 {
                     sawEnd = true;
@@ -260,13 +269,18 @@ internal sealed class FitsHeader
         }
     }
 
-    /// <summary>Appends a HISTORY card, and writes it to the diagnostic log at Debug as it was stored (R-042).</summary>
-    /// <param name="text">The text after the keyword; cut to 72 characters, the room a card has after "HISTORY ".</param>
+    /// <summary>
+    /// Appends a HISTORY card, ASCII whatever the text holds (<see cref="AsciiText.Of"/>), so the
+    /// copy never puts a byte above 0x7F in a header itself, and writes it to the diagnostic log
+    /// at Debug as it was stored (R-011, R-042, ADR 0010).
+    /// </summary>
+    /// <param name="text">The text after the keyword; made ASCII, then cut to 72 characters, the room a card has after "HISTORY ".</param>
     public void AddHistory(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
 
-        var body = text.Length > 72 ? text[..72] : text;
+        var ascii = AsciiText.Of(text);
+        var body = ascii.Length > 72 ? ascii[..72] : ascii;
         var card = Pad("HISTORY " + body);
         _cards.Add(card);
         Log.Debug("appended " + LogText.Card(card));
@@ -282,8 +296,9 @@ internal sealed class FitsHeader
     /// Writes this header, END and the padding to the next 2880-byte boundary, followed by
     /// the data area copied from <paramref name="dataSource"/>. When the target is the data
     /// source itself, the file is written beside it first and moved over it at the end: the
-    /// header may have grown past its original blocks, so it cannot be patched in place. The
-    /// diagnostic log gets the write before it starts (the temporary file of an in-place write;
+    /// header may have grown past its original blocks, so it cannot be patched in place. Each
+    /// card's characters are written as the bytes they were read from (<see cref="CardEncoding"/>).
+    /// The diagnostic log gets the write before it starts (the temporary file of an in-place write;
     /// at Trace every card to be written, so a failed write still shows the header it meant to
     /// write) and the file written after it (R-042, R-044); a write that throws is its caller's
     /// to log.
@@ -309,10 +324,10 @@ internal sealed class FitsHeader
         {
             foreach (var card in _cards)
             {
-                output.Write(Encoding.ASCII.GetBytes(Pad(card)));
+                output.Write(CardEncoding.GetBytes(Pad(card)));
             }
 
-            output.Write(Encoding.ASCII.GetBytes("END".PadRight(CardSize)));
+            output.Write(CardEncoding.GetBytes("END".PadRight(CardSize)));
 
             // Spaces up to the next 2880-byte boundary.
             var remainder = (int)(output.Position % BlockSize);
