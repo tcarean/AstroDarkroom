@@ -15,7 +15,7 @@
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
 
-What the tool is and what its six modes answer is the first paragraph of CLAUDE.md; each
+What the tool is and what its five modes answer is the first paragraph of CLAUDE.md; each
 mode has its own note (`modes-*.md`, mapped by the index). The dependency rule, the hand-rolled
 FITS and PNG and the three packages are ADR 0008, 0009, 0010 and 0070 with `dependencies.md`; what each
 of the two applications owns is ADR 0011 with `two-applications.md`. The target is .NET 8.
@@ -48,15 +48,16 @@ a library extraction and not a copy is ADR 0011.
     alone, so a last HDU without its padding to 2880 bytes is read (R-009). `LoadHeader` does
     not check the data area, so this is the one refusal the two reads do not share: the header
     of such a file is intact and the Sintetic tab can still use it.
-  - `FitsWriter.cs` - the hand-rolled FITS writer, with one consumer: `--smooth`. One primary
+  - `FitsWriter.cs` - the hand-rolled FITS writer, with one consumer: `--synthetic`. One primary
     2-D HDU, `BITPIX -32` or `16` (with `BZERO 32768`), the input's raw cards copied minus the
     structural ones it rewrites, `HISTORY` at the end. Writes into a `Stream` for the same
     reason the report is a `TextWriter` - 96 MB of float need not sit in memory twice; `Encode`
     over a `MemoryStream` is for tests. It copies the **raw 80-character cards**
     (`LoadedFrame.Cards`, kept by `FitsReader.LoadFull` alongside the dictionary), not the
     parsed dictionary, which loses comments and truncates strings at `/` (known issue 1).
-    `LoadedFrame` also carries `Planes` (`NAXIS3`) and `Bitpix`, both so `SmoothRun` can refuse
-    a cube and write the input's type back.
+    `LoadedFrame` also carries `Planes` (`NAXIS3`), so `SyntheticRun` can refuse a cube, and
+    `Bitpix`, for the load line of the log (`--smooth` wrote the input's type back until its
+    removal, ADR 0080).
   - `IFrameReader.cs` - the contract each input format implements: `Handles(path)` and
     `Load(path) -> LoadedFrame`. The only interface in the codebase, and the reason
     `ImageLoader` knows no reader's API.
@@ -84,13 +85,10 @@ a library extraction and not a copy is ADR 0011.
     file does not say: what it reads (libraw's `filters` + `cdesc`, or `BAYERPAT` with
     `XBAYROFF`/`YBAYROFF` and `ROWORDER`), why it is never guessed and why no figure depends on
     it are ADR 0023.
-  - `Mosaic.cs` - the CFA rule shared by `--expo`, `--histeq` and `--smooth`:
+  - `Mosaic.cs` - the CFA rule shared by `--expo` and `--histeq`:
     `PositionOf(y, x)`, `CfaSpreadMin` (1.15) with `LooksCfa`, `Split` into the four
-    position rasters, `Extract` (one position, for the mode that works them one at a time
-    and has no use for four copies), `Merge` (the inverse, back to the *original* size -
-    an odd last row or column is filled from the nearest line of the same parity, so a
-    CFA keeps its colours and a flat never gets a line of zeros), and `Label`/`ColourOf`
-    over a `CfaPattern`. It used to be inline in `ExposureAnalyzer`;
+    position rasters, and `Label`/`ColourOf` over a `CfaPattern` (`Extract` and `Merge`,
+    which only `--smooth` used, left with it, ADR 0080). It used to be inline in `ExposureAnalyzer`;
     two copies of `(y & 1) * 2 + (x & 1)` and of `1.15` would have diverged at the first
     adjustment. `ExposureAnalyzer` uses the rule, not `Split` - it fills its histograms in
     the same pass it reads the pixels, and a second copy of the data would cost memory.
@@ -104,11 +102,8 @@ a library extraction and not a copy is ADR 0011.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
     `Divide`, `Symmetrise` (the mean of a raster and its 180° rotation, which is what the
     radial model is fed - see `RadialModel` under "Shared pipeline" in `pipeline.md`). `CropCentred` and `Rotate180`, which only the `--ratio` mode used, left with it
-    (ADR 0067); `LargeScalePtp` keeps its top-left grid for parity (ADR 0016). `TileMedians` is the third grid, for
-    `--smooth` only: tile *medians*, **partial last row and column kept**, and the real
-    centre of every tile returned - a partial 8-px tile fitted one full tile from its
-    neighbour put a 0.8 % error band along the edge of the synthetic; with real centres the
-    whole-frame error is 0.19 %.
+    (ADR 0067); `LargeScalePtp` keeps its top-left grid for parity (ADR 0016). `TileMedians`, the third grid, which
+    only `--smooth` used, left with it too (ADR 0080).
   - `Stats.cs` - numeric primitives: `Percentile`, `Interp`, `Solve`,
     `Verdict`, `Rank`, `Severity`, and the verdict vocabulary (`ResidualBands`,
     `NotApplicable`).
@@ -161,11 +156,7 @@ a library extraction and not a copy is ADR 0011.
     two rasters prepared, normalised to median 1, their ratio through the structure battery),
     `VignettingComparison` (the sixth structure test: the master's corner depth against
     each candidate lens's nearest profile, measured with `CornerStats` on the model raster
-    built at analysis size - see "The sixth test" under mode 1),
-    `SmoothAnalyzer` (mode 6; its header comment carries the two rejected designs and the
-    measurements - read it before touching the method) and `SmoothScaleAdvisor` (proposes
-    the smoothing scale from the master, ADR 0027; pure, and `Decide` is separately pure
-    over hand-made trials). Beside them, `ExposureBands` - the verdict ladder as a *value*
+    built at analysis size - see "The sixth test" under mode 1). Beside them, `ExposureBands` - the verdict ladder as a *value*
     (ADR 0022). `ExposureAnalyzer` also carries `LevelHistogram` and `ChannelLevels`, the
     per-channel distributions; they are filled in the loop the analyzer already ran and
     change no existing figure. Beside them `PreviewLevels` and `AnalyzePreview`, the same
@@ -176,8 +167,8 @@ a library extraction and not a copy is ADR 0011.
     pixel is read), and `LightSeriesAnalyzer` is `[LightResult] -> LightSeriesResult` (it
     combines per-frame results; the file loading stays in `Runs/`, like every other mode).
     `StructureAnalyzer.AnalyzePrepared` is the overload that skips `Img.Prepare` because the
-    caller has already prepared its input; `SmoothAnalyzer` and `AgainstAnalyzer` run the
-    battery through it on rasters of their own making.
+    caller has already prepared its input; `AgainstAnalyzer` runs the battery through it on
+    rasters of its own making.
     The members of every `XxxResult`, with their units, which of them vote and which are
     informative, and the `docs/validation.json` keys that read them, are tabulated under
     "Result records (Analysis/)" at the end of this note.
@@ -239,14 +230,13 @@ a library extraction and not a copy is ADR 0011.
     (ADR 0073). The console formats them into columns, the WPF app puts them in cards
     and under a coloured chip; the wording has one definition either way. `HistEqReport` has no verdict to write; what it
     exposes as values is `Caveat()` (what the picture cannot show), `MasterVersusFrame()`
-    and `ViewCaption()` - window-only, like the others. `SmoothReport` prints "what was
-    removed" and the structure battery before/after; it reuses the structure report's own
-    labels through `StructureReport.TestLabel`/`TestKeys`/`Test` (added for it, so the two
-    reports cannot name a test differently) and `LocalSpotValue(pct, x, y)`, the overload
-    that formats a spot measured on another raster (its negative-zero rounding is ADR 0041).
+    and `ViewCaption()` - window-only, like the others. `StructureReport.TestLabel`/`TestKeys`/`Test` exist so that the
+    against and split reports cannot name a test differently from the structure report (they
+    were added for the smoothing report, removed since, ADR 0080); the negative-zero rounding
+    of `LocalSpotSize` is ADR 0041.
   - `Runs/` - the chain of one mode, the layer both applications call (ADR 0011):
     `StructureRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
-    `SmoothRun`, `SyntheticRun`, `AgainstRun`, `SplitRun`, plus `SeriesFinder` (which files a
+    `SyntheticRun`, `AgainstRun`, `SplitRun`, plus `SeriesFinder` (which files a
     series run covers). `StructureRun.Analyze` is the first half of `Execute` (load, analyze,
     compare, no text, no map); `SplitRun` calls it once per master - the whole, then the
     parts - picks the whole's nearest profile as the reference for every column, computes
@@ -259,17 +249,18 @@ a library extraction and not a copy is ADR 0011.
     query; with one, present even when it could not compare - `Gap` says why) and the
     combined verdict. `StructureRun.Recompare` redoes the comparison, or the plain outcome,
     on a `StructureResult` already computed and writes the report again, no load and no
-    map: the window's "no filters" box (R-118, ADR 0078, `two-applications.md`).
+    map: the window's "no filters" box (R-118, ADR 0078, `two-applications.md`). A query's
+    `LensKey` narrows the comparison to one candidate, the window's lens picker on a list
+    found by range alone (R-121, ADR 0081, `modes-structure.md`).
     Without a query the output is byte-identical to before, which is
     what keeps the golden files, the parity ones included, still. `Compare` is the second
     half on its own, so the window can explain a missing raw without reloading the master.
-    `SmoothRun` and `SyntheticRun` can refuse (a raw, a colour cube - `LightRun`'s shape;
-    for `SyntheticRun` also the lens choice) and produce a file: `WriteFits(outcome,
+    `SyntheticRun` can refuse (a colour cube - `LightRun`'s shape - and the lens choice) and
+    produces a file: `WriteFits(outcome,
     sourcePath, Stream)` is called by the console on a `FileStream` and by the window after
     the overwrite question, never by the run itself (ADR 0011). `SyntheticRequest` carries
     every value with the source it came from, so the report can print "cerut" beside
-    "profil folosit". `SmoothRun.OutputBitpix` is "same type in, same type out" (16 stays
-    16, everything else becomes -32), and nothing is renormalised. `HistEqRun` also carries
+    "profil folosit". `HistEqRun` also carries
     the per-view encoders (`EncodeChannel`, `EncodeMosaic`) the window calls on demand; the
     console only ever writes the composite. `ExposureRun` is the only one with an opt-in,
     `withPreview` (ADR 0024). The `TextWriter` and PNG-bytes shape of every outcome is
@@ -295,15 +286,15 @@ a library extraction and not a copy is ADR 0011.
     "Conventions").
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map(s) to
     disk, and the exit code. All output goes through the injected `TextWriter`, never
-    `Console` directly. `AfterMapPath` lives here rather than in the core (ADR 0011).
+    `Console` directly.
   - `Options.cs` - CLI parsing, and the mode the flags ask for (`Options.Mode`, decided once
     by R-003's precedence; the dispatch and the log both read it, `process.md`).
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See `two-applications.md`.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
-    master and where it may be, ADR 0034; which are raw flats; `SmoothedMasterPath` and `SyntheticMasterPath`, the two files the
-    writing tabs put beside the master, ADR 0036; `SettingsPath`, the folder's
-    `flatcheck.json`), `SessionSettings` (the two switches the window remembers per folder,
-    R-119, ADR 0078) and `SessionMessages` (the explanations
+    master and where it may be, ADR 0034; which are raw flats; `SyntheticMasterPath`, the file the
+    Sintetic tab puts beside the master, ADR 0036; `SettingsPath`, the folder's
+    `flatcheck.json`), `SessionSettings` (the two switches and the chosen lens the window
+    remembers per folder, R-119, R-121, ADRs 0078 and 0081) and `SessionMessages` (the explanations
     shown when the input is not usable and the residual map's shape guide), plus the four
     files behind the "run the script from here"
     button of ADR 0035: `SirilInstall` (where `siril-cli.exe` and the `.ssf` scripts are;
@@ -344,7 +335,7 @@ a library extraction and not a copy is ADR 0011.
     properties only, ADR 0040), and two small companions of the residual map:
     `MapScaleViewModel` (the scale chips, which translate a choice into a
     `PngWriter.MapRange` and decide nothing; on every tab with a residual map - Structure,
-    Netezire, Sintetic, Split) and `MapGuideViewModel` (on Structure; the
+    Sintetic, Split) and `MapGuideViewModel` (on Structure; the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
     either. `SensorFormatViewModel` is the same pattern on the Sintetic tab: six chips that
@@ -364,8 +355,8 @@ a library extraction and not a copy is ADR 0011.
     a factor, plus the effective factor the control writes back - so a test can drive it
     and the tab can reset it on a new file (and deliberately not on a chip change).
     `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
-    deviation battery, built once for every tab that shows the battery (Structure, and
-    Netezire before and after the smoothing). They are `public` because WPF binding
+    deviation battery, built in one place (the two tabs that showed it beside Structure
+    are gone, ADR 0067 and ADR 0080). They are `public` because WPF binding
     reads public properties by reflection (the consequence for internal core types is
     ADR 0037).
     `TestNote` earns its place the hard way: two of the five rows - the azimuthal
@@ -530,7 +521,7 @@ result say its size. Sensor pixels are named as such where they appear.
 `StructureReport.TestKeys` names the five voting members by these exact member names
 (`CornerSpreadPct`, `AzimuthalMaxPct`, `ResidualPtpPct`, `TiltPct`, `MaxTilePct`), and
 `StructureReport.Test(result, key)` returns the value and its verdict for one key; that is how
-the smooth and against reports print the battery without renaming a test.
+the against and split reports print the battery without renaming a test.
 
 ### `StructureQuery`, `StructureOutcome` (`Runs/StructureRun.cs`)
 
@@ -680,33 +671,6 @@ raster and never stored in the result (ADR 0063).
 | `FullH`, `FullW`, `CompositeFullRgb`, `MosaicFull` | full-resolution counterparts (`MosaicFull` is `SourceH * SourceW`) | what the window shows at 100 % |
 | `ChannelCount` | count | |
 
-**`SmoothResult`** (`SmoothAnalyzer.cs`, mode `--smooth`). No verdict of its own: the words
-come from the structure battery run before and after.
-
-| Member | Unit | Meaning | `validation.json` key (kind `smooth`) |
-| --- | --- | --- | --- |
-| `Smoothed` | `Img`, full resolution, the input's shape; never null | the product that `SmoothRun.WriteFits` writes | |
-| `IsCfa`, `CfaSpread`, `SourceH`, `SourceW` | as above | | |
-| `ScalePx` | sensor pixels, the kernel's sigma | the smoothing scale used | the case's `scalePx` is the input, not a figure |
-| `TilePx`, `SigmaTiles` | sensor pixels; tiles | tile side, and the sigma in tiles | |
-| `Positions` | `SmoothPositionFit[]`, 4 on CFA, 1 on mono | per Bayer position: `Tiles`, `Rejected`, `FitFailed` (counts), `TileRms` (fraction of the level) | |
-| `Removed` | `Img`, analysis raster, `Prepare(input) / Prepare(smoothed)` | what was taken out; the first map | |
-| `Width`, `Height` | pixels of the analysis raster | | |
-| `RemovedP1Pct`, `RemovedP99Pct` | percent | tails of `Removed` | |
-| `RemovedPtpPct` | percent, p95 - p5 over tiles | | `removedPtpPct` |
-| `RemovedMaxTilePct` | percent | the most deviating tile of `Removed` | `removedMaxTilePct` |
-| `RemovedSpotPct`, `RemovedSpotX`, `RemovedSpotY` | signed percent; pixels of the analysis raster | deepest compact spot removed, and where | `removedSpotPct`; the case-level `spotAt` records X, Y and is not compared by the test |
-| `RemovedFlagged` | bool, `RemovedMaxTilePct >= Th.SmoothKeptWarn` | more than texture was removed | |
-| `InputTexturePct`, `OutputTexturePct` | percent (`Metrics.FineTexture`) | was there texture, and did it go | `inputTexturePct`, `outputTexturePct` |
-| `Before`, `After` | `StructureResult` on the analysis rasters of input and output | the battery both sides | `beforeVerdict` / `afterVerdict` read `.Verdict`; `beforeVignetteStops` / `afterVignetteStops` read `.VignetteStops` |
-
-**`SmoothScaleAdvice`** (`SmoothScaleAdvisor.cs`, the proposed scale): `Kind`
-(`SmoothAdviceKind`: `NoTexture`, `Proposed`, `Undetermined`), `InputTexturePct` (percent),
-`ScalePx` (sensor pixels; `NaN` unless `Proposed`), `Trials` (one `SmoothScaleTrial` per rung:
-`ScalePx`, `TextureAfterPct` in percent, `AzimuthalDelta` / `TiltDelta` / `CornerDelta` in
-percent points after minus before, `RemovedPtpPct`, `RemovedMaxTilePct`, `TextureGone`,
-`StructureLost`, `Acceptable = TextureGone && !StructureLost`).
-
 **`SyntheticFlatResult`** (`SyntheticFlatBuilder.cs`, mode `--synthetic`). No verdict.
 
 | Member | Unit | Meaning |
@@ -746,14 +710,14 @@ run's `Result.Profile.Lens.Name` and `Profile.Settings`.
 `Execute` in this folder takes a `TextWriter report` and writes the mode's whole report into it
 before returning: `StructureRun.Execute` calls `StructureReport.Write(outcome, path, report)`
 unconditionally, and the same holds for `ExposureRun`, `LightRun`, `LightSeriesRun`,
-`HistEqRun`, `SmoothRun`, `SyntheticRun` and `AgainstRun`. The runs that can refuse (`LightRun`,
-`LightSeriesRun`, `SmoothRun`, `SyntheticRun`) write the refusal text into the same writer. No
+`HistEqRun`, `SyntheticRun` and `AgainstRun`. The runs that can refuse (`LightRun`,
+`LightSeriesRun`, `SyntheticRun`) write the refusal text into the same writer. No
 flag suppresses it, and nothing returns the text as a string (why the writer is the caller's is
 ADR 0011). The window saves what its `StringWriter` got back as "Test result.txt", the same
 text by construction; and **a caller who wants the figures and no text passes
-`TextWriter.Null`**, which is exactly what `ValidationTests` does for the structure, profile,
-smooth and against cases. Verified against the code on 2026-09-25: this is true today for all
-nine runs; `SplitRun`, added on 2026-09-28, follows the same rule (`SplitReport.Write`,
+`TextWriter.Null`**, which is exactly what `ValidationTests` does for the structure, profile
+and against cases. Verified against the code on 2026-09-25: this is true today for all
+nine runs (eight since `SmoothRun` left, ADR 0080); `SplitRun`, added on 2026-09-28, follows the same rule (`SplitReport.Write`,
 unconditionally).
 
 **`RunOutcome<TResult>`** (`RunOutcome.cs`), for the modes that always answer.
@@ -763,8 +727,8 @@ unconditionally).
 | `Result` | the analyzer's record, never null |
 | `Png` | the residual map, already encoded; null when the mode has no map (`--expo`) |
 
-A mode with two maps (`--smooth`) has an outcome type of its own with its `SecondaryPng`;
-`RunOutcome` carries one map since the `--ratio` mode left (ADR 0067).
+`RunOutcome` carries one map since the `--ratio` mode left (ADR 0067); the mode with two
+maps, `--smooth`, had an outcome type of its own and left too (ADR 0080).
 
 | Run and signature | Returns | `Png` |
 | --- | --- | --- |
@@ -780,6 +744,4 @@ The runs that can refuse have their own outcome type, each with `Refused => Resu
 | --- | --- | --- |
 | `LightRunOutcome` from `LightRun.Execute(path, fov?, report)` | `Suitability` (`SuitabilityResult`, always set), `Result` (`LightResult` or null), `Png` (`RadialMap`, or null), `Refused` | refused when the field of view is `TooWide`; the refusal text is `LightReport.WriteTooWide` |
 | `LightSeriesRunOutcome` from `LightSeriesRun.Execute(dir, pattern, fov?, report, onFrame = null, ct = default)` | `Suitability`, `Result` (`LightSeriesResult` or null), `Png` (mean `RadialMap`), `Files` (the series, always set), `Refused` | refused on the first frame's field of view; an empty series throws instead of refusing; `onFrame(i, n, name, result)` fires per frame as the table streams |
-| `SmoothRunOutcome` from `SmoothRun.Execute(path, scalePx, report)` (or the overload on a loaded frame) | `Result` (`SmoothResult` or null), `Frame` (`LoadedFrame`, for the cards and `Bitpix` the writer copies), `Png` (`Removed` map), `SecondaryPng` (`After.Residual` map), `Refusal` (text or null), `Refused` | refused on a raw (no FITS cards) or a colour cube (`Planes > 1`); the file is written by the caller through `SmoothRun.WriteFits(outcome, sourcePath, Stream)`, `OutputBitpix` keeps 16 and turns everything else into -32 |
-| `SmoothAdviceOutcome` from `SmoothRun.Advise(path, report)` | `Advice` (`SmoothScaleAdvice` or null), `Frame`, `Refusal`, `Refused` | the same two refusals |
 | `SyntheticRunOutcome` from `SyntheticRun.Execute(referencePath, request, sources, focal?, fstop?, crop?, report)` (or the overload on a loaded frame) | `Result` (`SyntheticFlatResult` or null), `Request` (`SyntheticRequest`: `LensText`, `Source`, `Lens`, `FocalMm` + `FocalSource`, `FStop` + `FStopSource`, `CameraCrop` + `CropSource`, each value with where it came from), `Frame`, `Refusal`, `RefusedChoice` (true when the refusal was the lens choice: none given, no match, ambiguous), `Refused` | refused on a colour cube, on an unresolvable lens, or on a missing focal, f-stop or (lensfun only) crop; the file is written by the caller through `SyntheticRun.WriteFits(outcome, referencePath, Stream)`, always -32 |

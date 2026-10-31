@@ -1075,4 +1075,234 @@ public class StructureTabTests
         Assert.Equal(report, File.ReadAllText(f.Session.ResultTextPath));
         Assert.Equal(written, File.GetLastWriteTimeUtc(f.Session.ResultTextPath));
     }
+
+    // ------------------------------------------------ the lens picker on a list by range (R-121)
+
+    /// <summary>The tab on the catalog with the two 135 f/2 lenses and the range raw in place
+    /// of the file in flats/, run once.</summary>
+    static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithRangePair(SessionFixture f, TempWorkspace ws, SessionSettings? settings = null, string camera = "NIKON D3300")
+    {
+        var sources = LensProfileTestData.Sources(ws, rangePair: true);
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? LensProfileTestData.Range135Raw(camera) : ImageLoader.LoadInfo(path));
+        await vm.RunAsync(f.Session, CancellationToken.None, settings);
+        return (vm, sources);
+    }
+
+    /// <summary>The console's report for the fixture master, the range raw and a chosen lens
+    /// (null: none chosen).</summary>
+    static string RangeReport(SessionFixture f, ProfileSources sources, string? lensKey)
+    {
+        var expected = new StringWriter();
+        RunReport.WriteBanner(expected);
+        StructureRun.Execute(f.Session.FlatMasterPath, expected,
+            new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => LensProfileTestData.Range135Raw(), LensKey = lensKey });
+        RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
+        return expected.ToString();
+    }
+
+    /// <summary>
+    /// R-121: a raw that gives only a range, with two lenses of that range, offers the picker:
+    /// the prompt, the none entry selected, one entry per candidate in the rows' order; both
+    /// rows are on the card and the saved report is the console's for the same raw.
+    /// </summary>
+    [Fact]
+    public async Task R121_ARawThatGivesOnlyARangeOffersThePickerWithEveryCandidate()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, sources) = await RunWithRangePair(f, ws);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(2, vm.ProfileRows.Count);
+        Assert.True(vm.OffersLensChoice);
+        Assert.NotEmpty(vm.LensChoicePrompt);
+        Assert.Equal(3, vm.LensOptions.Count);
+        Assert.Null(vm.LensOptions[0].Key);
+        Assert.NotEmpty(vm.LensOptions[0].Label);
+        Assert.Equal(LensProfileTestData.KeyOf(sources, LensProfileTestData.Nikkor135Dc), vm.LensOptions[1].Key);
+        Assert.Equal(LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135), vm.LensOptions[2].Key);
+        Assert.Contains(LensProfileTestData.Samyang135, vm.LensOptions[2].Label);
+        Assert.Same(vm.LensOptions[0], vm.SelectedLens);
+        Assert.Equal(RangeReport(f, sources, null), File.ReadAllText(f.Session.ResultTextPath));
+    }
+
+    /// <summary>R-121: a list the lens ID decided offers no picker.</summary>
+    [Fact]
+    public async Task R121_AListFoundByTheLensIdOffersNoPicker()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+
+        Assert.True(vm.HasProfileRows);
+        Assert.False(vm.OffersLensChoice);
+        Assert.Empty(vm.LensOptions);
+        Assert.Empty(vm.LensChoicePrompt);
+        Assert.Null(vm.SelectedLens);
+    }
+
+    /// <summary>
+    /// R-121: picking a lens redoes the comparison on the kept result - that lens's row alone,
+    /// the comparison's verdict its profile's, the report saved as the console's for the same
+    /// query, the map the same bytes - and the picker keeps every candidate; picking the none
+    /// entry again brings both rows back.
+    /// </summary>
+    [Fact]
+    public async Task R121_PickingALensNarrowsTheComparisonAndSavesTheReport()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, sources) = await RunWithRangePair(f, ws);
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
+        byte[] map = vm.Map;
+
+        vm.SelectedLens = vm.LensOptions.Single(o => o.Key == key);
+        await vm.Pending;
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        LensProfileRow row = Assert.Single(vm.ProfileRows);
+        Assert.Equal(LensProfileTestData.Samyang135, row.Lens);
+        Assert.True(row.IsNearest);
+        Assert.Equal(3, vm.LensOptions.Count);
+        Assert.Equal(key, vm.SelectedLens.Key);
+        Assert.Contains(LensProfileTestData.Nikkor135Dc, vm.ProfileSummary);   // the lens left out, named
+        Assert.Same(map, vm.Map);
+        Assert.Equal(RangeReport(f, sources, key), vm.Report);
+        Assert.Equal(RangeReport(f, sources, key), File.ReadAllText(f.Session.ResultTextPath));
+
+        vm.SelectedLens = vm.LensOptions[0];
+        await vm.Pending;
+
+        Assert.Equal(2, vm.ProfileRows.Count);
+        Assert.Same(vm.LensOptions[0], vm.SelectedLens);
+        Assert.Equal(RangeReport(f, sources, null), File.ReadAllText(f.Session.ResultTextPath));
+    }
+
+    /// <summary>
+    /// R-121: the folder's remembered key is applied at the run, before anything is on screen;
+    /// a key that matches no candidate is ignored - every row, the none entry selected.
+    /// </summary>
+    [Fact]
+    public async Task R121_ARememberedLensIsAppliedAtTheRunAndAKeyAmongNoCandidateIsIgnored()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, rangePair: true);
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
+        var remembered = SessionSettings.None;
+        remembered.Lens = key;
+
+        var (vm, _) = await RunWithRangePair(f, ws, remembered);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        LensProfileRow row = Assert.Single(vm.ProfileRows);
+        Assert.Equal(LensProfileTestData.Samyang135, row.Lens);
+        Assert.Equal(key, vm.SelectedLens.Key);
+
+        var stale = SessionSettings.None;
+        stale.Lens = "Adobe|NIKON CORPORATION|Nobody 135mm f/2|NIKON D3";
+        var (again, _) = await RunWithRangePair(f, ws, stale);
+
+        Assert.Equal(2, again.ProfileRows.Count);
+        Assert.Same(again.LensOptions[0], again.SelectedLens);
+    }
+
+    /// <summary>R-121: Reset empties the picker with the rest of the card.</summary>
+    [Fact]
+    public async Task R121_ResetEmptiesThePicker()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithRangePair(f, ws);
+        Assert.True(vm.OffersLensChoice);
+
+        vm.Reset();
+
+        Assert.False(vm.OffersLensChoice);
+        Assert.Empty(vm.LensOptions);
+        Assert.Empty(vm.LensChoicePrompt);
+        Assert.Null(vm.SelectedLens);
+    }
+
+    /// <summary>
+    /// R-121: a chosen lens whose profile makes no row (a lensfun lens on a body the lensfun
+    /// table does not know: no crop) leaves the card on the gap, but the picker stays, on that
+    /// lens, so the choice can be undone from the screen; picking the none entry brings the
+    /// Adobe row back.
+    /// </summary>
+    [Fact]
+    public async Task R121_AChosenLensThatComparesNothingKeepsThePickerSoTheChoiceCanBeUndone()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, sources) = await RunWithRangePair(f, ws, camera: "NIKON D5");
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.True(vm.OffersLensChoice);
+        LensProfileRow adobe = Assert.Single(vm.ProfileRows);           // the lensfun lens has no crop on this body
+        Assert.Equal(LensProfileTestData.Nikkor135Dc, adobe.Lens);
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
+
+        vm.SelectedLens = vm.LensOptions.Single(o => o.Key == key);
+        await vm.Pending;
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasProfileRows);
+        Assert.NotEmpty(vm.ProfileGap);
+        Assert.True(vm.OffersLensChoice);
+        Assert.Equal(key, vm.SelectedLens.Key);
+
+        vm.SelectedLens = vm.LensOptions[0];
+        await vm.Pending;
+
+        Assert.Equal(LensProfileTestData.Nikkor135Dc, Assert.Single(vm.ProfileRows).Lens);
+        Assert.Empty(vm.ProfileGap);
+    }
+
+    /// <summary>
+    /// R-121: the null the ComboBox pushes when the list is replaced is not a pick: nothing is
+    /// written, nothing recompared, and the selection stays.
+    /// </summary>
+    [Fact]
+    public async Task R121_ANullFromTheBindingIsNotAPick()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var settings = SessionSettings.Read(f.Session.SettingsPath);
+        var (vm, _) = await RunWithRangePair(f, ws, settings);
+        LensOption before = vm.SelectedLens;
+        string report = File.ReadAllText(f.Session.ResultTextPath);
+        DateTime written = File.GetLastWriteTimeUtc(f.Session.ResultTextPath);
+
+        vm.SelectedLens = null;
+        await vm.Pending;
+
+        Assert.Same(before, vm.SelectedLens);
+        Assert.False(File.Exists(settings.FilePath));
+        Assert.Equal(report, File.ReadAllText(f.Session.ResultTextPath));
+        Assert.Equal(written, File.GetLastWriteTimeUtc(f.Session.ResultTextPath));
+    }
+
+    /// <summary>
+    /// R-121: a gap nothing was chosen for (the range raw without an aperture) offers no
+    /// picker: no pick could cure it, so the prompt must not promise a verdict.
+    /// </summary>
+    [Fact]
+    public async Task R121_AGapNothingWasChosenForOffersNoPicker()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, rangePair: true);
+        LoadedFrame noFStop = LensProfileTestData.Range135Raw();
+        noFStop.FNumber = null;
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? noFStop : ImageLoader.LoadInfo(path));
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasProfileRows);
+        Assert.NotEmpty(vm.ProfileGap);
+        Assert.False(vm.OffersLensChoice);
+        Assert.Empty(vm.LensChoicePrompt);
+        Assert.Null(vm.SelectedLens);
+    }
 }

@@ -1,7 +1,7 @@
 # 0013. "Despre" lists the third-party components the launcher ships, and fits its screen
 
 Date: 2026-10-30
-Status: accepted 2026-10-30
+Status: accepted 2026-10-30; the notices file kept beside the source for the launcher's components superseded by 0014
 
 ## Context
 

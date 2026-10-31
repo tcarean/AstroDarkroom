@@ -95,9 +95,9 @@ folder).
 `Lap`. It is held in a `using`: a run that throws leaves the clock without `Done`, and `Dispose`
 writes `<run> ended without an outcome after N ms (<stages>)`, so the inputs and the stages
 reached are in the log beside the exception its caller logs. The clock starts **before** the
-load in every run, the path overloads of `SmoothRun` and `SyntheticRun` included (a private
-body takes the clock from either overload, so a run has one start line): a refusal decided after
-the load, a raw or a cube for `--smooth`, a lens without a vignetting profile for `--synthetic`
+load in every run, the path overload of `SyntheticRun` included (a private body takes the
+clock from either overload, so a run has one start line): a refusal decided after the load, a
+cube or a lens without a vignetting profile for `--synthetic`
 (ADR 0071), is a done line `refused: <why>` with the load stage, and a file that does not load
 still leaves the start line. A light series times `find` and the first frame's `load` as stages
 of their own, and the first frame's own line counts that load as the others count theirs.
@@ -114,7 +114,7 @@ of their own, and the first frame's own line counts that load as the others coun
 | `PreviewReader` | Warn | a preview that did not decode, with the exception |
 | `ProfileLocator`, `LensfunReader`, `LensCatalog` | Info, Warn, Debug | the folders searched (missing ones marked), the counts, lensfun's version and the lenses of each source, with the time; an Adobe root, or the lensfun folder, that could not be listed (a subfolder of a root without list rights is skipped by the enumeration itself, `lens-profiles.md`); an Adobe file that could not be read, and one that parsed to no vignetting profile (Debug) |
 | `LensIdentification` | Debug | `identified` with the focal length, the f-number and the crop and where each came from, the raw's lens and the candidates by catalogue key; `mount of <camera> unknown to lensfun` when a lensfun copy was read but its camera table gives the body no mount, so the camera's first word alone filtered the candidates (R-116) |
-| `Runs/` | Info, Debug, Warn | through `RunClock`, as above; at Debug the result's figures (`LogText.Structure`, `Comparison`, `Light`, `LightSeries`, `Exposure`, `HistEq`, `Smooth`, `Advice`, `Synthetic`, `Against`, `Split`), one line per frame of a series; the raw beside the master that could not be read |
+| `Runs/` | Info, Debug, Warn | through `RunClock`, as above; at Debug the result's figures (`LogText.Structure`, `Comparison`, `Light`, `LightSeries`, `Exposure`, `HistEq`, `Synthetic`, `Against`, `Split`), one line per frame of a series; the raw beside the master that could not be read |
 | `App`, `MainWindow` | Info, Warn | the language and the folder from the command line, a `--lang` refused; the folder dialog, About, the Siril run asked and its end, the answer to the close question during a split |
 | `MainViewModel` | Info, Error, Debug | the session usable or refused with the problem; an opening that failed past the check (a folder that cannot be listed), at Error, with the card it shows; at Debug, after the card or the tabs are up, the master (and an older one ignored), the counts of flats, raw flats and lights (`unreadable (<Type>)` for a folder that cannot be listed), the reference raw; a chain cancelled while it waited for the gate |
 | `TabViewModel` | Info, Error, Debug | `run <n> started`, `done in` or `refused in` (a run in which `Refuse` ran; a failure the tab worded itself through `Fail` is "done", its own line said what happened), `cancelled after`; `failed` with the exception; a superseded run's failure at Debug; `Refuse`: `refused: <why>; the tab shows "<title>"` for the refusals a tab decides itself |

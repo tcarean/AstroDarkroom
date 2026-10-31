@@ -162,27 +162,6 @@ namespace FlatCheck
                  + "slaba.");
 
         /// <summary>
-        /// What it means to put the smoothed flat beside the master it was made from. Screen
-        /// text too. The last sentence is the one people ask about: the smoothed one has its
-        /// noise removed, so the rank equalisation stretches what is LEFT - however small - over
-        /// the whole grey scale, and a cleaner flat looks noisier, not the other way round.
-        /// </summary>
-        /// <returns>One paragraph.</returns>
-        internal static string SmoothedVersusMaster()
-            => T("The smoothed flat is the master above with the texture, the dust and the compact spots "
-                 + "removed. A shape that shows on the master and is missing here was removed by the "
-                 + "smoothing; one that shows on both is smooth at the chosen scale and stayed - "
-                 + "lens or source, the picture does not say. The equalisation being by ranks, "
-                 + "what is left on the smoothed one, however small in amplitude, comes out at maximum contrast: a "
-                 + "smoothed flat that looks NOISIER than the master is the expected picture, not a defect.",
-                 "Flat-ul netezit e masterul de deasupra cu textura, praful si petele compacte "
-                 + "scoase. O forma care se vede pe master si lipseste de aici a fost scoasa de "
-                 + "netezire; una care se vede pe amandoua e neteda la scara aleasa si a ramas - "
-                 + "obiectiv sau sursa, poza nu spune. Egalizarea fiind pe ranguri, "
-                 + "ce a ramas pe netezit, oricat de mic in amplitudine, iese la contrast maxim: un "
-                 + "netezit care pare mai ZGOMOTOS decat masterul e poza asteptata, nu un defect.");
-
-        /// <summary>
         /// Which view is on screen, as the caption under the picture. The size is the
         /// full-resolution one, because that is the one the window shows: the mosaic the size
         /// of the sensor, a position or the composite at half on each side.

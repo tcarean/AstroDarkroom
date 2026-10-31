@@ -130,8 +130,6 @@ public class VersionTests
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--light", "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--expo"));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--histeq", "-o", png));
-        Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--smooth", ws.PathTo("s.fit"), "--scale", "50", "-o", png));
-        Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--smooth", ws.PathTo("s.fit"), "--scale", "auto", "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--synthetic", ws.PathTo("syn.fit"), "--lens", "Tokina AT-X 11-20mm F2.8 PRO DX", "--profiles", ws.Dir));
         Assert.Equal(VersionInfo.Banner, FirstLine("--lenses", "--profiles", ws.Dir));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--against", flat, "-o", png));
@@ -153,13 +151,12 @@ public class VersionTests
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--light", "-o", png));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--expo"));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--histeq", "-o", png));
-        Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--smooth", ws.PathTo("s.fit"), "--scale", "50", "-o", png));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--synthetic", ws.PathTo("syn.fit"), "--lens", "Tokina AT-X 11-20mm F2.8 PRO DX", "--profiles", ws.Dir));
         Assert.Equal(VersionInfo.Copyright, SecondLine("--lenses", "--profiles", ws.Dir));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--against", flat, "-o", png));
         // and on a refusal, which prints no report at all
         string cube = ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(16, 16, 3, (x, y, p) => 100));
-        Assert.Equal(VersionInfo.Copyright, SecondLine(cube, "--smooth", ws.PathTo("s2.fit")));
+        Assert.Equal(VersionInfo.Copyright, SecondLine(cube, "--synthetic", ws.PathTo("s2.fit"), "--profiles", ws.Dir));
         Assert.Equal(VersionInfo.Copyright, SecondLine("--help"));
         Assert.Equal(VersionInfo.Copyright, SecondLine(ws.PathTo("nu-exista.fit")));
     }

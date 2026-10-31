@@ -40,13 +40,22 @@ public sealed record ThirdPartyComponent(
 
 /// <summary>
 /// The components written by others, as "Despre" lists them (R-015): NLog's BSD-3-Clause licence
-/// asks for its notice in the materials that go with the program, and THIRD-PARTY-NOTICES.md,
-/// which holds the whole text and why the licence is compatible with the GPLv3, does not travel
-/// with the suite folder. A new package needs an entry here and a section there;
-/// ThirdPartyTests binds the two to the project files (ADR 0013).
+/// asks for its notice in the materials that go with the program. The whole texts, those of
+/// every component the suite folder ships, are in THIRD-PARTY-NOTICES.md, which the launcher
+/// publishes beside the executables as THIRD-PARTY-NOTICES.txt (R-017). A new package needs an
+/// entry here and a section there; ThirdPartyTests binds the two to the project files (ADR 0013,
+/// ADR 0014).
 /// </summary>
 public static class ThirdParty
 {
+    /// <summary>The name of the file beside the program that holds each licence's whole text (R-017); the launcher's project publishes it under this name.</summary>
+    public const string NoticesFile = "THIRD-PARTY-NOTICES.txt";
+
+    /// <summary>The line "Despre" shows above the list, saying where the whole texts are, in the language of the moment it is read.</summary>
+    public static string Lead => T(
+        $"Each licence's whole text is in {NoticesFile}, beside the program.",
+        $"Textul intreg al fiecarei licente e in {NoticesFile}, langa program.");
+
     /// <summary>The components, worded in the language of the moment they are read.</summary>
     public static IReadOnlyList<ThirdPartyComponent> Components =>
     [

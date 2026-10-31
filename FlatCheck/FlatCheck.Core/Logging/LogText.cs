@@ -259,30 +259,6 @@ namespace FlatCheck
              + " source " + Int(r.SourceW) + "x" + Int(r.SourceH) + " shrink=" + Int(r.Shrink) + " view " + Int(r.W) + "x" + Int(r.H)
              + " full " + Int(r.FullW) + "x" + Int(r.FullH) + " channels=" + Int(r.ChannelCount);
 
-        /// <summary>What a smoothing removed, and the structure before and after.</summary>
-        /// <param name="r">The result.</param>
-        /// <returns>The text.</returns>
-        internal static string Smooth(SmoothResult r)
-            => "scalePx=" + Num(r.ScalePx) + " tilePx=" + Int(r.TilePx) + " sigmaTiles=" + Num(r.SigmaTiles)
-             + " isCfa=" + Yes(r.IsCfa) + " cfaSpread=" + Num(r.CfaSpread) + " source " + Int(r.SourceW) + "x" + Int(r.SourceH)
-             + " positions=" + List(r.Positions?.Select(p => "tiles " + Int(p.Tiles) + " rejected " + Int(p.Rejected)
-                                                          + " rms " + Num(p.TileRms) + " fitFailed " + Int(p.FitFailed)))
-             + " removed p1=" + Num(r.RemovedP1Pct) + "% p99=" + Num(r.RemovedP99Pct) + "% ptp=" + Num(r.RemovedPtpPct)
-             + "% maxTile=" + Num(r.RemovedMaxTilePct) + "% spot=" + Num(r.RemovedSpotPct) + "% at (" + Int(r.RemovedSpotX) + ", "
-             + Int(r.RemovedSpotY) + ") flagged=" + Yes(r.RemovedFlagged)
-             + " texture in=" + Num(r.InputTexturePct) + "% out=" + Num(r.OutputTexturePct) + "%"
-             + " before {" + (r.Before != null ? Structure(r.Before) : "none") + "} after {" + (r.After != null ? Structure(r.After) : "none") + "}";
-
-        /// <summary>The scale advisor's trials and its proposal.</summary>
-        /// <param name="a">The advice.</param>
-        /// <returns>The text.</returns>
-        internal static string Advice(SmoothScaleAdvice a)
-            => "kind=" + a.Kind + " inputTexturePct=" + Num(a.InputTexturePct) + " scalePx=" + Num(a.ScalePx)
-             + " trials=" + List(a.Trials?.Select(t => Num(t.ScalePx) + " px: texture " + Num(t.TextureAfterPct)
-                                                     + "% azimuthalDelta " + Num(t.AzimuthalDelta) + " tiltDelta " + Num(t.TiltDelta)
-                                                     + " cornerDelta " + Num(t.CornerDelta) + " gone=" + Yes(t.TextureGone)
-                                                     + " lost=" + Yes(t.StructureLost)));
-
         /// <summary>A synthetic flat's request as completed, with where each value came
         /// from.</summary>
         /// <param name="q">The request.</param>

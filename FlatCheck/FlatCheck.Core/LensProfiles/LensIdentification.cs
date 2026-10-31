@@ -90,6 +90,20 @@ namespace FlatCheck
         /// </summary>
         internal bool CandidatesByRangeOnly;
 
+        /// <summary>
+        /// The lens the person chose among <see cref="Candidates"/> (the window's picker on a
+        /// list found by range alone, R-121): the only one compared, while the candidates stay
+        /// whole. Null when nothing was chosen, or when the chosen key matched no candidate.
+        /// </summary>
+        internal LensChoice ChosenLens;
+
+        /// <summary>
+        /// True when there is a lens to choose (R-121): the candidates came by range alone and
+        /// there is more than one, so the file cannot say which is on the camera. The window's
+        /// picker and the report's prompt both hang on this.
+        /// </summary>
+        internal bool OffersLensChoice => CandidatesByRangeOnly && Candidates.Count > 1;
+
         internal bool HasRawLensId => Raw?.LensId != null;
 
         /// <summary>

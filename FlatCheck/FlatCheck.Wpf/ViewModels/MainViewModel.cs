@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - the session folder and the seven tabs.
+// MainViewModel.cs - the session folder and the six tabs.
 //
 // Two decisions about behaviour deserve an explanation:
 //
@@ -30,8 +30,8 @@
 // NEW FOLDER = CANCELLATION. When another folder is chosen while something runs, the old work is
 // cancelled and the tabs empty, instead of leaving results from the previous folder beside the
 // new ones. The cancellation is caught between frames, so it answers in under a second. The
-// folder button itself is locked during the opening chain and while the Smoothing or the
-// Synthetic tab is busy (CanChooseFolder, R-117), so this applies to the other tabs' runs.
+// folder button itself is locked during the opening chain and while the Synthetic tab is
+// busy (CanChooseFolder, R-117), so this applies to the other tabs' runs.
 
 using System;
 using System.Collections.Generic;
@@ -70,7 +70,7 @@ namespace FlatCheck.Wpf
         /// <summary>
         /// The two questions about the machine - where Siril is, and whether it runs - are given
         /// from outside so the tests do not depend on what is installed on the computer running
-        /// them. Null means the real answer. The third is the smoothing tab's overwrite question:
+        /// them. Null means the real answer. The third is the Synthetic tab's overwrite question:
         /// by default a MessageBox, in the tests an answer given beforehand.
         /// </summary>
         /// <param name="locate">Finds Siril on this machine; null for
@@ -108,19 +108,12 @@ namespace FlatCheck.Wpf
             Light = new LightTabViewModel();
             Exposure = new ExposureTabViewModel();
             HistEq = new HistEqTabViewModel();
-            Smooth = new SmoothTabViewModel(confirm ?? AskOnScreen);
             Synthetic = new SyntheticTabViewModel(confirm ?? AskOnScreen, catalog, loadInfo);
             // The Split tab runs the Siril script like the card's button, so it gets the same two
             // questions about the machine, plus the run factory (in the tests, a fake Siril),
             // the clock and the temp root (in the tests, the test's folder).
             Split = new SplitTabViewModel(_locate, _sirilGuiRunning, runScript, catalog, loadInfo, clock, splitTempRootFor);
             Preprocess = new PreprocessViewModel();
-
-            // The only link between two tabs: the smoothed flat Netezire writes appears in the
-            // Histogram tab's list, beside the master. Wired here, so neither of them knows the
-            // other; FileWritten ignores by itself a path that is not the current session's, so
-            // a change of folder has nothing to unwire.
-            Smooth.Saved += HistEq.FileWritten;
 
             // The opening panel's rows (R-120, ADR 0079): what runs by itself on a folder, in
             // the order the user sees it end. The prefill runs beside the chain, not after it.
@@ -130,9 +123,8 @@ namespace FlatCheck.Wpf
             _prefillStep = new OpeningStep("The lens list for the Synthetic tab", "Lista de obiective pentru tabul Sintetic", Synthetic);
             OpeningSteps = new[] { _structureStep, _lightStep, _prefillStep };
 
-            // The folder button follows the two tabs whose main runs take longer than a folder
-            // change (R-117, ADR 0077): their busy state is part of CanChooseFolder.
-            Smooth.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(TabViewModel.IsIdle)) Raise(nameof(CanChooseFolder)); };
+            // The folder button follows the tab whose main run takes longer than a folder
+            // change (R-117, ADR 0077): its busy state is part of CanChooseFolder.
             Synthetic.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(TabViewModel.IsIdle)) Raise(nameof(CanChooseFolder)); };
         }
 
@@ -158,7 +150,6 @@ namespace FlatCheck.Wpf
         public LightTabViewModel Light { get; }
         public ExposureTabViewModel Exposure { get; }
         public HistEqTabViewModel HistEq { get; }
-        public SmoothTabViewModel Smooth { get; }
         public SyntheticTabViewModel Synthetic { get; }
         public SplitTabViewModel Split { get; }
 
@@ -180,7 +171,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// The problem that stops this folder from starting, if there is one. When it is set, the
-        /// tabs are not shown at all: there is no point seeing seven empty panels when what has to
+        /// tabs are not shown at all: there is no point seeing six empty panels when what has to
         /// be done is to run a script in Siril.
         /// </summary>
         public string ProblemTitle { get => _problemTitle; private set => Set(ref _problemTitle, value); }
@@ -202,13 +193,13 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// Whether the folder button is live: not during the opening chain, and not while the
-        /// Smoothing or the Synthetic tab is busy, the two tabs whose main runs are long enough
-        /// for a folder change to land on the new folder's tabs (measured 2026-10-30 on a 24 MP
-        /// master: 6.4-6.7 s and about 8 s; R-117, ADR 0077). The lock is per tab, so their
-        /// shorter runs (the proposal, the stand-alone comparison) lock it too. The other tabs'
-        /// runs take a few seconds and leave the button alone.
+        /// Synthetic tab is busy, the tab whose main run is long enough for a folder change to
+        /// land on the new folder's tabs (measured 2026-10-30 on a 24 MP master: about 8 s;
+        /// R-117, ADR 0077). The lock is per tab, so its shorter run (the stand-alone
+        /// comparison) locks it too. The other tabs' runs take a few seconds and leave the
+        /// button alone.
         /// </summary>
-        public bool CanChooseFolder => !_running && Smooth.IsIdle && Synthetic.IsIdle;
+        public bool CanChooseFolder => !_running && Synthetic.IsIdle;
 
         /// <summary>The version and the copyright, the same as what the console writes on its
         /// first two lines.</summary>
@@ -265,7 +256,8 @@ namespace FlatCheck.Wpf
                 // Structure run and the Exposure tab start on them.
                 SessionSettings settings = SessionSettings.Read(session.SettingsPath);
                 Log.Info("session " + folder + ": settings " + (File.Exists(session.SettingsPath) ? "read from " : "absent, defaults; would be ")
-                         + session.SettingsPath + " noFilters=" + LogText.Yes(settings.NoFilters) + " skyFlat=" + LogText.Yes(settings.SkyFlat));
+                         + session.SettingsPath + " noFilters=" + LogText.Yes(settings.NoFilters) + " skyFlat=" + LogText.Yes(settings.SkyFlat)
+                         + " lens=" + LogText.Str(settings.Lens));
 
                 // The tabs that wait for a choice are prepared at once: their lists are read from
                 // the folder, not from a computation, so they have no reason to wait. Every run a
@@ -275,9 +267,8 @@ namespace FlatCheck.Wpf
                 // A list too, also without a computation: the 24 MP master is not loaded twice
                 // on opening - Structure is already reading it, below.
                 HistEq.Attach(session, ct, _gate);
-                // The smoothing does not compute on opening either: it writes a file, and a file
-                // is not produced because a folder was opened. It waits for a click.
-                Smooth.Attach(session, ct, _gate);
+                // The synthetic flat does not compute on opening either: it writes a file, and a
+                // file is not produced because a folder was opened. It waits for a click.
                 Synthetic.Attach(session, ct, _gate);
                 // The prefill is on its way from Attach: its row follows ITS task, captured now -
                 // read later, the property would be the next folder's - so it reads done the
@@ -300,7 +291,7 @@ namespace FlatCheck.Wpf
                 // Check() looked only at what exists; listing the folders can still fail (a
                 // folder the user may not list, a broken junction). The window fires this task
                 // without awaiting it, so the exception would reach no handler: it goes to the
-                // log whole and to the user as a card, not as seven empty tabs (R-110).
+                // log whole and to the user as a card, not as six empty tabs (R-110).
                 if (!ReferenceEquals(_session, session))
                 {
                     Log.Debug(e, "session " + folder + ": the opening failed after another folder was opened; nothing is shown");
@@ -449,7 +440,6 @@ namespace FlatCheck.Wpf
             Light.Reset();
             Exposure.Reset();
             HistEq.Reset();
-            Smooth.Reset();
             Synthetic.Reset();
             Split.Reset();
         }

@@ -169,7 +169,9 @@ namespace FlatCheck
                 w.WriteLine($"    {row.Source,-7} {row.Lens}  [{row.Where}]");
                 w.WriteLine(T($"        profile {row.Profile,-23}: {row.Depth}   difference {row.Diff} = {row.Error} [{VerdictWords.Of(row.Verdict)}]",
                               $"        profil {row.Profile,-24}: {row.Depth}   diferenta {row.Diff} = {row.Error} [{VerdictWords.Of(row.Verdict)}]")
-                          + (row.IsNearest ? T("  <- the nearest, gives the verdict", "  <- cel mai apropiat, da verdictul") : ""));
+                          + (!row.IsNearest ? ""
+                             : o.Shot?.ChosenLens != null ? T("  <- the lens you chose, gives the verdict", "  <- obiectivul ales de tine, da verdictul")
+                             : T("  <- the nearest, gives the verdict", "  <- cel mai apropiat, da verdictul")));
                 if (row.IsWarning) w.WriteLine("        " + row.Note);
             }
             Indent(ComparisonSummary(c), w);
@@ -326,19 +328,70 @@ namespace FlatCheck
         /// <returns>Two or three lines joined by '\n'.</returns>
         internal static string ComparisonSummary(VignettingComparison c)
         {
+            // With a lens chosen (R-121) the list is one row by the person's hand, not by the
+            // databases: the verdict is "the lens you chose's", the chosen note says what was
+            // left out, and the single-profile sentence, which would blame a missing second
+            // database, is not printed.
+            bool chosen = c.Shot?.ChosenLens != null;
             string who = $"{c.Nearest.Profile.Lens.SourceLabel} {c.Nearest.Profile.Lens.Title}";
+            string whose = chosen
+                ? T($"the profile of the lens you chose ({who})", $"al profilului obiectivului ales de tine ({who})")
+                : T($"the nearest profile's ({who})", $"al celui mai apropiat profil ({who})");
             string verdict = T(
-                $"the comparison's verdict: {VerdictWords.Of(c.Verdict)} - the nearest profile's ({who}), "
+                $"the comparison's verdict: {VerdictWords.Of(c.Verdict)} - {whose}, "
                 + $"{c.Nearest.DiffStops:+0.00;-0.00} stops = {c.Nearest.ErrorPct:F1} % error in the corner of a light calibrated with the master",
-                $"verdictul comparatiei: {VerdictWords.Of(c.Verdict)} - al celui mai apropiat profil ({who}), "
+                $"verdictul comparatiei: {VerdictWords.Of(c.Verdict)} - {whose}, "
                 + $"{c.Nearest.DiffStops:+0.00;-0.00} stopuri = {c.Nearest.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul");
             string spread = c.Profiles.Count > 1
                 ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner; a master that matches one of them is not wrong",
                     $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; un master care coincide cu unul din ele nu e gresit")
+                : chosen ? ""
                 : T("\na single profile: without a second database there is no telling how uncertain the model is (usually ~0.2 stops)",
                     "\nun singur profil: fara a doua baza nu se stie cat de incert e modelul (de obicei ~0.2 stopuri)");
-            return verdict + spread + RangeOnlyNote(c.Shot);
+            return verdict + spread + (chosen ? ChosenLensNote(c.Shot) : RangeOnlyNote(c.Shot));
         }
+
+        /// <summary>
+        /// When the person chose the lens among the candidates found by range alone (R-121):
+        /// which lens was compared, why there was a choice to make, and which lenses of the
+        /// range were left out. Printed in place of <see cref="RangeOnlyNote"/>.
+        /// </summary>
+        /// <param name="shot">The shot's identity, with <see cref="ShotIdentity.ChosenLens"/>
+        /// set; null, or none chosen, gives "".</param>
+        /// <returns>The note, starting with '\n'; "" without a chosen lens.</returns>
+        internal static string ChosenLensNote(ShotIdentity shot)
+        {
+            if (shot?.ChosenLens == null) return "";
+            LensChoice chosen = shot.ChosenLens;
+            string others = string.Join(", ", shot.Candidates.Where(c => c.Key != chosen.Key).Select(c => $"{c.SourceLabel} {c.Title}"));
+            string leftOut = others.Length == 0 ? ""
+                : shot.CandidatesByRangeOnly
+                ? T($" The other lenses of that range were left out: {others}.", $" Celelalte obiective cu aceasta gama au fost lasate deoparte: {others}.")
+                : T($" The other candidates were left out: {others}.", $" Celelalte candidate au fost lasate deoparte: {others}.");
+            // Why there was a choice: on a list by range alone the file could not tell the lens;
+            // on any other list (a caller narrowing an ID-found list by key) that sentence
+            // would be false, so only the choice and what it left out are said.
+            string why = shot.CandidatesByRangeOnly
+                ? T($": all that is known is {shot.RawLensLabel}, a manual lens or one unknown to the databases, so the lens could not be told from the file.",
+                    $": se stie doar {shot.RawLensLabel}, obiectiv manual sau necunoscut bazelor, deci obiectivul nu se putea afla din fisier.")
+                : ".";
+            return T($"\ncompared with the lens you chose, {chosen.SourceLabel} {chosen.Title}" + why + leftOut,
+                     $"\ncomparat cu obiectivul ales de tine, {chosen.SourceLabel} {chosen.Title}" + why + leftOut);
+        }
+
+        /// <summary>
+        /// The window's line above its lens picker (R-121), on a list found by range alone with
+        /// more than one lens: why there is a choice to make and what it does.
+        /// </summary>
+        /// <param name="shot">The shot's identity; null, or a list not by range, gives "".</param>
+        /// <returns>The paragraph, in the interface language; "" when there is nothing to choose.</returns>
+        internal static string LensChoicePrompt(ShotIdentity shot)
+            => shot != null && shot.OffersLensChoice
+                ? T($"All that is known is {shot.RawLensLabel}: a manual lens or one unknown to the databases, so the lenses in the list are every lens of your "
+                    + "camera's mount with that range. Choose yours and the verdict is its profile's; without a choice the nearest profile decides.",
+                    $"Se stie doar {shot.RawLensLabel}: obiectiv manual sau necunoscut bazelor, deci obiectivele din lista sunt toate obiectivele "
+                    + "monturii camerei tale cu aceasta gama. Alege-l pe al tau si verdictul e al profilului lui; fara alegere decide cel mai apropiat profil.")
+                : "";
 
         /// <summary>
         /// When the lenses were found only by their range (a manual lens, no usable ID): the list
@@ -639,8 +692,8 @@ namespace FlatCheck
             => LocalSpotValue(r.LocalSpotPct, r.LocalSpotX, r.LocalSpotY);
 
         /// <summary>
-        /// The same wording for a spot measured on another raster - the smoothing mode reads it
-        /// from the removed component, not from the structure's residual.
+        /// The wording of a spot given by its figures; the overload above reads them from the
+        /// result.
         /// </summary>
         /// <param name="pct">The spot's depth, percent, signed.</param>
         /// <param name="x">Its column, analysis raster pixels.</param>
@@ -659,7 +712,7 @@ namespace FlatCheck
         {
             // What rounds to zero IS SHOWN as zero: .NET keeps the sign of a negative zero and
             // "-0.00001" came out "-+0.00" (the format's positive section, with the negative
-            // zero's minus in front). Measured on the smoothing mode's golden.
+            // zero's minus in front). Measured on a golden of the smoothing mode of the time.
             double shown = Math.Abs(pct) < 0.005 ? 0.0 : pct;
             return $"{shown:+0.00;-0.00} %{SignWord(shown)}";
         }
@@ -667,8 +720,7 @@ namespace FlatCheck
         /// <summary>
         /// A test's label, keyed by the name of the figure in <see cref="StructureResult"/>,
         /// like <see cref="TestNote"/>. It is what WriteBody prints in front of the figure; the
-        /// smoothing report reuses it in its "inainte / dupa" table, so that the two reports name
-        /// the tests the same way.
+        /// against and split reports reuse it, so that no report names a test differently.
         /// </summary>
         /// <param name="metric">One of <see cref="TestKeys"/>.</param>
         /// <returns>The label; null for an unknown key.</returns>

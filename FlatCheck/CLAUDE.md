@@ -2,10 +2,9 @@
 
 Quantitative diagnostic for astrophotography flat frames, for a photographic lens on a DSLR
 (the author's Samyang 135 f/2, Nikkor 35 DX and Tokina 11-20 on a Nikon D3300, Siril workflow).
-Six modes: structure (is the master radially symmetric, and does its vignetting match the
+Five modes: structure (is the master radially symmetric, and does its vignetting match the
 lens's published profile), `--light` (does the flat correct a real light), `--expo` (is a raw flat exposed right),
-`--histeq` (Siril's histogram display, a picture, no verdict), `--smooth` (writes a second
-master with the diffuser texture removed), `--synthetic` / `--lenses` / `--against` (writes a
+`--histeq` (Siril's histogram display, a picture, no verdict), `--synthetic` / `--lenses` / `--against` (writes a
 radial flat from the lens's Adobe or lensfun profile and compares). Two applications, a console
 (`flatcheck.exe`) and a WPF window, over one core library; neither computes a number itself.
 It is not an image processor and it never decides what a shape on a map is.
@@ -129,12 +128,10 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. FlatCheck adds:
 
 - `Metrics.RadialModel` / `RingFit`: `docs/design/radial-model-even-term.md` (five designs
   rejected; rings drawn by the model, not the flat).
-- `SmoothAnalyzer`: `docs/design/smooth-validation.md` (two designs failed on real masters; the
-  clip floor is load-bearing).
 - Anything in `LensProfiles/`: `docs/design/lens-profiles.md` (two coordinate conventions,
   quoted from their sources; the calibration crop is part of a lens's identity).
 - The Siril session rules of the window: `docs/design/two-applications.md` (two places for the
-  master; the smoothed master is never the master).
+  master; the synthetic master is never the master).
 - Any threshold or verdict wording: `docs/design/thresholds.md`.
 - A "bug" in `known-issues.md` is probably deliberate; read it first.
 

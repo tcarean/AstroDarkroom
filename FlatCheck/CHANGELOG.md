@@ -8,6 +8,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The Structure tab offers `My lens` when the raw gives only a focal range (a manual lens, such as
+  the Samyang 135 f/2 on a Nikon, whose "non-CPU lens" ID no profile carries) and more than one
+  lens of the camera's mount has that range (R-121, ADR 0081): a picker with every lens of the
+  range and a first entry meaning no choice. A pick redoes the comparison with that lens alone,
+  without reloading the master - its row, its verdict, the saved report naming the lens chosen and
+  those left out - and is remembered in the folder's `flatcheck.json` as `lens`.
 - The Structure tab's card `VIGNETTING against the lens profile` opens with the box `I didn't use
   any filters on my lens`, ticked by default (R-118, ADR 0078). Unticked, the run is the plain
   `flatcheck master`: the verdict is the five tests' alone, `Test result.txt` is the plain report,
@@ -204,6 +210,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Removed
 
+- The `--smooth` mode and the window's Smoothing tab (ADR 0080): the smoothed master, the
+  `--scale` option with its `auto` proposal, the `-after` map, the `SMOOTHED` row of the Histogram
+  tab and the `pp_flat_stacked_smoothed.fit` it listed. `--smooth` and `--scale` are unknown
+  options now, exit 1; the window has six tabs and its folder button is locked by the Synthetic
+  tab alone (R-117). Removing a documented flag is a breaking change by SemVer; the version bump
+  is the owner's.
 - The `--ratio` mode and the window's Ratio tab (R-020 and R-082 dropped, ADR 0067): the
   attribution by 180-degree rotation needed two masters from two rotated sittings, an input the
   workflow never produced, so the tab stayed empty and the flag unused. `--ratio` is now an

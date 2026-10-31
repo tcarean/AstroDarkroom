@@ -1,7 +1,7 @@
 # 0036. The window runs its chains one after another, writes files only on a button, and never replaces the session's master
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the Netezire tab superseded by 0080
 
 ## Context
 

@@ -78,10 +78,10 @@ public class WindowLanguageTests
     // Words that are Romanian and never English, as whole words.
     static readonly Regex Romanian = new(
         @"\b(si|sau|nu|din|cu|pe|de|la|fara|mai|este|stopuri|cadre|cadrul|harta|obiectiv|obiectivul|"
-        + @"netezit|netezire|sintetic|fisier|fisierul|folderul|alege|masterul|eroare|lipseste|scara|"
+        + @"sintetic|fisier|fisierul|folderul|alege|masterul|eroare|lipseste|scara|"
         + @"colt|centru|reziduu|vignetare|expunere|structura|teste|atentie|verdictul|praf|ales|niciunul|"
         + @"despre|inchide|opreste|potrivit|ruleaza|parti|tabul|cerut|preumplut|nimic|pentru|aparat|"
-        + @"canal|canalul|mediana|scrie|salvat|salveaza|netezeste|propune|ramas|scos|inainte|dupa)\b",
+        + @"canal|canalul|mediana|scrie|salvat|salveaza|propune|ramas|scos|inainte|dupa)\b",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>
@@ -97,7 +97,6 @@ public class WindowLanguageTests
         {
             using var f = new SessionFixture()
                 .WithFlatMaster()
-                .WithSmoothedMaster()
                 .WithLightSeries(6)
                 .WithRawFlats("DSC_0101.NEF", "DSC_0102.NEF");
             using var broken = new SessionFixture().WithProcess();
@@ -116,7 +115,6 @@ public class WindowLanguageTests
                 vm.Structure.HowToRead.IsExpanded = true;
                 vm.Exposure.HistogramGuide.IsExpanded = true;
                 vm.HistEq.Guide.IsExpanded = true;
-                vm.Smooth.Guide.IsExpanded = true;
                 vm.Synthetic.Guide.IsExpanded = true;
 
                 foreach (var (name, view) in new (string, FrameworkElement)[]
@@ -127,7 +125,6 @@ public class WindowLanguageTests
                     ("en-end-to-end", new LightView { DataContext = vm.Light }),
                     ("en-exposure", new ExposureView { DataContext = vm.Exposure }),
                     ("en-histogram", new HistEqView { DataContext = vm.HistEq }),
-                    ("en-smoothing", new SmoothView { DataContext = vm.Smooth }),
                     ("en-synthetic", new SyntheticView { DataContext = vm.Synthetic }),
                     ("en-split", new SplitView { DataContext = vm.Split }),
                 })
@@ -139,7 +136,7 @@ public class WindowLanguageTests
 
             Assert.True(vm.Structure.HasResult && vm.Light.HasResult);
             Assert.True(problem.HasProblem);
-            foreach (string tab in new[] { "Structure", "Exposure", "Smoothing", "Synthetic" })
+            foreach (string tab in new[] { "Structure", "Exposure", "Synthetic" })
                 Assert.Contains(tab, texts);
             var romanian = texts.Where(t => Romanian.IsMatch(WithoutPaths(t))).Distinct().ToList();
             Assert.True(romanian.Count == 0, "Romanian on an English screen:\n" + string.Join("\n---\n", romanian));
@@ -152,8 +149,8 @@ public class WindowLanguageTests
 
     /// <summary>
     /// The states the test above leaves empty, filled, in English: an exposure result with its
-    /// histograms and guide, an equalised master with its guide and views, a smoothing result
-    /// with its scale proposal, a split table, an error card, and the About window.
+    /// histograms and guide, an equalised master with its guide and views, a split table, an
+    /// error card, and the About window.
     /// </summary>
     [Fact]
     public void R101_EnglishResultsGuidesAndCardsShowNoRomanianWord()
@@ -180,20 +177,8 @@ public class WindowLanguageTests
                 exposure.HistogramGuide.IsExpanded = true;
 
                 var histeq = new HistEqTabViewModel();
-                histeq.Populate(HistEqAnalyzer.Analyze(mosaic, CfaPattern.Parse("RGGB", "BAYERPAT")), HistEqKind.Smoothed);
+                histeq.Populate(HistEqAnalyzer.Analyze(mosaic, CfaPattern.Parse("RGGB", "BAYERPAT")), HistEqKind.Master);
                 histeq.Guide.IsExpanded = true;
-
-                var smooth = new SmoothTabViewModel(_ => true);
-                smooth.Attach(f.Session, CancellationToken.None);
-                smooth.Populate(SmoothAnalyzer.Analyze(
-                    FlatCheck.Tests.TestImages.From(256, 256, FlatCheck.Tests.FitsTestData.Radial(256, 256)), 12));
-                smooth.PopulateAdvice(SmoothScaleAdvisor.Decide(0.69, SmoothScaleAdvisor.Ladder.Select(px => new SmoothScaleTrial
-                {
-                    ScalePx = px,
-                    TextureAfterPct = 0.02,
-                    TextureGone = true,
-                    RemovedPtpPct = 3,
-                }).ToList()));
 
                 var splitVm = new SplitTabViewModel();
                 splitVm.Populate(split);
@@ -202,7 +187,6 @@ public class WindowLanguageTests
                 {
                     ("en-exposure-result", new ExposureView { DataContext = exposure }),
                     ("en-histogram-result", new HistEqView { DataContext = histeq }),
-                    ("en-smoothing-result", new SmoothView { DataContext = smooth }),
                     ("en-split-result", new SplitView { DataContext = splitVm }),
                     ("en-about", new AboutWindow()),
                 })
@@ -211,7 +195,7 @@ public class WindowLanguageTests
                     Collect(view, texts);
                 }
 
-                Assert.True(exposure.HasResult && histeq.HasResult && smooth.HasResult && splitVm.HasResult);
+                Assert.True(exposure.HasResult && histeq.HasResult && splitVm.HasResult);
             });
 
             Assert.Contains("Mosaic", texts);
@@ -225,7 +209,7 @@ public class WindowLanguageTests
     }
 
     /// <summary>
-    /// Files with the former Romanian names are not the smoothed or the synthetic master any
+    /// Files with the former Romanian names are not the synthetic master any
     /// more (R-101, the owner's decision): beside the master only the English names count.
     /// </summary>
     [Fact]
@@ -233,12 +217,9 @@ public class WindowLanguageTests
     {
         using var f = new SessionFixture().WithFlatMaster();
         string dir = Path.GetDirectoryName(f.Session.FlatMasterPath)!;
-        File.WriteAllText(Path.Combine(dir, "pp_flat_stacked_netezit.fit"), "x");
         File.WriteAllText(Path.Combine(dir, "pp_flat_stacked_sintetic.fit"), "x");
 
-        Assert.Equal(Path.Combine(dir, "pp_flat_stacked_smoothed.fit"), SirilSession.SmoothedPathBeside(f.Session.FlatMasterPath));
         Assert.Equal(Path.Combine(dir, "pp_flat_stacked_synthetic.fit"), SirilSession.SyntheticPathBeside(f.Session.FlatMasterPath));
-        Assert.DoesNotContain(f.Session.HistEqCandidates(), c => c.Path.Contains("_netezit"));
     }
 
     /// <summary>The same screen in Romanian still speaks Romanian: the check above is not

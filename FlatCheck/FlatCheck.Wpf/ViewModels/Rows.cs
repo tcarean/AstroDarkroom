@@ -23,7 +23,6 @@
 // is not.
 
 using System.Windows.Media;
-using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
@@ -101,6 +100,25 @@ namespace FlatCheck.Wpf
         public bool HasNote => !string.IsNullOrEmpty(Note);
     }
 
+    /// <summary>
+    /// An entry of the Structure tab's lens picker (R-121): a candidate lens by its catalog key,
+    /// or, with a null key, the first entry meaning no choice - the nearest profile decides.
+    /// </summary>
+    public sealed class LensOption
+    {
+        /// <summary>The lens's catalog key (LensChoice.Key), the value remembered in the
+        /// session's settings; null for the no-choice entry.</summary>
+        public string Key { get; init; }
+        /// <summary>What the picker shows: "lensfun Samyang 135mm f/2.0 ED UMC [Nikon F AI, ...]",
+        /// or the no-choice words.</summary>
+        public string Label { get; init; }
+
+        /// <summary>The label, so the picker's closed box shows it wherever a template does not
+        /// reach (the theme's selection box).</summary>
+        /// <returns>The label.</returns>
+        public override string ToString() => Label;
+    }
+
     /// <summary>A shape from the map guide: its name and what it meant on real masters. The
     /// other guides use it for their rows too.</summary>
     public sealed class GuideRow
@@ -168,9 +186,9 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
-    /// A row of the histogram tab's list: the master from masters/ or process/, the smoothed flat
-    /// beside it, or a frame from flats/. Formatted here, not through a converter, so a test can
-    /// assert "MASTER", "NETEZIT" and "process/" directly.
+    /// A row of the histogram tab's list: the master from masters/ or process/, or a frame from
+    /// flats/. Formatted here, not through a converter, so a test can assert "MASTER" and
+    /// "process/" directly.
     /// </summary>
     public sealed class HistEqFileRow
     {
@@ -179,8 +197,8 @@ namespace FlatCheck.Wpf
         /// <summary>The file's name only.</summary>
         public string Name { get; init; }
 
-        /// <summary>The real folder: "process/" or "masters/" for the master and the smoothed
-        /// one, "flats/" for a frame.</summary>
+        /// <summary>The real folder: "process/" or "masters/" for the master, "flats/" for a
+        /// frame.</summary>
         public string Where { get; init; }
 
         /// <summary>The row's kind. Internal - an internal type cannot leave through a public
@@ -189,27 +207,10 @@ namespace FlatCheck.Wpf
 
         public bool IsMaster => Kind == HistEqKind.Master;
 
-        /// <summary>The smoothed flat written by the Netezire tab. It is NOT a master: IsMaster
-        /// stays false.</summary>
-        public bool IsSmoothed => Kind == HistEqKind.Smoothed;
-
-        /// <summary>The chip in the list: "MASTER" on the master, "NETEZIT" on the smoothed
-        /// flat, empty on a frame.</summary>
-        public string Tag => Kind switch
-        {
-            HistEqKind.Master => "MASTER",
-            HistEqKind.Smoothed => T("SMOOTHED", "NETEZIT"),
-            _ => "",
-        };
+        /// <summary>The chip in the list: "MASTER" on the master, empty on a frame.</summary>
+        public string Tag => Kind == HistEqKind.Master ? "MASTER" : "";
 
         public bool HasTag => Tag.Length > 0;
-
-        /// <summary>
-        /// The last row of the master + smoothed group: under it sits the line that separates it
-        /// from the frames. It is set when the list is built, which sees the whole group; that is
-        /// why the list is rebuilt whole when a file appears, not a row inserted.
-        /// </summary>
-        public bool ClosesGroup { get; init; }
     }
 
     /// <summary>A frame of the end-to-end series table.</summary>

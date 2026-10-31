@@ -22,8 +22,8 @@
 // one and +10% on the other. On a fixed scale two sessions compare at a glance, and saturation
 // has a meaning - "out of the band".
 //
-// WHY IT IS A CLASS OF ITS OWN, used by four tabs. Structure, Netezire, Sintetic and Split
-// all show a residual on the residual scale, so all want the same switch. Copies of the list of
+// WHY IT IS A CLASS OF ITS OWN, used by three tabs. Structure, Sintetic and Split all
+// show a residual on the residual scale, so all want the same switch. Copies of the list of
 // caps would have diverged at the first adjustment, and the list is NOT the window's anyway: it
 // comes from PngWriter.FixedCapsPct, which takes it from Th.Resid*.
 //
@@ -86,12 +86,9 @@ namespace FlatCheck.Wpf
     {
         MapScaleOption _selected;
 
-        /// <summary>Makes "auto" and the core's fixed caps, and ticks the default.</summary>
-        /// <param name="defaultCapPct">
-        /// The cap ticked at the start; by default the core's. The smoothing tab gives
-        /// Th.ResidPerfect: what is removed is small, and at +-10 % its map would be white.
-        /// </param>
-        public MapScaleViewModel(double? defaultCapPct = null)
+        /// <summary>Makes "auto" and the core's fixed caps, and ticks the core's default
+        /// cap.</summary>
+        public MapScaleViewModel()
         {
             // "auto" first, then the caps in ascending order, as on the residual scale.
             var options = new List<MapScaleOption> { new MapScaleOption(this, null) };
@@ -100,8 +97,7 @@ namespace FlatCheck.Wpf
 
             // By default the core's cap, not "auto": the band a normal flat is expected to live
             // in, so two sessions compare without pressing anything.
-            double cap = defaultCapPct ?? PngWriter.DefaultCapPct;
-            _selected = options.First(o => o.CapPct == cap);
+            _selected = options.First(o => o.CapPct == PngWriter.DefaultCapPct);
             _selected.IsSelected = true;
         }
 

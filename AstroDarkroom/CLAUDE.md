@@ -46,13 +46,16 @@ a seventh analysis tool and never changes a component.
   `App` starts and closes the diagnostic log.
 - `tests/AstroDarkroom.Tests/` - the requirement tests (`R###_...`), the suite checks
   (`SuiteTests`: the catalogue against `kit.json`, the components' frameworks and packages and
-  the launcher's against theirs, the icon copies against the components' files, R-010),
+  the launcher's against theirs, the icon copies against the components' files, R-010, the
+  notices file against the windows' packages, R-017),
   repo rules (`RepoInvariantTests`, `LicenseHeaderTests`, `VersionTests`), the log's tests
   (`LoggingTests`; `LogCapture` configures the log at Trace for the whole assembly). It
   targets `net8.0-windows`, the window's framework (ADR 0012). `tests/testdata/` holds only the
   manifest.
-- `THIRD-PARTY-NOTICES.md` - the licence of each component written by others that the launcher
-  ships, whole, and why it is compatible with the GPLv3 (ADR 0013).
+- `THIRD-PARTY-NOTICES.md` - the licence of each component written by others that a program of
+  the suite folder ships, whole, with its copyright notices and why it is compatible with the
+  GPLv3; the launcher publishes it as `THIRD-PARTY-NOTICES.txt`, beside the .NET runtime's two
+  texts (R-017, ADRs 0013 and 0014). `SuiteTests` binds its sections to the windows' lock files.
 - `Icon/` - the launcher's icon, drawn per size by `make_icon.py`, and a copy of each
   component's icon, shown beside its row and kept equal to the component's file by
   `SuiteTests` (ADR 0011); never drawn here.
@@ -82,7 +85,9 @@ varies a kit rule names it.
   `release.publish` in `kit.json` (one entry whose `project` starts with `../`, its window
   project) and every component is in the catalogue, under the exe name its project file
   gives; `SuiteTests` checks it, and refuses a console entry (ADR 0002). A new app in the
-  suite is one entry, one catalogue line, its icon copied into `Icon/` and that test run.
+  suite is one entry, one catalogue line, its icon copied into `Icon/`, its title on the
+  `Programs:` lines of `THIRD-PARTY-NOTICES.md` for the packages it ships (a section for any
+  new one, R-017), and that test run.
 - **Two interface languages, English everywhere else** (varies the kit's rule "Languages",
   ADRs 0003, 0006 and 0009). Every text the user sees in the windows is a pair
   `T("english", "romana")` where it is composed, the Romanian without diacritics, never a single

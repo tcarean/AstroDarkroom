@@ -18,8 +18,8 @@
 // PngWriter.cs - our own PNG encoder (no dependencies) for the residual map.
 //
 // The map is diverging: blue (below) -> white -> red (above), with the white FIXED at 1.0.
-// Fixing it at 1.0 is valid for every caller of today - the structure residual is img/model ~ 1,
-// the smoothing's removed component is a ratio around 1, and the --light map is 1 + radial/a. If you add a
+// Fixing it at 1.0 is valid for every caller of today - the structure and --against residuals
+// are img/model ~ 1, and the --light map is 1 + radial/a. If you add a
 // caller whose data are NOT centred on 1, the map will lie.
 //
 // The ENDS of the range come from outside, as MapRange, and are of two kinds:

@@ -106,56 +106,6 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The grid of medians over tiles of <paramref name="k"/> px, WITH the partial tiles at
-        /// the end, and the real centre of each tile in pixels.
-        ///
-        /// Deliberately NOT the grid of <see cref="BlockMean"/>, which drops the partial blocks:
-        /// the smoothing has to reach the last pixel, and if the last 58 rows of a 4016 sensor
-        /// have no tile, their value is extrapolated. And the centre of the partial tile is
-        /// returned as it is, not as "one more step": an 8 px tile treated as a whole one
-        /// (fitted one tile away from its neighbour, when it is half that) put a 0.8 % error band
-        /// along the right edge of the synthetic with a known truth. With the real centres the
-        /// band disappeared (0.19 % over the whole frame).
-        ///
-        /// The median, not the mean: a tile with a hot pixel or a small dust shadow keeps its
-        /// typical value.
-        /// </summary>
-        /// <param name="a">The raster to tile.</param>
-        /// <param name="k">The tile side in pixels.</param>
-        /// <returns>
-        /// The tile medians (<c>ceil(H / k)</c> by <c>ceil(W / k)</c>), and the centre of each
-        /// tile row and tile column in pixels of <paramref name="a"/>.
-        /// </returns>
-        internal static (Img Tiles, double[] CentreY, double[] CentreX) TileMedians(Img a, int k)
-        {
-            int th = (a.H + k - 1) / k, tw = (a.W + k - 1) / k;
-            var t = new Img(th, tw);
-            var cy = new double[th];
-            var cx = new double[tw];
-            var buf = new double[k * k];
-            for (int i = 0; i < tw; i++)
-                cx[i] = (i * k + Math.Min(a.W, (i + 1) * k)) / 2.0;
-            for (int j = 0; j < th; j++)
-            {
-                int y0 = j * k, y1 = Math.Min(a.H, (j + 1) * k);
-                cy[j] = (y0 + y1) / 2.0;
-                for (int i = 0; i < tw; i++)
-                {
-                    int x0 = i * k, x1 = Math.Min(a.W, (i + 1) * k);
-                    int n = 0;
-                    for (int y = y0; y < y1; y++)
-                        for (int x = x0; x < x1; x++)
-                            buf[n++] = a.At(y, x);
-                    var vals = new double[n];
-                    Array.Copy(buf, vals, n);
-                    Array.Sort(vals);
-                    t.Set(j, i, Stats.OfSorted(vals, 50));
-                }
-            }
-            return (t, cy, cx);
-        }
-
-        /// <summary>
         /// The mean of the raster and its 180-degree rotation.
         ///
         /// It cancels the odd part EXACTLY - so any linear gradient - and leaves the even part

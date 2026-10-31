@@ -34,5 +34,30 @@
          build output and in whatever is published from it. The components publish the same
          text under the same name, so the suite's merge sees equal bytes, not a collision. -->
     <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The licences of everything others wrote that the suite folder ships, whole (R-017, ADR
+         0014): the repository's Markdown, beside the executables under the name "Despre" gives
+         (ThirdParty.NoticesFile), a .txt that Windows opens with a double click. No component
+         publishes a file of that name. -->
+    <None Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <!-- A self-contained publish carries the .NET runtime, so it carries the runtime's licence and
+       its third-party notices too, copied unchanged from the Microsoft.NETCore.App runtime pack
+       the publish resolved, under the names THIRD-PARTY-NOTICES.txt gives them (R-017, ADR
+       0014). The WindowsDesktop pack's LICENSE has the same words and the pack no notices file.
+       A pack without the two files stops the publish rather than ship the runtime without them. -->
+  <Target Name="PublishDotnetLicenceTexts" AfterTargets="ComputeResolvedFilesToPublishList"
+          DependsOnTargets="ResolveFrameworkReferences" Condition="'$(SelfContained)' == 'true'">
+    <ItemGroup>
+      <_NetCoreRuntimePack Include="@(ResolvedRuntimePack)" Condition="'%(ResolvedRuntimePack.FrameworkName)' == 'Microsoft.NETCore.App'" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_NetCoreRuntimePackDirectory>@(_NetCoreRuntimePack->'%(PackageDirectory)')</_NetCoreRuntimePackDirectory>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_NetCoreRuntimePackDirectory)\LICENSE.TXT') or !Exists('$(_NetCoreRuntimePackDirectory)\THIRD-PARTY-NOTICES.TXT')"
+           Text="The Microsoft.NETCore.App runtime pack ('$(_NetCoreRuntimePackDirectory)') has no LICENSE.TXT or THIRD-PARTY-NOTICES.TXT; the suite folder does not ship the runtime without them (R-017)." />
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(_NetCoreRuntimePackDirectory)\LICENSE.TXT" RelativePath="DOTNET-LICENSE.txt" CopyToPublishDirectory="PreserveNewest" />
+      <ResolvedFileToPublish Include="$(_NetCoreRuntimePackDirectory)\THIRD-PARTY-NOTICES.TXT" RelativePath="DOTNET-THIRD-PARTY-NOTICES.txt" CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
 </Project>

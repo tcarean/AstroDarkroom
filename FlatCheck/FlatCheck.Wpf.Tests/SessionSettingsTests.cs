@@ -118,6 +118,52 @@ public class SessionSettingsTests
         Assert.False(File.Exists(settings.FilePath + ".tmp"));   // the temporary file does not stay behind
     }
 
+    /// <summary>R-121: the chosen lens's key is the third thing the file holds; it round-trips,
+    /// and a write without a choice writes no `lens` key at all.</summary>
+    [Fact]
+    public void R121_TheChosenLensRoundTripsAndIsAbsentWhenNoneWasChosen()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var settings = SessionSettings.Read(f.Session.SettingsPath);
+        Assert.Null(settings.Lens);
+
+        settings.SkyFlat = true;
+        settings.Write();
+        Assert.DoesNotContain("lens", File.ReadAllText(settings.FilePath));
+
+        settings.Lens = "Lensfun|Samyang|Samyang 135mm f/2.0 ED UMC|Nikon F AI|full frame 1";
+        settings.Write();
+
+        string json = File.ReadAllText(settings.FilePath);
+        Assert.Contains("\"lens\":\"Lensfun|Samyang|Samyang 135mm f/2.0 ED UMC|Nikon F AI|full frame 1\"", json);
+        Assert.Contains("\"skyFlat\":true", json);
+        var again = SessionSettings.Read(f.Session.SettingsPath);
+        Assert.Equal(settings.Lens, again.Lens);
+        Assert.True(again.SkyFlat);
+
+        again.Lens = null;
+        again.Write();
+        Assert.DoesNotContain("lens", File.ReadAllText(settings.FilePath));
+        Assert.Null(SessionSettings.Read(f.Session.SettingsPath).Lens);
+    }
+
+    /// <summary>R-121: a `lens` key that is empty or of another type is no choice.</summary>
+    [Theory]
+    [InlineData("{\"lens\":\"\"}")]
+    [InlineData("{\"lens\":12}")]
+    [InlineData("{\"lens\":true}")]
+    [InlineData("{\"lens\":null}")]
+    public void R121_AnEmptyOrMistypedLensKeyIsNoChoice(string text)
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        File.WriteAllText(f.Session.SettingsPath, text);
+
+        var settings = SessionSettings.Read(f.Session.SettingsPath);
+
+        Assert.Null(settings.Lens);
+        Assert.True(settings.NoFilters);
+    }
+
     /// <summary>Settings without a file - a tab attached in a test, a tab before any folder -
     /// remember nothing and write nowhere.</summary>
     [Fact]

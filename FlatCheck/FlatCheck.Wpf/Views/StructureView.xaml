@@ -36,10 +36,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
          and the pill on the second; the note (the calibration format against the sensor) on the
          third, ONLY in the name column, on as many lines as it needs - stretched under the
          figures it looks like a continuation of them, and the user said it "arata dubios". The
-         row that gives the verdict is bold, like the residual in the tests table. Local, not in
-         Dark.xaml: its only consumer is this tab. -->
+         row that gives the verdict is marked three ways, so it is clear which one it is among
+         several (the owner asked, 2026-10-31): an accent bar on its left with a lighter
+         background, the words "gives the verdict" in the accent colour beside the lens's name,
+         and bold text, like the residual in the tests table. Local, not in Dark.xaml: its only
+         consumer is this tab. -->
     <DataTemplate x:Key="LensProfileRowTemplate">
-      <Grid Margin="0,0,0,12">
+      <Border Margin="0,0,0,10" CornerRadius="3" Padding="8,6">
+        <Border.Style>
+          <Style TargetType="Border">
+            <Setter Property="BorderThickness" Value="3,0,0,0" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsNearest}" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBr}" />
+                <Setter Property="Background" Value="{StaticResource PanelBg2}" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Border.Style>
+      <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
@@ -59,6 +75,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </Border>
           <TextBlock Style="{StaticResource Faint}" DockPanel.Dock="Right" Margin="10,0,0,0"
                      Text="{Binding Where}" VerticalAlignment="Center" />
+          <TextBlock DockPanel.Dock="Right" Margin="10,0,0,0" Foreground="{StaticResource AccentBr}"
+                     Text="{l:T En='gives the verdict', Ro='da verdictul'}" VerticalAlignment="Center"
+                     Visibility="{Binding IsNearest, Converter={StaticResource BoolToVis}}" />
           <TextBlock Text="{Binding Lens}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
         </DockPanel>
 
@@ -95,6 +114,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </Style>
         </Grid.Style>
       </Grid>
+      </Border>
     </DataTemplate>
   </UserControl.Resources>
 
@@ -170,6 +190,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="{l:T En='I didn\'t use any filters on my lens', Ro='Nu am folosit niciun filtru pe obiectiv'}"
                            TextWrapping="Wrap" />
               </CheckBox>
+              <!-- The lens picker (R-121, ADR 0081), only when the raw gave a range and nothing
+                   else, so the rows are every lens of the mount with that range: the core's line
+                   says why, then "My lens:" with the no-choice entry first and every candidate.
+                   A pick redoes the comparison on the kept result with that lens alone, so it is
+                   locked while the tab runs; the choice is the folder's, in flatcheck.json. -->
+              <StackPanel Margin="0,0,0,14"
+                          Visibility="{Binding OffersLensChoice, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding LensChoicePrompt}" />
+                <Grid Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{l:T En='My lens:', Ro='Obiectivul meu:'}" FontWeight="SemiBold"
+                             VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <ComboBox Grid.Column="1" ItemsSource="{Binding LensOptions}"
+                            SelectedItem="{Binding SelectedLens, Mode=TwoWay}"
+                            DisplayMemberPath="Label" VerticalAlignment="Center"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+                </Grid>
+              </StackPanel>
               <!-- Without Adobe's profiles (R-113, ADR 0073), above whatever the card holds: that
                    they were not found, in the window's red for a message; then what to install,
                    the link to Adobe's page (MainWindow opens it in the browser) and the folders
