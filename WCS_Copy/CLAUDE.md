@@ -77,8 +77,11 @@ varies a kit rule names it.
   `WcsCopy.Run` returns lines, the applications print or show them (ADR 0001).
 - **A card is copied verbatim.** `dest.SetCard(key, source.GetCard(key)!)` copies the raw
   80-byte card, never a reparsed or reformatted value: the source's formatting and inline
-  comment survive (R-010). The header is read and written as ASCII, so a byte above 0x7F,
-  which a FITS header may not hold, comes out as `?`. Do not "clean up" this into a reparse.
+  comment survive (R-010). The header is read and written as Latin-1, byte for byte, so a
+  byte above 0x7F, which a FITS header may not hold, comes out as it went in, in every card;
+  the one card the tool composes, HISTORY, is made ASCII by `AsciiText` (ADR 0010). Do not
+  "clean up" this into a reparse, and do not ask `string.Normalize` for the ASCII: it is a
+  no-op under the console's `InvariantGlobalization`.
 - **`Main` is a shim**: it opens the diagnostic log, calls `CopyWcsCli.Run(args, stdout,
   stderr)` once and closes the log, each log call guarded so the log never stops the tool (ADR
   0009); new console behaviour goes in `CopyWcsCli` or `Options`, testable in process, without

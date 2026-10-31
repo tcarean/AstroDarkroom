@@ -52,7 +52,7 @@ internal static class FitsTestData
         using var ms = new MemoryStream();
         foreach (var c in cards)
         {
-            ms.Write(Encoding.ASCII.GetBytes(Pad(c)));
+            ms.Write(Encoding.Latin1.GetBytes(Pad(c)));
         }
 
         return ms.ToArray();
@@ -63,10 +63,10 @@ internal static class FitsTestData
         using var ms = new MemoryStream();
         foreach (var c in cards)
         {
-            ms.Write(Encoding.ASCII.GetBytes(Pad(c)));
+            ms.Write(Encoding.Latin1.GetBytes(Pad(c)));
         }
 
-        ms.Write(Encoding.ASCII.GetBytes(Pad("END")));
+        ms.Write(Encoding.Latin1.GetBytes(Pad("END")));
 
         var remainder = (int)(ms.Position % BlockSize);
         if (remainder != 0)

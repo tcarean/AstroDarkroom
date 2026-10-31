@@ -20,7 +20,7 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 | `Kind` | `Copied`, `Previewed` or `Refused` | decides the exit code: 0, 0, 1 |
 | `Error` | the one line of a refusal, else null | stderr |
 | `Warnings` | the `WARNING:` lines, in order; forced mismatch, missing `CTYPE1` | stdout, before anything else |
-| `Cards` | the raw 80-character cards selected, in the source's order | the preview, indented and trimmed |
+| `Cards` | the raw 80-character cards selected, in the source's order | the preview, indented, trailing spaces trimmed (a 0xA0 stays); a byte above 0x7F shows as the character of its Latin-1 code, which the log alone escapes (ADR 0010) |
 | `Target` | the file written, else null | nothing; the window reads the destination's facts again after a copy |
 | `Notes` | the preview's heading, or the count copied and the flip reminder | stdout, last |
 

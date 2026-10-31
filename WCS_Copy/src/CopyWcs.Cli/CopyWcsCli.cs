@@ -118,7 +118,7 @@ internal static class CopyWcsCli
 
                 foreach (var card in outcome.Cards)
                 {
-                    stdout.WriteLine("  " + card.TrimEnd());
+                    stdout.WriteLine("  " + card.TrimEnd(' '));
                 }
 
                 return 0;

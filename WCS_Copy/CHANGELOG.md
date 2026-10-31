@@ -30,6 +30,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The header is read and written byte for byte: a byte above 0x7F, which the FITS standard
+  forbids but a file may hold, now comes out as it went in, in the copied cards and in the
+  destination's own cards, where it was written as `?` before. The `HISTORY` card stays ASCII:
+  a letter with a diacritic in the source's name is written as its base letter (`Nebula.fit`
+  for a name with a-breve), a character with no ASCII form as `?`. The log names such a byte
+  by its code, `\xC5`, instead of `?` (ADR 0010).
 - The texts are English by default; the Romanian wordings are unchanged under `--lang ro`,
   the usage gaining its `--lang` line.
 - The `HISTORY` card written into the destination reads `WCS copied from <file>` in both

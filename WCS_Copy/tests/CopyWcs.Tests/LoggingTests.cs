@@ -545,11 +545,12 @@ public class LoggingTests
 
     /// <summary>
     /// A card is written as the file holds it: a HISTORY card built from a source named with a
-    /// letter outside ASCII is logged with the question mark the file gets for it, not with the
-    /// letter (the review of 2026-10-30).
+    /// letter outside ASCII is logged with the base letter the card gets for it (R-011, ADR
+    /// 0010), not with the letter (the review of 2026-10-30 first pinned the <c>?</c> of the
+    /// ASCII writer here).
     /// </summary>
     [Fact]
-    public void R042_ACardIsLoggedAsTheFileHoldsIt_ALetterOutsideAsciiAsAQuestionMark()
+    public void R042_ACardIsLoggedAsTheFileHoldsIt_TheHistoryCardWithTheBaseLetter()
     {
         using var ws = new TempWorkspace();
         byte[] data = FitsTestData.DeterministicData(400);
@@ -559,13 +560,37 @@ public class LoggingTests
         using (var capture = LogCapture.Start())
         {
             Assert.Equal(0, Cli(src, dst).Code);
-            Assert.Contains("appended HISTORY WCS copied from Nebula-?.fit", capture.Messages);
+            Assert.Contains("appended HISTORY WCS copied from Nebula-A.fit", capture.Messages);
         }
 
-        // The file's own bytes, not the reader's decoding, which turns any byte above 0x7F into a
-        // question mark itself: Latin-1 keeps each byte as it is. The whole 80-byte card, so
-        // nothing may follow the name.
-        Assert.Contains("HISTORY WCS copied from Nebula-?.fit".PadRight(80), Encoding.Latin1.GetString(File.ReadAllBytes(dst)), StringComparison.Ordinal);
+        // The file's own bytes, as Latin-1 keeps each one: the whole 80-byte card, so nothing may
+        // follow the name.
+        Assert.Contains("HISTORY WCS copied from Nebula-A.fit".PadRight(80), Encoding.Latin1.GetString(File.ReadAllBytes(dst)), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A byte above 0x7F in a card, which the header keeps as it is (R-010), is logged as its
+    /// hex code like a control character, so the log stays ASCII and says which byte the file
+    /// holds (ADR 0010).
+    /// </summary>
+    [Fact]
+    public void R042_AByteAboveAsciiInACardIsLoggedAsItsHexCode()
+    {
+        using var ws = new TempWorkspace();
+        List<string> cards = FitsTestData.PlateSolvedCards();
+        int obj = cards.FindIndex(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        cards[obj] = FitsTestData.Card("OBJECT", "'M42'", "Orion #");
+        byte[] source = FitsTestData.MinimalFitsFile(cards, FitsTestData.DeterministicData(400));
+        // The marker's byte becomes 0xC5 (A-ring in Latin-1), put into the file's bytes so this file stays ASCII.
+        source[Encoding.Latin1.GetString(source).IndexOf("Orion #", StringComparison.Ordinal) + "Orion ".Length] = 0xC5;
+        string src = ws.WriteFile("source.fit", source);
+        string dst = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards(), FitsTestData.DeterministicData(400)));
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, dst, "--dry-run").Code);
+
+        Assert.Contains(@"card OBJECT: OBJECT  = 'M42' / Orion \xC5 | dest: OBJECT  = 'M42'", capture.Messages);
+        Assert.DoesNotContain(capture.Text, c => c > 0x7F);
     }
 
     [Fact]

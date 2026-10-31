@@ -239,6 +239,78 @@ public class FitsHeaderTests
         Assert.Equal("HISTORY short note".PadRight(80), header.GetCard("HISTORY"));
     }
 
+    /// <summary>
+    /// Only the space pads a keyword field or a value: the byte 0xA0, which Latin-1 reads as a
+    /// no-break space that <c>string.Trim()</c> would strip, is part of the keyword, so a card
+    /// whose field is <c>OBJECT</c> plus two of them is not the <c>OBJECT</c> card, one whose
+    /// field is <c>END</c> plus one does not end the header, and a value ending in one is not an
+    /// integer (the review of 2026-10-31; R-010's untouched card).
+    /// </summary>
+    [Fact]
+    public void R010_ReadFrom_TheByte0xA0InAKeywordOrAValue_IsNotWhiteSpace()
+    {
+        var block = FitsTestData.HeaderBlock(new[]
+        {
+            FitsTestData.Card("SIMPLE", "T"),
+            FitsTestData.Pad("OBJECT##= 'M43'"),
+            FitsTestData.Pad("NAXIS1  = 100#"),
+            // Last, so that a reader taking it for END (the old Trim()) still reads the two
+            // cards above and each assertion fails on its own (the second review of 2026-10-31).
+            FitsTestData.Pad("END#    = 'not the end'"),
+        });
+        for (var i = 0; i < block.Length; i++)
+        {
+            if (block[i] == (byte)'#')
+            {
+                block[i] = 0xA0;
+            }
+        }
+
+        var header = FitsHeader.ReadFrom(new MemoryStream(block));
+
+        Assert.Equal(new[] { "SIMPLE", "OBJECT" + (char)0xA0 + (char)0xA0, "NAXIS1", "END" + (char)0xA0 }, header.Keywords);
+        Assert.False(header.Contains("OBJECT"));
+        Assert.Equal(-1, header.GetInt("NAXIS1"));
+    }
+
+    /// <summary>
+    /// The HISTORY card is ASCII: each letter with a diacritic is written as its base letter, the
+    /// seven of R-011 by their code points so this file stays ASCII (ADR 0010).
+    /// </summary>
+    [Fact]
+    public void R011_AddHistory_ALetterWithADiacritic_IsWrittenAsItsBaseLetter()
+    {
+        var header = ReadHeader();
+        // a-breve, s-comma, t-comma, i-circumflex, a-circumflex, e-acute, A-ring.
+        var text = "WCS copied from " + (char)0x0103 + (char)0x0219 + (char)0x021B + (char)0x00EE + (char)0x00E2 + (char)0x00E9 + (char)0x00C5 + ".fit";
+
+        header.AddHistory(text);
+
+        Assert.Equal("HISTORY WCS copied from astiaeA.fit".PadRight(80), header.GetCard("HISTORY"));
+    }
+
+    /// <summary>A character with no ASCII form (here an emoji, one character of two UTF-16 units) is one <c>?</c> in the card (ADR 0010).</summary>
+    [Fact]
+    public void R011_AddHistory_ACharacterWithNoAsciiForm_IsOneQuestionMark()
+    {
+        var header = ReadHeader();
+
+        header.AddHistory("WCS copied from " + char.ConvertFromUtf32(0x1F30C) + ".fit");
+
+        Assert.Equal("HISTORY WCS copied from ?.fit".PadRight(80), header.GetCard("HISTORY"));
+    }
+
+    /// <summary>The cut at 72 counts the ASCII characters written, after the transliteration (ADR 0010).</summary>
+    [Fact]
+    public void R011_AddHistory_TheCutAt72_CountsTheCharactersWritten()
+    {
+        var header = ReadHeader();
+
+        header.AddHistory(new string((char)0x0103, 100));
+
+        Assert.Equal("HISTORY " + new string('a', 72), header.GetCard("HISTORY"));
+    }
+
     [Fact]
     public void Keywords_SkipsBlankCommentaryCards()
     {

@@ -71,7 +71,8 @@ proposed), the About window (`ShowAbout`, the Help command's handler), and
   destination's again after a copy, so an in-place copy shows up as `already plate-solved`.
 - **Show the outcome.** `Show(outcome)` keeps the `WcsCopyOutcome` and raises every bound
   property: `Error`, `Warnings`, `Heading` (the outcome's notes when the kind is `Previewed`:
-  the core's one heading line), `Cards` (each card with its padding trimmed, as the console
+  the core's one heading line), `Cards` (each card with its trailing spaces trimmed, a 0xA0
+  kept and a byte above 0x7F shown as the character of its Latin-1 code, ADR 0010, as the console
   prints it without the indent) and `Notes` (the notes when the kind is `Copied`: the count
   and the reminder). The `Has...` flags are derived, never stored.
 
