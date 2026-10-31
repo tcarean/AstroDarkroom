@@ -44,7 +44,7 @@ public partial class App : Application
         string[] all = Environment.GetCommandLineArgs();
         string[] args = all.Length > 1 ? all[1..] : [];
 
-        // The log never stops the window: without it the session opens all the same.
+        // A log that cannot be set up never stops the window: the session opens all the same.
         try
         {
             LogSetup.Apply("DarksCheck.Wpf", args);

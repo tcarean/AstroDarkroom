@@ -45,8 +45,9 @@ internal static class Program
     /// <returns>The exit code: 0 on a clean run or for --help, 1 otherwise.</returns>
     private static int Main(string[] args)
     {
-        // The log never stops the tool: a folder that cannot be probed, a broken NLog on this
-        // machine, and the run goes on without a log, stdout and stderr untouched (R-001, R-101).
+        // A log that cannot be set up never stops the tool: when no folder can be probed or NLog
+        // refuses its configuration, the run goes on without a log, stdout and stderr untouched
+        // (R-001, R-101). NLog's own assembly is no such case: like the core's, it must be there.
         try
         {
             LogSetup.Apply("darkscheck", args);

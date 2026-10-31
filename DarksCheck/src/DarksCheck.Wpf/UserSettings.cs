@@ -17,7 +17,6 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using DarksCheck.Core;
 using NLog;
 
 namespace DarksCheck.Wpf;
@@ -92,7 +91,6 @@ public static class UserSettings
             }
 
             File.WriteAllText(FilePath, JsonSerializer.Serialize(settings, Json));
-            Log.Debug(LogText.Wrote(FilePath));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
@@ -102,7 +100,10 @@ public static class UserSettings
         }
     }
 
-    /// <summary>The diagnostic log: the settings file written, and one that could not be read or written (R-101).</summary>
+    /// <summary>
+    /// The diagnostic log: a settings file that could not be read or written (R-101). A save that
+    /// works writes nothing, since the boxes save on every keystroke.
+    /// </summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     // The folder path is written as itself, not as \u escapes, so the file reads as the README

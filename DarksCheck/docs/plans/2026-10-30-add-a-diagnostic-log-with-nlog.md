@@ -487,7 +487,8 @@ of `Logging/`, `LogCapture`, `LogFiles` and the tests rather than FlatCheck's di
   refused `--out` is its run's failure, one Error line `run failed: mode=darks` with the
   exception, not a Warn `refused:` line. The window's failed run is `run N failed after ...; the
   problem card shows the message` at Error, as planned; the label copied names the label; a
-  settings file read without trouble writes nothing, a write writes `wrote` at Debug.
+  settings file read or written without trouble writes nothing (a `wrote` line per save was
+  dropped after the first review: the boxes save on every keystroke).
 - **The console names its mode** in `Program` (`help`, `darks`, `inventory`); `Options` is
   unchanged. `GoldenOutputTests.Scrub` and `GoldenDir` became internal so
   `R101_TheConsoleAddsNothingToStdoutOrStderr` compares stdout with the golden file itself.

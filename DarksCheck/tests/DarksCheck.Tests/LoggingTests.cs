@@ -842,8 +842,9 @@ public partial class LoggingTests
     /// The log's own words are English whatever the language (R-101): no log call composes its
     /// message through the T(english, romanian) pair, whichever logger it goes through and however
     /// many lines the call spans. And every logger is declared one way, a <c>Logger</c> field or
-    /// property taken from <c>LogManager.GetLogger</c> with <c>using NLog</c>, so the first check
-    /// sees every call.
+    /// property named <c>Log</c> taken from <c>LogManager.GetLogger</c> with <c>using NLog</c>, so
+    /// the first check, which scans the calls of names ending in <c>log</c>, sees every call (the
+    /// first review of the branch: any name passed before).
     /// </summary>
     [Fact]
     public void NoLogLineGoesThroughTheTranslation()
@@ -923,7 +924,7 @@ public partial class LoggingTests
     [GeneratedRegex(@"\bT\(")]
     private static partial Regex Translation();
 
-    [GeneratedRegex(@"static readonly Logger \w+ = LogManager\.GetLogger\(|static Logger \w+ => LogManager\.GetLogger\(")]
+    [GeneratedRegex(@"static readonly Logger Log = LogManager\.GetLogger\(|static Logger Log => LogManager\.GetLogger\(")]
     private static partial Regex Declaration();
 
     [GeneratedRegex(@"\bNLog\b|\bLogger\b|\bLogManager\b")]

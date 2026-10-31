@@ -512,8 +512,8 @@ so a file ends one line past that) a file is left and the next one is started
 ones deleted, so the folder holds about 5 MiB per program at most: an analysis of a night like
 Smida (20 darks, 30 biases and 32 lights, against a library of 30 darks) writes about 200 KB, so
 the log keeps some twenty-five of them. Two windows open at the same time write into the same
-file, each line marked with its process. Nothing is written into the session folder or the
-library.
+file, each line marked with its process. The analysis writes nothing into the session folder or
+the library; keep the program itself outside them, since its log is written beside it.
 
 **What is in it.** One line per event, numbers with a point: at the start the version, the command
 line, the Windows and .NET versions and the folders; each folder opened, with its frame counts;
