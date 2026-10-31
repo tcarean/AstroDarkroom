@@ -29,7 +29,7 @@ using System.Windows.Media.Imaging;
 
 namespace FlatCheck.Wpf.Tests;
 
-[Collection("fereastra")]
+[Collection("window")]
 public class IconTests
 {
     readonly StaFixture _sta;

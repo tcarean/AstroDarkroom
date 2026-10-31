@@ -28,7 +28,7 @@ namespace FlatCheck.Wpf.Tests;
 /// core. The assembly runs in Romanian (<see cref="RomanianByDefault"/>, serial), so each test
 /// here puts the default back when it ends.
 /// </summary>
-[Collection("fereastra")]
+[Collection("window")]
 public class WindowLanguageTests
 {
     readonly StaFixture _sta;

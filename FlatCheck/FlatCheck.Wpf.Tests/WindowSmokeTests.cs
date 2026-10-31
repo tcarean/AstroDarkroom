@@ -46,7 +46,7 @@ using System.Windows.Navigation;
 
 namespace FlatCheck.Wpf.Tests;
 
-[Collection("fereastra")]
+[Collection("window")]
 public class WindowSmokeTests
 {
     readonly StaFixture _sta;
@@ -124,7 +124,7 @@ public class WindowSmokeTests
         {
             using var errors = new BindingErrors();
             Render(new MainWindow(), 1360, 820);
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
     /// <summary>
@@ -140,10 +140,10 @@ public class WindowSmokeTests
             var about = new AboutWindow();
 
             // The CONTENT is rendered, not the window: a Window not shown renders
-            // transparent (that is how "fereastra" below comes out too), and the root panel
+            // transparent (that is how "window" below comes out too), and the root panel
             // inherits the DataContext and goes through the same bindings.
-            Render((FrameworkElement)about.Content, 600, 720, "despre");
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Render((FrameworkElement)about.Content, 600, 720, "about");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             // the icon is the large frame, not the 16 px one scaled
             var logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);
@@ -173,28 +173,28 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
 
-            Render(new MainWindow { DataContext = vm }, 1360, 820, "fereastra");
-            Render(new StructureView { DataContext = vm.Structure }, name: "tab-structura");
+            Render(new MainWindow { DataContext = vm }, 1360, 820, "window");
+            Render(new StructureView { DataContext = vm.Structure }, name: "tab-structure");
             Render(new LightView { DataContext = vm.Light }, name: "tab-end-to-end");
-            Render(new ExposureView { DataContext = vm.Exposure }, name: "tab-expunere");
-            Render(new HistEqView { DataContext = vm.HistEq }, name: "tab-histeq-gol");
+            Render(new ExposureView { DataContext = vm.Exposure }, name: "tab-exposure");
+            Render(new HistEqView { DataContext = vm.HistEq }, name: "tab-histeq-empty");
             // Netezire starts empty, with the guide open and the button enabled - the state
             // the user sees; its result is rendered in the dedicated test.
-            Render(new SmoothView { DataContext = vm.Smooth }, name: "tab-netezire-gol");
+            Render(new SmoothView { DataContext = vm.Smooth }, name: "tab-smoothing-empty");
             await vm.Synthetic.Pending;
-            Render(new SyntheticView { DataContext = vm.Synthetic }, name: "tab-sintetic-gol");
+            Render(new SyntheticView { DataContext = vm.Synthetic }, name: "tab-synthetic-empty");
             // Split starts empty, with the frames counted, the chips and the script - the
             // state at opening; its result is rendered in the dedicated test.
-            Render(new SplitView { DataContext = vm.Split }, name: "tab-split-gol");
+            Render(new SplitView { DataContext = vm.Split }, name: "tab-split-empty");
 
             // The map guide, expanded. Collapsed, its bindings inside the card are never
             // evaluated - and a binding that fails only when shown is exactly what this
             // suite exists to catch.
             vm.Structure.MapGuide.IsExpanded = true;
             vm.Structure.HowToRead.IsExpanded = true;
-            Render(new StructureView { DataContext = vm.Structure }, name: "tab-structura-ghid");
+            Render(new StructureView { DataContext = vm.Structure }, name: "tab-structure-guide");
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         // and they really had something to render
@@ -229,7 +229,7 @@ public class WindowSmokeTests
             Assert.True(vm.HasResult);
             Assert.Equal(3, vm.Maps.Count);
             Render(new SplitView { DataContext = vm }, name: "tab-split");
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
     }
 
@@ -265,11 +265,11 @@ public class WindowSmokeTests
 
             var vm = new StructureTabViewModel();
             vm.Populate(compared);
-            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structura-profil");
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structure-profile");
             Assert.True(vm.HasProfileRows);
 
             vm.Populate(new StructureOutcome(r, null, null, null), gap);
-            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structura-fara-raw");
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structure-without-raw");
             Assert.False(vm.HasProfileRows);
             Assert.NotEmpty(vm.ProfileGap);
 
@@ -277,13 +277,13 @@ public class WindowSmokeTests
             // saying why nothing is compared, no row and no gap.
             vm.NoFilters = false;
             vm.Populate(new StructureOutcome(r, null, null, null));
-            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structura-filtru");
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structure-filter");
             Assert.False(vm.HasProfileRows);
             Assert.Empty(vm.ProfileGap);
             Assert.NotEmpty(vm.ProfileMaster);
             Assert.NotEmpty(vm.FilteredNote);
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
     }
 
@@ -315,10 +315,10 @@ public class WindowSmokeTests
             // The window's content, as the problem-screen render does: a Window itself draws
             // nothing into a bitmap.
             var window = new MainWindow { DataContext = vm };
-            Render((FrameworkElement)window.Content, 1360, 820, "deschidere");
+            Render((FrameworkElement)window.Content, 1360, 820, "opening");
             Assert.Equal(Visibility.Visible, ((FrameworkElement)window.FindName("Opening")).Visibility);
             Assert.Equal(Visibility.Collapsed, ((FrameworkElement)window.FindName("Tabs")).Visibility);
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         hold.Set();
@@ -372,7 +372,7 @@ public class WindowSmokeTests
             var vm = new StructureTabViewModel();
             vm.Populate(compared, null, sources);
             var view = new StructureView { DataContext = vm };
-            Render(view, h: 1800, name: "tab-structura-fara-adobe");
+            Render(view, h: 1800, name: "tab-structure-without-adobe");
             Assert.NotEmpty(vm.AdobeMissing);
             Assert.True(vm.HasProfileRows);
 
@@ -386,7 +386,7 @@ public class WindowSmokeTests
 
             // No profile at all: above the gap that says so.
             vm.Populate(noProfile, null, none);
-            Render(view, h: 1800, name: "tab-structura-fara-profile");
+            Render(view, h: 1800, name: "tab-structure-without-profiles");
             Assert.NotEmpty(vm.ProfileGap);
             red = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.AdobeMissing);
             TextBlock gap = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.ProfileGap);
@@ -400,7 +400,7 @@ public class WindowSmokeTests
             TextBlock install = Assert.Single(Descendants(view).OfType<TextBlock>(), t => t.Text == vm.AdobeInstall);
             Assert.Equal(Visibility.Collapsed, ((UIElement)VisualTreeHelper.GetParent(install)).Visibility);
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
     }
 
@@ -484,11 +484,11 @@ public class WindowSmokeTests
             var vm = new SmoothTabViewModel(_ => true);
             vm.Attach(f.Session, CancellationToken.None);
             vm.Populate(result);
-            Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-netezire");
+            Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-smoothing");
 
             vm.ShowAfterMap = true;
             vm.Guide.IsExpanded = false;
-            Render(new SmoothView { DataContext = vm }, name: "tab-netezire-dupa");
+            Render(new SmoothView { DataContext = vm }, name: "tab-smoothing-after");
 
             // the scale proposal, with the table of steps
             vm.PopulateAdvice(SmoothScaleAdvisor.Decide(0.69, SmoothScaleAdvisor.Ladder.Select(s => new SmoothScaleTrial
@@ -500,10 +500,10 @@ public class WindowSmokeTests
                 StructureLost = s > 500,
                 RemovedPtpPct = 3,
             }).ToList()));
-            Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-netezire-propunere");
+            Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-smoothing-proposal");
             Assert.Equal(SmoothAnalyzer.DefaultScalePx, vm.ProposedScalePx);
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         Assert.True(result.RemovedFlagged);
@@ -520,8 +520,8 @@ public class WindowSmokeTests
         _sta.Invoke(() =>
         {
             using var errors = new BindingErrors();
-            Render(new SmoothView { DataContext = refused }, name: "tab-netezire-refuz");
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Render(new SmoothView { DataContext = refused }, name: "tab-smoothing-refusal");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
     }
 
@@ -555,8 +555,8 @@ public class WindowSmokeTests
             vm.Populate(built, new SyntheticRequest { FocalMm = 20, FocalSource = "FOCALLEN", FStop = 2.8, FStopSource = "--fstop" });
             vm.PopulateCompare(against);
             vm.Guide.IsExpanded = true;
-            Render(new SyntheticView { DataContext = vm }, h: 1600, name: "tab-sintetic");
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Render(new SyntheticView { DataContext = vm }, h: 1600, name: "tab-synthetic");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
             Assert.True(vm.HasResult);
             Assert.True(vm.HasCompare);
             Assert.Equal(4, vm.Depth.Count);
@@ -587,10 +587,10 @@ public class WindowSmokeTests
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq");
 
             vm.Guide.IsExpanded = true;
-            Render(new HistEqView { DataContext = vm }, h: 1600, name: "tab-histeq-ghid");
+            Render(new HistEqView { DataContext = vm }, h: 1600, name: "tab-histeq-guide");
 
             vm.View.Options.First(o => o.Label == "G1").IsSelected = true;
-            Render(new HistEqView { DataContext = vm }, name: "tab-histeq-canal");
+            Render(new HistEqView { DataContext = vm }, name: "tab-histeq-channel");
 
             // the false colours: the chip on, the legend under the picture (R-104)
             vm.View.Rainbow = true;
@@ -614,7 +614,7 @@ public class WindowSmokeTests
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-mono-rainbow");
             vm.View.Rainbow = false;
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
             Assert.True(vm.HasResult);
             Assert.False(vm.View.IsVisible);
             Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
@@ -640,7 +640,7 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
             Render(new MainWindow { DataContext = vm }, 1360, 820);
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         Assert.True(vm.HasProblem);
@@ -675,14 +675,14 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
             // the content, not the window: a Window not shown renders transparent
-            Render((FrameworkElement)new MainWindow { DataContext = vm }.Content, 1360, 820, "problema-blocat");
+            Render((FrameworkElement)new MainWindow { DataContext = vm }.Content, 1360, 820, "problem-blocked");
 
             Directory.CreateDirectory(Path.Combine(f.Root, "lights"));
             File.WriteAllText(Path.Combine(f.Root, "lights", "a.NEF"), "x");
             vm.Preprocess.Refresh();
-            Render((FrameworkElement)new MainWindow { DataContext = vm }.Content, 1360, 820, "problema-ruleaza");
+            Render((FrameworkElement)new MainWindow { DataContext = vm }.Content, 1360, 820, "problem-running");
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         Assert.True(vm.Preprocess.CanRun);
@@ -715,12 +715,12 @@ public class WindowSmokeTests
                 return gate.Task;
             });
             var window = new SirilRunWindow(running, (_, _) => Task.FromResult(0));
-            Render((FrameworkElement)window.Content, 900, 600, "siril-ruleaza");
+            Render((FrameworkElement)window.Content, 900, 600, "siril-running");
             Assert.True(running.IsRunning);
 
             gate.SetResult(0);
             await run;
-            Render((FrameworkElement)window.Content, 900, 600, "siril-reusit");
+            Render((FrameworkElement)window.Content, 900, 600, "siril-succeeded");
             Assert.True(running.IsSuccess);
 
             var failed = new SirilRunViewModel(@"E:\sesiune", @"C:\scripturi\OSC_Preprocessing_WithoutDark.ssf",
@@ -732,10 +732,10 @@ public class WindowSmokeTests
                 return Task.FromResult(1);
             });
             var failedWindow = new SirilRunWindow(failed, (_, _) => Task.FromResult(1));
-            Render((FrameworkElement)failedWindow.Content, 900, 600, "siril-esuat");
+            Render((FrameworkElement)failedWindow.Content, 900, 600, "siril-failed");
             Assert.True(failed.IsFailure);
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
     /// <summary>
@@ -757,7 +757,7 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
             Render(new LightView { DataContext = vm.Light });
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         Assert.True(vm.Light.Refused);
@@ -785,12 +785,12 @@ public class WindowSmokeTests
             await vm.Pending;
 
             using var errors = new BindingErrors();
-            Render(new ExposureView { DataContext = vm }, name: "tab-expunere-rezultat");
+            Render(new ExposureView { DataContext = vm }, name: "tab-exposure-result");
 
             vm.HistogramGuide.IsExpanded = true;
-            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-expunere-ghid");
+            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-exposure-guide");
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         Assert.True(vm.HasResult);
@@ -819,12 +819,12 @@ public class WindowSmokeTests
             vm.Populate(r);
 
             using var errors = new BindingErrors();
-            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-expunere-comparatie");
+            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-exposure-comparison");
 
             vm.Source.Preview.IsSelected = true;
-            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-expunere-ecran");
+            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-exposure-screen");
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
             Assert.True(vm.Source.IsPreviewSelected);
             Assert.Equal(3, vm.Histograms.Count);
         });
@@ -849,8 +849,8 @@ public class WindowSmokeTests
             await vm.Pending;
 
             using var errors = new BindingErrors();
-            Render(new ExposureView { DataContext = vm }, name: "tab-expunere-mono");
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Render(new ExposureView { DataContext = vm }, name: "tab-exposure-mono");
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         Assert.Single(vm.Histograms);
@@ -877,7 +877,7 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
             Render(new ExposureView { DataContext = vm.Exposure });
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         Assert.False(vm.Exposure.HasResult);

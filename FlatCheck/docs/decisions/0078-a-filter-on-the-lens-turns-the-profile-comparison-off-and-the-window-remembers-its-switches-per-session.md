@@ -68,4 +68,4 @@ comparison's master depth is the structure result's own `VignetteStops`
 - The texts (`StructureReport.FilteredLensNote`, the label in `StructureView.xaml`) are in
   both languages, without diacritics; the console's report and the goldens are unchanged.
 - Guarded by R-118 and R-119: `StructureTabTests`, `MainViewModelTests`,
-  `SessionSettingsTests`, a render in `WindowSmokeTests` (`tab-structura-filtru`).
+  `SessionSettingsTests`, a render in `WindowSmokeTests` (`tab-structure-filter`).

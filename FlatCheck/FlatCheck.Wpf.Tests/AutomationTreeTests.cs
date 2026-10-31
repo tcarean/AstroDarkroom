@@ -29,7 +29,7 @@ using System.Windows.Media;
 
 namespace FlatCheck.Wpf.Tests;
 
-[Collection("fereastra")]
+[Collection("window")]
 public class AutomationTreeTests
 {
     readonly StaFixture _sta;

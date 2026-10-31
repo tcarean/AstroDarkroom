@@ -27,7 +27,7 @@ namespace FlatCheck.Wpf.Tests;
 /// results: they are there in both languages, quote the thresholds of Th rather than retyping
 /// them, and do not depend on what the run produced.
 /// </summary>
-[Collection("fereastra")]
+[Collection("window")]
 public class LightExplanationsTests
 {
     readonly StaFixture _sta;
