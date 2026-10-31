@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using AstroDarkroom.Core;
@@ -139,7 +141,9 @@ public partial class ThirdPartyTests
                      "Copyright (C) 2010, Jacek Gozdz (cuniek@kft.umcs.lublin.pl)",
                      "Neither the name of the author nor the names of its contributors",
                      "Copyright (c) 2005 Adobe Systems Incorporated",
-                     "https://github.com/LibRaw/LibRaw/tree/0.21.1"] },
+                     "https://github.com/LibRaw/LibRaw/tree/0.21.1",
+                     "https://github.com/LibRaw/LibRaw-cmake/tree/6e26c9e73677dc04f9eb236a97c6a4dc225ba7e8",
+                     "https://github.com/microsoft/vcpkg/tree/2e3b958ff00e01b26e82d139bb4765586f349f07/ports/libraw"] },
         { "libjpeg-turbo", [.. Bsd, "This software is based in part on the work of the Independent JPEG Group.",
                             "This software is copyright (C) 1991-2020, Thomas G. Lane, Guido Vollbeding.",
                             "(2) If only executable code is distributed, then the accompanying documentation must state that",
@@ -178,6 +182,18 @@ public partial class ThirdPartyTests
     }
 
     /// <summary>
+    /// Every section of the file is one whose licence text the theory above checks, and the
+    /// reverse: a section added for a new package, with only its Packages and Programs lines,
+    /// would satisfy SuiteTests and no test would ask for its licence (R-017).
+    /// </summary>
+    [Fact]
+    public void R017_EverySectionOfTheFileHasItsLicenceTextChecked()
+    {
+        IEnumerable<string> checkedHeadings = LicenceTexts.Select(row => (string)row[0]);
+        Assert.Equal(checkedHeadings.Order(StringComparer.Ordinal), Notices.Sections().Keys.Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>
     /// The LibRaw package ships four native libraries, each a project of its own under its own
     /// licence, so each has its own section, which names the file (R-017).
     /// </summary>
@@ -197,8 +213,8 @@ public partial class ThirdPartyTests
     /// <summary>
     /// The launcher's window publishes the notices file under the name the lead gives, like
     /// LICENSE, and a target of its own adds the runtime pack's two texts to the self-contained
-    /// publish under their suite names, with an error when they are missing. What the target
-    /// really copies is checked by publishing the suite (R-017; the window has no tests, ADR 0001).
+    /// publish under their suite names, with an error when they are missing (R-017; the window
+    /// has no tests, ADR 0001). What the publish would copy is the next test's.
     /// </summary>
     [Fact]
     public void R017_TheLaunchersPublishCarriesTheNoticesFileAndTheRuntimesTwoTexts()
@@ -217,6 +233,73 @@ public partial class ThirdPartyTests
         Assert.True(published.TryGetValue("DOTNET-THIRD-PARTY-NOTICES.txt", out string? runtimeNotices), "no DOTNET-THIRD-PARTY-NOTICES.txt in the publish");
         Assert.EndsWith("THIRD-PARTY-NOTICES.TXT", runtimeNotices, StringComparison.Ordinal);
         Assert.NotEmpty(target.Descendants("Error"));
+    }
+
+    /// <summary>
+    /// What the launcher's self-contained publish would copy, asked of MSBuild without publishing:
+    /// the window project's publish list for win-x64, as release.publish builds it, about a second
+    /// once the project is built (R-017). It holds the notices file under its suite name and the
+    /// runtime pack's two texts under theirs, each copied, the two from files of the
+    /// Microsoft.NETCore.App runtime pack that exist; a target that stopped running, or an item
+    /// no longer copied, which the project file's test above cannot see, turns it red.
+    /// </summary>
+    [Fact]
+    public async Task R017_ThePublishListHoldsTheNoticesFileAndTheRuntimesTwoTexts()
+    {
+        ProcessStartInfo start = new(Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet")
+        {
+            WorkingDirectory = TestData.FindRepoRoot(),
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+        };
+        string[] arguments =
+        [
+            "build", Path.Combine("src", "AstroDarkroom.Wpf", "AstroDarkroom.Wpf.csproj"), "-c", "Release", "--no-restore", "-nologo",
+            "-t:ComputeResolvedFilesToPublishList", "-p:RuntimeIdentifier=win-x64", "-p:SelfContained=true", "-getItem:ResolvedFileToPublish",
+        ];
+        foreach (string argument in arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
+
+        using Process process = Process.Start(start)!;
+        Task<string> output = process.StandardOutput.ReadToEndAsync();
+        Task<string> errors = process.StandardError.ReadToEndAsync();
+        using CancellationTokenSource timeout = new(TimeSpan.FromMinutes(3));
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            process.Kill(entireProcessTree: true);
+            throw;
+        }
+
+        string json = await output;
+        Assert.True(process.ExitCode == 0, $"MSBuild exited {process.ExitCode}:\n{json}\n{await errors}");
+        using JsonDocument list = JsonDocument.Parse(json);
+        Dictionary<string, (string Source, string Copy)> published = new(StringComparer.Ordinal);
+        foreach (JsonElement item in list.RootElement.GetProperty("Items").GetProperty("ResolvedFileToPublish").EnumerateArray())
+        {
+            string relative = item.TryGetProperty("RelativePath", out JsonElement r) ? r.GetString() ?? "" : "";
+            string copy = item.TryGetProperty("CopyToPublishDirectory", out JsonElement c) ? c.GetString() ?? "" : "";
+            published[relative] = (item.GetProperty("Identity").GetString() ?? "", copy);
+        }
+
+        string[] copied = ["PreserveNewest", "Always"];
+        Assert.True(published.TryGetValue(ThirdParty.NoticesFile, out (string Source, string Copy) notices), $"no {ThirdParty.NoticesFile} in the publish list");
+        Assert.EndsWith("THIRD-PARTY-NOTICES.md", notices.Source, StringComparison.Ordinal);
+        Assert.Contains(notices.Copy, copied);
+        foreach ((string name, string packFile) in new[] { ("DOTNET-LICENSE.txt", "LICENSE.TXT"), ("DOTNET-THIRD-PARTY-NOTICES.txt", "THIRD-PARTY-NOTICES.TXT") })
+        {
+            Assert.True(published.TryGetValue(name, out (string Source, string Copy) text), $"no {name} in the publish list");
+            Assert.Equal(packFile, Path.GetFileName(text.Source));
+            Assert.Contains("microsoft.netcore.app.runtime.win-x64", text.Source, StringComparison.OrdinalIgnoreCase);
+            Assert.True(File.Exists(text.Source), $"{name} comes from {text.Source}, which does not exist");
+            Assert.Contains(text.Copy, copied);
+        }
     }
 
     /// <summary>BSD-3-Clause's two conditions on copies, the start of its disclaimer and its last words.</summary>

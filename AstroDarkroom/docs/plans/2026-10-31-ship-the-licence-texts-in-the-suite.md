@@ -108,7 +108,8 @@ and AstroPhotoAnalyzer point "Despre" at the suite's file.
   downloaded like the others; the DCB/FBDD header of LibRaw 0.21.1, Chromium's `LICENSE` at
   `d522fb7` and SharpZipLib's `LICENSE.txt` at `ff2d7c3` were read from their repositories
   without saving them, typed into the file, and compared with the sources word for word. Every
-  quoted text of the file was compared so (16, all equal).
+  quoted text of the file was compared so (16, all equal), the Adobe one with the MIT text it
+  takes, since LibRaw ships none for those pieces.
 - **Sdcb.LibRaw's licence file** is the MIT template with `[year] [fullname]` unfilled; it is
   shipped as it is, the package's holder (Zhou Jie) named beside it.
 - **The tests.** The checks that read only this project went to `ThirdPartyTests`, the one that
@@ -127,3 +128,17 @@ and AstroPhotoAnalyzer point "Despre" at the suite's file.
   holding them; "Despre" rendered offscreen at 931 / 946 DIP as before, the lead on one line in
   both languages. The live start of the launcher from the published folder waited, the owner
   being at the PC.
+- **The review** (a subagent, nine findings). The one that mattered: the four DLLs of the LibRaw
+  package were compiled by vcpkg (their debug paths), not from Sdcb.LibRaw's repository, and
+  LGPL-2.1 counts build scripts as source. Measured: `raw_r.dll` linked 2023-05-31, so vcpkg's
+  `libraw` port of commit `2e3b958` (LibRaw 0.21.1 with LibRaw-cmake `6e26c9e` and two patches).
+  It contradicted the premise of the owner's link choice, so it went back to them: of a source
+  archive beside the zip (recommended), exact links, or a written offer, they chose exact links.
+  Taken as well: a test that every section has its licence text checked; a test that asks
+  MSBuild for the real publish list (`-getItem`, about a second), which turned red when the
+  target was hooked to a target that never runs, while an item stripped of
+  `CopyToPublishDirectory` stays copied (MSBuild lists it as `Always`), so its green was right;
+  the Adobe text's lead-in; Apache-2.0 alone on ImageSharp's licence line, as its Split License
+  asks; WPF's own notices linked; "nothing has to be installed" narrowed to .NET, since
+  `raw_r.dll` needs the Visual C++ runtime the folder lacks; continued list lines joined by
+  `Notices.Field`; stale summaries in `SuiteTests`, `CLAUDE.md` and `docs/skills.md`.

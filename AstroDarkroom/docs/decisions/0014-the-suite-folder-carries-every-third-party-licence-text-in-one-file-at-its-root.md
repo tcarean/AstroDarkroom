@@ -22,24 +22,36 @@ and `NLog.Targets.AtomicFile` 6.2.2, `Sdcb.LibRaw` 0.21.1.7, `Sdcb.LibRaw.runtim
 and `Wacton.Unicolour` 8.0.0. The LibRaw package's four DLLs are four projects: `raw_r.dll`
 reports LibRaw `0.21.1-Release`, `jpeg8.dll` libjpeg-turbo 2.1.3, `lcms2.dll` 2120 through
 `cmsGetEncodedCMMversion` (Little CMS 2.12), `zlib1.dll` zlib 1.2.11. The WindowsDesktop pack's
-`LICENSE` has the NETCore pack's words, its last line end aside, and the pack has no notices file.
+`LICENSE` has the NETCore pack's words, its last line end aside, and the pack has no notices file;
+WPF's repository keeps one at the tag of each runtime version.
 
 On 2026-10-31 the owner chose, of the options put to them with a recommendation each: one file
 in the suite, at its root, from the launcher's publish, the tools unchanged; everything the zip
 holds, the native libraries and the .NET runtime with WPF included, the .NET texts taken as they
 are from the runtime pack; the missing texts downloaded from the projects at the versions
 shipped; and, for LibRaw's source, a link (not the recommended written offer, nor the source
-beside the zip on the Drive).
+beside the zip).
 
 Reading the texts brought three facts the questions did not have. LibRaw's `COPYRIGHT` names code
 of others inside it: the DCB demosaicing and FBDD denoising, under a 3-clause BSD licence whose
 text is in `src/demosaic/dcb_demosaic.cpp`, and which `raw_r.dll` holds (it exports `dcb` and
-`fbdd`); pieces of the Adobe DNG SDK 1.4 under MIT; and dcraw.c's unrestricted code. The X3F
-tools it also names are not compiled in (`x3f_thumb_loader`, declared only under
-`USE_X3FTOOLS`, is absent). ImageSharp's `THIRD-PARTY-NOTICES.TXT`, at the commit 3.1.11 was
-built from, names SharpZipLib (MIT), Chromium (BSD-3) and corefx (MIT) code inside it, with
-neither copyright lines nor texts. And Sdcb.LibRaw's `LICENSE.txt`, at the commit its package
-names, is the MIT template with `[year] [fullname]` unfilled; the package names Zhou Jie.
+`fbdd`); pieces of the Adobe DNG SDK 1.4, under MIT by its words, with no text of that licence
+in LibRaw's source; and dcraw.c's unrestricted code. The X3F tools it also names are not compiled
+in (`x3f_thumb_loader`, declared only under `USE_X3FTOOLS`, is absent). ImageSharp's
+`THIRD-PARTY-NOTICES.TXT`, at the commit 3.1.11 was built from, names SharpZipLib (MIT), Chromium
+(BSD-3) and corefx (MIT) code inside it, with neither copyright lines nor texts. And Sdcb.LibRaw's
+`LICENSE.txt`, at the commit its package names, is the MIT template with `[year] [fullname]`
+unfilled; the package names Zhou Jie.
+
+The review of the branch brought one more. The four DLLs were compiled by vcpkg, not from
+Sdcb.LibRaw's repository: their debug paths name vcpkg's build folders (`buildtrees/libraw` and
+the like), and the package records no vcpkg commit. `raw_r.dll` was linked on 2023-05-31; the
+only `libraw` port that built LibRaw 0.21.1 before that day is the one of vcpkg's commit
+`2e3b958` (2023-02-16), which compiles LibRaw 0.21.1 with the CMake files of LibRaw-cmake at
+`6e26c9e`, after two patches of its own to them. LGPL-2.1 counts the scripts that control
+compilation as part of a library's source, so a link to LibRaw's tag alone does not give them.
+Put to the owner again the same day, with the source archive beside the zip as the
+recommendation, the owner chose exact links only.
 
 ## Decision
 
@@ -53,16 +65,22 @@ names, is the MIT template with `[year] [fullname]` unfilled; the package names 
   own notices name is covered in its section with its own notice and licence text, one level
   down: the DCB/FBDD and Adobe pieces in LibRaw's, the SharpZipLib, Chromium and corefx pieces in
   ImageSharp's, the texts taken from the file that names them or, for code adapted from a project
-  still moving, from that project's licence file at a named commit.
+  still moving, from that project's licence file at a named commit; the Adobe pieces, whose
+  licence LibRaw names without a text, get MIT's usual text under the copyright line LibRaw
+  gives. ImageSharp's `Licence:` line names Apache-2.0 alone, the licence the Six Labors Split
+  License grants open-source software, since it asks documentation to name the granted licence
+  only.
 - **Published as `THIRD-PARTY-NOTICES.txt`** at the suite folder's root by the launcher's window
   project, like `LICENSE`, a name Windows opens with a double click. Its self-contained publish
   adds the `Microsoft.NETCore.App` runtime pack's `LICENSE.TXT` and `THIRD-PARTY-NOTICES.TXT`,
   unchanged, as `DOTNET-LICENSE.txt` and `DOTNET-THIRD-PARTY-NOTICES.txt`, found through the
   runtime pack the publish resolved, and stops with an error when they are missing. The
-  WindowsDesktop pack's `LICENSE` is not shipped a second time.
-- **LibRaw's source by a link**, the owner's choice: LibRaw is used under the LGPL-2.1, as a
+  WindowsDesktop pack's `LICENSE` is not shipped a second time; WPF's own notices, which its pack
+  does not carry, are linked at the tag of the runtime's version.
+- **LibRaw's source by exact links**, the owner's choice: LibRaw is used under the LGPL-2.1, as a
   library of its own that a build with the same interface can replace, and its section links
-  the source of 0.21.1 and the package's build.
+  what `raw_r.dll` was built from, LibRaw 0.21.1, LibRaw-cmake at `6e26c9e` and vcpkg's `libraw`
+  port at `2e3b958`, saying that the package records no vcpkg commit and how the port was found.
 - **"Despre" points at the shipped file.** Its lead names `THIRD-PARTY-NOTICES.txt` beside the
   program; the lead and the name are in the core (`ThirdParty.Lead`, `ThirdParty.NoticesFile`),
   where the tests pin them, and the window shows the lead. The card still lists the launcher's
@@ -71,8 +89,9 @@ names, is the MIT template with `[year] [fullname]` unfilled; the package names 
   window project of `release.publish` and checks that each package is on a section's `Packages:`
   line at the version resolved, that each package named there is resolved, and that each such
   section's `Programs:` line names exactly the windows that resolve its packages; `ThirdPartyTests`
-  checks phrases of each section's licence texts, the native libraries' sections, the
-  publish's items in the window project and the lead.
+  checks phrases of each section's licence texts, that every section is among those it checks,
+  the native libraries' sections, the publish's items in the window project, the publish list
+  MSBuild computes for win-x64 (`ComputeResolvedFilesToPublishList`), and the lead.
 
 ## Alternatives rejected
 
@@ -89,10 +108,12 @@ names, is the MIT template with `[year] [fullname]` unfilled; the package names 
 - **The code of others inside a component left to the component's own notices**: ImageSharp's
   name three pieces with no copyright line or text, and LibRaw's `COPYRIGHT` names DCB/FBDD's
   licence without its text; the BSD and MIT licences ask for their text in a binary distribution.
-- **A written offer of LibRaw's source for three years, or the source beside the zip on the
-  Drive**: the owner chose the link.
-- **A publish inside the tests, to check the files it writes**: about a minute per run of the gate;
-  the tests read the project file, and the publish is checked with `release.ps1 -PublishOnly`.
+- **LibRaw's source in an archive beside the zip, with the build scripts** (the recommendation
+  after the review), **or a written offer for three years** (the first recommendation): the owner
+  chose links, twice.
+- **A publish inside the tests, to check the files it writes**: about a minute per run of the
+  gate; MSBuild's publish list for win-x64 gives the same answer in about a second, copying
+  nothing.
 
 ## Consequences
 
@@ -100,9 +121,13 @@ The suite folder has three more files at its root: `THIRD-PARTY-NOTICES.txt` (ab
 `DOTNET-LICENSE.txt` and `DOTNET-THIRD-PARTY-NOTICES.txt` (about 1 KB and 69 KB). A component
 that adds a package, or updates one, turns this project's gate red until the file covers it at
 the new version, as a redrawn icon does (ADR 0011); a new version of the LibRaw runtime package
-also means reading the four DLLs' versions and texts again, which no test can. A runtime package
-for another system is named too, since the lock files list it. The tools' own About windows still
-point at their notices beside their source: pointing them at the suite's file, and listing
-libjpeg-turbo, Little CMS and zlib apart from LibRaw in the three tools that ship them, is a task
-in each tool. The texts of Chromium and SharpZipLib are those of their licence files at the
-commits `d522fb7` and `ff2d7c3` read on 2026-10-31, the projects ImageSharp adapted code from.
+also means reading the four DLLs' versions and texts again, and finding again, from their link
+date, the vcpkg port that built them, which no test can. A runtime package for another system is
+named too, since the lock files list it. The publish-list test runs MSBuild from the tests,
+about a second once the window is built. The tools' own About windows still point at their
+notices beside their source: pointing them at the suite's file, and listing libjpeg-turbo,
+Little CMS and zlib apart from LibRaw in the three tools that ship them, is a task in each tool,
+due before the next suite release, since LGPL-2.1 asks a program that shows LibRaw's notice to
+point at the licence's copy. The texts of Chromium and SharpZipLib are those of their licence
+files at the commits `d522fb7` and `ff2d7c3` read on 2026-10-31, the projects ImageSharp adapted
+code from.

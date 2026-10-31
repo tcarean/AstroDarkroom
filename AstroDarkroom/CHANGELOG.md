@@ -33,7 +33,8 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
   the three libraries it calls (libjpeg-turbo, Little CMS, zlib), ImageSharp, Unicolour, the
   lensfun database, the Lynds catalogue and .NET with WPF the programs that ship each, its
   copyright notices and its licence's whole text, with those of the code of others it contains,
-  and LibRaw's section links the source of LibRaw 0.21.1; `DOTNET-LICENSE.txt` and
+  and LibRaw's section links what its DLL was built from (LibRaw 0.21.1, LibRaw-cmake, vcpkg's
+  port); `DOTNET-LICENSE.txt` and
   `DOTNET-THIRD-PARTY-NOTICES.txt` are the .NET runtime's own, copied from the runtime pack the
   suite is built with. "Despre" points at `THIRD-PARTY-NOTICES.txt` beside the program.
 - Each row of the launcher shows its tool's own icon, dimmed when the tool is missing from

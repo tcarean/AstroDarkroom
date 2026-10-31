@@ -170,7 +170,7 @@ NLog, with its licence, its copyright line and its address (ADR 0013); each tool
 | libjpeg-turbo (`jpeg8.dll`) | JPEG data in raw files, for LibRaw | DarksCheck, FlatCheck, LightsCheck | IJG, BSD-3-Clause, zlib |
 | Little CMS (`lcms2.dll`) | colour management, for LibRaw | DarksCheck, FlatCheck, LightsCheck | MIT |
 | zlib (`zlib1.dll`) | Deflate data in raw files, for LibRaw | DarksCheck, FlatCheck, LightsCheck | zlib |
-| SixLabors.ImageSharp | reading and writing image files | FlatCheck, AstroPhotoAnalyzer | Six Labors Split License (Apache-2.0) |
+| SixLabors.ImageSharp | reading and writing image files | FlatCheck, AstroPhotoAnalyzer | Apache-2.0 |
 | Wacton.Unicolour | a printer's ICC profile | AstroPhotoAnalyzer | MIT |
 | The lensfun database | lens vignetting profiles | FlatCheck | CC BY-SA 3.0 |
 | Lynds' Catalogue of Dark Nebulae | naming the dark nebulae in a frame | AstroPhotoAnalyzer | a citation |

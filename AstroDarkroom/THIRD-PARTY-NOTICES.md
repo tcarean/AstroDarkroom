@@ -11,7 +11,7 @@ the suite folder carries it as `THIRD-PARTY-NOTICES.txt` (R-017, ADR 0014).
 Each section opens with a list: the NuGet packages that bring the component, at the versions the
 suite is built with; its files in the folder; the programs that ship it, the launcher as Astro
 Darkroom; its licence; its project's address. The .NET 8 runtime and WPF, which the folder carries
-so that nothing has to be installed, come with two files of their own, `DOTNET-LICENSE.txt` and
+so that .NET need not be installed, come with two files of their own, `DOTNET-LICENSE.txt` and
 `DOTNET-THIRD-PARTY-NOTICES.txt` (the last section).
 
 The six tools are not third-party code: they are projects of the same repository, under the same
@@ -120,25 +120,32 @@ the MIT text with its template's year and name left unfilled; it follows as it i
 - Programs: DarksCheck, FlatCheck, LightsCheck
 - Licence: LGPL-2.1-only, of LibRaw's two (LGPL-2.1-only OR CDDL-1.0)
 - Project: <https://www.libraw.org/>
-- Source of the version shipped: <https://github.com/LibRaw/LibRaw/tree/0.21.1>
+- Source: LibRaw 0.21.1, built with LibRaw-cmake at `6e26c9e` by vcpkg's `libraw` port at
+  `2e3b958` (the links are under "Licence and compatibility")
 
 **Role.** Reads the camera raw files (NEF, CR2, CR3, ARW, DNG and the others) for DarksCheck,
 FlatCheck and LightsCheck, through the binding of the previous section. `raw_r.dll` reports itself
-as LibRaw `0.21.1-Release`. It comes from the package `Sdcb.LibRaw.runtime.win64` 0.21.1, which
-the project <https://github.com/sdcb/Sdcb.LibRaw> builds, with the three libraries it calls,
+as LibRaw `0.21.1-Release`. It comes from the package `Sdcb.LibRaw.runtime.win64` 0.21.1 of the
+project <https://github.com/sdcb/Sdcb.LibRaw>, which ships it with the three libraries it calls,
 each with a section of its own: libjpeg-turbo (`jpeg8.dll`), Little CMS (`lcms2.dll`) and zlib
-(`zlib1.dll`). The tools also reference `Sdcb.LibRaw.runtime.linux64`, LibRaw's Linux build from
-the same project under the same licence, of which the Windows publish puts no file in this
-folder.
+(`zlib1.dll`). The four were compiled by vcpkg, whose build folders their debug paths name, not
+from that project's repository. The tools also reference `Sdcb.LibRaw.runtime.linux64`, LibRaw's
+Linux build from the same project under the same licence, of which the Windows publish puts no
+file in this folder.
 
 **Licence and compatibility.** LibRaw is licensed under the LGPL-2.1 or the CDDL-1.0, at the
 choice of whoever uses it, and the suite takes the **LGPL-2.1**: the CDDL-1.0 is not compatible
 with the GPL, while the Free Software Foundation lists the LGPL-2.1 as compatible with GPLv2 and
 GPLv3. The programs use LibRaw as a library of its own, `raw_r.dll`, which they load at run time
 and which another build of LibRaw with the same interface can replace; the About window of each
-tool that ships it shows LibRaw's copyright. Its source, at the version shipped, is at
-<https://github.com/LibRaw/LibRaw/tree/0.21.1>, and the build of the package at
-<https://github.com/sdcb/Sdcb.LibRaw>.
+tool that ships it shows LibRaw's copyright. Its source is LibRaw 0.21.1,
+<https://github.com/LibRaw/LibRaw/tree/0.21.1>, which vcpkg's `libraw` port of commit `2e3b958`,
+<https://github.com/microsoft/vcpkg/tree/2e3b958ff00e01b26e82d139bb4765586f349f07/ports/libraw>,
+compiles with the CMake files of LibRaw-cmake at commit `6e26c9e`,
+<https://github.com/LibRaw/LibRaw-cmake/tree/6e26c9e73677dc04f9eb236a97c6a4dc225ba7e8>, after
+applying the port's two patches to them (`dependencies.patch`, `fix-install.patch`). The package
+records no vcpkg commit: `raw_r.dll` was linked on 2023-05-31, and the only `libraw` port that
+built LibRaw 0.21.1 before that day is the one of commit `2e3b958` (2023-02-16).
 
 LibRaw's `COPYRIGHT`, at 0.21.1:
 
@@ -205,8 +212,9 @@ header:
 > OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
 > OF SUCH DAMAGE.
 
-The pieces of the Adobe DNG SDK 1.4 are under the MIT licence, as the `COPYRIGHT` file says, with
-the copyright line it gives:
+The pieces of the Adobe DNG SDK 1.4 are under the MIT licence, as the `COPYRIGHT` file says;
+LibRaw's source carries no text of that licence for them, so its usual text follows, under the
+copyright line `COPYRIGHT` gives:
 
 > Copyright (c) 2005 Adobe Systems Incorporated
 >
@@ -867,7 +875,7 @@ compatible with the GPL; it asks nothing of a binary distribution, and follows a
 - Packages: `SixLabors.ImageSharp` 3.1.11
 - Files: `SixLabors.ImageSharp.dll`
 - Programs: FlatCheck, AstroPhotoAnalyzer
-- Licence: Six Labors Split License 1.0, which gives open-source software the Apache-2.0
+- Licence: Apache-2.0
 - Project: <https://sixlabors.com/products/imagesharp/>, source <https://github.com/SixLabors/ImageSharp>
 
 **Role.** Decodes and encodes image files: in FlatCheck, the JPEG preview a camera embeds in a raw
@@ -876,8 +884,9 @@ JPEG and TIFF files of its compression table.
 
 **Licence and compatibility.** The Six Labors Split License grants the Apache License 2.0 to
 whoever uses the library in software under an open-source licence, which the suite is (GPLv3 or
-later); the commercial licence it mentions is for other uses. The Free Software Foundation lists
-the Apache-2.0 as compatible with version 3 of the GNU GPL. It asks a copy of the licence to go
+later); the commercial licence it mentions is for other uses. Once granted, it asks documentation
+to name the granted licence alone, as the list above does. The Free Software Foundation lists the
+Apache-2.0 as compatible with version 3 of the GNU GPL. It asks a copy of the licence to go
 with the program, and the attribution notices of the work's `NOTICE` file, which ImageSharp's
 repository does not have; its third-party notices, at the commit 3.1.11 was built from
 (`f4a2684`), follow the two licences, with the licences of the code they name.
@@ -1295,7 +1304,7 @@ Lynds, B. T., *Catalogue of Dark Nebulae*, Astrophysical Journal Supplement 7, 1
   <https://github.com/dotnet/wpf>
 
 **Role.** Runs the programs: the folder carries the .NET 8 runtime and WPF, the toolkit of the
-windows, so that nothing has to be installed.
+windows, so that .NET need not be installed.
 
 **Licence.** The .NET Foundation's MIT licence, and the notices of the code of others inside the
 runtime, are two files beside this one, which the launcher's publish copies unchanged from the
@@ -1306,5 +1315,7 @@ runtime, are two files beside this one, which the launcher's publish copies unch
 - `DOTNET-THIRD-PARTY-NOTICES.txt`
 
 The `Microsoft.WindowsDesktop.App` runtime pack, WPF, carries the same MIT licence, word for word,
-and no notices file of its own. The runtime's version is in each program's `.runtimeconfig.json`.
+and no notices file of its own; WPF's repository keeps one, at the tag of each runtime version:
+<https://github.com/dotnet/wpf/blob/v8.0.33/THIRD-PARTY-NOTICES.TXT> for 8.0.33. The runtime's
+version is in each program's `.runtimeconfig.json`.
 MIT is permissive and compatible with the GPLv3.

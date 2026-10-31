@@ -25,11 +25,12 @@ namespace AstroDarkroom.Tests;
 /// The suite's consistency, read from the sibling projects of the photo repository: the
 /// catalogue against the components kit.json bundles and the executables their project files
 /// build (the rule "The catalogue and kit.json agree"), and the components' frameworks and
-/// package versions (the rule "Same .NET and same packages across the suite"), and the icon
-/// copies against the components' own files. Repository facts rather than behaviour of the
-/// launcher, so not requirement-numbered, except the icon copies (R-010), which the window
-/// shows. They return early, with the reason in the output, where the sibling folders are
-/// not beside this project (a clone of this folder alone).
+/// package versions (the rule "Same .NET and same packages across the suite"), the icon copies
+/// against the components' own files, and the notices file against the packages the windows
+/// ship. Repository facts rather than behaviour of the launcher, so not requirement-numbered,
+/// except the icon copies (R-010), which the window shows, and the notices file (R-017), which
+/// the suite folder carries. They return early, with the reason in the output, where the
+/// sibling folders are not beside this project (a clone of this folder alone).
 /// </summary>
 public partial class SuiteTests
 {

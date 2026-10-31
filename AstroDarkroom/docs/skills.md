@@ -14,7 +14,9 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   name of its icon), its icon copied into `Icon/` under the component's own file name (R-010,
   ADR 0011) and a row in R-001; `SuiteTests` then checks the three agree, that the copy has
   the component's bytes and that the component is on .NET 8 with the suite's package
-  versions. Nothing else changes: the window lists whatever the catalogue holds.
+  versions. The new app's title goes on the `Programs:` lines of `THIRD-PARTY-NOTICES.md` for the
+  packages it ships, and a package new to the suite gets its section (R-017, below). Nothing
+  else changes: the window lists whatever the catalogue holds.
 - At step 2: the core is tested in `tests/AstroDarkroom.Tests` with a temp folder of empty
   files named like the executables (`TempWorkspace`); the window has no tests (ADR 0001) and
   is checked by starting it from a published suite folder.
@@ -27,8 +29,10 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   a component's, needs its section in `THIRD-PARTY-NOTICES.md` at that version, with the
   windows that ship it and its licence's whole text from the project's own file, read at that
   version (R-017, ADR 0014): `SuiteTests` is red until the `Packages:` and `Programs:` lines
-  match the windows' lock files. A new version of `Sdcb.LibRaw.runtime.win64` also means reading
-  again what its four DLLs report (LibRaw, libjpeg-turbo, Little CMS, zlib) and their texts.
+  match the windows' lock files, and `ThirdPartyTests` until the new section's licence phrases
+  join `LicenceTexts`. A new version of `Sdcb.LibRaw.runtime.win64` also means reading again what
+  its four DLLs report (LibRaw, libjpeg-turbo, Little CMS, zlib), their texts, and from
+  `raw_r.dll`'s link date the vcpkg `libraw` port that built it, for LibRaw's source links.
 
 ## /wrap-up
 

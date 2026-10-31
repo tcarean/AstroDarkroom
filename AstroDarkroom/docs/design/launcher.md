@@ -196,14 +196,19 @@ and `THIRD-PARTY-NOTICES.TXT` into `ResolvedFileToPublish`, with the `RelativePa
 `DOTNET-LICENSE.txt` and `DOTNET-THIRD-PARTY-NOTICES.txt`, so they are copied unchanged; when
 either file is missing, or no such pack was resolved, its `Error` stops the publish. A
 framework-dependent publish carries no runtime and gets neither file. The WindowsDesktop pack is
-left out: its `LICENSE` has the same words, and it has no notices file.
+left out: its `LICENSE` has the same words, and it has no notices file (the notices file links
+WPF's repository's one instead).
 
 `ThirdPartyTests` reads the project file for the notices item's `Link`, the two published names and
-the error; what the target copies is checked by publishing the suite
-(`scripts/release.ps1 -PublishOnly`), since a publish inside the tests would cost the gate about
-a minute. `SuiteTests` binds the notices file's `Packages:` and `Programs:` lines to the lock file
-beside each window project of `release.publish`, which holds the packages of the projects that
-window references too.
+the error, and asks MSBuild what the publish would copy without publishing: `dotnet build` of the
+window project with the target `ComputeResolvedFilesToPublishList`, `RuntimeIdentifier=win-x64`,
+`SelfContained=true` and `-getItem:ResolvedFileToPublish`, whose JSON lists every file with its
+`RelativePath` and `CopyToPublishDirectory`, in about a second once the project is built; a
+whole publish would cost the gate about a minute. An item left without `CopyToPublishDirectory`
+is listed as `Always`, so it is still copied. `SuiteTests` binds the notices file's `Packages:`
+and `Programs:` lines to the lock file beside each window project of `release.publish`, which
+holds the packages of the projects that window references too; a list item may go on over
+indented lines, which `Notices.Field` joins.
 
 ## The icons
 

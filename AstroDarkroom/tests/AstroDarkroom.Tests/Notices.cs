@@ -47,11 +47,14 @@ internal static partial class Notices
         return sections;
     }
 
-    /// <summary>The value of a section's "- Name: value" line, or null when it has none.</summary>
+    /// <summary>
+    /// The value of a section's "- Name: value" line, the indented lines that continue it joined
+    /// with single spaces, or null when the section has none.
+    /// </summary>
     public static string? Field(string section, string name)
     {
-        Match m = Regex.Match(section, "^- " + Regex.Escape(name) + @":[ \t]*(.+)$", RegexOptions.Multiline);
-        return m.Success ? m.Groups[1].Value.Trim() : null;
+        Match m = Regex.Match(section, "^- " + Regex.Escape(name) + @":[ \t]*(.+(?:\n[ \t]+\S.*)*)", RegexOptions.Multiline);
+        return m.Success ? Space().Replace(m.Groups[1].Value, " ").Trim() : null;
     }
 
     /// <summary>The names in backticks on a field's line, each with the version written right after it, or "" for none.</summary>
