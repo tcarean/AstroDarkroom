@@ -75,13 +75,12 @@ namespace FlatCheck
         /// rasters is the same thing as preparing the mean, at a sixteenth of the memory on the
         /// D3300's 6016 x 4016 masters ((2k)^2 = 16 with k = 2: 1504 x 1004 prepared).
         ///
-        /// The smoothing mode calls it too, for its before and after batteries on the prepared
-        /// input and output.
+        /// The comparison of two flats (--against) calls it too, for the batteries on A, B and
+        /// their ratio.
         ///
-        /// RawMedian/RawMax then come from the prepared (and, for the attribution mode,
-        /// normalised) raster, so they no longer mean ADU. They are not printed: the attribution
-        /// report calls StructureReport.WriteBody, which does not include that row, and the
-        /// smoothing report and tab show only the five tests, the verdicts and the residual map.
+        /// RawMedian/RawMax then come from the prepared raster, so they no longer mean ADU. They
+        /// are not printed: the comparison report shows the five tests, the verdicts and the
+        /// residual map, not that row.
         /// </summary>
         /// <param name="prepared">The analysis raster; not modified.</param>
         /// <returns>The figures and the verdicts.</returns>

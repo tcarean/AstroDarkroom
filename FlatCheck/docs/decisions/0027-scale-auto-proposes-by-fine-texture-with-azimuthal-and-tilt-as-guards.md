@@ -1,7 +1,7 @@
 # 0027. --scale auto proposes the smoothing scale from the fine texture, guarded by azimuthal asymmetry and tilt
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: superseded by 0080
 
 ## Context
 

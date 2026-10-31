@@ -45,15 +45,14 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
-    /// What kind of row it is in the histogram tab's list. The master is the stack of the
-    /// others; the smoothed flat is the master without the texture, written by the Netezire
-    /// tab; a frame is a frame. A bool cannot say three things.
+    /// What kind of row it is in the histogram tab's list: the master, the stack of the
+    /// others, or a frame.
     /// </summary>
-    internal enum HistEqKind { Master, Smoothed, Frame }
+    internal enum HistEqKind { Master, Frame }
 
     /// <summary>
-    /// A file the histogram tab can show: the master from masters/ or process/, the smoothed
-    /// flat beside it when it exists, or a frame from flats/.
+    /// A file the histogram tab can show: the master from masters/ or process/, or a frame
+    /// from flats/.
     /// </summary>
     /// <param name="Path">The file's full path.</param>
     /// <param name="Kind">Which kind of row it is.</param>
@@ -150,36 +149,10 @@ namespace FlatCheck.Wpf
         internal string FlatMasterPath => FindFlatMaster().Path;
 
         /// <summary>
-        /// The smoothed flat's suffix: "pp_flat_stacked_netezit.fit", beside the master it was
-        /// made from. The name is NOT one of <see cref="FlatMasterCandidates"/> - exact paths,
-        /// not patterns - so the session's master stays the one photographed and the Structure
-        /// tab still shows the texture; the smoothed file must not hide the problem it was made
-        /// for.
-        /// </summary>
-        internal const string SmoothedSuffix = "_smoothed";
-
-        /// <summary>Where the smoothing tab writes, or null when there is no master.</summary>
-        internal string SmoothedMasterPath
-        {
-            get
-            {
-                string master = FlatMasterPath;
-                return master == null ? null : SmoothedPathBeside(master);
-            }
-        }
-
-        /// <summary>The name of the smoothed flat made from <paramref name="master"/>, in the
-        /// same folder.</summary>
-        /// <param name="master">A master's full path.</param>
-        /// <returns>The path with <see cref="SmoothedSuffix"/> before the extension.</returns>
-        internal static string SmoothedPathBeside(string master)
-            => Path.Combine(Path.GetDirectoryName(master),
-                Path.GetFileNameWithoutExtension(master) + SmoothedSuffix + Path.GetExtension(master));
-
-        /// <summary>
-        /// The SYNTHETIC flat's suffix (the Sintetic tab): pp_flat_stacked_sintetic.fit, beside
-        /// the master, for the same reasons as the smoothed one - it does not become the
-        /// session's master, but it is what --against expects.
+        /// The SYNTHETIC flat's suffix (the Sintetic tab): pp_flat_stacked_synthetic.fit, beside
+        /// the master. The name is NOT one of <see cref="FlatMasterCandidates"/> - exact paths,
+        /// not patterns - so the session's master stays the one photographed and the file never
+        /// becomes it; it is what --against expects.
         /// </summary>
         internal const string SyntheticSuffix = "_synthetic";
 
@@ -316,17 +289,13 @@ namespace FlatCheck.Wpf
         internal string ReferenceRawPath => LensIdentification.FirstRaw(FlatFrames());
 
         /// <summary>
-        /// What the histogram tab lists: the master first, ONLY if it exists; after it the
-        /// smoothed flat, ONLY if it exists - on the exact path the Netezire tab writes,
-        /// <see cref="SmoothedMasterPath"/>, not by pattern; then the frames of flats/. In the
-        /// window the master always exists - Check() refuses the folder without it - but this
-        /// class is tested on its own and never throws.
+        /// What the histogram tab lists: the master first, ONLY if it exists; then the frames of
+        /// flats/. In the window the master always exists - Check() refuses the folder without
+        /// it - but this class is tested on its own and never throws.
         ///
         /// Only the master by convention - the one Structure measures too, so the same one
         /// when there are two - not any stack in process/: a second stack in a folder is not
-        /// the session's master. For the same reason a smoothed file beside the OLDER master,
-        /// when there are two, does not appear: it is the smoothing of another master than the
-        /// one on screen. And nothing is de-duplicated by content - a master copied into
+        /// the session's master. And nothing is de-duplicated by content - a master copied into
         /// flats/ appears twice, under two paths, which is the truth.
         /// </summary>
         /// <returns>The rows in display order; empty when there is neither master nor
@@ -335,12 +304,7 @@ namespace FlatCheck.Wpf
         {
             var list = new List<HistEqCandidate>();
             string master = FlatMasterPath;
-            if (master != null)
-            {
-                list.Add(new HistEqCandidate(master, HistEqKind.Master));
-                string smoothed = SmoothedPathBeside(master);
-                if (File.Exists(smoothed)) list.Add(new HistEqCandidate(smoothed, HistEqKind.Smoothed));
-            }
+            if (master != null) list.Add(new HistEqCandidate(master, HistEqKind.Master));
             list.AddRange(FlatFrames().Select(p => new HistEqCandidate(p, HistEqKind.Frame)));
             return list;
         }

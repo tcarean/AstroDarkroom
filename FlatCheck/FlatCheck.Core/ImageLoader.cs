@@ -47,10 +47,10 @@ namespace FlatCheck
 
         /// <summary>
         /// The same cards, but RAW - the 80 characters of each, in the file's order, without
-        /// END. Empty for a raw. It exists for the smoothing mode, which writes a second master
-        /// and wants to give it the input's header untouched: the dictionary above loses the
-        /// comments and cuts the strings at the first '/', so it cannot be the source of a header
-        /// written back.
+        /// END. Empty for a raw. It exists for the synthetic mode, which writes a second master
+        /// beside the reference and wants to give it the reference's header untouched: the
+        /// dictionary above loses the comments and cuts the strings at the first '/', so it
+        /// cannot be the source of a header written back.
         /// </summary>
         internal IReadOnlyList<string> Cards = System.Array.Empty<string>();
 

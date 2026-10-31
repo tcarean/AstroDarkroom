@@ -27,12 +27,10 @@
 // the pixels, and a second copy of the data would cost memory for nothing. It uses PositionOf,
 // LooksCfa and Label - the rule, not the buffers.
 
-using System;
-
 namespace FlatCheck
 {
     /// <summary>
-    /// The 2x2 Bayer mosaic's rule: a pixel's position, the four positions as rasters and back,
+    /// The 2x2 Bayer mosaic's rule: a pixel's position, the four positions as rasters,
     /// and their names.
     /// </summary>
     internal static class Mosaic
@@ -77,59 +75,6 @@ namespace FlatCheck
                     o[2].Set(y, x, a.At(y * 2 + 1, x * 2));
                     o[3].Set(y, x, a.At(y * 2 + 1, x * 2 + 1));
                 }
-            return o;
-        }
-
-        /// <summary>
-        /// A single position, as a raster of H/2 x W/2 - the same cut as <see cref="Split"/>, but
-        /// for a single <paramref name="p"/>. It exists for the smoothing mode, which works the
-        /// positions one at a time and has no reason to hold all four copies at once: on a 24 MP
-        /// frame that is 190 MB more, for nothing.
-        /// </summary>
-        /// <param name="a">The mosaic raster.</param>
-        /// <param name="p">The position, 0..3, as <see cref="PositionOf"/> numbers it.</param>
-        /// <returns>The position's raster.</returns>
-        internal static Img Extract(Img a, int p)
-        {
-            int h = a.H / 2, w = a.W / 2;
-            int oy = p / 2, ox = p % 2;
-            var o = new Img(h, w);
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                    o.Set(y, x, a.At(y * 2 + oy, x * 2 + ox));
-            return o;
-        }
-
-        /// <summary>
-        /// The inverse of <see cref="Split"/>: the four positions, woven back into a raster of
-        /// the ORIGINAL size <paramref name="h"/> x <paramref name="w"/>.
-        ///
-        /// Split drops an odd row or column at the end; here the missing line is filled by
-        /// copying the nearest even line, so that the output always has the input's shape and
-        /// the last row of a 4017 frame is not zero - a flat with a line of zeros would divide
-        /// the lights by zero on that line.
-        /// </summary>
-        /// <param name="positions">The four position rasters, each (h/2) x (w/2).</param>
-        /// <param name="h">The height of the woven raster, in pixels.</param>
-        /// <param name="w">The width of the woven raster, in pixels.</param>
-        /// <returns>The mosaic raster of h x w.</returns>
-        internal static Img Merge(Img[] positions, int h, int w)
-        {
-            var o = new Img(h, w);
-            int ph = h / 2, pw = w / 2;
-            for (int y = 0; y < h; y++)
-            {
-                int sy = Math.Min(y / 2, ph - 1);
-                for (int x = 0; x < w; x++)
-                {
-                    int sx = Math.Min(x / 2, pw - 1);
-                    // on the odd line at the end, row y (or column x) falls outside the
-                    // positions: the position with the SAME parity is taken - so the same colour
-                    // on a CFA - from the last even line, through sy/sx clamped above
-                    int p = PositionOf(y, x);
-                    o.Set(y, x, positions[p].At(sy, sx));
-                }
-            }
             return o;
         }
 

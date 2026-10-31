@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// TabViewModel.cs - what the seven tabs have in common.
+// TabViewModel.cs - what the six tabs have in common.
 //
 // They all do the same thing: show a waiting screen, compute on another thread, then show either
-// results or an explanation. That state - busy / result / error - lives here, once, so the seven
-// do not end up with seven ways of failing. The Split tab is the one exception to the waiting
+// results or an explanation. That state - busy / result / error - lives here, once, so the six
+// do not end up with six ways of failing. The Split tab is the one exception to the waiting
 // screen: it keeps its own running state, so its log stays visible, and uses the result, the
 // error and the progress (Progress, ProgressKnown, for its own bar), not RunGuardedAsync.
 //

@@ -1,7 +1,7 @@
 # 0026. --smooth is a robust local quadratic on tile medians, per Bayer position, with no radial model
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: superseded by 0080
 
 ## Context
 

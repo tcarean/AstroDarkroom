@@ -16,8 +16,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
-<!-- SyntheticView - tab 7, the synthetic flat from the lens's profile.
-     Like the Netezire tab: the figures on the left, the map (of the comparison) on the right.
+<!-- SyntheticView - the Synthetic tab, the synthetic flat from the lens's profile.
+     The figures on the left, the map (of the comparison) on the right.
      The panel with the profiles' sources is COLLAPSED by default - it is documentation, not a
      precondition. The list of lenses is searched by text; the focal length, the aperture and
      the crop are prefilled from the files and stay editable. -->

@@ -11,17 +11,16 @@ behind it:
 - Does the flat correct a real light? (`--light`)
 - Is a raw flat exposed right? (`--expo`)
 
-Three more modes give no verdict. `--histeq` shows a frame the way Siril's "Histogram" display
-does, where any unevenness comes out at maximum contrast. `--smooth` writes a second master with
-the diffuser's texture removed. `--synthetic` writes a radial flat from the lens's published
+Two more modes give no verdict. `--histeq` shows a frame the way Siril's "Histogram" display
+does, where any unevenness comes out at maximum contrast. `--synthetic` writes a radial flat from the lens's published
 vignetting profile, and `--against` compares two flats, for example the real one with that
 synthetic one.
 
 There are two applications over one core library, `FlatCheck.Core`:
 
 - `flatcheck.exe`, a console: one file, one mode, one report per run;
-- `FlatCheck.Wpf.exe`, a window: it opens a Siril session folder and runs the same six modes in
-  seven tabs.
+- `FlatCheck.Wpf.exe`, a window: it opens a Siril session folder and runs the same five modes in
+  six tabs.
 
 The window is not a second implementation. Both applications call the same code, so their
 figures are the same by construction, and the report the window saves is byte for byte the
@@ -30,8 +29,8 @@ console's.
 Both speak English by default, or Romanian with `--lang ro` (also `--lang=ro`), anywhere on the
 command line. The language changes the words only: the figures, the verdicts behind them, the
 exit codes and the names of the files written are the same in both. The output quoted in this
-file is the English one. Files that earlier versions wrote under Romanian names (`_netezit`,
-`_sintetic`, `Rezultat testare.txt`) are no longer recognised: rename them to keep using them.
+file is the English one. Files that earlier versions wrote under Romanian names (`_sintetic`,
+`Rezultat testare.txt`) are no longer recognised: rename them to keep using them.
 
 FlatCheck measures and reports. It never changes a file you give it, and it never decides what a
 shape on a map is. It was built and validated on the author's equipment: a Nikon D3300 with a
@@ -74,7 +73,7 @@ commands the script runs are under "Development".
   `siril-cli.exe`.
 - **Adobe's lens profiles, optional.** The `.lcp` files that Adobe DNG Converter (free), Camera
   Raw or Lightroom install. Without them, the lens list holds the lensfun profiles that ship with
-  FlatCheck. See mode 6.
+  FlatCheck. See mode 5.
 
 ## Quick start
 
@@ -228,7 +227,7 @@ excess**. A tablet master (Tokina at 20 mm f/2.8, four orientations 90 degrees a
 PERFECT on all five with 1.26 stops of vignetting, where the two profile databases give 0.66 to
 0.92 for that lens. The excess was the panel's angular fall-off, made radial by the rotation;
 more rotations do not help. The tool's only outside reference is **the lens's published
-profile** (Adobe's on the machine, lensfun's beside the program; see mode 6), and this is the
+profile** (Adobe's on the machine, lensfun's beside the program; see mode 5), and this is the
 comparison:
 
 ```bash
@@ -241,7 +240,7 @@ matched letter for letter against the profiles' names, and the lens ID (Nikon's 
 maker's on Canon, Sony and Pentax). The name's matches are the candidates when there are any, the
 ID's otherwise, narrowed by the focal range and the aperture the raw gives and by the camera's
 mount. With `--lens`, the candidates are the lenses that match every word of the text, as in
-mode 6. For each candidate, the profile nearest in focal length and aperture is built as a raster
+mode 5. For each candidate, the profile nearest in focal length and aperture is built as a raster
 at the analysis size, and its vignetting is measured with **exactly the master's operator**: the
 median of the 5 % corner boxes against the centre.
 
@@ -492,107 +491,7 @@ outside the palette, which say nothing (measured on the Samyang's NEF, 2026-10-2
 without `--histeq` is a command-line error, exit 1. In the window, the **False colours** chip beside
 the views does the same on Mosaic, on a channel and on mono, and is greyed out on RGB.
 
-### 5. Smoothing: `--smooth`
-
-```bash
-flatcheck process/pp_flat_stacked.fit --smooth process/pp_flat_stacked_smoothed.fit
-flatcheck process/pp_flat_stacked.fit --smooth smoothed.fit --scale 150
-```
-
-Not a test, and no verdict. It writes **a second master**: the same flat, with everything smooth
-kept and everything else removed: the diffuser's texture, the dust shadows, the compact spots, the
-noise. It is meant for a flat shot through a material laid on a monitor, whose texture reaches the
-lights as a blanket of cells a few per cent deep.
-
-**Why not a synthetic radial flat.** A purely radial model would remove the texture, but also
-everything the lens does besides vignetting: on a Tokina at 20 mm the four corners differ from each
-other by 6-16 %, exactly the case where a radial model corrects worse than the flat it replaces.
-Smoothing keeps the uneven corners, the gradient, the wide blotches: everything smooth at the
-chosen scale.
-
-**What it does**, on each Bayer position separately (on mono, on the whole frame):
-
-1. the median of tiles of ~150 sensor px, keeping the partial tiles at the edges;
-2. at each tile, a local quadratic fit over the neighbouring tiles, weighted by a Gaussian of
-   sigma = the scale (300 sensor px by default);
-3. robustly: the tiles that deviate from the local fit by more than 2.5 MAD *and* more than 2 % of
-   the level (dust, spots, the deepest cells) no longer weigh in anyone's fit;
-4. at each pixel, the bilinear mean of the predictions of the four tiles around it.
-
-There is no radial model, on purpose: two variants that had one failed on the real masters. A global
-polynomial does not follow the medium-scale structure every master has (a monitor's blotches at
-1000-1500 px, an off-centre ring), and a model on rings **puts rings into the file**: beyond the
-inscribed circle the median of a ring jumps from one ring to the next, and a local field of 150 px
-cannot make up for it. The smoothing above knows of no centre, so it cannot make rings.
-
-**What it reports** is *what it removed*, because that is the only figure by which you can decide
-whether the file can be trusted: p1 / p99 per pixel, the large-scale structure (p95 - p5 over the
-tiles) and the most deviant tile of the ratio `original / smoothed`, the deepest spot, and the
-structure battery on the input and on the output, side by side. When the most deviant tile
-reaches 2 %, the report warns that something of large scale was removed too (deep dust, a spot, or
-a real structure narrower than the scale) and leaves the decision to you.
-
-Measured on five real masters (the Nikkor 35 DX on the sky at two ISOs, the Tokina 20 with the
-diffuser close to the lens and on the monitor, the Samyang 135 on an LCD), at 300 px: every verdict
-and vignetting depth stays the same; the five tests move by less than half a point; the component
-removed is 0.12-0.39 % on the four clean masters (pixel noise plus the dust) and 3.7 % on the
-textured one, where the compact spot falls from +6.19 % to +0.62 % and the texture in the file from
-±3 % to ±0.3 %. On a synthetic frame with a known truth the method's error is under 0.2 % over the
-whole frame, corners included.
-
-**What it does not know.** What is the lens's and what is the source's: a monitor's blotches, the
-sky's gradient, a panel's uneven corners stay, because they are smooth; nothing here separates
-them. And what it removes can be wanted: a dust shadow is right for the session whose lights have it
-too, and wrong in a library flat. A real structure of ~300 px (the Nikkor's off-centre ring,
-0.3-0.5 %) is partly taken at 300 px and stays at 150 px; the scale is the only knob. What is left
-of the cells is fundamental: a random field with a correlation length of 300 px passes through a
-300 px kernel at ~30 % in RMS.
-
-**The file** keeps the input's type (16-bit stays 16-bit; anything else is written as 32-bit
-float, so a float master keeps its values) and the input's header card by card (`BAYERPAT`,
-`STACKCNT`, `DATE-OBS`), plus two `HISTORY` lines. Nothing is renormalised. Siril's scripts name
-`pp_flat_stacked` explicitly, so they do not pick up the smoothed file by themselves: rename it in
-place of the master (keep the original) or give it to `calibrate` with `-flat=`. The mode refuses a
-raw (a single, uncalibrated frame: for a raw there is `--expo`) and a colour cube (the reader would
-average it into one raster).
-
-**A check you can make yourself:** smooth two masters of the same lens and compare them with
-`--against`; what is left should be a smooth, low-order field. Whether the smoothed flat really
-corrects better only `--light` can say, on calibrated lights, and it refuses a field wider than 40
-degrees.
-
-#### Choosing the scale, and `--scale auto`
-
-The scale must sit between the size of what you want removed and the size of the smallest real
-structure you want kept. Both can be read from the master, and `--scale auto` reads them for you:
-
-1. **The input's fine texture**: the structured part of the component under ~128 sensor px, with
-   the pixel noise subtracted. Under 0.20 % there is nothing to smooth and the tool runs nothing:
-   on the real masters, those without texture read 0.04-0.06 %, the one with the diffuser on the
-   monitor 0.69 %.
-2. Otherwise, **one smoothing per step** (150 / 300 / 600 px, ~15 s in all on 24 MP) and two
-   figures per step: the texture left in the file (under 0.05 % it is gone), and how much the
-   azimuthal asymmetry and the tilt *fell*. Those are the two tests the texture does not touch, so a
-   fall of more than 0.5 points there is real structure leaving.
-3. **The smallest step** at which the texture is gone and that guard stays quiet. On the master with
-   the diffuser on the monitor: 150 leaves 0.09 % of texture, 300 leaves 0.02 % with the guard at
-   0.00 / -0.01, so 300. At 600 the guard catches the Nikkor's real ring (asymmetry -0.79) and the
-   monitor's blotches on the Tokina (-0.80).
-
-Three answers. `PROPOSED SCALE`: the smoothing runs at it and writes the file (exit 0).
-`NOTHING TO SMOOTH`, and `UNDETERMINED` (the texture and the real structure have the same size):
-nothing is written and the exit code is **2**, not an error but "read before you decide". The
-rule **proposes, it does not decide**: it does not know what is the lens's and what is the
-source's (an LCD's hot spot looks like a ring of the lens), and it is blind to a real structure
-that sits only in the corners, outside the inscribed circle. Its thresholds rest on five masters;
-one with a faint texture, 0.15-0.25 %, falls near the first.
-
-By hand, the criteria are the same: look at the map of what was removed at ±2 % (only cells and
-dust is right; a large smooth shape means the scale is too large) and at the before / after table
-("worst spot" and the residual fall when the texture leaves, but the asymmetry and the tilt must
-not move).
-
-### 6. Synthetic flat: `--synthetic`, `--lenses`, `--against`
+### 5. Synthetic flat: `--synthetic`, `--lenses`, `--against`
 
 ```bash
 flatcheck --lenses --lens "Tokina 11-20"                         # which lenses have a profile
@@ -817,9 +716,6 @@ matching (a quarter stop on the aperture, 5 % on a crop), and when an extrapolat
 | centre level, panel | `--expo` | OK 50-65 %; ACCEPTABLE, but rather low 30-50 %, rather high 65-80 %; TOO LOW under 30 %, TOO HIGH above 80 % |
 | centre level, sky | `--expo --sky` | OK 15-50 %; rather high, but acceptable 50-60 %; TOO HIGH above 60 %, TOO LOW under 15 % |
 | clipping in the centre | `--expo` | more than 0.05 % of the window at 98 % of white or above: TOO HIGH, whatever the level |
-| fine texture of the master | `--smooth --scale auto` | under 0.20 % nothing to smooth; under 0.05 % gone |
-| fall of the asymmetry or the tilt | `--smooth --scale auto` | above 0.5 points: real structure leaving |
-| most deviant tile removed | `--smooth` | 2 %: a warning |
 
 The thresholds of the series are the least calibrated of all: they come from a single real session.
 Recalibrate them when you have one you are sure of.
@@ -836,9 +732,6 @@ Recalibrate them when you have one you are sure of.
 The severity is monotonic, so "anything but 0" means "not clean, look". The modes without a verdict:
 
 - `--histeq`: 0 when the picture was written, 1 when it could not be.
-- `--smooth`: 0 when it wrote the smoothed flat and the maps, 1 when it refused the input (a raw, a
-  colour cube) or could not write; with `--scale auto`, 2 when it wrote nothing because there is
-  nothing to smooth or the scale is undetermined.
 - `--synthetic`: 0 when it wrote the flat, 1 when it refused the reference, could not learn the
   focal length, the aperture or the crop, or the lens chosen has no vignetting profile (Adobe ships
   files for some lenses with only their distortion or colour measured; they are in the list, and
@@ -862,14 +755,12 @@ flatcheck <raw_flat.NEF> --expo            # the same, directly on a camera raw
 flatcheck <sky_flat.NEF> --expo --sky      # exposure for sky flats
 flatcheck <flat.NEF> --histeq              # Siril's "Histogram" view, per channel
 flatcheck <flat.NEF> --histeq --rainbow    # the same in Siril's false colours (one layer: the mosaic or the channel)
-flatcheck <flat.fit> --smooth <smoothed.fit>                          # a smoothed flat: no texture, dust or spots
 flatcheck <reference.fit> --synthetic <synthetic.fit> --lens <text>   # a synthetic flat from the lens profile
 flatcheck --lenses [--lens <text>]         # the lenses with a profile (Adobe on the disk, lensfun/ beside the exe);
                                            # their focal lengths, apertures, distances and number of profiles, on a list of at most 40
 flatcheck <A.fit> --against <B.fit>        # how much and how two flats differ
 
-  -o, --out <file.png>     the output map (default flatcheck.png; with --histeq the equalised
-                           picture; --smooth writes a second one beside it, suffix -after)
+  -o, --out <file.png>     the output map (default flatcheck.png; with --histeq the equalised picture)
   --sky                    the thresholds for sky flats (--expo)
   --sat <white>            the saturation level, when the auto-detection is wrong (--expo)
   --black <level>          the black level (--expo)
@@ -877,8 +768,6 @@ flatcheck <A.fit> --against <B.fit>        # how much and how two flats differ
                            red = highest (--histeq; alone it is an error)
   --pattern <pattern>      which files of a folder it takes (--light; default pp_light_*.fit)
   --fov <degrees>          the field's diagonal, when the header does not give it (--light)
-  --scale <px>|auto        the smoothing scale, in sensor pixels (--smooth; default 300);
-                           'auto' proposes it from the master and smooths at it, or exits with 2
   --lens <text>            the lens, by words of its name / maker / mount (--synthetic, --lenses;
                            for structure, compares the master's vignetting with every lens that matches)
   --raw <file>             a raw beside the master (structure): the aperture and the lens are read from it
@@ -894,7 +783,7 @@ flatcheck <A.fit> --against <B.fit>        # how much and how two flats differ
 
 A flag may come anywhere: `flatcheck --expo f.fit` and `flatcheck f.fit --expo` are the same. The
 modes exclude each other; given two, the first in the order `--lenses`, `--synthetic`, `--against`,
-`--smooth`, `--histeq`, `--expo`, `--light` runs. A `--lang` with a value other than `en` or `ro`, or
+`--histeq`, `--expo`, `--light` runs. A `--lang` with a value other than `en` or `ro`, or
 with none, stops the run with an English error and exit 1. `--pattern` takes `*` and `?`; character
 classes (`[abc]`) are taken literally.
 
@@ -912,8 +801,8 @@ temperature, or by the ISO of the lights.
 
 A diverging blue → white → red map, with white pinned at **1.0** and the range scaled to the 1st
 and 99th percentiles plus 10 % of padding. Pinning white at 1.0 holds for every mode that writes one:
-the structure residual is `image / model ≈ 1`, the maps of `--smooth` are centred on 1 (what was
-removed, and the smoothed flat's residual), and the map of `--light` is `1 + radial / a`. The figures
+the structure residual is `image / model ≈ 1`, the `--against` residual too, and the map of
+`--light` is `1 + radial / a`. The figures
 are in the report; the map is there so you see the *shape* of a problem: a gradient, horizontal,
 vertical or diagonal, a spot, an edge.
 
@@ -1007,7 +896,7 @@ step's line and its progress bar, and the tabs appear only once all three have e
 can be clicked before the folder has been read whole. If a click's analysis of the previous
 folder is still computing, the panel keeps the two tests on "waiting" until it ends (the lens
 list loads meanwhile). The two tests run one after the other, not in parallel, and no analysis
-started by a click (Exposure, Histogram, Smoothing, Synthetic, the Split's analysis) runs beside
+started by a click (Exposure, Histogram, Synthetic, the Split's analysis) runs beside
 another: every one passes through a single gate, one at a time.
 Measured on 24 MP masters: one analysis takes 0.7-1.25 GB of memory, two at once 1.3-2.2 GB. A
 click made during another click's run waits for its turn, and the waiting screen says what it is
@@ -1078,20 +967,19 @@ LibRaw is taken asks for the library's notice to appear beside the program's. An
 has no `LICENSE` and no `THIRD-PARTY-NOTICES.md` beside it, so the window is the one place where the
 notices surely travel with the program.
 
-### The seven tabs
+### The six tabs
 
 | tab | what it does | when it runs |
 |---|---|---|
 | **Structure** | mode 1 on `pp_flat_stacked.fit` from `masters/` or `process/`, with the vignetting compared with the lens profile when `flats/` holds a raw and the **I didn't use any filters on my lens** box is ticked | when the folder opens; flipping the box redoes the comparison and the verdict without reloading the master |
 | **End to end** | mode 2 on the whole `pp_light_*.fit` series in `process/` | when the folder opens |
 | **Exposure** | mode 3 on a raw from `flats/` | when chosen, and when the **Sky flat** switch changes |
-| **Histogram** | mode 4 on the session's master, on the smoothed flat beside it (when there is one) or on a frame from `flats/`, raw or FITS | when chosen; changing the view recomputes nothing |
-| **Smoothing** | mode 5 on the session's master; writes `pp_flat_stacked_smoothed.fit` beside it | on its button, never by itself: it writes a file |
-| **Synthetic** | mode 6: chooses the lens from the Adobe profiles on the disk and the lensfun database beside the program, writes `pp_flat_stacked_synthetic.fit` beside the master and compares it with the master (`--against`) | on its button; only the prefill runs by itself |
+| **Histogram** | mode 4 on the session's master or on a frame from `flats/`, raw or FITS | when chosen; changing the view recomputes nothing |
+| **Synthetic** | mode 5: chooses the lens from the Adobe profiles on the disk and the lensfun database beside the program, writes `pp_flat_stacked_synthetic.fit` beside the master and compares it with the master (`--against`) | on its button; only the prefill runs by itself |
 | **Split** | splits the flats into 2 or 4 groups, runs the Siril script on each in a temporary session and puts the groups' masters beside the whole master: the five tests, the vignetting against the profile, the maps side by side; writes `Split result.txt` and `flatcheck-split.png` in the session folder | on its button, never by itself: it copies gigabytes and runs Siril N times |
 
-With `--lang ro` the tabs read Structura, End to end, Expunere, Histogram, Netezire, Sintetic and
-Split. A screen reader such as Narrator reaches what each tab shows, not only the tabs' names.
+With `--lang ro` the tabs read Structura, End to end, Expunere, Histogram, Sintetic and Split. A
+screen reader such as Narrator reaches what each tab shows, not only the tabs' names.
 
 Two switches are **remembered per session folder**, in `flatcheck.json` in its root: the
 Structure tab's **I didn't use any filters on my lens** (`noFilters`, `true` by default) and the
@@ -1209,22 +1097,11 @@ tab says why.
 
 ### Histogram
 
-The Histogram tab lists **the master first**, marked `MASTER`; under it, **when it exists,
-`pp_flat_stacked_smoothed.fit`**, marked `SMOOTHED` (the file the Smoothing tab writes, exactly at the
-path it writes it, not any stack in the folder); then the frames of `flats/`, camera raws **and**
-FITS, because for an equalisation a flat converted by Siril is as good as the NEF. A click equalises
+The Histogram tab lists **the master first**, marked `MASTER`; then the frames of `flats/`, camera
+raws **and** FITS, because for an equalisation a flat converted by Siril is as good as the NEF. A click equalises
 a file; another click equalises another, and if the first was still computing it is abandoned: the
 list stays clickable, and the waiting screen covers only the picture. Nothing runs by itself when the
 folder opens: the Structure tab is already reading the 24 MP master then.
-
-The `SMOOTHED` row **also appears by itself** during the session, as soon as the Smoothing tab has
-written the file; what was selected stays selected and nothing is recomputed, with one exception: if
-the smoothed flat itself was on screen and was rewritten, the picture is redone, since it would
-otherwise show bytes that are no longer on the disk. Under the smoothed flat's picture stands a note:
-a shape that shows on the master and is missing here was removed by the smoothing; one that shows on
-both is smooth at the chosen scale and stayed. And because the equalisation goes by ranks, what is
-left on the smoothed flat, however small its amplitude, comes out at maximum contrast: a smoothed
-flat that looks *noisier* than the master is the expected picture, not a defect.
 
 The master is there for one question: **were the imperfections seen on the single frames averaged
 out?** A shape that shows on a frame and is missing from the master was transient (a cloud, a shadow,
@@ -1263,37 +1140,13 @@ The window's guide "How to read the equalised picture" says:
 | the master against a frame | The master is the stack of the frames under it. A shape that shows on a frame and is missing from the master was transient and was averaged out; one that shows on both is fixed to the setup, and that is what the Structure tab's figures measure. |
 | where the figure is | In the Structure tab: the residual after the radial model, the corners, the tilt, the worst spot. The picture here says WHAT SHAPE the thing they measure has. |
 
-### Smoothing
-
-Mode 5 on the session's master. Like Split, the tab **never runs by itself**: it writes a file of
-~96 MB beside the master, and a file is not produced because a folder was opened. Its guide stands
-open above the button, because it is the button's precondition; it says what mode 5 says above. Under
-it are three scale chips (150 / 300 / 600 px, 300 by default), the **Propose a scale** button, which
-runs the rule of `--scale auto`, shows the table of the steps and ticks the chip proposed, writing
-nothing, and the **Smooth and save** button. That button waits for any analysis still running
-(the structure test reads the same 24 MP master) and asks before it overwrites an existing smoothed file; a "no"
-leaves the figures on screen and the old file on the disk, and says so.
-
-After the run: the figures of *what was removed*, the yellow warning when something of large scale was
-removed too, the structure battery **before** and **after** (the Structure tab's rows, each with its
-verdict), and on the right two maps behind a switch: `original / smoothed`, exactly what left, and the
-smoothed flat's residual after its own radial model, what the lens does once the texture is gone. The
-maps' scale starts at ±2 %, not at ±10 % as on the other tabs: what is removed is small, and at 10 % the
-map would be white.
-
-The smoothed file **does not become the session's master**: its name is not one of the two paths the
-window looks for, so the Structure tab still measures the master photographed and still shows the
-texture that made the smoothing necessary. It **appears in the Histogram tab** as a row of its own,
-under the master, marked `SMOOTHED`, as soon as it is written, so what the smoothing removed and what it
-left can be seen side by side.
-
 ### Synthetic
 
-Mode 6.
+Mode 5.
 
 - **The list of lenses** comes from both sources, with an `Adobe` or `lensfun` chip on each row and the
   mount on the right; for lensfun, also the format the profile was calibrated on, because the same lens
-  can be in the database twice, calibrated on two formats (see mode 6). It is searched by text: every
+  can be in the database twice, calibrated on two formats (see mode 5). It is searched by text: every
   word must appear, the format included. Under each row stand **the focal lengths, apertures and
   distances** of its profiles, with their count, exactly what `--lenses` prints, but only when the list
   has at most 40 rows, because an Adobe lens's details need its file read; on a longer list the rows
@@ -1324,7 +1177,7 @@ Mode 6.
   recomputed through millimetres; your corner inside the profile, a small extrapolation or a LARGE one).
   The console prints the same sentence at `format`, and the tab shows it again under the depths
   written. There too, in yellow, stands **the mismatch warning** when the focal length or the aperture
-  in the box is far from every profile of the lens (see mode 6); it is recomputed at every key, and
+  in the box is far from every profile of the lens (see mode 5); it is recomputed at every key, and
   after writing the same sentence stands under `profile used`.
 - **For the Tokina the choice does not matter**: the atx-i 11-20 F2.8 CF (2020) is the AT-X 11-20 F2.8
   PRO DX (2015) in another housing, the two Adobe files have byte-identical vignetting parameters, and
@@ -1343,7 +1196,7 @@ Mode 6.
   compared with.
 - **Compare with the master** runs the same comparison on its own, for a synthetic file written
   earlier.
-- The file does not become the session's master, any more than the smoothed one does.
+- The file does not become the session's master.
 
 ### Split
 
@@ -1553,7 +1406,7 @@ compatible with GPLv3:
 | LibRaw (the native DLLs) | reading camera raw files | LGPL-2.1 (the option chosen of LibRaw's dual LGPL-2.1 / CDDL-1.0) |
 | SixLabors.ImageSharp 3.1.x | decoding the JPEG preview a raw carries | Six Labors Split License 1.0, which grants open-source projects the terms of Apache 2.0. Pinned to 3.1.x because from 4.0 the package asks for a licence key at compile time, an error on Release builds. |
 | NLog and NLog.Targets.AtomicFile 6.2.x | writing the diagnostic log (see "Logs"), two windows into one file | BSD-3-Clause |
-| the lensfun database (the `lensfun/` folder) | the vignetting profiles of mode 6 and of the structure's profile comparison; data, not code, copied unchanged | CC BY-SA 3.0 |
+| the lensfun database (the `lensfun/` folder) | the vignetting profiles of mode 5 and of the structure's profile comparison; data, not code, copied unchanged | CC BY-SA 3.0 |
 
 Adobe's profiles (`.lcp`) are not a component: they are read on the machine, where Adobe put them, and
 copied nowhere.

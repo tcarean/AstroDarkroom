@@ -28,7 +28,7 @@
 namespace FlatCheck
 {
     /// <summary>
-    /// The verdict thresholds, as named constants: the residual scale, the smoothing,
+    /// The verdict thresholds, as named constants: the residual scale,
     /// --light and its series, the profile tolerances and the exposure bands. Percent
     /// unless the name says otherwise.
     /// </summary>
@@ -63,38 +63,6 @@ namespace FlatCheck
         // when the vertex came to leave the frame it fell to 0.00% = "OK" - so it also became
         // non-monotonic, giving a false negative exactly on the flattest lenses. What is measured
         // now is Th.Resid* on the "tilt": the same gradient, taken as an amplitude.
-
-        // --- smoothing ---
-        // The threshold from which the smoothing report warns that more than the texture was
-        // removed: the most deviant tile of the removed component (original / smoothed), on the
-        // analysis raster. It is not a verdict - the file is written anyway - but the signal that
-        // the smoothing took something of large scale too, which the person has to see in the
-        // map. Measured at the default scale of 300 px on five real masters: 0.40-0.71 % on the
-        // four clean ones, 4.2 % on the one with the fabric texture - so the same 2 % as the
-        // PERFECT band leaves a 3x margin in both directions.
-        public const double SmoothKeptWarn = ResidPerfect;
-
-        // The scale proposal (SmoothScaleAdvisor), on Metrics.FineTexture - the structured part
-        // of the fine component under ~128 px on the sensor, in percent, on the analysis raster.
-        // Measured in C# on five real masters (2026-09-16):
-        //   input: 0.04-0.06 % on the four without texture, 0.69 % on the one with the diffuser
-        //   on a monitor (cells of ~300 px). The 0.20 threshold leaves 3x in both directions.
-        //   after smoothing, on the textured one: 0.09 % at 150 px, 0.02 % at 300, 0.01 % at
-        //   600; on the clean ones 0.01-0.02 % at any scale. The 0.05 threshold says "it is gone"
-        //   from 300 up, with 1.8x against 150 and 2.5x against what is left at 300.
-        // Five masters are enough to see that the idea holds, not to calibrate it: a master with
-        // a weak texture, of 0.15-0.25 %, falls next to the first threshold.
-        public const double SmoothTextureMin = 0.20;    // below this, nothing to smooth
-        public const double SmoothTextureGone = 0.05;   // below this, the texture is gone
-
-        // The "scale too large" guard: how much the azimuthal asymmetry and the tilt may DROP,
-        // in points, between the master and the smoothed file. They are the two tests the
-        // texture does not touch (large sectors, and a plane), so a drop is real structure
-        // leaving. Measured: at 300 px on the textured master they move 0.00 and -0.01; at
-        // 600 px the real ring of a Nikkor 35 DX drops the asymmetry by 0.79 and the monitor's
-        // spots on the Tokina by 0.80. The corners, the residual and the maximum spot can NOT be
-        // the guard: they drop when the texture leaves (1.47 points on the maximum spot).
-        public const double SmoothScaleLoss = 0.5;
 
         // --- end-to-end ---
         public const double LightRadOk = 2.0, LightRadBad = 5.0;

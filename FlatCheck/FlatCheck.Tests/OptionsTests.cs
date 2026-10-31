@@ -29,8 +29,7 @@ public class OptionsTests
     [Theory]
     [InlineData("--lenses --synthetic s.fit --histeq", "Lenses")]
     [InlineData("--synthetic s.fit --against b.fit", "Synthetic")]
-    [InlineData("--against b.fit --smooth s.fit", "Against")]
-    [InlineData("--smooth s.fit --histeq", "Smooth")]
+    [InlineData("--against b.fit --histeq", "Against")]
     [InlineData("--histeq --expo", "Histeq")]
     [InlineData("--expo --light", "Expo")]
     [InlineData("--light", "Light")]
@@ -245,6 +244,18 @@ public class OptionsTests
         Assert.Contains("optiune necunoscuta", o.Error);
     }
 
+    /// <summary>The flags of the smoothing mode, removed on 2026-10-31 (ADR 0080), are unknown
+    /// options like any other: no silent acceptance of a flag that does nothing.</summary>
+    [Theory]
+    [InlineData("--smooth")]
+    [InlineData("--scale")]
+    public void AFlagOfTheRemovedSmoothingModeIsAnUnknownOption(string flag)
+    {
+        var o = Options.Parse(new[] { "a.fit", flag, "x" });
+
+        Assert.Contains("optiune necunoscuta", o.Error);
+    }
+
     [Fact]
     public void NoInputFile_IsAnError()
     {
@@ -340,85 +351,5 @@ public class OptionsTests
         Assert.Null(o.Error);
         Assert.Equal("process", o.Image);
         Assert.True(o.Light);
-    }
-
-    // ---------------------------------------------------------------- --smooth
-
-    [Fact]
-    public void SmoothFlag_TakesTheOutputPath_OnEitherSideOfTheInput()
-    {
-        var after = Options.Parse(new[] { "flat.fit", "--smooth", "netezit.fit" });
-        var before = Options.Parse(new[] { "--smooth", "netezit.fit", "flat.fit" });
-
-        Assert.Null(after.Error);
-        Assert.Null(before.Error);
-        Assert.Equal("flat.fit", after.Image);
-        Assert.Equal("flat.fit", before.Image);
-        Assert.Equal("netezit.fit", after.Smooth);
-        Assert.Equal("netezit.fit", before.Smooth);
-        Assert.Equal(SmoothAnalyzer.DefaultScalePx, after.ScalePx);
-    }
-
-    [Fact]
-    public void SmoothFlag_RefusesToWriteOverTheInput()
-    {
-        var o = Options.Parse(new[] { "flat.fit", "--smooth", "FLAT.FIT" });
-
-        Assert.NotNull(o.Error);
-        Assert.Contains("peste fisierul de intrare", o.Error);
-    }
-
-    [Fact]
-    public void SmoothFlag_NeedsAValue()
-    {
-        Assert.Contains("lipseste valoarea", Options.Parse(new[] { "flat.fit", "--smooth" }).Error);
-        Assert.Contains("asteapta o valoare", Options.Parse(new[] { "flat.fit", "--smooth", "--expo" }).Error);
-    }
-
-    [Theory]
-    [InlineData("150", 150.0)]
-    [InlineData("600", 600.0)]
-    public void ScaleFlag_SetsTheSmoothingScale(string value, double expected)
-    {
-        var o = Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", value });
-
-        Assert.Null(o.Error);
-        Assert.Equal(expected, o.ScalePx);
-    }
-
-    [Theory]
-    [InlineData("10")]
-    [InlineData("5000")]
-    [InlineData("abc")]
-    public void ScaleFlag_RefusesNonsense(string value)
-    {
-        var o = Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", value });
-
-        Assert.NotNull(o.Error);
-        Assert.Contains("--scale", o.Error);
-    }
-
-    [Fact]
-    public void ScaleFlag_AcceptsAuto_InAnyCase()
-    {
-        var o = Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", "Auto" });
-
-        Assert.Null(o.Error);
-        Assert.True(o.ScaleAuto);
-        Assert.Equal(SmoothAnalyzer.DefaultScalePx, o.ScalePx);
-        Assert.False(Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", "300" }).ScaleAuto);
-    }
-
-    /// <summary>
-    /// --scale without --smooth parses and is simply unused; dispatch never reads it.
-    /// </summary>
-    [Fact]
-    public void ScaleFlag_WithoutSmooth_IsAccepted()
-    {
-        var o = Options.Parse(new[] { "flat.fit", "--scale", "200" });
-
-        Assert.Null(o.Error);
-        Assert.Null(o.Smooth);
-        Assert.Equal(200, o.ScalePx);
     }
 }

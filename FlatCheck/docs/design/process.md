@@ -82,12 +82,12 @@ tests and documents; this section is that list, in the order the work goes.
 
 - `Options` is an `internal sealed class` of plain `internal` fields: no properties, no
   setters, no builder. One field per flag (`Image`, `Light`, `Expo`, `Sky`, `Histeq`,
-  `Rainbow`, `Smooth`, `ScalePx`, `ScaleAuto`, `Synthetic`, `Lens`, `Source`, `Focal`, `FStop`, `Crop`,
+  `Rainbow`, `Synthetic`, `Lens`, `Source`, `Focal`, `FStop`, `Crop`,
   `Profiles`, `Lenses`, `Against`, `Raw`, `OutPng`, `Sat`, `Black`, `Pattern`, `Fov`), plus
   `Help` and `Error`. A flag with a value is a `string` or a nullable number (`double?`), so
   "not given" is `null` and never a sentinel; a switch is a `bool`. Defaults are field
-  initialisers, and when the default is a number the core owns it (`ScalePx =
-  SmoothAnalyzer.DefaultScalePx`, `Pattern = SeriesFinder.DefaultPattern`): the console holds
+  initialisers, and when the default is a value of the core's the core owns it (`Pattern =
+  SeriesFinder.DefaultPattern`): the console holds
   no number of its own (the rule "Computed only in the core", ADR 0011).
 - `Options.Parse(string[] args)` never throws. It returns an `Options` with `Help = true` (no
   arguments, or `-h` / `--help` anywhere; parsing stops there), or with `Error` set (the first
@@ -112,8 +112,8 @@ tests and documents; this section is that list, in the order the work goes.
   `R003_FlagBeforePath_GivesTheSameResultAsFlagAfterPath` in `GoldenOutputTests`). The parser
   collects every non-flag token as positional and, after the loop, wants exactly one; none
   with `--lenses`, which is a list and needs no input.
-- Cross-argument checks come after the loop, in the same method: `--smooth` and `--synthetic`
-  refuse to write over the input (`SamePath`, case-insensitive on Windows), and `--sat` must
+- Cross-argument checks come after the loop, in the same method: `--synthetic`
+  refuses to write over the input (`SamePath`, case-insensitive on Windows), and `--sat` must
   exceed `--black`. Mode flags are **not** mutually validated here
   (`HisteqAndExpoTogether_BothStaySet`): `flat.fit --histeq --expo` parses cleanly with both
   set, and dispatch decides.
@@ -140,7 +140,7 @@ every test calls, with two `StringWriter`s. In order:
    `ERROR: <Error>` (Romanian `EROARE:`) to stderr and returns 1.
 4. A folder as input is refused with exit 1 unless `--light` (series mode).
 5. The mode, `o.Mode`, chosen by `Options.ModeOf` as the first match in a fixed order:
-   `--lenses`, `--synthetic`, `--against`, `--smooth`, `--histeq`, `--expo`, `--light`,
+   `--lenses`, `--synthetic`, `--against`, `--histeq`, `--expo`, `--light`,
    structure (the default, no flag). That order is the mutual exclusion R-003 promises and
    the requirement itself; `Run` logs `mode=<name>` from it and switches on it. The comment
    at the top of `FlatCheckCli.cs` still lists the pre-mode-7 order; the code is the truth. A
@@ -160,10 +160,10 @@ string or an exit code:
   (`OK` / `PERFECT` / `BUN` → 0, `Stats.NotApplicable` → 1, `SUSPECT` / `ACCEPTABIL` /
   `NEDETERMINAT` → 2, anything else 3); `--expo` has its own `ExitFor(ExposureVerdict)`. The
   mapping is R-002, explained in `thresholds.md`, pinned by `R002_ExitCodesFollowVerdictSeverity`.
-- A mode without a verdict (`--histeq`, `--smooth`, `--synthetic`, `--lenses`) returns its
+- A mode without a verdict (`--histeq`, `--synthetic`, `--lenses`) returns its
   `int` directly and must not invent an `OK`: 0 means "wrote the file", 1 a refusal (the first
   line of the outcome's `Refusal` goes to stderr with the `ERROR: ` prefix), 2 "read this
-  before deciding" (`--scale auto` with nothing to propose, `--synthetic` with an ambiguous
+  before deciding" (`--synthetic` with an ambiguous
   lens).
 - Secondary map paths are derived from `-o` by suffix (`AfterMapPath` → `-after`, the same
   in both languages; R-006, R-103), never by a second flag.
@@ -183,8 +183,9 @@ Romanian is without diacritics, like every console line.
 `Help_IsPrintedForHelpFlags` (`-h`, `--help`), and
 `R005_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense` in `VersionTests` pins the legal
 lines. Any edit to `WriteUsage`, a new flag included, therefore changes `help.txt` and goes
-through the golden procedure below. The default printed for `--scale` is interpolated from
-`SmoothAnalyzer.DefaultScalePx`, so the number lives once; do the same for a new default.
+through the golden procedure below. A default printed in the usage is interpolated from the
+core's constant, so the number lives once (as `--scale` did until ADR 0080); do the same for a
+new default.
 
 ### Adding a golden scenario
 
@@ -205,7 +206,7 @@ The golden tests are the console's output contract; the class comment in
   created on the first run under the variable**. Without the variable a missing file fails
   with a message that says to re-run with it.
 - Names are lowercase `mode_scenario` in snake case: `structure_clean`,
-  `light_series_undetermined`, `smooth_auto_no_texture`, `synthetic_ambiguous`, `help`. A name
+  `light_series_undetermined`, `synthetic_ambiguous`, `help`. A name
   describes the behaviour, not the fixture.
 
 The procedure:
@@ -244,7 +245,7 @@ The procedure:
 When it is required: the rule "Formula changes re-validate" and `/new-feature` step 2. A **new** scenario is required when a
 change opens a numeric path the 39 existing scenarios do not exercise: a new band or branch of a
 metric, a new input shape (size, BITPIX, a header card), a new option that changes a number.
-`--histeq`, `--smooth` and mode 7 produce a picture, a file or a list and get no scenario; their
+`--histeq` and mode 7 produce a picture, a file or a list and get no scenario; their
 goldens are in `GoldenOutputTests`. `python-parity.md` lists the current coverage and where the
 set came from (the retired Python cross-check, ADR 0047).
 
@@ -277,9 +278,9 @@ figure on a real master).
 
 `R001_EveryModePrintsTheBannerOnTheFirstLine` and `R001_EveryModePrintsTheCopyrightOnTheSecondLine`
 each hold an explicit list of invocations, one `Assert.Equal` per mode; the copyright one adds a
-`--smooth` refusal, `--help` and a missing file. A new mode is one more line in each, with the
-arguments it needs to reach its report. Since 2026-09-27 the lists cover every mode (eight
-since `--ratio` left, ADR 0067): structure, `--light`, `--expo`, `--histeq`, `--smooth` (fixed scale and `auto`),
+`--synthetic` refusal, `--help` and a missing file. A new mode is one more line in each, with the
+arguments it needs to reach its report. Since 2026-09-27 the lists cover every mode (seven
+since `--ratio` and `--smooth` left, ADR 0067 and ADR 0080): structure, `--light`, `--expo`, `--histeq`,
 `--synthetic`, `--lenses` and `--against` (the last three with an empty `--profiles` folder,
 which is enough for the banner: it is written before the options are parsed).
 
