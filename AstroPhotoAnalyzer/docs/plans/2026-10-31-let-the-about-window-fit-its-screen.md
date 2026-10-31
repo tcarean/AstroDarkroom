@@ -198,3 +198,22 @@ characters. All commands run in this worktree.
 - **ADR number.** It is 0070, after the branch's 0069; check main's latest number before the
   merge.
 - **The Stop hook.** It refuses to end a turn after a code edit until verify is green.
+
+## What deviated
+
+- **The fit runs at `ContentRendered`**, not at `Loaded` as planned and as the launcher has it.
+  Measured: at `Loaded` the window still had its first height, 436 DIP for a window of 862. The
+  guard and the log line read that one; the line said "cards scroll: no" on a 690 DIP area where
+  they scroll by 172.
+- **The window's heights.** It is 847 and 862 DIP with its title bar and frame (39 DIP here), and
+  808 and 823 DIP of client area at its 584 DIP inner width. The 804 and 819 "of content" of
+  ADR 0069 were laid out at 600 DIP without the frame, and that ADR is corrected.
+- **`WindowSmokeTests` renders "Despre" at 860 DIP** instead of 720: at 720 the render now shows
+  the scroll bar.
+- **Not pixel for pixel identical where it fits.** The render differs from today's by at most 3
+  of 255 in a channel, in about 4 % of its pixels, on text edges only: the anti-aliasing of text
+  drawn inside a scroll viewer. The sizes and places are the same.
+- **Step 1's test failed on today's window**, as planned: "the Close button lies at 724..755 DIP
+  of 560".
+- **The low-area test's renders** are 600 DIP wide, as `WindowSmokeTests` renders; the window's
+  client area is 584.

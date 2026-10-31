@@ -111,8 +111,8 @@ put nine choices to the owner, each with a recommendation; the owner approved it
 
 - A fourth third-party component, two packages of one project (`ThirdParty.cs`, the BSD-3-Clause
   text in `THIRD-PARTY-NOTICES.md`, the README's table); `ThirdPartyTests` counts four. The About
-  window lists it and grows by its card, 73 DIP in English and 88 in Romanian, to 804 and 819
-  DIP of content; it has no scroll bar (`known-limitations.md`).
+  window lists it and grows by its card, to 847 DIP high in English and 862 in Romanian with its
+  title bar and frame, measured with the window shown; ADR 0070 makes it fit its screen.
 - The log is the first thing to ask a reporter for: the README's "Logs" section says where it is
   and how to raise the level. It holds the paths of the user's files and the figures measured on
   them, not their pixels. It is written beside the executable, wherever that is.

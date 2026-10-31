@@ -100,7 +100,21 @@ percentiles are one per line. `VerdictPalette`
 neutral); `RasterBitmaps` (a raster region as `BitmapSource`, at an integer stride,
 frozen); `BarsCanvas` (a `FrameworkElement` drawing a histogram with up to two marker lines in
 `OnRender`, the second dashed, each at the centre of its value's bin since the bins are centred on their index); `DarkTitleBar` (DWM attribute 20, falling back to 19); `AppIcon` (largest
-frame of the .ico for "Despre").
+frame of the .ico for "Despre"); `ScreenArea` (the work area of a window's screen, from
+`MonitorFromWindow` and `GetMonitorInfoW` divided by the window's DPI scale, and `TopInside`, the
+top that keeps a window inside an area).
+
+**"Despre" fits its screen** (R-158, ADR 0070):
+- `MainWindow` passes it the work area of its own screen, and the window's `MaxHeight` is that
+  area's height. Below the cap it sizes to its content as before.
+- Its cards are in the `ScrollViewer` `Cards`, which has a transparent background so that the
+  wheel works over the margins, with the theme's dark scroll bar. The Close button is in a row
+  of its own under it.
+- The window's `PreviewKeyDown` passes Up, Down, Page Up, Page Down, Home and End to the cards
+  (`Scroll`).
+- At `ContentRendered`, when its size is final, `FitInto` keeps its top inside the area and
+  writes its Debug line. At `Loaded` it still has its first height.
+- Where it fits, the margins add up to the same layout as before.
 
 **Culture**: `App.ForceInvariantNumbers` pins `DefaultThreadCurrentCulture` and
 `CurrentCulture` to invariant at startup; `InvariantGlobalization` must **not** be set on

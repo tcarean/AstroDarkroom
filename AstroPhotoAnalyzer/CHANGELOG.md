@@ -110,6 +110,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- "About" fits the screen the main window is on (R-158, ADR 0070). On a screen lower than the
+  window, such as a 1080-line screen at 125 % or 150 % scaling or a 1366x768 laptop, its cards
+  scroll with the mouse wheel and with the arrow, page, Home and End keys, and the Close button
+  stays in view. Before, the window's bottom and its Close button fell off the screen.
 - Clearing the window's tabs before a run emptied only the Report and Tones tabs' rows; the
   Export, Resolution and Colour tabs kept theirs behind a hidden view until the next result
   replaced them. All three now empty their rows (R-111).

@@ -137,7 +137,7 @@ as done lines too, as the tab shows them.
 | `App` | Info, Warn | the language and the file from the command line; a `--lang` refused |
 | `MainViewModel` (`Window`) | Info, Warn, Error | `run N started`, `done in` with the verdict, `refused after` (a linear image), `failed after` with the exception; a field refused; an exception that leaves the run (`LogUnhandled`, an exception filter, marked with `LogSetup.Wrote`); the profile restored, in use, cleared; the report written, or not with the exception |
 | `MainWindow`, `IccPickerWindow` (`Window`) | Info | each dialog's answer, the buttons, the secondary windows opened |
-| `WindowSettings`, `DarkTitleBar`, `AboutWindow` (`Window`) | Warn, Debug | a settings file that cannot be read or written, with the exception; each write at Debug; a title bar that cannot be darkened; a link that cannot be opened, by its `OriginalString` |
+| `WindowSettings`, `DarkTitleBar`, `ScreenArea`, `AboutWindow` (`Window`) | Warn, Debug | a settings file that cannot be read or written, with the exception; each write at Debug; a title bar that cannot be darkened; a screen whose work area Windows does not give; a link that cannot be opened, by its `OriginalString`; "Despre" once shown, with its size and place, its screen's work area and whether its cards scroll (R-158) |
 | `CurvesTab` (`Window.Curves`) | Error, Warn, Debug | a computation that failed, with the exception; one a newer computation superseded; a save that failed |
 | `SoftProofTab` (`Window.SoftProof`) | Info, Error, Warn, Debug | the intent, the paper gamut warning, the original and the margin when changed; a computation or a render that failed, a table the core refuses, one superseded |
 

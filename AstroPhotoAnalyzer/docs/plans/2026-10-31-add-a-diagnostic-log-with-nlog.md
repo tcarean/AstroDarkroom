@@ -616,7 +616,9 @@ before it was taken; the bug and the two gaps got a failing test first.
    Debug line; the probes whose outcome a line shows), the README's opening (the log is written
    too) and its "every error", `logging.md`'s guards.
 7. **The About window's height** (left to the owner): recorded in `known-limitations.md`; a
-   `ScrollViewer` would fix it, a change of the window outside this task.
+   `ScrollViewer` would fix it, a change of the window outside this task. The owner chose on
+   2026-10-31 to fix it on this branch: ADR 0070,
+   `docs/plans/2026-10-31-let-the-about-window-fit-its-screen.md`.
 
 ## The second review of 2026-10-31
 

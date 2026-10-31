@@ -62,7 +62,7 @@ AstroPhotoAnalyzer/                    Program.cs, Options.cs, AnalyzerCli.cs
 AstroPhotoAnalyzer.Wpf/
   App.xaml(.cs), MainWindow.xaml(.cs), Theme/Dark.xaml
   Loggers.cs                           the names of the window's loggers in the diagnostic log
-  Interop/DarkTitleBar.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
+  Interop/DarkTitleBar.cs, Interop/ScreenArea.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
   Presentation/AppIcon.cs, BarsCanvas.cs, CurveCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs,
                TExtension.cs (a XAML text in both languages), Emphasis.cs (a because's ** marks in bold, R-112),
                AccessibleTabControl.cs (the window's tabs, their content in the UI Automation tree, R-157),
