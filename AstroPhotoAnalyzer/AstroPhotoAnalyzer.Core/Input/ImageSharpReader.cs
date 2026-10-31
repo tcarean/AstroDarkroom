@@ -49,7 +49,10 @@ namespace AstroPhotoAnalyzer
     {
         static readonly string[] Exts = { ".tif", ".tiff", ".png", ".jpg", ".jpeg" };
 
-        /// <summary>The diagnostic log: what Identify found, at Debug (R-171, ADR 0069).</summary>
+        /// <summary>
+        /// The diagnostic log: what Identify found, at Debug, and the exception of a file it cannot
+        /// identify, with its stack (R-171, ADR 0069).
+        /// </summary>
         static readonly Logger Log = LogManager.GetLogger("ImageSharpReader");
 
         public IReadOnlyList<string> Extensions => Exts;
@@ -77,10 +80,20 @@ namespace AstroPhotoAnalyzer
         {
             ImageInfo info;
             try { info = Image.Identify(path); }
-            // ImageSharp's exception travels as the inner one, so its stack reaches the
-            // diagnostic log; the user's message, which holds its text already, is unchanged.
-            catch (UnknownImageFormatException e) { throw new Exception(Tr.Pick("the file is not an image format the tool knows: ", "fisierul nu e o imagine cunoscuta: ") + e.Message, e); }
-            catch (InvalidImageContentException e) { throw new Exception(Tr.Pick("damaged image: ", "imagine stricata: ") + e.Message, e); }
+            // ImageSharp's exception, its own inner ones included, is written to the diagnostic log
+            // here, the only place its stack exists. The user's exception carries no inner one:
+            // the window joins every inner message into what it shows, and one of ImageSharp's
+            // would add a paragraph the user never saw before the log (the review of 2026-10-31).
+            catch (UnknownImageFormatException e)
+            {
+                Log.Warn(e, "ImageSharp cannot identify " + path);
+                throw new Exception(Tr.Pick("the file is not an image format the tool knows: ", "fisierul nu e o imagine cunoscuta: ") + e.Message);
+            }
+            catch (InvalidImageContentException e)
+            {
+                Log.Warn(e, "ImageSharp cannot identify " + path);
+                throw new Exception(Tr.Pick("damaged image: ", "imagine stricata: ") + e.Message);
+            }
 
             var facts = Facts(info);
             if (Log.IsDebugEnabled)

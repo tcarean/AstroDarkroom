@@ -207,9 +207,7 @@ namespace AstroPhotoAnalyzer
         {
             string text = card.TrimEnd();
             if (text.Length == 0) return;
-            var sb = new StringBuilder(text.Length);
-            foreach (char ch in text) sb.Append(ch < ' ' || ch == (char)127 ? '?' : ch);
-            Log.Trace("card " + sb);
+            Log.Trace("card " + LogText.Printable(text));
         }
 
         /// <summary>

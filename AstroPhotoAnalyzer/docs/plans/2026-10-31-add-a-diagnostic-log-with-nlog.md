@@ -558,10 +558,12 @@ after the owner's approval.
   names that carry the user's language sit in records held by the results. `LogText.Nums` (the
   curves' class levels) and `LogText.WorkingSet` (the analysis's done line, `workingSet=`, as
   DarksCheck writes it per frame) were added.
-- **Two inner exceptions.** `ImageSharpReader.Load` and `AnalysisRun.BorrowWcs` wrapped the
-  reader's exception into a new one without it; they pass it on as the inner exception now, so
-  its stack reaches the log. The user's message is unchanged (it held the inner message
-  already, and `Describe` skips an inner message the outer one contains).
+- **The reworded exceptions.** `ImageSharpReader.Load` and `AnalysisRun.BorrowWcs` wrapped the
+  reader's exception into a new one without it. Step 3 passed it on as the inner exception; the
+  review of 2026-10-31 found that `Describe` joins an inner exception's own inner message too, so
+  a damaged WebP named `.png` gained a paragraph in the window. Both now log the original at
+  Warn where they catch it and throw the user's exception as on `main`; `CurveExport.Save`, which
+  rewords the system's refusal of a save over the input, does the same.
 - **The words.** The console's refusals go through one helper, `Refuse`; the plan's names of the
   window's secondary windows became `opened the map window` and the like; a settings file read
   without trouble writes nothing (the view-model's `profile restored from the settings` says
@@ -586,3 +588,32 @@ after the owner's approval.
   no input sent.
 - **Names.** The ADR is `0069-a-diagnostic-log-with-nlog-as-darkschecks-written-at-the-seams.md`
   (the plan said "as-flatchecks"): DarksCheck's code is the one taken.
+
+## The review of 2026-10-31
+
+A subagent reviewed `git diff main...HEAD` after the wrap-up's gate, with the plan, the ADR and
+the conventions and without the author's conclusions. Every finding was checked against the code
+before it was taken; the bug and the two gaps got a failing test first.
+
+1. **The inner exception changed the window's message** (taken). On a damaged WebP named `.png`,
+   ImageSharp 3.1.11 wraps its allocation failure into the content error, and `Describe` joined
+   that inner message as a second paragraph. The readers now log the original where they catch
+   it and throw the user's exception as on `main`
+   (`R171_ADamagedImageIsLoggedWithImageSharpsException_AndTheUsersMessageIsUnchanged`, the 64
+   bytes of the review's fuzzed file in the test; `R171_ARunThatThrowsLeavesItsStartLineAndTheStagesItReached`
+   asks the same of the `--wcs` file).
+2. **Control characters of a damaged FITS header reached the Debug line** (taken):
+   `LogText.Printable`, through `LogText.Str`, now writes them `?` for every stored text
+   (`R171_AControlCharacterInAHeaderReachesTheLogAsAQuestionMark`).
+3. **`CurveExport.Save` dropped the system's exception** when it rewords a save over the input
+   (taken): a Warn line with it (`R171_ASaveOverTheInputByAnotherSpellingLogsTheSystemsException`).
+4. **The run's exception filter was never exercised** (taken): the window's test now throws from
+   a handler of the view-model's own property change, outside the run's catch; disabling the
+   filter makes it fail.
+5. **The window's bilingual test could not fail** (taken): it now also sees a report that cannot
+   be written and a field refused, the refusal's own text set apart.
+6. **Four sentences said more than the code does** (taken): R-171 (a superseded computation is a
+   Debug line; the probes whose outcome a line shows), the README's opening (the log is written
+   too) and its "every error", `logging.md`'s guards.
+7. **The About window's height** (left to the owner): recorded in `known-limitations.md`; a
+   `ScrollViewer` would fix it, a change of the window outside this task.

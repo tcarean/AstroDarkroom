@@ -13,8 +13,9 @@ each recommendation, how long each stage took, or what the window did before it 
 places swallowed an exception for good reasons and left no trace: a profile that cannot be read
 became a `Problem` text (`IccPaperBlack`, `GamutAnalyzer.Build`, `ProofProfile.Open`), the
 settings file that cannot be read or written gave the defaults, a link that does not open, the
-title bar that stays light; and two places rewrapped a reader's exception without its stack
-(`ImageSharpReader.Load`, `AnalysisRun.BorrowWcs`).
+title bar that stays light; and three places reworded an exception for the user and dropped
+the original with its stack (`ImageSharpReader.Load`, `AnalysisRun.BorrowWcs`,
+`CurveExport.Save`).
 
 The owner asked on 2026-10-31 for a log with NLog, as text, in a folder `log` beside the
 executable, the file names starting with the executable's name, at most 5 files per executable
@@ -48,8 +49,10 @@ put nine choices to the owner, each with a recommendation; the owner approved it
   `ImageSharpReader`, `IccPaperBlack`. `Analysis/`, `Report/`, `Thresholds.cs`, `Parameters.cs`,
   `Language.cs` and the rest of `Input/` hold no logger. `GamutTable` and `ProofProfile` keep the
   exception behind their `Problem` as `Cause`, which `CurveRun` and `ProofRun` log with its
-  stack; `ImageSharpReader` and `BorrowWcs` pass the reader's exception on as the inner one, the
-  user's message unchanged.
+  stack. Where the core rewords an exception for the user (`ImageSharpReader`'s file it cannot
+  identify, `BorrowWcs`'s unreadable FITS, `CurveExport`'s save the system refuses over the
+  input), it logs the original with its stack where it catches it and throws the user's
+  exception as before, without an inner one.
 - **The figures by one rule** (D5): `LogText.Figures` writes a result record by reflection, as
   DarksCheck's does, adapted to this core: its internal members, a hand-written getter that gives
   a text left out (on this core every such getter is a sentence through `Tr.Pick`), another
@@ -95,6 +98,10 @@ put nine choices to the owner, each with a recommendation; the owner approved it
 - **Logging inside `Analysis/`**, where a profile's exception is caught: the analyzers would hold
   a logger; the `Cause` property keeps them free of input and output, and the run that reads the
   `Problem` logs it.
+- **The reader's exception passed on as the inner one** of the user's, the first way built: the
+  window's `Describe` joins every inner message into what it shows, so an ImageSharp exception
+  with an inner one of its own added a paragraph to the window's message (found by the review
+  of 2026-10-31 on a damaged WebP named `.png`).
 - **The tabs' runs as lines of their own around the core's**: `CurveRun` and `ProofRun` write
   their start and done lines with the stages already; a second pair from the tab would say the
   same twice.

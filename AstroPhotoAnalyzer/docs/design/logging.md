@@ -74,9 +74,11 @@ padded to five, `[pid:thread]`, the logger's name, the message, and on the next 
 `Exception.ToString()` when there is one. Messages are composed from `LogText` (invariant
 numbers with six significant digits, `none` for a missing value, sizes in KiB and MiB, an
 elapsed time as `Ms` or `Seconds`) and logged as plain strings, so NLog never parses them as
-message templates and a `{` in a path is harmless. A line whose message costs something to
-build is guarded by `IsDebugEnabled` / `IsTraceEnabled`. A FITS card is written with any
-control character as `?`, so a damaged header puts no control byte in the file.
+message templates and a `{` in a path is harmless. A Debug or Trace line whose message costs
+something to build is guarded by `IsDebugEnabled` / `IsTraceEnabled`; the Info lines are built
+always, and cheap. `LogText.Str`, which every stored text goes through (a FITS value, an ICC
+profile's name, a record's text), and the Trace line of a FITS card write a control character as
+`?` (`LogText.Printable`), so a damaged file breaks no line and puts no control byte in the log.
 
 `LogText.Figures(record, skip...)` writes a result record by one rule: every instance property,
 then every field, that is not private (so neither a record's `EqualityContract`), in declaration
@@ -103,7 +105,12 @@ the window's four from `Loggers`: `App`, `Window`, `Window.Curves`, `Window.Soft
 `RunClock` writes a run's start line and, through `Done`, its done line with the stages timed by
 `Lap`. It is held in a `using`: a run that throws leaves the clock without `Done`, and `Dispose`
 writes `<run> ended without an outcome after N ms (<stages>)`, so the inputs and the stages
-reached are in the log beside the exception its caller logs. `AnalysisRun.Execute` starts its
+reached are in the log beside the exception its caller logs. Where the core rewords an
+exception for the user (a file ImageSharp cannot identify, a `--wcs` file that cannot be read, a
+save the system refuses over the input), it writes the original with its stack at Warn where it
+catches it and throws the user's exception without an inner one: the window's `Describe` joins
+every inner message into what it shows, and an inner exception added a paragraph there that the
+user never saw before the log (the review of 2026-10-31). `AnalysisRun.Execute` starts its
 clock before the load (both overloads, one private body, `Run`), so a file that does not load
 still leaves the start line; a linear image is a done line `refused: ...` with its median, then
 the throw. `CurveRun.Execute` and `ProofRun.Prepare` write their refusals (a problem, no profile)
@@ -117,10 +124,10 @@ as done lines too, as the tab shows them.
 | `AnalyzerCli` | Info, Warn, Error | `mode=help`, or `mode=analysis image=... out=... lang=...`; every refusal as stderr shows it, the linear image included; `run failed: mode=analysis` with the exception; the report written with its size; a report that could not be written, with the exception |
 | `ImageLoader` | Info | `loaded <path> (<MiB>) reader=<type> <W>x<H> planes=N` and what the reader recorded (`LogText.Source`: format, bit depth, float, planes in the file, compression, ICC profile, WCS, note), with the time |
 | `FitsReader` | Debug, Trace | the keywords that decide the reading and the WCS (`LogText.FitsKeys`) for the analysed FITS and for a `--wcs` file; every card at Trace, HISTORY and COMMENT included |
-| `ImageSharpReader` | Debug | what `Image.Identify` found (format, size, bits per pixel, frames) and the facts read from it |
+| `ImageSharpReader` | Debug, Warn | what `Image.Identify` found (format, size, bits per pixel, frames) and the facts read from it; a file it cannot identify, with ImageSharp's exception |
 | `IccPaperBlack` | Info, Warn, Debug | one line per profile read with its figures or its problem; a file that cannot be read, and the package's exception on a damaged table, with the exception; a folder listed with its counts and time, a folder that cannot be listed, a file skipped |
-| `AnalysisRun` | Info, Debug | the clock `analysis`, inputs the path and every parameter, stages `load`, `wcs`, `file`, `tones`, `simulation`, `noise`, `background`, `stars`, `size`, `quantization`, `jpeg`, `recommendations`, `report`, done `verdict=... recommendations=N <W>x<H> workingSet=...`; at Debug the WCS when there is one, every result's figures as soon as it is measured, one line per recommendation with its text and because as shown |
-| `CurveRun`, `CurveExport` | Info, Debug, Warn | the clock `curves`, stages `anchors`, `gamut`, `suggestions`; the anchors with the method and the class levels, every suggestion's points and evidence; a gamut table that cannot be built, with `GamutTable.Cause`; every FITS written with its size |
+| `AnalysisRun` | Info, Debug | the clock `analysis`, inputs the path and every parameter, stages `load`, `wcs`, `file`, `tones`, `simulation`, `noise`, `background`, `stars`, `size`, `quantization`, `jpeg`, `recommendations`, `report`, done `verdict=... recommendations=N <W>x<H> workingSet=...`; at Debug the WCS when there is one, every result's figures as soon as it is measured, one line per recommendation with its text and because as shown; a `--wcs` file that cannot be read, with the reader's exception |
+| `CurveRun`, `CurveExport` | Info, Debug, Warn | the clock `curves`, stages `anchors`, `gamut`, `suggestions`; the anchors with the method and the class levels, every suggestion's points and evidence; a gamut table that cannot be built, with `GamutTable.Cause`; every FITS written with its size; a save over the input the system refuses, with the system's exception |
 | `ProofRun` | Info, Debug, Warn | the clock `proof`, stages `profile`, `gamut`, `mask`, done with the share outside the paper's gamut and the profile's figures; a profile or a table that cannot be used, with `ProofProfile.Cause` or `GamutTable.Cause`; each render at Debug with its intent and time |
 | `App` | Info, Warn | the language and the file from the command line; a `--lang` refused |
 | `MainViewModel` (`Window`) | Info, Warn, Error | `run N started`, `done in` with the verdict, `refused after` (a linear image), `failed after` with the exception; a field refused; an exception that leaves the run (`LogUnhandled`, an exception filter, marked with `LogSetup.Wrote`); the profile restored, in use, cleared; the report written, or not with the exception |

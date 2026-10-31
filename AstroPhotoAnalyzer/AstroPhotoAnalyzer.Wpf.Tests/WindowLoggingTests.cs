@@ -186,37 +186,53 @@ public class WindowLoggingTests
 
     /// <summary>
     /// An exception that leaves a run, whose task the window's buttons discard, is written with its
-    /// stack where it leaves, and the hook of the task nobody awaited names it instead of writing it
-    /// again (R-171, after LightsCheck's ADR 0029).
+    /// stack where it leaves, through the run's exception filter, goes on as before, and the hook of
+    /// the task nobody awaited names it instead of writing it again (R-171, after LightsCheck's ADR
+    /// 0029). A handler of the view-model's own property change throws, outside the run's catch.
     /// </summary>
     [Fact]
-    public void R171_AnExceptionTheWindowDoesNotHandleIsWrittenOnceAndTheHookNamesIt()
+    public async Task R171_AnExceptionTheWindowDoesNotHandleIsWrittenOnceAndTheHookNamesIt()
     {
-        InvalidOperationException bug = new("the window's bug");
+        using TempWorkspace ws = new();
+        string tif = SkyTiff(ws);
+        MainViewModel vm = new();
+        InvalidOperationException bug = new("a binding fell over");
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainViewModel.IsBusy) && vm.IsBusy) throw bug;
+        };
         using LogCapture capture = LogCapture.Start();
 
-        Assert.False(MainViewModel.LogUnhandled(bug));
-        LogSetup.Unobserved(new AggregateException(bug));
+        InvalidOperationException thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => vm.OpenAsync(tif));
+        LogSetup.Unobserved(new AggregateException(thrown));
 
+        Assert.Same(bug, thrown);
         LogCapture.Captured[] errors = capture.Events.Where(e => e.Level == LogLevel.Error).ToArray();
         Assert.Equal(2, errors.Length);
         Assert.Equal("Window", errors[0].Logger);
+        Assert.Equal("a run failed with an exception the window does not handle; it shows no result", errors[0].Message);
         Assert.Same(bug, errors[0].Exception);
         Assert.Equal("a task failed and nobody awaited it: the exception logged above", errors[1].Message);
         Assert.Null(errors[1].Exception);
     }
 
-    /// <summary>The window's own lines are English whatever the language, the same in both (R-171).</summary>
+    /// <summary>
+    /// The window's own lines are English whatever the language, the same in both (R-171): a run, a
+    /// report that cannot be written and a field refused, the refusal's text, which is the user's,
+    /// set apart.
+    /// </summary>
     [Fact]
     public async Task R171_TheWindowsLinesAreTheSameInBothLanguages()
     {
         using TempWorkspace ws = new();
         string tif = SkyTiff(ws);
+        string nowhere = Path.Combine(ws.Dir, "no such folder", "Report.txt");
 
-        string[] english = await WindowMessages(tif, UiLanguage.English);
-        string[] romanian = await WindowMessages(tif, UiLanguage.Romanian);
+        string[] english = await WindowMessages(tif, nowhere, UiLanguage.English);
+        string[] romanian = await WindowMessages(tif, nowhere, UiLanguage.Romanian);
 
-        Assert.NotEmpty(english);
+        Assert.Contains("refused: #", english);
+        Assert.Contains("the report could not be written to " + nowhere + "; the window shows the message", english);
         Assert.Equal(english, romanian);
         Assert.Empty(RomanianWords.In(string.Join("\n", english)));
     }
@@ -264,18 +280,22 @@ public class WindowLoggingTests
         => capture.Events.Where(e => e.Logger == "Window").Select(e => e.Message).ToArray();
 
     /// <summary>
-    /// The messages of the window's loggers for one open of <paramref name="path"/> in one
-    /// language, each elapsed time written as <c>#</c>.
+    /// The messages of the window's loggers in one language for an open of <paramref name="path"/>,
+    /// a save of the report to <paramref name="nowhere"/>, which fails, and a run a field refuses;
+    /// each elapsed time written as <c>#</c>, the refusal's text, the user's, as <c>#</c> too.
     /// </summary>
-    static async Task<string[]> WindowMessages(string path, UiLanguage language)
+    static async Task<string[]> WindowMessages(string path, string nowhere, UiLanguage language)
     {
         using IDisposable scope = Tr.Use(language);
         using LogCapture capture = LogCapture.Start();
         MainViewModel vm = new();
         await vm.OpenAsync(path);
         await Task.WhenAll(vm.CurvesComputation, vm.ProofComputation);
+        vm.SaveReport(nowhere);
+        vm.Parameters.Distance = "1,5";
+        await vm.RunAsync();
         return capture.Events.Where(e => e.Logger.StartsWith("Window", StringComparison.Ordinal))
-            .Select(e => LogFiles.ElapsedTime().Replace(e.Message, "#"))
+            .Select(e => e.Message.StartsWith("refused: ", StringComparison.Ordinal) ? "refused: #" : LogFiles.ElapsedTime().Replace(e.Message, "#"))
             .ToArray();
     }
 }

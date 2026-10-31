@@ -144,9 +144,14 @@ namespace AstroPhotoAnalyzer
             if (!File.Exists(wcsPath)) throw new Exception("--wcs: " + Tr.Pick("the file does not exist: ", "fisierul nu exista: ") + wcsPath);
             IReadOnlyDictionary<string, string> hdr; int w, h;
             try { (hdr, w, h) = FitsReader.ReadImageHeader(wcsPath); }
-            // The reader's exception travels as the inner one, so its stack reaches the
-            // diagnostic log; the user's message, which holds its text already, is unchanged.
-            catch (Exception e) { throw new Exception("--wcs: " + e.Message, e); }
+            catch (Exception e)
+            {
+                // The reader's exception is written to the diagnostic log here, the only place its
+                // stack exists; the user's exception carries no inner one, since the window joins
+                // every inner message into what it shows (the review of 2026-10-31).
+                Log.Warn(e, "the --wcs file " + wcsPath + " cannot be read");
+                throw new Exception("--wcs: " + e.Message);
+            }
             if (w != r.W || h != r.H)
                 throw new Exception(Tr.Pick($"--wcs: the FITS is {Fmt.Dim(w, h)} px, the image {Fmt.Dim(r.W, r.H)}: a WCS is lent only between images of the same size.",
                                             $"--wcs: FITS-ul are {Fmt.Dim(w, h)} px, imaginea {Fmt.Dim(r.W, r.H)}: WCS-ul se imprumuta doar intre imagini de aceeasi marime."));

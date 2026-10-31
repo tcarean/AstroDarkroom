@@ -26,6 +26,7 @@ using System.Text.RegularExpressions;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
+using SixLabors.ImageSharp;
 using Xunit.Abstractions;
 
 namespace AstroPhotoAnalyzer.Tests;
@@ -462,8 +463,10 @@ public partial class LoggingTests
     }
 
     /// <summary>
-    /// A run that throws leaves its start line and the stages it reached, and the exception keeps
-    /// the reader's own as its inner one, so the caller's line writes both stacks (R-171).
+    /// A run that throws leaves its start line and the stages it reached; the reader's own
+    /// exception, which the run rewords for the user, is a Warn line with its stack where it is
+    /// caught, and the user's exception carries no inner one, so the window's message is what it
+    /// was before the log (R-171).
     /// </summary>
     [Fact]
     public void R171_ARunThatThrowsLeavesItsStartLineAndTheStagesItReached()
@@ -479,8 +482,13 @@ public partial class LoggingTests
             Exception e = Assert.ThrowsAny<Exception>(() => AnalysisRun.Execute(png, Scenes.OnBuiltForPaper() with { WcsPath = cutHeader }));
 
             Assert.StartsWith("--wcs: ", e.Message, StringComparison.Ordinal);
-            Assert.NotNull(e.InnerException);
-            string[] run = Timeless(capture, "AnalysisRun");
+            Assert.Null(e.InnerException);
+            LogCapture.Captured reader = Assert.Single(capture.Events, x => x.Level == LogLevel.Warn);
+            Assert.Equal("AnalysisRun", reader.Logger);
+            Assert.Equal("the --wcs file " + cutHeader + " cannot be read", reader.Message);
+            Assert.NotNull(reader.Exception);
+            Assert.Contains("FitsReader", reader.Line, StringComparison.Ordinal);   // the reader's stack
+            string[] run = Timeless(capture, "AnalysisRun").Where(m => m.StartsWith("analysis ", StringComparison.Ordinal)).ToArray();
             Assert.Equal(2, run.Length);
             Assert.StartsWith("analysis start path=" + png + " ", run[0], StringComparison.Ordinal);
             Assert.Contains(" wcsPath=" + cutHeader + " ", run[0], StringComparison.Ordinal);
@@ -496,6 +504,86 @@ public partial class LoggingTests
             Assert.Equal("analysis ended without an outcome after #", run[1]);
             Assert.DoesNotContain(capture.Events, x => x.Logger == "ImageLoader");
         }
+    }
+
+    /// <summary>
+    /// A file ImageSharp cannot identify is a Warn line with ImageSharp's own exception and its
+    /// stack, inner exceptions included, while the exception the user is shown carries none: the
+    /// window joins every inner message into what it shows, so an inner one would add a
+    /// paragraph (the review of 2026-10-31). The file is a damaged WebP named .png, found by
+    /// fuzzing: ImageSharp 3.1.11 wraps its allocation failure into the content error.
+    /// </summary>
+    [Fact]
+    public void R171_ADamagedImageIsLoggedWithImageSharpsException_AndTheUsersMessageIsUnchanged()
+    {
+        using TempWorkspace ws = new();
+        string damaged = ws.WriteFile("damaged.png",
+        [
+            0x52, 0x49, 0x46, 0x46, 0x38, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x20,
+            0x2c, 0x00, 0x00, 0xff, 0x90, 0x03, 0x00, 0x9d, 0x01, 0x2a, 0x40, 0x00, 0x30, 0x00, 0xb7, 0x91,
+            0x48, 0xa0, 0x4c, 0x7f, 0xa4, 0x23, 0x22, 0x22, 0xa8, 0x00, 0xb0, 0x12, 0x09, 0x69, 0x00, 0x01,
+            0xe2, 0x84, 0xa3, 0xaa, 0x34, 0xe4, 0x9d, 0xdc, 0xc0, 0x00, 0xfe, 0xf8, 0xcf, 0x1a, 0xc0, 0x00,
+        ]);
+        using LogCapture capture = LogCapture.Start();
+
+        Exception e = Assert.ThrowsAny<Exception>(() => ImageLoader.Load(damaged));
+
+        Assert.Null(e.InnerException);
+        LogCapture.Captured warn = Assert.Single(capture.Events, x => x.Level == LogLevel.Warn);
+        Assert.Equal("ImageSharpReader", warn.Logger);
+        Assert.Equal("ImageSharp cannot identify " + damaged, warn.Message);
+        InvalidImageContentException imageSharps = Assert.IsType<InvalidImageContentException>(warn.Exception);
+        Assert.NotNull(imageSharps.InnerException);
+        Assert.Contains(imageSharps.InnerException!.Message, warn.Line, StringComparison.Ordinal);   // its inner one, with its stack
+        Assert.EndsWith(imageSharps.Message, e.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A control character in a damaged FITS header reaches the log as a question mark, on the
+    /// Debug line of the keywords as on the Trace line of the card, so no line of the file breaks
+    /// (the review of 2026-10-31).
+    /// </summary>
+    [Fact]
+    public void R171_AControlCharacterInAHeaderReachesTheLogAsAQuestionMark()
+    {
+        using TempWorkspace ws = new();
+        string damaged = "M42" + (char)0 + (char)10 + "X";
+        string fits = ws.WriteFile("damaged.fit", FitsTestData.Build(8, 8, 1, (x, y, p) => 0.3, extraCards: [FitsTestData.StringCard("OBJECT", damaged)]));
+        using LogCapture capture = LogCapture.Start();
+
+        ImageLoader.Load(fits);
+
+        LogCapture.Captured[] reader = capture.Events.Where(e => e.Logger == "FitsReader").ToArray();
+        Assert.Contains(reader, e => e.Level == LogLevel.Debug && e.Message.Contains(" OBJECT=M42??X ", StringComparison.Ordinal));
+        Assert.Contains(reader, e => e.Level == LogLevel.Trace && e.Message == "card OBJECT  = 'M42??X'");
+        Assert.All(capture.Events, e => Assert.DoesNotContain(e.Line, c => c < ' '));
+    }
+
+    /// <summary>
+    /// A save the system refuses because the target is the input by another spelling is reworded
+    /// for the user; the system's own exception is a Warn line with its stack where it is caught,
+    /// the only place it exists (the review of 2026-10-31).
+    /// </summary>
+    [Fact]
+    public void R171_ASaveOverTheInputByAnotherSpellingLogsTheSystemsException()
+    {
+        if (!OperatingSystem.IsWindows()) return;   // the device spelling and the sharing rules are Windows'
+        using TempWorkspace ws = new();
+        string input = ws.WriteFile("in.fit", FitsTestData.Build(48, 48, 3, (x, y, p) => 3000 + 900 * ((x + y + p) % 60)));
+        AnalysisResult a = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
+        CurveSuggestion s = CurveRun.Execute(a, CurvePurpose.Print, 64, 64).Suggestions.FirstOrDefault()
+            ?? new CurveSuggestion { Name = "test", Curve = new ToneCurve([new CurvePoint(0, 0, null), new CurvePoint(0.5, 0.6, null), new CurvePoint(1, 1, null)]) };
+        string target = @"\\?\" + input;
+        using LogCapture capture = LogCapture.Start();
+
+        Exception e = Assert.ThrowsAny<Exception>(() => CurveExport.Save(a, s, target));
+
+        Assert.Null(e.InnerException);
+        LogCapture.Captured warn = Assert.Single(capture.Events, x => x.Level == LogLevel.Warn);
+        Assert.Equal("CurveExport", warn.Logger);
+        Assert.Equal("the save to " + target + " was refused while the input was held open: the target is the input by another spelling", warn.Message);
+        Assert.IsAssignableFrom<IOException>(warn.Exception);
+        Assert.Contains(warn.Exception!.Message, e.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

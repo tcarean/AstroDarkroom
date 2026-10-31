@@ -218,7 +218,9 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   1350 figures 1348 are identical to the recorded ones, and the same two as since 2026-10-23
   differ by 0.0001, inside the 0.01 tolerance (V-011 `curves.Maxima.lstar.clouds` 67.1502 ->
   67.1503, V-014 `curves.Maxima.lstar.peaks` 77.9226 -> 77.9227). The fifteen cases and the
-  eleven star-pair checks pass.
+  eleven star-pair checks pass. Re-run the same day after the review's fixes (`Input/` again:
+  the readers log a reworded exception where they catch it, the header's values printable):
+  the same 1348 of 1350 identical, the same two differences; the 26 tests pass.
 
 - 2026-10-27 (ADR 0060, the banding verdict on the share of the frame with a visible plateau,
   every one of 5000 positions tried; `docs/plans/2026-10-27-plateau-share-of-flat-tiles.md`, its

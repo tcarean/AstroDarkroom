@@ -215,7 +215,10 @@ namespace AstroPhotoAnalyzer
     /// <summary>Saves a suggested curve applied to the whole image as a new FITS (R-145).</summary>
     internal static class CurveExport
     {
-        /// <summary>The diagnostic log: every FITS written, with its size (R-171, ADR 0069).</summary>
+        /// <summary>
+        /// The diagnostic log: every FITS written, with its size, and the system's exception when
+        /// it refuses a save over the input (R-171, ADR 0069).
+        /// </summary>
         static readonly Logger Log = LogManager.GetLogger("CurveExport");
 
         /// <summary>
@@ -269,8 +272,14 @@ namespace AstroPhotoAnalyzer
             {
                 // Opening an existing target of the same size as the image for writing (AtomicFile
                 // probes it before writing) failed while the image was held: almost certainly the
-                // target is the image itself, by another path.
-                if (File.Exists(target) && SameLength(target, hold.Length)) throw new Exception(CurveTexts.SaveOverInput + " (" + e.Message + ")");
+                // target is the image itself, by another path. The system's exception is written
+                // to the diagnostic log here, the only place its stack exists; the user's message
+                // quotes it (the review of 2026-10-31).
+                if (File.Exists(target) && SameLength(target, hold.Length))
+                {
+                    Log.Warn(e, "the save to " + target + " was refused while the input was held open: the target is the input by another spelling");
+                    throw new Exception(CurveTexts.SaveOverInput + " (" + e.Message + ")");
+                }
                 throw;
             }
         }

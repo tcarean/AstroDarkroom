@@ -83,10 +83,33 @@ namespace AstroPhotoAnalyzer
         /// <returns>The text.</returns>
         internal static string Seconds(TimeSpan elapsed) => elapsed.TotalSeconds.ToString("F1", Inv) + " s";
 
-        /// <summary>A text that may be missing or empty: itself, or <c>none</c>.</summary>
+        /// <summary>
+        /// A text that may be missing or empty: itself, its control characters written <c>?</c>
+        /// (<see cref="Printable"/>), or <c>none</c>.
+        /// </summary>
         /// <param name="s">The text, or null.</param>
         /// <returns>The text.</returns>
-        internal static string Str(string s) => string.IsNullOrEmpty(s) ? "none" : s;
+        internal static string Str(string s) => string.IsNullOrEmpty(s) ? "none" : Printable(s);
+
+        /// <summary>
+        /// A text with every control character written <c>?</c>, so a value read from a damaged
+        /// file (a FITS card, an ICC profile's name) breaks no line of the log and puts no control
+        /// byte in it (the review of 2026-10-31).
+        /// </summary>
+        /// <param name="s">The text; null gives null.</param>
+        /// <returns>The text, itself when it holds no control character.</returns>
+        internal static string Printable(string s)
+        {
+            if (s == null || !s.Any(IsControl)) return s;
+            var sb = new StringBuilder(s.Length);
+            foreach (char c in s) sb.Append(IsControl(c) ? '?' : c);
+            return sb.ToString();
+        }
+
+        /// <summary>Whether a character is a control character, C0 or DEL.</summary>
+        /// <param name="c">The character.</param>
+        /// <returns>True under the space and for DEL (127).</returns>
+        static bool IsControl(char c) => c < ' ' || c == (char)127;
 
         /// <summary>A flag as <c>yes</c> or <c>no</c>.</summary>
         /// <param name="b">The flag.</param>

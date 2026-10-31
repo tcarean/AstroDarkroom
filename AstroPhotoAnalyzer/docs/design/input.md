@@ -39,8 +39,8 @@ with the problem.
 that knows both. An unknown extension is an error naming the accepted ones. It writes one line
 to the diagnostic log per image loaded, with the reader and what it recorded; `FitsReader` adds
 the keywords that decide the reading at Debug and every card at Trace, `ImageSharpReader` what
-`Image.Identify` found, and the exception ImageSharp throws travels as the inner one of the
-reader's own, so its stack reaches the log (`logging.md`).
+`Image.Identify` found, and a file it cannot identify at Warn with ImageSharp's exception and its
+stack, before the user's exception, which carries no inner one, is thrown (`logging.md`).
 
 | reader | extensions | what it reads |
 |---|---|---|

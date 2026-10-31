@@ -7,9 +7,10 @@ the colour cast and the gradients, the largest print size the real detail suppor
 distance it will be seen at, and how much denoise the print version needs. Every recommendation
 comes with the figure it measured and the threshold it judged it by.
 
-It measures and recommends; the export itself is made cleanly from Siril. Besides its report it
-writes one file, and only when you ask for it: from the window's **Curves Editing** tab, a new FITS with
-a suggested contrast curve applied. The image you open is never modified.
+It measures and recommends; the export itself is made cleanly from Siril. Besides its report and
+its log (see "Logs") it writes one file, and only when you ask for it: from the window's
+**Curves Editing** tab, a new FITS with a suggested contrast curve applied. The image you open is
+never modified.
 
 There are two applications over one core, so both give the same figures: the window,
 `AstroPhotoAnalyzer.Wpf.exe`, with a dark theme, and the console, `AstroPhotoAnalyzer.exe`, which
@@ -395,9 +396,9 @@ that decide how it is read; every ICC profile read, with its Dmax or why it cann
 each analysis its parameters, every figure of every measurement, every recommendation with its
 "because:", the verdict and the time each stage took; the same for the suggested curves and the
 soft proof; every file the programs write for you, with its size; in the window, each run, the
-dialogs and the buttons pressed; every error with its technical details, those the programs work
-around without a word included (a profile or a settings file that cannot be read, a link that
-does not open); at the end the exit code and the time taken. The log's own words are English
+dialogs and the buttons pressed; every error with its technical details, and the problems the
+programs work around without a word (a profile or a settings file that cannot be read, a link
+that does not open); at the end the exit code and the time taken. The log's own words are English
 whatever `--lang` says; an error's message, a refusal and a recommendation appear as you saw
 them, so in Romanian under `--lang ro`. It holds the paths of your files and the figures measured
 on them, not their pixels.
