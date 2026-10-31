@@ -24,7 +24,7 @@ namespace LightsCheck.Core;
 /// it is centred on, the stretched grey bytes.
 /// </summary>
 /// <param name="Where">
-/// The position, in the Romanian word the report turns into a caption (centru, stanga sus, ...).
+/// The position in the run's language, which opens the cut-out's caption (centre, top left, ...).
 /// </param>
 /// <param name="Star">The measured star the cut-out is centred on.</param>
 /// <param name="Grey">

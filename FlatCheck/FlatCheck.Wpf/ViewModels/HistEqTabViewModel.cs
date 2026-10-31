@@ -17,19 +17,12 @@
 
 // HistEqTabViewModel.cs - the "Histogram" tab: one frame seen through histogram equalisation.
 //
-// The list has the master in first position, the smoothed flat beside it when it exists, and then
-// the frames from flats/, raw or FITS. The master is there for a single question - did the
-// imperfections of the individual frames average out? - and it is not preselected and does not run
-// by itself on opening: it is a 24 MP float FITS, and the Structure tab is already reading it at
-// that moment (the "sequential, not parallel" rule in MainViewModel). The smoothed one is there for
-// the other question - what did the smoothing take out and what did it leave - and it is a third
-// kind of row, not a second master: chip NETEZIT, IsMaster false.
-//
-// THE LIST IS REBUILT WHEN THE SMOOTHING WRITES. The Netezire tab can produce the file during the
-// session; MainViewModel wires its event to FileWritten, which re-reads the list from the session -
-// a single definition of the list, HistEqCandidates - and keeps the choice, without starting
-// anything. With one exception: if the file rewritten is the very one chosen, it recomputes,
-// otherwise the picture on screen would be of bytes no longer on disk.
+// The list has the master in first position and then the frames from flats/, raw or FITS. The
+// master is there for a single question - did the imperfections of the individual frames average
+// out? - and it is not preselected and does not run by itself on opening: it is a 24 MP float
+// FITS, and the Structure tab is already reading it at that moment (the "sequential, not
+// parallel" rule in MainViewModel). The list is read once from the session when the folder
+// opens, through HistEqCandidates - a single definition of it.
 //
 // THE LOADER COVERS THE PICTURE, NOT THE TAB. The list stays clickable while it computes, and a
 // click on another file CANCELS the current run and starts another. So a superseded run does not
@@ -59,7 +52,7 @@ using static FlatCheck.Ui;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>The Histogram tab: the master, the smoothed master and the frames of flats/ in a
+    /// <summary>The Histogram tab: the master and the frames of flats/ in a
     /// list, and the chosen one shown histogram-equalised, per view, at full resolution.</summary>
     public sealed class HistEqTabViewModel : TabViewModel
     {
@@ -100,8 +93,7 @@ namespace FlatCheck.Wpf
             View.Changed += RefreshImage;
         }
 
-        /// <summary>The master first, the smoothed one when it exists, then the frames from
-        /// flats/.</summary>
+        /// <summary>The master first, then the frames from flats/.</summary>
         public ObservableCollection<HistEqFileRow> Files { get; } = new();
 
         public HistEqFileRow Selected
@@ -170,19 +162,12 @@ namespace FlatCheck.Wpf
                 ClearError();
         }
 
-        /// <summary>The list, from the session: the master, the smoothed one when it exists, the
-        /// frames.</summary>
+        /// <summary>The list, from the session: the master, then the frames.</summary>
         void FillFiles()
         {
             Files.Clear();
-            IReadOnlyList<HistEqCandidate> candidates = _session.HistEqCandidates();
-            int lastOfGroup = -1;
-            for (int i = 0; i < candidates.Count; i++)
-                if (candidates[i].Kind != HistEqKind.Frame) lastOfGroup = i;
-
-            for (int i = 0; i < candidates.Count; i++)
+            foreach (HistEqCandidate c in _session.HistEqCandidates())
             {
-                HistEqCandidate c = candidates[i];
                 Files.Add(new HistEqFileRow
                 {
                     Path = c.Path,
@@ -190,36 +175,8 @@ namespace FlatCheck.Wpf
                     // the file's real folder: the master can be in masters/ or process/
                     Where = Path.GetFileName(Path.GetDirectoryName(c.Path)) + "/",
                     Kind = c.Kind,
-                    ClosesGroup = i == lastOfGroup,
                 });
             }
-        }
-
-        /// <summary>
-        /// Another tab wrote a file. If it is the current session's smoothed flat, the list is
-        /// rebuilt and the choice kept (by path); if the chosen file is the very one rewritten, it
-        /// recomputes. Any other path, or no session, does nothing.
-        /// </summary>
-        /// <param name="path">The full path of the file written.</param>
-        internal void FileWritten(string path)
-        {
-            if (_session == null || path == null) return;
-            if (!string.Equals(path, _session.SmoothedMasterPath, StringComparison.OrdinalIgnoreCase)) return;
-
-            string selectedPath = Selected?.Path;
-
-            // With a ListBox bound both ways, Files.Clear() pushes null into Selected's setter
-            // right now; Recompute() stops at Selected == null without touching _runCts, so a run
-            // in progress is not cancelled and its Populate reaches the screen as before. The
-            // choice is then put straight into the field, not through the setter, so no run starts
-            // on a file that has not changed.
-            FillFiles();
-            _selected = selectedPath == null ? null
-                : Files.FirstOrDefault(r => string.Equals(r.Path, selectedPath, StringComparison.OrdinalIgnoreCase));
-            Raise(nameof(Selected));
-
-            if (_selected != null && string.Equals(selectedPath, path, StringComparison.OrdinalIgnoreCase))
-                Recompute();
         }
 
         /// <summary>Starts a run on the chosen file and keeps it in <see cref="Pending"/>;
@@ -279,8 +236,8 @@ namespace FlatCheck.Wpf
         /// HistEqAnalyzer, without a file. A new file = zoom back to fitted.
         /// </summary>
         /// <param name="r">The analyzer's result; kept for a later change of view.</param>
-        /// <param name="kind">What the file is: a master and a smoothed master get their note
-        /// under the picture, a frame none.</param>
+        /// <param name="kind">What the file is: a master gets its note under the picture, a
+        /// frame none.</param>
         /// <param name="path">The file the result came from, printed in the report rebuilt
         /// when the chip goes on; null when there is none (a result built in a test).</param>
         internal void Populate(HistEqResult r, HistEqKind kind = HistEqKind.Frame, string path = null)
@@ -295,12 +252,7 @@ namespace FlatCheck.Wpf
 
             Frame = HistEqReport.FrameLine(r);
             Channels = string.Join("\n", Enumerable.Range(0, r.Channels.Length).Select(i => HistEqReport.ChannelLine(r, i)));
-            MasterNote = kind switch
-            {
-                HistEqKind.Master => HistEqReport.MasterVersusFrame(),
-                HistEqKind.Smoothed => HistEqReport.SmoothedVersusMaster(),
-                _ => "",
-            };
+            MasterNote = kind == HistEqKind.Master ? HistEqReport.MasterVersusFrame() : "";
 
             RefreshImage();
             HasResult = true;
@@ -372,8 +324,6 @@ namespace FlatCheck.Wpf
             try { cts?.Cancel(); } catch (ObjectDisposedException) { }
             cts?.Dispose();
 
-            // without a session, FileWritten has nothing to rebuild: a closed folder does not
-            // fill up again because the smoothing wrote into it
             _session = null;
             _gate = null;
             _last = null;

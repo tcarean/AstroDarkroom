@@ -98,5 +98,5 @@ public sealed class StaFixture : IDisposable
 /// <summary>
 /// The window tests share a single UI thread, so they cannot run in parallel.
 /// </summary>
-[CollectionDefinition("fereastra")]
+[CollectionDefinition("window")]
 public class WindowCollection : ICollectionFixture<StaFixture> { }

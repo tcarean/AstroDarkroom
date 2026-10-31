@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // FitsWriter.cs - our own FITS writer, the pair of FitsReader. It exists for a single
-// consumer: the smoothing mode, which writes a second master flat.
+// consumer: the synthetic mode, which writes a radial flat from the lens's profile.
 //
 // It writes a single primary HDU, 2D, BITPIX -32 or 16, big-endian, with the input's header
 // copied card by card - minus the structural ones, which it rewrites - and with a few HISTORY

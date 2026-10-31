@@ -58,7 +58,7 @@ awaits; the window's log lines and the two logger names of `Loggers` are in `log
   header row and the rows, each row an `ItemsControl` with a horizontal panel of fixed-width
   `TextBlock` cells, no grid control and no column logic; under the tables it lists
   `DitherExplanation`, `SeriesReport.DitherExplanation` as `ParagraphVm`s with the same
-  `DataTrigger` on `Emphasis` as the Respinse tab (R-047);
+  `DataTrigger` on `Emphasis` as the Rejected tab (R-047);
 - the charts take `ChartPoint(X, Y, Label, Colour)` lists: the map from the registration's
   `Dx`/`Dy`, the steps and nearest distances from `DitherAnalysis`, the four quality series
   from `FrameMeasurement`; a frame without a figure is `NaN` and the chart leaves a gap. The
@@ -74,7 +74,7 @@ fixed labels are `{local:T}` pairs in the XAML (`language.md`, which also covers
 problem cards, the wait line (`Busy`, `BusyRegistering`), the dialog titles, the status after
 an export, the cut-out notes, the step chart's guide labels (`MoveGuide`, `WalkingNoiseGuide`,
 given the core's formatted figure) and the map's grid note (`GridNote`). The class words on
-the elongation guides are `SeriesReport.ClassWord`, the session card's `scara` label is
+the elongation guides are `SeriesReport.ClassWord`, the session card's `scale` label is
 `SeriesReport.ScaleLabel`, and the `ERROR: ` / `EROARE: ` line of an export error or a failed cut-out decode
 is `RunReport.Error`, the console's own, so a verdict word or the prefix changes in `Report/`
 alone (ADR 0020).

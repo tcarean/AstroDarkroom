@@ -75,18 +75,6 @@ internal sealed class SessionFixture : IDisposable
     internal SessionFixture WithFlatMasterInMasters(Func<int, int, double>? scene = null)
         => WithFlatMaster(scene, folder: "masters");
 
-    /// <summary>
-    /// The smoothed flat beside the master, where the Netezire tab writes it: a copy of the
-    /// master. For the list and for the equalisation the content does not matter, only that it
-    /// loads.
-    /// </summary>
-    internal SessionFixture WithSmoothedMaster()
-    {
-        string master = Session.FlatMasterPath ?? throw new InvalidOperationException("intai masterul");
-        File.Copy(master, SirilSession.SmoothedPathBeside(master), overwrite: true);
-        return this;
-    }
-
     internal SessionFixture WithFlatMasters(params string[] names)
     {
         WithProcess();

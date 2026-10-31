@@ -43,7 +43,7 @@ internal static class FrameRun
     /// <summary>
     /// Opens the session and measures one of its lights. The folder errors of
     /// <see cref="SessionFolder.Open"/> propagate; an index outside the session throws
-    /// <see cref="InvalidOperationException"/> with a Romanian message.
+    /// <see cref="InvalidOperationException"/> with a message in the run's language.
     /// </summary>
     /// <param name="folder">The session folder.</param>
     /// <param name="frameIndex">The light's 1-based position in the session's sorted list.</param>
@@ -111,7 +111,7 @@ internal static class FrameRun
     /// </param>
     /// <returns>
     /// The white level of the integer range (255, 65535 or 2^32 - 1) or 1.0 for a float frame,
-    /// black at 0, with a Romanian source text for the report.
+    /// black at 0, with a source text for the report, in the run's language.
     /// </returns>
     internal static AduScale AssumedScale(int bitpix) => bitpix switch
     {

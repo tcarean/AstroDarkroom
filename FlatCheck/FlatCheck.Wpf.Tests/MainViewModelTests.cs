@@ -175,61 +175,6 @@ public class MainViewModelTests
         Assert.Null(vm.HistEq.Selected);
     }
 
-    /// <summary>Case A through the window: a folder with the smoothed master already written lists
-    /// it at once, second.</summary>
-    [Fact]
-    public async Task AFolderOpenedWithASmoothedMasterListsItAtOnce()
-    {
-        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster().WithRawFlats("a.NEF");
-        var vm = new MainViewModel();
-
-        await vm.OpenAsync(f.Root);
-
-        Assert.Equal(new[] { "MASTER", "NETEZIT", "" }, vm.HistEq.Files.Select(r => r.Tag));
-        Assert.Null(vm.HistEq.Selected);
-    }
-
-    /// <summary>
-    /// Case B, end to end: the smoothing button writes the file and the row appears in the
-    /// Histogram tab's list, without starting anything there - "nothing at opening" is also
-    /// "nothing at a write".
-    /// </summary>
-    [Fact]
-    public async Task SmoothingFromTheWindowPutsTheSmoothedMasterIntoTheHistogramList()
-    {
-        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF");
-        var vm = new MainViewModel(null, null, _ => true);
-
-        await vm.OpenAsync(f.Root);
-        Assert.Equal(new[] { "MASTER", "" }, vm.HistEq.Files.Select(r => r.Tag));
-
-        await vm.Smooth.RunAsync();
-
-        Assert.Equal(f.Session.SmoothedMasterPath, vm.Smooth.SavedTo);
-        Assert.Equal(new[] { "MASTER", "NETEZIT", "" }, vm.HistEq.Files.Select(r => r.Tag));
-        Assert.Equal(vm.Smooth.SavedTo, vm.HistEq.Files[1].Path);
-        Assert.Null(vm.HistEq.Selected);
-        Assert.False(vm.HistEq.HasResult);
-    }
-
-    /// <summary>Another folder, without a smoothed master: the NETEZIT row does not survive the
-    /// change.</summary>
-    [Fact]
-    public async Task OpeningAnotherFolderDropsTheSmoothedRow()
-    {
-        using var a = new SessionFixture().WithFlatMaster().WithSmoothedMaster();
-        using var b = new SessionFixture().WithFlatMaster();
-        var vm = new MainViewModel();
-
-        await vm.OpenAsync(a.Root);
-        Assert.Contains(vm.HistEq.Files, r => r.IsSmoothed);
-
-        await vm.OpenAsync(b.Root);
-
-        Assert.DoesNotContain(vm.HistEq.Files, r => r.IsSmoothed);
-        Assert.Single(vm.HistEq.Files);
-    }
-
     /// <summary>
     /// The Smida session from the archive: the master in masters/, as OSC_Preprocessing.ssf
     /// from Siril 1.4 leaves it, calibrated lights in process/. It opens and runs both.
@@ -863,14 +808,13 @@ public class MainViewModelTests
     }
 
     /// <summary>
-    /// R-117: the folder button is locked while the Smoothing or the Synthetic tab is busy, as
-    /// it is during the opening chain: their main runs take longer than a folder change does
-    /// (measured 2026-10-30 on a 24 MP master, 6.4-6.7 s and about 8 s), and their file writes
-    /// have no business landing on another folder's tabs. The gate the test holds keeps each
-    /// run busy.
+    /// R-117: the folder button is locked while the Synthetic tab is busy, as it is during the
+    /// opening chain: its main run takes longer than a folder change does (measured 2026-10-30
+    /// on a 24 MP master, about 8 s), and its file write has no business landing on another
+    /// folder's tabs. The gate the test holds keeps the run busy.
     /// </summary>
     [Fact]
-    public async Task R117_TheFolderButtonIsLockedDuringASmoothingOrSyntheticRun()
+    public async Task R117_TheFolderButtonIsLockedDuringASyntheticRun()
     {
         using var f = new SessionFixture().WithFlatMaster();
         using var ws = new TempWorkspace();
@@ -885,21 +829,14 @@ public class MainViewModelTests
         Assert.True(vm.CanChooseFolder);
 
         IDisposable held = await gate.EnterAsync(CancellationToken.None);
-        Task smooth = vm.Smooth.RunAsync();
-        Assert.False(vm.CanChooseFolder);
-        held.Dispose();
-        await smooth;
-        Assert.True(vm.CanChooseFolder);
-
-        held = await gate.EnterAsync(CancellationToken.None);
         Task synthetic = vm.Synthetic.RunAsync();
         Assert.False(vm.CanChooseFolder);
         held.Dispose();
         await synthetic;
         Assert.True(vm.CanChooseFolder);
 
-        // the binding hears every change: false at each run, true at its end
-        Assert.Equal(new[] { false, true, false, true }, seen.Skip(seen.Count - 4));
+        // the binding hears every change: false at the run, true at its end
+        Assert.Equal(new[] { false, true }, seen.Skip(seen.Count - 2));
     }
 }
 

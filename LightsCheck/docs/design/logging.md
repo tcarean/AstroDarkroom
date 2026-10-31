@@ -84,11 +84,15 @@ with six significant digits, `none` for a missing value, sizes in KiB and MiB, a
 NLog never parses them as message templates and a `{` in a path is harmless. A line whose message
 costs something to build is guarded by `IsDebugEnabled` or `IsTraceEnabled`.
 
-A line never throws: a value it may not have is written `none`. A line that threw would change
-what a run does at one level only, at the default one among them: libraw's line once read the
-CFA order of every raw, and a raw without a Bayer mosaic (an X-Trans RAF, a monochrome DNG) has
-none, so every such frame became unreadable at Debug and not at Info. `RawReader.FiguresLine`
-composes that line from plain values, so a test reaches it without such a raw.
+A line never throws: a value it may not have is written `none`. A guarded line that threw would
+change what a run does at one level only, at the default one among them: libraw's line once read
+the CFA order of every raw, and a raw without a Bayer mosaic (an X-Trans RAF, a monochrome DNG)
+has none, so every such frame became unreadable at Debug and not at Info. `RawReader.FiguresLine`
+composes that line from plain values, so a test reaches it without such a raw. An unguarded line
+builds its message before the logger looks at the level, so one that threw would throw at every
+level, `off` included: the About window's link line once asked a relative link for its absolute
+address, the failure its catch had just taken, and the window would have closed; it now names the
+link as written.
 
 `LogText` never writes a text the report words in the run's language: a FITS frame's scale is
 `none` in its `loaded` line (`FrameRun` assumes it from BITPIX, in the run's language) and its
@@ -134,7 +138,7 @@ three timed inside `FrameRun.Measure` by the clock it is handed; `open`, `measur
 | `App` | Info, Warn | the language and the folder from the command line; a `--lang` refused; it hooks the window thread's unhandled exception, which `LogSetup` writes |
 | `MainWindow` | Info | the folder and export dialogs, chosen or cancelled; Stop; About |
 | `MainViewModel` | Info, Warn, Debug, Error | `session <folder>: run started pixel= threads= east= north=`; `done in`, `stopped after`, or `refused after ...; the card shows the message` with the exception; a run a newer one replaced, at Debug; an exception the window does not handle, at Error, from an exception filter that returns false and records it with `LogSetup.Wrote`; every file the export writes, as soon as it is written, and an export that failed; the cut-outs of a frame, and a decode that failed (Warn), at Debug when another frame was selected meanwhile |
-| `UserSettings`, `DarkTitleBar`, `AboutWindow` | Debug | the settings file written, with its size, and one that could not be read or written; a window manager that cannot be called (no `dwmapi.dll` or entry point), the title bar staying light; a link the system could not open; each failure with its exception |
+| `UserSettings`, `DarkTitleBar`, `AboutWindow` | Debug | the settings file written, with its size, and one that could not be read or written; a window manager that cannot be called (no `dwmapi.dll` or entry point), the title bar staying light; a link that could not be opened; each failure with its exception |
 
 Not logged: pixels, a FITS card below Trace, a progress tick (the frame lines are the progress),
 the cancellation of `CancelPending` racing the window's close.
@@ -175,7 +179,10 @@ be given it before the handle is closed. Those processes, and the one of
 `R060_WithoutLangTheProgramSpeaksEnglish`, log as any other, so every test run leaves their lines
 in `log\lightscheck.log` beside the copy of the executable in the test project's build folder,
 rolled like any log. `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers, the
-title bar's and the About window's catches and the wiring of the hooks run in no test: no test
-builds `App`, crashes a process, lacks `dwmapi.dll` or follows a link. The hooks' bodies,
-`LogSetup.Fatal` and `LogSetup.Unobserved`, and the view-model's filter for an exception it does
-not handle, `MainViewModel.LogUnhandled`, are tested directly.
+title bar's catch and the wiring of the hooks run in no test: no test builds `App`, crashes a
+process or lacks `dwmapi.dll`. The hooks' bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, and
+the view-model's filter for an exception it does not handle, `MainViewModel.LogUnhandled`, are
+tested directly. The About window's catch runs in
+`R071_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays`, which raises `RequestNavigate` on
+the window, on the tests' UI thread, with a relative link: asking for its absolute address throws
+before any browser is started, so the test opens nothing.

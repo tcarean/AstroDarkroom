@@ -130,23 +130,4 @@ namespace FlatCheck.Wpf
         /// <summary>Collapsed by default, like the other three.</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
-
-    /// <summary>
-    /// The smoothing tab's guide. The same shape as the others, but OPEN by default: it is the
-    /// tab's precondition, not a footnote - a button that writes a file beside the master is not
-    /// pressed before knowing what it does. See SessionMessages.SmoothGuideIntro.
-    /// </summary>
-    public sealed class SmoothGuideViewModel : ObservableObject
-    {
-        bool _expanded = true;
-
-        public string Intro => SessionMessages.SmoothGuideIntro();
-
-        public IReadOnlyList<GuideRow> Rows { get; } =
-            SessionMessages.SmoothGuideRows()
-                .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
-                .ToList();
-
-        public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
-    }
 }

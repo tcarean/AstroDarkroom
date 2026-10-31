@@ -1,7 +1,7 @@
 # 0077. The Exposure tab keeps its pick's run in Pending, and the folder button locks during the long runs
 
 Date: 2026-10-30
-Status: accepted 2026-10-30
+Status: accepted 2026-10-30; the Smoothing tab's part of the lock superseded by 0080
 
 ## Context
 

@@ -23,10 +23,10 @@ namespace FlatCheck.Tests;
 
 /// <summary>
 /// The acceptance figures measured on the real masters, read from docs/validation.json so the
-/// document and the test cannot drift apart (ADR 0004). Four kinds of case, one per run the
+/// document and the test cannot drift apart (ADR 0004). Three kinds of case, one per run the
 /// figures were measured with: <c>structure</c> (the five tests, the vignetting depth and the
 /// local spot on a master), <c>profile</c> (the master's depth against the nearest lens
-/// profile, identified from a raw beside it), <c>smooth</c> (what --smooth removes) and
+/// profile, identified from a raw beside it) and
 /// <c>against</c> (the master against the synthetic flat written from its lens's Adobe profile).
 ///
 /// Not in the gate: trait Category=Validation, minutes on 96 MB files. A case whose file is
@@ -68,7 +68,6 @@ public class ValidationTests
         {
             "structure" => Structure(master),
             "profile" => Profile(c, master),
-            "smooth" => Smooth(c, master),
             "against" => Against(c, master),
             _ => throw new InvalidOperationException($"{id}: unknown kind {kind}"),
         };
@@ -153,29 +152,6 @@ public class ValidationTests
         }
 
         return m;
-    }
-
-    static Dictionary<string, object> Smooth(JsonElement c, string master)
-    {
-        double scale = c.TryGetProperty("scalePx", out JsonElement s) ? s.GetDouble() : SmoothAnalyzer.DefaultScalePx;
-        SmoothRunOutcome o = SmoothRun.Execute(master, scale, TextWriter.Null);
-        if (o.Refused)
-            return new Dictionary<string, object> { ["refusal"] = o.Refusal };
-        SmoothResult r = o.Result;
-        return new Dictionary<string, object>
-        {
-            ["removedPtpPct"] = R(r.RemovedPtpPct),
-            ["removedMaxTilePct"] = R(r.RemovedMaxTilePct),
-            ["removedSpotPct"] = R(r.RemovedSpotPct),
-            ["removedSpotX"] = r.RemovedSpotX,
-            ["removedSpotY"] = r.RemovedSpotY,
-            ["inputTexturePct"] = R(r.InputTexturePct),
-            ["outputTexturePct"] = R(r.OutputTexturePct),
-            ["beforeVerdict"] = r.Before.Verdict,
-            ["afterVerdict"] = r.After.Verdict,
-            ["beforeVignetteStops"] = R(r.Before.VignetteStops),
-            ["afterVignetteStops"] = R(r.After.VignetteStops),
-        };
     }
 
     static Dictionary<string, object> Against(JsonElement c, string master)

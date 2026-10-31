@@ -5,11 +5,11 @@ repository: DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare, CopyWcs (fol
 and AstroPhotoAnalyzer. The launcher is a small WPF window that lists the six, says which is in
 the suite folder beside it and starts the one the user picks; it computes nothing of its own.
 Its `<Version>` is the suite's version and its `/release` publishes the six components' windows
-and the launcher into one flat self-contained folder, zipped; the zip is shared from the owner's
-Google Drive, its link and SHA-256 in `README.md` (ADR 0005) and, for the latest release, in the
-repository root's `README.md`, the Bitbucket front page (ADR 0008), and the consoles stay in the
-components' own releases (ADR 0002). It is for the owner and the few people who receive the
-zip; it is not a seventh analysis tool and never changes a component.
+and the launcher into one flat self-contained folder, zipped; the zip and its `.sha256` are
+attached to the GitHub Release of its tag, and the repository root's `README.md`, the GitHub
+front page, links the latest release (ADRs 0008 and 0015); the consoles stay in the components'
+own releases (ADR 0002). It is for the owner and the few people who receive the zip; it is not
+a seventh analysis tool and never changes a component.
 
 ## Commands
 

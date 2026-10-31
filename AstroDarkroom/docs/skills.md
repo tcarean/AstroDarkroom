@@ -72,14 +72,20 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   Check that the folder's root holds `LICENSE`, `THIRD-PARTY-NOTICES.txt`, `DOTNET-LICENSE.txt`
   and `DOTNET-THIRD-PARTY-NOTICES.txt` (R-017, ADR 0014), the last two equal to the files of the
   `Microsoft.NETCore.App` runtime pack whose version the windows' `.runtimeconfig.json` names.
-- At step 7: the owner uploads the zip to their Google Drive by hand and shares it as "Anyone
-  with the link"; nothing here uploads it or asks for Drive access (ADR 0005). With the link
-  the owner gives, propose a new first row of the table under `## Download` in `README.md`,
-  and the same row as the only row of the table under `## Download` in the repository's root
-  `README.md` (`../README.md`, the Bitbucket front page, ADR 0008), replacing the row there:
-  the version, the release date, the link, and the hash from the zip's `.sha256`. Read the hash
-  from the file, never retype it. Then propose its commit, `Link the X.Y.Z zip in the READMEs`,
-  limited to the two READMEs; the owner commits it on `main`, as the release commit.
+- At step 7: the zip and its `.sha256` go to the GitHub Release of the tag, which the owner
+  makes by hand on the web; nothing here uploads them or asks for a GitHub token (ADR 0015).
+  Propose the push of the release commit and the tag for the owner to run,
+  `git push origin main astrodarkroom-vX.Y.Z`, then what the owner enters at
+  <https://github.com/tcarean/AstroDarkroom/releases/new>: the pushed tag, picked under "Choose
+  a tag" (a name typed there makes a new tag from a branch); the title `Astro Darkroom X.Y.Z`;
+  the notes, the version's section of `CHANGELOG.md` and then the zip's `.sha256` line in a
+  code block, read from the file, never retyped; the zip and its `.sha256` from `artifacts/`,
+  to attach; and "Set as the latest release" selected. When the owner says it is published,
+  read <https://api.github.com/repos/tcarean/AstroDarkroom/releases/latest> (public, no
+  account): its `tag_name` must be the tag, and the zip's `digest` the hash of the `.sha256`
+  (`sha256:<hash>`). Report both; a different digest means another file was uploaded. The
+  READMEs do not change: the root `README.md` (`../README.md`, the GitHub front page, ADR 0008)
+  links `releases/latest`, and neither lists the versions.
 
 ## /mutate
 

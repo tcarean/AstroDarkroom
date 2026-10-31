@@ -60,12 +60,13 @@ the notes.
 (`--against`, 2026-09-18): close +0.19, on-monitor +0.12. Sixth test (nearest profile):
 close 0.00 vs the lensfun 7D2 entry -> PERFECT; on-monitor -0.07 -> BUN. Structure: the
 on-monitor master's worst tile carries ~2 points of real even structure (the texture);
-the `--smooth` figures for both are in `smooth-validation.md`.
+the `--smooth` figures of the time for both were in `smooth-validation.md`, deleted with the
+mode (ADR 0080; git history).
 
 **Angular falloff.** n = 0.5-0.8; the panel adds ~0.1 stops at mid-field.
 
 **Conclusion.** The best depth of the library, within the databases' own spread. The price is
-the fabric's texture, which is what `--smooth` was built for.
+the fabric's texture, which the `--smooth` mode of the time was built for (removed, ADR 0080).
 
 ## 3. Tablet through frosted binder covers (Tokina, 2026-09-18)
 
@@ -178,7 +179,7 @@ reference's resolution; n was not measured.
 |---|---|---|---|---|---|---|---|
 | Tokina f2.8-sky-no-difuser (2026-09-16) | twilight sky, no diffuser | 15 + 15 at 180° | not stated (corners ~10 %, residual 9.31 %, worst tile 7.87 %) | -0.39 (0.27 vs 0.66) | not measured | -1.4 | even saddle -6.3 %, chromatic |
 | Tokina monitor-difuzor-aproape | monitor, fabric diffuser at the lens | 30, scheme not in the notes | not stated | +0.19 (0.85) | 0.00 vs 7D2, PERFECT | 0.5-0.8 | best of the library |
-| Tokina monitor-difuzor-pe-monitor | monitor, fabric on the panel | 30, scheme not in the notes | not stated (worst tile +2 pt of texture) | +0.12 (0.78) | -0.07, BUN | 0.5-0.8 | 300-px cells +-3 %; `--smooth` target |
+| Tokina monitor-difuzor-pe-monitor | monitor, fabric on the panel | 30, scheme not in the notes | not stated (worst tile +2 pt of texture) | +0.12 (0.78) | -0.07, BUN | 0.5-0.8 | 300-px cells +-3 % |
 | Tokina coperti-7-foi (2026-09-18) | tablet, 7 frosted covers | 4 x 10 at 90° | PERFECT / BUN (1.5-2.5 %) | +0.57 (1.26) | +0.34 vs D7100 0.91, REFA | 2.16 | +-5.5 % world-fixed saddle per orientation |
 | Tokina coperti-15-foi (2026-09-18) | tablet, 15 frosted covers | 4 x 10 at 90° | PERFECT / BUN (1.5-2.5 %) | +0.56 (1.24) | +0.33 vs D7100 0.91, REFA | 2.08 | +-3.5 % saddle; -0.28 stops of light vs 7 |
 | Tokina hartie-3-foi (2026-09-23) | tablet, 3 sheets of paper | 4 x 10 at 90° | BUN (residual 3.8 %) | +0.15 (0.81 vs 0.66) | vs 0.85 / 0.91, not stated | 0.55 | re-seated after frames 5, 15, 25, 38 |

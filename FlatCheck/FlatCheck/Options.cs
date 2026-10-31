@@ -47,8 +47,6 @@ namespace FlatCheck
         Expo,
         /// <summary><c>--histeq</c>.</summary>
         Histeq,
-        /// <summary><c>--smooth</c>.</summary>
-        Smooth,
         /// <summary><c>--against</c>.</summary>
         Against,
         /// <summary><c>--synthetic</c>.</summary>
@@ -82,12 +80,6 @@ namespace FlatCheck
         internal bool Histeq;
         internal bool Rainbow;
 
-        // Mode 6: the smoothed flat. The value is the PATH of the FITS file to write -
-        // explicit, with no default name: a mode that writes 96 MB beside the master must be
-        // told where. -o stays the map. --scale is the smoothing scale, in sensor pixels.
-        internal string Smooth;
-        internal double ScalePx = SmoothAnalyzer.DefaultScalePx;
-
         // The synthetic flat and the comparison. --lenses needs no input file.
         internal string Synthetic;
         internal string Lens;
@@ -106,9 +98,6 @@ namespace FlatCheck
         /// </summary>
         internal string Raw;
 
-        // --scale auto: the tool proposes the scale (SmoothScaleAdvisor) and smooths at it;
-        // with no texture or undetermined, it writes nothing and exits with 2.
-        internal bool ScaleAuto;
         internal string OutPng = "flatcheck.png";
         internal double? Sat;
         internal double? Black;
@@ -131,7 +120,7 @@ namespace FlatCheck
         { "--light", "--expo", "--sky", "--histeq", "--rainbow", "--lenses", "-h", "--help" };
 
         static readonly HashSet<string> ValueFlags = new()
-        { "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale",
+        { "-o", "--out", "--sat", "--black", "--pattern", "--fov",
           "--synthetic", "--lens", "--source", "--focal", "--fstop", "--crop", "--profiles", "--against", "--raw" };
 
         /// <summary>
@@ -193,15 +182,6 @@ namespace FlatCheck
                             if (fov <= 0 || fov >= 180)
                                 return o.Fail(T($"--fov expects degrees between 0 and 180, got {v}", $"--fov asteapta grade intre 0 si 180, a primit {v}"));
                             o.Fov = fov; break;
-                        case "--smooth":
-                            if (v.Length == 0) return o.Fail(T("--smooth expects the path of the FITS file to write, got an empty string", "--smooth asteapta calea fisierului FITS de scris, a primit sirul gol"));
-                            o.Smooth = v; break;
-                        case "--scale":
-                            if (string.Equals(v, "auto", StringComparison.OrdinalIgnoreCase)) { o.ScaleAuto = true; break; }
-                            if (!TryNum(v, out var scale)) return o.Fail(T($"--scale expects a number or 'auto', got '{v}'", $"--scale asteapta un numar sau 'auto', a primit '{v}'"));
-                            if (scale < 50 || scale > 2000)
-                                return o.Fail(T($"--scale expects sensor pixels between 50 and 2000, got {v}", $"--scale asteapta pixeli de senzor intre 50 si 2000, a primit {v}"));
-                            o.ScalePx = scale; break;
                         case "--synthetic":
                             if (v.Length == 0) return o.Fail(T("--synthetic expects the path of the FITS file to write, got an empty string", "--synthetic asteapta calea fisierului FITS de scris, a primit sirul gol"));
                             o.Synthetic = v; break;
@@ -246,11 +226,8 @@ namespace FlatCheck
                 return o.Fail(T("expected a single input file, got: ", "astept un singur fisier de intrare, am primit: ") + string.Join(", ", positional));
             o.Image = positional.Count > 0 ? positional[0] : null;
 
-            // The smoothed file is not written over the input: it would destroy the only
-            // master photographed, and exactly that one must stay, so one can see what was
-            // removed.
-            if (o.Smooth != null && SamePath(o.Smooth, o.Image))
-                return o.Fail(T("--smooth cannot write over the input file; give another path", "--smooth nu poate scrie peste fisierul de intrare; da alta cale"));
+            // The synthetic file is not written over the reference: it would destroy the only
+            // master photographed, the one the synthetic is compared with.
             if (o.Synthetic != null && SamePath(o.Synthetic, o.Image))
                 return o.Fail(T("--synthetic cannot write over the reference frame; give another path", "--synthetic nu poate scrie peste cadrul de referinta; da alta cale"));
 
@@ -277,7 +254,6 @@ namespace FlatCheck
             => o.Lenses ? Mode.Lenses
              : o.Synthetic != null ? Mode.Synthetic
              : o.Against != null ? Mode.Against
-             : o.Smooth != null ? Mode.Smooth
              : o.Histeq ? Mode.Histeq
              : o.Expo ? Mode.Expo
              : o.Light ? Mode.Light

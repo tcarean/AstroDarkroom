@@ -306,7 +306,7 @@ The maps of all fifteen were looked at side by side (old `flatcheck.png` in each
 against the new one, both on the automatic scale): the annulus and the hard circle are gone
 from the three paper masters and the monitor master, and nothing else changed shape. The
 0.79 % step left on the on-monitor master is its paper texture (0.69 % fine texture,
-`--smooth` territory), not the model. The verdicts, the single-orientation stack, the sky
+measured by the `--smooth` mode of the time), not the model. The verdicts, the single-orientation stack, the sky
 master's accepted cost and the golden drift are in ADR 0017; on the fixtures,
 `structure_clean` reads 0.29 % again and its worst tile 0.57 % (0.37 before, the correction's
 cost on a 256-px square fixture where only the corner arcs are partial), and the k = 0.6

@@ -204,6 +204,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Removed
 
+- The `--smooth` mode and the window's Smoothing tab (ADR 0080): the smoothed master, the
+  `--scale` option with its `auto` proposal, the `-after` map, the `SMOOTHED` row of the Histogram
+  tab and the `pp_flat_stacked_smoothed.fit` it listed. `--smooth` and `--scale` are unknown
+  options now, exit 1; the window has six tabs and its folder button is locked by the Synthetic
+  tab alone (R-117). Removing a documented flag is a breaking change by SemVer; the version bump
+  is the owner's.
 - The `--ratio` mode and the window's Ratio tab (R-020 and R-082 dropped, ADR 0067): the
   attribution by 180-degree rotation needed two masters from two rotated sittings, an input the
   workflow never produced, so the tab stayed empty and the flag unused. `--ratio` is now an

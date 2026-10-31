@@ -74,7 +74,7 @@ internal sealed record ReportTable(string Title, IReadOnlyList<string> Columns, 
 /// The registered y offset from the reference frame in pixels, one decimal.
 /// </param>
 /// <param name="Move">The `dithering` cell, the mount's move on each axis.</param>
-/// <param name="Spot">The cell of the frame's run at 10 px, `k/n de la f`.</param>
+/// <param name="Spot">The cell of the frame's run at 10 px, `k/n from f`.</param>
 /// <param name="Reasons">The frame's flags in words; empty when it has none.</param>
 /// <param name="StepTip">The tooltip of the step cell; null when the frame has no step.</param>
 internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Move, string Spot, string Reasons, string? StepTip);
@@ -88,8 +88,8 @@ internal static class SeriesReport
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     /// <summary>
-    /// Writes the whole series report: the session lines and the scale, the sections REZUMAT,
-    /// FOCUS, EXPUNERE SI ZGOMOT, ROUA, CADRE MISCATE, DRIFT SI ROTATIE and DITHERING, the
+    /// Writes the whole series report: the session lines and the scale, the sections SUMMARY,
+    /// FOCUS, EXPOSURE AND NOISE, DEW, TRAILED FRAMES, DRIFT AND ROTATION and DITHERING, the
     /// rejected frames, then the table of every frame.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
@@ -253,7 +253,7 @@ internal static class SeriesReport
         => run is null ? "-" : $"{run.Ordinal.ToString(Inv)}/{run.Frames.ToString(Inv)} {T("from", "de la")} {run.FirstIndex.ToString(Inv)}";
 
     /// <summary>
-    /// What the Respinse tab says under its heading, one paragraph per line: the elongation, where
+    /// What the Rejected tab says under its heading, one paragraph per line: the elongation, where
     /// the marginal frames are, the trail and its axis, and in bold what each axis points to
     /// (R-035, R-036). Built when read, in the language of that moment.
     /// </summary>
@@ -329,7 +329,7 @@ internal static class SeriesReport
     // ------------------------------------------------------------------ the sections
 
     /// <summary>
-    /// The REZUMAT section: focus, exposure, dew, the moved frames, dithering, polar alignment,
+    /// The SUMMARY section: focus, exposure, dew, the trailed frames, dithering, polar alignment,
     /// each with its verdict, and the frames to leave out of the stack.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
@@ -413,14 +413,14 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The EXPUNERE SI ZGOMOT section: the sky background of the first and last good frames,
+    /// The EXPOSURE AND NOISE section: the sky background of the first and last good frames,
     /// the read noise per channel from the bias pair, then per sampled frame the sky, the
     /// shot-to-read ratio and the noise penalty of each channel, and the row that explains the
     /// ratio's scale.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The rows in the console's order; only the background and a `nemasurat` read-noise row
+    /// The rows in the console's order; only the background and a `not measured` read-noise row
     /// when the session has no two biases.
     /// </returns>
     internal static IReadOnlyList<ReportRow> NoiseRows(SeriesResult r)
@@ -455,7 +455,7 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The ROUA section: the halo, the detected stars and the FWHM of the first against the last
+    /// The DEW section: the halo, the detected stars and the FWHM of the first against the last
     /// good frames, and the dew verdict.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
@@ -473,7 +473,7 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The CADRE MISCATE section: the bad frames, the marginal frames (each row naming its
+    /// The TRAILED FRAMES section: the bad frames, the marginal frames (each row naming its
     /// elongation bounds, <see cref="Th.ElongationBad"/> and <see cref="Th.ElongationMarginal"/>),
     /// and the direction of the trails with the mount axis it falls on.
     /// </summary>
@@ -492,7 +492,7 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The DRIFT SI ROTATIE section: the drift between consecutive undithered frames in pixels
+    /// The DRIFT AND ROTATION section: the drift between consecutive undithered frames in pixels
     /// per minute (and arcseconds per minute when the scale is known), the drift over one
     /// exposure, the field rotation, the polar alignment and the RA drift.
     /// </summary>
@@ -659,8 +659,8 @@ internal static class SeriesReport
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
     /// The verdict word, null when there is none, and the text: the error's bracket and its cost
-    /// in pixels per exposure, at least the lower drift for ATENTIE or without an upper bound,
-    /// both drifts for LA LIMITA, otherwise at most the upper one.
+    /// in pixels per exposure, at least the lower drift for WARNING or without an upper bound,
+    /// both drifts for MARGINAL, otherwise at most the upper one.
     /// </returns>
     private static (string? Verdict, string Text) PolarSummary(SeriesResult r)
     {
@@ -881,7 +881,7 @@ internal static class SeriesReport
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The `pattern fix` row: the figures when the pattern was measured, else why not, and in
+    /// The `fixed pattern` row: the figures when the pattern was measured, else why not, and in
     /// both cases what the session's darks do.
     /// </returns>
     private static ReportRow PatternRow(SeriesResult r)

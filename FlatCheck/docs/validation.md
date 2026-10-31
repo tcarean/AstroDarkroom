@@ -7,13 +7,12 @@ under History saying old value, new value and why. The masters and raws are the 
 `E:\Photografie\Astro\Flats and Darks`, listed with their SHA-256 in
 `FlatCheck.Tests/testdata/manifest.json`; `FLATCHECK_TESTDATA_LARGE` names that folder.
 
-Four kinds of case, one per run the figures come from:
+Three kinds of case, one per run the figures come from:
 
 | Kind | What runs | What is recorded | Tolerance |
 | --- | --- | --- | --- |
 | `structure` | `StructureRun` on the master, no profiles | the five deviation tests, the vignetting depth, the local spot, the verdict | 0.05 points |
 | `profile` | `StructureRun` with the first raw of `flats/` as `--raw` | the master's depth, the nearest profile and the difference in stops, the depth verdict, the run's verdict | 0.02 stops |
-| `smooth` | `SmoothRun` at 300 px | what was removed (p95 - p5 on tiles, worst tile, deepest spot with sign), input and output texture, verdict and depth before and after | 0.05 points |
 | `against` | `SyntheticRun` from the lens's Adobe profile at 20 mm f/2.8, crop 1.523, then `AgainstRun` | the two depths, the difference in stops and as corner error, the ratio's residual, shape / depth / overall verdict | 0.02 stops |
 
 The `nearest` lens name and the verdict words are compared exactly; positions (`spotAt`) are
@@ -38,7 +37,7 @@ the second decimal is the check that the port and the notes describe the same th
 | V-006 | Samyang ISO400 f/2 sky | BUN | 7.59 / 6.83 / 6.33 / 8.03 / 4.17 | 0.61 | |
 | V-007 | Samyang ISO400 f/2.8 sky | ACCEPTABIL | 12.62 / 7.05 / 9.99 / 12.36 / 6.51 | 0.15 | tilt 12.36 %, 12.62 / 7.05 / 6.05 (the 1.2.0 note in `thresholds.md`; the worst tile did not exist then) |
 | V-008 | Tokina monitor, diffuser close | BUN | 6.67 / 8.73 / 7.10 / 6.71 / 6.65 | 0.85 | |
-| V-009 | Tokina monitor, diffuser on the monitor | ACCEPTABIL | 16.41 / 10.74 / 12.27 / 11.77 / 12.60 | 0.78 | local spot +6.19 % (`smooth-validation.md`) |
+| V-009 | Tokina monitor, diffuser on the monitor | ACCEPTABIL | 16.41 / 10.74 / 12.27 / 11.77 / 12.60 | 0.78 | local spot +6.19 % (2026-09-16) |
 | V-010 | Tokina sky, no diffuser | ACCEPTABIL | 10.28 / 7.25 / 10.06 / 0.49 / 8.81 | 0.27 | residual 10.06 after the 4θ correction (2026-09-23 note); 0.27 stops |
 | V-011 | Tokina tablet, 15 frosted covers | BUN | 2.17 / 2.00 / 2.28 / 2.55 / 1.54 | 1.24 | 1.24 stops (2026-09-18 note) |
 | V-012 | Tokina tablet, 7 frosted covers | PERFECT | 1.58 / 1.60 / 1.42 / 1.64 / 0.95 | 1.26 | 1.26 stops, PERFECT |
@@ -69,19 +68,6 @@ the second decimal is the check that the port and the notes describe the same th
 
 The library on 2026-09-25 holds 15 sessions with a raw beside every master, so every session is
 here; the ten quoted in `modes-structure.md` are a subset.
-
-### What `--smooth` removes at 300 px (V-031 to V-035)
-
-| ID | Master | removed ptp / worst tile / spot (%) at | texture in -> out (%) | verdict before -> after | earlier figure (`smooth-validation.md`, 2026-09-16) |
-| --- | --- | --- | --- | --- | --- |
-| V-031 | Nikkor ISO400 | 0.375 / 0.404 / -0.321 at (117, 225) | 0.051 -> 0.014 | BUN -> BUN | 0.37 / 0.40 / -0.32 at (117, 225) |
-| V-032 | Nikkor ISO800 | 0.393 / 0.449 / -0.320 | 0.060 -> 0.014 | ACCEPTABIL -> ACCEPTABIL | 0.39 / 0.45 / -0.32 |
-| V-033 | Tokina diffuser close | 0.378 / 0.469 / +0.342 | 0.044 -> 0.020 | BUN -> BUN | 0.38 / 0.47 / +0.34 |
-| V-034 | Tokina on the monitor | 3.683 / 4.208 / +6.038 at (1071, 639) | 0.687 -> 0.023 | ACCEPTABIL -> ACCEPTABIL | 3.68 / 4.21 / +6.04 at (1071, 639); texture 0.69 -> 0.02 |
-| V-035 | Samyang sursa_neuniforma lcd | 0.121 / 0.714 / +0.400 | 0.036 -> 0.008 | BUN -> BUN | 0.12 / 0.71 / +0.40 |
-
-Depth before and after agrees within 0.006 stops on all five, which is the "verdicts and
-vignetting depth unchanged" claim of the smooth note, re-measured.
 
 ### The master against its lens's Adobe synthetic (V-036 to V-040)
 
@@ -184,6 +170,9 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 ## History
 
+- 2026-10-31: V-031 to V-035, the `smooth` kind, removed with the `--smooth` mode (ADR 0080);
+  their last figures stay in this file's git history and in ADR 0026. The other cases are
+  untouched: no formula moved and nothing was re-measured.
 - 2026-10-30: V-049 added, the Nikkor 35 DX master against the shipped lensfun copy alone, the
   case of a computer without Adobe's profiles (R-116, ADR 0076): the nearest profile is the
   lens's own full-frame calibration (+0.207 stops, ACCEPTABIL, 3 profiles) where the first-word

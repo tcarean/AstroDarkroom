@@ -78,21 +78,6 @@ public class HistEqReportTests
     }
 
     /// <summary>
-    /// The two screen notes, master and smoothed, are not confused; the smoothed one says
-    /// what left and why the smoothed flat looks noisier, not cleaner.
-    /// </summary>
-    [Fact]
-    public void TheSmoothedNoteSaysWhatWasRemovedAndWhyItLooksNoisier()
-    {
-        string s = HistEqReport.SmoothedVersusMaster();
-
-        Assert.Contains("netezit", s);
-        Assert.Contains("ZGOMOTOS", s);
-        Assert.Contains("poza nu spune", s);
-        Assert.NotEqual(HistEqReport.MasterVersusFrame(), s);
-    }
-
-    /// <summary>
     /// With false colours the display line says so and the legend follows the table's order:
     /// magenta first, red last. Without them neither appears.
     /// </summary>
