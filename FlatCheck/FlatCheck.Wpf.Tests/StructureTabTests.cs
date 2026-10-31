@@ -1078,16 +1078,12 @@ public class StructureTabTests
 
     // ------------------------------------------------ the lens picker on a list by range (R-121)
 
-    /// <summary>The range raw of the fixtures (LensProfileTestData.Range135Raw), on the D3300
-    /// or on another body.</summary>
-    static LoadedFrame Range135Raw(string camera = "NIKON D3300") => LensProfileTestData.Range135Raw(camera);
-
     /// <summary>The tab on the catalog with the two 135 f/2 lenses and the range raw in place
     /// of the file in flats/, run once.</summary>
     static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithRangePair(SessionFixture f, TempWorkspace ws, SessionSettings? settings = null, string camera = "NIKON D3300")
     {
         var sources = LensProfileTestData.Sources(ws, rangePair: true);
-        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? Range135Raw(camera) : ImageLoader.LoadInfo(path));
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? LensProfileTestData.Range135Raw(camera) : ImageLoader.LoadInfo(path));
         await vm.RunAsync(f.Session, CancellationToken.None, settings);
         return (vm, sources);
     }
@@ -1099,13 +1095,10 @@ public class StructureTabTests
         var expected = new StringWriter();
         RunReport.WriteBanner(expected);
         StructureRun.Execute(f.Session.FlatMasterPath, expected,
-            new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => Range135Raw(), LensKey = lensKey });
+            new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => LensProfileTestData.Range135Raw(), LensKey = lensKey });
         RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
         return expected.ToString();
     }
-
-    /// <summary>The catalog key of the lens with that name (LensProfileTestData.KeyOf).</summary>
-    static string KeyOf(ProfileSources sources, string name) => LensProfileTestData.KeyOf(sources, name);
 
     /// <summary>
     /// R-121: a raw that gives only a range, with two lenses of that range, offers the picker:
@@ -1126,8 +1119,8 @@ public class StructureTabTests
         Assert.Equal(3, vm.LensOptions.Count);
         Assert.Null(vm.LensOptions[0].Key);
         Assert.NotEmpty(vm.LensOptions[0].Label);
-        Assert.Equal(KeyOf(sources, LensProfileTestData.Nikkor135Dc), vm.LensOptions[1].Key);
-        Assert.Equal(KeyOf(sources, LensProfileTestData.Samyang135), vm.LensOptions[2].Key);
+        Assert.Equal(LensProfileTestData.KeyOf(sources, LensProfileTestData.Nikkor135Dc), vm.LensOptions[1].Key);
+        Assert.Equal(LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135), vm.LensOptions[2].Key);
         Assert.Contains(LensProfileTestData.Samyang135, vm.LensOptions[2].Label);
         Assert.Same(vm.LensOptions[0], vm.SelectedLens);
         Assert.Equal(RangeReport(f, sources, null), File.ReadAllText(f.Session.ResultTextPath));
@@ -1160,7 +1153,7 @@ public class StructureTabTests
         using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
         using var ws = new TempWorkspace();
         var (vm, sources) = await RunWithRangePair(f, ws);
-        string key = KeyOf(sources, LensProfileTestData.Samyang135);
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
         byte[] map = vm.Map;
 
         vm.SelectedLens = vm.LensOptions.Single(o => o.Key == key);
@@ -1195,7 +1188,7 @@ public class StructureTabTests
         using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
         using var ws = new TempWorkspace();
         var sources = LensProfileTestData.Sources(ws, rangePair: true);
-        string key = KeyOf(sources, LensProfileTestData.Samyang135);
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
         var remembered = SessionSettings.None;
         remembered.Lens = key;
 
@@ -1247,7 +1240,7 @@ public class StructureTabTests
         Assert.True(vm.OffersLensChoice);
         LensProfileRow adobe = Assert.Single(vm.ProfileRows);           // the lensfun lens has no crop on this body
         Assert.Equal(LensProfileTestData.Nikkor135Dc, adobe.Lens);
-        string key = KeyOf(sources, LensProfileTestData.Samyang135);
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
 
         vm.SelectedLens = vm.LensOptions.Single(o => o.Key == key);
         await vm.Pending;
@@ -1287,5 +1280,29 @@ public class StructureTabTests
         Assert.False(File.Exists(settings.FilePath));
         Assert.Equal(report, File.ReadAllText(f.Session.ResultTextPath));
         Assert.Equal(written, File.GetLastWriteTimeUtc(f.Session.ResultTextPath));
+    }
+
+    /// <summary>
+    /// R-121: a gap nothing was chosen for (the range raw without an aperture) offers no
+    /// picker: no pick could cure it, so the prompt must not promise a verdict.
+    /// </summary>
+    [Fact]
+    public async Task R121_AGapNothingWasChosenForOffersNoPicker()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, rangePair: true);
+        LoadedFrame noFStop = LensProfileTestData.Range135Raw();
+        noFStop.FNumber = null;
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? noFStop : ImageLoader.LoadInfo(path));
+
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasProfileRows);
+        Assert.NotEmpty(vm.ProfileGap);
+        Assert.False(vm.OffersLensChoice);
+        Assert.Empty(vm.LensChoicePrompt);
+        Assert.Null(vm.SelectedLens);
     }
 }

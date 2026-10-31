@@ -580,11 +580,12 @@ namespace FlatCheck.Wpf
                 ProfileRows = Array.Empty<LensProfileRow>();
                 ProfileScale = Array.Empty<ScaleRow>();
                 ProfileSummary = ProfileScaleNote = ProfileNote = "";
-                // The picker stays whenever the shot offers a choice, compared or not: a chosen
-                // lens whose profile makes no row (a gap) must still be undone from the screen,
-                // or the choice kept in flatcheck.json would lock the card on the gap. With the
-                // box off nothing was identified, and the picker goes with the rows.
-                ShowLensPicker(NoFilters ? explained?.Shot : null);
+                // On a gap the picker stays only when the gap is the choice's doing: a chosen
+                // lens whose profile makes no row must still be undone from the screen, or the
+                // choice kept in flatcheck.json would lock the card on the gap. A gap nothing was
+                // chosen for (no f-stop in the raw, no crop for any candidate) is not cured by a
+                // pick, so the picker goes with the rows; with the box off nothing was identified.
+                ShowLensPicker(NoFilters && explained?.Shot?.ChosenLens != null ? explained.Shot : null);
                 // With the box off (R-118): the master's own depth, for information, and why
                 // nothing is compared - both from the core. With it on: the gap, when known.
                 ProfileMaster = NoFilters ? "" : StructureReport.MasterDepth(o.Structure);

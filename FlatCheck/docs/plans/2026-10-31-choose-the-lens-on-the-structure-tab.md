@@ -168,3 +168,11 @@ words composed in the view-model, as the nearest-row note already was) on the pr
 5. `ShotIdentity.OffersLensChoice` is the one condition for the prompt and the picker, instead
    of the prompt's emptiness.
 7. The `SelectedLens` setter filters the binding's null before `Set`, with the reason beside it.
+
+## Part 3: the second review, on the fix commit (approved by the owner on 2026-10-31)
+
+Four small things, all taken without a further review: on a gap the picker stays only when a
+lens is chosen (a gap nothing was chosen for, such as no f-stop, gets none, with a test); the
+left-out sentence says "the other candidates" on a list the ID decided; the prompt says "the
+lenses in the list", since on a gap no row is below it; the three forwarders in the tests became
+direct calls to `LensProfileTestData`.

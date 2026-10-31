@@ -365,7 +365,9 @@ namespace FlatCheck
             LensChoice chosen = shot.ChosenLens;
             string others = string.Join(", ", shot.Candidates.Where(c => c.Key != chosen.Key).Select(c => $"{c.SourceLabel} {c.Title}"));
             string leftOut = others.Length == 0 ? ""
-                : T($" The other lenses of that range were left out: {others}.", $" Celelalte obiective cu aceasta gama au fost lasate deoparte: {others}.");
+                : shot.CandidatesByRangeOnly
+                ? T($" The other lenses of that range were left out: {others}.", $" Celelalte obiective cu aceasta gama au fost lasate deoparte: {others}.")
+                : T($" The other candidates were left out: {others}.", $" Celelalte candidate au fost lasate deoparte: {others}.");
             // Why there was a choice: on a list by range alone the file could not tell the lens;
             // on any other list (a caller narrowing an ID-found list by key) that sentence
             // would be false, so only the choice and what it left out are said.
@@ -385,9 +387,9 @@ namespace FlatCheck
         /// <returns>The paragraph, in the interface language; "" when there is nothing to choose.</returns>
         internal static string LensChoicePrompt(ShotIdentity shot)
             => shot != null && shot.OffersLensChoice
-                ? T($"All that is known is {shot.RawLensLabel}: a manual lens or one unknown to the databases, so the lenses below are every lens of your "
+                ? T($"All that is known is {shot.RawLensLabel}: a manual lens or one unknown to the databases, so the lenses in the list are every lens of your "
                     + "camera's mount with that range. Choose yours and the verdict is its profile's; without a choice the nearest profile decides.",
-                    $"Se stie doar {shot.RawLensLabel}: obiectiv manual sau necunoscut bazelor, deci obiectivele de mai jos sunt toate obiectivele "
+                    $"Se stie doar {shot.RawLensLabel}: obiectiv manual sau necunoscut bazelor, deci obiectivele din lista sunt toate obiectivele "
                     + "monturii camerei tale cu aceasta gama. Alege-l pe al tau si verdictul e al profilului lui; fara alegere decide cel mai apropiat profil.")
                 : "";
 

@@ -55,9 +55,6 @@ public class LensChoiceTests
             LensText = text,
         });
 
-    /// <summary>The catalog key of the lens with that name.</summary>
-    static string KeyOf(ProfileSources sources, string name) => LensProfileTestData.KeyOf(sources, name);
-
     /// <summary>The console's report block for the outcome.</summary>
     static string Report(StructureOutcome o)
     {
@@ -99,7 +96,7 @@ public class LensChoiceTests
     {
         using var ws = new TempWorkspace();
         var (r, sources) = Setup(ws);
-        string key = KeyOf(sources, LensProfileTestData.Samyang135);
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
 
         StructureOutcome o = Compare(r, sources, key);
 
@@ -172,6 +169,8 @@ public class LensChoiceTests
         Assert.NotEmpty(note);
         Assert.DoesNotContain("databases", note);
         Assert.DoesNotContain("bazelor", note);
+        Assert.DoesNotContain("of that range", note);
+        Assert.DoesNotContain("aceasta gama", note);
     }
 
     /// <summary>R-121: the console's lens text, when given, wins over the key.</summary>
@@ -181,7 +180,7 @@ public class LensChoiceTests
         using var ws = new TempWorkspace();
         var (r, sources) = Setup(ws);
 
-        StructureOutcome o = Compare(r, sources, KeyOf(sources, LensProfileTestData.Samyang135), text: LensProfileTestData.Nikkor135Dc);
+        StructureOutcome o = Compare(r, sources, LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135), text: LensProfileTestData.Nikkor135Dc);
 
         Assert.True(o.Compared, o.Profiles.Gap.ToString());
         ProfileDepth row = Assert.Single(o.Profiles.Profiles);

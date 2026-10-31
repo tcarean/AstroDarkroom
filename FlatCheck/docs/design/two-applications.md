@@ -138,11 +138,12 @@ every lens of the mount with that range, and the window cannot tell which is on 
 the rows' order, labelled `SourceLabel Name [Where]`, and the selection lands on the entry whose
 key is `shot.ChosenLens?.Key`, else on the no-choice entry - through the field and a `Raise`, as
 the box does, since a run shows a choice and does not make one. The "nothing compared" branch
-passes the shot too, with the box on: a chosen lens whose profile makes no row (a lensfun lens
-on a body the lensfun table does not know, so no crop) leaves the card on the gap with the
-picker still up, so the choice can be undone from the screen; otherwise the key kept in
-`flatcheck.json` would lock the card on the gap at every reopen. With the box off, and in
-`Reset`, the picker is emptied and `OffersLensChoice` hides it. The `SelectedLens` setter, a
+passes the shot too, with the box on and only when a lens is chosen: a chosen lens whose
+profile makes no row (a lensfun lens on a body the lensfun table does not know, so no crop)
+leaves the card on the gap with the picker still up, so the choice can be undone from the
+screen; otherwise the key kept in `flatcheck.json` would lock the card on the gap at every
+reopen. A gap nothing was chosen for (no f-stop in the raw) gets no picker: no pick could cure
+it. With the box off, and in `Reset`, the picker is emptied and `OffersLensChoice` hides it. The `SelectedLens` setter, a
 pick on screen, ignores the null the `ComboBox` pushes whenever the list is replaced (the field
 never takes it), writes `_settings.Lens = value.Key` and starts `RecompareAsync`, exactly the
 box's path; `QueryAsync`
