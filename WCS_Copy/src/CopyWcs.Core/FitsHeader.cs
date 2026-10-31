@@ -191,8 +191,9 @@ internal sealed class FitsHeader
 
     /// <summary>
     /// The keyword of a card: its first eight characters, trimmed of spaces only, the one
-    /// character FITS pads with; the byte 0xA0, a no-break space in Latin-1, is part of the
-    /// keyword, so that no card with such a byte passes for another (R-010).
+    /// character FITS pads with; the byte 0xA0, a no-break space in Latin-1, and a control
+    /// character 0x09 to 0x0D are part of the keyword, so that no card with such a byte passes
+    /// for another (R-010).
     /// </summary>
     /// <param name="card">The card; shorter than eight characters means no keyword.</param>
     /// <returns>The keyword, or an empty string for a blank or short card.</returns>

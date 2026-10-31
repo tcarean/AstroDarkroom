@@ -151,7 +151,7 @@ public class MainViewModelTests
         Assert.True(vm.HasCards);
         Assert.Equal(lines[1..].Select(l => l[2..]), vm.Cards);
         Assert.Equal(15, vm.Cards.Count);
-        Assert.All(vm.Cards, c => Assert.Equal(c.TrimEnd(), c));
+        Assert.All(vm.Cards, c => Assert.Equal(c.TrimEnd(' '), c));
         Assert.False(vm.HasNotes);
         Assert.Equal(before, File.ReadAllBytes(f.Dest));
 

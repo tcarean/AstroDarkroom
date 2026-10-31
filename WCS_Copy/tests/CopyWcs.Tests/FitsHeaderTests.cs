@@ -252,9 +252,11 @@ public class FitsHeaderTests
         var block = FitsTestData.HeaderBlock(new[]
         {
             FitsTestData.Card("SIMPLE", "T"),
-            FitsTestData.Pad("END#    = 'not the end'"),
             FitsTestData.Pad("OBJECT##= 'M43'"),
             FitsTestData.Pad("NAXIS1  = 100#"),
+            // Last, so that a reader taking it for END (the old Trim()) still reads the two
+            // cards above and each assertion fails on its own (the second review of 2026-10-31).
+            FitsTestData.Pad("END#    = 'not the end'"),
         });
         for (var i = 0; i < block.Length; i++)
         {
@@ -266,7 +268,7 @@ public class FitsHeaderTests
 
         var header = FitsHeader.ReadFrom(new MemoryStream(block));
 
-        Assert.Equal(new[] { "SIMPLE", "END" + (char)0xA0, "OBJECT" + (char)0xA0 + (char)0xA0, "NAXIS1" }, header.Keywords);
+        Assert.Equal(new[] { "SIMPLE", "OBJECT" + (char)0xA0 + (char)0xA0, "NAXIS1", "END" + (char)0xA0 }, header.Keywords);
         Assert.False(header.Contains("OBJECT"));
         Assert.Equal(-1, header.GetInt("NAXIS1"));
     }

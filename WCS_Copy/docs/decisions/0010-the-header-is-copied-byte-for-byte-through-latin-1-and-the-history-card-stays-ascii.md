@@ -95,7 +95,9 @@ wrote `Nebula.fit` for the same file.
   `string.Trim()` counts as white space, and a keyword field of `OBJECT` plus two 0xA0 bytes
   would have matched `OBJECT` and been replaced, which is the untouched card R-010 now
   promises (found by the review of 2026-10-31; `KeywordOf` and `GetInt` use `Trim(' ')`, the
-  two listings `TrimEnd(' ')`).
+  two listings `TrimEnd(' ')`). The same trim no longer strips the control characters 0x09 to
+  0x0D either, the one way a header below 0x80 reads differently than before: FITS pads with
+  the space alone, so such a card is kept as it is too.
 - A byte above 0x7F in a card the dry run lists, or the window shows, appears as the character
   the console's output encoding or WPF gives the Latin-1 code (0xC5 as A with ring), where it
   was `?`; the copy and the log are unaffected, and the file written holds the byte.

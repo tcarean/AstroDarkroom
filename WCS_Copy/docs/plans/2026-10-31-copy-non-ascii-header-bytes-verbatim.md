@@ -105,3 +105,20 @@ Six findings, all held, fixed in the next commit:
 5. `SetCard`'s contract that a character above 0xFF has no byte, said in its `<param>`.
 6. The dry-run listing and the window's card list now show a byte above 0x7F as the character
    of its Latin-1 code, where they showed `?`: a Consequences line in ADR 0010.
+
+## The second review (one subagent, on 072a05b3 alone)
+
+Six findings, none blocking; five applied in the third commit, one left:
+
+1. In the engine test the `END` + 0xA0 card came second, so against the old `Trim()` the two
+   cards after it were never read and two of the three assertions passed vacuously: the card
+   is now last, and each assertion fails on its own against the old code.
+2. `Trim(' ')` also stops stripping the control characters 0x09 to 0x0D, the one way a header
+   below 0x80 reads differently than before: said in ADR 0010, `fits-header.md` and
+   `KeywordOf`'s comment.
+3. The window's test still asserted `TrimEnd()` where `Show` now trims spaces only.
+4. `run-and-console.md` and `window.md` now say the listings trim trailing spaces only and show
+   a byte above 0x7F as the character of its Latin-1 code.
+5. One over-long line in `fits-header.md`, rewrapped.
+6. Left: `GetInt`'s `int.TryParse` without `NumberStyles.Integer` and the invariant culture is
+   pre-existing and immaterial for ASCII integer cards; not this task's.

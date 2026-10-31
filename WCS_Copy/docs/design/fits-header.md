@@ -26,8 +26,10 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
   data.
 - `KeywordOf` is the first eight characters trimmed of spaces only (`Trim(' ')`, as `GetInt`
   trims a value: with Latin-1 the bytes 0x85 and 0xA0 read as white space that `Trim()` would
-  strip, and `OBJECT` plus two 0xA0 bytes must not pass for `OBJECT`, nor `END` plus one for
-  `END`; `R010_ReadFrom_TheByte0xA0InAKeywordOrAValue_IsNotWhiteSpace`); `Keywords` lists the non-blank ones, so
+  strip, as it stripped the control characters 0x09 to 0x0D, while FITS pads with the space
+  alone; `OBJECT` plus two 0xA0 bytes must not pass for `OBJECT`, nor `END` plus one for `END`;
+  `R010_ReadFrom_TheByte0xA0InAKeywordOrAValue_IsNotWhiteSpace`); `Keywords` lists the
+  non-blank ones, so
   `COMMENT` and `HISTORY` count as keywords and blank cards do not.
 - `GetInt` takes the text after `=` up to a `/`, trimmed, and returns -1 when the card is
   missing, has no `=` or is not an integer. Two files that both lack `NAXIS1` therefore
