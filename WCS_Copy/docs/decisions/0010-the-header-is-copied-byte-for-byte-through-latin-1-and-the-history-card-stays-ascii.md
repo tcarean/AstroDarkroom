@@ -41,15 +41,17 @@ wrote `Nebula.fit` for the same file.
 - **The HISTORY card stays ASCII** (R-011): a character outside ASCII whose canonical
   decomposition (FormD) begins with an ASCII character followed by combining marks only becomes
   that character (a with breve to `a`, s and t with comma to `s` and `t`, i and a with
-  circumflex to `i` and `a`, e with acute to `e`, A with ring to `A`); a combining mark standing
-  alone is dropped; anything else outside ASCII, an emoji or a letter of another script, becomes
-  one `?`. The copy never puts a byte above 0x7F in a header itself.
+  circumflex to `i` and `a`, e with acute to `e`, A with ring to `A`); a non-spacing combining
+  mark standing alone is dropped; anything else outside ASCII, an emoji, a letter of another
+  script, a spacing or enclosing mark, becomes one `?`. The copy never puts a byte above 0x7F
+  in a header itself.
 - **The rule is frozen into a table**, `AsciiText`, not asked of the runtime: the 495
   characters of the Basic Multilingual Plane whose FormD decomposition is one ASCII character
   plus combining marks, generated on .NET 8.0.33 by enumerating the plane (53 in Latin-1
-  Supplement, 147 in Latin Extended-A, 44 in Latin Extended-B, 244 in Latin Extended Additional,
+  Supplement, 108 in Latin Extended-A, 83 in Latin Extended-B, 244 in Latin Extended Additional,
   and 7 others: the Greek question mark, the Greek varia, the Kelvin and Angstrom signs, and the
-  three negated relations `=`, `<` and `>`). The console and the window thus write the same card
+  three negated relations, whose negation is lost: `=` for U+2260, `<` for U+226E, `>` for
+  U+226F, as the rule says). The console and the window thus write the same card
   for the same name, whatever globalization mode each runs in. The table is checked against the
   runtime's own FormD over the whole plane by `AsciiTextTests` in the window's test project,
   which runs with culture data; a runtime whose Unicode data adds such a character makes that
@@ -89,5 +91,13 @@ wrote `Nebula.fit` for the same file.
   `R011_TheBaseCharacterTable_IsTheRuntimesFormDWithoutTheMarks_OverTheWholePlane`.
 - The table is a maintained artefact of 4 KB: its generator is described in `fits-header.md`,
   and the pin test says when to run it again.
+- The parser trims spaces only: with Latin-1 the bytes 0x85 and 0xA0 read as characters
+  `string.Trim()` counts as white space, and a keyword field of `OBJECT` plus two 0xA0 bytes
+  would have matched `OBJECT` and been replaced, which is the untouched card R-010 now
+  promises (found by the review of 2026-10-31; `KeywordOf` and `GetInt` use `Trim(' ')`, the
+  two listings `TrimEnd(' ')`).
+- A byte above 0x7F in a card the dry run lists, or the window shows, appears as the character
+  the console's output encoding or WPF gives the Latin-1 code (0xC5 as A with ring), where it
+  was `?`; the copy and the log are unaffected, and the file written holds the byte.
 - The test files stay ASCII: a letter is written by its code point, a byte above 0x7F is put
   into the file's bytes.

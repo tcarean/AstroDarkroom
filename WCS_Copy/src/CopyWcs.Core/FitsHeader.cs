@@ -189,11 +189,15 @@ internal sealed class FitsHeader
         return total;
     }
 
-    /// <summary>The keyword of a card: its first eight characters, trimmed.</summary>
+    /// <summary>
+    /// The keyword of a card: its first eight characters, trimmed of spaces only, the one
+    /// character FITS pads with; the byte 0xA0, a no-break space in Latin-1, is part of the
+    /// keyword, so that no card with such a byte passes for another (R-010).
+    /// </summary>
     /// <param name="card">The card; shorter than eight characters means no keyword.</param>
     /// <returns>The keyword, or an empty string for a blank or short card.</returns>
     private static string KeywordOf(string card) =>
-        card.Length < 8 ? string.Empty : card[..8].Trim();
+        card.Length < 8 ? string.Empty : card[..8].Trim(' ');
 
     /// <summary>Whether a card with this keyword is in the header.</summary>
     /// <param name="key">The keyword, as written in the card, case-sensitive.</param>
@@ -225,9 +229,9 @@ internal sealed class FitsHeader
         return i < 0 ? null : _cards[i];
     }
 
-    /// <summary>The integer value of a card: the text between the '=' and the '/' comment, if any.</summary>
+    /// <summary>The integer value of a card: the text between the '=' and the '/' comment, if any, trimmed of spaces only.</summary>
     /// <param name="key">The keyword, case-sensitive; safe for NAXIS1 and the other integer keys.</param>
-    /// <returns>The value, or -1 when the card is missing, has no '=' or does not hold an integer.</returns>
+    /// <returns>The value, or -1 when the card is missing, has no '=' or does not hold an integer (a byte 0xA0 beside the digits is not an integer).</returns>
     public int GetInt(string key)
     {
         var card = GetCard(key);
@@ -249,12 +253,12 @@ internal sealed class FitsHeader
             value = value[..slash];
         }
 
-        return int.TryParse(value.Trim(), out var n) ? n : -1;
+        return int.TryParse(value.Trim(' '), out var n) ? n : -1;
     }
 
     /// <summary>Replaces the card of a keyword in place, or appends it when the header has none.</summary>
     /// <param name="key">The keyword the card is filed under, case-sensitive.</param>
-    /// <param name="rawCard">The card's text; padded to 80 characters, or cut to 80 when longer.</param>
+    /// <param name="rawCard">The card's text, each character one byte of the file (a card read from a file, normally); padded to 80 characters, or cut to 80 when longer. A character above 0xFF has no byte and is written as <c>?</c>.</param>
     public void SetCard(string key, string rawCard)
     {
         var card = Pad(rawCard);

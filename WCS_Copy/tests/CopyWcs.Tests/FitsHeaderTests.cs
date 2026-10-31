@@ -240,6 +240,38 @@ public class FitsHeaderTests
     }
 
     /// <summary>
+    /// Only the space pads a keyword field or a value: the byte 0xA0, which Latin-1 reads as a
+    /// no-break space that <c>string.Trim()</c> would strip, is part of the keyword, so a card
+    /// whose field is <c>OBJECT</c> plus two of them is not the <c>OBJECT</c> card, one whose
+    /// field is <c>END</c> plus one does not end the header, and a value ending in one is not an
+    /// integer (the review of 2026-10-31; R-010's untouched card).
+    /// </summary>
+    [Fact]
+    public void R010_ReadFrom_TheByte0xA0InAKeywordOrAValue_IsNotWhiteSpace()
+    {
+        var block = FitsTestData.HeaderBlock(new[]
+        {
+            FitsTestData.Card("SIMPLE", "T"),
+            FitsTestData.Pad("END#    = 'not the end'"),
+            FitsTestData.Pad("OBJECT##= 'M43'"),
+            FitsTestData.Pad("NAXIS1  = 100#"),
+        });
+        for (var i = 0; i < block.Length; i++)
+        {
+            if (block[i] == (byte)'#')
+            {
+                block[i] = 0xA0;
+            }
+        }
+
+        var header = FitsHeader.ReadFrom(new MemoryStream(block));
+
+        Assert.Equal(new[] { "SIMPLE", "END" + (char)0xA0, "OBJECT" + (char)0xA0 + (char)0xA0, "NAXIS1" }, header.Keywords);
+        Assert.False(header.Contains("OBJECT"));
+        Assert.Equal(-1, header.GetInt("NAXIS1"));
+    }
+
+    /// <summary>
     /// The HISTORY card is ASCII: each letter with a diacritic is written as its base letter, the
     /// seven of R-011 by their code points so this file stays ASCII (ADR 0010).
     /// </summary>

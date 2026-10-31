@@ -138,6 +138,33 @@ public class CopyWcsCliTests
     }
 
     /// <summary>
+    /// A destination card whose keyword field is <c>OBJECT</c> followed by two bytes 0xA0 is not
+    /// the <c>OBJECT</c> card: the copy appends the source's and leaves it as it was, bytes
+    /// included (the review of 2026-10-31: Latin-1 reads 0xA0 as a no-break space, which
+    /// <c>string.Trim()</c> would strip from the keyword).
+    /// </summary>
+    [Fact]
+    public void R010_Run_ADestinationKeywordPaddedWithTheByte0xA0_IsNotReplaced()
+    {
+        using var ws = new TempWorkspace();
+        var data = FitsTestData.DeterministicData(100);
+        var destCards = FitsTestData.ProcessedCards();
+        destCards.RemoveAll(c => c.StartsWith("OBJECT", StringComparison.Ordinal));
+        destCards.Add(FitsTestData.Pad("OBJECT##= 'M43'"));
+        var dest = FitsTestData.MinimalFitsFile(destCards, data);
+        WithByte(dest, "OBJECT#", 0xA0);
+        WithByte(dest, "OBJECT" + (char)0xA0 + "#", 0xA0);
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), data));
+        var destPath = ws.WriteFile("dest.fit", dest);
+
+        Assert.Equal(0, Run(sourcePath, destPath).ExitCode);
+
+        var written = Encoding.Latin1.GetString(File.ReadAllBytes(destPath));
+        Assert.Contains(FitsTestData.Pad("OBJECT" + (char)0xA0 + (char)0xA0 + "= 'M43'"), written, StringComparison.Ordinal);
+        Assert.Contains(FitsTestData.Card("OBJECT", "'M42'"), written, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The HISTORY card is ASCII whatever the source's name holds: a source named with a letter
     /// with a diacritic (a with breve, by its code point so this file stays ASCII) is named in
     /// the card with the base letter (ADR 0010).
@@ -154,6 +181,7 @@ public class CopyWcsCliTests
 
         var written = File.ReadAllBytes(destPath);
         Assert.Contains("HISTORY WCS copied from Nebula.fit".PadRight(80), Encoding.Latin1.GetString(written), StringComparison.Ordinal);
+        // Over the whole file: its data is the 100 bytes 0 to 99, all below 0x80.
         Assert.DoesNotContain(written, b => b > 0x7F);
     }
 

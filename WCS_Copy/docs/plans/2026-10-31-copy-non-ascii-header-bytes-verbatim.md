@@ -85,3 +85,23 @@ the fixture, built before the change and after it, gives the same bytes.
 
 - The tests, red first: the eight new or changed ones failed against the old code (8 failed,
   4 passed of the 12 filtered), then 201 core tests and the table's pin passed.
+
+## The review (one subagent, on 42c24e3b)
+
+Six findings, all held, fixed in the next commit:
+
+1. `string.Trim()` in `KeywordOf` and `GetInt` strips U+0085 and U+00A0, which Latin-1 now
+   makes of the bytes 0x85 and 0xA0: a destination keyword `OBJECT` plus two 0xA0 bytes matched
+   `OBJECT` and was replaced, against R-010's untouched card; `END` plus 0xA0 ended the header.
+   Two tests red first (`R010_ReadFrom_TheByte0xA0InAKeywordOrAValue_IsNotWhiteSpace`,
+   `R010_Run_ADestinationKeywordPaddedWithTheByte0xA0_IsNotReplaced`), then `Trim(' ')` in both,
+   `TrimEnd(' ')` in the console's dry-run listing and the window's card list.
+2. ADR 0010's counts per block split at U+0200, not at the Unicode blocks: 108 in Latin
+   Extended-A and 83 in Latin Extended-B, recounted from the file's table.
+3. `FitsTestData` still wrote test files with `Encoding.ASCII`: now Latin-1, so a card given a
+   character above 0x7F reaches the file as that byte; no existing test moves.
+4. The ADR said "a combining mark standing alone is dropped" where the code drops a non-spacing
+   one; and the three negated relations lose their negation (`=` for U+2260), now said.
+5. `SetCard`'s contract that a character above 0xFF has no byte, said in its `<param>`.
+6. The dry-run listing and the window's card list now show a byte above 0x7F as the character
+   of its Latin-1 code, where they showed `?`: a Consequences line in ADR 0010.

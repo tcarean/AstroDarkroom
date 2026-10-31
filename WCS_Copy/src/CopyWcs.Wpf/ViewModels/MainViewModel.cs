@@ -235,7 +235,7 @@ public sealed class MainViewModel : ObservableObject
     private void Show(WcsCopyOutcome outcome)
     {
         _outcome = outcome;
-        Cards = outcome.Cards.Select(c => c.TrimEnd()).ToList();
+        Cards = outcome.Cards.Select(c => c.TrimEnd(' ')).ToList();
         foreach (string name in new[]
                  {
                      nameof(HasOutcome), nameof(Error), nameof(HasError), nameof(Warnings), nameof(HasWarnings),
