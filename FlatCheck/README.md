@@ -981,9 +981,10 @@ notices surely travel with the program.
 With `--lang ro` the tabs read Structura, End to end, Expunere, Histogram, Sintetic and Split. A
 screen reader such as Narrator reaches what each tab shows, not only the tabs' names.
 
-Two switches are **remembered per session folder**, in `flatcheck.json` in its root: the
-Structure tab's **I didn't use any filters on my lens** (`noFilters`, `true` by default) and the
-Exposure tab's **Sky flat** (`skyFlat`, `false` by default). The file is read when the folder
+Two switches and a choice are **remembered per session folder**, in `flatcheck.json` in its root:
+the Structure tab's **I didn't use any filters on my lens** (`noFilters`, `true` by default), the
+Exposure tab's **Sky flat** (`skyFlat`, `false` by default) and the Structure tab's **My lens**
+(`lens`, the lens's catalog key, absent until you pick one). The file is read when the folder
 opens and written whenever one of them changes; a folder you never touch gets no file, and a
 file that cannot be read gives the defaults.
 
@@ -995,14 +996,21 @@ verdict when there is one, each row with its description under it; plus the resi
 
 Under the tests stands **the vignetting against the lens's profile**. When `flats/` holds a raw, the
 run is the console's with `--raw` on the first of them (the lens and the aperture from the raw, the
-crop from the lensfun database by `INSTRUME`): one row per profile, the row that gives the verdict in
-bold, the depth scale as a table of four bands in stops (the same residual scale, translated, not a
+crop from the lensfun database by `INSTRUME`): one row per profile, the row that gives the verdict
+marked with an accent bar, a lighter background and the words **gives the verdict**, the depth scale as a table of four bands in stops (the same residual scale, translated, not a
 new threshold) with the verdict's band marked, and the run's verdict, the worse of shape and depth,
 in the pill at the top, with its two parts written under it. With no raw, the card says why nothing
 could be compared, and the report stays the plain one. With the box **I didn't use any filters on
 my lens** at the top of the card unticked, nothing is compared either, on purpose: the card keeps
 the master's depth and says why, the verdict is the five tests', and the report is the plain one;
-the box is remembered in the folder's `flatcheck.json`. A raw that says nothing about the lens (a
+the box is remembered in the folder's `flatcheck.json`. When the raw gives only a focal range (a
+manual lens, such as the Samyang 135 f/2 on a Nikon: the "non-CPU lens" ID and the range set in
+the camera's menu) and more than one lens of your camera's mount has that range, the card says so
+and offers **My lens**, a picker with every lens of the range and a first entry meaning no choice,
+on which the nearest profile decides. Pick yours and the comparison is redone with that lens alone,
+without reloading the master: its row, its verdict, the report saying which lens you chose and
+which were left out; the pick is remembered in the folder's `flatcheck.json` and applied when the
+folder reopens. A raw that says nothing about the lens (a
 camera on a telescope, or a lens without contacts: focal length 0, no ID, no name, no range) is named
 as such, with what it lacks, not as a missing raw; the comparison is then made by naming the lens in
 the Synthetic tab, or in the console with `--lens`, `--focal` and `--fstop`.

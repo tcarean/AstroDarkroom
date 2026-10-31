@@ -606,6 +606,14 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
 - A search that found no Adobe file is said on the window's card only, above the rows or the
   gap, with what to install (R-113, ADR 0073); the texts are in `modes-structure.md`, the card
   in `two-applications.md`.
+- A lens chosen on a list found by range alone (R-121, ADR 0081): `StructureQuery.LensKey`
+  carries a candidate's `LensChoice.Key`, `StructureRun.Compare` compares that candidate alone
+  and records it in `ShotIdentity.ChosenLens`, with `Candidates` left whole for the window's
+  picker; a key among no candidate is ignored with a Debug line. The verdict is then that
+  lens's profile's, through the unchanged nearest rule over a list of one. On the Samyang 135
+  f/2 masters above this is the difference between the Nikkor DC row and the Samyang row:
+  +0.11 / +0.10 (BUN) against +0.15 / +0.14 (ACCEPTABIL) at f/2, and nothing at f/2.8, where
+  the Samyang is the nearest already (+0.01).
 
 **Measured** (corner, stops; "nearest" is the profile that gives the verdict):
 

@@ -50,6 +50,13 @@ namespace FlatCheck
         internal string LensText;
         internal ProfileSource? Source;
         internal double? Focal, FStop, Crop;
+        /// <summary>
+        /// The lens chosen among the raw's candidates, by its catalog key
+        /// (<see cref="LensChoice.Key"/>): the window's picker on a list found by range alone
+        /// (R-121). Null = every candidate. Ignored with a <see cref="LensText"/>, and when the
+        /// key matches no candidate.
+        /// </summary>
+        internal string LensKey;
     }
 
     /// <summary>
@@ -158,7 +165,7 @@ namespace FlatCheck
         /// <returns>The text, with a leading space when not empty.</returns>
         static string Describe(StructureQuery query)
             => query == null ? ""
-             : " raw=" + LogText.Str(query.RawPath) + " lens=" + LogText.Str(query.LensText)
+             : " raw=" + LogText.Str(query.RawPath) + " lens=" + LogText.Str(query.LensText) + " lensKey=" + LogText.Str(query.LensKey)
              + " source=" + (query.Source.HasValue ? query.Source.Value.ToString() : "both")
              + " focal=" + LogText.Num(query.Focal) + " fstop=" + LogText.Num(query.FStop) + " crop=" + LogText.Num(query.Crop);
 
@@ -218,6 +225,16 @@ namespace FlatCheck
             IReadOnlyList<LensChoice> lenses = string.IsNullOrWhiteSpace(query.LensText)
                 ? (query.Source.HasValue ? shot.Candidates.Where(c => c.Source == query.Source.Value).ToList() : shot.Candidates)
                 : SyntheticRun.MatchLenses(query.LensText, query.Source, query.Sources, shot);
+            // The lens chosen among the candidates (R-121): that one alone is compared, the
+            // candidates stay whole on the identity for the picker, and the choice is recorded
+            // for the report. A key that matches none - the raw changed, the profile gone - is
+            // ignored, so nothing stale is ever compared.
+            if (string.IsNullOrWhiteSpace(query.LensText) && !string.IsNullOrEmpty(query.LensKey))
+            {
+                LensChoice chosen = lenses.FirstOrDefault(c => c.Key == query.LensKey);
+                if (chosen != null) { shot.ChosenLens = chosen; lenses = new[] { chosen }; }
+                else Log.Debug("the chosen lens " + query.LensKey + " is not among the candidates; every candidate is compared");
+            }
             var cmp = VignettingComparer.Analyze(r, shot, query.Sources?.Catalog, lenses);
             if (Log.IsDebugEnabled)
                 Log.Debug("lenses compared " + LogText.List(lenses?.Select(l => l.Key)) + ": " + LogText.Comparison(cmp));

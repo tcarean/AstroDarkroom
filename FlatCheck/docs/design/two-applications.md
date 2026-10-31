@@ -127,6 +127,33 @@ the image HDU's cards; the pre-existing gap path did the same, and Siril's maste
 single-HDU, so the two agree on every real master. In the XAML the master's depth sits in its own panel, shown
 on `ProfileMaster`, and the note is the card's last element, shown on `FilteredNote`.
 
+**The lens picker under the box, on a list found by range alone** (R-121, ADR 0081). A manual
+lens leaves the core a range and nothing else, so `ShotIdentity.CandidatesByRangeOnly` lists
+every lens of the mount with that range, and the window cannot tell which is on the camera.
+`Populate` calls `ShowLensPicker(shot)` in both branches: when the core says there is a choice
+(`ShotIdentity.OffersLensChoice`: range only, more than one candidate; the prompt
+`StructureReport.LensChoicePrompt` speaks exactly then) the picker gets the no-choice entry
+(`LensOption` with a null key, "the nearest profile decides") and one entry per candidate in
+the rows' order, labelled `SourceLabel Name [Where]`, and the selection lands on the entry whose
+key is `shot.ChosenLens?.Key`, else on the no-choice entry - through the field and a `Raise`, as
+the box does, since a run shows a choice and does not make one. The "nothing compared" branch
+passes the shot too, with the box on and only when a lens is chosen: a chosen lens whose
+profile makes no row (a lensfun lens on a body the lensfun table does not know, so no crop)
+leaves the card on the gap with the picker still up, so the choice can be undone from the
+screen; otherwise the key kept in `flatcheck.json` would lock the card on the gap at every
+reopen. A gap nothing was chosen for (no f-stop in the raw) gets no picker: no pick could cure
+it. With the box off, and in `Reset`, the picker is emptied and `OffersLensChoice` hides it. The `SelectedLens` setter, a
+pick on screen, ignores the null the `ComboBox` pushes whenever the list is replaced (the field
+never takes it), writes `_settings.Lens = value.Key` and starts `RecompareAsync`, exactly the
+box's path; `QueryAsync`
+puts `_settings.Lens` on the query as `LensKey`, so the run at open and every recompare carry
+the folder's choice. The core does the rest (`StructureRun.Compare`, `lens-profiles.md`
+section 11): the chosen candidate alone is compared, the candidates stay whole on the identity
+so the picker keeps every entry, and the report's summary says which lens was chosen and which
+were left out. A key that matches no candidate is ignored there, so the card shows every row
+with the no-choice entry selected and the stale key stays in the file until the next pick. The
+picker is bound `IsEnabled` to `!IsBusy` like the box.
+
 **While the opening runs, a panel stands in for the tabs** (R-120, ADR 0079). `MainViewModel`
 holds three `OpeningStep`s - the structure run, the end-to-end run, the Synthetic prefill - each a
 label (a `T` pair read at bind time), the tab it runs on and a state the view-model sets around
@@ -148,7 +175,8 @@ panel is visible on `IsRunning` and the tabs add `IsRunning == False` to their t
 
 **The two switches are the folder's** (R-119, ADR 0078): `Session/SessionSettings.cs`, one
 JSON object in `SirilSession.SettingsPath` (`flatcheck.json` in the root) with `noFilters` and
-`skyFlat`, `System.Text.Json` from the BCL. `MainViewModel.OpenAsync` reads it once after
+`skyFlat`, and since R-121 the Structure tab's chosen lens under `lens`, a string written only
+when a lens is chosen (`ReadText` gives null for an absent, empty or mistyped key), `System.Text.Json` from the BCL. `MainViewModel.OpenAsync` reads it once after
 `Check()` passes and hands it to `Exposure.Attach` and, through `RunChainAsync`, to
 `Structure.RunAsync`; each tab keeps the object and its setter writes it whole (a temporary file
 and `File.Move`, a `Warn` line on failure) before it recomputes. `None` is the object without a

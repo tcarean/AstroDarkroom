@@ -683,6 +683,34 @@ public class MainViewModelTests
         Assert.False(File.Exists(Path.Combine(b.Root, "flatcheck.json")));
     }
 
+    /// <summary>
+    /// R-121: a folder whose flatcheck.json names the chosen lens opens with the comparison
+    /// narrowed to it - one row, the picker on that lens - and writes nothing by opening.
+    /// </summary>
+    [Fact]
+    public async Task R121_TheChosenLensIsRestoredFromTheFolderWhenItOpens()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, rangePair: true);
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
+        LoadedFrame raw = LensProfileTestData.Range135Raw();
+        string json = Path.Combine(f.Root, "flatcheck.json");
+        File.WriteAllText(json, "{\"noFilters\":true,\"skyFlat\":false,\"lens\":\"" + key + "\"}");
+        DateTime written = File.GetLastWriteTimeUtc(json);
+        var vm = new MainViewModel(null, null, null, locateProfiles: () => sources,
+            loadInfo: path => RawReader.IsRawPath(path) ? raw : ImageLoader.LoadInfo(path));
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.Structure.HasResult, vm.Structure.ErrorText);
+        LensProfileRow row = Assert.Single(vm.Structure.ProfileRows);
+        Assert.Equal(LensProfileTestData.Samyang135, row.Lens);
+        Assert.True(vm.Structure.OffersLensChoice);
+        Assert.Equal(key, vm.Structure.SelectedLens.Key);
+        Assert.Equal(written, File.GetLastWriteTimeUtc(json));
+    }
+
     // ------------------------------------------------------------ the opening panel (R-120)
 
     /// <summary>

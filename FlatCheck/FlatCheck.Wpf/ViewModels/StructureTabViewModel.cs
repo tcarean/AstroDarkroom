@@ -74,9 +74,12 @@ namespace FlatCheck.Wpf
         string _adobeMissing = "", _adobeSearched = "";
         bool _noFilters = true;
         string _filteredNote = "";
+        IReadOnlyList<LensOption> _lensOptions = Array.Empty<LensOption>();
+        LensOption _selectedLens;
+        string _lensChoicePrompt = "";
 
-        /// <summary>The folder's remembered switches (R-119); <see cref="SessionSettings.None"/>
-        /// before a folder and in the tests.</summary>
+        /// <summary>The folder's remembered switches and chosen lens (R-119, R-121);
+        /// <see cref="SessionSettings.None"/> before a folder and in the tests.</summary>
         SessionSettings _settings = SessionSettings.None;
 
         /// <summary>
@@ -224,6 +227,45 @@ namespace FlatCheck.Wpf
         /// <summary>Why nothing is compared when the box is off (R-118), under the master's
         /// depth; empty when it is on.</summary>
         public string FilteredNote { get => _filteredNote; private set => Set(ref _filteredNote, value); }
+
+        /// <summary>
+        /// The lens picker's entries (R-121): the no-choice entry first, then one per candidate
+        /// in the rows' order, when the run compared a list found by range alone with more than
+        /// one lens; empty otherwise, and the picker is off the card.
+        /// </summary>
+        public IReadOnlyList<LensOption> LensOptions
+        {
+            get => _lensOptions;
+            private set { if (Set(ref _lensOptions, value)) Raise(nameof(OffersLensChoice)); }
+        }
+
+        /// <summary>True when the card shows the lens picker (R-121).</summary>
+        public bool OffersLensChoice => _lensOptions.Count > 0;
+
+        /// <summary>The line above the picker, from the core: why there is a choice to make and
+        /// what it does (R-121); empty without a picker.</summary>
+        public string LensChoicePrompt { get => _lensChoicePrompt; private set => Set(ref _lensChoicePrompt, value); }
+
+        /// <summary>
+        /// The picker's selection (R-121): the entry of the chosen lens, the no-choice entry when
+        /// none is chosen, null without a picker. A pick on screen writes the folder's settings
+        /// (R-119) and redoes the comparison on the kept result with that lens alone, as a flip
+        /// of the box does; a run sets it from the outcome without writing or recomparing.
+        /// </summary>
+        public LensOption SelectedLens
+        {
+            get => _selectedLens;
+            set
+            {
+                // The ComboBox pushes null through the binding whenever LensOptions is replaced
+                // (every Populate): that is not a pick, and the field must not lose the entry
+                // ShowLensPicker is about to set, so a null never reaches the field from here.
+                if (value == null || !Set(ref _selectedLens, value)) return;
+                _settings.Lens = value.Key;
+                _settings.Write();
+                Pending = RecompareAsync();
+            }
+        }
 
         /// <summary>The red paragraph when the run's search found no Adobe profile (R-113);
         /// empty otherwise, and when the run searched nothing.</summary>
@@ -428,7 +470,9 @@ namespace FlatCheck.Wpf
         {
             ProfileSources sources = await _catalog.EnsureAsync().ConfigureAwait(true);
             ct.ThrowIfCancellationRequested();
-            return new StructureQuery { Sources = sources, RawPath = rawPath, LoadInfo = _loadInfo };
+            // The folder's chosen lens (R-121) rides on the query; the core ignores a key that
+            // matches no candidate, and Populate then selects the no-choice entry.
+            return new StructureQuery { Sources = sources, RawPath = rawPath, LoadInfo = _loadInfo, LensKey = _settings.Lens };
         }
 
         /// <summary>
@@ -517,7 +561,9 @@ namespace FlatCheck.Wpf
                     Error = r.Error,
                     Verdict = r.Verdict,
                     IsNearest = r.IsNearest,
-                    Note = (r.IsNearest ? T("The nearest profile - it gives the verdict. ", "Cel mai apropiat profil - da verdictul. ") : "") + r.Note,
+                    Note = (!r.IsNearest ? ""
+                            : explained.Shot?.ChosenLens != null ? T("The lens you chose - it gives the verdict. ", "Obiectivul ales de tine - da verdictul. ")
+                            : T("The nearest profile - it gives the verdict. ", "Cel mai apropiat profil - da verdictul. ")) + r.Note,
                     IsWarning = r.IsWarning,
                 }).ToList();
                 ProfileSummary = StructureReport.ComparisonSummary(c).Replace('\n', ' ');
@@ -527,12 +573,19 @@ namespace FlatCheck.Wpf
                 ProfileScaleNote = StructureReport.DepthScaleNote().Replace('\n', ' ') + " "
                                  + StructureReport.DepthLightScaleNote(c.Nearest.DiffStops).Replace('\n', ' ');
                 ProfileNote = StructureReport.ComparisonNote().Replace('\n', ' ');
+                ShowLensPicker(explained.Shot);
             }
             else
             {
                 ProfileRows = Array.Empty<LensProfileRow>();
                 ProfileScale = Array.Empty<ScaleRow>();
                 ProfileSummary = ProfileScaleNote = ProfileNote = "";
+                // On a gap the picker stays only when the gap is the choice's doing: a chosen
+                // lens whose profile makes no row must still be undone from the screen, or the
+                // choice kept in flatcheck.json would lock the card on the gap. A gap nothing was
+                // chosen for (no f-stop in the raw, no crop for any candidate) is not cured by a
+                // pick, so the picker goes with the rows; with the box off nothing was identified.
+                ShowLensPicker(NoFilters && explained?.Shot?.ChosenLens != null ? explained.Shot : null);
                 // With the box off (R-118): the master's own depth, for information, and why
                 // nothing is compared - both from the core. With it on: the gap, when known.
                 ProfileMaster = NoFilters ? "" : StructureReport.MasterDepth(o.Structure);
@@ -540,6 +593,37 @@ namespace FlatCheck.Wpf
                 ProfileGap = explained == null || !NoFilters ? ""
                     : T("Cannot compare: ", "Nu se poate compara: ") + StructureReport.GapText(explained) + "\n" + StructureReport.GapMeaning().Replace('\n', ' ');
             }
+        }
+
+        /// <summary>
+        /// Fills or empties the lens picker (R-121) from the compared shot: the no-choice entry
+        /// and one entry per candidate when the list came by range alone with more than one
+        /// lens, the selection on the chosen lens or on the no-choice entry; nothing otherwise.
+        /// The selection is set on the field, not through the setter: a run or a recompare
+        /// shows the choice, it does not make one.
+        /// </summary>
+        /// <param name="shot">The compared shot; null empties the picker.</param>
+        void ShowLensPicker(ShotIdentity shot)
+        {
+            // The core says whether there is a choice to make (ShotIdentity.OffersLensChoice),
+            // and the prompt speaks exactly then.
+            if (shot == null || !shot.OffersLensChoice)
+            {
+                LensChoicePrompt = "";
+                LensOptions = Array.Empty<LensOption>();
+                _selectedLens = null;
+                Raise(nameof(SelectedLens));
+                return;
+            }
+            LensChoicePrompt = StructureReport.LensChoicePrompt(shot);
+            var options = new List<LensOption>
+            {
+                new LensOption { Key = null, Label = T("the nearest profile decides", "decide cel mai apropiat profil") },
+            };
+            options.AddRange(shot.Candidates.Select(c => new LensOption { Key = c.Key, Label = $"{c.SourceLabel} {c.Name} [{c.Where}]" }));
+            LensOptions = options;
+            _selectedLens = options.FirstOrDefault(o => o.Key == shot.ChosenLens?.Key) ?? options[0];
+            Raise(nameof(SelectedLens));
         }
 
         /// <summary>Shows the five tests' side: size, levels, the test and informative rows, the
@@ -640,6 +724,7 @@ namespace FlatCheck.Wpf
             ProfileMaster = ProfileSummary = ProfileScaleNote = ProfileNote = ProfileGap = "";
             AdobeMissing = AdobeSearched = "";
             FilteredNote = "";
+            ShowLensPicker(null);
             SavedTo = "";
             SaveError = "";
             Map = null;
