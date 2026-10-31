@@ -1,4 +1,4 @@
-# 0080. The Structure tab offers the lens when the raw gives only a range; the choice narrows the comparison to that lens and is remembered per session
+# 0081. The Structure tab offers the lens when the raw gives only a range; the choice narrows the comparison to that lens and is remembered per session
 
 Date: 2026-10-31
 Status: accepted 2026-10-31

@@ -30,7 +30,7 @@ is more than one; (2) the choice narrows the comparison to that lens, on the pat
 already has for one lens (no new verdict rule, no re-validation); (3) the choice is remembered
 in the session's `flatcheck.json`, beside the two switches of R-119; (4) no prefill of the
 Synthetic tab from it; (5) the rows keep their catalog order. Rejected with the owner: an
-app-wide default per range ("135 mm f/2.0 means Samyang"), a second memory. ADR 0080.
+app-wide default per range ("135 mm f/2.0 means Samyang"), a second memory. ADR 0081.
 
 ## Design
 
@@ -82,7 +82,7 @@ app-wide default per range ("135 mm f/2.0 means Samyang"), a second memory. ADR 
    choice does on screen, in the verdict and in `Test result.txt`, the recompare without a
    reload, the memory in `flatcheck.json`, the fallback when the key matches no candidate, an
    example with the Veil figures above); R-119 amended with the third key `lens`.
-3. **ADR 0080**: "The Structure tab offers the lens when the raw gives only a range; the choice
+3. **ADR 0081**: "The Structure tab offers the lens when the raw gives only a range; the choice
    narrows the comparison and is remembered per session": context (the Veil listing, the
    measured rows), the five decisions, the alternatives rejected (the nearest row first; every
    row kept with the verdict moved to the chosen, a new rule over ADR 0031; an app-wide default

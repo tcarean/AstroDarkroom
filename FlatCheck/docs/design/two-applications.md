@@ -128,7 +128,7 @@ the image HDU's cards; the pre-existing gap path did the same, and Siril's maste
 single-HDU, so the two agree on every real master. In the XAML the master's depth sits in its own panel, shown
 on `ProfileMaster`, and the note is the card's last element, shown on `FilteredNote`.
 
-**The lens picker under the box, on a list found by range alone** (R-121, ADR 0080). A manual
+**The lens picker under the box, on a list found by range alone** (R-121, ADR 0081). A manual
 lens leaves the core a range and nothing else, so `ShotIdentity.CandidatesByRangeOnly` lists
 every lens of the mount with that range, and the window cannot tell which is on the camera.
 `Populate` calls `ShowLensPicker(shot)` in both branches: when the core says there is a choice

@@ -606,7 +606,7 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
 - A search that found no Adobe file is said on the window's card only, above the rows or the
   gap, with what to install (R-113, ADR 0073); the texts are in `modes-structure.md`, the card
   in `two-applications.md`.
-- A lens chosen on a list found by range alone (R-121, ADR 0080): `StructureQuery.LensKey`
+- A lens chosen on a list found by range alone (R-121, ADR 0081): `StructureQuery.LensKey`
   carries a candidate's `LensChoice.Key`, `StructureRun.Compare` compares that candidate alone
   and records it in `ShotIdentity.ChosenLens`, with `Candidates` left whole for the window's
   picker; a key among no candidate is ignored with a Debug line. The verdict is then that

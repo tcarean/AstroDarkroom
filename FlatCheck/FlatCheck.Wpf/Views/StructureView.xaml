@@ -190,7 +190,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="{l:T En='I didn\'t use any filters on my lens', Ro='Nu am folosit niciun filtru pe obiectiv'}"
                            TextWrapping="Wrap" />
               </CheckBox>
-              <!-- The lens picker (R-121, ADR 0080), only when the raw gave a range and nothing
+              <!-- The lens picker (R-121, ADR 0081), only when the raw gave a range and nothing
                    else, so the rows are every lens of the mount with that range: the core's line
                    says why, then "My lens:" with the no-choice entry first and every candidate.
                    A pick redoes the comparison on the kept result with that lens alone, so it is
