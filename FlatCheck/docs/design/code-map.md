@@ -15,7 +15,7 @@
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
 
-What the tool is and what its six modes answer is the first paragraph of CLAUDE.md; each
+What the tool is and what its five modes answer is the first paragraph of CLAUDE.md; each
 mode has its own note (`modes-*.md`, mapped by the index). The dependency rule, the hand-rolled
 FITS and PNG and the three packages are ADR 0008, 0009, 0010 and 0070 with `dependencies.md`; what each
 of the two applications owns is ADR 0011 with `two-applications.md`. The target is .NET 8.
@@ -284,7 +284,7 @@ a library extraction and not a copy is ADR 0011.
     "Conventions").
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map(s) to
     disk, and the exit code. All output goes through the injected `TextWriter`, never
-    `Console` directly. `AfterMapPath` lives here rather than in the core (ADR 0011).
+    `Console` directly.
   - `Options.cs` - CLI parsing, and the mode the flags ask for (`Options.Mode`, decided once
     by R-003's precedence; the dispatch and the log both read it, `process.md`).
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See `two-applications.md`.

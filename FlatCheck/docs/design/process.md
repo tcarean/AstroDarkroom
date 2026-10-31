@@ -165,8 +165,9 @@ string or an exit code:
   line of the outcome's `Refusal` goes to stderr with the `ERROR: ` prefix), 2 "read this
   before deciding" (`--synthetic` with an ambiguous
   lens).
-- Secondary map paths are derived from `-o` by suffix (`AfterMapPath` → `-after`, the same
-  in both languages; R-006, R-103), never by a second flag.
+- A mode writes one map, at `-o`. Until ADR 0080, `--smooth` derived its second map's path
+  from `-o` by suffix (`-after`, the same in both languages; R-006, R-103), never by a second
+  flag; do the same for a mode with two maps.
 
 Nothing in these methods computes: a run method that needs a number or a sentence gets it from
 a `Runs/` outcome (the rule "Computed only in the core").

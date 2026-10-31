@@ -55,7 +55,7 @@ same numbers on 2026-09-26, which was the sanity check of the capture.
 
 ADR 0038 lists them (no 4-panel figure, no `suggest_shutter`, `Percentile` on an empty list,
 `libraw` against `rawpy` in two lines, no console histograms, `--sat=4095` against
-`--sat=4095.0`, the capitalised `--light` diagnosis, and the five modes that exist only in C#);
+`--sat=4095.0`, the capitalised `--light` diagnosis, and the modes that exist only in C#);
 ADR 0047 and CLAUDE.md ("Layout") make the prototype prior art, not a reference, so nothing is
 "fixed" on either side. ADR 0014 and ADR 0038 hold the one numeric divergence: on a perfectly
 constant frame the C# guard `|det| < 1e-15` in `FitCenter` prints `nedeterminat` where Python

@@ -148,7 +148,7 @@ a saddle of the sky, measured from three quarters of that circle's radius outwar
 before a ring's median is taken. Neither can then leave rings in the model that the flat does not
 have (`docs/design/radial-model-even-term.md` tells how this was found).
 
-## The six modes
+## The five modes
 
 ### 1. Structure (default)
 

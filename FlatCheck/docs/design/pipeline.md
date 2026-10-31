@@ -45,7 +45,7 @@ what dispatches. A raw carries no FITS header, so `--light` sees an empty
 dictionary and lands in the guard's `Unknown` layer - runs, with a note (ADR 0020).
 
 
-## The six modes
+## The five modes
 
 Dispatch order in `FlatCheckCli.Run` is `--lenses` → `--synthetic` → `--against` →
 `--histeq` → `--expo` → `--light` → structure (default; `--ratio` sat between `--expo` and

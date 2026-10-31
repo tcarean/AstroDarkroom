@@ -39,8 +39,9 @@ cube) and `Bitpix` (the load log line), `StructureAnalyzer.AnalyzePrepared` and
 `StructureReport.TestKeys` / `Test` / `TestLabel` (the against and split reports),
 `StructureRows.Tests` (the Structure tab), `Mosaic.Split` / `LooksCfa` / `PositionOf`,
 `Stats.Solve`, the heavy-run gate and the overwrite delegate of `MainViewModel` (the Synthetic
-tab). The two R-110 tests that used the `--smooth` refusal of a cube as "a refusal decided after
-the load" now use the `--synthetic` refusal of a cube, which has the same shape.
+tab). The R-110 test that used the `--smooth` refusal of a cube as "a refusal decided after the
+load", and the R-001 copyright check on a refusal, now use the `--synthetic` refusal of a cube,
+which has the same shape; the `smooth` scenario of the two-language log test is dropped.
 
 ## Alternatives rejected
 
