@@ -24,6 +24,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -36,6 +37,12 @@ namespace AstroPhotoAnalyzer.Wpf
     {
         /// <summary>The key of the ICC profile's path in the file.</summary>
         const string IccProfileKey = "iccProfile";
+
+        /// <summary>
+        /// The diagnostic log: a file that cannot be read or written, with its exception, and each
+        /// write, which only a change of profile makes (R-171, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         readonly string _path;
 
@@ -79,6 +86,7 @@ namespace AstroPhotoAnalyzer.Wpf
             catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
             {
                 // No setting: the window starts as if the file were absent.
+                Log.Warn(e, "the settings file " + path + " cannot be read; nothing is remembered");
             }
             return settings;
         }
@@ -111,10 +119,12 @@ namespace AstroPhotoAnalyzer.Wpf
                 string temp = _path + ".tmp";
                 File.WriteAllText(temp, JsonSerializer.Serialize(values));
                 File.Move(temp, _path, overwrite: true);
+                Log.Debug("settings written to " + _path + ": profile=" + LogText.Str(IccProfilePath));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
                 // Nothing else depends on the file: the choice is already applied for this run.
+                Log.Warn(e, "the settings could not be written to " + _path + "; the choice holds for this run only");
             }
         }
     }

@@ -47,6 +47,12 @@
     <Compile Include="..\AstroPhotoAnalyzer.Tests\IccTestData.cs" Link="Shared\IccTestData.cs" />
     <Compile Include="..\AstroPhotoAnalyzer.Tests\IccPrinterTestData.cs" Link="Shared\IccPrinterTestData.cs" />
     <Compile Include="..\AstroPhotoAnalyzer.Tests\RomanianWords.cs" Link="Shared\RomanianWords.cs" />
+    <!-- LogCapture configures the diagnostic log for the whole test assembly and lets a test read
+         its own lines; LogFiles holds the two-writer check, which runs here on the window's build
+         of the atomic target (ADR 0069). One copy, so both assemblies render every log line the
+         same way. -->
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\LogCapture.cs" Link="Shared\LogCapture.cs" />
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\LogFiles.cs" Link="Shared\LogFiles.cs" />
   </ItemGroup>
 
 </Project>

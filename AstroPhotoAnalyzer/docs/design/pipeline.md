@@ -25,6 +25,8 @@ Invariants that the structure enforces:
   **cannot expose a core type** - every value shown passes through `Rows.cs`.
 - One external package, `SixLabors.ImageSharp` 3.1.11, touched in exactly two core files:
   `Input/ImageSharpReader.cs` (decode) and `Analysis/JpegAnalyzer.cs` (encode). See `dependencies.md`.
+- NLog, the diagnostic log, is named in `Logging/`, `Runs/` and four files of `Input/` only; no
+  analyzer and no report writer holds a logger (`logging.md`).
 - Version and copyright live in `Directory.Build.props` only; `VersionInfo` reads them
   from the assembly.
 
@@ -54,6 +56,11 @@ Progress stages reported through `IProgress<string>`, in order, in the interface
 `tonuri`, `praf`, `zgomot`, `fundal`, `stele`, `cuantizare`, `JPEG`, `raport`). No percentage:
 JPEG is about half the wall time and the rest is uneven.
 
+Both overloads of `Execute` run the chain through one private body, `Run`, under a `RunClock`
+started before the load: each stage is timed in the diagnostic log and each result written at
+Debug as soon as it is measured, and the log's stage names are its own (`load`, `wcs`, `file`,
+`tones`, `simulation`, ...), never the progress's (`logging.md`).
+
 `AnalysisResult` holds every result record, the parameters, the path, the raster (kept
 for previews) and the report body. `Overall` is the maximum verdict over the
 recommendations, `Ok` when there are none.
@@ -77,7 +84,9 @@ only: the paper checks and the gamut figure are added for print, and `CurveRun.F
 derives the screen set from a print set by dropping them, which is how the window changes the
 purpose without computing anything. `CurveExport.Save` is the one
 place that writes an image: it refuses the input's own path, then hands the raster, the curve
-and the `HISTORY` text to `FitsWriter` (`input.md`).
+and the `HISTORY` text to `FitsWriter` (`input.md`). The run is timed by a `RunClock`
+(`anchors`, `gamut`, `suggestions`); a gamut table that cannot be built is logged with
+`GamutTable.Cause`, the exception behind its `Problem`.
 
 ### The third run (`Runs/ProofRun.cs`, ADR 0066)
 
@@ -86,7 +95,8 @@ proof's run, started by the window beside the curves' once the tabs are filled a
 change of intent or of the simulation; the console never calls it. Prepare opens the profile the
 Dmax came from, reduces the image to `ProofMaxSide` and marks the pixels outside the paper's
 gamut once (the rule of R-144); Render proofs the reduction through the intent's table, built on
-its first use and kept on the profile. The chain itself is in `soft-proof.md`.
+its first use and kept on the profile. The chain itself is in `soft-proof.md`. Prepare is timed
+by a `RunClock` (`profile`, `gamut`, `mask`), Render writes one Debug line per render.
 
 Timing (Release, 2026-10-05): the two validation cases V-008 and V-009, each an analysis of a
 23 MP image, a curve run and a save of the full image, take 85 s together.

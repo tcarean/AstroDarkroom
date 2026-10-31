@@ -35,6 +35,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using NLog;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Tiff;
@@ -47,6 +48,12 @@ namespace AstroPhotoAnalyzer
     internal sealed class ImageSharpReader : IFrameReader
     {
         static readonly string[] Exts = { ".tif", ".tiff", ".png", ".jpg", ".jpeg" };
+
+        /// <summary>
+        /// The diagnostic log: what Identify found, at Debug, and the exception of a file it cannot
+        /// identify, with its stack (R-171, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger("ImageSharpReader");
 
         public IReadOnlyList<string> Extensions => Exts;
 
@@ -73,10 +80,26 @@ namespace AstroPhotoAnalyzer
         {
             ImageInfo info;
             try { info = Image.Identify(path); }
-            catch (UnknownImageFormatException e) { throw new Exception(Tr.Pick("the file is not an image format the tool knows: ", "fisierul nu e o imagine cunoscuta: ") + e.Message); }
-            catch (InvalidImageContentException e) { throw new Exception(Tr.Pick("damaged image: ", "imagine stricata: ") + e.Message); }
+            // ImageSharp's exception, its own inner ones included, is written to the diagnostic log
+            // here, the only place its stack exists. The user's exception carries no inner one:
+            // the window joins every inner message into what it shows, and one of ImageSharp's
+            // would add a paragraph the user never saw before the log (the review of 2026-10-31).
+            catch (UnknownImageFormatException e)
+            {
+                Log.Warn(e, "ImageSharp cannot identify " + path);
+                throw new Exception(Tr.Pick("the file is not an image format the tool knows: ", "fisierul nu e o imagine cunoscuta: ") + e.Message);
+            }
+            catch (InvalidImageContentException e)
+            {
+                Log.Warn(e, "ImageSharp cannot identify " + path);
+                throw new Exception(Tr.Pick("damaged image: ", "imagine stricata: ") + e.Message);
+            }
 
             var facts = Facts(info);
+            if (Log.IsDebugEnabled)
+                Log.Debug("identified " + path + ": format=" + LogText.Str(info.Metadata.DecodedImageFormat?.Name) + " " + LogText.Int(info.Width) + "x" + LogText.Int(info.Height)
+                    + " bitsPerPixel=" + LogText.Int(info.PixelType.BitsPerPixel) + " frames=" + LogText.Int(info.FrameMetadataCollection.Count)
+                    + " bits=" + LogText.Int(facts.Bits) + " color=" + LogText.Yes(facts.Color) + " compression=" + LogText.Str(facts.Compression));
             var raster = facts.Color ? LoadColor(path, out byte[] icc) : LoadMono(path, out icc);
 
             raster.Source = new SourceInfo

@@ -211,6 +211,17 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-10-31 (ADR 0069, the diagnostic log, `docs/plans/2026-10-31-add-a-diagnostic-log-with-nlog.md`):
+  log lines in the four readers of `Input/` and in `Runs/`, a `Cause` on `GamutTable` and
+  `ProofProfile`, the readers' exceptions passed on as inner ones; no formula moved. Re-run on
+  the branch, the twelve files of the manifest copied into the worktree: of the fifteen cases'
+  1350 figures 1348 are identical to the recorded ones, and the same two as since 2026-10-23
+  differ by 0.0001, inside the 0.01 tolerance (V-011 `curves.Maxima.lstar.clouds` 67.1502 ->
+  67.1503, V-014 `curves.Maxima.lstar.peaks` 77.9226 -> 77.9227). The fifteen cases and the
+  eleven star-pair checks pass. Re-run the same day after the review's fixes (`Input/` again:
+  the readers log a reworded exception where they catch it, the header's values printable):
+  the same 1348 of 1350 identical, the same two differences; the 26 tests pass.
+
 - 2026-10-27 (ADR 0060, the banding verdict on the share of the frame with a visible plateau,
   every one of 5000 positions tried; `docs/plans/2026-10-27-plateau-share-of-flat-tiles.md`, its
   table): `quantization.plateauPositions` (5000) and

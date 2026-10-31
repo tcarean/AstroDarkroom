@@ -32,6 +32,7 @@
 
 using System;
 using System.IO;
+using NLog;
 
 namespace AstroPhotoAnalyzer
 {
@@ -42,6 +43,13 @@ namespace AstroPhotoAnalyzer
     /// </summary>
     internal static class AnalyzerCli
     {
+        /// <summary>
+        /// The diagnostic log's console lines (R-171): the mode, every refusal as the user reads
+        /// it, a run that failed with its exception, the report written. A static field: this
+        /// type is first used after <c>Program.Main</c> configured the log (ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger("Cli");
+
         /// <summary>
         /// Runs the console once, in the language of --lang, English without one (R-151): the
         /// banner on lines 1-2, then --help, or an error, or the report. Every error goes to
@@ -67,7 +75,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// <see cref="Run"/> once the language is in use: the banner, then the --lang error, or
-        /// the rest of the run.
+        /// the rest of the run. Every refusal, the failure of a run and the report written also
+        /// go to the diagnostic log, the refusals as the user reads them, the failure with its
+        /// exception, whose stack stderr does not show (R-171).
         /// </summary>
         /// <param name="args">The command-line arguments, --lang included; not null.</param>
         /// <param name="languageError">
@@ -85,6 +95,7 @@ namespace AstroPhotoAnalyzer
 
             if (languageError != null)
             {
+                Log.Warn("refused: " + languageError);
                 stderr.WriteLine(error + languageError);
                 return 1;
             }
@@ -92,49 +103,47 @@ namespace AstroPhotoAnalyzer
             Options o = Options.Parse(args);
             if (o.Help)
             {
+                Log.Info("mode=help");
                 WriteUsage(stdout);
                 return 0;
             }
             if (o.Error != null)
             {
+                Log.Warn("refused the arguments: " + o.Error);
                 stderr.WriteLine(error + o.Error);
                 return 1;
             }
+
+            // The arguments are on the log's first line already; the parameters are on the run's.
+            Log.Info("mode=analysis image=" + o.Image + " out=" + LogText.Str(o.Out) + " lang=" + (Tr.Current == UiLanguage.Romanian ? "ro" : "en"));
             if (Directory.Exists(o.Image))
-            {
-                stderr.WriteLine(error + Tr.Pick("the tool analyses a file, not a folder: ", "unealta analizeaza un fisier, nu un folder: ") + o.Image);
-                return 1;
-            }
+                return Refuse(stderr, error, Tr.Pick("the tool analyses a file, not a folder: ", "unealta analizeaza un fisier, nu un folder: ") + o.Image);
             if (!File.Exists(o.Image))
-            {
-                stderr.WriteLine(error + Tr.Pick("the file does not exist: ", "fisierul nu exista: ") + o.Image);
-                return 1;
-            }
+                return Refuse(stderr, error, Tr.Pick("the file does not exist: ", "fisierul nu exista: ") + o.Image);
 
             Parameters p = ParametersFrom(o);
             if (o.Icc != null)
             {
                 p = p.WithDmaxFromProfile(o.Icc, out string profileError);
-                if (p == null)
-                {
-                    stderr.WriteLine(error + "--icc: " + profileError);
-                    return 1;
-                }
+                if (p == null) return Refuse(stderr, error, "--icc: " + profileError);
             }
             string invalid = p.Validate();
-            if (invalid != null)
-            {
-                stderr.WriteLine(error + invalid);
-                return 1;
-            }
+            if (invalid != null) return Refuse(stderr, error, invalid);
 
             AnalysisResult result;
             try
             {
                 result = AnalysisRun.Execute(o.Image, p);
             }
+            catch (RefusedImageException e)
+            {
+                // A linear image is a refusal, not a failure: the run's done line has its figures.
+                return Refuse(stderr, error, e.Message);
+            }
             catch (Exception e)
             {
+                // The stack lives in the log; stderr keeps its one line.
+                Log.Error(e, "run failed: mode=analysis");
                 stderr.WriteLine(error + e.Message);
                 return 1;
             }
@@ -147,16 +156,33 @@ namespace AstroPhotoAnalyzer
                 try
                 {
                     ReportWriter.SaveFull(result, o.Out);
+                    Log.Info(LogText.Wrote(o.Out));
                     stdout.WriteLine(Tr.Pick("    -> report saved: ", "    -> raport salvat: ") + o.Out);
                 }
                 catch (Exception e)
                 {
+                    Log.Error(e, "the report could not be written: " + o.Out);
                     stderr.WriteLine(error + Tr.Pick("the report could not be written: ", "nu s-a putut scrie raportul: ") + e.Message);
                     return 1;
                 }
             }
 
             return ExitFor(result.Overall);
+        }
+
+        /// <summary>
+        /// A refusal before or instead of a report: one line on stderr, the same in the
+        /// diagnostic log at Warn, and the exit code 1.
+        /// </summary>
+        /// <param name="stderr">Where the errors go.</param>
+        /// <param name="error">The error prefix in the interface language: <c>ERROR: </c> or <c>EROARE: </c>.</param>
+        /// <param name="message">Why, as the user reads it.</param>
+        /// <returns>1, the exit code of an error.</returns>
+        static int Refuse(TextWriter stderr, string error, string message)
+        {
+            Log.Warn("refused: " + message);
+            stderr.WriteLine(error + message);
+            return 1;
         }
 
         /// <summary>The exit code of a run's overall verdict.</summary>

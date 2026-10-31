@@ -29,8 +29,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using NLog;
 
 namespace AstroPhotoAnalyzer
 {
@@ -41,6 +43,9 @@ namespace AstroPhotoAnalyzer
     {
         static readonly IFrameReader[] Readers = { new FitsReader(), new ImageSharpReader() };
 
+        /// <summary>The diagnostic log: one line per image loaded (R-171, ADR 0069).</summary>
+        static readonly Logger Log = LogManager.GetLogger("ImageLoader");
+
         /// <summary>
         /// Every extension accepted, for the messages and for the window's file filter.
         /// </summary>
@@ -48,7 +53,9 @@ namespace AstroPhotoAnalyzer
             => Readers.SelectMany(r => r.Extensions).ToArray();
 
         /// <summary>
-        /// Reads the image with the reader that claims its extension. Throws
+        /// Reads the image with the reader that claims its extension, and writes to the
+        /// diagnostic log what was read: the file, its size, the reader, the raster, what the
+        /// reader recorded and the time it took (R-171). Throws
         /// <see cref="FileNotFoundException"/> for a file that does not exist, an exception
         /// naming the accepted extensions for an unknown one, and whatever the reader throws.
         /// </summary>
@@ -62,7 +69,11 @@ namespace AstroPhotoAnalyzer
             if (reader == null)
                 throw new Exception(Tr.Pick($"unsupported format: '{Path.GetExtension(path)}'. Accepted: {string.Join(", ", Extensions)}.", $"format neacceptat: '{Path.GetExtension(path)}'. Se accepta {string.Join(", ", Extensions)}."));
 
-            return reader.Load(path);
+            var clock = Stopwatch.StartNew();
+            Raster r = reader.Load(path);
+            Log.Info("loaded " + path + " (" + LogText.FileMiB(path) + ") reader=" + reader.GetType().Name + " " + LogText.Int(r.W) + "x" + LogText.Int(r.H)
+                + " planes=" + LogText.Int(r.Planes.Length) + " " + LogText.Source(r.Source) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
+            return r;
         }
     }
 }

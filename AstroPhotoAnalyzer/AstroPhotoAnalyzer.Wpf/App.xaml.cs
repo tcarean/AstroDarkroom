@@ -15,15 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// App.xaml.cs - the application's start.
+// App.xaml.cs - the application's start and end.
 //
 // The image can come from the command line: a shortcut, or "Open with" from Explorer. It is not
 // for scripting - the console exists for that. So can the interface language, --lang en|ro,
-// English when it is missing (ADR 0048).
+// English when it is missing (ADR 0048). The diagnostic log is started first, in the
+// constructor, and closed last, in OnExit (ADR 0069).
 
+using System;
 using System.Globalization;
 using System.IO;
 using System.Windows;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -33,6 +36,40 @@ namespace AstroPhotoAnalyzer.Wpf
     /// </summary>
     public partial class App : Application
     {
+        /// <summary>
+        /// Starts the diagnostic log first, so a failure while the resources load is in it too
+        /// (R-170 to R-173), and hooks the window thread's unhandled exceptions to it. The window's
+        /// tests build a plain Application, not this one, so they never start a log of their own.
+        /// </summary>
+        public App()
+        {
+            string[] all = Environment.GetCommandLineArgs();
+            string[] args = all.Length > 1 ? all[1..] : Array.Empty<string>();
+
+            // Whatever Apply throws, the window goes on and the image opens all the same; NLog's
+            // own assembly is no such case: like the core's, it must be there.
+            try
+            {
+                LogSetup.Apply("AstroPhotoAnalyzer.Wpf", args);
+            }
+            catch (Exception)
+            {
+                // the window goes on without a log
+            }
+
+            // Logged, not handled: the window closes on such an exception as it did (ADR 0069).
+            DispatcherUnhandledException += (_, e) =>
+                LogSetup.Fatal(e.Exception, "unhandled exception on the window's thread, the window closes");
+        }
+
+        /// <summary>
+        /// The diagnostic log: the start's choices. Fetched on use, not a static field: this is the
+        /// type whose constructor configures the log, and a logger its type initialiser created
+        /// first could make NLog load a stray <c>NLog.config</c> (ADR 0069, after FlatCheck's ADR
+        /// 0072).
+        /// </summary>
+        static Logger Log => LogManager.GetLogger(Loggers.App);
+
         /// <summary>
         /// Starts the application: the invariant culture first, then the interface language,
         /// before any XAML loads, then the main window over the user's remembered settings
@@ -50,9 +87,31 @@ namespace AstroPhotoAnalyzer.Wpf
             MainWindow = window;
             window.Show();
             if (languageError != null)
+            {
+                Log.Warn("refused: " + languageError);
                 MessageBox.Show(window, languageError, "AstroPhotoAnalyzer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
 
-            window.Start(FileFromArgs(e.Args));
+            string file = FileFromArgs(e.Args);
+            Log.Info("language=" + (Tr.Current == UiLanguage.Romanian ? "ro" : "en") + " file from the command line: " + (file ?? "none, the window asks for one"));
+            window.Start(file);
+        }
+
+        /// <summary>Writes the diagnostic log's last line, with the exit code, and closes the log.</summary>
+        /// <param name="e">The exit's arguments, whose exit code the line reports.</param>
+        protected override void OnExit(ExitEventArgs e)
+        {
+            base.OnExit(e);
+
+            // Guarded like Apply: whatever Close throws, the window still exits.
+            try
+            {
+                LogSetup.Close(e.ApplicationExitCode);
+            }
+            catch (Exception)
+            {
+                // the log's last line is lost, the exit is not
+            }
         }
 
         /// <summary>

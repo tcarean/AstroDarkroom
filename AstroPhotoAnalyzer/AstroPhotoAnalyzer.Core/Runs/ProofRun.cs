@@ -25,7 +25,9 @@
 // through the table of an intent, built on its first use and kept on the profile.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using NLog;
 
 namespace AstroPhotoAnalyzer
 {
@@ -54,6 +56,13 @@ namespace AstroPhotoAnalyzer
     internal static class ProofRun
     {
         /// <summary>
+        /// The diagnostic log: the preparation's start and done lines with the time of each
+        /// stage, a profile or a table that cannot be used with its cause, each render at Debug
+        /// (R-171, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger("ProofRun");
+
+        /// <summary>
         /// The integer step that brings the image's long side to at most ProofMaxSide.
         /// </summary>
         /// <param name="img">The image; only its size is read.</param>
@@ -72,11 +81,29 @@ namespace AstroPhotoAnalyzer
         {
             Parameters prm = a.Parameters;
             string path = prm.DmaxProfile != null && prm.DmaxOverride.HasValue ? prm.DmaxProfilePath : null;
-            if (path == null) return new ProofSet { Problem = ProofTexts.NoProfile };
+            using RunClock clock = RunClock.Start(Log, "proof", "path=" + LogText.Str(a.Path) + " profile=" + LogText.Str(path) + " stride=" + LogText.Int(Stride(a.Raster)));
+            // A refusal is the run's outcome, written as the tab shows it.
+            if (path == null)
+            {
+                clock.Done("refused: " + ProofTexts.NoProfile);
+                return new ProofSet { Problem = ProofTexts.NoProfile };
+            }
             ProofProfile profile = ProofProfile.Open(path);
-            if (profile.Problem != null) return new ProofSet { Problem = profile.Problem };
+            clock.Lap("profile");
+            if (profile.Problem != null)
+            {
+                Log.Warn(profile.Cause, "profile " + path + " cannot be proofed: " + LogText.Str(profile.Problem));
+                clock.Done("refused: " + LogText.Str(profile.Problem));
+                return new ProofSet { Problem = profile.Problem };
+            }
             GamutTable gamut = GamutAnalyzer.Build(path);
-            if (gamut.Problem != null) return new ProofSet { Problem = gamut.Problem };
+            clock.Lap("gamut");
+            if (gamut.Problem != null)
+            {
+                Log.Warn(gamut.Cause, "the gamut table of " + path + " cannot be built: " + LogText.Str(gamut.Problem));
+                clock.Done("refused: " + LogText.Str(gamut.Problem));
+                return new ProofSet { Problem = gamut.Problem };
+            }
 
             Raster reduced = RasterOps.Subsample(a.Raster, Stride(a.Raster));
             int w = reduced.W, h = reduced.H;
@@ -96,7 +123,11 @@ namespace AstroPhotoAnalyzer
                     return n;
                 }, n => { lock (gate) count += n; });
             }
-            return new ProofSet { Profile = profile, Reduced = reduced, PaperOutside = outside, PctPaper = outside.Length == 0 ? 0 : 100.0 * count / outside.Length };
+            var set = new ProofSet { Profile = profile, Reduced = reduced, PaperOutside = outside, PctPaper = outside.Length == 0 ? 0 : 100.0 * count / outside.Length };
+            clock.Lap("mask");
+            clock.Done("outside=" + LogText.Num(set.PctPaper) + " % reduced=" + LogText.Int(w) + "x" + LogText.Int(h) + " description=" + LogText.Str(profile.Description)
+                + " dmax=" + LogText.Num(profile.Dmax) + " paperBlackLstar=" + LogText.Num(profile.PaperBlackLstar));
+            return set;
         }
 
         /// <summary>
@@ -110,7 +141,10 @@ namespace AstroPhotoAnalyzer
         internal static SoftProofResult Render(ProofSet set, ProofIntent intent, bool simulate)
         {
             if (set.Problem != null) throw new InvalidOperationException(set.Problem);
-            return SoftProof.Render(set.Profile, set.Profile.Table(intent), set.Reduced, simulate);
+            var clock = Stopwatch.StartNew();
+            SoftProofResult proof = SoftProof.Render(set.Profile, set.Profile.Table(intent), set.Reduced, simulate);
+            Log.Debug("proof rendered intent=" + intent + " simulate=" + LogText.Yes(simulate) + " in " + LogText.Ms(clock.ElapsedMilliseconds));
+            return proof;
         }
     }
 }

@@ -21,6 +21,7 @@
 
 using System.Windows;
 using System.Windows.Input;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -42,6 +43,9 @@ namespace AstroPhotoAnalyzer.Wpf
 
         IccPickerViewModel Vm => (IccPickerViewModel)DataContext;
 
+        /// <summary>The diagnostic log: the file dialog and its answer (R-171, ADR 0069).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
         /// <summary>
         /// "Alege fisier...": the open dialog for a profile from anywhere, added to the list.
         /// </summary>
@@ -55,7 +59,12 @@ namespace AstroPhotoAnalyzer.Wpf
                 Filter = Tr.Pick("ICC profiles (*.icc;*.icm)|*.icc;*.icm|All files|*.*", "Profile ICC (*.icc;*.icm)|*.icc;*.icm|Toate fisierele|*.*"),
                 Multiselect = false,
             };
-            if (dlg.ShowDialog(this) == true) Vm.AddFile(dlg.FileName);
+            if (dlg.ShowDialog(this) == true)
+            {
+                Log.Info("profile file dialog: chose " + dlg.FileName);
+                Vm.AddFile(dlg.FileName);
+            }
+            else Log.Info("profile file dialog: cancelled");
         }
 
         /// <summary>

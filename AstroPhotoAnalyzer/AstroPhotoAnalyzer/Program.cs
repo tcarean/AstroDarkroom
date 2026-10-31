@@ -15,8 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Program.cs - the entry point. Main is a one-line shim over AnalyzerCli.Run, which is also the
-// place where everything can be tested, because it takes the output writers.
+// Program.cs - the entry point. Main opens the diagnostic log, runs AnalyzerCli.Run once and
+// closes the log; AnalyzerCli.Run is the place where everything can be tested, because it takes
+// the output writers, and it configures no log, so the tests that call it in-process keep their
+// capture (ADR 0069).
 
 using System;
 
@@ -25,10 +27,48 @@ namespace AstroPhotoAnalyzer
     /// <summary>The console's entry point.</summary>
     static class Program
     {
-        /// <summary>Runs the console on the real stdout and stderr.</summary>
+        /// <summary>
+        /// Runs the console on the real stdout and stderr, between the diagnostic log's first and
+        /// last lines (R-170 to R-173).
+        /// </summary>
         /// <param name="args">The command-line arguments, without the program's name.</param>
         /// <returns>The exit code of <see cref="AnalyzerCli.Run"/>: 0, 1, 2 or 3.</returns>
         internal static int Main(string[] args)
-            => AnalyzerCli.Run(args, Console.Out, Console.Error);
+        {
+            // Whatever Apply throws, the run goes on, with the log as far as it was set up, stdout
+            // and stderr untouched (R-001, R-171). A folder that cannot be written does not end
+            // here (Apply falls back to %LOCALAPPDATA% itself), and NLog's own assembly is no such
+            // case: like the core's it must be there, since without it the core's first logger
+            // throws.
+            try
+            {
+                LogSetup.Apply("AstroPhotoAnalyzer", args);
+            }
+            catch (Exception)
+            {
+                // the run goes on without a log
+            }
+
+            // Run's exit code, for the log's last line. A run that throws past AnalyzerCli's
+            // catches crashes: the hook's Fatal line, written first, is then the crash's line.
+            int code = 1;
+            try
+            {
+                code = AnalyzerCli.Run(args, Console.Out, Console.Error);
+                return code;
+            }
+            finally
+            {
+                // Guarded like Apply: whatever Close throws, the exit code is kept.
+                try
+                {
+                    LogSetup.Close(code);
+                }
+                catch (Exception)
+                {
+                    // the log's last line is lost, the exit code is not
+                }
+            }
+        }
     }
 }

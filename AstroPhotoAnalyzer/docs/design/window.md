@@ -32,7 +32,8 @@ shown.
 (`Report.txt`, `Raport.txt` in Romanian, beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
 and runs; `RunAsync()` validates the fields (`ParameterFields.TryBuild`), clears the
 tabs, runs `AnalysisRun.Execute` via `Task.Run`, populates the tabs, or sets `Error`
-(`Describe` joins inner messages, no stack); `SaveReport(file)` writes `WriteFull` through
+(`Describe` joins inner messages, no stack: the stack goes to the diagnostic log, where each run
+is numbered with its outcome, `logging.md`); `SaveReport(file)` writes `WriteFull` through
 `ReportWriter.SaveFull` (whole or not at all, as the console's `-o`) and tells
 the outcome rather than throwing it: `SaveMessage` ("raport salvat: " and the path) or
 `SaveError` (`Describe` of the exception: a file another program holds open, a folder that
@@ -49,8 +50,9 @@ The parameterless constructor passes `WindowSettings.None`.
 
 **`WindowSettings`** (`ViewModels/WindowSettings.cs`, R-156): one JSON object, today the key
 `iccProfile`; `Read(path)` tolerates a missing, unreadable or malformed file (no profile),
-`Write()` goes through `<file>.tmp` and one move and swallows IO and access errors; a null
-path reads and writes nothing. `InLocalAppData()` is the user's file, passed by `App`.
+`Write()` goes through `<file>.tmp` and one move and swallows IO and access errors, both writing
+the exception to the diagnostic log at Warn; a null path reads and writes nothing.
+`InLocalAppData()` is the user's file, passed by `App`.
 
 **`ParameterFields` and the profile** (R-155): `Profile` is the one place the profile lives;
 `UseProfile` sets it before the Dmax text (the `Dmax` setter drops a readable profile whose
@@ -98,11 +100,30 @@ percentiles are one per line. `VerdictPalette`
 neutral); `RasterBitmaps` (a raster region as `BitmapSource`, at an integer stride,
 frozen); `BarsCanvas` (a `FrameworkElement` drawing a histogram with up to two marker lines in
 `OnRender`, the second dashed, each at the centre of its value's bin since the bins are centred on their index); `DarkTitleBar` (DWM attribute 20, falling back to 19); `AppIcon` (largest
-frame of the .ico for "Despre").
+frame of the .ico for "Despre"); `ScreenArea` (the work area of a window's screen, from
+`MonitorFromWindow` and `GetMonitorInfoW` divided by the window's DPI scale, and `TopInside`, the
+top that keeps a window inside an area).
+
+**"Despre" fits its screen** (R-158, ADR 0070):
+- `MainWindow` passes it the work area of its own screen, and the window's `MaxHeight` is that
+  area's height. Below the cap it sizes to its content as before.
+- Its cards are in the `ScrollViewer` `Cards`, which has a transparent background so that the
+  wheel works over the margins, with the theme's dark scroll bar. The Close button is in a row
+  of its own under it.
+- While the cards can scroll, the window's `PreviewKeyDown` passes Up, Down, Page Up, Page Down,
+  Home and End to them (`Scroll`). Where they fit it takes no key, so the arrows move the focus
+  between the links and the Close button as before.
+- At `ContentRendered`, when its size is final, `FitInto` keeps its top inside the area and
+  writes its Debug line. At `Loaded` it still has its first height.
+- Where it fits, the margins add up to the same layout as before.
 
 **Culture**: `App.ForceInvariantNumbers` pins `DefaultThreadCurrentCulture` and
 `CurrentCulture` to invariant at startup; `InvariantGlobalization` must **not** be set on
 the WPF project (XAML fails to load without culture data).
+
+**The diagnostic log**: `App`'s constructor starts it, before `App.xaml`'s resources load, and
+hooks the dispatcher's unhandled exceptions to it; `OnExit` closes it; the window's four loggers
+are named in `Loggers.cs` (`logging.md`, ADR 0069).
 
 **Language**: `App.OnStartup` sets the interface language from `--lang` before the first
 window; every XAML text is `{local:T En=..., Ro=...}` and every view-model text a

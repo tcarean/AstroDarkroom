@@ -23,7 +23,8 @@ licence.
 
 - Packages: `NLog` 6.2.2, `NLog.Targets.AtomicFile` 6.2.2
 - Files: `NLog.dll`, `NLog.Targets.AtomicFile.dll`
-- Programs: Astro Darkroom, DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare, CopyWcs
+- Programs: Astro Darkroom, DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare, CopyWcs,
+  AstroPhotoAnalyzer
 - Licence: BSD-3-Clause
 - Project: <https://nlog-project.org/>, source <https://github.com/NLog/NLog>
 

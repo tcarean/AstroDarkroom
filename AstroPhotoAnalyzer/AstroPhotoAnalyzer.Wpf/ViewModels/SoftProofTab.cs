@@ -34,6 +34,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -89,6 +90,13 @@ namespace AstroPhotoAnalyzer.Wpf
         bool _showPaper, _showOriginal;
         ProofMarginChoice _margin = ProofMarginChoice.PaperWhite;
 
+        /// <summary>
+        /// The diagnostic log: the controls the user changes, a computation or a render that
+        /// failed or was superseded; the core's ProofRun writes each preparation and render
+        /// (R-171, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.SoftProof);
+
         /// <summary>Makes the command; the tab starts empty.</summary>
         public SoftProofTabViewModel()
         {
@@ -125,17 +133,18 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (_intent == value) return;
                 _intent = value;
+                Log.Info("intent=" + value);
                 Raise(nameof(IsPerceptual)); Raise(nameof(IsRelative)); Raise(nameof(IsRelativeNoBpc));
                 if (HasControls) ProofComputation = RenderAsync();
             }
         }
 
-        public bool ShowPaperGamut { get => _showPaper; set { if (Set(ref _showPaper, value)) RaiseLayers(); } }
+        public bool ShowPaperGamut { get => _showPaper; set { if (Set(ref _showPaper, value)) { Log.Info("paper gamut warning=" + LogText.Yes(value)); RaiseLayers(); } } }
 
         /// <summary>"Originalul": the image as it is, inside the same margin, without the warnings.</summary>
-        public bool ShowOriginal { get => _showOriginal; set { if (Set(ref _showOriginal, value)) { Raise(nameof(Image)); RaiseLayers(); } } }
+        public bool ShowOriginal { get => _showOriginal; set { if (Set(ref _showOriginal, value)) { Log.Info("original=" + LogText.Yes(value)); Raise(nameof(Image)); RaiseLayers(); } } }
 
-        public ProofMarginChoice Margin { get => _margin; set { if (Set(ref _margin, value)) Raise(nameof(MarginBrush)); } }
+        public ProofMarginChoice Margin { get => _margin; set { if (Set(ref _margin, value)) { Log.Info("margin=" + value); Raise(nameof(MarginBrush)); } } }
 
         // ---- what is shown
 
@@ -283,7 +292,11 @@ namespace AstroPhotoAnalyzer.Wpf
             try
             {
                 Outcome outcome = await Task.Run(() => Prepare(result, intent));
-                if (run != _run) return;
+                if (run != _run)
+                {
+                    Log.Debug("computation " + LogText.Int(run) + " ended after a newer one started; nothing is shown");
+                    return;
+                }
                 Show(outcome);
                 IsBusy = false;
                 // The intent changed while the table was built: the proof shown is the old
@@ -292,7 +305,13 @@ namespace AstroPhotoAnalyzer.Wpf
             }
             catch (Exception e)
             {
-                if (run == _run) { Reset(); Message = MainViewModel.Describe(e); }
+                if (run == _run)
+                {
+                    Log.Error(e, "computation " + LogText.Int(run) + " failed; the tab shows the message");
+                    Reset();
+                    Message = MainViewModel.Describe(e);
+                }
+                else Log.Debug(e, "computation " + LogText.Int(run) + " failed after a newer one started; nothing is shown");
             }
             finally
             {
@@ -319,7 +338,15 @@ namespace AstroPhotoAnalyzer.Wpf
             }
             catch (Exception e)
             {
-                if (run != _run) return;
+                if (run != _run)
+                {
+                    Log.Debug(e, "render " + LogText.Int(run) + " failed after a newer one started; nothing is shown");
+                    return;
+                }
+                // An ArgumentException is a table the core refuses, shown as the reason; any other
+                // is a failure.
+                if (e is ArgumentException) Log.Warn(e, "render " + LogText.Int(run) + " refused with intent " + intent + ": " + e.Message);
+                else Log.Error(e, "render " + LogText.Int(run) + " failed; the tab shows the message");
                 DropProof();
                 Message = e is ArgumentException ? e.Message : MainViewModel.Describe(e);
                 IsProblem = e is ArgumentException;

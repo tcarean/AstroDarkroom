@@ -7,9 +7,10 @@ the colour cast and the gradients, the largest print size the real detail suppor
 distance it will be seen at, and how much denoise the print version needs. Every recommendation
 comes with the figure it measured and the threshold it judged it by.
 
-It measures and recommends; the export itself is made cleanly from Siril. Besides its report it
-writes one file, and only when you ask for it: from the window's **Curves Editing** tab, a new FITS with
-a suggested contrast curve applied. The image you open is never modified.
+It measures and recommends; the export itself is made cleanly from Siril. Besides its report and
+its log (see "Logs") it writes one file, and only when you ask for it: from the window's
+**Curves Editing** tab, a new FITS with a suggested contrast curve applied. The image you open is
+never modified.
 
 There are two applications over one core, so both give the same figures: the window,
 `AstroPhotoAnalyzer.Wpf.exe`, with a dark theme, and the console, `AstroPhotoAnalyzer.exe`, which
@@ -370,6 +371,46 @@ flagged:
 On a mono image there is no cast, and no region is coloured. Appendix E gives the sky's colour
 with its L\*, a\*, b\* and chroma, and the eight regions with their deltas.
 
+## Logs
+
+Both programs keep a log of what they did, for the day something goes wrong. To report a problem,
+attach the whole `log` folder: it holds what is needed to see what happened.
+
+**Where it is.** In a folder named `log` beside the program: `log\AstroPhotoAnalyzer.log` beside
+`AstroPhotoAnalyzer.exe`, `log\AstroPhotoAnalyzer.Wpf.log` beside `AstroPhotoAnalyzer.Wpf.exe`.
+When that folder cannot be written (a program under Program Files, a read-only drive), the log
+goes to `%LOCALAPPDATA%\AstroPhotoAnalyzer\log` instead, beside the window's settings, and its
+first line says so. Past 1 MiB (1,048,576 bytes, so a file ends one line past that) a file is
+left and the next one is started (`AstroPhotoAnalyzer_01.log`, `AstroPhotoAnalyzer_02.log`, ...);
+the five most recent files are kept and the older ones deleted, so the folder holds about 5 MiB
+per program at most. An analysis of a 23 MP image writes about 25 KB in the console and about
+30 KB in the window, with its curves and its soft proof, so the log keeps some two hundred of
+them. Two windows open at the same time write into the same file, each line marked with its
+process. The log is written beside the program, wherever that is: keep the program outside your
+image folders.
+
+**What is in it.** One line per event, numbers with a point: at the start the version, the
+command line, the Windows and .NET versions and the folders; every image read, with its size and
+what its file says (format, bit depth, compression, ICC profile, WCS), and for a FITS the keywords
+that decide how it is read; every ICC profile read, with its Dmax or why it cannot be used; for
+each analysis its parameters, every figure of every measurement, every recommendation with its
+"because:", the verdict and the time each stage took; the same for the suggested curves and the
+soft proof; every file the programs write for you, with its size; in the window, each run, the
+dialogs and the buttons pressed; every error with its technical details, and the problems the
+programs work around without a word (a profile or a settings file that cannot be read, a link
+that does not open), though not a temporary file that a failed save could not remove; at the end
+the exit code and the time taken. The log's own words are English
+whatever `--lang` says; an error's message, a refusal and a recommendation appear as you saw
+them, so in Romanian under `--lang ro`. It holds the paths of your files and the figures measured
+on them, not their pixels.
+
+**How much.** The environment variable `APA_LOG` sets the level: `off`, `fatal`, `error`, `warn`,
+`info`, `debug` (the default) or `trace`, which adds every header card of each FITS read; `off`
+writes no log and creates no folder. In a command window, `set APA_LOG=trace` holds for the
+programs started from that window; for the window started from a shortcut or from Astro
+Darkroom, set it once with `setx APA_LOG trace` (or in Windows' environment variables) and start
+the program, or Astro Darkroom, again.
+
 ## Building
 
 The solution needs Windows, because of the window; the console's project builds alone on any
@@ -451,4 +492,5 @@ compatible with the GPL:
 | --- | --- | --- |
 | SixLabors.ImageSharp | reads TIFF, PNG and JPEG, and encodes the JPEGs and the 8-bit TIFF of the compression table | Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software) |
 | Wacton.Unicolour | evaluates the tables of a printer ICC profile, for the paper's Dmax, for the out-of-gamut figure of the Curves Editing tab and for the Soft proof tab | MIT |
+| NLog and NLog.Targets.AtomicFile 6.2.2 | writing the diagnostic log (see "Logs"), two windows into one file | BSD-3-Clause |
 | Lynds' Catalogue of Dark Nebulae (data, not code) | the catalogue of dust clouds (LDN, 1962) by which the clouds of a plate-solved FITS are recognized | published data (Lynds 1962, ApJS 7, 1), the ADC/NASA version of 1979 distributed by CDS/VizieR as VII/7A; citing the source is the only condition |

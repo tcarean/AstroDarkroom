@@ -51,6 +51,9 @@ AstroPhotoAnalyzer.Core/
   Runs/AnalysisRun.cs                  the chain, AnalysisResult, RefusedImageException
   Runs/CurveRun.cs                     the second run, after the analysis: CurveSet, CurveExport
   Runs/ProofRun.cs                     the third run, after the analysis: ProofSet (ADR 0066)
+  Logging/LogSetup.cs                  the diagnostic log's configuration, its first and last lines (ADR 0069)
+  Logging/LogText.cs                   how a value is written in the log; a result record's figures
+  Logging/RunClock.cs                  a run's start and done lines, with the time of each stage
   Parameters.cs, Thresholds.cs, ThirdParty.cs, Version.cs
   Language.cs                          the interface language: Tr.Pick, the --lang parser (ADR 0048)
 
@@ -58,7 +61,8 @@ AstroPhotoAnalyzer/                    Program.cs, Options.cs, AnalyzerCli.cs
 
 AstroPhotoAnalyzer.Wpf/
   App.xaml(.cs), MainWindow.xaml(.cs), Theme/Dark.xaml
-  Interop/DarkTitleBar.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
+  Loggers.cs                           the names of the window's loggers in the diagnostic log
+  Interop/DarkTitleBar.cs, Interop/ScreenArea.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
   Presentation/AppIcon.cs, BarsCanvas.cs, CurveCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs,
                TExtension.cs (a XAML text in both languages), Emphasis.cs (a because's ** marks in bold, R-112),
                AccessibleTabControl.cs (the window's tabs, their content in the UI Automation tree, R-157),

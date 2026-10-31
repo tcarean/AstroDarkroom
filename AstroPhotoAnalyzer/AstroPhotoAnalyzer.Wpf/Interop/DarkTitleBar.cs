@@ -26,12 +26,16 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
     /// <summary>Asks DWM for the dark title bar on a window; best effort, never fails.</summary>
     internal static class DarkTitleBar
     {
+        /// <summary>The diagnostic log: a system without the dark title bar (R-171, ADR 0069).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
         const int UseImmersiveDarkModeBefore20H1 = 19;
         const int UseImmersiveDarkMode = 20;
 
@@ -63,8 +67,10 @@ namespace AstroPhotoAnalyzer.Wpf
                 if (DwmSetWindowAttribute(hwnd, UseImmersiveDarkMode, ref on, sizeof(int)) != 0)
                     DwmSetWindowAttribute(hwnd, UseImmersiveDarkModeBefore20H1, ref on, sizeof(int));
             }
-            catch (DllNotFoundException) { }
-            catch (EntryPointNotFoundException) { }
+            catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException)
+            {
+                Log.Debug(e, "the title bar cannot be darkened on this system");
+            }
         }
     }
 }

@@ -36,6 +36,14 @@ component too: the Lynds catalogue (`Input/ldn.txt`, an `EmbeddedResource` with 
 `ThirdPartyTests` ties the csproj's resources to the components the same way (ADR 0025). Since 2026-10-02
 the version is in `Directory.Packages.props` and the csproj names the package only (ADR 0003).
 
+`NLog` **6.2.2** and `NLog.Targets.AtomicFile` **6.2.2** (BSD-3-Clause, one project, one commit,
+pure managed): the diagnostic log (ADR 0069, `logging.md`), one component with two packages in
+`ThirdParty.cs`. The version is the suite's: AstroDarkroom publishes every window into one
+folder, so the DLLs must be the same bytes as FlatCheck's, DarksCheck's and LightsCheck's, and a
+change of version moves in every tool the same day. `NLog.Targets.AtomicFile` ships two builds,
+`net8.0` (the console's and the core's tests') and `net8.0-windows7.0` (the window's): the
+two-writer check runs on both.
+
 ## The rule, as the first CLAUDE.md wrote it
 
 **Dependencies are discussed before they are added, not avoided.** Bring the candidate,

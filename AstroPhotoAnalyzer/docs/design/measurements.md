@@ -450,7 +450,10 @@ baryta, 29 000 to 40 500 on its canvas, 1 700 on the PNG. `Measure` gives the sh
 tonal subsample's pixels, in all and per class of the patch each pixel lies in, the rows run in
 parallel (`Parallel.For`, each worker's counts over the rows it took merged under a lock; the package's configuration
 served eight threads in the probe with the single-threaded results); a table without an `Exact`
-trip, the hand-built ones of the tests, is judged by the interpolation alone.
+trip, the hand-built ones of the tests, is judged by the interpolation alone. A table that
+cannot be built keeps the exception behind its `Problem` as `Cause`, for the diagnostic log,
+which the run that reads the table writes with its stack (ADR 0069); the analyzer holds no
+logger.
 
 On the plate-solved FITS through the lab's baryta profile (V-008): 1.36 % as is (dust 4.3 %,
 sky 0.7 %, band 1.8 %, bright clouds 0.6 %, peaks 0.0 %; exact per pixel 1.35 %, dust 4.2 %),

@@ -27,6 +27,8 @@
 - The visibility threshold, L\* 15, is a rule of thumb with no measurement behind it, and one
   number for every room: a print under gallery light shows tones well under it, one in a dim
   hallway loses tones above it. The tool does not know the viewing light (ADR 0029).
+- The diagnostic log is written beside the executable, wherever that is: a program kept inside
+  an image folder writes its `log` folder there (ADR 0069).
 - The profile window lists the installed profiles on the UI thread, with no busy sign: tens of
   milliseconds for a normal colour folder, but a folder of hundreds of printer profiles, or one
   damaged profile the package is slow on (4 s measured on one corrupted file), freezes the

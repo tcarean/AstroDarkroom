@@ -175,7 +175,7 @@ NLog, with its licence, its copyright line and its address (ADR 0013); each tool
 
 | Component | Used for | Shipped by | Licence |
 | --- | --- | --- | --- |
-| NLog and NLog.Targets.AtomicFile | the diagnostic logs (see "Logs") | the launcher, DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare, CopyWcs | BSD-3-Clause |
+| NLog and NLog.Targets.AtomicFile | the diagnostic logs (see "Logs") | the launcher, DarksCheck, FlatCheck, LightsCheck, ImageVisualCompare, CopyWcs, AstroPhotoAnalyzer | BSD-3-Clause |
 | Sdcb.LibRaw | the .NET binding to LibRaw | DarksCheck, FlatCheck, LightsCheck | MIT |
 | LibRaw (`raw_r.dll`) | reading camera raw files | DarksCheck, FlatCheck, LightsCheck | LGPL-2.1 |
 | libjpeg-turbo (`jpeg8.dll`) | JPEG data in raw files, for LibRaw | DarksCheck, FlatCheck, LightsCheck | IJG, BSD-3-Clause, zlib |

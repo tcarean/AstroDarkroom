@@ -30,6 +30,8 @@ absent). It keeps two package configurations, one per direction and intent, the 
 through A2B1 in XYZ (`PaperBlack`; its L\* and Dmax are the ones `IccPaperBlack` reads), the
 media white's L\*a\*b\* against D50 (`PaperWhiteLab`) and the display colour of sRGB white under
 the simulation (`PaperWhiteSrgb`, the margin). `ForTests` makes a profile with the facts alone.
+A profile refused for an exception keeps it as `Cause`, which `ProofRun` writes with its stack
+to the diagnostic log (ADR 0069).
 
 `ProofProfile.Table(intent)` builds, once per intent and keeps (a `Lazy` per intent in a
 concurrent dictionary), a `ProofTable`: for every node of an sRGB cube of `ProofGrid` (65) nodes
@@ -71,7 +73,9 @@ unusable one, the core's reason), the image reduced so that its long side is at 
 `ProofMaxSide` (`RasterOps.Subsample` at the integer stride), the gamut table of R-144 and the
 paper mask with its share. `Render(set, intent, simulate)` builds the intent's table on its first
 use and renders. The reduction is larger than the preview's (`PreviewMaxSide`, 1600) because the
-proof is shown full screen on a 4K screen too.
+proof is shown full screen on a 4K screen too. `Prepare` is timed in the diagnostic log by a
+`RunClock` named `proof` (`profile`, `gamut`, `mask`), a refusal as its done line; `Render`
+writes one Debug line per render (`logging.md`).
 
 ## The texts (`Report/ProofTexts.cs`)
 
@@ -93,7 +97,9 @@ prepares, renders and makes the frozen bitmaps on a pool thread (an `Outcome` re
 back; an overlay over 2.7 MP would stall the window if made on its thread) with
 "computing" shown meanwhile; a change of intent renders again the same way
 (`RenderAsync`, the cached set, a new table only on a new intent), and one made while the first
-computation runs is rendered right after it; the other controls raise properties. The run number
+computation runs is rendered right after it; the other controls raise properties, and each change
+is a line of the diagnostic log under `Window.SoftProof`, with a computation or a render that
+failed or that a newer one superseded (`logging.md`). The run number
 pattern of the Editare Curbe tab (`_run`): a result that ends after a `Reset` (another image, a
 clear, a newer computation) touches nothing. The controls follow `HasControls`, the prepared set,
 not the proof: they stay while a render runs and after one the core refused (a table with a
