@@ -70,9 +70,7 @@ public partial class AboutWindow : Window
         LicenceHeading.Text = T("LICENCE", "LICENTA");
         Warranty.Text = LicenseInfo.Warranty;
         ThirdPartyHeading.Text = T("THIRD-PARTY COMPONENTS", "COMPONENTE TERTE");
-        ThirdPartyLead.Text = T(
-            "Each licence's whole text is in THIRD-PARTY-NOTICES.md, beside the source.",
-            "Textul intreg al fiecarei licente e in THIRD-PARTY-NOTICES.md, langa sursa.");
+        ThirdPartyLead.Text = ThirdParty.Lead;
         ThirdPartyList.ItemsSource = ThirdParty.Components;
         PrerequisitesHeading.Text = T("REQUIREMENTS", "CERINTE");
         PrerequisitesList.ItemsSource = Prerequisites.Details;
