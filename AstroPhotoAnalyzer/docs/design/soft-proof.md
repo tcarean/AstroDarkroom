@@ -1,12 +1,13 @@
 # The soft proof
 
-> Written 2026-10-30 with the feature (R-160 to R-163, ADR 0066). **Covers:**
+> Written 2026-10-30 with the feature (R-160 to R-164, ADR 0066, ADR 0068). **Covers:**
 > `AstroPhotoAnalyzer.Core/Analysis/SoftProof.cs`, `AstroPhotoAnalyzer.Core/Runs/ProofRun.cs`,
 > `AstroPhotoAnalyzer.Core/Report/ProofTexts.cs`,
 > `AstroPhotoAnalyzer.Wpf/ViewModels/SoftProofTab.cs`,
 > `AstroPhotoAnalyzer.Wpf/Views/SoftProofView.xaml`,
 > `AstroPhotoAnalyzer.Wpf/Views/SoftProofControls.xaml`,
-> `AstroPhotoAnalyzer.Wpf/Views/SoftProofWindow.xaml` and
+> `AstroPhotoAnalyzer.Wpf/Views/SoftProofWindow.xaml`, the `SoftProofWindow` class in
+> `AstroPhotoAnalyzer.Wpf/Views/OverlayWindows.xaml.cs` and
 > `AstroPhotoAnalyzer.Wpf/Presentation/ZoomPanViewer.cs`. A change to the code this describes means
 > this note is updated in the same task, or deleted with the decision it explains.
 
@@ -70,7 +71,7 @@ unusable one, the core's reason), the image reduced so that its long side is at 
 `ProofMaxSide` (`RasterOps.Subsample` at the integer stride), the gamut table of R-144 and the
 paper mask with its share. `Render(set, intent, simulate)` builds the intent's table on its first
 use and renders. The reduction is larger than the preview's (`PreviewMaxSide`, 1600) because the
-proof is shown maximised on a 4K screen too.
+proof is shown full screen on a 4K screen too.
 
 ## The texts (`Report/ProofTexts.cs`)
 
@@ -128,12 +129,27 @@ neighbour, so that the zoom shows the proof's pixels; the left button drags with
 resets; the centre is clamped so that the child never leaves the viewport (centred along an axis
 where it is smaller). The child is arranged at its natural size under a scale and a translation.
 View state only: the view-model knows nothing of it.
-`SoftProofWindow` is maximised and non-modal, over the tab's own view-model (so the window's
-state is the tab's): the controls and the caption in a bar at the top, the margin brush filling
-the window behind the image (the same `ZoomPanViewer`), the message ("computing" or a refused
-table's reason, red) under the caption, and the keys in `PreviewKeyDown`:
-Esc closes, G and O toggle the boxes and I moves to the next intent through
-`SoftProofTabViewModel.HandleKey`, ignored while the focus is in a text box or a modifier is held.
+`SoftProofWindow` is a borderless window over the whole screen (`WindowStyle` `None`,
+`WindowState` `Maximized`, `ResizeMode` `NoResize`; R-164, ADR 0068), non-modal, over the tab's
+own view-model (so the window's state is the tab's): the margin brush filling the window behind
+the image (the same `ZoomPanViewer`), and over its top a panel with the controls, the caption,
+the message ("computing" or a refused table's reason, red), the key hint and the `Close` button
+(`CloseClicked` closes). The panel sits in a transparent `Border`, the band, aligned to the top;
+a style trigger keeps the panel `Hidden` (not `Collapsed`, so the band keeps its height) unless
+the window's `PanelShown` dependency property is true, which the band's `MouseEnter` sets and
+`MouseLeave` clears (`HidePanel`). While the margin list's drop-down is open the `ComboBox`
+holds a sub-tree mouse capture, so the band sees no `MouseLeave` wherever the mouse goes (the
+list is taller than the band) and the panel stays; `MouseLeave` also skips the hide while the
+list is open, for the same case. When the list closes the capture is released, and the band's
+`MouseLeave` or the list's `DropDownClosed`, whichever comes first, hides the panel if the mouse
+is outside the band. `HidePanel` also takes the keyboard focus back to the window when a
+control of the panel holds it, so no hidden control answers the arrow keys. Two things follow
+from the band being hit-testable: the panel appears once the mouse is seen over the band, and
+a wheel notch or a drag begun inside the band goes to the band, not to the viewer (a drag begun
+in the viewer holds its own capture, so panning across the band does not show the panel). The keys are in `PreviewKeyDown`: Esc closes
+(the window, even with the margin list open, since the window sees the key first), G and O
+toggle the boxes and I moves to the next intent through `SoftProofTabViewModel.HandleKey`,
+ignored while the focus is in a text box or a modifier is held.
 
 ## What was measured
 

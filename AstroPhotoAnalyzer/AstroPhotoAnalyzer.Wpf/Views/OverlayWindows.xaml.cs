@@ -16,8 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // OverlayWindows.xaml.cs - the links with the XAML of the viewing windows: the dust / sky map
-// (R-130), the preview of a row (R-131) and the suggested curve (R-147). The behaviour is in
-// the view-models; here only the dark title bar and Esc.
+// (R-130), the preview of a row (R-131), the suggested curve (R-147) and the soft proof full
+// screen (R-163, R-164). The behaviour is in the view-models; here only the dark title bar and
+// Esc, and, for the soft proof window, its hover panel and its keys.
 
 using System.Windows;
 using System.Windows.Input;
@@ -55,19 +56,40 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
-    /// The soft proof's full-screen window (R-163), over the tab's own
-    /// <see cref="SoftProofTabViewModel"/>; non-modal. The keys G, O and I go to the
-    /// view-model, Esc closes.
+    /// The soft proof's full-screen window (R-163, R-164), over the tab's own
+    /// <see cref="SoftProofTabViewModel"/>; non-modal, borderless, over the whole screen. Its
+    /// panel of controls shows while the mouse is over the band it occupies at the top
+    /// (<see cref="PanelShown"/>). The keys G, O and I go to the view-model; Esc and the
+    /// panel's Close button close.
     /// </summary>
     public partial class SoftProofWindow : Window
     {
         /// <summary>
-        /// Loads the XAML, asks for the dark title bar once there is a handle; the keys as above.
+        /// Whether the panel over the top of the image is shown (R-164): true while the mouse is
+        /// over its band or the margin list is open, set from the band's MouseEnter and
+        /// MouseLeave; false at first.
+        /// </summary>
+        public static readonly DependencyProperty PanelShownProperty =
+            DependencyProperty.Register(nameof(PanelShown), typeof(bool), typeof(SoftProofWindow), new PropertyMetadata(false));
+
+        /// <summary>
+        /// Loads the XAML; the band's MouseEnter and MouseLeave drive <see cref="PanelShown"/>,
+        /// held while the margin list is open; the keys as above.
         /// </summary>
         public SoftProofWindow()
         {
             InitializeComponent();
-            SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+            // The band is a transparent Border, so it is under the mouse even while the panel
+            // in it is hidden; MouseLeave fires when the mouse leaves the band's subtree. While
+            // the margin list is open the ComboBox holds a sub-tree mouse capture, so the band
+            // sees no MouseLeave wherever the mouse goes (the list is taller than the band) and
+            // the panel stays; the guard below covers the same case should a MouseLeave come
+            // through anyway. When the list closes the capture is released: the band's
+            // MouseLeave, or the list's DropDownClosed, hides the panel if the mouse is outside
+            // the band, whichever comes first (HidePanel twice is harmless).
+            PanelZone.MouseEnter += (_, _) => PanelShown = true;
+            PanelZone.MouseLeave += (_, _) => { if (!ProofControls.MarginList.IsDropDownOpen) HidePanel(); };
+            ProofControls.MarginList.DropDownClosed += (_, _) => { if (!PanelZone.IsMouseOver) HidePanel(); };
             PreviewKeyDown += (_, e) =>
             {
                 if (e.Key == Key.Escape) { Close(); e.Handled = true; return; }
@@ -76,6 +98,28 @@ namespace AstroPhotoAnalyzer.Wpf
                 if (DataContext is SoftProofTabViewModel vm && vm.HandleKey(e.Key)) e.Handled = true;
             };
         }
+
+        /// <summary>Whether the panel over the top of the image is shown (R-164).</summary>
+        public bool PanelShown
+        {
+            get => (bool)GetValue(PanelShownProperty);
+            set => SetValue(PanelShownProperty, value);
+        }
+
+        /// <summary>
+        /// Hides the panel and takes the keyboard focus back from it: a hidden control would
+        /// otherwise keep it, and the arrow keys would change the intent or the margin unseen.
+        /// </summary>
+        void HidePanel()
+        {
+            PanelShown = false;
+            if (HoverPanel.IsKeyboardFocusWithin) Focus();
+        }
+
+        /// <summary>The panel's Close button (R-164): closes the window, as Esc does.</summary>
+        /// <param name="sender">The button; not read.</param>
+        /// <param name="e">The click; not read.</param>
+        void CloseClicked(object sender, RoutedEventArgs e) => Close();
     }
 
     /// <summary>

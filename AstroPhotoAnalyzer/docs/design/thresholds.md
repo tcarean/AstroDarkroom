@@ -73,4 +73,4 @@ All empirical, most from the reference image. Change one, change its comment.
 | `CurveShadowChartFactor` / `CurveChartSamples` | 1.25 / 257 | the shadow chart ends at this many times the band's input; samples per chart |
 | `CurvePreviewDefaultWidth` / `CurvePreviewDefaultHeight` | 1600 / 900 | the preview size before the view has reported its gallery area: a presumption about the screen |
 | `ProofGrid` | 65 | the nodes per channel of the soft proof's table (R-160): within Delta E76 1.0 of the exact per-pixel proof at the 99th percentile on both lab profiles, where 33 reach 5.2 on the canvas; 1.6 to 2.2 s to build in parallel (ADR 0066) |
-| `ProofMaxSide` | 2400 | the long side of the reduced copy the proof is made on (R-160): the preview's 1600 fits a Full HD render, the proof is shown maximised on a 4K screen too; a presumption about the screen |
+| `ProofMaxSide` | 2400 | the long side of the reduced copy the proof is made on (R-160): the preview's 1600 fits a Full HD render, the proof is shown full screen on a 4K screen too; a presumption about the screen |

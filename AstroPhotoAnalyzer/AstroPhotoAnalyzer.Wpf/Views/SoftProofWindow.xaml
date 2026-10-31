@@ -17,10 +17,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- SoftProofWindow - the soft proof full screen (R-163): maximised, over the tab's own
-     view-model, the same controls in a bar at the top, the margin filling the window behind
-     the image. The keys G, O, I and Esc are in the code-behind. No figure is computed
-     here. -->
+<!-- SoftProofWindow - the soft proof full screen (R-163, R-164): a borderless window over the
+     whole screen, over the tab's own view-model, the margin filling the screen behind the
+     image. The tab's controls, the caption, the message, the key hint and a Close button sit
+     in a panel laid over the top of the image, hidden until the mouse is over the band the
+     panel occupies (PanelShown, in the code-behind, from the band's MouseEnter / MouseLeave,
+     held while the margin list is open); the band keeps its height while hidden, so there is
+     something to point at. The keys G, O, I and Esc are in the code-behind. No figure is
+     computed here. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.SoftProofWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -28,46 +32,58 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf"
         Title="{Binding Title}"
         Icon="/AstroPhotoAnalyzer.Wpf;component/Icon/AstroPhotoAnalyzer.ico"
-        WindowState="Maximized" MinWidth="800" MinHeight="500"
+        WindowStyle="None" ResizeMode="NoResize" WindowState="Maximized"
         Background="{StaticResource WindowBg}"
         TextOptions.TextFormattingMode="Display">
-
   <Grid>
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto" />
-      <RowDefinition Height="*" />
-    </Grid.RowDefinitions>
-
-    <Border Grid.Row="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1" Padding="16,8">
-      <StackPanel>
-        <local:SoftProofControls ShowFullScreenButton="False" />
-        <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" Style="{StaticResource Muted}" />
-        <!-- "computing", or the reason a table was refused, with the image gone (R-163). -->
-        <TextBlock Text="{Binding Message}" TextWrapping="Wrap">
-          <TextBlock.Style>
-            <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
-              <Style.Triggers>
-                <DataTrigger Binding="{Binding IsProblem}" Value="True">
-                  <Setter Property="Foreground" Value="{StaticResource BadBr}" />
-                </DataTrigger>
-              </Style.Triggers>
-            </Style>
-          </TextBlock.Style>
-        </TextBlock>
-        <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
-                   Text="{local:T En='Keys: G paper gamut, O original, I next intent, Esc closes. Wheel: zoom around the cursor, up to 8:1 at 100 % display scaling; left button: drag; double click: fit again. A reduced copy; the pixels and the screen are assumed sRGB.', Ro='Taste: G gamut hartie, O originalul, I intentul urmator, Esc inchide. Rola: zoom in jurul cursorului, pana la 8:1 la scalare de 100 % a ecranului; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa; pixelii si ecranul sunt presupusi sRGB.'}" />
-      </StackPanel>
-    </Border>
-
     <!-- The viewer fits the proof, zooms it with the wheel and pans it with the left button;
-         a double click fits it again (ZoomPanViewer). -->
-    <Border Grid.Row="1" Background="{Binding MarginBrush}" Padding="48">
+         a double click fits it again (ZoomPanViewer). It takes the whole screen. -->
+    <Border x:Name="Proof" Background="{Binding MarginBrush}" Padding="48">
       <local:ZoomPanViewer>
         <Grid Width="{Binding Width}" Height="{Binding Height}">
           <Image Source="{Binding Image}" Stretch="None" />
           <Image Source="{Binding PaperLayer}" Stretch="None" Visibility="{Binding ShowPaperLayer, Converter={StaticResource BoolToVis}}" />
         </Grid>
       </local:ZoomPanViewer>
+    </Border>
+    <!-- The band at the top: transparent, so the mouse is seen over it while the panel is
+         hidden; Hidden, not Collapsed, keeps the panel's height in the band. -->
+    <Border x:Name="PanelZone" VerticalAlignment="Top" Background="Transparent">
+      <Border x:Name="HoverPanel" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1" Padding="16,8">
+        <Border.Style>
+          <Style TargetType="Border">
+            <Setter Property="Visibility" Value="Hidden" />
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding PanelShown, RelativeSource={RelativeSource AncestorType=Window}}" Value="True">
+                <Setter Property="Visibility" Value="Visible" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Border.Style>
+        <StackPanel>
+          <DockPanel>
+            <Button x:Name="CloseButton" DockPanel.Dock="Right" Content="{local:T En='Close', Ro='Inchide'}" Click="CloseClicked"
+                    Padding="14,3" VerticalAlignment="Top" Margin="16,0,0,4"
+                    ToolTip="{local:T En='Leaves the full screen; Esc does the same', Ro='Iese din ecranul intreg; Esc face la fel'}" />
+            <local:SoftProofControls x:Name="ProofControls" ShowFullScreenButton="False" />
+          </DockPanel>
+          <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" Style="{StaticResource Muted}" />
+          <!-- "computing", or the reason a table was refused, with the image gone (R-163). -->
+          <TextBlock Text="{Binding Message}" TextWrapping="Wrap">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+          <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
+                     Text="{local:T En='Keys: G paper gamut, O original, I next intent, Esc or Close leaves the full screen. This panel shows while the mouse is over it. Wheel: zoom around the cursor, up to 8:1 at 100 % display scaling; left button: drag; double click: fit again. A reduced copy; the pixels and the screen are assumed sRGB.', Ro='Taste: G gamut hartie, O originalul, I intentul urmator, Esc sau Inchide ies din ecranul intreg. Panoul acesta se vede cat timp mouse-ul e peste el. Rola: zoom in jurul cursorului, pana la 8:1 la scalare de 100 % a ecranului; butonul stang: tragere; dublu-clic: potrivire din nou. O copie redusa; pixelii si ecranul sunt presupusi sRGB.'}" />
+        </StackPanel>
+      </Border>
     </Border>
   </Grid>
 </Window>

@@ -191,9 +191,10 @@ nothing is edited, nothing is written. The proof is computed right after the ana
 - **Margin**: **Paper white** by default; the others are fixed greys, white to black.
 - In the tab and in the window, the mouse wheel zooms around the cursor, up to 8:1 at 100 % display scaling, dragging
   with the left button pans, and a double click fits the image again.
-- **Full screen** opens the same proof maximised, with the same controls at the top and the
-  margin filling the window; the keys G and O toggle the two boxes, I moves to the next
-  intent, Esc closes.
+- **Full screen** opens the same proof over the whole screen, nothing else: no title bar, the
+  margin filling the screen. The controls, with a **Close** button, appear while the mouse is
+  over the band they occupy at the top of the screen and hide when it leaves; the keys G and O
+  toggle the two boxes, I moves to the next intent, Esc or **Close** leaves the full screen.
 
 Under the image: the profile's name, its paper white in L\*a\*b\* (what the image's white
 becomes), its paper black in L\* and Dmax, and the warning's share.
