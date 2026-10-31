@@ -1,0 +1,98 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- OpeningPanel - what stands in for the tabs while the opening runs (R-120, ADR 0079).
+
+     It binds to the inherited DataContext, the MainViewModel: the folder, then one row per
+     OpeningStep - the state in a word (or the tab's own refusal or failure title once done),
+     the label, and, while the step runs, the tab's waiting line and its progress bar, the one
+     its own waiting screen would draw. Nothing here computes: the states are set by
+     MainViewModel as it awaits each run, the words come from the tabs. -->
+
+<UserControl x:Class="FlatCheck.Wpf.OpeningPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:FlatCheck.Wpf">
+
+  <Border Background="{StaticResource PanelBg}">
+    <Border Style="{StaticResource Card}" MaxWidth="720" Margin="24"
+            VerticalAlignment="Center" HorizontalAlignment="Center" Padding="22,18">
+      <StackPanel>
+        <TextBlock Text="{l:T En='ANALYSING THE SESSION', Ro='ANALIZEZ SESIUNEA'}" Style="{StaticResource Heading}" />
+        <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,14" Text="{Binding Folder}"
+                   TextTrimming="CharacterEllipsis" />
+
+        <ItemsControl ItemsSource="{Binding OpeningSteps}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" MinWidth="110" />
+                  <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                  <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- the state: faint while it waits, the accent while it runs, plain once done;
+                     a refusal or failure title is the tab's and reads as such -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center"
+                           Text="{Binding StatusWord}" TextWrapping="Wrap">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource Faint}">
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                          <Setter Property="Foreground" Value="{StaticResource AccentBr}" />
+                          <Setter Property="FontWeight" Value="SemiBold" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsDone}" Value="True">
+                          <Setter Property="Foreground" Value="{StaticResource TextBr}" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Label}" TextWrapping="Wrap"
+                           VerticalAlignment="Center" />
+
+                <!-- while it runs: the tab's own waiting line, its detail and its bar -->
+                <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0"
+                            Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">
+                  <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding Tab.BusyMessage}" />
+                  <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Tab.BusyDetail}"
+                             Visibility="{Binding Tab.BusyDetail, Converter={StaticResource NotNullToVis}}" />
+                  <ProgressBar Height="6" Margin="0,8,0,0" IsIndeterminate="True"
+                               Visibility="{Binding Tab.ProgressKnown, Converter={StaticResource NotBoolToVis}}" />
+                  <ProgressBar Height="6" Margin="0,8,0,0" Minimum="0" Maximum="1"
+                               Value="{Binding Tab.Progress, Mode=OneWay}"
+                               Visibility="{Binding Tab.ProgressKnown, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap"
+                   Text="{l:T En='The tabs appear once everything has ended.', Ro='Taburile apar cand totul s-a terminat.'}" />
+      </StackPanel>
+    </Border>
+  </Border>
+</UserControl>

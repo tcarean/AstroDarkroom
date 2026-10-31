@@ -77,7 +77,7 @@ public class ExposureTabTests
     // ------------------------------------------------------------------ computation
 
     /// <summary>
-    /// A pick made while another heavy run holds the gate (the opening chain, say) waits for it
+    /// A pick made while another heavy run holds the gate (another tab's click, say) waits for it
     /// instead of decoding a 24 MP raw beside it (R-081, ADR 0061); the waiting screen says so,
     /// and the measurement follows once the gate opens.
     /// </summary>
@@ -87,7 +87,7 @@ public class ExposureTabTests
         using var f = new SessionFixture().WithFlatMaster();
         string path = f.WriteAnalysableRawFlat("flat.fit");
         var gate = new HeavyRunGate();
-        IDisposable chain = await gate.EnterAsync(CancellationToken.None);
+        IDisposable other = await gate.EnterAsync(CancellationToken.None);
         var vm = new ExposureTabViewModel();
         vm.Attach(f.Session, CancellationToken.None, gate);
 
@@ -96,10 +96,10 @@ public class ExposureTabTests
 
         Assert.NotSame(run, await Task.WhenAny(run, Task.Delay(1000)));
         Assert.True(vm.IsBusy);
-        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.BusyMessage);
+        Assert.Equal(SessionMessages.WaitingForRunningAnalysis(), vm.BusyMessage);
         Assert.False(vm.HasResult);
 
-        chain.Dispose();
+        other.Dispose();
         await run;
 
         Assert.True(vm.HasResult);

@@ -180,7 +180,7 @@ namespace FlatCheck.Wpf
         /// <summary>
         /// Enters the window's heavy-run gate before a run a click started (ADR 0061), with the
         /// waiting screen saying so: while another run holds the gate, the first line reads
-        /// <see cref="SessionMessages.WaitingForOpeningChain"/> instead of the run's own message,
+        /// <see cref="SessionMessages.WaitingForRunningAnalysis"/> instead of the run's own message,
         /// which would claim work that has not begun; the run's message comes back once it is
         /// in. A free gate, or no gate at all, shows nothing. Of two runs waiting together, only
         /// the latest one puts its message back (the generation of <see cref="RunGuardedAsync"/>),
@@ -200,7 +200,7 @@ namespace FlatCheck.Wpf
 
             int gen = _generation;
             string message = BusyMessage;
-            BusyMessage = SessionMessages.WaitingForOpeningChain();
+            BusyMessage = SessionMessages.WaitingForRunningAnalysis();
             IDisposable lease = await gate.EnterAsync(ct).ConfigureAwait(true);
             if (gen == _generation) BusyMessage = message;
             return lease;

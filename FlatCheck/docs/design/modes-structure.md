@@ -92,4 +92,9 @@ library figures of 2026-09-18 and the guards. ADR 0030 holds how the lens is ide
   `AdobeDngConverterUrl` are the instructions and the link under them. `Write` prints none of
   them: R-113 adds no line to the console's report, and a window test checks the saved report
   holds neither the paragraph nor the folders line.
+- A filter on the lens voids the comparison (R-118, ADR 0078): the window's box turns the
+  query off, so the run is the plain one, and `StructureReport.FilteredLensNote` says why on
+  the card, under `MasterDepth(StructureResult)`, the same figure as the comparison's
+  `MasterStops`. `StructureRun.Recompare` redoes the comparison on the kept result when the
+  box is flipped. The console has no flag: its user leaves `--raw` out.
 - `--help` moved when the flags were added, and was re-approved.

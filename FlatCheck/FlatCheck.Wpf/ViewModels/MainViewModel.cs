@@ -122,11 +122,29 @@ namespace FlatCheck.Wpf
             // a change of folder has nothing to unwire.
             Smooth.Saved += HistEq.FileWritten;
 
+            // The opening panel's rows (R-120, ADR 0079): what runs by itself on a folder, in
+            // the order the user sees it end. The prefill runs beside the chain, not after it.
+            _structureStep = new OpeningStep("Structure of the flat master, and the lens profile",
+                                             "Structura masterului de flat, si profilul obiectivului", Structure);
+            _lightStep = new OpeningStep("End to end on the series of lights", "End to end pe seria de lights", Light);
+            _prefillStep = new OpeningStep("The lens list for the Synthetic tab", "Lista de obiective pentru tabul Sintetic", Synthetic);
+            OpeningSteps = new[] { _structureStep, _lightStep, _prefillStep };
+
             // The folder button follows the two tabs whose main runs take longer than a folder
             // change (R-117, ADR 0077): their busy state is part of CanChooseFolder.
             Smooth.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(TabViewModel.IsIdle)) Raise(nameof(CanChooseFolder)); };
             Synthetic.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(TabViewModel.IsIdle)) Raise(nameof(CanChooseFolder)); };
         }
+
+        readonly OpeningStep _structureStep, _lightStep, _prefillStep;
+
+        /// <summary>The opening panel's rows (R-120): the structure run, the end-to-end run and
+        /// the Synthetic prefill, each with its state.</summary>
+        public IReadOnlyList<OpeningStep> OpeningSteps { get; }
+
+        /// <summary>Counts the openings, so the chain of an older one does not drop
+        /// <see cref="IsRunning"/> under a newer one (R-120).</summary>
+        int _opening;
 
         /// <summary>Asks a yes/no question in a MessageBox, No by default.</summary>
         /// <param name="question">The question, Romanian.</param>
@@ -208,11 +226,14 @@ namespace FlatCheck.Wpf
         internal async Task OpenAsync(string folder)
         {
             CancelPending();
+            int opening = ++_opening;
 
             Folder = folder ?? "";
             ResetTabs();
 
-            if (string.IsNullOrWhiteSpace(folder)) { ClearProblem(); return; }
+            // An opening that ends here is the latest: it owns the flag (R-120), whatever an
+            // older one, still running and cancelled above, does in its finally.
+            if (string.IsNullOrWhiteSpace(folder)) { ClearProblem(); _session = null; IsRunning = false; return; }
 
             var session = new SirilSession(folder);
             SessionProblem problem = session.Check();
@@ -228,6 +249,7 @@ namespace FlatCheck.Wpf
                 if (problem == SessionProblem.NoProcessDir || problem == SessionProblem.NoFlatMaster)
                     Preprocess.Attach(session, _locate(), _sirilGuiRunning);
                 DescribeInLog(session, problem);
+                IsRunning = false;
                 return;
             }
 
@@ -239,11 +261,17 @@ namespace FlatCheck.Wpf
             IsRunning = true;
             try
             {
+                // The folder's remembered switches (R-119): read once, before any run, so the
+                // Structure run and the Exposure tab start on them.
+                SessionSettings settings = SessionSettings.Read(session.SettingsPath);
+                Log.Info("session " + folder + ": settings " + (File.Exists(session.SettingsPath) ? "read from " : "absent, defaults; would be ")
+                         + session.SettingsPath + " noFilters=" + LogText.Yes(settings.NoFilters) + " skyFlat=" + LogText.Yes(settings.SkyFlat));
+
                 // The tabs that wait for a choice are prepared at once: their lists are read from
                 // the folder, not from a computation, so they have no reason to wait. Every run a
                 // click starts in them takes the gate, so it waits for the chain below, and for
                 // each other.
-                Exposure.Attach(session, ct, _gate);
+                Exposure.Attach(session, ct, _gate, settings);
                 // A list too, also without a computation: the 24 MP master is not loaded twice
                 // on opening - Structure is already reading it, below.
                 HistEq.Attach(session, ct, _gate);
@@ -251,12 +279,21 @@ namespace FlatCheck.Wpf
                 // is not produced because a folder was opened. It waits for a click.
                 Smooth.Attach(session, ct, _gate);
                 Synthetic.Attach(session, ct, _gate);
+                // The prefill is on its way from Attach: its row follows ITS task, captured now -
+                // read later, the property would be the next folder's - so it reads done the
+                // moment it ends, not when the chain does.
+                _prefillStep.State = OpeningState.Running;
+                Task prefill = WatchPrefillAsync(session, Synthetic.Pending);
                 // Nor does Split: it copies and runs Siril N times, so only on the button, and
                 // after the chain.
                 Split.Attach(session, ct, _gate);
                 DescribeInLog(session, problem);
 
-                await RunChainAsync(session, ct).ConfigureAwait(true);
+                await RunChainAsync(session, ct, settings).ConfigureAwait(true);
+
+                // Everything the opening started has to end before the tabs appear (R-120): the
+                // prefill too, which never faults - a failure is its note.
+                await prefill.ConfigureAwait(true);
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
@@ -278,8 +315,24 @@ namespace FlatCheck.Wpf
             }
             finally
             {
-                IsRunning = false;
+                // Only the latest opening ends the panel: an older chain ending under a newer
+                // opening must not show the tabs while the newer one still runs. From the screen
+                // no folder opens over a running one (the button is locked, and the card's Siril
+                // run exists only without a chain); a direct call, as in the tests, can.
+                if (opening == _opening) IsRunning = false;
             }
+        }
+
+        /// <summary>Marks the prefill's row done when its own task ends, if the folder is still
+        /// the open one (R-120).</summary>
+        /// <param name="session">The folder the prefill belongs to.</param>
+        /// <param name="prefill">The prefill's task, captured right after Attach; it never
+        /// faults.</param>
+        /// <returns>A task that completes when the prefill has.</returns>
+        async Task WatchPrefillAsync(SirilSession session, Task prefill)
+        {
+            await prefill.ConfigureAwait(true);
+            if (ReferenceEquals(_session, session)) _prefillStep.State = OpeningState.Done;
         }
 
         /// <summary>Writes <see cref="Describe"/> at <c>Debug</c>, after the card or the tabs
@@ -338,8 +391,10 @@ namespace FlatCheck.Wpf
         /// <param name="session">The folder just opened.</param>
         /// <param name="ct">The folder's token, cancelled by another folder or by closing the
         /// window.</param>
+        /// <param name="settings">The folder's remembered switches (R-119), for the Structure
+        /// run.</param>
         /// <returns>A task that completes when the chain ended.</returns>
-        async Task RunChainAsync(SirilSession session, CancellationToken ct)
+        async Task RunChainAsync(SirilSession session, CancellationToken ct, SessionSettings settings)
         {
             // The gate, once for both runs. A run of the previous folder may still hold it: its
             // computation does not stop mid-way, so the new chain waits for it rather than loading
@@ -354,10 +409,17 @@ namespace FlatCheck.Wpf
 
             using (lease)
             {
-                await Structure.RunAsync(session, ct).ConfigureAwait(true);
+                // The rows of the opening panel follow the awaits (R-120); a step of a folder
+                // closed meanwhile leaves no mark on the next folder's rows.
+                _structureStep.State = OpeningState.Running;
+                await Structure.RunAsync(session, ct, settings).ConfigureAwait(true);
                 if (ct.IsCancellationRequested) return;
+                _structureStep.State = OpeningState.Done;
 
+                _lightStep.State = OpeningState.Running;
                 await Light.RunAsync(session, ct).ConfigureAwait(true);
+                if (ct.IsCancellationRequested) return;
+                _lightStep.State = OpeningState.Done;
             }
         }
 
@@ -381,6 +443,7 @@ namespace FlatCheck.Wpf
         /// <summary>Empties every tab and detaches the problem card's script block.</summary>
         void ResetTabs()
         {
+            foreach (OpeningStep step in OpeningSteps) step.State = OpeningState.Waiting;
             Preprocess.Detach();
             Structure.Reset();
             Light.Reset();

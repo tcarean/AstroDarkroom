@@ -72,6 +72,22 @@ namespace FlatCheck.Wpf
         string _whyResidual = StructureReport.WhyResidualMatters();
         string _profileMaster = "", _profileSummary = "", _profileScaleNote = "", _profileNote = "", _profileGap = "";
         string _adobeMissing = "", _adobeSearched = "";
+        bool _noFilters = true;
+        string _filteredNote = "";
+
+        /// <summary>The folder's remembered switches (R-119); <see cref="SessionSettings.None"/>
+        /// before a folder and in the tests.</summary>
+        SessionSettings _settings = SessionSettings.None;
+
+        /// <summary>
+        /// What a flip of the box needs to redo the comparison without a load (R-118): the
+        /// folder, its token, the five tests' result, the master's path and the raw's. Null
+        /// before the first run and after Reset.
+        /// </summary>
+        SirilSession _session;
+        CancellationToken _ct;
+        StructureResult _structure;
+        string _masterPath, _rawPath;
         IReadOnlyList<ScaleRow> _profileScale = Array.Empty<ScaleRow>();
         IReadOnlyList<LensProfileRow> _profileRows = Array.Empty<LensProfileRow>();
         string _savedTo = "";
@@ -182,6 +198,33 @@ namespace FlatCheck.Wpf
         /// <summary>Why it could not compare, when it could not; empty otherwise.</summary>
         public string ProfileGap { get => _profileGap; private set => Set(ref _profileGap, value); }
 
+        /// <summary>
+        /// The box at the top of the card (R-118): true, the default, when no filter was on the
+        /// lens, so the vignetting is compared with the lens profile. Flipping it writes the
+        /// folder's settings (R-119) and, with a result on screen, redoes the comparison and the
+        /// verdict on the kept result - the master is not loaded again.
+        /// </summary>
+        public bool NoFilters
+        {
+            get => _noFilters;
+            set
+            {
+                if (!Set(ref _noFilters, value)) return;
+                _settings.NoFilters = value;
+                _settings.Write();
+                Pending = RecompareAsync();
+            }
+        }
+
+        /// <summary>The recompare the last flip of the box started, so a test can await it;
+        /// completed when none is running. The box is disabled while the tab is busy, so two
+        /// never overlap from the screen.</summary>
+        internal Task Pending { get; private set; } = Task.CompletedTask;
+
+        /// <summary>Why nothing is compared when the box is off (R-118), under the master's
+        /// depth; empty when it is on.</summary>
+        public string FilteredNote { get => _filteredNote; private set => Set(ref _filteredNote, value); }
+
         /// <summary>The red paragraph when the run's search found no Adobe profile (R-113);
         /// empty otherwise, and when the run searched nothing.</summary>
         public string AdobeMissing { get => _adobeMissing; private set => Set(ref _adobeMissing, value); }
@@ -238,31 +281,38 @@ namespace FlatCheck.Wpf
         /// <param name="session">The open session folder; its master is analysed and its raw in
         /// flats/, if any, names the lens.</param>
         /// <param name="ct">The folder's token.</param>
+        /// <param name="settings">The folder's remembered switches (R-119), whose "no filters"
+        /// the box takes before the run; null for none remembered.</param>
         /// <returns>A task that completes when the run ended; it never faults.</returns>
-        internal Task RunAsync(SirilSession session, CancellationToken ct)
+        internal Task RunAsync(SirilSession session, CancellationToken ct, SessionSettings settings = null)
         {
+            _session = session;
+            _ct = ct;
+            _settings = settings ?? SessionSettings.None;
+            // The box takes the folder's value without writing it back and without a recompare:
+            // there is nothing on screen yet, and the run below reads it. Without settings (a
+            // test, a run with nothing remembered) the box stays as it was set.
+            if (settings != null)
+            {
+                _noFilters = settings.NoFilters;
+                Raise(nameof(NoFilters));
+            }
+
             string rawPath = session.ReferenceRawPath;
-            bool compares = rawPath != null && _catalog != null;
-            return RunGuardedAsync(compares
-                ? T("Analysing the structure of the flat master and looking for the lens profile...",
-                    "Analizez structura masterului de flat si caut profilul obiectivului...")
-                : T("Analysing the structure of the flat master...", "Analizez structura masterului de flat..."), async () =>
+            _rawPath = rawPath;
+            bool compares = Compares(rawPath);
+            return RunGuardedAsync(RunMessage(compares), async () =>
             {
                 FlatMasterLookup master = session.FindFlatMaster();
                 string path = master.Path;
+                _masterPath = path;
                 SourceWarning = master.Ambiguous ? SessionMessages.TwoFlatMasters(master) : "";
                 var text = new StringWriter();
 
-                // With a raw beside the master, the run is the console's with --raw: the shared
-                // catalog, the raw from flats/, the comparison in the same report. Without one,
-                // the plain run.
-                StructureQuery query = null;
-                if (compares)
-                {
-                    ProfileSources sources = await _catalog.EnsureAsync().ConfigureAwait(true);
-                    ct.ThrowIfCancellationRequested();
-                    query = new StructureQuery { Sources = sources, RawPath = rawPath, LoadInfo = _loadInfo };
-                }
+                // With a raw beside the master and the box on, the run is the console's with
+                // --raw: the shared catalog, the raw from flats/, the comparison in the same
+                // report. Without one, or with the box off, the plain run.
+                StructureQuery query = compares ? await QueryAsync(rawPath, ct).ConfigureAwait(true) : null;
 
                 var (outcome, gap) = await Task.Run(() =>
                 {
@@ -270,15 +320,21 @@ namespace FlatCheck.Wpf
                     var run = StructureRun.Execute(path, text, query);
                     RunReport.WriteMapSaved(session.ResidualPngPath, text);
                     ct.ThrowIfCancellationRequested();
-                    // Without a comparison, the reason for the card: the same core says why, on
-                    // the master's metadata (the header only) and without a catalog.
-                    StructureOutcome why = run.Result.Profiles != null ? null
-                        : StructureRun.Compare(run.Result.Structure, _loadInfo(path), new StructureQuery { RawPath = rawPath, LoadInfo = _loadInfo });
-                    return (run, why);
+                    return (run, Gap(run.Result, path, rawPath));
                 }, ct).ConfigureAwait(true);
+                // Back on the UI thread: the folder may have been closed meanwhile (Reset nulls
+                // the session), and then nothing of this run lands on screen or on disk.
+                if (!ReferenceEquals(_session, session))
+                {
+                    // RunGuardedAsync's own line then says the run ended; this one says where its
+                    // result went.
+                    Log.Debug("run dropped: the folder was closed while the structure was analysed");
+                    return;
+                }
 
                 Source = path;
                 Report = text.ToString();
+                _structure = outcome.Result.Structure;
                 Populate(outcome.Result, gap, query?.Sources);
 
                 // The raster, then the map on the chosen scale. The bytes received from the run
@@ -296,6 +352,97 @@ namespace FlatCheck.Wpf
                 Save(session, outcome.Png);
             });
         }
+
+        /// <summary>
+        /// Redoes the comparison and the verdict on the result already on screen, after a flip
+        /// of the box (R-118): the console's report for the new query is written again and
+        /// saved; the five tests, the raster and the map are kept. Nothing before the first run,
+        /// after Reset, or while the folder's token is cancelled.
+        /// </summary>
+        /// <returns>A task that completes when the recompare ended; it never faults.</returns>
+        internal Task RecompareAsync()
+        {
+            SirilSession session = _session;
+            StructureResult structure = _structure;
+            string path = _masterPath, rawPath = _rawPath;
+            CancellationToken ct = _ct;
+            if (session == null || structure == null || ct.IsCancellationRequested) return Task.CompletedTask;
+
+            bool compares = Compares(rawPath);
+            return RunGuardedAsync(RecompareMessage(compares), async () =>
+            {
+                StructureQuery query = compares ? await QueryAsync(rawPath, ct).ConfigureAwait(true) : null;
+                var text = new StringWriter();
+
+                var (outcome, gap) = await Task.Run(() =>
+                {
+                    RunReport.WriteBanner(text);
+                    StructureOutcome o = StructureRun.Recompare(structure, _loadInfo(path), path, text, query);
+                    RunReport.WriteMapSaved(session.ResidualPngPath, text);
+                    ct.ThrowIfCancellationRequested();
+                    return (o, Gap(o, path, rawPath));
+                }, ct).ConfigureAwait(true);
+                // The folder may have been closed while the comparison ran: then this result is
+                // nobody's, and it neither lands on the next folder's tab nor rewrites a file.
+                if (!ReferenceEquals(_session, session))
+                {
+                    Log.Debug("recompare dropped: the folder was closed while the vignetting was compared");
+                    return;
+                }
+
+                Report = text.ToString();
+                Populate(outcome, gap, query?.Sources);
+                HasResult = true;
+                SaveReport(session);
+            });
+        }
+
+        /// <summary>Whether a run compares with the profiles: a raw beside the master, a catalog,
+        /// and the box on.</summary>
+        /// <param name="rawPath">The raw in flats/, or null.</param>
+        /// <returns>True when the run is the console's <c>--raw</c> one.</returns>
+        bool Compares(string rawPath) => rawPath != null && _catalog != null && NoFilters;
+
+        /// <summary>The busy overlay's line for a run.</summary>
+        /// <param name="compares">Whether the run looks for the lens profile too.</param>
+        /// <returns>The line, in the interface language.</returns>
+        static string RunMessage(bool compares) => compares
+            ? T("Analysing the structure of the flat master and looking for the lens profile...",
+                "Analizez structura masterului de flat si caut profilul obiectivului...")
+            : T("Analysing the structure of the flat master...", "Analizez structura masterului de flat...");
+
+        /// <summary>The busy overlay's line for a recompare after a flip of the box, which
+        /// loads no master: it says what it does, not what the run did.</summary>
+        /// <param name="compares">Whether the recompare looks for the lens profile.</param>
+        /// <returns>The line, in the interface language.</returns>
+        static string RecompareMessage(bool compares) => compares
+            ? T("Comparing the vignetting with the lens profile...", "Compar vignetarea cu profilul obiectivului...")
+            : T("Redoing the verdict without the comparison...", "Refac verdictul fara comparatie...");
+
+        /// <summary>The console's <c>--raw</c> query on the shared catalog, awaited (a second or
+        /// two on the first open).</summary>
+        /// <param name="rawPath">The raw in flats/.</param>
+        /// <param name="ct">The folder's token.</param>
+        /// <returns>The query for the run.</returns>
+        async Task<StructureQuery> QueryAsync(string rawPath, CancellationToken ct)
+        {
+            ProfileSources sources = await _catalog.EnsureAsync().ConfigureAwait(true);
+            ct.ThrowIfCancellationRequested();
+            return new StructureQuery { Sources = sources, RawPath = rawPath, LoadInfo = _loadInfo };
+        }
+
+        /// <summary>
+        /// Without a comparison in the run, the reason for the card: the same core says why, on
+        /// the master's metadata (the header only) and without a catalog. With the box off there
+        /// is no reason to give - the card says why in its own words - and nothing is read.
+        /// </summary>
+        /// <param name="o">The run's outcome.</param>
+        /// <param name="path">The master's path.</param>
+        /// <param name="rawPath">The raw in flats/, or null.</param>
+        /// <returns>The explaining comparison, or null.</returns>
+        StructureOutcome Gap(StructureOutcome o, string path, string rawPath)
+            => o.Profiles != null || !NoFilters ? null
+             : StructureRun.Compare(o.Structure, _loadInfo(path), new StructureQuery { RawPath = rawPath, LoadInfo = _loadInfo });
 
         /// <summary>
         /// Rebuilds the map for the current scale.
@@ -357,6 +504,7 @@ namespace FlatCheck.Wpf
             {
                 VignettingComparison c = explained.Profiles;
                 ProfileGap = "";
+                FilteredNote = "";
                 ProfileMaster = StructureReport.MasterDepth(c);
                 ProfileRows = StructureReport.ProfileRows(c).Select(r => new LensProfileRow
                 {
@@ -384,8 +532,12 @@ namespace FlatCheck.Wpf
             {
                 ProfileRows = Array.Empty<LensProfileRow>();
                 ProfileScale = Array.Empty<ScaleRow>();
-                ProfileMaster = ProfileSummary = ProfileScaleNote = ProfileNote = "";
-                ProfileGap = explained == null ? ""
+                ProfileSummary = ProfileScaleNote = ProfileNote = "";
+                // With the box off (R-118): the master's own depth, for information, and why
+                // nothing is compared - both from the core. With it on: the gap, when known.
+                ProfileMaster = NoFilters ? "" : StructureReport.MasterDepth(o.Structure);
+                FilteredNote = NoFilters ? "" : StructureReport.FilteredLensNote();
+                ProfileGap = explained == null || !NoFilters ? ""
                     : T("Cannot compare: ", "Nu se poate compara: ") + StructureReport.GapText(explained) + "\n" + StructureReport.GapMeaning().Replace('\n', ' ');
             }
         }
@@ -435,20 +587,39 @@ namespace FlatCheck.Wpf
         /// <param name="png">The map on the automatic scale.</param>
         void Save(SirilSession session, byte[] png)
         {
+            if (!SaveReport(session)) return;
+            try
+            {
+                File.WriteAllBytes(session.ResidualPngPath, png);
+                Log.Info("wrote " + session.ResidualPngPath + " (" + LogText.KiB(png.Length) + ")");
+            }
+            catch (Exception e)
+            {
+                Log.Warn(e, "the map could not be saved beside the session");
+                SaveError = T("Could not save the report:\n", "Nu am putut salva raportul:\n") + Describe(e);
+            }
+        }
+
+        /// <summary>The report alone, in the session folder: after a recompare (R-118) the map
+        /// on disk is already the right one. A write failure is shown apart, as above.</summary>
+        /// <param name="session">The session folder; its result path is written.</param>
+        /// <returns>True when the file was written.</returns>
+        bool SaveReport(SirilSession session)
+        {
             SavedTo = "";
             SaveError = "";
             try
             {
                 File.WriteAllText(session.ResultTextPath, Report);
-                File.WriteAllBytes(session.ResidualPngPath, png);
                 SavedTo = session.ResultTextPath;
                 Log.Info("wrote " + session.ResultTextPath + " (" + LogText.FileKiB(session.ResultTextPath) + ")");
-                Log.Info("wrote " + session.ResidualPngPath + " (" + LogText.KiB(png.Length) + ")");
+                return true;
             }
             catch (Exception e)
             {
-                Log.Warn(e, "the report or the map could not be saved beside the session");
+                Log.Warn(e, "the report could not be saved beside the session");
                 SaveError = T("Could not save the report:\n", "Nu am putut salva raportul:\n") + Describe(e);
+                return false;
             }
         }
 
@@ -468,6 +639,7 @@ namespace FlatCheck.Wpf
             ProfileScale = Array.Empty<ScaleRow>();
             ProfileMaster = ProfileSummary = ProfileScaleNote = ProfileNote = ProfileGap = "";
             AdobeMissing = AdobeSearched = "";
+            FilteredNote = "";
             SavedTo = "";
             SaveError = "";
             Map = null;
@@ -476,6 +648,12 @@ namespace FlatCheck.Wpf
             // preference, not a result, so it must survive the change of folder.
             _residual = null;
             _mapCache.Clear();
+            // What a recompare needs goes with the result; the box stays as it is, the next
+            // folder's file sets it (R-119).
+            _session = null;
+            _structure = null;
+            _masterPath = _rawPath = null;
+            _settings = SessionSettings.None;
             Tests.Clear();
             Informative.Clear();
             Scale.Clear();

@@ -257,7 +257,10 @@ a library extraction and not a copy is ADR 0011.
     sources, a raw beside the master, or `--lens` text, plus the overrides) and returns a
     `StructureOutcome`: the `StructureResult`, the `VignettingComparison` (null without a
     query; with one, present even when it could not compare - `Gap` says why) and the
-    combined verdict. Without a query the output is byte-identical to before, which is
+    combined verdict. `StructureRun.Recompare` redoes the comparison, or the plain outcome,
+    on a `StructureResult` already computed and writes the report again, no load and no
+    map: the window's "no filters" box (R-118, ADR 0078, `two-applications.md`).
+    Without a query the output is byte-identical to before, which is
     what keeps the golden files, the parity ones included, still. `Compare` is the second
     half on its own, so the window can explain a missing raw without reloading the master.
     `SmoothRun` and `SyntheticRun` can refuse (a raw, a colour cube - `LightRun`'s shape;
@@ -298,7 +301,9 @@ a library extraction and not a copy is ADR 0011.
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See `two-applications.md`.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
     master and where it may be, ADR 0034; which are raw flats; `SmoothedMasterPath` and `SyntheticMasterPath`, the two files the
-    writing tabs put beside the master, ADR 0036) and `SessionMessages` (the explanations
+    writing tabs put beside the master, ADR 0036; `SettingsPath`, the folder's
+    `flatcheck.json`), `SessionSettings` (the two switches the window remembers per folder,
+    R-119, ADR 0078) and `SessionMessages` (the explanations
     shown when the input is not usable and the residual map's shape guide), plus the four
     files behind the "run the script from here"
     button of ADR 0035: `SirilInstall` (where `siril-cli.exe` and the `.ssf` scripts are;
@@ -386,7 +391,9 @@ a library extraction and not a copy is ADR 0011.
     window; starts the run on `Loaded`, confirms before closing mid-run (closing kills
     Siril), scrolls the log to the end.
   - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
-    inherited `TabViewModel`, so the same three controls serve every tab; `SplitView` is the
+    inherited `TabViewModel`, so the same three controls serve every tab; `OpeningPanel`
+    binds to `MainViewModel` and stands in for the tabs while the opening runs, one row per
+    `ViewModels/OpeningStep` (R-120, ADR 0079, `two-applications.md`); `SplitView` is the
     one without the overlay (its running card has the bar, the log and the stop button) and
     the one whose table has a variable number of columns (an `ItemsControl` of rows, each a
     horizontal `ItemsControl` of fixed-width cells, the header built the same way); `SyntheticView`

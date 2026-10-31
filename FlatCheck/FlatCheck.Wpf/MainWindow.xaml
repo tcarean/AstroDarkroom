@@ -166,6 +166,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </Border>
 
+      <!-- while the analyses started by opening the folder run, the panel that lists them
+           stands in for the tabs (R-120, ADR 0079): nothing can be pressed before they end -->
+      <local:OpeningPanel x:Name="Opening" Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+
       <!-- the seven tabs; the theme's style is keyed by AccessibleTabControl's type, so this one
            is based on that key (R-114, ADR 0074) -->
       <local:AccessibleTabControl x:Name="Tabs">
@@ -177,6 +181,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <MultiDataTrigger.Conditions>
                   <Condition Binding="{Binding HasFolder}" Value="True" />
                   <Condition Binding="{Binding HasProblem}" Value="False" />
+                  <Condition Binding="{Binding IsRunning}" Value="False" />
                 </MultiDataTrigger.Conditions>
                 <Setter Property="Visibility" Value="Visible" />
               </MultiDataTrigger>

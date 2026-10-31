@@ -296,6 +296,15 @@ about its lens (a camera on a telescope, or a lens without contacts: no lens ID,
 focal range) is named as such, and the report says what to give: `--lens <text>`, plus `--focal`
 and `--fstop` for whichever is unknown too.
 
+**A filter on the lens voids the comparison.** The profile describes the bare lens; any filter
+changes the vignetting (a mount shades the corners, a glass darkens the edges), so the master's
+depth is no longer the profile plus the flat's error and the difference means nothing. In the
+console, leave `--raw` out. In the window, the card opens with the box **I didn't use any filters
+on my lens**, ticked by default: untick it and the run is the plain one, the verdict is the five
+tests' alone, the card keeps only the master's depth, for information, with a line saying why,
+and `Test result.txt` is rewritten without the table. Tick it again and the table comes back and
+counts. The box is remembered per session folder (see "The window").
+
 ### 2. End to end: `--light`
 
 ```bash
@@ -991,12 +1000,17 @@ FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida" --lang ro
 ```
 
 As soon as the folder is chosen, the **structure** test and the **end-to-end** test start by
-themselves, behind a waiting screen (and, in the background, the Synthetic tab's prefill, which
-writes nothing). They run one after the other, not in parallel, and no analysis started by a click
-(Exposure, Histogram, Smoothing, Synthetic, the Split's analysis) runs beside them or beside
-another: every one passes through a single gate, one at a time. Measured on 24 MP masters: one
-analysis takes 0.7-1.25 GB of memory, two at once 1.3-2.2 GB. A click made during the opening
-analyses, or during another click's run, waits for its turn, and the waiting screen says what it is
+themselves, and beside them the Synthetic tab's prefill, which loads the lens list and writes
+nothing. While they run the window shows no tab: a panel lists the three steps with their state
+(waiting, running, done, or the tab's own message, such as no lights to run on), the running
+step's line and its progress bar, and the tabs appear only once all three have ended, so nothing
+can be clicked before the folder has been read whole. If a click's analysis of the previous
+folder is still computing, the panel keeps the two tests on "waiting" until it ends (the lens
+list loads meanwhile). The two tests run one after the other, not in parallel, and no analysis
+started by a click (Exposure, Histogram, Smoothing, Synthetic, the Split's analysis) runs beside
+another: every one passes through a single gate, one at a time.
+Measured on 24 MP masters: one analysis takes 0.7-1.25 GB of memory, two at once 1.3-2.2 GB. A
+click made during another click's run waits for its turn, and the waiting screen says what it is
 waiting for.
 
 The master flat, `pp_flat_stacked.fit`, is looked for in **two places**, because Siril's scripts
@@ -1068,7 +1082,7 @@ notices surely travel with the program.
 
 | tab | what it does | when it runs |
 |---|---|---|
-| **Structure** | mode 1 on `pp_flat_stacked.fit` from `masters/` or `process/` | when the folder opens |
+| **Structure** | mode 1 on `pp_flat_stacked.fit` from `masters/` or `process/`, with the vignetting compared with the lens profile when `flats/` holds a raw and the **I didn't use any filters on my lens** box is ticked | when the folder opens; flipping the box redoes the comparison and the verdict without reloading the master |
 | **End to end** | mode 2 on the whole `pp_light_*.fit` series in `process/` | when the folder opens |
 | **Exposure** | mode 3 on a raw from `flats/` | when chosen, and when the **Sky flat** switch changes |
 | **Histogram** | mode 4 on the session's master, on the smoothed flat beside it (when there is one) or on a frame from `flats/`, raw or FITS | when chosen; changing the view recomputes nothing |
@@ -1078,6 +1092,12 @@ notices surely travel with the program.
 
 With `--lang ro` the tabs read Structura, End to end, Expunere, Histogram, Netezire, Sintetic and
 Split. A screen reader such as Narrator reaches what each tab shows, not only the tabs' names.
+
+Two switches are **remembered per session folder**, in `flatcheck.json` in its root: the
+Structure tab's **I didn't use any filters on my lens** (`noFilters`, `true` by default) and the
+Exposure tab's **Sky flat** (`skyFlat`, `false` by default). The file is read when the folder
+opens and written whenever one of them changes; a folder you never touch gets no file, and a
+file that cannot be read gives the defaults.
 
 ### Structure
 
@@ -1091,7 +1111,10 @@ crop from the lensfun database by `INSTRUME`): one row per profile, the row that
 bold, the depth scale as a table of four bands in stops (the same residual scale, translated, not a
 new threshold) with the verdict's band marked, and the run's verdict, the worse of shape and depth,
 in the pill at the top, with its two parts written under it. With no raw, the card says why nothing
-could be compared, and the report stays the plain one. A raw that says nothing about the lens (a
+could be compared, and the report stays the plain one. With the box **I didn't use any filters on
+my lens** at the top of the card unticked, nothing is compared either, on purpose: the card keeps
+the master's depth and says why, the verdict is the five tests', and the report is the plain one;
+the box is remembered in the folder's `flatcheck.json`. A raw that says nothing about the lens (a
 camera on a telescope, or a lens without contacts: focal length 0, no ID, no name, no range) is named
 as such, with what it lacks, not as a missing raw; the comparison is then made by naming the lens in
 the Synthetic tab, or in the console with `--lens`, `--focal` and `--fstop`.
@@ -1144,7 +1167,8 @@ the picture is. They say:
 The Exposure tab lists from `flats/` **camera raws only** (`.nef`, `.cr2`, `.cr3`, `.arw`, `.dng`,
 `.raf`, `.pef`): the mode needs the CFA mosaic intact and the original ADU scale, and on a raw the
 white and black levels are read exactly from the file instead of being guessed from the maximum. The
-**Sky flat** switch changes the thresholds and recomputes at once.
+**Sky flat** switch changes the thresholds and recomputes at once; its state is remembered in the
+session folder's `flatcheck.json` and restored when the folder is opened again.
 
 The tab also draws **one histogram per channel**, on the same percentage axis all its figures sit on,
 with the target band, the clipping stripe and the centre's median drawn over them. Under them, a
@@ -1246,8 +1270,8 @@ Mode 5 on the session's master. Like Split, the tab **never runs by itself**: it
 open above the button, because it is the button's precondition; it says what mode 5 says above. Under
 it are three scale chips (150 / 300 / 600 px, 300 by default), the **Propose a scale** button, which
 runs the rule of `--scale auto`, shows the table of the steps and ticks the chip proposed, writing
-nothing, and the **Smooth and save** button. That button waits for the opening analyses (the structure
-test reads the same 24 MP master) and asks before it overwrites an existing smoothed file; a "no"
+nothing, and the **Smooth and save** button. That button waits for any analysis still running
+(the structure test reads the same 24 MP master) and asks before it overwrites an existing smoothed file; a "no"
 leaves the figures on screen and the old file on the disk, and says so.
 
 After the run: the figures of *what was removed*, the yellow warning when something of large scale was
@@ -1309,7 +1333,7 @@ Mode 6.
 - The panel **The profiles: where they come from and how they are updated** is folded by default: it
   says where the Adobe profiles are looked for, which lensfun copy is used (the folder, the commit, the
   date) and how it is replaced.
-- **Write synthetic flat** waits for the opening analyses, asks before it overwrites, shows the depth
+- **Write synthetic flat** waits for any analysis still running, asks before it overwrites, shows the depth
   written at the four points, **and starts the comparison with the master by itself**: `--against` on
   the master and the file just written, with the difference's verdict (shape and depth, the worse of
   them) and the table of three columns (the master, the synthetic flat, the difference) for the

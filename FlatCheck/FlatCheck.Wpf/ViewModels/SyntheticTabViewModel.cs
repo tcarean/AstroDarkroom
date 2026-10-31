@@ -598,7 +598,7 @@ namespace FlatCheck.Wpf
         // ------------------------------------------------------------ the buttons
 
         /// <summary>Writes the synthetic flat for the chosen lens and the fields' values, guarded,
-        /// after the opening chain: the numbers on screen first, then the file beside the master,
+        /// after the gate: the numbers on screen first, then the file beside the master,
         /// asking before an overwrite, then the comparison with the master.</summary>
         /// <returns>A task that completes when the write and its comparison ended; it never
         /// faults.</returns>
@@ -679,7 +679,7 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>Compares the session's master with the synthetic flat beside it, guarded,
-        /// after the opening chain, and shows the table, the verdict and the map.</summary>
+        /// after the gate, and shows the table, the verdict and the map.</summary>
         /// <param name="reportSoFar">The write's report, when the comparison follows it; otherwise
         /// null and the banner is written.</param>
         /// <returns>A task that completes when the comparison ended; it never faults.</returns>

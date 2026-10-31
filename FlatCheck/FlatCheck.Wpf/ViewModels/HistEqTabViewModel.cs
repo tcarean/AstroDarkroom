@@ -250,8 +250,8 @@ namespace FlatCheck.Wpf
 
             return RunGuardedAsync(T($"Equalising the histogram of {row.Name}...", $"Egalizez histograma pe {row.Name}..."), async () =>
             {
-                // The master in the list is the 24 MP file the opening chain reads: a pick waits
-                // for the gate instead of loading it beside the chain, and the waiting screen says
+                // The master in the list is a 24 MP file another run may be reading: a pick waits
+                // for the gate instead of loading it beside that run, and the waiting screen says
                 // so. A pick superseded while it waits leaves the queue here, cancelled (ADR 0061).
                 using IDisposable lease = await EnterGateAsync(gate, ct).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
