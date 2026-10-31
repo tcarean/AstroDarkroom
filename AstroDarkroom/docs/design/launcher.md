@@ -5,19 +5,19 @@
 `src/AstroDarkroom.Core/ReleaseManifest.cs`, `src/AstroDarkroom.Core/LicenseInfo.cs`,
 `src/AstroDarkroom.Core/Prerequisites.cs`, `src/AstroDarkroom.Core/Version.cs`,
 `src/AstroDarkroom.Core/ThirdParty.cs`, `src/AstroDarkroom.Core/WindowFit.cs`,
-`src/AstroDarkroom.Core/Language/Ui.cs`,
+`src/AstroDarkroom.Core/VcRuntime.cs`, `src/AstroDarkroom.Core/Language/Ui.cs`,
 `src/AstroDarkroom.Core/Language/LanguageSetting.cs`, `src/AstroDarkroom.Wpf/App.xaml.cs`,
 `src/AstroDarkroom.Wpf/Icons.cs`, `src/AstroDarkroom.Wpf/AppRow.cs`,
 `src/AstroDarkroom.Wpf/MainWindow.xaml.cs`, `src/AstroDarkroom.Wpf/DarkTitleBar.cs`,
-`src/AstroDarkroom.Wpf/ScreenArea.cs`, `src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`,
-`src/AstroDarkroom.Wpf/AstroDarkroom.Wpf.csproj`,
+`src/AstroDarkroom.Wpf/ScreenArea.cs`, `src/AstroDarkroom.Wpf/NativeProbe.cs`,
+`src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`, `src/AstroDarkroom.Wpf/AstroDarkroom.Wpf.csproj`,
 `Icon/make_icon.py` and the icon files in `Icon/`.
 
 The launcher is two layers: a core that answers three questions about a folder (which apps
 exist, which of them are there, how to start one), reads two files (`release.json`, the
 language setting) and words every answer in one of two languages, and a window that asks those
 questions at start-up and at every change of language and shows the answers. The requirements
-are R-001 to R-010 and R-015 to R-017 in `docs/requirements.md`; the choice of a compiled-in catalogue
+are R-001 to R-010 and R-015 to R-018 in `docs/requirements.md`; the choice of a compiled-in catalogue
 over a scan of the folder is ADR 0002, the split with no test project for the window is ADR
 0001, the two languages and the live switch are ADR 0006. What the launcher writes to its
 diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
@@ -71,9 +71,17 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   holds the warranty paragraph, a pair picked at each read, and the licence URL for the about
   window.
 - `Prerequisites` holds what the suite needs on the machine, as texts only (R-009, ADR 0007):
-  `Summary`, one line for the main window, and `Details`, three paragraphs for the about
-  window (the Siril session folder, Siril 1.4.4 or newer, the optional Adobe lens profiles for
-  FlatCheck), each a pair picked at each read. The core checks nothing of it.
+  `Summary`, one line for the main window, and `Details`, four paragraphs for the about
+  window (the Siril session folder, Siril 1.4.4 or newer, the Visual C++ runtime with
+  `VcRuntime.DownloadUrl`, the optional Adobe lens profiles for FlatCheck), each a pair picked
+  at each read. Of these, only the runtime is checked, by `VcRuntime` and the window.
+- `VcRuntime` is Microsoft's Visual C++ v14 runtime (x64) that LibRaw's DLLs import and the
+  suite does not ship (R-018, ADR 0016): `Files`, its four DLLs as the import tables of
+  `Sdcb.LibRaw.runtime.win64` 0.21.1 name them, the version `SuiteTests` holds the windows to;
+  `DownloadUrl`, Microsoft's permalink for its latest x64 package; `Missing(canLoad)`, the files
+  a loader refuses, asking each once, in order, and keeping that order; `Warning`, the main
+  window's text before the link, a pair picked at each read. The core loads nothing: the window
+  passes the loader, the tests a fake one. `LogText.VcRuntime` words the log's line.
 - `ThirdParty.Components` is the list of the components written by others that the launcher
   ships, for the about window (R-015, ADR 0013): today one, NLog, which two packages bring. A
   `ThirdPartyComponent` has a name, a role (a pair picked at each read of the list), a licence
@@ -94,9 +102,23 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 
 - `App`'s constructor starts the diagnostic log and `App.OnExit` closes it (`logging.md`).
   `App.OnStartup` reads the setting file into `Ui.Default` (English when it gives none), makes
-  one `SuiteFolder` from `AppContext.BaseDirectory`, the folder the executable runs from, and
-  opens `MainWindow` on it and on the setting's path. Nothing is read from the command line,
-  which the log's first line records as it was.
+  one `SuiteFolder` from `AppContext.BaseDirectory`, the folder the executable runs from, asks
+  `NativeProbe.MissingRuntime()` and logs its outcome (Info, or Warn with the missing files),
+  and opens `MainWindow` on the folder, the setting's path and that list. Nothing is read from
+  the command line, which the log's first line records as it was.
+- `NativeProbe.MissingRuntime()` makes the suite folder the process's current folder, asks
+  `VcRuntime.Missing` with its private `CanLoad`, and puts the current folder back; a folder
+  Windows will not make current leaves the asking where it is (`TryMakeCurrent`); one that
+  cannot be put back leaves the suite folder current, which matters only to the setting file,
+  whose path is relative when Windows gives no local application data folder. `CanLoad(file)`
+  is `NativeLibrary.TryLoad` of a bare file name, released at once when it loads. For a bare
+  name Windows uses its standard search from the program's folder: the suite folder, then
+  System32, Windows, the current folder and PATH. With the suite folder current, these are the
+  places where `raw_r.dll`'s dependencies are found when a tool the launcher started loads it:
+  the resolver of `Sdcb.LibRaw` 0.21.1.7 asks .NET 8 for `raw_r.dll`, which loads it from the
+  suite folder by its full path with `LOAD_WITH_ALTERED_SEARCH_PATH`, and the launcher starts
+  every tool in the suite folder (ADR 0016). The four loads take about 16 ms; a DLL that does
+  not load is looked for along the whole PATH, so a miss costs more with a longer PATH.
 - `Icons` is the `.ico` resources of `Icon/`: `LargestFrame(fileName)` is the widest frame
   of that file (its pack URI from the private `Source`), decoded once and kept in a
   dictionary (the rows are rebuilt at every change of language), since the first frame of an
@@ -104,7 +126,8 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   logos.
 - `MainWindow` reads `release.json` once. The XAML carries no user text: `Relabel()` assigns
   every label (the subtitle, the prerequisites line under it from `Prerequisites.Summary`, the
-  folder line, the selector's tooltip, the about button and its tooltip) through `T` and
+  runtime's warning under that, the folder line, the selector's tooltip, the about button and
+  its tooltip) through `T` and
   builds one `AppRow` per catalogue app: the app, its `AppLocation`, its `ComponentInfo` or
   null. The row's properties are the strings the XAML binds (`OpenLabel`, `VersionHint` as
   `version X` / `versiunea X` or `version unknown` / `versiune necunoscuta`, `ButtonHint` as
@@ -134,6 +157,19 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   The start asked for and its outcome go to the diagnostic log; the started process's id is
   read through `IdOf`, which never throws, so the log line cannot turn a start that worked into
   the message box of one that failed.
+- The runtime's warning (R-018) is `RuntimeWarning`, a `Muted` `TextBlock` in `WarnBr` under the
+  prerequisites line, collapsed unless the list `App` passed holds a file: a `Run` that
+  `Relabel()` fills from `VcRuntime.Warning`, then a `Hyperlink` in `AccentBr` whose `Run` shows
+  `VcRuntime.DownloadUrl` and whose `NavigateUri` the constructor sets to it (the inlines touch
+  in the XAML, so no space slips in before the link). `OpenRuntimeLink` starts the URI's
+  `OriginalString` through the shell, as `OpenApp` starts an app, and logs it; a
+  `Win32Exception` or `InvalidOperationException` ends in a message box with the address and an
+  Error line. `RecheckRuntime`, on each `Activated` while the list holds a file, asks
+  `NativeProbe.MissingRuntime()` again: an answer that differs from the list replaces it, goes
+  to the log (Info or Warn) and sets the line's visibility, so the line goes when the user comes
+  back from installing the runtime. Once the list is empty nothing is asked; the first
+  activation, right after the start's check, asks again only when that check found a file
+  missing.
 - `AboutWindow` takes the `ReleaseInfo` the main window read and words itself once, in its
   constructor, in the language of that moment (it is modal and made anew at every open): the
   title, the tagline, the headings, the banner, the copyright, the warranty, the third-party

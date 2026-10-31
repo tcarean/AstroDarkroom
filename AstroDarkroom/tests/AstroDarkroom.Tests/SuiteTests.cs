@@ -28,8 +28,9 @@ namespace AstroDarkroom.Tests;
 /// package versions (the rule "Same .NET and same packages across the suite"), the icon copies
 /// against the components' own files, and the notices file against the packages the windows
 /// ship. Repository facts rather than behaviour of the launcher, so not requirement-numbered,
-/// except the icon copies (R-010), which the window shows, and the notices file (R-017), which
-/// the suite folder carries. They return early, with the reason in the output, where the
+/// except the icon copies (R-010), which the window shows, the notices file (R-017), which the
+/// suite folder carries, and the LibRaw build whose imports and resolver the launcher's check of
+/// the Visual C++ runtime follows (R-018). They return early, with the reason in the output, where the
 /// sibling folders are not beside this project (a clone of this folder alone).
 /// </summary>
 public partial class SuiteTests
@@ -291,6 +292,69 @@ public partial class SuiteTests
 
         Assert.True(shipped.Count > 0, "no package was read from any window's lock file");
         Assert.True(problems.Count == 0, "THIRD-PARTY-NOTICES.md against the windows' lock files:\n  " + string.Join("\n  ", problems));
+    }
+
+    /// <summary>
+    /// The Visual C++ runtime's DLLs the launcher looks for (<see cref="VcRuntime.Files"/>) are the
+    /// imports of the DLLs of Sdcb.LibRaw.runtime.win64 0.21.1, read from their import tables on
+    /// 2026-10-31, and its probe copies the search Sdcb.LibRaw 0.21.1.7's resolver makes .NET use:
+    /// every window that resolves those packages resolves those versions, and the warning, the log
+    /// line and the prerequisite paragraph name exactly those windows, in the catalogue's order
+    /// (R-018, ADR 0016). A component that updates LibRaw, or a tool that starts or stops reading
+    /// raw files through it, turns this red until the new DLLs and resolver are read again and the
+    /// list, these versions and the texts follow them.
+    /// </summary>
+    [Fact]
+    public void R018_TheRuntimeFiles_AreTheImportsOfTheLibRawTheWindowsResolve_TheWarningNamesThoseWindows()
+    {
+        List<ComponentEntry> entries = ComponentEntries();
+        if (!SiblingsPresent(entries))
+        {
+            return;   // the sibling projects are not beside this one
+        }
+
+        // The versions read: the native DLLs' import tables, and how the managed resolver loads them.
+        Dictionary<string, string> read = new(StringComparer.Ordinal)
+        {
+            ["Sdcb.LibRaw.runtime.win64"] = "0.21.1",
+            ["Sdcb.LibRaw"] = "0.21.1.7",
+        };
+        HashSet<string> withLibRaw = new(StringComparer.Ordinal);
+        List<string> problems = [];
+        foreach ((string window, string lockFile) in WindowLockFiles())
+        {
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(lockFile));
+            foreach (JsonProperty framework in doc.RootElement.GetProperty("dependencies").EnumerateObject())
+            {
+                foreach ((string name, string expected) in read)
+                {
+                    if (!framework.Value.TryGetProperty(name, out JsonElement package))
+                    {
+                        continue;
+                    }
+
+                    withLibRaw.Add(window);
+                    string? version = package.GetProperty("resolved").GetString();
+                    if (version != expected)
+                    {
+                        problems.Add($"{window} resolves {name} {version} for {framework.Name}; VcRuntime.Files and NativeProbe follow {expected}: read the new DLLs' imports and the resolver again");
+                    }
+                }
+            }
+        }
+
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
+        string[] tools = AppCatalogue.Apps.Select(a => a.Title).Where(withLibRaw.Contains).ToArray();
+        Assert.True(tools.Length > 0, "no window resolves LibRaw: the runtime check and its texts have nothing left to guard");
+        string Listed(string conjunction) => tools.Length == 1 ? tools[0] : string.Join(", ", tools[..^1]) + " " + conjunction + " " + tools[^1];
+
+        // Each list anchored on the words around it, so a name added or left out at either end shows.
+        Assert.Contains("deci " + Listed("si") + " nu pot citi", VcRuntime.Warning, StringComparison.Ordinal);   // the tests run in Romanian
+        Assert.Contains("calculatoare: " + Listed("si") + " au nevoie", Prerequisites.Details[2], StringComparison.Ordinal);
+        Assert.Contains("; " + Listed("and") + " cannot read camera raw files", LogText.VcRuntime(["vcomp140.dll"]), StringComparison.Ordinal);
+        using IDisposable scope = Ui.Use(UiLanguage.English);
+        Assert.Contains("so " + Listed("and") + " cannot read", VcRuntime.Warning, StringComparison.Ordinal);
+        Assert.Contains("have: " + Listed("and") + " need it", Prerequisites.Details[2], StringComparison.Ordinal);
     }
 
     /// <summary>

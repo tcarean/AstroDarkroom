@@ -23,6 +23,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Navigation;
 using AstroDarkroom.Core;
 using NLog;
 using static AstroDarkroom.Core.Ui;
@@ -31,10 +32,12 @@ namespace AstroDarkroom.Wpf;
 
 /// <summary>
 /// The launcher's window: a row per app of the catalogue, each with its open button, the
-/// language selector and the about button. It shows what the core says about the suite folder
-/// and starts what the core plans (R-002, R-003); it decides nothing itself. Every label is
-/// assigned in <see cref="Relabel"/>, in the current language, which is what lets a change of
-/// language apply at once (R-006). What it does goes to the diagnostic log (R-012).
+/// language selector and the about button, and a warning when the Visual C++ runtime the raw
+/// tools need is missing or too old, asked again at each activation while it shows (R-018). It
+/// shows what the core says about the suite folder and starts what the core plans (R-002,
+/// R-003); it decides nothing itself. Every label is assigned in
+/// <see cref="Relabel"/>, in the current language, which is what lets a change of language apply
+/// at once (R-006). What it does goes to the diagnostic log (R-012).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -44,6 +47,7 @@ public partial class MainWindow : Window
     private readonly SuiteFolder _folder;
     private readonly string _settingsPath;
     private readonly ReleaseInfo? _release;
+    private IReadOnlyList<string> _missingRuntime;
 
     /// <summary>
     /// The window on one suite folder, labelled in the language <see cref="Ui.Default"/> holds
@@ -51,15 +55,23 @@ public partial class MainWindow : Window
     /// </summary>
     /// <param name="folder">The suite folder the apps are looked up in: the launcher's own folder.</param>
     /// <param name="settingsPath">The file the chosen language is written to at every change (R-007).</param>
-    public MainWindow(SuiteFolder folder, string settingsPath)
+    /// <param name="missingRuntime">
+    /// The Visual C++ runtime's DLLs that did not load at start (<see cref="VcRuntime.Missing"/>);
+    /// empty when the runtime is there, and the warning line stays hidden (R-018). While it holds
+    /// a file, each activation of the window asks again (<see cref="RecheckRuntime"/>).
+    /// </param>
+    public MainWindow(SuiteFolder folder, string settingsPath, IReadOnlyList<string> missingRuntime)
     {
         InitializeComponent();
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         Loaded += (_, _) => LogShown();
+        Activated += (_, _) => RecheckRuntime();
         Closing += (_, _) => Log.Info("window closing");
         _folder = folder;
         _settingsPath = settingsPath;
+        _missingRuntime = missingRuntime;
         _release = ReleaseManifest.TryRead(folder.ManifestPath);
+        RuntimeLink.NavigateUri = new Uri(VcRuntime.DownloadUrl);
         Logo.Source = Icons.LargestFrame(Icons.Launcher);
         Banner.Text = VersionInfo.Banner;
         // Checking the current language fires LanguageChecked, which sees no change and does
@@ -79,6 +91,9 @@ public partial class MainWindow : Window
             "The astrophotography tools, in the order they are used. Open one from its row.",
             "Uneltele de astrofoto, in ordinea in care se folosesc. Deschide una din randul ei.");
         PrerequisitesLine.Text = Prerequisites.Summary;
+        RuntimeWarning.Visibility = _missingRuntime.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        RuntimeWarningText.Text = VcRuntime.Warning;
+        RuntimeLinkText.Text = VcRuntime.DownloadUrl;
         // BaseDirectory ends with a separator; shown without it, so no backslash dangles before the dash.
         string shownFolder = Path.TrimEndingDirectorySeparator(_folder.BaseDirectory);
         FolderLine.Text = _release is { Date.Length: > 0 } r
@@ -193,6 +208,63 @@ public partial class MainWindow : Window
         catch (InvalidOperationException)
         {
             return "unknown";
+        }
+    }
+
+    /// <summary>
+    /// Asks Windows again for the Visual C++ runtime, each time the window is activated while the
+    /// warning shows, so a user who installed it from the link and comes back sees the line go
+    /// (R-018); once the four load, nothing is asked any more. An answer that differs from the
+    /// last goes to the log, Info when the four load, Warn with those that still do not, and to
+    /// the line.
+    /// </summary>
+    private void RecheckRuntime()
+    {
+        if (_missingRuntime.Count == 0)
+        {
+            return;
+        }
+
+        IReadOnlyList<string> missing = NativeProbe.MissingRuntime();
+        if (missing.SequenceEqual(_missingRuntime, StringComparer.Ordinal))
+        {
+            return;
+        }
+
+        _missingRuntime = missing;
+        if (missing.Count == 0)
+        {
+            Log.Info(LogText.VcRuntime(missing));
+        }
+        else
+        {
+            Log.Warn(LogText.VcRuntime(missing));
+        }
+
+        RuntimeWarning.Visibility = missing.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Opens Microsoft's download of the Visual C++ runtime, the warning line's link, in the
+    /// browser (R-018). The address opened goes to the log; when Windows will not open it, a
+    /// message box gives the address, so it can be typed in a browser, and the log the exception.
+    /// </summary>
+    /// <param name="sender">The link; not read.</param>
+    /// <param name="e">The navigation asked for; its URI, as written, is what opens.</param>
+    private void OpenRuntimeLink(object sender, RequestNavigateEventArgs e)
+    {
+        e.Handled = true;
+        string address = e.Uri.OriginalString;
+        try
+        {
+            using Process? browser = Process.Start(new ProcessStartInfo(address) { UseShellExecute = true });
+            Log.Info("opened " + address);
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+        {
+            Log.Error(ex, "open " + address + " failed: Windows refused it; the message box gives the address");
+            MessageBox.Show(this, T($"Windows could not open {address}: {ex.Message}", $"Windows nu a putut deschide {address}: {ex.Message}"),
+                "Astro Darkroom", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

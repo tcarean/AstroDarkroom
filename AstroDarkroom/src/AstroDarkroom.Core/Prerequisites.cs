@@ -21,9 +21,11 @@ namespace AstroDarkroom.Core;
 
 /// <summary>
 /// What the suite needs on the machine, told to the user before the tools are opened (R-009,
-/// ADR 0007): a Siril session folder, Siril 1.4.4 or newer installed and, optional for
-/// FlatCheck, Adobe's lens profiles. The launcher checks none of it; the texts are here, in
-/// both languages, so a test guards them (ADR 0006), and the windows show them.
+/// ADR 0007): a Siril session folder, Siril 1.4.4 or newer installed, Microsoft's Visual C++
+/// runtime for the tools that read camera raw files and, optional for FlatCheck, Adobe's lens
+/// profiles. The launcher checks the runtime only (<see cref="VcRuntime"/>, R-018, ADR 0016);
+/// the texts are here, in both languages, so a test guards them (ADR 0006), and the windows show
+/// them.
 /// </summary>
 public static class Prerequisites
 {
@@ -33,8 +35,9 @@ public static class Prerequisites
         "Uneltele citesc folderul unei sesiuni Siril si cer Siril 1.4.4 sau mai nou; detalii la Despre.");
 
     /// <summary>
-    /// The three paragraphs of the "Despre" window, in the current language: the session
-    /// folder, the Siril version, the optional Adobe lens profiles.
+    /// The four paragraphs of the "Despre" window, in the current language: the session folder,
+    /// the Siril version, the Visual C++ runtime with Microsoft's link, the optional Adobe lens
+    /// profiles.
     /// </summary>
     public static IReadOnlyList<string> Details =>
     [
@@ -52,6 +55,13 @@ public static class Prerequisites
           "Siril 1.4.4 sau mai nou instalat (siril.org): masterele si stack-urile pe care le verifica "
           + "uneltele ies din scripturile lui, iar FlatCheck ruleaza scriptul de preprocesare prin siril-cli "
           + "din instalarea ta."),
+        T("Microsoft's Visual C++ v14 runtime (x64), which most computers already have: DarksCheck, "
+          + "FlatCheck and LightsCheck need it to read camera raw files, and the launcher says when it is "
+          + "missing or too old. Its latest version installs from " + VcRuntime.DownloadUrl + ".",
+          "Runtime-ul Microsoft Visual C++ v14 (x64), pe care il au deja cele mai multe calculatoare: "
+          + "DarksCheck, FlatCheck si LightsCheck au nevoie de el ca sa citeasca fisiere raw de aparat, iar "
+          + "lansatorul spune cand lipseste sau este prea vechi. Ultima lui versiune se instaleaza de la "
+          + VcRuntime.DownloadUrl + "."),
         T("Optional, for FlatCheck: Adobe's lens profiles, read from this computer when an Adobe program "
           + "installed them: Lightroom, Photoshop with Camera Raw, or the free Adobe DNG Converter. Without "
           + "them FlatCheck uses the lensfun database it ships with.",
