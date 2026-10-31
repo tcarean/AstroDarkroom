@@ -170,6 +170,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Text="{l:T En='I didn\'t use any filters on my lens', Ro='Nu am folosit niciun filtru pe obiectiv'}"
                            TextWrapping="Wrap" />
               </CheckBox>
+              <!-- The lens picker (R-121, ADR 0080), only when the raw gave a range and nothing
+                   else, so the rows are every lens of the mount with that range: the core's line
+                   says why, then "My lens:" with the no-choice entry first and every candidate.
+                   A pick redoes the comparison on the kept result with that lens alone, so it is
+                   locked while the tab runs; the choice is the folder's, in flatcheck.json. -->
+              <StackPanel Margin="0,0,0,14"
+                          Visibility="{Binding OffersLensChoice, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding LensChoicePrompt}" />
+                <Grid Margin="0,8,0,0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{l:T En='My lens:', Ro='Obiectivul meu:'}" FontWeight="SemiBold"
+                             VerticalAlignment="Center" Margin="0,0,10,0" />
+                  <ComboBox Grid.Column="1" ItemsSource="{Binding LensOptions}"
+                            SelectedItem="{Binding SelectedLens, Mode=TwoWay}"
+                            DisplayMemberPath="Label" VerticalAlignment="Center"
+                            IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" />
+                </Grid>
+              </StackPanel>
               <!-- Without Adobe's profiles (R-113, ADR 0073), above whatever the card holds: that
                    they were not found, in the window's red for a message; then what to install,
                    the link to Adobe's page (MainWindow opens it in the browser) and the folders

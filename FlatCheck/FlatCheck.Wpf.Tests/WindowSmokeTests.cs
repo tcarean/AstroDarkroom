@@ -288,6 +288,54 @@ public class WindowSmokeTests
     }
 
     /// <summary>
+    /// R-121: the structure tab on a raw that gives only a range - the prompt and the picker
+    /// over the rows - first with no choice (both rows), then with the Samyang chosen (its row
+    /// alone, the picker on it). The result comes through Populate, on hand-made sources.
+    /// </summary>
+    [Fact]
+    public void R121_TheStructureTabRendersTheLensPicker()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, rangePair: true);
+        var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
+        var master = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" }, FocalMm = 135, Camera = "Nikon D3300" };
+        var raw = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(),
+            FocalMm = 135,
+            FNumber = 2.8,
+            Camera = "NIKON D3300",
+            LensId = 74,
+            LensMinFocalMm = 135,
+            LensMaxFocalMm = 135,
+            LensMaxAperture = 2,
+        };
+        string key = sources.Catalog.Lenses.First(l => l.Name == LensProfileTestData.Samyang135).Key;
+        StructureOutcome open = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw });
+        StructureOutcome chosen = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw, LensKey = key });
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+
+            var vm = new StructureTabViewModel();
+            vm.Populate(open);
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structure-lens-open");
+            Assert.True(vm.OffersLensChoice);
+            Assert.Equal(2, vm.ProfileRows.Count);
+            Assert.Null(vm.SelectedLens.Key);
+
+            vm.Populate(chosen);
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structure-lens-chosen");
+            Assert.True(vm.OffersLensChoice);
+            Assert.Single(vm.ProfileRows);
+            Assert.Equal(key, vm.SelectedLens.Key);
+
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
+    /// <summary>
     /// The opening panel (R-120): the window while the opening runs, held at the catalog so
     /// the structure and the prefill rows say "running" and the series row "waiting"; the tabs
     /// are collapsed meanwhile and the panel is up. Then, once everything has ended, the panel

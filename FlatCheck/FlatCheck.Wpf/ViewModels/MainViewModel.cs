@@ -265,7 +265,8 @@ namespace FlatCheck.Wpf
                 // Structure run and the Exposure tab start on them.
                 SessionSettings settings = SessionSettings.Read(session.SettingsPath);
                 Log.Info("session " + folder + ": settings " + (File.Exists(session.SettingsPath) ? "read from " : "absent, defaults; would be ")
-                         + session.SettingsPath + " noFilters=" + LogText.Yes(settings.NoFilters) + " skyFlat=" + LogText.Yes(settings.SkyFlat));
+                         + session.SettingsPath + " noFilters=" + LogText.Yes(settings.NoFilters) + " skyFlat=" + LogText.Yes(settings.SkyFlat)
+                         + " lens=" + LogText.Str(settings.Lens));
 
                 // The tabs that wait for a choice are prepared at once: their lists are read from
                 // the folder, not from a computation, so they have no reason to wait. Every run a

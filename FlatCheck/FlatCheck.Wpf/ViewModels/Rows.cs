@@ -101,6 +101,25 @@ namespace FlatCheck.Wpf
         public bool HasNote => !string.IsNullOrEmpty(Note);
     }
 
+    /// <summary>
+    /// An entry of the Structure tab's lens picker (R-121): a candidate lens by its catalog key,
+    /// or, with a null key, the first entry meaning no choice - the nearest profile decides.
+    /// </summary>
+    public sealed class LensOption
+    {
+        /// <summary>The lens's catalog key (LensChoice.Key), the value remembered in the
+        /// session's settings; null for the no-choice entry.</summary>
+        public string Key { get; init; }
+        /// <summary>What the picker shows: "lensfun Samyang 135mm f/2.0 ED UMC [Nikon F AI, ...]",
+        /// or the no-choice words.</summary>
+        public string Label { get; init; }
+
+        /// <summary>The label, so the picker's closed box shows it wherever a template does not
+        /// reach (the theme's selection box).</summary>
+        /// <returns>The label.</returns>
+        public override string ToString() => Label;
+    }
+
     /// <summary>A shape from the map guide: its name and what it meant on real masters. The
     /// other guides use it for their rows too.</summary>
     public sealed class GuideRow

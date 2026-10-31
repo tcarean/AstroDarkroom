@@ -47,6 +47,10 @@ namespace FlatCheck.Wpf
         /// <summary>The key of the Exposure tab's "sky flat" box (R-043).</summary>
         const string SkyFlatKey = "skyFlat";
 
+        /// <summary>The key of the Structure tab's chosen lens (R-121): the lens's catalog key,
+        /// absent when none was chosen.</summary>
+        const string LensKey = "lens";
+
         /// <summary>The window's diagnostic log (R-110).</summary>
         static readonly Logger Log = LogManager.GetLogger(Loggers.Window + ".Session");
 
@@ -72,11 +76,15 @@ namespace FlatCheck.Wpf
         /// panel's (R-043); false by default.</summary>
         internal bool SkyFlat { get; set; }
 
+        /// <summary>The Structure tab's chosen lens (R-121): the catalog key of the lens picked
+        /// on a list found by range alone; null (the default) when none was chosen.</summary>
+        internal string Lens { get; set; }
+
         /// <summary>
         /// Reads a session's settings. A missing or unreadable file, one that is not a JSON
-        /// object, a key absent or holding something other than a boolean: the default for that
-        /// key, never an exception and never a message - a hand edit must not stop the folder
-        /// from opening.
+        /// object, a key absent or holding something other than a boolean (a string for the
+        /// lens): the default for that key, never an exception and never a message - a hand
+        /// edit must not stop the folder from opening.
         /// </summary>
         /// <param name="path">The file's full path; it need not exist; null remembers
         /// nothing.</param>
@@ -92,6 +100,7 @@ namespace FlatCheck.Wpf
                 if (doc.RootElement.ValueKind != JsonValueKind.Object) return settings;
                 settings.NoFilters = ReadBool(doc.RootElement, NoFiltersKey, settings.NoFilters);
                 settings.SkyFlat = ReadBool(doc.RootElement, SkyFlatKey, settings.SkyFlat);
+                settings.Lens = ReadText(doc.RootElement, LensKey);
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is JsonException)
             {
@@ -110,11 +119,21 @@ namespace FlatCheck.Wpf
                 ? value.GetBoolean()
                 : fallback;
 
+        /// <summary>One text key of the file's object.</summary>
+        /// <param name="root">The file's object.</param>
+        /// <param name="key">The key.</param>
+        /// <returns>The key's text; null when absent, empty, or of another type.</returns>
+        static string ReadText(JsonElement root, string key)
+            => root.TryGetProperty(key, out JsonElement value) && value.ValueKind == JsonValueKind.String && value.GetString().Length > 0
+                ? value.GetString()
+                : null;
+
         /// <summary>
-        /// Writes both switches to the file: the text goes to a temporary file beside it, which
-        /// then replaces the file in one move, so an interrupted write leaves the last good file
-        /// and never a truncated one. A write that fails for IO or access is a Warn line naming
-        /// the file: the switch holds for this run and is lost at the next. Nothing is written
+        /// Writes the switches and the chosen lens to the file: the text goes to a temporary
+        /// file beside it, which then replaces the file in one move, so an interrupted write
+        /// leaves the last good file and never a truncated one. The lens key is written only
+        /// when a lens is chosen. A write that fails for IO or access is a Warn line naming the
+        /// file: the switch holds for this run and is lost at the next. Nothing is written
         /// without a path.
         /// </summary>
         internal void Write()
@@ -122,11 +141,13 @@ namespace FlatCheck.Wpf
             if (_path == null) return;
             try
             {
-                var values = new Dictionary<string, bool> { [NoFiltersKey] = NoFilters, [SkyFlatKey] = SkyFlat };
+                var values = new Dictionary<string, object> { [NoFiltersKey] = NoFilters, [SkyFlatKey] = SkyFlat };
+                if (Lens != null) values[LensKey] = Lens;
                 string temp = _path + ".tmp";
                 File.WriteAllText(temp, JsonSerializer.Serialize(values));
                 File.Move(temp, _path, overwrite: true);
-                Log.Info("wrote " + _path + " (" + NoFiltersKey + "=" + LogText.Yes(NoFilters) + " " + SkyFlatKey + "=" + LogText.Yes(SkyFlat) + ")");
+                Log.Info("wrote " + _path + " (" + NoFiltersKey + "=" + LogText.Yes(NoFilters) + " " + SkyFlatKey + "=" + LogText.Yes(SkyFlat)
+                         + " " + LensKey + "=" + LogText.Str(Lens) + ")");
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {

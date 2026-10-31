@@ -90,6 +90,13 @@ namespace FlatCheck
         /// </summary>
         internal bool CandidatesByRangeOnly;
 
+        /// <summary>
+        /// The lens the person chose among <see cref="Candidates"/> (the window's picker on a
+        /// list found by range alone, R-121): the only one compared, while the candidates stay
+        /// whole. Null when nothing was chosen, or when the chosen key matched no candidate.
+        /// </summary>
+        internal LensChoice ChosenLens;
+
         internal bool HasRawLensId => Raw?.LensId != null;
 
         /// <summary>

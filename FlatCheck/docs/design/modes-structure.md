@@ -97,4 +97,13 @@ library figures of 2026-09-18 and the guards. ADR 0030 holds how the lens is ide
   the card, under `MasterDepth(StructureResult)`, the same figure as the comparison's
   `MasterStops`. `StructureRun.Recompare` redoes the comparison on the kept result when the
   box is flipped. The console has no flag: its user leaves `--raw` out.
+- A lens chosen among the candidates found by range alone (R-121, ADR 0080): the window's
+  picker puts the lens's catalog key on the query (`StructureQuery.LensKey`), and
+  `StructureRun.Compare` compares that candidate alone, leaving `ShotIdentity.Candidates` whole
+  and recording `ShotIdentity.ChosenLens`. `StructureReport.ComparisonSummary` then prints
+  `ChosenLensNote` (the lens chosen, why there was a choice, the lenses left out) in place of
+  `RangeOnlyNote`, and drops the single-profile sentence, which would blame a missing second
+  database; `LensChoicePrompt` is the card's line above the picker and gives "" when there is
+  nothing to choose, which is also how the window knows to hide it. The console sets no key:
+  its `--lens` text wins over one.
 - `--help` moved when the flags were added, and was re-approved.

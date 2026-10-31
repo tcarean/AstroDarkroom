@@ -383,14 +383,51 @@ internal static class LensProfileTestData
     </lens>
 </lensdatabase>";
 
+    /// <summary>The Adobe half of the range pair (R-121): the Nikkor 135 f/2 DC as Adobe's file
+    /// names it - no slash, since the reader takes the lens's name from the file's name.</summary>
+    internal const string Nikkor135Dc = "Nikkor 135mm f2 DC";
+
+    /// <summary>The lensfun half of the range pair (R-121): the owner's manual lens, as lensfun names it.</summary>
+    internal const string Samyang135 = "Samyang 135mm f/2.0 ED UMC";
+
+    /// <summary>
+    /// The lensfun half of the range pair (R-121): the Samyang 135 f/2 on Nikon F, with a
+    /// vignetting calibration at 135 mm f/2 (the entry in <see cref="LensfunXml"/> has distortion
+    /// only and is not read). Beside the Adobe Nikkor 135 f/2 DC file it makes the two lenses a
+    /// D3300 raw with the "non-CPU lens" ID 74 and the range 135 mm f/2.0 points at by range alone.
+    /// The mount definition says the D3300's `Nikon F AF` takes `Nikon F AI`, as lensfun's does
+    /// (R-116): without it the manual lens would be filtered out of the candidates.
+    /// </summary>
+    internal const string LensfunRangePairXml = @"<!DOCTYPE lensdatabase SYSTEM ""lensfun-database.dtd"">
+<lensdatabase version=""2"">
+    <mount>
+        <name>Nikon F AF</name>
+        <compat>Nikon F</compat>
+        <compat>Nikon F AI</compat>
+        <compat>Nikon F AI-S</compat>
+    </mount>
+    <lens>
+        <maker>Samyang</maker>
+        <model>Samyang 135mm f/2.0 ED UMC</model>
+        <mount>Nikon F AI</mount>
+        <cropfactor>1.0</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""135"" aperture=""2"" distance=""1000"" k1=""-0.4500"" k2=""0.1200"" k3=""-0.0400""/>
+            <vignetting model=""pa"" focal=""135"" aperture=""2.8"" distance=""1000"" k1=""-0.1600"" k2=""0.0300"" k3=""-0.0100""/>
+        </calibration>
+    </lens>
+</lensdatabase>";
+
     /// <summary>
     /// A profiles folder as --profiles expects it: an .lcp anywhere in it, and lensfun/ beneath.
     /// With <paramref name="tokinaOnTwoFormats"/> the lensfun half also carries the Tokina's
     /// full-frame calibration, so the same lens is listed twice, once per calibration format.
     /// With <paramref name="mounts"/> it also carries <see cref="LensfunMountsXml"/>: the Nikon
     /// mount definitions and two Tokinas of the raw's range on mounts the D3300 does not take.
+    /// With <paramref name="rangePair"/> it also carries the two 135 f/2 lenses of R-121: Adobe's
+    /// Nikkor 135 f/2 DC file (no lens ID) and lensfun's Samyang (<see cref="LensfunRangePairXml"/>).
     /// </summary>
-    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool mounts = false)
+    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool mounts = false, bool rangePair = false)
     {
         string dir = Path.Combine(ws.Dir, "profiles");
         Directory.CreateDirectory(Path.Combine(dir, "Tokina"));
@@ -429,6 +466,15 @@ internal static class LensProfileTestData
         }
         if (mounts)
             File.WriteAllText(Path.Combine(dir, "lensfun", "slr-mounts.xml"), LensfunMountsXml);
+        if (rangePair)
+        {
+            // Adobe's file for a Nikon F lens: the maker is the camera's, "NIKON CORPORATION", and
+            // the file carries no lens ID a manual lens could match (R-121)
+            Directory.CreateDirectory(Path.Combine(dir, "Nikon"));
+            File.WriteAllText(Path.Combine(dir, "Nikon", $"NIKON CORPORATION ({Nikkor135Dc}) - RAW.lcp"),
+                LcpOneProfile("NIKON CORPORATION", Nikkor135Dc, "135mm f/2 DC", null, "1", "135", camera: "NIKON D3"));
+            File.WriteAllText(Path.Combine(dir, "lensfun", "slr-samyang.xml"), LensfunRangePairXml);
+        }
         File.WriteAllText(Path.Combine(dir, "lensfun", "LENSFUN-VERSION.txt"), "lensfun database snapshot\nupstream commit: test\n");
         return dir;
     }
@@ -437,11 +483,12 @@ internal static class LensProfileTestData
     /// The sources located on <see cref="ProfilesDir"/>. Without <paramref name="withAdobe"/> the
     /// Adobe folder searched is one that does not exist, so only lensfun/ is read: a computer
     /// without Adobe software (R-113). With <paramref name="mounts"/> the lensfun half carries the
-    /// Nikon mount definitions and the two Tokinas on other mounts (R-116).
+    /// Nikon mount definitions and the two Tokinas on other mounts (R-116). With
+    /// <paramref name="rangePair"/> it carries the two 135 f/2 lenses of R-121.
     /// </summary>
-    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool withAdobe = true, bool mounts = false)
+    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool withAdobe = true, bool mounts = false, bool rangePair = false)
     {
-        string dir = ProfilesDir(ws, tokinaOnTwoFormats, otherMounts, mounts);
+        string dir = ProfilesDir(ws, tokinaOnTwoFormats, otherMounts, mounts, rangePair);
         string adobe = withAdobe ? dir : Path.Combine(ws.Dir, "no-adobe");
         return ProfileLocator.Locate(new[] { adobe }, Path.Combine(dir, "lensfun"));
     }

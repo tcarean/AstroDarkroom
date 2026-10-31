@@ -259,7 +259,9 @@ a library extraction and not a copy is ADR 0011.
     query; with one, present even when it could not compare - `Gap` says why) and the
     combined verdict. `StructureRun.Recompare` redoes the comparison, or the plain outcome,
     on a `StructureResult` already computed and writes the report again, no load and no
-    map: the window's "no filters" box (R-118, ADR 0078, `two-applications.md`).
+    map: the window's "no filters" box (R-118, ADR 0078, `two-applications.md`). A query's
+    `LensKey` narrows the comparison to one candidate, the window's lens picker on a list
+    found by range alone (R-121, ADR 0080, `modes-structure.md`).
     Without a query the output is byte-identical to before, which is
     what keeps the golden files, the parity ones included, still. `Compare` is the second
     half on its own, so the window can explain a missing raw without reloading the master.
@@ -302,8 +304,8 @@ a library extraction and not a copy is ADR 0011.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
     master and where it may be, ADR 0034; which are raw flats; `SmoothedMasterPath` and `SyntheticMasterPath`, the two files the
     writing tabs put beside the master, ADR 0036; `SettingsPath`, the folder's
-    `flatcheck.json`), `SessionSettings` (the two switches the window remembers per folder,
-    R-119, ADR 0078) and `SessionMessages` (the explanations
+    `flatcheck.json`), `SessionSettings` (the two switches and the chosen lens the window
+    remembers per folder, R-119, R-121, ADRs 0078 and 0080) and `SessionMessages` (the explanations
     shown when the input is not usable and the residual map's shape guide), plus the four
     files behind the "run the script from here"
     button of ADR 0035: `SirilInstall` (where `siril-cli.exe` and the `.ssf` scripts are;
