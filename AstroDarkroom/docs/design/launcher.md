@@ -108,15 +108,17 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   the command line, which the log's first line records as it was.
 - `NativeProbe.MissingRuntime()` makes the suite folder the process's current folder, asks
   `VcRuntime.Missing` with its private `CanLoad`, and puts the current folder back; a folder
-  Windows will not make current leaves the asking where it is (`TryMakeCurrent`), since the
-  launcher reads no relative path. `CanLoad(file)` is `NativeLibrary.TryLoad` of a bare file
-  name, released at once when it loads. For a bare name Windows uses its standard search from
-  the program's folder: the suite folder, then System32, Windows, the current folder and PATH.
-  With the suite folder current, these are the places where `raw_r.dll`'s dependencies are
-  found when a tool the launcher started loads it: Sdcb.LibRaw's resolver asks .NET 8 for
-  `raw_r.dll`, which loads it from the suite folder by its full path with
-  `LOAD_WITH_ALTERED_SEARCH_PATH`, and the launcher starts every tool in the suite folder
-  (ADR 0016). The four loads take about 16 ms.
+  Windows will not make current leaves the asking where it is (`TryMakeCurrent`); one that
+  cannot be put back leaves the suite folder current, which matters only to the setting file,
+  whose path is relative when Windows gives no local application data folder. `CanLoad(file)`
+  is `NativeLibrary.TryLoad` of a bare file name, released at once when it loads. For a bare
+  name Windows uses its standard search from the program's folder: the suite folder, then
+  System32, Windows, the current folder and PATH. With the suite folder current, these are the
+  places where `raw_r.dll`'s dependencies are found when a tool the launcher started loads it:
+  the resolver of `Sdcb.LibRaw` 0.21.1.7 asks .NET 8 for `raw_r.dll`, which loads it from the
+  suite folder by its full path with `LOAD_WITH_ALTERED_SEARCH_PATH`, and the launcher starts
+  every tool in the suite folder (ADR 0016). The four loads take about 16 ms; a DLL that does
+  not load is looked for along the whole PATH, so a miss costs more with a longer PATH.
 - `Icons` is the `.ico` resources of `Icon/`: `LargestFrame(fileName)` is the widest frame
   of that file (its pack URI from the private `Source`), decoded once and kept in a
   dictionary (the rows are rebuilt at every change of language), since the first frame of an

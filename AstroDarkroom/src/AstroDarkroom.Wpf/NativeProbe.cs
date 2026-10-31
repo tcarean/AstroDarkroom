@@ -47,7 +47,8 @@ internal static class NativeProbe
         {
             if (moved)
             {
-                // The launcher reads no relative path, so a folder that cannot be put back costs nothing.
+                // Should Windows refuse, the suite folder stays current: every path the launcher uses is
+                // absolute, but the setting file's when Windows gives no local application data folder.
                 TryMakeCurrent(before);
             }
         }

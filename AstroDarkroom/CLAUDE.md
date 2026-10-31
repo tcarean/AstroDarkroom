@@ -48,7 +48,8 @@ a seventh analysis tool and never changes a component.
 - `tests/AstroDarkroom.Tests/` - the requirement tests (`R###_...`), the suite checks
   (`SuiteTests`: the catalogue against `kit.json`, the components' frameworks and packages and
   the launcher's against theirs, the icon copies against the components' files, R-010, the
-  notices file against the windows' packages, R-017),
+  notices file against the windows' packages, R-017, LibRaw's two packages against the Visual
+  C++ runtime check and its texts, R-018),
   repo rules (`RepoInvariantTests`, `LicenseHeaderTests`, `VersionTests`), the log's tests
   (`LoggingTests`; `LogCapture` configures the log at Trace for the whole assembly). It
   targets `net8.0-windows`, the window's framework (ADR 0012). `tests/testdata/` holds only the

@@ -1,7 +1,7 @@
 # 0007. The launcher tells the suite's prerequisites, hides the unreleased flag and draws a flag on each language button
 
 Date: 2026-10-26
-Status: accepted 2026-10-26; the launcher checking none of the prerequisites superseded by 0016
+Status: accepted 2026-10-26; the launcher checking none of the prerequisites and never looking outside its folder superseded by 0016
 
 ## Context
 

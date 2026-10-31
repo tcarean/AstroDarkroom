@@ -102,8 +102,8 @@ public static class LogText
     }
 
     /// <summary>
-    /// The launcher's line about the Visual C++ runtime at start (R-018): its four DLLs loading,
-    /// or those that do not, and what that stops.
+    /// The launcher's line about the Visual C++ runtime, at start and when a later check finds
+    /// another answer (R-018): its four DLLs loading, or those that do not, and what that stops.
     /// </summary>
     /// <param name="missing">The DLLs that do not load, as <see cref="Core.VcRuntime.Missing"/> gave them; not null, empty when all load.</param>
     /// <returns>The line, <c>Visual C++ runtime: missing vcomp140.dll; DarksCheck, ...</c>.</returns>

@@ -120,3 +120,16 @@ libraw" message names the Visual C++ runtime and its link instead of advice abou
   C++ runtime: vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, vcomp140.dll load`, its
   window had no `RuntimeWarning` (UI Automation), and it closed with exit code 0. The link and
   the activation check cannot be seen on this PC, which has the runtime.
+- **The second review's findings, taken** (a subagent review of ba77fd64 alone). The suite
+  check matched a tail of the list, so a tool leaving the front of it stayed green: each list is
+  now anchored on the words around it, the "Despre" paragraph is checked too, and it turned red
+  when DarksCheck's lock file no longer listed LibRaw. It also holds `Sdcb.LibRaw`, whose
+  resolver the probe copies, to 0.21.1.7 (red at 0.21.1.8). ADR 0016's superseded part of 0007
+  now covers "never looks outside its folder" too; it says the resolver calls `TryLoad`, then
+  `Load`; its Consequences carry the review's measure of four misses (25 to 26 ms first, 12 ms
+  repeated, 55 folders on PATH) and the cost of an unanswering network folder on PATH. The
+  READMEs and the ADR name the older "2015-2019", "2017" and "2015" packages, the last two too
+  old (Visual Studio 2019 added `vcruntime140_1.dll`, OpenJDK's JDK-8242507). The claim that the
+  launcher reads no relative path was narrowed: the setting file's path is relative when
+  Windows gives no local application data folder. `LogText.VcRuntime`'s comment and the
+  CLAUDE.md list of suite checks were brought up to date.

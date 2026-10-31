@@ -2,7 +2,7 @@
 
 Date: 2026-10-31
 Status: accepted 2026-10-31
-Supersedes: 0007 in part (the launcher checking none of the prerequisites)
+Supersedes: 0007 in part (the launcher checking none of the prerequisites and never looking outside its folder)
 
 ## Context
 
@@ -15,7 +15,9 @@ else loads. No document named the runtime as a prerequisite. Microsoft calls it 
 v14 Redistributable", for programs built with Visual Studio 2017 to 2026, and asks for one "at
 least as recent as the build tools used to build your app" (its page of the latest supported
 downloads, read on 2026-10-31); Windows lists this PC's as "Microsoft Visual C++ v14
-Redistributable (x64) - 14.51.36247", and older installations as "2015-2022".
+Redistributable (x64) - 14.51.36247", and older installations as "2015-2022", "2015-2019",
+"2017" or "2015". The last two came before Visual Studio 2019, which added `vcruntime140_1.dll`
+(OpenJDK's JDK-8242507).
 
 Measured on 2026-10-31 with a scratch loader that keeps `System32`'s copies out
 (`LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR`): LibRaw's four DLLs alone in a folder all fail with error
@@ -29,12 +31,13 @@ not need it. A fresh Windows could not be measured: this PC is Windows 10 Home, 
 Sandbox, with the runtime 14.51.36247 installed.
 
 The tools reach `raw_r.dll` through Sdcb.LibRaw's own resolver, `LibRawNativeLoader`, which asks
-`NativeLibrary.TryLoad` for `raw_r.dll`, then `libraw.dll`. .NET 8 finds the first in the suite
-folder and loads it by its full path with `LOAD_WITH_ALTERED_SEARCH_PATH`
-(`src/coreclr/vm/nativelibrary.cpp`, release/8.0), so `raw_r.dll`'s dependencies are looked for
-in its own folder, the suite folder, then in Windows' standard order, whose current folder is the
-suite folder for a tool the launcher starts. `NativeLibrary.TryLoad`, given a bare file name by a
-program in the suite folder whose current folder is the suite folder, searches the same places.
+`NativeLibrary.TryLoad` for `raw_r.dll` and, failing that, `NativeLibrary.Load` for `libraw.dll`.
+.NET 8 finds the first in the suite folder and loads it by its full path with
+`LOAD_WITH_ALTERED_SEARCH_PATH` (`src/coreclr/vm/nativelibrary.cpp`, release/8.0), so `raw_r.dll`'s
+dependencies are looked for in its own folder, the suite folder, then in Windows' standard order,
+whose current folder is the suite folder for a tool the launcher starts. `NativeLibrary.TryLoad`,
+given a bare file name by a program in the suite folder whose current folder is the suite folder,
+searches the same places.
 
 The options, put to the owner on 2026-10-31 with a recommendation: name the runtime as a
 prerequisite and have the launcher check for it; the prerequisite text only; ship the runtime's
@@ -58,9 +61,12 @@ four DLLs. The owner chose the first.
   leaves a message box with the address (R-018).
 - **Again while the line shows.** Each activation of the main window asks again, so the line
   goes when the user comes back from installing the runtime; an answer that changed is logged.
-- **Tied to the LibRaw build.** The four are the imports of 0.21.1's DLLs. `SuiteTests` holds
-  every window that resolves the package to that version, and the warning and the log line to
-  naming exactly those windows, so a new LibRaw has its DLLs read again before it ships.
+- **Tied to the LibRaw build.** The four are the imports of the DLLs of
+  `Sdcb.LibRaw.runtime.win64` 0.21.1, and the search the probe copies is the one the resolver
+  of `Sdcb.LibRaw` 0.21.1.7 makes .NET use. `SuiteTests` holds every window that resolves
+  either package to that version, and the warning, the log line and the prerequisite paragraph
+  to naming exactly those windows, so a new LibRaw has its DLLs and its resolver read again
+  before it ships.
 - **Nothing of Microsoft's in the zip**, and the three tools unchanged here.
 
 ## Alternatives rejected
@@ -90,15 +96,21 @@ four DLLs. The owner chose the first.
 
 ## Consequences
 
-The check costs about 16 ms at start (three fresh processes on this PC: 15.2 to 17.2 ms for the
-four, most of it `vcruntime140_1.dll`), and as much at each activation of the window while the
-warning shows; on a computer with the runtime nothing is asked after the start. On a computer
-without the runtime the main window is a line or two taller; "Despre" has a fourth paragraph. A
-runtime that has the four DLLs but is older than the build tools of LibRaw's (14.36) passes the
-check, though Microsoft asks for one at least as recent; whether LibRaw then loads was not
-measured. The check is right as long as the tools load LibRaw as they do today, through
-`LibRawNativeLoader` and .NET 8, by full path with the standard search for its dependencies; a
-new version of Sdcb.LibRaw, or a tool that loaded LibRaw otherwise, needs the check revisited.
+The check costs about 16 ms at start when the four load (three fresh processes on this PC: 15.2
+to 17.2 ms, most of it `vcruntime140_1.dll`); on a computer with the runtime nothing is asked
+after the start. A DLL that does not load is looked for along the whole search, PATH included,
+at start and at each activation of the window while the warning shows: four misses took 25 to
+26 ms the first time and 12 ms when repeated, on this PC with 55 folders on PATH (three fresh
+processes, measured by the review). The time grows with PATH, and a network folder on PATH that
+does not answer would hold the window as long as it would hold a tool loading LibRaw. On a
+computer without the runtime the main window is a line or two taller; "Despre" has a fourth
+paragraph. A runtime that has the four DLLs but is older than the build tools of LibRaw's
+(14.36) passes the check, though Microsoft asks for one at least as recent; whether LibRaw then
+loads was not measured. The check is right as long as the tools load LibRaw as they do today,
+through `LibRawNativeLoader` and .NET 8, by full path with the standard search for its
+dependencies; a new version of either package, which `SuiteTests` stops, or a tool that loaded
+LibRaw otherwise, needs the check revisited.
+
 The window has no tests (ADR 0001): `VcRuntime` is tested with a fake loader and the warning line
 was checked by rendering the window offscreen with a missing DLL; the probe inside
 `AstroDarkroom.exe` is checked by hand only, by starting the launcher from a published suite
