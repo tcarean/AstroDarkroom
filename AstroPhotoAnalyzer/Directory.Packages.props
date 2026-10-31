@@ -13,6 +13,19 @@
          the paper's Dmax is read (ADR 0030). MIT, pure managed, no dependencies. Chosen over a
          hand-written reader after it matched one to the last digit on two real profiles. -->
     <PackageVersion Include="Wacton.Unicolour" Version="8.0.0" />
+    <!-- The diagnostic log beside each executable (R-170 to R-173, ADR 0069): configured in
+         code, a size-rolled text file, BSD-3-Clause, purely managed, so the console stays one
+         copyable file. The version every tool of the suite pins for the same log (FlatCheck's
+         ADR 0070, DarksCheck's ADR 0025): AstroDarkroom publishes the windows into one folder,
+         where a second version of NLog.dll would stop its release. The owner asked for NLog by
+         name on 2026-10-31. -->
+    <PackageVersion Include="NLog" Version="6.2.2" />
+    <!-- NLog's own file target with the operating system's atomic append, so two windows
+         writing one log at once lose no line (R-173): FlatCheck measured NLog's plain target
+         losing 33 to 48 lines of 4000 and this one none (its ADR 0070). Same project, commit
+         and licence as NLog, no native file of its own; taken at the owner's word of
+         2026-10-31. Keep its version equal to NLog's. -->
+    <PackageVersion Include="NLog.Targets.AtomicFile" Version="6.2.2" />
   </ItemGroup>
   <ItemGroup>
     <!-- Test host and runner (xUnit 2: no dynamic skip, which is why an absent reference

@@ -45,6 +45,15 @@
     <PackageReference Include="SixLabors.ImageSharp" />
     <!-- The tables of ICC printer profiles, for the Dmax from the profile (ADR 0030). -->
     <PackageReference Include="Wacton.Unicolour" />
+    <!-- NLog, for the diagnostic log only (ADR 0069): the core logs at its seams (Runs/ and the
+         four files of Input/ that read a file), never in Analysis/, Report/ or the rest of
+         Input/; the two applications configure it, in code, through Logging/LogSetup.cs.
+         Without a configuration (a library use) every call is a no-op; the test assemblies
+         configure a capture at Trace (LogCapture). NLog.Targets.AtomicFile is its file target
+         with the operating system's atomic append, so two windows writing one log lose no line
+         (R-173). -->
+    <PackageReference Include="NLog" />
+    <PackageReference Include="NLog.Targets.AtomicFile" />
   </ItemGroup>
 
   <!-- The embedded data: the Lynds catalogue of dark nebulae (ADR 0025), a 52 KB text file

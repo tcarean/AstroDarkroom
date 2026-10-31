@@ -89,6 +89,19 @@ namespace AstroPhotoAnalyzer
                 Copyright: "Copyright (c) 2022-2026 William Acton",
                 Url: "https://github.com/waacton/Unicolour",
                 Packages: new[] { "Wacton.Unicolour" }),
+            // One component, two packages of the same project: NLog.Targets.AtomicFile is NLog's
+            // own file target with atomic append, built from the same commit (d9ebf82) under the
+            // same licence. The copyright notice is the first line of LICENSE.txt at that commit,
+            // as FlatCheck read it for the same packages (its ADR 0070); the BSD terms ask for it,
+            // the conditions and the disclaimer, which THIRD-PARTY-NOTICES.md reproduces.
+            new ThirdPartyComponent(
+                Name: "NLog",
+                Role: Tr.Pick("writing the diagnostic log beside the program (the log folder), two windows into one file",
+                             "scrierea jurnalului de diagnostic langa program (folderul log), doua ferestre in acelasi fisier"),
+                Licence: "BSD-3-Clause",
+                Copyright: "Copyright (c) 2004-2024 Jaroslaw Kowalski <jaak@jkowalski.net>, Kim Christensen, Julian Verdurmen",
+                Url: "https://nlog-project.org/",
+                Packages: new[] { "NLog", "NLog.Targets.AtomicFile" }),
             new ThirdPartyComponent(
                 Name: "Lynds' Catalogue of Dark Nebulae",
                 Role: Tr.Pick("the catalogue of dust clouds (LDN, 1962), by which the clouds of a plate-solved FITS are recognized",

@@ -451,4 +451,5 @@ compatible with the GPL:
 | --- | --- | --- |
 | SixLabors.ImageSharp | reads TIFF, PNG and JPEG, and encodes the JPEGs and the 8-bit TIFF of the compression table | Six Labors Split License 1.0 (the Apache 2.0 terms for open-source software) |
 | Wacton.Unicolour | evaluates the tables of a printer ICC profile, for the paper's Dmax, for the out-of-gamut figure of the Curves Editing tab and for the Soft proof tab | MIT |
+| NLog and NLog.Targets.AtomicFile 6.2.2 | writing the diagnostic log (see "Logs"), two windows into one file | BSD-3-Clause |
 | Lynds' Catalogue of Dark Nebulae (data, not code) | the catalogue of dust clouds (LDN, 1962) by which the clouds of a plate-solved FITS are recognized | published data (Lynds 1962, ApJS 7, 1), the ADC/NASA version of 1979 distributed by CDS/VizieR as VII/7A; citing the source is the only condition |
