@@ -15,14 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StructureRows.cs - the five test rows of the structure battery, built once for the three tabs
-// that show them.
+// StructureRows.cs - the five test rows of the structure battery, built once, in one place.
 //
-// WHY IT EXISTS. The Structure and Netezire tabs show THE SAME battery - Netezire on the master
-// before and after smoothing - and the figures, the labels and the verdicts are the same, because
-// it is literally the same analyzer. (The informative rows go to Structure.) Before this file
-// each tab composed them by itself: Structure from an ItemsControl over MetricRow, the Ratio tab
-// of the time from five Grid blocks hand-written in XAML, with the labels as literals. The
+// WHY IT EXISTS. Three tabs of the time showed THE SAME battery - Structure, the Ratio tab and
+// the Netezire tab, the last two since removed (ADR 0067, ADR 0080) - and the figures, the
+// labels and the verdicts were the same, because it is literally the same analyzer. Before this
+// file each tab composed them by itself: Structure from an ItemsControl over MetricRow, the
+// Ratio tab from five Grid blocks hand-written in XAML, with the labels as literals. The
 // consequence was exactly what could be expected - when Structure got descriptions under every
 // row, Ratio was left without, and when the fifth test appeared it had to be added in two places.
 //

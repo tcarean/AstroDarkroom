@@ -1,9 +1,0 @@
-flatcheck <VERSIUNE>
-Copyright (C) 2026 Tudor Carean
-
-NETEZIRE: <TMP>/cube.fit are 3 planuri de culoare (debayerizat).
-Cititorul le-ar media intr-un singur raster, si scris inapoi ca mono fisierul ar
-pierde doua canale. Stivuieste flat-urile ca CFA (fara debayerizare) si reia.
-
-[stderr]
-EROARE: NETEZIRE: <TMP>/cube.fit are 3 planuri de culoare (debayerizat).

@@ -151,7 +151,7 @@ public class WindowSmokeTests
         });
 
     /// <summary>
-    /// The window and its seven tabs: Structura and End to end with real results in
+    /// The window and its six tabs: Structura and End to end with real results in
     /// them, the others in their opening state (their results are rendered by the tests
     /// below). An empty tab would render even with half of its templates wrong - only with
     /// data are all the bindings reached.
@@ -161,7 +161,6 @@ public class WindowSmokeTests
     {
         using var f = new SessionFixture()
             .WithFlatMaster()
-            .WithSmoothedMaster()      // the NETEZIT row and the line moved under it, in the histogram list
             .WithLightSeries(6)
             .WithRawFlats("DSC_0101.NEF", "DSC_0102.NEF");
 
@@ -178,9 +177,6 @@ public class WindowSmokeTests
             Render(new LightView { DataContext = vm.Light }, name: "tab-end-to-end");
             Render(new ExposureView { DataContext = vm.Exposure }, name: "tab-exposure");
             Render(new HistEqView { DataContext = vm.HistEq }, name: "tab-histeq-empty");
-            // Netezire starts empty, with the guide open and the button enabled - the state
-            // the user sees; its result is rendered in the dedicated test.
-            Render(new SmoothView { DataContext = vm.Smooth }, name: "tab-smoothing-empty");
             await vm.Synthetic.Pending;
             Render(new SyntheticView { DataContext = vm.Synthetic }, name: "tab-synthetic-empty");
             // Split starts empty, with the frames counted, the chips and the script - the
@@ -201,9 +197,7 @@ public class WindowSmokeTests
         Assert.True(vm.Structure.HasResult);
         Assert.True(vm.Light.HasResult);
         Assert.Equal(2, vm.Exposure.Files.Count);
-        Assert.Equal(4, vm.HistEq.Files.Count);    // master, smoothed, two frames
-        Assert.True(vm.Smooth.CanRun);
-        Assert.False(vm.Smooth.HasResult);
+        Assert.Equal(3, vm.HistEq.Files.Count);    // master, two frames
     }
 
     /// <summary>
@@ -464,68 +458,6 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// The smoothing tab WITH a result - both maps, the warning, the two batteries - and in
-    /// the refused state (a colour cube). The result comes through Populate, without a file
-    /// written, as on the histogram tab.
-    /// </summary>
-    [Fact]
-    public async Task TheSmoothTabRendersAResultAndARefusal()
-    {
-        using var f = new SessionFixture().WithFlatMaster();
-        var blotched = TestImages.From(256, 256, (x, y) =>
-            FitsTestData.Radial(256, 256)(x, y)
-            * (1 + 0.10 * Math.Exp(-((x - 60) * (x - 60) + (y - 180) * (y - 180)) / (2 * 10.0 * 10.0))));
-        var result = SmoothAnalyzer.Analyze(blotched, 12);
-
-        _sta.Invoke(() =>
-        {
-            using var errors = new BindingErrors();
-
-            var vm = new SmoothTabViewModel(_ => true);
-            vm.Attach(f.Session, CancellationToken.None);
-            vm.Populate(result);
-            Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-smoothing");
-
-            vm.ShowAfterMap = true;
-            vm.Guide.IsExpanded = false;
-            Render(new SmoothView { DataContext = vm }, name: "tab-smoothing-after");
-
-            // the scale proposal, with the table of steps
-            vm.PopulateAdvice(SmoothScaleAdvisor.Decide(0.69, SmoothScaleAdvisor.Ladder.Select(s => new SmoothScaleTrial
-            {
-                ScalePx = s,
-                TextureAfterPct = s < 200 ? 0.09 : 0.02,
-                AzimuthalDelta = s > 500 ? -0.8 : 0,
-                TextureGone = s >= 200,
-                StructureLost = s > 500,
-                RemovedPtpPct = 3,
-            }).ToList()));
-            Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-smoothing-proposal");
-            Assert.Equal(SmoothAnalyzer.DefaultScalePx, vm.ProposedScalePx);
-
-            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
-        });
-
-        Assert.True(result.RemovedFlagged);
-
-        // the refusal, through the real run on a cube
-        using var g = new SessionFixture().WithProcess();
-        File.WriteAllBytes(Path.Combine(g.ProcessDir, SirilSession.FlatMasterName),
-            FitsTestData.BuildFitsCube(32, 32, 3, (x, y, p) => 1000 + p));
-        var refused = new SmoothTabViewModel(_ => true);
-        refused.Attach(g.Session, CancellationToken.None);
-        await refused.RunAsync();
-        Assert.True(refused.HasError);
-
-        _sta.Invoke(() =>
-        {
-            using var errors = new BindingErrors();
-            Render(new SmoothView { DataContext = refused }, name: "tab-smoothing-refusal");
-            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
-        });
-    }
-
-    /// <summary>
     /// The synthetic tab with a written flat and a comparison, from hand-made profiles and an
     /// analyzer result - no file, no Adobe on the machine. Both cards visible, the map on the
     /// right, the sources panel expanded, and no binding error.
@@ -605,10 +537,10 @@ public class WindowSmokeTests
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-zoom");
             Assert.Equal(3, vm.Zoom.EffectiveZoom, 9);
 
-            // mono, and as smoothed: the note under the picture is the third, the smoothed flat's
+            // mono, and as the master: the note under the picture is the master's
             var mono = HistEqAnalyzer.Analyze(
                 FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128)), null);
-            vm.Populate(mono, HistEqKind.Smoothed);
+            vm.Populate(mono, HistEqKind.Master);
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-mono");
             vm.View.Rainbow = true;                   // the chip alone, without the view row
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-mono-rainbow");
@@ -617,7 +549,7 @@ public class WindowSmokeTests
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
             Assert.True(vm.HasResult);
             Assert.False(vm.View.IsVisible);
-            Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
+            Assert.Equal(HistEqReport.MasterVersusFrame(), vm.MasterNote);
             // a new file: back to fit, and the control wrote the effective factor below 1
             Assert.True(vm.Zoom.IsFit);
             Assert.InRange(vm.Zoom.EffectiveZoom, 0.01, 1.0);

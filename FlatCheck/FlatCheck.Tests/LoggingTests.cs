@@ -307,22 +307,22 @@ public class LoggingTests
 
     /// <summary>
     /// A refusal decided after the load has the run's start and done lines, with the load
-    /// stage: before, the path overloads of <c>--smooth</c> and <c>--synthetic</c> loaded the
+    /// stage: before, the path overloads of the file-writing modes loaded the
     /// file before the clock started, and a refusal left one bare line (the review of
     /// 2026-10-27, A9).
     /// </summary>
     [Fact]
-    public void R110_ASmoothRefusalHasItsStartAndDoneLinesWithTheLoadStage()
+    public void R110_ASyntheticRefusalHasItsStartAndDoneLinesWithTheLoadStage()
     {
         using var ws = new TempWorkspace();
         string cube = ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(Size, Size, 3, (x, y, p) => 30000));
         using var capture = LogCapture.Start();
 
-        int exit = FlatCheckCli.Run(new[] { cube, "--smooth", ws.PathTo("smooth.fit") }, new StringWriter(), new StringWriter());
+        int exit = FlatCheckCli.Run(new[] { cube, "--synthetic", ws.PathTo("synthetic.fit"), "--profiles", ws.PathTo("none") }, new StringWriter(), new StringWriter());
 
         Assert.Equal(1, exit);
-        Assert.Contains(capture.Events, e => e.Logger == "SmoothRun" && e.Message.StartsWith("smooth start " + cube, StringComparison.Ordinal));
-        Assert.Matches(@"SmoothRun smooth done refused: a cube of 3 planes in \d+ ms \(load \d+ ms\)", capture.Text);
+        Assert.Contains(capture.Events, e => e.Logger == "SyntheticRun" && e.Message.StartsWith("synthetic start " + cube, StringComparison.Ordinal));
+        Assert.Matches(@"SyntheticRun synthetic done refused: a cube of 3 planes; .* in \d+ ms \(load \d+ ms[^)]*\)", capture.Text);
     }
 
     /// <summary>
@@ -478,24 +478,21 @@ public class LoggingTests
     [InlineData("expo")]
     [InlineData("light")]
     [InlineData("synthetic")]
-    [InlineData("smooth")]
     [InlineData("against")]
     public void R110_TheLogIsTheSameInBothLanguages(string scenario)
     {
         using var ws = new TempWorkspace();
         string flat = GoldenOutputTests.Flat(ws, "flat.fit", FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.12), Size);
         string raw = GoldenOutputTests.Flat(ws, "raw.fit", FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000)), Size);
-        string cube = ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(Size, Size, 3, (x, y, p) => 30000));
         string lights = GoldenOutputTests.SeriesDir(ws, "lights", FitsTestData.Radial(Size, Size), FitsTestData.Radial(Size, Size));
 
-        // Every mode, the refusals included (synthetic: no lens matches; smooth: a cube).
+        // Every mode, the refusals included (synthetic: no lens matches).
         string[] Args(string lang) => scenario switch
         {
             "structure" => new[] { flat, "-o", ws.PathTo(lang + ".png") },
             "expo" => new[] { raw, "--expo" },
             "light" => new[] { lights, "--light", "--fov", "10", "-o", ws.PathTo(lang + ".png") },
             "synthetic" => new[] { flat, "--synthetic", ws.PathTo(lang + ".fit"), "--lens", "nothing matches this", "--profiles", ws.PathTo("none") },
-            "smooth" => new[] { cube, "--smooth", ws.PathTo(lang + ".fit") },
             "against" => new[] { flat, "--against", flat, "-o", ws.PathTo(lang + ".png") },
             _ => throw new ArgumentException(scenario),
         };

@@ -96,7 +96,6 @@ same way everywhere.
 | harta | map |
 | stopuri | stops |
 | colt / centru | corner / centre |
-| netezire / netezit | smoothing / smoothed |
 | flat sintetic | synthetic flat |
 | obiectiv / profil | lens / profile |
 | focala / diafragma | focal length / aperture |

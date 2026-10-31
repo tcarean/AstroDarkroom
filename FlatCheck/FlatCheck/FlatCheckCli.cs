@@ -16,8 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // FlatCheckCli.cs - the testable orchestration: parsing, dispatch by mode, exit code.
-// The dispatch order: --lenses -> --synthetic -> --against -> --smooth -> --histeq -> --expo
-// -> --light -> structure (the default).
+// The dispatch order: --lenses -> --synthetic -> --against -> --histeq -> --expo -> --light
+// -> structure (the default).
 //
 // WHAT IS LEFT HERE, after the core became FlatCheck.Core: exactly what is the console's and
 // nobody else's - the arguments, the choice of the mode, the writing of the map to disk and the
@@ -29,14 +29,14 @@
 // the whole table is in docs/design/thresholds.md):
 //     0  OK / PERFECT / BUN; --expo exposed right
 //     1  error (missing file, wrong argument, invalid FITS, failed fit) or input refused
-//        (INAPLICABIL, --expo on a file that is not a raw flat, --smooth on a raw or a cube,
+//        (INAPLICABIL, --expo on a file that is not a raw flat,
 //        --synthetic on a cube, without a focal length, f-stop or crop, or on a lens whose
 //        file carries no vignetting model)
-//     2  SUSPECT / ACCEPTABIL / NEDETERMINAT; --expo acceptable, low or high; --smooth
-//        --scale auto with no scale proposed; --synthetic when the lens cannot be chosen
+//     2  SUSPECT / ACCEPTABIL / NEDETERMINAT; --expo acceptable, low or high;
+//        --synthetic when the lens cannot be chosen
 //     3  PROBLEMA / REFA; --expo too low or too high
 // The verdicts are monotonic, so "anything != 0" means "not clean, take a look".
-// --histeq, --smooth, --synthetic and --lenses have no verdict: 0 only means they wrote their
+// --histeq, --synthetic and --lenses have no verdict: 0 only means they wrote their
 // output (--lenses always exits 0).
 
 using System;
@@ -134,7 +134,6 @@ namespace FlatCheck
                     case Mode.Lenses: code = RunLenses(o, stdout); break;
                     case Mode.Synthetic: code = RunSynthetic(o, stdout, stderr); break;
                     case Mode.Against: code = ExitFor(RunAgainst(o, stdout)); break;
-                    case Mode.Smooth: code = RunSmooth(o, stdout, stderr); break;
                     case Mode.Histeq: code = RunHisteq(o, stdout); break;
                     case Mode.Expo: code = ExitFor(RunExpo(o, stdout)); break;
                     case Mode.Light: code = ExitFor(RunLight(o, stdout)); break;
@@ -271,55 +270,6 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Like --histeq, it does not go through ExitFor: it has no verdict. 0 = it wrote the
-        /// smoothed flat and the maps; 1 = it refused the input (raw, cube) or failed. The FITS
-        /// file is written BEFORE the maps: it is the product, the maps are its explanation.
-        /// </summary>
-        /// <param name="o">The parsed options; <c>Smooth</c> is the FITS path to
-        /// write.</param>
-        /// <param name="w">Where the report is written.</param>
-        /// <param name="err">Where the refusal's first line goes.</param>
-        /// <returns>0 written, 1 refused, 2 with --scale auto when no scale was
-        /// proposed.</returns>
-        static int RunSmooth(Options o, TextWriter w, TextWriter err)
-        {
-            SmoothRunOutcome run;
-            if (o.ScaleAuto)
-            {
-                // The proposal first. With no texture or undetermined: no file, code 2 - it is
-                // not an error, it is "read this before you decide", what 2 means everywhere.
-                var advice = SmoothRun.Advise(o.Image, w);
-                if (advice.Refused)
-                {
-                    err.WriteLine(ErrorPrefix + advice.Refusal.Split('\n')[0]);
-                    return 1;
-                }
-                if (advice.Advice.Kind != SmoothAdviceKind.Proposed)
-                {
-                    Log.Info("no scale proposed (" + advice.Advice.Kind + "); nothing written, exit 2");
-                    return 2;
-                }
-                run = SmoothRun.Execute(advice.Frame, o.Image, advice.Advice.ScalePx, w);
-            }
-            else
-            {
-                run = SmoothRun.Execute(o.Image, o.ScalePx, w);
-                if (run.Refused)
-                {
-                    err.WriteLine(ErrorPrefix + run.Refusal.Split('\n')[0]);
-                    return 1;
-                }
-            }
-            using (var fs = new FileStream(o.Smooth, FileMode.Create, FileAccess.Write))
-                SmoothRun.WriteFits(run, o.Image, fs);
-            Log.Info("wrote " + o.Smooth + " (" + LogText.FileKiB(o.Smooth) + ")");
-            w.WriteLine(SmoothReport.SavedLine(o.Smooth));
-            SaveMap(o.OutPng, run.Png, w);
-            SaveMap(AfterMapPath(o.OutPng), run.SecondaryPng, w);
-            return 0;
-        }
-
-        /// <summary>
         /// The profile sources: by default the machine's (the Adobe folders and the lensfun/
         /// beside the exe); with --profiles &lt;dir&gt;, the folder given (with .lcp files
         /// anywhere in it) and its lensfun/ subfolder. That is how the tests run too, on XML
@@ -350,7 +300,7 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// --synthetic: like --smooth, without a verdict. 0 = it wrote the flat; 1 = the
+        /// --synthetic: like --histeq, without a verdict. 0 = it wrote the flat; 1 = the
         /// reference refused or something not to be found (focal length, aperture, crop); 2 =
         /// the lens could not be chosen (none or too many) - "read the list before you
         /// decide", what 2 means everywhere.
@@ -386,19 +336,6 @@ namespace FlatCheck
             var run = AgainstRun.Execute(o.Image, o.Against, w);
             SaveMap(o.OutPng, run.Png, w);
             return run.Result.Verdict;
-        }
-
-        /// <summary>
-        /// The path of the smoothed flat's residual map: the same name, with "-after" before the
-        /// extension, in both languages (R-103). "map.png" -> "map-after.png".
-        /// </summary>
-        /// <param name="path">The main map's path (-o).</param>
-        /// <returns>The second map's path, in the same folder.</returns>
-        internal static string AfterMapPath(string path)
-        {
-            string dir = Path.GetDirectoryName(path);
-            string name = Path.GetFileNameWithoutExtension(path) + "-after" + Path.GetExtension(path);
-            return string.IsNullOrEmpty(dir) ? name : Path.Combine(dir, name);
         }
 
         /// <summary>Writes a map to disk, overwriting, and announces it.</summary>
@@ -445,15 +382,12 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <sky_flat.NEF> --expo --sky   # exposure for sky flats");
             w.WriteLine("  flatcheck <flat.NEF> --histeq -o <picture.png>   # Siril's \"Histogram\" view, per channel");
             w.WriteLine("  flatcheck <flat.NEF> --histeq --rainbow -o <picture.png>   # the same in Siril's false colours (one layer)");
-            w.WriteLine("  flatcheck <flat.fit> --smooth <smoothed.fit>     # smoothed flat: no texture, dust or spots");
             w.WriteLine("  flatcheck <reference.fit> --synthetic <synthetic.fit> --lens <text>   # synthetic flat from the lens profile");
             w.WriteLine("  flatcheck --lenses [--lens <text>]      # the lenses with a vignetting profile (Adobe on disk, lensfun/ beside the exe)");
             w.WriteLine("  flatcheck <A.fit> --against <B.fit>     # how much and how two flats differ (e.g. real against synthetic)");
             w.WriteLine("  optional: -o, --out <output.png> | --sat <white> --black <lvl> (for --expo)");
             w.WriteLine("            --pattern <pattern> (for --light on a folder; default pp_light_*.fit)");
             w.WriteLine("            --fov <degrees> (the field's diagonal, when the header does not give it)");
-            w.WriteLine($"            --scale <px>|auto (for --smooth: the smoothing scale on the sensor, default {SmoothAnalyzer.DefaultScalePx:F0};");
-            w.WriteLine("                         'auto' proposes it from the master and smooths at it, or exits with 2 and no file)");
             w.WriteLine("            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (for --synthetic");
             w.WriteLine("                         and for structure with --lens/--raw; the focal length and the aperture come from the raw or");
             w.WriteLine("                         from FOCALLEN when not given; the crop from the lensfun database)");
@@ -471,10 +405,6 @@ namespace FlatCheck
             w.WriteLine("so it shows the shape of what is not uniform, not how large it is. Exits with 0 once written.");
             w.WriteLine("--rainbow colours that picture with Siril's rainbow table (magenta = lowest level, red = highest):");
             w.WriteLine("the mosaic on a CFA frame, the channel on mono. The colours are ranks, not values.");
-            w.WriteLine();
-            w.WriteLine("--smooth writes a second master that keeps everything smooth and removes the diffuser's");
-            w.WriteLine("texture, the dust and the spots. It gives no verdict; it reports WHAT IT REMOVED, and writes the map");
-            w.WriteLine("of that component at -o (plus the residual of the smoothed flat, with the suffix -after).");
             w.WriteLine();
             w.WriteLine("--synthetic writes a radial flat from the lens's published vignetting profile -");
             w.WriteLine("its model, achromatic, with no dust and no light source at all. --against compares it");
@@ -496,15 +426,12 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer");
             w.WriteLine("  flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea \"Histogram\" din Siril, pe canale");
             w.WriteLine("  flatcheck <flat.NEF> --histeq --rainbow -o <poza.png>   # la fel, in culorile false din Siril (un strat)");
-            w.WriteLine("  flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fara textura, praf, pete");
             w.WriteLine("  flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului");
             w.WriteLine("  flatcheck --lenses [--lens <text>]      # obiectivele cu profil de vignetare (Adobe de pe disc, lensfun/ de langa exe)");
             w.WriteLine("  flatcheck <A.fit> --against <B.fit>     # cat si cum difera doua flaturi (ex. real fata de sintetic)");
             w.WriteLine("  optional: -o, --out <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
             w.WriteLine("            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)");
             w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
-            w.WriteLine($"            --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit {SmoothAnalyzer.DefaultScalePx:F0};");
-            w.WriteLine("                         'auto' o propune din master si netezeste la ea, sau iese cu 2 fara fisier)");
             w.WriteLine("            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (pt --synthetic");
             w.WriteLine("                         si pt structura cu --lens/--raw; focala si diafragma vin din raw sau din FOCALLEN");
             w.WriteLine("                         cand nu le dai; crop-ul din baza lensfun)");
@@ -522,10 +449,6 @@ namespace FlatCheck
             w.WriteLine("deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.");
             w.WriteLine("--rainbow coloreaza poza cu tabelul rainbow din Siril (magenta = nivelul cel mai jos, rosu = cel mai sus):");
             w.WriteLine("mozaicul pe un cadru CFA, canalul pe mono. Culorile sunt ranguri, nu valori.");
-            w.WriteLine();
-            w.WriteLine("--smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura");
-            w.WriteLine("difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta");
-            w.WriteLine("acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -after).");
             w.WriteLine();
             w.WriteLine("--synthetic scrie un flat radial din profilul de vignetare publicat al obiectivului -");
             w.WriteLine("modelul lui, acromatic, fara praf si fara nicio sursa de lumina. --against il compara");

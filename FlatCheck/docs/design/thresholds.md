@@ -31,11 +31,7 @@ the last inline ones there and the `--expo` midpoints). Full picture:
 | standard error of the mean | light, series | 2.0 pts | | `Th.LightSeriesSemMax` |
 | \|corr(radPct, planePct)\| | light, series | 0.70 | | `Th.LightSeriesSkyCorr` |
 | frame count | light, series | ≥ 5 | | `Th.LightSeriesMinFrames` |
-| worst tile of the removed component | smooth | 2 % = warning only, never a verdict | | `Th.SmoothKeptWarn` |
 | request vs the profile used (focal, f-stop) | synthetic, structure `--raw`/`--lens` | 1 mm or 5 % on the focal, 0.5 stops on the aperture = warning only, never a verdict | | `Th.ProfileFocalTolMm/Frac`, `Th.ProfileStopsTol` |
-| fine texture of the input | smooth, `--scale auto` | 0.20 % = "nothing to smooth" below | | `Th.SmoothTextureMin` |
-| fine texture of the output | smooth, `--scale auto` | 0.05 % = texture gone below | | `Th.SmoothTextureGone` |
-| drop in azimuthal asymmetry or tilt | smooth, `--scale auto` | 0.5 pts = scale too large above | | `Th.SmoothScaleLoss` |
 | centre clipping | expo | 0.05% | - | `Th.ExpoClip` |
 | saturated pixel (what clipping counts) | expo | at or above 98 % of white | - | `Th.ExpoClipWhite` |
 | centre level | expo | 50-65% | - | `Th.ExpoLo/Hi` |
@@ -82,11 +78,7 @@ Since phase 8 the tool is usable from a script:
 
 Verdict severity is monotonic, so "anything non-zero" means "not clean, go look".
 `--histeq` has no verdict and does not go through `ExitFor`: 0 means the picture was
-written, 1 that it could not be. `--smooth` likewise: 0 means the smoothed flat and its
-maps were written, 1 that the input was refused (raw, cube) or the file could not be;
-with `--scale auto`, 2 means no file was written because there was nothing to smooth or
-the scale was undetermined - "read this before you decide", the meaning 2 has elsewhere.
-`--synthetic` follows the same shape: 0 written, 1 refused (a colour cube, a focal
+written, 1 that it could not be. `--synthetic` has the same shape: 0 written, 1 refused (a colour cube, a focal
 length, f-stop or crop factor nobody could supply, or a lens whose file carries no
 vignetting model, ADR 0071), 2 the lens could not be chosen from
 the text (none, or several - the candidates are printed). `--lenses` is always 0.

@@ -10,15 +10,12 @@ Utilizare:
   flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer
   flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea "Histogram" din Siril, pe canale
   flatcheck <flat.NEF> --histeq --rainbow -o <poza.png>   # la fel, in culorile false din Siril (un strat)
-  flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fara textura, praf, pete
   flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului
   flatcheck --lenses [--lens <text>]      # obiectivele cu profil de vignetare (Adobe de pe disc, lensfun/ de langa exe)
   flatcheck <A.fit> --against <B.fit>     # cat si cum difera doua flaturi (ex. real fata de sintetic)
   optional: -o, --out <iesire.png> | --sat <white> --black <lvl> (pt --expo)
             --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)
             --fov <grade> (diagonala campului, daca headerul n-o da)
-            --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit 300;
-                         'auto' o propune din master si netezeste la ea, sau iese cu 2 fara fisier)
             --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (pt --synthetic
                          si pt structura cu --lens/--raw; focala si diafragma vin din raw sau din FOCALLEN
                          cand nu le dai; crop-ul din baza lensfun)
@@ -36,10 +33,6 @@ fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.
 deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.
 --rainbow coloreaza poza cu tabelul rainbow din Siril (magenta = nivelul cel mai jos, rosu = cel mai sus):
 mozaicul pe un cadru CFA, canalul pe mono. Culorile sunt ranguri, nu valori.
-
---smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura
-difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta
-acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -after).
 
 --synthetic scrie un flat radial din profilul de vignetare publicat al obiectivului -
 modelul lui, acromatic, fara praf si fara nicio sursa de lumina. --against il compara

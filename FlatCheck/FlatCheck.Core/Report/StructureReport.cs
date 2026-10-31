@@ -639,8 +639,8 @@ namespace FlatCheck
             => LocalSpotValue(r.LocalSpotPct, r.LocalSpotX, r.LocalSpotY);
 
         /// <summary>
-        /// The same wording for a spot measured on another raster - the smoothing mode reads it
-        /// from the removed component, not from the structure's residual.
+        /// The wording of a spot given by its figures; the overload above reads them from the
+        /// result.
         /// </summary>
         /// <param name="pct">The spot's depth, percent, signed.</param>
         /// <param name="x">Its column, analysis raster pixels.</param>
@@ -659,7 +659,7 @@ namespace FlatCheck
         {
             // What rounds to zero IS SHOWN as zero: .NET keeps the sign of a negative zero and
             // "-0.00001" came out "-+0.00" (the format's positive section, with the negative
-            // zero's minus in front). Measured on the smoothing mode's golden.
+            // zero's minus in front). Measured on a golden of the smoothing mode of the time.
             double shown = Math.Abs(pct) < 0.005 ? 0.0 : pct;
             return $"{shown:+0.00;-0.00} %{SignWord(shown)}";
         }
@@ -667,8 +667,7 @@ namespace FlatCheck
         /// <summary>
         /// A test's label, keyed by the name of the figure in <see cref="StructureResult"/>,
         /// like <see cref="TestNote"/>. It is what WriteBody prints in front of the figure; the
-        /// smoothing report reuses it in its "inainte / dupa" table, so that the two reports name
-        /// the tests the same way.
+        /// against and split reports reuse it, so that no report names a test differently.
         /// </summary>
         /// <param name="metric">One of <see cref="TestKeys"/>.</param>
         /// <returns>The label; null for an unknown key.</returns>

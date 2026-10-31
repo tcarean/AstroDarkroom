@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <!-- BusyOverlay - the waiting screen of a tab.
 
      It has no properties of its own: it binds to the inherited DataContext, which in any tab
-     is a TabViewModel. That way the same control works in the seven tabs that use it (all
+     is a TabViewModel. That way the same control works in the five tabs that use it (all
      but Split, which shows its own run card) without any parametrisation.
 
      It covers the whole tab, with an almost opaque background, so that the controls cannot

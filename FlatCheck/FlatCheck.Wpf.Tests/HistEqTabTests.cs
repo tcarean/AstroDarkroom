@@ -22,12 +22,10 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// The "Histogram" tab. The required behaviour: the list with the master first, the smoothed
-/// flat after it when there is one, and the frames from flats/ after them; a click computes,
-/// another click recomputes, and a click during a computation replaces it instead of
-/// waiting. The smoothed flat can also appear during the session, written by the Netezire
-/// tab - the list is rebuilt without spoiling the choice. No figures are checked here - there
-/// are none - but that the picture really changes with the file and with the view.
+/// The "Histogram" tab. The required behaviour: the list with the master first and the frames
+/// from flats/ after it; a click computes, another click recomputes, and a click during a
+/// computation replaces it instead of waiting. No figures are checked here - there are none -
+/// but that the picture really changes with the file and with the view.
 /// </summary>
 public class HistEqTabTests
 {
@@ -53,16 +51,13 @@ public class HistEqTabTests
         Assert.True(vm.Files[0].IsMaster);
         Assert.Equal("MASTER", vm.Files[0].Tag);
         Assert.True(vm.Files[0].HasTag);
-        Assert.True(vm.Files[0].ClosesGroup);     // without a smoothed flat, the line sits under the master
         Assert.Equal("process/", vm.Files[0].Where);
         Assert.Equal(f.Session.FlatMasterPath, vm.Files[0].Path);
         Assert.All(vm.Files.Skip(1), r =>
         {
             Assert.False(r.IsMaster);
-            Assert.False(r.IsSmoothed);
             Assert.Equal("", r.Tag);
             Assert.False(r.HasTag);
-            Assert.False(r.ClosesGroup);
             Assert.Equal("flats/", r.Where);
         });
         Assert.False(vm.HasError);
@@ -78,39 +73,6 @@ public class HistEqTabTests
 
         Assert.True(vm.Files[0].IsMaster);
         Assert.Equal("masters/", vm.Files[0].Where);
-    }
-
-    /// <summary>
-    /// Case A: the smoothed file exists at opening. The second row, chip NETEZIT, not
-    /// master; the line under the group moves under it.
-    /// </summary>
-    [Fact]
-    public void ASmoothedMasterPresentAtOpenIsListedSecond_TaggedNetezit()
-    {
-        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster().WithRawFlats("DSC_0001.NEF");
-
-        var vm = Attached(f);
-
-        Assert.Equal(new[] { "MASTER", "NETEZIT", "" }, vm.Files.Select(r => r.Tag));
-        HistEqFileRow smoothed = vm.Files[1];
-        Assert.False(smoothed.IsMaster);
-        Assert.True(smoothed.IsSmoothed);
-        Assert.True(smoothed.HasTag);
-        Assert.Equal("pp_flat_stacked_smoothed.fit", smoothed.Name);
-        Assert.Equal("process/", smoothed.Where);
-        Assert.Equal(f.Session.SmoothedMasterPath, smoothed.Path);
-        Assert.Equal(new[] { false, true, false }, vm.Files.Select(r => r.ClosesGroup));
-    }
-
-    [Fact]
-    public void ASmoothedMasterInMastersIsListedWithItsRealFolder()
-    {
-        using var f = new SessionFixture().WithFlatMasterInMasters().WithSmoothedMaster();
-
-        var vm = Attached(f);
-
-        Assert.Equal("NETEZIT", vm.Files[1].Tag);
-        Assert.Equal("masters/", vm.Files[1].Where);
     }
 
     /// <summary>Half an answer is still an answer: the master alone can be seen.</summary>
@@ -177,27 +139,6 @@ public class HistEqTabTests
         // a mono master: a single view, so no chips
         Assert.Single(vm.View.Options);
         Assert.False(vm.View.IsVisible);
-    }
-
-    /// <summary>
-    /// The smoothed flat has its own note, not the master's; and the master keeps its own.
-    /// </summary>
-    [Fact]
-    public async Task PickingTheSmoothedMasterShowsTheSmoothedNote()
-    {
-        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster();
-        var vm = Attached(f);
-
-        vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
-
-        Assert.True(vm.HasResult);
-        Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
-        Assert.Contains("pp_flat_stacked_smoothed.fit", vm.Report);
-
-        vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
-        Assert.Equal(HistEqReport.MasterVersusFrame(), vm.MasterNote);
     }
 
     [Fact]
@@ -455,93 +396,6 @@ public class HistEqTabTests
         Assert.Equal("", vm.MasterNote);
         Assert.Contains("flat.fit", vm.Report);
         Assert.False(gate.IsHeld);
-    }
-
-    // ------------------------------------------------------------------ a file written by another
-    // tab
-
-    /// <summary>
-    /// Case B: the smoothed flat appears during the session. The list is rebuilt, the choice
-    /// stays, nothing is recomputed - the picture is the same object.
-    /// </summary>
-    [Fact]
-    public async Task AFileWrittenLaterAppearsInTheList_WithoutDisturbingTheSelection()
-    {
-        using var f = new SessionFixture().WithFlatMaster();
-        f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
-        var vm = Attached(f);
-        vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
-        ImageSource picture = vm.Image!;
-        Assert.Equal(2, vm.Files.Count);
-
-        f.WithSmoothedMaster();
-        vm.FileWritten(f.Session.SmoothedMasterPath);
-        await vm.Pending;
-
-        Assert.Equal(new[] { "MASTER", "NETEZIT", "" }, vm.Files.Select(r => r.Tag));
-        Assert.Equal(new[] { false, true, false }, vm.Files.Select(r => r.ClosesGroup));
-        Assert.NotNull(vm.Selected);
-        Assert.Same(vm.Files[2], vm.Selected);
-        Assert.Same(picture, vm.Image);
-        Assert.False(vm.IsBusy);
-    }
-
-    /// <summary>The file on the screen was rewritten: the picture is redone, otherwise it would
-    /// show bytes that no longer exist.</summary>
-    [Fact]
-    public async Task RewritingTheSelectedSmoothedFileRerunsIt()
-    {
-        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster();
-        var vm = Attached(f);
-        vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
-        ImageSource before = vm.Image!;
-
-        vm.FileWritten(f.Session.SmoothedMasterPath);
-        await vm.Pending;
-
-        Assert.Same(vm.Files[1], vm.Selected);
-        Assert.True(vm.Selected!.IsSmoothed);
-        Assert.NotSame(before, vm.Image);
-        Assert.True(vm.HasResult);
-        Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
-    }
-
-    /// <summary>The only file the tab cares about is the session's smoothed flat; anything else
-    /// moves nothing.</summary>
-    [Fact]
-    public async Task AWriteOfSomeOtherPathIsIgnored()
-    {
-        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF");
-        var vm = Attached(f);
-        vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
-        HistEqFileRow selected = vm.Selected!;
-        ImageSource picture = vm.Image!;
-
-        vm.FileWritten(f.Session.FlatMasterPath);
-        vm.FileWritten(Path.Combine(f.ProcessDir, "altceva_smoothed.fit"));
-        vm.FileWritten(null!);
-        await vm.Pending;
-
-        Assert.Equal(2, vm.Files.Count);
-        Assert.Same(selected, vm.Selected);
-        Assert.Same(picture, vm.Image);
-    }
-
-    [Fact]
-    public void FileWrittenBeforeAttachOrAfterResetIsHarmless()
-    {
-        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster();
-        var fresh = new HistEqTabViewModel();
-        fresh.FileWritten(f.Session.SmoothedMasterPath);
-        Assert.Empty(fresh.Files);
-
-        var vm = Attached(f);
-        vm.Reset();
-        vm.FileWritten(f.Session.SmoothedMasterPath);
-        Assert.Empty(vm.Files);
     }
 
     [Fact]
