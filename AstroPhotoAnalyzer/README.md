@@ -398,7 +398,8 @@ each analysis its parameters, every figure of every measurement, every recommend
 soft proof; every file the programs write for you, with its size; in the window, each run, the
 dialogs and the buttons pressed; every error with its technical details, and the problems the
 programs work around without a word (a profile or a settings file that cannot be read, a link
-that does not open); at the end the exit code and the time taken. The log's own words are English
+that does not open), though not a temporary file that a failed save could not remove; at the end
+the exit code and the time taken. The log's own words are English
 whatever `--lang` says; an error's message, a refusal and a recommendation appear as you saw
 them, so in Romanian under `--lang ro`. It holds the paths of your files and the figures measured
 on them, not their pixels.

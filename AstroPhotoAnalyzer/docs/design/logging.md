@@ -77,8 +77,10 @@ elapsed time as `Ms` or `Seconds`) and logged as plain strings, so NLog never pa
 message templates and a `{` in a path is harmless. A Debug or Trace line whose message costs
 something to build is guarded by `IsDebugEnabled` / `IsTraceEnabled`; the Info lines are built
 always, and cheap. `LogText.Str`, which every stored text goes through (a FITS value, an ICC
-profile's name, a record's text), and the Trace line of a FITS card write a control character as
-`?` (`LogText.Printable`), so a damaged file breaks no line and puts no control byte in the log.
+profile's name, a record's text, a recommendation's text and because, a profile's problem), and
+the Trace line of a FITS card write a control character (C0, DEL, C1) or a Unicode line or
+paragraph separator as `?` (`LogText.Printable`), so a damaged file breaks no line and puts no
+control byte in the log.
 
 `LogText.Figures(record, skip...)` writes a result record by one rule: every instance property,
 then every field, that is not private (so neither a record's `EqualityContract`), in declaration
@@ -106,11 +108,14 @@ the window's four from `Loggers`: `App`, `Window`, `Window.Curves`, `Window.Soft
 `Lap`. It is held in a `using`: a run that throws leaves the clock without `Done`, and `Dispose`
 writes `<run> ended without an outcome after N ms (<stages>)`, so the inputs and the stages
 reached are in the log beside the exception its caller logs. Where the core rewords an
-exception for the user (a file ImageSharp cannot identify, a `--wcs` file that cannot be read, a
-save the system refuses over the input), it writes the original with its stack at Warn where it
-catches it and throws the user's exception without an inner one: the window's `Describe` joins
-every inner message into what it shows, and an inner exception added a paragraph there that the
-user never saw before the log (the review of 2026-10-31). `AnalysisRun.Execute` starts its
+exception for the user and drops the original (a file ImageSharp cannot identify, a `--wcs` file
+that cannot be read, a save the system refuses over the input), it writes the original with its
+stack at Warn where it catches it and throws the user's exception without an inner one: the
+window's `Describe` joins every inner message into what it shows, and an inner exception added a
+paragraph there that the user never saw before the log (the review of 2026-10-31).
+`AtomicFile.Write`, which rewords a temporary file it cannot create, keeps the original as the
+inner exception instead, since `Input/AtomicFile.cs` holds no logger: its caller logs the
+exception with both stacks, and `Describe` skips an inner message the outer one already holds. `AnalysisRun.Execute` starts its
 clock before the load (both overloads, one private body, `Run`), so a file that does not load
 still leaves the start line; a linear image is a done line `refused: ...` with its median, then
 the throw. `CurveRun.Execute` and `ProofRun.Prepare` write their refusals (a problem, no profile)
@@ -126,7 +131,7 @@ as done lines too, as the tab shows them.
 | `FitsReader` | Debug, Trace | the keywords that decide the reading and the WCS (`LogText.FitsKeys`) for the analysed FITS and for a `--wcs` file; every card at Trace, HISTORY and COMMENT included |
 | `ImageSharpReader` | Debug, Warn | what `Image.Identify` found (format, size, bits per pixel, frames) and the facts read from it; a file it cannot identify, with ImageSharp's exception |
 | `IccPaperBlack` | Info, Warn, Debug | one line per profile read with its figures or its problem; a file that cannot be read, and the package's exception on a damaged table, with the exception; a folder listed with its counts and time, a folder that cannot be listed, a file skipped |
-| `AnalysisRun` | Info, Debug | the clock `analysis`, inputs the path and every parameter, stages `load`, `wcs`, `file`, `tones`, `simulation`, `noise`, `background`, `stars`, `size`, `quantization`, `jpeg`, `recommendations`, `report`, done `verdict=... recommendations=N <W>x<H> workingSet=...`; at Debug the WCS when there is one, every result's figures as soon as it is measured, one line per recommendation with its text and because as shown; a `--wcs` file that cannot be read, with the reader's exception |
+| `AnalysisRun` | Info, Debug, Warn | the clock `analysis`, inputs the path and every parameter, stages `load`, `wcs`, `file`, `tones`, `simulation`, `noise`, `background`, `stars`, `size`, `quantization`, `jpeg`, `recommendations`, `report`, done `verdict=... recommendations=N <W>x<H> workingSet=...`; at Debug the WCS when there is one, every result's figures as soon as it is measured, one line per recommendation with its text and because as shown; a `--wcs` file that cannot be read, with the reader's exception |
 | `CurveRun`, `CurveExport` | Info, Debug, Warn | the clock `curves`, stages `anchors`, `gamut`, `suggestions`; the anchors with the method and the class levels, every suggestion's points and evidence; a gamut table that cannot be built, with `GamutTable.Cause`; every FITS written with its size; a save over the input the system refuses, with the system's exception |
 | `ProofRun` | Info, Debug, Warn | the clock `proof`, stages `profile`, `gamut`, `mask`, done with the share outside the paper's gamut and the profile's figures; a profile or a table that cannot be used, with `ProofProfile.Cause` or `GamutTable.Cause`; each render at Debug with its intent and time |
 | `App` | Info, Warn | the language and the file from the command line; a `--lang` refused |

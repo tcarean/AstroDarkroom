@@ -92,16 +92,16 @@ namespace AstroPhotoAnalyzer
             clock.Lap("profile");
             if (profile.Problem != null)
             {
-                Log.Warn(profile.Cause, "profile " + path + " cannot be proofed: " + profile.Problem);
-                clock.Done("refused: " + profile.Problem);
+                Log.Warn(profile.Cause, "profile " + path + " cannot be proofed: " + LogText.Str(profile.Problem));
+                clock.Done("refused: " + LogText.Str(profile.Problem));
                 return new ProofSet { Problem = profile.Problem };
             }
             GamutTable gamut = GamutAnalyzer.Build(path);
             clock.Lap("gamut");
             if (gamut.Problem != null)
             {
-                Log.Warn(gamut.Cause, "the gamut table of " + path + " cannot be built: " + gamut.Problem);
-                clock.Done("refused: " + gamut.Problem);
+                Log.Warn(gamut.Cause, "the gamut table of " + path + " cannot be built: " + LogText.Str(gamut.Problem));
+                clock.Done("refused: " + LogText.Str(gamut.Problem));
                 return new ProofSet { Problem = gamut.Problem };
             }
 

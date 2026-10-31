@@ -49,10 +49,11 @@ put nine choices to the owner, each with a recommendation; the owner approved it
   `ImageSharpReader`, `IccPaperBlack`. `Analysis/`, `Report/`, `Thresholds.cs`, `Parameters.cs`,
   `Language.cs` and the rest of `Input/` hold no logger. `GamutTable` and `ProofProfile` keep the
   exception behind their `Problem` as `Cause`, which `CurveRun` and `ProofRun` log with its
-  stack. Where the core rewords an exception for the user (`ImageSharpReader`'s file it cannot
-  identify, `BorrowWcs`'s unreadable FITS, `CurveExport`'s save the system refuses over the
-  input), it logs the original with its stack where it catches it and throws the user's
-  exception as before, without an inner one.
+  stack. Where the core rewords an exception for the user and drops the original
+  (`ImageSharpReader`'s file it cannot identify, `BorrowWcs`'s unreadable FITS, `CurveExport`'s
+  save the system refuses over the input), it logs the original with its stack where it catches
+  it and throws the user's exception as before, without an inner one. `AtomicFile.Write` keeps
+  the original as the inner exception of the one it throws, and its caller logs both stacks.
 - **The figures by one rule** (D5): `LogText.Figures` writes a result record by reflection, as
   DarksCheck's does, adapted to this core: its internal members, a hand-written getter that gives
   a text left out (on this core every such getter is a sentence through `Tr.Pick`), another

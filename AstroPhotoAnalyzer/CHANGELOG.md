@@ -239,8 +239,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   two windows writing one log lose no line (BSD-3-Clause, R-173, ADR 0069), at the version every
   tool of the suite ships. The core logs in `Runs/` and in the four files of `Input/` that read
   a file, never in `Analysis/` or `Report/`; `GamutTable` and `ProofProfile` keep the exception
-  behind their problem as `Cause`, and an exception the core rewords for the user is logged
-  with its stack where it is caught; every test runs every log line on its path.
+  behind their problem as `Cause`, and an exception the core rewords for the user without
+  keeping it is logged with its stack where it is caught; every test runs every log line on its
+  path.
 - The rule "Languages" in `CLAUDE.md` says what holds after the documentation backfill: every
   comment in the code's C# files is English (the kit's ADR 0035); the tests' Romanian comments
   stay until a task of their own, the csproj, `Directory.Build.props` and XAML comments stay

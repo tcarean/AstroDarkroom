@@ -160,7 +160,7 @@ namespace AstroPhotoAnalyzer
                     clock.Lap("gamut");
                     if (gamut.Problem != null)
                     {
-                        Log.Warn(gamut.Cause, "the gamut table of " + profile + " cannot be built: " + gamut.Problem);
+                        Log.Warn(gamut.Cause, "the gamut table of " + profile + " cannot be built: " + LogText.Str(gamut.Problem));
                         gamutNote = CurveTexts.GamutUnreadable(gamut.Problem);
                         gamut = null;
                     }
@@ -277,7 +277,7 @@ namespace AstroPhotoAnalyzer
                 // quotes it (the review of 2026-10-31).
                 if (File.Exists(target) && SameLength(target, hold.Length))
                 {
-                    Log.Warn(e, "the save to " + target + " was refused while the input was held open: the target is the input by another spelling");
+                    Log.Warn(e, "the save to " + target + " was refused while the input was held open: the target is probably the input by another spelling");
                     throw new Exception(CurveTexts.SaveOverInput + " (" + e.Message + ")");
                 }
                 throw;

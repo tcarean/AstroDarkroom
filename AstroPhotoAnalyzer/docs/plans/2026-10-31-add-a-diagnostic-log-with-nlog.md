@@ -617,3 +617,25 @@ before it was taken; the bug and the two gaps got a failing test first.
    too) and its "every error", `logging.md`'s guards.
 7. **The About window's height** (left to the owner): recorded in `known-limitations.md`; a
    `ScrollViewer` would fix it, a change of the window outside this task.
+
+## The second review of 2026-10-31
+
+A second subagent reviewed the fix commit `340ccd47` alone, with the same brief. Its five
+findings were checked in the code and taken in one commit; none changes a text the user sees.
+
+1. **A profile's name could still break a log line.** The "profile is not sRGB" recommendation
+   quotes the embedded profile's name, which `IccProfileInfo` trims only at its ends, and the
+   recommendation's line wrote it as it was. The recommendation's text and because, and the
+   profile problems the curve and proof runs log, now go through `LogText.Str`; `Printable` also
+   replaces the C1 controls and the Unicode line and paragraph separators, which a v4 profile's
+   UTF-16 name can hold (`R171_AProfilesNameWithALineBreakBreaksNoLogLine`,
+   `R171_EveryControlCharacterAndLineSeparatorIsWrittenAsAQuestionMark`).
+2. **R-171 filed the clean-up of a failed save's temporary file among the probes a line shows.**
+   No line shows it, and `Input/AtomicFile.cs` holds no logger (D4): R-171 and the README now say
+   it is not logged.
+3. **The rule on reworded exceptions was stated for every case.** `AtomicFile.Write` keeps the
+   original as the inner exception, which its caller logs with both stacks; `logging.md`, ADR
+   0069 and the CHANGELOG say so.
+4. **`logging.md`'s row of `AnalysisRun` lacked Warn**, the level of the unreadable `--wcs` file.
+5. **The save over the input logged a guess as a fact.** Its line now says the target is
+   probably the input, since a read-only earlier save of the same length matches the test too.

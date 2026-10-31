@@ -84,17 +84,18 @@ namespace AstroPhotoAnalyzer
         internal static string Seconds(TimeSpan elapsed) => elapsed.TotalSeconds.ToString("F1", Inv) + " s";
 
         /// <summary>
-        /// A text that may be missing or empty: itself, its control characters written <c>?</c>
-        /// (<see cref="Printable"/>), or <c>none</c>.
+        /// A text that may be missing or empty: itself, its control characters and line separators
+        /// written <c>?</c> (<see cref="Printable"/>), or <c>none</c>.
         /// </summary>
         /// <param name="s">The text, or null.</param>
         /// <returns>The text.</returns>
         internal static string Str(string s) => string.IsNullOrEmpty(s) ? "none" : Printable(s);
 
         /// <summary>
-        /// A text with every control character written <c>?</c>, so a value read from a damaged
-        /// file (a FITS card, an ICC profile's name) breaks no line of the log and puts no control
-        /// byte in it (the review of 2026-10-31).
+        /// A text with every control character and Unicode line separator written <c>?</c>, so a
+        /// value read from a damaged file (a FITS card, an ICC profile's name, which a v4 profile
+        /// stores in UTF-16) breaks no line of the log and puts no control byte in it (the reviews
+        /// of 2026-10-31).
         /// </summary>
         /// <param name="s">The text; null gives null.</param>
         /// <returns>The text, itself when it holds no control character.</returns>
@@ -106,10 +107,14 @@ namespace AstroPhotoAnalyzer
             return sb.ToString();
         }
 
-        /// <summary>Whether a character is a control character, C0 or DEL.</summary>
+        /// <summary>
+        /// Whether a character breaks or garbles a line of the log: a control character (C0, DEL,
+        /// C1, NEL among them) or the Unicode line or paragraph separator, where editors break a
+        /// line too.
+        /// </summary>
         /// <param name="c">The character.</param>
-        /// <returns>True under the space and for DEL (127).</returns>
-        static bool IsControl(char c) => c < ' ' || c == (char)127;
+        /// <returns>True for U+0000 to U+001F, U+007F to U+009F, U+2028 and U+2029.</returns>
+        static bool IsControl(char c) => char.IsControl(c) || c == (char)0x2028 || c == (char)0x2029;
 
         /// <summary>A flag as <c>yes</c> or <c>no</c>.</summary>
         /// <param name="b">The flag.</param>

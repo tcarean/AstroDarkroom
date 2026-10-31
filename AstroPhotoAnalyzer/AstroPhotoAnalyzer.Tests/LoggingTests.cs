@@ -560,6 +560,54 @@ public partial class LoggingTests
     }
 
     /// <summary>
+    /// A profile whose name holds a line break, a line feed in a damaged v2 name or a line
+    /// separator in a v4 one, reaches the log as a question mark on every line that quotes it, the
+    /// "not sRGB" recommendation's included, so no line of the file breaks (the second review of
+    /// 2026-10-31).
+    /// </summary>
+    [Theory]
+    [InlineData(2, 0x0A)]
+    [InlineData(4, 0x2028)]
+    public void R171_AProfilesNameWithALineBreakBreaksNoLogLine(int version, int code)
+    {
+        using TempWorkspace ws = new();
+        string name = "Wide" + (char)code + "Gamut";
+        Raster r = Scenes.CleanSky();
+        string tif = ws.WriteFile("wide.tif", TiffTestData.Build16Rgb(r.W, r.H, (x, y, c) => RasterOps.Level16(r.At(c, y, x)),
+            version == 2 ? IccTestData.V2(name) : IccTestData.V4(name)));
+        using LogCapture capture = LogCapture.Start();
+
+        AnalysisRun.Execute(tif, Scenes.OnBuiltForPaper());
+
+        Assert.Contains(capture.Events, e => e.Logger == "AnalysisRun"
+            && e.Message.StartsWith("recommendation ", StringComparison.Ordinal)
+            && e.Message.Contains("(Wide?Gamut)", StringComparison.Ordinal));
+        Assert.All(capture.Events.Where(e => e.Exception == null),
+            e => Assert.DoesNotContain(e.Line, c => c < ' ' || c == (char)0x2028 || c == (char)0x2029));
+    }
+
+    /// <summary>
+    /// <c>LogText.Printable</c> writes every control character, C0, DEL and C1, and the two Unicode
+    /// line separators as a question mark, and leaves any other character as it is (the second
+    /// review of 2026-10-31).
+    /// </summary>
+    [Theory]
+    [InlineData(0x00, true)]
+    [InlineData(0x09, true)]
+    [InlineData(0x7F, true)]
+    [InlineData(0x85, true)]
+    [InlineData(0x9F, true)]
+    [InlineData(0x2028, true)]
+    [InlineData(0x2029, true)]
+    [InlineData(0xE9, false)]
+    [InlineData(0x2026, false)]
+    public void R171_EveryControlCharacterAndLineSeparatorIsWrittenAsAQuestionMark(int code, bool replaced)
+    {
+        string text = "a" + (char)code + "b";
+        Assert.Equal(replaced ? "a?b" : text, LogText.Printable(text));
+    }
+
+    /// <summary>
     /// A save the system refuses because the target is the input by another spelling is reworded
     /// for the user; the system's own exception is a Warn line with its stack where it is caught,
     /// the only place it exists (the review of 2026-10-31).
@@ -581,7 +629,7 @@ public partial class LoggingTests
         Assert.Null(e.InnerException);
         LogCapture.Captured warn = Assert.Single(capture.Events, x => x.Level == LogLevel.Warn);
         Assert.Equal("CurveExport", warn.Logger);
-        Assert.Equal("the save to " + target + " was refused while the input was held open: the target is the input by another spelling", warn.Message);
+        Assert.Equal("the save to " + target + " was refused while the input was held open: the target is probably the input by another spelling", warn.Message);
         Assert.IsAssignableFrom<IOException>(warn.Exception);
         Assert.Contains(warn.Exception!.Message, e.Message, StringComparison.Ordinal);
     }

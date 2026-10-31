@@ -270,9 +270,11 @@ namespace AstroPhotoAnalyzer
             clock.Lap("recommendations");
             if (Log.IsDebugEnabled)
             {
-                // The text and the because as the user reads them, so in the run's language.
+                // The text and the because as the user reads them, so in the run's language, through
+                // Str: the "not sRGB" warning quotes the profile's name, which a damaged or a v4
+                // profile can fill with a line break (the second review of 2026-10-31).
                 foreach (Recommendation x in res.Recommendations)
-                    Log.Debug("recommendation topic=" + x.Topic + " verdict=" + x.Verdict + " text=" + x.Text + " because=" + x.Because);
+                    Log.Debug("recommendation topic=" + x.Topic + " verdict=" + x.Verdict + " text=" + LogText.Str(x.Text) + " because=" + LogText.Str(x.Because));
             }
 
             var sw = new StringWriter();
