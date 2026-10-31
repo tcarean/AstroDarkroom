@@ -26,7 +26,9 @@
 // that opens dialogs can no longer be tested.
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -43,6 +45,16 @@ namespace AstroPhotoAnalyzer.Wpf
         string _saveMessage, _saveError;
         bool _hasResult;
         AnalysisResult _result;
+
+        // The runs of this view-model, numbered from 1 in the diagnostic log, so two runs of one
+        // image are told apart (R-171).
+        int _runs;
+
+        /// <summary>
+        /// The diagnostic log: each run's start and outcome, the profile in use, the report saved,
+        /// a refused field (R-171, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         // The words the console prints after -o ("-> raport salvat: <file>"), without the arrow.
         static string SavedPrefix => Tr.Pick("report saved: ", "raport salvat: ");
@@ -76,11 +88,16 @@ namespace AstroPhotoAnalyzer.Wpf
             SoftProof = new SoftProofTabViewModel();
 
             if (_settings.IccProfilePath != null)
-                Parameters.RestoreProfile(new IccProfileRow(IccPaperBlack.Read(_settings.IccProfilePath)));
+            {
+                var row = new IccProfileRow(IccPaperBlack.Read(_settings.IccProfilePath));
+                Parameters.RestoreProfile(row);
+                Log.Info("profile restored from the settings: " + row.File + " readable=" + LogText.Yes(row.Readable));
+            }
             // Subscribed after the restore: what was just read back need not be written again.
             Parameters.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName != nameof(ParameterFields.Profile)) return;
+                Log.Info(Parameters.Profile == null ? "profile cleared" : "profile in use: " + Parameters.Profile.File);
                 _settings.IccProfilePath = Parameters.Profile?.File;
                 _settings.Write();
             };
@@ -214,9 +231,39 @@ namespace AstroPhotoAnalyzer.Wpf
         /// Runs (again) on the chosen image, with the fields as they are now: a bad field sets
         /// <see cref="Error"/> and runs nothing; otherwise the tabs are cleared, the core runs on
         /// a pool thread, and the tabs are filled, or <see cref="Error"/> gets the exception's
-        /// messages. Nothing happens without a path or while a run is on.
+        /// messages. Nothing happens without a path or while a run is on. Each run is numbered in
+        /// the diagnostic log, with its outcome, and its failure with the exception's stack, which
+        /// the screen does not show (R-171).
         /// </summary>
         internal async Task RunAsync()
+        {
+            try
+            {
+                await RunCoreAsync();
+            }
+            catch (Exception e) when (LogUnhandled(e))
+            {
+                // never taken: the filter writes the exception and lets it go on as before
+            }
+        }
+
+        /// <summary>
+        /// Writes an exception that leaves <see cref="RunAsync"/>, whose task the window's buttons
+        /// discard, at Error, and marks it written, so the hook of a task nobody awaited names it
+        /// instead of writing it again (ADR 0069, after LightsCheck's ADR 0029). A filter: the
+        /// exception goes on as before.
+        /// </summary>
+        /// <param name="e">The exception; not null.</param>
+        /// <returns>False, always: the exception is not caught.</returns>
+        internal static bool LogUnhandled(Exception e)
+        {
+            Log.Error(e, "a run failed with an exception the window does not handle; it shows no result");
+            LogSetup.Wrote(e);
+            return false;
+        }
+
+        /// <summary>The body of <see cref="RunAsync"/>.</summary>
+        async Task RunCoreAsync()
         {
             if (!HasPath || IsBusy) return;
 
@@ -225,7 +272,12 @@ namespace AstroPhotoAnalyzer.Wpf
             SaveMessage = null;
             SaveError = null;
             Parameters p = Parameters.TryBuild(out string bad);
-            if (p == null) { Error = bad; return; }
+            if (p == null)
+            {
+                Log.Warn("refused: " + bad);
+                Error = bad;
+                return;
+            }
 
             Error = null;
             HasResult = false;
@@ -234,11 +286,15 @@ namespace AstroPhotoAnalyzer.Wpf
             BusyMessage = Tr.Pick("reading", "citire");
             var progress = new Progress<string>(stage => BusyMessage = stage);
             string path = Path;
+            int run = ++_runs;
+            var clock = Stopwatch.StartNew();
+            Log.Info("run " + LogText.Int(run) + " started: path=" + path);
             try
             {
                 _result = await Task.Run(() => AnalysisRun.Execute(path, p, progress)).ConfigureAwait(true);
                 Populate(_result);
                 HasResult = true;
+                Log.Info("run " + LogText.Int(run) + " done in " + LogText.Ms(clock.ElapsedMilliseconds) + ": verdict=" + _result.Overall);
                 // The curves follow the analysis without a press (R-146, ADR 0051): the window is
                 // free meanwhile, the tab says "computing" until they are there. ComputeAsync
                 // catches its own exceptions, so the task never faults.
@@ -246,8 +302,16 @@ namespace AstroPhotoAnalyzer.Wpf
                 // The soft proof too (R-163, ADR 0066): its own run, independent of the curves'.
                 ProofComputation = SoftProof.ComputeAsync();
             }
+            catch (RefusedImageException e)
+            {
+                // A linear image is a refusal, not a failure: the run's done line has its figures.
+                Log.Warn("run " + LogText.Int(run) + " refused after " + LogText.Ms(clock.ElapsedMilliseconds) + ": " + e.Message);
+                _result = null;
+                Error = Describe(e);
+            }
             catch (Exception e)
             {
+                Log.Error(e, "run " + LogText.Int(run) + " failed after " + LogText.Ms(clock.ElapsedMilliseconds) + "; the window shows the message");
                 _result = null;
                 Error = Describe(e);
             }
@@ -273,11 +337,13 @@ namespace AstroPhotoAnalyzer.Wpf
             try
             {
                 ReportWriter.SaveFull(_result, file);
+                Log.Info(LogText.Wrote(file));
                 SaveError = null;
                 SaveMessage = SavedPrefix + file;
             }
             catch (Exception e)
             {
+                Log.Warn(e, "the report could not be written to " + file + "; the window shows the message");
                 SaveMessage = null;
                 SaveError = Describe(e);
             }

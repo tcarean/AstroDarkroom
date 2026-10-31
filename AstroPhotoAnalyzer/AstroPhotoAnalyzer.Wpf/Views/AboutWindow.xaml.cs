@@ -18,9 +18,12 @@
 // AboutWindow.xaml.cs - the "Despre" window: GPLv3 section 5(d) asks an interactive program to
 // show its notice. Only the dark title bar and the opening of links remain here.
 
+using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -39,9 +42,12 @@ namespace AstroPhotoAnalyzer.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         }
 
+        /// <summary>The diagnostic log: a link that could not be opened (R-171, ADR 0069).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
         /// <summary>
         /// Opens a hyperlink in the system's browser, through the shell; a refusal by the shell
-        /// or a missing handler is swallowed.
+        /// or a missing handler is swallowed, and written to the diagnostic log at Debug.
         /// </summary>
         /// <param name="sender">The hyperlink; not read.</param>
         /// <param name="e">The navigation; its URI is opened and it is marked handled.</param>
@@ -49,8 +55,13 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             e.Handled = true;
             try { Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); }
-            catch (System.ComponentModel.Win32Exception) { }
-            catch (System.InvalidOperationException) { }
+            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+            {
+                // OriginalString, not AbsoluteUri: a relative link throws there, which is what this
+                // catch took, and would throw again out of the handler and close the window (ADR
+                // 0069, after DarksCheck's review).
+                Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
+            }
         }
 
         /// <summary>The close button.</summary>

@@ -20,6 +20,7 @@
 
 using System.Linq;
 using System.Windows;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -30,6 +31,9 @@ namespace AstroPhotoAnalyzer.Wpf
     public partial class MainWindow : Window
     {
         readonly MainViewModel _vm;
+
+        /// <summary>The diagnostic log: the dialogs, their answers, the buttons and the windows opened (R-171, ADR 0069).</summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         /// <summary>Builds the window over a view-model that remembers nothing (the tests').</summary>
         public MainWindow() : this(WindowSettings.None) { }
@@ -48,14 +52,23 @@ namespace AstroPhotoAnalyzer.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
             // The viewing windows of the Tonuri tab (R-130, R-131): the view-model asks, the
             // window opens. Non-modal, maximised, as many as the user wants.
-            _vm.Tones.MapRequested += m => new MapWindow { Owner = this, DataContext = m }.Show();
-            _vm.Tones.PreviewRequested += p => new PreviewWindow { Owner = this, DataContext = p }.Show();
+            _vm.Tones.MapRequested += m => Open("the map window", new MapWindow { Owner = this, DataContext = m });
+            _vm.Tones.PreviewRequested += p => Open("a preview window", new PreviewWindow { Owner = this, DataContext = p });
             // The Editare Curbe tab (R-146, R-147): the curve window, the save dialog and the arrow keys.
-            _vm.Curves.CurveRequested += c => new CurveWindow { Owner = this, DataContext = c }.Show();
+            _vm.Curves.CurveRequested += c => Open("a curve window", new CurveWindow { Owner = this, DataContext = c });
             _vm.Curves.SaveRequested += SaveCurve;
             // The Soft proof tab (R-163): its full-screen window (R-164), over the tab's own view-model.
-            _vm.SoftProof.ProofRequested += p => new SoftProofWindow { Owner = this, DataContext = p }.Show();
+            _vm.SoftProof.ProofRequested += p => Open("the soft proof full screen", new SoftProofWindow { Owner = this, DataContext = p });
             PreviewKeyDown += GalleryKeys;
+        }
+
+        /// <summary>Shows a secondary window, non-modal, and writes it to the diagnostic log.</summary>
+        /// <param name="what">The window, in the log's words: <c>the map window</c>, ...</param>
+        /// <param name="window">The window, built with its owner and its view-model.</param>
+        static void Open(string what, Window window)
+        {
+            Log.Info("opened " + what);
+            window.Show();
         }
 
         /// <summary>
@@ -78,7 +91,11 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>"Analizeaza": runs the analysis again with the fields as they are.</summary>
         /// <param name="sender">The button; not read.</param>
         /// <param name="e">The click; not read.</param>
-        void Analyze(object sender, RoutedEventArgs e) => _ = _vm.RunAsync();
+        void Analyze(object sender, RoutedEventArgs e)
+        {
+            Log.Info("Analyze pressed");
+            _ = _vm.RunAsync();
+        }
 
         /// <summary>
         /// "Din profil ICC...": the window with the installed profiles; "Foloseste" writes the
@@ -90,19 +107,30 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             var picker = new IccPickerViewModel();
             if (new IccPickerWindow { Owner = this, DataContext = picker }.ShowDialog() == true)
+            {
+                Log.Info("profile dialog: chose " + picker.Selected?.File);
                 _ = _vm.ChooseProfile(picker.Selected);
+            }
+            else Log.Info("profile dialog: cancelled");
         }
 
         /// <summary>"Scoate", beside the profile in the top bar: drops it and runs the analysis again (R-155).</summary>
         /// <param name="sender">The button; not read.</param>
         /// <param name="e">The click; not read.</param>
-        void ClearProfile(object sender, RoutedEventArgs e) => _ = _vm.ClearProfile();
+        void ClearProfile(object sender, RoutedEventArgs e)
+        {
+            Log.Info("Clear profile pressed");
+            _ = _vm.ClearProfile();
+        }
 
         /// <summary>"Despre", the button or F1: the about window, modal (R-119).</summary>
         /// <param name="sender">The command's source; not read.</param>
         /// <param name="e">The command's arguments; not read.</param>
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
-            => new AboutWindow { Owner = this }.ShowDialog();
+        {
+            Log.Info("About opened");
+            new AboutWindow { Owner = this }.ShowDialog();
+        }
 
         /// <summary>
         /// The open dialog, filtered to the extensions the core reads; a chosen file is opened
@@ -117,7 +145,12 @@ namespace AstroPhotoAnalyzer.Wpf
                 Filter = Tr.Pick($"Images ({patterns})|{patterns}|All files|*.*", $"Imagini ({patterns})|{patterns}|Toate fisierele|*.*"),
                 Multiselect = false,
             };
-            if (dlg.ShowDialog(this) == true) _ = _vm.OpenAsync(dlg.FileName);
+            if (dlg.ShowDialog(this) == true)
+            {
+                Log.Info("open dialog: chose " + dlg.FileName);
+                _ = _vm.OpenAsync(dlg.FileName);
+            }
+            else Log.Info("open dialog: cancelled");
         }
 
         /// <summary>
@@ -155,7 +188,12 @@ namespace AstroPhotoAnalyzer.Wpf
                 Filter = "FITS|*.fit",
                 DefaultExt = ".fit",
             };
-            if (dlg.ShowDialog(this) != true) return;
+            if (dlg.ShowDialog(this) != true)
+            {
+                Log.Info("curve save dialog: cancelled");
+                return;
+            }
+            Log.Info("curve save dialog: chose " + dlg.FileName);
             System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
             try { _vm.Curves.Save(dlg.FileName); }
             finally { System.Windows.Input.Mouse.OverrideCursor = null; }
@@ -176,7 +214,12 @@ namespace AstroPhotoAnalyzer.Wpf
                 Filter = "Text|*.txt",
                 DefaultExt = ".txt",
             };
-            if (dlg.ShowDialog(this) == true) _vm.SaveReport(dlg.FileName);
+            if (dlg.ShowDialog(this) == true)
+            {
+                Log.Info("report save dialog: chose " + dlg.FileName);
+                _vm.SaveReport(dlg.FileName);
+            }
+            else Log.Info("report save dialog: cancelled");
         }
     }
 }

@@ -33,6 +33,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -166,6 +167,12 @@ namespace AstroPhotoAnalyzer.Wpf
     /// </summary>
     public sealed class CurvesTabViewModel : ResultTabViewModel
     {
+        /// <summary>
+        /// The diagnostic log: a computation that failed or was superseded, a save that failed;
+        /// the core's CurveRun writes each computation's start and outcome (R-171, ADR 0069).
+        /// </summary>
+        static readonly Logger Log = LogManager.GetLogger(Loggers.Curves);
+
         AnalysisResult _result;
 
         // The curves are computed once, for print; the set for the screen is the same without
@@ -351,14 +358,17 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 CurveSet set = await Task.Run(() => CurveRun.Execute(result, CurvePurpose.Print, w, h));
                 if (run == _run) Show(set);
+                else Log.Debug("computation " + LogText.Int(run) + " ended after a newer one started; nothing is shown");
             }
             catch (Exception e)
             {
                 if (run == _run)
                 {
+                    Log.Error(e, "computation " + LogText.Int(run) + " failed; the tab shows the message");
                     Reset();
                     Message = MainViewModel.Describe(e);
                 }
+                else Log.Debug(e, "computation " + LogText.Int(run) + " failed after a newer one started; nothing is shown");
             }
             finally
             {
@@ -475,6 +485,7 @@ namespace AstroPhotoAnalyzer.Wpf
             }
             catch (Exception e)
             {
+                Log.Warn(e, "the curve could not be saved to " + path + "; the tab shows the message");
                 SaveMessage = null;
                 SaveError = MainViewModel.Describe(e);
             }
