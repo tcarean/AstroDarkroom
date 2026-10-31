@@ -1094,7 +1094,7 @@ public class StructureTabTests
 
     /// <summary>The tab on the catalog with the two 135 f/2 lenses and the range raw in place
     /// of the file in flats/, run once.</summary>
-    static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithRangePair(SessionFixture f, TempWorkspace ws, SessionSettings settings = null)
+    static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithRangePair(SessionFixture f, TempWorkspace ws, SessionSettings? settings = null)
     {
         var sources = LensProfileTestData.Sources(ws, rangePair: true);
         var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? Range135Raw() : ImageLoader.LoadInfo(path));
@@ -1104,7 +1104,7 @@ public class StructureTabTests
 
     /// <summary>The console's report for the fixture master, the range raw and a chosen lens
     /// (null: none chosen).</summary>
-    static string RangeReport(SessionFixture f, ProfileSources sources, string lensKey)
+    static string RangeReport(SessionFixture f, ProfileSources sources, string? lensKey)
     {
         var expected = new StringWriter();
         RunReport.WriteBanner(expected);

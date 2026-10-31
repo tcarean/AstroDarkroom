@@ -1108,8 +1108,8 @@ verdict when there is one, each row with its description under it; plus the resi
 
 Under the tests stands **the vignetting against the lens's profile**. When `flats/` holds a raw, the
 run is the console's with `--raw` on the first of them (the lens and the aperture from the raw, the
-crop from the lensfun database by `INSTRUME`): one row per profile, the row that gives the verdict in
-bold, the depth scale as a table of four bands in stops (the same residual scale, translated, not a
+crop from the lensfun database by `INSTRUME`): one row per profile, the row that gives the verdict
+marked with an accent bar, a lighter background and the words **gives the verdict**, the depth scale as a table of four bands in stops (the same residual scale, translated, not a
 new threshold) with the verdict's band marked, and the run's verdict, the worse of shape and depth,
 in the pill at the top, with its two parts written under it. With no raw, the card says why nothing
 could be compared, and the report stays the plain one. With the box **I didn't use any filters on

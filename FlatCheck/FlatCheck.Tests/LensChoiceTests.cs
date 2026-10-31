@@ -63,7 +63,7 @@ public class LensChoiceTests
         => sources.Catalog.Lenses.First(l => l.Name == name).Key;
 
     /// <summary>The comparison on the range raw, with or without a chosen key and a lens text.</summary>
-    static StructureOutcome Compare(StructureResult r, ProfileSources sources, string key = null, string text = null)
+    static StructureOutcome Compare(StructureResult r, ProfileSources sources, string? key = null, string? text = null)
         => StructureRun.Compare(r, Master(), new StructureQuery
         {
             Sources = sources,
