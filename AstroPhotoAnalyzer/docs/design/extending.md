@@ -97,6 +97,10 @@ Another format, or another thing written, is a decision first (the owner chose F
 input); then a writer in `Core/Input/`, called from `Core/Runs/`, that never opens the input
 for writing; **`input.md`**.
 
+**A new run, a file read or written, a dialog or a quiet catch**: its line in the diagnostic
+log, from `LogText`, never through `Tr.Pick`, a run with a `RunClock`; nothing in `Analysis/` or
+`Report/` logs; **`logging.md`**.
+
 **A new dependency**: the kit's rule "Packages" and the rule "Package notices" in `CLAUDE.md` -
 discuss first; four places, two enforced by tests; **`dependencies.md`, and ADR 0009 if the
 reasoning changes**.

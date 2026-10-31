@@ -26,7 +26,8 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   [--dmax n] [--distance m] [--sizes cm,cm,...] [--aspect w:h] [--target-bg 0..1]
   [--passepartout cm] [--frame cm] [--wcs file.fit] [--icc profile.icc] [--lang en|ro] [-o file]`;
   flags before or after the image (R-003); English without `--lang` (R-151).
-  Window: `dotnet run --project AstroPhotoAnalyzer.Wpf -- [--lang ro] <image>`
+  Window: `dotnet run --project AstroPhotoAnalyzer.Wpf -- [--lang ro] <image>`; the log's level:
+  `APA_LOG=off|...|trace` (R-172), the files in `log\` beside the executable
 - Golden console texts, after an intended output change (the rule "Golden files"):
   `APA_UPDATE_GOLDEN=1 dotnet test AstroPhotoAnalyzer.sln`
 - Window renders as PNGs without running it:
@@ -52,6 +53,7 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   them; both applications call `Runs/AnalysisRun.Execute`, and the window alone, after it,
   `Runs/CurveRun.cs` (the suggested curves and the saved FITS, ADR 0032, ADR 0051) and
   `Runs/ProofRun.cs` (the soft proof, ADR 0066), nothing else. `Thresholds.cs`, `Parameters.cs`.
+  `Logging/` configures the diagnostic log, which the two entry points start and close (ADR 0069).
 - `AstroPhotoAnalyzer/` - the console: `Program.cs`, `Options.cs`, `AnalyzerCli.cs`. Nothing else.
 - `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, seven
   tabs out. Formats, never decides; view-models are public and cannot expose a core type.
@@ -106,7 +108,8 @@ or varies a kit rule names it.
   test stays as the user sees it. Never leave a file in two languages, the pairs apart.
 - **Computed only in the core.** Nothing is computed outside `AstroPhotoAnalyzer.Core`: a new
   number, threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`,
-  never in a view-model or the console (ADR 0007).
+  never in a view-model or the console (ADR 0007). A diagnostic log line is no figure of the
+  analysis: English, composed by `LogText`, never through `Tr.Pick` (ADR 0069).
 - **Explanation is not diagnosis.** The window's explanatory texts (a row's `Description`, a
   table's `GuideParagraph`s, a field's `*Help`) are the one kind of sentence a
   view-model writes; every number in them is interpolated from `Thresholds`, `Parameters` or the
@@ -161,6 +164,7 @@ edit:
   is the 1 % rule, the simulation is a gamma curve that a real stretch undercuts).
 - `NoiseAnalyzer`, `QuantizationAnalyzer`: ADR 0015 (two tile criteria on purpose).
 - `JpegAnalyzer`: ADR 0019 (the mean error votes nothing).
+- `LogSetup`, `RunClock`, a log line anywhere: `docs/design/logging.md` and ADR 0069.
 - `SoftProof`, `ProofRun`: `docs/design/soft-proof.md` and ADR 0066 (the table holds the paper's
   colour, the display step is a scaling, the third intent is the Tonuri tab's model, no screen
   warning and no simulation box: both were measured useless).

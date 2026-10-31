@@ -32,7 +32,8 @@ shown.
 (`Report.txt`, `Raport.txt` in Romanian, beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
 and runs; `RunAsync()` validates the fields (`ParameterFields.TryBuild`), clears the
 tabs, runs `AnalysisRun.Execute` via `Task.Run`, populates the tabs, or sets `Error`
-(`Describe` joins inner messages, no stack); `SaveReport(file)` writes `WriteFull` through
+(`Describe` joins inner messages, no stack: the stack goes to the diagnostic log, where each run
+is numbered with its outcome, `logging.md`); `SaveReport(file)` writes `WriteFull` through
 `ReportWriter.SaveFull` (whole or not at all, as the console's `-o`) and tells
 the outcome rather than throwing it: `SaveMessage` ("raport salvat: " and the path) or
 `SaveError` (`Describe` of the exception: a file another program holds open, a folder that
@@ -49,8 +50,9 @@ The parameterless constructor passes `WindowSettings.None`.
 
 **`WindowSettings`** (`ViewModels/WindowSettings.cs`, R-156): one JSON object, today the key
 `iccProfile`; `Read(path)` tolerates a missing, unreadable or malformed file (no profile),
-`Write()` goes through `<file>.tmp` and one move and swallows IO and access errors; a null
-path reads and writes nothing. `InLocalAppData()` is the user's file, passed by `App`.
+`Write()` goes through `<file>.tmp` and one move and swallows IO and access errors, both writing
+the exception to the diagnostic log at Warn; a null path reads and writes nothing.
+`InLocalAppData()` is the user's file, passed by `App`.
 
 **`ParameterFields` and the profile** (R-155): `Profile` is the one place the profile lives;
 `UseProfile` sets it before the Dmax text (the `Dmax` setter drops a readable profile whose
@@ -103,6 +105,10 @@ frame of the .ico for "Despre").
 **Culture**: `App.ForceInvariantNumbers` pins `DefaultThreadCurrentCulture` and
 `CurrentCulture` to invariant at startup; `InvariantGlobalization` must **not** be set on
 the WPF project (XAML fails to load without culture data).
+
+**The diagnostic log**: `App`'s constructor starts it, before `App.xaml`'s resources load, and
+hooks the dispatcher's unhandled exceptions to it; `OnExit` closes it; the window's four loggers
+are named in `Loggers.cs` (`logging.md`, ADR 0069).
 
 **Language**: `App.OnStartup` sets the interface language from `--lang` before the first
 window; every XAML text is `{local:T En=..., Ro=...}` and every view-model text a

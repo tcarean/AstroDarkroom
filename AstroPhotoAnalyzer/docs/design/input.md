@@ -36,7 +36,11 @@ with the problem.
 ### Formats and readers (`Input/`)
 
 `ImageLoader` picks a reader **by extension** (never by sniffing) and is the only place
-that knows both. An unknown extension is an error naming the accepted ones.
+that knows both. An unknown extension is an error naming the accepted ones. It writes one line
+to the diagnostic log per image loaded, with the reader and what it recorded; `FitsReader` adds
+the keywords that decide the reading at Debug and every card at Trace, `ImageSharpReader` what
+`Image.Identify` found, and the exception ImageSharp throws travels as the inner one of the
+reader's own, so its stack reaches the log (`logging.md`).
 
 | reader | extensions | what it reads |
 |---|---|---|

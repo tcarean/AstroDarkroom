@@ -115,6 +115,12 @@ cannot write `-o`), **2** at least one Attention, **3** at least one Problem. `-
 `    -> report saved: <file>` (`    -> raport salvat: <file>` with `--lang ro`). `--lang` and its
 value are read first and stripped before the options are parsed (`language.md`).
 
+`Program.Main` starts the diagnostic log, calls `AnalyzerCli.Run` once and closes the log, each
+log call guarded; `AnalyzerCli.Run` configures nothing, so the tests and the golden tests call
+it in-process with the capture of the test assembly. Its lines go to the log only, never to
+stdout or stderr: the mode, each refusal as stderr shows it (through `Refuse`, the linear image
+included), a failure with its exception, the report written (`logging.md`).
+
 ## Golden scenes
 
 - **Golden scenes are synthetic and deterministic** (`Scenes.cs`): a dark sky with every

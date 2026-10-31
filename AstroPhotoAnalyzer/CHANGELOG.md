@@ -8,6 +8,18 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A diagnostic log, for bug reports (R-170 to R-173, ADR 0069): each application writes
+  `log\AstroPhotoAnalyzer.log` or `log\AstroPhotoAnalyzer.Wpf.log` beside its executable (or
+  under `%LOCALAPPDATA%\AstroPhotoAnalyzer\log` when that folder cannot be written), at most 5
+  files of 1 MiB each, rolled by NLog, two windows writing into one file without losing a line.
+  It holds the arguments, the machine and the runtime, every image and ICC profile read, each
+  analysis's parameters, figures, recommendations and stage times, the curves and the soft
+  proof, every file written, the window's runs, dialogs and buttons, every error with its stack,
+  those worked around included, and the exit code. The log's own words are English whatever
+  `--lang` says, an error's, a refusal's or a recommendation's text as the user saw it; nothing
+  more on stdout or stderr. `APA_LOG=off|fatal|error|warn|info|debug|trace` sets the level, Debug
+  by default.
+
 - A **Soft proof** tab, the last, modelled on Lightroom Classic's soft proofing and for
   looking only: the image through the ICC printer profile chosen for the Dmax, with the intent
   (**Perceptual**, **Relative** with black point compensation, and **Relative, no black point
@@ -223,6 +235,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- NLog 6.2.2 is the fourth third-party component, with its `NLog.Targets.AtomicFile` package so
+  two windows writing one log lose no line (BSD-3-Clause, R-173, ADR 0069), at the version every
+  tool of the suite ships. The core logs in `Runs/` and in the four files of `Input/` that read
+  a file, never in `Analysis/` or `Report/`; `GamutTable` and `ProofProfile` keep the exception
+  behind their problem as `Cause`, and the readers' exceptions travel as the inner ones; every
+  test runs every log line on its path.
 - The rule "Languages" in `CLAUDE.md` says what holds after the documentation backfill: every
   comment in the code's C# files is English (the kit's ADR 0035); the tests' Romanian comments
   stay until a task of their own, the csproj, `Directory.Build.props` and XAML comments stay

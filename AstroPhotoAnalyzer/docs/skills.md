@@ -22,7 +22,8 @@ are in `kit.json`, not here.
   words, `Runs/` chains them), then the console and the window, which only call `Runs/` (the rule
   "Computed only in the core"). `docs/design/extending.md` is the checklist per kind of change: a
   measurement, a window text, a recommendation, a parameter, a medium, an input format, a tab, a
-  dependency.
+  dependency. A new seam (a run, a file read or written, a dialog, a quiet catch) logs as
+  `docs/design/logging.md` says.
 - At step 6: numeric code is `Input/`, `Analysis/`, `Report/`, `Parameters.cs` and
   `Thresholds.cs` (the rule "Formula changes re-validate"). The golden files are regenerated with
   `APA_UPDATE_GOLDEN=1` (the rule "Golden files", the kit's ADR 0033).

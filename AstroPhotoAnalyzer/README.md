@@ -370,6 +370,45 @@ flagged:
 On a mono image there is no cast, and no region is coloured. Appendix E gives the sky's colour
 with its L\*, a\*, b\* and chroma, and the eight regions with their deltas.
 
+## Logs
+
+Both programs keep a log of what they did, for the day something goes wrong. To report a problem,
+attach the whole `log` folder: it holds what is needed to see what happened.
+
+**Where it is.** In a folder named `log` beside the program: `log\AstroPhotoAnalyzer.log` beside
+`AstroPhotoAnalyzer.exe`, `log\AstroPhotoAnalyzer.Wpf.log` beside `AstroPhotoAnalyzer.Wpf.exe`.
+When that folder cannot be written (a program under Program Files, a read-only drive), the log
+goes to `%LOCALAPPDATA%\AstroPhotoAnalyzer\log` instead, beside the window's settings, and its
+first line says so. Past 1 MiB (1,048,576 bytes, so a file ends one line past that) a file is
+left and the next one is started (`AstroPhotoAnalyzer_01.log`, `AstroPhotoAnalyzer_02.log`, ...);
+the five most recent files are kept and the older ones deleted, so the folder holds about 5 MiB
+per program at most. An analysis of a 23 MP image writes about 25 KB in the console and about
+30 KB in the window, with its curves and its soft proof, so the log keeps some two hundred of
+them. Two windows open at the same time write into the same file, each line marked with its
+process. The log is written beside the program, wherever that is: keep the program outside your
+image folders.
+
+**What is in it.** One line per event, numbers with a point: at the start the version, the
+command line, the Windows and .NET versions and the folders; every image read, with its size and
+what its file says (format, bit depth, compression, ICC profile, WCS), and for a FITS the keywords
+that decide how it is read; every ICC profile read, with its Dmax or why it cannot be used; for
+each analysis its parameters, every figure of every measurement, every recommendation with its
+"because:", the verdict and the time each stage took; the same for the suggested curves and the
+soft proof; every file the programs write for you, with its size; in the window, each run, the
+dialogs and the buttons pressed; every error with its technical details, those the programs work
+around without a word included (a profile or a settings file that cannot be read, a link that
+does not open); at the end the exit code and the time taken. The log's own words are English
+whatever `--lang` says; an error's message, a refusal and a recommendation appear as you saw
+them, so in Romanian under `--lang ro`. It holds the paths of your files and the figures measured
+on them, not their pixels.
+
+**How much.** The environment variable `APA_LOG` sets the level: `off`, `fatal`, `error`, `warn`,
+`info`, `debug` (the default) or `trace`, which adds every header card of each FITS read; `off`
+writes no log and creates no folder. In a command window, `set APA_LOG=trace` holds for the
+programs started from that window; for the window started from a shortcut or from Astro
+Darkroom, set it once with `setx APA_LOG trace` (or in Windows' environment variables) and start
+the program, or Astro Darkroom, again.
+
 ## Building
 
 The solution needs Windows, because of the window; the console's project builds alone on any

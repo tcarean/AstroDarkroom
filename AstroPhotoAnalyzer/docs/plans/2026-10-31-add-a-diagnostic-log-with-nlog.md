@@ -543,3 +543,46 @@ English, one line, at most 100 characters, saying why. No builds in the main che
 - ADR numbers collide at merge when `main` moved; check before proposing the merge.
 - A real window run at step 7 only while the owner is away from the PC; two console processes
   on one file stand in otherwise, and the plan's "What deviated" says which was done.
+
+## What deviated
+
+Written at the end of step 7, 2026-10-31. The session that planned it implemented it, on Opus,
+after the owner's approval.
+
+- **The statuses.** R-170 to R-173 turned `implemented` in step 2, with their first tests, not in
+  step 7: `RepoInvariantTests.EveryTestedRequirement_IsMarkedImplemented` refuses a row tested
+  by name and left `accepted`. R-171's example was written in step 7, as planned.
+- **The figures' rule.** `LogText.Figures` walks the types of the assembly of the record it is
+  given, not the core's alone, so its test can use a probe record of the test assembly; and the
+  names it skips are skipped at every depth (DarksCheck's at the top only), because the region
+  names that carry the user's language sit in records held by the results. `LogText.Nums` (the
+  curves' class levels) and `LogText.WorkingSet` (the analysis's done line, `workingSet=`, as
+  DarksCheck writes it per frame) were added.
+- **Two inner exceptions.** `ImageSharpReader.Load` and `AnalysisRun.BorrowWcs` wrapped the
+  reader's exception into a new one without it; they pass it on as the inner exception now, so
+  its stack reaches the log. The user's message is unchanged (it held the inner message
+  already, and `Describe` skips an inner message the outer one contains).
+- **The words.** The console's refusals go through one helper, `Refuse`; the plan's names of the
+  window's secondary windows became `opened the map window` and the like; a settings file read
+  without trouble writes nothing (the view-model's `profile restored from the settings` says
+  what was read) and each write is a Debug line.
+- **The tabs.** `Window.Curves` and `Window.SoftProof` write no `run N started` or `done` lines:
+  `CurveRun` and `ProofRun` write the start and done lines with the stages already, so the tabs
+  log only what the core cannot see (ADR 0069, "Alternatives rejected").
+- **The tests.** As planned, with these names: `R171_ALinearImageIsARefusedDoneLineNotAFailure`,
+  `R171_TheReportTheConsoleWritesIsOneLineWithItsSize` (added), and in the window
+  `R171_ALinearImageAndABadFieldAreRefusalsNotFailures`,
+  `R171_ASavedReportIsOneLineWithItsSize_AndAFailedSaveItsException`,
+  `R171_ASettingsFileThatCannotBeReadOrWrittenIsLoggedAndTheDefaultsAreUsed`.
+  `GoldenOutputTests.RunCli` and `GoldenDir` became internal for
+  `R171_TheConsoleAddsNothingToStdoutOrStderr`. No golden file moved.
+- **The About window** grows by NLog's card to 804 DIP of content in English and 819 in Romanian,
+  measured offscreen; it has no scroll bar, so on a small work area its bottom falls off the
+  screen. Recorded in `known-limitations.md`, not fixed: a task of its own if the owner wants it.
+- **Step 7, the window.** The owner had been idle ten minutes with only the Claude app in front,
+  so the real window was started: once on `de_printat.png` with `--lang ro` (41 lines, the
+  analysis, the curves and the proof, exit 0 after 25.5 s), then twice at once on two images,
+  42 whole lines each in one `AstroPhotoAnalyzer.Wpf.log`; every window closed with `WM_CLOSE`,
+  no input sent.
+- **Names.** The ADR is `0069-a-diagnostic-log-with-nlog-as-darkschecks-written-at-the-seams.md`
+  (the plan said "as-flatchecks"): DarksCheck's code is the one taken.

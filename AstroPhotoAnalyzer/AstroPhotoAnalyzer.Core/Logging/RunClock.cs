@@ -74,9 +74,6 @@ namespace AstroPhotoAnalyzer
             return new RunClock(log, run);
         }
 
-        /// <summary>The milliseconds since the start line.</summary>
-        internal long ElapsedMs => _total.ElapsedMilliseconds;
-
         /// <summary>Ends the current stage and starts the next.</summary>
         /// <param name="stage">The stage that ended: <c>load</c>, <c>tones</c>, ...</param>
         internal void Lap(string stage)
