@@ -96,4 +96,34 @@ and AstroPhotoAnalyzer point "Despre" at the suite's file.
 
 ## What deviated
 
-(filled at wrap-up)
+- **One level deeper than the table.** Reading the texts showed code of others inside two
+  components: LibRaw's `COPYRIGHT` names DCB/FBDD (3-clause BSD, in `raw_r.dll`, which exports
+  `dcb` and `fbdd`), Adobe DNG SDK pieces (MIT) and dcraw.c (no restricted code), and the X3F tools
+  (not compiled in: no `x3f_thumb_loader`); ImageSharp's `THIRD-PARTY-NOTICES.TXT` names
+  SharpZipLib (MIT), Chromium (BSD-3) and corefx (MIT) without copyright lines or texts. Under
+  the owner's "everything in the zip", their sections carry those notices and texts too (ADR
+  0014). Assumption stated, not asked: the BSD and MIT licences ask for their text in a binary
+  distribution, so "everything" reads as including them.
+- **Texts beyond the plan's list.** ImageSharp's `THIRD-PARTY-NOTICES.TXT` at `f4a2684` was
+  downloaded like the others; the DCB/FBDD header of LibRaw 0.21.1, Chromium's `LICENSE` at
+  `d522fb7` and SharpZipLib's `LICENSE.txt` at `ff2d7c3` were read from their repositories
+  without saving them, typed into the file, and compared with the sources word for word. Every
+  quoted text of the file was compared so (16, all equal).
+- **Sdcb.LibRaw's licence file** is the MIT template with `[year] [fullname]` unfilled; it is
+  shipped as it is, the package's holder (Zhou Jie) named beside it.
+- **The tests.** The checks that read only this project went to `ThirdPartyTests`, the one that
+  reads the siblings' lock files to `SuiteTests`, with a `Notices` helper; beyond the plan, that
+  test also checks the version on each `Packages:` line and each section's `Programs:` line, and
+  the lead and the published name moved into the core (`ThirdParty.Lead`, `NoticesFile`), so a
+  test pins them and compares the name with the project's `Link`.
+- **Format.** Each section opens with a `Packages:` / `Files:` / `Programs:` / `Licence:` /
+  `Project:` list, which the tests parse; the texts are quoted with `> ` as before, tabs expanded
+  and trailing spaces dropped; `<br>` was taken out of libjpeg-turbo's BSD copyright line.
+- **Verification.** The gate green (102 tests); six mutations each turned the matching test red
+  (a package name, a version, a program, a native library's section, the BSD disclaimer, and the
+  publish's runtime pack, which stopped the publish with its error); `release.ps1 -Version 1.0.0
+  -PublishOnly` published 370 files with no collision, its only new files the three at the root,
+  the two .NET ones equal to the 8.0.33 pack's that all seven `.runtimeconfig.json` name, the zip
+  holding them; "Despre" rendered offscreen at 931 / 946 DIP as before, the lead on one line in
+  both languages. The live start of the launcher from the published folder waited, the owner
+  being at the PC.

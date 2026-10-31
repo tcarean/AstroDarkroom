@@ -23,6 +23,12 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   new seam's lines join the table in `docs/design/logging.md` and R-012. A new package is a
   component in `ThirdParty.cs` and a section in `THIRD-PARTY-NOTICES.md` (`ThirdPartyTests`,
   ADR 0013); a package a component also ships takes the component's version (`SuiteTests`).
+- A package any window of the suite starts to ship, or ships at a new version, the launcher's or
+  a component's, needs its section in `THIRD-PARTY-NOTICES.md` at that version, with the
+  windows that ship it and its licence's whole text from the project's own file, read at that
+  version (R-017, ADR 0014): `SuiteTests` is red until the `Packages:` and `Programs:` lines
+  match the windows' lock files. A new version of `Sdcb.LibRaw.runtime.win64` also means reading
+  again what its four DLLs report (LibRaw, libjpeg-turbo, Little CMS, zlib) and their texts.
 
 ## /wrap-up
 
@@ -52,6 +58,9 @@ Values (the solution, the folders, the publish list, what the auditor may also r
   `release.json` and the zip `AstroDarkroom-<version>-win-x64.zip` with its `.sha256` land in
   `artifacts/`. The tag is `astrodarkroom-vX.Y.Z`. No `log` folder goes into the zip: the
   publish starts no program, and it deletes the folder a test run of the suite left first.
+  Check that the folder's root holds `LICENSE`, `THIRD-PARTY-NOTICES.txt`, `DOTNET-LICENSE.txt`
+  and `DOTNET-THIRD-PARTY-NOTICES.txt` (R-017, ADR 0014), the last two equal to the files of the
+  `Microsoft.NETCore.App` runtime pack whose version the windows' `.runtimeconfig.json` names.
 - At step 7: the owner uploads the zip to their Google Drive by hand and shares it as "Anyone
   with the link"; nothing here uploads it or asks for Drive access (ADR 0005). With the link
   the owner gives, propose a new first row of the table under `## Download` in `README.md`,

@@ -51,8 +51,10 @@ zip; it is not a seventh analysis tool and never changes a component.
   (`LoggingTests`; `LogCapture` configures the log at Trace for the whole assembly). It
   targets `net8.0-windows`, the window's framework (ADR 0012). `tests/testdata/` holds only the
   manifest.
-- `THIRD-PARTY-NOTICES.md` - the licence of each component written by others that the launcher
-  ships, whole, and why it is compatible with the GPLv3 (ADR 0013).
+- `THIRD-PARTY-NOTICES.md` - the licence of each component written by others that a program of
+  the suite folder ships, whole, with its copyright notices and why it is compatible with the
+  GPLv3; the launcher publishes it as `THIRD-PARTY-NOTICES.txt`, beside the .NET runtime's two
+  texts (R-017, ADRs 0013 and 0014). `SuiteTests` binds its sections to the windows' lock files.
 - `Icon/` - the launcher's icon, drawn per size by `make_icon.py`, and a copy of each
   component's icon, shown beside its row and kept equal to the component's file by
   `SuiteTests` (ADR 0011); never drawn here.
