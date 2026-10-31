@@ -37,11 +37,11 @@ public class GoldenOutputTests
     static string RepoDir([CallerFilePath] string thisFile = "")
         => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
 
-    static string GoldenDir => Path.Combine(RepoDir(), "AstroPhotoAnalyzer.Tests", "Golden");
+    internal static string GoldenDir => Path.Combine(RepoDir(), "AstroPhotoAnalyzer.Tests", "Golden");
 
     static bool Update => Environment.GetEnvironmentVariable("APA_UPDATE_GOLDEN") == "1";
 
-    static string RunCli(TempWorkspace ws, string lang, params string[] args)
+    internal static string RunCli(TempWorkspace ws, string lang, params string[] args)
     {
         var o = new StringWriter(); var e = new StringWriter();
         int code = AnalyzerCli.Run([.. args, "--lang", lang], o, e);

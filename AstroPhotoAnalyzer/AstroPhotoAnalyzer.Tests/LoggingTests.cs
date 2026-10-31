@@ -19,6 +19,7 @@
 // they roll, what the core and the console write, the level, two writers on one file, and where
 // the log may be configured and written. DarksCheck's tests of the same log are the model.
 
+using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -624,6 +625,120 @@ public partial class LoggingTests
         Assert.Empty(RomanianWords.In(string.Join("\n", english)));
     }
 
+    // ---------------------------------------------------------------- R-171: the console
+
+    /// <summary>
+    /// A run that fails is one line on stderr, as before, and in the log an Error line with the
+    /// exception's type, message and stack (R-171, R-002).
+    /// </summary>
+    [Fact]
+    public void R171_TheConsoleLogsAFailureWithItsStack_AndStderrKeepsOneLine()
+    {
+        using TempWorkspace ws = new();
+        byte[] whole = FitsTestData.Build(64, 64, 3, (x, y, p) => 0.3, bitpix: -32);
+        string cut = ws.WriteFile("cut-data.fit", whole[..(whole.Length / 2)]);
+        StringWriter stdout = new();
+        StringWriter stderr = new();
+        using LogCapture capture = LogCapture.Start();
+
+        int code = AnalyzerCli.Run([cut, "--lang", "en"], stdout, stderr);
+
+        Assert.Equal(1, code);
+        string error = Assert.Single(stderr.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries)).TrimEnd('\r');
+        Assert.StartsWith("ERROR: ", error, StringComparison.Ordinal);
+        LogCapture.Captured failed = Assert.Single(capture.Events, e => e.Level == LogLevel.Error);
+        Assert.Equal("Cli", failed.Logger);
+        Assert.Equal("run failed: mode=analysis", failed.Message);
+        Assert.Equal(error["ERROR: ".Length..], failed.Exception?.Message);
+        Assert.Contains("FitsReader", failed.Line, StringComparison.Ordinal);   // the stack, under the line
+        Assert.Contains("mode=analysis image=" + cut + " out=none lang=en", capture.Messages);
+    }
+
+    /// <summary>
+    /// Every refusal of the console is a Warn line holding the message stderr shows, without an
+    /// exception: a bad option, a bad --lang, a folder, a file that does not exist (R-171, R-003).
+    /// </summary>
+    [Fact]
+    public void R171_ARefusedOptionIsLoggedAtWarnAsShown()
+    {
+        using TempWorkspace ws = new();
+        string[][] runs =
+        [
+            ["x.tif", "--medium", "paper", "--lang", "en"],
+            ["x.tif", "--lang", "fr"],
+            [ws.Dir, "--lang", "en"],
+            [ws.PathTo("missing.tif"), "--lang", "en"],
+        ];
+        foreach (string[] args in runs)
+        {
+            StringWriter stderr = new();
+            using LogCapture capture = LogCapture.Start();
+
+            Assert.Equal(1, AnalyzerCli.Run(args, new StringWriter(), stderr));
+
+            string shown = stderr.ToString().Trim();
+            Assert.StartsWith("ERROR: ", shown, StringComparison.Ordinal);
+            LogCapture.Captured warn = Assert.Single(capture.Events, e => e.Level == LogLevel.Warn);
+            Assert.Equal("Cli", warn.Logger);
+            Assert.Null(warn.Exception);
+            Assert.StartsWith("refused", warn.Message, StringComparison.Ordinal);
+            Assert.EndsWith(": " + shown["ERROR: ".Length..], warn.Message, StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
+    /// The log adds nothing to the console's streams: with the capture open, a golden scene's
+    /// stdout and stderr are its golden file, byte for byte, while the log holds the run (R-171,
+    /// R-001).
+    /// </summary>
+    [Fact]
+    public void R171_TheConsoleAddsNothingToStdoutOrStderr()
+    {
+        using TempWorkspace ws = new();
+        string png = ImageFiles.SavePng8Gray(Scenes.MonoSky(), ws.PathTo("mono.png"));
+        using LogCapture capture = LogCapture.Start();
+
+        string actual = GoldenOutputTests.RunCli(ws, "en", png);
+
+        Assert.True(capture.Events.Count > 10, "the log holds " + capture.Events.Count.ToString(CultureInfo.InvariantCulture) + " lines");
+        Assert.Equal(File.ReadAllText(Path.Combine(GoldenOutputTests.GoldenDir, "mono-png8.en.txt")).Replace("\r\n", "\n"), actual);
+    }
+
+    /// <summary>The report the console writes with -o is one line with its size (R-171).</summary>
+    [Fact]
+    public void R171_TheReportTheConsoleWritesIsOneLineWithItsSize()
+    {
+        using TempWorkspace ws = new();
+        string png = ImageFiles.SavePng8Gray(Scenes.MonoSky(), ws.PathTo("mono.png"));
+        string report = ws.PathTo("report.txt");
+        using LogCapture capture = LogCapture.Start();
+
+        AnalyzerCli.Run([png, "-o", report, "--lang", "en"], new StringWriter(), new StringWriter());
+
+        Assert.True(File.Exists(report));
+        Assert.Contains(LogText.Wrote(report), capture.Messages);
+    }
+
+    /// <summary>
+    /// The real console, as the user starts it, writes the process's first line with its facts,
+    /// its own lines, and the last line with the exit code and the elapsed time into the log beside
+    /// the executable, which here is the test's output folder, which other tests' processes share.
+    /// </summary>
+    [Fact]
+    public void R171_TheRealConsoleWritesItsFirstAndItsLastLine()
+    {
+        (int pid, int code, List<string> lines) = RunTheConsole(null, "--help", "--lang", "en");
+
+        Assert.Equal(0, code);
+        Assert.True(lines.Count >= 3, "the console wrote " + lines.Count.ToString(CultureInfo.InvariantCulture) + " lines");
+        Assert.Contains(" INFO  [" + pid.ToString(CultureInfo.InvariantCulture) + ":", lines[0], StringComparison.Ordinal);
+        Assert.Contains("] Process AstroPhotoAnalyzer " + VersionInfo.Value + " starting; exe=" + ConsoleExe + "; args=[\"--help\", \"--lang\", \"en\"]; ",
+            lines[0], StringComparison.Ordinal);
+        Assert.Contains("; level=Debug; ", lines[0], StringComparison.Ordinal);
+        Assert.Contains(lines, l => l.EndsWith("] Cli mode=help", StringComparison.Ordinal));
+        Assert.Matches(@"\] Process exit 0 after \d+\.\d s$", lines[^1]);
+    }
+
     // ---------------------------------------------------------------- R-172: the level
 
     [Theory]
@@ -640,6 +755,24 @@ public partial class LoggingTests
     public void R172_TheLevelComesFromTheEnvironmentVariable(string? value, string level)
     {
         Assert.Equal(LogLevel.FromString(level), LogSetup.LevelFrom(value));
+    }
+
+    /// <summary>
+    /// The real console takes its level from <c>APA_LOG</c>, the name R-172 and the README give,
+    /// written out here so a renamed constant fails: <c>off</c> writes no line, <c>trace</c> says so
+    /// in the first line (LightsCheck's review of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void R172_TheRealConsoleTakesItsLevelFromAPA_LOG()
+    {
+        (_, int offCode, List<string> off) = RunTheConsole("off", "--help");
+        (_, int traceCode, List<string> trace) = RunTheConsole("trace", "--help");
+
+        Assert.Equal(0, offCode);
+        Assert.Equal(0, traceCode);
+        Assert.Empty(off);
+        Assert.NotEmpty(trace);
+        Assert.Contains("; level=Trace; ", trace[0], StringComparison.Ordinal);
     }
 
     [Fact]
@@ -750,6 +883,79 @@ public partial class LoggingTests
 
     /// <summary>A record held by <see cref="Probe"/>.</summary>
     private sealed record Pair(double A, int B, string Name);
+
+    /// <summary>The console's executable as the build copies it beside the tests.</summary>
+    private static string ConsoleExe => Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "AstroPhotoAnalyzer.exe" : "AstroPhotoAnalyzer");
+
+    /// <summary>
+    /// Runs the real console, without a window, its level variable as given: removed for null,
+    /// whatever the developer's own environment says. It runs in a working folder of its own,
+    /// which its first line names, and its lines are read while this test still holds its
+    /// handle, so no other process can be given its id meanwhile and an older process's lines
+    /// under the same id stay out (LightsCheck's second review of 2026-10-30).
+    /// </summary>
+    private static (int Pid, int Code, List<string> Lines) RunTheConsole(string? level, params string[] args)
+    {
+        using TempWorkspace cwd = new();
+        ProcessStartInfo start = new(ConsoleExe)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = cwd.Dir,
+        };
+        foreach (string a in args)
+        {
+            start.ArgumentList.Add(a);
+        }
+
+        start.Environment.Remove(LogSetup.LevelVariable);
+        if (level is not null)
+        {
+            start.Environment["APA_LOG"] = level;
+        }
+
+        using Process p = Process.Start(start)!;
+        Task<string> errors = p.StandardError.ReadToEndAsync();
+        p.StandardOutput.ReadToEnd();
+        Assert.True(p.WaitForExit(30_000), "AstroPhotoAnalyzer did not end within 30 s");
+        errors.Wait();
+        return (p.Id, p.ExitCode, ConsoleLinesOf(p.Id, Path.GetFileName(cwd.Dir)));
+    }
+
+    /// <summary>
+    /// The lines one console process wrote, in the log beside the executable: those of its process
+    /// id from its first line on, the one that names its working folder; none when it wrote no
+    /// first line. The files are opened sharing every access, as other tests' processes may hold
+    /// them.
+    /// </summary>
+    private static List<string> ConsoleLinesOf(int pid, string folderName)
+    {
+        string folder = Path.Combine(AppContext.BaseDirectory, LogSetup.FolderName);
+        List<string> lines = [];
+        if (!Directory.Exists(folder))
+        {
+            return lines;
+        }
+
+        string mark = " [" + pid.ToString(CultureInfo.InvariantCulture) + ":";
+        foreach (string f in LogFiles.FilesOf(folder, Exe))
+        {
+            using FileStream s = new(f, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using StreamReader r = new(s);
+            for (string? l = r.ReadLine(); l is not null; l = r.ReadLine())
+            {
+                if (l.Contains(mark, StringComparison.Ordinal) && (lines.Count > 0
+                    || (l.Contains(" starting; ", StringComparison.Ordinal) && l.Contains(folderName, StringComparison.Ordinal))))
+                {
+                    lines.Add(l);
+                }
+            }
+        }
+
+        return lines;
+    }
 
     /// <summary>Writes <paramref name="bytes"/> of lines through one executable's configuration and closes it.</summary>
     private static void WriteThrough(string folder, string executable, long bytes, string tag)
