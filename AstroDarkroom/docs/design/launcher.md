@@ -10,13 +10,14 @@
 `src/AstroDarkroom.Wpf/Icons.cs`, `src/AstroDarkroom.Wpf/AppRow.cs`,
 `src/AstroDarkroom.Wpf/MainWindow.xaml.cs`, `src/AstroDarkroom.Wpf/DarkTitleBar.cs`,
 `src/AstroDarkroom.Wpf/ScreenArea.cs`, `src/AstroDarkroom.Wpf/AboutWindow.xaml.cs`,
+`src/AstroDarkroom.Wpf/AstroDarkroom.Wpf.csproj`,
 `Icon/make_icon.py` and the icon files in `Icon/`.
 
 The launcher is two layers: a core that answers three questions about a folder (which apps
 exist, which of them are there, how to start one), reads two files (`release.json`, the
 language setting) and words every answer in one of two languages, and a window that asks those
 questions at start-up and at every change of language and shows the answers. The requirements
-are R-001 to R-010, R-015 and R-016 in `docs/requirements.md`; the choice of a compiled-in catalogue
+are R-001 to R-010 and R-015 to R-017 in `docs/requirements.md`; the choice of a compiled-in catalogue
 over a scan of the folder is ADR 0002, the split with no test project for the window is ADR
 0001, the two languages and the live switch are ADR 0006. What the launcher writes to its
 diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
@@ -79,6 +80,10 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   identifier, a copyright line, an address and its packages; all but the role are the same in
   both languages. `ThirdPartyTests` binds the list to the packages of the projects under `src/`
   and to the sections of `THIRD-PARTY-NOTICES.md`, which holds each licence's whole text.
+  `ThirdParty.NoticesFile` is the name that file has in the suite folder,
+  `THIRD-PARTY-NOTICES.txt`, and `ThirdParty.Lead` the card's lead, a pair picked at each read
+  that names it (R-015, R-017, ADR 0014); the window project publishes the file under that name,
+  which a test compares with its `Link`.
 - `WindowFit.Top(top, height, areaTop, areaHeight)` keeps a window inside a work area (R-016,
   ADR 0013): its own top when it fits, the area's top or the top that puts its bottom on the
   area's when it runs past one edge, the area's top when it is as tall as the area or taller.
@@ -132,7 +137,7 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 - `AboutWindow` takes the `ReleaseInfo` the main window read and words itself once, in its
   constructor, in the language of that moment (it is modal and made anew at every open): the
   title, the tagline, the headings, the banner, the copyright, the warranty, the third-party
-  card after the licence's (a one-line `Muted` lead, then an `ItemsControl` over
+  card after the licence's (a one-line `Muted` lead, `ThirdParty.Lead`, then an `ItemsControl` over
   `ThirdParty.Components`, each the name and the role on one line, the licence and the address
   on a `Faint` line under it and the copyright line under that; R-015, ADR 0013), the prerequisites
   card (an `ItemsControl` of `Muted` paragraphs over `Prerequisites.Details`), the release line
@@ -172,6 +177,43 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   and a call that cannot be made at all (no `dwmapi.dll`, or no such entry point) leaves a
   Debug line in the log, as LightsCheck's copy does. Message boxes are the system's and keep
   its bar.
+
+## What the window's project publishes
+
+`AstroDarkroom.Wpf.csproj` puts two texts beside `AstroDarkroom.exe`, in the build output and in
+whatever is published from it, each a `None` item of the repository's root with a `Link` for its
+name: `LICENSE`, the GPL text, which every component publishes with the same bytes, so the
+suite's merge skips the copies; and `THIRD-PARTY-NOTICES.txt`, the repository's
+`THIRD-PARTY-NOTICES.md` under the name `ThirdParty.NoticesFile` gives (R-017), which no
+component publishes.
+
+The target `PublishDotnetLicenceTexts` adds the .NET runtime's two texts to a self-contained
+publish, which carries the runtime (ADR 0014). It runs after `ComputeResolvedFilesToPublishList`
+and depends on the SDK's `ResolveFrameworkReferences`, which gives each `ResolvedRuntimePack` item
+its `PackageDirectory`, the runtime pack's folder in the NuGet cache at the version being
+published. From the item whose `FrameworkName` is `Microsoft.NETCore.App` it takes `LICENSE.TXT`
+and `THIRD-PARTY-NOTICES.TXT` into `ResolvedFileToPublish`, with the `RelativePath`s
+`DOTNET-LICENSE.txt` and `DOTNET-THIRD-PARTY-NOTICES.txt`, so they are copied unchanged; when
+either file is missing, or no such pack was resolved, its `Error` stops the publish. A
+framework-dependent publish carries no runtime and gets neither file. The WindowsDesktop pack is
+left out: its `LICENSE` has the same words, and it has no notices file (the notices file links
+WPF's repository's one instead).
+
+`ThirdPartyTests` reads the project file for the notices item's `Link`, the two published names and
+the error, and asks MSBuild what the publish would copy without publishing (`ReadPublishList`,
+run once for its two tests): `dotnet build` of the window project with the target
+`ComputeResolvedFilesToPublishList`, `RuntimeIdentifier=win-x64` and `SelfContained=true`, the
+switches of the launcher's `release.publish` entry, which the test compares with `kit.json`, and
+`-getItem:ResolvedFileToPublish`, whose JSON lists what the publish takes from the project and
+from the runtime packs, each with its `RelativePath` and `CopyToPublishDirectory`, in about a
+second once the project is built (the referenced projects' outputs are not in it: that target
+alone does not resolve them); a whole publish would cost the gate about a minute. An item left
+without `CopyToPublishDirectory` is listed as `Always`, so it is still copied. The second test
+takes the WindowsDesktop pack's version from the list's paths and checks that the notices file
+links WPF's notices at that tag. `SuiteTests` binds the notices file's `Packages:`
+and `Programs:` lines to the lock file beside each window project of `release.publish`, which
+holds the packages of the projects that window references too; a list item may go on over
+indented lines, which `Notices.Field` joins.
 
 ## The icons
 

@@ -284,7 +284,9 @@ profiles; it neither copies nor redistributes them.
 
 Every tool and the launcher are free software, under the GNU General Public License version 3 or
 (at your option) any later version: see the `LICENSE` file in each folder. What a tool ships from
-others is listed, with its licence, in the folder's `THIRD-PARTY-NOTICES.md`, where it has one.
+others is listed, with its licence, in the folder's `THIRD-PARTY-NOTICES.md`, where it has one;
+the zip holds all of it, each licence's whole text included, in `THIRD-PARTY-NOTICES.txt` beside
+`AstroDarkroom.exe`.
 
 ## Also in this repository
 

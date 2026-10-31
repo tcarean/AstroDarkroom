@@ -25,11 +25,12 @@ namespace AstroDarkroom.Tests;
 /// The suite's consistency, read from the sibling projects of the photo repository: the
 /// catalogue against the components kit.json bundles and the executables their project files
 /// build (the rule "The catalogue and kit.json agree"), and the components' frameworks and
-/// package versions (the rule "Same .NET and same packages across the suite"), and the icon
-/// copies against the components' own files. Repository facts rather than behaviour of the
-/// launcher, so not requirement-numbered, except the icon copies (R-010), which the window
-/// shows. They return early, with the reason in the output, where the sibling folders are
-/// not beside this project (a clone of this folder alone).
+/// package versions (the rule "Same .NET and same packages across the suite"), the icon copies
+/// against the components' own files, and the notices file against the packages the windows
+/// ship. Repository facts rather than behaviour of the launcher, so not requirement-numbered,
+/// except the icon copies (R-010), which the window shows, and the notices file (R-017), which
+/// the suite folder carries. They return early, with the reason in the output, where the
+/// sibling folders are not beside this project (a clone of this folder alone).
 /// </summary>
 public partial class SuiteTests
 {
@@ -197,6 +198,116 @@ public partial class SuiteTests
             Assert.Equal(Path.GetFileName(original), app.Icon);
             Assert.True(File.ReadAllBytes(original).AsSpan().SequenceEqual(File.ReadAllBytes(copy)),
                 $"Icon/{app.Icon} differs from {original}; copy the component's file over it");
+        }
+    }
+
+    /// <summary>
+    /// Every package a window of the suite resolves (the lock file beside each window project of
+    /// release.publish, which holds the packages of the projects it references too, a runtime
+    /// package for another system included) is on a section's Packages line of
+    /// THIRD-PARTY-NOTICES.md with the version it resolves, every package named there is resolved
+    /// at that version, and each such section's Programs line names exactly the windows that
+    /// resolve its packages (R-017, ADR 0014). A component that adds or updates a package turns
+    /// this red until the suite's notices cover what it ships, as its icon does (R-010).
+    /// </summary>
+    [Fact]
+    public void R017_EveryPackageOfTheWindows_IsInASectionWithItsVersion_ItsProgramsTheWindowsThatShipIt()
+    {
+        List<ComponentEntry> entries = ComponentEntries();
+        if (!SiblingsPresent(entries))
+        {
+            return;   // the sibling projects are not beside this one
+        }
+
+        Dictionary<string, (string Version, SortedSet<string> Windows)> shipped = new(StringComparer.Ordinal);
+        foreach ((string window, string lockFile) in WindowLockFiles())
+        {
+            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(lockFile));
+            foreach (JsonProperty framework in doc.RootElement.GetProperty("dependencies").EnumerateObject())
+            {
+                foreach (JsonProperty package in framework.Value.EnumerateObject())
+                {
+                    if (package.Value.GetProperty("type").GetString() == "Project"
+                        || !package.Value.TryGetProperty("resolved", out JsonElement version))
+                    {
+                        continue;
+                    }
+
+                    // One version per package across the suite is the test above's; the first one read stands.
+                    if (!shipped.TryGetValue(package.Name, out (string Version, SortedSet<string> Windows) seen))
+                    {
+                        seen = (version.GetString()!, new SortedSet<string>(StringComparer.Ordinal));
+                        shipped[package.Name] = seen;
+                    }
+
+                    seen.Windows.Add(window);
+                }
+            }
+        }
+
+        List<string> problems = [];
+        HashSet<string> named = new(StringComparer.Ordinal);
+        foreach ((string heading, string section) in Notices.Sections())
+        {
+            string? packages = Notices.Field(section, "Packages");
+            if (packages is null)
+            {
+                continue;
+            }
+
+            SortedSet<string> windows = new(StringComparer.Ordinal);
+            foreach ((string name, string version) in Notices.Named(packages))
+            {
+                named.Add(name);
+                if (!shipped.TryGetValue(name, out (string Version, SortedSet<string> Windows) s))
+                {
+                    problems.Add($"## {heading}: {name} is resolved by no window");
+                    continue;
+                }
+
+                if (version != s.Version)
+                {
+                    problems.Add($"## {heading}: {name} {version}, but the windows resolve {s.Version}");
+                }
+
+                windows.UnionWith(s.Windows);
+            }
+
+            string[] programs = (Notices.Field(section, "Programs") ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (!windows.SetEquals(programs))
+            {
+                problems.Add($"## {heading}: Programs: {string.Join(", ", programs)}; the windows that resolve its packages: {string.Join(", ", windows)}");
+            }
+        }
+
+        foreach ((string package, (string version, SortedSet<string> windows)) in shipped)
+        {
+            if (!named.Contains(package))
+            {
+                problems.Add($"{package} {version}, resolved by {string.Join(", ", windows)}, is on no section's Packages line");
+            }
+        }
+
+        Assert.True(shipped.Count > 0, "no package was read from any window's lock file");
+        Assert.True(problems.Count == 0, "THIRD-PARTY-NOTICES.md against the windows' lock files:\n  " + string.Join("\n  ", problems));
+    }
+
+    /// <summary>
+    /// Each window the release publishes, by the name the notices file uses (the product's for the
+    /// launcher, the catalogue's title for a component), with the lock file beside its project.
+    /// </summary>
+    private static IEnumerable<(string Window, string LockFile)> WindowLockFiles()
+    {
+        using JsonDocument kit = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "kit.json")));
+        foreach (JsonElement entry in kit.RootElement.GetProperty("release").GetProperty("publish").EnumerateArray())
+        {
+            string project = entry.GetProperty("project").GetString()!;
+            string window = project.StartsWith("../", StringComparison.Ordinal)
+                ? AppCatalogue.Apps.Single(a => a.Folder == project.Split('/')[1]).Title
+                : VersionInfo.Name;
+            string projectFile = Path.GetFullPath(Path.Combine(Root, project));
+            yield return (window, Path.Combine(Path.GetDirectoryName(projectFile)!, "packages.lock.json"));
         }
     }
 
