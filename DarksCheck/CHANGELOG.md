@@ -8,6 +8,19 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A diagnostic log, for bug reports (R-100 to R-103, ADR 0025): each application writes
+  `log\darkscheck.log` or `log\DarksCheck.Wpf.log` beside its executable (or under
+  `%LOCALAPPDATA%\DarksCheck\log` when that folder cannot be written), at most 5 files of 1 MiB
+  each, rolled by NLog, two windows writing into one file without losing a line. It holds the
+  start (version, command line, machine), each folder opened, each file read with what its header
+  or the camera says, each frame decoded with its time and the memory held after it, each run's
+  options, stages and outcome, the figures behind every verdict, every output file written, the
+  window's runs, dialogs and buttons, every error with its stack, those worked around included
+  (not a stop the user asked for), and the exit code. The log's own words are English whatever
+  `--lang` says; an error's or a refusal's message appears as it was shown.
+  `DARKSCHECK_LOG=off|fatal|error|warn|info|debug|trace` sets the level, Debug by default;
+  stdout, stderr and the reports are unchanged.
+
 - `.pef` (Pentax) is a raw extension, and the lens of a raw of any make is read as FlatCheck
   reads it since its ADR 0068 (R-002, R-008, ADR 0023): the maker's lens ID by mount (Nikon's
   own field on a Nikon body, the MakerNote's on Canon, Sony, Pentax and the rest), the mount's
@@ -163,6 +176,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   ADR 0020).
 
 ### Internal
+
+- NLog 6.2.2 is the third third-party component, with its `NLog.Targets.AtomicFile` package so
+  two windows writing one log lose no line (BSD-3-Clause, R-103, ADR 0025), as FlatCheck and
+  LightsCheck have it. The core logs at its seams: the two readers adapted from LightsCheck take
+  LightsCheck's log hunk (its ADR 0029), the other copies of `Imaging/` none; of `Analysis/` only
+  the two decoding loops log, and `Report/` never does, `DarkOutputs.WriteAll` telling its caller
+  each file instead. `LogText.Figures` writes every figure of a result record by one rule, and
+  every test runs every log line on its path.
 
 - Every type and method of the code carries an XML documentation comment (the kit's ADR 0035),
   and every comment is English, the copied readers', `Dark.xaml`'s and two tests' included: the

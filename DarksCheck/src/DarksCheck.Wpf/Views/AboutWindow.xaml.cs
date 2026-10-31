@@ -18,6 +18,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Navigation;
+using NLog;
 
 namespace DarksCheck.Wpf;
 
@@ -27,6 +28,9 @@ namespace DarksCheck.Wpf;
 /// </summary>
 public partial class AboutWindow : Window
 {
+    /// <summary>The diagnostic log: a link that could not be opened (R-101).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     /// <summary>
     /// The window over a new <see cref="AboutViewModel"/>, with the icon's largest frame as its
     /// logo.
@@ -41,10 +45,12 @@ public partial class AboutWindow : Window
 
     /// <summary>
     /// Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.
-    /// A refused start is ignored: the link stays on screen to be copied by hand.
+    /// A link that cannot be opened (no browser starts, or the link is relative and has no absolute
+    /// address) is a Debug line in the diagnostic log with the reason, and the window stays: the
+    /// link stays on screen to be copied by hand.
     /// </summary>
-    /// <param name="sender">The hyperlink.</param>
-    /// <param name="e">The navigation request; marked handled.</param>
+    /// <param name="sender">This window, on which the handler is set; not used.</param>
+    /// <param name="e">The navigation request; marked handled, its URI opened when it can be.</param>
     private void OpenLink(object sender, RequestNavigateEventArgs e)
     {
         e.Handled = true;
@@ -52,11 +58,11 @@ public partial class AboutWindow : Window
         {
             Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-        }
-        catch (InvalidOperationException)
-        {
+            // OriginalString, not AbsoluteUri: a relative link throws there, which is what this
+            // catch took, and would throw again out of the handler and close the window (ADR 0025).
+            Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
         }
     }
 

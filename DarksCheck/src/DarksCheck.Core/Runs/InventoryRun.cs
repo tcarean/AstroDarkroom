@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using NLog;
+
 namespace DarksCheck.Core;
 
 /// <summary>
@@ -64,13 +66,34 @@ internal static class InventoryRun
     /// <returns>The inventory; a file that could not be read is listed with its error.</returns>
     internal static Inventory Run(string folder)
     {
+        using RunClock clock = RunClock.Start(Log, "inventory", "folder=" + folder);
         SessionFolder session = SessionFolder.Open(folder, allowLightsOnly: true);
+        clock.Lap("open");
         FrameInfo[] darks = ReadAll(session.Darks);
+        clock.Lap("darks");
         FrameInfo[] biases = ReadAll(session.Biases);
+        clock.Lap("biases");
         FrameInfo[] lights = ReadAll(session.Lights);
-        return new Inventory(session, darks, biases, lights,
-            CadenceAnalyzer.Analyze(darks), CadenceAnalyzer.Analyze(lights), MatchAnalyzer.Analyze(darks, biases, lights));
+        clock.Lap("lights");
+        Cadence darksCadence = CadenceAnalyzer.Analyze(darks);
+        Cadence lightsCadence = CadenceAnalyzer.Analyze(lights);
+        MatchAnalysis match = MatchAnalyzer.Analyze(darks, biases, lights);
+        clock.Lap("cadence");
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug("cadence of the darks: " + LogText.Figures(darksCadence));
+            Log.Debug("cadence of the lights: " + LogText.Figures(lightsCadence));
+            Log.Debug("match: " + LogText.Figures(match));
+        }
+
+        Inventory inventory = new(session, darks, biases, lights, darksCadence, lightsCadence, match);
+        clock.Done("darks=" + LogText.Int(darks.Length) + " biases=" + LogText.Int(biases.Length) + " lights=" + LogText.Int(lights.Length)
+            + " errors=" + LogText.Int(inventory.ErrorCount));
+        return inventory;
     }
+
+    /// <summary>The diagnostic log: the run's lines, the cadences and the match of check 1 (R-101).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(InventoryRun));
 
     /// <summary>
     /// Reads the metadata of each file, numbering them from 1 in the order given.

@@ -15,9 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Diagnostics;
 using System.Globalization;
 using System.Windows.Media.Imaging;
 using DarksCheck.Core;
+using NLog;
 using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Wpf;
@@ -117,7 +119,13 @@ public sealed record MapVm(string Title, BitmapSource? Image, string Note, strin
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
+    /// <summary>The diagnostic log: the runs, numbered, the partner, the export, the label (R-101).</summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
+
     private CancellationTokenSource? _cts;
+
+    // The opens of this view-model, counted from 1, so the log tells two runs of one folder apart.
+    private int _runs;
     private string _folder = "";
     private string? _partner;
     private string? _problemText;
@@ -176,6 +184,7 @@ public sealed class MainViewModel : ObservableObject
             string? v = string.IsNullOrWhiteSpace(value) ? null : value;
             if (Set(ref _partner, v))
             {
+                Log.Info("partner=" + LogText.Str(v));
                 Raise(nameof(HasPartner));
                 Raise(nameof(PartnerText));
                 SaveSettings();
@@ -392,7 +401,9 @@ public sealed class MainViewModel : ObservableObject
     /// progress on the UI thread. A run in flight is cancelled first and the previous result is
     /// cleared; a cancelled run leaves no result, and the status line says it was stopped. An error
     /// the core throws for a bad folder becomes the problem card and the tabs stay hidden; any
-    /// other exception propagates.
+    /// other exception propagates. The diagnostic log gets the run's number, folder and options,
+    /// and its outcome: done, stopped, failed with the exception, or replaced by a newer run, and an
+    /// exception that propagates with its stack before it leaves (R-101).
     /// </summary>
     /// <param name="folder">The session or library folder; not null.</param>
     public async Task OpenAsync(string folder)
@@ -400,6 +411,7 @@ public sealed class MainViewModel : ObservableObject
         CancelPending();
         CancellationTokenSource cts = new();
         _cts = cts;
+        int run = ++_runs;
         Folder = folder;
         ProblemText = null;
         Status = null;
@@ -408,6 +420,10 @@ public sealed class MainViewModel : ObservableObject
         Progress = 0;
         BusyMessage = WindowTexts.Busy("", 0, 0);
         DarkOptions options = Options;
+        Stopwatch clock = Stopwatch.StartNew();
+        Log.Info("run " + LogText.Int(run) + " started: folder=" + folder + " threads=" + (options.Threads > 0 ? LogText.Int(options.Threads) : "auto")
+            + " maxFrames=" + LogText.Int(options.MaxFrames) + " isoFactor=" + LogText.Num(options.IsoFactorPerStop)
+            + " doubling=" + LogText.Num(options.DoublingCelsius) + " against=" + LogText.Str(options.Against));
         Progress<RunProgress> progress = new(p =>
         {
             // a run superseded by a later OpenAsync still posts a few callbacks: not over the new
@@ -426,10 +442,17 @@ public sealed class MainViewModel : ObservableObject
             if (!cts.IsCancellationRequested)
             {
                 Populate(r);
+                Log.Info("run " + LogText.Int(run) + " done in " + LogText.Seconds(clock.Elapsed) + "; the tabs show the result");
+            }
+            else
+            {
+                LogStopped(run, cts, clock);
             }
         }
         catch (OperationCanceledException)
         {
+            // A stop the user asked for, another folder or the window closing: a line, no exception.
+            LogStopped(run, cts, clock);
         }
         catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException or AggregateException)
         {
@@ -438,7 +461,17 @@ public sealed class MainViewModel : ObservableObject
             if (ReferenceEquals(_cts, cts))
             {
                 ProblemText = e is AggregateException a ? string.Join("; ", a.Flatten().InnerExceptions.Select(x => x.Message).Distinct(StringComparer.Ordinal)) : e.Message;
+                Log.Error(e, "run " + LogText.Int(run) + " failed after " + LogText.Seconds(clock.Elapsed) + "; the problem card shows the message");
             }
+            else
+            {
+                Log.Debug(e, "run " + LogText.Int(run) + " failed after a newer run started; nothing is shown");
+            }
+        }
+        catch (Exception e) when (LogUnhandled(run, e))
+        {
+            // Never entered: the filter writes the exception and returns false, so it leaves this
+            // method in the returned task as it always did.
         }
         finally
         {
@@ -457,6 +490,45 @@ public sealed class MainViewModel : ObservableObject
 
             cts.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Writes the line of a run that was stopped: at Info when it is still the current run (the
+    /// user pressed Stop, or the window is closing), at Debug when a newer run replaced it. A
+    /// cancellation the user asked for is no exception of the log's (R-101).
+    /// </summary>
+    /// <param name="run">The run's number.</param>
+    /// <param name="cts">The run's own cancellation source.</param>
+    /// <param name="clock">Runs from the run's start.</param>
+    private void LogStopped(int run, CancellationTokenSource cts, Stopwatch clock)
+    {
+        if (ReferenceEquals(_cts, cts))
+        {
+            Log.Info("run " + LogText.Int(run) + " stopped after " + LogText.Seconds(clock.Elapsed));
+        }
+        else
+        {
+            Log.Debug("run " + LogText.Int(run) + " stopped after " + LogText.Seconds(clock.Elapsed) + " by a newer run; nothing is shown");
+        }
+    }
+
+    /// <summary>
+    /// Writes, at Error with its stack, an exception the window does not handle, while it leaves
+    /// <see cref="OpenAsync"/> in a task nobody awaits, where it would otherwise surface, if ever,
+    /// only when the task is collected (R-101). Used as an exception filter, it changes nothing: it
+    /// returns false.
+    /// </summary>
+    /// <param name="run">The run's number.</param>
+    /// <param name="e">The exception; not null.</param>
+    /// <returns>False, always.</returns>
+    internal static bool LogUnhandled(int run, Exception e)
+    {
+        Log.Error(e, "run " + LogText.Int(run) + " failed with an exception the window does not handle; it shows no result");
+
+        // Its task is never awaited: the hook that meets it when the task is collected names it
+        // instead of writing the stack a second time.
+        LogSetup.Wrote(e);
+        return false;
     }
 
     /// <summary>
@@ -491,16 +563,23 @@ public sealed class MainViewModel : ObservableObject
 
         try
         {
-            Status = WindowTexts.Written(DarkOutputs.WriteAll(_result, dir));
+            // Each file's line as soon as the file is written, so an export that fails part-way
+            // still names what it wrote (R-101).
+            Status = WindowTexts.Written(DarkOutputs.WriteAll(_result, dir, p => Log.Info(LogText.Wrote(p))));
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
+            Log.Warn(e, "the export into " + dir + " failed; the status line shows the message");
             Status = T("ERROR: ", "EROARE: ") + e.Message;
         }
     }
 
-    /// <summary>The window copied the label: says so under the top bar.</summary>
-    public void LabelCopied() => Status = WindowTexts.LabelCopied;
+    /// <summary>The window copied the label: says so under the top bar, and in the log.</summary>
+    public void LabelCopied()
+    {
+        Log.Info("label copied: " + Label);
+        Status = WindowTexts.LabelCopied;
+    }
 
     /// <summary>Stores the four setting texts as typed and the partner.</summary>
     private void SaveSettings() => UserSettings.Save(new StoredSettings(_threadsText, _maxFramesText, _isoFactorText, _doublingText, _partner));

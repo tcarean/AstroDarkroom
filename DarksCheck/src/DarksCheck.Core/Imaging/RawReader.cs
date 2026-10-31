@@ -37,8 +37,12 @@
 // The native DLLs come from the Sdcb.LibRaw.runtime.* packages and sit beside the executable.
 // When they are missing, a FITS run is unaffected (this type is loaded only when a raw is
 // asked for) and a raw run fails with a message naming what is missing.
+//
+// The diagnostic log (ADR 0025) gets libraw's own figures at Debug and the lens block that
+// could not be read at Warn; the file's line is ImageLoader's, a failure's line its caller's.
 
 using System.Runtime.InteropServices;
+using NLog;
 using Sdcb.LibRaw;
 using Sdcb.LibRaw.Natives;
 using static DarksCheck.Core.Ui;
@@ -55,6 +59,9 @@ namespace DarksCheck.Core
         // type is loaded, and the type is loaded on every run, FITS included; method bodies
         // only at JIT time. Measured in FlatCheck, pinned by RawReaderTests.
         static readonly IReadOnlyDictionary<string, string> NoHeader = new Dictionary<string, string>();
+
+        /// <summary>The diagnostic log: libraw's figures of a decode, the lens block that failed (R-101).</summary>
+        static readonly Logger Log = LogManager.GetLogger(nameof(RawReader));
 
         // FlatCheck's six extensions plus .pef (Pentax; FlatCheck's R-108, 2026-10-26: a K-70
         // sample read fine through libraw and was refused by this list alone). Only the NEF is
@@ -211,6 +218,11 @@ namespace DarksCheck.Core
                 blacks.Add(c.Black + (c.CBlack != null && i < c.CBlack.Length ? c.CBlack[i] : 0));
             double black = Stats.Percentile(blacks, 50);
 
+            // Before the scale is judged, so a refused scale leaves its figures.
+            if (Log.IsDebugEnabled)
+                Log.Debug(FiguresLine(path, w, h, s.RawWidth, s.RawHeight, s.TopMargin, s.LeftMargin, s.RawPitch,
+                                      ip.Filters, ip.Cdesc, cfa, white, c.Black, blacks, black));
+
             if (!(white > black))
                 throw new InvalidOperationException(T(
                     $"{path}: libraw gives an impossible scale (white {white:F0} <= black {black:F0}).",
@@ -227,6 +239,40 @@ namespace DarksCheck.Core
             FillShootingInfo(f, ctx, ip);
             return f;
         }
+
+        /// <summary>
+        /// libraw's figures of one decode, as the diagnostic log writes them at Debug: the visible
+        /// and raw sizes, the margins, the pitch, the filters mask and <c>cdesc</c>, the CFA order
+        /// evaluated at the visible origin, the maximum and the blacks. It takes plain values only,
+        /// no libraw type, so the tests can call it and no closure of a libraw local is ever made
+        /// (see the note at the top).
+        /// </summary>
+        /// <param name="path">The raw file.</param>
+        /// <param name="w">The visible width, in pixels.</param>
+        /// <param name="h">The visible height, in pixels.</param>
+        /// <param name="rawWidth">The raw width, margins included, in pixels.</param>
+        /// <param name="rawHeight">The raw height, margins included, in pixels.</param>
+        /// <param name="topMargin">The first visible row.</param>
+        /// <param name="leftMargin">The first visible column.</param>
+        /// <param name="rawPitch">libraw's row pitch, in bytes; 0 when libraw gives none.</param>
+        /// <param name="filters">libraw's <c>filters</c> mask.</param>
+        /// <param name="cdesc">libraw's colour description; null allowed.</param>
+        /// <param name="cfa">The CFA order; null for a raw without a Bayer mosaic (mono, Leaf, X-Trans).</param>
+        /// <param name="maximum">libraw's <c>color.maximum</c>, the white, in ADU.</param>
+        /// <param name="black0">libraw's global <c>color.black</c>, in ADU.</param>
+        /// <param name="blacks">The four channels' blacks, global plus per channel, in ADU.</param>
+        /// <param name="black">Their median, the black the frame is read with, in ADU.</param>
+        /// <returns>The line's text.</returns>
+        internal static string FiguresLine(string path, int w, int h, int rawWidth, int rawHeight, int topMargin, int leftMargin,
+                                           long rawPitch, uint filters, string cdesc, CfaPattern cfa, double maximum, double black0,
+                                           List<double> blacks, double black)
+            => "libraw on " + path + ": visible " + LogText.Int(w) + "x" + LogText.Int(h)
+             + " raw " + LogText.Int(rawWidth) + "x" + LogText.Int(rawHeight)
+             + " margins top " + LogText.Int(topMargin) + " left " + LogText.Int(leftMargin)
+             + " pitch " + LogText.Int(rawPitch) + " filters 0x" + filters.ToString("X8")
+             + " cdesc " + LogText.Str(cdesc) + " cfa " + (cfa != null ? cfa.Letters : "none")
+             + " maximum " + LogText.Num(maximum) + " black " + LogText.Num(black0)
+             + " per channel " + LogText.List(blacks.ConvertAll(LogText.Num)) + " median " + LogText.Num(black);
 
         /// <summary>
         /// Fills <paramref name="f"/> with what libraw knows about the shot: focal length,
@@ -281,8 +327,9 @@ namespace DarksCheck.Core
                     RangeOf(notes.MinFocal, notes.MaxFocal, notes.MaxAperture4MinFocal, notes.MaxAperture, li.MinFocal, li.MaxFocal, li.MaxAperture4MinFocal,
                             other.FocalLength);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Log.Warn(e, "the raw's lens block could not be read; the lens stays unknown");
                 f.LensId = null;
                 f.LensMount = null;
                 f.LensName = null;

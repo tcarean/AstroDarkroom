@@ -30,6 +30,12 @@ name `PART_SelectedContentHost`, which would also move the keyboard focus into a
 on its header. The theme's tab style targets the class, and the window's local style, the one
 that hides the tabs until `HasResult`, is based on that type's style.
 
+`App`'s constructor starts the diagnostic log, before the resources load, and hooks the window
+thread's unhandled exceptions to it; `OnExit` closes it (ADR 0025). The view-model numbers its
+runs and writes each one's options and outcome, the window its dialogs and buttons, and
+`UserSettings`, `DarkTitleBar` and `AboutWindow` the failures they swallow; the lines and the two
+logger names of `Loggers` are in `logging.md`.
+
 ## One view-model, fed by the core
 
 `MainViewModel` has every property the XAML binds, the window's own sentences included
@@ -105,7 +111,8 @@ status line after the window put the label in the clipboard.
 `StoredSettings(Threads, MaxFrames, IsoFactor, Doubling, Partner)`, five strings as typed or
 chosen, in `%LOCALAPPDATA%\DarksCheck\settings.json`, written on every change through
 `System.Text.Json` with the path unescaped; a missing or unreadable file gives nulls, a failed
-write is swallowed; the class judges nothing. `UserSettings.Path` lets the tests point at a
+write is swallowed, and both leave a Debug line with their exception in the diagnostic log; the
+class judges nothing. `UserSettings.Path` lets the tests point at a
 file of their own, and `TestSettings` does so for the whole run before any test
 (`ModuleInitializer`); a test that reads the file back takes `TestSettings.Own`, a fresh file
 restored on dispose.
@@ -163,4 +170,6 @@ without a window, the report tab against `Program.Run`'s text. `AutomationTreeTe
 select each tab of a window over the same session and ask the automation peers in process: the
 tab's content under its item, once, and under no other tab's item. Keyboard focus needs a
 window on screen, which no test shows, so the second test makes WPF's own lookup of the stock
-presenter name in the applied template and finds nothing.
+presenter name in the applied template and finds nothing. `WindowLoggingTests` cover the
+window's log lines over the view-model, and the two-writer check on the window's own build of
+the atomic file target (`logging.md`, "In the tests").

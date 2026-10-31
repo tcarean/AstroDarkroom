@@ -18,12 +18,14 @@
 using System.Globalization;
 using System.Windows;
 using DarksCheck.Core;
+using NLog;
 
 namespace DarksCheck.Wpf;
 
 /// <summary>
-/// The window application: sets the interface language from <c>--lang</c>, pins the number
-/// culture, opens the main window and hands it the folder given on the command line.
+/// The window application: starts and closes the diagnostic log, sets the interface language from
+/// <c>--lang</c>, pins the number culture, opens the main window and hands it the folder given on
+/// the command line.
 /// </summary>
 public partial class App : Application
 {
@@ -32,14 +34,39 @@ public partial class App : Application
     private readonly string? _unknownLanguage;
 
     /// <summary>
-    /// Sets the interface language from the command line (R-094) before anything else: the
-    /// constructor runs before App.xaml's resources and the first view load, and both carry texts.
+    /// Starts the diagnostic log first, so a failure while the resources load is in it too (R-100
+    /// to R-103), and hooks the window thread's unhandled exceptions to it; then sets the interface
+    /// language from the command line (R-094) before anything else: the constructor runs before
+    /// App.xaml's resources and the first view load, and both carry texts.
     /// </summary>
     public App()
     {
         string[] all = Environment.GetCommandLineArgs();
-        Ui.Default = LanguageFromArgs(all.Length > 1 ? all[1..] : [], out _unknownLanguage);
+        string[] args = all.Length > 1 ? all[1..] : [];
+
+        // Whatever Apply throws, the window goes on and the session opens all the same; NLog's own
+        // assembly is no such case: like the core's, it must be there.
+        try
+        {
+            LogSetup.Apply("DarksCheck.Wpf", args);
+        }
+        catch (Exception)
+        {
+            // the window goes on without a log
+        }
+
+        // Logged, not handled: the window closes on such an exception as it did (ADR 0025).
+        DispatcherUnhandledException += (_, e) =>
+            LogSetup.Fatal(e.Exception, "unhandled exception on the window's thread, the window closes");
+        Ui.Default = LanguageFromArgs(args, out _unknownLanguage);
     }
+
+    /// <summary>
+    /// The diagnostic log: the start's choices. Fetched on use, not a static field: this is the
+    /// type whose constructor configures the log, and a logger its type initialiser created first
+    /// could make NLog load a stray <c>NLog.config</c> (ADR 0025, after FlatCheck's ADR 0072).
+    /// </summary>
+    private static Logger Log => LogManager.GetLogger(Loggers.App);
 
     /// <summary>
     /// Sets the invariant number culture, shows <see cref="DarksCheck.Wpf.MainWindow"/> and starts
@@ -60,10 +87,31 @@ public partial class App : Application
         // (R-092).
         if (_unknownLanguage is not null)
         {
+            Log.Warn("refused: " + LanguageArgument.BadValueMessage(_unknownLanguage) + "; the window goes on in English");
             MessageBox.Show(window, LanguageArgument.BadValueMessage(_unknownLanguage), WindowTexts.AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
-        window.Start(FolderFromArgs(e.Args));
+        string? folder = FolderFromArgs(e.Args);
+        Log.Info("language=" + (Ui.Default == UiLanguage.Romanian ? "ro" : "en") + " folder from the command line: "
+            + (folder ?? "none, the window asks for one"));
+        window.Start(folder);
+    }
+
+    /// <summary>Writes the diagnostic log's last line, with the exit code, and closes the log.</summary>
+    /// <param name="e">The exit's arguments, whose exit code the line reports.</param>
+    protected override void OnExit(ExitEventArgs e)
+    {
+        base.OnExit(e);
+
+        // Guarded like Apply: whatever Close throws, the window still exits.
+        try
+        {
+            LogSetup.Close(e.ApplicationExitCode);
+        }
+        catch (Exception)
+        {
+            // the log's last line is lost, the exit is not
+        }
     }
 
     /// <summary>

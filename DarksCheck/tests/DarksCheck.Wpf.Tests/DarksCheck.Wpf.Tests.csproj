@@ -45,5 +45,11 @@
     <Compile Include="..\DarksCheck.Tests\FitsTestData.cs" Link="Shared\FitsTestData.cs" />
     <Compile Include="..\DarksCheck.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
     <Compile Include="..\DarksCheck.Tests\TestData.cs" Link="Shared\TestData.cs" />
+    <!-- LogCapture configures the diagnostic log for the whole test assembly and lets a test read
+         its own lines, here as in DarksCheck.Tests (ADR 0025). -->
+    <Compile Include="..\DarksCheck.Tests\LogCapture.cs" Link="Shared\LogCapture.cs" />
+    <!-- The log's file checks, so R-103 runs here on the build of NLog.Targets.AtomicFile the
+         window ships (net8.0-windows), which DarksCheck.Tests does not load. -->
+    <Compile Include="..\DarksCheck.Tests\LogFiles.cs" Link="Shared\LogFiles.cs" />
   </ItemGroup>
 </Project>

@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using NLog;
 using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core;
@@ -124,8 +125,16 @@ internal sealed class SessionFolder
         IReadOnlyList<string> biases = darksDir != root && Directory.Exists(biasesDir) ? FramesIn(biasesDir) : [];
         string lightsDir = Path.Combine(root, LightsName);
         IReadOnlyList<string> lights = lightsFound ?? (darksDir != root && Directory.Exists(lightsDir) ? FramesIn(lightsDir) : []);
-        return new SessionFolder(root, darksDir, biases.Count > 0 ? biasesDir : null, lights.Count > 0 ? lightsDir : null, darks, biases, lights);
+        SessionFolder session = new(root, darksDir, biases.Count > 0 ? biasesDir : null, lights.Count > 0 ? lightsDir : null, darks, biases, lights);
+        Log.Info("opened " + LogText.Session(session));
+        return session;
     }
+
+    /// <summary>
+    /// The diagnostic log: each folder as it was opened, the session's and the partner's (R-101); a
+    /// refused folder writes nothing here, its exception is the caller's line.
+    /// </summary>
+    private static readonly Logger Log = LogManager.GetLogger(nameof(SessionFolder));
 
     /// <summary>
     /// The frames of one folder, sorted by file name (ordinal, case-insensitive, so DSC_0010

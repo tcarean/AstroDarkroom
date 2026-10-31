@@ -177,3 +177,9 @@ report delivered on 2026-10-11), with its figures in `results.json`,
 - 2026-10-26: after a comma in check 2's English verdict (`; that is, `, a text change under
   `Report/`), all ten cases re-run with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`:
   `Total tests: 10, Passed: 10, Total time: 7.4932 Minutes`; no figure moved.
+- 2026-10-30: after the diagnostic log (ADR 0025: log lines in `FrameStack`, in the loop of
+  `LightsAnalyzer` and in `DarkSeriesRun`, a callback in `DarkOutputs.WriteAll`, no formula or
+  constant changed), all ten cases re-run with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`:
+  `Total tests: 10, Passed: 10, Total time: 10.2956 Minutes`; no figure moved outside its
+  tolerance. The Smida run against the library printed the same report, byte for byte, with the
+  log at Debug and off, three runs each (ADR 0025 has the times).

@@ -17,6 +17,7 @@
 
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using NLog;
 
 namespace DarksCheck.Wpf;
 
@@ -69,6 +70,7 @@ public static class UserSettings
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
+            Log.Debug(e, "the settings " + FilePath + " could not be read; the defaults are used");
             return new StoredSettings(null, null, null, null, null);
         }
     }
@@ -94,8 +96,15 @@ public static class UserSettings
         {
             // A setting that cannot be written is picked again next time; nothing else depends on
             // it.
+            Log.Debug(e, "the settings " + FilePath + " could not be written; they are picked again next time");
         }
     }
+
+    /// <summary>
+    /// The diagnostic log: a settings file that could not be read or written (R-101). A save that
+    /// works writes nothing, since the boxes save on every keystroke.
+    /// </summary>
+    private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     // The folder path is written as itself, not as \u escapes, so the file reads as the README
     // says.

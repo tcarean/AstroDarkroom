@@ -21,7 +21,9 @@ Values (the solution, the folders, the publish list, what the auditor may also r
 - At step 5: `DarksCheck.Core` first (`Analysis/` decides numbers, `Thresholds.cs` holds the
   constants, `Report/` decides words and rows, `Runs/` chains them), then the console and the
   window, which only call `Runs/` and bind the report's rows. Nothing is computed outside the
-  core (the rule "Computed only in the core").
+  core (the rule "Computed only in the core"). A new seam (a run, a file read or written, a
+  group that can fail, a dialog, an exception swallowed on purpose) writes its lines to the
+  diagnostic log as `docs/design/logging.md` says.
 - At step 6: numeric code is `Imaging/Stats.cs`, `Analysis/`, `Thresholds.cs` and `Report/`
   (the rule "Measured on the sessions"). The golden files are regenerated with
   `DARKSCHECK_UPDATE_GOLDEN=1` and `--filter GoldenOutputTests`.

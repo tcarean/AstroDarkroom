@@ -25,7 +25,7 @@ namespace DarksCheck.Tests;
 /// </summary>
 public class GoldenOutputTests
 {
-    private static string GoldenDir => Path.Combine(TestData.FindRepoRoot(), "tests", "DarksCheck.Tests", "Golden");
+    internal static string GoldenDir => Path.Combine(TestData.FindRepoRoot(), "tests", "DarksCheck.Tests", "Golden");
 
     [Fact]
     public void Inventory_MatchesTheGoldenText()
@@ -83,7 +83,7 @@ public class GoldenOutputTests
         Compare("help.txt", Scrub(stdout, "") + "--- stderr ---\n" + stderr + "--- exit " + code + " ---\n");
     }
 
-    private static string Scrub(string text, string root)
+    internal static string Scrub(string text, string root)
     {
         string[] lines = text.Split('\n');
         if (lines.Length > 0 && lines[0].StartsWith("darkscheck ", StringComparison.Ordinal))
