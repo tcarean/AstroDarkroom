@@ -217,3 +217,31 @@ characters. All commands run in this worktree.
   of 560".
 - **The low-area test's renders** are 600 DIP wide, as `WindowSmokeTests` renders; the window's
   client area is 584.
+
+## The review of 2026-10-31
+
+A subagent reviewed the About commits `356d7383` and `2f307c04` alone, with the plan, the ADR and
+the conventions and without the author's conclusions. Its five findings were checked and taken
+in one commit.
+
+1. **Up and Down no longer moved the focus where the window fits.** The window took the six keys
+   always, and its cards hold five links, which a window's directional navigation reaches with
+   the arrows. It now takes them only while the cards can scroll.
+   `R158_WhereTheWindowFitsNothingChanges` failed on the previous code with "Down was taken where
+   the cards fit".
+2. **Neither hook was tested.** The tests called `Scroll` and `FitInto` directly. The keys are now
+   raised as `PreviewKeyDown` events through a stand-in presentation source, and the fit through
+   `Window.OnContentRendered`. Removing the key hook, or moving the fit back to `Loaded`, fails a
+   test each, which was checked.
+3. **The fits test passed by construction.** It now asserts the hidden scroll bar, the gaps of 16
+   and 20 DIP around Close and that no key is taken, under the name
+   `R158_WhereTheWindowFitsNothingChanges`. The log test is now
+   `R171_WhenItsContentIsRenderedTheAboutWindowFitsAndLogsItsSizePlaceAndArea`.
+4. **The work-area test could not fail on a machine with one screen.** It now asserts that the
+   fallback's Debug line is not written.
+5. **Four sentences said more than the code does:**
+   - R-158's "nothing changes" now says what is kept, and the anti-aliasing that differs.
+   - Its "bottom edge" is now the client area's bottom.
+   - The CHANGELOG's entry moved from Fixed to Changed: 1.0.0 listed one component, so its window
+     was shorter, and the overflow never shipped.
+   - `testing.md`'s keys now match the tests.

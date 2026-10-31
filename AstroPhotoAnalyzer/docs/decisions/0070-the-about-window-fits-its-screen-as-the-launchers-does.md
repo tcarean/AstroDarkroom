@@ -28,12 +28,12 @@ owner chose to fix it on that branch, before its merge, with the launcher's desi
   - Its cards are in a `ScrollViewer`, with the theme's dark scroll bar. The wheel scrolls it
     anywhere over it, since its background is transparent. The arrow, page, Home and End keys
     scroll it from the window's `PreviewKeyDown`, since the focus stays on the Close button or
-    a link.
+    a link; they do so only while the cards can scroll (below).
   - The Close button is in a row of its own under the cards, so it stays in view.
   - Once the window is shown, `ScreenArea.TopInside`, the launcher's `WindowFit.Top`, keeps its
     top inside the area, as a guard behind WPF's own placement.
   - Where the window fits, the margins add up to the same layout as before.
-- **Three differences from the launcher**, each this project's own:
+- **Four differences from the launcher**, each this project's own:
   - **The arithmetic and the Windows query live in the window project**,
     `Interop/ScreenArea.cs`, and the window's tests test them. The launcher put `WindowFit.Top`
     in its core because its window has no tests (its ADR 0001). This window has tests, and this
@@ -45,6 +45,10 @@ owner chose to fix it on that branch, before its merge, with the launcher's desi
     content still has its first height: 436 DIP, measured here for a window of 862. The guard and
     the log line would read that wrong one; the log line said "cards scroll: no" on a 690 DIP
     area where they scroll by 172. The launcher fits at `Loaded`.
+  - **The keys are taken only while the cards can scroll.** Where they fit, the window takes no
+    key, so the arrows move the focus between its five links and its Close button, as before: a
+    window's directional navigation cycles through them. The launcher's cards hold nothing that
+    takes the focus, and it takes the keys always (the review of 2026-10-31).
 - **The constructor takes the area**, `AboutWindow(Rect workArea)`, as the launcher's does.
   - The main window passes its own screen's area, `ScreenArea.WorkAreaOf(this)`.
   - The primary screen's `SystemParameters.WorkArea` stands in when the window has no handle or
@@ -86,9 +90,12 @@ owner chose to fix it on that branch, before its merge, with the launcher's desi
   it, its Close button in view.
 - `AboutWindowFitTests` hold the `R158_...` tests and R-171's Debug line:
   - the arithmetic;
-  - the low area, with the keys;
-  - the area where nothing scrolls;
-  - Windows' answer on the primary screen, through a hidden window's handle.
+  - the low area, with End, Home and Enter raised as key events through a stand-in presentation
+    source;
+  - the area where the window fits: no scroll bar, the old gaps around Close, no key taken;
+  - Windows' answer on the primary screen, through a hidden window's handle, with no fallback
+    line;
+  - the fit and its line, through `Window.OnContentRendered`.
 - The three existing tests that build the window pass `SystemParameters.WorkArea` to its new
   constructor. `WindowSmokeTests` renders it at 860 DIP, the whole window, since a 720 DIP render
   now shows the scroll bar.

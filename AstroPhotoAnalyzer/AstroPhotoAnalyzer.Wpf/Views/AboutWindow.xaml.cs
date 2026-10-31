@@ -104,14 +104,17 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Scrolls the cards by a key (R-158): Up and Down by a line, Page Up and Page Down by a
-        /// page, Home and End to either end. The scroll viewer carries the move out at its next
-        /// layout.
+        /// Scrolls the cards by a key while they can scroll (R-158): Up and Down by a line, Page
+        /// Up and Page Down by a page, Home and End to either end. Where the cards fit no key is
+        /// taken, so the arrows still move the focus between the links and the Close button, as
+        /// before the fit (the review of 2026-10-31). The scroll viewer carries the move out at
+        /// its next layout.
         /// </summary>
         /// <param name="key">The key pressed.</param>
-        /// <returns>True when the key is one of the six and the cards were asked to scroll.</returns>
+        /// <returns>True when the cards can scroll and the key is one of the six: they were asked to scroll.</returns>
         internal bool Scroll(Key key)
         {
+            if (Cards.ScrollableHeight <= 0) return false;
             switch (key)
             {
                 case Key.Down: Cards.LineDown(); return true;
@@ -126,8 +129,9 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// The window's keys for the cards: the focus stays on the Close button or on a link,
-        /// neither of which scrolls, so the keys a scroll viewer answers are passed to it here.
-        /// Enter and Esc go on to the Close button as before.
+        /// neither of which scrolls, so while the cards can scroll the keys a scroll viewer
+        /// answers are passed to it here. Any other key, and every key where the cards fit, goes
+        /// on as before: Enter and Esc to the Close button, the arrows to the focus.
         /// </summary>
         /// <param name="sender">The window; not read.</param>
         /// <param name="e">The key; marked handled when it scrolled the cards.</param>

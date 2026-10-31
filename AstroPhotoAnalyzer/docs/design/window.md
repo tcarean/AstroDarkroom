@@ -110,8 +110,9 @@ top that keeps a window inside an area).
 - Its cards are in the `ScrollViewer` `Cards`, which has a transparent background so that the
   wheel works over the margins, with the theme's dark scroll bar. The Close button is in a row
   of its own under it.
-- The window's `PreviewKeyDown` passes Up, Down, Page Up, Page Down, Home and End to the cards
-  (`Scroll`).
+- While the cards can scroll, the window's `PreviewKeyDown` passes Up, Down, Page Up, Page Down,
+  Home and End to them (`Scroll`). Where they fit it takes no key, so the arrows move the focus
+  between the links and the Close button as before.
 - At `ContentRendered`, when its size is final, `FitInto` keeps its top inside the area and
   writes its Debug line. At `Loaded` it still has its first height.
 - Where it fits, the margins add up to the same layout as before.
