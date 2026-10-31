@@ -34,8 +34,8 @@ public class SoftProofWindowTests
 
     public SoftProofWindowTests(StaFixture sta) => _sta = sta;
 
-    static void Mouse(UIElement on, RoutedEvent what)
-        => on.RaiseEvent(new MouseEventArgs(System.Windows.Input.Mouse.PrimaryDevice, 0) { RoutedEvent = what });
+    static void RaiseMouse(UIElement on, RoutedEvent what)
+        => on.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, 0) { RoutedEvent = what });
 
     [Fact]
     public void R164_TheWindowIsBorderlessAndItsPanelHidesUntilTheMouseIsOverItsBand()
@@ -66,22 +66,23 @@ public class SoftProofWindowTests
                 Assert.Equal(content.ActualHeight, window.Proof.ActualHeight);
                 // The controls (without "Ecran intreg") and the Close button are in the panel,
                 // so they hide with it.
-                Assert.True(window.HoverPanel.IsAncestorOf(window.Controls));
-                Assert.False(window.Controls.ShowFullScreenButton);
+                Assert.True(window.HoverPanel.IsAncestorOf(window.ProofControls));
+                Assert.False(window.ProofControls.ShowFullScreenButton);
                 Assert.True(window.HoverPanel.IsAncestorOf(window.CloseButton));
 
                 // The mouse enters the band: the panel shows; it leaves: the panel hides.
-                Mouse(window.PanelZone, UIElement.MouseEnterEvent);
+                RaiseMouse(window.PanelZone, UIElement.MouseEnterEvent);
                 Layout(content);
                 Assert.True(window.PanelShown);
                 Assert.Equal(Visibility.Visible, window.HoverPanel.Visibility);
-                Mouse(window.PanelZone, UIElement.MouseLeaveEvent);
+                RaiseMouse(window.PanelZone, UIElement.MouseLeaveEvent);
                 Layout(content);
                 Assert.False(window.PanelShown);
                 Assert.Equal(Visibility.Hidden, window.HoverPanel.Visibility);
                 // The hold while the margin list is open is not reachable here: a ComboBox that
                 // is not loaded coerces IsDropDownOpen back to false, and the tests show no
-                // window. That path is read, and checked on a live run.
+                // window. Nor is the focus rule of HidePanel: Keyboard.Focus needs a shown
+                // window. Both paths are read, and checked on a live run.
             }
             finally
             {

@@ -737,8 +737,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The longest side of the reduced copy the soft proof is made on (R-160). The preview's
-        /// PreviewMaxSide (1600) fits a Full HD render; the proof is shown maximised on a 4K screen
-        /// too, so a long side under the screen's would be enlarged there. 2400 is a presumption
+        /// PreviewMaxSide (1600) fits a Full HD render; the proof is shown full screen on a 4K
+        /// screen too, so a long side under the screen's would be enlarged there. 2400 is a presumption
         /// about the screen, not a measurement; a 23 MP image reduces to 2.7 MP.
         /// </summary>
         internal const int ProofMaxSide = 2400;

@@ -16,8 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // OverlayWindows.xaml.cs - the links with the XAML of the viewing windows: the dust / sky map
-// (R-130), the preview of a row (R-131) and the suggested curve (R-147). The behaviour is in
-// the view-models; here only the dark title bar and Esc.
+// (R-130), the preview of a row (R-131), the suggested curve (R-147) and the soft proof full
+// screen (R-163, R-164). The behaviour is in the view-models; here only the dark title bar and
+// Esc, and, for the soft proof window, its hover panel and its keys.
 
 using System.Windows;
 using System.Windows.Input;
@@ -65,7 +66,8 @@ namespace AstroPhotoAnalyzer.Wpf
     {
         /// <summary>
         /// Whether the panel over the top of the image is shown (R-164): true while the mouse is
-        /// over its band, set from the band's MouseEnter and MouseLeave; false at first.
+        /// over its band or the margin list is open, set from the band's MouseEnter and
+        /// MouseLeave; false at first.
         /// </summary>
         public static readonly DependencyProperty PanelShownProperty =
             DependencyProperty.Register(nameof(PanelShown), typeof(bool), typeof(SoftProofWindow), new PropertyMetadata(false));
@@ -78,13 +80,16 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             InitializeComponent();
             // The band is a transparent Border, so it is under the mouse even while the panel
-            // in it is hidden; MouseLeave fires when the mouse leaves the band's subtree. The
-            // margin list's drop-down is in that subtree, but it is taller than the band, so
-            // the mouse can leave past it while the list is open: the panel then stays, and
-            // hides when the list closes with the mouse already outside the band.
+            // in it is hidden; MouseLeave fires when the mouse leaves the band's subtree. While
+            // the margin list is open the ComboBox holds a sub-tree mouse capture, so the band
+            // sees no MouseLeave wherever the mouse goes (the list is taller than the band) and
+            // the panel stays; the guard below covers the same case should a MouseLeave come
+            // through anyway. When the list closes the capture is released: the band's
+            // MouseLeave, or the list's DropDownClosed, hides the panel if the mouse is outside
+            // the band, whichever comes first (HidePanel twice is harmless).
             PanelZone.MouseEnter += (_, _) => PanelShown = true;
-            PanelZone.MouseLeave += (_, _) => { if (!Controls.MarginList.IsDropDownOpen) HidePanel(); };
-            Controls.MarginList.DropDownClosed += (_, _) => { if (!PanelZone.IsMouseOver) HidePanel(); };
+            PanelZone.MouseLeave += (_, _) => { if (!ProofControls.MarginList.IsDropDownOpen) HidePanel(); };
+            ProofControls.MarginList.DropDownClosed += (_, _) => { if (!PanelZone.IsMouseOver) HidePanel(); };
             PreviewKeyDown += (_, e) =>
             {
                 if (e.Key == Key.Escape) { Close(); e.Handled = true; return; }

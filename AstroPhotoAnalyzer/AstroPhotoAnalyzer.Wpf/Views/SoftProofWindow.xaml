@@ -65,7 +65,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Button x:Name="CloseButton" DockPanel.Dock="Right" Content="{local:T En='Close', Ro='Inchide'}" Click="CloseClicked"
                     Padding="14,3" VerticalAlignment="Top" Margin="16,0,0,4"
                     ToolTip="{local:T En='Leaves the full screen; Esc does the same', Ro='Iese din ecranul intreg; Esc face la fel'}" />
-            <local:SoftProofControls x:Name="Controls" ShowFullScreenButton="False" />
+            <local:SoftProofControls x:Name="ProofControls" ShowFullScreenButton="False" />
           </DockPanel>
           <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" Style="{StaticResource Muted}" />
           <!-- "computing", or the reason a table was refused, with the image gone (R-163). -->

@@ -6,7 +6,8 @@
 > `AstroPhotoAnalyzer.Wpf/ViewModels/SoftProofTab.cs`,
 > `AstroPhotoAnalyzer.Wpf/Views/SoftProofView.xaml`,
 > `AstroPhotoAnalyzer.Wpf/Views/SoftProofControls.xaml`,
-> `AstroPhotoAnalyzer.Wpf/Views/SoftProofWindow.xaml` and
+> `AstroPhotoAnalyzer.Wpf/Views/SoftProofWindow.xaml`, the `SoftProofWindow` class in
+> `AstroPhotoAnalyzer.Wpf/Views/OverlayWindows.xaml.cs` and
 > `AstroPhotoAnalyzer.Wpf/Presentation/ZoomPanViewer.cs`. A change to the code this describes means
 > this note is updated in the same task, or deleted with the decision it explains.
 
@@ -136,13 +137,16 @@ the message ("computing" or a refused table's reason, red), the key hint and the
 (`CloseClicked` closes). The panel sits in a transparent `Border`, the band, aligned to the top;
 a style trigger keeps the panel `Hidden` (not `Collapsed`, so the band keeps its height) unless
 the window's `PanelShown` dependency property is true, which the band's `MouseEnter` sets and
-`MouseLeave` clears (`HidePanel`), except while the margin list's drop-down is open, since the
-list is taller than the band and the mouse can leave past it; the list's `DropDownClosed` then
-hides the panel if the mouse is no longer over the band. `HidePanel` also takes the keyboard
-focus back to the window when a control of the panel holds it, so no hidden control answers
-the arrow keys. Two things follow from the band being hit-testable: the panel appears on the
-first mouse move after the window opens, not before, and a wheel notch or a drag begun inside
-the band goes to the band, not to the viewer. The keys are in `PreviewKeyDown`: Esc closes
+`MouseLeave` clears (`HidePanel`). While the margin list's drop-down is open the `ComboBox`
+holds a sub-tree mouse capture, so the band sees no `MouseLeave` wherever the mouse goes (the
+list is taller than the band) and the panel stays; `MouseLeave` also skips the hide while the
+list is open, for the same case. When the list closes the capture is released, and the band's
+`MouseLeave` or the list's `DropDownClosed`, whichever comes first, hides the panel if the mouse
+is outside the band. `HidePanel` also takes the keyboard focus back to the window when a
+control of the panel holds it, so no hidden control answers the arrow keys. Two things follow
+from the band being hit-testable: the panel appears once the mouse is seen over the band, and
+a wheel notch or a drag begun inside the band goes to the band, not to the viewer (a drag begun
+in the viewer holds its own capture, so panning across the band does not show the panel). The keys are in `PreviewKeyDown`: Esc closes
 (the window, even with the margin list open, since the window sees the key first), G and O
 toggle the boxes and I moves to the next intent through `SoftProofTabViewModel.HandleKey`,
 ignored while the focus is in a text box or a modifier is held.

@@ -19,19 +19,21 @@ the image and put the program's chrome beside the paper's white.
 `WindowState` `Maximized`, `ResizeMode` `NoResize`: no caption, no thick frame, so Windows
 maximises it to the whole monitor, taskbar covered, with nothing past the edge; WPF's
 documented behaviour, not measured in the task's session, so the first run by the owner is the
-check). The proof and its margin fill the window. The former bar becomes a panel laid over the top of the image, with the button
-`Inchide` (`Close`) at its right end, and is hidden until the mouse is over the band it
-occupies (R-164).
+check). The proof and its margin fill the window. The former bar becomes a panel laid over
+the top of the image, with the button `Inchide` (`Close`) at its right end, and is hidden
+until the mouse is over the band it occupies (R-164).
 
 The band is the panel's own area: a transparent `Border` at the top of the window holding the
 panel, whose `Visibility` is `Hidden` rather than `Collapsed`, so the band keeps the panel's
 height and there is something to point at. The band's `MouseEnter` and `MouseLeave` set the
 window's `PanelShown`: the panel shows the moment the mouse enters the band and hides the
 moment it leaves. No delay, no fade, no timer, no toggle key. One exception: while the margin
-list's drop-down is open the panel stays, since the list is taller than the band and the mouse
-can leave past it; it hides when the list closes with the mouse outside the band. When the
-panel hides, the window takes the keyboard focus back from it, so no hidden control answers
-the arrow keys.
+list's drop-down is open the panel stays, whatever the mouse does, since the list is taller
+than the band: the `ComboBox` holds a sub-tree mouse capture while open, so the band sees no
+`MouseLeave`, and the window skips the hide while the list is open in any case; when the list
+closes the capture is released, and the band's `MouseLeave` or the list's `DropDownClosed`
+hides the panel if the mouse is outside the band. When the panel hides, the window takes the
+keyboard focus back from it, so no hidden control answers the arrow keys.
 
 Esc still closes (R-163); `Inchide` does the same, for whoever reaches for the mouse. The
 window keeps its title, which the taskbar shows.
@@ -54,12 +56,16 @@ window keeps its title, which the taskbar shows.
 ## Consequences
 
 - R-164 added; R-163's sentence about the window points at it. `SoftProofWindowTests` covers
-  the window's three properties, the hidden panel and its band, and the Close button; the hover
-  itself is WPF's and is not driven in the tests.
+  the window's three properties, the hidden panel and its band, the Close button, and raises
+  the band's `MouseEnter` and `MouseLeave` by hand, reading `PanelShown` and the panel's
+  `Visibility`; the real mouse, the hold while the list is open (an unloaded `ComboBox` keeps
+  its list closed) and the focus rule are checked on a live run.
 - The dark title bar helper is no longer called for this window: there is no title bar.
 - The smoke test renders the window with `PanelShown` true, so the PNG shows the panel.
 - The margin list's drop-down is part of the band's subtree for `IsMouseOver`, so hovering it
-  keeps the panel shown, and the list being open holds the panel anyway. A tooltip's popup has
+  keeps the panel shown, and the open list's mouse capture holds the panel anyway; after a
+  click on an item the hide may wait one dispatcher pass, until the popup is torn down or the
+  mouse moves. A tooltip's popup has
   no such link to its owner: hovering one may hide the panel, which closes the tooltip, which
   puts the mouse back over the band; a flicker at worst, and tooltips open beside the cursor,
   not under it. Neither was measured on a live window in the task's session: the first thing
