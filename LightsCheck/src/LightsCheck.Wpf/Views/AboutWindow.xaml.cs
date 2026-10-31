@@ -41,10 +41,11 @@ public partial class AboutWindow : Window
 
     /// <summary>
     /// Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.
-    /// A browser that cannot be started is ignored.
+    /// A link that cannot be opened (no browser starts, or the link is relative and has no
+    /// absolute address) is a Debug line in the diagnostic log with the reason, and the window stays.
     /// </summary>
-    /// <param name="sender">The hyperlink clicked.</param>
-    /// <param name="e">The navigation request; marked handled, its URI opened.</param>
+    /// <param name="sender">This window, on which the handler is set; not used.</param>
+    /// <param name="e">The navigation request; marked handled, its URI opened when it can be.</param>
     private void OpenLink(object sender, RequestNavigateEventArgs e)
     {
         e.Handled = true;
@@ -54,11 +55,14 @@ public partial class AboutWindow : Window
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-            Log.Debug(ex, "the link " + e.Uri.AbsoluteUri + " could not be opened in a browser");
+            // OriginalString, not AbsoluteUri: a relative link throws there, which is what this
+            // catch took, and would throw again out of the handler; the log never stops the
+            // window (ADR 0029).
+            Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
         }
     }
 
-    /// <summary>The diagnostic log: a link the system could not open (R-071).</summary>
+    /// <summary>The diagnostic log: a link that could not be opened (R-071).</summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     /// <summary>The "Inchide" button: closes the window.</summary>
