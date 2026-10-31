@@ -160,6 +160,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="{Binding ProfilesHeading}" />
           <Border Style="{StaticResource Card}">
             <StackPanel>
+              <!-- First of all, the box (R-118, ADR 0078): on by default; off, the run compares
+                   nothing and the card keeps only the master's depth and the paragraph at its end.
+                   Flipping it redoes the comparison on the kept result, so it is locked while
+                   the tab runs. Its state is the folder's, in flatcheck.json (R-119). The label is
+                   a TextBlock so it can wrap. -->
+              <CheckBox Margin="0,0,0,14" IsChecked="{Binding NoFilters, Mode=TwoWay}"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}">
+                <TextBlock Text="{l:T En='I didn\'t use any filters on my lens', Ro='Nu am folosit niciun filtru pe obiectiv'}"
+                           TextWrapping="Wrap" />
+              </CheckBox>
               <!-- Without Adobe's profiles (R-113, ADR 0073), above whatever the card holds: that
                    they were not found, in the window's red for a message; then what to install,
                    the link to Adobe's page (MainWindow opens it in the browser) and the folders
@@ -180,16 +190,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </StackPanel>
               <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding ProfileGap}"
                          Visibility="{Binding ProfileGap, Converter={StaticResource NotNullToVis}}" />
+              <!-- The master's own depth: with the rows, and alone when the box above is off
+                   (R-118) - then it is information, and the paragraph at the end of the card says
+                   why nothing is compared. Its own panel, so it does not go with the rows. -->
+              <Grid Margin="0,0,0,12"
+                    Visibility="{Binding ProfileMaster, Converter={StaticResource NotNullToVis}}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{l:T En='the master photographed', Ro='masterul fotografiat'}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Style="{StaticResource Number}" Margin="12,0,0,0"
+                           Text="{Binding ProfileMaster}" VerticalAlignment="Center" />
+              </Grid>
               <StackPanel Visibility="{Binding HasProfileRows, Converter={StaticResource BoolToVis}}">
-                <Grid Margin="0,0,0,12">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="{l:T En='the master photographed', Ro='masterul fotografiat'}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}" Margin="12,0,0,0"
-                             Text="{Binding ProfileMaster}" VerticalAlignment="Center" />
-                </Grid>
                 <ItemsControl ItemsSource="{Binding ProfileRows}"
                               ItemTemplate="{StaticResource LensProfileRowTemplate}" />
                 <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"
@@ -205,6 +219,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,10,0,0"
                            Text="{Binding ProfileNote}" />
               </StackPanel>
+              <!-- With the box off: why nothing is compared, from the core (R-118). -->
+              <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding FilteredNote}"
+                         Visibility="{Binding FilteredNote, Converter={StaticResource NotNullToVis}}" />
             </StackPanel>
           </Border>
 

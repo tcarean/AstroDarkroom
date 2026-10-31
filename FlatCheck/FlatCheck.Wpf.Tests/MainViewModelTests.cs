@@ -65,8 +65,8 @@ public class MainViewModelTests
 
         Task any = Task.WhenAny(histEq, expo);
         Assert.NotSame(any, await Task.WhenAny(any, Task.Delay(1000)));
-        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.HistEq.BusyMessage);
-        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.Exposure.BusyMessage);
+        Assert.Equal(SessionMessages.WaitingForRunningAnalysis(), vm.HistEq.BusyMessage);
+        Assert.Equal(SessionMessages.WaitingForRunningAnalysis(), vm.Exposure.BusyMessage);
 
         hold.Set();
         await open;
@@ -659,6 +659,207 @@ public class MainViewModelTests
 
         Assert.Equal(VersionInfo.Banner, vm.Banner);
         Assert.Equal(VersionInfo.Copyright, vm.Copyright);
+    }
+
+    // ------------------------------------------------ the switches remembered per folder (R-119)
+
+    /// <summary>
+    /// R-119: a folder whose flatcheck.json says so opens with the filter box unchecked - so
+    /// the Structure run compares nothing, even with a raw and a catalog - and the sky box
+    /// checked, before any run.
+    /// </summary>
+    [Fact]
+    public async Task R119_TheSwitchesAreRestoredFromTheFolderWhenItOpens()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        File.WriteAllText(Path.Combine(f.Root, "flatcheck.json"), "{\"noFilters\":false,\"skyFlat\":true}");
+        var vm = new MainViewModel(null, null, null, locateProfiles: () => sources,
+            loadInfo: path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.Structure.HasResult, vm.Structure.ErrorText);
+        Assert.False(vm.Structure.NoFilters);
+        Assert.False(vm.Structure.HasProfileRows);
+        Assert.NotEmpty(vm.Structure.FilteredNote);
+        Assert.True(vm.Exposure.Sky);
+    }
+
+    /// <summary>
+    /// R-119: without a file both switches are on their defaults, nothing is written by
+    /// opening the folder, and each change writes the file with both keys.
+    /// </summary>
+    [Fact]
+    public async Task R119_NothingIsWrittenUntilASwitchChanges()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string json = Path.Combine(f.Root, "flatcheck.json");
+        var vm = new MainViewModel();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.Structure.NoFilters);
+        Assert.False(vm.Exposure.Sky);
+        Assert.False(File.Exists(json));
+
+        vm.Exposure.Sky = true;
+        Assert.True(File.Exists(json));
+        Assert.Contains("\"skyFlat\":true", File.ReadAllText(json));
+        Assert.Contains("\"noFilters\":true", File.ReadAllText(json));
+
+        vm.Structure.NoFilters = false;
+        await vm.Structure.Pending;
+        Assert.Contains("\"noFilters\":false", File.ReadAllText(json));
+        Assert.Contains("\"skyFlat\":true", File.ReadAllText(json));
+    }
+
+    /// <summary>
+    /// R-119: the switches belong to the folder: the next folder, without a file, opens on the
+    /// defaults, whatever the previous one had.
+    /// </summary>
+    [Fact]
+    public async Task R119_TheNextFolderStartsFromItsOwnFile()
+    {
+        using var a = new SessionFixture().WithFlatMaster();
+        using var b = new SessionFixture().WithFlatMaster();
+        File.WriteAllText(Path.Combine(a.Root, "flatcheck.json"), "{\"noFilters\":false,\"skyFlat\":true}");
+        var vm = new MainViewModel();
+
+        await vm.OpenAsync(a.Root);
+        Assert.False(vm.Structure.NoFilters);
+        Assert.True(vm.Exposure.Sky);
+
+        await vm.OpenAsync(b.Root);
+
+        Assert.True(vm.Structure.NoFilters);
+        Assert.False(vm.Exposure.Sky);
+        Assert.False(File.Exists(Path.Combine(b.Root, "flatcheck.json")));
+    }
+
+    // ------------------------------------------------------------ the opening panel (R-120)
+
+    /// <summary>
+    /// R-120: while the opening runs, the three rows say where it stands - the structure and
+    /// the prefill running (both wait for the held catalog), the series waiting - and the
+    /// window is running; once everything has ended every row is done, the series' row with
+    /// the tab's own refusal (no lights in the fixture), and the window is not running any
+    /// more. The tabs follow IsRunning in the XAML.
+    /// </summary>
+    [Fact]
+    public async Task R120_TheRowsFollowTheRunsAndTheWindowRunsUntilThePrefillEnds()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF");
+        using var ws = new TempWorkspace();
+        using var hold = new ManualResetEventSlim(false);
+        var sources = LensProfileTestData.Sources(ws);
+        var vm = new MainViewModel(null, null, null,
+            locateProfiles: () => { hold.Wait(); return sources; },
+            loadInfo: path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        Assert.Equal(3, vm.OpeningSteps.Count);
+        Assert.All(vm.OpeningSteps, s => Assert.True(s.IsWaiting));
+
+        Task open = vm.OpenAsync(f.Root);   // stops at the catalog, which the test holds
+
+        Assert.True(vm.IsRunning);
+        Assert.True(vm.OpeningSteps[0].IsRunning);
+        Assert.Equal("ruleaza...", vm.OpeningSteps[0].StatusWord);
+        Assert.True(vm.OpeningSteps[1].IsWaiting);
+        Assert.Equal("asteapta", vm.OpeningSteps[1].StatusWord);
+        Assert.True(vm.OpeningSteps[2].IsRunning);
+        Assert.Same(vm.Structure, vm.OpeningSteps[0].Tab);
+        Assert.NotEmpty(vm.Structure.BusyMessage);
+
+        hold.Set();
+        await open;
+
+        Assert.False(vm.IsRunning);
+        Assert.All(vm.OpeningSteps, s => Assert.True(s.IsDone));
+        Assert.Equal("gata", vm.OpeningSteps[0].StatusWord);
+        Assert.Equal(vm.Light.ErrorTitle, vm.OpeningSteps[1].StatusWord);   // the tab's refusal, not a word
+        Assert.Contains("end-to-end", vm.OpeningSteps[1].StatusWord);
+        Assert.Equal("gata", vm.OpeningSteps[2].StatusWord);
+        Assert.NotEmpty(vm.OpeningSteps[0].Label);
+        Assert.NotEqual(vm.OpeningSteps[0].Label, vm.OpeningSteps[1].Label);
+    }
+
+    /// <summary>
+    /// R-120: a folder opened over a running one keeps the panel until its own opening ends.
+    /// The gate is held by the test, as a click's run of a previous folder would hold it: A
+    /// waits for it, B cancels A and waits in its turn; A's opening ends under B's, and the
+    /// window is still running - before the fix A's finally dropped the flag and the tabs
+    /// showed while B had not even started.
+    /// </summary>
+    [Fact]
+    public async Task R120_TheOlderOpeningEndingDoesNotDropTheNewerOnesPanel()
+    {
+        using var a = new SessionFixture().WithFlatMaster();
+        using var b = new SessionFixture().WithFlatMaster();
+        var gate = new HeavyRunGate();
+        IDisposable other = await gate.EnterAsync(CancellationToken.None);
+        var vm = new MainViewModel(null, null, gate: gate);
+
+        Task openA = vm.OpenAsync(a.Root);   // waits for the gate
+        Task openB = vm.OpenAsync(b.Root);   // cancels A's wait and waits in its turn
+        Assert.True(vm.IsRunning);
+
+        await openA;                          // A's opening ends under B's
+        Assert.False(openB.IsCompleted);
+        Assert.True(vm.IsRunning);            // the panel follows B, not A's ending
+        Assert.False(vm.OpeningSteps[0].IsDone);
+        Assert.False(vm.OpeningSteps[1].IsDone);
+
+        // B's prefill needs no gate: its row turns done when its own task ends, while the chain
+        // still waits (the watcher's continuation lands right after the task, so a short wait).
+        await vm.Synthetic.Pending;
+        for (int i = 0; i < 300 && !vm.OpeningSteps[2].IsDone; i++) await Task.Delay(10);
+        Assert.True(vm.OpeningSteps[2].IsDone);
+        Assert.True(vm.IsRunning);
+
+        other.Dispose();
+        await openB;
+        Assert.False(vm.IsRunning);
+        Assert.Equal(b.Root, vm.Folder);
+        Assert.All(vm.OpeningSteps, s => Assert.True(s.IsDone));
+    }
+
+    /// <summary>R-120: an opening that stops at the problem card, over a running one, drops the
+    /// panel at once: the card must not stay covered.</summary>
+    [Fact]
+    public async Task R120_AnOpeningThatStopsAtTheCardDropsThePanel()
+    {
+        using var a = new SessionFixture().WithFlatMaster();
+        using var b = new SessionFixture().WithProcess();   // no master: the card
+        var gate = new HeavyRunGate();
+        IDisposable other = await gate.EnterAsync(CancellationToken.None);
+        var vm = new MainViewModel(null, null, gate: gate);
+
+        Task openA = vm.OpenAsync(a.Root);
+        Assert.True(vm.IsRunning);
+        await vm.OpenAsync(b.Root);
+
+        Assert.True(vm.HasProblem);
+        Assert.False(vm.IsRunning);
+
+        other.Dispose();
+        await openA;
+        Assert.False(vm.IsRunning);           // A's ending changes nothing
+        Assert.True(vm.HasProblem);
+    }
+
+    /// <summary>R-120: a folder with lights ends with every row done, in a word.</summary>
+    [Fact]
+    public async Task R120_WithASeriesEveryRowEndsDone()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithLightSeries(3);
+        var vm = new MainViewModel();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.False(vm.IsRunning);
+        Assert.All(vm.OpeningSteps, s => Assert.Equal("gata", s.StatusWord));
+        Assert.True(vm.Light.ProgressKnown);  // the series row's bar was determinate
     }
 
     /// <summary>

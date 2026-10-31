@@ -6,7 +6,9 @@
 > ADR 0037, and this note keeps the mechanics of the window's tabs and the few reasons that have
 > no other home. **Covers:** in full, the table of what each application does with the core's
 > outputs (`FlatCheck/`) and `FlatCheck.Wpf/` `ViewModels` and `Views` (the tab mechanics below);
-> by pointer, `FlatCheck.Wpf/Session` (ADR 0033 to 0035, 0055), `Presentation` and `Theme`
+> by pointer, `FlatCheck.Wpf/Session` (ADR 0033 to 0035, 0055; `SessionSettings.cs` in full,
+> under the Structure tab below, ADR 0078; the opening panel, `ViewModels/OpeningStep.cs` and
+> `Views/OpeningPanel.xaml`, ADR 0079), `Presentation` and `Theme`
 > (ADR 0036, 0037; the tabs' control, ADR 0074) and `Runs/RunOutcome.cs` (ADR 0011, 0036).
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
@@ -64,7 +66,9 @@ map guide's. `Histograms` is a **replaceable list, not an `ObservableCollection`
 file starts a run nobody awaits, and a second pick (or the Sky toggle) can start another over
 it - scalar properties just let the last one win, but a collection cleared and refilled by two
 runs at once ends up with duplicated rows and nulls in it. The light series is the opposite
-case and does need `ObservableCollection`, because it appends rows as frames finish.
+case and does need `ObservableCollection`, because it appends rows as frames finish. The Sky
+box is set from the folder's `SessionSettings` in `Attach`, before any file is chosen (so no
+run starts), and its setter writes them back (R-119, below under the Structure tab).
 
 Above the charts sits a switch, `HistogramSourceViewModel`, on the `MapScaleViewModel`
 pattern: two radio chips, raw data or the camera's preview (ADR 0024 for what the preview is
@@ -100,6 +104,57 @@ Netezire tab, which reuses `StructureRows.Tests`, are untouched. `Populate` is
 `internal` and sets `HasResult` for the smoke test. The one thing the window cannot do
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
+
+**The box at the top of the card, `NoFilters`, turns that comparison off** (R-118, ADR 0078).
+`RunAsync` takes the folder's `SessionSettings` and sets the box from them without writing or
+recomparing (the field and a `Raise`, not the setter), then `Compares(rawPath)` is "a raw, a
+catalog, and the box on": off, the run is the plain `Execute` with no query, `Gap` returns null
+(no `Compare` on the header either: the card has its own words), `searched` is null so the Adobe
+block stays empty, and `Populate`'s "nothing compared" branch shows `MasterDepth(o.Structure)`
+with `FilteredLensNote()` instead of the gap. The tab keeps what a flip needs - `_session`,
+`_ct`, `_structure`, `_masterPath`, `_rawPath` - and the setter writes the settings and starts
+`RecompareAsync`: the same guarded run, `StructureRun.Recompare` on the kept result (the
+comparison or the plain outcome, and the report), then `Populate` and `SaveReport`, the report
+alone; the raster, the map cache and `Map` are untouched, and `flatcheck.png` on disk is
+already right. `Save` is `SaveReport` plus the PNG. The box is bound `IsEnabled` to `!IsBusy`,
+so a flip never lands in the middle of the tab's own run; `Reset` drops the kept pieces and the
+settings, not the box, which the next folder's file sets. The recompare is deliberately outside
+the heavy-run gate (ADR 0061): it loads no pixels - the master's header, the raw's metadata and
+the catalog only - so it may run beside the chain's light series. After the await, both `RunAsync`
+and `RecompareAsync` return when `_session` is no longer the run's: a folder closed meanwhile
+(`Reset` nulls it) gets nothing on screen and no file rewritten. One assumption to know: the
+recompare identifies the lens on `LoadInfo`'s header, the primary HDU's, where `Execute` read
+the image HDU's cards; the pre-existing gap path did the same, and Siril's masters are
+single-HDU, so the two agree on every real master. In the XAML the master's depth sits in its own panel, shown
+on `ProfileMaster`, and the note is the card's last element, shown on `FilteredNote`.
+
+**While the opening runs, a panel stands in for the tabs** (R-120, ADR 0079). `MainViewModel`
+holds three `OpeningStep`s - the structure run, the end-to-end run, the Synthetic prefill - each a
+label (a `T` pair read at bind time), the tab it runs on and a state the view-model sets around
+its awaits: `Running` before `Structure.RunAsync` and `Light.RunAsync` in `RunChainAsync`, `Done`
+after each, the prefill's `Running` right after `Synthetic.Attach`, whose task is captured there
+and watched by `WatchPrefillAsync`: the row turns `Done` the moment that task ends, if the folder
+is still the open one (`_session` by reference, so a reopen of the same path is not confused),
+and `OpenAsync` awaits the watcher after the chain; read later, `Synthetic.Pending` would be the
+next folder's. `ResetTabs` puts all three back to `Waiting`. `StatusWord`
+is the state in a word or, once done, the tab's own `ErrorTitle` when it has one (a refusal such
+as no lights reads as the tab will show it). `Views/OpeningPanel.xaml` binds the rows to the
+tab's `BusyMessage`, `BusyDetail`, `Progress` and `ProgressKnown`, the same properties its own
+`BusyOverlay` draws. `IsRunning` now lasts until the prefill has ended and follows the latest
+opening: `OpenAsync` counts openings, only the latest clears the flag in its `finally`, and an
+opening that stops before the chain (a blank folder, the problem card) clears it at once, so an
+older chain ending under a newer opening - a direct call, as the tests make; the screen cannot -
+does not show the tabs early. In `MainWindow.xaml` the
+panel is visible on `IsRunning` and the tabs add `IsRunning == False` to their trigger.
+
+**The two switches are the folder's** (R-119, ADR 0078): `Session/SessionSettings.cs`, one
+JSON object in `SirilSession.SettingsPath` (`flatcheck.json` in the root) with `noFilters` and
+`skyFlat`, `System.Text.Json` from the BCL. `MainViewModel.OpenAsync` reads it once after
+`Check()` passes and hands it to `Exposure.Attach` and, through `RunChainAsync`, to
+`Structure.RunAsync`; each tab keeps the object and its setter writes it whole (a temporary file
+and `File.Move`, a `Warn` line on failure) before it recomputes. `None` is the object without a
+path, which the tabs hold before a folder and in the tests, so a setter never checks for null.
+`Read` never throws: not a file, not an object, a key absent or of another type is the default.
 
 **Without Adobe's profiles the card says so first** (R-113, ADR 0073). `Populate` takes the
 sources the run searched (`query.Sources`; null without a raw, when the run compares nothing and
@@ -158,7 +213,7 @@ no overlay, waits for the gate before its copies start and holds it only around 
 of the part masters, not through the Siril runs. The gate wait takes the run's own token, so a
 run superseded or cancelled while queued leaves the queue without computing; the chain's wait,
 cancelled by another folder, returns quietly. While another run holds the gate, the waiting
-screen's first line is `SessionMessages.WaitingForOpeningChain()`, not the run's own message,
+screen's first line is `SessionMessages.WaitingForRunningAnalysis()`, not the run's own message,
 which would claim work that has not begun: `EnterGateAsync` swaps the line in when the gate is
 held at entry and puts the run's message back once in, and only for the latest run (the
 generation counter of `RunGuardedAsync`), so a superseded run waiting beside the new one does
@@ -183,7 +238,8 @@ causes), the tabs reset and the session dropped, unless another folder was opene
 (then a Debug line only). The Debug line that describes the folder runs after the card or the
 tabs are up and writes a folder it cannot list as `unreadable`, so it never takes the card
 down with it (R-080, R-110; why a card and not a crash is ADR 0072). The Synthetic prefill reads the reference raw inside its own
-`try` for the same reason: it is a task nobody awaits.
+`try` for the same reason: it is awaited only at the end of `OpenAsync`, through a watcher that
+assumes it never faults (R-120).
 
 **The Histogram tab lists the flat master first, then the smoothed master when it exists,
 then `flats/`, and lets a click interrupt a click.** The list and its order, the master not

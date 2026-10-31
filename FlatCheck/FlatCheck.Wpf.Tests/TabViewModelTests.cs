@@ -41,12 +41,12 @@ public class TabViewModelTests
         tab.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(tab.BusyMessage)) messages.Add(tab.BusyMessage); };
 
         Task run = tab.Run("Lucrez...", async () => { using (await tab.Enter(gate)) await Task.Yield(); });
-        Assert.Equal(SessionMessages.WaitingForOpeningChain(), tab.BusyMessage);
+        Assert.Equal(SessionMessages.WaitingForRunningAnalysis(), tab.BusyMessage);
 
         held.Dispose();
         await run;
 
-        Assert.Equal(new[] { "Lucrez...", SessionMessages.WaitingForOpeningChain(), "Lucrez..." }, messages);
+        Assert.Equal(new[] { "Lucrez...", SessionMessages.WaitingForRunningAnalysis(), "Lucrez..." }, messages);
         Assert.False(tab.IsBusy);
         Assert.False(gate.IsHeld);
 

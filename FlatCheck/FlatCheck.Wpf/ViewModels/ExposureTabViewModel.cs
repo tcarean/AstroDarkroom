@@ -131,12 +131,22 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>The window's --sky (R-043): the switch changes the bands, so it
-        /// recomputes.</summary>
+        /// recomputes; it is the folder's, so a change writes its settings (R-119).</summary>
         public bool Sky
         {
             get => _sky;
-            set { if (Set(ref _sky, value)) Recompute(); }
+            set
+            {
+                if (!Set(ref _sky, value)) return;
+                _settings.SkyFlat = value;
+                _settings.Write();
+                Recompute();
+            }
         }
+
+        /// <summary>The folder's remembered switches (R-119); <see cref="SessionSettings.None"/>
+        /// before a folder and in the tests.</summary>
+        SessionSettings _settings = SessionSettings.None;
 
         public string Scale { get => _scale; private set => Set(ref _scale, value); }
         public string Centre { get => _centre; private set => Set(ref _centre, value); }
@@ -169,11 +179,19 @@ namespace FlatCheck.Wpf
         /// <param name="ct">The folder's token, which every run observes.</param>
         /// <param name="gate">The window's heavy-run gate, taken around a measurement; null runs
         /// at once.</param>
-        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate = null)
+        /// <param name="settings">The folder's remembered switches (R-119), whose "sky flat" the
+        /// box takes before any file is chosen; null for none remembered.</param>
+        internal void Attach(SirilSession session, CancellationToken ct, HeavyRunGate gate = null, SessionSettings settings = null)
         {
             _session = session;
             _ct = ct;
             _gate = gate;
+
+            // The box takes the folder's value without writing it back and without a run: no
+            // file is chosen yet, so Recompute would do nothing anyway.
+            _settings = settings ?? SessionSettings.None;
+            _sky = _settings.SkyFlat;
+            Raise(nameof(Sky));
 
             Files.Clear();
             foreach (string p in session.RawFlats()) Files.Add(p);
@@ -388,6 +406,8 @@ namespace FlatCheck.Wpf
             base.Reset();
             _session = null;
             _gate = null;
+            // The box stays as it is; the next folder's file sets it (R-119).
+            _settings = SessionSettings.None;
             Files.Clear();
             _selected = null;
             Raise(nameof(Selected));

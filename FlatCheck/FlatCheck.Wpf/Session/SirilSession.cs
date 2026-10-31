@@ -209,6 +209,10 @@ namespace FlatCheck.Wpf
         /// console's.</summary>
         internal string ResidualPngPath => Path.Combine(Root, "flatcheck.png");
 
+        /// <summary>The two switches the window remembers for this folder (R-119), beside the
+        /// report: <see cref="SessionSettings.FileName"/> in the session root.</summary>
+        internal string SettingsPath => Path.Combine(Root, SessionSettings.FileName);
+
         /// <summary>The Split tab's report and mosaic, in the session's root, beside the
         /// structure's (ADR 0054).</summary>
         internal const string SplitResultFileName = "Split result.txt";

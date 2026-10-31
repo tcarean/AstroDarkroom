@@ -21,9 +21,9 @@
 // opened; this one writes a 96 MB file beside the master, and a file is not produced because
 // someone looked at a folder. Attach only prepares the paths and the guide.
 //
-// SEQUENTIAL: the button can be pressed while the structure run is still going on the same 24 MP
-// master; RunAsync first awaits the opening chain (MainViewModel), for the memory reason given
-// there.
+// SEQUENTIAL: RunAsync first takes the heavy-run gate (MainViewModel), for the memory reason
+// given there: another click's run may still be going on the same 24 MP master (the opening
+// chain cannot: the tabs are not on screen while it runs, R-120).
 //
 // THE FILE IS WRITTEN AFTER THE RESULT IS ON SCREEN, and the overwrite is asked through a delegate
 // given from outside - a MessageBox in the application, a fixed answer in the tests. A "no" leaves
@@ -124,7 +124,7 @@ namespace FlatCheck.Wpf
         internal double ProposedScalePx { get; private set; } = double.NaN;
 
         /// <summary>
-        /// The proposal: the advisor on the session's master, after the opening chain like the
+        /// The proposal: the advisor on the session's master, after the gate like the
         /// smoothing, then the proposed chip ticked. It writes no file; the result on screen, if
         /// there is one, stays.
         /// </summary>
@@ -300,8 +300,8 @@ namespace FlatCheck.Wpf
             ClearError();
         }
 
-        /// <summary>Smooths the session's master at the chosen scale, guarded, after the opening
-        /// chain; shows the numbers, then writes the smoothed master beside it, asking before an
+        /// <summary>Smooths the session's master at the chosen scale, guarded, after the gate;
+        /// shows the numbers, then writes the smoothed master beside it, asking before an
         /// overwrite, and raises <see cref="Saved"/> once written.</summary>
         /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal async Task RunAsync()

@@ -124,6 +124,32 @@ namespace FlatCheck
             return new RunOutcome<StructureOutcome>(o, png);
         }
 
+        /// <summary>
+        /// The comparison redone on a structure already computed, and the report written again
+        /// (R-118, ADR 0078): with a query, <see cref="Compare"/>; without one, the plain outcome
+        /// of the five tests. The window calls it when its "no filters" box is flipped, so the
+        /// master is not loaded or analysed a second time; the map is unchanged, so it is not
+        /// encoded again. The report is the one <see cref="Execute"/> writes for the same query.
+        /// </summary>
+        /// <param name="r">The five tests on the master, already computed.</param>
+        /// <param name="master">The master's frame, for its header; its pixels are not
+        /// read.</param>
+        /// <param name="path">The master's path, named in the report.</param>
+        /// <param name="report">Where the report is written.</param>
+        /// <param name="query">What to compare with; null = the structure only.</param>
+        /// <returns>The outcome; its <see cref="StructureOutcome.Profiles"/> is null without a
+        /// query.</returns>
+        internal static StructureOutcome Recompare(StructureResult r, LoadedFrame master, string path, TextWriter report, StructureQuery query)
+        {
+            using RunClock clock = RunClock.Start(Log, "structure recompare", path + Describe(query));
+            StructureOutcome o = query == null ? new StructureOutcome(r, null, null, null) : Compare(r, master, query);
+            clock.Lap("compare");
+            StructureReport.Write(o, path, report);
+            clock.Lap("report");
+            clock.Done("verdict=" + o.Verdict);
+            return o;
+        }
+
         /// <summary>The diagnostic log: the run's lines and figures (R-110).</summary>
         static readonly Logger Log = LogManager.GetLogger(nameof(StructureRun));
 
