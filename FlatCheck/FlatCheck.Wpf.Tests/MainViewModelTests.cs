@@ -748,18 +748,8 @@ public class MainViewModelTests
         using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
         using var ws = new TempWorkspace();
         var sources = LensProfileTestData.Sources(ws, rangePair: true);
-        string key = sources.Catalog.Lenses.First(l => l.Name == LensProfileTestData.Samyang135).Key;
-        var raw = new LoadedFrame
-        {
-            Header = new Dictionary<string, string>(),
-            FocalMm = 135,
-            FNumber = 2.8,
-            Camera = "NIKON D3300",
-            LensId = 74,
-            LensMinFocalMm = 135,
-            LensMaxFocalMm = 135,
-            LensMaxAperture = 2,
-        };
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
+        LoadedFrame raw = LensProfileTestData.Range135Raw();
         string json = Path.Combine(f.Root, "flatcheck.json");
         File.WriteAllText(json, "{\"noFilters\":true,\"skyFlat\":false,\"lens\":\"" + key + "\"}");
         DateTime written = File.GetLastWriteTimeUtc(json);

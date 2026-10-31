@@ -257,7 +257,10 @@ namespace FlatCheck.Wpf
             get => _selectedLens;
             set
             {
-                if (!Set(ref _selectedLens, value) || value == null) return;
+                // The ComboBox pushes null through the binding whenever LensOptions is replaced
+                // (every Populate): that is not a pick, and the field must not lose the entry
+                // ShowLensPicker is about to set, so a null never reaches the field from here.
+                if (value == null || !Set(ref _selectedLens, value)) return;
                 _settings.Lens = value.Key;
                 _settings.Write();
                 Pending = RecompareAsync();
@@ -577,7 +580,11 @@ namespace FlatCheck.Wpf
                 ProfileRows = Array.Empty<LensProfileRow>();
                 ProfileScale = Array.Empty<ScaleRow>();
                 ProfileSummary = ProfileScaleNote = ProfileNote = "";
-                ShowLensPicker(null);
+                // The picker stays whenever the shot offers a choice, compared or not: a chosen
+                // lens whose profile makes no row (a gap) must still be undone from the screen,
+                // or the choice kept in flatcheck.json would lock the card on the gap. With the
+                // box off nothing was identified, and the picker goes with the rows.
+                ShowLensPicker(NoFilters ? explained?.Shot : null);
                 // With the box off (R-118): the master's own depth, for information, and why
                 // nothing is compared - both from the core. With it on: the gap, when known.
                 ProfileMaster = NoFilters ? "" : StructureReport.MasterDepth(o.Structure);
@@ -597,14 +604,17 @@ namespace FlatCheck.Wpf
         /// <param name="shot">The compared shot; null empties the picker.</param>
         void ShowLensPicker(ShotIdentity shot)
         {
-            LensChoicePrompt = StructureReport.LensChoicePrompt(shot);
-            if (LensChoicePrompt.Length == 0)
+            // The core says whether there is a choice to make (ShotIdentity.OffersLensChoice),
+            // and the prompt speaks exactly then.
+            if (shot == null || !shot.OffersLensChoice)
             {
+                LensChoicePrompt = "";
                 LensOptions = Array.Empty<LensOption>();
                 _selectedLens = null;
                 Raise(nameof(SelectedLens));
                 return;
             }
+            LensChoicePrompt = StructureReport.LensChoicePrompt(shot);
             var options = new List<LensOption>
             {
                 new LensOption { Key = null, Label = T("the nearest profile decides", "decide cel mai apropiat profil") },

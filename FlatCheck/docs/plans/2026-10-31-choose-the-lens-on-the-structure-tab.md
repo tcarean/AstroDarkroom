@@ -149,3 +149,22 @@ app-wide default per range ("135 mm f/2.0 means Samyang"), a second memory. ADR 
   Samyang out, which is exactly the real database's shape.
 - `ComparisonSummary` drops its single-profile sentence when a lens was chosen: "without a second
   database" would blame the databases for a list the person narrowed.
+- The owner asked, on seeing the window, that the row giving the verdict be clearly marked: an
+  accent bar, a lighter background and the words "gives the verdict" beside the name, in the
+  row template (commit db024729).
+
+## Part 2: the review's findings (approved by the owner on 2026-10-31)
+
+A review of the branch found seven things; the owner took 1-5 and 7, and left 6 (the no-choice
+words composed in the view-model, as the nearest-row note already was) on the precedent:
+
+1. The picker vanished when the chosen lens compared nothing (a lensfun lens on a body the
+   lensfun table does not know: no crop, no row, a gap), locking the choice kept in
+   `flatcheck.json`: `Populate`'s "nothing compared" branch now keeps the picker when the shot
+   offers a choice and the box is on.
+2. Tests for that case and for the null the `ComboBox` pushes on a list swap.
+3. `ChosenLensNote` says "the file could not tell the lens" only on a list by range alone.
+4. `Range135Raw()` and `KeyOf()` moved to `LensProfileTestData`; the four test files call them.
+5. `ShotIdentity.OffersLensChoice` is the one condition for the prompt and the picker, instead
+   of the prompt's emptiness.
+7. The `SelectedLens` setter filters the binding's null before `Set`, with the reason beside it.

@@ -97,6 +97,13 @@ namespace FlatCheck
         /// </summary>
         internal LensChoice ChosenLens;
 
+        /// <summary>
+        /// True when there is a lens to choose (R-121): the candidates came by range alone and
+        /// there is more than one, so the file cannot say which is on the camera. The window's
+        /// picker and the report's prompt both hang on this.
+        /// </summary>
+        internal bool OffersLensChoice => CandidatesByRangeOnly && Candidates.Count > 1;
+
         internal bool HasRawLensId => Raw?.LensId != null;
 
         /// <summary>

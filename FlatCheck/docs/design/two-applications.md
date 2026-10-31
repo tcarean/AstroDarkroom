@@ -131,15 +131,21 @@ on `ProfileMaster`, and the note is the card's last element, shown on `FilteredN
 **The lens picker under the box, on a list found by range alone** (R-121, ADR 0080). A manual
 lens leaves the core a range and nothing else, so `ShotIdentity.CandidatesByRangeOnly` lists
 every lens of the mount with that range, and the window cannot tell which is on the camera.
-`Populate` ends its compared branch with `ShowLensPicker(explained.Shot)`: when
-`StructureReport.LensChoicePrompt(shot)` has words (range only, more than one candidate) the
-picker gets the no-choice entry (`LensOption` with a null key, "the nearest profile decides")
-and one entry per candidate in the rows' order, labelled `SourceLabel Name [Where]`, and the
-selection lands on the entry whose key is `shot.ChosenLens?.Key`, else on the no-choice entry -
-through the field and a `Raise`, as the box does, since a run shows a choice and does not make
-one; otherwise, and in the "nothing compared" branch and in `Reset`, the picker is emptied and
-`OffersLensChoice` hides it. The `SelectedLens` setter, a pick on screen, writes
-`_settings.Lens = value.Key` and starts `RecompareAsync`, exactly the box's path; `QueryAsync`
+`Populate` calls `ShowLensPicker(shot)` in both branches: when the core says there is a choice
+(`ShotIdentity.OffersLensChoice`: range only, more than one candidate; the prompt
+`StructureReport.LensChoicePrompt` speaks exactly then) the picker gets the no-choice entry
+(`LensOption` with a null key, "the nearest profile decides") and one entry per candidate in
+the rows' order, labelled `SourceLabel Name [Where]`, and the selection lands on the entry whose
+key is `shot.ChosenLens?.Key`, else on the no-choice entry - through the field and a `Raise`, as
+the box does, since a run shows a choice and does not make one. The "nothing compared" branch
+passes the shot too, with the box on: a chosen lens whose profile makes no row (a lensfun lens
+on a body the lensfun table does not know, so no crop) leaves the card on the gap with the
+picker still up, so the choice can be undone from the screen; otherwise the key kept in
+`flatcheck.json` would lock the card on the gap at every reopen. With the box off, and in
+`Reset`, the picker is emptied and `OffersLensChoice` hides it. The `SelectedLens` setter, a
+pick on screen, ignores the null the `ComboBox` pushes whenever the list is replaced (the field
+never takes it), writes `_settings.Lens = value.Key` and starts `RecompareAsync`, exactly the
+box's path; `QueryAsync`
 puts `_settings.Lens` on the query as `LensKey`, so the run at open and every recompare carry
 the folder's choice. The core does the rest (`StructureRun.Compare`, `lens-profiles.md`
 section 11): the chosen candidate alone is compared, the candidates stay whole on the identity

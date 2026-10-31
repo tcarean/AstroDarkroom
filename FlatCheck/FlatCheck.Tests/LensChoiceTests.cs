@@ -28,20 +28,6 @@ namespace FlatCheck.Tests;
 /// </summary>
 public class LensChoiceTests
 {
-    /// <summary>A D3300 raw with a manual lens: the "non-CPU lens" ID 74, no name, the range
-    /// 135 mm f/2.0 from the camera's menu, shot at f/2.8.</summary>
-    static LoadedFrame Range135Raw() => new LoadedFrame
-    {
-        Header = new Dictionary<string, string>(),
-        FocalMm = 135,
-        FNumber = 2.8,
-        Camera = "NIKON D3300",
-        LensId = 74,
-        LensMinFocalMm = 135,
-        LensMaxFocalMm = 135,
-        LensMaxAperture = 2,
-    };
-
     /// <summary>The master's header, as the window reads it without pixels.</summary>
     static LoadedFrame Master() => new LoadedFrame
     {
@@ -58,20 +44,19 @@ public class LensChoiceTests
         return (r, sources);
     }
 
-    /// <summary>The catalog key of the lens with that name.</summary>
-    static string KeyOf(ProfileSources sources, string name)
-        => sources.Catalog.Lenses.First(l => l.Name == name).Key;
-
-    /// <summary>The comparison on the range raw, with or without a chosen key and a lens text.</summary>
-    static StructureOutcome Compare(StructureResult r, ProfileSources sources, string? key = null, string? text = null)
+    /// <summary>The comparison on the range raw (or another), with or without a chosen key and a lens text.</summary>
+    static StructureOutcome Compare(StructureResult r, ProfileSources sources, string? key = null, string? text = null, LoadedFrame? raw = null)
         => StructureRun.Compare(r, Master(), new StructureQuery
         {
             Sources = sources,
             RawPath = "DSC_0001.NEF",
-            LoadInfo = _ => Range135Raw(),
+            LoadInfo = _ => raw ?? LensProfileTestData.Range135Raw(),
             LensKey = key,
             LensText = text,
         });
+
+    /// <summary>The catalog key of the lens with that name.</summary>
+    static string KeyOf(ProfileSources sources, string name) => LensProfileTestData.KeyOf(sources, name);
 
     /// <summary>The console's report block for the outcome.</summary>
     static string Report(StructureOutcome o)
@@ -150,6 +135,43 @@ public class LensChoiceTests
         Assert.Null(o.Shot.ChosenLens);
         Assert.Contains(capture.Events, e => e.Level == LogLevel.Debug && e.Message.Contains("Nobody 135mm f/2") && e.Message.Contains("not among"));
         Assert.Contains(StructureReport.RangeOnlyNote(o.Shot).Trim(), Report(o));
+    }
+
+    /// <summary>
+    /// R-121: a key on a list the lens ID decided (the Tokina, 139) still narrows the rows, but
+    /// the note does not claim the file could not tell the lens, and there is no prompt: the
+    /// window offers no picker on such a list.
+    /// </summary>
+    [Fact]
+    public void R121_AKeyOnAListFoundByIdNarrowsWithoutTheRangeOnlyWords()
+    {
+        using var ws = new TempWorkspace();
+        var (r, sources) = Setup(ws);
+        var tokinaRaw = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(),
+            FocalMm = 20,
+            FNumber = 2.8,
+            Camera = "NIKON D3300",
+            LensId = 139,
+            LensMinFocalMm = 11,
+            LensMaxFocalMm = 20,
+            LensMaxAperture = 2.8,
+        };
+        string key = sources.Catalog.Lenses.First(l => l.Source == ProfileSource.Lensfun && l.Name.Contains("11-20")).Key;
+
+        StructureOutcome o = Compare(r, sources, key, raw: tokinaRaw);
+
+        Assert.True(o.Compared, o.Profiles.Gap.ToString());
+        Assert.Single(o.Profiles.Profiles);
+        Assert.Equal(key, o.Shot.ChosenLens.Key);
+        Assert.False(o.Shot.CandidatesByRangeOnly);
+        Assert.False(o.Shot.OffersLensChoice);
+        Assert.Empty(StructureReport.LensChoicePrompt(o.Shot));
+        string note = StructureReport.ChosenLensNote(o.Shot);
+        Assert.NotEmpty(note);
+        Assert.DoesNotContain("databases", note);
+        Assert.DoesNotContain("bazelor", note);
     }
 
     /// <summary>R-121: the console's lens text, when given, wins over the key.</summary>

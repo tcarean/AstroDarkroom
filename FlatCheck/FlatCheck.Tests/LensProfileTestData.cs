@@ -391,6 +391,34 @@ internal static class LensProfileTestData
     internal const string Samyang135 = "Samyang 135mm f/2.0 ED UMC";
 
     /// <summary>
+    /// A D3300 raw with a manual lens (R-121): the "non-CPU lens" ID 74, no name, the range
+    /// 135 mm f/2.0 from the camera's menu, shot at f/2.8. Points at the range pair by range
+    /// alone.
+    /// </summary>
+    /// <param name="camera">The body's name; the D3300 by default, which the fixture's lensfun
+    /// camera table knows (crop 1.523). A body the table does not know leaves the lensfun
+    /// lens without a crop, so its row cannot be made.</param>
+    /// <returns>The frame, metadata only.</returns>
+    internal static LoadedFrame Range135Raw(string camera = "NIKON D3300") => new LoadedFrame
+    {
+        Header = new Dictionary<string, string>(),
+        FocalMm = 135,
+        FNumber = 2.8,
+        Camera = camera,
+        LensId = 74,
+        LensMinFocalMm = 135,
+        LensMaxFocalMm = 135,
+        LensMaxAperture = 2,
+    };
+
+    /// <summary>The catalog key of the lens with that name.</summary>
+    /// <param name="sources">The located sources.</param>
+    /// <param name="name">The lens's name, exactly as the catalog lists it.</param>
+    /// <returns>The key, as the window remembers it.</returns>
+    internal static string KeyOf(ProfileSources sources, string name)
+        => sources.Catalog.Lenses.First(l => l.Name == name).Key;
+
+    /// <summary>
     /// The lensfun half of the range pair (R-121): the Samyang 135 f/2 on Nikon F, with a
     /// vignetting calibration at 135 mm f/2 (the entry in <see cref="LensfunXml"/> has distortion
     /// only and is not read). Beside the Adobe Nikkor 135 f/2 DC file it makes the two lenses a

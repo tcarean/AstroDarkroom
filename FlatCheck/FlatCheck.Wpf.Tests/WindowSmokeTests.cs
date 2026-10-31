@@ -299,18 +299,8 @@ public class WindowSmokeTests
         var sources = LensProfileTestData.Sources(ws, rangePair: true);
         var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
         var master = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" }, FocalMm = 135, Camera = "Nikon D3300" };
-        var raw = new LoadedFrame
-        {
-            Header = new Dictionary<string, string>(),
-            FocalMm = 135,
-            FNumber = 2.8,
-            Camera = "NIKON D3300",
-            LensId = 74,
-            LensMinFocalMm = 135,
-            LensMaxFocalMm = 135,
-            LensMaxAperture = 2,
-        };
-        string key = sources.Catalog.Lenses.First(l => l.Name == LensProfileTestData.Samyang135).Key;
+        LoadedFrame raw = LensProfileTestData.Range135Raw();
+        string key = LensProfileTestData.KeyOf(sources, LensProfileTestData.Samyang135);
         StructureOutcome open = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw });
         StructureOutcome chosen = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw, LensKey = key });
 

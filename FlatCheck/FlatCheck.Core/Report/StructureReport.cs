@@ -366,10 +366,15 @@ namespace FlatCheck
             string others = string.Join(", ", shot.Candidates.Where(c => c.Key != chosen.Key).Select(c => $"{c.SourceLabel} {c.Title}"));
             string leftOut = others.Length == 0 ? ""
                 : T($" The other lenses of that range were left out: {others}.", $" Celelalte obiective cu aceasta gama au fost lasate deoparte: {others}.");
-            return T($"\ncompared with the lens you chose, {chosen.SourceLabel} {chosen.Title}: all that is known is {shot.RawLensLabel}, "
-                     + "a manual lens or one unknown to the databases, so the lens could not be told from the file." + leftOut,
-                     $"\ncomparat cu obiectivul ales de tine, {chosen.SourceLabel} {chosen.Title}: se stie doar {shot.RawLensLabel}, "
-                     + "obiectiv manual sau necunoscut bazelor, deci obiectivul nu se putea afla din fisier." + leftOut);
+            // Why there was a choice: on a list by range alone the file could not tell the lens;
+            // on any other list (a caller narrowing an ID-found list by key) that sentence
+            // would be false, so only the choice and what it left out are said.
+            string why = shot.CandidatesByRangeOnly
+                ? T($": all that is known is {shot.RawLensLabel}, a manual lens or one unknown to the databases, so the lens could not be told from the file.",
+                    $": se stie doar {shot.RawLensLabel}, obiectiv manual sau necunoscut bazelor, deci obiectivul nu se putea afla din fisier.")
+                : ".";
+            return T($"\ncompared with the lens you chose, {chosen.SourceLabel} {chosen.Title}" + why + leftOut,
+                     $"\ncomparat cu obiectivul ales de tine, {chosen.SourceLabel} {chosen.Title}" + why + leftOut);
         }
 
         /// <summary>
@@ -379,7 +384,7 @@ namespace FlatCheck
         /// <param name="shot">The shot's identity; null, or a list not by range, gives "".</param>
         /// <returns>The paragraph, in the interface language; "" when there is nothing to choose.</returns>
         internal static string LensChoicePrompt(ShotIdentity shot)
-            => shot != null && shot.CandidatesByRangeOnly && shot.Candidates.Count > 1
+            => shot != null && shot.OffersLensChoice
                 ? T($"All that is known is {shot.RawLensLabel}: a manual lens or one unknown to the databases, so the lenses below are every lens of your "
                     + "camera's mount with that range. Choose yours and the verdict is its profile's; without a choice the nearest profile decides.",
                     $"Se stie doar {shot.RawLensLabel}: obiectiv manual sau necunoscut bazelor, deci obiectivele de mai jos sunt toate obiectivele "

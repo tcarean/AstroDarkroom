@@ -101,9 +101,10 @@ library figures of 2026-09-18 and the guards. ADR 0030 holds how the lens is ide
   picker puts the lens's catalog key on the query (`StructureQuery.LensKey`), and
   `StructureRun.Compare` compares that candidate alone, leaving `ShotIdentity.Candidates` whole
   and recording `ShotIdentity.ChosenLens`. `StructureReport.ComparisonSummary` then prints
-  `ChosenLensNote` (the lens chosen, why there was a choice, the lenses left out) in place of
-  `RangeOnlyNote`, and drops the single-profile sentence, which would blame a missing second
-  database; `LensChoicePrompt` is the card's line above the picker and gives "" when there is
-  nothing to choose, which is also how the window knows to hide it. The console sets no key:
-  its `--lens` text wins over one.
+  `ChosenLensNote` (the lens chosen, the lenses left out, and, only on a list by range alone,
+  why there was a choice: on an ID-found list narrowed by key the file did tell the lens) in
+  place of `RangeOnlyNote`, and drops the single-profile sentence, which would blame a missing
+  second database; `ShotIdentity.OffersLensChoice` (range only, more than one candidate) is the
+  one condition, and `LensChoicePrompt` is the card's line above the picker, "" otherwise. The
+  console sets no key: its `--lens` text wins over one.
 - `--help` moved when the flags were added, and was re-approved.

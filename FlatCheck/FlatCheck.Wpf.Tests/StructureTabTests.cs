@@ -1078,26 +1078,16 @@ public class StructureTabTests
 
     // ------------------------------------------------ the lens picker on a list by range (R-121)
 
-    /// <summary>A D3300 raw with a manual lens: the "non-CPU lens" ID 74, no name, the range
-    /// 135 mm f/2.0 from the camera's menu, shot at f/2.8.</summary>
-    static LoadedFrame Range135Raw() => new LoadedFrame
-    {
-        Header = new Dictionary<string, string>(),
-        FocalMm = 135,
-        FNumber = 2.8,
-        Camera = "NIKON D3300",
-        LensId = 74,
-        LensMinFocalMm = 135,
-        LensMaxFocalMm = 135,
-        LensMaxAperture = 2,
-    };
+    /// <summary>The range raw of the fixtures (LensProfileTestData.Range135Raw), on the D3300
+    /// or on another body.</summary>
+    static LoadedFrame Range135Raw(string camera = "NIKON D3300") => LensProfileTestData.Range135Raw(camera);
 
     /// <summary>The tab on the catalog with the two 135 f/2 lenses and the range raw in place
     /// of the file in flats/, run once.</summary>
-    static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithRangePair(SessionFixture f, TempWorkspace ws, SessionSettings? settings = null)
+    static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithRangePair(SessionFixture f, TempWorkspace ws, SessionSettings? settings = null, string camera = "NIKON D3300")
     {
         var sources = LensProfileTestData.Sources(ws, rangePair: true);
-        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? Range135Raw() : ImageLoader.LoadInfo(path));
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? Range135Raw(camera) : ImageLoader.LoadInfo(path));
         await vm.RunAsync(f.Session, CancellationToken.None, settings);
         return (vm, sources);
     }
@@ -1114,9 +1104,8 @@ public class StructureTabTests
         return expected.ToString();
     }
 
-    /// <summary>The catalog key of the lens with that name.</summary>
-    static string KeyOf(ProfileSources sources, string name)
-        => sources.Catalog.Lenses.First(l => l.Name == name).Key;
+    /// <summary>The catalog key of the lens with that name (LensProfileTestData.KeyOf).</summary>
+    static string KeyOf(ProfileSources sources, string name) => LensProfileTestData.KeyOf(sources, name);
 
     /// <summary>
     /// R-121: a raw that gives only a range, with two lenses of that range, offers the picker:
@@ -1240,5 +1229,63 @@ public class StructureTabTests
         Assert.Empty(vm.LensOptions);
         Assert.Empty(vm.LensChoicePrompt);
         Assert.Null(vm.SelectedLens);
+    }
+
+    /// <summary>
+    /// R-121: a chosen lens whose profile makes no row (a lensfun lens on a body the lensfun
+    /// table does not know: no crop) leaves the card on the gap, but the picker stays, on that
+    /// lens, so the choice can be undone from the screen; picking the none entry brings the
+    /// Adobe row back.
+    /// </summary>
+    [Fact]
+    public async Task R121_AChosenLensThatComparesNothingKeepsThePickerSoTheChoiceCanBeUndone()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, sources) = await RunWithRangePair(f, ws, camera: "NIKON D5");
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.True(vm.OffersLensChoice);
+        LensProfileRow adobe = Assert.Single(vm.ProfileRows);           // the lensfun lens has no crop on this body
+        Assert.Equal(LensProfileTestData.Nikkor135Dc, adobe.Lens);
+        string key = KeyOf(sources, LensProfileTestData.Samyang135);
+
+        vm.SelectedLens = vm.LensOptions.Single(o => o.Key == key);
+        await vm.Pending;
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasProfileRows);
+        Assert.NotEmpty(vm.ProfileGap);
+        Assert.True(vm.OffersLensChoice);
+        Assert.Equal(key, vm.SelectedLens.Key);
+
+        vm.SelectedLens = vm.LensOptions[0];
+        await vm.Pending;
+
+        Assert.Equal(LensProfileTestData.Nikkor135Dc, Assert.Single(vm.ProfileRows).Lens);
+        Assert.Empty(vm.ProfileGap);
+    }
+
+    /// <summary>
+    /// R-121: the null the ComboBox pushes when the list is replaced is not a pick: nothing is
+    /// written, nothing recompared, and the selection stays.
+    /// </summary>
+    [Fact]
+    public async Task R121_ANullFromTheBindingIsNotAPick()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var settings = SessionSettings.Read(f.Session.SettingsPath);
+        var (vm, _) = await RunWithRangePair(f, ws, settings);
+        LensOption before = vm.SelectedLens;
+        string report = File.ReadAllText(f.Session.ResultTextPath);
+        DateTime written = File.GetLastWriteTimeUtc(f.Session.ResultTextPath);
+
+        vm.SelectedLens = null;
+        await vm.Pending;
+
+        Assert.Same(before, vm.SelectedLens);
+        Assert.False(File.Exists(settings.FilePath));
+        Assert.Equal(report, File.ReadAllText(f.Session.ResultTextPath));
+        Assert.Equal(written, File.GetLastWriteTimeUtc(f.Session.ResultTextPath));
     }
 }
