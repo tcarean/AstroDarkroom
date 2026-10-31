@@ -49,10 +49,10 @@ public class VcRuntimeTests
         string romanian = VcRuntime.Warning;   // the tests run in Romanian
         using IDisposable scope = Ui.Use(UiLanguage.English);
         Assert.Equal(
-            "Microsoft's Visual C++ runtime is missing from this computer, so DarksCheck, FlatCheck and LightsCheck cannot read camera raw files until it is installed: ",
+            "Microsoft's Visual C++ runtime is missing or too old, so DarksCheck, FlatCheck and LightsCheck cannot read camera raw files until its latest version is installed: ",
             VcRuntime.Warning);
         Assert.Equal(
-            "Runtime-ul Microsoft Visual C++ lipseste de pe acest calculator, deci DarksCheck, FlatCheck si LightsCheck nu pot citi fisiere raw de aparat pana nu il instalezi: ",
+            "Runtime-ul Microsoft Visual C++ lipseste sau este prea vechi, deci DarksCheck, FlatCheck si LightsCheck nu pot citi fisiere raw de aparat pana nu instalezi ultima lui versiune: ",
             romanian);
     }
 

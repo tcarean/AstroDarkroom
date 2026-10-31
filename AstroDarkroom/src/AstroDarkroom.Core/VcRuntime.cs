@@ -20,10 +20,10 @@ using static AstroDarkroom.Core.Ui;
 namespace AstroDarkroom.Core;
 
 /// <summary>
-/// The Visual C++ 2015-2022 runtime for x64, which LibRaw's DLLs in the suite folder need and the
-/// suite does not ship (R-018, ADR 0016): without it DarksCheck, FlatCheck and LightsCheck cannot
-/// read camera raw files. The core names the runtime's DLLs, finds which ones a loader cannot
-/// load and words the warning; the window does the loading.
+/// Microsoft's Visual C++ v14 runtime for x64, which LibRaw's DLLs in the suite folder need and
+/// the suite does not ship (R-018, ADR 0016): without it DarksCheck, FlatCheck and LightsCheck
+/// cannot read camera raw files. The core names the runtime's DLLs, finds which ones a loader
+/// cannot load and words the warning; the window does the loading.
 /// </summary>
 public static class VcRuntime
 {
@@ -31,19 +31,22 @@ public static class VcRuntime
     public const string DownloadUrl = "https://aka.ms/vc14/vc_redist.x64.exe";
 
     /// <summary>
-    /// The runtime's DLLs, as the import tables of LibRaw's DLLs name them (read on 2026-10-31):
-    /// <c>raw_r.dll</c> imports all four, OpenMP's <c>vcomp140.dll</c> included, and
-    /// <c>jpeg8.dll</c>, <c>lcms2.dll</c> and <c>zlib1.dll</c> import <c>vcruntime140.dll</c>.
+    /// The runtime's DLLs, as the import tables of the DLLs of <c>Sdcb.LibRaw.runtime.win64</c>
+    /// 0.21.1 name them (read on 2026-10-31): <c>raw_r.dll</c> imports all four, OpenMP's
+    /// <c>vcomp140.dll</c> included, and <c>jpeg8.dll</c>, <c>lcms2.dll</c> and <c>zlib1.dll</c>
+    /// import <c>vcruntime140.dll</c>. A suite test holds the raw tools to that version, so another
+    /// one has its DLLs read again before it ships.
     /// </summary>
     public static IReadOnlyList<string> Files { get; } = ["vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "vcomp140.dll"];
 
     /// <summary>
-    /// The main window's warning when the runtime is missing, in the current language: the text
-    /// that comes before Microsoft's link (<see cref="DownloadUrl"/>).
+    /// The main window's warning when one of <see cref="Files"/> does not load, in the current
+    /// language: the runtime is missing, or too old to have all four. The text comes before
+    /// Microsoft's link (<see cref="DownloadUrl"/>), which installs the latest version.
     /// </summary>
     public static string Warning => T(
-        "Microsoft's Visual C++ runtime is missing from this computer, so DarksCheck, FlatCheck and LightsCheck cannot read camera raw files until it is installed: ",
-        "Runtime-ul Microsoft Visual C++ lipseste de pe acest calculator, deci DarksCheck, FlatCheck si LightsCheck nu pot citi fisiere raw de aparat pana nu il instalezi: ");
+        "Microsoft's Visual C++ runtime is missing or too old, so DarksCheck, FlatCheck and LightsCheck cannot read camera raw files until its latest version is installed: ",
+        "Runtime-ul Microsoft Visual C++ lipseste sau este prea vechi, deci DarksCheck, FlatCheck si LightsCheck nu pot citi fisiere raw de aparat pana nu instalezi ultima lui versiune: ");
 
     /// <summary>The runtime's DLLs that a loader cannot load.</summary>
     /// <param name="canLoad">

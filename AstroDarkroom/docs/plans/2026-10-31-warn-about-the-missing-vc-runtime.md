@@ -95,3 +95,28 @@ libraw" message names the Visual C++ runtime and its link instead of advice abou
   "Despre" 997 DIP with its fourth paragraph (931 / 946 before), under a 1080p screen's 1040 DIP
   work area. The live start of the launcher from the published folder waited: the owner was at
   the PC. The probe's own call was measured in a scratch process (all four DLLs load here).
+- **The review's findings, taken** (a subagent review of 2fab20f7, which found the four DLLs
+  and the search order right). ADR 0016 supersedes in part ADR 0007's "the launcher checks none
+  of it". While the warning shows, each activation of the window asks again, so a user back
+  from the installer no longer sees a stale warning. The probe makes the suite folder the
+  current folder, as the tools have it, so a launcher started elsewhere cannot find a copy the
+  tools would not. A new `SuiteTests` check holds the windows that resolve
+  `Sdcb.LibRaw.runtime.win64` to 0.21.1, whose imports `VcRuntime.Files` lists, and the warning
+  and the log line to naming exactly those windows. The runtime is named v14, Microsoft's name
+  for it (Windows lists "v14 Redistributable", or "2015-2022" when older), and the warning says
+  "missing or too old", since an older runtime can lack one of the four (the review: the 2015
+  and 2017 packages have no `vcruntime140_1.dll`; not checked here). ADR 0016 names
+  Sdcb.LibRaw's resolver and says the probe in the real executable is checked by hand only.
+  Nits: About's comment, the README's "one line under the title", a blank line in the
+  CHANGELOG. Not taken: each DLL's path and version in the launcher's log (ADR 0016's
+  alternatives).
+- **Verification after the review.** Gate green, 109 tests. The new suite check turned red when
+  DarksCheck's lock file said 0.21.2, and when LightsCheck's no longer listed the package
+  (restored after). With "or too old" the warning wrapped to three lines and broke the link in
+  two; "from this computer" was dropped, and it is two lines again (30 DIP, the link whole) in
+  both languages: the main window's content 740 DIP with it, 704 without. "Despre" is 983 / 998
+  DIP of content (Romanian / English), 1012 / 1027 with the frame, under 1040. The live start
+  ran with the PC locked and idle: the launcher, published from the worktree, logged `App Visual
+  C++ runtime: vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, vcomp140.dll load`, its
+  window had no `RuntimeWarning` (UI Automation), and it closed with exit code 0. The link and
+  the activation check cannot be seen on this PC, which has the runtime.

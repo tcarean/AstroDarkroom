@@ -51,9 +51,9 @@ The executables are not signed: on another computer, SmartScreen asks at the fir
 
 ## Requirements
 
-The launcher states these (one line under the title, the details under **About**) because the
-tools expect them; it checks only the Visual C++ runtime, and says on its window when that is
-missing:
+The launcher states these under **About** (the line under its title names the first two)
+because the tools expect them; it checks only the Visual C++ runtime, and says on its window
+when that is missing or too old:
 
 - **A Siril session folder**: the folder of one night with `lights/`, `darks/`, `flats/` and
   `biases/` as Siril lays them out, and the results of its scripts in `process/` (or `masters/`,
@@ -64,11 +64,14 @@ missing:
   tools check come out of its scripts, and FlatCheck runs the preprocessing script through
   `siril-cli.exe` from your installation (with a private copy of your settings, which it never
   touches). The tools' figures were measured on 1.4.4.
-- **Microsoft's Visual C++ 2015-2022 runtime (x64)**, which most computers already have:
-  DarksCheck, FlatCheck and LightsCheck read camera raw files through LibRaw, whose DLLs need it,
-  and the suite does not ship it. Without it those three cannot read raw files (FITS still
-  works), and the launcher shows a warning with Microsoft's download,
-  <https://aka.ms/vc14/vc_redist.x64.exe> (ADR 0016).
+- **Microsoft's Visual C++ v14 runtime (x64)**, which most computers already have; Windows
+  lists it as "Microsoft Visual C++ v14 Redistributable (x64)", or "Microsoft Visual C++
+  2015-2022 Redistributable (x64)" when it is older. DarksCheck, FlatCheck and LightsCheck read
+  camera raw files through LibRaw, whose DLLs need it, and the suite does not ship it. Without
+  it, or with one too old to have the four DLLs LibRaw imports, those three cannot read raw
+  files (FITS still works), and the launcher shows a warning with Microsoft's download of the
+  latest version, <https://aka.ms/vc14/vc_redist.x64.exe>; the warning goes when you come back
+  to the launcher after installing it (ADR 0016).
 - **Optional, for FlatCheck: Adobe's lens profiles** (`.lcp`), read from
   `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` and `%APPDATA%\Adobe\CameraRaw\LensProfiles`,
   where the free Adobe DNG Converter and Camera Raw with Photoshop put them, and from

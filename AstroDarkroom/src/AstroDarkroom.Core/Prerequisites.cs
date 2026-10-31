@@ -55,12 +55,13 @@ public static class Prerequisites
           "Siril 1.4.4 sau mai nou instalat (siril.org): masterele si stack-urile pe care le verifica "
           + "uneltele ies din scripturile lui, iar FlatCheck ruleaza scriptul de preprocesare prin siril-cli "
           + "din instalarea ta."),
-        T("Microsoft's Visual C++ 2015-2022 runtime (x64), which most computers already have: DarksCheck, "
+        T("Microsoft's Visual C++ v14 runtime (x64), which most computers already have: DarksCheck, "
           + "FlatCheck and LightsCheck need it to read camera raw files, and the launcher says when it is "
-          + "missing. It installs from " + VcRuntime.DownloadUrl + ".",
-          "Runtime-ul Microsoft Visual C++ 2015-2022 (x64), pe care il au deja cele mai multe calculatoare: "
+          + "missing or too old. Its latest version installs from " + VcRuntime.DownloadUrl + ".",
+          "Runtime-ul Microsoft Visual C++ v14 (x64), pe care il au deja cele mai multe calculatoare: "
           + "DarksCheck, FlatCheck si LightsCheck au nevoie de el ca sa citeasca fisiere raw de aparat, iar "
-          + "lansatorul spune cand lipseste. Se instaleaza de la " + VcRuntime.DownloadUrl + "."),
+          + "lansatorul spune cand lipseste sau este prea vechi. Ultima lui versiune se instaleaza de la "
+          + VcRuntime.DownloadUrl + "."),
         T("Optional, for FlatCheck: Adobe's lens profiles, read from this computer when an Adobe program "
           + "installed them: Lightroom, Photoshop with Camera Raw, or the free Adobe DNG Converter. Without "
           + "them FlatCheck uses the lensfun database it ships with.",

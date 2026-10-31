@@ -167,7 +167,7 @@ public class LanguageTests
         Assert.StartsWith("Uneltele citesc folderul unei sesiuni Siril", romanianSummary, StringComparison.Ordinal);
         Assert.Equal(4, romanian.Length);
         Assert.StartsWith("Siril 1.4.4 sau mai nou instalat", romanian[1], StringComparison.Ordinal);
-        Assert.StartsWith("Runtime-ul Microsoft Visual C++ 2015-2022 (x64)", romanian[2], StringComparison.Ordinal);
+        Assert.StartsWith("Runtime-ul Microsoft Visual C++ v14 (x64)", romanian[2], StringComparison.Ordinal);
 
         using IDisposable scope = Ui.Use(UiLanguage.English);
         string englishSummary = Prerequisites.Summary;
@@ -175,7 +175,7 @@ public class LanguageTests
         Assert.StartsWith("The tools read a Siril session folder", englishSummary, StringComparison.Ordinal);
         Assert.Equal(4, english.Length);
         Assert.StartsWith("Siril 1.4.4 or newer installed", english[1], StringComparison.Ordinal);
-        Assert.StartsWith("Microsoft's Visual C++ 2015-2022 runtime (x64)", english[2], StringComparison.Ordinal);
+        Assert.StartsWith("Microsoft's Visual C++ v14 runtime (x64)", english[2], StringComparison.Ordinal);
 
         // Each wording is its own text, not the other language's left in place.
         Assert.NotEqual(romanianSummary, englishSummary);

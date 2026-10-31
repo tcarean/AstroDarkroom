@@ -256,10 +256,13 @@ downloads. It gives `siril-cli` a private copy of your Siril settings, so your o
 ### Microsoft's Visual C++ runtime
 
 DarksCheck, FlatCheck and LightsCheck read camera raw files through LibRaw, whose DLLs need
-Microsoft's Visual C++ 2015-2022 runtime for x64. Most computers already have it, installed by
-other programs; the zip does not include it. Without it those three tools cannot read raw files
-(their FITS modes still work), and `AstroDarkroom.exe` says so on its window, with Microsoft's
-download: <https://aka.ms/vc14/vc_redist.x64.exe>.
+Microsoft's Visual C++ v14 runtime for x64. Most computers already have it, installed by other
+programs; Windows lists it under installed apps as "Microsoft Visual C++ v14 Redistributable
+(x64)", or "Microsoft Visual C++ 2015-2022 Redistributable (x64)" when it is older. The zip does
+not include it. Without it, or with one too old, those three tools cannot read raw files (their
+FITS modes still work), and `AstroDarkroom.exe` says so on its window, with Microsoft's download
+of the latest version: <https://aka.ms/vc14/vc_redist.x64.exe>. Once it is installed, the warning
+goes when you come back to the launcher.
 
 ### Optional, for FlatCheck: Adobe's lens profiles
 

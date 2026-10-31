@@ -75,8 +75,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   window (the Siril session folder, Siril 1.4.4 or newer, the Visual C++ runtime with
   `VcRuntime.DownloadUrl`, the optional Adobe lens profiles for FlatCheck), each a pair picked
   at each read. Of these, only the runtime is checked, by `VcRuntime` and the window.
-- `VcRuntime` is the Visual C++ 2015-2022 runtime (x64) that LibRaw's DLLs import and the suite
-  does not ship (R-018, ADR 0016): `Files`, its four DLLs as the import tables name them;
+- `VcRuntime` is Microsoft's Visual C++ v14 runtime (x64) that LibRaw's DLLs import and the
+  suite does not ship (R-018, ADR 0016): `Files`, its four DLLs as the import tables of
+  `Sdcb.LibRaw.runtime.win64` 0.21.1 name them, the version `SuiteTests` holds the windows to;
   `DownloadUrl`, Microsoft's permalink for its latest x64 package; `Missing(canLoad)`, the files
   a loader refuses, asking each once, in order, and keeping that order; `Warning`, the main
   window's text before the link, a pair picked at each read. The core loads nothing: the window
@@ -102,15 +103,20 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 - `App`'s constructor starts the diagnostic log and `App.OnExit` closes it (`logging.md`).
   `App.OnStartup` reads the setting file into `Ui.Default` (English when it gives none), makes
   one `SuiteFolder` from `AppContext.BaseDirectory`, the folder the executable runs from, asks
-  `VcRuntime.Missing(NativeProbe.CanLoad)` once and logs its outcome (Info, or Warn with the
-  missing files), and opens `MainWindow` on the folder, the setting's path and that list.
-  Nothing is read from the command line, which the log's first line records as it was.
-- `NativeProbe.CanLoad(file)` is `NativeLibrary.TryLoad` of a bare file name, released at once
-  when it loads. For a bare name Windows uses its standard search from the program's folder:
-  the suite folder, then System32, Windows, the current folder and PATH, the places where
-  `raw_r.dll`'s dependencies are found when a tool loads it, since .NET 8 loads a package's
-  native library by its full path with `LOAD_WITH_ALTERED_SEARCH_PATH` (ADR 0016). The four
-  loads take about 16 ms.
+  `NativeProbe.MissingRuntime()` and logs its outcome (Info, or Warn with the missing files),
+  and opens `MainWindow` on the folder, the setting's path and that list. Nothing is read from
+  the command line, which the log's first line records as it was.
+- `NativeProbe.MissingRuntime()` makes the suite folder the process's current folder, asks
+  `VcRuntime.Missing` with its private `CanLoad`, and puts the current folder back; a folder
+  Windows will not make current leaves the asking where it is (`TryMakeCurrent`), since the
+  launcher reads no relative path. `CanLoad(file)` is `NativeLibrary.TryLoad` of a bare file
+  name, released at once when it loads. For a bare name Windows uses its standard search from
+  the program's folder: the suite folder, then System32, Windows, the current folder and PATH.
+  With the suite folder current, these are the places where `raw_r.dll`'s dependencies are
+  found when a tool the launcher started loads it: Sdcb.LibRaw's resolver asks .NET 8 for
+  `raw_r.dll`, which loads it from the suite folder by its full path with
+  `LOAD_WITH_ALTERED_SEARCH_PATH`, and the launcher starts every tool in the suite folder
+  (ADR 0016). The four loads take about 16 ms.
 - `Icons` is the `.ico` resources of `Icon/`: `LargestFrame(fileName)` is the widest frame
   of that file (its pack URI from the private `Source`), decoded once and kept in a
   dictionary (the rows are rebuilt at every change of language), since the first frame of an
@@ -156,7 +162,12 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   in the XAML, so no space slips in before the link). `OpenRuntimeLink` starts the URI's
   `OriginalString` through the shell, as `OpenApp` starts an app, and logs it; a
   `Win32Exception` or `InvalidOperationException` ends in a message box with the address and an
-  Error line.
+  Error line. `RecheckRuntime`, on each `Activated` while the list holds a file, asks
+  `NativeProbe.MissingRuntime()` again: an answer that differs from the list replaces it, goes
+  to the log (Info or Warn) and sets the line's visibility, so the line goes when the user comes
+  back from installing the runtime. Once the list is empty nothing is asked; the first
+  activation, right after the start's check, asks again only when that check found a file
+  missing.
 - `AboutWindow` takes the `ReleaseInfo` the main window read and words itself once, in its
   constructor, in the language of that moment (it is modal and made anew at every open): the
   title, the tagline, the headings, the banner, the copyright, the warranty, the third-party

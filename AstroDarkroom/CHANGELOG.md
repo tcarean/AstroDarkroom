@@ -18,12 +18,13 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Added
 
-- The launcher checks at start for Microsoft's Visual C++ 2015-2022 runtime (x64), which
-  LibRaw's DLLs need and the suite does not ship (R-018, ADR 0016): when Windows cannot load it,
-  the main window says that DarksCheck, FlatCheck and LightsCheck cannot read camera raw files
-  until it is installed, with Microsoft's download link, and the log says which DLLs are missing.
-  "Despre" and the READMEs name the runtime among the requirements (R-009).
-
+- The launcher checks at start for Microsoft's Visual C++ v14 runtime (x64), which LibRaw's
+  DLLs need and the suite does not ship (R-018, ADR 0016): when Windows cannot load it, missing
+  or too old, the main window says that DarksCheck, FlatCheck and LightsCheck cannot read camera
+  raw files until its latest version is installed, with Microsoft's download link, and the log
+  says which DLLs are missing; the window asks again each time it is activated, so the warning
+  goes once the runtime is installed. "Despre" and the READMEs name the runtime among the
+  requirements (R-009).
 - A diagnostic log, for bug reports (R-011 to R-014, ADR 0012): the launcher writes
   `log\AstroDarkroom.log` beside `AstroDarkroom.exe`, in the same `log` folder as the tools'
   logs (or under `%LOCALAPPDATA%\AstroDarkroom\log` when that folder cannot be written), at most
