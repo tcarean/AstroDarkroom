@@ -107,7 +107,11 @@ with six significant digits, `none` for a missing value, sizes in KiB and MiB, a
 `Ms`, `1141 ms`, or `Seconds`, `12.9 s`, an enum by its name) and logged as plain strings, so
 NLog never parses them as message templates and a `{` in a path is harmless. A line whose message
 costs something to build is guarded by `IsDebugEnabled` or `IsTraceEnabled`. A line never
-throws: a value it may not have is written `none`, a file whose size cannot be read `?`.
+throws: a value it may not have is written `none`, a file whose size cannot be read `?`. An
+unguarded line builds its message before the logger looks at the level, so one that threw would
+throw at every level, `off` included: the About window's link line once asked a relative link for
+its absolute address, the failure its catch had just taken, and the window would have closed; it
+now names the link as written (`OriginalString`), as LightsCheck's and CopyWcs's do.
 
 `LogText` never writes a text the report words in the run's language: the stack's line says where
 its black and white come from in the log's own words (`the file's`, `the biases'`, `the median of
@@ -220,10 +224,13 @@ which its first line names, and take its lines by its process id from that line 
 they still hold its handle. Those processes log as any other, so every test run leaves their lines
 in `log\darkscheck.log` beside the copy of the executable in the test project's build folder,
 rolled like any log. `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers, the
-title bar's and the About window's catches and the wiring of the hooks run in no test: no test
-builds `App`, crashes a process, lacks `dwmapi.dll` or follows a link. The hooks' bodies,
-`LogSetup.Fatal` and `LogSetup.Unobserved`, and the view-model's filter for an exception it does
-not handle, `MainViewModel.LogUnhandled`, are tested directly. The three invariants of
+title bar's catch and the wiring of the hooks run in no test: no test builds `App`, crashes a
+process or lacks `dwmapi.dll`. The hooks' bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, and
+the view-model's filter for an exception it does not handle, `MainViewModel.LogUnhandled`, are
+tested directly. The About window's catch runs in
+`R101_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays`, which raises `RequestNavigate` on
+the window, on the tests' UI thread, with a relative link: asking for its absolute address throws
+before any browser is started, so the test opens nothing. The three invariants of
 `LoggingTests` pin the shape: `OnlyTheTwoEntryPointsConfigureTheLog`,
 `NoLogLineGoesThroughTheTranslation`, and `NothingThatComputesOrWordsTheReportLogs`, which also
 asks that the files of `Analysis/` and `Imaging/` that do log are exactly the two of each.
