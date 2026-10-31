@@ -67,7 +67,7 @@ public class WindowSmokeTests
         }
     }
 
-    static void Render(FrameworkElement el, int w = 1400, int h = 860, string? name = null)
+    internal static void Render(FrameworkElement el, int w = 1400, int h = 860, string? name = null)
     {
         el.Measure(new Size(w, h));
         el.Arrange(new Rect(0, 0, w, h));
@@ -171,8 +171,8 @@ public class WindowSmokeTests
         => _sta.Invoke(() =>
         {
             using var errors = new BindingErrors();
-            var about = new AboutWindow();
-            Render((FrameworkElement)about.Content, 600, 720, "despre");
+            var about = new AboutWindow(SystemParameters.WorkArea);
+            Render((FrameworkElement)about.Content, 600, 860, "despre");   // the whole window; AboutWindowFitTests renders a low screen
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             var logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);

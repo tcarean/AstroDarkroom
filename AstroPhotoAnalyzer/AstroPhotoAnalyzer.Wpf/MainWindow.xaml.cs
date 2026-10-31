@@ -123,13 +123,13 @@ namespace AstroPhotoAnalyzer.Wpf
             _ = _vm.ClearProfile();
         }
 
-        /// <summary>"Despre", the button or F1: the about window, modal (R-119).</summary>
+        /// <summary>"Despre", the button or F1: the about window, modal (R-119), no taller than this window's screen (R-158).</summary>
         /// <param name="sender">The command's source; not read.</param>
         /// <param name="e">The command's arguments; not read.</param>
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
             Log.Info("About opened");
-            new AboutWindow { Owner = this }.ShowDialog();
+            new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();
         }
 
         /// <summary>

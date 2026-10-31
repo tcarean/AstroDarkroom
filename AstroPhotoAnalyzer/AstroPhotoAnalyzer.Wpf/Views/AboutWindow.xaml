@@ -18,7 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- AboutWindow - the icon, the version, the copyright, the GPLv3 notice and the third-party
-     components. Modal, centred on the parent; Esc closes it. No sentence is written here. -->
+     components. Modal, centred on the parent; Enter and Esc close it. No sentence is written here.
+     As tall as its content, but no taller than the work area of its screen, which the code behind
+     sets as its MaxHeight: then the cards scroll and the Close button, in a row of its own, stays
+     in view (R-158, ADR 0070). Where it fits, the margins add up to the same layout as before. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -33,43 +36,55 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         TextOptions.TextFormattingMode="Display"
         Hyperlink.RequestNavigate="OpenLink">
 
-  <StackPanel Margin="24,20,24,20">
-    <Grid>
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="*" />
-      </Grid.ColumnDefinitions>
-      <Image x:Name="Logo" Grid.Column="0" Width="72" Height="72" VerticalAlignment="Top" Margin="0,2,20,0"
-             RenderOptions.BitmapScalingMode="HighQuality" />
-      <StackPanel Grid.Column="1" VerticalAlignment="Center">
-        <TextBlock Text="AstroPhotoAnalyzer" FontSize="22" FontWeight="SemiBold" />
-        <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0" Text="{Binding Tagline}" />
-        <TextBlock Margin="0,10,0,0" Text="{Binding Banner}" FontFamily="{StaticResource MonoFont}" />
-        <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Copyright}" />
-      </StackPanel>
-    </Grid>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
 
-    <Border Style="{StaticResource Card}" Margin="0,18,0,0">
-      <StackPanel>
-        <TextBlock Style="{StaticResource Heading}" Text="{Binding LicenceHeading}" />
-        <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" Text="{Binding Warranty}" />
-        <TextBlock Margin="0,10,0,0">
-          <Hyperlink NavigateUri="{Binding LicenseUrl}">
-            <Run Text="{Binding LicenseLinkLabel, Mode=OneWay}" />
-          </Hyperlink>
-        </TextBlock>
-      </StackPanel>
-    </Border>
+    <!-- Transparent, not null: the wheel scrolls over the margins and the gaps between the cards
+         too, which a null background leaves to the window. The keys reach it from the window's
+         PreviewKeyDown, since the focus stays on the Close button or a link. -->
+    <ScrollViewer x:Name="Cards" Grid.Row="0" VerticalScrollBarVisibility="Auto" Focusable="False" Background="Transparent">
+      <StackPanel Margin="24,20,24,0">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Image x:Name="Logo" Grid.Column="0" Width="72" Height="72" VerticalAlignment="Top" Margin="0,2,20,0"
+                 RenderOptions.BitmapScalingMode="HighQuality" />
+          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <TextBlock Text="AstroPhotoAnalyzer" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0" Text="{Binding Tagline}" />
+            <TextBlock Margin="0,10,0,0" Text="{Binding Banner}" FontFamily="{StaticResource MonoFont}" />
+            <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Copyright}" />
+          </StackPanel>
+        </Grid>
 
-    <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-      <StackPanel>
-        <TextBlock Style="{StaticResource Heading}" Text="{Binding ThirdPartyHeading}" />
-        <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,12" Text="{Binding ThirdPartyLead}" />
-        <ItemsControl ItemsSource="{Binding Components}" ItemTemplate="{StaticResource ComponentRowTemplate}" />
-      </StackPanel>
-    </Border>
+        <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+          <StackPanel>
+            <TextBlock Style="{StaticResource Heading}" Text="{Binding LicenceHeading}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" Text="{Binding Warranty}" />
+            <TextBlock Margin="0,10,0,0">
+              <Hyperlink NavigateUri="{Binding LicenseUrl}">
+                <Run Text="{Binding LicenseLinkLabel, Mode=OneWay}" />
+              </Hyperlink>
+            </TextBlock>
+          </StackPanel>
+        </Border>
 
-    <Button Content="{local:T En='Close', Ro='Inchide'}" IsCancel="True" IsDefault="True" Click="Close"
-            HorizontalAlignment="Right" Margin="0,16,0,0" MinWidth="96" />
-  </StackPanel>
+        <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock Style="{StaticResource Heading}" Text="{Binding ThirdPartyHeading}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,12" Text="{Binding ThirdPartyLead}" />
+            <ItemsControl ItemsSource="{Binding Components}" ItemTemplate="{StaticResource ComponentRowTemplate}" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Button x:Name="CloseButton" Grid.Row="1" Content="{local:T En='Close', Ro='Inchide'}" IsCancel="True" IsDefault="True" Click="Close"
+            HorizontalAlignment="Right" Margin="24,16,24,20" MinWidth="96" />
+  </Grid>
 </Window>

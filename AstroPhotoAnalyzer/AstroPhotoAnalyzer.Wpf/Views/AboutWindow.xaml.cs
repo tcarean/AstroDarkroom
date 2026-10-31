@@ -16,33 +16,52 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // AboutWindow.xaml.cs - the "Despre" window: GPLv3 section 5(d) asks an interactive program to
-// show its notice. Only the dark title bar and the opening of links remain here.
+// show its notice. Only the dark title bar, the opening of links and the window's fit to its
+// screen remain here (R-158, ADR 0070).
 
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Navigation;
 using NLog;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
-    /// <summary>The "Despre" window (R-119), over an <see cref="AboutViewModel"/>.</summary>
+    /// <summary>
+    /// The "Despre" window (R-119), over an <see cref="AboutViewModel"/>, fitted to the work area
+    /// of its screen (R-158).
+    /// </summary>
     public partial class AboutWindow : Window
     {
         /// <summary>
         /// Loads the XAML, binds a new <see cref="AboutViewModel"/>, puts the largest icon frame
-        /// in the logo and asks for the dark title bar once there is a handle.
+        /// in the logo and asks for the dark title bar once there is a handle. The window is no
+        /// taller than <paramref name="workArea"/>, is kept inside it once shown, and its cards
+        /// scroll from the keyboard too (R-158, ADR 0070).
         /// </summary>
-        public AboutWindow()
+        /// <param name="workArea">
+        /// The work area of the screen the window opens on, in device-independent pixels: the
+        /// main window's, from <see cref="ScreenArea.WorkAreaOf"/>.
+        /// </param>
+        public AboutWindow(Rect workArea)
         {
             InitializeComponent();
             DataContext = new AboutViewModel();
             Logo.Source = AppIcon.Largest();
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+            MaxHeight = workArea.Height;
+            // Not at Loaded: a window sized to its content still has its first height then (436
+            // DIP measured here, for 862), so the guard and the log line would read a wrong one.
+            ContentRendered += (_, _) => FitInto(workArea);
+            PreviewKeyDown += ScrollCards;
         }
 
-        /// <summary>The diagnostic log: a link that could not be opened (R-171, ADR 0069).</summary>
+        /// <summary>
+        /// The diagnostic log: a link that could not be opened, the window's size and place once
+        /// shown (R-171, ADR 0069).
+        /// </summary>
         static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
         /// <summary>
@@ -62,6 +81,59 @@ namespace AstroPhotoAnalyzer.Wpf
                 // 0069, after DarksCheck's review).
                 Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
             }
+        }
+
+        /// <summary>
+        /// Keeps the shown window inside its screen's work area (R-158), and writes its size and
+        /// place, the area and whether its cards scroll to the diagnostic log at Debug. Called once
+        /// its content is first rendered, when its size is final. WPF has placed it there already
+        /// (a window centred on its owner is clamped into the owner screen's work area); the move
+        /// holds that place as a guard, so the requirement does not rest on WPF's placement alone,
+        /// as in the launcher (AstroDarkroom ADR 0013).
+        /// </summary>
+        /// <param name="workArea">The work area of the window's screen, in device-independent pixels.</param>
+        internal void FitInto(Rect workArea)
+        {
+            Top = ScreenArea.TopInside(Top, ActualHeight, workArea.Top, workArea.Height);
+            if (Log.IsDebugEnabled)
+                Log.Debug("About shown " + LogText.Num(ActualWidth) + "x" + LogText.Num(ActualHeight)
+                    + " at (" + LogText.Num(Left) + "," + LogText.Num(Top) + "); work area "
+                    + LogText.Num(workArea.Width) + "x" + LogText.Num(workArea.Height)
+                    + " at (" + LogText.Num(workArea.Left) + "," + LogText.Num(workArea.Top) + "); cards scroll: "
+                    + LogText.Yes(Cards.ScrollableHeight > 0));
+        }
+
+        /// <summary>
+        /// Scrolls the cards by a key (R-158): Up and Down by a line, Page Up and Page Down by a
+        /// page, Home and End to either end. The scroll viewer carries the move out at its next
+        /// layout.
+        /// </summary>
+        /// <param name="key">The key pressed.</param>
+        /// <returns>True when the key is one of the six and the cards were asked to scroll.</returns>
+        internal bool Scroll(Key key)
+        {
+            switch (key)
+            {
+                case Key.Down: Cards.LineDown(); return true;
+                case Key.Up: Cards.LineUp(); return true;
+                case Key.PageDown: Cards.PageDown(); return true;
+                case Key.PageUp: Cards.PageUp(); return true;
+                case Key.End: Cards.ScrollToBottom(); return true;
+                case Key.Home: Cards.ScrollToTop(); return true;
+                default: return false;
+            }
+        }
+
+        /// <summary>
+        /// The window's keys for the cards: the focus stays on the Close button or on a link,
+        /// neither of which scrolls, so the keys a scroll viewer answers are passed to it here.
+        /// Enter and Esc go on to the Close button as before.
+        /// </summary>
+        /// <param name="sender">The window; not read.</param>
+        /// <param name="e">The key; marked handled when it scrolled the cards.</param>
+        void ScrollCards(object sender, KeyEventArgs e)
+        {
+            if (Scroll(e.Key)) e.Handled = true;
         }
 
         /// <summary>The close button.</summary>

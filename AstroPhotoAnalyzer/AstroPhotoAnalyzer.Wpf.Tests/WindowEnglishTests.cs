@@ -121,7 +121,7 @@ public class WindowEnglishTests
             AssertEnglish("the window with a profile", await TextsOfAsync(new MainWindow(WindowSettings.Read(settingsPath)), "fereastra-profil"));
             File.WriteAllText(settingsPath, "{\"iccProfile\": " + System.Text.Json.JsonSerializer.Serialize(ws.PathTo("absent.icc")) + "}");
             AssertEnglish("the window with a missing profile", await TextsOfAsync(new MainWindow(WindowSettings.Read(settingsPath)), "fereastra-profil-lipsa"));
-            var about = new AboutWindow();
+            var about = new AboutWindow(SystemParameters.WorkArea);
             string aboutTexts = await TextsOfAsync(about, "despre", 600, 720);
             Assert.Equal("About AstroPhotoAnalyzer", about.Title);
             AssertEnglish("the About window", aboutTexts);
