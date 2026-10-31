@@ -8,6 +8,7 @@
 > `tests/ImageVisualCompare.Tests/WicImageLoaderTests.cs`,
 > `tests/ImageVisualCompare.Tests/ImagePairLoaderTests.cs`,
 > `tests/ImageVisualCompare.Tests/WpfThread.cs`,
+> `tests/ImageVisualCompare.Tests/WpfThreadTests.cs`,
 > `tests/ImageVisualCompare.Tests/MainWindowTests.cs`,
 > `tests/ImageVisualCompare.Tests/DisplayRendererTests.cs`,
 > `tests/ImageVisualCompare.Tests/LevelLookupTests.cs`,
@@ -19,7 +20,8 @@
 > `src/ImageVisualCompare.Wpf/MessageDialog.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/Interop/DarkTitleBar.cs`,
 > `src/ImageVisualCompare.Wpf/Services/FileDialogService.cs`,
-> `src/ImageVisualCompare.Wpf/Imaging/MemoryHousekeeping.cs`.
+> `src/ImageVisualCompare.Wpf/Imaging/MemoryHousekeeping.cs`,
+> `src/ImageVisualCompare.Wpf/App.xaml`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
 
@@ -47,10 +49,10 @@ prompt.
 The WPF layer is mostly untested: event wiring, mouse capture, property assignment, and the
 interop that darkens a caption. Every number those controls put on screen comes from Core and
 has a test. Since 2026-10-22 a defect a window or a control shows without being shown has a
-test of its own (ADR 0032). `WpfThread` starts one STA thread for the run, creates the real
-`App` there and calls its `InitializeComponent`, so `Theme.xaml`'s resources resolve, never
-calls `Run`, and posts each test body to that thread's dispatcher; an exception in the body
-fails the test. `MainWindowTests` builds the main window there with dialogs that count the
+test of its own (ADR 0032). `WpfThread` starts one STA thread for the run, creates a plain
+`Application` there with `Theme.xaml` merged into its resources, so the windows' resources
+resolve, and posts each test body to that thread's dispatcher; an exception in the body fails
+the test (ADR 0046). `MainWindowTests` builds the main window there with dialogs that count the
 asking and a loader whose decode never ends, and clicks Open twice while the body still holds
 the dispatcher. For the display modes (R-113, R-114) it uses a loader that decodes a 2 × 2
 bitmap at once and records the mode of every load: it clicks Open, waits between pumps of the
@@ -61,11 +63,18 @@ presentation source a window never shown does not have. `WindowLoggingTests` dri
 window the same way and reads its lines, and the surface's, in the diagnostic log
 (`logging.md`).
 
-`WpfThread` never calls `Run`, but WPF's `Application` constructor queues the application's start,
-which runs once the thread's dispatcher pumps (the note of 2026-10-30 on ADR 0032): `App.OnStartup`
-reads the test host's arguments, and `StartupUri` opens a real `MainWindow`, shown and maximised,
-whose start opens the real Open dialog; the tests' bodies run on inside that dialog's message
-loop, for as long as the test host lives.
+WPF's `Application` constructor queues the application's start, which runs at the thread's first
+dispatcher pass even though `Application.Run` is never called (the note of 2026-10-30 on ADR
+0032). Until 2026-10-30 the thread created the real `App`, whose start read the test host's
+arguments and set the interface language, and opened a real `MainWindow`, shown and maximised,
+with its Open dialog, at every test run. A plain `Application`'s start is empty: it opens no
+window and leaves the language as a test set it (ADR 0046). `WpfThread` sets its `ShutdownMode`
+to `OnExplicitShutdown`, since under the default closing the thread's last window, as
+`AboutWindowTests` do, ends the application and fails the next window built. `WpfThreadTests`
+checks that the thread's application is exactly a plain `Application` in that mode, that no
+top-level window of the thread is visible, Win32 ones included, and that `App.xaml`'s resources
+are the theme's merge alone, element for element: a resource the windows need goes in
+`Theme.xaml`, since the tests do not load `App.xaml`.
 
 The display modes' arithmetic is Core's: `LevelLookupTests` pins Siril's equalisation on
 hand-computed histograms (R-111's two examples, the rounding, a uniform histogram, the share

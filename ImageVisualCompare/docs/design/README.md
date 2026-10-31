@@ -29,7 +29,7 @@ stop.
 | The culture trap and the dark chrome: no `InvariantGlobalization`, no `MessageBox`, the DWM caption, the icon, the About window as FlatCheck's | `shell.md` | `Directory.Build.props`, a new `Window`, `Theme.xaml`, `Assets/`, `AboutWindow`, `AboutViewModel.cs`; ADR 0017, ADR 0018, ADR 0030 and ADR 0045 first |
 | The version and the licence: one source for each, what `VersionTests` and `LicenseHeaderTests` pin, the components written by others and their notices | `versioning-and-licence.md` | `Version.cs`, `ThirdParty.cs`, `Directory.Build.props`, `VersionTests`, `LicenseHeaderTests`, `ThirdPartyTests`, the `LICENSE` item of the Wpf csproj; ADR 0004, ADR 0023, ADR 0024, ADR 0027 and ADR 0043 first |
 | The interface language: `--lang`, the table of every text in English and Romanian, what is not translated, the Romanian tests | `language.md` | any text the application shows, `App.xaml.cs`, `UiText.cs`, `StartupArguments.cs`; ADR 0038 first |
-| What is tested, how the fixtures are made, what is not tested and why the application has to be launched | `testing.md` | a new fixture, any change to the WPF layer; ADR 0026 first |
+| What is tested, how the fixtures are made, what is not tested and why the application has to be launched | `testing.md` | a new fixture, any change to the WPF layer; ADR 0026, ADR 0032 and ADR 0046 first |
 | The diagnostic log with NLog: where it starts (`Program.Main`), the files and their rolling, the line, the loggers, what each part writes, the capture of the tests | `logging.md` | `Program.cs`, anything in `Logging/`, a new log line, a new package; ADR 0043 first |
 
 The decisions themselves, with the alternatives rejected, are in `../decisions/`. The behaviour,
