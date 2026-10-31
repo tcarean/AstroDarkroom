@@ -40,6 +40,15 @@ public partial class LoggingTests
     private const string Exe = "AstroPhotoAnalyzer";
     private const string WindowExe = "AstroPhotoAnalyzer.Wpf";
 
+    /// <summary>The only two files that start and close the log: the two entry points.</summary>
+    private static readonly string[] EntryPoints = ["AstroPhotoAnalyzer.Wpf/App.xaml.cs", "AstroPhotoAnalyzer/Program.cs"];
+
+    /// <summary>The only two files that set NLog's configuration: the applications' and the tests'.</summary>
+    private static readonly string[] Configurers = ["AstroPhotoAnalyzer.Core/Logging/LogSetup.cs", "AstroPhotoAnalyzer.Tests/LogCapture.cs"];
+
+    /// <summary>The three code folders kit.json names.</summary>
+    private static readonly string[] CodeFolders = ["AstroPhotoAnalyzer", "AstroPhotoAnalyzer.Core", "AstroPhotoAnalyzer.Wpf"];
+
     /// <summary>The five files 8 MiB of lines leave, measured in FlatCheck with the same NLog and the same settings (R-170).</summary>
     private static readonly string[] RolledFiles =
     [
@@ -832,7 +841,127 @@ public partial class LoggingTests
         LogFiles.TwoWritersKeepEveryLine(Path.Combine(ws.Dir, "log"), WindowExe, _output);
     }
 
+    // ---------------------------------------------------------------- invariants of the repository
+
+    /// <summary>
+    /// Only the two entry points configure the log for a user's run, and nothing but LogSetup (for
+    /// them) and LogCapture (for the tests) sets NLog's configuration at all: a library use logs
+    /// into nothing and every test into the capture (ADR 0069).
+    /// </summary>
+    [Fact]
+    public void OnlyTheTwoEntryPointsConfigureTheLog()
+    {
+        string[] all = [.. CodeFolders, "AstroPhotoAnalyzer.Tests", "AstroPhotoAnalyzer.Wpf.Tests"];
+        string[] callers = CsSources(all).Where(f => ApplyOrClose().IsMatch(File.ReadAllText(f))).Select(Rel).Order(StringComparer.Ordinal).ToArray();
+        string[] configurers = CsSources(all).Where(f => SetsConfiguration().IsMatch(File.ReadAllText(f))).Select(Rel).Order(StringComparer.Ordinal).ToArray();
+
+        Assert.Equal(EntryPoints, callers);
+        Assert.Equal(Configurers, configurers);
+    }
+
+    /// <summary>
+    /// The log's own words are English whatever the language (R-171): no log call composes its
+    /// message through the Tr.Pick pair, whichever logger it goes through and however many lines
+    /// the call spans. And every logger is declared one way, a <c>Logger</c> field or property
+    /// named <c>Log</c> taken from <c>LogManager.GetLogger</c> with <c>using NLog</c>: a
+    /// <c>LogManager.Get...</c> call of any other shape, a <c>Logger</c> variable of another name
+    /// and a qualified NLog name are refused, so the first check, which scans the calls of names
+    /// ending in <c>log</c>, sees every call (DarksCheck's reviews of 2026-10-30).
+    /// </summary>
+    [Fact]
+    public void NoLogLineGoesThroughTheTranslation()
+    {
+        List<string> offenders = [];
+        List<string> declarations = [];
+        foreach (string f in CsSources(CodeFolders))
+        {
+            string text = File.ReadAllText(f);
+            foreach (Match m in LogCall().Matches(text))
+            {
+                Match end = CallEnd().Match(text, m.Index);
+                string whole = end.Success ? text[m.Index..(end.Index + end.Length)] : text[m.Index..];
+                if (Translation().IsMatch(whole))
+                {
+                    offenders.Add(Rel(f) + ":" + (text.Take(m.Index).Count(c => c == '\n') + 1).ToString(CultureInfo.InvariantCulture));
+                }
+            }
+
+            string[] lines = File.ReadAllLines(f);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                bool inline = lines[i].Contains("LogManager.Get", StringComparison.Ordinal) && !Declaration().IsMatch(lines[i]);
+                bool qualified = lines[i].Contains("NLog.Logger", StringComparison.Ordinal) || lines[i].Contains("NLog.LogManager", StringComparison.Ordinal);
+                bool renamed = LoggerVariable().Match(lines[i]) is { Success: true } v && v.Groups[1].Value != "Log";
+                if (inline || qualified || renamed)
+                {
+                    declarations.Add(Rel(f) + ":" + (i + 1).ToString(CultureInfo.InvariantCulture));
+                }
+            }
+        }
+
+        Assert.Empty(offenders);
+        Assert.Empty(declarations);
+    }
+
+    /// <summary>
+    /// The numbers and the report's words stay pure (ADR 0069): nothing in Analysis/, Report/,
+    /// Thresholds.cs, Parameters.cs or Language.cs names NLog, and of Input/ only the four files
+    /// that read a file do, no more and no less; the runs log what the analyzers return.
+    /// </summary>
+    [Fact]
+    public void NothingThatComputesOrWordsTheReportLogs()
+    {
+        string core = Path.Combine(TestData.RepoDir(), "AstroPhotoAnalyzer.Core");
+        string[] readers = ["FitsReader.cs", "IccPaperBlack.cs", "ImageLoader.cs", "ImageSharpReader.cs"];
+        string[] input = CsSources(Path.Combine("AstroPhotoAnalyzer.Core", "Input")).ToArray();
+        string[] pure = CsSources(Path.Combine("AstroPhotoAnalyzer.Core", "Analysis"), Path.Combine("AstroPhotoAnalyzer.Core", "Report"))
+            .Concat(input.Where(f => !readers.Contains(Path.GetFileName(f))))
+            .Concat(new[] { "Thresholds.cs", "Parameters.cs", "Language.cs" }.Select(f => Path.Combine(core, f)))
+            .ToArray();
+
+        Assert.True(pure.Length > 30, "the folders were not found");
+        Assert.All(pure, f => Assert.DoesNotMatch(NamesNLog(), File.ReadAllText(f)));
+        Assert.Equal(readers, input.Where(f => NamesNLog().IsMatch(File.ReadAllText(f))).Select(f => Path.GetFileName(f)).Order(StringComparer.Ordinal));
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    [GeneratedRegex(@"LogSetup\.(Apply|Close)\(")]
+    private static partial Regex ApplyOrClose();
+
+    [GeneratedRegex(@"LogManager\.(Configuration\s*=[^=]|Setup\()")]
+    private static partial Regex SetsConfiguration();
+
+    /// <summary>A call that composes a log line's text: a logger's, or a run clock's start, lap or outcome.</summary>
+    [GeneratedRegex(@"\b\w*[Ll]og\.(Trace|Debug|Info|Warn|Error|Fatal|Log)\(|\bRunClock\.Start\(|\b\w*[Cc]lock\??\.(Lap|Done)\(")]
+    private static partial Regex LogCall();
+
+    /// <summary>A variable, field or property of type <c>Logger</c> given a value, and its name.</summary>
+    [GeneratedRegex(@"\bLogger\s+(\w+)\s*(=|=>)")]
+    private static partial Regex LoggerVariable();
+
+    [GeneratedRegex(@"\)\s*;")]
+    private static partial Regex CallEnd();
+
+    [GeneratedRegex(@"\bTr\.Pick\(")]
+    private static partial Regex Translation();
+
+    [GeneratedRegex(@"static readonly Logger Log = LogManager\.GetLogger\(|static Logger Log => LogManager\.GetLogger\(")]
+    private static partial Regex Declaration();
+
+    [GeneratedRegex(@"\bNLog\b|\bLogger\b|\bLogManager\b")]
+    private static partial Regex NamesNLog();
+
+    /// <summary>The C# sources under the given folders of the project, without bin/ and obj/ (filtered on the relative path).</summary>
+    private static IEnumerable<string> CsSources(params string[] folders)
+        => folders.SelectMany(f => Directory.EnumerateFiles(Path.Combine(TestData.RepoDir(), f), "*.cs", SearchOption.AllDirectories))
+            .Where(f => !BuildOutput().IsMatch(Rel(f)));
+
+    [GeneratedRegex(@"(^|/)(bin|obj)/")]
+    private static partial Regex BuildOutput();
+
+    /// <summary>A file's path as the assertions name it: relative to the project, with forward slashes.</summary>
+    private static string Rel(string f) => Path.GetRelativePath(TestData.RepoDir(), f).Replace('\\', '/');
 
     /// <summary>A result's figures line: its name, a colon, its figures.</summary>
     [GeneratedRegex(@"^\w+: ")]
