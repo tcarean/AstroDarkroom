@@ -82,7 +82,7 @@
     the peak down (the 2026-09-08 measurement found no transient spike to keep down; the
     loader's comment says why the order stays, ADR 0015). Turns every expected file failure into
     a message rather than a crash. `ReplaceAsync` changes one image of a pair on screen and
-    keeps the other as decoded. See ADR 0015, ADR 0046, `imaging.md`.
+    keeps the other as decoded. See ADR 0015, ADR 0047, `imaging.md`.
   - `Imaging/MemoryHousekeeping.cs` — the release path when a pair is replaced, and the
     process memory readout.
   - `Services/FileDialogService.cs` — the two open dialogs of a pair, the one dialog of a

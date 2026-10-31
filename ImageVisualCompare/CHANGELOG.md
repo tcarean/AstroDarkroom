@@ -12,7 +12,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   chosen takes that image's place while the other image stays as it is, not read again; the
   zoom, the position and the line stay where they were when the canvas keeps its size, and the
   padding question is asked when the sizes differ. `Open…` and `Ctrl+O` still open a whole pair
-  (R-009, R-065, ADR 0046).
+  (R-009, R-065, ADR 0047).
 
 - A diagnostic log, for the day a problem is reported: `log\ImageVisualCompare.Wpf.log` beside
   the program (or `%LOCALAPPDATA%\ImageVisualCompare\log` when that folder cannot be written),
@@ -75,7 +75,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - A switch of display mode gave the outgoing pair's memory back only at the next load, not after
   its first render as intended, so the process carried two pairs in between: on the real FITS pair
-  the release left 665.9 MiB where it now leaves 403.8 MiB (R-081, R-113, ADR 0046).
+  the release left 665.9 MiB where it now leaves 403.8 MiB (R-081, R-113, ADR 0047).
 - `LICENSE` now sits next to the program, in the build folder and in the publish folder, where
   the About window says the full licence text is (R-074, ADR 0027).
 - A file WIC fails with an error of its own, an image too large to decode or a damaged WebP,

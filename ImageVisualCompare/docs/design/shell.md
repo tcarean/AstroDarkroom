@@ -64,7 +64,7 @@ the files of the pair on screen again (`_selection`, kept from the last open) th
 has put the incoming one on screen (`rendering.md`). `ToggleModeAsync` keeps only the canvas's
 size across its await, never the pair: a local holding the pair is hoisted into the state machine
 and keeps the outgoing bitmaps alive through that release, which then frees nothing (measured on
-2026-10-30, ADR 0046). `_mode` is always what the pair says it was
+2026-10-30, ADR 0047). `_mode` is always what the pair says it was
 rendered in, so a pair the loader fell back to linear on leaves both toggles unchecked and
 disabled; the pair line of the status bar ends with the mode's name, and the readout gives, in
 false colours, the level `RainbowTable.LevelOf` finds for the pixel's colour. The two toggles
@@ -72,7 +72,7 @@ have their own style, `ToolToggleButton` in `Theme.xaml`, a copy of `ToolButton`
 with an `IsChecked` trigger, since a `ToggleButton` is not a `Button` and cannot be based on
 one.
 
-A change of one image (R-065, ADR 0046) is the third kind of load through the same field.
+A change of one image (R-065, ADR 0047) is the third kind of load through the same field.
 `ChangeImageAsync(side, from)`, reached from `ChangeBeforeButton` and `ChangeAfterButton`, the
 two buttons after the file names in `PairPanel`, the left column of the toolbar's grid, returns at
 once while `_opening` is set or with no pair shown. Otherwise it asks `IFileDialogService.PickImage`
@@ -83,7 +83,7 @@ keeps the other image's `LoadedImage` and decodes the new file alone (`imaging.m
 read inside `ReplaceShownAsync`, a method of its own, and `ChangeImageAsync` keeps only the
 canvas's size: a local holding the pair would be hoisted into the async method's state machine,
 live through `ShowPair`, and the release there would find the outgoing bitmap referenced and free
-nothing (measured on 2026-10-30, ADR 0046). On success
+nothing (measured on 2026-10-30, ADR 0047). On success
 `_selection` takes the new path, so a later switch of mode decodes the pair now on screen, and
 `ShowPair` keeps the view when the canvas has the same size as before and fits otherwise; `ShowPair`
 also writes the two names into `BeforeName` and `AfterName` and enables the two buttons, disabled

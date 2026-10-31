@@ -202,7 +202,7 @@ measured since on a real pair are its cases.
 the padding settled before anything is decoded (`SettlePaddingAsync`: refused with no one to ask,
 otherwise asked, and declined without an error), the mode both decodes are asked for (`ModeFor`:
 the one asked when both files are shown as stored, `Linear` otherwise, R-110), then the two
-decodes one after the other. `ReplaceAsync` (R-009, ADR 0046) changes one image of a pair already
+decodes one after the other. `ReplaceAsync` (R-009, ADR 0047) changes one image of a pair already
 decoded: it probes the new file alone, puts its header beside the kept image's `Info` on the side
 each belongs to, and goes through the same `SettlePaddingAsync` and `ModeFor`, so the question's
 wording, the refusal and the fallback are one code path for both; then it decodes the new file,

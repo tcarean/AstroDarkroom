@@ -1,4 +1,4 @@
-# 0046. One image of the pair is changed in place, the other kept as decoded
+# 0047. One image of the pair is changed in place, the other kept as decoded
 
 Date: 2026-10-30
 Status: accepted 2026-10-30

@@ -214,7 +214,7 @@ public partial class MainWindow : Window
             // Only the canvas's size, never the pair: a local holding it would be hoisted into
             // this method's state machine and keep the outgoing pair alive through ShowPair's
             // release, which then freed nothing (measured on 2026-10-30: 667.6 MiB before the
-            // release, 665.9 after, 176 MiB outgoing; ADR 0046).
+            // release, 665.9 after, 176 MiB outgoing; ADR 0047).
             (int width, int height) canvas = (_pair.PixelWidth, _pair.PixelHeight);
             Log.Info("mode switch " + _mode + " -> " + target);
 

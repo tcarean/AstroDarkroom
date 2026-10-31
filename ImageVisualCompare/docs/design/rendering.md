@@ -17,7 +17,7 @@
 `CompareView.SetPair` shows a new pair: the sources, the pixel sizes, the backdrops, the
 content size, zoom to fit, the divider reset, the thumbnail. `ReplacePair` (ADR 0040) shows
 another rendering on the same canvas: the same files decoded again in another display mode
-(R-113), or one file changed with the canvas size unchanged (R-065, ADR 0046). The two sources,
+(R-113), or one file changed with the canvas size unchanged (R-065, ADR 0047). The two sources,
 their pixel sizes and the thumbnail change, nothing else is touched, so `Viewport` and
 `DividerModel` keep the zoom, the pan and the line where they were; the caller guarantees the
 canvas size, since the backdrops and `Viewport`'s content size are not touched.

@@ -1,7 +1,7 @@
 # Change one image of the pair, the other kept
 
 On `claude/Change-one-image-of-the-pair`, approved 2026-10-30; the approval is also the owner's
-yes to ADR 0046 (`docs/decisions/0046-one-image-of-the-pair-is-changed-in-place.md`).
+yes to ADR 0047 (`docs/decisions/0047-one-image-of-the-pair-is-changed-in-place.md`).
 
 ## Context
 
@@ -59,7 +59,7 @@ in the `R063_` theory, the Romanian wordings in `UiTextTests`; they do not compi
    screenshot looked at, the log read (`change of B asked by the Change B button`, `replace …`,
    `shown … view=kept`, `exit 0`, no `ERROR`). Only when the owner is not using the PC.
 6. **Record.** R-009 and R-065 `implemented`; R-008 (toolbar: the names with a button after
-   each), R-060 (the toolbar list), R-063 (the two buttons hand the focus back) amended; ADR 0046
+   each), R-060 (the toolbar list), R-063 (the two buttons hand the focus back) amended; ADR 0047
    `accepted 2026-10-30`; `docs/design/shell.md` (a section on the change beside "One open at a
    time", the log lines), `imaging.md` (`ReplaceAsync` in the loader's section), `logging.md`
    (the new lines in the table), `code-map.md` (the two files' lines), `testing.md`
@@ -70,6 +70,6 @@ in the `R063_` theory, the Romanian wordings in `UiTextTests`; they do not compi
 
 ## Not done
 
-- No keyboard shortcut for a change (ADR 0046); no drag and drop.
+- No keyboard shortcut for a change (ADR 0047); no drag and drop.
 - No new validation case: the change decodes one file through the same loaders the cases of
   `docs/validation.json` already measure.
