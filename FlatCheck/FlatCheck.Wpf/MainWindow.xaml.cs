@@ -110,13 +110,13 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>The "Despre" button and F1, through ApplicationCommands.Help - see
-        /// MainWindow.xaml.</summary>
+        /// MainWindow.xaml. The window fits the work area of this window's screen (R-123).</summary>
         /// <param name="sender">The window.</param>
         /// <param name="e">The command.</param>
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
         {
             Log.Info("About opened");
-            new AboutWindow { Owner = this }.ShowDialog();
+            new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();
         }
 
         /// <summary>A link clicked in a tab - the Structure tab's link to Adobe's DNG Converter

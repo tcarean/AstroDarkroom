@@ -90,7 +90,7 @@ public class WindowSmokeTests
     /// It is only how you look at it without starting the application - for example when the
     /// Windows session is locked and a screenshot would catch the lock screen.
     /// </summary>
-    static void Render(FrameworkElement el, int w = 1360, int h = 800, string? name = null)
+    internal static void Render(FrameworkElement el, int w = 1360, int h = 800, string? name = null)
     {
         el.Measure(new Size(w, h));
         el.Arrange(new Rect(0, 0, w, h));
@@ -133,16 +133,23 @@ public class WindowSmokeTests
     /// wrong name and fail only when shown.
     /// </summary>
     [Fact]
-    public void TheAboutWindowLoadsAndRenders()
-        => _sta.Invoke(() =>
+    public Task TheAboutWindowLoadsAndRenders()
+        => _sta.InvokeAsync(async () =>
         {
             using var errors = new BindingErrors();
-            var about = new AboutWindow();
+            var about = new AboutWindow(SystemParameters.WorkArea);
+            // A window never shown resolves its bindings and styles in a later dispatcher pass;
+            // measured before it, the content comes out short (397 DIP instead of 880 on
+            // 2026-11-01).
+            await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ContextIdle);
 
             // The CONTENT is rendered, not the window: a Window not shown renders
             // transparent (that is how "window" below comes out too), and the root panel
-            // inherits the DataContext and goes through the same bindings.
-            Render((FrameworkElement)about.Content, 600, 720, "about");
+            // inherits the DataContext and goes through the same bindings. At its own height,
+            // so that the render shows the whole window and no scroll bar (R-123).
+            var content = (FrameworkElement)about.Content;
+            content.Measure(new Size(600, double.PositiveInfinity));
+            Render(content, 600, (int)Math.Ceiling(content.DesiredSize.Height), "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             // the icon is the large frame, not the 16 px one scaled

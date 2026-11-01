@@ -171,6 +171,18 @@ namespace FlatCheck
         /// <returns>The text.</returns>
         internal static string Yes(bool b) => b ? "yes" : "no";
 
+        /// <summary>
+        /// What the probe of the Visual C++ runtime found, in the Astro Darkroom launcher's words
+        /// (its <c>LogText.VcRuntime</c>): <c>Visual C++ runtime: vcruntime140.dll, ...,
+        /// vcomp140.dll load</c>, or <c>Visual C++ runtime: missing vcomp140.dll</c> (R-110).
+        /// </summary>
+        /// <param name="missing">The runtime's DLLs that did not load, from
+        /// <see cref="global::FlatCheck.VcRuntime.Missing"/>; empty when all load. Not null.</param>
+        /// <returns>The text.</returns>
+        internal static string VcRuntime(IReadOnlyList<string> missing) => missing.Count == 0
+            ? "Visual C++ runtime: " + string.Join(", ", global::FlatCheck.VcRuntime.Files) + " load"
+            : "Visual C++ runtime: missing " + string.Join(", ", missing);
+
         // ------------------------------------------------------------------ the results
         // One line per result, with every figure a verdict rests on; the words of the reports
         // are not repeated (they are localized, and the report is beside the log anyway).

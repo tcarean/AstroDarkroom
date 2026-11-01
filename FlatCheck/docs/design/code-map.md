@@ -80,7 +80,13 @@ a library extraction and not a copy is ADR 0011.
   - `RawReader.cs` - the only file that names a libraw type, loaded lazily, `FillShootingInfo`
     reading its fields as locals: ADR 0009. `IsRawPath` is the extension gate; `RawExtensions`
     exposes the same list to the WPF app's `flats/` filter, so a camera the reader learns is a
-    camera the list offers.
+    camera the list offers. When LibRaw cannot be loaded, `CannotLoad` refuses the raw with
+    R-122's message, which names the Visual C++ runtime on Windows, and logs the loader's
+    exception with the probe: ADR 0082, the mechanics in `dependencies.md`.
+  - `VcRuntime.cs` - the four DLLs of Microsoft's Visual C++ runtime that LibRaw's DLLs import,
+    Microsoft's link to its latest package, and the probe `CannotLoad` runs: the Astro Darkroom
+    launcher's list and words, kept here for the tool's own release, which has no launcher
+    (ADR 0082).
   - `CfaPattern.cs` - which colour each of the four Bayer positions is, or `null` when the
     file does not say: what it reads (libraw's `filters` + `cdesc`, or `BAYERPAT` with
     `XBAYROFF`/`YBAYROFF` and `ROWORDER`), why it is never guessed and why no figure depends on
@@ -116,8 +122,9 @@ a library extraction and not a copy is ADR 0011.
   - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly:
     ADR 0039.
   - `ThirdParty.cs` - the third-party components as a *value*, what the window's "Despre"
-    shows, bound to the csproj and the notices file by `ThirdPartyTests`: ADR 0008, ADR 0040
-    and the rule "Package notices".
+    shows, bound to the csproj, to the DLLs of LibRaw's runtime package (`NativeFiles`) and to
+    the notices file by `ThirdPartyTests`: ADR 0008, ADR 0040, ADR 0082 and the rule "Package
+    notices". `NoticesUrl` is where each licence's whole text is online.
   - `LensProfiles/` - the lens vignetting profiles behind the synthetic flat.
     `VignettingModel` is the factor `V(x, y)` as a value, with the two coordinate
     conventions verified from sources (its header quotes them): Adobe's r in units of the
@@ -407,7 +414,11 @@ a library extraction and not a copy is ADR 0011.
     than blown up (found on the 128 px test fixtures, where fit came out at 4x).
   - `Views/AboutWindow.xaml` - the "Despre" window (ADR 0040: what it shows and how it is
     opened; ADR 0037: the hyperlink handler and why the smoke test renders its content, not
-    the window). Modal, centred on its owner, `IsCancel` on the close button.
+    the window). Modal, centred on its owner, `IsCancel` on the close button. No taller than
+    the work area of its screen, which the main window passes to its constructor: the cards
+    in a `ScrollViewer` named `Cards`, the Close button in a row of its own, the fit and its
+    log line at `ContentRendered`, the keys passed to the cards only while they scroll (R-123,
+    ADR 0083).
   - `Presentation/AppIcon.cs` - the largest frame of `flatcheck.ico`, chosen through
     `BitmapDecoder`: an `<Image>` handed the `.ico` directly takes whichever frame comes
     first, which at 72 px on screen can be the 16 px one scaled up.
@@ -435,7 +446,10 @@ a library extraction and not a copy is ADR 0011.
   - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
     templates; why the converters and the `ToolTip` style live there is ADR 0037. The tabs'
     style targets `AccessibleTabControl` and names its presenter `ContentHost` (ADR 0074).
-  - `Interop/DarkTitleBar.cs` - the one P/Invoke: Windows draws the title bar, not WPF.
+  - `Interop/DarkTitleBar.cs` - a P/Invoke: Windows draws the title bar, not WPF.
+  - `Interop/ScreenArea.cs` - the other: the work area of the screen a window is on, which WPF
+    knows for the primary screen only, and `TopInside`, the arithmetic that keeps "Despre"
+    inside it (R-123, ADR 0083).
   - `Loggers.cs` - the names of the window's loggers in the diagnostic log (`logging.md`);
     each tab logs under `Window.<Tab>`, given by `TabViewModel`.
 - `FlatCheck.Tests/` - xUnit tests for the core and the console, reaching them via

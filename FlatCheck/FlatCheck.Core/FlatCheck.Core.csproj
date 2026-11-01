@@ -29,8 +29,10 @@
        debayers (and then the exposure mode has nothing to measure), or is commercial, or starts
        an external dcraw.exe. The runtime.* packages bring native DLLs (raw_r, jpeg8, lcms2,
        zlib1, ~2.1 MB); they go into flatcheck.exe ONLY at a publish with
-       IncludeNativeLibrariesForSelfExtract (see README). Without them the FITS modes work
-       unchanged; only the raw paths refuse, with an explicit message.
+       IncludeNativeLibrariesForSelfExtract (see README). They import Microsoft's Visual C++
+       runtime, which no release ships. Without them, or without it, the FITS modes work
+       unchanged; only the raw paths refuse, with a message that names the runtime on Windows
+       (ADR 0082).
 
        SixLabors.ImageSharp, and only for the JPEG preview the camera embedded in the raw - the
        image from which it computed its on-screen histogram. It replaces nothing written by
