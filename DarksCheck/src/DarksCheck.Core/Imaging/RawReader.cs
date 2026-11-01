@@ -18,8 +18,9 @@
 #nullable disable // adapted from FlatCheck 2.3.0, which compiles without nullable annotations (ADR 0003)
 // The code is LightsCheck's adaptation; the comments are DarksCheck's own (ADR 0019). The
 // messages are English-or-Romanian T(...) pairs written here, LightsCheck's Romanian wording
-// kept byte for byte beside its English; LightsCheck takes these English wordings back in its
-// own language task (ADR 0021). The runtime check of Missing, its pair included, is
+// kept byte for byte beside its English (ADR 0021); LightsCheck's own language task, merged on
+// 2026-10-25, wrote English of its own, which differs in places. The runtime check of Missing,
+// its pair included, is
 // LightsCheck's hunk of 2026-11-01 (its ADR 0030; here ADR 0026), taken word for word.
 
 // RawReader.cs - camera raw files (NEF and its relatives) through libraw: the one place in
@@ -38,7 +39,7 @@
 // The native DLLs come from the Sdcb.LibRaw.runtime.* packages: inside the single file, which
 // extracts them at start, or beside the window in the Astro Darkroom folder. They import
 // Microsoft's Visual C++ v14 runtime, which neither ships. When LibRaw cannot be loaded, a FITS
-// run is unaffected (this type is loaded only when a raw is asked for) and every raw's error
+// run is unaffected (no libraw type is loaded until a raw is asked for) and every raw's error
 // names that runtime, missing or too old, as the likely cause, with Microsoft's link (R-110, ADR
 // 0026). The loader's own text never names the runtime: it names libraw.dll, or, in a single
 // file, says only that the DLL was not found. The first such failure of a process also writes

@@ -79,8 +79,9 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   would bring both.
 - Taken later, the messages' English: every message the readers throw is a `T(english,
   romanian)` pair (ADR 0021). `FitsReader`'s English is FlatCheck's, word for word;
-  `RawReader`'s messages are LightsCheck's adaptations and their English was written here, for
-  LightsCheck to take back. A refresh from LightsCheck keeps the pairs.
+  `RawReader`'s messages are LightsCheck's adaptations and their English was written here;
+  LightsCheck's own language task, merged on 2026-10-25, wrote English of its own, which
+  differs in places. A refresh from LightsCheck keeps the pairs.
 - Taken later from LightsCheck: the runtime check of its ADR 0030, merged into its `main` as
   7b59214f on 2026-11-01 (here R-110, ADR 0026), its code and its pair word for word.
   `Missing(inner)` calls `Missing(inner, Runtime)`, which writes the runtime's line once and

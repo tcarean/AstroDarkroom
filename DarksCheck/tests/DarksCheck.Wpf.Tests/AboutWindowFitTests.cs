@@ -49,7 +49,7 @@ public class AboutWindowFitTests
     /// </summary>
     [Theory]
     [InlineData(100.0, 600.0, 0.0, 800.0, 100.0)]          // it fits where it opens: unchanged
-    [InlineData(300.0, 600.0, 0.0, 800.0, 200.0)]          // past the bottom: up until its bottom is the area's (R-121's example)
+    [InlineData(300.0, 600.0, 0.0, 800.0, 200.0)]          // past the bottom: up until its bottom is the area's
     [InlineData(-60.0, 600.0, 0.0, 800.0, 0.0)]            // past the top: down to the area's top
     [InlineData(-60.0, 1017.0, 0.0, 800.0, 0.0)]           // taller than the area: at its top (the window is cut to the area's height)
     [InlineData(-60.0, 800.0, 0.0, 800.0, 0.0)]            // exactly as tall as the area: at its top
@@ -96,8 +96,8 @@ public class AboutWindowFitTests
             await Dispatcher.Yield(DispatcherPriority.ContextIdle);
             FrameworkElement content = (FrameworkElement)about.Content;
 
-            // 560 DIP, under the content's 950 to 978 (at 600 and 584 DIP wide): less than what a
-            // window capped at 680 leaves its content once its title bar and frame are taken.
+            // 560 DIP, under the content's 961 at the window's 584 DIP of width (ADR 0027): less
+            // than what a window capped at 680 leaves its content once its title bar and frame are taken.
             WindowSmokeTests.Render(content, 600, 560, "about-low-screen");
 
             Assert.Equal(680, about.MaxHeight);

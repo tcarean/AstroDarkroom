@@ -260,8 +260,8 @@ The task's facts all hold:
   same way, as AstroPhotoAnalyzer's tests do.
 - **LightsCheck was merged during the third review (2026-11-01, its 7b59214f), with its own
   answer to the same request.** Its reader now checks the runtime itself and words the message
-  with a note on FITS frames (its ADR 0030), and its About window has the same fit, its lead in
-  its core (its ADR 0031). DarksCheck's reader and About pieces are its copies. On 2026-11-02 the
+  with a note on FITS frames, and its lead in its core (its ADR 0030); its About window has the
+  same fit (its ADR 0031). DarksCheck's reader and About pieces are its copies. On 2026-11-02 the
   owner chose, each as recommended:
   - LightsCheck's runtime check, taken as a hunk of the copied reader; `VcRuntime`, its two
     calls and its versions and paths in the log are gone;
@@ -271,5 +271,7 @@ The task's facts all hold:
     ADR 0009 stays as it was;
   - a fixed list of the six in place of the test that read `AstroDarkroom/THIRD-PARTY-NOTICES.md`.
 - **ADRs 0026 and 0027 were rewritten** for those answers, before any merge. About's heights
-  were measured again: 1000 DIP at a 1040 DIP work area in both languages.
+  were measured again at the four work areas, in both languages: 1000 DIP high at 1040 DIP,
+  where nothing scrolls, and the cards scrolling by 190, 287 and 325 DIP at 825, 728 and 690,
+  as in the first version.
 
