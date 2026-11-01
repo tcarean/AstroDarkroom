@@ -17,7 +17,7 @@ VERDICT: PROBLEM
 
 2. The background and the paper  [PROBLEM]
    !! The sky is under paper black: the sky and the dust would print as the SAME black. Re-stretch from linear to a background of 0.16 (simulated: the dust at L* 11.7, the sky at L* 15.9; exactly on black at 0.135).
-     because: the dust (the 25 % percentile of the dust patches (0.5 L* below the modelled sky (4 sigma of the sky); 5.5 % of the frame); no WCS) at L* 4.8; paper black L* 9.0 at Dmax 2.0; the sky (the median of the sky patches (classes relative to the modelled sky)) at L* 7.2; the background level 0.089; the dust reaches paper black from Dmax 2.28; as it is, no paper makes the image print-safe: the sky is under L* 15, and the remedy is lifting the background at the stretch; the visibility threshold L* 15, under it 83.9 % of the pixels
+     because: the dust (the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 5.5 % of the frame, the patches 0.5 L* darker than the sky (4 times its noise)); no WCS) at L* 4.8; paper black L* 9.0 at Dmax 2.0; the sky (the middle value of the sky patches (the patches sorted by comparison with the sky)) at L* 7.2; the background level 0.089; as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; the visibility threshold L* 15, under it 83.9 % of the pixels
 
 3. The background colour and the gradients  [CAUTION]
    - The background is neutral.
@@ -63,10 +63,10 @@ Appendix B. Background simulation (from level 0.089; a gamma curve on every chan
   0.18                 0.710      13.8     18.3       0.0 %      2.6 %        3.9 %   print-safe
   0.19                 0.687      14.8     19.5       0.0 %      2.0 %        4.3 %   print-safe
   0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
-  * = recommended: the lowest print-safe target - the dust on paper black and the sky at L* 15 or above
-  dust = the 25 % percentile of the dust patches (0.5 L* below the modelled sky (4 sigma of the sky); 5.5 % of the frame) (no WCS); sky = the median of the sky patches (classes relative to the modelled sky); pure black = 32 px patches under paper black (L* 9.0 at Dmax 2.0)
+  * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
+  dust = the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 5.5 % of the frame, the patches 0.5 L* darker than the sky (4 times its noise)) (no WCS); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 9.0 at Dmax 2.0)
   classes: dust 5.5 %, sky 47.3 %, nebula 35.9 % (over the modelled sky by 0.5 L*, 4 sigma of the sky), bright nebula 10.9 % (over 14.0 L*, the Otsu threshold), peaks 0.4 %
-  the exact target of the dust on black: 0.135 at Dmax 2.0 (0.154 at Dmax 1.9, 0.117 at Dmax 2.1); the dust reaches paper black from Dmax 2.28; as it is, no paper makes the image print-safe: the sky is under L* 15, and the remedy is lifting the background at the stretch; the sky reaches the visibility threshold L* 15 at 0.152
+  the background at which the dust reaches exactly paper black: 0.135 at Dmax 2.0 (0.154 if the Dmax is 1.9, 0.117 if it is 2.1); as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; the sky reaches L* 15 when the background is 0.152
 
 Appendix C. Export
   TIFF 8-bit LZW: 0.2 MB

@@ -15,7 +15,7 @@ VERDICT: CAUTION
 
 2. The background and the paper  [OK]
    - The background is print-safe as it is; you can go down to 0.20 (the dust at L* 21.2, the sky at L* 21.2).
-     because: the dust (the darkest 1 % of the sky patches (no dust patch); no WCS) at L* 26.9; paper black L* 20.7 at Dmax 1.5; the sky (the median of the sky patches (classes relative to the modelled sky)) at L* 27.0; the background level 0.25; the dust reaches paper black from Dmax 1.3; the visibility threshold L* 15, under it 0.0 % of the pixels
+     because: the dust (the darkest 1 % of the sky patches (no dust found); no WCS) at L* 26.9; paper black L* 20.7 at Dmax 1.5; the sky (the middle value of the sky patches (the patches sorted by comparison with the sky)) at L* 27.0; the background level 0.25; as the image is, the dust stays above black from Dmax 1.3 up; the visibility threshold L* 15, under it 0.0 % of the pixels
 
 3. The background colour and the gradients  [OK]
    - The background is neutral.
@@ -57,10 +57,10 @@ Appendix B. Background simulation (from level 0.25; a gamma curve on every chann
   0.19                 1.198      20.0     20.1      92.2 %      0.0 %        0.0 %
   0.20 *               1.161      21.2     21.2       0.0 %      0.0 %        0.0 %   print-safe
   0.25 as is           1.000      26.9     27.0       0.0 %      0.0 %        0.1 %   print-safe
-  * = recommended: the lowest print-safe target - the dust on paper black and the sky at L* 15 or above
-  dust = the darkest 1 % of the sky patches (no dust patch) (no WCS); sky = the median of the sky patches (classes relative to the modelled sky); pure black = 32 px patches under paper black (L* 20.7 at Dmax 1.5)
+  * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
+  dust = the darkest 1 % of the sky patches (no dust found) (no WCS); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 20.7 at Dmax 1.5)
   classes: dust 0.0 %, sky 75.0 %, nebula 17.2 % (over the modelled sky by 0.2 L*, 4 sigma of the sky), bright nebula 7.4 % (over 0.5 L*, the Otsu threshold), peaks 0.4 %
-  the exact target of the dust on black: 0.196 at Dmax 1.5 (0.221 at Dmax 1.4, 0.173 at Dmax 1.6); the dust reaches paper black from Dmax 1.3; the sky reaches the visibility threshold L* 15 at 0.148
+  the background at which the dust reaches exactly paper black: 0.196 at Dmax 1.5 (0.221 if the Dmax is 1.4, 0.173 if it is 1.6); as the image is, the dust stays above black from Dmax 1.3 up; the sky reaches L* 15 when the background is 0.148
 
 Appendix C. Export
   TIFF 8-bit LZW: 0.3 MB

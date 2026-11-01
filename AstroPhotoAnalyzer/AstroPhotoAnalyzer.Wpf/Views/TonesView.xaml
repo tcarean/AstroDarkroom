@@ -48,7 +48,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='BACKGROUND SIMULATION (gamma curve on all channels)', Ro='SIMULAREA FUNDALULUI (curba gamma pe toate canalele)'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='BACKGROUND SIMULATION (what happens if you move the background)', Ro='SIMULAREA FUNDALULUI (ce se intampla daca muti fundalul)'}" />
           <!-- The same mono text as in Anexa B; on each row with a target, the button that
                opens the row's preview (R-131). The header and the note have no button. -->
           <ItemsControl ItemsSource="{Binding SimulationRows}">
@@ -72,7 +72,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource BadBr}" Text="{Binding NoWcsWarning}"
                      Visibility="{Binding NoWcsWarning, Converter={StaticResource NotNullToVis}}" />
           <Button Content="{local:T En='Dust / sky map', Ro='Harta praf / cer'}" Command="{Binding OpenMap}" HorizontalAlignment="Left" Margin="0,10,0,0"
-                  ToolTip="{local:T En='The whole image with the dust and sky patches painted and the catalogued clouds by name', Ro='Imaginea intreaga cu dalele de praf si de cer vopsite si norii catalogati pe nume'}" />
+                  ToolTip="{local:T En='The whole image, with the dust and sky areas coloured and the catalogued clouds written by name', Ro='Imaginea intreaga, cu zonele de praf si de cer colorate si cu norii din catalog scrisi pe nume'}" />
         </StackPanel>
       </Border>
 
@@ -81,7 +81,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Heading}" Text="{local:T En='LEVEL AND L*: THE LANDMARKS OF THE TAB', Ro='NIVEL SI L*: REPERELE TABULUI'}" />
           <ItemsControl ItemsSource="{Binding LadderRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
-                     Text="{local:T En='The level is that of a grey (R = G = B) with the same L*: what you look for on the Siril histogram when you pull the curve. On a colour the same level gives a different L* by its hue - a blue background has a lower L* than its levels suggest.', Ro='Nivelul e cel al unui gri (R = G = B) cu acelasi L*: ce cauti pe histograma din Siril cand tragi de curba. Pe culoare acelasi nivel da alt L* dupa nuanta - un fundal albastru are L* mai mic decat sugereaza nivelurile lui.'}" />
+                     Text="{local:T En='The level in the table is that of a grey (R = G = B) with the same L*: the figure you look for on the Siril histogram when you pull the curve. On colour, the same level gives a different L* by its hue: a blue background is darker (a lower L*) than its levels would suggest.', Ro='Nivelul din tabel e cel al unui gri (R = G = B) cu acelasi L*: cifra pe care o cauti pe histograma din Siril cand tragi de curba. Pe culoare, acelasi nivel da alt L* dupa nuanta: un fundal albastru e mai intunecat (L* mai mic) decat ar sugera nivelurile lui.'}" />
         </StackPanel>
       </Border>
 

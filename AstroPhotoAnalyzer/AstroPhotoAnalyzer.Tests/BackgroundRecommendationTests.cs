@@ -58,13 +58,13 @@ public class BackgroundRecommendationTests
         Assert.StartsWith("Cerul e sub negrul hartiei", rec.Text);
         // 0.10 already puts the dust on paper black (exact 0.10); the row recommended is the first that also has the sky at L* 15.
         Assert.Contains("Re-stretch din liniar la fundal 0.15 (simulat: praful la L* 15.3, cerul la L* 15.3; exact pe negru la 0.1", rec.Text);
-        Assert.Contains("praful (cel mai intunecat 1 % al dalelor de cer (nicio dala de praf); fara WCS) la L* 6.", rec.Because);
+        Assert.Contains("praful (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); fara WCS) la L* 6.", rec.Because);
         Assert.Contains("negrul hartiei L* 9.0 la Dmax 2.0", rec.Because);
-        Assert.Contains("cerul (mediana dalelor de cer (clase relative la cerul modelat)) la L* 6.", rec.Because);
+        Assert.Contains("cerul (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)) la L* 6.", rec.Because);
         Assert.Contains("nivelul fundalului 0.08", rec.Because);
         // The Dmax figure is the dust's; the sky (L* 6) is under the visibility threshold, so no paper passes as it is.
-        Assert.Contains("praful ajunge pe negrul hartiei de la Dmax 2.", rec.Because);
-        Assert.Contains("; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch", rec.Because);
+        Assert.Contains("asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.", rec.Because);
+        Assert.Contains("; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul", rec.Because);
         Assert.DoesNotContain("trece asa cum e", rec.Because);
     }
 
@@ -89,15 +89,15 @@ public class BackgroundRecommendationTests
         Recommendation rec = Background(WcsFixtures.BandScene());
 
         Assert.Equal(Verdict.Attention, rec.Verdict);
-        Assert.Contains("praful (percentila 25 % a dalelor de praf (cu 5 L* sub nivelul local al benzii sau sub cerul modelat; ", rec.Because);
+        Assert.Contains("praful (cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e ", rec.Because);
         Assert.Contains("cei mai intunecati: LDN ", rec.Because);
-        Assert.Contains("cerul (mediana dalelor de cer, in afara benzii (|b| peste 10 grade)) la L* 2", rec.Because);
+        Assert.Contains("cerul (cerul din afara benzii Caii Lactee, la peste 10 grade de ea (valoarea din mijloc a dalelor de cer)) la L* 2", rec.Because);
         Assert.DoesNotContain("fara WCS", rec.Because);
 
         // Wholly inside the band: the sky path, named; the cloud fills the frame and is the
         // modelled sky itself, so the dust is the darkest sky.
         Recommendation inside = Background(WcsFixtures.Ldn42Scene());
-        Assert.Contains("praful (cel mai intunecat 1 % al dalelor de cer (nicio dala de praf); cadrul e in intregime in banda) la L* ", inside.Because);
+        Assert.Contains("praful (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); cadrul e in intregime in banda) la L* ", inside.Because);
         Assert.Contains("cei mai intunecati: LDN 42 (B78) L* ", inside.Because);
     }
 

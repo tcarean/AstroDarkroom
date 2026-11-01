@@ -46,6 +46,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Tonuri tab explains itself in plain words (R-113, ADR 0072): what each row means for the print, the
+  histogram's two lines, the ladder's landmarks, the guide's six paragraphs and the simulation's
+  legend and exact-target line. The definition of the dust and the sky, which the console report
+  and the Raport tab's reasons print too, now reads "cele mai intunecate zone intinse din norii de
+  praf (...)" and "cerul din afara benzii Caii Lactee (...)" instead of percentiles and medians;
+  every figure in it is unchanged.
 - The Rezolutie tab explains itself in plain words (R-115, ADR 0071): what each figure means
   for the print, the stars' width named "latimea stelelor (FWHM)", no median, quartile,
   interpolation or pixel grid in the rows' descriptions, the notes under the tables or the dpi
