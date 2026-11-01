@@ -404,7 +404,7 @@ namespace FlatCheck
             w.WriteLine("--histeq is a picture, not a test: every grey level gets the same number of pixels,");
             w.WriteLine("so it shows the shape of what is not uniform, not how large it is. Exits with 0 once written.");
             w.WriteLine("--rainbow colours that picture with Siril's rainbow table (magenta = lowest level, red = highest):");
-            w.WriteLine("the mosaic on a CFA frame, the channel on mono. The colours are ranks, not values.");
+            w.WriteLine("the mosaic on a CFA frame, the channel on mono. The colours are only an order, not values.");
             w.WriteLine();
             w.WriteLine("--synthetic writes a radial flat from the lens's published vignetting profile -");
             w.WriteLine("its model, achromatic, with no dust and no light source at all. --against compares it");
@@ -448,7 +448,7 @@ namespace FlatCheck
             w.WriteLine("--histeq e o poza, nu un test: fiecare nivel de gri primeste acelasi numar de pixeli,");
             w.WriteLine("deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.");
             w.WriteLine("--rainbow coloreaza poza cu tabelul rainbow din Siril (magenta = nivelul cel mai jos, rosu = cel mai sus):");
-            w.WriteLine("mozaicul pe un cadru CFA, canalul pe mono. Culorile sunt ranguri, nu valori.");
+            w.WriteLine("mozaicul pe un cadru CFA, canalul pe mono. Culorile sunt doar o ordine, nu valori.");
             w.WriteLine();
             w.WriteLine("--synthetic scrie un flat radial din profilul de vignetare publicat al obiectivului -");
             w.WriteLine("modelul lui, acromatic, fara praf si fara nicio sursa de lumina. --against il compara");

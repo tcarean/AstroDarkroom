@@ -32,7 +32,7 @@ because there the sky and the vignetting have the same shape. See README.md.
 --histeq is a picture, not a test: every grey level gets the same number of pixels,
 so it shows the shape of what is not uniform, not how large it is. Exits with 0 once written.
 --rainbow colours that picture with Siril's rainbow table (magenta = lowest level, red = highest):
-the mosaic on a CFA frame, the channel on mono. The colours are ranks, not values.
+the mosaic on a CFA frame, the channel on mono. The colours are only an order, not values.
 
 --synthetic writes a radial flat from the lens's published vignetting profile -
 its model, achromatic, with no dust and no light source at all. --against compares it

@@ -32,7 +32,7 @@ fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.
 --histeq e o poza, nu un test: fiecare nivel de gri primeste acelasi numar de pixeli,
 deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.
 --rainbow coloreaza poza cu tabelul rainbow din Siril (magenta = nivelul cel mai jos, rosu = cel mai sus):
-mozaicul pe un cadru CFA, canalul pe mono. Culorile sunt ranguri, nu valori.
+mozaicul pe un cadru CFA, canalul pe mono. Culorile sunt doar o ordine, nu valori.
 
 --synthetic scrie un flat radial din profilul de vignetare publicat al obiectivului -
 modelul lui, acromatic, fara praf si fara nicio sursa de lumina. --against il compara

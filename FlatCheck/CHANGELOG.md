@@ -121,6 +121,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   burnt pixels and saturation; no median, distribution, CFA, Bayer, gamma, clipping, SNR, radial,
   gradient, sector, tile, rank or extrapolation. The labels stay. The goldens that print those
   sentences, parity ones included, were recaptured for the text lines alone, every figure unchanged.
+  The same goes for the note above the Histogram tab's list of files and the console's `--rainbow`
+  help line.
 - When LibRaw cannot be loaded, a raw is refused with a message that names Microsoft's Visual C++
   runtime, missing or too old, as the likely cause, and ends with Microsoft's link to its latest
   x64 package, `https://aka.ms/vc14/vc_redist.x64.exe`, in English or Romanian (R-124, ADR 0085).

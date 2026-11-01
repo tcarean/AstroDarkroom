@@ -46,7 +46,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel DockPanel.Dock="Top">
           <TextBlock Style="{StaticResource Heading}" Margin="0,0,0,8" Text="{l:T En='THE MASTER AND THE FLATS', Ro='MASTERUL SI FLAT-URILE'}" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,0,0,10"
-                     Text="{l:T En='The master is the stack of the frames under it: compare it with them to see what was averaged out and what stayed.', Ro='Masterul e stiva cadrelor de sub el: compara-l cu ele ca sa vezi ce s-a mediat si ce a ramas.'}" />
+                     Text="{l:T En='The master is the mean of the frames under it: compare it with them to see what was lost in the averaging and what stayed.', Ro='Masterul e media cadrelor de sub el: compara-l cu ele ca sa vezi ce s-a pierdut la mediere si ce a ramas.'}" />
         </StackPanel>
 
         <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding Selected, Mode=TwoWay}">
