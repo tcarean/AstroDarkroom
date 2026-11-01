@@ -84,6 +84,12 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
   varful iese din cadru e nedeterminat", R-013). The 15 `parity_structure_*.txt` were recaptured,
   with the owner's yes, for that one line each; every figure is unchanged. A C#-only call, like
   the rest.
+- On 2026-11-01 the structure sentences the console shares with the window's Structure tab were
+  rewritten in plain words too (ADR 0083, R-122): the scale's meanings, the paragraph on why the
+  residual matters, the illumination-offset explanation and its undetermined row, the local-spot
+  note and warning, the advices. The 15 `parity_structure_*.txt` were recaptured, with the
+  owner's yes, for those text lines alone (17 to 21 lines each); every figure is unchanged. A
+  C#-only call, like the rest.
 - The goldens run in Romanian, the language the prototype spoke; the console's default is
   English since the same date, and `EnglishOutputTests` checks that each parity scenario prints
   the same numbers in English.

@@ -39,7 +39,7 @@ public class MapGuideTests
 
         string names = string.Join(" | ", shapes.Select(s => s.Shape));
         Assert.Contains("pete", names);
-        Assert.Contains("dipol", names);
+        Assert.Contains("o parte albastra", names);
         Assert.Contains("cercuri", names);
         Assert.Contains("pata", names);
     }
@@ -54,7 +54,7 @@ public class MapGuideTests
         string intro = SessionMessages.MapGuideIntro();
 
         Assert.Contains("alb", intro);
-        Assert.Contains("model", intro);
+        Assert.Contains("vignetarea obisnuita", intro);
         Assert.Contains("vignetare", intro);
     }
 
@@ -109,8 +109,8 @@ public class MapGuideTests
         var rings = SessionMessages.MapGuideShapes().Single(s => s.Shape.Contains("cercuri"));
 
         Assert.DoesNotContain("descentrat", rings.Shape);
-        Assert.Contains("NU poate", rings.Meaning);       // a ring centred on the sensor
-        Assert.Contains("artefact", rings.Meaning);       // and why they showed before
+        Assert.Contains("nu poate ramane in harta", rings.Meaning);   // a ring centred on the sensor
+        Assert.Contains("centrat in alta parte", rings.Meaning);     // so a visible one is not
     }
 
     /// <summary>
@@ -124,8 +124,8 @@ public class MapGuideTests
     {
         var blob = SessionMessages.MapGuideShapes().Single(s => s.Shape.Contains("centru"));
 
-        Assert.Contains("NU poate aparea", blob.Meaning);
-        Assert.Contains("absoarbe", blob.Meaning);
+        Assert.Contains("nu apare pe harta", blob.Meaning);
+        Assert.Contains("seamana perfect cu vignetarea", blob.Meaning);
         Assert.Contains("vignetare", blob.Meaning);     // the only trace it leaves
     }
 
@@ -159,7 +159,7 @@ public class MapGuideTests
         Assert.Contains("CAT DE MULT", rows[0].Shape);
         Assert.Contains("CE FEL", rows[1].Shape);
         Assert.Contains("cifrele", rows[0].Shape);
-        Assert.Contains("NU depinde", rows[0].Meaning);   // the verdict does not depend on the map
+        Assert.Contains("nu depinde niciodata", rows[0].Meaning);   // the verdict does not depend on the map
     }
 
     [Fact]

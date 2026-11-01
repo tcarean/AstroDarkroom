@@ -9,13 +9,13 @@ Copyright (C) 2026 Tudor Carean
     vignetare centru->colt  : 1.12 stopuri (colt = 46% din centru)
     offset centru iluminare :  0.45 %
         varf iluminare = (60, 40)  vs  centru senzor = (60, 40)
-        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
-        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
-        iar cand varful iese din cadru e nedeterminat. Amplitudinea o da "inclinare".
+        Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
+        fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
+        nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
     pete locale (praf etc.) : +0.12 % (mai luminos) la (9, 15)
-        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
-        Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
-        condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
+        Cea mai pronuntata pata mica, dupa ce se scot formele mari.
+        Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
+        condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
         Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
 
   TESTE
@@ -31,17 +31,17 @@ Copyright (C) 2026 Tudor Carean
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta
-    2 - 10 %     utilizabil; background extraction scoate ce ramane
-    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    2 - 10 %     utilizabil; extragerea de fond scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu testul End-to-end (--light) inainte de un stretch puternic
     peste 20 %   refa flat-urile
-    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
-    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
-    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
-    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
-    nu se reproduce); un singur master nu le desparte. Imprastierea colturilor,
-    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
-    "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
-    mica, o pata de condens - pe care reziduul il taie ca extrema.
+    Cel mai important e "reziduu dupa model rad.": spune direct cat din cadru nu
+    arata ca o vignetare obisnuita, simetrica in jurul centrului. E o LIMITA DE SUS a
+    erorii flat-ului, nu eroarea insasi: cuprinde si ce tine de aparat (optica, care se
+    imparte corect din lights) si ce tine de lume (iluminarea, care nu se repeta); un
+    singur master nu le poate desparti. Imprastierea colturilor, asimetria azimutala si
+    inclinarea sunt bucati ale aceleiasi abateri. "Pata maxima" prinde ce le scapa
+    celorlalte: un defect mic si compact, o scurgere de lumina, o pata de condens, pe
+    care reziduul il lasa deoparte ca pe o extrema.
 
   VIGNETAREA fata de profilul obiectivului
     master                  : 1.12 stopuri (colt = 46 % din centru)
@@ -49,30 +49,30 @@ Copyright (C) 2026 Tudor Carean
         profil 20 mm, f/2.8, infinit   : 0.66 stopuri (colt = 63 % din centru)   diferenta +0.46 stopuri = 37.5 % [REFA]
     lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8  [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]
         profil 20 mm, f/2.8, distanta nespecificata: 0.85 stopuri (colt = 56 % din centru)   diferenta +0.28 stopuri = 21.1 % [REFA]  <- cel mai apropiat, da verdictul
-    verdictul comparatiei: REFA - al celui mai apropiat profil (lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 (calibrat pe APS-C Canon 1.61)), +0.28 stopuri = 21.1 % eroare in coltul unui light calibrat cu masterul
+    verdictul comparatiei: REFA, dat de profilul cel mai apropiat (lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 (calibrat pe APS-C Canon 1.61)): +0.28 stopuri fata de profil = 21.1 % eroare in coltul unui light calibrat cu masterul
     cele 2 profile difera intre ele cu 0.18 stopuri in colt; un master care coincide cu unul din ele nu e gresit
     (sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste REFA)
-    Aceeasi scara de reziduu ca cele cinci teste (2 / 10 / 20 %), aplicata erorii pe care
-    diferenta de adancime o lasa in coltul unui light calibrat cu masterul, 2^|stopuri| - 1, si
-    tradusa in stopuri. Nu e un prag nou.
-    In coltul unui light calibrat cu masterul: 21.1 %; pe scara modului --light (2 % OK,
-    5 % PROBLEMA), care masoara aceeasi marime direct in light, ar fi PROBLEMA.
-    Referinta insasi difera cu 0.2 stopuri = 15 % intre bazele de profile,
-    deci verdictul adancimii nu poate fi mai fin de atat si ramane pe scara de reziduu.
-    Diferenta e RADIALA, deci invizibila celor cinci teste si hartii: e singurul
-    loc unde se vede o sursa care cade cu unghiul (plus) sau umple colturile (minus). Profilul e
-    modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.
+    Aceeasi scara ca la cele cinci teste (2 / 10 / 20 %), aplicata erorii pe care
+    diferenta de adancime o lasa in coltul unui light calibrat cu masterul, si tradusa in
+    stopuri. Nu e un prag nou.
+    In coltul unui light calibrat cu acest master eroarea ar fi 21.1 %. Testul End-to-end,
+    care masoara acelasi lucru direct in light, i-ar spune PROBLEMA (2 % OK, 5 % PROBLEMA).
+    Dar cele doua baze de profile difera intre ele cu 0.2 stopuri, adica 15 % in colt,
+    asa ca verdictul de aici nu poate fi mai fin de atat si ramane pe scara celor cinci teste.
+    Diferenta e simetrica in jurul centrului, ca vignetarea, deci cele cinci teste si harta nu o vad:
+    aici e singurul loc unde se vede o sursa mai slaba vazuta din unghi (plus) sau una care umple colturile (minus).
+    Profilul descrie modelul obiectivului, nu exemplarul tau, si nu tine cont de culoare; masterul e luat ca medie a celor patru culori ale senzorului.
 
   VERDICT: REFA
-    forma     : BUN - cele cinci teste de abatere de la simetria radiala
-    adancimea : REFA - +0.28 stopuri fata de lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 (calibrat pe APS-C Canon 1.61) = 21.1 % eroare in coltul light-ului calibrat
-    Cel mai rau dintre ele.
-    Masterul cade spre colt MAI MULT decat modelul obiectivului: sursa de lumina cade cu
-    unghiul - un panou (monitor, tableta) prea aproape sau fara un difuzor adevarat; foile
-    mate nu difuzeaza. Ajuta un difuzor lambertian (acril opal, un teanc gros de hartie
-    alba) sau un perete alb luminat din lateral; nu ajuta mai multe rotatii.
-    Excesul e radial, deci cele cinci teste nu-l vad; nu-l va scoate nici background
-    extraction. Refa flat-urile.
+    forma     : BUN - cele cinci teste
+    adancimea : REFA - cu +0.28 stopuri fata de profilul lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 (calibrat pe APS-C Canon 1.61), adica 21.1 % eroare in coltul light-ului calibrat
+    Verdictul e cel mai rau dintre cele doua.
+    Masterul se intuneca spre colt MAI MULT decat spune profilul obiectivului: sursa de
+    lumina e mai slaba vazuta din unghi, un panou (monitor, tableta) prea aproape sau fara un
+    difuzor adevarat; foile mate nu difuzeaza. Ajuta un difuzor adevarat (acril opal, un teanc
+    gros de hartie alba) sau un perete alb luminat din lateral; mai multe rotiri nu ajuta.
+    Diferenta e simetrica in jurul centrului, ca vignetarea, deci cele cinci teste nu o vad;
+    nici extragerea de fond nu o scoate. Refa flat-urile.
 
     -> harta salvata: <TMP>/out.png
 

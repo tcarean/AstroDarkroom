@@ -9,13 +9,13 @@ Copyright (C) 2026 Tudor Carean
     vignetting to corner    : 0.75 stops (corner = 59% of centre)
     illum. centre offset    :  0.46 %
         illumination peak = (60, 40)  vs  sensor centre = (60, 40)
-        It is the ratio of the gradient to the curvature, so it is not scale-invariant: on a
-        lens with almost no vignetting it grows a lot without the error growing,
-        and once the peak leaves the frame it reads undetermined. The amplitude is given by "tilt".
+        The figure is only indicative: on a lens with almost no vignetting it grows a lot
+        without the error growing, and once the brightest point leaves the frame it reads
+        undetermined. How large the imbalance is, "tilt" says.
     local spots (dust etc.) : +0.09 % (brighter) at (7, 19)
-        The deepest compact spot, after the large-scale structure is removed.
+        The most pronounced small spot, after the large shapes are taken out.
         The sign says which kind: minus = darker than its surroundings (dust,
-        condensation, an obstruction), plus = brighter (light leak, reflection).
+        condensation, something in front of the lens), plus = brighter (light leak, reflection).
         Above 2 % a warning follows; below that the figure is informative only.
 
   TESTS
@@ -32,24 +32,24 @@ Copyright (C) 2026 Tudor Carean
   SCALE of the five deviation tests above
     under 2 %    perfect quality
     2 - 10 %     usable; background extraction removes what is left
-    10 - 20 %    usable, but confirm with --light before a hard stretch
+    10 - 20 %    usable, but confirm with the End-to-end test (--light) before a hard stretch
     over 20 %    redo the flats
-    The most important one is "residual (radial model)": it measures directly how much of
-    the frame a purely radial model does NOT explain. It is an UPPER BOUND of the
-    flat's error, not the error itself - it holds both the part fixed to the camera
-    (the optics; divided out of the lights correctly) and the part fixed in the world (the
-    illumination; it does not repeat); one master cannot tell them apart. The corner spread,
-    the azimuthal asymmetry and the tilt are partial views of the same deviation.
-    "Worst spot" catches what the others miss: a compact defect - a small leak,
-    a condensation spot - that the residual clips as an extreme.
+    The most important one is "residual (radial model)": it says directly how much of
+    the frame does not look like a usual vignetting, symmetric about the centre. It is an
+    UPPER BOUND of the flat's error, not the error itself: it holds both what belongs to the
+    camera (the optics, divided out of the lights correctly) and what belongs to the world
+    (the illumination, which does not repeat); one master cannot tell them apart. The corner
+    spread, the azimuthal asymmetry and the tilt are pieces of the same deviation.
+    "Worst spot" catches what the others miss: a small compact defect, a light leak,
+    a condensation spot, which the residual sets aside as an extreme.
 
   VIGNETTING against the lens profile
     cannot compare: the aperture is not known - Siril does not write it in the master, and there was no raw beside it; give --fstop <f> or --raw <file>
-    The comparison would have said whether the depth of the vignetting is the lens's: a radial excess - a panel's
-    fall-off, the sky's curvature - goes unnoticed through the five tests.
+    The comparison would have said whether the master's vignetting is as deep as the lens's: a surplus symmetric
+    about the centre, from a panel seen at an angle or from the sky's dome, goes unnoticed through the five tests.
 
   VERDICT: PERFECT
-    The deviation from radial symmetry is below the noise. The flat is clean.
+    The flat looks like a clean vignetting; what departs from it is below the noise.
 
     -> map saved: <TMP>/out.png
 

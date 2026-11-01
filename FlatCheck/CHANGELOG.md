@@ -96,6 +96,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Structure tab's explanations, and the sentences the console shares with it (the advices, the
+  scale, the local-spot note and warning, the illumination-offset note, the depth comparison's
+  block), are in plain words (R-122, ADR 0083): a usual vignetting symmetric about the centre, one
+  side of the frame brighter than the other, a small compact spot, the sky; no radial symmetry,
+  fit, gradient, sector, Lambertian or mosaic. The thresholds stay read from the code; the names
+  of the five tests stay. The `structure_*` goldens and the parity goldens that print those
+  sentences were recaptured for those text lines alone, every figure unchanged.
 - The window's folder button is disabled while the Smoothing or the Synthetic tab is busy, as
   it is during the opening chain (R-117, ADR 0077): measured on a 24 MP master, their main
   runs take 6.4-6.7 s and about 8 s, long enough for a folder change to land on the new

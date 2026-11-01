@@ -9,13 +9,13 @@ Copyright (C) 2026 Tudor Carean
     vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
     offset centru iluminare :  3.09 %
         varf iluminare = (134, 128)  vs  centru senzor = (128, 128)
-        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
-        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
-        iar cand varful iese din cadru e nedeterminat. Amplitudinea o da "inclinare".
+        Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult
+        fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e
+        nedeterminata. Cat de mare e dezechilibrul spune "inclinare".
     pete locale (praf etc.) : +0.11 % (mai luminos) la (241, 244)
-        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
-        Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
-        condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
+        Cea mai pronuntata pata mica, dupa ce se scot formele mari.
+        Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,
+        condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).
         Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
 
   TESTE
@@ -31,21 +31,21 @@ Copyright (C) 2026 Tudor Carean
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta
-    2 - 10 %     utilizabil; background extraction scoate ce ramane
-    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    2 - 10 %     utilizabil; extragerea de fond scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu testul End-to-end (--light) inainte de un stretch puternic
     peste 20 %   refa flat-urile
-    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
-    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
-    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
-    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
-    nu se reproduce); un singur master nu le desparte. Imprastierea colturilor,
-    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
-    "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
-    mica, o pata de condens - pe care reziduul il taie ca extrema.
+    Cel mai important e "reziduu dupa model rad.": spune direct cat din cadru nu
+    arata ca o vignetare obisnuita, simetrica in jurul centrului. E o LIMITA DE SUS a
+    erorii flat-ului, nu eroarea insasi: cuprinde si ce tine de aparat (optica, care se
+    imparte corect din lights) si ce tine de lume (iluminarea, care nu se repeta); un
+    singur master nu le poate desparti. Imprastierea colturilor, asimetria azimutala si
+    inclinarea sunt bucati ale aceleiasi abateri. "Pata maxima" prinde ce le scapa
+    celorlalte: un defect mic si compact, o scurgere de lumina, o pata de condens, pe
+    care reziduul il lasa deoparte ca pe o extrema.
 
   VERDICT: BUN
-    Utilizabil ca atare. Ce ramane sta in intervalul pe care background
-    extraction il scoate fara efort.
+    Utilizabil asa cum e. Ce ramane e in intervalul pe care extragerea
+    de fond il scoate fara efort.
 
     -> harta salvata: <TMP>/structure_band_bun.png
 

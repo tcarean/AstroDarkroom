@@ -152,7 +152,7 @@ public class GoldenOutputTests
 
         Assert.Equal(2, exit);
         Assert.Contains("VERDICT: ACCEPTABIL", output);
-        Assert.Contains("confirma cu --light", output);
+        Assert.Contains("confirma cu testul End-to-end (--light)", output);
         AssertGolden("structure_gradient", output);
     }
 
@@ -225,9 +225,9 @@ public class GoldenOutputTests
         var (ro, _) = RunCli(ws, f, "-o", ws.PathTo("ro.png"));
         var (en, _) = RunCli(ws, f, "--lang", "en", "-o", ws.PathTo("en.png"));
 
-        Assert.Contains("iar cand varful iese din cadru e nedeterminat.", ro);
+        Assert.Contains("iar cand punctul cel mai luminos iese din cadru e", ro);
         Assert.DoesNotContain("spre 0", ro);
-        Assert.Contains("and once the peak leaves the frame it reads undetermined.", en);
+        Assert.Contains("and once the brightest point leaves the frame it reads", en);
         Assert.DoesNotContain("toward 0", en);
     }
 

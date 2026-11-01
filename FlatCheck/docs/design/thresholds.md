@@ -51,7 +51,7 @@ non-monotonic measurement and the Samyang figures. What the bands tell the user:
 |---|---|---|
 | < 2% | `PERFECT` | quality is perfect |
 | 2-10% | `BUN` | usable; background extraction removes what is left |
-| 10-20% | `ACCEPTABIL` | usable, but run `--light` to confirm before a hard stretch - if your field is narrow enough for it, see "The validity limit" |
+| 10-20% | `ACCEPTABIL` | usable, but confirm with the End-to-end test (`--light`) before a hard stretch - if your field is narrow enough for it, see "The validity limit" |
 | > 20% | `REFA` | reshoot the flats |
 
 **`reziduu dupa model rad.` is the one that matters most.** It measures the departure from the
