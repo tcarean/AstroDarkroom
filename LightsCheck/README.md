@@ -350,7 +350,9 @@ north (`→` and `↑` by default), remembered between starts in
 `%LOCALAPPDATA%\LightsCheck\settings.json`, the only setting the program keeps there (its log goes
 there too when the folder beside the program cannot be written, see [Logs](#logs)).
 **Write the files...** writes the three files of `--out` into a folder you choose; the session
-folder is proposed. **About** (F1) shows the version, the licence and the third-party components.
+folder is proposed. **About** (F1) shows the version, the licence and the third-party components;
+on a screen too low for all of it, its cards scroll (wheel, arrows, Page Up/Down, Home, End) and
+the Close button stays in view.
 
 ## Logs
 

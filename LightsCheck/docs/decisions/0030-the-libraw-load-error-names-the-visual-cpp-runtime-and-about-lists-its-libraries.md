@@ -105,6 +105,7 @@ and took the recommendation each time:
   no second line.
 - The message speaks of Windows' runtime. LightsCheck ships for Windows only; a console built from
   the source on another system would show the same message, a case no shipped form meets.
-- About grows by three rows. AstroDarkroom's ADR 0016 says the three tools keep their old message
+- About grows by three rows, to about 1,017 DIP, too tall for a 1080-line screen at 125 %; ADR
+  0031 fits it to its screen. AstroDarkroom's ADR 0016 says the three tools keep their old message
   until their follow-ups; for LightsCheck that sentence is outdated once this is merged, and it
   is AstroDarkroom's to amend.

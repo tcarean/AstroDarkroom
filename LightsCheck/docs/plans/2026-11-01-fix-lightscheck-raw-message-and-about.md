@@ -329,3 +329,16 @@ Other files:
     code, R-074, ADR 0030, `logging.md`, the README and the test, which is now
     `R074_WhenTheFourLoad_TheLogSaysNoneIsMissing`.
   - The About fit is made in this branch, as APA's ADR 0070 (below).
+- **The About fit**, added at the owner's word after the first review: R-076, ADR 0031, and
+  R-071's Debug line. It is AstroPhotoAnalyzer's ADR 0070 taken as it is, with `LibraryImport`
+  in `ScreenArea`, as `DarkTitleBar` uses here.
+  - The tests are AstroPhotoAnalyzer's, on this window (`AboutWindowFitTests`). They could only
+    fail by not compiling before the code (the new constructor, `Cards`, `CloseButton`), so no
+    stub phase was run.
+  - The three tests that build the window pass `SystemParameters.WorkArea`; two render it 1000
+    DIP high.
+  - Measured with the content laid out at a capped window's client height:
+    - 978 DIP of content in either language;
+    - 1,017 DIP for the window on a 1040-DIP area, nothing scrolling;
+    - the cards scroll by 207, 304 and 342 DIP at 825, 728 and 690;
+    - Close always ends 20 DIP above the bottom.

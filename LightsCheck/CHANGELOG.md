@@ -65,6 +65,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- About fits the screen it opens on: never taller than the screen's work area, its cards
+  scrolling with the wheel and the keys when they are taller, the Close button always in view.
+  With its six components it was about 1,017 DIP high, more than a 1080p screen at 125 % or a
+  1366x768 laptop shows (R-076, ADR 0031).
 - The content of the window's tabs is in the UI Automation tree: a screen reader such as
   Narrator, or a UI Automation tool, now reaches what each tab shows, where it found only the six
   tab headers before (R-067, ADR 0028).

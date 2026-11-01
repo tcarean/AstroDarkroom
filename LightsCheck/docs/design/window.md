@@ -18,6 +18,25 @@ code. Five of the six tabs are `UserControl`s under `Views/` with no code of the
 `InitializeComponent`, the sixth the report's text box in a card; `AboutWindow` is the only
 second window.
 
+`AboutWindow` fits its screen (R-076, ADR 0031), as AstroPhotoAnalyzer's does. `MainWindow`
+passes the work area of its own screen, `ScreenArea.WorkAreaOf`. That asks Windows for the screen
+nearest the window (`MonitorFromWindow`, `GetMonitorInfoW`, through `LibraryImport`), divides the
+answer by the window's DPI scale, and falls back to `SystemParameters.WorkArea`, with a Debug
+line, when there is no handle or no answer. The constructor caps `MaxHeight` at the area's height.
+The window is a two-row grid:
+
+- The cards, the logo block included, are in the `ScrollViewer` `Cards`, transparent so the wheel
+  scrolls anywhere over it.
+- `CloseButton` is in the second row, its margins giving the old gaps, 16 DIP above and 20 below.
+
+`PreviewKeyDown` passes Up, Down, Page Up, Page Down, Home and End to `Cards`, only while
+`ScrollableHeight` is above 0 (`Scroll`). Elsewhere the arrows move the focus, as before.
+`ContentRendered`, when the window's height is final, calls `FitInto`. That clamps `Top` with
+`ScreenArea.TopInside`, the launcher's `WindowFit.Top`, and writes the Debug line `About shown
+WxH at (L,T); work area WxH at (L,T); cards scroll: yes|no`. `AboutWindowFitTests` lays the
+content out at a capped height without showing a window, raises the keys through a stand-in
+presentation source, and calls `OnContentRendered` by reflection.
+
 The tabs are an `AccessibleTabControl` (R-067, ADR 0028). The theme's template for it names the
 presenter of the selected content `ContentHost`, and the control's automation peer adds that
 presenter's children, the selected tab's view, under the tab's item, which the stock peer does

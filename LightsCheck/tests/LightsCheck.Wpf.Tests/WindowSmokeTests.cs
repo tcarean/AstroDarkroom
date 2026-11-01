@@ -72,7 +72,7 @@ public class WindowSmokeTests
         }
     }
 
-    private static void Render(FrameworkElement el, int w = 1360, int h = 820, string? name = null)
+    internal static void Render(FrameworkElement el, int w = 1360, int h = 820, string? name = null)
     {
         el.Measure(new Size(w, h));
         el.Arrange(new Rect(0, 0, w, h));
@@ -120,11 +120,13 @@ public class WindowSmokeTests
         => _sta.Invoke(() =>
         {
             using BindingErrors errors = new();
-            AboutWindow about = new();
+            AboutWindow about = new(SystemParameters.WorkArea);
 
             // The content, not the window: an unshown Window renders transparent, while the
-            // root panel inherits the DataContext and goes through the same bindings.
-            Render((FrameworkElement)about.Content, 600, 760, "about");
+            // root panel inherits the DataContext and goes through the same bindings. 1000 DIP,
+            // the whole content (978 with the six components of R-075), so the render shows no
+            // scroll bar (R-076).
+            Render((FrameworkElement)about.Content, 600, 1000, "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             BitmapSource logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);

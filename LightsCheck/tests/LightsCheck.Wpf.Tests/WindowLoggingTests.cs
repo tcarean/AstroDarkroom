@@ -232,7 +232,7 @@ public class WindowLoggingTests
     public void R071_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays()
         => _sta.Invoke(() =>
         {
-            AboutWindow about = new();
+            AboutWindow about = new(System.Windows.SystemParameters.WorkArea);
             RequestNavigateEventArgs args = new(new Uri("THIRD-PARTY-NOTICES.md", UriKind.Relative), null)
             {
                 RoutedEvent = Hyperlink.RequestNavigateEvent,
