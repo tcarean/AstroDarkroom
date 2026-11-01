@@ -9,7 +9,8 @@ Status: accepted 2026-11-01
 ADR 0030 adds three rows. With them the content is 978 DIP high in either language, at the
 window's client width of 584 DIP. With the title bar and the frame, 39 DIP at 100 % as
 AstroPhotoAnalyzer measured the same window chrome on this PC (its ADR 0070), the window is
-about 1,017 DIP high. Before the three rows it was about 740.
+about 1,017 DIP high. Before the three rows it was about 750, from 710 DIP of content measured on
+main's build by the second review of this branch.
 
 The launcher worked out the work areas of a 1080-line screen: 1040 DIP at 100 %, about 825 at
 125 % and about 690 at 150 % (AstroDarkroom's ADR 0013). A 1366x768 laptop at 100 % leaves about
@@ -68,8 +69,10 @@ before the merge, as AstroPhotoAnalyzer did for the same regression from its NLo
 - **The fit at `Loaded`, as in the launcher.** AstroPhotoAnalyzer measured the first height
   there: 436 DIP for a window of 862.
 - **A test that shows the window.** None of this project's window tests shows one. The layout at
-  a capped height, the keys, the arithmetic, Windows' answer, and the fit with its log line are
-  tested apart.
+  a capped height, the keys, the arithmetic, the conversion of Windows' pixels by the DPI scale
+  (`ScreenArea.ToDips`, at 125 % and 150 %), and the fit with its log line are tested apart. That
+  the query asks Windows at all is seen only in its not falling back. On this one-screen PC at
+  100 %, Windows' answer and WPF's are the same.
 
 ## Consequences
 

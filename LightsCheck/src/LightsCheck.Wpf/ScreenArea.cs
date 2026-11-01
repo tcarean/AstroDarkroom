@@ -78,11 +78,7 @@ internal static partial class ScreenArea
             }
 
             DpiScale dpi = VisualTreeHelper.GetDpi(window);
-            return new Rect(
-                info.Work.Left / dpi.DpiScaleX,
-                info.Work.Top / dpi.DpiScaleY,
-                (info.Work.Right - info.Work.Left) / dpi.DpiScaleX,
-                (info.Work.Bottom - info.Work.Top) / dpi.DpiScaleY);
+            return ToDips(info.Work.Left, info.Work.Top, info.Work.Right, info.Work.Bottom, dpi.DpiScaleX, dpi.DpiScaleY);
         }
         catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException)
         {
@@ -90,6 +86,20 @@ internal static partial class ScreenArea
             return SystemParameters.WorkArea;
         }
     }
+
+    /// <summary>
+    /// A rectangle Windows gives in this process's pixels, in a window's device-independent
+    /// pixels: each edge divided by the window's DPI scale on its own axis.
+    /// </summary>
+    /// <param name="left">The left edge, in pixels; negative on a screen left of the primary.</param>
+    /// <param name="top">The top edge, in pixels; negative on a screen above the primary.</param>
+    /// <param name="right">The right edge, outside the rectangle, in pixels.</param>
+    /// <param name="bottom">The bottom edge, outside the rectangle, in pixels.</param>
+    /// <param name="scaleX">The window's horizontal DPI scale, 1.25 at 125 %; above 0.</param>
+    /// <param name="scaleY">The window's vertical DPI scale; above 0.</param>
+    /// <returns>The rectangle in device-independent pixels.</returns>
+    internal static Rect ToDips(int left, int top, int right, int bottom, double scaleX, double scaleY)
+        => new(left / scaleX, top / scaleY, (right - left) / scaleX, (bottom - top) / scaleY);
 
     /// <summary>
     /// The top of a window of the given height kept inside a work area: its own top when it fits

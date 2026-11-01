@@ -342,3 +342,23 @@ Other files:
     - 1,017 DIP for the window on a 1040-DIP area, nothing scrolling;
     - the cards scroll by 207, 304 and 342 DIP at 825, 728 and 690;
     - Close always ends 20 DIP above the bottom.
+- **The 31 DIP of frame** in the first bullets above was an estimate from
+  `SystemParameters.WindowNonClientFrameThickness`. AstroPhotoAnalyzer's measurement of the same
+  chrome with a shown window, 39 DIP, replaced it. The window's 1,017 DIP is 978 measured plus
+  those 39; before the three rows it was about 750, from 710 DIP of content that the second
+  review measured on main's build.
+- **The second review** (a subagent, of 0a6f10d4 and a74699e2) found no run-time defect. Its
+  findings, taken in one commit:
+  - `ScreenArea.ToDips`, the conversion of Windows' pixels split out and tested at 125 %, 150 %,
+    unequal axes and a negative origin. A multiplied or swapped conversion had passed every test
+    on this 100 % PC.
+  - ADR 0031 and the tests no longer claim that Windows' answer is tested, only its not falling
+    back. `window.md` says the fallback is silent without a handle.
+  - The project-file comment names ScreenArea's unsafe imports.
+  - R-007's English message is tested too.
+  - The import test's pattern also takes `vcamp` and `mfc`/`mfcm`, and it refuses a DLL with
+    delay loads, which it does not read.
+  - ADR 0030 says the catch clauses routing a loader's failure to `Missing` have no test.
+  - The CHANGELOG's Fixed line describes the released state.
+  - Smaller: the 950-to-978 content heights in two test comments, and ScreenArea in the log
+    note's logger list and untested lines.

@@ -31,8 +31,10 @@ namespace LightsCheck.Wpf.Tests;
 /// scrolling when their content is taller, the Close button in view, and as before where it fits.
 /// No test here shows a window: the content is laid out at a height a capped window leaves it, as
 /// WindowSmokeTests renders it; the keys are raised as events through a stand-in presentation
-/// source, the fit through the window's own OnContentRendered; the arithmetic and Windows' answer
-/// are tested apart. AstroPhotoAnalyzer's AboutWindowFitTests, on LightsCheck's window.
+/// source, the fit through the window's own OnContentRendered; the arithmetic and the conversion
+/// of Windows' pixels are tested apart. That the query asks Windows at all is seen only in its not
+/// falling back: on this one-screen PC, Windows' answer and WPF's are the same.
+/// AstroPhotoAnalyzer's AboutWindowFitTests, on LightsCheck's window.
 /// </summary>
 [Collection("window")]
 public class AboutWindowFitTests
@@ -57,6 +59,28 @@ public class AboutWindowFitTests
         => Assert.Equal(expected, ScreenArea.TopInside(top, height, areaTop, areaHeight));
 
     /// <summary>
+    /// Windows gives the work area in the process's pixels; the window's are device-independent,
+    /// each axis divided by its own DPI scale (R-076). A 1080-line screen at 125 % gives 1032 px
+    /// above a 48 px taskbar, 825.6 DIP: multiplied instead, the cap would be about 1290 DIP and
+    /// nothing would scroll. This PC runs at 100 %, where a wrong conversion would go unseen.
+    /// </summary>
+    [Theory]
+    [InlineData(0, 0, 1920, 1032, 1.25, 1.25, 0.0, 0.0, 1536.0, 825.6)]          // 1080 lines at 125 %
+    [InlineData(0, 0, 1920, 1032, 1.5, 1.5, 0.0, 0.0, 1280.0, 688.0)]            // at 150 %
+    [InlineData(0, 0, 1920, 1032, 1.25, 1.5, 0.0, 0.0, 1536.0, 688.0)]           // each axis by its own scale
+    [InlineData(-2560, -120, 0, 1320, 1.25, 1.25, -2048.0, -96.0, 2048.0, 1152.0)] // a screen left of and above the primary
+    public void R076_WindowsPixelsBecomeDeviceIndependentPixels(int left, int top, int right, int bottom, double scaleX, double scaleY,
+                                                                double x, double y, double width, double height)
+    {
+        Rect area = ScreenArea.ToDips(left, top, right, bottom, scaleX, scaleY);
+
+        Assert.Equal(x, area.X, 9);
+        Assert.Equal(y, area.Y, 9);
+        Assert.Equal(width, area.Width, 9);
+        Assert.Equal(height, area.Height, 9);
+    }
+
+    /// <summary>
     /// On a work area lower than the window's content, the window is capped at the area's height.
     /// Laid out at a height under its own, as a capped window leaves it, the content keeps the
     /// Close button inside that height and its cards scroll; End and Home pressed on the window
@@ -72,8 +96,8 @@ public class AboutWindowFitTests
             await Dispatcher.Yield(DispatcherPriority.ContextIdle);
             FrameworkElement content = (FrameworkElement)about.Content;
 
-            // 560 DIP, under the content's 978: what a window capped at 680 leaves its content once
-            // its title bar and frame are taken, and less.
+            // 560 DIP, under the content's 950 to 978 (at 600 and 584 DIP wide): less than what a
+            // window capped at 680 leaves its content once its title bar and frame are taken.
             WindowSmokeTests.Render(content, 600, 560, "about-low-screen");
 
             Assert.Equal(680, about.MaxHeight);
@@ -127,8 +151,8 @@ public class AboutWindowFitTests
     /// <summary>
     /// The work area is the one of the window's own screen: a hidden window given a handle on the
     /// primary screen gets from Windows the area WPF knows for that screen, and a window without a
-    /// handle gets it through the fallback. On a machine with one screen the two answers are
-    /// equal, so the area alone cannot tell them apart: the fallback writes a Debug line, which a
+    /// handle gets WPF's, silently. On a machine with one screen the two answers are equal, so the
+    /// area alone cannot tell them apart: Windows giving no answer writes a Debug line, which a
     /// window with a handle must not cause.
     /// </summary>
     [Fact]

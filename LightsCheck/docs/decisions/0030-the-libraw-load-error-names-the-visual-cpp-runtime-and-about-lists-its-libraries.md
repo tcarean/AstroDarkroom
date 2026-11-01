@@ -103,6 +103,10 @@ and took the recommendation each time:
   check, as it passes the launcher's.
 - The check runs once per process: a window left open while the user installs the runtime writes
   no second line.
+- No test makes libraw fail to load: in the test process it loads. The tests cover `Missing`, its
+  check and its message. The four catch clauses of `Load` and `LoadInfo` that route a loader's
+  failure to it predate this ADR and have no test. They were seen working once, with a build
+  lacking `raw_r.dll` (the plan's third check).
 - The message speaks of Windows' runtime. LightsCheck ships for Windows only; a console built from
   the source on another system would show the same message, a case no shipped form meets.
 - About grows by three rows, to about 1,017 DIP, too tall for a 1080-line screen at 125 %; ADR

@@ -124,8 +124,8 @@ public class WindowSmokeTests
 
             // The content, not the window: an unshown Window renders transparent, while the
             // root panel inherits the DataContext and goes through the same bindings. 1000 DIP,
-            // the whole content (978 with the six components of R-075), so the render shows no
-            // scroll bar (R-076).
+            // the whole content (950 to 978 with the six components of R-075, at 600 and 584 DIP
+            // wide), so the render shows no scroll bar (R-076).
             Render((FrameworkElement)about.Content, 600, 1000, "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 

@@ -108,7 +108,8 @@ fetched on use (step 2 above). The names: the class name in the core (`ImageLoad
 `SessionFolder`, `FrameInfo`, `InventoryRun`, `FrameRun`, `SeriesRun`), `Process` for the first
 and last lines and the crashes, `Cli` for the console, and the window's two from `Loggers`: `App`
 (the start's choices) and `Window` (the main window, the view-model, the stored setting, the
-title bar, the About window). `RunClock` writes through the logger of the run that holds it.
+title bar, the About window and its screen's work area). `RunClock` writes through the logger of
+the run that holds it.
 
 ## A run's lines
 
@@ -179,8 +180,9 @@ be given it before the handle is closed. Those processes, and the one of
 `R060_WithoutLangTheProgramSpeaksEnglish`, log as any other, so every test run leaves their lines
 in `log\lightscheck.log` beside the copy of the executable in the test project's build folder,
 rolled like any log. `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers, the
-title bar's catch and the wiring of the hooks run in no test: no test builds `App`, crashes a
-process or lacks `dwmapi.dll`. The hooks' bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, and
+title bar's catch, `ScreenArea`'s two lines for a work area Windows does not give, and the
+wiring of the hooks run in no test: no test builds `App`, crashes a process, lacks `dwmapi.dll`
+or has a screen Windows will not describe. The hooks' bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, and
 the view-model's filter for an exception it does not handle, `MainViewModel.LogUnhandled`, are
 tested directly. The About window's catch runs in
 `R071_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays`, which raises `RequestNavigate` on

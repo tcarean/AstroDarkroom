@@ -20,9 +20,10 @@ second window.
 
 `AboutWindow` fits its screen (R-076, ADR 0031), as AstroPhotoAnalyzer's does. `MainWindow`
 passes the work area of its own screen, `ScreenArea.WorkAreaOf`. That asks Windows for the screen
-nearest the window (`MonitorFromWindow`, `GetMonitorInfoW`, through `LibraryImport`), divides the
-answer by the window's DPI scale, and falls back to `SystemParameters.WorkArea`, with a Debug
-line, when there is no handle or no answer. The constructor caps `MaxHeight` at the area's height.
+nearest the window (`MonitorFromWindow`, `GetMonitorInfoW`, through `LibraryImport`) and divides
+the answer by the window's DPI scale on each axis (`ToDips`). It falls back to
+`SystemParameters.WorkArea`: silently when the window has no handle, with a Debug line when
+Windows gives no answer. The constructor caps `MaxHeight` at the area's height.
 The window is a two-row grid:
 
 - The cards, the logo block included, are in the `ScrollViewer` `Cards`, transparent so the wheel

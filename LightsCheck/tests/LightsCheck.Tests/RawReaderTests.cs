@@ -66,8 +66,8 @@ public partial class RawReaderTests
 
     /// <summary>
     /// What libraw refuses becomes the reader's own error, the type a corrupt FITS gives, naming
-    /// the file in Romanian (R-007): the console and the window handle it; libraw's exception
-    /// type and words do not leave the reader.
+    /// the file in the run's language (R-007): the console and the window handle it; libraw's
+    /// exception type and words do not leave the reader.
     /// </summary>
     [Fact]
     public void R007_AFileLibrawCannotOpenFailsWithInvalidDataNamingTheFile()
@@ -77,11 +77,17 @@ public partial class RawReaderTests
 
         InvalidDataException full = Assert.Throws<InvalidDataException>(() => Reader.Load(path));
         InvalidDataException info = Assert.Throws<InvalidDataException>(() => Reader.LoadInfo(path));
+        InvalidDataException english;
+        using (Ui.Use(UiLanguage.English))
+        {
+            english = Assert.Throws<InvalidDataException>(() => Reader.Load(path));
+        }
 
-        // Romanian, the file named once; libraw's own words ("Failed opening file: <path>") are
-        // the inner exception's, not the user's (ADR 0020).
+        // The tests' default, Romanian, and English, the file named once; libraw's own words
+        // ("Failed opening file: <path>") are the inner exception's, not the user's (ADR 0020).
         Assert.Equal($"{path}: libraw nu poate citi fisierul", full.Message);
         Assert.Equal($"{path}: libraw nu poate citi fisierul", info.Message);
+        Assert.Equal($"{path}: libraw cannot read the file", english.Message);
         Assert.NotNull(full.InnerException);
         Assert.Contains("minte.NEF", full.InnerException.Message, StringComparison.Ordinal);
     }
@@ -402,12 +408,17 @@ public partial class RawReaderTests
             runtime.Select(f => f.ToLowerInvariant()).Order(StringComparer.Ordinal));
     }
 
-    /// <summary>The names of the DLLs a PE file imports, from its import directory.</summary>
+    /// <summary>
+    /// The names of the DLLs a PE file imports, from its import directory. A file that also
+    /// delay-loads DLLs fails the test, since its delay-load directory is not read: LibRaw
+    /// 0.21.1's four DLLs have none.
+    /// </summary>
     /// <param name="path">The DLL to read.</param>
     /// <returns>The imported DLLs' names, as the file spells them.</returns>
     private static List<string> Imports(string path)
     {
         using PEReader pe = new(File.OpenRead(path));
+        Assert.True(pe.PEHeaders.PEHeader!.DelayImportTableDirectory.Size == 0, $"{Path.GetFileName(path)} delay-loads DLLs, which this test does not read");
         DirectoryEntry table = pe.PEHeaders.PEHeader!.ImportTableDirectory;
         System.Reflection.Metadata.BlobReader descriptors = pe.GetSectionData(table.RelativeVirtualAddress).GetReader();
         List<string> names = [];
@@ -436,8 +447,9 @@ public partial class RawReaderTests
         }
     }
 
-    // Every DLL of the Visual C++ v14 redistributable a native library could import, not only the
-    // four LibRaw 0.21.1 does, so a build importing another one turns the test red.
-    [GeneratedRegex(@"^(vcruntime|msvcp|vcomp|concrt|vccorlib)\d", RegexOptions.IgnoreCase)]
+    // The DLLs of the Visual C++ v14 redistributable (vcruntime, msvcp, vcomp, concrt, vccorlib,
+    // vcamp, mfc and mfcm), not only the four LibRaw 0.21.1 imports, so a build importing another
+    // turns the test red. Read from the import directory; Imports refuses a DLL with delay loads.
+    [GeneratedRegex(@"^(vcruntime|msvcp|vcomp|concrt|vccorlib|vcamp|mfcm?)\d", RegexOptions.IgnoreCase)]
     private static partial Regex VcRuntimeDll();
 }
