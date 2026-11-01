@@ -8,26 +8,26 @@ Fisier: <TEMP>\cer-curat.tif
 VERDICT: ATENTIE
 
 1. Formatul de trimis  [OK]
-   - Trimite TIFF 8-bit LZW (0.3 MB). Conversia 16 -> 8 biti e rotunjire pura, nu pierdere.
-     fiindca: eroare de rotunjire medie 0.25, maxima 0.50 niveluri (jumatate de nivel e maximul posibil)
-   - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.2 MB).
-     fiindca: eroare medie 0.61, maxima 3.5 niveluri; 1.8 % din esantioane cu eroare > 2, la nivelul mediu 64 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
+   - Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi (0.3 MB). Trecerea de la 16 la 8 biti doar rotunjeste valorile; nu se pierde nimic.
+     fiindca: la rotunjire, un pixel se muta in medie cu 0.25 dintr-un nivel si cel mult cu 0.50 (o rotunjire nu poate muta mai mult de jumatate de nivel)
+   - Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea pastrata la rezolutie intreaga (setarea 4:4:4) (0.2 MB).
+     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.61 niveluri si cel mult cu 3.5; 1.8 % din valori se schimba cu mai mult de 2 niveluri, mai ales in jurul nivelului 64 (in cerul intunecat, unde JPEG-ul se descurca cel mai prost)
 
 2. Fundalul si hartia  [OK]
-   - Fundalul e print-safe asa cum e; poti cobori pana la 0.20 (praful la L* 21.2, cerul la L* 21.2).
-     fiindca: praful (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); fara WCS) la L* 26.9; negrul hartiei L* 20.7 la Dmax 1.5; cerul (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)) la L* 27.0; nivelul fundalului 0.25; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 1.3 in sus; pragul de vizibilitate L* 15, sub el 0.0 % din pixeli
+   - Fundalul e print-safe asa cum e; il poti cobori pana la 0.20 (atunci praful ar fi la L* 21.2, cerul la L* 21.2).
+     fiindca: praful la L* 26.9 (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); fara WCS); negrul hartiei e L* 20.7 la Dmax 1.5; cerul la L* 27.0 (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)); nivelul fundalului 0.25; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 1.3 in sus; 0.0 % din pixeli sunt sub L* 15, unde ochiul abia mai deosebeste tonurile
 
-3. Culoarea fundalului si gradientele  [OK]
+3. Culoarea fundalului si marginile cadrului  [OK]
    - Fundalul e neutru.
-     fiindca: fundal R 63.8 G 63.7 B 63.8: croma 0.0 (a* 0.0, b* 0.0; prag 3.0); G - (R+B)/2 = 0.0, R - B = 0.0 niveluri
+     fiindca: fundalul are R 63.8, G 63.7, B 63.8; cat de departe e de un gri (croma): 0.0, prag 3.0 (a* 0.0, b* 0.0); verdele iese peste rosu si albastru cu 0.0 niveluri, rosul peste albastru cu 0.0
 
 4. Marimea printului  [ATENTIE]
-   ! De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica (40 x 40 cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea.
-     fiindca: FWHM median 3.05 px (Q1 3.03, Q3 3.07, 64 stele) = detaliu real ~168 px pe latime; la 40 cm steaua are 2.38 mm si e punct de la 8.21 m fata de distanta naturala 0.85 m (1.5 x diagonala) (toleranta 15 %); raportul e acelasi la orice marime
+   ! Privite de la distanta obisnuita pentru marimea lor, stelele se vad ca mici discuri la orice marime: imaginea e moale fata de cati pixeli are. Cea mai mica marime (40 x 40 cm) le face cel mai putin vizibile. Da distanta de privire, ca judecata sa se faca pe ea.
+     fiindca: latimea stelelor (FWHM) e 3.05 px (un sfert din stele sub 3.03, un sfert peste 3.07; 64 de stele), deci pe latime incap ~168 de stele una langa alta; la 40 cm o stea are 2.38 mm si se vede ca punct abia de la 8.21 m, iar printul se priveste de la distanta obisnuita 0.85 m (1.5 x diagonala; toleranta 15 %); raportul dintre cele doua distante e acelasi la orice marime
 
 5. Denoise pentru versiunea de print  [OK]
-   - Zgomotul rezidual e exact unde trebuie pentru print.
-     fiindca: sigma median 1.00 LSB pe 37 dale netede (10 % 0.99, minim 0.97; sub 0.5 LSB, 0.0 % din dale); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.20 zgomotul scade de ~0.93 x (panta curbei la fundal), la ~0.93 LSB
+   - Zgomotul ramas e exact cat trebuie pentru print.
+     fiindca: zgomotul ramas in cer e de 1.00 niveluri (sigma; valoarea din mijloc pe 37 de zone mici de cer neted; in cele mai netede 10 % sub 0.99, cel mai mic 0.97); 0.0 % din zone sunt sub 0.5 niveluri, unde zgomotul nu mai ascunde treptele; tinta pentru print: 0.8-1.5 niveluri; dupa ce refaci stretch-ul la 0.20, zgomotul scade de ~0.93 ori (cat de tare urca curba in dreptul fundalului), la ~0.93 niveluri
 
 6. Avertismente  [OK]
    (nimic de semnalat)

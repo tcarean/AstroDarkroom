@@ -8,34 +8,34 @@ Fisier: <TEMP>\cer-intunecat-wcs.fit
 VERDICT: PROBLEMA
 
 1. Formatul de trimis  [ATENTIE]
-   - Trimite TIFF 8-bit LZW (0.2 MB). Conversia 16 -> 8 biti e rotunjire pura, nu pierdere.
-     fiindca: eroare de rotunjire medie 0.26, maxima 0.50 niveluri (jumatate de nivel e maximul posibil)
-   - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.1 MB).
-     fiindca: eroare medie 0.58, maxima 3.5 niveluri; 0.4 % din esantioane cu eroare > 2, la nivelul mediu 28 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
-   ! Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export.
-     fiindca: trepte plate de peste 1.0 mm la 26 dpi pe 8.38 % din cadru (prag 0.10 %); palierul tipic pe cele 419 dale curate, 8.4 % din cadru, e 2.2 px = 2.13 mm, cu zgomotul ramas la sigma 0.30 LSB
+   - Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi (0.2 MB). Trecerea de la 16 la 8 biti doar rotunjeste valorile; nu se pierde nimic.
+     fiindca: la rotunjire, un pixel se muta in medie cu 0.26 dintr-un nivel si cel mult cu 0.50 (o rotunjire nu poate muta mai mult de jumatate de nivel)
+   - Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea pastrata la rezolutie intreaga (setarea 4:4:4) (0.1 MB).
+     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.58 niveluri si cel mult cu 3.5; 0.4 % din valori se schimba cu mai mult de 2 niveluri, mai ales in jurul nivelului 28 (in cerul intunecat, unde JPEG-ul se descurca cel mai prost)
+   ! Pe 8 biti pot aparea trepte vizibile in cer (banding): trimite fisierul pe 16 biti daca laboratorul il primeste, sau adauga putin zgomot la export (dither).
+     fiindca: la 26 dpi, zonele plate, fara nicio trecere de ton, mai late de 1.0 mm acopera 8.38 % din cadru (prag 0.10 %); in cele 419 zone mici de cer neted (8.4 % din cadru), o zona plata are de obicei 2.2 px = 2.13 mm, iar zgomotul ramas acolo e de 0.30 niveluri
 
 2. Fundalul si hartia  [PROBLEMA]
-   !! Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru. Re-stretch din liniar la fundal 0.16 (simulat: praful la L* 11.7, cerul la L* 15.9; exact pe negru la 0.135).
-     fiindca: praful (cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 5.5 % din cadru, dalele cu 0.5 L* mai intunecate decat cerul (de 4 ori zgomotul lui)); cadrul e in intregime in banda) la L* 4.8; cei mai intunecati: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; negrul hartiei L* 9.0 la Dmax 2.0; cerul (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)) la L* 7.2; nivelul fundalului 0.089; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.28 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; pragul de vizibilitate L* 15, sub el 83.9 % din pixeli
+   !! Cerul e mai intunecat decat negrul hartiei: cerul si praful ar iesi cu ACELASI negru. Refa stretch-ul din datele liniare pana la fundalul 0.16 (in simulare: praful la L* 11.7, cerul la L* 15.9; praful ajunge exact pe negru la 0.135).
+     fiindca: praful la L* 4.8 (cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 5.5 % din cadru, dalele cu 0.5 L* mai intunecate decat cerul (de 4 ori zgomotul lui)); cadrul e in intregime in banda); norii cei mai intunecati: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; negrul hartiei e L* 9.0 la Dmax 2.0; cerul la L* 7.2 (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)); nivelul fundalului 0.089; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.28 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; 83.9 % din pixeli sunt sub L* 15, unde ochiul abia mai deosebeste tonurile
 
-3. Culoarea fundalului si gradientele  [ATENTIE]
+3. Culoarea fundalului si marginile cadrului  [ATENTIE]
    - Fundalul e neutru.
-     fiindca: fundal R 20.4 G 22.4 B 20.4: croma 1.7 (a* -1.4, b* +1.0; prag 3.0); G - (R+B)/2 = +2.0, R - B = 0.0 niveluri
-   ! Colt dreapta-jos: cald (lumina de orizont / poluare). Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.
-     fiindca: fata de fundal, pe toti pixelii regiunii (cer 14 %): R +9.9, G 0.0, B -8.0 niveluri (prag 3.0); canalele se misca diferit
+     fiindca: fundalul are R 20.4, G 22.4, B 20.4; cat de departe e de un gri (croma): 1.7, prag 3.0 (a* -1.4, b* +1.0); verdele iese peste rosu si albastru cu +2.0 niveluri, rosul peste albastru cu 0.0
+   ! Colt dreapta-jos: mai cald decat restul cerului (lumina de la orizont sau poluare luminoasa). Corecteaz-o pe datele liniare (GraXpert) sau las-o ca parte a compozitiei; nu o corecta cu o curba locala pe imaginea deja intinsa.
+     fiindca: fata de restul cerului, masurat pe toti pixelii zonei (doar 14 % din ei sunt cer): R +9.9, G 0.0, B -8.0 niveluri (prag 3.0); canalele nu se schimba la fel, deci e o culoare
 
 4. Marimea printului  [ATENTIE]
-   ! De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica (50 x 50 cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea.
-     fiindca: FWHM median 3.06 px (Q1 3.05, Q3 3.08, 64 stele) = detaliu real ~167 px pe latime; la 50 cm steaua are 2.99 mm si e punct de la 10.31 m fata de distanta naturala 1.06 m (1.5 x diagonala) (toleranta 15 %); raportul e acelasi la orice marime
+   ! Privite de la distanta obisnuita pentru marimea lor, stelele se vad ca mici discuri la orice marime: imaginea e moale fata de cati pixeli are. Cea mai mica marime (50 x 50 cm) le face cel mai putin vizibile. Da distanta de privire, ca judecata sa se faca pe ea.
+     fiindca: latimea stelelor (FWHM) e 3.06 px (un sfert din stele sub 3.05, un sfert peste 3.08; 64 de stele), deci pe latime incap ~167 de stele una langa alta; la 50 cm o stea are 2.99 mm si se vede ca punct abia de la 10.31 m, iar printul se priveste de la distanta obisnuita 1.06 m (1.5 x diagonala; toleranta 15 %); raportul dintre cele doua distante e acelasi la orice marime
 
 5. Denoise pentru versiunea de print  [ATENTIE]
-   ! Denoise-ul e apasat tare pentru print: zgomotul nu mai dither-eaza cuantizarea. Pentru versiunea de print, o valoare mai mica pastreaza textura si stelele slabe.
-     fiindca: sigma median 0.30 LSB pe 38 dale netede (10 % 0.30, minim 0.29; sub 0.5 LSB, 100.0 % din dale); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.16 zgomotul creste de ~1.36 x (panta curbei la fundal), la ~0.41 LSB
+   ! Denoise-ul e prea puternic pentru print: a ramas prea putin zgomot ca sa ascunda treptele dintre niveluri (banding). Pentru versiunea de print, un denoise mai slab pastreaza textura cerului si stelele slabe.
+     fiindca: zgomotul ramas in cer e de 0.30 niveluri (sigma; valoarea din mijloc pe 38 de zone mici de cer neted; in cele mai netede 10 % sub 0.30, cel mai mic 0.29); 100.0 % din zone sunt sub 0.5 niveluri, unde zgomotul nu mai ascunde treptele; tinta pentru print: 0.8-1.5 niveluri; dupa ce refaci stretch-ul la 0.16, zgomotul creste de ~1.36 ori (cat de tare urca curba in dreptul fundalului), la ~0.41 niveluri
 
 6. Avertismente  [ATENTIE]
-   ! Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic.
-     fiindca: niciun profil in fisier; unealta a masurat presupunand sRGB
+   ! Fisierul nu are profil de culoare (ICC): laboratorul va presupune sRGB. Exporta cu profilul sRGB inclus in fisier, ca sa nu presupuna nimeni nimic.
+     fiindca: fisierul nu are niciun profil; programul a masurat presupunand sRGB
 
 Anexa A. Tonuri
   medii pe canal (0..255): 29.1 / 30.8 / 28.6

@@ -25,6 +25,7 @@
 // the same digits in both applications, since both run in the invariant culture.
 
 using System.Globalization;
+using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
@@ -120,5 +121,26 @@ namespace AstroPhotoAnalyzer
         /// <param name="h">The height, in pixels.</param>
         /// <returns>The width and the height joined by " x ".</returns>
         internal static string Dim(int w, int h) => Int(w) + " x " + Int(h);
+
+        /// <summary>
+        /// A Romanian count ready for its noun: the figure as shown, a space, and "de " where
+        /// Romanian wants it ("64 de stele", "16 stele", "120 de stele", "101 stele"), that is
+        /// when the last two digits of the whole number are 00 or 20 to 99, zero excepted.
+        /// English needs no such word; its texts never call this.
+        /// </summary>
+        /// <param name="shown">
+        /// The figure exactly as the text shows it ("64", "167", "1.5"): its whole part decides;
+        /// a leading "~" or sign is ignored. Null or a text without digits gives the text and a
+        /// space.
+        /// </param>
+        /// <returns>The figure, a space, and "de " when the count takes one.</returns>
+        internal static string RoCount(string shown)
+        {
+            string digits = new string((shown ?? "").TrimStart('~', '+', '-').TakeWhile(char.IsDigit).ToArray());
+            if (!long.TryParse(digits, NumberStyles.None, I, out long n))
+                return shown + " ";
+            long lastTwo = n % 100;
+            return shown + (n != 0 && (lastTwo == 0 || lastTwo >= 20) ? " de " : " ");
+        }
     }
 }

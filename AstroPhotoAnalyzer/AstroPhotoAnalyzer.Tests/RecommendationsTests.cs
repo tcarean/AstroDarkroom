@@ -34,7 +34,7 @@ public class RecommendationsTests
         Assert.Equal(Verdict.Ok, a.Overall);
         Assert.All(a.Recommendations, r => Assert.Equal(Verdict.Ok, r.Verdict));
         Assert.Contains(Of(a, Topic.Background), r => r.Text.Contains("print-safe"));
-        Assert.Contains(Of(a, Topic.Denoise), r => r.Text.Contains("exact unde trebuie"));
+        Assert.Contains(Of(a, Topic.Denoise), r => r.Text.Contains("exact cat trebuie"));
     }
 
     [Fact]
@@ -43,13 +43,13 @@ public class RecommendationsTests
         var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
 
         Assert.Equal(Verdict.Problem, a.Overall);
-        Assert.Contains(Of(a, Topic.Background), r => r.Verdict == Verdict.Problem && r.Text.Contains("Re-stretch"));
+        Assert.Contains(Of(a, Topic.Background), r => r.Verdict == Verdict.Problem && r.Text.Contains("Refa stretch-ul"));
         // The scene's two levels of green are a chroma of 1.7, no cast since ADR 0057, as on
         // the real image (1.0); the cast itself is tested on R093_AFiveLevelGreenSkyIsACast.
-        Assert.Contains(Of(a, Topic.Colour), r => r.Verdict == Verdict.Ok && r.Text.Contains("Fundalul e neutru") && r.Because.Contains("croma 1."));
+        Assert.Contains(Of(a, Topic.Colour), r => r.Verdict == Verdict.Ok && r.Text.Contains("Fundalul e neutru") && r.Because.Contains("(croma): 1."));
         Assert.Contains(Of(a, Topic.Colour), r => r.Verdict == Verdict.Attention && r.Text.StartsWith("Colt dreapta-jos"));
         Assert.Contains(Of(a, Topic.Size), r => r.Verdict == Verdict.Attention && r.Text.Contains("decupaj"));
-        Assert.Contains(Of(a, Topic.Denoise), r => r.Verdict == Verdict.Attention && r.Text.Contains("apasat tare"));
+        Assert.Contains(Of(a, Topic.Denoise), r => r.Verdict == Verdict.Attention && r.Text.Contains("prea puternic"));
         // The 16-bit master and the q100 floor are facts of the Export tab since ADR 0061, not
         // warnings: neither line is in the report, though the scene raises both measurements.
         Assert.True(a.Quantization.Keep16BitMaster);
@@ -75,8 +75,8 @@ public class RecommendationsTests
 
         var a = Run(r);
 
-        Assert.Contains(Of(a, Topic.Warnings), x => x.Text.Contains("deghizat"));
-        Assert.Contains(Of(a, Topic.Warnings), x => x.Text.Contains("Fara profil ICC"));
+        Assert.Contains(Of(a, Topic.Warnings), x => x.Text.Contains("8 biti de informatie, salvati ca 16 biti"));
+        Assert.Contains(Of(a, Topic.Warnings), x => x.Text.Contains("Fisierul nu are profil de culoare (ICC)"));
         Assert.Equal(Verdict.Attention, Of(a, Topic.Warnings).Max(x => x.Verdict));
     }
 
@@ -99,9 +99,9 @@ public class RecommendationsTests
         var a = Run(SyntheticRasters.Flat(256, 256, 0.14f, 0.14f + 5f / 255, 0.14f));
 
         Recommendation cast = Assert.Single(Of(a, Topic.Colour), r => r.Verdict == Verdict.Attention);
-        Assert.StartsWith("Tenta verde pe fundal", cast.Text);
-        Assert.Contains("croma 4.3 (a* -3.5, b* +2.5; prag 3.0, depasit)", cast.Because);
-        Assert.Contains("G - (R+B)/2 = +5.0", cast.Because);
+        Assert.StartsWith("Fundalul are o tenta verde", cast.Text);
+        Assert.Contains("cat de departe e de un gri (croma): 4.3, prag 3.0, depasit (a* -3.5, b* +2.5)", cast.Because);
+        Assert.Contains("verdele iese peste rosu si albastru cu +5.0 niveluri", cast.Because);
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class RecommendationsTests
         var a = Run(r);
 
         Recommendation corner = Assert.Single(Of(a, Topic.Colour), x => x.Verdict == Verdict.Attention);
-        Assert.StartsWith("Colt stanga-sus: mai intunecat si mai brun decat cerul (albastrul lipseste cel mai mult). Praf la marginea cadrului", corner.Text);
+        Assert.StartsWith("Colt stanga-sus: mai intunecat si mai brun decat cerul (albastrul lipseste cel mai mult). Poate fi praf la marginea cadrului", corner.Text);
         Assert.DoesNotContain("orizont", corner.Text);
         Assert.Contains("R -8.0, G -7.0, B -12.0", corner.Because);
     }
@@ -134,7 +134,7 @@ public class RecommendationsTests
         var a = Run(r);
 
         Recommendation edge = Assert.Single(Of(a, Topic.Colour), x => x.Verdict == Verdict.Attention);
-        Assert.StartsWith("Latura de jos: cald (lumina de orizont / poluare). Corecteaza pe liniar", edge.Text);
+        Assert.StartsWith("Latura de jos: mai cald decat restul cerului (lumina de la orizont sau poluare luminoasa). Corecteaz-o pe datele liniare", edge.Text);
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class RecommendationsTests
         var a = Run(r);
 
         Recommendation corner = Assert.Single(Of(a, Topic.Colour), x => x.Verdict == Verdict.Attention);
-        Assert.StartsWith("Colt dreapta-jos: cald (lumina de orizont / poluare), intins si pe latura de jos. Corecteaza", corner.Text);
+        Assert.StartsWith("Colt dreapta-jos: mai cald decat restul cerului (lumina de la orizont sau poluare luminoasa), intins si pe latura de jos. Corecteaz-o", corner.Text);
         Assert.Contains("; latura de jos: R +4.0, G 0.0, B -3.0", corner.Because);
     }
 
@@ -167,8 +167,8 @@ public class RecommendationsTests
 
         var lines = Of(a, Topic.Colour).Where(x => x.Verdict == Verdict.Attention).Select(x => x.Text).ToList();
         Assert.Equal(2, lines.Count);
-        Assert.Contains(lines, t => t.StartsWith("Colt dreapta-jos: cald (lumina de orizont / poluare). "));
-        Assert.Contains(lines, t => t.StartsWith("Latura de jos: cald (lumina de orizont / poluare). "));
+        Assert.Contains(lines, t => t.StartsWith("Colt dreapta-jos: mai cald decat restul cerului (lumina de la orizont sau poluare luminoasa). "));
+        Assert.Contains(lines, t => t.StartsWith("Latura de jos: mai cald decat restul cerului (lumina de la orizont sau poluare luminoasa). "));
     }
 
     [Fact]
@@ -181,10 +181,10 @@ public class RecommendationsTests
         // median, taken on other tiles.
         var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
 
-        Recommendation banding = Assert.Single(Of(a, Topic.Format), r => r.Text.StartsWith("Risc de banding"));
+        Recommendation banding = Assert.Single(Of(a, Topic.Format), r => r.Text.StartsWith("Pe 8 biti pot aparea trepte vizibile in cer (banding)"));
         // The share and the threshold carry Fmt.Strong's marks, bold in the window's Raport tab
         // and stripped from the text report (R-112).
-        Assert.Matches(@"^trepte plate de peste 1\.0 mm la \d+ dpi pe \*\*\d+\.\d\d %\*\* din cadru \(prag \*\*0\.10 %\*\*\); palierul tipic pe cele \d+ dale curate, \d+\.\d % din cadru, e \d+\.\d px = \d+\.\d\d mm, cu zgomotul ramas la sigma \d+\.\d\d LSB$", banding.Because);
+        Assert.Matches(@"^la \d+ dpi, zonele plate, fara nicio trecere de ton, mai late de 1\.0 mm acopera \*\*\d+\.\d\d %\*\* din cadru \(prag \*\*0\.10 %\*\*\); in cele \d+ (de )?zone mici de cer neted \(\d+\.\d % din cadru\), o zona plata are de obicei \d+\.\d px = \d+\.\d\d mm, iar zgomotul ramas acolo e de \d+\.\d\d niveluri$", banding.Because);
         Assert.DoesNotContain("**", a.ReportBody);
     }
 
@@ -196,7 +196,7 @@ public class RecommendationsTests
 
         Recommendation denoise = Assert.Single(Of(a, Topic.Denoise));
         Assert.Equal(Verdict.Ok, denoise.Verdict);
-        Assert.Contains("; sub 0.5 LSB, 0.0 % din dale)", denoise.Because);
+        Assert.Contains("); 0.0 % din zone sunt sub 0.5 niveluri, unde zgomotul nu mai ascunde treptele; ", denoise.Because);
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class RecommendationsTests
         var a = Run(Scenes.MonoSky());
 
         var colour = Assert.Single(Of(a, Topic.Colour));
-        Assert.Contains("mono", colour.Text);
+        Assert.Contains("alb-negru", colour.Text);
         Assert.Equal(Verdict.Ok, colour.Verdict);
     }
 
@@ -229,6 +229,64 @@ public class RecommendationsTests
         Assert.Contains("Anexa F. Parametri", a.ReportBody);
         Assert.DoesNotContain(VersionInfo.Banner, a.ReportBody);
     }
+
+    /// <summary>
+    /// R-112 (ADR 0073): every text the Raport tab shows - the section titles and every
+    /// recommendation with its "because" - is in plain words, in both languages, on scenes that
+    /// raise most of the branches: the dark sky with and without a given distance (a problem, a
+    /// coloured corner, banding, a crop), the clean sky, the mono sky without enough stars, a
+    /// sky under L* 15, a green cast, a darkened corner, the band, and a dust no target lifts.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R112_TheReportTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        const float sky = 0.14f;
+        var results = new[]
+        {
+            Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 }),
+            Run(Scenes.DarkSky()),
+            Run(Scenes.CleanSky()),
+            Run(Scenes.MonoSky()),
+            Run(SyntheticRasters.Flat(64, 64, 0.08f)),
+            Run(SyntheticRasters.Flat(256, 256, sky, sky + 5f / 255, sky)),
+            Run(SyntheticRasters.From(320, 320, 3, (x, y, p) =>
+                y < 48 && x < 64 ? (p == 0 ? sky - 8f / 255 : p == 1 ? sky - 7f / 255 : sky - 12f / 255) : sky)),
+            Run(WcsFixtures.BandScene()),
+            Run(SyntheticRasters.From(512, 512, 3, (x, y, p) => (x - 255.5) * (x - 255.5) + (y - 255.5) * (y - 255.5) <= 70 * 70 ? 0.001f : 0.25f)),
+        };
+
+        var texts = results.SelectMany(a => a.Recommendations.SelectMany(r => new[] { r.Text, r.Because }))
+            .Concat(Enum.GetValues(typeof(Topic)).Cast<Topic>().Select(VerdictText.Title))
+            .ToList();
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(median\w*|percentil\w*|LSB|Q1|Q3|esantion\w*|samples?|re-stretch\w*|grila|grid|deghizat|disguised|octet_inalt|high_byte|palier\w*|plateau\w*|cuantiz\w*|quantiz\w*|gradient\w*|rezidual|residual|aplatiz\w*|flattening|vizibilitate|visibility|modelat|modelled|tiles?|dale (netede|curate))\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts, t => Assert.False(methodWords.IsMatch(t), t));
+        Assert.Equal(Tr.Pick("The background colour and the frame's edges", "Culoarea fundalului si marginile cadrului"), VerdictText.Title(Topic.Colour));
+        Assert.Contains(results[0].Recommendations, r => r.Text.Contains(Tr.Pick("Redo the stretch from the linear data up to a background of ", "Refa stretch-ul din datele liniare pana la fundalul ")));
+        Assert.Contains(results[1].Recommendations, r => r.Because.StartsWith(Tr.Pick("the stars' width (FWHM) is ", "latimea stelelor (FWHM) e ")));
+    }
+
+    /// <summary>
+    /// The Romanian counts take "de" before their noun from 20 on, and again at every hundred,
+    /// but not for the numbers ending in 01 to 19: "64 de stele", "16 stele", "101 stele".
+    /// </summary>
+    [Theory]
+    [InlineData("0", "0 ")]
+    [InlineData("16", "16 ")]
+    [InlineData("19", "19 ")]
+    [InlineData("20", "20 de ")]
+    [InlineData("64", "64 de ")]
+    [InlineData("100", "100 de ")]
+    [InlineData("101", "101 ")]
+    [InlineData("119", "119 ")]
+    [InlineData("167", "167 de ")]
+    [InlineData("1000", "1000 de ")]
+    public void RomanianCountsTakeDeWhereTheLanguageDoes(string shown, string expected)
+        => Assert.Equal(expected, Fmt.RoCount(shown));
 
     [Fact]
     public void R002_TheExitCodeFollowsTheVerdict()

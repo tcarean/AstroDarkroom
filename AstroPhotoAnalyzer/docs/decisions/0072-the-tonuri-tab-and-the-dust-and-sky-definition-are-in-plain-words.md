@@ -21,6 +21,15 @@ cer, in afara benzii (|b| peste 10 grade)", "clase relative la cerul modelat"). 
 told that and chose to change it as well, so that no sentence of the tab stays in the method's
 words.
 
+(Corrected 2026-11-01: the exact-target line quoted in the Decision below, "0.17 la Dmax 2.4
+(0.15 daca Dmax e 2.3, 0.19 daca e 2.5); ... de la Dmax 2.1 in sus; cerul ajunge la L* 15 cand
+fundalul e 0.14", carries example figures typed for the owner's approval list, not measured on
+any image; the sentence's wording is what the program writes. The same list gave example levels
+"13 / 26" and a baryta black "L* 4.3", which the tab never showed: the thresholds are 32 and 64
+(`Thresholds.DarkLevelA`, `DarkLevelB`) and the baryta black is L* 3.6, all interpolated. The
+line as the program writes it on a measured scene is in `AstroPhotoAnalyzer.Tests/Golden/dark-sky-wcs.txt`,
+Appendix B.)
+
 ## Decision
 
 Every text of the Tonuri tab is in plain words, in both languages (R-113, checked by

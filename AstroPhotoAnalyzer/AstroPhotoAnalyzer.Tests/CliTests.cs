@@ -43,7 +43,7 @@ public class CliTests
         Assert.Equal("", err);
         Assert.StartsWith(VersionInfo.Banner, output);
         Assert.Contains("VERDICT: PROBLEMA", output);
-        Assert.Contains("Re-stretch din liniar", output);
+        Assert.Contains("Refa stretch-ul din datele liniare", output);
     }
 
     [Fact]
@@ -55,8 +55,8 @@ public class CliTests
         var (code, output, _) = Run(png);
 
         Assert.Equal(2, code);
-        Assert.Contains("Fara profil ICC", output);
-        Assert.Contains("Imagine mono", output);
+        Assert.Contains("Fisierul nu are profil de culoare (ICC)", output);
+        Assert.Contains("Imagine alb-negru", output);
     }
 
     [Fact]

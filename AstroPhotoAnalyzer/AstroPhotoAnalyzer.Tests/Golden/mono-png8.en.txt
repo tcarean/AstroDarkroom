@@ -8,30 +8,30 @@ File: <TEMP>\mono.png
 VERDICT: CAUTION
 
 1. The format to send  [OK]
-   - Send an 8-bit LZW TIFF (0.0 MB). The source is already 8-bit; there is nothing to convert.
-     because: the source has 8 bits per sample
-   - If the lab accepts only JPEG: q100, 4:4:4 (0.0 MB).
-     because: mean error 0.08, max 1.0 levels; 0.0 % of the samples with an error > 2, at a mean level of 0
+   - Send the lab an 8-bit TIFF with LZW compression, which loses nothing (0.0 MB). The file is already 8-bit; there is nothing to convert.
+     because: the file has 8 bits on each channel
+   - If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) (0.0 MB).
+     because: against the original, the JPEG changes a pixel by 0.08 levels on average and by 1.0 at most; 0.0 % of the values change by more than 2 levels, mostly around level 0
 
 2. The background and the paper  [OK]
-   - The background is print-safe as it is; you can go down to 0.15 (the dust at L* 15.1, the sky at L* 15.2).
-     because: the dust (the darkest 1 % of the sky patches (no dust found); no WCS) at L* 26.8; paper black L* 3.6 at Dmax 2.4; the sky (the middle value of the sky patches (the patches sorted by comparison with the sky)) at L* 27.0; the background level 0.251; as the image is, the dust stays above black from Dmax 1.3 up; the visibility threshold L* 15, under it 0.0 % of the pixels
+   - The background is print-safe as it is; you can lower it down to 0.15 (then the dust would be at L* 15.1, the sky at L* 15.2).
+     because: the dust at L* 26.8 (the darkest 1 % of the sky patches (no dust found); no WCS); paper black is L* 3.6 at Dmax 2.4; the sky at L* 27.0 (the middle value of the sky patches (the patches sorted by comparison with the sky)); the background level 0.251; as the image is, the dust stays above black from Dmax 1.3 up; 0.0 % of the pixels are under L* 15, where the eye barely tells the tones apart
 
-3. The background colour and the gradients  [OK]
-   - A mono image: there is no cast to measure.
-     because: a single plane
+3. The background colour and the frame's edges  [OK]
+   - A black-and-white image: it has no colour tint to measure.
+     because: a single channel
 
 4. The size of the print  [CAUTION]
-   ! Without stars the real resolution is not measured; only the pixel grid is judged: without a given distance the convention of 180 dpi applies (the grid invisible from ~0.5 m, when you step closer), and not even the smallest width of the list (50 x 50 cm, 15 dpi) reaches the threshold. It is a limit of the file, not of the detail - a soft nebula may need much less - so no size is recommended. Give the viewing distance, so that the threshold is the physical one, not the convention.
-     because: 16 stars measured, 177.8 per megapixel (minimum 20 and 10 per megapixel); at 50 cm the pixel pitch is 1.67 mm, invisible from 5.75 m; threshold 180 dpi (convention: a pitch of 0.14 mm, invisible from 0.49 m)
+   ! Without stars it cannot be measured how much detail the image holds; it is only checked that the pixels do not show: without a given distance the convention of 180 dpi applies (the pixels no longer show from ~0.5 m, when you step closer), and not even the smallest width of the list (50 x 50 cm, 15 dpi) gets to the threshold. It is a limit of the file, not of the detail (a soft nebula may look fine even larger), so no size is recommended. Give the viewing distance, so that the threshold is the one for your distance, not the convention.
+     because: only 16 stars measured, 177.8 per megapixel (at least 20 are needed, and 10 per megapixel); at 50 cm a pixel is 1.67 mm and no longer shows from 5.75 m; the threshold is 180 dpi (convention: pixels of 0.14 mm, which no longer show from 0.49 m)
 
 5. Denoise for the print version  [OK]
-   - The residual noise is exactly where it should be for print.
-     because: median sigma 1.05 LSB on 123 smooth tiles (10 % 1.03, minimum 1.02; under 0.5 LSB, 0.0 % of the tiles); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.15 the noise shrinks by ~0.82 x (the slope of the curve at the background), to ~0.86 LSB
+   - The noise left is exactly what print needs.
+     because: the noise left in the sky is 1.05 levels (sigma; the middle value over 123 small areas of smooth sky; in the smoothest 10 % under 1.03, the lowest 1.02); 0.0 % of the areas are under 0.5 levels, where the noise no longer hides the steps; the target for print: 0.8-1.5 levels; after you redo the stretch to 0.15, the noise shrinks by ~0.82 times (how steeply the curve climbs at the background), to ~0.86 levels
 
 6. Warnings  [CAUTION]
-   ! No ICC profile: the lab will assume sRGB. Export with the sRGB profile embedded, so that nobody assumes anything.
-     because: no profile in the file; the tool measured assuming sRGB
+   ! The file has no colour profile (ICC): the lab will assume sRGB. Export with the sRGB profile included in the file, so that nobody assumes anything.
+     because: the file has no profile; the program measured assuming sRGB
 
 Appendix A. Tones
   channel means (0..255): 63.9
