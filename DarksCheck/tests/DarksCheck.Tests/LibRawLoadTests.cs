@@ -238,12 +238,12 @@ public partial class LibRawLoadTests
         Assert.All(rows, r => Assert.EndsWith("error: " + English, r.TrimEnd('\r'), StringComparison.Ordinal));
         Assert.Equal([level], RuntimeLines(logs));
 
-        // The second process's lines alone: the first one's go with its folder.
-        Directory.Delete(logs, recursive: true);
+        // The second process appends to the first one's file, its own one line after the first's;
+        // nothing is deleted between the runs, which a scanner holding the closed file could fail.
         (code, _, string stderr) = RunCopy(app, session);
         Assert.Equal(1, code);
         Assert.Contains("ERROR: no dark could be decoded: DSC_0001.NEF: " + English + "; DSC_0002.NEF: " + English, stderr, StringComparison.Ordinal);
-        Assert.Equal([level], RuntimeLines(logs));
+        Assert.Equal([level, level], RuntimeLines(logs));
     }
 
     /// <summary>
