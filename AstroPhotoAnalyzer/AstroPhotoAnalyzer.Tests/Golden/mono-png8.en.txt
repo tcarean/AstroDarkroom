@@ -82,7 +82,7 @@ Appendix D. Resolution and size
       80          80.0    10       n/a         n/a m           1.70 m   100 x 100
       90          90.0     8       n/a         n/a m           1.91 m   110 x 110
      100         100.0     8       n/a         n/a m           2.12 m   120 x 120
-  no recommended row: without stars the detail is not measured, only the pixel grid (threshold 180 dpi) - a limit of the file, not of the image
+  no recommended row: without stars it is not known how much detail the image holds, only that the pixels do not show (threshold 180 dpi) - a limit of the file, not of the image
 
 Appendix E. Background colour
   the background, one channel (0..255): 64.0; from the sky patches above the bottom band

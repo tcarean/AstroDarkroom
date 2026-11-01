@@ -252,9 +252,9 @@ namespace AstroPhotoAnalyzer
         {
             var rows = new List<DpiLadderRow>
             {
-                At(Thresholds.ReferenceDpi, Tr.Pick("reading, held in the hand - where the myth comes from", "citit, tinut in mana - de aici mitul")),
-                At(240, Tr.Pick("native to many printers", "nativul multor imprimante")),
-                At(Thresholds.FallbackMinDpi, Tr.Pick("arm's length, when you step closer - the convention without stars", "lungimea bratului, cand te apropii - conventia fara stele")),
+                At(Thresholds.ReferenceDpi, Tr.Pick($"reading, held in the hand - where the {Fmt.F0(Thresholds.ReferenceDpi)} dpi myth comes from", $"citit, tinut in mana - de aici vine mitul celor {Fmt.F0(Thresholds.ReferenceDpi)} dpi")),
+                At(240, Tr.Pick("the own resolution of many printers", "rezolutia proprie a multor imprimante")),
+                At(Thresholds.FallbackMinDpi, Tr.Pick("at arm's length, when you step closer - the convention when there are no stars", "la o lungime de brat, cand te apropii - conventia cand nu sunt stele")),
                 At(100, "poster"),
                 At(60, Tr.Pick("from the sofa", "de pe canapea")),
             };

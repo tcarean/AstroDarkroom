@@ -46,6 +46,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Rezolutie tab explains itself in plain words (R-115, ADR 0071): what each figure means
+  for the print, the stars' width named "latimea stelelor (FWHM)", no median, quartile,
+  interpolation or pixel grid in the rows' descriptions, the notes under the tables or the dpi
+  scale. The size table's legend, which the console report prints too, says that without a
+  given distance a larger print is viewed from farther away, so every size looks the same, and
+  that without stars only the pixels' visibility is checked; its figures are unchanged.
 - "About", which lists four components where 1.0.0 listed one, is no taller than the screen the
   main window is on (R-158, ADR 0070). On a screen lower than the window, such as a 1080-line
   screen at 125 % or 150 % scaling or a 1366x768 laptop, its cards scroll with the mouse wheel

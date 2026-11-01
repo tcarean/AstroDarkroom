@@ -99,7 +99,7 @@ public class ViewModelTests
         Assert.Contains(tones.SimulationRows, row => row.Target == "asa cum e");
         Assert.All(tones.Rows, row => Assert.False(string.IsNullOrWhiteSpace(row.Description), row.Label));
         // Rezolutie: a description on every row, except the corners (the centre covers them).
-        Assert.Contains(res.Rows, row => row.Label == "FWHM median in centru" && row.Description != null);
+        Assert.Contains(res.Rows, row => row.Label == "Latimea stelelor (FWHM) in centru" && row.Description != null);
         Assert.All(res.Rows, row => Assert.Equal(row.Label.Contains("coltul "), string.IsNullOrWhiteSpace(row.Description)));
         // header + 3 blacks + the scene's paper black (explicit Dmax 2.0, no medium's), 32/64,
         // L* 15/50, the recommended background
@@ -129,6 +129,37 @@ public class ViewModelTests
         Assert.Contains(bg.RegionRows, r => r.EndsWith("! colorat") || r.EndsWith("! neutru"));
         Assert.All(bg.Rows, row => Assert.False(string.IsNullOrWhiteSpace(row.Description), row.Label));
         Assert.Equal(5, bg.Guide.Count);
+    }
+
+    /// <summary>
+    /// R-115 (ADR 0071): the Rezolutie tab's texts are in plain words, in both languages. The
+    /// rows' names, notes and descriptions, the size table's legend (with and without stars)
+    /// and the dpi scale name the stars' width as "latimea stelelor (FWHM)" and use none of the
+    /// method's words.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R115_TheResolutionTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var withStars = new ResolutionTabViewModel(); withStars.Populate(Result(Scenes.DarkSky()));
+        var withoutStars = new ResolutionTabViewModel(); withoutStars.Populate(Result(SyntheticRasters.AddNoise(SyntheticRasters.Flat(300, 300, 0.25f, planes: 1), 1.0 / 255, 23)));
+
+        var texts = new[] { withStars, withoutStars }
+            .SelectMany(vm => vm.Rows.SelectMany(r => new[] { r.Label, r.Note, r.Description }).Concat(vm.SizeRows).Concat(vm.DpiRows))
+            .Where(t => t != null)
+            .ToList();
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(median[a]?|Q1|Q3|interpol\w*|amplitud\w*|nesaturat\w*|unsaturated|grila|grid|percentil\w*)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts, t => Assert.False(methodWords.IsMatch(t), t));
+        string fwhm = Tr.Pick("Star width (FWHM)", "Latimea stelelor (FWHM)");
+        Assert.Contains(withStars.Rows, r => r.Label == fwhm);
+        Assert.Contains(withStars.Rows, r => r.Label.StartsWith(fwhm + Tr.Pick(" in the ", " in ")));
+        Assert.Contains(withoutStars.Rows, r => r.Note != null && r.Note.Contains("FWHM"));
+        Assert.Contains(withStars.SizeRows, s => s.StartsWith(Tr.Pick("no recommended row", "fara rand recomandat")));
+        Assert.Contains(withoutStars.SizeRows, s => s.StartsWith(Tr.Pick("no recommended row", "fara rand recomandat")));
     }
 
     /// <summary>
