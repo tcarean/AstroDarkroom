@@ -229,34 +229,39 @@ public partial class LibRawLoadTests
         }
 
         string level = VcRuntime.Probe().Any(d => !d.Loads) ? "WARN" : "INFO";
-        string log = Path.Combine(app, "log", "darkscheck.log");
+        string logs = Path.Combine(app, "log");
 
         (int code, string stdout, _) = RunCopy(app, "--inventory", session);
         Assert.Equal(1, code);
         string[] rows = stdout.Split('\n').Where(l => l.Contains("DSC_000", StringComparison.Ordinal)).ToArray();
         Assert.Equal(3, rows.Length);
         Assert.All(rows, r => Assert.EndsWith("error: " + English, r.TrimEnd('\r'), StringComparison.Ordinal));
-        Assert.Equal([level], RuntimeLines(log));
+        Assert.Equal([level], RuntimeLines(logs));
 
-        File.Delete(log);
+        // The second process's lines alone: the first one's go with its folder.
+        Directory.Delete(logs, recursive: true);
         (code, _, string stderr) = RunCopy(app, session);
         Assert.Equal(1, code);
         Assert.Contains("ERROR: no dark could be decoded: DSC_0001.NEF: " + English + "; DSC_0002.NEF: " + English, stderr, StringComparison.Ordinal);
-        Assert.Equal([level], RuntimeLines(log));
+        Assert.Equal([level], RuntimeLines(logs));
     }
 
     /// <summary>
     /// Copies the console as the test's own output folder holds it, every file but one, so the copy
-    /// starts as the console does and lacks only that DLL.
+    /// starts as the console does and lacks only that DLL. The output's own <c>log</c> folder stays
+    /// behind: LoggingTests' console runs write into it, at the same time as this test may run, and
+    /// a copy of it would hold their lines and, once rolled, send the copy's lines to another file.
     /// </summary>
     private static string CopyConsoleWithout(string to, string left)
     {
         string from = AppContext.BaseDirectory;
         Assert.True(File.Exists(Path.Combine(from, "darkscheck.exe")), "the console is not in the test's output folder");
         Assert.True(File.Exists(Path.Combine(from, "runtimes", "win-x64", "native", left)), left + " is not where the copy leaves it out");
+        string ownLog = Path.Combine(from, "log") + Path.DirectorySeparatorChar;
         foreach (string f in Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories))
         {
-            if (string.Equals(Path.GetFileName(f), left, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(Path.GetFileName(f), left, StringComparison.OrdinalIgnoreCase)
+                || f.StartsWith(ownLog, StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -293,9 +298,13 @@ public partial class LibRawLoadTests
         return (p.ExitCode, stdout.GetAwaiter().GetResult(), stderr.GetAwaiter().GetResult());
     }
 
-    /// <summary>The levels of the runtime's lines in a log file, in their order.</summary>
-    private static string[] RuntimeLines(string log)
-        => File.ReadAllLines(log).Select(l => RuntimeLine().Match(l)).Where(m => m.Success).Select(m => m.Groups[1].Value).ToArray();
+    /// <summary>
+    /// The levels of the runtime's lines in a copy's log folder, every file of it, rolled ones
+    /// included; the copy starts without one, so they are the lines of its own runs.
+    /// </summary>
+    private static string[] RuntimeLines(string logs)
+        => Directory.GetFiles(logs, "*.log").Order(StringComparer.Ordinal).SelectMany(File.ReadAllLines)
+            .Select(l => RuntimeLine().Match(l)).Where(m => m.Success).Select(m => m.Groups[1].Value).ToArray();
 
     [GeneratedRegex(@"^\S+ \S+ (\w+)\s+\[\d+:\d+\] VcRuntime Visual C\+\+ runtime: ")]
     private static partial Regex RuntimeLine();

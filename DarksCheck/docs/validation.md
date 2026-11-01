@@ -184,7 +184,8 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   tolerance. The Smida run against the library printed the same report, byte for byte, with the
   log at Debug and off, three runs each (ADR 0025 has the times).
 - 2026-11-01: after the message for a LibRaw that cannot be loaded and About's list and fit
-  (R-110, R-120, R-121; ADRs 0026 and 0027: one call in `FrameStack.LogFailed`, which no frame
-  of the sessions reaches, no formula or constant changed), all ten cases re-run with
+  (R-110, R-120, R-121; ADRs 0026 and 0027: two calls, in `FrameInfo.Read` and
+  `FrameStack.LogFailed`, which write nothing unless LibRaw cannot be loaded, and LibRaw loads
+  for every frame of the sessions; no formula or constant changed), all ten cases re-run with
   `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed: 10, Total time:
   10.0908 Minutes`; no figure moved outside its tolerance.

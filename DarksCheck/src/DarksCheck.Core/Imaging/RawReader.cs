@@ -20,7 +20,8 @@
 // messages are English-or-Romanian T(...) pairs written here, LightsCheck's Romanian wording
 // kept byte for byte beside its English; LightsCheck takes these English wordings back in its
 // own language task (ADR 0021). The pair of Missing is DarksCheck's in both languages, the
-// launcher's words for the Visual C++ runtime, for LightsCheck to take back too (ADR 0026).
+// launcher's words for the Visual C++ runtime, for LightsCheck to take back too (ADR 0026); it
+// no longer appends the loader's text (inner.Message), which a refresh must keep out.
 
 // RawReader.cs - camera raw files (NEF and its relatives) through libraw: the one place in
 // the tool that touches an external library. Adapted from FlatCheck's reader (ADR 0003): the

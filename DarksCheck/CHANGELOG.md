@@ -42,8 +42,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - About lists the six components the program ships, the three libraries inside LibRaw's DLLs
   (libjpeg-turbo, Little CMS, zlib) apart from it, counts them from the list itself, and points
   to their licence texts in the Astro Darkroom folder and in the source repository (R-120, ADR
-  0027). It is no taller than its screen: on a low screen, or at 125 % and more, its cards
-  scroll and the Close button stays in view (R-121).
+  0027). It is no taller than its screen: on a screen too low for it, such as a 1080-line
+  screen at 125 % or more, its cards scroll and the Close button stays in view (R-121).
 
 - `README.md`, the user guide, and `THIRD-PARTY-NOTICES.md` are in English (ADR 0022). The
   README is rewritten against the current behaviour: the English labels and verdict words,

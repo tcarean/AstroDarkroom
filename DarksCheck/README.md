@@ -511,8 +511,9 @@ per doubling.
 the session folder, which is refused, as is the partner's, so choose a folder outside both.
 **About** (F1) shows the version, the licence and the six third-party components the program
 ships, LibRaw's three libraries listed apart from it, with where their licence texts are. It is
-never taller than the screen it opens on: on a low screen, or at 125 % and more, its cards scroll
-(the wheel, or the arrows, Page Up, Page Down, Home and End) and the Close button stays in view.
+never taller than the screen it opens on: on a screen too low for it, such as a 1080-line screen
+at 125 % or more or a 1366x768 laptop, its cards scroll (the wheel, or the arrows, Page Up, Page
+Down, Home and End) and the Close button stays in view.
 
 ## Logs
 

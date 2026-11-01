@@ -54,7 +54,8 @@ On 2026-11-01 the owner chose two things, each as recommended:
   Its text no longer goes into the message.
 - **Only the pair changes in the copied reader.** `RawReader.Missing` keeps LightsCheck's code
   and catch list. Its `T(...)` pair and the comments are DarksCheck's (ADRs 0019 and 0021), for
-  LightsCheck to take back.
+  LightsCheck to take back. The old pair appended the loader's text, `inner.Message`, inside
+  both of its arguments; the new one does not, and a refresh from LightsCheck must keep it out.
 - **The log line.** The first time in a process that a frame's error is that failure,
   `VcRuntime` asks Windows for the four DLLs and writes one line. `VcRuntime` is DarksCheck's
   own code, in `Logging/`.
