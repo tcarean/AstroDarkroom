@@ -553,76 +553,83 @@ namespace AstroPhotoAnalyzer.Wpf
             string lo = Fmt.Int(Thresholds.ShadowLiftLevelLo), hi = Fmt.Int(Thresholds.ShadowLiftLevelHi);
             var rows = new List<MetricRow>
             {
-                Row("TIFF 8-bit LZW", Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes),
-                    description: Tr.Pick("The size of the file you send to the lab: the same image, reduced to 8 bits, written as a TIFF with LZW compression "
-                        + "(lossless) and a horizontal predictor. It is the recommended format: no compression artefacts, accepted by any lab, "
-                        + "at half the size of a 16-bit TIFF. The figure is that of the tool's encoder, not Siril's; the order of magnitude is the same.",
-                        "Marimea fisierului pe care il trimiti la laborator: aceeasi imagine, redusa la 8 biti, scrisa TIFF cu compresie LZW "
-                        + "(fara pierdere) si predictor orizontal. E formatul recomandat: fara artefacte de compresie, acceptat de orice laborator, "
-                        + "la jumatate din marimea unui TIFF de 16 biti. Cifra e a encoderului din unealta, nu a lui Siril; ordinul de marime e acelasi.")),
+                Row(Tr.Pick("8-bit TIFF, LZW", "TIFF pe 8 biti, LZW"), Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes),
+                    description: Tr.Pick("How large the file you send to the lab comes out: the same image, at 8 bits, saved as a TIFF with LZW compression, "
+                        + "which loses nothing. It is the recommended format: no traces of compression, taken by any lab, and about half the size "
+                        + "of a 16-bit TIFF. The program computes the size; Siril may give a slightly different figure, of the same order.",
+                        "Cat de mare iese fisierul pe care il trimiti la laborator: aceeasi imagine, pe 8 biti, salvata ca TIFF cu compresie LZW, "
+                        + "care nu pierde nimic. E formatul recomandat: fara urme de compresie, primit de orice laborator, si cam jumatate cat un TIFF "
+                        + "pe 16 biti. Marimea o calculeaza programul; Siril poate da o cifra putin diferita, dar de acelasi ordin.")),
             };
             if (q.Applicable)
             {
-                rows.Add(Row(Tr.Pick("Rounding 16 -> 8 bits: mean / max / p99.9", "Rotunjire 16 -> 8 biti: medie / maxim / p99.9"), $"{Fmt.F3(q.RoundingMeanAbs)} / {Fmt.F3(q.RoundingMax)} / {Fmt.F3(q.RoundingP999)}",
-                    description: Tr.Pick("How much is lost when each 16-bit value is rounded to the nearest of 255 levels: the mean, the maximum and the p99.9 "
-                        + "of the error, over all the channels. Half a level is the mathematical maximum, so a maximum of 0.5 is not a defect, it is the definition "
-                        + "of rounding. It is a loss of precision, not of visible information: the eye does not tell two neighbouring levels of 255 apart. "
-                        + "The row appears only when the source has more than 8 bits.",
-                        "Cat se pierde cand fiecare valoare de 16 biti se rotunjeste la cel mai apropiat nivel din 255: media, maximul si p99.9 "
-                        + "ale erorii, pe toate canalele. Jumatate de nivel e maximul matematic posibil, deci un maxim de 0.5 nu e un defect, e definitia "
-                        + "rotunjirii. E o pierdere de precizie, nu de informatie vizibila: ochiul nu deosebeste doua niveluri vecine din 255. "
-                        + "Randul apare doar cand sursa are mai mult de 8 biti.")));
-                rows.Add(Row(Tr.Pick($"Shadow-lift stress, levels {lo}..{hi}: from 16 bits", $"Stres shadow-lift, niveluri {lo}..{hi}: din 16 biti"), Tr.Pick($"{q.LevelsUsedFrom16} used / {q.MissingFrom16} missing", $"{q.LevelsUsedFrom16} folosite / {q.MissingFrom16} lipsa"),
-                    description: Tr.Pick("It answers \"what happens if the shadows are pulled further?\". The reference channel is lifted with a gamma curve "
-                        + $"{Fmt.F1(Thresholds.ShadowLiftGamma)}, a typical lab auto-correct, then quantized to 8 bits; the levels used between {lo} and {hi} "
-                        + "are counted, and how many are missing between the first and the last one used. Starting from the 16-bit data, the stretched shadows "
-                        + "have something to fill the levels with: this row is the reference for the one under it.",
-                        "Raspunde la \"ce se intampla daca se mai trage de umbre?\". Canalul de referinta e ridicat cu o curba gamma "
-                        + $"{Fmt.F1(Thresholds.ShadowLiftGamma)}, un auto-correct tipic de laborator, apoi cuantizat la 8 biti; se numara nivelurile "
-                        + $"folosite intre {lo} si {hi} si cate lipsesc intre primul si ultimul folosit. Pornind din datele de 16 biti, umbrele intinse "
-                        + "au de unde sa umple nivelurile: randul asta e referinta pentru cel de sub el.")));
-                rows.Add(Row(Tr.Pick("... from 8 bits", "... din 8 biti"),
+                rows.Add(Row(Tr.Pick("Rounding from 16 to 8 bits: mean / max / p99.9", "Rotunjirea de la 16 la 8 biti: medie / maxim / p99.9"), $"{Fmt.F3(q.RoundingMeanAbs)} / {Fmt.F3(q.RoundingMax)} / {Fmt.F3(q.RoundingP999)}",
+                    description: Tr.Pick("How far each value moves when it goes from 16 to 8 bits, that is to the nearest level on the 0..255 scale: "
+                        + "on average, at most, and the value under which 99.9 % of the pixels stay (p99.9), over all the channels. A rounding cannot "
+                        + "move a value by more than half a level, so a maximum of 0.5 is no defect, it is how rounding works. Precision is lost, "
+                        + "not anything you can see: the eye does not tell two neighbouring levels apart. The row appears only when the file has more than 8 bits.",
+                        "Cu cat se muta fiecare valoare cand trece de la 16 la 8 biti, adica la cel mai apropiat nivel de pe scara 0..255: "
+                        + "in medie, cel mult, si valoarea sub care raman 99.9 % din pixeli (p99.9), pe toate canalele. O rotunjire nu poate muta "
+                        + "mai mult de jumatate de nivel, deci un maxim de 0.5 nu e un defect, ci chiar felul in care merge rotunjirea. Se pierde precizie, "
+                        + "nu ceva ce se vede: ochiul nu deosebeste doua niveluri vecine. Randul apare doar cand fisierul are mai mult de 8 biti.")));
+                rows.Add(Row(Tr.Pick($"Shadows lifted, levels {lo}..{hi}: starting from 16 bits", $"Umbre ridicate, niveluri {lo}..{hi}: pornind din 16 biti"), Tr.Pick($"{q.LevelsUsedFrom16} used / {q.MissingFrom16} missing", $"{q.LevelsUsedFrom16} folosite / {q.MissingFrom16} lipsa"),
+                    description: Tr.Pick("It answers the question \"what happens if someone lifts the shadows further?\". The program brightens the shadows "
+                        + $"of the green channel (in black and white, of the only channel) with a gamma curve {Fmt.F1(Thresholds.ShadowLiftGamma)}, as the "
+                        + $"automatic correction of many labs does, then takes the result to 8 bits and counts how many levels between {lo} and {hi} are used "
+                        + "and how many are missing between the first and the last one used. Starting from the 16-bit file, the stretched shadows have "
+                        + "values enough to fill the levels: this row is the reference for the one under it.",
+                        "Raspunde la intrebarea \"ce se intampla daca cineva mai ridica umbrele?\". Programul lumineaza umbrele canalului verde "
+                        + $"(la alb-negru, ale singurului canal) cu o curba gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}, cum face corectia automata a multor "
+                        + $"laboratoare, apoi trece rezultatul pe 8 biti si numara cate niveluri intre {lo} si {hi} sunt folosite si cate lipsesc intre "
+                        + "primul si ultimul folosit. Pornind din fisierul de 16 biti, umbrele intinse au destule valori ca sa umple nivelurile: randul "
+                        + "asta e reperul pentru cel de dedesubt.")));
+                rows.Add(Row(Tr.Pick("... starting from 8 bits", "... pornind din 8 biti"),
                     Tr.Pick($"{q.LevelsUsedFrom8} used / {q.MissingFrom8} missing", $"{q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa"),
-                    q.Keep16BitMaster ? Tr.Pick("keep the 16-bit master", "pastreaza master-ul de 16 biti") : null,
-                    Tr.Pick("The same lift, but starting from the data already rounded to 8 bits, that is from the print file. Each missing level is a step in "
-                        + "the histogram, a gap nothing fills any more, visible as banding if the shadows are smooth. "
-                        + $"Over {Fmt.Int(Thresholds.MissingLevelsWarn)} more missing levels than on the 16-bit path, keep the 16-bit master: any later edit "
-                        + "(a reframing, a retouch, another print) starts from it, not from the 8-bit file. As long as the lab prints the file as it is, "
-                        + "8 bits are enough; the test is about what is left for later.",
-                        "Acelasi lift, dar pornind din datele deja rotunjite la 8 biti, adica din fisierul de tipar. Fiecare nivel lipsa e o treapta in "
-                        + "histograma, un gol pe care nu-l mai umple nimic, vizibil ca banding daca umbrele sunt netede. "
-                        + $"Peste {Fmt.Int(Thresholds.MissingLevelsWarn)} de niveluri lipsa in plus fata de calea de 16 biti, pastreaza master-ul de 16 biti: orice editare ulterioara "
-                        + "(recadrare, retus, alt print) pleaca din el, nu din fisierul de 8 biti. Cat timp laboratorul printeaza fisierul asa cum e, "
-                        + "8 biti ajung; testul e despre ce ramane pentru mai tarziu.")));
+                    q.Keep16BitMaster ? Tr.Pick("keep the 16-bit original", "pastreaza originalul pe 16 biti") : null,
+                    Tr.Pick("The same lifting of the shadows, but starting from the file already taken to 8 bits, the one you send to print. Each missing "
+                        + "level is a gap in the histogram nothing fills any more; on smooth shadows it shows as steps (banding). "
+                        + $"When over {Fmt.Int(Thresholds.MissingLevelsWarn)} more levels are missing than starting from 16 bits, keep the 16-bit original: "
+                        + "any later edit (another framing, a retouch, another print) starts from it, not from the 8-bit file. As long as the lab prints "
+                        + "the file as it is, 8 bits are enough; the test says what is left to you for later.",
+                        "Aceeasi ridicare a umbrelor, dar pornind din fisierul deja trecut pe 8 biti, cel pe care il trimiti la tipar. Fiecare nivel lipsa "
+                        + "e un gol in histograma pe care nu-l mai umple nimic; pe umbre netede se vede ca trepte (banding). "
+                        + $"Daca lipsesc cu peste {Fmt.RoCount(Fmt.Int(Thresholds.MissingLevelsWarn))}niveluri mai multe decat pornind din 16 biti, pastreaza originalul "
+                        + "pe 16 biti: orice editare de mai tarziu (alta incadrare, un retus, alt print) porneste din el, nu din fisierul de 8 biti. Cat timp "
+                        + "laboratorul tipareste fisierul asa cum e, 8 biti ajung; testul spune ce iti ramane pentru mai tarziu.")));
             }
-            string plateauDesc = Tr.Pick($"At each of {Fmt.Int(Thresholds.PlateauPositions)} random positions a tile is kept when it is clean sky (a range under {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} levels "
-                + $"and a mean under {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, so as not to catch the core), and on each tile kept it is measured, at 8 bits, how long the runs "
-                + "of neighbouring pixels with exactly the same value are. A noiseless sky quantized to 8 bits makes wide steps; the residual noise breaks them, "
-                + "like a natural dither. A tile's plateau in pixels, times the pixel pitch at the reference row's dpi, is the length of its step on paper: "
-                + $"over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm it is a visible contour. The verdict is the share of the frame in such tiles (tiles over the positions tried): "
-                + $"over {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} % it is a banding risk - 16 bits if the lab accepts it, or dither at the export. The plateau shown is the mean over the clean tiles, "
-                + "the typical step, for information: it cannot decide, because on a heavily denoised frame the many ordinary tiles drown the few fully flat ones. "
-                + "n/a when no clean sky tiles are found. The tiles' share of the frame and the noise left on them say where the plateau "
-                + "was measured: on an AI-denoised frame the only tiles clean enough can be a few patches the denoiser wiped, while the noise section's median, "
-                + "taken on other tiles, chosen with a looser criterion, says the sky is fine; the two speak of different places.",
-                $"La fiecare dintre cele {Fmt.Int(Thresholds.PlateauPositions)} de pozitii aleatoare se pastreaza dala daca e cer curat (interval sub {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} niveluri "
-                + $"si medie sub {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, ca sa nu prinda nucleul), si pe fiecare dala pastrata se masoara, pe 8 biti, cat de lungi sunt sirurile "
-                + "de pixeli vecini cu exact aceeasi valoare. Un cer fara zgomot cuantizat la 8 biti face trepte late; zgomotul rezidual le sparge, "
-                + "ca un dither natural. Palierul unei dale in pixeli, inmultit cu pasul pixelului la dpi-ul randului de referinta, e lungimea treptei ei pe hartie: "
-                + $"peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm e un contur vizibil. Verdictul e partea din cadru ocupata de astfel de dale (dale raportate la pozitiile incercate): "
-                + $"peste {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} % e risc de banding - 16 biti daca laboratorul accepta, sau dither la export. Palierul afisat e media pe dalele curate, "
-                + "treapta tipica, informativ: nu poate decide, pentru ca pe un cadru cu denoise tare multele dale obisnuite le ineaca pe cele cateva complet plate. "
-                + "n/a cand nu se gasesc dale de cer curat. Partea din cadru a dalelor si zgomotul ramas pe ele spun unde s-a masurat "
-                + "palierul: pe un cadru cu denoise AI, singurele dale destul de curate pot fi cateva petice sterse de denoise, in timp ce mediana sectiunii de zgomot, "
-                + "luata pe alte dale, alese cu un criteriu mai larg, spune ca cerul e bine; cele doua vorbesc despre locuri diferite.");
+            string plateauDesc = Tr.Pick("At 8 bits, neighbouring pixels with exactly the same value form flat areas; when they are wide enough, on paper they "
+                + "show as steps (banding). A little noise breaks them, like a natural dither. The program looks, in "
+                + $"{Fmt.Int(Thresholds.PlateauPositions)} places picked at random, for small areas of smooth sky (values that vary by less than "
+                + $"{Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} levels and stay under level {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, so as not to catch the core) "
+                + "and measures how long the runs of identical pixels are. Times the size of a pixel on paper at the reference row's dpi, the length "
+                + $"gives the width of the step on paper: over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm it shows as a contour. The verdict is how much of "
+                + $"the frame such areas cover: over {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} % it is a banding risk, and then send the file at 16 bits "
+                + "if the lab takes it, or add a little noise at the export (dither). The figure in the row is the usual width of a flat area, for "
+                + "information only: it cannot decide on its own, because after a strong denoise the many ordinary areas hide the few fully flat ones. "
+                + "n/a when no smooth sky is found. How much of the frame the measured areas cover and the noise left in them say where it was "
+                + "measured: after an AI denoise the only areas smooth enough can be a few patches the denoiser wiped, while the noise section, "
+                + "measured another way on other areas, can say the sky is fine; the two speak of different places.",
+                "Pe 8 biti, pixelii vecini cu exact aceeasi valoare formeaza zone plate; cand sunt destul de late, pe hartie se vad ca trepte "
+                + "(banding). Un pic de zgomot le sparge, ca un dither natural. Programul cauta, in "
+                + $"{Fmt.RoCount(Fmt.Int(Thresholds.PlateauPositions))}locuri alese la intamplare, zone mici de cer neted (valori care variaza cu mai putin "
+                + $"de {Fmt.F0(Thresholds.PlateauTileMaxRangeLevels)} niveluri si stau sub nivelul {Fmt.F0(Thresholds.PlateauTileMaxMeanLevels)}, ca sa nu prinda nucleul) "
+                + "si masoara cat de lungi sunt sirurile de pixeli identici. Inmultita cu marimea unui pixel pe hartie la dpi-ul randului de referinta, "
+                + $"lungimea da latimea treptei pe hartie: peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm se vede ca un contur. Verdictul e cat din cadru "
+                + $"acopera astfel de zone: peste {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} % e risc de banding, si atunci trimite fisierul pe 16 biti "
+                + "daca laboratorul il primeste, sau adauga putin zgomot la export (dither). Cifra din rand e latimea obisnuita a unei zone plate, doar "
+                + "informativ: nu poate decide singura, pentru ca dupa un denoise puternic zonele obisnuite, multe, le ascund pe cele cateva complet plate. "
+                + "n/a cand nu se gaseste cer neted. Cat din cadru acopera zonele masurate si zgomotul ramas in ele spun unde s-a masurat: dupa un "
+                + "denoise AI, singurele zone destul de netede pot fi cateva petice sterse de denoise, in timp ce sectiunea de zgomot, masurata altfel, "
+                + "pe alte zone, poate spune ca cerul e bine; cele doua vorbesc despre locuri diferite.");
             rows.Add(q.PlateauKnown
-                ? Row(Tr.Pick("Plateau on the quantized sky", "Palier pe cerul cuantizat"), $"{Fmt.F1(q.PlateauPx)} px",
-                    Tr.Pick($"over {q.PlateauTiles} tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, noise left sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB", $"pe {q.PlateauTiles} dale, {Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB")
+                ? Row(Tr.Pick("Flat areas on the sky taken to 8 bits", "Zone plate pe cerul trecut pe 8 biti"), $"{Fmt.F1(q.PlateauPx)} px",
+                    Tr.Pick($"in {Fmt.Int(q.PlateauTiles)} small areas of smooth sky, {Fmt.Pct(q.PlateauFramePct)} of the frame, noise left {Fmt.F2(q.PlateauSigmaLsb)} levels",
+                            $"in {Fmt.RoCount(Fmt.Int(q.PlateauTiles))}zone mici de cer neted, {Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas {Fmt.F2(q.PlateauSigmaLsb)} niveluri")
                     + (r.Size.ReferenceRow != null
-                        ? Tr.Pick($"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm at {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi; flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm on {Fmt.F2(q.PlateauVisibleFramePctAt(r.Size.ReferenceRow.Dpi))} % of the frame (threshold {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)",
-                            $"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm la {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi; trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm pe {Fmt.F2(q.PlateauVisibleFramePctAt(r.Size.ReferenceRow.Dpi))} % din cadru (prag {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)")
+                        ? Tr.Pick($"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm at {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi; flat areas wider than {Fmt.F1(Thresholds.PlateauVisibleMm)} mm on {Fmt.F2(q.PlateauVisibleFramePctAt(r.Size.ReferenceRow.Dpi))} % of the frame (threshold {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)",
+                            $"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm la {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi; zone plate mai late de {Fmt.F1(Thresholds.PlateauVisibleMm)} mm pe {Fmt.F2(q.PlateauVisibleFramePctAt(r.Size.ReferenceRow.Dpi))} % din cadru (prag {Fmt.F2(Thresholds.PlateauFlatFrameWarnPct)} %)")
                         : ""), plateauDesc)
-                : Row(Tr.Pick("Plateau on the quantized sky", "Palier pe cerul cuantizat"), "n/a", Tr.Pick("no clean sky tiles", "fara dale de cer curat"), plateauDesc));
+                : Row(Tr.Pick("Flat areas on the sky taken to 8 bits", "Zone plate pe cerul trecut pe 8 biti"), "n/a", Tr.Pick("no smooth sky found", "nu s-a gasit cer neted"), plateauDesc));
             Rows = rows;
             HasResult = true;
         }
@@ -641,59 +648,61 @@ namespace AstroPhotoAnalyzer.Wpf
             // The evidence for "do not go below q100", once a warning of the report (ADR 0061): the
             // highest quality under 100 that fails the maximum-error threshold, named with its figure.
             JpegRow failing = jpeg.HighestFailingBelow100;
-            string failingEn = failing == null ? "" : $" Here q{failing.Quality} reaches a maximum error of {Fmt.F1(failing.MaxError)} levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below q100.";
-            string failingRo = failing == null ? "" : $" Aici q{failing.Quality} ajunge la o eroare maxima de {Fmt.F1(failing.MaxError)} niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub q100.";
+            string failingEn = failing == null ? "" : $" Here quality {failing.Quality} reaches a difference of {Fmt.F1(failing.MaxError)} levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below quality 100.";
+            string failingRo = failing == null ? "" : $" Aici calitatea {failing.Quality} ajunge la o diferenta de {Fmt.F1(failing.MaxError)} niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub calitatea 100.";
             return new[]
             {
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("How it is measured.", "Cum se masoara."),
-                    Text = Tr.Pick("The image reduced to 8 bits is encoded as JPEG in memory at each quality, 4:4:4 (no chroma subsampling), "
-                        + "decoded and compared with the unrounded 16-bit values, x 255. The error therefore includes the rounding to 8 bits, "
-                        + "which is why not even q100 gives zero. The encoder is the tool's, not the one in Siril or Photoshop: the figures are indicative, "
-                        + "the order and the proportions hold.",
-                        "Imaginea redusa la 8 biti e encodata JPEG in memorie la fiecare calitate, 4:4:4 (fara subesantionarea culorii), "
-                        + "decodata si comparata cu valorile de 16 biti nerotunjite, x 255. Eroarea include deci si rotunjirea la 8 biti, "
-                        + "de aceea nici q100 nu da zero. Encoderul e cel al uneltei, nu cel din Siril sau Photoshop: cifrele sunt orientative, "
-                        + "ordinea si proportiile raman."),
+                    Text = Tr.Pick("The program saves the 8-bit image as JPEG, in memory, at each quality, with the colour at full resolution (4:4:4), "
+                        + "opens it again and compares it with the 16-bit original, on the 0..255 scale. The difference includes the rounding to 8 bits "
+                        + "too, which is why not even quality 100 gives zero. The JPEG is made by the program, not by Siril or Photoshop: the figures "
+                        + "are a guide, but the order and the proportions hold.",
+                        "Programul salveaza imaginea pe 8 biti ca JPEG, in memorie, la fiecare calitate, cu culoarea la rezolutie intreaga (4:4:4), "
+                        + "o deschide la loc si o compara cu originalul pe 16 biti, pe scara 0..255. Diferenta include si rotunjirea la 8 biti, de aceea "
+                        + "nici calitatea 100 nu da zero. JPEG-ul e facut de program, nu de Siril sau Photoshop: cifrele sunt orientative, dar ordinea "
+                        + "si proportiile raman valabile."),
                 },
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("Size.", "Marime."),
-                    Text = Tr.Pick("The file's megabytes at that quality, to compare with the 8-bit LZW TIFF in the panel below.",
-                        "Megabytii fisierului la calitatea respectiva, de comparat cu TIFF-ul 8-bit LZW din panoul de mai jos."),
+                    Text = Tr.Pick("How large the file comes out at that quality, to compare with the 8-bit TIFF in the panel below.",
+                        "Cat de mare iese fisierul la calitatea respectiva, ca sa-l compari cu TIFF-ul pe 8 biti din panoul de mai jos."),
                 },
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("Mean err / max / p99 / p99.9.", "Err medie / max / p99 / p99.9."),
-                    Text = Tr.Pick("The error per sample, in levels of 255: the mean over the whole image, the largest, and the values under which 99 % "
-                        + "and 99.9 % of the samples lie. The mean does not fall monotonically with the quality this close to lossless (the trip through "
-                        + "YCbCr in integers costs 1-2 levels by itself), so the verdict is not given on it but on the maximum: "
-                        + $"over {Fmt.F0(Thresholds.JpegMaxErrorReject)} levels, the quality is not recommended.",
-                        "Eroarea pe esantion, in niveluri din 255: media pe toata imaginea, cea mai mare, si valorile sub care stau 99 %, "
-                        + "respectiv 99.9 % din esantioane. Media nu scade monoton cu calitatea atat de aproape de fara-pierdere (trecerea prin "
-                        + "YCbCr in intregi costa singura 1-2 niveluri), asa ca verdictul nu se da pe ea, ci pe maxim: "
-                        + $"peste {Fmt.F0(Thresholds.JpegMaxErrorReject)} niveluri, calitatea nu se recomanda."),
+                    Text = Tr.Pick("How far each value differs from the original, in levels on the 0..255 scale: on average over the whole image, at "
+                        + "most, and the value under which 99 % (p99) and 99.9 % (p99.9) of the values stay. This close to the highest quality the "
+                        + "mean does not necessarily fall as the quality rises (JPEG's own conversion of the colours costs 1-2 levels by itself), so "
+                        + $"the verdict is given on the largest difference: over {Fmt.F0(Thresholds.JpegMaxErrorReject)} levels, the quality is not recommended.",
+                        "Cu cat difera fiecare valoare fata de original, in niveluri pe scara 0..255: in medie pe toata imaginea, cel mult, si valoarea "
+                        + "sub care raman 99 % (p99), respectiv 99.9 % (p99.9) din valori. Atat de aproape de calitatea maxima, media nu scade neaparat "
+                        + "cand creste calitatea (doar conversia interna a culorilor in JPEG costa 1-2 niveluri), asa ca verdictul se da pe diferenta "
+                        + $"cea mai mare: peste {Fmt.F0(Thresholds.JpegMaxErrorReject)} niveluri, calitatea nu se recomanda."),
                 },
                 new GuideParagraph
                 {
                     Lead = Tr.Pick($"> {count} lev / mean level.", $"> {count} niv / nivel mediu."),
-                    Text = Tr.Pick($"What percentage of the samples have an error over {count} levels, and at what mean level (0..255) those samples lie - "
-                        + "that is where the compression strikes. A low mean level means the dark sky, where JPEG does worst and where "
-                        + "the eye sees the blocks on a smooth background; a high one means stars and edges, where the errors hide in the detail. "
-                        + $"Over {Fmt.F0(Thresholds.JpegOverThresholdWarnPct)} % of the samples at q100: caution.",
-                        $"Cat la suta din esantioane au eroarea peste {count} niveluri, si la ce nivel mediu (0..255) stau acele esantioane - "
-                        + "adica unde loveste compresia. Un nivel mediu mic inseamna cerul intunecat, unde JPEG-ul lucreaza cel mai prost si unde "
-                        + "ochiul vede blocurile pe fundal neted; unul mare inseamna stele si muchii, unde erorile se ascund in detaliu. "
-                        + $"Peste {Fmt.F0(Thresholds.JpegOverThresholdWarnPct)} % din esantioane la q100: atentie."),
+                    Text = Tr.Pick($"What percentage of the values change by more than {count} levels, and around which level (0..255) they lie, that is "
+                        + "where the compression strikes. A low level means the dark sky, where JPEG does worst and where the eye sees the squares on "
+                        + "a smooth background; a high one means stars and edges, where the differences get lost in the detail. "
+                        + $"Over {Fmt.F0(Thresholds.JpegOverThresholdWarnPct)} % of the values at quality 100: caution.",
+                        $"Cat la suta din valori se schimba cu mai mult de {count} niveluri, si in jurul carui nivel (0..255) stau, adica unde loveste "
+                        + "compresia. Un nivel mic inseamna cerul intunecat, unde JPEG-ul se descurca cel mai prost si unde ochiul vede patratele pe un "
+                        + "fundal neted; unul mare inseamna stele si margini, unde diferentele se pierd in detaliu. "
+                        + $"Peste {Fmt.F0(Thresholds.JpegOverThresholdWarnPct)} % din valori la calitatea 100: atentie."),
                 },
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("What is recommended.", "Ce se recomanda."),
-                    Text = Tr.Pick("An 8-bit LZW TIFF. If the lab accepts only JPEG: q100, 4:4:4. Under q100 the maximum error jumps on the stars and the edges, "
-                        + "and the size gained does not matter for a print." + failingEn,
-                        "TIFF 8-bit LZW. Daca laboratorul accepta doar JPEG: q100, 4:4:4. Sub q100 eroarea maxima sare pe stele si pe muchii, "
-                        + "iar castigul de marime nu conteaza pentru un print." + failingRo),
+                    Text = Tr.Pick("An 8-bit TIFF with LZW compression. If the lab takes only JPEG: quality 100, with the colour at full resolution "
+                        + "(4:4:4). Under quality 100 the largest difference jumps on the stars and the edges, and a smaller file does not help a print."
+                        + failingEn,
+                        "Un TIFF pe 8 biti, cu compresie LZW. Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea la rezolutie intreaga "
+                        + "(4:4:4). Sub calitatea 100, diferenta cea mai mare sare pe stele si pe margini, iar un fisier mai mic nu ajuta la un print."
+                        + failingRo),
                 },
             };
         }

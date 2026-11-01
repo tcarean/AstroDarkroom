@@ -398,25 +398,25 @@ namespace AstroPhotoAnalyzer
             QuantizationResult q = r.Quantization;
             w.WriteLine();
             w.WriteLine(Tr.Pick("Appendix C. Export", "Anexa C. Export"));
-            w.WriteLine($"  TIFF 8-bit LZW: {Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}");
+            w.WriteLine(Tr.Pick("  8-bit TIFF, LZW: ", "  TIFF pe 8 biti, LZW: ") + Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes));
             w.WriteLine(Tr.Pick("  JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level",
                                 "  JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu"));
             foreach (JpegRow j in r.Jpeg.Rows)
                 w.WriteLine($"  q{j.Quality,-3}         {Fmt.Mb(j.Megabytes),8}   {Fmt.F3(j.MeanAbsError),9}   {Fmt.F1(j.MaxError),7}   {Fmt.F2(j.P99),4}   {Fmt.F2(j.P999),5}   {Fmt.Pct(j.PctOverThreshold),7}   {Fmt.F0(j.MeanLevelOverThreshold),11}");
             if (q.Applicable)
             {
-                w.WriteLine(Tr.Pick($"  16 -> 8 rounding: mean {Fmt.F3(q.RoundingMeanAbs)}, max {Fmt.F3(q.RoundingMax)}, p99.9 {Fmt.F3(q.RoundingP999)} levels",
-                                    $"  rotunjire 16 -> 8: medie {Fmt.F3(q.RoundingMeanAbs)}, maxim {Fmt.F3(q.RoundingMax)}, p99.9 {Fmt.F3(q.RoundingP999)} niveluri"));
-                w.WriteLine(Tr.Pick($"  shadow-lift stress (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), levels {Thresholds.ShadowLiftLevelLo}..{Thresholds.ShadowLiftLevelHi}: from 16 bits {q.LevelsUsedFrom16} used / {q.MissingFrom16} missing; from 8 bits {q.LevelsUsedFrom8} used / {q.MissingFrom8} missing",
-                                    $"  stres shadow-lift (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), niveluri {Thresholds.ShadowLiftLevelLo}..{Thresholds.ShadowLiftLevelHi}: din 16 biti {q.LevelsUsedFrom16} folosite / {q.MissingFrom16} lipsa; din 8 biti {q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa"));
+                w.WriteLine(Tr.Pick($"  rounding from 16 to 8 bits: on average {Fmt.F3(q.RoundingMeanAbs)}, at most {Fmt.F3(q.RoundingMax)}, p99.9 {Fmt.F3(q.RoundingP999)} levels",
+                                    $"  rotunjirea de la 16 la 8 biti: in medie {Fmt.F3(q.RoundingMeanAbs)}, cel mult {Fmt.F3(q.RoundingMax)}, p99.9 {Fmt.F3(q.RoundingP999)} niveluri"));
+                w.WriteLine(Tr.Pick($"  shadows lifted (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), levels {Thresholds.ShadowLiftLevelLo}..{Thresholds.ShadowLiftLevelHi}: starting from 16 bits {q.LevelsUsedFrom16} used / {q.MissingFrom16} missing; starting from 8 bits {q.LevelsUsedFrom8} used / {q.MissingFrom8} missing",
+                                    $"  umbre ridicate (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), niveluri {Thresholds.ShadowLiftLevelLo}..{Thresholds.ShadowLiftLevelHi}: pornind din 16 biti {q.LevelsUsedFrom16} folosite / {q.MissingFrom16} lipsa; pornind din 8 biti {q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa"));
             }
             SizeRow reference = r.Size.ReferenceRow;
             string steps = !q.PlateauKnown || reference == null ? "" : Tr.Pick(
-                $"; flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm at {Fmt.F0(reference.Dpi)} dpi on {Fmt.F2(q.PlateauVisibleFramePctAt(reference.Dpi))} % of the frame",
-                $"; trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm la {Fmt.F0(reference.Dpi)} dpi pe {Fmt.F2(q.PlateauVisibleFramePctAt(reference.Dpi))} % din cadru");
+                $"; at {Fmt.F0(reference.Dpi)} dpi, flat areas wider than {Fmt.F1(Thresholds.PlateauVisibleMm)} mm on {Fmt.F2(q.PlateauVisibleFramePctAt(reference.Dpi))} % of the frame",
+                $"; la {Fmt.F0(reference.Dpi)} dpi, zone plate mai late de {Fmt.F1(Thresholds.PlateauVisibleMm)} mm pe {Fmt.F2(q.PlateauVisibleFramePctAt(reference.Dpi))} % din cadru");
             w.WriteLine(q.PlateauKnown
-                ? Tr.Pick($"  plateau on the quantized sky: {Fmt.F1(q.PlateauPx)} px over {q.PlateauTiles} tiles of {q.PlateauPositions} positions ({Fmt.Pct(q.PlateauFramePct)} of the frame, noise left sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB){steps}", $"  palier pe cerul cuantizat: {Fmt.F1(q.PlateauPx)} px pe {q.PlateauTiles} dale din {q.PlateauPositions} pozitii ({Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB){steps}")
-                : Tr.Pick($"  plateau: no clean sky tiles ({q.PlateauTiles} of {q.PlateauPositions} positions)", $"  palier: fara dale de cer curat ({q.PlateauTiles} din {q.PlateauPositions} pozitii)"));
+                ? Tr.Pick($"  flat areas on the sky taken to 8 bits: usually {Fmt.F1(q.PlateauPx)} px, in {Fmt.Int(q.PlateauTiles)} small areas of smooth sky of {Fmt.Int(q.PlateauPositions)} places tried ({Fmt.Pct(q.PlateauFramePct)} of the frame, noise left {Fmt.F2(q.PlateauSigmaLsb)} levels){steps}", $"  zone plate pe cerul trecut pe 8 biti: de obicei {Fmt.F1(q.PlateauPx)} px, in {Fmt.RoCount(Fmt.Int(q.PlateauTiles))}zone mici de cer neted din {Fmt.RoCount(Fmt.Int(q.PlateauPositions))}locuri incercate ({Fmt.Pct(q.PlateauFramePct)} din cadru, zgomot ramas {Fmt.F2(q.PlateauSigmaLsb)} niveluri){steps}")
+                : Tr.Pick($"  flat areas: no smooth sky found ({Fmt.Int(q.PlateauTiles)} of {Fmt.Int(q.PlateauPositions)} places tried)", $"  zone plate: nu s-a gasit cer neted ({Fmt.Int(q.PlateauTiles)} din {Fmt.RoCount(Fmt.Int(q.PlateauPositions))}locuri incercate)"));
         }
 
         /// <summary>A count of stars with its noun: "1 star", "9 stars"; "1 stea", "9 stele", "64 de stele".</summary>
