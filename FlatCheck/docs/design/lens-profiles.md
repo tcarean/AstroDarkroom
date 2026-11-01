@@ -121,10 +121,10 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   Extrapolation` is the same for the written flat). `SyntheticReport.FormatMatch(model,
   crop, w, h)` turns both into the one "format" sentence of ADR 0029: the calibration format
   (`SensorFormats.LabelOf` of the profile's crop / SFF), the user's format, "acelasi
-  format" when the crops are within `SameFormatTolerance` (3 %) or "alt format, raza se
-  recalculeaza prin mm" otherwise, then the corner: inside the profile (below 0.97, "in
-  interiorul profilului"), nothing (0.97-1.0), "extrapolare mica" up to 1.1, "extrapolare
-  MARE" beyond. `SensorFormats.Nearest` lights the tab's chip within 5 % of a nominal crop
+  format" when the crops are within `SameFormatTolerance` (3 %) or "alt format, modelul e
+  recalculat pentru senzorul tau" otherwise, then the corner: inside the profile (below 0.97,
+  "in interiorul lui"), nothing (0.97-1.0), "putin dincolo de ce s-a masurat" up to 1.1, "MULT
+  dincolo de ce s-a masurat" beyond. `SensorFormats.Nearest` lights the tab's chip within 5 % of a nominal crop
   (1.523 → APS-C, 1.61 → APS-C Canon, 1.15 → none). `FormatMatchIsWarning` is true only for
   the large extrapolation; the tab colours the sentence amber on that alone, so "acelasi
   format" never looks like a warning.

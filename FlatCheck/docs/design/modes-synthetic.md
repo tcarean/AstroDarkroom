@@ -27,8 +27,9 @@ and why nothing is copied or embedded is ADR 0028; the two models, quoted from t
 and the model as implemented are `lens-profiles.md` sections 2 to 4; the camera's crop as
 the frame's physical size, the SFF as the fallback, `SyntheticReport.FormatMatch` and
 `SyntheticRun.PreferCamera` are ADR 0029. The "format" sentence reads "profil calibrat pe
-APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format", or "alt format, raza se
-recalculeaza prin mm; coltul tau cade la 1.50 x coltul de calibrare: extrapolare MARE"; the
+APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format", or "alt format, modelul e
+recalculat pentru senzorul tau; coltul tau e la 1.50 x coltul pe care a fost masurat
+profilul: MULT dincolo de ce s-a masurat"; the
 console prints it at "format", the tab shows it when a lens is picked and again under the
 written depths. Console and window agree, and the tab's chips are only for a body the
 lensfun table lacks: the note under the fields says so and the chosen chip's crop lands in

@@ -34,3 +34,15 @@ darker or brighter the corners are than the centre, and the sky.
 4. README's table of the tab's texts, CHANGELOG (Changed), an ADR recording the choice and the
    parity recapture, `python-parity.md`'s list of recaptures, `modes-light.md` if it quotes a
    sentence.
+
+## What deviated
+
+Noted at the wrap-up of 2026-11-01, after the merge.
+
+- The vocabulary test skips a word that follows a dot: the frame tooltip quotes the pattern
+  `pp_light_*.fit`, whose `.fit` is not the word "fit".
+- One more test outside the files listed quoted the old diagnosis,
+  `GoldenOutputTests.R030_Light_OnUncorrectedVignetting_ReportsUnderCorrection`; it changed with
+  the others.
+- The branch merged into `main` as 151504ec, after the Veil figures. Its CHANGELOG entry met the
+  next two branches' entries and stays first among them.

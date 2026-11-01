@@ -86,8 +86,9 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
   lines each). Every figure is unchanged. A C#-only call, like the rest.
 - The note under the illumination offset said, until 2026-10-26, that past a threshold the offset
   "cade inapoi spre 0", which is what it did before the vertex guard of ADR 0014; since that guard
-  the row reads `nedeterminat` once the peak leaves the frame, and the note now says so ("iar cand
-  varful iese din cadru e nedeterminat", R-013). The 15 `parity_structure_*.txt` were recaptured,
+  the row reads `nedeterminat` once the peak leaves the frame, and the note said so ("iar cand
+  varful iese din cadru e nedeterminat", R-013) until its plain-words rewording of 2026-11-01
+  (below). The 15 `parity_structure_*.txt` were recaptured,
   with the owner's yes, for that one line each; every figure is unchanged. A C#-only call, like
   the rest.
 - On 2026-11-01 the structure sentences the console shares with the window's Structure tab were

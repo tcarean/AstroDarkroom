@@ -193,7 +193,7 @@ namespace FlatCheck
         /// </summary>
         /// <param name="diffStops">The master's depth minus the profile's, stops; NaN when
         /// undetermined.</param>
-        /// <returns>Three lines joined by '\n'; two on NaN.</returns>
+        /// <returns>Four lines joined by '\n'; two on NaN.</returns>
         internal static string DepthLightScaleNote(double diffStops)
         {
             double spread = Stats.DepthErrorPct(Th.ProfileDatabaseSpreadStops);
@@ -553,7 +553,7 @@ namespace FlatCheck
                  $"forma     : {ShapeDetail(o)}\nadancimea : {DepthDetail(o)}\n{WorseOfBoth}");
 
         /// <summary>
-        /// "PERFECT - cele cinci teste de abatere de la simetria radiala". Separate, so that the
+        /// "PERFECT - cele cinci teste". Separate, so that the
         /// window can put its own label in front.
         /// </summary>
         /// <param name="o">The run.</param>
@@ -563,8 +563,8 @@ namespace FlatCheck
                  $"{VerdictWords.Of(o.Structure.Verdict)} - cele cinci teste");
 
         /// <summary>
-        /// "REFA - +0.34 stopuri fata de lensfun Tokina ... = 27.0 % eroare in coltul light-ului
-        /// calibrat".
+        /// "REFA - cu +0.34 stopuri fata de profilul lensfun Tokina ..., adica 27.0 % eroare in
+        /// coltul light-ului calibrat".
         /// </summary>
         /// <param name="o">The run, with a comparison made.</param>
         /// <returns>The depth verdict, the difference against the nearest profile and its corner
@@ -844,9 +844,9 @@ namespace FlatCheck
                  $"coltul e {CornerOverCentrePct(r):F0} % din centru; "
                  + "asa e obiectivul, nu e o eroare a flat-ului");
 
-        /// <summary>The note under the window's illumination-centre row: the fitted vertex
-        /// against the sensor's centre and why the figure is not scale-invariant, or why there is
-        /// no vertex.</summary>
+        /// <summary>The note under the window's illumination-centre row: the brightest point (the
+        /// fitted vertex) against the sensor's centre and that the figure is only indicative, or
+        /// that the point falls outside the frame.</summary>
         /// <param name="r">The structure result.</param>
         /// <returns>One line.</returns>
         internal static string CentroidNote(StructureResult r)
