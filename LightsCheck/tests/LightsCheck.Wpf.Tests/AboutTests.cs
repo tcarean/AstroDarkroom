@@ -64,7 +64,7 @@ public class AboutTests
     }
 
     [Fact]
-    public void EveryHeadingAndLeadIsWritten()
+    public void EveryHeadingIsWritten()
     {
         AboutViewModel vm = new();
 
@@ -73,6 +73,14 @@ public class AboutTests
         Assert.False(string.IsNullOrWhiteSpace(vm.LicenceHeading));
         Assert.False(string.IsNullOrWhiteSpace(vm.LicenseLinkLabel));
         Assert.False(string.IsNullOrWhiteSpace(vm.ThirdPartyHeading));
-        Assert.Contains("THIRD-PARTY-NOTICES.md", vm.ThirdPartyLead, StringComparison.Ordinal);
+    }
+
+    /// <summary>The lead above the list is the core's, which counts the list it heads (R-075).</summary>
+    [Fact]
+    public void R075_TheLeadAboveTheListIsTheCores()
+    {
+        AboutViewModel vm = new();
+
+        Assert.Equal(ThirdParty.Lead, vm.ThirdPartyLead);
     }
 }

@@ -105,6 +105,8 @@ The English follows Siril's and the usual astrophotography vocabulary, British i
 | BUN(A), LA LIMITA, NU, DA, POSIBIL, ATENTIE | GOOD, MARGINAL, NO, YES, POSSIBLE, WARNING |
 | NEDETERMINAT, NEMASURAT, INSUFICIENT, FARA walking noise | UNDETERMINED, NOT MEASURED, INSUFFICIENT, NO walking noise |
 | EROARE | ERROR |
+| fisiere raw de aparat | camera raw files |
+| runtime-ul Microsoft Visual C++ (lipseste sau este prea vechi) | Microsoft's Visual C++ runtime (missing or too old) |
 | E / V (sensul pe RA) | E / W |
 | stanga / dreapta / sus / jos (sageti) | left / right / up / down |
 

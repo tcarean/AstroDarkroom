@@ -108,7 +108,8 @@ fetched on use (step 2 above). The names: the class name in the core (`ImageLoad
 `SessionFolder`, `FrameInfo`, `InventoryRun`, `FrameRun`, `SeriesRun`), `Process` for the first
 and last lines and the crashes, `Cli` for the console, and the window's two from `Loggers`: `App`
 (the start's choices) and `Window` (the main window, the view-model, the stored setting, the
-title bar, the About window). `RunClock` writes through the logger of the run that holds it.
+title bar, the About window and its screen's work area). `RunClock` writes through the logger of
+the run that holds it.
 
 ## A run's lines
 
@@ -130,7 +131,7 @@ three timed inside `FrameRun.Measure` by the clock it is handed; `open`, `measur
 | `Program` (`Cli`) | Info, Warn, Error, Debug | `mode=<Mode> input=<folder> lang=<en/ro>`, or `mode=Help`; a refused `--lang` and refused arguments, with the message as shown; `wrote <file> (<KiB>)` per file of `--out`, as soon as the file is written (`SeriesOutputs.WriteAll`'s callback); `run failed: mode=<Mode>` with the exception, before the one `ERROR:` line of stderr; the code page that could not be switched or put back, at Debug |
 | `SessionFolder.Open` | Info | `session root=... lights=<dir> (<n> frames, <ext>) biases=<dir> (<n>) darks=<dir> (<n>)`; a refused folder is its caller's exception |
 | `ImageLoader.Load` / `LoadInfo` | Info, Debug, Trace | `loaded <LogText.Frame> in <ms>` for a full load (Info), `read the header of ...` for a metadata read (Debug); the FITS keywords that decide the reading (`LogText.FitsKeys`) at Debug; every card at Trace, from a full load only |
-| `RawReader` | Debug, Warn | through `FiguresLine`, libraw's visible and raw sizes, margins, pitch, filters, `cdesc`, the CFA order or `none`, the maximum, the black and the per-channel blacks and their median, before the scale is judged; the lens block that could not be read, with the exception |
+| `RawReader` | Debug, Warn | through `FiguresLine`, libraw's visible and raw sizes, margins, pitch, filters, `cdesc`, the CFA order or `none`, the maximum, the black and the per-channel blacks and their median, before the scale is judged; the lens block that could not be read, with the exception; when libraw cannot be loaded, once per process, through `RuntimeLine`, the Visual C++ runtime's DLLs Windows cannot load, or the four loading, so none is missing (R-074; the failure itself is its caller's line) |
 | `FrameInfo.Read` | Warn | a frame whose metadata could not be read, with the exception; its row carries the message; not when its caller takes the exception back to write it itself (the series, through the overload with an `out` parameter) |
 | `InventoryRun` | Info, Debug | through `RunClock`, `inventory done lights=<n> errors=<n>`; the cadence at Debug |
 | `FrameRun` | Info, Debug | through `RunClock`, `frame done detected=<n> fwhm=<v> elongation=<v>`; in `Measure`, every figure of the frame's measurement (`LogText.Measured`) at Debug, for the series' frames too |
@@ -138,7 +139,7 @@ three timed inside `FrameRun.Measure` by the clock it is handed; `open`, `measur
 | `App` | Info, Warn | the language and the folder from the command line; a `--lang` refused; it hooks the window thread's unhandled exception, which `LogSetup` writes |
 | `MainWindow` | Info | the folder and export dialogs, chosen or cancelled; Stop; About |
 | `MainViewModel` | Info, Warn, Debug, Error | `session <folder>: run started pixel= threads= east= north=`; `done in`, `stopped after`, or `refused after ...; the card shows the message` with the exception; a run a newer one replaced, at Debug; an exception the window does not handle, at Error, from an exception filter that returns false and records it with `LogSetup.Wrote`; every file the export writes, as soon as it is written, and an export that failed; the cut-outs of a frame, and a decode that failed (Warn), at Debug when another frame was selected meanwhile |
-| `UserSettings`, `DarkTitleBar`, `AboutWindow` | Debug | the settings file written, with its size, and one that could not be read or written; a window manager that cannot be called (no `dwmapi.dll` or entry point), the title bar staying light; a link that could not be opened; each failure with its exception |
+| `UserSettings`, `DarkTitleBar`, `AboutWindow`, `ScreenArea` | Debug | the settings file written, with its size, and one that could not be read or written; a window manager that cannot be called (no `dwmapi.dll` or entry point), the title bar staying light; a link that could not be opened; the About window once its content is rendered, its size and place, its screen's work area and whether its cards scroll (R-076); a screen's work area that Windows did not give, the primary screen's used; each failure with its exception |
 
 Not logged: pixels, a FITS card below Trace, a progress tick (the frame lines are the progress),
 the cancellation of `CancelPending` racing the window's close.
@@ -179,8 +180,9 @@ be given it before the handle is closed. Those processes, and the one of
 `R060_WithoutLangTheProgramSpeaksEnglish`, log as any other, so every test run leaves their lines
 in `log\lightscheck.log` beside the copy of the executable in the test project's build folder,
 rolled like any log. `App`'s constructor, `OnStartup` and `OnExit`, `MainWindow`'s handlers, the
-title bar's catch and the wiring of the hooks run in no test: no test builds `App`, crashes a
-process or lacks `dwmapi.dll`. The hooks' bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, and
+title bar's catch, `ScreenArea`'s two lines for a work area Windows does not give, and the
+wiring of the hooks run in no test: no test builds `App`, crashes a process, lacks `dwmapi.dll`
+or has a screen Windows will not describe. The hooks' bodies, `LogSetup.Fatal` and `LogSetup.Unobserved`, and
 the view-model's filter for an exception it does not handle, `MainViewModel.LogUnhandled`, are
 tested directly. The About window's catch runs in
 `R071_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays`, which raises `RequestNavigate` on

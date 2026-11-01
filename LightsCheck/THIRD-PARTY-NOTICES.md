@@ -1,11 +1,14 @@
 # Componente terte
 
 LightsCheck e distribuit sub **GNU General Public License v3 sau ulterioara** (vezi
-[LICENSE](LICENSE)). Fisierul asta listeaza codul tert pe care il leaga, licenta fiecarei
-componente si motivul pentru care e compatibila cu GPLv3. Un pachet adaugat fara o intrare
-aici e un pachet a carui compatibilitate n-a verificat-o nimeni; `ThirdPartyTests` leaga
-lista de aici, lista din `ThirdParty.cs` (ce arata fereastra "Despre") si pachetele din
-`LightsCheck.Core.csproj`.
+[LICENSE](LICENSE)). Fisierul asta listeaza codul tert pe care il livreaza, licenta fiecarei
+componente si motivul pentru care e compatibila cu GPLv3. Textul intreg al fiecarei licente e in
+`THIRD-PARTY-NOTICES.txt`, pe care folderul suitei Astro Darkroom il poarta langa programe; in
+sursa, [../AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md)
+(ADR 0030). Un pachet adaugat fara o intrare aici e un pachet a carui compatibilitate n-a
+verificat-o nimeni; `ThirdPartyTests` leaga lista de aici, lista din `ThirdParty.cs` (ce arata
+fereastra "Despre"), pachetele din `LightsCheck.Core.csproj` si bibliotecile native pe care
+acestea le aduc pentru Windows.
 
 Ce e scris de mana si **nu** e cod tert: cititorul FITS, encoderul PNG, toate calculele si
 toate pragurile. Cititorul FITS, cititorul raw si encoderul PNG sunt copiate din FlatCheck,
@@ -25,10 +28,15 @@ obiectiv) dintr-un fisier raw de aparat.
 
 - Proiect: <https://github.com/sdcb/Sdcb.LibRaw>
 
-## LibRaw (bibliotecile native din `Sdcb.LibRaw.runtime.*`)
+## LibRaw (`raw_r.dll`, din `Sdcb.LibRaw.runtime.*`)
 
-**Rol.** Decodarea propriu-zisa a formatelor raw. Vine ca DLL-uri native (`raw_r`, `jpeg8`,
-`lcms2`, `zlib1`), livrate alaturi de executabil.
+**Rol.** Decodarea propriu-zisa a formatelor raw. E `raw_r.dll`, care cheama trei biblioteci
+native livrate impreuna cu el, fiecare cu sectiunea ei mai jos: libjpeg-turbo (`jpeg8.dll`),
+Little CMS (`lcms2.dll`) si zlib (`zlib1.dll`). Cele patru DLL-uri vin cu programul: langa el in
+folderul suitei, in interiorul fisierului unic al versiunii construite de aici, care le
+despacheteaza sub `%TEMP%\.net\` cand porneste. Toate patru au nevoie de runtime-ul Microsoft
+Visual C++ v14 (x64), pe care nicio forma a uneltei nu il livreaza; fara el, un raw da eroarea
+din R-074, cu legatura Microsoft spre ultima lui versiune (ADR 0030).
 
 **Licenta.** Dubla, la alegerea celui care o foloseste: **LGPL-2.1-only SAU CDDL-1.0**.
 
@@ -39,9 +47,53 @@ aplicarea termenilor GPL obisnuite, "version 2 of the ordinary GNU General Publi
 any later version", asupra unei copii, ceea ce aduce codul intr-o lucrare GPLv3. LGPL-2.1
 articolul 6 cere ca, daca programul isi afiseaza notitele de copyright la rulare (o face, pe
 a doua linie a fiecarei rulari), notita LibRaw sa apara printre ele: de asta exista lista din
-`ThirdParty.cs` si fereastra "Despre".
+`ThirdParty.cs` si fereastra "Despre". Trimiterea la copia licentei, pe care acelasi articol o
+cere langa notita, e fraza de deasupra listei, care arata unde e `THIRD-PARTY-NOTICES.txt`.
 
 - Proiect: <https://www.libraw.org/>
+
+## libjpeg-turbo (`jpeg8.dll`, din `Sdcb.LibRaw.runtime.win64`)
+
+**Rol.** Decodeaza, pentru LibRaw, datele comprimate JPEG din unele fisiere raw, printre ele
+DNG-urile cu pierderi. `jpeg8.dll` se raporteaza ca libjpeg-turbo 2.1.3.
+
+**Licenta.** Cele trei ale lui libjpeg-turbo: licenta IJG, pentru codul venit din libjpeg al
+Independent JPEG Group; BSD-3-Clause, pentru API-ul TurboJPEG si sistemul de build; zlib, pentru
+extensiile SIMD.
+
+**Compatibilitate.** Free Software Foundation le listeaza pe toate trei ca fiind compatibile cu
+GNU GPL. Licenta IJG cere ca documentatia unui program distribuit ca executabil sa spuna ca "this
+software is based in part on the work of the Independent JPEG Group": o spun randul libjpeg-turbo
+din fereastra "Despre", in ambele limbi, si `README.md`. BSD-3-Clause cere ca notitele de
+copyright, conditiile si declinarea raspunderii sa insoteasca forma binara: textul lor intreg e
+in `THIRD-PARTY-NOTICES.txt` al suitei.
+
+- Proiect: <https://libjpeg-turbo.org/>
+
+## Little CMS (`lcms2.dll`, din `Sdcb.LibRaw.runtime.win64`)
+
+**Rol.** Gestiunea culorilor din LibRaw: transformarile lui cu profiluri ICC. `lcms2.dll` se
+raporteaza ca Little CMS 2.12.
+
+**Licenta.** MIT.
+
+**Compatibilitate.** MIT e permisiva si compatibila cu GPLv3; cere ca notita de copyright si
+permisiunea sa insoteasca toate copiile, iar textul ei intreg e in `THIRD-PARTY-NOTICES.txt` al
+suitei.
+
+- Proiect: <https://www.littlecms.com/>
+
+## zlib (`zlib1.dll`, din `Sdcb.LibRaw.runtime.win64`)
+
+**Rol.** Decomprima, pentru LibRaw, datele comprimate Deflate din unele fisiere raw, printre ele
+DNG. `zlib1.dll` se raporteaza ca zlib 1.2.11.
+
+**Licenta.** zlib.
+
+**Compatibilitate.** Licenta zlib e permisiva, iar Free Software Foundation o listeaza ca fiind
+compatibila cu GPL; unei distributii binare nu ii cere nimic.
+
+- Proiect: <https://zlib.net/>
 
 ## NLog
 

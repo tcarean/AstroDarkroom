@@ -93,7 +93,7 @@ public class WindowLanguageTests
                 await vm.CropsPending;
                 Assert.NotEmpty(vm.Crops);
                 texts.AddRange(Texts(Render(new FramesView { DataContext = vm }, "en-tab-frames")));
-                texts.AddRange(Texts(Render((FrameworkElement)new AboutWindow().Content, "en-about", 600, 760)));
+                texts.AddRange(Texts(Render((FrameworkElement)new AboutWindow(SystemParameters.WorkArea).Content, "en-about", 600, 1000)));
 
                 // What the charts draw themselves, outside the visual tree.
                 texts.AddRange(vm.StepGuides.Concat(vm.ElongationGuides).Select(g => g.Label));

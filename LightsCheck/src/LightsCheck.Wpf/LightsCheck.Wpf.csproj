@@ -16,8 +16,9 @@
     <!-- The executable's icon (Explorer, the taskbar); the window takes the same file through
          the <Resource> below and Icon= in MainWindow.xaml. Drawn per size by Icon/make_icon.py. -->
     <ApplicationIcon>..\..\Icon\lightscheck.ico</ApplicationIcon>
-    <!-- DarkTitleBar's LibraryImport (DwmSetWindowAttribute) is source-generated as unsafe
-         code; nothing else in the project is unsafe. -->
+    <!-- The LibraryImports of DarkTitleBar (DwmSetWindowAttribute) and of ScreenArea
+         (MonitorFromWindow, GetMonitorInfoW) are source-generated as unsafe code; nothing else in
+         the project is unsafe (ADR 0031). -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- A WPF project gets no System.IO in its implicit usings (Path would collide with
          System.Windows.Shapes.Path); the view-models read files, so it is added here. -->

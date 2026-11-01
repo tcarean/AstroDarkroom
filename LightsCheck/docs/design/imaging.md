@@ -80,9 +80,31 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
 - The diagnostic log (ADR 0029): `ImageLoader` writes the line per file read, the FITS
   keywords at Debug and every card at Trace from what the reader returns, and `RawReader`
   libraw's figures at Debug, composed by `FiguresLine` from plain values so no closure of a
-  libraw local is ever made (the mechanic below), and its lens block's failure at Warn;
+  libraw local is ever made (the mechanic below), its lens block's failure at Warn, and the
+  runtime check's line at Warn, once (above);
   `FitsReader` does not log, where FlatCheck's does since its ADR 0070, so the copy stays as it
   was (`logging.md`).
+- LightsCheck's own, when libraw cannot be loaded (R-074, ADR 0030). `Load` and `LoadInfo`
+  turn the loader's failures (`DllNotFoundException`, a `FileNotFoundException` for another file
+  than the raw, `BadImageFormatException`, `TypeInitializationException`) into `Missing`'s
+  `InvalidOperationException`. Its message names Microsoft's Visual C++ runtime as the likely
+  cause and ends with `RuntimeUrl`, and keeps the loader's exception, whose words name
+  `libraw.dll`, as the inner one. The DLLs travel with the program in both forms it ships: beside
+  it in the suite folder, inside the single file of the own release, which extracts them under
+  `%TEMP%\.net\<program>\<bundle id>\` at start. So the message says nothing of where they sit.
+  `Missing` first asks `RuntimeCheck.FirstLine`, which gives the log line once per check and null
+  afterwards, an `Interlocked` flag deciding among the parallel frames. The process's check,
+  `Runtime`, asks `CanLoad` (`NativeLibrary.TryLoad` by bare name, freed at once) for each of
+  `RuntimeFiles`, and `RuntimeLine` words the answer for the Warn line. A failing series fails
+  twice per frame, the measurement then the metadata, so asking every time would cost the PATH
+  search 174 times on the Veil session. The bare name is searched for from the program's folder,
+  then the system folders, the current folder and PATH. `raw_r.dll`'s own imports are searched
+  for from `raw_r.dll`'s folder instead, since .NET loads it by full path with
+  `LOAD_WITH_ALTERED_SEARCH_PATH`, then the same places. The two differ only in the single-file
+  release, where that folder is the extraction folder, and only for a runtime DLL copied into one
+  of them. `RuntimeDlls` is what the import tables of `Sdcb.LibRaw.runtime.win64` 0.21.1's DLLs
+  name. `RawReaderTests` reads those tables from the build's `runtimes/win-x64/native` with
+  `PEReader`, so another LibRaw build is read again before it ships.
 - Taken later from FlatCheck, the last sentence of its R-009 (469da9b, ADR 0025): `LoadHeader`'s
   comment says the header read does not check the data area, so a cut file still answers the
   metadata read and only the full load refuses it.

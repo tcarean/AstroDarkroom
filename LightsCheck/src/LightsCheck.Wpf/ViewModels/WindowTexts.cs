@@ -37,14 +37,6 @@ internal static class WindowTexts
 
     internal static string AboutThirdPartyHeading => T("THIRD-PARTY COMPONENTS", "COMPONENTE TERTE");
 
-    internal static string AboutThirdPartyLead => T(
-        "The tool links two components written by others, both compatible with the GPLv3. The FITS reader, "
-        + "the PNG encoder, every calculation and every threshold are written by hand. Why each licence is "
-        + "compatible is in THIRD-PARTY-NOTICES.md.",
-        "Unealta leaga doua componente scrise de altii, amandoua compatibile cu GPLv3. Cititorul FITS, "
-        + "encoderul PNG, toate calculele si toate pragurile sunt scrise de mana. Motivele pentru care fiecare "
-        + "licenta e compatibila sunt in THIRD-PARTY-NOTICES.md.");
-
     internal static string ChooseTitle => T("Choose the Siril session folder (the one with lights\\ and biases\\)", "Alege folderul sesiunii Siril (cel cu lights\\ si biases\\)");
 
     internal static string EmptyTitle => T("Choose a session folder", "Alege folderul unei sesiuni");

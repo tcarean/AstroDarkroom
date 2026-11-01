@@ -22,6 +22,19 @@ repository ([../README.md](../README.md)); opened from the suite's launcher, it 
 launcher's language. The console is not part of the suite: build it from this folder, as
 "Building" below says.
 
+To read camera raw files, both programs need **Microsoft's Visual C++ v14 runtime (x64)**, which
+most computers already have. Windows lists it as "Microsoft Visual C++ v14 Redistributable (x64)",
+or, when it is older, "Microsoft Visual C++ 2015-2022 Redistributable (x64)", "2015-2019", "2017"
+or "2015"; the last two are too old, from before Visual Studio 2019 added one of the DLLs libraw
+needs. Neither the suite nor the programs built here include it. Without it FITS frames are still
+read, and every raw file gives this error, whose link downloads the latest version:
+
+```
+cannot load libraw: Microsoft's Visual C++ runtime is likely missing or too old, so camera raw files cannot be read until its latest version is installed (FITS frames are not affected): https://aka.ms/vc14/vc_redist.x64.exe
+```
+
+The log then names the runtime's DLLs that Windows could not load ("Logs" below).
+
 ## The session folder
 
 Give it the folder of one night, laid out the way Siril and its scripts lay it out:
@@ -337,7 +350,9 @@ north (`→` and `↑` by default), remembered between starts in
 `%LOCALAPPDATA%\LightsCheck\settings.json`, the only setting the program keeps there (its log goes
 there too when the folder beside the program cannot be written, see [Logs](#logs)).
 **Write the files...** writes the three files of `--out` into a folder you choose; the session
-folder is proposed. **About** (F1) shows the version, the licence and the third-party components.
+folder is proposed. **About** (F1) shows the version, the licence and the third-party components;
+on a screen too low for all of it, its cards scroll (wheel, arrows, Page Up/Down, Home, End) and
+the Close button stays in view.
 
 ## Logs
 
@@ -362,7 +377,9 @@ focal length, exposure, ISO, time); for each run its options, its outcome and th
 took; for each frame its figures, and the class, the flags and the thresholds behind every
 rejection; the dithering, the drift, the sensor's pattern, the read noise and the polar alignment
 as the report's verdicts read them; every file written; in the window, the folder opened, each
-run's end and the buttons pressed; every error with its technical details, those the program works
+run's end and the buttons pressed; when libraw cannot be loaded, once, which of the Visual C++
+runtime's four DLLs Windows cannot load, or that the four load, so none is missing;
+every error with its technical details, those the program works
 around without a word included (not a run you stopped yourself, nor what the window drops while it
 closes); at the end the exit code and the time taken. The log's own words are English whatever
 `--lang` says; an error's or a refusal's message appears as you saw it, so in Romanian under
@@ -392,7 +409,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
 ```
 
 The two executables, each one self-contained file with the libraw DLLs inside, which runs without
-.NET installed:
+.NET installed (raw files still need the Visual C++ runtime, as "Getting it" says):
 
 ```
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 1.0.0 -PublishOnly
@@ -407,8 +424,13 @@ and changes no tracked file; the `.pdb` and `.xml` files beside them are not nee
 
 LightsCheck is free software, under the GNU General Public License version 3 or, at your option,
 any later version: see [LICENSE](LICENSE). Its raw and FITS readers are copied from FlatCheck.
-What the programs ship from others (libraw, its C# wrapper, and NLog, which writes the log) is
-listed, each with its licence, in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), in Romanian.
+What the programs ship from others is libraw with the three libraries its DLL calls
+(libjpeg-turbo, Little CMS and zlib), libraw's C# wrapper, and NLog, which writes the log; the
+About window lists them, each with its licence. The whole text of each licence is in
+`THIRD-PARTY-NOTICES.txt` beside the programs in the Astro Darkroom suite folder, and in this
+repository in [../AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md);
+why each is compatible with the GPLv3 is also in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md),
+in Romanian. This software is based in part on the work of the Independent JPEG Group.
 
 ## For developers
 

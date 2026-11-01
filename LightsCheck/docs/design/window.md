@@ -18,6 +18,26 @@ code. Five of the six tabs are `UserControl`s under `Views/` with no code of the
 `InitializeComponent`, the sixth the report's text box in a card; `AboutWindow` is the only
 second window.
 
+`AboutWindow` fits its screen (R-076, ADR 0031), as AstroPhotoAnalyzer's does. `MainWindow`
+passes the work area of its own screen, `ScreenArea.WorkAreaOf`. That asks Windows for the screen
+nearest the window (`MonitorFromWindow`, `GetMonitorInfoW`, through `LibraryImport`) and divides
+the answer by the window's DPI scale on each axis (`ToDips`). It falls back to
+`SystemParameters.WorkArea`: silently when the window has no handle, with a Debug line when
+Windows gives no answer. The constructor caps `MaxHeight` at the area's height.
+The window is a two-row grid:
+
+- The cards, the logo block included, are in the `ScrollViewer` `Cards`, transparent so the wheel
+  scrolls anywhere over it.
+- `CloseButton` is in the second row, its margins giving the old gaps, 16 DIP above and 20 below.
+
+`PreviewKeyDown` passes Up, Down, Page Up, Page Down, Home and End to `Cards`, only while
+`ScrollableHeight` is above 0 (`Scroll`). Elsewhere the arrows move the focus, as before.
+`ContentRendered`, when the window's height is final, calls `FitInto`. That clamps `Top` with
+`ScreenArea.TopInside`, the launcher's `WindowFit.Top`, and writes the Debug line `About shown
+WxH at (L,T); work area WxH at (L,T); cards scroll: yes|no`. `AboutWindowFitTests` lays the
+content out at a capped height without showing a window, raises the keys through a stand-in
+presentation source, and calls `OnContentRendered` by reflection.
+
 The tabs are an `AccessibleTabControl` (R-067, ADR 0028). The theme's template for it names the
 presenter of the selected content `ContentHost`, and the control's automation peer adds that
 presenter's children, the selected tab's view, under the tab's item, which the stock peer does
@@ -73,7 +93,9 @@ fixed labels are `{local:T}` pairs in the XAML (`language.md`, which also covers
 `--lang`). `WindowTexts` holds the empty and
 problem cards, the wait line (`Busy`, `BusyRegistering`), the dialog titles, the status after
 an export, the cut-out notes, the step chart's guide labels (`MoveGuide`, `WalkingNoiseGuide`,
-given the core's formatted figure) and the map's grid note (`GridNote`). The class words on
+given the core's formatted figure) and the map's grid note (`GridNote`). The About window's lead
+above the third-party list is the core's `ThirdParty.Lead`, beside the list it counts (R-075),
+and its rows are `ThirdParty.Components`. The class words on
 the elongation guides are `SeriesReport.ClassWord`, the session card's `scale` label is
 `SeriesReport.ScaleLabel`, and the `ERROR: ` / `EROARE: ` line of an export error or a failed cut-out decode
 is `RunReport.Error`, the console's own, so a verdict word or the prefix changes in `Report/`

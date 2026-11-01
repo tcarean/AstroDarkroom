@@ -84,14 +84,15 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The Help command (the "About" button or F1): shows the About window, modal.
+    /// The Help command (the "About" button or F1): shows the About window, modal, fitted to the
+    /// work area of this window's screen (R-076).
     /// </summary>
     /// <param name="sender">The element the command was executed on.</param>
     /// <param name="e">The command's arguments, not used.</param>
     private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
     {
         Log.Info("About opened");
-        new AboutWindow { Owner = this }.ShowDialog();
+        new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();
     }
 
     /// <summary>
