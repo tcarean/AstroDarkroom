@@ -20,6 +20,14 @@ only at 100 %: a regression of the log's branch at a common laptop setting. On 2
 owner chose to fix it on that branch, before its merge, with the launcher's design. The plan,
 `docs/plans/2026-10-31-let-the-about-window-fit-its-screen.md`, was approved as written.
 
+(Restated 2026-11-01: "a window sized to its content still has its first height" at `Loaded`,
+in the Decision below, holds for this window, not for every one. The launcher's About, whose
+texts are set in code before it is shown, already has its final height at `Loaded`. It was
+measured off the screen, not activated, at work areas of 1040, 825 and 690 DIP: it was 1037, 825
+and 690 DIP high at `Loaded` as at `ContentRendered`, and its own log lines gave those heights
+and the right scroll state. The fit here stays at `ContentRendered`, where this window's height
+is final.)
+
 ## Decision
 
 - **The launcher's design** (AstroDarkroom ADR 0013, its R-016):
@@ -101,3 +109,5 @@ owner chose to fix it on that branch, before its merge, with the launcher's desi
   now shows the scroll bar.
 - The launcher's own fit runs at `Loaded`. Whether its window reads its first height there too is
   not measured; that is a task for AstroDarkroom.
+  (Restated 2026-11-01: measured, it reads its final height there; see the note before
+  "Decision". Nothing changes in the launcher.)
