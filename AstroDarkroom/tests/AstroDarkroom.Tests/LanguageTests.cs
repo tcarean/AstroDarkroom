@@ -55,7 +55,7 @@ public class LanguageTests
         [
             "Checks the darks of a session or a library: light leaks, thermal drift, noise, hot and dead pixels, and whether their temperature matches the lights.",
             "Checks the flats of a lens: exposure, symmetry, vignetting against the lens profile, and whether they correct a real light; builds a flat from the profile.",
-            "Checks the lights of a night: which frames to leave out of the stack and why, dithering, mount drift, polar alignment, what to change next time.",
+            "Checks the lights of a night: which frames to leave out of the stack and why, mount drift, dithering, polar alignment, what to change next time.",
             "Compares two versions of one image with a before/after slider (two stretches, with and without stars), pixel by pixel; reveals faint gradients.",
             "Copies the plate solve of a FITS back into its processed version, which lost it on the way, so that annotations and catalogues find the sky again.",
             "Prepares an image for print: simulates the paper, checks the blacks against its limits, helps edit the curves and soft-proofs with the paper's ICC profile.",

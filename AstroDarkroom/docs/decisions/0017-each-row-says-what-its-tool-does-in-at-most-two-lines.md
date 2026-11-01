@@ -32,19 +32,26 @@ old ones, each starts with a verb; they use the tools' own words (`scurgeri de l
 
 ## Consequences
 
-The window, sized to its content, grows by one line per row: six lines of 15 px, from the
-743 px of its log line of 2026-10-31 (at 96 DPI) to about 833 px, computed, not measured;
-the work area of the owner's primary screen is 1040 px high. The column is the window's client
+The window, sized to its content, grows by one line per row: from the 743 px of its log line
+of 2026-10-31 to 833 px, measured on 2026-11-01 at 96 DPI in the window started from a mock
+suite folder (the new build, empty tool executables, the `release.json` of 0.9.0), where UI
+Automation gives each description 416 × 30 px, two lines of 15 px, in both languages; the
+work area of the owner's primary screen is 1040 px high. The column is the window's client
 area, 664 px (the 680 px less the frame of a window that cannot be resized, measured on the
 screenshot of 2026-10-25, whose card spans 624 px), less the list's margins (40), the card's
 border and padding (34), the icon's column (54), the text's right margin (16) and the button's
-minimum width (104). No test guards the two lines, since the test project has no WPF: a changed
-description, or a change of any of those widths, is measured again.
+minimum width (104). WPF breaks a line after a hyphen too, so a hyphenated Romanian word must
+not end a line: in that window LightsCheck's first text broke as `dithering-` / `ul`, and its
+list was reordered, `deriva monturii, dithering-ul` (`mount drift, dithering` in English, so
+that the two lists stay alike). No test guards the two lines or the breaks, since the test
+project has no WPF: a changed description, or a change of any of those widths, is measured
+again, and so is where it breaks.
 
 Measured on 2026-11-01 with WPF's own text layout (`FormattedText` in Windows PowerShell,
 Segoe UI 12, `Display` formatting as the window sets it, 96 DPI): each text's line count at
 416 px and the narrowest width that keeps it on two lines (the texts cut short here); the
-widest needs 397 px.
+widest needs 397 px. Laid out at 416 px, the reordered texts included, every first line ends
+at a space, none at a hyphen.
 
 ```
 149 ch  2 lines  2 lines from 380 px  | Checks the darks of a session or a library: light leaks, ...
@@ -59,4 +66,24 @@ widest needs 397 px.
 142 ch  2 lines  2 lines from 359 px  | Copiaza plate solve-ul unui FITS inapoi in varianta lui ...
 155 ch  2 lines  2 lines from 392 px  | Prepares an image for print: simulates the paper, checks ...
 158 ch  2 lines  2 lines from 393 px  | Pregateste o imagine pentru print: simuleaza hartia, ...
+```
+
+The window, through UI Automation, before LightsCheck's list was reordered (the same words, on
+two lines either way; the folder line's rows left out):
+
+```
+shot main-en.png: window 680x833 at (2540,104)
+  416 x  30 px  Checks the darks of a session or a library: ligh...
+  416 x  30 px  Checks the flats of a lens: exposure, symmetry, ...
+  416 x  30 px  Checks the lights of a night: which frames to le...
+  416 x  30 px  Compares two versions of one image with a before...
+  416 x  30 px  Copies the plate solve of a FITS back into its p...
+  416 x  30 px  Prepares an image for print: simulates the paper...
+shot main-ro.png: window 680x833 at (2540,104)
+  416 x  30 px  Verifica dark-urile unei sesiuni sau biblioteci:...
+  416 x  30 px  Verifica flat-urile unui obiectiv: expunerea, si...
+  416 x  30 px  Verifica light-urile unei nopti: ce cadre sa las...
+  416 x  30 px  Compara doua variante ale unei imagini cu un sli...
+  416 x  30 px  Copiaza plate solve-ul unui FITS inapoi in varia...
+  416 x  30 px  Pregateste o imagine pentru print: simuleaza har...
 ```
