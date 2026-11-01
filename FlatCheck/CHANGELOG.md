@@ -96,6 +96,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The End to end tab's explanations, and the `--light` diagnosis, reasons, refusal and warnings
+  the console shares with it, are in plain words (R-105, ADR 0082): how much darker or brighter
+  the corners are than the centre after the flat, and what is sky, with no fit, plane, Pearson,
+  standard deviation, clipping or degeneracy. The thresholds stay read from the code. The
+  `light_*` goldens and the eleven `parity_light_*` goldens were recaptured for those text lines
+  alone, every figure unchanged.
 - The window's folder button is disabled while the Smoothing or the Synthetic tab is busy, as
   it is during the opening chain (R-117, ADR 0077): measured on a 24 MP master, their main
   runs take 6.4-6.7 s and about 8 s, long enough for a folder change to land on the new

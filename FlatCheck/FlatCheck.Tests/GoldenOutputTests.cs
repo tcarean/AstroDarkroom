@@ -242,7 +242,7 @@ public class GoldenOutputTests
         var (output, exit) = RunCli(ws, f, "--light", "-o", ws.PathTo("out.png"));
 
         Assert.Equal(3, exit);
-        Assert.Contains("SUB-corectie", output);
+        Assert.Contains("flat-ul nu a scos toata vignetarea", output);
         AssertGolden("light_undercorrected", output);
     }
 

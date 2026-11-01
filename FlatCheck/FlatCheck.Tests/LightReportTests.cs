@@ -114,7 +114,7 @@ public class LightReportTests
         LightReport.WriteSuitability(s, w);
 
         Assert.Contains("camp diagonal           :  30.0 grade  (WCS)", w.ToString());
-        Assert.Contains("ATENTIE: camp la limita", w.ToString());
+        Assert.Contains("ATENTIE: campul e la limita", w.ToString());
     }
 
     /// <summary>
@@ -131,7 +131,7 @@ public class LightReportTests
         string text = w.ToString();
 
         Assert.Contains("TESTUL NU SE APLICA", text);
-        Assert.Contains("degenerare geometrica", text);
+        Assert.Contains("asa e geometria", text);
         Assert.Contains("testele de structura", text);
         Assert.DoesNotContain("componenta radiala", text);
     }
@@ -148,9 +148,9 @@ public class LightReportTests
         var ok = new SuitabilityResult { Level = FovLevel.Ok, FovDeg = 12.0, Source = "WCS" };
 
         Assert.Equal("30.0 grade  (WCS)", LightReport.FieldText(marginal));
-        Assert.Contains($"peste {Th.LightFovOk:F0} grade", LightReport.FieldWarning(marginal));
+        Assert.Contains($"Peste {Th.LightFovOk:F0} de grade", LightReport.FieldWarning(marginal));
         Assert.Equal("", LightReport.FieldWarning(ok));
-        Assert.Contains("necunoscut inseamna neverificat", LightReport.FieldWarning(Unknown));
+        Assert.Contains("necunoscut nu inseamna in regula", LightReport.FieldWarning(Unknown));
 
         string refusal = LightReport.TooWideText(new SuitabilityResult { Level = FovLevel.TooWide, FovDeg = 70.4, Source = "WCS" });
         Assert.Contains($"Peste {Th.LightFovMax:F0} de grade", refusal);
@@ -189,18 +189,18 @@ public class LightReportTests
     {
         var w = new StringWriter();
         LightReport.WriteTooWide(FocalOnly, "light.fit", w);
-        Assert.Contains("Decizia s-a luat doar pe focala, presupunand cel mai mare senzor", w.ToString());
+        Assert.Contains("Campul a fost apreciat doar dupa focala, ca si cum senzorul ar fi full-frame", w.ToString());
         Assert.Contains("--fov <grade>", w.ToString());
 
         string window = LightReport.TooWideText(FocalOnly);
-        Assert.Contains("Decizia s-a luat doar pe focala, presupunand cel mai mare senzor plauzibil.", window);
+        Assert.Contains("Campul a fost apreciat doar dupa focala, ca si cum senzorul ar fi full-frame, cel mai mare posibil.", window);
         Assert.DoesNotContain("--fov", window);
 
         var known = new SuitabilityResult { Level = FovLevel.TooWide, FovDeg = 70.4, Source = "WCS" };
-        Assert.DoesNotContain("doar pe focala", LightReport.TooWideText(known));
+        Assert.DoesNotContain("doar dupa focala", LightReport.TooWideText(known));
         w = new StringWriter();
         LightReport.WriteTooWide(known, "light.fit", w);
-        Assert.DoesNotContain("doar pe focala", w.ToString());
+        Assert.DoesNotContain("doar dupa focala", w.ToString());
     }
 
     static SuitabilityResult Unknown => new() { Level = FovLevel.Unknown };

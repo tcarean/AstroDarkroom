@@ -22,18 +22,17 @@ Copyright (C) 2026 Tudor Carean
 
     VERDICT: UNDETERMINED
     The mean can NOT be read as the flat error:
-      - the error of the mean (16.14) exceeds even the OK threshold (2.00),
-        so the series does not resolve the flat to the precision the thresholds
-        speak at. A verdict here would be an opinion, not a measurement.
-      - the radial component follows the sky gradient (r = 0.98
-        over a range of 27 points of gradient), a sign that what is
-        measured is the sky.
+      - the mean is too uncertain: its error (16.14) is larger even than the OK threshold (2.00),
+        because the frames differ too much from each other. A verdict here would be
+        an opinion, not a measurement.
+      - the radial figure moves together with the sky (correlation 0.98, on a sky
+        that changed by 27 points): what is measured is the sky, not the flat.
 
-    The flat is the same on every frame by construction - it was divided out of
-    each one. So everything that moves during the series is sky, not flat.
-    On data like these the flat has to be judged on its own, on the structure tests
-    of the master, which do not involve the sky at all. See the README, the section
-    on when --light can be used.
+    The same flat was applied to every frame, so its error is the same in all of them;
+    what changes from one frame to the next comes from the sky.
+    On these data the flat is judged only on the structure tests of the master,
+    where the sky does not enter at all. See the README, the section on when
+    --light can be used.
 
     -> map saved: <TMP>/out.png
 

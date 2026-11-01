@@ -93,10 +93,10 @@ namespace FlatCheck
             w.WriteLine(T("\n  THE TEST DOES NOT APPLY TO THESE FRAMES", "\n  TESTUL NU SE APLICA PE CADRELE ASTEA"));
             foreach (string line in DegeneracyLines()) w.WriteLine("    " + line);
             w.WriteLine("    " + NotALimitation);
-            w.WriteLine(T("\n    On a wide-field setup the flat has to be judged on its own: the structure",
-                          "\n    Pe un setup cu camp larg flat-ul se judeca singur: testele de structura"));
-            w.WriteLine(T("    tests of the master, which do not involve the sky at all.",
-                          "    ale masterului, care nu implica cerul deloc."));
+            w.WriteLine(T("\n    On a wide field the flat is judged only on the structure tests of the master,",
+                          "\n    Pe un camp larg flat-ul se judeca doar pe testele de structura ale masterului,"));
+            w.WriteLine(T("    where the sky does not enter at all.",
+                          "    unde cerul nu intra deloc."));
             if (JudgedOnTheFocalLengthAlone(s))
             {
                 w.WriteLine("\n    " + FocalOnlyLines[0]);
@@ -116,9 +116,9 @@ namespace FlatCheck
         /// as the console's two lines: the window joins them into one sentence.</summary>
         static string[] FocalOnlyLines => new[]
         {
-            T("The decision was made on the focal length alone, assuming the largest plausible",
-              "Decizia s-a luat doar pe focala, presupunand cel mai mare senzor"),
-            T("sensor.", "plauzibil."),
+            T("The field was judged from the focal length alone, as if the sensor were full-frame,",
+              "Campul a fost apreciat doar dupa focala, ca si cum senzorul ar fi full-frame,"),
+            T("the largest possible.", "cel mai mare posibil."),
         };
 
         /// <summary>The way out the console adds to that note; the window has no control for
@@ -151,12 +151,12 @@ namespace FlatCheck
         /// <returns>Three lines; the first quotes <see cref="Th.LightFovOk"/>.</returns>
         static string[] MarginalLines() => new[]
         {
-            T($"WARNING: field at the limit. The plane/radial separation weakens beyond {Th.LightFovOk:F0}",
-              $"ATENTIE: camp la limita. Separarea plan/radial slabeste peste {Th.LightFovOk:F0}"),
-            T("degrees of diagonal, and the figure below may hold sky too, not only the flat.",
-              "grade diagonala, iar cifra de mai jos poate contine si cer, nu doar flat."),
-            T("Read it as a hint, not as a measurement.",
-              "Citeste-o ca pe un indiciu, nu ca pe o masuratoare."),
+            T($"WARNING: the field is at the limit. Beyond {Th.LightFovOk:F0} degrees of diagonal the sky and the",
+              $"ATENTIE: campul e la limita. Peste {Th.LightFovOk:F0} de grade pe diagonala cerul si vignetarea"),
+            T("vignetting start to look alike, and the figure below may hold sky too, not only flat.",
+              "incep sa semene, iar cifra de mai jos poate contine si cer, nu doar flat."),
+            T("Take it as a hint, not as a measurement.",
+              "Ia-o ca pe un indiciu, nu ca pe o masuratoare."),
         };
 
         /// <summary>Why a field wider than <see cref="Th.LightFovMax"/> cannot be measured, in
@@ -165,19 +165,19 @@ namespace FlatCheck
         /// <returns>Four lines of one paragraph.</returns>
         static string[] DegeneracyLines() => new[]
         {
-            T($"Beyond {Th.LightFovMax:F0} degrees of diagonal, the light-pollution dome",
-              $"Peste {Th.LightFovMax:F0} de grade diagonala, cupola de poluare luminoasa se"),
-            T("CURVES inside the frame. The radially symmetric part of that curvature",
-              "CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi"),
-            T("has exactly the shape of the vignetting, so the fit can no longer separate them: any figure",
-              "are exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra"),
-            T("that came out would be the sky, not the flat.",
-              "ar iesi ar fi cerul, nu flat-ul."),
+            T($"The frame covers too wide a field. Beyond {Th.LightFovMax:F0} degrees of diagonal the sky's light",
+              $"Cadrul acopera un camp prea larg. Peste {Th.LightFovMax:F0} de grade pe diagonala lumina cerului"),
+            T("is no longer even: it is brighter toward the horizon and fades toward the centre, like a dome,",
+              "nu mai e uniforma: e mai luminoasa spre orizont si scade spre centru, ca o cupola,"),
+            T("which is exactly the shape the vignetting has. The two cannot be told apart, however good",
+              "adica exact forma pe care o are si vignetarea. Cele doua nu se pot desparti, oricat"),
+            T("the program: any figure that came out would be the sky, not the flat.",
+              "de bun ar fi programul: orice cifra ar iesi ar fi cerul, nu flat-ul."),
         };
 
         /// <summary>The sentence after the degeneracy, in both applications.</summary>
-        static string NotALimitation => T("It is not a limitation of the tool, it is a geometric degeneracy.",
-                                          "Nu e o limitare a uneltei, e o degenerare geometrica.");
+        static string NotALimitation => T("It is not a shortcoming of the program; that is the geometry.",
+                                          "Nu e o lipsa a programului; asa e geometria.");
 
         /// <summary>
         /// Writes the report of one frame: the field, the tiles kept, the sky plane (flagged
@@ -241,21 +241,21 @@ namespace FlatCheck
         internal static string Diagnosis(double radPct)
         {
             if (Math.Abs(radPct) < Th.LightRadOk)
-                return T("The background has no radial component. The flat does its job.\n"
-                         + "This is the test that matters - all the others are proxies for it.",
-                         "Fondul n-are componenta radiala. Flat-ul face treaba.\n"
-                         + "Asta e testul care conteaza - toate celelalte sunt proxy pentru el.");
+                return T("The sky background stayed as bright in the corners as at the centre: the flat removed\n"
+                         + "the vignetting as it should. This is the real proof; the structure tests only anticipate it.",
+                         "Fondul cerului a ramas la fel de luminos din centru pana in colturi: flat-ul a scos\n"
+                         + "vignetarea cum trebuie. Asta e proba adevarata; testele de structura doar o anticipeaza.");
 
             if (radPct > 0)
-                return T("The background FALLS toward the edges => UNDER-correction. The flat does not catch all\n"
-                         + "the vignetting: another aperture than for the lights, or a contaminated flat.",
-                         "Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata\n"
-                         + "vignetarea: alta diafragma decat la lights, sau flat contaminat.");
+                return T("The corners stayed darker than the centre: the flat did not remove all the vignetting.\n"
+                         + "Usually the flats were shot at another aperture than the lights, or the flat holds something that is not vignetting.",
+                         "Colturile au ramas mai intunecate decat centrul: flat-ul nu a scos toata vignetarea.\n"
+                         + "De obicei flat-urile au fost facute la alta diafragma decat lights-urile, sau flat-ul are in el ceva ce nu e vignetare.");
 
-            return T("The background RISES toward the edges => OVER-correction. Most likely\n"
-                     + "missing/wrong flat-darks: you divide by a flat that holds an offset.",
-                     "Fondul CRESTE spre margini => SUPRA-corectie. Cel mai probabil\n"
-                     + "flat-darks lipsa/gresite: imparti la un flat care contine offset.");
+            return T("The corners came out brighter than the centre: the flat corrected too much. Almost always\n"
+                     + "the flat-darks or the bias are missing, so the flat still holds an offset and the division pulls the corners up.",
+                     "Colturile au iesit mai luminoase decat centrul: flat-ul a corectat prea mult. Aproape intotdeauna\n"
+                     + "lipsesc flat-dark-urile sau bias-ul, asa ca flat-ul mai contine un offset, iar impartirea trage colturile in sus.");
         }
 
         // ------------------------------------------------------------ for the window
@@ -283,10 +283,10 @@ namespace FlatCheck
                 return string.Join(" ", MarginalLines());
 
             if (s.Level == FovLevel.Unknown)
-                return T("Cannot check whether the test applies: the header does not say enough about the field. "
-                         + "The result runs anyway, but unknown means unchecked, not checked.",
-                         "Nu pot verifica daca testul se aplica: headerul nu spune destul despre camp. "
-                         + "Rezultatul ruleaza oricum, dar necunoscut inseamna neverificat, nu verificat.");
+                return T("How wide the field is cannot be told: the file gives neither the focal length nor the "
+                         + "scale. The test runs anyway, but without this check; unknown does not mean fine.",
+                         "Nu stiu cat de larg e campul: fisierul nu spune nici focala, nici scara. Testul "
+                         + "ruleaza oricum, dar fara aceasta verificare; necunoscut nu inseamna in regula.");
 
             return "";
         }
@@ -301,10 +301,8 @@ namespace FlatCheck
         /// alone.</returns>
         internal static string TooWideText(SuitabilityResult s)
             => string.Join(" ", DegeneracyLines()) + "\n\n" + NotALimitation + "\n\n"
-             + T("On a wide-field setup the flat has to be judged on its own, on the Structure tab: "
-                 + "the structure tests of the master do not involve the sky at all.",
-                 "Pe un setup cu camp larg flat-ul se judeca singur, in tabul Structura: "
-                 + "testele de structura ale masterului nu implica cerul deloc.")
+             + T("On a wide field the flat is judged only on the Structure tab, where the sky does not enter at all.",
+                 "Pe un camp larg flat-ul se judeca doar in tabul Structura, unde cerul nu intra deloc.")
              + (JudgedOnTheFocalLengthAlone(s) ? "\n\n" + string.Join(" ", FocalOnlyLines) : "");
     }
 }

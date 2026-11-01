@@ -106,7 +106,7 @@ public class LightSeriesReportTests
         string text = Summary(Steady(10, mean: 0.4));
 
         Assert.Contains("VERDICT: OK", text);
-        Assert.Contains("Flat-ul face treaba", text);
+        Assert.Contains("Fondul cerului a ramas la fel de luminos din centru pana in colturi", text);
         Assert.Contains("Media pe 10 cadre e estimarea erorii de flat", text);
         Assert.DoesNotContain("NEDETERMINAT", text);
     }
@@ -115,8 +115,8 @@ public class LightSeriesReportTests
     [Fact]
     public void TheSignOfTheMeanIsReadAsTheDiagnosis()
     {
-        Assert.Contains("SUB-corectie", Summary(Steady(10, mean: 3.5)));
-        Assert.Contains("SUPRA-corectie", Summary(Steady(10, mean: -3.5)));
+        Assert.Contains("flat-ul nu a scos toata vignetarea", Summary(Steady(10, mean: 3.5)));
+        Assert.Contains("flat-ul a corectat prea mult", Summary(Steady(10, mean: -3.5)));
     }
 
     // ------------------------------------------------------------ inconclusive
@@ -135,7 +135,7 @@ public class LightSeriesReportTests
         Assert.Contains("VERDICT: NEDETERMINAT", text);
         Assert.Contains("Media NU se poate citi ca eroare de flat", text);
         Assert.Contains("eroarea mediei", text);
-        Assert.Contains("urmareste gradientul de cer", text);
+        Assert.Contains("se misca odata cu cerul", text);
         // and says what is left to judge the flat on, on such data
         Assert.Contains("testele de structura", text);
     }
@@ -149,8 +149,8 @@ public class LightSeriesReportTests
     {
         string text = Summary(Steady(10, mean: 0.0, jitter: 30.0));
 
-        Assert.Contains("Flat-ul e acelasi pe toate cadrele prin constructie", text);
-        Assert.Contains("tot ce se misca in timpul seriei e cer", text);
+        Assert.Contains("Acelasi flat s-a aplicat pe fiecare cadru", text);
+        Assert.Contains("ce se schimba de la un cadru la altul vine din cer", text);
     }
 
     [Fact]
@@ -196,8 +196,8 @@ public class LightSeriesReportTests
         LightSeriesResult r = LightSeriesAnalyzer.Combine(Steady(10, mean: 0.0, jitter: 30.0));
         string reasons = LightSeriesReport.ReasonsText(r);
 
-        Assert.StartsWith($"Eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK ({Th.LightRadOk:F2}), ", reasons);
-        Assert.Contains("Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din fiecare.", reasons);
+        Assert.StartsWith($"Media e prea nesigura: eroarea ei ({r.Sem:F2}) e mai mare chiar decat pragul de OK ({Th.LightRadOk:F2}), ", reasons);
+        Assert.Contains("Acelasi flat s-a aplicat pe fiecare cadru, deci greseala lui e aceeasi in toate;", reasons);
         Assert.Contains("tabul Structura", reasons);
         Assert.StartsWith("nu se aplica (gradientul variaza doar", LightSeriesReport.CorrelationValue(r));
     }
