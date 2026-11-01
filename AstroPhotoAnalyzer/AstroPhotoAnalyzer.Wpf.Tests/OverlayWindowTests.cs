@@ -53,8 +53,8 @@ public class OverlayWindowTests
         Assert.True(canvas.PaperBlack > canvas.LowSeparation, $"canvas {canvas.PaperBlack}");
         Assert.Equal(baryta.HistogramHeading, canvas.HistogramHeading);
         Assert.Equal(baryta.HistogramNote, canvas.HistogramNote);
-        Assert.StartsWith("HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena intrerupta = pragul de vizibilitate L* 15", baryta.HistogramHeading);
-        Assert.StartsWith("La stanga liniei rosii totul se printeaza cu acelasi negru. La stanga liniei galbene intrerupte (sub L* 15), tonurile pe care hartia le mai separa abia se deosebesc cu ochiul", baryta.HistogramNote);
+        Assert.StartsWith("HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena intrerupta = L* 15, sub care ochiul abia mai deosebeste tonurile", baryta.HistogramHeading);
+        Assert.StartsWith("La stanga liniei rosii totul iese pe hartie cu acelasi negru. La stanga liniei galbene intrerupte (sub L* 15) hartia inca deosebeste tonurile, dar ochiul", baryta.HistogramNote);
         // Under paper black the paper separates nothing, and that region is also left of the threshold.
         Assert.DoesNotContain("hartia inca separa", baryta.HistogramNote);
         // Each sentence says what lies left of one line; none says which line is left of the other.
@@ -75,17 +75,17 @@ public class OverlayWindowTests
         noWcs.Populate(Result(Scenes.DarkSky()));
 
         Assert.StartsWith("praful = ", noWcs.Definition);
-        Assert.Contains(" (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei", noWcs.Definition);
+        Assert.Contains(" (fara WCS); cerul = valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul); negru pur = dale de 32 px mai intunecate decat negrul hartiei", noWcs.Definition);
         Assert.Equal(TonesTabViewModel.NoWcsSentence, noWcs.NoWcsWarning);
-        Assert.StartsWith("tinta exacta a prafului pe negru:", noWcs.ExactLine);
-        Assert.Equal($"Imaginea la tinta randului, intr-o fereastra separata ale carei doua casute, odata bifate, vopsesc ce e sub negrul hartiei si sub L* {Thresholds.LowSeparationLstar:0}", noWcs.PreviewTooltip);
+        Assert.StartsWith("fundalul la care praful ajunge exact pe negrul hartiei:", noWcs.ExactLine);
+        Assert.Equal($"Arata imaginea cu fundalul mutat la valoarea din rand, intr-o fereastra separata; cele doua casute de acolo coloreaza ce ar iesi negru pe hartie si ce e sub L* {Thresholds.LowSeparationLstar:0}", noWcs.PreviewTooltip);
         Assert.Contains($"grila {new Parameters().SimulationTargets.Min():0.00}..{new Parameters().SimulationTargets.Max():0.00}", string.Join(" ", noWcs.Guide.Select(g => g.Text)));
         Assert.True(noWcs.OpenMap.CanExecute(null));
 
         var withWcs = new TonesTabViewModel();
         withWcs.Populate(Result(WcsFixtures.BandScene()));
 
-        Assert.StartsWith("praful = percentila 25 % a dalelor de praf (", withWcs.Definition);
+        Assert.StartsWith("praful = cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; ", withWcs.Definition);
         Assert.Null(withWcs.NoWcsWarning);
         // The clouds' rows are the map window's list (R-130), not a table on the tab.
         Assert.Null(typeof(TonesTabViewModel).GetProperty("CloudRows"));
@@ -141,12 +141,12 @@ public class OverlayWindowTests
         Assert.All(map.Layers, l => Assert.True(l.IsVisible));
         Assert.All(map.Layers, l => Assert.Equal(map.Width, l.Layer.PixelWidth));
         Assert.All(map.Layers, l => Assert.Contains("% din dale", l.Legend));
-        Assert.Contains("sub nivelul local al benzii", map.Layers[0].Legend);
+        Assert.Contains("mai intunecate decat banda din jur", map.Layers[0].Legend);
         Assert.Equal(512, map.Width);
         Assert.Equal(512, map.Height);
         Assert.Equal(map.Width, map.Image.PixelWidth);
         Assert.Null(map.NoWcsWarning);
-        Assert.StartsWith("praful = percentila 25 % a dalelor de praf", map.Definition);
+        Assert.StartsWith("praful = cele mai intunecate zone intinse din norii de praf", map.Definition);
         Assert.NotEmpty(map.Clouds);
         Assert.Equal(result.Simulation.Clouds.Select(c => c.Name), map.Clouds.Select(c => c.Name));
 
@@ -192,7 +192,7 @@ public class OverlayWindowTests
 
         MapViewModel band = MapViewModel.From(Result(WcsFixtures.BandScene()));
         Assert.Equal(new[] { "praf", "cer", "banda", "nori luminosi", "varfuri" }, band.Layers.Select(l => l.Name).ToArray());
-        Assert.Contains("sub nivelul local al benzii", band.Layers[0].Legend);
+        Assert.Contains("mai intunecate decat banda din jur", band.Layers[0].Legend);
     }
 
     [Fact]

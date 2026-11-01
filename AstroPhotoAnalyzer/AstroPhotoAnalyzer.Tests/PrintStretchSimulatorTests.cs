@@ -120,9 +120,9 @@ public class PrintStretchSimulatorTests
         Assert.EndsWith("   <= 0.05", cloud);
 
         var s = new SimulationResult { Dmax = 2.0, ExactTarget = Thresholds.ExactTargetLo, ExactTargetDmaxLower = 0.06, ExactTargetDmaxHigher = Thresholds.ExactTargetLo, DmaxDustOnPaperBlackAsIs = 1.3, AsIs = new SimulationRow { LstarSky = 20 } };
-        Assert.StartsWith("tinta exacta a prafului pe negru: <= 0.05 la Dmax 2.0 (0.06 la Dmax 1.9, <= 0.05 la Dmax 2.1); ", ReportWriter.ExactLine(s));
+        Assert.StartsWith("fundalul la care praful ajunge exact pe negrul hartiei: <= 0.05 la Dmax 2.0 (0.06 daca Dmax e 1.9, <= 0.05 daca e 2.1); ", ReportWriter.ExactLine(s));
         var none = s with { ExactTarget = null, ExactTargetDmaxLower = null, ExactTargetDmaxHigher = null };
-        Assert.StartsWith("tinta exacta a prafului pe negru: > 0.60 la Dmax 2.0 (> 0.60 la Dmax 1.9, > 0.60 la Dmax 2.1); ", ReportWriter.ExactLine(none));
+        Assert.StartsWith("fundalul la care praful ajunge exact pe negrul hartiei: > 0.60 la Dmax 2.0 (> 0.60 daca Dmax e 1.9, > 0.60 daca e 2.1); ", ReportWriter.ExactLine(none));
     }
 
     /// <summary>
@@ -152,8 +152,8 @@ public class PrintStretchSimulatorTests
         Assert.True(new SimulationRow { LstarSky = 14.96 }.SkyVisible);
         Assert.False(new SimulationRow { LstarSky = 14.94 }.SkyVisible);
         Assert.InRange(s.VisibilityTarget!.Value, 0.147, 0.149);
-        Assert.EndsWith("cerul ajunge la pragul de vizibilitate L* 15 la 0.148", ReportWriter.ExactLine(s));
-        Assert.Equal("* = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste", ReportWriter.SimulationFooter(s));
+        Assert.EndsWith("cerul ajunge la L* 15 cand fundalul e 0.148", ReportWriter.ExactLine(s));
+        Assert.Equal("* = recomandat: cea mai mica tinta print-safe (praful nu cade sub negrul hartiei si cerul e la L* 15 sau peste)", ReportWriter.SimulationFooter(s));
     }
 
     /// <summary>
@@ -199,17 +199,18 @@ public class PrintStretchSimulatorTests
         var dark = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));   // sky L* 6, under 15
         Assert.True(dark.SkyBelowVisibility);
         string text = ReportWriter.DustDmaxText(dark);
-        Assert.StartsWith("praful ajunge pe negrul hartiei de la Dmax 2.1", text);
-        Assert.EndsWith("; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch", text);
+        Assert.StartsWith("asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.1", text);
+        Assert.Contains(" in sus;", text);
+        Assert.EndsWith("; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul", text);
         Assert.Contains("); " + text + "; cerul ajunge", ReportWriter.ExactLine(dark));
         Assert.DoesNotContain("trece asa cum e", ReportWriter.ExactLine(dark));
 
         var bright = Simulate(SyntheticRasters.Flat(64, 64, 0.3f));   // sky L* 31
         Assert.False(bright.SkyBelowVisibility);
-        Assert.Equal($"praful ajunge pe negrul hartiei de la Dmax {Fmt.Dmax(bright.DmaxDustOnPaperBlackAsIs)}", ReportWriter.DustDmaxText(bright));
+        Assert.Equal($"asa cum e imaginea, praful ramane deasupra negrului de la Dmax {Fmt.Dmax(bright.DmaxDustOnPaperBlackAsIs)} in sus", ReportWriter.DustDmaxText(bright));
 
         var black = Simulate(SyntheticRasters.Flat(16, 16, 0f));
-        Assert.StartsWith("praful nu ajunge pe negrul hartiei la niciun Dmax (e la L* 0)", ReportWriter.DustDmaxText(black));
+        Assert.StartsWith("praful e la L* 0, negru total, si nicio hartie nu il poate tine deasupra negrului", ReportWriter.DustDmaxText(black));
     }
 
     /// <summary>
@@ -357,8 +358,9 @@ public class PrintStretchSimulatorTests
         Assert.NotEmpty(s.Clouds);
         Assert.Contains(s.Clouds, c => c.Name.StartsWith("LDN "));
         Assert.Equal(s.Clouds.OrderBy(c => c.Lstar).Select(c => c.Name), s.Clouds.Select(c => c.Name));
-        Assert.StartsWith("percentila 25 % a dalelor de praf (cu 5 L* sub nivelul local al benzii sau sub cerul modelat; ", s.DustDescription);
-        Assert.StartsWith("mediana dalelor de cer, in afara benzii", s.SkyDescription);
+        Assert.StartsWith("cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e ", s.DustDescription);
+        Assert.EndsWith(" din cadru, dalele cu 5 L* mai intunecate decat banda din jur sau decat cerul)", s.DustDescription);
+        Assert.StartsWith("cerul din afara benzii Caii Lactee, la peste 10 grade de ea", s.SkyDescription);
         Assert.Null(s.MethodNote);
         Assert.StartsWith("praf ", s.ClassFractions);
         Assert.Contains("varfuri ", s.ClassFractions);
@@ -372,8 +374,8 @@ public class PrintStretchSimulatorTests
 
         Assert.Equal(DustMethod.Band, s.Method);
         Assert.Null(s.MethodNote);
-        Assert.Equal("cel mai intunecat 1 % al dalelor de cer (nicio dala de praf)", s.DustDescription);
-        Assert.StartsWith("mediana dalelor de cer, in afara benzii", s.SkyDescription);
+        Assert.Equal("cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf)", s.DustDescription);
+        Assert.StartsWith("cerul din afara benzii Caii Lactee, la peste 10 grade de ea", s.SkyDescription);
         Assert.StartsWith("praf 0.0 %", s.ClassFractions);
         Assert.Contains(", banda ", s.ClassFractions);
     }
@@ -386,7 +388,7 @@ public class PrintStretchSimulatorTests
         Assert.Equal(DustMethod.Sky, s.Method);
         Assert.InRange(s.Map.LatitudeSpanDeg, 8, Thresholds.BandMinLatitudeSpanDeg - 1);
         Assert.Equal($"camp prea ingust pentru banda: {s.Map.LatitudeSpanDeg:F1} grade de latitudine galactica, sub {Thresholds.BandMinLatitudeSpanDeg:F0}", s.MethodNote);
-        Assert.Equal("mediana dalelor de cer (clase relative la cerul modelat)", s.SkyDescription);
+        Assert.Equal("valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)", s.SkyDescription);
         Assert.Contains(", nebuloasa ", s.ClassFractions);
     }
 
@@ -399,8 +401,8 @@ public class PrintStretchSimulatorTests
         Assert.Equal("cadrul e in intregime in banda", s.MethodNote);
         // The disc covers nine tenths of the frame: the modelled sky is the cloud itself, no
         // patch is under it, and the dust is the darkest sky, the cloud's level.
-        Assert.Equal("cel mai intunecat 1 % al dalelor de cer (nicio dala de praf)", s.DustDescription);
-        Assert.Equal("mediana dalelor de cer (clase relative la cerul modelat)", s.SkyDescription);
+        Assert.Equal("cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf)", s.DustDescription);
+        Assert.Equal("valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)", s.SkyDescription);
         Assert.Contains(", nebuloasa ", s.ClassFractions);
         Assert.Contains("sigma ale cerului", s.ClassFractions);
         Assert.Equal(Lstar(0.05), s.AsIs.LstarDust, 1);
@@ -415,8 +417,8 @@ public class PrintStretchSimulatorTests
     {
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
 
-        Assert.Equal("cel mai intunecat 1 % al dalelor de cer (nicio dala de praf)", s.DustDescription);
-        Assert.Equal("mediana dalelor de cer (clase relative la cerul modelat)", s.SkyDescription);
+        Assert.Equal("cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf)", s.DustDescription);
+        Assert.Equal("valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)", s.SkyDescription);
         Assert.Equal("fara WCS", s.MethodNote);
         Assert.StartsWith("praf 0.0 %, cer 100.0 %, nebuloasa 0.0 % (peste cerul modelat cu ", s.ClassFractions);
     }

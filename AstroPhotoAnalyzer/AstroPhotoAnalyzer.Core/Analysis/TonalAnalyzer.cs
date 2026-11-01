@@ -132,7 +132,7 @@ namespace AstroPhotoAnalyzer
                 rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), Tr.Pick($"paper black: {(p.DmaxProfile != null ? "ICC profile" : "explicit")} Dmax {Fmt.Dmax(p.Dmax)}", $"negrul hartiei: Dmax {(p.DmaxProfile != null ? "din profilul ICC" : "explicit")} {Fmt.Dmax(p.Dmax)}"), true));
             rows.Add(FromLevel(Thresholds.DarkLevelA, Tr.Pick($"the threshold \"under level {Thresholds.DarkLevelA}\"", $"pragul \"sub nivelul {Thresholds.DarkLevelA}\"")));
             rows.Add(FromLevel(Thresholds.DarkLevelB, Tr.Pick($"the threshold \"under level {Thresholds.DarkLevelB}\"", $"pragul \"sub nivelul {Thresholds.DarkLevelB}\"")));
-            rows.Add(FromLstar(Thresholds.LowSeparationLstar, Tr.Pick("weak separation", "separare slaba")));
+            rows.Add(FromLstar(Thresholds.LowSeparationLstar, Tr.Pick("the eye barely tells apart", "ochiul abia deosebeste")));
             rows.Add(FromLstar(Thresholds.HighlightLstar, Tr.Pick("highlights", "lumini")));
             SimulationRow primary = s?.Primary;
             if (primary != null && !primary.AsIs)

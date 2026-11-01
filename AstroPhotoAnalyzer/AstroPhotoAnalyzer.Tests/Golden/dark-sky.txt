@@ -17,7 +17,7 @@ VERDICT: PROBLEMA
 
 2. Fundalul si hartia  [PROBLEMA]
    !! Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru. Re-stretch din liniar la fundal 0.16 (simulat: praful la L* 11.7, cerul la L* 15.9; exact pe negru la 0.135).
-     fiindca: praful (percentila 25 % a dalelor de praf (cu 0.5 L* sub cerul modelat (4 sigma ale cerului); 5.5 % din cadru); fara WCS) la L* 4.8; negrul hartiei L* 9.0 la Dmax 2.0; cerul (mediana dalelor de cer (clase relative la cerul modelat)) la L* 7.2; nivelul fundalului 0.089; praful ajunge pe negrul hartiei de la Dmax 2.28; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch; pragul de vizibilitate L* 15, sub el 83.9 % din pixeli
+     fiindca: praful (cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 5.5 % din cadru, dalele cu 0.5 L* mai intunecate decat cerul (de 4 ori zgomotul lui)); fara WCS) la L* 4.8; negrul hartiei L* 9.0 la Dmax 2.0; cerul (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)) la L* 7.2; nivelul fundalului 0.089; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.28 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; pragul de vizibilitate L* 15, sub el 83.9 % din pixeli
 
 3. Culoarea fundalului si gradientele  [ATENTIE]
    - Fundalul e neutru.
@@ -63,10 +63,10 @@ Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalel
   0.18                 0.710      13.8     18.3       0.0 %      2.6 %        3.9 %   print-safe
   0.19                 0.687      14.8     19.5       0.0 %      2.0 %        4.3 %   print-safe
   0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
-  * = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste
-  praful = percentila 25 % a dalelor de praf (cu 0.5 L* sub cerul modelat (4 sigma ale cerului); 5.5 % din cadru) (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei (L* 9.0 la Dmax 2.0)
+  * = recomandat: cea mai mica tinta print-safe (praful nu cade sub negrul hartiei si cerul e la L* 15 sau peste)
+  praful = cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 5.5 % din cadru, dalele cu 0.5 L* mai intunecate decat cerul (de 4 ori zgomotul lui)) (fara WCS); cerul = valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul); negru pur = dale de 32 px mai intunecate decat negrul hartiei (L* 9.0 la Dmax 2.0)
   clase: praf 5.5 %, cer 47.3 %, nebuloasa 35.9 % (peste cerul modelat cu 0.5 L*, 4 sigma ale cerului), nebuloasa stralucitoare 10.9 % (peste 14.0 L*, pragul Otsu), varfuri 0.4 %
-  tinta exacta a prafului pe negru: 0.135 la Dmax 2.0 (0.154 la Dmax 1.9, 0.117 la Dmax 2.1); praful ajunge pe negrul hartiei de la Dmax 2.28; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch; cerul ajunge la pragul de vizibilitate L* 15 la 0.152
+  fundalul la care praful ajunge exact pe negrul hartiei: 0.135 la Dmax 2.0 (0.154 daca Dmax e 1.9, 0.117 daca e 2.1); asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.28 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; cerul ajunge la L* 15 cand fundalul e 0.152
 
 Anexa C. Export
   TIFF 8-bit LZW: 0.2 MB

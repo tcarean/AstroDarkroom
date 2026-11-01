@@ -143,8 +143,8 @@ namespace AstroPhotoAnalyzer.Wpf
         /// window.
         /// </summary>
         public static string NoWcsSentence => Tr.Pick(
-            "The file has no WCS: the clouds were not identified by astrometric coordinates.",
-            "Fisierul nu are WCS: norii nu au fost identificati dupa coordonate astrometrice.");
+            "The file has no sky coordinates (WCS), so the dust clouds could not be looked up in the catalogue; the dust was found by darkness alone.",
+            "Fisierul nu are coordonate pe cer (WCS), asa ca norii de praf nu au putut fi cautati dupa catalog; praful s-a cautat doar dupa cat e de intunecat.");
 
         IReadOnlyList<MetricRow> _rows = Array.Empty<MetricRow>();
         IReadOnlyList<double> _hist = Array.Empty<double>();
@@ -176,9 +176,9 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </summary>
         public string HistogramHeading => Tr.Pick(
             "L* HISTOGRAM (0..100); red line = paper black, dashed yellow line = "
-            + $"the visibility threshold L* {Fmt.F0(Thresholds.LowSeparationLstar)}",
+            + $"L* {Fmt.F0(Thresholds.LowSeparationLstar)}, under which the eye barely tells the tones apart",
             "HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena intrerupta = "
-            + $"pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)}");
+            + $"L* {Fmt.F0(Thresholds.LowSeparationLstar)}, sub care ochiul abia mai deosebeste tonurile");
 
         /// <summary>
         /// The note under the chart. Each sentence says what lies left of one line and never
@@ -188,12 +188,12 @@ namespace AstroPhotoAnalyzer.Wpf
         /// also under paper black, on every paper.
         /// </summary>
         public string HistogramNote => Tr.Pick(
-            "Left of the red line everything prints as the same black. "
-            + $"Left of the dashed yellow line (under L* {Fmt.F0(Thresholds.LowSeparationLstar)}), the tones the paper "
-            + "still separates are barely told apart by the eye, in room light. The histogram is on a subsample, in percent.",
-            "La stanga liniei rosii totul se printeaza cu acelasi negru. "
-            + $"La stanga liniei galbene intrerupte (sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}), tonurile pe care hartia "
-            + "le mai separa abia se deosebesc cu ochiul, in lumina de camera. Histograma e pe subesantion, in procente.");
+            "Left of the red line everything comes out on paper as the same black. "
+            + $"Left of the dashed yellow line (under L* {Fmt.F0(Thresholds.LowSeparationLstar)}) the paper still tells the tones apart, "
+            + "but the eye, in ordinary room light, almost does not. The histogram shows percentages of the pixels, counted on a reduced copy of the image.",
+            "La stanga liniei rosii totul iese pe hartie cu acelasi negru. "
+            + $"La stanga liniei galbene intrerupte (sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}) hartia inca deosebeste tonurile, "
+            + "dar ochiul, in lumina obisnuita de camera, aproape ca nu. Histograma arata procente din pixeli, numarati pe o copie redusa a imaginii.");
 
         /// <summary>
         /// The simulation table: the header, then a row per target, each with its preview
@@ -230,7 +230,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// The tooltip of a row's Preview button: the threshold comes from Thresholds, not typed.
         /// </summary>
-        public string PreviewTooltip => Tr.Pick($"The image at the row's target, in a separate window whose two check boxes, once ticked, paint what is under paper black and under L* {Fmt.F0(Thresholds.LowSeparationLstar)}", $"Imaginea la tinta randului, intr-o fereastra separata ale carei doua casute, odata bifate, vopsesc ce e sub negrul hartiei si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}");
+        public string PreviewTooltip => Tr.Pick($"Shows the image with the background moved to the row's value, in a separate window; its two check boxes colour what would come out black on paper and what is under L* {Fmt.F0(Thresholds.LowSeparationLstar)}", $"Arata imaginea cu fundalul mutat la valoarea din rand, intr-o fereastra separata; cele doua casute de acolo coloreaza ce ar iesi negru pe hartie si ce e sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}");
 
         /// <summary>
         /// Opens the dust / sky map (R-130). Whoever listens to MapRequested opens the window;
@@ -265,51 +265,57 @@ namespace AstroPhotoAnalyzer.Wpf
             Rows = new[]
             {
                 Row(Tr.Pick("Channel means (0..255)", "Medii pe canal (0..255)"), string.Join(" / ", t.MeanLevels.Select(Fmt.F1)),
-                    description: Tr.Pick("The mean of each channel over all the pixels, in 8-bit levels. The sky fills almost the whole frame, "
-                        + "so the means sit close to the background; the differences between the channels are analysed as a cast in the Colour tab.",
-                        "Media fiecarui canal pe toti pixelii, in niveluri de 8 biti. Cerul ocupa aproape tot cadrul, "
-                        + "asa ca mediile stau aproape de fundal; diferentele dintre canale sunt analizate ca dominanta in tabul Culoare.")),
+                    description: Tr.Pick("How bright each channel (red, green, blue) is on average, on the 0..255 scale of Siril's histogram. "
+                        + "The sky fills almost the whole frame, so the means really say how high the sky sits. When the three differ, "
+                        + "the sky has a tint; that is judged in the Colour tab.",
+                        "Cat de luminos e in medie fiecare canal (rosu, verde, albastru), pe scara 0..255 a histogramei din Siril. "
+                        + "Cerul ocupa aproape tot cadrul, asa ca mediile spun de fapt cat de sus sta cerul. Daca cele trei difera, "
+                        + "cerul are o tenta; asta se judeca in tabul Culoare.")),
                 Row(Tr.Pick($"Under level {Thresholds.DarkLevelA} / {Thresholds.DarkLevelB}", $"Sub nivelul {Thresholds.DarkLevelA} / {Thresholds.DarkLevelB}"), $"{Fmt.Pct(t.PctBelowDarkA)} / {Fmt.Pct(t.PctBelowDarkB)}",
-                    description: Tr.Pick($"How much of the image (all the channels together) is under {Thresholds.DarkLevelA} and under {Thresholds.DarkLevelB} of 255, "
-                        + "the thresholds you read on Siril's histogram. Context only: the print verdict is given on L*, below.",
-                        $"Cat din imagine (toate canalele la un loc) e sub {Thresholds.DarkLevelA} si sub {Thresholds.DarkLevelB} din 255, "
-                        + "pragurile pe care le citesti pe histograma din Siril. Doar context: verdictul de print se da pe L*, mai jos.")),
-                Row(Tr.Pick("Background level (median of the reference channel)", "Nivelul fundalului (mediana canalului de referinta)"), Fmt.F3(t.BackgroundMedian),
-                    description: Tr.Pick("The median of the green channel (of the only channel, in mono), on the 0..1 scale. As the sky dominates the frame, "
-                        + "the median is the background level: how high the sky sits. The simulation below starts from here. "
+                    description: Tr.Pick($"How much of the image, in percent, is darker than level {Thresholds.DarkLevelA} and than {Thresholds.DarkLevelB}, "
+                        + "on the 0..255 scale of Siril's histogram. A landmark only, to compare with what you see in Siril; "
+                        + "the print verdict is given on the L* scale, below.",
+                        $"Cat la suta din imagine e mai intunecat decat nivelul {Thresholds.DarkLevelA} si decat {Thresholds.DarkLevelB}, "
+                        + "pe scara 0..255 a histogramei din Siril. E doar un reper, ca sa compari cu ce vezi in Siril; "
+                        + "verdictul pentru print se da pe scara L*, mai jos.")),
+                Row(Tr.Pick("Background level (green channel)", "Nivelul fundalului (canalul verde)"), Fmt.F3(t.BackgroundMedian),
+                    description: Tr.Pick("How high the sky sits, on the 0..1 scale: the middle value of the green channel (in mono, of the only channel). "
+                        + "As the sky fills most of the image, the middle pixel is a sky pixel. The simulation below starts from here. "
                         + "The colour of the sky is another measurement, in the Colour tab.",
-                        "Mediana canalului verde (a singurului canal la mono), pe scara 0..1. Cum cerul domina cadrul, "
-                        + "mediana e nivelul fundalului: cat de sus sta cerul. De aici porneste simularea de mai jos. "
+                        "Cat de sus sta cerul, pe scara 0..1: valoarea din mijloc a canalului verde (la alb-negru, a singurului canal). "
+                        + "Cum cerul ocupa cea mai mare parte a imaginii, pixelul din mijloc e un pixel de cer. De aici porneste simularea de mai jos. "
                         + "Culoarea cerului e alta masuratoare, in tabul Culoare.")),
-                Row(Tr.Pick("Median L*", "L* median"), Fmt.F1(t.LstarMedian),
-                    description: Tr.Pick("The perceived lightness of the median pixel, from 0 (black) to 100 (white). L* is the paper's scale: "
-                        + "equal steps of L* look like equal steps of grey. On an astrophoto, the median L* is practically the sky.",
-                        "Luminozitatea perceputa a pixelului median, de la 0 (negru) la 100 (alb). L* e scara hartiei: "
-                        + "pasi egali de L* se vad ca pasi egali de gri. Pe o astrofoto, L* median e practic cerul.")),
+                Row(Tr.Pick("Median L* (the sky)", "L* median (cerul)"), Fmt.F1(t.LstarMedian),
+                    description: Tr.Pick("How bright the eye sees the middle pixel, from 0 (black) to 100 (white). L* is the scale the print is judged on: "
+                        + "equal steps of L* look like equal steps of grey. On an astrophoto the middle pixel is the sky, so this is the sky's lightness.",
+                        "Cat de luminos vede ochiul pixelul din mijloc, de la 0 (negru) la 100 (alb). L* e scara in care se judeca printul: "
+                        + "pasi egali de L* se vad ca pasi egali de gri. Pe o astrofoto, pixelul din mijloc e cerul, deci asta e luminozitatea cerului.")),
                 Row(Tr.Pick($"Under paper black (L* {Fmt.F1(t.PaperBlackLstar)}, Dmax {Fmt.Dmax(t.Dmax)})", $"Sub negrul hartiei (L* {Fmt.F1(t.PaperBlackLstar)}, Dmax {Fmt.Dmax(t.Dmax)})"), Fmt.Pct(t.PctBelowPaperBlack),
-                    description: Tr.Pick("The pixels darker than the deepest black the chosen paper gives. They all come out as the same black, "
-                        + "so the shades between them are lost. It is a fact of the image, not the verdict: the verdict is given on the dust and the sky, "
-                        + "in the simulation below.",
-                        "Pixelii mai intunecati decat cel mai adanc negru pe care il da hartia aleasa. Toti ies cu acelasi negru, "
-                        + "deci nuantele dintre ei se pierd. E un fapt al imaginii, nu verdictul: verdictul se da pe praf si pe cer, "
-                        + "in simularea de mai jos.")),
-                Row(Tr.Pick($"Under L* {Fmt.F0(Thresholds.LowSeparationLstar)} (weak separation)", $"Sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} (separare slaba)"), Fmt.Pct(t.PctBelowLowSeparation),
-                    description: Tr.Pick("Tones the paper still separates, but which the eye, in ordinary room light, barely tells apart. "
-                        + "It includes the pixels under paper black. A large share means a sky that will look like a uniform patch.",
-                        "Tonuri pe care hartia inca le separa, dar pe care ochiul, in lumina obisnuita de camera, abia le deosebeste. "
-                        + "Include si pixelii de sub negrul hartiei. Un procent mare inseamna un cer care va parea o pata uniforma.")),
+                    description: Tr.Pick("How many of the pixels, in percent, are darker than the deepest black the chosen paper can give. "
+                        + "All of them come out on paper as the same black, so the shades between them are lost. The share is only a measure "
+                        + "of the image, not the verdict: the verdict is given on the dust and the sky, in the simulation below.",
+                        "Cat la suta din pixeli sunt mai intunecati decat cel mai adanc negru pe care il poate da hartia aleasa. "
+                        + "Toti acestia ies pe hartie cu acelasi negru, deci nuantele dintre ei se pierd. Procentul e doar o masura "
+                        + "a imaginii, nu verdictul: verdictul se da pe praf si pe cer, in simularea de mai jos.")),
+                Row(Tr.Pick($"Under L* {Fmt.F0(Thresholds.LowSeparationLstar)} (the eye barely tells apart)", $"Sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} (ochiul abia deosebeste)"), Fmt.Pct(t.PctBelowLowSeparation),
+                    description: Tr.Pick($"How many of the pixels, in percent, are under L* {Fmt.F0(Thresholds.LowSeparationLstar)}. The paper still tells these tones apart, "
+                        + "but the eye, in ordinary room light, almost does not. The share includes the pixels under paper black. "
+                        + "A large share means a sky that will look like a uniform patch.",
+                        $"Cat la suta din pixeli sunt sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}. Hartia inca deosebeste tonurile astea, "
+                        + "dar ochiul, in lumina obisnuita de camera, aproape ca nu. Procentul ii cuprinde si pe cei de sub negrul hartiei. "
+                        + "Un procent mare inseamna un cer care va parea o pata uniforma.")),
                 Row(Tr.Pick($"Over L* {Fmt.F0(Thresholds.HighlightLstar)}", $"Peste L* {Fmt.F0(Thresholds.HighlightLstar)}"), Fmt.Pct(t.PctAboveHighlight),
-                    description: Tr.Pick("The pixels lighter than middle grey: stars, the core, bright nebulosity. "
-                        + "It shows how much of the frame carries the highlights.",
-                        "Pixelii mai luminosi decat griul de mijloc: stele, nucleu, nebulozitate stralucitoare. "
-                        + "Arata cat din cadru poarta luminile.")),
+                    description: Tr.Pick("How many of the pixels, in percent, are lighter than middle grey: stars, a galaxy's core, bright nebulosity. "
+                        + "It says how much of the frame the bright parts take.",
+                        "Cat la suta din pixeli sunt mai luminosi decat griul de mijloc: stele, nucleul galaxiei, nebuloasa stralucitoare. "
+                        + "Spune cat din cadru e ocupat de partile luminoase.")),
                 // One percentile per line: on a single line the value would be the widest in the
                 // panel and would narrow the description column for every row.
-                Row(Tr.Pick("Reference channel percentiles", "Percentile canal referinta"), string.Join("\n", TonalResult.PercentileRanks.Zip(t.ReferencePercentiles, (p, v) => $"{"p" + Fmt.F1(p),-6} = {Fmt.F1(v),5}")),
-                    description: Tr.Pick("The level (0..255) under which a percentage of the reference channel's pixels falls: p50 is the background, "
-                        + "p0.1 the deepest black that counts, p99.9 and p100 the brightest stars. p100 = 255 means saturated pixels.",
-                        "Nivelul (0..255) sub care cade un procent din pixelii canalului de referinta: p50 e fundalul, "
-                        + "p0.1 cel mai adanc negru care conteaza, p99.9 si p100 stelele cele mai luminoase. p100 = 255 inseamna pixeli saturati.")),
+                Row(Tr.Pick("Landmarks on the green channel (0..255)", "Repere pe canalul verde (0..255)"), string.Join("\n", TonalResult.PercentileRanks.Zip(t.ReferencePercentiles, (p, v) => $"{"p" + Fmt.F1(p),-6} = {Fmt.F1(v),5}")),
+                    description: Tr.Pick("The level under which a given share of the green channel's pixels lies: p50 = half the pixels are under it, "
+                        + "so it is the sky; p0.1 = the deepest black that counts; p99.9 and p100 = the brightest stars. p100 = 255 means burnt-out pixels.",
+                        "Nivelul sub care se afla un anumit procent din pixelii canalului verde: p50 = jumatate din pixeli sunt sub el, "
+                        + "deci e cerul; p0.1 = cel mai adanc negru care conteaza; p99.9 si p100 = stelele cele mai luminoase. p100 = 255 inseamna pixeli arsi.")),
             };
             Histogram = t.LstarHistogramPct;
             PaperBlack = t.PaperBlackLstar;
@@ -376,111 +382,121 @@ namespace AstroPhotoAnalyzer.Wpf
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("What the tab asks.", "Ce intreaba tabul."),
-                    Text = Tr.Pick("Does the background survive the paper? On screen the black goes down almost to zero; on paper the darkest tone is that "
-                        + "of the ink at saturation, and everything under it prints the same. The sky of an astrophotograph sits right in this zone, "
+                    Text = Tr.Pick("Does the background survive on paper? On screen the black goes down almost to zero; on paper the darkest tone is that "
+                        + "of the ink laid at its maximum, and everything darker than it comes out the same. The sky of an astrophotograph sits right in this zone, "
                         + "so a background that looks good on the monitor can come out on paper as a black patch without shades.",
-                        "Supravietuieste fundalul hartiei? Pe ecran negrul coboara aproape la zero; pe hartie cel mai intunecat ton e cel "
-                        + "al cernelii la saturatie, iar tot ce e sub el se printeaza la fel. Cerul unei astrofotografii sta tocmai in zona asta, "
+                        "Supravietuieste fundalul pe hartie? Pe ecran negrul coboara aproape la zero; pe hartie cel mai intunecat ton e cel "
+                        + "al cernelii puse la maximum, si tot ce e mai intunecat decat el iese la fel. Cerul unei astrofotografii sta tocmai in zona asta, "
                         + "asa ca un fundal care arata bine pe monitor poate iesi pe hartie ca o pata neagra fara nuante."),
                 },
                 new GuideParagraph
                 {
-                    Lead = Tr.Pick("Two scales, on purpose.", "Doua scari, deliberat."),
-                    Text = Tr.Pick("The levels 0..255 are the language of the histogram in Siril and in any editor; L* (0..100) is the language of the paper, "
-                        + "the lightness as the eye sees it. The conversion takes three steps: the sRGB curve is undone, the channels are added "
-                        + "with weights (green weighs ten times as much as blue) and the cube root of L* is applied. "
-                        + $"On a grey, level {Fmt.F0(ColorMath.GrayLevelOfLstar(barytaBlack))} is L* {Fmt.F0(barytaBlack)} (the baryta black), "
+                    Lead = Tr.Pick("Two scales, in turn.", "Doua scari, pe rand."),
+                    Text = Tr.Pick("The levels 0..255 are the scale of the histogram in Siril and in any editor; L* (0..100) is the paper's scale: "
+                        + "the lightness as the eye sees it. Going from one to the other is no simple proportion; the program does it by the "
+                        + "standard colour formula (sRGB -> L*). "
+                        + $"Landmarks, on a grey: level {Fmt.F0(ColorMath.GrayLevelOfLstar(barytaBlack))} is L* {Fmt.F0(barytaBlack)} (the baryta black), "
                         + $"{Thresholds.DarkLevelA} is L* {Fmt.F0(ColorMath.LstarOfGrayLevel(Thresholds.DarkLevelA))}, "
                         + $"{Thresholds.DarkLevelB} is L* {Fmt.F0(ColorMath.LstarOfGrayLevel(Thresholds.DarkLevelB))}. "
                         + "On colour, the same level gives a different L* by its hue, which is why both are shown.",
-                        "Nivelurile 0..255 sunt limbajul histogramei din Siril si din orice editor; L* (0..100) e limbajul hartiei, "
-                        + "luminozitatea asa cum o vede ochiul. Trecerea se face in trei pasi: se anuleaza curba sRGB, se aduna canalele "
-                        + "ponderat (verdele cantareste de zece ori cat albastrul) si se aplica radacina cubica a L*-ului. "
-                        + $"Pe un gri, nivelul {Fmt.F0(ColorMath.GrayLevelOfLstar(barytaBlack))} e L* {Fmt.F0(barytaBlack)} (negrul baryta), "
+                        "Nivelurile 0..255 sunt scara histogramei din Siril si din orice editor; L* (0..100) e scara hartiei: "
+                        + "luminozitatea asa cum o vede ochiul. Trecerea de la una la alta nu e o simpla proportie; programul o face dupa "
+                        + "formula standard a culorii (sRGB -> L*). "
+                        + $"Repere, pe un gri: nivelul {Fmt.F0(ColorMath.GrayLevelOfLstar(barytaBlack))} e L* {Fmt.F0(barytaBlack)} (negrul baryta), "
                         + $"{Thresholds.DarkLevelA} e L* {Fmt.F0(ColorMath.LstarOfGrayLevel(Thresholds.DarkLevelA))}, "
                         + $"{Thresholds.DarkLevelB} e L* {Fmt.F0(ColorMath.LstarOfGrayLevel(Thresholds.DarkLevelB))}. "
-                        + "Pe culoare, acelasi nivel da L* diferit dupa nuanta, de aceea se arata amandoua."),
+                        + "Pe culoare, acelasi nivel da alt L* dupa nuanta, de aceea se arata amandoua."),
                 },
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("Paper black", "Negrul hartiei"),
-                    Text = Tr.Pick($"comes from the Dmax, the maximum optical density of the medium: baryta {Black(PrintMedium.Baryta)}, "
+                    Text = Tr.Pick("is the deepest black the paper can give. Its Dmax says it, that is how much light the ink laid at its maximum swallows; "
+                        + $"the higher the Dmax, the deeper the black: baryta {Black(PrintMedium.Baryta)}, "
                         + $"canvas {Black(PrintMedium.Canvas)}, a C-print under acrylic {Black(PrintMedium.Acrylic)}. The medium is chosen in the parameters; "
                         + "the same image can be print-safe on baryta and too dark on canvas.",
-                        $"vine din Dmax, densitatea optica maxima a mediului: baryta {Black(PrintMedium.Baryta)}, "
+                        "e cel mai adanc negru pe care il poate da hartia. Il spune Dmax-ul ei, adica cata lumina inghite cerneala pusa la maximum; "
+                        + $"cu cat Dmax e mai mare, cu atat negrul e mai adanc: baryta {Black(PrintMedium.Baryta)}, "
                         + $"canvas {Black(PrintMedium.Canvas)}, C-print sub acril {Black(PrintMedium.Acrylic)}. Mediul se alege in parametri; "
                         + "aceeasi imagine poate fi print-safe pe baryta si prea intunecata pe canvas."),
                 },
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("The dust and the sky.", "Praful si cerul."),
-                    Text = Tr.Pick($"The image is divided into patches of {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, each with the L* of its mean luminance: "
-                        + "what the eye integrates over a spot of paper, not a pixel. The patches are sorted into five classes, relatively, not by a fixed threshold, along one of two paths. "
-                        + "With a plate-solved FITS (a WCS in the header, or lent with the \"WCS from FITS\" field) and with the Milky Way in the frame: the band is the galactic latitude |b| under "
-                        + $"{Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} degrees; the sky is modelled from the patches outside it; the dust is a patch {Fmt.F0(Thresholds.DustDepthLstar)} L* below the band's local level "
-                        + $"(the median over ~{Thresholds.BandLocalWindowPatches * Thresholds.DustPatchPx} px) or below the modelled sky, that is darker than the band would be there; the bright clouds, "
-                        + $"{Fmt.F0(Thresholds.BrightCloudLstar)} L* over the local level; the peaks, the brightest {Fmt.F1(Thresholds.PeakFraction * 100)} % of the patches. "
-                        + $"This path needs the band and sky outside it, each with at least {Fmt.F0(Thresholds.BandMinFraction * 100)} % of the patches, and a field that covers at least "
-                        + $"{Fmt.F0(Thresholds.BandMinLatitudeSpanDeg)} degrees of galactic latitude, the width of the band: on a narrower field the band is not a strip but a gradient, and the frame is deep sky in the band. Otherwise, as without a WCS, the classes are relative to the sky "
-                        + $"modelled from all the patches (the {Fmt.F0(Thresholds.SkyModelLowPercentile)} percentile of each cell), with thresholds from the image: the nebula is a patch more than {Fmt.F0(Thresholds.SkyNoiseK)} sigma of the "
-                        + "sky over the model, the dust one as much under it, the bright nebula one over the nebula's Otsu threshold, the peaks as above. "
-                        + $"On either path, the sky's L* is the median of the sky patches, and the dust's L* is the darkest extended area: the {Fmt.F0(Thresholds.DustClassFraction * 100)} % percentile of the dust patches "
-                        + $"when the class holds at least {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % of the patches (under that they are cores or artefacts), or the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of the sky patches, "
-                        + "whichever of the two is darker. "
-                        + $"The \"Dust / sky map\" button shows the classes on the image and, from the Lynds catalogue, the clouds by name: each one with at least {Thresholds.DustCloudMinPatches} patches, listed with its L* and the target at which it reaches black, the darkest {Thresholds.DustCloudReportRows} labelled on the image.",
-                        $"Imaginea se imparte in dale de {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, fiecare cu L*-ul luminantei ei medii: "
-                        + "ce integreaza ochiul pe o pata de hartie, nu un pixel. Dalele se impart in cinci clase, relativ, nu dupa un prag fix, pe una din doua cai. "
-                        + "Cu un FITS plate-solved (WCS in antet, sau imprumutat cu campul \"WCS din FITS\") si cu Calea Lactee in cadru: banda e latitudinea galactica |b| sub "
-                        + $"{Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade; cerul e modelat din dalele din afara ei; praful e dala cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii "
-                        + $"(mediana pe ~{Thresholds.BandLocalWindowPatches * Thresholds.DustPatchPx} px) sau sub cerul modelat, adica mai intunecata decat ar fi banda acolo; norii luminosi, "
-                        + $"cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste nivelul local; varfurile, cele mai luminoase {Fmt.F1(Thresholds.PeakFraction * 100)} % din dale. "
-                        + $"Calea asta cere banda si cer in afara ei, fiecare cu cel putin {Fmt.F0(Thresholds.BandMinFraction * 100)} % din dale, si un camp care acopera cel putin "
-                        + $"{Fmt.F0(Thresholds.BandMinLatitudeSpanDeg)} grade de latitudine galactica, latimea benzii: pe un camp mai ingust banda nu e o fasie, ci un gradient, si cadrul e deep-sky in banda. Altfel, ca si fara WCS, clasele sunt relative la cerul "
-                        + $"modelat din toate dalele (percentila {Fmt.F0(Thresholds.SkyModelLowPercentile)} a fiecarei celule), cu praguri din imagine: nebuloasa e dala cu peste {Fmt.F0(Thresholds.SkyNoiseK)} sigma ale "
-                        + "cerului deasupra modelului, praful cu la fel de mult sub el, nebuloasa stralucitoare cea de peste pragul Otsu al nebuloasei, varfurile ca mai sus. "
-                        + $"Pe orice cale, L*-ul cerului e mediana dalelor de cer, iar L*-ul prafului e zona intinsa cea mai intunecata: percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf "
-                        + $"cand clasa are cel putin {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale (sub atat sunt nuclee sau artefacte), sau cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al dalelor de cer, "
-                        + "care din doua e mai intunecata. "
-                        + $"Butonul \"Harta praf / cer\" arata clasele pe imagine si, din catalogul Lynds, norii pe nume: fiecare cu cel putin {Thresholds.DustCloudMinPatches} dale, in lista cu L*-ul lui si tinta la care ajunge el pe negru, cei mai intunecati {Thresholds.DustCloudReportRows} etichetati pe imagine."),
+                    Text = Tr.Pick($"The program does not judge pixel by pixel but on patches (squares) of {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, about what the eye "
+                        + "takes in on a spot of paper; each patch has its mean lightness, in L*. The patches are sorted into five kinds, by comparison "
+                        + "with each other, not by a fixed threshold. When the file has sky coordinates (a WCS in the header, or lent through the "
+                        + $"\"WCS from FITS\" field) and the Milky Way is in the frame: the band is the zone less than {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} degrees "
+                        + $"from the plane of the Milky Way; the sky is what lies outside the band; the dust is the patches {Fmt.F0(Thresholds.DustDepthLstar)} L* darker than the band "
+                        + $"around them (over ~{Thresholds.BandLocalWindowPatches * Thresholds.DustPatchPx} px) or than the sky, that is darker than the band would be there; the bright clouds, "
+                        + $"those {Fmt.F0(Thresholds.BrightCloudLstar)} L* over the band around them; the peaks, the brightest {Fmt.F1(Thresholds.PeakFraction * 100)} % of the patches. "
+                        + $"This path needs both band and sky outside it (at least {Fmt.F0(Thresholds.BandMinFraction * 100)} % of the patches each) and a field of at least "
+                        + $"{Fmt.F0(Thresholds.BandMinLatitudeSpanDeg)} degrees of galactic latitude, the band's width: on a narrower field the band is not a strip but a gentle "
+                        + "slope, and the whole frame is deep sky inside the band. Otherwise, as without a WCS, the sky is taken from all the patches "
+                        + $"(the lower part of each zone of the image: the level under which {Fmt.F0(Thresholds.SkyModelLowPercentile)} % of the zone's patches lie) and the thresholds come from the image: "
+                        + $"the nebula is a patch well over the sky (over {Fmt.F0(Thresholds.SkyNoiseK)} sigma, that is {Fmt.F0(Thresholds.SkyNoiseK)} times the sky's noise), the dust "
+                        + "one as much under the sky, the bright nebula the brightest part of the nebula, the peaks as above. "
+                        + $"On either path, the sky's L* is the middle value of the sky patches, and the dust's L* is the darkest extended area: the threshold under which "
+                        + $"{Fmt.F0(Thresholds.DustClassFraction * 100)} % of the dust patches lie, when the dust has at least {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % of the patches "
+                        + $"(under that they are cores or artefacts), or the darkest {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % of the sky patches, whichever of the two is darker. "
+                        + $"The \"Dust / sky map\" button shows the kinds of patches on the image and, from the Lynds catalogue, the clouds by name: each one with at least {Thresholds.DustCloudMinPatches} patches, "
+                        + $"listed with its L* and the background at which it reaches black, the darkest {Thresholds.DustCloudReportRows} written on the image.",
+                        $"Programul nu judeca pixel cu pixel, ci pe dale (patrate) de {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, cam cat vede ochiul "
+                        + "pe o pata de hartie; fiecare dala are luminozitatea ei medie, in L*. Dalele se impart in cinci feluri, prin comparatie "
+                        + "intre ele, nu dupa un prag fix. Daca fisierul are coordonate pe cer (WCS in antet, sau imprumutat prin campul "
+                        + $"\"WCS din FITS\") si Calea Lactee e in cadru: banda e zona la mai putin de {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade "
+                        + $"de planul Caii Lactee; cerul e cel din afara benzii; praful sunt dalele cu {Fmt.F0(Thresholds.DustDepthLstar)} L* mai intunecate decat banda "
+                        + $"din jurul lor (pe ~{Thresholds.BandLocalWindowPatches * Thresholds.DustPatchPx} px) sau decat cerul, adica mai intunecate decat ar fi banda acolo; norii luminosi, "
+                        + $"cele cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste banda din jur; varfurile, cele mai luminoase {Fmt.F1(Thresholds.PeakFraction * 100)} % din dale. "
+                        + $"Calea asta cere si banda, si cer in afara ei (cel putin {Fmt.F0(Thresholds.BandMinFraction * 100)} % din dale fiecare) si un camp de cel putin "
+                        + $"{Fmt.F0(Thresholds.BandMinLatitudeSpanDeg)} de grade de latitudine galactica, cat e banda de lata: pe un camp mai ingust banda nu e o fasie, ci o "
+                        + "trecere lina, si tot cadrul e cer adanc in banda. Altfel, la fel ca fara WCS, cerul se ia din toate dalele "
+                        + $"(partea de jos a fiecarei zone a imaginii: nivelul sub care stau {Fmt.F0(Thresholds.SkyModelLowPercentile)} % din dalele zonei) si pragurile vin din imagine: "
+                        + $"nebuloasa e dala cu mult peste cer (peste {Fmt.F0(Thresholds.SkyNoiseK)} sigma, adica de {Fmt.F0(Thresholds.SkyNoiseK)} ori zgomotul cerului), praful "
+                        + "cea la fel de mult sub cer, nebuloasa stralucitoare partea cea mai luminoasa a nebuloasei, varfurile ca mai sus. "
+                        + $"Pe orice cale, L*-ul cerului e valoarea din mijloc a dalelor de cer, iar L*-ul prafului e cea mai intunecata zona intinsa: pragul sub care stau "
+                        + $"{Fmt.F0(Thresholds.DustClassFraction * 100)} % din dalele de praf, daca praful are cel putin {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale "
+                        + $"(sub atat sunt nuclee sau artefacte), sau cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % din dalele de cer, care din doua e mai intunecata. "
+                        + $"Butonul \"Harta praf / cer\" arata felurile de dale pe imagine si, din catalogul Lynds, norii pe nume: fiecare cu cel putin {Thresholds.DustCloudMinPatches} dale, "
+                        + $"in lista cu L*-ul lui si fundalul la care el ajunge pe negru, cei mai intunecati {Thresholds.DustCloudReportRows} scrisi pe imagine."),
                 },
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("The verdict.", "Verdictul."),
-                    Text = Tr.Pick("The dust under paper black, the sky over it: caution, the clouds would print pure black. "
-                        + "The sky under black: a problem, the sky and the dust come out as the same black. It is not a share of the pixels: it is the darkest "
-                        + "extended structure against paper black. Then comes the viewing: the paper separates tones even lower, but a sky under "
-                        + $"L* {Fmt.F0(Thresholds.LowSeparationLstar)} looks almost black in room light, so it too is a caution, however deep the paper black. "
-                        + "Print-safe means both: the dust at or over paper black and the sky at the threshold or over it; a row with the dust on black "
-                        + $"and the sky below it is marked \"sky under L* {Fmt.F0(Thresholds.LowSeparationLstar)}\". "
-                        + "The recommendation is the MINIMUM print-safe level - upwards "
-                        + "on an image that is too dark, downwards on one that is too bright.",
-                        "Praful sub negrul hartiei, cerul peste: atentie, norii s-ar tipari negru pur. "
-                        + "Cerul sub negru: problema, cerul si praful ies cu acelasi negru. Nu e un procent de pixeli: e cea mai intunecata "
-                        + "structura intinsa fata de negrul hartiei. Apoi vine privitul: hartia separa tonurile si mai jos, dar un cer sub "
-                        + $"L* {Fmt.F0(Thresholds.LowSeparationLstar)} se vede aproape negru in lumina de camera, deci si el e atentie, oricat de adanc ar fi negrul hartiei. "
-                        + "Print-safe inseamna amandoua: praful la sau peste negrul hartiei si cerul la prag sau peste; un rand cu praful pe negru "
-                        + $"si cerul dedesubt e marcat \"cer sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}\". "
-                        + "Recomandarea e nivelul MINIM print-safe - in sus "
-                        + "pe o imagine prea intunecata, in jos pe una prea luminoasa."),
+                    Text = Tr.Pick("When the dust falls under paper black and the sky stays above: caution, the clouds would print pure black. "
+                        + "When the sky falls under black too: a problem, the sky and the dust come out as the same black. The pixels are not counted: "
+                        + "what is looked at is the darkest extended area against paper black. Then the viewing matters: the paper tells tones apart "
+                        + $"even lower, but a sky under L* {Fmt.F0(Thresholds.LowSeparationLstar)} looks almost black in room light, so it too is a caution, however deep the paper black. "
+                        + $"Print-safe means both: the dust at or over paper black and the sky at L* {Fmt.F0(Thresholds.LowSeparationLstar)} or over; a row with the dust on black "
+                        + $"and the sky under the threshold is marked \"sky under L* {Fmt.F0(Thresholds.LowSeparationLstar)}\". "
+                        + "The recommendation is the MINIMUM print-safe level: higher on an image that is too dark, lower on one that is too bright.",
+                        "Daca praful cade sub negrul hartiei si cerul ramane deasupra: atentie, norii s-ar tipari negru pur. "
+                        + "Daca si cerul cade sub negru: problema, cerul si praful ies cu acelasi negru. Nu se numara pixelii: "
+                        + "se uita la cea mai intunecata zona intinsa fata de negrul hartiei. Apoi conteaza privitul: hartia deosebeste tonuri "
+                        + $"si mai jos, dar un cer sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} se vede aproape negru in lumina de camera, deci si el e atentie, oricat de adanc ar fi negrul hartiei. "
+                        + $"Print-safe inseamna amandoua: praful la sau peste negrul hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste; un rand cu praful pe negru "
+                        + $"si cerul sub prag e marcat \"cer sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}\". "
+                        + "Recomandarea e nivelul MINIM print-safe: mai sus pe o imagine prea intunecata, mai jos pe una prea luminoasa."),
                 },
                 new GuideParagraph
                 {
                     Lead = Tr.Pick("The simulation", "Simularea"),
-                    Text = Tr.Pick($"answers \"and what if I move the background?\". It applies to a reduced copy of the image a gamma curve, the same on every channel, "
-                        + $"that takes the measured background to each target of the grid {Fmt.Level(grid.Min())}..{Fmt.Level(grid.Max())}, then re-measures the dust and the sky. "
-                        + "The \"as is\" row sits among the targets, at its level. The lowest target marked print-safe is the recommended one: redo "
-                        + "the stretch from the linear data in Siril up to that background. Under the table: the exact target at which the dust reaches black, "
-                        + $"and the same target at a Dmax {Fmt.F1(Thresholds.DmaxSensitivityStep)} lower and higher, because the Dmax of a paper on a printer is rarely known better. "
-                        + "It is a simulation: a real stretch (Siril, VeraLux) holds the shadows lower than the gamma curve, so the exact target is the curve's, "
-                        + $"not the stretch's. The Preview button of a row opens the image at its target in a separate window, whose two check boxes, once ticked, paint what is under black and under L* {Fmt.F0(Thresholds.LowSeparationLstar)}. "
+                    Text = Tr.Pick("answers the question \"and what if I move the background?\". On a reduced copy of the image, the program lifts or lowers "
+                        + $"the background to each target of the grid {Fmt.Level(grid.Min())}..{Fmt.Level(grid.Max())}, with a simple curve, the same on every channel "
+                        + "(a gamma curve), then measures the dust and the sky again. The \"as is\" row sits among the targets, at its level. "
+                        + "The lowest target marked print-safe is the recommended one: redo the stretch from the linear data in Siril up to that background. "
+                        + $"Under the table: the exact background at which the dust reaches black, and the same at a Dmax {Fmt.F1(Thresholds.DmaxSensitivityStep)} lower and higher, "
+                        + "because the Dmax of a paper on a printer is rarely known better than that. It is a simulation: a real stretch (Siril, VeraLux) "
+                        + "holds the shadows lower than the curve here, so the exact target is a guide. The Preview button of a row shows the image at its target "
+                        + $"in a separate window; its two check boxes colour what would come out black on paper and what is under L* {Fmt.F0(Thresholds.LowSeparationLstar)}. "
                         + $"A target that is too high washes the sky into grey; watch the \"L* > {Fmt.F0(Thresholds.HighlightLstar)}\" column.",
-                        $"raspunde la \"si daca mut fundalul?\". Aplica pe o copie redusa a imaginii o curba gamma, aceeasi pe toate canalele, "
-                        + $"care duce fundalul masurat la fiecare tinta din grila {Fmt.Level(grid.Min())}..{Fmt.Level(grid.Max())}, apoi remasoara praful si cerul. "
-                        + "Randul \"asa cum e\" sta printre tinte, la nivelul lui. Cea mai mica tinta marcata print-safe e cea recomandata: refa "
-                        + "stretch-ul din datele liniare in Siril pana la fundalul acela. Sub tabel: tinta exacta la care praful atinge negrul, "
-                        + $"si aceeasi tinta la Dmax cu {Fmt.F1(Thresholds.DmaxSensitivityStep)} mai mic si mai mare, fiindca Dmax-ul unei hartii pe o imprimanta rar e stiut mai bine. "
-                        + "E o simulare: un stretch adevarat (Siril, VeraLux) tine umbrele mai jos decat curba gamma, deci tinta exacta e a curbei, "
-                        + $"nu a lui. Butonul Preview al unui rand deschide imaginea la tinta lui intr-o fereastra separata, ale carei doua casute, odata bifate, vopsesc ce e sub negru si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}. "
+                        "raspunde la intrebarea \"si daca mut fundalul?\". Pe o copie redusa a imaginii, programul ridica sau coboara "
+                        + $"fundalul la fiecare tinta din grila {Fmt.Level(grid.Min())}..{Fmt.Level(grid.Max())}, cu o curba simpla, aceeasi pe toate canalele "
+                        + "(o curba gamma), apoi masoara din nou praful si cerul. Randul \"asa cum e\" sta printre tinte, la nivelul lui. "
+                        + "Cea mai mica tinta marcata print-safe e cea recomandata: refa stretch-ul din datele liniare in Siril pana la fundalul acela. "
+                        + $"Sub tabel: fundalul exact la care praful ajunge pe negru, si acelasi lucru la un Dmax cu {Fmt.F1(Thresholds.DmaxSensitivityStep)} mai mic si mai mare, "
+                        + "fiindca Dmax-ul unei hartii pe o imprimanta rar e stiut mai bine de atat. E o simulare: un stretch adevarat (Siril, VeraLux) "
+                        + "tine umbrele mai jos decat curba de aici, deci tinta exacta e orientativa. Butonul Preview al unui rand arata imaginea la tinta lui "
+                        + $"intr-o fereastra separata; cele doua casute de acolo coloreaza ce ar iesi negru pe hartie si ce e sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}. "
                         + $"O tinta prea mare spala cerul in gri; urmareste coloana \"peste L*{Fmt.F0(Thresholds.HighlightLstar)}\"."),
                 },
             };

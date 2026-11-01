@@ -257,8 +257,8 @@ namespace AstroPhotoAnalyzer
         /// </returns>
         internal static string SimulationFooter(SimulationResult s)
             => s.Recommended != null
-                ? Tr.Pick($"* = recommended: the lowest print-safe target - the dust on paper black and the sky at L* {Fmt.F0(Thresholds.LowSeparationLstar)} or above",
-                          $"* = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste")
+                ? Tr.Pick($"* = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* {Fmt.F0(Thresholds.LowSeparationLstar)} or above)",
+                          $"* = recomandat: cea mai mica tinta print-safe (praful nu cade sub negrul hartiei si cerul e la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste)")
                 : s.Rows.Any(x => x.DustOnPaperBlack)
                     ? Tr.Pick($"no target of the grid brings the sky to L* {Fmt.F0(Thresholds.LowSeparationLstar)} (it would take {TargetText(s.VisibilityTarget)})",
                               $"nicio tinta din grila nu aduce cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} (ar trebui {TargetText(s.VisibilityTarget)})")
@@ -281,9 +281,9 @@ namespace AstroPhotoAnalyzer
         /// </returns>
         internal static string DustDefinition(SimulationResult s)
             => Tr.Pick($"dust = {s.DustDescription}{(s.MethodNote == null ? "" : " (" + s.MethodNote + ")")}; sky = {s.SkyDescription}; "
-                       + $"pure black = {Thresholds.DustPatchPx} px patches under paper black (L* {Fmt.F1(s.PaperBlackLstar)} at Dmax {Fmt.Dmax(s.Dmax)})",
+                       + $"pure black = {Thresholds.DustPatchPx} px patches darker than paper black (L* {Fmt.F1(s.PaperBlackLstar)} at Dmax {Fmt.Dmax(s.Dmax)})",
                        $"praful = {s.DustDescription}{(s.MethodNote == null ? "" : " (" + s.MethodNote + ")")}; cerul = {s.SkyDescription}; "
-                       + $"negru pur = dale de {Thresholds.DustPatchPx} px sub negrul hartiei (L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)})");
+                       + $"negru pur = dale de {Thresholds.DustPatchPx} px mai intunecate decat negrul hartiei (L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)})");
 
         /// <summary>
         /// An exact target from the ladder (R-043): its value, or a bound at the ladder's ends -
@@ -318,12 +318,12 @@ namespace AstroPhotoAnalyzer
         internal static string DustDmaxText(SimulationResult s)
         {
             string dust = double.IsNaN(s.DmaxDustOnPaperBlackAsIs)
-                ? Tr.Pick("the dust reaches paper black at no Dmax (it is at L* 0)", "praful nu ajunge pe negrul hartiei la niciun Dmax (e la L* 0)")
-                : Tr.Pick($"the dust reaches paper black from Dmax {Fmt.Dmax(s.DmaxDustOnPaperBlackAsIs)}",
-                          $"praful ajunge pe negrul hartiei de la Dmax {Fmt.Dmax(s.DmaxDustOnPaperBlackAsIs)}");
+                ? Tr.Pick("the dust is at L* 0, total black, and no paper can keep it above black", "praful e la L* 0, negru total, si nicio hartie nu il poate tine deasupra negrului")
+                : Tr.Pick($"as the image is, the dust stays above black from Dmax {Fmt.Dmax(s.DmaxDustOnPaperBlackAsIs)} up",
+                          $"asa cum e imaginea, praful ramane deasupra negrului de la Dmax {Fmt.Dmax(s.DmaxDustOnPaperBlackAsIs)} in sus");
             return s.SkyBelowVisibility
-                ? dust + Tr.Pick($"; as it is, no paper makes the image print-safe: the sky is under L* {Fmt.F0(Thresholds.LowSeparationLstar)}, and the remedy is lifting the background at the stretch",
-                                 $"; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, iar remediul e ridicarea fundalului la stretch")
+                ? dust + Tr.Pick($"; but no paper saves the print as it is: the sky is under L* {Fmt.F0(Thresholds.LowSeparationLstar)}, and the only remedy is to lift the background when you redo the stretch",
+                                 $"; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, si singurul remediu e sa ridici fundalul cand refaci stretch-ul")
                 : dust;
         }
 
@@ -339,10 +339,10 @@ namespace AstroPhotoAnalyzer
         internal static string ExactLine(SimulationResult s)
         {
             double lo = s.Dmax - Thresholds.DmaxSensitivityStep, hi = s.Dmax + Thresholds.DmaxSensitivityStep;
-            return Tr.Pick($"the exact target of the dust on black: {TargetText(s.ExactTarget)} at Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} at Dmax {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} at Dmax {Fmt.Dmax(hi)}); {DustDmaxText(s)}; "
-                           + $"the sky reaches the visibility threshold L* {Fmt.F0(Thresholds.LowSeparationLstar)} at {TargetText(s.VisibilityTarget)}",
-                           $"tinta exacta a prafului pe negru: {TargetText(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} la Dmax {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} la Dmax {Fmt.Dmax(hi)}); {DustDmaxText(s)}; "
-                           + $"cerul ajunge la pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)} la {TargetText(s.VisibilityTarget)}");
+            return Tr.Pick($"the background at which the dust reaches exactly paper black: {TargetText(s.ExactTarget)} at Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} if the Dmax is {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} if it is {Fmt.Dmax(hi)}); {DustDmaxText(s)}; "
+                           + $"the sky reaches L* {Fmt.F0(Thresholds.LowSeparationLstar)} when the background is {TargetText(s.VisibilityTarget)}",
+                           $"fundalul la care praful ajunge exact pe negrul hartiei: {TargetText(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} daca Dmax e {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} daca e {Fmt.Dmax(hi)}); {DustDmaxText(s)}; "
+                           + $"cerul ajunge la L* {Fmt.F0(Thresholds.LowSeparationLstar)} cand fundalul e {TargetText(s.VisibilityTarget)}");
         }
 
         /// <summary>

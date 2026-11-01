@@ -91,7 +91,7 @@ public class ViewModelTests
         Assert.Equal(101, tones.Histogram.Count);
         Assert.InRange(tones.PaperBlack, 8.9, 9.1);
         Assert.Equal(Thresholds.LowSeparationLstar, tones.LowSeparation);
-        Assert.Contains($"linia rosie = negrul hartiei, linia galbena intrerupta = pragul de vizibilitate L* {Thresholds.LowSeparationLstar:0}", tones.HistogramHeading);
+        Assert.Contains($"linia rosie = negrul hartiei, linia galbena intrerupta = L* {Thresholds.LowSeparationLstar:0}, sub care ochiul abia mai deosebeste tonurile", tones.HistogramHeading);
         Assert.Contains($"La stanga liniei galbene intrerupte (sub L* {Thresholds.LowSeparationLstar:0})", tones.HistogramNote);
         Assert.Equal(1 + 17 + 1, tones.SimulationRows.Count);   // header + "asa cum e" + grid 0.05..0.20 + note
         Assert.Null(tones.SimulationRows[0].Preview);
@@ -108,9 +108,9 @@ public class ViewModelTests
         Assert.Single(tones.LadderRows, s => s.EndsWith("<- mediul ales") && s.Contains("Dmax explicit 2.0"));
         Assert.Equal(6, tones.Guide.Count);
         string guide = string.Join(" ", tones.Guide.Select(g => g.Lead + " " + g.Text));
-        Assert.Contains($"percentila {Thresholds.DustClassFraction * 100:0} % a dalelor de praf", guide);
-        Assert.Contains($"cel mai intunecat {Thresholds.SkyDarkestFraction * 100:0} % al dalelor de cer", guide);
-        Assert.Contains($"peste {Thresholds.SkyNoiseK:0} sigma ale cerului", guide);
+        Assert.Contains($"pragul sub care stau {Thresholds.DustClassFraction * 100:0} % din dalele de praf", guide);
+        Assert.Contains($"cel mai intunecat {Thresholds.SkyDarkestFraction * 100:0} % din dalele de cer", guide);
+        Assert.Contains($"de {Thresholds.SkyNoiseK:0} ori zgomotul cerului", guide);
         Assert.Contains($"cel putin {Thresholds.DustClassMinFraction * 100:0} % din dale", guide);
         Assert.Contains("nivelul MINIM", guide);
         Assert.Contains("nivelul 13 e L* 4 (negrul baryta)", guide);
@@ -160,6 +160,41 @@ public class ViewModelTests
         Assert.Contains(withoutStars.Rows, r => r.Note != null && r.Note.Contains("FWHM"));
         Assert.Contains(withStars.SizeRows, s => s.StartsWith(Tr.Pick("no recommended row", "fara rand recomandat")));
         Assert.Contains(withoutStars.SizeRows, s => s.StartsWith(Tr.Pick("no recommended row", "fara rand recomandat")));
+    }
+
+    /// <summary>
+    /// R-113 (ADR 0072): the Tonuri tab's texts are in plain words, in both languages: the
+    /// rows' names and descriptions, the histogram's heading and note, the simulation table's
+    /// legend, the exact-target line and the definition of the dust and the sky (the console's
+    /// too), the ladder, the preview tooltip, the no-WCS sentence and the guide use none of the
+    /// method's words, on a scene without a WCS and on the band scene.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R113_TheTonesTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var noWcs = new TonesTabViewModel(); noWcs.Populate(Result(Scenes.DarkSky()));
+        var band = new TonesTabViewModel(); band.Populate(Result(WcsFixtures.BandScene()));
+
+        var texts = new[] { noWcs, band }
+            .SelectMany(vm => vm.Rows.SelectMany(r => new[] { r.Label, r.Note, r.Description })
+                .Concat(vm.SimulationRows.Select(r => r.Text))
+                .Concat(vm.LadderRows)
+                .Concat(vm.Guide.SelectMany(g => new[] { g.Lead, g.Text }))
+                .Append(vm.HistogramHeading).Append(vm.HistogramNote).Append(vm.PreviewTooltip)
+                .Append(vm.Definition).Append(vm.ExactLine).Append(vm.NoWcsWarning))
+            .Where(t => t != null)
+            .ToList();
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(mediana|percentil\w*|interpol\w*|Otsu|modelat|modelled|astrometric\w*|vizibilitate|visibility|separare slaba|weak separation|subesantion|subsample)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts, t => Assert.False(methodWords.IsMatch(t), t));
+        Assert.Contains(noWcs.Rows, r => r.Label == Tr.Pick("Background level (green channel)", "Nivelul fundalului (canalul verde)"));
+        Assert.Contains(Tr.Pick(" (no WCS); sky = the middle value of the sky patches", " (fara WCS); cerul = valoarea din mijloc a dalelor de cer"), noWcs.Definition);
+        Assert.StartsWith(Tr.Pick("dust = the darkest extended areas of the dust clouds (", "praful = cele mai intunecate zone intinse din norii de praf ("), band.Definition);
+        Assert.StartsWith(Tr.Pick("the background at which the dust reaches exactly paper black:", "fundalul la care praful ajunge exact pe negrul hartiei:"), noWcs.ExactLine);
     }
 
     /// <summary>
