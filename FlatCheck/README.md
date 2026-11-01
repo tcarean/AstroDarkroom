@@ -974,8 +974,9 @@ LibRaw is taken asks for the library's notice to appear beside the program's. An
 has no `LICENSE` and no notices file beside it, so the window is the one place where the notices
 surely travel with the program. Each licence's whole text is in `THIRD-PARTY-NOTICES.txt`, beside
 the program in the Astro Darkroom folder, and online, at the link above the list. The window is
-never taller than the screen: on a small or highly scaled one, its content scrolls (with the mouse
-wheel, or the arrow, Page Up, Page Down, Home and End keys) and the **Close** button stays in view.
+never taller than the screen: on a small or highly scaled one, everything above the **Close**
+button scrolls (with the mouse wheel, or the arrow, Page Up, Page Down, Home and End keys), and the
+button stays in view.
 
 ### The six tabs
 

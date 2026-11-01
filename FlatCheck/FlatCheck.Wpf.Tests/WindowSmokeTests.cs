@@ -31,7 +31,8 @@
 // What is checked: the window is built, laid out, rendered into a bitmap, and produces no
 // binding error on the way; for the Structure tab's message without Adobe (R-113), also that it
 // is on screen in its red above the rows or the gap, hidden with Adobe, and that its link leaves
-// the tab. What is not checked: how it looks.
+// the tab; for "Despre" (R-095), that its link to the notices is there, showing its address,
+// under the lead and above the list. What is not checked: how it looks.
 
 using FlatCheck.Tests;
 using System.Diagnostics;
@@ -176,6 +177,7 @@ public class WindowSmokeTests
 
             Hyperlink link = Assert.Single(Descendants(content).OfType<TextBlock>().SelectMany(t => t.Inlines.OfType<Hyperlink>()),
                                            h => h.NavigateUri.AbsoluteUri == ThirdParty.NoticesUrl);
+            Assert.Equal(ThirdParty.NoticesUrl, string.Concat(link.Inlines.OfType<Run>().Select(r => r.Text)));
             var holder = (TextBlock)link.Parent;
             TextBlock lead = Assert.Single(Descendants(content).OfType<TextBlock>(), t => t.Text == vm.ThirdPartyLead);
             // A row's name is a Run bound in the row template, which TextBlock.Text does not hold.

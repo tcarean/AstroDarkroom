@@ -127,9 +127,9 @@ public class AboutWindowFitTests
     /// The work area of the window's own screen: a hidden window given a handle on the primary
     /// screen gets from Windows the area WPF knows for that screen, with no line saying the area
     /// could not be read, and a window without a handle gets the primary screen's area. What this
-    /// cannot show: on a machine with one screen the window's screen is the primary one, so an
-    /// implementation that never asked Windows would pass too; telling them apart takes a second
-    /// screen (the window is placed on it by the main window's handle, R-123).
+    /// cannot show: the hidden window sits on the primary screen, so an implementation that never
+    /// asked Windows would pass too, on any machine; telling the two apart would take a window
+    /// placed on a second screen, which no test here does.
     /// </summary>
     [Fact]
     public void R123_TheWorkAreaIsTheOneOfTheWindowsScreen()

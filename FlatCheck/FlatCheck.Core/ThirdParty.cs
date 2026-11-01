@@ -34,8 +34,8 @@
 //
 // WHERE THE WHOLE TEXTS ARE. The lead above the list says it (R-095): in THIRD-PARTY-NOTICES.txt
 // beside the program in the Astro Darkroom folder, and at NoticesUrl, the same file in the source
-// repository, a link under the lead. FlatCheck's own release ships no notices file, so the address is what is true from
-// both places the tool runs.
+// repository, a link under the lead. FlatCheck's own release ships no notices file, so the
+// address is what is true from both places the tool runs.
 //
 // The text mirrors the table of the README and the notices file BY HAND; no test compares the
 // wording, only the presence.

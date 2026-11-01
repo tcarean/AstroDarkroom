@@ -39,7 +39,8 @@ public class LibRawLoadTests
     /// <summary>
     /// On Windows the message names the Visual C++ runtime, missing or too old, with the launcher's
     /// words (AstroDarkroom's VcRuntime.Warning), and ends with Microsoft's link, so that nothing
-    /// follows the address a user copies. No advice about publishing, no libraw.dll.
+    /// of the message follows the address a user copies. No advice about publishing, no
+    /// libraw.dll.
     /// </summary>
     [Fact]
     public void R122_OnWindowsTheMessageNamesTheRuntimeAndEndsWithMicrosoftsLink()
