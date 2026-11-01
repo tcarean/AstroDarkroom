@@ -42,3 +42,14 @@ brighter than the other; a small compact spot; the sky.
    (given above); every changed line read and tied to a text above, no figure line changed.
 4. README's tables of the tab's guides and its quoted sentences, CHANGELOG (Changed), an ADR,
    `python-parity.md`'s list of recaptures.
+
+## What deviated
+
+Noted at the wrap-up of 2026-11-01, after the merge.
+
+- More test assertions than foreseen quoted the old sentences, in `StructureReportTests`,
+  `StructureTabTests`, `MapGuideTests` and `GoldenOutputTests`.
+- Requirement R-013, which describes the offset note, and four doc comments still quoted the old
+  wording; they were brought in line on `claude/Align-notes-with-the-plain-words`.
+- By the merge, `main` held the End to end branch, so `main` was merged into this branch first
+  and the CHANGELOG conflict resolved there (c5d11078); the merge into `main` is c009b084.

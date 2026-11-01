@@ -534,7 +534,7 @@ curvature nor the panel's fall-off.
 
 A profile calibrated on another format than yours is recomputed through millimetres and holds up
 to the corner of its calibration sensor; beyond it the polynomial extrapolates, and above 10 % the
-report says it is a LARGE extrapolation. Then take a profile calibrated on your format: Adobe keeps
+report says your corner is FAR beyond what was measured. Then take a profile calibrated on your format: Adobe keeps
 files per body, such as "NIKON D750 (lens)", which the program prefers when the reference frame
 names that body. The lensfun camera database has 1053 bodies; for one that is missing, give `--crop`
 one of the six nominal crops (full frame 1.0, APS-C 1.5, APS-C Canon 1.6, APS-H 1.3, Micro 4/3 2.0,

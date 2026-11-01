@@ -175,6 +175,14 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 ## History
 
+- 2026-11-01: re-measured at the wrap-up of the plain-words series (ADRs 0082 to 0084), on `main`
+  at 91bd006e. The series reworded the explanations in `Report/StructureReport.cs`,
+  `LightReport.cs`, `LightSeriesReport.cs`, `ExposureReport.cs`, `HistEqReport.cs`,
+  `SyntheticReport.cs`, `SplitReport.cs` and `Runs/AgainstRun.cs` without touching a formula:
+  the 36 large files present with their hashes, 44 passed in 2 min 4 s (the 36 cases and the 8
+  raw samples), and with the dump compared to `validation.json` case by case, every figure and
+  verdict of the 36 cases equal to the recorded one. No figure changed; no formula moved.
+
 - 2026-10-31: V-031 to V-035, the `smooth` kind, removed with the `--smooth` mode (ADR 0080);
   their last figures stay in this file's git history and in ADR 0026. The other cases are
   untouched: no formula moved and nothing was re-measured.

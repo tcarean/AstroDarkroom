@@ -203,8 +203,7 @@ namespace FlatCheck
             w.WriteLine("    " + WorseOfBoth());
         }
 
-        /// <summary>"PERFECT: cele cinci teste pe raport, pe scara de reziduu a
-        /// structurii".</summary>
+        /// <summary>"PERFECT: cele cinci teste pe raport, pe scara lor".</summary>
         /// <param name="r">The comparison.</param>
         /// <returns>The shape's verdict with what it is.</returns>
         internal static string ShapeDetail(AgainstResult r)

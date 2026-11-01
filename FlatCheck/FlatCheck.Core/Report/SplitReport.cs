@@ -278,7 +278,7 @@ namespace FlatCheck
                  $"harta: partile 1..{parts} de la stanga la dreapta, apoi intregul, toate pe aceeasi scara de culoare");
 
         /// <summary>How to read the parts against the whole.</summary>
-        /// <returns>Four lines joined by '\n'.</returns>
+        /// <returns>Five lines joined by '\n'.</returns>
         internal static string Meaning()
             => T("Each part is the master of a single orientation, with fewer frames, so noisier; the whole is\n"
                  + "their mean. What is large on the parts and small on the whole is what the rotation cancelled: at 180 degrees\n"

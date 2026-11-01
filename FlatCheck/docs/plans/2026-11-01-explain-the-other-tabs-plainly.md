@@ -36,3 +36,19 @@ usual vignetting symmetric about the centre. The labels stay ("mediana globala",
    (given); every changed line tied to a text above, no figure line changed.
 4. README's tables of the histogram and the equalised-picture guides, CHANGELOG (Changed), an
    ADR, `python-parity.md`'s list of recaptures.
+
+## What deviated
+
+Noted at the wrap-up of 2026-11-01, after the merge.
+
+- The comparison's texts live in `AgainstReport`, inside `Runs/AgainstRun.cs`, not in a
+  `Report/` file; the vocabulary test calls them there.
+- Assertions in `ExposureReportTests`, `LensProfileTests`, `ExposureTabTests`, `HistEqTabTests`
+  and `SyntheticTabTests` quoted the old sentences; the full test run found most of them.
+- Requirement R-072 still quoted `extrapolare MARE`, and two design notes and one README line the
+  old format sentence; they were brought in line on `claude/Align-notes-with-the-plain-words`.
+- Two texts outside the approved list still use the old words: the equalised picture's note
+  above the list of files ("Masterul e stiva cadrelor de sub el") and the console's help line
+  for `--rainbow` ("The colours are ranks, not values"). They wait for the owner's decision.
+- The branch was cut from the Structure branch, so that R-123 follows R-122. `main` was merged
+  into it first (5e1f5898); the merge into `main` is f86ba91c.
