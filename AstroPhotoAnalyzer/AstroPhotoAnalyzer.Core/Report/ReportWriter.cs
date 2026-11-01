@@ -466,14 +466,14 @@ namespace AstroPhotoAnalyzer
             }
             if (!ps.FwhmKnown)
             {
-                yield return Tr.Pick($"no recommended row: without stars the detail is not measured, only the pixel grid (threshold {Fmt.F0(ps.FallbackDpi)} dpi) - a limit of the file, not of the image",
-                                     $"fara rand recomandat: fara stele nu se masoara detaliul, ci doar grila de pixeli (prag {Fmt.F0(ps.FallbackDpi)} dpi) - o limita a fisierului, nu a imaginii");
+                yield return Tr.Pick($"no recommended row: without stars it is not known how much detail the image holds, only that the pixels do not show (threshold {Fmt.F0(ps.FallbackDpi)} dpi) - a limit of the file, not of the image",
+                                     $"fara rand recomandat: fara stele nu se stie cat detaliu are imaginea, se verifica doar sa nu se vada pixelii (prag {Fmt.F0(ps.FallbackDpi)} dpi) - o limita a fisierului, nu a imaginii");
                 yield break;
             }
-            yield return Tr.Pick($"no recommended row: \"point from\" and \"dist. used\" both grow with the width, so their ratio ({Fmt.F2(ps.NaturalRatio)}) is the same on every row",
-                                 $"fara rand recomandat: \"punct de la\" si \"dist. folosita\" cresc amandoua cu latimea, deci raportul lor ({Fmt.F2(ps.NaturalRatio)}) e acelasi pe fiecare rand");
-            yield return Tr.Pick("  and the test does not tell the sizes apart - the wall chooses; give a viewing distance to tell them apart",
-                                 "  si testul nu desparte marimile - o alege peretele; da o distanta de privire ca sa le desparta");
+            yield return Tr.Pick($"no recommended row: without a given distance a larger print is viewed from farther away, so every size looks the same (the ratio {Fmt.F2(ps.NaturalRatio)} is the same on every row)",
+                                 $"fara rand recomandat: fara distanta data, un print mai mare se priveste de mai departe, asa ca toate marimile arata la fel (raportul {Fmt.F2(ps.NaturalRatio)} e acelasi pe fiecare rand)");
+            yield return Tr.Pick("  the wall chooses the size; give a viewing distance so that the program can choose one",
+                                 "  marimea o alege peretele; da o distanta de privire ca programul sa poata alege una");
         }
 
         /// <summary>

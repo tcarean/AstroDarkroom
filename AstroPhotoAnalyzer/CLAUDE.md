@@ -115,6 +115,13 @@ or varies a kit rule names it.
   view-model writes; every number in them is interpolated from `Thresholds`, `Parameters` or the
   result, never typed. A literal a text needs is lifted into `Thresholds` first, with its
   comment, even one no rule reads (ADR 0012, ADR 0020).
+- **Plain words.** Every text the user reads, in the window and in the console, is in words
+  anyone can follow: what the figure means for the print, short sentences, everyday words, no
+  part of the method named (no median, quartile, interpolation, amplitude, grid, percentile). A
+  technical term stays only where the figure is known by it, the plain name first and the term
+  in brackets: "latimea stelelor (FWHM)". The numbers stay interpolated (the rule "Explanation
+  is not diagnosis"). A text rewrite is shown to the owner first, original and proposal side by
+  side, and edited only on their yes. The same register in chat with the owner (ADR 0071).
 - **"Fundal" names one thing, the sky, and two measurements of it.** Tonuri measures its level
   (`BackgroundMedian`, "Nivelul fundalului"), Culoare its colour (`BackgroundResult.Levels`,
   "Culoarea fundalului"). Every label, row, appendix and `Because` that shows one says which; no

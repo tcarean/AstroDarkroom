@@ -719,67 +719,69 @@ namespace AstroPhotoAnalyzer.Wpf
             // typed in. The corners have no description - the centre's covers them, and four
             // times the same text would load the panel.
             string minStars = Fmt.Int(Thresholds.StarMinCount), regionStars = Fmt.Int(Thresholds.RegionMinStars);
-            string fwhmDesc = Tr.Pick("The width of a star at half its height, in pixels: the smallest detail the image holds, "
-                + "however many pixels the file has. It is measured on the row and the column through the peak and the mean is taken; the median over all "
-                + "the stars is the figure that counts. Q1 / Q3 show how spread out they are: a wide interval means unequal stars across the "
-                + "frame - soft corners, tracking trails, or stars on nebulosity, which come out wider.",
-                "Latimea unei stele la jumatatea inaltimii ei, in pixeli: cel mai mic detaliu pe care il tine imaginea, "
-                + "indiferent cati pixeli are fisierul. Se masoara pe linia si pe coloana prin varf si se ia media; mediana pe toate "
-                + "stelele e cifra care conteaza. Q1 / Q3 arata cat de imprastiate sunt: un interval larg inseamna stele inegale in "
-                + "cadru - colturi moi, urme de tracking, sau stele pe nebulozitate, care ies mai late.");
+            string fwhmDesc = Tr.Pick("The width of a star (FWHM): how wide a star comes out in the image, in pixels, measured at half its brightness. "
+                + "This is the finest detail the image holds, however many pixels the file has. The main figure is the middle value over all "
+                + "the stars. The two in brackets: a quarter of the stars are narrower than the first, a quarter wider than the second. "
+                + "When the two are far apart, the stars are not the same over the whole frame: soft corners, tracking trails, or stars "
+                + "on nebulosity, which come out wider.",
+                "Latimea unei stele (FWHM): cat de lata iese o stea in imagine, in pixeli, masurata la jumatatea stralucirii ei. "
+                + "Acesta e cel mai fin detaliu pe care il are imaginea, oricati pixeli ar avea fisierul. Cifra principala e valoarea din "
+                + "mijloc pe toate stelele. Cele doua din paranteza: un sfert din stele sunt mai inguste decat prima, un sfert mai late "
+                + "decat a doua. Daca cele doua sunt departe una de alta, stelele nu sunt la fel in tot cadrul: colturi moi, urme de "
+                + "tracking sau stele pe nebuloasa, care ies mai late.");
             var rows = new List<MetricRow>
             {
                 Row(Tr.Pick("Stars measured", "Stele masurate"), Fmt.Int(s.Count),
-                    s.Insufficient ? Tr.Pick($"{Fmt.F1(s.DensityPerMp)} per megapixel: too few for a FWHM (minimum {minStars}, {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel)", $"{Fmt.F1(s.DensityPerMp)} pe megapixel: prea putine pentru FWHM (minim {minStars}, {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel)") : null,
-                    Tr.Pick("How many stars passed the filters: an unsaturated local peak, with a minimum amplitude against the background around it "
-                        + $"and at least {Fmt.F0(Thresholds.StarMinSnr)} times that background's noise (the grain of a stretched sky is not a star), "
-                        + $"with a width between {Fmt.F1(Thresholds.StarFwhmMin)} and {Fmt.F0(Thresholds.StarFwhmMax)} px on both axes. "
-                        + "They are searched for on the reference channel (green; the only channel in mono). "
-                        + $"Under {minStars} stars, or under {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel of the frame (a starless frame keeps a few dozen soft blobs after a denoise, "
-                        + "which a count alone would take for stars), the global FWHM is not reliable and is not reported.",
-                        "Cate stele au trecut de filtre: un varf local nesaturat, cu amplitudine minima fata de fundalul din jurul lui "
-                        + $"si de cel putin {Fmt.F0(Thresholds.StarMinSnr)} ori zgomotul acelui fundal (granulatia unui cer intins nu e stea), "
-                        + $"cu latimea intre {Fmt.F1(Thresholds.StarFwhmMin)} si {Fmt.F0(Thresholds.StarFwhmMax)} px pe ambele axe. "
-                        + "Se cauta pe canalul de referinta (verdele; singurul canal la mono). "
-                        + $"Sub {minStars} de stele, sau sub {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel de cadru (un cadru fara stele pastreaza dupa denoise cateva zeci de pete moi, "
-                        + "pe care un numar singur le-ar lua drept stele), FWHM-ul global nu e de incredere si nu se raporteaza.")),
-                Row(Tr.Pick("Median FWHM (Q1 / Q3)", "FWHM median (Q1 / Q3)"), s.Insufficient ? "n/a" : $"{Fmt.F2(s.FwhmMedian)} px ({Fmt.F2(s.FwhmQ1)} / {Fmt.F2(s.FwhmQ3)})",
+                    s.Insufficient ? Tr.Pick($"{Fmt.F1(s.DensityPerMp)} per megapixel: too few to measure the stars' width, FWHM (at least {minStars} are needed, and {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel)", $"{Fmt.F1(s.DensityPerMp)} pe megapixel: prea putine ca sa masuram latimea stelelor, FWHM (e nevoie de cel putin {minStars}, si de {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel)") : null,
+                    Tr.Pick("How many stars the program found and could measure. A star is a clear bright point, not burnt out, "
+                        + $"enough brighter than the sky around it (at least {Fmt.F0(Thresholds.StarMinSnr)} times the sky's noise, so that the grain is not taken for stars) "
+                        + $"and between {Fmt.F1(Thresholds.StarFwhmMin)} and {Fmt.F0(Thresholds.StarFwhmMax)} pixels wide. "
+                        + "They are searched for on the green channel; in mono, on the only channel. "
+                        + $"Under {minStars} stars, or under {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel, the measurement is not reliable and is not shown: "
+                        + "an image without stars keeps a few dozen soft blobs after a denoise, which would look like stars.",
+                        "Cate stele a gasit programul si a putut masura. O stea e un punct luminos clar, nears, "
+                        + $"destul de mai luminos decat cerul din jur (de cel putin {Fmt.F0(Thresholds.StarMinSnr)} ori zgomotul cerului, ca granulatia sa nu fie luata drept stele) "
+                        + $"si cu latimea intre {Fmt.F1(Thresholds.StarFwhmMin)} si {Fmt.F0(Thresholds.StarFwhmMax)} pixeli. "
+                        + "Se cauta pe canalul verde; la alb-negru, pe singurul canal. "
+                        + $"Sub {minStars} de stele, sau sub {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel, masuratoarea nu e de incredere si nu se arata: "
+                        + "o imagine fara stele pastreaza dupa denoise cateva zeci de pete moi, care ar parea stele.")),
+                Row(Tr.Pick("Star width (FWHM)", "Latimea stelelor (FWHM)"), s.Insufficient ? "n/a" : $"{Fmt.F2(s.FwhmMedian)} px ({Fmt.F2(s.FwhmQ1)} / {Fmt.F2(s.FwhmQ3)})",
                     description: fwhmDesc),
                 Row(Tr.Pick("Real detail across the width", "Detaliu real pe latime"), ps.FwhmKnown ? $"~{Fmt.F0(ps.EffectiveDetailPx)} px" : "n/a",
-                    description: Tr.Pick("The width of the image (after the crop, if there is one) divided by the FWHM: how many stars fit side by side across "
-                        + "the width, that is the file's true resolution. The rest of the pixels are interpolation. The print size is "
-                        + "judged on this figure, not on the number of pixels; the table below starts from here.",
-                        "Latimea imaginii (dupa decupaj, daca e cazul) impartita la FWHM: cate stele incap una langa alta pe "
-                        + "latime, adica rezolutia adevarata a fisierului. Restul pixelilor sunt interpolare. Marimea de print se "
-                        + "judeca pe cifra asta, nu pe numarul de pixeli; tabelul de mai jos porneste de aici.")),
+                    description: Tr.Pick("How many stars fit side by side across the width of the image (after the crop, if there is one). "
+                        + "That is how much detail the file really holds; the extra pixels bring nothing new. The print size is "
+                        + "judged on this figure, not on the number of pixels, and the table below starts from here.",
+                        "Cate stele incap una langa alta pe latimea imaginii (dupa decupaj, daca e cazul). "
+                        + "Atat detaliu are fisierul cu adevarat; pixelii in plus nu aduc nimic nou. Marimea de print se "
+                        + "judeca dupa cifra asta, nu dupa numarul de pixeli, si tabelul de mai jos porneste de aici.")),
             };
             foreach (StarRegion reg in s.Regions)
             {
                 bool centre = reg == s.Regions[0];
-                rows.Add(Row(Tr.Pick("Median FWHM in the " + reg.Name, "FWHM median in " + (centre ? reg.Name : reg.Name.Replace("colt ", "coltul "))),
+                rows.Add(Row(Tr.Pick("Star width (FWHM) in the " + reg.Name, "Latimea stelelor (FWHM) in " + (centre ? reg.Name : reg.Name.Replace("colt ", "coltul "))),
                     reg.Known ? Fmt.F2(reg.FwhmMedian) + " px" : "n/a", Tr.Pick($"{reg.Count} star{(reg.Count == 1 ? "" : "s")}", $"{reg.Count} stele"),
                     centre
-                        ? Tr.Pick($"The median FWHM on five zones: the centre ({Fmt.F0(Thresholds.CenterFraction * 100)} % x {Fmt.F0(Thresholds.CenterFraction * 100)} % of the frame) "
+                        ? Tr.Pick($"The stars' width (FWHM) in five zones: the centre ({Fmt.F0(Thresholds.CenterFraction * 100)} % x {Fmt.F0(Thresholds.CenterFraction * 100)} % of the frame) "
                             + $"and the four corners ({Fmt.F0(Thresholds.RegionFraction * 100)} % of each side each, starting from the corner). "
-                            + $"A zone is reported only with at least {regionStars} stars in it, otherwise n/a. "
-                            + "Compared with each other, they show whether the optics are equally good over the whole field.",
-                            $"FWHM median pe cinci zone: centrul ({Fmt.F0(Thresholds.CenterFraction * 100)} % x {Fmt.F0(Thresholds.CenterFraction * 100)} % din cadru) "
+                            + $"A zone is shown only when it has at least {regionStars} stars, otherwise n/a. "
+                            + "Compared with each other, they say whether the lens is equally good over the whole field.",
+                            $"Latimea stelelor (FWHM) in cinci zone: centrul ({Fmt.F0(Thresholds.CenterFraction * 100)} % x {Fmt.F0(Thresholds.CenterFraction * 100)} % din cadru) "
                             + $"si cele patru colturi (cate {Fmt.F0(Thresholds.RegionFraction * 100)} % din fiecare latura, pornind din colt). "
-                            + $"O zona se raporteaza doar cu cel putin {regionStars} stele in ea, altfel n/a. "
-                            + "Comparate intre ele, arata daca optica e la fel de buna pe tot campul.")
+                            + $"O zona se arata doar daca are cel putin {regionStars} stele, altfel n/a. "
+                            + "Comparate intre ele, spun daca obiectivul e la fel de bun pe tot campul.")
                         : null));
             }
             if (!double.IsNaN(s.CornerToCenterRatio))
                 rows.Add(Row(Tr.Pick("Corner / centre", "Colt / centru"), Fmt.F2(s.CornerToCenterRatio), s.SoftCorners ? Tr.Pick("soft corners", "colturi moi") : null,
-                    Tr.Pick("The widest known corner divided by the centre. 1.00 means the same stars everywhere; "
-                        + $"over {Fmt.F1(Thresholds.CornerSoftRatio)} the corners are soft (coma, field curvature, tilt) and the size table "
-                        + "no longer holds for the whole frame: at the size at which the centre is at the limit, the corners are already blobs. "
-                        + "In that case the whole frame is not enlarged; a crop is considered. "
+                    Tr.Pick("The stars' width (FWHM) in the weakest corner divided by the centre's. 1.00 means the same stars everywhere. "
+                        + $"Over {Fmt.F1(Thresholds.CornerSoftRatio)} the corners are soft (coma, field curvature or tilt): at the size at which "
+                        + "the centre is at the limit, the corners are already blobs, so the size table no longer holds for the whole frame. "
+                        + "Then the whole frame is not enlarged; the edges are cut instead. "
                         + $"n/a when the centre or all the corners have under {regionStars} stars.",
-                        "Cel mai lat colt cunoscut impartit la centru. 1.00 inseamna stele la fel peste tot; "
-                        + $"peste {Fmt.F1(Thresholds.CornerSoftRatio)} colturile sunt moi (coma, curbura de camp, tilt) si tabelul de marimi "
-                        + "nu mai e valabil pentru tot cadrul: la marimea la care centrul e la limita, colturile sunt deja pete. "
-                        + "In cazul asta nu se mareste tot cadrul, se ia in calcul un decupaj. "
+                        "Latimea stelelor (FWHM) din cel mai slab colt impartita la cea din centru. 1.00 inseamna stele la fel peste tot. "
+                        + $"Peste {Fmt.F1(Thresholds.CornerSoftRatio)} colturile sunt moi (coma, curbura de camp sau tilt): la marimea la care "
+                        + "centrul e la limita, colturile sunt deja pete, asa ca tabelul de marimi nu mai e valabil pentru tot cadrul. "
+                        + "Atunci nu se mareste tot cadrul, ci se taie din margini. "
                         + $"n/a cand centrul sau toate colturile au sub {regionStars} stele.")));
             Rows = rows;
 
@@ -794,7 +796,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 .Concat(ps.Rows.Select(ReportWriter.SizeTableRow))
                 .Concat(ReportWriter.SizeTableFooter(ps))
                 .ToList();
-            DpiRows = new[] { Tr.Pick("dpi pitch mm    grid vanishes from   that is", "dpi   pas mm   grila dispare de la   adica") }
+            DpiRows = new[] { Tr.Pick("dpi   pixel mm   pixels vanish from   that is", "dpi   pixel mm   pixelii dispar de la   adica") }
                 .Concat(PrintSizeAnalyzer.DpiLadder(r.Parameters.ViewingDistanceM).Select(l =>
                     $"{Fmt.F0(l.Dpi),3}   {Fmt.F2(l.PitchMm),6}   {Fmt.F2(l.DistanceM) + " m",19}   {l.Meaning}"))
                 .ToList();

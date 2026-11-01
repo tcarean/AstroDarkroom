@@ -80,8 +80,8 @@ Anexa D. Rezolutie si marime
       40          40.0    33      2.38        8.21 m           0.85 m   60 x 60
       60          60.0    22      3.57       12.32 m           1.27 m   80 x 80
       80          80.0    16      4.76       16.42 m           1.70 m   100 x 100
-  fara rand recomandat: "punct de la" si "dist. folosita" cresc amandoua cu latimea, deci raportul lor (9.68) e acelasi pe fiecare rand
-    si testul nu desparte marimile - o alege peretele; da o distanta de privire ca sa le desparta
+  fara rand recomandat: fara distanta data, un print mai mare se priveste de mai departe, asa ca toate marimile arata la fel (raportul 9.68 e acelasi pe fiecare rand)
+    marimea o alege peretele; da o distanta de privire ca programul sa poata alege una
 
 Anexa E. Culoarea fundalului
   culoarea fundalului, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; L* 27.0, a* 0.0, b* 0.0, croma 0.0; de pe dalele de cer de deasupra benzii de jos
