@@ -62,8 +62,11 @@ again, and so is where it breaks.
 
 The subtitle takes one line more than before. Each of its sentences is narrower than its column
 (the top bar's 624 px less the logo's 40 px and its 16 px margin), so the line break gives
-exactly two lines, each sentence whole; the window grows by another 15 px, to 848 px, computed.
-Its text is composed in `MainWindow`, which has no test project (ADR 0001), so it too is
+exactly two lines, each sentence whole; the window grows by another 15 px, to 848 px, measured
+on 2026-11-01 in the window started from a suite folder published from this branch
+(`scripts/release.ps1 -Version 1.0.0 -PublishOnly`), where UI Automation gives the subtitle
+568 × 30 px and each description 416 × 30 px in both languages, and whose log ends with
+`Process exit 0` and has no `WARN` or `ERROR` line. Its text is composed in `MainWindow`, which has no test project (ADR 0001), so it too is
 measured again when it changes. One line of each sentence, measured the same way:
 
 ```
