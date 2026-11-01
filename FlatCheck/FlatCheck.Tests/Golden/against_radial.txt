@@ -27,10 +27,10 @@ Copyright (C) 2026 Tudor Carean
                 (sub 2 % PERFECT, 2-10 BUN, 10-20 ACCEPTABIL, peste 20 REFA)
     adancimea : REFA: 0.30 stopuri = 23.0 % eroare in coltul light-ului calibrat,
                 pe aceeasi scara (sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste REFA)
-                In coltul unui light calibrat cu masterul: 23.0 %; pe scara modului --light (2 % OK,
-                5 % PROBLEMA), care masoara aceeasi marime direct in light, ar fi PROBLEMA.
-                Referinta insasi difera cu 0.2 stopuri = 15 % intre bazele de profile,
-                deci verdictul adancimii nu poate fi mai fin de atat si ramane pe scara de reziduu.
+                In coltul unui light calibrat cu acest master eroarea ar fi 23.0 %. Testul End-to-end,
+                care masoara acelasi lucru direct in light, i-ar spune PROBLEMA (2 % OK, 5 % PROBLEMA).
+                Dar cele doua baze de profile difera intre ele cu 0.2 stopuri, adica 15 % in colt,
+                asa ca verdictul de aici nu poate fi mai fin de atat si ramane pe scara celor cinci teste.
     Cel mai rau dintre ele. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.
 
     -> harta salvata: <TMP>/out.png

@@ -171,11 +171,11 @@ The five tests:
 
 | test | what it measures |
 |---|---|
-| spread of the 4 corners | the four 5 % corner boxes against each other |
-| max azimuthal asymmetry | the 12 sectors of each ring against each other, inside the inscribed circle |
-| residual (radial model) | how much of the frame a purely radial model does not explain, over the whole frame, corners included: **the most important** |
-| tilt (gradient) | the peak-to-peak amplitude of the linear gradient across the frame |
-| worst spot (one tile) | the most deviant tile of the whole frame: a compact defect that the residual clips as an extreme |
+| spread of the 4 corners | how much the four corners (5 % boxes) differ from each other; on a correct flat they would be equally bright |
+| max azimuthal asymmetry | how much the 12 slices of the same ring around the centre differ from each other, on the most uneven ring; measured only in the circle that fits whole in the frame |
+| residual (radial model) | how much of the frame does not look like a usual vignetting, symmetric about the centre, over the whole frame, corners included: **the most important** |
+| tilt (gradient) | how much brighter one edge of the frame is than the opposite one; it also catches a lens whose axis is off-centre |
+| worst spot (one tile) | the small square that stands out most from the others: a small compact defect, which the residual sets aside as an extreme |
 
 All five share one scale, and the verdict is the worst of them (see "The residual scale").
 
@@ -673,7 +673,7 @@ amplitudes in per cent, so they share one scale, not one threshold:
 |---|---|---|
 | under 2 % | `PERFECT` | perfect quality |
 | 2-10 % | `GOOD` | usable; background extraction removes what is left |
-| 10-20 % | `ACCEPTABLE` | usable, but confirm with `--light` before a hard stretch |
+| 10-20 % | `ACCEPTABLE` | usable, but confirm with the End-to-end test (`--light`) before a hard stretch |
 | over 20 % | `REDO` | redo the flats |
 
 The most important is **the residual after the radial model**: it measures directly how much of the
@@ -856,30 +856,29 @@ and only then the shape, which says *why*. The same list is in the window, under
 
 | shape | what it meant |
 |---|---|
-| blotches with no direction | Small deviations, with no preferred axis: the diffuser's signature plus the noise of the sky. Background extraction removes them without effort; the figures decide whether they can be ignored. |
-| a dipole (one side blue, the other red) | A gradient, so a direction; it matches "tilt". An uneven source, ambient light, or an obstruction lying asymmetrically over the lens. Whether it is fixed in the world (the sky) or to the camera (the diffuser, the lens hood) one master cannot say; a second session with the same lens can. |
-| concentric circles or arcs | A ring centred on the sensor can NOT stay in the map: the radial model absorbs it by construction. So if you see one, it is centred elsewhere: something round in front of the lens is off the axis, or the light is not diffuse. It has not been seen yet on a real master; the rings that once appeared on masters with a large gradient were an artefact of the radial model, corrected since. |
-| a local spot in a corner or at an edge | A light leak: the viewfinder, the mount, the diffuser's side. It is fixed to the camera, so it comes back in every session until its cause is found. |
-| a round spot in the centre | Illumination contaminated symmetrically about the axis: a panel too close, a monitor's backlight. When it is exactly centred it can NOT appear on the map, and no test sees it: the radial model absorbs all of it, exactly like vignetting; measured, a 10 % spot in the centre leaves the map empty and every figure under 0.1 %. Its only trace is the vignetting figure, which grows. It shows only when it is slightly off-centre, and then as a crescent, not a disc. No rotation removes it; the counter-test is distance: one set at 30 cm, one at 60. |
-| fine grain everywhere | Noise, not structure: too few frames or too low an exposure. The figures stay small; there is nothing to fix at the source, only more to stack. |
+| blotches with no direction | Small deviations, with no particular direction: the diffuser's mark and the noise. Background extraction removes them without effort; the figures say whether they can be ignored. |
+| one side blue, the other red | One side of the frame is brighter than the other: the same thing "tilt" measures. An uneven light source, light from around, or something lying askew over the lens. Whether it comes from the world (the sky) or from the camera (the diffuser, the lens hood) one master cannot say; a second session with the same lens can. |
+| concentric circles or arcs | A ring centred on the sensor cannot stay in the map: it is taken out with the vignetting. So if you see one, it is centred elsewhere: something round in front of the lens is not on the axis, or the light is not diffuse. It has not been seen on a real master yet; the rings that once appeared on masters with a large gradient were an artefact of the radial model, corrected since (the window's guide leaves that history out). |
+| a local spot in a corner or at an edge | A light leak: through the viewfinder, at the mount, past the diffuser. It belongs to the camera, so it comes back in every session until you find its cause. |
+| a round spot in the centre | Extra light right in the middle: a panel too close, the light behind a monitor. When it is exactly centred it does not appear on the map and no test sees it, because it looks exactly like vignetting; measured, a 10 % spot in the centre leaves the map empty and every figure under 0.1 %. Its only trace is the vignetting figure, which grows. It shows only when it is slightly off-centre, and then as a crescent, not as a disc. Turning the camera does not remove it; the test is distance: one set of flats at 30 cm, one at 60. |
+| fine grain everywhere | Noise, not a defect: too few frames or too low an exposure. The figures stay small; there is nothing to fix at the source, only more frames to stack. |
 
 ### Who decides: the figures or the map
 
 The figures and the map do not play the same role, although they look like two views of the same
 thing.
 
-- **How much: the figures decide, not the map.** "Residual after the radial model" is the very
-  measure of how much of the frame a purely radial function does not explain, on the residual
-  scale. Under 2 % it does not matter what shape it has; between 2 and 10 % background extraction
-  removes what is left, whatever the shape. **The verdict never depends on what you see on the
-  map.**
-- **What kind: here the eye comes in, but not from scratch.** The shape says what to change at the
-  next session, not whether the flat is good. And the figures do part of the work before you look:
-  if "tilt" is close to the residual, it is a gradient, and the map says in which direction; if
-  "worst spot" is far above the residual, it is something compact (a small leak, condensation), and
-  "local spots" says where; and if the dust warning appeared, the question is no longer whether the
-  flat is good but what you use it for: the session whose lights have the same spot, or the
-  library. What is left for the eye is the table above.
+- **How much: the figures decide, not the map.** "Residual (radial model)" says how much of the
+  frame does not look like a usual vignetting, symmetric about the centre, on the residual scale.
+  Under 2 % it does not matter what shape it has; between 2 and 10 % background extraction removes
+  what is left, whatever the shape. **The verdict never depends on what you see on the map.**
+- **What kind: here the eye comes in, but not from scratch.** The shape says what to change for the
+  next flats, not whether the flat is good. The figures help before you look: if "tilt" is close to
+  the residual, one side of the frame is brighter than the other, and the map says in which
+  direction; if "worst spot" is far above the residual, it is something small and compact (a light
+  leak, condensation), and "local spots" says where; if the dust warning appeared, the question is
+  no longer whether the flat is good but what you use it for: the session whose lights have the
+  same spot, or as a library flat. What is left for the eye is the table above.
 
 The same explanation is in the window, under the Structure tab's verdict.
 

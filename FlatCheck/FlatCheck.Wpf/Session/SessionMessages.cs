@@ -190,8 +190,10 @@ namespace FlatCheck.Wpf
         /// rows.</summary>
         /// <returns>One sentence.</returns>
         internal static string HowToReadIntro() =>
-            T("The tab answers two different questions, and not with the same means.",
-              "Tabul raspunde la doua intrebari diferite, si nu cu aceleasi mijloace.");
+            T("The tab answers two questions: how large the flat's deviation is, which the figures say, "
+            + "and what kind it is, which the map shows.",
+              "Tabul raspunde la doua intrebari: cat de mare e abaterea flat-ului, pe care o spun "
+            + "cifrele, si de ce fel e, pe care o arata harta.");
 
         /// <summary>The two halves of the reading, in the order they are used.</summary>
         /// <returns>Two rows, heading and text.</returns>
@@ -199,35 +201,31 @@ namespace FlatCheck.Wpf
         {
             (T("HOW MUCH - the figures decide, not the map",
                "CAT DE MULT - decid cifrele, nu harta"),
-             T("\"Residual after the radial model\" is the very measure of how much of the frame a purely radial "
-             + "function does not explain, on the scale below. Under 2 % it does not matter what "
-             + "shape it has. Between 2 and 10 % background extraction removes what is left, whatever "
-             + "the shape. The usability verdict NEVER depends on what you see "
-             + "in the map.",
-               "\"Reziduu dupa model radial\" e chiar masura a cat din cadru nu se explica "
-             + "printr-o functie pur radiala, pe scara de mai jos. Sub 2 % nu conteaza ce "
-             + "forma are. Intre 2 si 10 % background extraction scoate ce ramane, oricare "
-             + "ar fi forma. Verdictul de utilizabilitate NU depinde niciodata de ce vezi "
-             + "in harta.")),
+             T("\"Residual (radial model)\" says how much of the frame does not look like a usual "
+             + "vignetting, symmetric about the centre, on the scale below. Under 2 % it does not matter "
+             + "what shape it has. Between 2 and 10 % Siril's background extraction removes what is left, "
+             + "whatever the shape. The verdict never depends on what you see in the map.",
+               "\"Reziduu dupa model rad.\" spune cat din cadru nu arata ca o vignetare obisnuita, "
+             + "simetrica in jurul centrului, pe scara de mai jos. Sub 2 % nu conteaza ce forma are. "
+             + "Intre 2 si 10 % extragerea de fond din Siril scoate ce ramane, oricare ar fi forma. "
+             + "Verdictul nu depinde niciodata de ce vezi in harta.")),
 
             (T("WHAT KIND - here the eye comes in, but not from scratch",
                "CE FEL - aici intra ochiul, dar nu de la zero"),
-             T("The shape says what to change in the next session, not whether the flat is good. And "
-             + "the figures do part of the work before you look: if \"tilt\" is "
-             + "close to the residual, it is a gradient, and the map says in which direction; if "
-             + "\"worst spot\" is far above the residual, it is something "
-             + "compact - a small leak, condensation - and \"local spots\" says where; and "
-             + "if the dust warning appeared, the question is no longer whether the flat is "
-             + "good, but what you use it for: the session whose lights have the same "
-             + "spot, or the library. What is left for the eye is the guide under the map.",
-               "Forma spune ce sa schimbi la sedinta urmatoare, nu daca flat-ul e bun. Si "
-             + "cifrele fac o parte din treaba inainte sa te uiti: daca \"inclinare\" e "
-             + "aproape de reziduu, e un gradient, si harta spune in ce directie; daca "
-             + "\"pata maxima\" e mult peste reziduu, e ceva "
-             + "compact - o scurgere mica, condens - si \"pete locale\" spune unde; iar "
-             + "daca a aparut atentionarea de praf, intrebarea nu mai e daca flat-ul e "
-             + "bun, ci pentru ce il folosesti: sesiunea ale carei lights au aceeasi "
-             + "pata, sau biblioteca. Ce ramane pentru ochi e ghidul de sub harta.")),
+             T("The shape says what to change for the next flats, not whether the flat is good. The "
+             + "figures help before you look: if \"tilt\" is close to the residual, one side of the frame "
+             + "is brighter than the other, and the map says in which direction; if \"worst spot\" is far "
+             + "above the residual, it is something small and compact, a light leak or condensation, and "
+             + "\"local spots\" says where; if the dust warning appeared, the question is no longer whether "
+             + "the flat is good, but what you use it for: the session whose lights have the same spot, "
+             + "or as a library flat. For the rest there is the guide under the map.",
+               "Forma spune ce sa schimbi la urmatoarele flat-uri, nu daca flat-ul e bun. Cifrele te "
+             + "ajuta inainte sa te uiti: daca \"inclinare\" e aproape de reziduu, o parte a cadrului e "
+             + "mai luminoasa decat cealalta, si harta spune in ce directie; daca \"pata maxima\" e mult "
+             + "peste reziduu, e ceva mic si compact, o scurgere de lumina sau condens, si \"pete locale\" "
+             + "spune unde; daca a aparut atentionarea de praf, intrebarea nu mai e daca flat-ul e bun, "
+             + "ci la ce il folosesti: la sesiunea ale carei lights au aceeasi pata, sau ca flat de "
+             + "biblioteca. Pentru restul e ghidul de sub harta.")),
         };
 
         // --------------------------------------------------- the histograms' guide
@@ -390,22 +388,18 @@ namespace FlatCheck.Wpf
         /// shapes.</summary>
         /// <returns>The guide's intro.</returns>
         internal static string MapGuideIntro() =>
-            T("The map is the image divided by the radial model: white means exactly what "
-            + "a purely radial model around the sensor's centre predicts, red brighter than "
-            + "the model, blue darker. Everything that was radially symmetric has been removed, "
-            + "so what is left can NOT be vignetting.\n\n"
+            T("The map shows what is left of the flat once the usual vignetting, the one symmetric about "
+            + "the centre, is taken out: white means exactly as much as it predicts, red brighter, blue "
+            + "darker. So what you see in colour can NOT be vignetting.\n\n"
             + "Read the figures first, which say HOW MUCH, and only then the shape, which says WHY. "
-            + "The intensity of the colour depends on the scale chosen above: on \"auto\" the colours "
-            + "always fill the whole range, even when the figures are tiny - look "
-            + "at the legend.",
-              "Harta e imaginea impartita la modelul radial: alb inseamna exact cat prezice "
-            + "un model pur radial in jurul centrului senzorului, rosu mai luminos decat "
-            + "modelul, albastru mai intunecat. Tot ce era simetric radial a fost scos, "
-            + "deci ce a ramas NU poate fi vignetare.\n\n"
-            + "Citeste intai cifrele, care spun CAT, si abia apoi forma, care spune DE CE. "
-            + "Intensitatea culorii depinde de scara aleasa mai sus: pe \"auto\" culorile "
-            + "umplu mereu tot intervalul, chiar si cand cifrele sunt minuscule - uita-te "
-            + "la legenda.");
+            + "How strong the colours are depends on the scale chosen above: on \"auto\" they always "
+            + "fill the whole range, even when the figures are tiny; look at the legend.",
+              "Harta arata ce ramane din flat dupa ce se scoate vignetarea obisnuita, cea simetrica in "
+            + "jurul centrului: alb inseamna exact atat cat prezice ea, rosu mai luminos, albastru mai "
+            + "intunecat. Deci ce vezi colorat NU poate fi vignetare.\n\n"
+            + "Citeste intai cifrele, care spun CAT, si abia apoi forma, care spune DE CE. Cat de tari "
+            + "sunt culorile depinde de scara aleasa mai sus: pe \"auto\" ele umplu mereu tot intervalul, "
+            + "chiar si cand cifrele sunt minuscule; uita-te la legenda.");
 
         /// <summary>
         /// The shapes met on the map and what they meant, in the order they are worth looking
@@ -417,75 +411,60 @@ namespace FlatCheck.Wpf
         {
             (T("blotches with no direction",
                "pete fara directie"),
-             T("Small deviations, with no preferred axis. The diffuser's signature plus the noise of "
-             + "the sky. Background extraction removes them without effort; the figures decide whether "
-             + "they can be ignored.",
-               "Abateri mici, fara o axa preferata. Semnatura difuzorului plus zgomotul "
-             + "cerului. Background extraction le scoate fara efort; cifrele decid daca "
-             + "sunt de ignorat.")),
+             T("Small deviations, with no particular direction: the diffuser's mark and the noise. "
+             + "Background extraction removes them without effort; the figures say whether they can be "
+             + "ignored.",
+               "Abateri mici, fara o directie anume: urma difuzorului si zgomotul. Extragerea de fond "
+             + "le scoate fara efort; cifrele spun daca pot fi ignorate.")),
 
-            (T("dipole (one side blue, the other red)",
-               "dipol (o parte albastra, cealalta rosie)"),
-             T("A gradient, so a direction. It matches \"tilt\". An uneven "
-             + "source, ambient light, or an obstruction lying asymmetrically over the "
-             + "lens. Whether it is fixed in the world (the sky) or to the camera (the diffuser, the "
-             + "lens hood) one master cannot say; a second session with the same lens can.",
-               "Un gradient, deci o directie. Se potriveste cu \"inclinare\". Sursa "
-             + "neuniforma, lumina ambientala, sau un obstacol intins asimetric peste "
-             + "obiectiv. Daca e fix in lume (cerul) sau pe aparat (difuzorul, parasolarul) un "
-             + "singur master nu poate spune; o a doua sesiune cu acelasi obiectiv poate.")),
+            (T("one side blue, the other red",
+               "o parte albastra, cealalta rosie"),
+             T("One side of the frame is brighter than the other: the same thing \"tilt\" measures. An "
+             + "uneven light source, light from around, or something lying askew over the lens. Whether "
+             + "it comes from the world (the sky) or from the camera (the diffuser, the lens hood) one "
+             + "master cannot say; a second session with the same lens can.",
+               "O parte a cadrului e mai luminoasa decat cealalta: acelasi lucru pe care il masoara "
+             + "\"inclinare\". Sursa de lumina neuniforma, lumina din jur, sau ceva asezat stramb peste "
+             + "obiectiv. Daca vine din lume (cerul) sau de la aparat (difuzorul, parasolarul) un singur "
+             + "master nu poate spune; o a doua sesiune cu acelasi obiectiv poate.")),
 
             (T("concentric circles or arcs",
                "cercuri sau arce concentrice"),
-             T("A ring centred on the sensor can NOT stay in the map - the radial model "
-             + "absorbs it by construction. So if you see one, it is centred elsewhere: "
-             + "something round in front of the lens is off the axis, or the light is not "
-             + "diffuse. It has not been seen yet on a real master: the rings that appeared on "
-             + "masters with a large gradient were an artefact of the radial model, corrected "
-             + "since - the profile is now taken from the raster symmetrised at 180 degrees, "
-             + "and on the partial rings beyond the inscribed circle the even term "
-             + "(a saddle of the sky) is removed too, which drew a ridge on that circle.",
-               "Un inel centrat pe senzor NU poate ramane in harta - modelul radial il "
-             + "absoarbe prin constructie. Deci daca vezi unul, e centrat in alta parte: "
-             + "ceva rotund din fata obiectivului e in afara axei, sau lumina nu e "
-             + "difuza. Nu s-a vazut inca pe un master real: inelele care apareau pe "
-             + "mastere cu gradient mare erau un artefact al modelului radial, corectat "
-             + "intre timp - profilul se ia acum din rasterul simetrizat la 180 de grade, "
-             + "iar pe inelele partiale de dincolo de cercul inscris se scoate si termenul "
-             + "par (o sa a cerului), care desena o creasta pe acel cerc.")),
+             T("A ring centred on the sensor cannot stay in the map: it is taken out with the vignetting. "
+             + "So if you see one, it is centred elsewhere: something round in front of the lens is not on "
+             + "the axis, or the light is not diffuse. It has not been seen on a real master yet.",
+               "Un inel centrat pe senzor nu poate ramane in harta: e scos odata cu vignetarea. Deci daca "
+             + "vezi unul, e centrat in alta parte: ceva rotund din fata obiectivului nu e pe axa, sau "
+             + "lumina nu e difuza. Pe un master real nu s-a vazut inca.")),
 
             (T("a local spot in a corner or at an edge",
                "pata locala intr-un colt sau la o margine"),
-             T("A light leak: the viewfinder, the mount, the diffuser's side. It is fixed to the "
-             + "camera, so it comes back in every session until its cause is found.",
-               "Light leak: vizor, montura, latura difuzorului. E fixa pe aparat, deci "
-             + "revine in fiecare sesiune pana i se gaseste cauza.")),
+             T("A light leak: through the viewfinder, at the mount, past the diffuser. It belongs to the "
+             + "camera, so it comes back in every session until you find its cause.",
+               "O scurgere de lumina: prin vizor, pe la montura, pe langa difuzor. Tine de aparat, deci "
+             + "revine in fiecare sesiune pana ii gasesti cauza.")),
 
             (T("a round spot in the centre",
                "pata rotunda in centru"),
-             T("Illumination contaminated symmetrically about the axis: a panel too close, "
-             + "a monitor's backlight. When it is exactly centred, it can NOT appear on the "
-             + "map and no test sees it - the radial model absorbs all of it, "
-             + "exactly like vignetting; measured, a 10% spot in the centre leaves the map empty "
-             + "and every figure under 0.1%. Its only trace is the vignetting figure, which "
-             + "grows. It shows only when it is slightly off-centre, and then as a crescent, "
-             + "not as a disc. No rotation removes it; the counter-test "
-             + "is distance - one set at 30 cm, one at 60.",
-               "Iluminare contaminata simetric fata de axa: un panou prea aproape, "
-             + "backlight-ul unui monitor. Cand e chiar centrata, NU poate aparea pe "
-             + "harta si nu o vede niciun test - modelul radial o absoarbe intreaga, "
-             + "exact ca vignetarea; masurat, o pata de 10% in centru lasa harta goala "
-             + "si toate cifrele sub 0.1%. Singura ei urma e cifra de vignetare, care "
-             + "creste. Se vede doar cand e putin descentrata, si atunci ca o semiluna, "
-             + "nu ca un disc. Nicio rotatie nu o scoate; contra-testul "
-             + "e distanta - un set la 30 cm, unul la 60.")),
+             T("Extra light right in the middle: a panel too close, the light behind a monitor. When it "
+             + "is exactly centred it does not appear on the map and no test sees it, because it looks "
+             + "exactly like vignetting; measured, a 10 % spot in the centre leaves the map empty and "
+             + "every figure under 0.1 %. Its only trace is the vignetting figure, which grows. It shows "
+             + "only when it is slightly off-centre, and then as a crescent, not as a disc. Turning the "
+             + "camera does not remove it; the test is distance: one set of flats at 30 cm, one at 60.",
+               "Lumina in plus chiar in mijloc: un panou prea aproape, lumina din spatele unui monitor. "
+             + "Cand e exact in centru nu apare pe harta si nu o vede niciun test, pentru ca seamana "
+             + "perfect cu vignetarea; masurat, o pata de 10 % in centru lasa harta goala si toate "
+             + "cifrele sub 0.1 %. Singura ei urma e cifra de vignetare, care creste. Se vede doar cand "
+             + "e putin descentrata, si atunci ca o semiluna, nu ca un disc. Rotirea aparatului nu o "
+             + "scoate; proba e distanta: un set de flat-uri la 30 cm, unul la 60.")),
 
             (T("fine grain everywhere",
                "granulatie fina peste tot"),
-             T("Noise, not structure: too few frames or too low an exposure. The figures "
-             + "stay small; there is nothing to fix at the source, only more to stack.",
-               "Zgomot, nu structura: prea putine cadre sau expunere prea joasa. Cifrele "
-             + "raman mici; nu e nimic de reparat la sursa, doar de stivuit mai mult.")),
+             T("Noise, not a defect: too few frames or too low an exposure. The figures stay small; "
+             + "there is nothing to fix at the source, only more frames to stack.",
+               "Zgomot, nu un defect: prea putine cadre sau expunere prea mica. Cifrele raman mici; nu "
+             + "e nimic de reparat la sursa, doar de stivuit mai multe cadre.")),
         };
 
         // --------------------------------------------------- the histogram tab

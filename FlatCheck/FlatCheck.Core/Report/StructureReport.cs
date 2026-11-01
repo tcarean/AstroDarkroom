@@ -198,19 +198,19 @@ namespace FlatCheck
         {
             double spread = Stats.DepthErrorPct(Th.ProfileDatabaseSpreadStops);
             string reference = T(
-                $"The reference itself differs by {Th.ProfileDatabaseSpreadStops:F1} stops = {spread:F0} % between the profile databases,\n"
-                + "so the depth verdict cannot be finer than that and stays on the residual scale.",
-                $"Referinta insasi difera cu {Th.ProfileDatabaseSpreadStops:F1} stopuri = {spread:F0} % intre bazele de profile,\n"
-                + "deci verdictul adancimii nu poate fi mai fin de atat si ramane pe scara de reziduu.");
+                $"But the two profile databases differ from each other by {Th.ProfileDatabaseSpreadStops:F1} stops, that is {spread:F0} % in the corner,\n"
+                + "so the verdict here cannot be finer than that and stays on the five tests' scale.",
+                $"Dar cele doua baze de profile difera intre ele cu {Th.ProfileDatabaseSpreadStops:F1} stopuri, adica {spread:F0} % in colt,\n"
+                + "asa ca verdictul de aici nu poate fi mai fin de atat si ramane pe scara celor cinci teste.");
             if (double.IsNaN(diffStops))
-                return T("On the scale of the --light mode the difference cannot be read (undetermined). ",
-                         "Pe scara modului --light diferenta nu se poate citi (nedeterminata). ") + reference;
+                return T("The End-to-end test would have nothing to read from it (undetermined). ",
+                         "Testul End-to-end nu ar avea ce citi din ea (nedeterminata). ") + reference;
             double err = Stats.DepthErrorPct(diffStops);
             string word = VerdictWords.Of(Stats.DepthOnLightScale(diffStops));
-            return T($"In the corner of a light calibrated with the master: {err:F1} %; on the scale of the --light mode ({Th.LightRadOk:F0} % OK,\n"
-                     + $"{Th.LightRadBad:F0} % {VerdictWords.Of("PROBLEMA")}), which measures the same quantity directly in the light, it would be {word}.\n",
-                     $"In coltul unui light calibrat cu masterul: {err:F1} %; pe scara modului --light ({Th.LightRadOk:F0} % OK,\n"
-                     + $"{Th.LightRadBad:F0} % PROBLEMA), care masoara aceeasi marime direct in light, ar fi {word}.\n")
+            return T($"In the corner of a light calibrated with this master the error would be {err:F1} %. The End-to-end test,\n"
+                     + $"which measures the same thing directly in the light, would call it {word} ({Th.LightRadOk:F0} % OK, {Th.LightRadBad:F0} % {VerdictWords.Of("PROBLEMA")}).\n",
+                     $"In coltul unui light calibrat cu acest master eroarea ar fi {err:F1} %. Testul End-to-end,\n"
+                     + $"care masoara acelasi lucru direct in light, i-ar spune {word} ({Th.LightRadOk:F0} % OK, {Th.LightRadBad:F0} % PROBLEMA).\n")
                  + reference;
         }
 
@@ -231,8 +231,8 @@ namespace FlatCheck
                 ("BUN", T($"{S(Th.ResidPerfect)} - {S(Th.ResidUsable)} stops", $"{S(Th.ResidPerfect)} - {S(Th.ResidUsable)} stopuri"),
                     T($"corner error {Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %", $"eroare in colt {Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %")),
                 ("ACCEPTABIL", T($"{S(Th.ResidUsable)} - {S(Th.ResidCheck)} stops", $"{S(Th.ResidUsable)} - {S(Th.ResidCheck)} stopuri"),
-                    T($"corner error {Th.ResidUsable:F0} - {Th.ResidCheck:F0} %; below that it cannot be told from the model's uncertainty",
-                      $"eroare in colt {Th.ResidUsable:F0} - {Th.ResidCheck:F0} %; sub atat nu se deosebeste de incertitudinea modelului")),
+                    T($"corner error {Th.ResidUsable:F0} - {Th.ResidCheck:F0} %; below that it cannot be told from the profile's uncertainty",
+                      $"eroare in colt {Th.ResidUsable:F0} - {Th.ResidCheck:F0} %; sub atat nu se poate deosebi de nesiguranta profilului")),
                 ("REFA", T($"over {S(Th.ResidCheck)} stops", $"peste {S(Th.ResidCheck)} stopuri"),
                     T($"corner error over {Th.ResidCheck:F0} %; redo the flats", $"eroare in colt peste {Th.ResidCheck:F0} %; refa flat-urile")),
             };
@@ -244,12 +244,12 @@ namespace FlatCheck
         /// </summary>
         /// <returns>Three lines joined by '\n'.</returns>
         internal static string DepthScaleNote()
-            => T($"The same residual scale as the five tests ({Th.ResidPerfect:F0} / {Th.ResidUsable:F0} / {Th.ResidCheck:F0} %), applied to the error\n"
-                 + "the depth difference leaves in the corner of a light calibrated with the master, 2^|stops| - 1, and\n"
-                 + "translated into stops. It is not a new threshold.",
-                 $"Aceeasi scara de reziduu ca cele cinci teste ({Th.ResidPerfect:F0} / {Th.ResidUsable:F0} / {Th.ResidCheck:F0} %), aplicata erorii pe care\n"
-                 + "diferenta de adancime o lasa in coltul unui light calibrat cu masterul, 2^|stopuri| - 1, si\n"
-                 + "tradusa in stopuri. Nu e un prag nou.");
+            => T($"The same scale as the five tests' ({Th.ResidPerfect:F0} / {Th.ResidUsable:F0} / {Th.ResidCheck:F0} %), applied to the error the depth\n"
+                 + "difference leaves in the corner of a light calibrated with the master, and translated\n"
+                 + "into stops. It is not a new threshold.",
+                 $"Aceeasi scara ca la cele cinci teste ({Th.ResidPerfect:F0} / {Th.ResidUsable:F0} / {Th.ResidCheck:F0} %), aplicata erorii pe care\n"
+                 + "diferenta de adancime o lasa in coltul unui light calibrat cu masterul, si tradusa in\n"
+                 + "stopuri. Nu e un prag nou.");
 
         /// <summary>
         /// "1.26 stopuri (colt = 42 % din centru)" - the master's depth, as the informative row
@@ -276,16 +276,14 @@ namespace FlatCheck
         /// </summary>
         /// <returns>The paragraph, in the interface language.</returns>
         internal static string FilteredLensNote()
-            => T("With a filter on the lens the comparison has no meaning. Any filter changes the vignetting - "
-               + "a mount shades the corners, a glass darkens the edges, a stack of rings does both - so the "
-               + "master's depth is no longer the lens's published profile plus the error of the flat, and "
-               + "nothing can be compared. The verdict is the five tests' alone; the depth above is shown for "
-               + "information.",
-                 "Cu un filtru pe obiectiv comparatia nu are sens. Orice filtru schimba vignetarea - inelul "
-               + "umbreste colturile, sticla intuneca marginile, un teanc de inele le face pe amandoua - deci "
-               + "adancimea masterului nu mai e profilul publicat al obiectivului plus eroarea flatului, si nu "
-               + "se mai poate compara nimic. Verdictul e doar al celor cinci teste; adancimea de mai sus e "
-               + "pur informativa.");
+            => T("With a filter on the lens the comparison has no meaning: any filter changes the vignetting "
+               + "(a mount shades the corners, a glass darkens the edges), so the master's vignetting is no "
+               + "longer the one in the lens's profile. The verdict is the five tests' alone; the depth above "
+               + "is for information only.",
+                 "Cu un filtru pe obiectiv comparatia nu are sens: orice filtru schimba vignetarea (inelul "
+               + "umbreste colturile, sticla intuneca marginile), deci vignetarea masterului nu mai e cea din "
+               + "profilul obiectivului. Verdictul e doar al celor cinci teste; adancimea de mai sus e doar "
+               + "informativa.");
 
         /// <summary>A depth in stops, with the corner's level as a percent of the centre.</summary>
         /// <param name="stops">The depth, stops.</param>
@@ -335,19 +333,19 @@ namespace FlatCheck
             bool chosen = c.Shot?.ChosenLens != null;
             string who = $"{c.Nearest.Profile.Lens.SourceLabel} {c.Nearest.Profile.Lens.Title}";
             string whose = chosen
-                ? T($"the profile of the lens you chose ({who})", $"al profilului obiectivului ales de tine ({who})")
-                : T($"the nearest profile's ({who})", $"al celui mai apropiat profil ({who})");
+                ? T($"given by the profile of the lens you chose ({who})", $"dat de profilul obiectivului ales de tine ({who})")
+                : T($"given by the nearest profile ({who})", $"dat de profilul cel mai apropiat ({who})");
             string verdict = T(
-                $"the comparison's verdict: {VerdictWords.Of(c.Verdict)} - {whose}, "
-                + $"{c.Nearest.DiffStops:+0.00;-0.00} stops = {c.Nearest.ErrorPct:F1} % error in the corner of a light calibrated with the master",
-                $"verdictul comparatiei: {VerdictWords.Of(c.Verdict)} - {whose}, "
-                + $"{c.Nearest.DiffStops:+0.00;-0.00} stopuri = {c.Nearest.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul");
+                $"the comparison's verdict: {VerdictWords.Of(c.Verdict)}, {whose}: "
+                + $"{c.Nearest.DiffStops:+0.00;-0.00} stops against the profile = {c.Nearest.ErrorPct:F1} % error in the corner of a light calibrated with the master",
+                $"verdictul comparatiei: {VerdictWords.Of(c.Verdict)}, {whose}: "
+                + $"{c.Nearest.DiffStops:+0.00;-0.00} stopuri fata de profil = {c.Nearest.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul");
             string spread = c.Profiles.Count > 1
                 ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner; a master that matches one of them is not wrong",
                     $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; un master care coincide cu unul din ele nu e gresit")
                 : chosen ? ""
-                : T("\na single profile: without a second database there is no telling how uncertain the model is (usually ~0.2 stops)",
-                    "\nun singur profil: fara a doua baza nu se stie cat de incert e modelul (de obicei ~0.2 stopuri)");
+                : T("\na single profile: without a second profile database there is no telling how sure it is (they usually differ by ~0.2 stops)",
+                    "\nun singur profil: fara o a doua baza de profile nu se stie cat de sigur e (de obicei difera cu ~0.2 stopuri)");
             return verdict + spread + (chosen ? ChosenLensNote(c.Shot) : RangeOnlyNote(c.Shot));
         }
 
@@ -372,8 +370,8 @@ namespace FlatCheck
             // on any other list (a caller narrowing an ID-found list by key) that sentence
             // would be false, so only the choice and what it left out are said.
             string why = shot.CandidatesByRangeOnly
-                ? T($": all that is known is {shot.RawLensLabel}, a manual lens or one unknown to the databases, so the lens could not be told from the file.",
-                    $": se stie doar {shot.RawLensLabel}, obiectiv manual sau necunoscut bazelor, deci obiectivul nu se putea afla din fisier.")
+                ? T($": the file only says {shot.RawLensLabel}, a manual lens or one unknown to the profile databases, so the lens could not be told on its own.",
+                    $": din fisier se stie doar {shot.RawLensLabel}, un obiectiv manual sau unul necunoscut bazelor de profile, deci obiectivul nu se putea afla singur.")
                 : ".";
             return T($"\ncompared with the lens you chose, {chosen.SourceLabel} {chosen.Title}" + why + leftOut,
                      $"\ncomparat cu obiectivul ales de tine, {chosen.SourceLabel} {chosen.Title}" + why + leftOut);
@@ -387,10 +385,10 @@ namespace FlatCheck
         /// <returns>The paragraph, in the interface language; "" when there is nothing to choose.</returns>
         internal static string LensChoicePrompt(ShotIdentity shot)
             => shot != null && shot.OffersLensChoice
-                ? T($"All that is known is {shot.RawLensLabel}: a manual lens or one unknown to the databases, so the lenses in the list are every lens of your "
-                    + "camera's mount with that range. Choose yours and the verdict is its profile's; without a choice the nearest profile decides.",
-                    $"Se stie doar {shot.RawLensLabel}: obiectiv manual sau necunoscut bazelor, deci obiectivele din lista sunt toate obiectivele "
-                    + "monturii camerei tale cu aceasta gama. Alege-l pe al tau si verdictul e al profilului lui; fara alegere decide cel mai apropiat profil.")
+                ? T($"The file only says {shot.RawLensLabel}: a manual lens or one the profile databases do not know, so the list holds every lens "
+                    + "with that range for your camera's mount. Choose yours and the verdict is given on its profile; without a choice the nearest profile decides.",
+                    $"Din fisier se stie doar {shot.RawLensLabel}: un obiectiv manual sau unul pe care bazele de profile nu il cunosc, asa ca lista are toate "
+                    + "obiectivele cu aceasta gama pentru montura camerei tale. Alege-l pe al tau si verdictul se da pe profilul lui; fara alegere decide profilul cel mai apropiat.")
                 : "";
 
         /// <summary>
@@ -401,9 +399,9 @@ namespace FlatCheck
         /// <returns>The note, starting with '\n'; "" when the lenses were matched by ID.</returns>
         internal static string RangeOnlyNote(ShotIdentity shot)
             => shot != null && shot.CandidatesByRangeOnly
-                ? T($"\nthe lenses above are those of the mount with {shot.RawLensLabel}: a manual lens or one unknown to the databases. "
+                ? T($"\nthe lenses above are all those with {shot.RawLensLabel} for this mount: a manual lens or one unknown to the profile databases. "
                     + "If another one with the same range is among them, read your lens's row, not the nearest one.",
-                    $"\nobiectivele de mai sus sunt cele ale monturii cu {shot.RawLensLabel}: obiectiv manual sau necunoscut bazelor. "
+                    $"\nobiectivele de mai sus sunt toate cele cu {shot.RawLensLabel} pentru aceasta montura: un obiectiv manual sau unul necunoscut bazelor de profile. "
                     + "Daca printre ele e si altul cu aceeasi gama, citeste randul obiectivului tau, nu pe cel mai apropiat.")
                 : "";
 
@@ -412,12 +410,12 @@ namespace FlatCheck
         /// </summary>
         /// <returns>Three lines joined by '\n'.</returns>
         internal static string ComparisonNote()
-            => T("The difference is RADIAL, so invisible to the five tests and to the map: it is the\n"
-                 + "only place where a source that falls off with the angle (plus) or fills the corners (minus) shows. The\n"
-                 + "profile is the lens model, not your copy of it, and it is achromatic; the master is the 2x2 mean of the mosaic.",
-                 "Diferenta e RADIALA, deci invizibila celor cinci teste si hartii: e singurul\n"
-                 + "loc unde se vede o sursa care cade cu unghiul (plus) sau umple colturile (minus). Profilul e\n"
-                 + "modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.");
+            => T("The difference is symmetric about the centre, like the vignetting, so the five tests and the map do not\n"
+                 + "see it: this is the only place where a source weaker seen at an angle (plus) or one that fills the corners (minus) shows.\n"
+                 + "The profile describes the lens model, not your copy, and ignores colour; the master is taken as the mean of the sensor's four colours.",
+                 "Diferenta e simetrica in jurul centrului, ca vignetarea, deci cele cinci teste si harta nu o vad:\n"
+                 + "aici e singurul loc unde se vede o sursa mai slaba vazuta din unghi (plus) sau una care umple colturile (minus).\n"
+                 + "Profilul descrie modelul obiectivului, nu exemplarul tau, si nu tine cont de culoare; masterul e luat ca medie a celor patru culori ale senzorului.");
 
         /// <summary>Why it could not compare, in words.</summary>
         /// <summary>
@@ -481,10 +479,10 @@ namespace FlatCheck
         /// </summary>
         /// <returns>Two lines joined by '\n'.</returns>
         internal static string GapMeaning()
-            => T("The comparison would have said whether the depth of the vignetting is the lens's: a radial excess - a panel's\n"
-                 + "fall-off, the sky's curvature - goes unnoticed through the five tests.",
-                 "Comparatia ar fi spus daca adancimea vignetarii e cea a obiectivului: un exces radial - caderea\n"
-                 + "unui panou, curbura cerului - trece neobservat prin cele cinci teste.");
+            => T("The comparison would have said whether the master's vignetting is as deep as the lens's: a surplus symmetric\n"
+                 + "about the centre, from a panel seen at an angle or from the sky's dome, goes unnoticed through the five tests.",
+                 "Comparatia ar fi spus daca vignetarea masterului e cat a obiectivului: un surplus simetric in jurul\n"
+                 + "centrului, de la un panou vazut din unghi sau de la cupola cerului, trece neobservat prin cele cinci teste.");
 
         // ------------------------------------------------ without Adobe's profiles (R-113)
         //
@@ -515,12 +513,12 @@ namespace FlatCheck
             // cannot be listed (R-115) or none of its files could be read (it then counts as
             // present).
             return s.LensfunLenses == 0 ? missing
-                 : missing + " " + T("Without them the lens is looked for in lensfun alone, the database that ships with FlatCheck: "
-                                     + "one database instead of two, and a raw that names no lens (a Nikon writes only an ID) "
-                                     + "is matched by its focal range alone.",
-                                     "Fara ele obiectivul e cautat doar in lensfun, baza livrata cu FlatCheck: o singura baza "
-                                     + "in loc de doua, iar un raw care nu numeste obiectivul (un Nikon scrie doar un ID) "
-                                     + "e potrivit doar dupa gama de focale.");
+                 : missing + " " + T("Without them the lens is looked for in lensfun alone, the profile database that ships with "
+                                     + "FlatCheck: one database instead of two, and if the raw does not give the lens's name (a Nikon "
+                                     + "writes only a code), it is found by its focal range alone.",
+                                     "Fara ele obiectivul e cautat doar in lensfun, baza de profile livrata cu FlatCheck: o singura "
+                                     + "baza in loc de doua, iar daca raw-ul nu spune numele obiectivului (un Nikon scrie doar un "
+                                     + "cod), el e gasit doar dupa gama de focale.");
         }
 
         /// <summary>
@@ -561,8 +559,8 @@ namespace FlatCheck
         /// <param name="o">The run.</param>
         /// <returns>The shape verdict and what it covers.</returns>
         internal static string ShapeDetail(StructureOutcome o)
-            => T($"{VerdictWords.Of(o.Structure.Verdict)} - the five tests of deviation from radial symmetry",
-                 $"{VerdictWords.Of(o.Structure.Verdict)} - cele cinci teste de abatere de la simetria radiala");
+            => T($"{VerdictWords.Of(o.Structure.Verdict)} - the five tests",
+                 $"{VerdictWords.Of(o.Structure.Verdict)} - cele cinci teste");
 
         /// <summary>
         /// "REFA - +0.34 stopuri fata de lensfun Tokina ... = 27.0 % eroare in coltul light-ului
@@ -574,12 +572,12 @@ namespace FlatCheck
         internal static string DepthDetail(StructureOutcome o)
         {
             ProfileDepth n = o.Profiles.Nearest;
-            return T($"{VerdictWords.Of(o.Profiles.Verdict)} - {n.DiffStops:+0.00;-0.00} stops against {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title} = {n.ErrorPct:F1} % error in the corner of the calibrated light",
-                     $"{VerdictWords.Of(o.Profiles.Verdict)} - {n.DiffStops:+0.00;-0.00} stopuri fata de {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title} = {n.ErrorPct:F1} % eroare in coltul light-ului calibrat");
+            return T($"{VerdictWords.Of(o.Profiles.Verdict)} - by {n.DiffStops:+0.00;-0.00} stops against the {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title} profile, that is {n.ErrorPct:F1} % error in the corner of the calibrated light",
+                     $"{VerdictWords.Of(o.Profiles.Verdict)} - cu {n.DiffStops:+0.00;-0.00} stopuri fata de profilul {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title}, adica {n.ErrorPct:F1} % eroare in coltul light-ului calibrat");
         }
 
         /// <summary>The line under the two parts of the verdict: the verdict is the worse.</summary>
-        internal static string WorseOfBoth => T("The worse of the two.", "Cel mai rau dintre ele.");
+        internal static string WorseOfBoth => T("The verdict is the worse of the two.", "Verdictul e cel mai rau dintre cele doua.");
 
         /// <summary>
         /// The run's advice: the depth's when it worsened the verdict, otherwise the shape's.
@@ -604,31 +602,33 @@ namespace FlatCheck
         internal static string DepthAdvice(double diffStops, string verdict)
         {
             string cause = diffStops > 0
-                ? T("The master falls toward the corner MORE than the lens model: the light source falls off with\n"
-                    + "the angle - a panel (monitor, tablet) too close or without a real diffuser; matte sheets\n"
-                    + "do not diffuse. A Lambertian diffuser helps (opal acrylic, a thick stack of white paper)\n"
+                ? T("The master darkens toward the corner MORE than the lens profile says: the light source is\n"
+                    + "weaker seen at an angle, a panel (monitor, tablet) too close or without a real diffuser; matte\n"
+                    + "sheets do not diffuse. A real diffuser helps (opal acrylic, a thick stack of white paper)\n"
                     + "or a white wall lit from the side; more rotations do not help.",
-                    "Masterul cade spre colt MAI MULT decat modelul obiectivului: sursa de lumina cade cu\n"
-                    + "unghiul - un panou (monitor, tableta) prea aproape sau fara un difuzor adevarat; foile\n"
-                    + "mate nu difuzeaza. Ajuta un difuzor lambertian (acril opal, un teanc gros de hartie\n"
-                    + "alba) sau un perete alb luminat din lateral; nu ajuta mai multe rotatii.")
-                : T("The master falls toward the corner LESS than the lens model: the source fills the corners - a\n"
-                    + "dome of sky (it brightens toward the horizon all around), ambient light around the\n"
-                    + "source, a reflection in the lens hood. Shield the lens from everything that is not the source; on the sky,\n"
-                    + "avoid the zenith and wait for a more uniform sky.",
-                    "Masterul cade spre colt MAI PUTIN decat modelul obiectivului: sursa umple colturile - o\n"
-                    + "cupola de cer (se lumineaza spre orizont de jur imprejur), lumina ambianta pe langa\n"
-                    + "sursa, o reflexie in parasolar. Fereste obiectivul de tot ce nu e sursa; pe cer, fereste\n"
-                    + "zenitul si asteapta un cer mai uniform.");
+                    "Masterul se intuneca spre colt MAI MULT decat spune profilul obiectivului: sursa de\n"
+                    + "lumina e mai slaba vazuta din unghi, un panou (monitor, tableta) prea aproape sau fara un\n"
+                    + "difuzor adevarat; foile mate nu difuzeaza. Ajuta un difuzor adevarat (acril opal, un teanc\n"
+                    + "gros de hartie alba) sau un perete alb luminat din lateral; mai multe rotiri nu ajuta.")
+                : T("The master darkens toward the corner LESS than the lens profile says: something fills the\n"
+                    + "corners with light, the dome of the sky (it brightens toward the horizon all around), light\n"
+                    + "around the source, a reflection in the lens hood. Shield the lens from everything that is not the\n"
+                    + "source; on the sky, avoid the zenith and wait for a more uniform sky.",
+                    "Masterul se intuneca spre colt MAI PUTIN decat spune profilul obiectivului: ceva umple\n"
+                    + "colturile cu lumina, cupola cerului (se lumineaza spre orizont de jur imprejur), lumina din\n"
+                    + "jurul sursei, o reflexie in parasolar. Fereste obiectivul de tot ce nu e sursa; pe cer,\n"
+                    + "evita zenitul si asteapta un cer mai uniform.");
             string weight = verdict == "REFA"
-                ? T("\nThe excess is radial, so the five tests do not see it; background extraction\n"
-                    + "will not remove it either. Redo the flats.",
-                    "\nExcesul e radial, deci cele cinci teste nu-l vad; nu-l va scoate nici background\n"
-                    + "extraction. Refa flat-urile.")
-                : T($"\nThe excess is radial, so the five tests do not see it. Below {VerdictWords.Of("ACCEPTABIL")} it cannot be told\n"
-                    + "from the model's uncertainty (the two databases differ from each other by ~0.2 stops).",
-                    "\nExcesul e radial, deci cele cinci teste nu-l vad. Sub ACCEPTABIL nu se deosebeste\n"
-                    + "de incertitudinea modelului (cele doua baze difera intre ele cu ~0.2 stopuri).");
+                ? T("\nThe difference is symmetric about the centre, like the vignetting, so the five tests do not\n"
+                    + "see it; background extraction does not remove it either. Redo the flats.",
+                    "\nDiferenta e simetrica in jurul centrului, ca vignetarea, deci cele cinci teste nu o vad;\n"
+                    + "nici extragerea de fond nu o scoate. Refa flat-urile.")
+                : T($"\nThe difference is symmetric about the centre, like the vignetting, so the five tests do not\n"
+                    + $"see it. Below {VerdictWords.Of("ACCEPTABIL")} it cannot be told from the profile's uncertainty (the two profile\n"
+                    + "databases differ from each other by ~0.2 stops).",
+                    "\nDiferenta e simetrica in jurul centrului, ca vignetarea, deci cele cinci teste nu o vad.\n"
+                    + "Sub ACCEPTABIL nu se poate deosebi de nesiguranta profilului (cele doua baze de profile\n"
+                    + "difera intre ele cu ~0.2 stopuri).");
             return cause + weight;
         }
 
@@ -655,20 +655,20 @@ namespace FlatCheck
             }
             else
             {
-                w.WriteLine(T("    illum. centre offset    : undetermined (peak outside the frame or degenerate fit)",
-                              "    offset centru iluminare : nedeterminat (varf in afara cadrului sau fit degenerat)"));
+                w.WriteLine(T("    illum. centre offset    : undetermined (the brightest point is outside the frame)",
+                              "    offset centru iluminare : nedeterminat (punctul cel mai luminos e in afara cadrului)"));
             }
             if (Ui.Current == UiLanguage.Romanian)
             {
-                w.WriteLine("        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un");
-                w.WriteLine("        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,");
-                w.WriteLine("        iar cand varful iese din cadru e nedeterminat. Amplitudinea o da \"inclinare\".");
+                w.WriteLine("        Cifra e doar orientativa: pe un obiectiv aproape fara vignetare creste mult");
+                w.WriteLine("        fara ca eroarea sa creasca, iar cand punctul cel mai luminos iese din cadru e");
+                w.WriteLine("        nedeterminata. Cat de mare e dezechilibrul spune \"inclinare\".");
             }
             else
             {
-                w.WriteLine("        It is the ratio of the gradient to the curvature, so it is not scale-invariant: on a");
-                w.WriteLine("        lens with almost no vignetting it grows a lot without the error growing,");
-                w.WriteLine("        and once the peak leaves the frame it reads undetermined. The amplitude is given by \"tilt\".");
+                w.WriteLine("        The figure is only indicative: on a lens with almost no vignetting it grows a lot");
+                w.WriteLine("        without the error growing, and once the brightest point leaves the frame it reads");
+                w.WriteLine("        undetermined. How large the imbalance is, \"tilt\" says.");
             }
             w.WriteLine(T($"    local spots (dust etc.) : {LocalSpotValue(r)}",
                           $"    pete locale (praf etc.) : {LocalSpotValue(r)}"));
@@ -803,13 +803,13 @@ namespace FlatCheck
         /// </summary>
         /// <returns>Four lines joined by '\n'.</returns>
         internal static string LocalSpotNote()
-            => T("The deepest compact spot, after the large-scale structure is removed.\n"
+            => T("The most pronounced small spot, after the large shapes are taken out.\n"
                  + "The sign says which kind: minus = darker than its surroundings (dust,\n"
-                 + "condensation, an obstruction), plus = brighter (light leak, reflection).\n"
+                 + "condensation, something in front of the lens), plus = brighter (light leak, reflection).\n"
                  + $"Above {Th.LocalSpotWarn:F0} % a warning follows; below that the figure is informative only.",
-                 "Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.\n"
-                 + "Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,\n"
-                 + "condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).\n"
+                 "Cea mai pronuntata pata mica, dupa ce se scot formele mari.\n"
+                 + "Semnul spune ce fel: minus = mai intunecata decat imprejurimile (praf,\n"
+                 + "condens, ceva in fata obiectivului), plus = mai luminoasa (scurgere de lumina, reflexie).\n"
                  + $"Peste {Th.LocalSpotWarn:F0} % urmeaza o atentionare; sub atat cifra e doar informativa.");
 
         /// <summary>A corner's level as a percentage of the four corners' mean - the ratio of the
@@ -840,9 +840,9 @@ namespace FlatCheck
         /// <returns>One line.</returns>
         internal static string VignetteNote(StructureResult r)
             => T($"the corner is {CornerOverCentrePct(r):F0} % of the centre; "
-                 + "it is a property of the lens, not an error",
+                 + "that is the lens, not an error of the flat",
                  $"coltul e {CornerOverCentrePct(r):F0} % din centru; "
-                 + "e o proprietate a obiectivului, nu o eroare");
+                 + "asa e obiectivul, nu e o eroare a flat-ului");
 
         /// <summary>The note under the window's illumination-centre row: the fitted vertex
         /// against the sensor's centre and why the figure is not scale-invariant, or why there is
@@ -851,11 +851,12 @@ namespace FlatCheck
         /// <returns>One line.</returns>
         internal static string CentroidNote(StructureResult r)
             => r.CentroidValid
-                ? T($"peak ({r.FitCx:F0}, {r.FitCy:F0}) vs sensor centre ({r.SensorCx:F0}, {r.SensorCy:F0}); "
-                    + "a gradient/curvature ratio, so NOT scale-invariant - the amplitude is given by the tilt",
-                    $"varf ({r.FitCx:F0}, {r.FitCy:F0}) vs centru senzor ({r.SensorCx:F0}, {r.SensorCy:F0}); "
-                    + "raport gradient/curbura, deci NU e scale-invariant - amplitudinea o da inclinarea")
-                : T("peak outside the frame or degenerate fit", "varf in afara cadrului sau fit degenerat");
+                ? T($"the brightest point is at ({r.FitCx:F0}, {r.FitCy:F0}), the sensor's centre at ({r.SensorCx:F0}, {r.SensorCy:F0}); "
+                    + "the figure is only indicative, how large the imbalance is \"tilt\" says",
+                    $"punctul cel mai luminos e la ({r.FitCx:F0}, {r.FitCy:F0}), centrul senzorului la ({r.SensorCx:F0}, {r.SensorCy:F0}); "
+                    + "cifra e doar orientativa, cat de mare e dezechilibrul spune \"inclinare\"")
+                : T("the brightest point falls outside the frame; it cannot be measured",
+                    "punctul cel mai luminos cade in afara cadrului; nu se poate masura");
 
         /// <summary>
         /// The warning for a compact spot, or null when there is none. It is not a verdict,
@@ -868,13 +869,13 @@ namespace FlatCheck
         /// <returns>Four lines joined by '\n' when the spot is flagged, else null.</returns>
         internal static string LocalSpotWarning(StructureResult r)
             => r.LocalSpotFlagged
-                ? T($"WARNING: compact spot of {Math.Abs(r.LocalSpotPct):F2} % at ({r.LocalSpotX}, {r.LocalSpotY}), above {Th.LocalSpotWarn:F0} %.\n"
-                    + "    It is fixed to the camera - dust on the sensor or on a filter, condensation, a small leak.\n"
-                    + "    Right for the session whose lights have the same spot; NOT for a\n"
+                ? T($"WARNING: small spot of {Math.Abs(r.LocalSpotPct):F2} % at ({r.LocalSpotX}, {r.LocalSpotY}), above {Th.LocalSpotWarn:F0} %.\n"
+                    + "    It belongs to the camera: dust on the sensor or on a filter, condensation, a small light leak.\n"
+                    + "    Fine for the session whose lights have the same spot; NOT for a\n"
                     + "    library flat. Look for the position above in the residual map.",
-                    $"ATENTIE: pata compacta de {Math.Abs(r.LocalSpotPct):F2} % la ({r.LocalSpotX}, {r.LocalSpotY}), peste {Th.LocalSpotWarn:F0} %.\n"
-                    + "    E fixa pe aparat - praf pe senzor sau pe filtru, condens, o scurgere mica.\n"
-                    + "    Corecta pentru sesiunea ale carei lights au aceeasi pata; NU pentru un\n"
+                    $"ATENTIE: pata mica de {Math.Abs(r.LocalSpotPct):F2} % la ({r.LocalSpotX}, {r.LocalSpotY}), peste {Th.LocalSpotWarn:F0} %.\n"
+                    + "    Tine de aparat: praf pe senzor sau pe filtru, condens, o scurgere mica de lumina.\n"
+                    + "    E in regula pentru sesiunea ale carei lights au aceeasi pata; NU pentru un\n"
                     + "    flat de biblioteca. Cauta pozitia de mai sus in harta reziduala.")
                 : null;
 
@@ -899,32 +900,32 @@ namespace FlatCheck
         internal static string TestNote(string metric) => metric switch
         {
             nameof(StructureResult.CornerSpreadPct) => T(
-                "how much the four corner boxes differ from each other; on a purely radial field they would be equal",
-                "cat difera intre ele cele patru cutii de colt; pe un camp pur radial ar fi egale"),
+                "how much the four corners differ from each other; on a correct flat they would be equally bright",
+                "cat difera intre ele cele patru colturi; pe un flat corect ar fi la fel de luminoase"),
 
             nameof(StructureResult.AzimuthalMaxPct) => T(
-                "how much the 12 sectors of the same ring differ from each other, on the worst "
-              + "ring; only in the inscribed circle, the one place where every azimuth is "
-              + "sampled",
-                "cat difera intre ele cele 12 sectoare ale aceluiasi inel, pe inelul cel mai "
-              + "prost; doar in cercul inscris, singurul loc unde toate azimuturile sunt "
-              + "esantionate"),
+                "how much the 12 slices of the same ring around the centre differ from each other, on "
+              + "the most uneven ring; measured only in the circle that fits whole in the frame",
+                "cat difera intre ele cele 12 felii ale aceluiasi inel din jurul centrului, pe inelul "
+              + "cel mai neuniform; se masoara doar in cercul care incape intreg in cadru"),
 
             nameof(StructureResult.ResidualPtpPct) => T(
-                "measures directly how much of the frame a purely radial model does NOT explain",
-                "masoara direct cat din cadru NU se explica printr-un model pur radial"),
+                "how much of the frame does NOT look like a usual vignetting, symmetric about the "
+              + "centre; the figure that matters most",
+                "cat din cadru NU arata ca o vignetare obisnuita, simetrica in jurul centrului; "
+              + "cifra care conteaza cel mai mult"),
 
             nameof(StructureResult.TiltPct) => T(
-                "the peak-to-peak amplitude of the linear gradient across the frame; it also catches an "
-              + "off-centre optical axis, weighted by what it costs photometrically",
-                "amplitudinea varf-la-varf a gradientului liniar peste cadru; prinde si o axa "
-              + "optica decentrata, ponderata cu cat costa ea fotometric"),
+                "how much brighter one edge of the frame is than the opposite one; it also catches a "
+              + "lens whose axis is off-centre",
+                "cu cat e o margine a cadrului mai luminoasa decat cea opusa; prinde si un obiectiv "
+              + "cu axa descentrata"),
 
             nameof(StructureResult.MaxTilePct) => T(
-                "the most deviant tile of the whole frame; it catches a compact defect that "
-              + "the residual clips as an extreme",
-                "cea mai abatuta dala de pe tot cadrul; prinde un defect compact pe care "
-              + "reziduul il taie ca extrema"),
+                "the small square that stands out most from the others; it catches a small compact "
+              + "defect, which the residual sets aside as an extreme",
+                "patratelul care iese cel mai mult din randul celorlalte; prinde un defect mic si "
+              + "compact, pe care reziduul il lasa deoparte ca pe o extrema"),
 
             _ => null,
         };
@@ -947,9 +948,10 @@ namespace FlatCheck
                 ("PERFECT", T($"under {Th.ResidPerfect:F0} %", $"sub {Th.ResidPerfect:F0} %"),
                             T("perfect quality", "calitate perfecta")),
                 ("BUN", $"{Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %",
-                        T("usable; background extraction removes what is left", "utilizabil; background extraction scoate ce ramane")),
+                        T("usable; background extraction removes what is left", "utilizabil; extragerea de fond scoate ce ramane")),
                 ("ACCEPTABIL", $"{Th.ResidUsable:F0} - {Th.ResidCheck:F0} %",
-                               T("usable, but confirm with --light before a hard stretch", "utilizabil, dar confirma cu --light inainte de un stretch dur")),
+                               T("usable, but confirm with the End-to-end test (--light) before a hard stretch",
+                                 "utilizabil, dar confirma cu testul End-to-end (--light) inainte de un stretch puternic")),
                 ("REFA", T($"over {Th.ResidCheck:F0} %", $"peste {Th.ResidCheck:F0} %"),
                          T("redo the flats", "refa flat-urile")),
             };
@@ -960,22 +962,22 @@ namespace FlatCheck
         /// </summary>
         /// <returns>Eight lines joined by '\n'.</returns>
         internal static string WhyResidualMatters()
-            => T("The most important one is \"residual (radial model)\": it measures directly how much of\n"
-                 + "the frame a purely radial model does NOT explain. It is an UPPER BOUND of the\n"
-                 + "flat's error, not the error itself - it holds both the part fixed to the camera\n"
-                 + "(the optics; divided out of the lights correctly) and the part fixed in the world (the\n"
-                 + "illumination; it does not repeat); one master cannot tell them apart. The corner spread,\n"
-                 + "the azimuthal asymmetry and the tilt are partial views of the same deviation.\n"
-                 + "\"Worst spot\" catches what the others miss: a compact defect - a small leak,\n"
-                 + "a condensation spot - that the residual clips as an extreme.",
-                 "Cel mai important e \"reziduu dupa model rad.\": masoara direct cat din\n"
-                 + "cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a\n"
-                 + "erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat\n"
-                 + "(optica; se imparte corect din lights) si partea fixa in lume (iluminarea;\n"
-                 + "nu se reproduce); un singur master nu le desparte. Imprastierea colturilor,\n"
-                 + "asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.\n"
-                 + "\"Pata maxima\" prinde ce le scapa celorlalte: un defect compact - o scurgere\n"
-                 + "mica, o pata de condens - pe care reziduul il taie ca extrema.");
+            => T("The most important one is \"residual (radial model)\": it says directly how much of\n"
+                 + "the frame does not look like a usual vignetting, symmetric about the centre. It is an\n"
+                 + "UPPER BOUND of the flat's error, not the error itself: it holds both what belongs to the\n"
+                 + "camera (the optics, divided out of the lights correctly) and what belongs to the world\n"
+                 + "(the illumination, which does not repeat); one master cannot tell them apart. The corner\n"
+                 + "spread, the azimuthal asymmetry and the tilt are pieces of the same deviation.\n"
+                 + "\"Worst spot\" catches what the others miss: a small compact defect, a light leak,\n"
+                 + "a condensation spot, which the residual sets aside as an extreme.",
+                 "Cel mai important e \"reziduu dupa model rad.\": spune direct cat din cadru nu\n"
+                 + "arata ca o vignetare obisnuita, simetrica in jurul centrului. E o LIMITA DE SUS a\n"
+                 + "erorii flat-ului, nu eroarea insasi: cuprinde si ce tine de aparat (optica, care se\n"
+                 + "imparte corect din lights) si ce tine de lume (iluminarea, care nu se repeta); un\n"
+                 + "singur master nu le poate desparti. Imprastierea colturilor, asimetria azimutala si\n"
+                 + "inclinarea sunt bucati ale aceleiasi abateri. \"Pata maxima\" prinde ce le scapa\n"
+                 + "celorlalte: un defect mic si compact, o scurgere de lumina, o pata de condens, pe\n"
+                 + "care reziduul il lasa deoparte ca pe o extrema.");
 
         /// <summary>Writes the residual scale in columns, and why the residual matters.</summary>
         /// <param name="w">Where to write.</param>
@@ -998,34 +1000,34 @@ namespace FlatCheck
         internal static string Advice(string verdict) => verdict switch
         {
             "PERFECT" => T(
-                "The deviation from radial symmetry is below the noise. The flat is clean.",
-                "Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat."),
+                "The flat looks like a clean vignetting; what departs from it is below the noise.",
+                "Flat-ul arata ca o vignetare curata; ce abate de la ea e sub zgomot."),
 
             "BUN" => T(
-                "Usable as it is. What is left lies in the range that background\n"
+                "Usable as it is. What is left is in the range that background\n"
               + "extraction removes without effort.",
-                "Utilizabil ca atare. Ce ramane sta in intervalul pe care background\n"
-              + "extraction il scoate fara efort."),
+                "Utilizabil asa cum e. Ce ramane e in intervalul pe care extragerea\n"
+              + "de fond il scoate fara efort."),
 
             "ACCEPTABIL" => T(
-                "Usable, but run the --light mode on a calibrated light before\n"
+                "Usable, but run the End-to-end test (--light) on the calibrated lights before\n"
               + "a hard stretch, to confirm that the flat really corrects.",
-                "Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de\n"
-              + "un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza."),
+                "Utilizabil, dar ruleaza testul End-to-end (--light) pe lighturile calibrate\n"
+              + "inainte de un stretch puternic, ca sa confirmi ca flat-ul chiar corecteaza."),
 
             // Says that the figure is an upper bound: a part fixed to the camera (a genuinely
             // non-radial optic, an off-centre axis) comes out here too, without being a flat
             // error. Measured: an axis off-centre by 5% of the width gives REFA on a flat that
             // corrects perfectly.
             _ => T(
-                "Too large a deviation from radial symmetry => an uneven source, a light\n"
-              + "leak, a tilted camera, or ambient light. It is NOT vignetting. The figure is an\n"
-              + "upper bound: an optic that is itself off-centre shows here too, and that part\n"
-              + "is not a flat error. Otherwise redo the flats; see the map for the shape of the problem.",
-                "Abatere prea mare de la simetria radiala => sursa neuniforma, light\n"
-              + "leak, camera inclinata, sau ambient. NU e vignetare. Cifra e o limita\n"
-              + "superioara: o optica ea insasi descentrata apare si ea aici, si partea aceea\n"
-              + "nu e eroare de flat. Altfel refa flat-urile; vezi harta pentru forma problemei."),
+                "Too large a departure from a usual vignetting: an uneven light source, a light\n"
+              + "leak, the camera tilted toward the source, or light from around. It is NOT vignetting.\n"
+              + "The figure is an upper bound: a lens whose axis is off-centre shows here too, and that\n"
+              + "part is not a flat error. Otherwise redo the flats; the map shows the shape of the problem.",
+                "Abatere prea mare fata de o vignetare obisnuita: sursa de lumina neuniforma, o\n"
+              + "scurgere de lumina, aparatul inclinat fata de sursa sau lumina din jur. NU e vignetare.\n"
+              + "Cifra e o limita de sus: un obiectiv cu axa descentrata apare si el aici, si partea\n"
+              + "aceea nu e eroare de flat. Altfel refa flat-urile; harta arata forma problemei."),
         };
 
         /// <summary>Writes the advice of a verdict, indented.</summary>

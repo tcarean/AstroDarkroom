@@ -123,7 +123,7 @@ public class StructureReportTests
         Assert.Contains("(441, 297)", warning);
         Assert.Contains("sesiunea", warning);
         Assert.Contains("biblioteca", warning);
-        Assert.Contains("fixa pe aparat", warning);
+        Assert.Contains("Tine de aparat", warning);
     }
 
     /// <summary>
@@ -152,7 +152,7 @@ public class StructureReportTests
         Assert.Contains("mai intunecat", note);
         Assert.Contains("praf", note);
         Assert.Contains("plus", note);
-        Assert.Contains("mai luminos", note);
+        Assert.Contains("mai luminoasa", note);
         Assert.Contains("scurgere", note);
     }
 
@@ -205,9 +205,9 @@ public class StructureReportTests
         {
             string note = StructureReport.CentroidNote(r);
             if (r.CentroidValid)
-                Assert.StartsWith($"varf ({r.FitCx:F0}, {r.FitCy:F0}) vs centru senzor", note);
+                Assert.StartsWith($"punctul cel mai luminos e la ({r.FitCx:F0}, {r.FitCy:F0}), centrul senzorului la", note);
             else
-                Assert.Equal("varf in afara cadrului sau fit degenerat", note);
+                Assert.Equal("punctul cel mai luminos cade in afara cadrului; nu se poate masura", note);
         }
         Assert.True(vignetted.CentroidValid);
     }
@@ -244,7 +244,7 @@ public class StructureReportTests
 
         StructureReport.Write(r, "x.fit", w);
 
-        Assert.Contains("    ATENTIE: pata compacta de", w.ToString());
+        Assert.Contains("    ATENTIE: pata mica de", w.ToString());
         Assert.Contains("pete locale (praf etc.) : -", w.ToString());
     }
 
@@ -288,9 +288,9 @@ public class StructureReportTests
     {
         string note = StructureReport.TestNote(nameof(StructureResult.AzimuthalMaxPct))!;
 
-        Assert.Contains("sectoare", note);
+        Assert.Contains("felii", note);
         Assert.Contains("inel", note);
-        Assert.Contains("cercul inscris", note);
+        Assert.Contains("cercul care incape intreg in cadru", note);
     }
 
     [Fact]
@@ -298,9 +298,9 @@ public class StructureReportTests
     {
         string note = StructureReport.TestNote(nameof(StructureResult.TiltPct))!;
 
-        Assert.Contains("varf-la-varf", note);
-        Assert.Contains("gradient", note);
-        Assert.Contains("decentrata", note);
+        Assert.Contains("margine", note);
+        Assert.Contains("mai luminoasa", note);
+        Assert.Contains("descentrata", note);
     }
 
     /// <summary>No diacritics, like every other string the tool shows.</summary>
@@ -387,7 +387,7 @@ public class StructureReportTests
         Assert.Single(rows, r => r.IsNearest);
         Assert.Contains("<- cel mai apropiat, da verdictul", text);
         Assert.Contains(AgainstReport.DepthScale(), text);
-        Assert.Contains("RADIALA", text);
+        Assert.Contains("simetrica in jurul centrului", text);
         foreach (ProfileRow row in rows)
         {
             Assert.Contains(row.Lens, text);
@@ -459,16 +459,16 @@ public class StructureReportTests
     {
         string tenth = StructureReport.DepthLightScaleNote(0.10);   // 7.2 % in the corner
         Assert.Contains("7.2 %", tenth);
-        Assert.Contains("ar fi PROBLEMA", tenth);
+        Assert.Contains("i-ar spune PROBLEMA", tenth);
         Assert.Contains($"{Th.LightRadOk:F0} % OK", tenth);
         Assert.Contains($"{Th.LightRadBad:F0} % PROBLEMA", tenth);
         Assert.Contains($"{Th.ProfileDatabaseSpreadStops:F1} stopuri", tenth);
         Assert.Contains($"{Stats.DepthErrorPct(Th.ProfileDatabaseSpreadStops):F0} %", tenth);
-        Assert.Contains("ramane pe scara de reziduu", tenth);
+        Assert.Contains("ramane pe scara celor cinci teste", tenth);
 
-        Assert.Contains("ar fi OK", StructureReport.DepthLightScaleNote(0.02));          // 1.4 %
-        Assert.Contains("ar fi SUSPECT", StructureReport.DepthLightScaleNote(-0.05));    // 3.5 %, sign irrelevant
-        Assert.Contains("nu se poate citi", StructureReport.DepthLightScaleNote(double.NaN));
+        Assert.Contains("i-ar spune OK", StructureReport.DepthLightScaleNote(0.02));          // 1.4 %
+        Assert.Contains("i-ar spune SUSPECT", StructureReport.DepthLightScaleNote(-0.05));    // 3.5 %, sign irrelevant
+        Assert.Contains("nu ar avea ce citi", StructureReport.DepthLightScaleNote(double.NaN));
 
         // the word is --light's own, not a copy: same function, same thresholds
         Assert.Equal(Stats.Verdict(Stats.DepthErrorPct(0.10), Th.LightRadOk, Th.LightRadBad), Stats.DepthOnLightScale(0.10));
@@ -487,7 +487,7 @@ public class StructureReportTests
         Assert.Contains("Refa flat-urile", deeper);
         Assert.Contains("MAI PUTIN", shallower);
         Assert.Contains("cer", shallower);
-        Assert.Contains("cele cinci teste nu-l vad", mild);
+        Assert.Contains("cele cinci teste nu o vad", mild);
         Assert.DoesNotContain("Refa flat-urile", mild);
         Assert.Contains("0.2 stopuri", mild);
     }

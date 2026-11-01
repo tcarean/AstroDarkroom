@@ -27,10 +27,10 @@ Copyright (C) 2026 Tudor Carean
                 (under 2 % PERFECT, 2-10 GOOD, 10-20 ACCEPTABLE, over 20 REDO)
     depth     : REDO: 0.30 stops = 23.0 % error in the corner of the calibrated light,
                 on the same scale (under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, over REDO)
-                In the corner of a light calibrated with the master: 23.0 %; on the scale of the --light mode (2 % OK,
-                5 % PROBLEM), which measures the same quantity directly in the light, it would be PROBLEM.
-                The reference itself differs by 0.2 stops = 15 % between the profile databases,
-                so the depth verdict cannot be finer than that and stays on the residual scale.
+                In the corner of a light calibrated with this master the error would be 23.0 %. The End-to-end test,
+                which measures the same thing directly in the light, would call it PROBLEM (2 % OK, 5 % PROBLEM).
+                But the two profile databases differ from each other by 0.2 stops, that is 15 % in the corner,
+                so the verdict here cannot be finer than that and stays on the five tests' scale.
     The worse of the two. Two correct flats of the same lens give PERFECT and 0.00 stops.
 
     -> map saved: <TMP>/out.png

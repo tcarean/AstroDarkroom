@@ -434,13 +434,13 @@ public class StructureTabTests
         Assert.All(vm.ProfileRows, r => Assert.NotEmpty(r.Verdict));
         Assert.Empty(vm.ProfileGap);
         Assert.Contains("stopuri", vm.ProfileMaster);
-        Assert.Contains("apropiat profil", vm.ProfileSummary);
+        Assert.Contains("profilul cel mai apropiat", vm.ProfileSummary);
         Assert.Equal(4, vm.ProfileScale.Count);                        // the depth scale, in stops, band marked
         Assert.Single(vm.ProfileScale, s => s.IsCurrent);
         Assert.Equal(vm.ProfileRows.Single(r => r.IsNearest).Verdict, vm.ProfileScale.Single(s => s.IsCurrent).Band);
         Assert.Contains("Nu e un prag nou", vm.ProfileScaleNote);
         Assert.All(vm.ProfileRows, r => Assert.NotEmpty(r.Note));
-        Assert.Contains("RADIALA", vm.ProfileNote);
+        Assert.Contains("simetrica in jurul centrului", vm.ProfileNote);
         Assert.Contains("forma", vm.VerdictDetail);
         Assert.Contains("adancimea", vm.VerdictDetail);
         Assert.Equal(5, vm.Tests.Count);                               // the five stay five
