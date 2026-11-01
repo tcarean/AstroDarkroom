@@ -15,8 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// DarksCheck's own, not a LightsCheck copy: the launcher's ScreenArea (AstroDarkroom ADR 0013)
-// with AstroPhotoAnalyzer's TopInside beside it (its ADR 0070), for About's fit (ADR 0027).
+// Copied from LightsCheck (its ADR 0031; here ADR 0027); a fix goes there first (ADR 0009).
 
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -28,10 +27,8 @@ namespace DarksCheck.Wpf;
 
 /// <summary>
 /// The work area of the screen a window is on, and where a window's top goes to stay inside it
-/// (R-121). WPF knows the primary screen's area only (<see cref="SystemParameters.WorkArea"/>),
-/// so Windows is asked for the screen nearest the window and its area without the taskbar, in
-/// the pixels Windows gives this process, turned into the window's device-independent pixels by
-/// the window's DPI scale.
+/// (R-121, ADR 0027): AstroPhotoAnalyzer's <c>ScreenArea</c>, its <c>TopInside</c> the launcher's
+/// <c>WindowFit.Top</c>.
 /// </summary>
 internal static partial class ScreenArea
 {
@@ -41,14 +38,14 @@ internal static partial class ScreenArea
     /// <summary>MONITOR_DEFAULTTONEAREST: the screen nearest the window, even when it is on none.</summary>
     private const uint MonitorDefaultToNearest = 2;
 
-    /// <summary>The screen nearest a window.</summary>
+    /// <summary>MonitorFromWindow of user32.dll: the screen nearest a window.</summary>
     /// <param name="hwnd">The window's handle.</param>
     /// <param name="flags">What to return for a window on no screen: <see cref="MonitorDefaultToNearest"/>.</param>
     /// <returns>The screen's handle; zero when there is none.</returns>
     [LibraryImport("user32.dll")]
     private static partial IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
 
-    /// <summary>What Windows says of one screen: its rectangle and its work area.</summary>
+    /// <summary>GetMonitorInfoW of user32.dll: what Windows says of one screen.</summary>
     /// <param name="monitor">The screen's handle.</param>
     /// <param name="info">Filled in; its <see cref="MonitorInfo.Size"/> must be set first.</param>
     /// <returns>True when the information was given.</returns>
@@ -57,8 +54,10 @@ internal static partial class ScreenArea
     private static partial bool GetMonitorInfo(IntPtr monitor, ref MonitorInfo info);
 
     /// <summary>
-    /// The work area of the screen <paramref name="window"/> is on, in its device-independent
-    /// pixels: the screen nearest it, without the taskbar.
+    /// The work area of the screen a window is on, in its device-independent pixels: the screen
+    /// nearest it, without the taskbar. WPF knows the primary screen's alone
+    /// (<see cref="SystemParameters.WorkArea"/>), so Windows is asked, and its answer, in the
+    /// pixels it gives this process, is divided by the window's DPI scale.
     /// </summary>
     /// <param name="window">A window, normally shown, so that it has a handle and a screen; not null.</param>
     /// <returns>The area; the primary screen's when the window has no handle or Windows gives no answer.</returns>
@@ -81,11 +80,7 @@ internal static partial class ScreenArea
             }
 
             DpiScale dpi = VisualTreeHelper.GetDpi(window);
-            return new Rect(
-                info.Work.Left / dpi.DpiScaleX,
-                info.Work.Top / dpi.DpiScaleY,
-                (info.Work.Right - info.Work.Left) / dpi.DpiScaleX,
-                (info.Work.Bottom - info.Work.Top) / dpi.DpiScaleY);
+            return ToDips(info.Work.Left, info.Work.Top, info.Work.Right, info.Work.Bottom, dpi.DpiScaleX, dpi.DpiScaleY);
         }
         catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException)
         {
@@ -95,10 +90,24 @@ internal static partial class ScreenArea
     }
 
     /// <summary>
+    /// A rectangle Windows gives in this process's pixels, in a window's device-independent
+    /// pixels: each edge divided by the window's DPI scale on its own axis.
+    /// </summary>
+    /// <param name="left">The left edge, in pixels; negative on a screen left of the primary.</param>
+    /// <param name="top">The top edge, in pixels; negative on a screen above the primary.</param>
+    /// <param name="right">The right edge, outside the rectangle, in pixels.</param>
+    /// <param name="bottom">The bottom edge, outside the rectangle, in pixels.</param>
+    /// <param name="scaleX">The window's horizontal DPI scale, 1.25 at 125 %; above 0.</param>
+    /// <param name="scaleY">The window's vertical DPI scale; above 0.</param>
+    /// <returns>The rectangle in device-independent pixels.</returns>
+    internal static Rect ToDips(int left, int top, int right, int bottom, double scaleX, double scaleY)
+        => new(left / scaleX, top / scaleY, (right - left) / scaleX, (bottom - top) / scaleY);
+
+    /// <summary>
     /// The top of a window of the given height kept inside a work area: its own top when it fits
     /// there, moved down to the area's top or up until its bottom is the area's when it runs past
     /// one edge, and the area's top when it is as tall as the area or taller, so its title bar
-    /// stays on the screen. The launcher's <c>WindowFit.Top</c>, as AstroPhotoAnalyzer keeps it.
+    /// stays on the screen. The launcher's <c>WindowFit.Top</c>.
     /// </summary>
     /// <param name="top">Where the window's top is before the fit, in device-independent pixels.</param>
     /// <param name="height">The window's height, title bar included; not negative.</param>

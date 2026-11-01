@@ -40,17 +40,35 @@ internal sealed record ThirdPartyComponent(
     IReadOnlyList<string> Packages);
 
 /// <summary>
-/// The components written by others, as a value: what the About window shows. LGPL-2.1 §6
-/// asks that LibRaw's notice appear where the program displays its own copyright, and the
-/// reasons for GPLv3 compatibility are in THIRD-PARTY-NOTICES.md, which does not travel with
-/// a single executable. A new package needs an entry here and one in the notices file;
+/// The components written by others, as a value: what the About window shows, under its lead.
+/// LGPL-2.1 §6 asks that LibRaw's notice appear where the program displays its own copyright,
+/// with a reference to the licence's copy: the lead points to the suite's notices, which hold
+/// every licence's whole text, while THIRD-PARTY-NOTICES.md here argues each one's
+/// compatibility. A new package needs an entry here and one in the notices file;
 /// ThirdPartyTests binds the two to the Core csproj in both directions (ADR 0003). Each DLL of
 /// LibRaw's Windows package is a component of its own, the three libraries LibRaw calls listed
 /// apart from it, as the Astro Darkroom suite's notices list them for DarksCheck (R-120, ADR
-/// 0027); that file holds every licence's whole text.
+/// 0027).
 /// </summary>
 internal static class ThirdParty
 {
+    /// <summary>
+    /// The lead above the list in About, in the language of the moment it is read (R-120): how
+    /// many components the program ships, as a word that ThirdPartyTests holds to the list's
+    /// length, what is written by hand, and where each licence's whole text is, in words true
+    /// from the suite folder and from a build of the source alike. LightsCheck's wording (its ADR
+    /// 0030), as the window reading it is LightsCheck's (ADR 0027).
+    /// </summary>
+    internal static string Lead => T(
+        "The tool ships six components written by others, all compatible with the GPLv3. The FITS reader, the PNG encoder, "
+        + "every calculation and every threshold are written by hand. Each licence's whole text, and why it is compatible, is "
+        + "in THIRD-PARTY-NOTICES.txt beside the program in the Astro Darkroom suite folder, and in the source in "
+        + "AstroDarkroom/THIRD-PARTY-NOTICES.md.",
+        "Unealta livreaza sase componente scrise de altii, toate compatibile cu GPLv3. Cititorul FITS, encoderul PNG, toate "
+        + "calculele si toate pragurile sunt scrise de mana. Textul intreg al fiecarei licente, si motivul pentru care e "
+        + "compatibila, sunt in THIRD-PARTY-NOTICES.txt, langa program in folderul suitei Astro Darkroom, si in sursa, in "
+        + "AstroDarkroom/THIRD-PARTY-NOTICES.md.");
+
     /// <summary>The components, their words picked in the run's language when read.</summary>
     internal static IReadOnlyList<ThirdPartyComponent> Components =>
     [

@@ -37,13 +37,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - When LibRaw cannot be loaded, every raw's error names Microsoft's Visual C++ runtime, missing
   or too old, as the likely cause and gives Microsoft's link to its latest version, in English or
   Romanian, instead of saying where the DLLs must sit and how to publish them; the log says once
-  which of the runtime's four DLLs Windows loads, with their versions and paths (R-110, ADR 0026).
+  which of the runtime's four DLLs Windows cannot load. The words and the code are LightsCheck's
+  (R-110, ADR 0026).
 
 - About lists the six components the program ships, the three libraries inside LibRaw's DLLs
-  (libjpeg-turbo, Little CMS, zlib) apart from it, counts them from the list itself, and points
-  to their licence texts in the Astro Darkroom folder and in the source repository (R-120, ADR
-  0027). It is no taller than its screen: on a screen too low for it, such as a 1080-line
-  screen at 125 % or more, its cards scroll and the Close button stays in view (R-121).
+  (libjpeg-turbo, Little CMS, zlib) apart from it, under LightsCheck's lead, which says how many
+  there are and where their licence texts are: in the Astro Darkroom folder and in the source
+  (R-120, ADR 0027). It is no taller than its screen: on a screen too low for it, such as a
+  1080-line screen at 125 % or more, its cards scroll and the Close button stays in view (R-121).
 
 - `README.md`, the user guide, and `THIRD-PARTY-NOTICES.md` are in English (ADR 0022). The
   README is rewritten against the current behaviour: the English labels and verdict words,
@@ -178,7 +179,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 ### Fixed
 
 - About's lead said the program links two components written by others while it listed three;
-  the count now comes from the list (R-120).
+  a test now holds the lead's count to the list (R-120).
 
 - The content of the window's tabs is in the UI Automation tree: a screen reader such as
   Narrator, or a UI Automation tool, now reaches the checks and the buttons inside a tab, where

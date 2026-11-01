@@ -1,7 +1,7 @@
 # 0009. The window shows the report's rows and computes nothing; the two settings of the normalisation; its tests are a second project
 
 Date: 2026-10-16
-Status: accepted 2026-10-16; the About window improved in LightsCheck first superseded by 0027
+Status: accepted 2026-10-16
 
 ## Context
 

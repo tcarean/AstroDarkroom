@@ -27,19 +27,18 @@ using NLog;
 namespace DarksCheck.Wpf.Tests;
 
 /// <summary>
-/// About fits the work area of its screen (R-121, ADR 0027), AstroPhotoAnalyzer's tests of its
-/// ADR 0070 taken with its design: no taller than the area, its cards scrolling when their content
-/// is taller, the Close button in view, and as before where it fits. No test here shows a window:
-/// the content is laid out at the height a capped window leaves it, as WindowSmokeTests renders it;
-/// the keys are raised as events through a stand-in presentation source, the fit through the
-/// window's own OnContentRendered; the arithmetic and Windows' answer are tested apart.
+/// "About" fits the work area of its screen (R-121, ADR 0027): no taller than the area, its cards
+/// scrolling when their content is taller, the Close button in view, and as before where it fits.
+/// No test here shows a window: the content is laid out at a height a capped window leaves it, as
+/// WindowSmokeTests renders it; the keys are raised as events through a stand-in presentation
+/// source, the fit through the window's own OnContentRendered; the arithmetic and the conversion
+/// of Windows' pixels are tested apart. That the query asks Windows at all is seen only in its not
+/// falling back: on this one-screen PC, Windows' answer and WPF's are the same.
+/// AstroPhotoAnalyzer's AboutWindowFitTests, on DarksCheck's window.
 /// </summary>
 [Collection("window")]
 public class AboutWindowFitTests
 {
-    /// <summary>The six keys the cards scroll by while they can.</summary>
-    private static readonly Key[] ScrollKeys = [Key.Down, Key.Up, Key.PageDown, Key.PageUp, Key.End, Key.Home];
-
     private readonly StaFixture _sta;
 
     public AboutWindowFitTests(StaFixture sta) => _sta = sta;
@@ -50,14 +49,36 @@ public class AboutWindowFitTests
     /// </summary>
     [Theory]
     [InlineData(100.0, 600.0, 0.0, 800.0, 100.0)]          // it fits where it opens: unchanged
-    [InlineData(300.0, 600.0, 0.0, 800.0, 200.0)]          // past the bottom: up until its bottom is the area's
+    [InlineData(300.0, 600.0, 0.0, 800.0, 200.0)]          // past the bottom: up until its bottom is the area's (R-121's example)
     [InlineData(-60.0, 600.0, 0.0, 800.0, 0.0)]            // past the top: down to the area's top
-    [InlineData(-60.0, 990.0, 0.0, 800.0, 0.0)]            // taller than the area: at its top (the window is cut to the area's height)
+    [InlineData(-60.0, 1017.0, 0.0, 800.0, 0.0)]           // taller than the area: at its top (the window is cut to the area's height)
     [InlineData(-60.0, 800.0, 0.0, 800.0, 0.0)]            // exactly as tall as the area: at its top
     [InlineData(500.0, 600.0, 40.0, 800.0, 240.0)]         // an area that does not start at 0, a taskbar above it
     [InlineData(100.0, 600.0, -1080.0, 1040.0, -640.0)]    // a screen above the primary, at negative coordinates
     public void R121_TheWindowsTopKeepsItInsideTheWorkArea(double top, double height, double areaTop, double areaHeight, double expected)
         => Assert.Equal(expected, ScreenArea.TopInside(top, height, areaTop, areaHeight));
+
+    /// <summary>
+    /// Windows gives the work area in the process's pixels; the window's are device-independent,
+    /// each axis divided by its own DPI scale (R-121). A 1080-line screen at 125 % gives 1032 px
+    /// above a 48 px taskbar, 825.6 DIP: multiplied instead, the cap would be about 1290 DIP and
+    /// nothing would scroll. This PC runs at 100 %, where a wrong conversion would go unseen.
+    /// </summary>
+    [Theory]
+    [InlineData(0, 0, 1920, 1032, 1.25, 1.25, 0.0, 0.0, 1536.0, 825.6)]          // 1080 lines at 125 %
+    [InlineData(0, 0, 1920, 1032, 1.5, 1.5, 0.0, 0.0, 1280.0, 688.0)]            // at 150 %
+    [InlineData(0, 0, 1920, 1032, 1.25, 1.5, 0.0, 0.0, 1536.0, 688.0)]           // each axis by its own scale
+    [InlineData(-2560, -120, 0, 1320, 1.25, 1.25, -2048.0, -96.0, 2048.0, 1152.0)] // a screen left of and above the primary
+    public void R121_WindowsPixelsBecomeDeviceIndependentPixels(int left, int top, int right, int bottom, double scaleX, double scaleY,
+                                                                double x, double y, double width, double height)
+    {
+        Rect area = ScreenArea.ToDips(left, top, right, bottom, scaleX, scaleY);
+
+        Assert.Equal(x, area.X, 9);
+        Assert.Equal(y, area.Y, 9);
+        Assert.Equal(width, area.Width, 9);
+        Assert.Equal(height, area.Height, 9);
+    }
 
     /// <summary>
     /// On a work area lower than the window's content, the window is capped at the area's height.
@@ -75,9 +96,9 @@ public class AboutWindowFitTests
             await Dispatcher.Yield(DispatcherPriority.ContextIdle);
             FrameworkElement content = (FrameworkElement)about.Content;
 
-            // 560 DIP, well under the content's own height: a window capped at 680 leaves its
-            // content 680 less its title bar and frame, about 640 DIP at 100 %.
-            WindowSmokeTests.Render(content, 600, 560, "about-low-work-area");
+            // 560 DIP, under the content's 950 to 978 (at 600 and 584 DIP wide): less than what a
+            // window capped at 680 leaves its content once its title bar and frame are taken.
+            WindowSmokeTests.Render(content, 600, 560, "about-low-screen");
 
             Assert.Equal(680, about.MaxHeight);
             Rect close = Bounds(about.CloseButton, content);
@@ -118,7 +139,8 @@ public class AboutWindowFitTests
             Rect close = Bounds(about.CloseButton, content);
             Assert.Equal(16, close.Top - cards.Bottom, 3);
             Assert.Equal(20, content.ActualHeight - close.Bottom, 3);
-            foreach (Key key in ScrollKeys)
+            Key[] scrollKeys = [Key.Down, Key.Up, Key.PageDown, Key.PageUp, Key.End, Key.Home];
+            foreach (Key key in scrollKeys)
             {
                 Assert.False(PressKey(about, key), key + " was taken where the cards fit");
             }
@@ -129,8 +151,8 @@ public class AboutWindowFitTests
     /// <summary>
     /// The work area is the one of the window's own screen: a hidden window given a handle on the
     /// primary screen gets from Windows the area WPF knows for that screen, and a window without a
-    /// handle gets it through the fallback. On a machine with one screen the two answers are
-    /// equal, so the area alone cannot tell them apart: the fallback writes a Debug line, which a
+    /// handle gets WPF's, silently. On a machine with one screen the two answers are equal, so the
+    /// area alone cannot tell them apart: Windows giving no answer writes a Debug line, which a
     /// window with a handle must not cause.
     /// </summary>
     [Fact]
@@ -167,8 +189,8 @@ public class AboutWindowFitTests
     /// <summary>
     /// When its content is first rendered, the window keeps its top inside the work area and
     /// writes its size and place, the area and whether its cards scroll to the diagnostic log,
-    /// at Debug. A window never shown is 0 by 0 DIP, so a top of 900 in an area 680 DIP high
-    /// comes back to 680.
+    /// at Debug (R-101, R-121). A window never shown is 0 by 0 DIP, so a top of 900 in an area
+    /// 680 DIP high comes back to 680.
     /// </summary>
     [Fact]
     public Task R121_WhenItsContentIsRenderedTheAboutWindowFitsAndLogsItsSizePlaceAndArea()

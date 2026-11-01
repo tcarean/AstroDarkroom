@@ -25,8 +25,8 @@ namespace DarksCheck.Tests;
 /// package linked without an entry would ship undisplayed, and LGPL-2.1 §6 wants LibRaw's
 /// notice where the program shows its own copyright. The tests bind the list to the Core
 /// csproj in both directions and each entry to a heading of THIRD-PARTY-NOTICES.md; and the
-/// list is what the program ships (R-120, ADR 0027): the components the suite's notices name
-/// for DarksCheck, one for each DLL of LibRaw's Windows package.
+/// list is what the program ships (R-120, ADR 0027): six components, one for each DLL of
+/// LibRaw's Windows package among them, under a lead that counts them.
 /// </summary>
 public partial class ThirdPartyTests
 {
@@ -102,21 +102,51 @@ public partial class ThirdPartyTests
     }
 
     /// <summary>
-    /// The list is the components the Astro Darkroom suite's notices name for DarksCheck, in
-    /// R-120's order, but the platform the suite carries for every program (.NET 8 and WPF, ADR
-    /// 0027): a component the suite ships for DarksCheck cannot be missing from About, nor About
-    /// list one the suite does not ship for it. The file is the one About points to.
+    /// The six components the program ships, in R-120's order: the suite's notices name the same
+    /// for DarksCheck, but the platform they carry for every program (.NET 8 and WPF, ADR 0027).
+    /// A fixed list: the package test above and the DLL test below catch a new component on
+    /// DarksCheck's side, and a test reading the suite's file would leave DarksCheck's gate open to
+    /// a commit that touches AstroDarkroom alone.
     /// </summary>
     [Fact]
-    public void R120_TheComponentsAreTheOnesTheSuitesNoticesNameForDarksCheck()
+    public void R120_TheComponentsAreTheSixTheToolShips_InOrder()
+        => Assert.Equal(["Sdcb.LibRaw", "LibRaw", "libjpeg-turbo", "Little CMS", "zlib", "NLog"], ThirdParty.Components.Select(c => c.Name));
+
+    /// <summary>
+    /// The lead says how many components there are as a word, LightsCheck's way (its ADR 0030): a
+    /// literal word in each language, held here to the list's length, so a component added or
+    /// removed turns this red until the word follows; and it says where the licence texts are, in
+    /// the suite folder and in the source (R-120).
+    /// </summary>
+    [Fact]
+    public void R120_TheLeadCountsTheComponentsInWordsAndPointsToTheLicenceTexts_InBothLanguages()
     {
-        string suite = Path.GetFullPath(Path.Combine(TestData.FindRepoRoot(), "..", "AstroDarkroom", "THIRD-PARTY-NOTICES.md"));
-        Assert.True(File.Exists(suite), "the suite's notices are not beside DarksCheck: " + suite);
+        string[] english = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+        string[] romanian = ["zero", "una", "doua", "trei", "patru", "cinci", "sase", "sapte", "opt", "noua", "zece"];
+        int n = ThirdParty.Components.Count;
+        Assert.InRange(n, 2, 10);
 
-        string[] named = SectionsNaming("DarksCheck", File.ReadAllLines(suite)).Where(n => n != ".NET 8 and WPF").ToArray();
+        string en, ro;
+        using (Ui.Use(UiLanguage.English))
+        {
+            en = ThirdParty.Lead;
+        }
 
-        Assert.Equal(named.Order(StringComparer.Ordinal), ThirdParty.Components.Select(c => c.Name).Order(StringComparer.Ordinal));
-        Assert.Equal(["Sdcb.LibRaw", "LibRaw", "libjpeg-turbo", "Little CMS", "zlib", "NLog"], ThirdParty.Components.Select(c => c.Name));
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            ro = ThirdParty.Lead;
+        }
+
+        Assert.StartsWith($"The tool ships {english[n]} components written by others, ", en, StringComparison.Ordinal);
+        Assert.StartsWith($"Unealta livreaza {romanian[n]} componente scrise de altii, ", ro, StringComparison.Ordinal);
+        foreach (string lead in new[] { en, ro })
+        {
+            Assert.Contains("THIRD-PARTY-NOTICES.txt", lead, StringComparison.Ordinal);
+            Assert.Contains("Astro Darkroom", lead, StringComparison.Ordinal);
+            Assert.Contains("AstroDarkroom/THIRD-PARTY-NOTICES.md", lead, StringComparison.Ordinal);
+        }
+
+        Assert.All(ro, c => Assert.True(c < 128, $"'{c}' in the Romanian lead, which is written without diacritics"));
     }
 
     /// <summary>
@@ -177,36 +207,6 @@ public partial class ThirdPartyTests
 
     /// <summary>The two languages of the interface (R-090).</summary>
     private static readonly UiLanguage[] Languages = [UiLanguage.English, UiLanguage.Romanian];
-
-    /// <summary>
-    /// The names of the sections of the suite's notices whose <c>- Programs:</c> item names a
-    /// program: the heading <c>## Name</c>, and the item read with its indented continuation
-    /// lines, split at its commas.
-    /// </summary>
-    private static IEnumerable<string> SectionsNaming(string program, string[] lines)
-    {
-        string? section = null;
-        for (int i = 0; i < lines.Length; i++)
-        {
-            if (lines[i].StartsWith("## ", StringComparison.Ordinal))
-            {
-                section = lines[i][3..].Trim();
-            }
-            else if (section is not null && lines[i].StartsWith("- Programs:", StringComparison.Ordinal))
-            {
-                string item = lines[i]["- Programs:".Length..];
-                while (i + 1 < lines.Length && lines[i + 1].StartsWith("  ", StringComparison.Ordinal))
-                {
-                    item += " " + lines[++i];
-                }
-
-                if (item.Split(',').Select(p => p.Trim()).Contains(program))
-                {
-                    yield return section;
-                }
-            }
-        }
-    }
 
     [GeneratedRegex(@"<PackageReference\s+Include=""([^""]+)""")]
     private static partial Regex PackageReference();

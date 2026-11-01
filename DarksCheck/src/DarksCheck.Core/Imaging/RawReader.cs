@@ -19,10 +19,8 @@
 // The code is LightsCheck's adaptation; the comments are DarksCheck's own (ADR 0019). The
 // messages are English-or-Romanian T(...) pairs written here, LightsCheck's Romanian wording
 // kept byte for byte beside its English; LightsCheck takes these English wordings back in its
-// own language task (ADR 0021). The pair of Missing is DarksCheck's in both languages, the
-// launcher's words for the Visual C++ runtime, for LightsCheck to take back too (ADR 0026); it
-// no longer appends the loader's text (inner.Message), which LightsCheck's code appends after
-// its pair and a refresh must keep out.
+// own language task (ADR 0021). The runtime check of Missing, its pair included, is
+// LightsCheck's hunk of 2026-11-01 (its ADR 0030; here ADR 0026), taken word for word.
 
 // RawReader.cs - camera raw files (NEF and its relatives) through libraw: the one place in
 // the tool that touches an external library. Adapted from FlatCheck's reader (ADR 0003): the
@@ -41,12 +39,14 @@
 // extracts them at start, or beside the window in the Astro Darkroom folder. They import
 // Microsoft's Visual C++ v14 runtime, which neither ships. When LibRaw cannot be loaded, a FITS
 // run is unaffected (this type is loaded only when a raw is asked for) and every raw's error
-// names that runtime, missing or too old, as the likely cause, with the link to its latest
-// version (R-110, ADR 0026): Windows' own error names libraw.dll whatever is missing.
+// names that runtime, missing or too old, as the likely cause, with Microsoft's link (R-110, ADR
+// 0026). The loader's own text never names the runtime: it names libraw.dll, or, in a single
+// file, says only that the DLL was not found. The first such failure of a process also writes
+// which of the runtime's DLLs Windows cannot load (RuntimeCheck).
 //
-// The diagnostic log (ADR 0025) gets libraw's own figures at Debug and the lens block that
-// could not be read at Warn; the file's line is ImageLoader's, a failure's line its caller's,
-// which also writes, once per process, which of the runtime's DLLs Windows loads (VcRuntime).
+// The diagnostic log (ADR 0025) gets libraw's own figures at Debug, the lens block that could
+// not be read and the runtime's line at Warn; the file's line is ImageLoader's, a failure's line
+// its caller's.
 
 using System.Runtime.InteropServices;
 using NLog;
@@ -153,23 +153,112 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// The error that replaces a failure to load libraw's native DLLs: it names, in the run's
-        /// language, Microsoft's Visual C++ runtime, missing or too old, as the likely cause and
-        /// gives the link to its latest version, in the launcher's words (R-110, ADR 0026). It
-        /// names no folder and no executable, so it holds for the single file and the suite's
-        /// folder alike; the loader's own text, which names libraw.dll whatever is missing, stays
-        /// in the inner exception, for the log.
+        /// The error for a libraw that cannot be loaded (R-110): in the run's language, the likely
+        /// cause, Microsoft's Visual C++ runtime missing or too old, and Microsoft's link to its
+        /// latest version. Nothing about where the DLLs sit or how to publish, which held in
+        /// neither form the tool ships. The first call in the process also writes, at Warn, which
+        /// of the runtime's DLLs Windows cannot load (<see cref="Runtime"/>).
         /// </summary>
-        /// <param name="inner">The loader's exception, kept as the inner one.</param>
-        /// <returns>The exception to throw.</returns>
-        static InvalidOperationException Missing(Exception inner)
-            => new InvalidOperationException(T(
-                "cannot load LibRaw: Microsoft's Visual C++ runtime is likely missing or too old, "
-              + "so camera raw files cannot be read until its latest version is installed: "
-              + "https://aka.ms/vc14/vc_redist.x64.exe",
-                "nu pot incarca LibRaw: runtime-ul Microsoft Visual C++ probabil lipseste sau este "
-              + "prea vechi, deci nu pot citi fisiere raw de aparat pana nu instalezi ultima lui "
-              + "versiune: https://aka.ms/vc14/vc_redist.x64.exe"), inner);
+        /// <param name="inner">The loader's own exception, kept as the inner one.</param>
+        /// <returns>An InvalidOperationException with a message for the user.</returns>
+        internal static InvalidOperationException Missing(Exception inner) => Missing(inner, Runtime);
+
+        /// <summary>
+        /// <see cref="Missing(Exception)"/> with the runtime asked through <paramref name="check"/>,
+        /// whose first call gives the log line and whose later calls give none; the tests pass
+        /// their own.
+        /// </summary>
+        /// <param name="inner">The loader's own exception, kept as the inner one.</param>
+        /// <param name="check">The check that asks Windows for the runtime's DLLs; not null.</param>
+        /// <returns>An InvalidOperationException with a message for the user.</returns>
+        internal static InvalidOperationException Missing(Exception inner, RuntimeCheck check)
+        {
+            string line = check.FirstLine();
+            if (line != null) Log.Warn(line);
+            return new InvalidOperationException(T(
+                "cannot load libraw: Microsoft's Visual C++ runtime is likely missing or too old, so camera raw files cannot be read "
+              + "until its latest version is installed (FITS frames are not affected): ",
+                "nu pot incarca libraw: probabil runtime-ul Microsoft Visual C++ lipseste sau este prea vechi, deci nu pot citi fisiere raw "
+              + "de aparat pana nu instalezi ultima lui versiune (cadrele FITS nu sunt afectate): ") + RuntimeUrl, inner);
+        }
+
+        /// <summary>Microsoft's permalink for the latest supported x64 package of the Visual C++ v14 runtime.</summary>
+        internal const string RuntimeUrl = "https://aka.ms/vc14/vc_redist.x64.exe";
+
+        // The runtime's DLLs that libraw's DLLs import, as the import tables of the DLLs of
+        // Sdcb.LibRaw.runtime.win64 0.21.1 name them (LibRawLoadTests reads them at every run):
+        // raw_r.dll imports the four, OpenMP's vcomp140.dll included; jpeg8.dll, lcms2.dll and
+        // zlib1.dll import vcruntime140.dll. vcruntime140_1.dll came with Visual Studio 2019, so the
+        // runtimes of 2015 and 2017 lack it (ADR 0026).
+        static readonly string[] RuntimeDlls = { "vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "vcomp140.dll" };
+
+        /// <summary>The runtime's DLLs the check asks Windows for, in the order it asks.</summary>
+        internal static IReadOnlyList<string> RuntimeFiles => RuntimeDlls;
+
+        /// <summary>The process's own check, which asks Windows through <see cref="CanLoad"/>.</summary>
+        internal static readonly RuntimeCheck Runtime = new RuntimeCheck(CanLoad);
+
+        /// <summary>
+        /// The log line of the runtime check (R-110, R-101): the runtime's DLLs that do not load,
+        /// or the four loading, so none is missing. Loading does not prove the runtime new enough
+        /// for libraw's DLLs, so the line claims no more than that (ADR 0026).
+        /// </summary>
+        /// <param name="missing">The DLLs that do not load, in the order of <see cref="RuntimeFiles"/>; empty when the four load.</param>
+        /// <returns>The line's text.</returns>
+        internal static string RuntimeLine(IReadOnlyList<string> missing)
+            => missing.Count > 0
+                ? "libraw cannot be loaded; Visual C++ runtime: missing " + LogText.List(missing)
+                : "libraw cannot be loaded; Visual C++ runtime: " + LogText.List(RuntimeDlls) + " load, so none is missing";
+
+        /// <summary>
+        /// Whether Windows loads a DLL given by its file name, searched for from this process: the
+        /// program's folder, the system folders, the current folder, then PATH. A DLL that loads is
+        /// released at once.
+        /// </summary>
+        /// <param name="file">The DLL's file name, such as vcomp140.dll; a name, not a path.</param>
+        /// <returns>True when it loads.</returns>
+        static bool CanLoad(string file)
+        {
+            if (!NativeLibrary.TryLoad(file, out IntPtr handle)) return false;
+            NativeLibrary.Free(handle);
+            return true;
+        }
+
+        /// <summary>
+        /// Asks for the Visual C++ runtime's DLLs once (R-110): the first <see cref="FirstLine"/>
+        /// asks the loader for each of <see cref="RuntimeFiles"/> and gives the log line, every
+        /// later one gives null without asking. A missing libraw fails every raw of a session, the
+        /// inventory's metadata read and then each decode, and a DLL that does not load is looked
+        /// for along the whole PATH: 12 to 26 ms for the four on the owner's PC, measured for the
+        /// launcher (AstroDarkroom's ADR 0016).
+        /// </summary>
+        internal sealed class RuntimeCheck
+        {
+            /// <summary>Whether Windows loads a DLL given by its file name.</summary>
+            readonly Func<string, bool> canLoad;
+
+            /// <summary>1 once the check has asked, from any thread.</summary>
+            int asked;
+
+            /// <summary>A check that asks <paramref name="canLoad"/>.</summary>
+            /// <param name="canLoad">Whether Windows loads a DLL given by its file name; not null.</param>
+            internal RuntimeCheck(Func<string, bool> canLoad)
+            {
+                ArgumentNullException.ThrowIfNull(canLoad);
+                this.canLoad = canLoad;
+            }
+
+            /// <summary>Whether this check has asked already, so that a later call gives no line.</summary>
+            internal bool HasAsked => Volatile.Read(ref asked) != 0;
+
+            /// <summary>The log line, the first time this check is asked from any thread; null after.</summary>
+            /// <returns>The line of <see cref="RuntimeLine"/>, or null when this check gave it already.</returns>
+            internal string FirstLine()
+            {
+                if (Interlocked.Exchange(ref asked, 1) != 0) return null;
+                return RuntimeLine(RuntimeDlls.Where(file => !canLoad(file)).ToList());
+            }
+        }
 
         /// <summary>
         /// The full decode behind <see cref="Load"/>: Unpack, the visible mosaic, the scale, the

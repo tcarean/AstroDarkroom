@@ -16,198 +16,162 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Diagnostics;
-using System.Reflection;
+using System.Reflection.PortableExecutable;
+using System.Text;
 using System.Text.RegularExpressions;
 using DarksCheck.Core;
-using NLog;
 
 namespace DarksCheck.Tests;
 
 /// <summary>
 /// When LibRaw cannot be loaded (R-110, ADR 0026): every raw's error names Microsoft's Visual C++
-/// runtime, missing or too old, and the link to its latest version, in either language, and the
-/// log says once per process which of the runtime's four DLLs Windows loads. Windows gives the same
-/// exception, naming <c>libraw.dll</c>, whether the runtime is missing or LibRaw's own DLL is: a
-/// copy of the console without <c>raw_r.dll</c> shows the whole path, out of process, since this
-/// process has loaded LibRaw already.
+/// runtime, missing or too old, and its link, in either language, and the log says once per
+/// process which of the runtime's four DLLs Windows cannot load. The code is LightsCheck's hunk
+/// in the copied reader, and so are the first five tests, LightsCheck's R-074 tests under
+/// DarksCheck's names; the last one runs a copy of the console without LibRaw's own DLL, out of
+/// process, since this process has loaded LibRaw already.
 /// </summary>
 public partial class LibRawLoadTests
 {
-    private const string English = "cannot load LibRaw: Microsoft's Visual C++ runtime is likely missing or too old, so camera raw files "
-        + "cannot be read until its latest version is installed: https://aka.ms/vc14/vc_redist.x64.exe";
+    private const string English = "cannot load libraw: Microsoft's Visual C++ runtime is likely missing or too old, so camera raw files "
+        + "cannot be read until its latest version is installed (FITS frames are not affected): https://aka.ms/vc14/vc_redist.x64.exe";
 
-    private const string Romanian = "nu pot incarca LibRaw: runtime-ul Microsoft Visual C++ probabil lipseste sau este prea vechi, deci nu pot "
-        + "citi fisiere raw de aparat pana nu instalezi ultima lui versiune: https://aka.ms/vc14/vc_redist.x64.exe";
+    private const string Romanian = "nu pot incarca libraw: probabil runtime-ul Microsoft Visual C++ lipseste sau este prea vechi, deci nu "
+        + "pot citi fisiere raw de aparat pana nu instalezi ultima lui versiune (cadrele FITS nu sunt afectate): https://aka.ms/vc14/vc_redist.x64.exe";
 
-    /// <summary>The loader's exception, as .NET words it when Windows refuses <c>raw_r.dll</c> or a DLL it imports.</summary>
-    private static readonly DllNotFoundException Loader =
-        new("Unable to load DLL 'libraw.dll' or one of its dependencies: The specified module could not be found. (0x8007007E)");
-
-    /// <summary>RawReader's error for a loader failure, from the method its catch list calls.</summary>
-    private static InvalidOperationException Missing(Exception inner)
-    {
-        MethodInfo m = typeof(RawReader).GetMethod("Missing", BindingFlags.NonPublic | BindingFlags.Static)
-            ?? throw new InvalidOperationException("RawReader has no static Missing(Exception) any more");
-        return Assert.IsType<InvalidOperationException>(m.Invoke(null, [inner]));
-    }
-
-    [Fact]
-    public void R110_TheMessageNamesTheRuntimeAndItsLink_InEnglish()
-    {
-        using IDisposable _ = Ui.Use(UiLanguage.English);
-        InvalidOperationException e = Missing(Loader);
-
-        Assert.Equal(English, e.Message);
-        Assert.Same(Loader, e.InnerException);
-    }
-
-    /// <summary>The Romanian wording, without diacritics, as every Romanian text (ADR 0021).</summary>
-    [Fact]
-    public void R110_TheMessageNamesTheRuntimeAndItsLink_InRomanian()
-    {
-        using IDisposable _ = Ui.Use(UiLanguage.Romanian);
-        InvalidOperationException e = Missing(Loader);
-
-        Assert.Equal(Romanian, e.Message);
-        Assert.Same(Loader, e.InnerException);
-        Assert.All(e.Message, c => Assert.True(c < 128, $"'{c}' is not ASCII"));
-    }
+    /// <summary>What the message must not hold: words meant for a developer, and the loader's own.</summary>
+    private static readonly string[] DeveloperWords = ["IncludeNativeLibrariesForSelfExtract", "darkscheck.exe", "libraw.dll", "raw_r.dll"];
 
     /// <summary>
-    /// Only RawReader's error for a loader failure counts: its four causes, as its catch list takes
-    /// them, and none of the errors a raw or another file gives when LibRaw itself is there.
+    /// The user reads the likely cause and Microsoft's link, in each language, and nothing meant
+    /// for a developer: no executable, no DLL, no publish option, not the loader's own words, which
+    /// name libraw.dll. The loader's exception stays the inner one, for the log.
     /// </summary>
     [Fact]
-    public void R110_OnlyRawReadersLoadFailureCountsAsOne()
+    public void R110_TheLoadFailureNamesTheVisualCppRuntimeAndItsLink_InBothLanguages()
     {
-        Assert.True(VcRuntime.IsLoadFailure(Missing(Loader)));
-        Assert.True(VcRuntime.IsLoadFailure(Missing(new BadImageFormatException("raw_r.dll is not a valid image"))));
-        Assert.True(VcRuntime.IsLoadFailure(Missing(new TypeInitializationException("Sdcb.LibRaw.Natives.LibRawNative", null))));
-        Assert.True(VcRuntime.IsLoadFailure(Missing(new FileNotFoundException("Could not load file or assembly", "Sdcb.LibRaw"))));
+        DllNotFoundException loader = new("Unable to load DLL 'libraw.dll' or one of its dependencies: The specified module could not be found. (0x8007007E)");
+        RawReader.RuntimeCheck asked = new(_ => true);
 
-        Assert.False(VcRuntime.IsLoadFailure(new InvalidOperationException("x.NEF: libraw gives an impossible scale (white 0 <= black 0).")));
-        Assert.False(VcRuntime.IsLoadFailure(new InvalidOperationException("the partner: no darks", new IOException("gone"))));
-        Assert.False(VcRuntime.IsLoadFailure(Loader));
-        Assert.False(VcRuntime.IsLoadFailure(new FileNotFoundException("cannot find the file x.NEF", "x.NEF")));
-        Assert.False(VcRuntime.IsLoadFailure(new InvalidDataException("FITS: no SIMPLE card")));
-    }
-
-    /// <summary>The line names those of the four that do not load, and where each one that loads came from.</summary>
-    [Fact]
-    public void R110_TheLineNamesTheMissingDllsAndWhereTheOthersCameFrom()
-    {
-        RuntimeDll[] some =
-        [
-            new("vcruntime140.dll", true, @"C:\Windows\SYSTEM32\vcruntime140.dll", "14.0.24215.1"),
-            new("vcruntime140_1.dll", false, null, null),
-            new("msvcp140.dll", true, @"C:\Windows\SYSTEM32\msvcp140.dll", "14.0.24215.1"),
-            new("vcomp140.dll", true, @"C:\Windows\SYSTEM32\vcomp140.dll", null),
-        ];
-        Assert.Equal(
-            @"Visual C++ runtime: missing vcruntime140_1.dll; vcruntime140.dll 14.0.24215.1 at C:\Windows\SYSTEM32\vcruntime140.dll, "
-            + @"msvcp140.dll 14.0.24215.1 at C:\Windows\SYSTEM32\msvcp140.dll, vcomp140.dll at C:\Windows\SYSTEM32\vcomp140.dll load; "
-            + "LibRaw cannot be loaded until the runtime's latest version is installed",
-            VcRuntime.Line(some));
-
-        RuntimeDll[] none = VcRuntime.Files.Select(f => new RuntimeDll(f, false, null, null)).ToArray();
-        Assert.Equal(
-            "Visual C++ runtime: missing vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, vcomp140.dll; "
-            + "LibRaw cannot be loaded until the runtime's latest version is installed",
-            VcRuntime.Line(none));
-
-        RuntimeDll[] all = VcRuntime.Files.Select(f => new RuntimeDll(f, true, @"C:\Windows\SYSTEM32\" + f, "14.51.36247.0")).ToArray();
-        Assert.Equal(
-            @"Visual C++ runtime: vcruntime140.dll 14.51.36247.0 at C:\Windows\SYSTEM32\vcruntime140.dll, "
-            + @"vcruntime140_1.dll 14.51.36247.0 at C:\Windows\SYSTEM32\vcruntime140_1.dll, "
-            + @"msvcp140.dll 14.51.36247.0 at C:\Windows\SYSTEM32\msvcp140.dll, "
-            + @"vcomp140.dll 14.51.36247.0 at C:\Windows\SYSTEM32\vcomp140.dll load; LibRaw failed to load for another reason",
-            VcRuntime.Line(all));
-    }
-
-    /// <summary>
-    /// One line per process, at the first load failure: Warn when a DLL does not load, Info when the
-    /// four do; another error writes nothing and asks Windows nothing, and a second failure neither.
-    /// </summary>
-    [Fact]
-    public void R110_TheLineIsWrittenOnceAtTheFirstLoadFailure_AndNeverForAnotherError()
-    {
-        int logged = 0;
-        int asked = 0;
-        IReadOnlyList<RuntimeDll> OneMissing()
+        InvalidOperationException en, ro;
+        using (Ui.Use(UiLanguage.English))
         {
-            asked++;
-            return VcRuntime.Files.Select(f => f == "vcomp140.dll" ? new RuntimeDll(f, false, null, null) : new RuntimeDll(f, true, @"C:\Windows\SYSTEM32\" + f, "14.0.24215.1")).ToArray();
+            en = RawReader.Missing(loader, asked);
         }
 
-        using LogCapture capture = LogCapture.Start();
-        Assert.False(VcRuntime.LogOnce(new InvalidDataException("FITS: no SIMPLE card"), OneMissing, ref logged));
-        Assert.True(VcRuntime.LogOnce(Missing(Loader), OneMissing, ref logged));
-        Assert.False(VcRuntime.LogOnce(Missing(Loader), OneMissing, ref logged));
-
-        Assert.Equal(1, asked);
-        LogCapture.Captured line = Assert.Single(capture.Events);
-        Assert.Equal(LogLevel.Warn, line.Level);
-        Assert.Equal("VcRuntime", line.Logger);
-        Assert.StartsWith("Visual C++ runtime: missing vcomp140.dll; vcruntime140.dll 14.0.24215.1 at ", line.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void R110_WhenTheFourLoadTheLineIsInfo()
-    {
-        int logged = 0;
-        IReadOnlyList<RuntimeDll> AllFour() => VcRuntime.Files.Select(f => new RuntimeDll(f, true, @"C:\Windows\SYSTEM32\" + f, "14.51.36247.0")).ToArray();
-
-        using LogCapture capture = LogCapture.Start();
-        Assert.True(VcRuntime.LogOnce(Missing(Loader), AllFour, ref logged));
-
-        LogCapture.Captured line = Assert.Single(capture.Events);
-        Assert.Equal(LogLevel.Info, line.Level);
-        Assert.EndsWith("load; LibRaw failed to load for another reason", line.Message, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// The seams that call it sit in a frame's failure path, which must not fail: a probe that
-    /// throws becomes the process's one line, at Warn, with its exception.
-    /// </summary>
-    [Fact]
-    public void R110_AProbeThatThrowsIsALineNotAFailure()
-    {
-        int logged = 0;
-        IReadOnlyList<RuntimeDll> Broken() => throw new System.ComponentModel.Win32Exception(5, "Access is denied");
-
-        using LogCapture capture = LogCapture.Start();
-        Assert.True(VcRuntime.LogOnce(Missing(Loader), Broken, ref logged));
-
-        LogCapture.Captured line = Assert.Single(capture.Events);
-        Assert.Equal(LogLevel.Warn, line.Level);
-        Assert.Equal("Visual C++ runtime: Windows could not be asked which of its DLLs load", line.Message);
-        Assert.Contains("Access is denied", line.Line, StringComparison.Ordinal);
-    }
-
-    /// <summary>
-    /// Windows' own answer, on whatever this machine has: the four in their order, each that loads
-    /// with a full path ending in its own name.
-    /// </summary>
-    [Fact]
-    public void R110_TheProbeAnswersForTheFourInTheirOrder()
-    {
-        IReadOnlyList<RuntimeDll> dlls = VcRuntime.Probe();
-
-        Assert.Equal(["vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "vcomp140.dll"], dlls.Select(d => d.File));
-        Assert.All(dlls.Where(d => !d.Loads), d => Assert.Null(d.Path));
-        foreach (RuntimeDll d in dlls.Where(d => d.Path is not null))
+        using (Ui.Use(UiLanguage.Romanian))
         {
-            Assert.True(d.Loads);
-            Assert.True(Path.IsPathRooted(d.Path), d.Path);
-            Assert.Equal(d.File, Path.GetFileName(d.Path), ignoreCase: true);
+            ro = RawReader.Missing(loader, asked);
         }
+
+        Assert.Equal(English, en.Message);
+        Assert.Equal(Romanian, ro.Message);
+        Assert.Equal("https://aka.ms/vc14/vc_redist.x64.exe", RawReader.RuntimeUrl);
+        foreach (InvalidOperationException e in new[] { en, ro })
+        {
+            Assert.EndsWith(" " + RawReader.RuntimeUrl, e.Message, StringComparison.Ordinal);
+            Assert.Same(loader, e.InnerException);
+            foreach (string developer in DeveloperWords)
+            {
+                Assert.DoesNotContain(developer, e.Message, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        Assert.All(ro.Message, c => Assert.True(c < 128, $"'{c}' in the Romanian message, which is written without diacritics"));
+    }
+
+    /// <summary>
+    /// The first failure asks Windows for the runtime's four DLLs, in their order, and logs at Warn
+    /// those that do not load; a second failure asks nothing and logs nothing.
+    /// </summary>
+    [Fact]
+    public void R110_TheRuntimeIsAskedForOnce_AndTheLogNamesTheDllsThatDoNotLoad()
+    {
+        List<string> asked = [];
+        RawReader.RuntimeCheck check = new(file =>
+        {
+            asked.Add(file);
+            return file is not ("vcruntime140_1.dll" or "vcomp140.dll");
+        });
+        using LogCapture capture = LogCapture.Start();
+
+        RawReader.Missing(new DllNotFoundException("libraw.dll"), check);
+        RawReader.Missing(new DllNotFoundException("libraw.dll"), check);
+
+        string[] inOrder = ["vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "vcomp140.dll"];
+        Assert.Equal(inOrder, asked);
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == nameof(RawReader));
+        Assert.Equal(NLog.LogLevel.Warn, line.Level);
+        Assert.Equal("libraw cannot be loaded; Visual C++ runtime: missing [vcruntime140_1.dll, vcomp140.dll]", line.Message);
+    }
+
+    /// <summary>
+    /// The reader's own failures go through the process's one check: two failures leave it asked
+    /// and write at most one line, whichever test reached it first, where a check made per failure
+    /// would write a line, and search the PATH, at every failure of a session.
+    /// </summary>
+    [Fact]
+    public void R110_TheReadersFailuresShareTheProcesssOneCheck()
+    {
+        using LogCapture capture = LogCapture.Start();
+
+        RawReader.Missing(new DllNotFoundException("libraw.dll"));
+        RawReader.Missing(new DllNotFoundException("libraw.dll"));
+
+        Assert.True(RawReader.Runtime.HasAsked);
+        Assert.True(capture.Events.Count(e => e.Logger == nameof(RawReader)) <= 1, "two failures wrote more than one runtime line");
+    }
+
+    /// <summary>
+    /// When the four load, the line says that none is missing, which a bug report needs to know,
+    /// since the user's message names the runtime as the likely cause; it claims no more, since a
+    /// runtime too old for LibRaw's DLLs may still have the four (ADR 0026).
+    /// </summary>
+    [Fact]
+    public void R110_WhenTheFourLoad_TheLogSaysNoneIsMissing()
+    {
+        RawReader.RuntimeCheck check = new(_ => true);
+        using LogCapture capture = LogCapture.Start();
+
+        RawReader.Missing(new BadImageFormatException("raw_r.dll"), check);
+
+        LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == nameof(RawReader));
+        Assert.Equal(NLog.LogLevel.Warn, line.Level);
+        Assert.Equal(
+            "libraw cannot be loaded; Visual C++ runtime: [vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, vcomp140.dll] load, so none is missing",
+            line.Message);
+    }
+
+    /// <summary>
+    /// The runtime DLLs the reader asks for are the ones LibRaw's DLLs import, read from the import
+    /// tables of the DLLs the build brings for Windows: a Sdcb.LibRaw.runtime.win64 whose DLLs
+    /// import another runtime DLL turns this red until <see cref="RawReader.RuntimeFiles"/> names
+    /// it. The tables are read as bytes, so this runs on any system.
+    /// </summary>
+    [Fact]
+    public void R110_TheRuntimeFilesAreWhatLibrawsDllsImport()
+    {
+        string native = Path.Combine(AppContext.BaseDirectory, "runtimes", "win-x64", "native");
+        Assert.True(Directory.Exists(native), $"{native} does not exist: the test reads the DLLs the build brings for Windows");
+        string[] dlls = Directory.GetFiles(native, "*.dll");
+        Assert.NotEmpty(dlls);
+
+        HashSet<string> runtime = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string dll in dlls)
+        {
+            runtime.UnionWith(Imports(dll).Where(name => VcRuntimeDll().IsMatch(name)));
+        }
+
+        Assert.Equal(
+            RawReader.RuntimeFiles.Select(f => f.ToLowerInvariant()).Order(StringComparer.Ordinal),
+            runtime.Select(f => f.ToLowerInvariant()).Order(StringComparer.Ordinal));
     }
 
     /// <summary>
     /// The whole path, out of process, on Windows: a copy of the console without LibRaw's own DLL,
-    /// run on a session of three <c>.NEF</c> darks. Every row of the inventory carries the message, the full
-    /// run ends with it in its error, both exit 1, and each process writes the runtime's line once,
-    /// at the level this process's own probe gives (Info on a computer that has the runtime).
+    /// run on a session of three <c>.NEF</c> darks. Every row of the inventory carries the message,
+    /// the full run ends with it in its error, both exit 1, and each process writes the runtime's
+    /// line once, at Warn.
     /// </summary>
     [Fact]
     public void R110_ACopyOfTheConsoleWithoutLibRawsDll_GivesEveryRawTheMessage_AndLogsTheRuntimeOnce()
@@ -228,7 +192,6 @@ public partial class LibRawLoadTests
             File.WriteAllText(Path.Combine(session, "darks", $"DSC_000{i}.NEF"), "not a raw");
         }
 
-        string level = VcRuntime.Probe().Any(d => !d.Loads) ? "WARN" : "INFO";
         string logs = Path.Combine(app, "log");
 
         (int code, string stdout, _) = RunCopy(app, "--inventory", session);
@@ -236,14 +199,53 @@ public partial class LibRawLoadTests
         string[] rows = stdout.Split('\n').Where(l => l.Contains("DSC_000", StringComparison.Ordinal)).ToArray();
         Assert.Equal(3, rows.Length);
         Assert.All(rows, r => Assert.EndsWith("error: " + English, r.TrimEnd('\r'), StringComparison.Ordinal));
-        Assert.Equal([level], RuntimeLines(logs));
+        Assert.Equal(["WARN"], RuntimeLines(logs));
 
         // The second process appends to the first one's file, its own one line after the first's;
         // nothing is deleted between the runs, which a scanner holding the closed file could fail.
         (code, _, string stderr) = RunCopy(app, session);
         Assert.Equal(1, code);
         Assert.Contains("ERROR: no dark could be decoded: DSC_0001.NEF: " + English + "; DSC_0002.NEF: " + English, stderr, StringComparison.Ordinal);
-        Assert.Equal([level, level], RuntimeLines(logs));
+        Assert.Equal(["WARN", "WARN"], RuntimeLines(logs));
+    }
+
+    /// <summary>
+    /// The names of the DLLs a PE file imports, from its import directory. A file that also
+    /// delay-loads DLLs fails the test, since its delay-load directory is not read: LibRaw
+    /// 0.21.1's four DLLs have none.
+    /// </summary>
+    /// <param name="path">The DLL to read.</param>
+    /// <returns>The imported DLLs' names, as the file spells them.</returns>
+    private static List<string> Imports(string path)
+    {
+        using PEReader pe = new(File.OpenRead(path));
+        Assert.True(pe.PEHeaders.PEHeader!.DelayImportTableDirectory.Size == 0, $"{Path.GetFileName(path)} delay-loads DLLs, which this test does not read");
+        DirectoryEntry table = pe.PEHeaders.PEHeader!.ImportTableDirectory;
+        System.Reflection.Metadata.BlobReader descriptors = pe.GetSectionData(table.RelativeVirtualAddress).GetReader();
+        List<string> names = [];
+        while (true)
+        {
+            // IMAGE_IMPORT_DESCRIPTOR: five 32-bit fields, the name's address the fourth; an
+            // all-zero descriptor ends the table.
+            descriptors.ReadInt32();
+            descriptors.ReadInt32();
+            descriptors.ReadInt32();
+            int name = descriptors.ReadInt32();
+            descriptors.ReadInt32();
+            if (name == 0)
+            {
+                return names;
+            }
+
+            System.Reflection.Metadata.BlobReader text = pe.GetSectionData(name).GetReader();
+            StringBuilder sb = new();
+            for (byte b = text.ReadByte(); b != 0; b = text.ReadByte())
+            {
+                sb.Append((char)b);
+            }
+
+            names.Add(sb.ToString());
+        }
     }
 
     /// <summary>
@@ -306,6 +308,12 @@ public partial class LibRawLoadTests
         => Directory.GetFiles(logs, "*.log").Order(StringComparer.Ordinal).SelectMany(File.ReadAllLines)
             .Select(l => RuntimeLine().Match(l)).Where(m => m.Success).Select(m => m.Groups[1].Value).ToArray();
 
-    [GeneratedRegex(@"^\S+ \S+ (\w+)\s+\[\d+:\d+\] VcRuntime Visual C\+\+ runtime: ")]
+    // The DLLs of the Visual C++ v14 redistributable (vcruntime, msvcp, vcomp, concrt, vccorlib,
+    // vcamp, mfc and mfcm), not only the four LibRaw 0.21.1 imports, so a build importing another
+    // turns the test red. Read from the import directory; Imports refuses a DLL with delay loads.
+    [GeneratedRegex(@"^(vcruntime|msvcp|vcomp|concrt|vccorlib|vcamp|mfcm?)\d", RegexOptions.IgnoreCase)]
+    private static partial Regex VcRuntimeDll();
+
+    [GeneratedRegex(@"^\S+ \S+ (\w+)\s+\[\d+:\d+\] RawReader libraw cannot be loaded; Visual C\+\+ runtime: ")]
     private static partial Regex RuntimeLine();
 }

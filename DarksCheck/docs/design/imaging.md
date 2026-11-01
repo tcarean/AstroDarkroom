@@ -81,13 +81,16 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   romanian)` pair (ADR 0021). `FitsReader`'s English is FlatCheck's, word for word;
   `RawReader`'s messages are LightsCheck's adaptations and their English was written here, for
   LightsCheck to take back. A refresh from LightsCheck keeps the pairs.
-- Written here later, `Missing`'s pair: the error for a LibRaw that cannot be loaded names
-  Microsoft's Visual C++ runtime, missing or too old, as the likely cause, with the link to its
-  latest version, in the launcher's words and in both languages (R-110, ADR 0026); it names no
-  folder and no executable, and it no longer quotes the loader's text, which names `libraw.dll`
-  whatever is missing and stays in the inner exception, for the log. Its code and catch list are
-  LightsCheck's, unchanged; LightsCheck takes the pair back. Which of the runtime's DLLs Windows
-  loads is written once per process by `VcRuntime`, outside the copies (`logging.md`).
+- Taken later from LightsCheck: the runtime check of its ADR 0030, merged into its `main` as
+  7b59214f on 2026-11-01 (here R-110, ADR 0026), its code and its pair word for word.
+  `Missing(inner)` calls `Missing(inner, Runtime)`, which writes the runtime's line once and
+  returns the error with Microsoft's link appended after the pair. `RuntimeCheck` asks Windows
+  for `RuntimeFiles`, the four DLLs in their order, through `CanLoad` (`NativeLibrary.TryLoad`,
+  each released at once), the first time any thread asks, and gives null after; `RuntimeLine`
+  words its answer. The loader's own text never names the runtime: it names `libraw.dll`, or in
+  a single file says only `Dll was not found.`, and it stays in the inner exception, for the log.
+  The catch lists of `Load` and `LoadInfo` are unchanged. LightsCheck's other later hunks of the
+  two files stay out, as said above.
 - Time: libraw's `Timestamp` is the EXIF `DateTimeOriginal` run through `mktime` on this
   machine, so `DateTimeOffset.FromUnixTimeSeconds(..).ToLocalTime()` gives back the camera's
   wall-clock to the second; EXIF `SubSecTime` is not exposed. Siril's `DATE-OBS` is UTC and is
@@ -100,4 +103,5 @@ resolved when the type loads, which happens on every run because `ImageLoader` a
 `Handles()`, while method bodies resolve at JIT time. With that, a FITS run never loads the
 libraw assembly and a copy of `darkscheck.exe` without the native DLLs still reads FITS.
 `LibRawLoadTests` runs such a copy, without `raw_r.dll`, on three `.NEF` files: each row carries
-`Missing`'s message.
+`Missing`'s message, and the log holds one runtime line per run. `Runtime` is a field of the
+reader, but of its own type, not a libraw one, so it keeps the rule.

@@ -258,3 +258,18 @@ The task's facts all hold:
   words it.
 - **`WindowSmokeTests.Render` is `internal`,** so that `AboutWindowFitTests` lays About out the
   same way, as AstroPhotoAnalyzer's tests do.
+- **LightsCheck was merged during the third review (2026-11-01, its 7b59214f), with its own
+  answer to the same request.** Its reader now checks the runtime itself and words the message
+  with a note on FITS frames (its ADR 0030), and its About window has the same fit, its lead in
+  its core (its ADR 0031). DarksCheck's reader and About pieces are its copies. On 2026-11-02 the
+  owner chose, each as recommended:
+  - LightsCheck's runtime check, taken as a hunk of the copied reader; `VcRuntime`, its two
+    calls and its versions and paths in the log are gone;
+  - LightsCheck's message, word for word;
+  - LightsCheck's About window, view-model and `ScreenArea` (with `ToDips`, tested at 125 % and
+    150 %), its lead in the core with the count written out; `WindowTexts.CountWord` is gone and
+    ADR 0009 stays as it was;
+  - a fixed list of the six in place of the test that read `AstroDarkroom/THIRD-PARTY-NOTICES.md`.
+- **ADRs 0026 and 0027 were rewritten** for those answers, before any merge. About's heights
+  were measured again: 1000 DIP at a 1040 DIP work area in both languages.
+

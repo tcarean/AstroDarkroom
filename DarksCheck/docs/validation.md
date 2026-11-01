@@ -183,9 +183,11 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   `Total tests: 10, Passed: 10, Total time: 10.2956 Minutes`; no figure moved outside its
   tolerance. The Smida run against the library printed the same report, byte for byte, with the
   log at Debug and off, three runs each (ADR 0025 has the times).
-- 2026-11-01: after the message for a LibRaw that cannot be loaded and About's list and fit
-  (R-110, R-120, R-121; ADRs 0026 and 0027: two calls, in `FrameInfo.Read` and
-  `FrameStack.LogFailed`, which write nothing unless LibRaw cannot be loaded, and LibRaw loads
-  for every frame of the sessions; no formula or constant changed), all ten cases re-run with
-  `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed: 10, Total time:
-  10.0908 Minutes`; no figure moved outside its tolerance.
+- 2026-11-01: the message for a LibRaw that cannot be loaded and About's list and fit (R-110,
+  R-120, R-121; ADRs 0026 and 0027). Their first version (c4748998) called a runtime probe from
+  `FrameInfo.Read` and `FrameStack.LogFailed`, which wrote nothing unless LibRaw could not be
+  loaded, and LibRaw loads for every frame of the sessions; no formula or constant changed. All
+  ten cases re-run on it with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests:
+  10, Passed: 10, Total time: 10.0908 Minutes`; no figure moved outside its tolerance. The final
+  version leaves `Analysis/` and `Session/` as they were: the check sits in the reader's
+  failure path (LightsCheck's hunk).

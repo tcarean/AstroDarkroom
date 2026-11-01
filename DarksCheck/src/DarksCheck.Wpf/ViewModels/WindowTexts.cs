@@ -41,43 +41,6 @@ internal static class WindowTexts
 
     internal static string AboutThirdPartyHeading => T("THIRD-PARTY COMPONENTS", "COMPONENTE TERTE");
 
-    /// <summary>
-    /// The lead above the third-party list: how many components there are, in words, counted from
-    /// the core's list itself, and where their licence texts are, which holds in the Astro
-    /// Darkroom folder and for the single file alike (R-120, ADR 0027).
-    /// </summary>
-    internal static string AboutThirdPartyLead => T(
-        $"The program uses {CountWord(ThirdParty.Components.Count)} components written by others, all compatible with the GPLv3. "
-        + "The FITS reader, the PNG encoder, every computation and every threshold are written by hand. Their licence texts, "
-        + "whole, and why each is compatible are in THIRD-PARTY-NOTICES.txt, beside the program in the Astro Darkroom folder, "
-        + "and in AstroDarkroom/THIRD-PARTY-NOTICES.md in the source repository, https://github.com/tcarean/AstroDarkroom.",
-        $"Programul foloseste {CountWord(ThirdParty.Components.Count)} componente scrise de altii, toate compatibile cu GPLv3. "
-        + "Cititorul FITS, encoderul PNG, toate calculele si toate pragurile sunt scrise de mana. Textele licentelor lor, "
-        + "intregi, si motivele pentru care fiecare e compatibila sunt in THIRD-PARTY-NOTICES.txt, langa program in folderul "
-        + "Astro Darkroom, si in AstroDarkroom/THIRD-PARTY-NOTICES.md din depozitul sursei, https://github.com/tcarean/AstroDarkroom.");
-
-    /// <summary>
-    /// A count as a word, for a sentence: the words up to ten in the run's language, the digits past
-    /// them; FlatCheck's <c>CountWord</c>, to ten. The Romanian words are the feminine ones,
-    /// <c>componente</c> being feminine.
-    /// </summary>
-    /// <param name="n">The count, 1 or more.</param>
-    /// <returns>The word, or the digits.</returns>
-    internal static string CountWord(int n) => n switch
-    {
-        1 => T("one", "una"),
-        2 => T("two", "doua"),
-        3 => T("three", "trei"),
-        4 => T("four", "patru"),
-        5 => T("five", "cinci"),
-        6 => T("six", "sase"),
-        7 => T("seven", "sapte"),
-        8 => T("eight", "opt"),
-        9 => T("nine", "noua"),
-        10 => T("ten", "zece"),
-        _ => n.ToString(CultureInfo.InvariantCulture),
-    };
-
     internal static string ChooseTitle => T(
         "Choose the Siril session folder (the one with darks\\) or the folder of darks",
         "Alege folderul sesiunii Siril (cel cu darks\\) sau folderul de dark-uri");

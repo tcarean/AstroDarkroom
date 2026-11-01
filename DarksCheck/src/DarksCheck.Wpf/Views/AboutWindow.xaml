@@ -19,10 +19,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <!-- AboutWindow: the icon, the version, the copyright, the GPLv3 notice and the third-party
      list: the program's legal notice, the same as FlatCheck's. Modal, Esc closes it. Copied from
-     LightsCheck, with AstroPhotoAnalyzer's fit to the screen as its own hunk (its ADR 0070; here
-     ADR 0027): as tall as its content, but no taller than the work area of its screen, which the
-     code behind sets as its MaxHeight; then the cards scroll and the Close button, in a row of
-     its own, stays in view (R-121). Where it fits, the margins add up to the layout before. -->
+     LightsCheck, its fit to the screen included (its ADR 0031; here ADR 0027): as tall as its
+     content, but no taller than the work area of its screen, which the code behind sets as its
+     MaxHeight; then the cards scroll and the Close button, in a row of its own, stays in view
+     (R-121). Where it fits, the margins add up to the same layout as before. -->
 
 <Window x:Class="DarksCheck.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

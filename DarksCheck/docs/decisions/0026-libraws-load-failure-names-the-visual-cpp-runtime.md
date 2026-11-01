@@ -1,7 +1,7 @@
-# 0026. LibRaw's load failure names the Visual C++ runtime, and the log says which of its DLLs Windows loads
+# 0026. LibRaw's load failure names the Visual C++ runtime in LightsCheck's words, and the reader logs which of its DLLs Windows cannot load
 
 Date: 2026-11-01
-Status: accepted 2026-11-01
+Status: accepted 2026-11-02
 
 ## Context
 
@@ -19,85 +19,71 @@ must sit beside darkscheck.exe" and to "publish with IncludeNativeLibrariesForSe
 the whole folder". That is advice for a developer. It is wrong for a user who has the DLLs and
 lacks the runtime, and wrong where the DLLs are inside the single file.
 
-The loader's exception, which the message quoted, names `libraw.dll` whatever is missing, since
-`Sdcb.LibRaw`'s resolver tries `raw_r.dll` and then `NativeLibrary.Load("libraw.dll")`. Measured on
-a copy of the console without `raw_r.dll`, and on one whose `raw_r.dll` imports a DLL that does
-not exist, as a missing runtime would: both gave `Unable to load DLL 'libraw.dll' or one of its
-dependencies: The specified module could not be found. (0x8007007E)`. The log kept that
-exception and never said which DLL Windows refused.
+The loader's own text, which the error quoted, never names the runtime. `Sdcb.LibRaw`'s resolver
+tries `raw_r.dll` and then `NativeLibrary.Load("libraw.dll")`. Measured on a copy of the console
+without `raw_r.dll`, and on one whose `raw_r.dll` imports a DLL that does not exist, as a missing
+runtime would: both gave `Unable to load DLL 'libraw.dll' or one of its dependencies ...
+(0x8007007E)`. A single file copied without its DLLs gave only `Dll was not found.`
 
-Where the DLLs themselves can go missing was measured too:
+On 2026-11-01 the owner chose no hint for developers in the message, and a log line at the first
+failure saying which of the runtime's DLLs Windows cannot load.
 
-- The single file extracts its four DLLs at start.
-- The suite keeps them beside the window, with .NET.
-- Only a custom publish without the flag, its exe copied alone, loses them. That gives the same
-  outer message, with the inner `Dll was not found.`
-
-On 2026-11-01 the owner chose two things, each as recommended:
-
-- no hint for developers in the message;
-- a log line at the first failure, saying which of the runtime's DLLs Windows cannot load.
+DarksCheck's reader is a copy of LightsCheck's, and its code changes there first (the rule
+"Copied files stay copies"). This task's first version therefore wrote the probe outside the
+copy: `VcRuntime`, in `Logging/`, called from the two places that log a frame's failure, its line
+giving each DLL's version and path. During the task's third review, on 2026-11-01, LightsCheck
+merged its own answer to the same request (its ADR 0030): the check inside its reader, and a
+message with a note on FITS frames. On 2026-11-02 the owner chose to take LightsCheck's code and
+its words.
 
 ## Decision
 
-- **The message.** When LibRaw cannot be loaded, every raw's error words the launcher's warning
-  (AstroDarkroom's `VcRuntime.Warning`) as the likely cause (R-110):
-  - English: `cannot load LibRaw: Microsoft's Visual C++ runtime is likely missing or too old, so
-    camera raw files cannot be read until its latest version is installed:
-    https://aka.ms/vc14/vc_redist.x64.exe`
-  - Romanian: `nu pot incarca LibRaw: runtime-ul Microsoft Visual C++ probabil lipseste sau este
-    prea vechi, deci nu pot citi fisiere raw de aparat pana nu instalezi ultima lui versiune:
-    https://aka.ms/vc14/vc_redist.x64.exe`
-- **What the message leaves out.** It names no folder and no executable, so it holds for the
-  single file and the suite's folder alike. It gives no advice on publishing; the README's
-  "Building" says how the DLLs travel. The loader's exception stays the inner one, for the log.
-  Its text no longer goes into the message.
-- **Only the pair changes in the copied reader.** `RawReader.Missing` keeps LightsCheck's code
-  and catch list. Its `T(...)` pair and the comments are DarksCheck's (ADRs 0019 and 0021), for
-  LightsCheck to take back. The old pair appended the loader's text, `inner.Message`, inside
-  both of its arguments; the new one does not. LightsCheck's reader appends it after its
-  `T(...)`, outside the pair, so a refresh that takes that code would bring it back: a refresh
-  from LightsCheck must keep it out, and the two `R110_TheMessage...` tests turn red if it does
-  not.
-- **The log line.** The first time in a process that a frame's error is that failure,
-  `VcRuntime` asks Windows for the four DLLs and writes one line. `VcRuntime` is DarksCheck's
-  own code, in `Logging/`.
-  - It loads each by name (`NativeLibrary.TryLoad`) and releases each one at once.
-  - The line is at Warn, naming those that do not load, or at Info when the four load, the cause
-    then being elsewhere. Each DLL found is given with its file version and its path, from the
-    process's module list.
-  - A probe that throws writes its reason at Warn instead.
-- **Where it is called.** The two seams that log a frame's failure call it: `FrameInfo.Read`
-  and `FrameStack.LogFailed`, through which the lights' loop goes too. It recognises
-  RawReader's error by its inner exception, one of the four types RawReader's catch list takes.
-- **Its cost, measured** in a fresh .NET 8 process: 1.5 to 6 ms for each DLL found, 4 to 7 ms
-  for each miss. It is paid only after a failure, and once.
+- **LightsCheck's hunk, taken word for word.** `RawReader.Missing(inner)` calls
+  `Missing(inner, Runtime)`. Its pair is LightsCheck's, English and Romanian, and the code
+  appends Microsoft's link to it (R-110):
+  - English: `cannot load libraw: Microsoft's Visual C++ runtime is likely missing or too old, so
+    camera raw files cannot be read until its latest version is installed (FITS frames are not
+    affected): https://aka.ms/vc14/vc_redist.x64.exe`
+  - Romanian: `nu pot incarca libraw: probabil runtime-ul Microsoft Visual C++ lipseste sau este
+    prea vechi, deci nu pot citi fisiere raw de aparat pana nu instalezi ultima lui versiune
+    (cadrele FITS nu sunt afectate): https://aka.ms/vc14/vc_redist.x64.exe`
+- **What the message leaves out.** It names no executable, folder, DLL or publish option, so it
+  holds for the single file and the suite's folder alike. The loader's exception stays the inner
+  one, which the log writes with the frame's line.
+- **The runtime check, once per process.** `RuntimeCheck` asks Windows to load the four DLLs by
+  name (`NativeLibrary.TryLoad`, each released at once) at the first failure, and the reader
+  writes one Warn line. The line names the DLLs that do not load, or says that the four load, so
+  none is missing. It claims no more, since a runtime too old for LibRaw's DLLs may still have the
+  four. Later failures ask nothing.
+- **A hunk, not a whole refresh.** The code is LightsCheck's, word for word; the comments are
+  DarksCheck's (ADR 0019), as with FlatCheck's hunks in ADRs 0020 and 0023. LightsCheck's other
+  later hunks of the reader stay out, as `docs/design/imaging.md` says.
 
 ## Alternatives rejected
 
-- **A sentence for whoever built DarksCheck.** It would appear in every raw's row and three
-  times in the run's error line, for a case that only a custom publish reaches.
+- **DarksCheck's own probe outside the copy** (this task's first version). The reader would
+  differ from its source on purpose. The next refresh would bring LightsCheck's check beside it:
+  two runtime lines per process, and the link twice in every message.
+- **DarksCheck's own wording**, the launcher's without the FITS note. Two tools of one suite
+  would word the same failure two ways.
+- **A sentence for whoever built DarksCheck.** It would appear in every raw's row and three times
+  in the run's error line, for a case only a hand-made publish reaches.
 - **The loader's text in brackets, as before.** It names `libraw.dll` whatever is missing.
-- **No probe.** A bug report would need a question back to learn which runtime the computer has.
-- **A probe at every start, as the launcher's.** It would cost every run, FITS runs and `--help`
-  included, for a line that matters only when a raw fails.
-- **The probe inside RawReader, or the message chosen from its answer.** That is code in a copied
-  file, whose fixes go to LightsCheck first (the rule "Copied files stay copies").
+- **The check at every failure.** LightsCheck counted 174 failures for one session of its own,
+  87 raws failing twice each, and the launcher measured 12 to 26 ms for each check (LightsCheck's
+  ADR 0030, AstroDarkroom's ADR 0016): seconds per run for the same answer each time.
 - **Shipping the runtime.** AstroDarkroom's ADR 0016 rejected it for the suite, and the same
   holds here: the Visual Studio licence's terms for distributors, and Microsoft's advice against
   copies beside a program.
 
 ## Consequences
 
-- **`LibRawLoadTests`** pins:
-  - the message in both languages, word for word, through RawReader's own `Missing`;
-  - the probe's line and its once-per-process guard;
-  - a copy of the console without `raw_r.dll`, run out of process: every row carries the
-    message, the run's error too, exit 1, one runtime line in each process's log.
-- **The probe's search** is Windows' standard one, from the executable's folder. LibRaw's DLLs
-  look in their own folder first, which for the single file is the extraction folder. Neither
-  holds a copy of the runtime, so the two answers agree unless a user puts one beside the
-  executable.
-- **The link** is written in both messages here, and in AstroDarkroom's `VcRuntime.DownloadUrl`.
-- **LightsCheck and FlatCheck** have the same old message in their own readers; each mends it in
-  its own task.
+- **`LibRawLoadTests`** holds LightsCheck's five tests of the hunk, under DarksCheck's names:
+  - the words in both languages and the inner exception;
+  - the one check per process and its line, for missing DLLs and for none missing;
+  - the four names read from the import tables of the DLLs the build brings, at every run.
+
+  It also runs a copy of the console without `raw_r.dll`, out of process: every row carries the
+  message, the run's error too, exit 1, one runtime line per run in the log.
+- **A later refresh of the reader from LightsCheck** keeps this hunk as it is.
+- **FlatCheck** words the message and logs the runtime its own way, in its own task.

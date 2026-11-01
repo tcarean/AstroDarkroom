@@ -38,11 +38,11 @@ and neither the program nor the suite ships it; the suite's launcher checks for 
 missing, or too old (the 2015 and 2017 versions lack one of its files), every raw's row says so:
 
 ```
-cannot load LibRaw: Microsoft's Visual C++ runtime is likely missing or too old, so camera raw files cannot be read until its latest version is installed: https://aka.ms/vc14/vc_redist.x64.exe
+cannot load libraw: Microsoft's Visual C++ runtime is likely missing or too old, so camera raw files cannot be read until its latest version is installed (FITS frames are not affected): https://aka.ms/vc14/vc_redist.x64.exe
 ```
 
 That link is Microsoft's own, for the latest x64 version; install it and run the program again.
-FITS files are read without it.
+LightsCheck says the same, word for word.
 
 ## The folder you give it
 
@@ -543,7 +543,7 @@ and the partner; every file it writes for you; in the window, the folder opened,
 and the buttons pressed; every error with its technical details, those the program works around
 without a word included (not a run you stopped yourself, nor what the window drops while it
 closes); the first time LibRaw cannot be loaded, which of the Visual C++ runtime's four DLLs
-Windows loads, with each one's version and path; at the end the exit code and the time taken.
+Windows cannot load, or that it loads all four; at the end the exit code and the time taken.
 The log's own words are English whatever `--lang` says; an error's or a refusal's message appears as you saw it, so in Romanian under
 `--lang ro`. It holds the paths of your files and the figures measured on them, not their pixels.
 
@@ -585,9 +585,9 @@ Each file carries LibRaw's four DLLs, `raw_r.dll`, `jpeg8.dll`, `lcms2.dll` and 
 extracts them when it starts; the Visual C++ runtime they need is not inside ("Getting it").
 Published another way, without `-p:IncludeNativeLibrariesForSelfExtract=true`, the four DLLs land
 beside the executable and must stay there: an executable copied alone cannot read raws. Its
-error then names the runtime too, since Windows' own error names `libraw.dll` whatever is
-missing; the log keeps Windows' error, and its line on the runtime says whether the four
-runtime DLLs load.
+error then names the runtime too, since the loader's own error never does: it names
+`libraw.dll`, or says only `Dll was not found.`, whatever is missing. The log keeps that error,
+and its runtime line says whether the four runtime DLLs load.
 
 ## For developers
 

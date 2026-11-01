@@ -10,8 +10,8 @@ The whole text of every licence named here, with the notices of the code each co
 contains, is in the Astro Darkroom suite's notices: `THIRD-PARTY-NOTICES.txt` in the suite's
 folder, beside the programs, and `AstroDarkroom/THIRD-PARTY-NOTICES.md` in this repository. That
 file names DarksCheck among the programs that ship each of the six components below, and the
-About window points to it (R-120, ADR 0027); `ThirdPartyTests` holds the two lists equal. This
-file keeps NLog's text, and libjpeg-turbo's statement for the Independent JPEG Group.
+About window points to it (R-120, ADR 0027). This file keeps NLog's text, and libjpeg-turbo's
+statement for the Independent JPEG Group.
 
 What is written by hand and is **not** third-party code: the FITS reader, the PNG encoder, every
 computation and every threshold. The FITS reader, the raw reader and the PNG encoder are copied
