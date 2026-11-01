@@ -38,8 +38,8 @@ window would be four more controls in service of the rarer case.
 
 What the window adds - a workflow, never an analysis, a threshold or a wording - is ADR 0011
 and ADR 0033. The "Despre" window, which formulates nothing, is ADR 0040; it fits the work
-area of its screen, its cards scrolling, as the launcher's and AstroPhotoAnalyzer's do (R-123,
-ADR 0083). The three viewing
+area of its screen, its cards scrolling, as the launcher's and AstroPhotoAnalyzer's do (R-125,
+ADR 0086). The three viewing
 aids around the residual map (the scale switch with its caps from `Th.Resid*`, the legend, the
 collapsed shape guide), why the guide is documentation and not a classifier, why End-to-end
 gets the legend and no shape guide, why the guide texts mirror the README by hand and why the

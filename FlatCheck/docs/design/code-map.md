@@ -81,12 +81,12 @@ a library extraction and not a copy is ADR 0011.
     reading its fields as locals: ADR 0009. `IsRawPath` is the extension gate; `RawExtensions`
     exposes the same list to the WPF app's `flats/` filter, so a camera the reader learns is a
     camera the list offers. When LibRaw cannot be loaded, `CannotLoad` refuses the raw with
-    R-122's message, which names the Visual C++ runtime on Windows, and logs the loader's
-    exception with the probe: ADR 0082, the mechanics in `dependencies.md`.
+    R-124's message, which names the Visual C++ runtime on Windows, and logs the loader's
+    exception with the probe: ADR 0085, the mechanics in `dependencies.md`.
   - `VcRuntime.cs` - the four DLLs of Microsoft's Visual C++ runtime that LibRaw's DLLs import,
     Microsoft's link to its latest package, and the probe `CannotLoad` runs: the Astro Darkroom
     launcher's list and words, kept here for the tool's own release, which has no launcher
-    (ADR 0082).
+    (ADR 0085).
   - `CfaPattern.cs` - which colour each of the four Bayer positions is, or `null` when the
     file does not say: what it reads (libraw's `filters` + `cdesc`, or `BAYERPAT` with
     `XBAYROFF`/`YBAYROFF` and `ROWORDER`), why it is never guessed and why no figure depends on
@@ -123,7 +123,7 @@ a library extraction and not a copy is ADR 0011.
     ADR 0039.
   - `ThirdParty.cs` - the third-party components as a *value*, what the window's "Despre"
     shows, bound to the csproj, to the DLLs of LibRaw's runtime package (`NativeFiles`) and to
-    the notices file by `ThirdPartyTests`: ADR 0008, ADR 0040, ADR 0082 and the rule "Package
+    the notices file by `ThirdPartyTests`: ADR 0008, ADR 0040, ADR 0085 and the rule "Package
     notices". `NoticesUrl` is where each licence's whole text is online.
   - `LensProfiles/` - the lens vignetting profiles behind the synthetic flat.
     `VignettingModel` is the factor `V(x, y)` as a value, with the two coordinate
@@ -417,8 +417,8 @@ a library extraction and not a copy is ADR 0011.
     the window). Modal, centred on its owner, `IsCancel` on the close button. No taller than
     the work area of its screen, which the main window passes to its constructor: the cards
     in a `ScrollViewer` named `Cards`, the Close button in a row of its own, the fit and its
-    log line at `ContentRendered`, the keys passed to the cards only while they scroll (R-123,
-    ADR 0083).
+    log line at `ContentRendered`, the keys passed to the cards only while they scroll (R-125,
+    ADR 0086).
   - `Presentation/AppIcon.cs` - the largest frame of `flatcheck.ico`, chosen through
     `BitmapDecoder`: an `<Image>` handed the `.ico` directly takes whichever frame comes
     first, which at 72 px on screen can be the 16 px one scaled up.
@@ -449,7 +449,7 @@ a library extraction and not a copy is ADR 0011.
   - `Interop/DarkTitleBar.cs` - a P/Invoke: Windows draws the title bar, not WPF.
   - `Interop/ScreenArea.cs` - the other: the work area of the screen a window is on, which WPF
     knows for the primary screen only, and `TopInside`, the arithmetic that keeps "Despre"
-    inside it (R-123, ADR 0083).
+    inside it (R-125, ADR 0086).
   - `Loggers.cs` - the names of the window's loggers in the diagnostic log (`logging.md`);
     each tab logs under `Window.<Tab>`, given by `TabViewModel`.
 - `FlatCheck.Tests/` - xUnit tests for the core and the console, reaching them via

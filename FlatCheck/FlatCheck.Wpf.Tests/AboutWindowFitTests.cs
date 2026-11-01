@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AboutWindowFitTests.cs - "Despre" fits the work area of its screen (R-123, ADR 0083): no taller
+// AboutWindowFitTests.cs - "Despre" fits the work area of its screen (R-125, ADR 0086): no taller
 // than the area, its cards scrolling when their content is taller, the Close button in view, and
 // as before where it fits. AstroPhotoAnalyzer's tests of the same design, on this window. No test
 // here shows a window: the content is laid out at the height a capped window leaves it, as
@@ -47,13 +47,13 @@ public class AboutWindowFitTests
     /// </summary>
     [Theory]
     [InlineData(100.0, 600.0, 0.0, 800.0, 100.0)]   // it fits where it opens: unchanged
-    [InlineData(300.0, 600.0, 0.0, 800.0, 200.0)]   // past the bottom: up until its bottom is the area's (R-123's example)
+    [InlineData(300.0, 600.0, 0.0, 800.0, 200.0)]   // past the bottom: up until its bottom is the area's (R-125's example)
     [InlineData(-60.0, 600.0, 0.0, 800.0, 0.0)]     // past the top: down to the area's top
     [InlineData(-60.0, 1215.0, 0.0, 800.0, 0.0)]    // taller than the area: at its top (the window is cut to the area's height)
     [InlineData(-60.0, 800.0, 0.0, 800.0, 0.0)]     // exactly as tall as the area: at its top
     [InlineData(500.0, 600.0, 40.0, 800.0, 240.0)]  // an area that does not start at 0, a taskbar above it
     [InlineData(100.0, 600.0, -1080.0, 1040.0, -640.0)]   // a screen above the primary, at negative coordinates
-    public void R123_TheWindowsTopKeepsItInsideTheWorkArea(double top, double height, double areaTop, double areaHeight, double expected)
+    public void R125_TheWindowsTopKeepsItInsideTheWorkArea(double top, double height, double areaTop, double areaHeight, double expected)
         => Assert.Equal(expected, ScreenArea.TopInside(top, height, areaTop, areaHeight));
 
     /// <summary>
@@ -63,7 +63,7 @@ public class AboutWindowFitTests
     /// move them to either end, and Enter is left to the Close button.
     /// </summary>
     [Fact]
-    public Task R123_OnALowWorkAreaTheCardsScrollAndCloseStaysInView()
+    public Task R125_OnALowWorkAreaTheCardsScrollAndCloseStaysInView()
         => _sta.InvokeAsync(async () =>
         {
             AboutWindow about = new(new Rect(0, 0, 1280, 680));
@@ -100,7 +100,7 @@ public class AboutWindowFitTests
     /// area here is a 1440-line screen's at 100 %.
     /// </summary>
     [Fact]
-    public Task R123_WhereTheWindowFitsNothingChanges()
+    public Task R125_WhereTheWindowFitsNothingChanges()
         => _sta.InvokeAsync(async () =>
         {
             AboutWindow about = new(new Rect(0, 0, 2560, 1400));
@@ -132,7 +132,7 @@ public class AboutWindowFitTests
     /// placed on a second screen, which no test here does.
     /// </summary>
     [Fact]
-    public void R123_TheWorkAreaIsTheOneOfTheWindowsScreen()
+    public void R125_TheWorkAreaIsTheOneOfTheWindowsScreen()
         => _sta.Invoke(() =>
         {
             using LogCapture capture = LogCapture.Start();

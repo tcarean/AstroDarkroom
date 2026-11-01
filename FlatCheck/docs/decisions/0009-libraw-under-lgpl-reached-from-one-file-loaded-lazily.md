@@ -1,7 +1,7 @@
 # 0009. libraw (Sdcb.LibRaw) under LGPL-2.1, reached from one file, loaded lazily, nothing developed
 
 Date: 2026-09-25
-Status: accepted 2026-09-25; the message naming what is missing superseded by 0082
+Status: accepted 2026-09-25; the message naming what is missing superseded by 0085
 
 ## Context
 

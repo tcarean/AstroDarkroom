@@ -153,7 +153,7 @@ namespace FlatCheck
 
             // The Split License grants the Apache License 2.0 to software under an open-source
             // licence, which FlatCheck is, and asks all documentation to name the granted licence
-            // only; THIRD-PARTY-NOTICES.md argues the grant (ADR 0010, ADR 0082).
+            // only; THIRD-PARTY-NOTICES.md argues the grant (ADR 0010, ADR 0085).
             new ThirdPartyComponent(
                 Name: "SixLabors.ImageSharp",
                 Role: T("decoding the JPEG preview in a raw", "decodarea previzualizarii JPEG din raw"),

@@ -81,8 +81,8 @@ with the natives inside, the window as a folder) and the suite's flat folder (th
 ## 1. Requirements first: `docs/requirements.md`
 
 - **R-004.** The last sentence becomes: when LibRaw cannot be loaded, a FITS run is unaffected
-  and a raw run exits `1` with R-122's message.
-- **R-122 (new, implemented): the message when LibRaw cannot be loaded.** Any of
+  and a raw run exits `1` with R-124's message.
+- **R-124 (new, implemented): the message when LibRaw cannot be loaded.** Any of
   `DllNotFoundException`, a `FileNotFoundException` for another file, `BadImageFormatException`
   or `TypeInitializationException` is turned into an `InvalidOperationException`. It is worded
   in the run's language (`T` pairs, Romanian without diacritics) and carries no inner exception.
@@ -118,7 +118,7 @@ with the natives inside, the window as a folder) and the suite's flat folder (th
 ## 2. Tests, written to fail first
 
 - **`FlatCheck.Tests`:**
-  - **`R122_*`.**
+  - **`R124_*`.**
     - The message in English and Romanian on Windows: the runtime words, the link last, no
       `libraw.dll`, no `IncludeNativeLibrariesForSelfExtract`, no diacritics.
     - The message elsewhere: no "Visual C++", the advice about the native files.
@@ -206,7 +206,7 @@ with the natives inside, the window as a folder) and the suite's flat folder (th
   two names, why the user sees no inner exception, the probe and its search. `VcRuntime.cs` is
   added to `Covers:`.
 - **`docs/design/logging.md`.** The `RawReader` row gains the Warn line.
-- **`docs/decisions/0082-...`.** The four choices, the measurements and the alternatives
+- **`docs/decisions/0085-...`.** The four choices, the measurements and the alternatives
   rejected. "Supersedes: 0009 in part" (the "naming what is missing" message and its publish
   advice), with ADR 0009's status line amended. ADR 0010 is checked for a licence wording to
   supersede.
@@ -248,7 +248,7 @@ at 584 DIP, after one dispatcher pass at `ContextIdle` so that the bindings had 
 The owner chose the launcher's fit in this branch, as AstroPhotoAnalyzer's ADR 0070 brought it
 there. It goes in a commit of its own, with its requirement, tests and ADR:
 
-- **R-123 (new).** "Despre" fits the work area of the screen the main window is on:
+- **R-125 (new).** "Despre" fits the work area of the screen the main window is on:
   - never taller than that area, opening inside it;
   - its cards scroll when they are taller, with the wheel and with Up, Down, Page Up, Page Down,
     Home and End, the keys only while the cards can scroll;
@@ -264,11 +264,11 @@ there. It goes in a commit of its own, with its requirement, tests and ADR:
   row, with the same margins where the window fits.
 - **The main window** passes `ScreenArea.WorkAreaOf(this)`.
 - **Tests.**
-  - New `AboutWindowFitTests`: `R123_` for the arithmetic, the low area with its keys, the area
+  - New `AboutWindowFitTests`: `R125_` for the arithmetic, the low area with its keys, the area
     where it fits, and Windows' answer; `R110_` for the Debug line through `OnContentRendered`.
   - `WindowSmokeTests` and `WindowLanguageTests` pass `SystemParameters.WorkArea`. The smoke
     render shows the whole window.
-- **ADR 0083.** It records the fit, its measured table (the content's natural heights against
+- **ADR 0086.** It records the fit, its measured table (the content's natural heights against
   the four areas, computed and not shown) and the differences from APA's, if any.
 - `docs/design/` covers `ScreenArea.cs` and the About window's fit.
 
@@ -287,14 +287,14 @@ there. It goes in a commit of its own, with its requirement, tests and ADR:
 - **A fact of the task held only in part.** It said the caught exception names `libraw.dll`.
   Measured end to end in scratch publishes, that holds for a folder publish, the window's, alone
   or in the Astro Darkroom folder. The single-file console's exception says only "Dll was not
-  found.". The owner chose to go on with the docs stating both texts (R-122, ADR 0082,
+  found.". The owner chose to go on with the docs stating both texts (R-124, ADR 0085,
   `dependencies.md`, the CHANGELOG). The design did not change.
 - **The real About is a little shorter than step 0's estimate:** 1146 DIP of content in English
   and 1161 in Romanian (step 0's stand-in rows gave 1161 and 1176), because the link under the
-  lead is set at 11 px. ADR 0083's table uses the real figures.
+  lead is set at 11 px. ADR 0086's table uses the real figures.
 - **Two small additions to the code list.**
   - `LogText.VcRuntime` holds the runtime clause in the launcher's words.
-  - The window's R-122 check sits in `ExposureTabTests`, the tab that reads raws.
+  - The window's R-124 check sits in `ExposureTabTests`, the tab that reads raws.
 - **Two smaller test changes.**
   - `WindowSmokeTests` renders About after a dispatcher pass, at its own height. Without the
     pass, the content measured 397 DIP instead of 880.
@@ -313,3 +313,7 @@ there. It goes in a commit of its own, with its requirement, tests and ADR:
     run checks its cancelled token only after `HistEqRun.Execute` returns, so it can still be
     running.
   - The test and the tab are unchanged on this branch. Reported to the owner, not edited.
+- **Renumbered before the merge.** While this branch was open, the plain-words tasks took ADR
+  0082-0084 and R-122/R-123 on `main`, for other decisions. This branch's became ADR 0085 (the
+  message and the list) and ADR 0086 (the fit), and R-124 (the message) and R-125 (the fit),
+  with the test names `R124_` and `R125_`. The numbers above were changed to match.

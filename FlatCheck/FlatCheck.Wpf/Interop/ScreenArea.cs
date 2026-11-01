@@ -23,7 +23,7 @@
 // answer comes in the pixels Windows gives this process and is turned into the window's
 // device-independent pixels by the window's DPI scale. The arithmetic that keeps a window inside
 // the area is the launcher's WindowFit.Top, kept here beside the query, as in AstroPhotoAnalyzer:
-// it is a window's geometry, not a figure of the analysis (ADR 0083).
+// it is a window's geometry, not a figure of the analysis (ADR 0086).
 
 using System;
 using System.Runtime.InteropServices;
@@ -36,7 +36,7 @@ namespace FlatCheck.Wpf
 {
     /// <summary>
     /// The work area of the screen a window is on, and where a window's top goes to stay inside
-    /// it (R-123).
+    /// it (R-125).
     /// </summary>
     internal static class ScreenArea
     {

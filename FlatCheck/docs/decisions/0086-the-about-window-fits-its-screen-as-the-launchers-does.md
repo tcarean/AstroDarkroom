@@ -1,4 +1,4 @@
-# 0083. The About window fits its screen, as the launcher's and AstroPhotoAnalyzer's do
+# 0086. The About window fits its screen, as the launcher's and AstroPhotoAnalyzer's do
 
 Date: 2026-11-01
 Status: accepted 2026-11-01
@@ -24,7 +24,7 @@ window. It came to 880 DIP: a window of about 919 DIP with the title bar and the
 
 Where it ran past the area, its Close button was off the screen; Esc still closed it.
 
-**The new rows.** The three rows of ADR 0082 and the link under the lead bring the content to
+**The new rows.** The three rows of ADR 0085 and the link under the lead bring the content to
 1146 DIP in English and 1161 in Romanian. That is a window of about 1185 and 1200 DIP, past the
 1040 DIP area too.
 
@@ -94,7 +94,7 @@ FlatCheck takes AstroPhotoAnalyzer's design, including its four differences from
 - **On a 1080-line screen at 100 %**, the window is 1040 DIP high and its cards scroll by about
   150 DIP. The first view holds the header, the licence and the first rows; the rest is a
   scroll away.
-- **`AboutWindowFitTests`** holds the `R123_` tests:
+- **`AboutWindowFitTests`** holds the `R125_` tests:
   - the arithmetic;
   - the low area, with End, Home and Enter raised as key events through a stand-in presentation
     source;

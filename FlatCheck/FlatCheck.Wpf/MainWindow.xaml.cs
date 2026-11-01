@@ -110,7 +110,7 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>The "Despre" button and F1, through ApplicationCommands.Help - see
-        /// MainWindow.xaml. The window fits the work area of this window's screen (R-123).</summary>
+        /// MainWindow.xaml. The window fits the work area of this window's screen (R-125).</summary>
         /// <param name="sender">The window.</param>
         /// <param name="e">The command.</param>
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)

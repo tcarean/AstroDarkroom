@@ -23,7 +23,7 @@ against and not a veto, the three places a package touches and the two of them `
 enforces (the README table under "Third-party components" is the fourth copy, kept by hand), and
 the one data component the tests allow. A package that brings several native libraries is one
 component per DLL, each naming its files (`NativeFiles`), as the Astro Darkroom folder's notices
-list them: LibRaw's win-x64 runtime is LibRaw, libjpeg-turbo, Little CMS and zlib (ADR 0082). ADR 0028 holds why the lensfun database is that component
+list them: LibRaw's win-x64 runtime is LibRaw, libjpeg-turbo, Little CMS and zlib (ADR 0085). ADR 0028 holds why the lensfun database is that component
 and the Adobe profiles deliberately are not; ADR 0040 holds why the list is displayed in "Despre" rather
 than shipped as a file (LGPL-2.1 §6 asks for it, and nothing rides beside a single-file exe).
 
@@ -43,7 +43,7 @@ class, so `Decode` copies what its log line needs into a `double` before the lam
 guard walks the nested types and the fields' generic arguments for that reason (the review of
 2026-10-27).
 
-**When LibRaw cannot be loaded** (R-122, ADR 0082). `Sdcb.LibRaw`'s resolver, `LibRawNativeLoader`
+**When LibRaw cannot be loaded** (R-124, ADR 0085). `Sdcb.LibRaw`'s resolver, `LibRawNativeLoader`
 (0.21.1.7), asks .NET for `raw_r.dll` and, failing that, for `libraw.dll`, which exists nowhere,
 so the `DllNotFoundException` that reaches `RawReader` names no cause. In a folder publish it
 names `libraw.dll`, both when `raw_r.dll` is missing and when Windows cannot load what it
@@ -80,7 +80,7 @@ and what 4.x would cost (a licence key at compile time, `ColorProfileHandling.Pr
 the version is pinned at all, the one file that names an ImageSharp type (`PreviewReader.cs`),
 and `StbImageSharp` as the measured drop-in fallback if the licence ever moves. The list names
 its licence `Apache-2.0` alone, as the Split License asks of all documentation once it grants
-it (ADR 0082).
+it (ADR 0085).
 
 ### `NLog`
 

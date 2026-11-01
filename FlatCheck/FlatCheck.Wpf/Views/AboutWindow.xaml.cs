@@ -22,7 +22,7 @@
 // at --help, the window had nowhere to - and because LibRaw's LGPL asks for the library's
 // notice beside ours. All the text comes through AboutViewModel; here remain only the window
 // things: the dark title bar, opening the links in the browser, and the window's fit to its
-// screen (R-123, ADR 0083), the design of the Astro Darkroom launcher and of AstroPhotoAnalyzer.
+// screen (R-125, ADR 0086), the design of the Astro Darkroom launcher and of AstroPhotoAnalyzer.
 
 using System.Windows;
 using System.Windows.Input;
@@ -34,14 +34,14 @@ namespace FlatCheck.Wpf
     /// <summary>
     /// The modal "Despre" window: the icon, the version, the copyright, the GPLv3 notice and the
     /// third-party components, all bound to <see cref="AboutViewModel"/>, fitted to the work area
-    /// of its screen (R-123).
+    /// of its screen (R-125).
     /// </summary>
     public partial class AboutWindow : Window
     {
         /// <summary>
         /// Builds the window over a new <see cref="AboutViewModel"/>, with the largest icon and
         /// the dark title bar. The window is no taller than <paramref name="workArea"/>, is kept
-        /// inside it once shown, and its cards scroll from the keyboard too (R-123, ADR 0083).
+        /// inside it once shown, and its cards scroll from the keyboard too (R-125, ADR 0086).
         /// </summary>
         /// <param name="workArea">
         /// The work area of the screen the window opens on, in device-independent pixels: the
@@ -72,7 +72,7 @@ namespace FlatCheck.Wpf
         void OpenLink(object sender, RequestNavigateEventArgs e) => ExternalLink.Open(e);
 
         /// <summary>
-        /// Keeps the shown window inside its screen's work area (R-123), and writes its size and
+        /// Keeps the shown window inside its screen's work area (R-125), and writes its size and
         /// place, the area and whether its cards scroll to the diagnostic log at Debug (R-110).
         /// Called once its content is first rendered, when its size is final. WPF has placed it
         /// there already (a window centred on its owner is clamped into the owner screen's work
@@ -92,7 +92,7 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Scrolls the cards by a key while they can scroll (R-123): Up and Down by a line, Page
+        /// Scrolls the cards by a key while they can scroll (R-125): Up and Down by a line, Page
         /// Up and Page Down by a page, Home and End to either end. Where the cards fit no key is
         /// taken, so the arrows still move the focus between the links and the Close button, as
         /// before the fit. The scroll viewer carries the move out at its next layout.

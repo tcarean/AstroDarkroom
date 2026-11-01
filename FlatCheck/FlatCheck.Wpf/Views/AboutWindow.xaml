@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
      As tall as its content, but no taller than the work area of its screen, which the code
      behind sets as its MaxHeight: then the cards scroll and the Close button, in a row of its
-     own, stays in view (R-123, ADR 0083). Where it fits, the margins add up to the same layout
+     own, stays in view (R-125, ADR 0086). Where it fits, the margins add up to the same layout
      as before. -->
 
 <Window x:Class="FlatCheck.Wpf.AboutWindow"

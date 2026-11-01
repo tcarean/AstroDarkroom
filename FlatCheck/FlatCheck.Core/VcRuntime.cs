@@ -20,7 +20,7 @@
 // The same four names, link and probe as the Astro Darkroom launcher's VcRuntime and NativeProbe
 // (AstroDarkroom ADR 0016), kept here because the tool runs without the launcher too: its own
 // release has none. The launcher asks at start; this tool asks only after LibRaw failed to load,
-// for its log (R-110, R-122, ADR 0082).
+// for its log (R-110, R-124, ADR 0085).
 
 using System;
 using System.Collections.Generic;

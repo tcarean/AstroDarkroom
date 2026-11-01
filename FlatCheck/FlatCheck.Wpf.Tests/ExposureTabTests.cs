@@ -639,13 +639,13 @@ public class ExposureTabTests
     // ------------------------------------------------------------------ LibRaw cannot load
 
     /// <summary>
-    /// When LibRaw cannot be loaded, the tab's error panel shows the refusal alone (R-122): the
+    /// When LibRaw cannot be loaded, the tab's error panel shows the refusal alone (R-124): the
     /// panel adds every inner exception's message it does not see in the text, and the loader's,
     /// which in the window's folder names libraw.dll whatever is missing, stays in the log, so the
     /// refusal carries none.
     /// </summary>
     [Fact]
-    public void R122_TheWindowShowsTheRefusalWithoutTheLoadersMessage()
+    public void R124_TheWindowShowsTheRefusalWithoutTheLoadersMessage()
     {
         var cause = new DllNotFoundException("Unable to load DLL 'libraw.dll' or one of its dependencies: "
                                            + "The specified module could not be found. (0x8007007E)");

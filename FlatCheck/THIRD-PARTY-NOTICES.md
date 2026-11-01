@@ -36,7 +36,7 @@ mode could not run directly on a `.NEF`.
 the executable or inside a single-file one, with the three libraries it calls, each a component
 of its own below: libjpeg-turbo (`jpeg8.dll`), Little CMS (`lcms2.dll`) and zlib (`zlib1.dll`).
 The four import Microsoft's Visual C++ v14 runtime (x64), which no release of FlatCheck ships;
-without it a raw is refused with a message that names it (R-122).
+without it a raw is refused with a message that names it (R-124).
 
 **Licence.** Dual, at the choice of whoever uses it: **LGPL-2.1-only OR CDDL-1.0**.
 
@@ -110,7 +110,7 @@ enters no verdict and produces no figure that a decision about the flat rests on
 **Licence.** Apache-2.0, granted by the Six Labors Split License, version 1.0 (June 2022), to
 software under an open-source licence. Once granted, the Split License asks all documentation to
 name the granted licence only ("You must reference the granted license only in all
-documentation"), which the About window and the README do (ADR 0082); why the grant holds
+documentation"), which the About window and the README do (ADR 0085); why the grant holds
 follows.
 
 **Compatibility.** It is not a single restrictive licence but a **conditional dual** one. The text

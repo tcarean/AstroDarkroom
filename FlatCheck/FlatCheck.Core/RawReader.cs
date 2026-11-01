@@ -37,7 +37,7 @@
 // is reached only when a raw file is read - and here the reader refuses the raw with a message
 // that, on Windows, names the runtime, the likely cause, not with the loader's
 // DllNotFoundException, which names no cause (libraw.dll in a folder publish, nothing in a
-// single-file one); that one goes to the log (R-122, ADR 0082).
+// single-file one); that one goes to the log (R-124, ADR 0085).
 
 using System;
 using System.Collections.Generic;
@@ -164,13 +164,13 @@ namespace FlatCheck
         internal const string RawLibrary = "raw_r.dll";
 
         /// <summary>
-        /// The refusal when LibRaw cannot be loaded (R-122): the message of
+        /// The refusal when LibRaw cannot be loaded (R-124): the message of
         /// <see cref="CannotLoadMessage"/> for this system and no inner exception, since the
         /// loader's names no cause (libraw.dll in a folder publish, nothing in a single-file one)
         /// and the window adds every inner message to the text it shows. The loader's exception
         /// goes to the log instead, on a Warn line that on Windows also says where
         /// <see cref="RawLibrary"/> is among the folders .NET searches and which of the Visual C++
-        /// runtime's DLLs Windows does not load (R-110, ADR 0082). The probe runs here only, after
+        /// runtime's DLLs Windows does not load (R-110, ADR 0085). The probe runs here only, after
         /// LibRaw failed: never on a working computer.
         /// </summary>
         /// <param name="cause">The loader's exception: a DllNotFoundException, a
@@ -192,7 +192,7 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// What the user is told when LibRaw cannot be loaded, in the run's language (R-122). On
+        /// What the user is told when LibRaw cannot be loaded, in the run's language (R-124). On
         /// Windows: Microsoft's Visual C++ runtime is most likely missing or too old, in the Astro
         /// Darkroom launcher's words, then Microsoft's link last, so that nothing of the message
         /// follows the address a user copies; no advice about publishing, which every release

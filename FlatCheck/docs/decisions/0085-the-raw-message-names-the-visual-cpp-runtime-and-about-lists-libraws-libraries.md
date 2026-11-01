@@ -1,4 +1,4 @@
-# 0082. When LibRaw cannot load, the message names the Visual C++ runtime and the log probes it; About lists LibRaw's three libraries and where every licence's whole text is
+# 0085. When LibRaw cannot load, the message names the Visual C++ runtime and the log probes it; About lists LibRaw's three libraries and where every licence's whole text is
 
 Date: 2026-11-01
 Status: accepted 2026-11-01
@@ -88,7 +88,7 @@ four recommended:
 
 ## Decision
 
-- **The message (R-122).** `RawReader.CannotLoad` turns the four loader exceptions it catches into
+- **The message (R-124).** `RawReader.CannotLoad` turns the four loader exceptions it catches into
   an `InvalidOperationException` with no inner exception.
   - On Windows its message names Microsoft's Visual C++ runtime, missing or too old, as the
     likely cause.
@@ -190,4 +190,4 @@ four recommended:
 - **AstroDarkroom's ADR 0016** says the three tools keep their old message until their
   follow-ups. FlatCheck's follow-up is this one.
 - **The window's height.** The list has eight rows, and the window grew past a 1080-line screen
-  at 100 %. ADR 0083 answers that.
+  at 100 %. ADR 0086 answers that.

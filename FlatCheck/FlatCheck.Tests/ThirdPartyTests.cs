@@ -174,7 +174,7 @@ public class ThirdPartyTests
     public void EveryComponentNamesItsLicenceAndUrl()
     {
         // Five since 2026-10-27, when NLog joined for the diagnostic log (ADR 0070); eight since
-        // 2026-11-01, when the three libraries LibRaw's DLL calls joined (ADR 0082).
+        // 2026-11-01, when the three libraries LibRaw's DLL calls joined (ADR 0085).
         Assert.Equal(8, ThirdParty.Components.Count);
 
         foreach (var c in ThirdParty.Components)

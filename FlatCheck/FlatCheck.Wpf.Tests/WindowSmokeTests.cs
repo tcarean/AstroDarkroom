@@ -147,7 +147,7 @@ public class WindowSmokeTests
             // The CONTENT is rendered, not the window: a Window not shown renders
             // transparent (that is how "window" below comes out too), and the root panel
             // inherits the DataContext and goes through the same bindings. At its own height,
-            // so that the render shows the whole window and no scroll bar (R-123).
+            // so that the render shows the whole window and no scroll bar (R-125).
             var content = (FrameworkElement)about.Content;
             content.Measure(new Size(600, double.PositiveInfinity));
             Render(content, 600, (int)Math.Ceiling(content.DesiredSize.Height), "about");

@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LibRawLoadTests.cs - what the user and the log are told when LibRaw cannot be loaded (R-122,
-// R-110, ADR 0082).
+// LibRawLoadTests.cs - what the user and the log are told when LibRaw cannot be loaded (R-124,
+// R-110, ADR 0085).
 //
 // LibRaw cannot be made to fail here: this machine has the Visual C++ runtime and the test
 // output has LibRaw's DLLs. So the refusal is built from a loader's exception directly, the probe
@@ -43,7 +43,7 @@ public class LibRawLoadTests
     /// libraw.dll.
     /// </summary>
     [Fact]
-    public void R122_OnWindowsTheMessageNamesTheRuntimeAndEndsWithMicrosoftsLink()
+    public void R124_OnWindowsTheMessageNamesTheRuntimeAndEndsWithMicrosoftsLink()
     {
         using (Ui.Use(UiLanguage.English))
             Assert.Equal("cannot load LibRaw: most likely Microsoft's Visual C++ runtime is missing or too old, so FlatCheck "
@@ -72,7 +72,7 @@ public class LibRawLoadTests
     /// native files, which exist for Windows x64 and Linux x64 only.
     /// </summary>
     [Fact]
-    public void R122_ElsewhereTheMessageSaysWhereLibRawsNativeLibrariesMustBe()
+    public void R124_ElsewhereTheMessageSaysWhereLibRawsNativeLibrariesMustBe()
     {
         using (Ui.Use(UiLanguage.English))
             Assert.Equal("cannot load LibRaw, so camera raw files cannot be read (the FITS modes work without it): its native "
@@ -96,7 +96,7 @@ public class LibRawLoadTests
     /// raw_r.dll is among the folders .NET searches and what the runtime probe found.
     /// </summary>
     [Fact]
-    public void R122_TheRefusalCarriesNoInnerExceptionAndTheLogKeepsTheLoaders()
+    public void R124_TheRefusalCarriesNoInnerExceptionAndTheLogKeepsTheLoaders()
     {
         var cause = new DllNotFoundException(LoaderMessage);
         using var capture = LogCapture.Start();
@@ -151,7 +151,7 @@ public class LibRawLoadTests
     /// <summary>The probe asks for each of the four DLLs once, in their order, and gives back the
     /// ones that do not load in that order: the launcher's VcRuntime.Missing.</summary>
     [Fact]
-    public void R122_TheProbeAsksForEachRuntimeDllOnceAndKeepsTheirOrder()
+    public void R124_TheProbeAsksForEachRuntimeDllOnceAndKeepsTheirOrder()
     {
         var asked = new List<string>();
 
@@ -175,7 +175,7 @@ public class LibRawLoadTests
     /// runtime fails here before the probe and the message go stale.
     /// </summary>
     [Fact]
-    public void R122_TheFourDllsAreTheVisualCppRuntimeThatLibRawsDllsImport()
+    public void R124_TheFourDllsAreTheVisualCppRuntimeThatLibRawsDllsImport()
     {
         string native = Path.Combine(AppContext.BaseDirectory, "runtimes", "win-x64", "native");
 
