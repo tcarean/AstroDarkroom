@@ -240,4 +240,21 @@ The task's facts all hold:
 
 ## What deviated
 
-Filled at wrap-up.
+- **The branch** is `claude/Fix-DarksCheck-raw-message-and-About`, from `main` at 157b73d8:
+  FlatCheck's session had taken the planned name, and `main` had moved by one restatement of
+  AstroPhotoAnalyzer's ADR 0070, which changes nothing here.
+- **`VcRuntime` holds no `DownloadUrl`.** The link is written in RawReader's message pair only:
+  the copied reader's code should not lean on a class of DarksCheck's, and the log line does not
+  need the link.
+- **`RuntimeDll` has a `Loads` field.** A DLL that loads is not counted as missing because the
+  process's module list did not name its path.
+- **A probe that throws** writes its reason at Warn instead of throwing into the seam
+  (`R110_AProbeThatThrowsIsALineNotAFailure`).
+- **Two Romanian roles were shortened.** The roles of libjpeg-turbo and zlib lost the word
+  "comprimate" ("compressed"), and the English roles lost "-compressed" with them. Measured, the
+  Romanian About needed 1045 DIP and its cards scrolled by 5 at a 1040 DIP work area; both
+  languages are now 1015 DIP there (ADR 0027's table).
+- **The IJG statement** is quoted in English in the Romanian licence line too, as the licence
+  words it.
+- **`WindowSmokeTests.Render` is `internal`,** so that `AboutWindowFitTests` lays About out the
+  same way, as AstroPhotoAnalyzer's tests do.

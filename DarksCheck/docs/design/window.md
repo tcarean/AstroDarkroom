@@ -2,12 +2,15 @@
 
 **Covers:** `src/DarksCheck.Wpf/`, `tests/DarksCheck.Wpf.Tests/`, `Icon/make_icon.py`.
 
-The behaviour is R-070 to R-079; the reasons are ADR 0009. The pieces copied from LightsCheck
-(`Theme/Dark.xaml`, `Presentation/*.cs` but one, `Views/AboutWindow.*`,
-`ViewModels/AboutViewModel.cs`, the test fixture `StaFixture`) are marked as such in their
-headers and are LightsCheck's to improve first; the one, `Presentation/AccessibleTabControl.cs`,
+The behaviour is R-070 to R-079, R-120 and R-121; the reasons are ADR 0009 and, for About, ADR
+0027. The pieces copied from LightsCheck (`Theme/Dark.xaml`, `Presentation/*.cs` but two,
+`Views/AboutWindow.*`, `ViewModels/AboutViewModel.cs`, the test fixture `StaFixture`) are marked
+as such in their headers and are LightsCheck's to improve first, but About's fit to its screen,
+AstroPhotoAnalyzer's, which `Views/AboutWindow.*` carries as a hunk of its own, improved here
+first for LightsCheck to take back (ADR 0027). Of the two, `Presentation/AccessibleTabControl.cs`
 was taken from AstroPhotoAnalyzer with the theme's tab style it reads, as LightsCheck took both
-(ADR 0024); `Theme/Rows.xaml` (DarksCheck's
+(ADR 0024), and `Presentation/ScreenArea.cs` is the launcher's query with AstroPhotoAnalyzer's
+`TopInside` (ADR 0027); `Theme/Rows.xaml` (DarksCheck's
 templates, merging the theme), `MainViewModel`, the views and `WindowTexts` are DarksCheck's own.
 
 ## The shape
@@ -33,8 +36,32 @@ that hides the tabs until `HasResult`, is based on that type's style.
 `App`'s constructor starts the diagnostic log, before the resources load, and hooks the window
 thread's unhandled exceptions to it; `OnExit` closes it (ADR 0025). The view-model numbers its
 runs and writes each one's options and outcome, the window its dialogs and buttons, and
-`UserSettings`, `DarkTitleBar` and `AboutWindow` the failures they swallow; the lines and the two
-logger names of `Loggers` are in `logging.md`.
+`UserSettings`, `DarkTitleBar`, `AboutWindow` and `ScreenArea` the failures they swallow; the
+lines and the two logger names of `Loggers` are in `logging.md`.
+
+## About
+
+`AboutViewModel` turns `ThirdParty.Components` into rows, in the core's order, and takes its
+texts from `WindowTexts`. The lead above the rows counts them in words through
+`WindowTexts.CountWord` (the words to ten, the digits past them), from the core's list itself,
+so the count cannot drift from the rows, and it names the two places of the licence texts
+(R-120).
+
+The window is no taller than the work area of the main window's screen (R-121):
+`MainWindow.ShowAbout` passes `ScreenArea.WorkAreaOf(this)` and the constructor sets it as
+`MaxHeight`. `WorkAreaOf` asks Windows for the screen nearest the window (`MonitorFromWindow`,
+`GetMonitorInfoW`, through `LibraryImport` as `DarkTitleBar`) and turns its work area into the
+window's DIP by the window's DPI scale; without a handle, or without an answer, it gives the
+primary screen's `SystemParameters.WorkArea`, the latter with a Debug line. The cards are in a
+`ScrollViewer` named `Cards`, transparent so the wheel scrolls over the gaps too, and not
+focusable; the Close button sits in a second grid row, so it stays in view whatever the cards
+do. At `ContentRendered`, when a window sized to its content has its final height (at `Loaded`
+its bindings are not resolved yet, as AstroPhotoAnalyzer measured), `FitInto` keeps the top
+inside the area (`ScreenArea.TopInside`) and writes its Debug line. `PreviewKeyDown` gives Up,
+Down, Page Up, Page Down, Home and End to the cards only while they can scroll (`Scroll`), so
+where the window fits the arrows still move the focus between the links. The cards' panel
+(`24,20,24,0`) and the button (`24,16,24,20`) add up to the old margins where the window fits.
+The heights measured at four work areas are in ADR 0027.
 
 ## One view-model, fed by the core
 
@@ -172,4 +199,8 @@ tab's content under its item, once, and under no other tab's item. Keyboard focu
 window on screen, which no test shows, so the second test makes WPF's own lookup of the stock
 presenter name in the applied template and finds nothing. `WindowLoggingTests` cover the
 window's log lines over the view-model, and the two-writer check on the window's own build of
-the atomic file target (`logging.md`, "In the tests").
+the atomic file target (`logging.md`, "In the tests"). `AboutTests` hold About's rows to the
+core's list and its lead to the list's count and the two places, in both languages;
+`AboutWindowFitTests` (R-121, AstroPhotoAnalyzer's) lay About's content out at the height a
+capped window leaves it, raise the keys through a stand-in presentation source, call the
+window's `OnContentRendered` for the fit, and test `TopInside` and Windows' answer apart.

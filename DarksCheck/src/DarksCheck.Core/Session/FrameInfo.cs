@@ -90,7 +90,8 @@ internal sealed record FrameInfo(
     /// <summary>
     /// Reads the metadata of one file; never throws, the error becomes part of the record, and a
     /// failure is written to the diagnostic log with its exception, which the row cannot hold
-    /// (R-101).
+    /// (R-101), followed, the first time in the process that LibRaw cannot be loaded, by the
+    /// Visual C++ runtime's line (R-110).
     /// </summary>
     /// <param name="index">The frame's position in its folder's sorted list, from 1.</param>
     /// <param name="path">The full path of the file.</param>
@@ -102,6 +103,7 @@ internal sealed record FrameInfo(
         if (failure is not null)
         {
             Log.Warn(failure, "frame " + LogText.Int(index) + " " + path + " could not be read; its row carries the error");
+            VcRuntime.LogOnce(failure);
         }
         else if (info.Error is not null)
         {

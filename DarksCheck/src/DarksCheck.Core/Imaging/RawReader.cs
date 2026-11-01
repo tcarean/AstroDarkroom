@@ -19,7 +19,8 @@
 // The code is LightsCheck's adaptation; the comments are DarksCheck's own (ADR 0019). The
 // messages are English-or-Romanian T(...) pairs written here, LightsCheck's Romanian wording
 // kept byte for byte beside its English; LightsCheck takes these English wordings back in its
-// own language task (ADR 0021).
+// own language task (ADR 0021). The pair of Missing is DarksCheck's in both languages, the
+// launcher's words for the Visual C++ runtime, for LightsCheck to take back too (ADR 0026).
 
 // RawReader.cs - camera raw files (NEF and its relatives) through libraw: the one place in
 // the tool that touches an external library. Adapted from FlatCheck's reader (ADR 0003): the
@@ -34,12 +35,16 @@
 //   - other (shutter, iso_speed, timestamp, focal_len, aperture) and lens info -> metadata
 // No interpolation, no white balance, no gamma.
 //
-// The native DLLs come from the Sdcb.LibRaw.runtime.* packages and sit beside the executable.
-// When they are missing, a FITS run is unaffected (this type is loaded only when a raw is
-// asked for) and a raw run fails with a message naming what is missing.
+// The native DLLs come from the Sdcb.LibRaw.runtime.* packages: inside the single file, which
+// extracts them at start, or beside the window in the Astro Darkroom folder. They import
+// Microsoft's Visual C++ v14 runtime, which neither ships. When LibRaw cannot be loaded, a FITS
+// run is unaffected (this type is loaded only when a raw is asked for) and every raw's error
+// names that runtime, missing or too old, as the likely cause, with the link to its latest
+// version (R-110, ADR 0026): Windows' own error names libraw.dll whatever is missing.
 //
 // The diagnostic log (ADR 0025) gets libraw's own figures at Debug and the lens block that
-// could not be read at Warn; the file's line is ImageLoader's, a failure's line its caller's.
+// could not be read at Warn; the file's line is ImageLoader's, a failure's line its caller's,
+// which also writes, once per process, which of the runtime's DLLs Windows loads (VcRuntime).
 
 using System.Runtime.InteropServices;
 using NLog;
@@ -146,21 +151,23 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// The error that replaces a failure to load libraw's native DLLs: it says, in the run's
-        /// language, where they must sit and how to publish them.
+        /// The error that replaces a failure to load libraw's native DLLs: it names, in the run's
+        /// language, Microsoft's Visual C++ runtime, missing or too old, as the likely cause and
+        /// gives the link to its latest version, in the launcher's words (R-110, ADR 0026). It
+        /// names no folder and no executable, so it holds for the single file and the suite's
+        /// folder alike; the loader's own text, which names libraw.dll whatever is missing, stays
+        /// in the inner exception, for the log.
         /// </summary>
         /// <param name="inner">The loader's exception, kept as the inner one.</param>
         /// <returns>The exception to throw.</returns>
         static InvalidOperationException Missing(Exception inner)
             => new InvalidOperationException(T(
-                "cannot load libraw, so camera raw files cannot be read. The native DLLs "
-              + "(raw_r.dll and its neighbours) must sit beside darkscheck.exe. FITS frames "
-              + "work without them; for raws, publish with IncludeNativeLibrariesForSelfExtract "
-              + "or copy the whole folder, not just the executable. (" + inner.Message + ")",
-                "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "
-              + "native (raw_r.dll si vecinii) trebuie sa stea langa darkscheck.exe. Cadrele "
-              + "FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
-              + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")"), inner);
+                "cannot load LibRaw: Microsoft's Visual C++ runtime is likely missing or too old, "
+              + "so camera raw files cannot be read until its latest version is installed: "
+              + "https://aka.ms/vc14/vc_redist.x64.exe",
+                "nu pot incarca LibRaw: runtime-ul Microsoft Visual C++ probabil lipseste sau este "
+              + "prea vechi, deci nu pot citi fisiere raw de aparat pana nu instalezi ultima lui "
+              + "versiune: https://aka.ms/vc14/vc_redist.x64.exe"), inner);
 
         /// <summary>
         /// The full decode behind <see cref="Load"/>: Unpack, the visible mosaic, the scale, the

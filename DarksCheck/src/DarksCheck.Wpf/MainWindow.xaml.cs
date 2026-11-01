@@ -103,13 +103,16 @@ public partial class MainWindow : Window
         _ = _vm.RerunAsync();
     }
 
-    /// <summary>Shows the About window, modal, over this one.</summary>
+    /// <summary>
+    /// Shows the About window, modal, over this one, fitted to the work area of this window's
+    /// screen (R-121).
+    /// </summary>
     /// <param name="sender">The command's source.</param>
     /// <param name="e">The executed command.</param>
     private void ShowAbout(object sender, ExecutedRoutedEventArgs e)
     {
         Log.Info("About opened");
-        new AboutWindow { Owner = this }.ShowDialog();
+        new AboutWindow(ScreenArea.WorkAreaOf(this)) { Owner = this }.ShowDialog();
     }
 
     /// <summary>

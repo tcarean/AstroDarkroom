@@ -27,6 +27,13 @@ namespace DarksCheck.Wpf.Tests;
 /// </summary>
 public class AboutTests
 {
+    /// <summary>How the lead begins in each language, its count the list's (R-120's example).</summary>
+    private static readonly (UiLanguage Language, string Start)[] LeadStarts =
+    [
+        (UiLanguage.English, "The program uses six components written by others"),
+        (UiLanguage.Romanian, "Programul foloseste sase componente scrise de altii"),
+    ];
+
     [Fact]
     public void TheBannerAndCopyrightAreTheOnesEveryReportPrints()
     {
@@ -74,5 +81,43 @@ public class AboutTests
         Assert.False(string.IsNullOrWhiteSpace(vm.LicenseLinkLabel));
         Assert.False(string.IsNullOrWhiteSpace(vm.ThirdPartyHeading));
         Assert.Contains("THIRD-PARTY-NOTICES.md", vm.ThirdPartyLead, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The lead counts the components in words, from the list it stands above, so the count
+    /// cannot drift from the rows again (it said "two" of three), and it says where their
+    /// licence texts are, in the suite's folder and in the source repository (R-120).
+    /// </summary>
+    [Fact]
+    public void R120_TheLeadCountsTheListInWordsAndSaysWhereTheLicenceTextsAre_InBothLanguages()
+    {
+        foreach ((UiLanguage language, string count) in LeadStarts)
+        {
+            using IDisposable _ = Ui.Use(language);
+            AboutViewModel vm = new();
+
+            Assert.Equal(6, vm.Components.Count);
+            Assert.StartsWith(count, vm.ThirdPartyLead, StringComparison.Ordinal);
+            Assert.Contains("THIRD-PARTY-NOTICES.txt", vm.ThirdPartyLead, StringComparison.Ordinal);
+            Assert.Contains("Astro Darkroom", vm.ThirdPartyLead, StringComparison.Ordinal);
+            Assert.Contains("AstroDarkroom/THIRD-PARTY-NOTICES.md", vm.ThirdPartyLead, StringComparison.Ordinal);
+            Assert.Contains("https://github.com/tcarean/AstroDarkroom", vm.ThirdPartyLead, StringComparison.Ordinal);
+            Assert.All(vm.ThirdPartyLead, c => Assert.True(c < 128, $"'{c}' is not ASCII"));
+        }
+    }
+
+    /// <summary>The count's word: the words up to ten in each language, the digits past them.</summary>
+    [Fact]
+    public void R120_ACountIsAWordUpToTenAndDigitsPastIt()
+    {
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal(["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "11"], Enumerable.Range(1, 11).Select(WindowTexts.CountWord));
+        }
+
+        using (Ui.Use(UiLanguage.Romanian))
+        {
+            Assert.Equal(["una", "doua", "trei", "patru", "cinci", "sase", "sapte", "opt", "noua", "zece", "11"], Enumerable.Range(1, 11).Select(WindowTexts.CountWord));
+        }
     }
 }

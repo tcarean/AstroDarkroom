@@ -155,6 +155,8 @@ to the owner, each with a recommendation, and the owner approved it as written o
 - A third third-party component with two packages of the same project, as LibRaw has
   (`ThirdParty.cs`, `THIRD-PARTY-NOTICES.md` with the BSD-3-Clause text, the About window by
   itself); `ThirdPartyTests` counts three. The two versions move together.
+  (Restated 2026-11-01: `ThirdPartyTests` counts six since ADR 0027, which lists the three
+  libraries inside LibRaw's DLLs apart; NLog is still the one component this ADR added.)
 - The log is the first thing to ask a reporter for: the README's "Logs" section says where it is
   and what it holds.
 - The log is written beside the executable, wherever that is: a program placed inside a session

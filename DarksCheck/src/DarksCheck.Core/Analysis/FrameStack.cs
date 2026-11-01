@@ -311,7 +311,8 @@ internal sealed class FrameStack
     /// line that also says whether its metadata could then be read; the metadata read's exception
     /// follows on a line of its own when it is another error than the decode's (another type or
     /// message), so each exception is written once with its stack (R-101; LightsCheck's
-    /// LogFailedFrame). Both loops call it, the darks' here and the lights'.
+    /// LogFailedFrame). Both loops call it, the darks' here and the lights'. The first time in the
+    /// process that LibRaw cannot be loaded, the Visual C++ runtime's line follows (R-110).
     /// </summary>
     /// <param name="log">The loop's logger; not null.</param>
     /// <param name="index">The frame's 1-based position in its group.</param>
@@ -336,6 +337,8 @@ internal sealed class FrameStack
         {
             log.Warn(metadata, frame + ": its metadata could not be read");
         }
+
+        VcRuntime.LogOnce(decoding);
     }
 
     /// <summary>A stack's frames counted: <c>28 decoded, 1 failed, 1 skipped</c>; a frame left out for its size or settings counts as failed.</summary>

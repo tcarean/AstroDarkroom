@@ -6,6 +6,13 @@ component and why it is compatible with GPLv3. A package added without an entry 
 package whose compatibility nobody checked; `ThirdPartyTests` binds the list here, the list in
 `ThirdParty.cs` (what the "About" window shows) and the packages of `DarksCheck.Core.csproj`.
 
+The whole text of every licence named here, with the notices of the code each component says it
+contains, is in the Astro Darkroom suite's notices: `THIRD-PARTY-NOTICES.txt` in the suite's
+folder, beside the programs, and `AstroDarkroom/THIRD-PARTY-NOTICES.md` in this repository. That
+file names DarksCheck among the programs that ship each of the six components below, and the
+About window points to it (R-120, ADR 0027); `ThirdPartyTests` holds the two lists equal. This
+file keeps NLog's text, and libjpeg-turbo's statement for the Independent JPEG Group.
+
 What is written by hand and is **not** third-party code: the FITS reader, the PNG encoder, every
 computation and every threshold. The FITS reader, the raw reader and the PNG encoder are copied
 from LightsCheck, which copied them from FlatCheck: the same author, the same licence (ADR 0003).
@@ -24,10 +31,15 @@ camera raw file.
 
 - Project: <https://github.com/sdcb/Sdcb.LibRaw>
 
-## LibRaw (the native libraries of `Sdcb.LibRaw.runtime.*`)
+## LibRaw (`raw_r.dll`, from `Sdcb.LibRaw.runtime.*`)
 
-**Role.** The decoding of the raw formats itself. It comes as native DLLs (`raw_r`, `jpeg8`,
-`lcms2`, `zlib1`), shipped with the executable (inside it, in the published single file).
+**Role.** The decoding of the raw formats itself: `raw_r.dll`, LibRaw 0.21.1. Its Windows package
+ships it with the three libraries it calls, each a section below: libjpeg-turbo (`jpeg8.dll`),
+Little CMS (`lcms2.dll`) and zlib (`zlib1.dll`). The four are inside the published single file,
+which extracts them at start, and beside the window in the Astro Darkroom folder. They import
+Microsoft's Visual C++ v14 runtime (x64), `vcruntime140.dll`, `vcruntime140_1.dll`,
+`msvcp140.dll` and `vcomp140.dll`, which neither ships: it is Microsoft's, installed on most
+computers, and a raw's error names it when it is missing or too old (R-110, ADR 0026).
 
 **Licence.** Dual, at the user's choice: **LGPL-2.1-only OR CDDL-1.0**.
 
@@ -38,9 +50,56 @@ the terms of the ordinary GPL, "version 2 of the ordinary GNU General Public Lic
 version", to a copy, which brings the code into a GPLv3 work. LGPL-2.1 section 6 requires that,
 if the program displays its copyright notices at run time (it does, on the second line of every
 run), the LibRaw notice appear among them: that is why the list in `ThirdParty.cs` and the
-"About" window exist.
+"About" window exist. The same section asks for a reference directing the user to the copy of
+the licence: About's lead points to the suite's notices, which hold the LGPL-2.1's text.
 
 - Project: <https://www.libraw.org/>
+
+## libjpeg-turbo (`jpeg8.dll`)
+
+**Role.** Decodes, for LibRaw, the JPEG-compressed image data some raw files hold, lossy DNG
+among them: `jpeg8.dll`, libjpeg-turbo 2.1.3, from `Sdcb.LibRaw.runtime.win64`.
+
+**Licence.** Three, each for a part of the code: the IJG licence, for the code that comes from
+the Independent JPEG Group's libjpeg; the modified (3-clause) BSD licence, for the TurboJPEG API
+and the build system; the zlib licence, for the SIMD extensions.
+
+**Compatibility.** The Free Software Foundation lists all three as compatible with the GNU GPL.
+The IJG licence asks a program distributed as executables to state, in its documentation:
+
+This software is based in part on the work of the Independent JPEG Group.
+
+The About window's line for libjpeg-turbo quotes that sentence, since the single file has no
+other documentation. The BSD licence asks its notice, its conditions and its disclaimer to go
+with the binaries: the About window shows the notice, and the suite's notices carry the whole
+text; the zlib licence asks nothing of a binary distribution.
+
+- Project: <https://libjpeg-turbo.org/>
+
+## Little CMS (`lcms2.dll`)
+
+**Role.** The colour management inside LibRaw, its ICC profile transforms: `lcms2.dll`, Little
+CMS 2.12, from `Sdcb.LibRaw.runtime.win64`.
+
+**Licence.** MIT.
+
+**Compatibility.** MIT is permissive and compatible with GPLv3. It asks its copyright notice and
+its permission notice to go with every copy: the About window shows the notice, and the suite's
+notices carry the whole text.
+
+- Project: <https://www.littlecms.com/>
+
+## zlib (`zlib1.dll`)
+
+**Role.** Decompresses, for LibRaw, the Deflate-compressed data some raw files hold, DNG among
+them: `zlib1.dll`, zlib 1.2.11, from `Sdcb.LibRaw.runtime.win64`.
+
+**Licence.** zlib.
+
+**Compatibility.** The zlib licence is permissive, and the Free Software Foundation lists it as
+compatible with the GPL; it asks nothing of a binary distribution.
+
+- Project: <https://zlib.net/>
 
 ## NLog
 

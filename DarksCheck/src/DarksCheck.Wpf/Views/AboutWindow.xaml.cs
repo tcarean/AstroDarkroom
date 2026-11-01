@@ -15,32 +15,53 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+// Copied from LightsCheck; a fix goes there first (ADR 0009). The fit to the screen, the
+// constructor's work area, FitInto, Scroll and ScrollCards, is AstroPhotoAnalyzer's (its ADR
+// 0070), taken here first as a hunk of its own, for LightsCheck to take back (ADR 0027).
+
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Navigation;
+using DarksCheck.Core;
 using NLog;
 
 namespace DarksCheck.Wpf;
 
 /// <summary>
 /// The About window: the icon, the version, the copyright, the GPLv3 notice and the
-/// third-party list, all from <see cref="AboutViewModel"/>.
+/// third-party list, all from <see cref="AboutViewModel"/>, fitted to the work area of its
+/// screen (R-121).
 /// </summary>
 public partial class AboutWindow : Window
 {
-    /// <summary>The diagnostic log: a link that could not be opened (R-101).</summary>
+    /// <summary>
+    /// The diagnostic log: a link that could not be opened, the window's size and place once
+    /// shown (R-101, R-121).
+    /// </summary>
     private static readonly Logger Log = LogManager.GetLogger(Loggers.Window);
 
     /// <summary>
     /// The window over a new <see cref="AboutViewModel"/>, with the icon's largest frame as its
-    /// logo.
+    /// logo. It is no taller than <paramref name="workArea"/>, is kept inside it once shown, and
+    /// its cards scroll from the keyboard too, while they can (R-121, ADR 0027).
     /// </summary>
-    public AboutWindow()
+    /// <param name="workArea">
+    /// The work area of the screen the window opens on, in device-independent pixels: the main
+    /// window's, from <see cref="ScreenArea.WorkAreaOf"/>.
+    /// </param>
+    public AboutWindow(Rect workArea)
     {
         InitializeComponent();
         DataContext = new AboutViewModel();
         Logo.Source = AppIcon.Largest();
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        MaxHeight = workArea.Height;
+        // Not at Loaded: a window sized to its content still has its first height there, its
+        // bindings resolved in a later pass (AstroPhotoAnalyzer measured 436 DIP for 862), so the
+        // guard and the log line would read a wrong one.
+        ContentRendered += (_, _) => FitInto(workArea);
+        PreviewKeyDown += ScrollCards;
     }
 
     /// <summary>
@@ -63,6 +84,83 @@ public partial class AboutWindow : Window
             // OriginalString, not AbsoluteUri: a relative link throws there, which is what this
             // catch took, and would throw again out of the handler and close the window (ADR 0025).
             Log.Debug(ex, "the link " + e.Uri.OriginalString + " could not be opened in a browser");
+        }
+    }
+
+    /// <summary>
+    /// Keeps the shown window inside its screen's work area, and writes its size and place, the
+    /// area and whether its cards scroll to the diagnostic log at Debug (R-121). Called once its
+    /// content is first rendered, when its size is final. WPF has placed it there already (a
+    /// window centred on its owner is clamped into the owner screen's work area); the move holds
+    /// that place as a guard, so the requirement does not rest on WPF's placement alone.
+    /// </summary>
+    /// <param name="workArea">The work area of the window's screen, in device-independent pixels.</param>
+    internal void FitInto(Rect workArea)
+    {
+        Top = ScreenArea.TopInside(Top, ActualHeight, workArea.Top, workArea.Height);
+        if (Log.IsDebugEnabled)
+        {
+            Log.Debug("About shown " + LogText.Num(ActualWidth) + "x" + LogText.Num(ActualHeight)
+                + " at (" + LogText.Num(Left) + "," + LogText.Num(Top) + "); work area "
+                + LogText.Num(workArea.Width) + "x" + LogText.Num(workArea.Height)
+                + " at (" + LogText.Num(workArea.Left) + "," + LogText.Num(workArea.Top) + "); cards scroll: "
+                + LogText.Yes(Cards.ScrollableHeight > 0));
+        }
+    }
+
+    /// <summary>
+    /// Scrolls the cards by a key while they can scroll (R-121): Up and Down by a line, Page Up and
+    /// Page Down by a page, Home and End to either end. Where the cards fit no key is taken, so the
+    /// arrows still move the focus between the links and the Close button. The scroll viewer
+    /// carries the move out at its next layout.
+    /// </summary>
+    /// <param name="key">The key pressed.</param>
+    /// <returns>True when the cards can scroll and the key is one of the six: they were asked to scroll.</returns>
+    internal bool Scroll(Key key)
+    {
+        if (Cards.ScrollableHeight <= 0)
+        {
+            return false;
+        }
+
+        switch (key)
+        {
+            case Key.Down:
+                Cards.LineDown();
+                return true;
+            case Key.Up:
+                Cards.LineUp();
+                return true;
+            case Key.PageDown:
+                Cards.PageDown();
+                return true;
+            case Key.PageUp:
+                Cards.PageUp();
+                return true;
+            case Key.End:
+                Cards.ScrollToBottom();
+                return true;
+            case Key.Home:
+                Cards.ScrollToTop();
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>
+    /// The window's keys for the cards: the focus stays on the Close button or on a link, neither
+    /// of which scrolls, so while the cards can scroll the keys a scroll viewer answers are passed
+    /// to it here. Any other key, and every key where the cards fit, goes on as before: Enter and
+    /// Esc to the Close button, the arrows to the focus.
+    /// </summary>
+    /// <param name="sender">The window; not read.</param>
+    /// <param name="e">The key; marked handled when it scrolled the cards.</param>
+    private void ScrollCards(object sender, KeyEventArgs e)
+    {
+        if (Scroll(e.Key))
+        {
+            e.Handled = true;
         }
     }
 

@@ -81,6 +81,13 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   romanian)` pair (ADR 0021). `FitsReader`'s English is FlatCheck's, word for word;
   `RawReader`'s messages are LightsCheck's adaptations and their English was written here, for
   LightsCheck to take back. A refresh from LightsCheck keeps the pairs.
+- Written here later, `Missing`'s pair: the error for a LibRaw that cannot be loaded names
+  Microsoft's Visual C++ runtime, missing or too old, as the likely cause, with the link to its
+  latest version, in the launcher's words and in both languages (R-110, ADR 0026); it names no
+  folder and no executable, and it no longer quotes the loader's text, which names `libraw.dll`
+  whatever is missing and stays in the inner exception, for the log. Its code and catch list are
+  LightsCheck's, unchanged; LightsCheck takes the pair back. Which of the runtime's DLLs Windows
+  loads is written once per process by `VcRuntime`, outside the copies (`logging.md`).
 - Time: libraw's `Timestamp` is the EXIF `DateTimeOriginal` run through `mktime` on this
   machine, so `DateTimeOffset.FromUnixTimeSeconds(..).ToLocalTime()` gives back the camera's
   wall-clock to the second; EXIF `SubSecTime` is not exposed. Siril's `DATE-OBS` is UTC and is
@@ -92,3 +99,5 @@ No field of `RawReader` may be a `Sdcb.LibRaw` type (`RawReaderTests` pins it): 
 resolved when the type loads, which happens on every run because `ImageLoader` asks it
 `Handles()`, while method bodies resolve at JIT time. With that, a FITS run never loads the
 libraw assembly and a copy of `darkscheck.exe` without the native DLLs still reads FITS.
+`LibRawLoadTests` runs such a copy, without `raw_r.dll`, on three `.NEF` files: each row carries
+`Missing`'s message.

@@ -117,8 +117,8 @@ public partial class LanguageWindowTests
                     texts.AddRange(TextsOf(view));
                 }
 
-                AboutWindow about = new();
-                Render((FrameworkElement)about.Content, 600, 760);
+                AboutWindow about = new(new Rect(0, 0, 1920, 1040));
+                Render((FrameworkElement)about.Content, 600, 1100);
                 texts.Add(about.Title);
                 texts.AddRange(TextsOf((FrameworkElement)about.Content));
 
