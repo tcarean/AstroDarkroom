@@ -2,44 +2,44 @@ AstroPhotoAnalyzer <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 
 Fisier: <TEMP>\mono.png
-  PNG 8-bit mono, 300 x 300 (0.1 MP), Deflate, 0.0 MB, fara profil ICC
-  Mediu: baryta (Dmax 2.4, negrul hartiei L* 3.6). Distanta de privire: 1.5 x diagonala.
+  PNG 8-bit mono, 300 x 300 (0.1 MP), Deflate, 0.0 MB, fara profil de culoare (ICC)
+  Mediu: baryta (Dmax 2.4, negrul hartiei L* 3.6). Distanta de privire: 1.5 x diagonala printului.
 
 VERDICT: ATENTIE
 
 1. Formatul de trimis  [OK]
-   - Trimite TIFF 8-bit LZW (0.0 MB). Sursa e deja pe 8 biti; nu e nimic de convertit.
-     fiindca: sursa are 8 biti pe esantion
-   - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.0 MB).
-     fiindca: eroare medie 0.08, maxima 1.0 niveluri; 0.0 % din esantioane cu eroare > 2, la nivelul mediu 0
+   - Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi (0.0 MB). Fisierul e deja pe 8 biti; nu e nimic de convertit.
+     fiindca: fisierul are 8 biti pe fiecare canal
+   - Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea pastrata la rezolutie intreaga (setarea 4:4:4) (0.0 MB).
+     fiindca: fata de original, JPEG-ul schimba un pixel in medie cu 0.08 niveluri si cel mult cu 1.0; 0.0 % din valori se schimba cu mai mult de 2 niveluri, mai ales in jurul nivelului 0
 
 2. Fundalul si hartia  [OK]
-   - Fundalul e print-safe asa cum e; poti cobori pana la 0.15 (praful la L* 15.1, cerul la L* 15.2).
-     fiindca: praful (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); fara WCS) la L* 26.8; negrul hartiei L* 3.6 la Dmax 2.4; cerul (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)) la L* 27.0; nivelul fundalului 0.251; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 1.3 in sus; pragul de vizibilitate L* 15, sub el 0.0 % din pixeli
+   - Fundalul e print-safe asa cum e; il poti cobori pana la 0.15 (atunci praful ar fi la L* 15.1, cerul la L* 15.2).
+     fiindca: praful la L* 26.8 (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); fara WCS); negrul hartiei e L* 3.6 la Dmax 2.4; cerul la L* 27.0 (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)); nivelul fundalului 0.251; asa cum e imaginea, praful ramane deasupra negrului de la Dmax 1.3 in sus; 0.0 % din pixeli sunt sub L* 15, unde ochiul abia mai deosebeste tonurile
 
-3. Culoarea fundalului si gradientele  [OK]
-   - Imagine mono: nu exista tenta de masurat.
-     fiindca: un singur plan
+3. Culoarea fundalului si marginile cadrului  [OK]
+   - Imagine alb-negru: nu are o tenta de culoare de masurat.
+     fiindca: un singur canal
 
 4. Marimea printului  [ATENTIE]
-   ! Fara stele rezolutia reala nu se masoara; se judeca doar grila de pixeli: fara distanta data se cere conventia de 180 dpi (grila invizibila de la ~0.5 m, cand te apropii), si nici cea mai mica latime din lista (50 x 50 cm, 15 dpi) nu atinge pragul. E o limita a fisierului, nu a detaliului - o nebuloasa moale poate cere mult mai putin - deci nu se recomanda o marime. Da distanta de privire ca pragul sa fie cel fizic, nu conventia.
-     fiindca: 16 stele masurate, 177.8 pe megapixel (minim 20 si 10 pe megapixel); la 50 cm pasul pixelului e 1.67 mm, invizibil de la 5.75 m; prag 180 dpi (conventie: pas 0.14 mm, invizibil de la 0.49 m)
+   ! Fara stele nu se poate masura cat detaliu are imaginea; se verifica doar sa nu se vada pixelii: fara distanta data se cere conventia de 180 dpi (pixelii nu se mai vad de la ~0.5 m, cand te apropii), si nici cea mai mica latime din lista (50 x 50 cm, 15 dpi) nu ajunge la prag. E o limita a fisierului, nu a detaliului (o nebuloasa moale poate arata bine si mai mare), asa ca nu se recomanda o marime. Da distanta de privire, ca pragul sa fie cel pentru distanta ta, nu conventia.
+     fiindca: doar 16 stele masurate, 177.8 pe megapixel (e nevoie de cel putin 20, si de 10 pe megapixel); la 50 cm un pixel are 1.67 mm si nu se mai vede de la 5.75 m; pragul e 180 dpi (conventie: pixeli de 0.14 mm, care nu se mai vad de la 0.49 m)
 
 5. Denoise pentru versiunea de print  [OK]
-   - Zgomotul rezidual e exact unde trebuie pentru print.
-     fiindca: sigma median 1.05 LSB pe 123 dale netede (10 % 1.03, minim 1.02; sub 0.5 LSB, 0.0 % din dale); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.15 zgomotul scade de ~0.82 x (panta curbei la fundal), la ~0.86 LSB
+   - Zgomotul ramas e exact cat trebuie pentru print.
+     fiindca: zgomotul ramas in cer e de 1.05 niveluri (sigma; valoarea din mijloc pe 123 de zone mici de cer neted; in cele mai netede 10 % sub 1.03, cel mai mic 1.02); 0.0 % din zone sunt sub 0.5 niveluri, unde zgomotul nu mai ascunde treptele; tinta pentru print: 0.8-1.5 niveluri; dupa ce refaci stretch-ul la 0.15, zgomotul scade de ~0.82 ori (cat de tare urca curba in dreptul fundalului), la ~0.86 niveluri
 
 6. Avertismente  [ATENTIE]
-   ! Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic.
-     fiindca: niciun profil in fisier; unealta a masurat presupunand sRGB
+   ! Fisierul nu are profil de culoare (ICC): laboratorul va presupune sRGB. Exporta cu profilul sRGB inclus in fisier, ca sa nu presupuna nimeni nimic.
+     fiindca: fisierul nu are niciun profil; programul a masurat presupunand sRGB
 
 Anexa A. Tonuri
-  medii pe canal (0..255): 63.9
-  sub nivelul 32: 0.0 %   sub 64: 39.6 %
-  percentile canal referinta (0..255): p0.1=61.0  p1.0=61.0  p50.0=64.0  p90.0=65.0  p99.0=66.0  p99.9=106.5  p100.0=141.0
-  L* median 27.1; sub negrul hartiei (L* 3.6): 0.0 %; sub L* 15: 0.0 %; peste L* 50: 0.1 %
+  luminozitatea medie, un singur canal (0..255): 63.9
+  mai intunecat decat nivelul 32: 0.0 %   decat 64: 39.6 %
+  repere pe singurul canal (0..255), nivelul sub care sta acel procent din pixeli: p0.1=61.0  p1.0=61.0  p50.0=64.0  p90.0=65.0  p99.0=66.0  p99.9=106.5  p100.0=141.0
+  L* median (cerul) 27.1; pixeli sub negrul hartiei (L* 3.6): 0.0 %; sub L* 15, unde ochiul abia deosebeste tonurile: 0.0 %; peste L* 50: 0.1 %
 
-Anexa B. Simularea fundalului (de la nivelul 0.251; curba gamma pe toate canalele)
+Anexa B. Simularea fundalului: ce se intampla daca muti fundalul, acum la nivelul 0.251
   fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50
   0.05                 2.167       3.5      3.5      81.5 %     99.9 %        0.0 %
   0.06                 2.035       4.3      4.4       0.0 %     99.8 %        0.0 %   cer sub L* 15
@@ -60,7 +60,7 @@ Anexa B. Simularea fundalului (de la nivelul 0.251; curba gamma pe toate canalel
   0.251 asa cum e      1.000      26.8     27.0       0.0 %      0.0 %        0.1 %   print-safe
   * = recomandat: cea mai mica tinta print-safe (praful nu cade sub negrul hartiei si cerul e la L* 15 sau peste)
   praful = cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf) (fara WCS); cerul = valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul); negru pur = dale de 32 px mai intunecate decat negrul hartiei (L* 3.6 la Dmax 2.4)
-  clase: praf 0.0 %, cer 81.5 %, nebuloasa 9.9 % (peste cerul modelat cu 0.3 L*, 4 sigma ale cerului), nebuloasa stralucitoare 7.4 % (peste 0.5 L*, pragul Otsu), varfuri 1.2 %
+  felurile de dale: praf 0.0 %, cer 81.5 %, nebuloasa 9.9 % (cu peste 0.3 L* peste cer, de 4 ori zgomotul cerului), nebuloasa stralucitoare 7.4 % (cu peste 0.5 L* peste cer: partea cea mai luminoasa a nebuloasei), varfuri 1.2 %
   fundalul la care praful ajunge exact pe negrul hartiei: 0.051 la Dmax 2.4 (0.062 daca Dmax e 2.3, <= 0.05 daca e 2.5); asa cum e imaginea, praful ramane deasupra negrului de la Dmax 1.3 in sus; cerul ajunge la L* 15 cand fundalul e 0.149
 
 Anexa C. Export
@@ -72,8 +72,8 @@ Anexa C. Export
   palier: fara dale de cer curat (0 din 5000 pozitii)
 
 Anexa D. Rezolutie si marime
-  stele: 16 masurate, 177.8 pe megapixel - prea putine pentru FWHM
-  regiuni: centru 3.09 px (6); colt stanga-sus n/a (1); colt dreapta-sus n/a (1); colt stanga-jos n/a (0); colt dreapta-jos n/a (0)
+  stele: 16 masurate, 177.8 pe megapixel - prea putine ca sa masuram latimea stelelor (FWHM)
+  latimea stelelor pe zone: centru 3.09 px (6 stele); colt stanga-sus n/a (1 stea); colt dreapta-sus n/a (1 stea); colt stanga-jos n/a (0 stele); colt dreapta-jos n/a (0 stele)
   marimi pentru 300 x 300 px:
   latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm
       50          50.0    15       n/a         n/a m           1.06 m   70 x 70

@@ -12,7 +12,12 @@
 `Because`. A `Because` may hold `Fmt.Strong(part)`, `**part**`, the core's one piece of
 markup, for a figure the eye must catch (ADR 0063); `ReportWriter` and `CurveTexts.EvidenceRows` (the
 curves tab's paper checks) write it through `Fmt.Plain`, which strips the marks, and the
-window's Raport tab renders them bold (`Emphasis`). Verdicts are monotone `Ok < Attention < Problem`; a section's verdict is its
+window's Raport tab renders them bold (`Emphasis`). The texts and their `Because` are in plain words
+(the rule "Plain words", ADR 0073): every figure and threshold stays, the words for the method go.
+A Romanian count before its noun goes through `Fmt.RoCount`, which adds the "de" the language
+wants from 20 on and at every hundred ("64 de stele", "16 stele", "419 zone"); the English texts
+never call it; `ReportWriter`'s `Clouds` and `Stars` give a count with its noun, singular for
+one, in both languages. Verdicts are monotone `Ok < Attention < Problem`; a section's verdict is its
 maximum, the overall verdict the maximum of all. Topics in decision order: Format,
 Background, Colour, Size, Denoise, Warnings.
 
@@ -24,8 +29,8 @@ Background, Colour, Size, Denoise, Warnings.
 | Format | plateau known and the share of the frame with a visible step at the reference row's dpi over `PlateauFlatFrameWarnPct` (0.1 %, ADR 0060) | Attention | banding risk: send 16-bit or dither (the share and the threshold in `Fmt.Strong` marks, then the typical plateau and where it was measured) |
 | Format | plateau known and the share at or under it | Ok | no visible banding: flat steps on too little of the frame (the same because) |
 | Format | plateau unknown and `BandingRisk` | Attention | banding risk from sigma alone |
-| Background | the as-is dust at or above paper black and the as-is sky at or above L\* 15 | Ok | print-safe as is; "poti cobori pana la <row>" when the recommended row is lower, or the row just below and what fails there (the dust under paper black, or the sky under L\* 15) when the as-is row is the recommended one |
-| Background | the as-is sky under paper black | Problem | the sky and the dust would print the same black; re-stretch to the recommended row (its simulated dust and sky, the exact target), or "no target up to 0.20" with the exact target or "nici 0.60" |
+| Background | the as-is dust at or above paper black and the as-is sky at or above L\* 15 | Ok | print-safe as is; "il poti cobori pana la <row>" when the recommended row is lower, or the row just below and what fails there (the dust under paper black, or the sky under L\* 15) when the as-is row is the recommended one |
+| Background | the as-is sky under paper black | Problem | the sky and the dust would print the same black; redo the stretch to the recommended row (its simulated dust and sky, the exact target), or "no target of the simulation (up to 0.20)" with the exact target or "nici macar la 0.60", pointing at Appendix B ("lista lor e in Anexa B" when the catalogue named clouds, "vezi Anexa B" otherwise) |
 | Background | only the dust under paper black | Attention | the clouds would print pure black; same fix text |
 | Background | the dust at or above paper black, the as-is sky under L\* 15 (ADR 0029) | Attention | the paper separates the sky from black, the eye in room light barely; re-stretch to the recommended row (its simulated dust and sky, the target at which the sky reaches L\* 15) |
 | Colour | mono | Ok | nothing to measure |
@@ -65,7 +70,7 @@ the window's save both go through it, and each tells the exception its own way. 
 ```
 Fisier: <path>
   <format> <bits> <RGB|mono>, W x H (MP), <compression>, <MB>, <ICC>
-  Mediu: <name> (Dmax, negrul hartiei L*). Distanta de privire: <m | 1.5 x diagonala>.
+  Mediu: <name> (Dmax, negrul hartiei L*). Distanta de privire: <m | 1.5 x diagonala printului>.
 
 VERDICT: <OK|ATENTIE|PROBLEMA>
 

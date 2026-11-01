@@ -100,11 +100,11 @@ namespace AstroPhotoAnalyzer
             w.WriteLine(Tr.Pick("File: ", "Fisier: ") + r.Path);
             string bits = f.IsFloat ? "float" : f.BitDepth + "-bit";
             string icc = f.HasIcc
-                ? Tr.Pick("ICC profile: ", "profil ICC: ") + (f.IccDescription ?? Tr.Pick("(no name)", "(fara nume)"))
-                : Tr.Pick("no ICC profile", "fara profil ICC");
+                ? Tr.Pick("colour profile (ICC): ", "profil de culoare (ICC): ") + (f.IccDescription ?? Tr.Pick("(no name)", "(fara nume)"))
+                : Tr.Pick("no colour profile (ICC)", "fara profil de culoare (ICC)");
             w.WriteLine($"  {f.Format} {bits} {(f.IsColor ? "RGB" : "mono")}, {Fmt.Dim(f.W, f.H)} ({Fmt.F1(f.Megapixels)} MP), {f.Compression ?? "-"}, {Fmt.Mb(f.FileMegabytes)}, {icc}");
             Parameters p = r.Parameters;
-            string dist = p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : Tr.Pick("1.5 x the diagonal", "1.5 x diagonala");
+            string dist = p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : Tr.Pick($"{Fmt.F1(Thresholds.ViewingDistanceFactor)} x the print's diagonal", $"{Fmt.F1(Thresholds.ViewingDistanceFactor)} x diagonala printului");
             w.WriteLine(Tr.Pick($"  Medium: {Parameters.NameOf(p.Medium)} (Dmax {Fmt.Dmax(p.Dmax)}, paper black L* {Fmt.F1(r.Tonal.PaperBlackLstar)}). Viewing distance: {dist}.",
                                 $"  Mediu: {Parameters.NameOf(p.Medium)} (Dmax {Fmt.Dmax(p.Dmax)}, negrul hartiei L* {Fmt.F1(r.Tonal.PaperBlackLstar)}). Distanta de privire: {dist}."));
             w.WriteLine();
@@ -153,13 +153,18 @@ namespace AstroPhotoAnalyzer
             TonalResult t = r.Tonal;
             w.WriteLine();
             w.WriteLine(Tr.Pick("Appendix A. Tones", "Anexa A. Tonuri"));
-            w.WriteLine(Tr.Pick("  channel means (0..255): ", "  medii pe canal (0..255): ") + string.Join(" / ", t.MeanLevels.Select(Fmt.F1)));
-            w.WriteLine(Tr.Pick($"  under level {Thresholds.DarkLevelA}: {Fmt.Pct(t.PctBelowDarkA)}   under {Thresholds.DarkLevelB}: {Fmt.Pct(t.PctBelowDarkB)}",
-                                $"  sub nivelul {Thresholds.DarkLevelA}: {Fmt.Pct(t.PctBelowDarkA)}   sub {Thresholds.DarkLevelB}: {Fmt.Pct(t.PctBelowDarkB)}"));
-            w.WriteLine(Tr.Pick("  reference channel percentiles (0..255): ", "  percentile canal referinta (0..255): ")
+            // A mono image has one channel: neither "R / G / B" nor "the green channel" holds there.
+            bool colour = t.MeanLevels.Count > 1;
+            w.WriteLine((colour ? Tr.Pick("  mean brightness per channel, R / G / B (0..255): ", "  luminozitatea medie pe canal, R / G / B (0..255): ")
+                                : Tr.Pick("  mean brightness, one channel (0..255): ", "  luminozitatea medie, un singur canal (0..255): "))
+                + string.Join(" / ", t.MeanLevels.Select(Fmt.F1)));
+            w.WriteLine(Tr.Pick($"  darker than level {Thresholds.DarkLevelA}: {Fmt.Pct(t.PctBelowDarkA)}   than {Thresholds.DarkLevelB}: {Fmt.Pct(t.PctBelowDarkB)}",
+                                $"  mai intunecat decat nivelul {Thresholds.DarkLevelA}: {Fmt.Pct(t.PctBelowDarkA)}   decat {Thresholds.DarkLevelB}: {Fmt.Pct(t.PctBelowDarkB)}"));
+            w.WriteLine((colour ? Tr.Pick("  landmarks on the green channel (0..255), the level under which that share of the pixels lies: ", "  repere pe canalul verde (0..255), nivelul sub care sta acel procent din pixeli: ")
+                                : Tr.Pick("  landmarks on the only channel (0..255), the level under which that share of the pixels lies: ", "  repere pe singurul canal (0..255), nivelul sub care sta acel procent din pixeli: "))
                 + string.Join("  ", TonalResult.PercentileRanks.Zip(t.ReferencePercentiles, (p, v) => $"p{Fmt.F1(p)}={Fmt.F1(v)}")));
-            w.WriteLine(Tr.Pick($"  median L* {Fmt.F1(t.LstarMedian)}; under paper black (L* {Fmt.F1(t.PaperBlackLstar)}): {Fmt.Pct(t.PctBelowPaperBlack)}; under L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(t.PctBelowLowSeparation)}; over L* {Fmt.F0(Thresholds.HighlightLstar)}: {Fmt.Pct(t.PctAboveHighlight)}",
-                                $"  L* median {Fmt.F1(t.LstarMedian)}; sub negrul hartiei (L* {Fmt.F1(t.PaperBlackLstar)}): {Fmt.Pct(t.PctBelowPaperBlack)}; sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(t.PctBelowLowSeparation)}; peste L* {Fmt.F0(Thresholds.HighlightLstar)}: {Fmt.Pct(t.PctAboveHighlight)}"));
+            w.WriteLine(Tr.Pick($"  median L* (the sky) {Fmt.F1(t.LstarMedian)}; pixels under paper black (L* {Fmt.F1(t.PaperBlackLstar)}): {Fmt.Pct(t.PctBelowPaperBlack)}; under L* {Fmt.F0(Thresholds.LowSeparationLstar)}, where the eye barely tells the tones apart: {Fmt.Pct(t.PctBelowLowSeparation)}; over L* {Fmt.F0(Thresholds.HighlightLstar)}: {Fmt.Pct(t.PctAboveHighlight)}",
+                                $"  L* median (cerul) {Fmt.F1(t.LstarMedian)}; pixeli sub negrul hartiei (L* {Fmt.F1(t.PaperBlackLstar)}): {Fmt.Pct(t.PctBelowPaperBlack)}; sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, unde ochiul abia deosebeste tonurile: {Fmt.Pct(t.PctBelowLowSeparation)}; peste L* {Fmt.F0(Thresholds.HighlightLstar)}: {Fmt.Pct(t.PctAboveHighlight)}"));
         }
 
         /// <summary>
@@ -177,6 +182,11 @@ namespace AstroPhotoAnalyzer
              : p.DmaxIsExplicit ? " (explicit)"
              : "";
 
+        /// <summary>A count of clouds with its noun: "1 cloud", "9 clouds"; "1 nor", "9 nori", "20 de nori".</summary>
+        /// <param name="n">How many clouds; zero or more.</param>
+        /// <returns>The count and the noun, in the language in use.</returns>
+        static string Clouds(int n) => Tr.Pick(n == 1 ? "1 cloud" : $"{Fmt.Int(n)} clouds", n == 1 ? "1 nor" : Fmt.RoCount(Fmt.Int(n)) + "nori");
+
         /// <summary>
         /// Appendix B: the simulation's table from the measured level, its footer, the definition
         /// of the dust and the sky, the class shares, the exact-target line, and the darkest
@@ -188,25 +198,25 @@ namespace AstroPhotoAnalyzer
         {
             SimulationResult s = r.Simulation;
             w.WriteLine();
-            w.WriteLine(Tr.Pick($"Appendix B. Background simulation (from level {Fmt.Level(s.BackgroundMeasured)}; a gamma curve on every channel)",
-                                $"Anexa B. Simularea fundalului (de la nivelul {Fmt.Level(s.BackgroundMeasured)}; curba gamma pe toate canalele)"));
+            w.WriteLine(Tr.Pick($"Appendix B. Background simulation: what happens if you move the background, now at level {Fmt.Level(s.BackgroundMeasured)}",
+                                $"Anexa B. Simularea fundalului: ce se intampla daca muti fundalul, acum la nivelul {Fmt.Level(s.BackgroundMeasured)}"));
             w.WriteLine("  " + SimulationHeader);
             foreach (SimulationRow row in s.Rows)
                 w.WriteLine("  " + SimulationLine(row));
             w.WriteLine("  " + SimulationFooter(s));
             w.WriteLine("  " + DustDefinition(s));
-            w.WriteLine(Tr.Pick("  classes: ", "  clase: ") + s.ClassFractions);
+            w.WriteLine(Tr.Pick("  kinds of patches: ", "  felurile de dale: ") + s.ClassFractions);
             w.WriteLine("  " + ExactLine(s));
             if (s.Clouds.Count > 0)
             {
-                w.WriteLine(Tr.Pick($"  the catalogued clouds with at least {Thresholds.DustCloudMinPatches} patches ({Fmt.Int(s.Clouds.Count)}), darkest first; L* = {Fmt.F0(Thresholds.DustCloudFraction * 100)} % of the cloud's patches; target = where it reaches paper black:",
-                                    $"  norii catalogati cu cel putin {Thresholds.DustCloudMinPatches} dale ({Fmt.Int(s.Clouds.Count)}), de la cel mai intunecat; L* = {Fmt.F0(Thresholds.DustCloudFraction * 100)} % din dalele norului; tinta = unde ajunge pe negrul hartiei:"));
+                w.WriteLine(Tr.Pick($"  the clouds from the catalogue with at least {Thresholds.DustCloudMinPatches} patches ({Clouds(s.Clouds.Count)}), darkest first; L* = the threshold under which {Fmt.F0(Thresholds.DustCloudFraction * 100)} % of the cloud's patches lie; target = the background at which the cloud reaches paper black:",
+                                    $"  norii din catalog cu cel putin {Thresholds.DustCloudMinPatches} dale ({Clouds(s.Clouds.Count)}), de la cel mai intunecat; L* = pragul sub care stau {Fmt.F0(Thresholds.DustCloudFraction * 100)} % din dalele norului; tinta = fundalul la care norul ajunge pe negrul hartiei:"));
                 w.WriteLine("  " + CloudHeader);
                 foreach (CloudRow c in s.Clouds.Take(Thresholds.DustCloudReportRows))
                     w.WriteLine("  " + CloudLine(c));
                 if (s.Clouds.Count > Thresholds.DustCloudReportRows)
-                    w.WriteLine(Tr.Pick($"  ... and {Fmt.Int(s.Clouds.Count - Thresholds.DustCloudReportRows)} more (the window shows them all)",
-                                        $"  ... si inca {Fmt.Int(s.Clouds.Count - Thresholds.DustCloudReportRows)} (fereastra ii arata pe toti)"));
+                    w.WriteLine(Tr.Pick($"  ... and {Clouds(s.Clouds.Count - Thresholds.DustCloudReportRows)} more (the map window shows them all)",
+                                        $"  ... si inca {Clouds(s.Clouds.Count - Thresholds.DustCloudReportRows)} (fereastra cu harta ii arata pe toti)"));
             }
         }
 
@@ -409,6 +419,11 @@ namespace AstroPhotoAnalyzer
                 : Tr.Pick($"  plateau: no clean sky tiles ({q.PlateauTiles} of {q.PlateauPositions} positions)", $"  palier: fara dale de cer curat ({q.PlateauTiles} din {q.PlateauPositions} pozitii)"));
         }
 
+        /// <summary>A count of stars with its noun: "1 star", "9 stars"; "1 stea", "9 stele", "64 de stele".</summary>
+        /// <param name="n">How many stars; zero or more.</param>
+        /// <returns>The count and the noun, in the language in use.</returns>
+        static string Stars(int n) => Tr.Pick(n == 1 ? "1 star" : $"{Fmt.Int(n)} stars", n == 1 ? "1 stea" : Fmt.RoCount(Fmt.Int(n)) + "stele");
+
         /// <summary>
         /// Appendix D: the stars and their FWHM (or that too few were measured), the regions with
         /// the corner / centre ratio, and the size table with its footer.
@@ -422,11 +437,11 @@ namespace AstroPhotoAnalyzer
             w.WriteLine();
             w.WriteLine(Tr.Pick("Appendix D. Resolution and size", "Anexa D. Rezolutie si marime"));
             w.WriteLine(s.Insufficient
-                ? Tr.Pick($"  stars: {s.Count} measured, {Fmt.F1(s.DensityPerMp)} per megapixel - too few for a FWHM", $"  stele: {s.Count} masurate, {Fmt.F1(s.DensityPerMp)} pe megapixel - prea putine pentru FWHM")
-                : Tr.Pick($"  stars: {s.Count} measured; median FWHM {Fmt.F2(s.FwhmMedian)} px, Q1 {Fmt.F2(s.FwhmQ1)}, Q3 {Fmt.F2(s.FwhmQ3)}; real detail ~{Fmt.F0(ps.EffectiveDetailPx)} px across the width",
-                          $"  stele: {s.Count} masurate; FWHM median {Fmt.F2(s.FwhmMedian)} px, Q1 {Fmt.F2(s.FwhmQ1)}, Q3 {Fmt.F2(s.FwhmQ3)}; detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime"));
-            w.WriteLine(Tr.Pick("  regions: ", "  regiuni: ") + string.Join("; ", s.Regions.Select(x => $"{x.Name} {(x.Known ? Fmt.F2(x.FwhmMedian) + " px" : "n/a")} ({x.Count})"))
-                + (double.IsNaN(s.CornerToCenterRatio) ? "" : Tr.Pick("; corner/centre ", "; colt/centru ") + Fmt.F2(s.CornerToCenterRatio)));
+                ? Tr.Pick($"  stars: {s.Count} measured, {Fmt.F1(s.DensityPerMp)} per megapixel - too few to measure the stars' width (FWHM)", $"  stele: {s.Count} masurate, {Fmt.F1(s.DensityPerMp)} pe megapixel - prea putine ca sa masuram latimea stelelor (FWHM)")
+                : Tr.Pick($"  stars: {s.Count} measured; the stars' width (FWHM) {Fmt.F2(s.FwhmMedian)} px (a quarter under {Fmt.F2(s.FwhmQ1)}, a quarter over {Fmt.F2(s.FwhmQ3)}); ~{Fmt.F0(ps.EffectiveDetailPx)} stars fit side by side across the width",
+                          $"  stele: {s.Count} masurate; latimea stelelor (FWHM) {Fmt.F2(s.FwhmMedian)} px (un sfert sub {Fmt.F2(s.FwhmQ1)}, un sfert peste {Fmt.F2(s.FwhmQ3)}); pe latime incap ~{Fmt.RoCount(Fmt.F0(ps.EffectiveDetailPx))}stele una langa alta"));
+            w.WriteLine(Tr.Pick("  the stars' width by zone: ", "  latimea stelelor pe zone: ") + string.Join("; ", s.Regions.Select(x => $"{x.Name} {(x.Known ? Fmt.F2(x.FwhmMedian) + " px" : "n/a")} ({Stars(x.Count)})"))
+                + (double.IsNaN(s.CornerToCenterRatio) ? "" : Tr.Pick("; weakest corner / centre ", "; cel mai slab colt / centru ") + Fmt.F2(s.CornerToCenterRatio)));
             w.WriteLine(Tr.Pick($"  sizes for {Fmt.Dim(ps.PixelW, ps.PixelH)} px{(r.Crop.Needed ? " (after the crop)" : "")}:",
                                 $"  marimi pentru {Fmt.Dim(ps.PixelW, ps.PixelH)} px{(r.Crop.Needed ? " (dupa decupaj)" : "")}:"));
             w.WriteLine(Tr.Pick("   width cm     height   dpi   star mm    point from       dist. used   outer frame cm",

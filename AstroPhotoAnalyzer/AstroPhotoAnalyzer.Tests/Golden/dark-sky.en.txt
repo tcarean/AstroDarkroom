@@ -2,49 +2,49 @@ AstroPhotoAnalyzer <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 
 File: <TEMP>\cer-intunecat.tif
-  TIFF 16-bit RGB, 512 x 512 (0.3 MP), uncompressed, 1.5 MB, ICC profile: sRGB test
+  TIFF 16-bit RGB, 512 x 512 (0.3 MP), uncompressed, 1.5 MB, colour profile (ICC): sRGB test
   Medium: baryta (Dmax 2.0, paper black L* 9.0). Viewing distance: 1.5 m.
 
 VERDICT: PROBLEM
 
 1. The format to send  [CAUTION]
-   - Send an 8-bit LZW TIFF (0.2 MB). The 16 -> 8 bit conversion is pure rounding, not a loss.
-     because: mean rounding error 0.26, max 0.50 levels (half a level is the most possible)
-   - If the lab accepts only JPEG: q100, 4:4:4 (0.1 MB).
-     because: mean error 0.58, max 3.5 levels; 0.4 % of the samples with an error > 2, at a mean level of 28 (in the dark sky, where JPEG does worst)
-   ! Banding risk at 8 bits: send 16-bit if the lab accepts it, or add dither at the export.
-     because: flat steps over 1.0 mm at 26 dpi on 8.38 % of the frame (threshold 0.10 %); the typical plateau on the 419 clean tiles, 8.4 % of the frame, is 2.2 px = 2.13 mm, with the noise left at sigma 0.30 LSB
+   - Send the lab an 8-bit TIFF with LZW compression, which loses nothing (0.2 MB). Going from 16 to 8 bits only rounds the values; nothing is lost.
+     because: in the rounding a pixel moves by 0.26 of a level on average and by 0.50 at most (a rounding cannot move it by more than half a level)
+   - If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) (0.1 MB).
+     because: against the original, the JPEG changes a pixel by 0.58 levels on average and by 3.5 at most; 0.4 % of the values change by more than 2 levels, mostly around level 28 (in the dark sky, where JPEG does worst)
+   ! At 8 bits visible steps may appear in the sky (banding): send the file at 16 bits if the lab takes it, or add a little noise at the export (dither).
+     because: at 26 dpi, flat areas, with no change of tone, wider than 1.0 mm cover 8.38 % of the frame (threshold 0.10 %); in the 419 small areas of smooth sky (8.4 % of the frame) a flat area is usually 2.2 px = 2.13 mm, and the noise left there is 0.30 levels
 
 2. The background and the paper  [PROBLEM]
-   !! The sky is under paper black: the sky and the dust would print as the SAME black. Re-stretch from linear to a background of 0.16 (simulated: the dust at L* 11.7, the sky at L* 15.9; exactly on black at 0.135).
-     because: the dust (the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 5.5 % of the frame, the patches 0.5 L* darker than the sky (4 times its noise)); no WCS) at L* 4.8; paper black L* 9.0 at Dmax 2.0; the sky (the middle value of the sky patches (the patches sorted by comparison with the sky)) at L* 7.2; the background level 0.089; as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; the visibility threshold L* 15, under it 83.9 % of the pixels
+   !! The sky is darker than paper black: the sky and the dust would come out as the SAME black. Redo the stretch from the linear data up to a background of 0.16 (in the simulation: the dust at L* 11.7, the sky at L* 15.9; the dust reaches black exactly at 0.135).
+     because: the dust at L* 4.8 (the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 5.5 % of the frame, the patches 0.5 L* darker than the sky (4 times its noise)); no WCS); paper black is L* 9.0 at Dmax 2.0; the sky at L* 7.2 (the middle value of the sky patches (the patches sorted by comparison with the sky)); the background level 0.089; as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; 83.9 % of the pixels are under L* 15, where the eye barely tells the tones apart
 
-3. The background colour and the gradients  [CAUTION]
+3. The background colour and the frame's edges  [CAUTION]
    - The background is neutral.
-     because: background R 20.4 G 22.4 B 20.4: chroma 1.7 (a* -1.4, b* +1.0; threshold 3.0); G - (R+B)/2 = +2.0, R - B = 0.0 levels
-   ! Lower-right corner: warm (horizon glow / light pollution). Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.
-     because: against the background, on every pixel of the region (sky 14 %): R +9.9, G 0.0, B -8.0 levels (threshold 3.0); the channels move differently
+     because: the background is R 20.4, G 22.4, B 20.4; how far it is from a grey (chroma): 1.7, threshold 3.0 (a* -1.4, b* +1.0); green stands over red and blue by +2.0 levels, red over blue by 0.0
+   ! Lower-right corner: warmer than the rest of the sky (glow from the horizon or light pollution). Correct it on the linear data (GraXpert) or keep it as part of the composition; do not correct it with a local curve on the image already stretched.
+     because: against the rest of the sky, measured on every pixel of the zone (only 14 % of them are sky): R +9.9, G 0.0, B -8.0 levels (threshold 3.0); the channels do not change alike, so it is a colour
 
 4. The size of the print  [CAUTION]
-   ! From 1.5 m the stars are discs at every size of the list; the smallest (50 x 35 cm) minimizes the effect. Try smaller widths, or a longer distance if the viewer really stands further away.
-     because: median FWHM 3.06 px (Q1 3.05, Q3 3.08, 64 stars) = real detail ~167 px across the width; at 50 cm a star is 2.99 mm and a point from 10.31 m; the given distance 1.5 m
-   ! The target ratio needs a crop: it cuts 77 px on each side of the height (30.1 %); choose the framing yourself, not the lab.
-     because: native 1.000, target 1.429; 512 x 358 px remain
+   ! From 1.5 m the stars look like discs, not points, at every size of the list; the smallest (50 x 35 cm) makes them least visible. Try smaller widths, or a longer distance if the viewer really stands further away.
+     because: the stars' width (FWHM) is 3.06 px (a quarter of the stars under 3.05, a quarter over 3.08; 64 stars), so ~167 stars fit side by side across the width; at 50 cm a star is 2.99 mm and looks like a point from 10.31 m; the given distance 1.5 m
+   ! The proportion asked for the print needs a crop: it cuts 77 px on each side of the height (30.1 %); choose yourself what stays in the frame, not the lab.
+     because: the image's proportion 1.000, the one asked 1.429; 512 x 358 px remain
 
 5. Denoise for the print version  [CAUTION]
-   ! Denoise is set too strong for print: the noise no longer dithers the quantization. For the print version, a lower setting keeps the texture and the faint stars.
-     because: median sigma 0.30 LSB on 38 smooth tiles (10 % 0.30, minimum 0.29; under 0.5 LSB, 100.0 % of the tiles); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.16 the noise grows by ~1.36 x (the slope of the curve at the background), to ~0.41 LSB
+   ! Denoise is too strong for print: too little noise is left to hide the steps between levels (banding). For the print version, a weaker denoise keeps the sky's texture and the faint stars.
+     because: the noise left in the sky is 0.30 levels (sigma; the middle value over 38 small areas of smooth sky; in the smoothest 10 % under 0.30, the lowest 0.29); 100.0 % of the areas are under 0.5 levels, where the noise no longer hides the steps; the target for print: 0.8-1.5 levels; after you redo the stretch to 0.16, the noise grows by ~1.36 times (how steeply the curve climbs at the background), to ~0.41 levels
 
 6. Warnings  [OK]
    (nothing to report)
 
 Appendix A. Tones
-  channel means (0..255): 29.1 / 30.8 / 28.6
-  under level 32: 80.6 %   under 64: 92.3 %
-  reference channel percentiles (0..255): p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
-  median L* 7.4; under paper black (L* 9.0): 72.4 %; under L* 15: 83.9 %; over L* 50: 0.4 %
+  mean brightness per channel, R / G / B (0..255): 29.1 / 30.8 / 28.6
+  darker than level 32: 80.6 %   than 64: 92.3 %
+  landmarks on the green channel (0..255), the level under which that share of the pixels lies: p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
+  median L* (the sky) 7.4; pixels under paper black (L* 9.0): 72.4 %; under L* 15, where the eye barely tells the tones apart: 83.9 %; over L* 50: 0.4 %
 
-Appendix B. Background simulation (from level 0.089; a gamma curve on every channel)
+Appendix B. Background simulation: what happens if you move the background, now at level 0.089
   target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
   0.05                 1.240       2.3      3.4      84.8 %     90.1 %        0.0 %
   0.06                 1.165       2.8      4.2      81.6 %     88.6 %        0.0 %
@@ -65,7 +65,7 @@ Appendix B. Background simulation (from level 0.089; a gamma curve on every chan
   0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
   * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
   dust = the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 5.5 % of the frame, the patches 0.5 L* darker than the sky (4 times its noise)) (no WCS); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 9.0 at Dmax 2.0)
-  classes: dust 5.5 %, sky 47.3 %, nebula 35.9 % (over the modelled sky by 0.5 L*, 4 sigma of the sky), bright nebula 10.9 % (over 14.0 L*, the Otsu threshold), peaks 0.4 %
+  kinds of patches: dust 5.5 %, sky 47.3 %, nebula 35.9 % (over 0.5 L* above the sky, 4 times the sky's noise), bright nebula 10.9 % (over 14.0 L* above the sky: the brightest part of the nebula), peaks 0.4 %
   the background at which the dust reaches exactly paper black: 0.135 at Dmax 2.0 (0.154 if the Dmax is 1.9, 0.117 if it is 2.1); as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; the sky reaches L* 15 when the background is 0.152
 
 Appendix C. Export
@@ -79,8 +79,8 @@ Appendix C. Export
   plateau on the quantized sky: 2.2 px over 419 tiles of 5000 positions (8.4 % of the frame, noise left sigma 0.30 LSB); flat steps over 1.0 mm at 26 dpi on 8.38 % of the frame
 
 Appendix D. Resolution and size
-  stars: 64 measured; median FWHM 3.06 px, Q1 3.05, Q3 3.08; real detail ~167 px across the width
-  regions: centre 3.11 px (9); upper-left corner n/a (4); upper-right corner n/a (2); lower-left corner n/a (2); lower-right corner n/a (1)
+  stars: 64 measured; the stars' width (FWHM) 3.06 px (a quarter under 3.05, a quarter over 3.08); ~167 stars fit side by side across the width
+  the stars' width by zone: centre 3.11 px (9 stars); upper-left corner n/a (4 stars); upper-right corner n/a (2 stars); lower-left corner n/a (2 stars); lower-right corner n/a (1 star)
   sizes for 512 x 358 px (after the crop):
    width cm     height   dpi   star mm    point from       dist. used   outer frame cm
       50 *        35.0    26      2.99       10.31 m           1.50 m   70 x 55

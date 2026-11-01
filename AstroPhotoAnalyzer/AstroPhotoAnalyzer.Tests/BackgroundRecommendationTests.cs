@@ -36,16 +36,16 @@ public class BackgroundRecommendationTests
             .Recommendations.Single(x => x.Topic == Topic.Background);
 
         Assert.Equal(Verdict.Attention, rec.Verdict);
-        Assert.StartsWith("Cerul e sub L* 15: hartia il separa de negru", rec.Text);
-        Assert.Contains("Re-stretch din liniar la fundal 0.15 (simulat: praful la L* 15.3, cerul la L* 15.3; cerul la L* 15 de la 0.14", rec.Text);
-        Assert.Contains("negrul hartiei L* 3.6 la Dmax 2.4", rec.Because);
-        Assert.Contains("pragul de vizibilitate L* 15, sub el 100.0 % din pixeli", rec.Because);
+        Assert.StartsWith("Cerul e sub L* 15: pe hartie nu e negru", rec.Text);
+        Assert.Contains("Refa stretch-ul din datele liniare pana la fundalul 0.15 (in simulare: praful la L* 15.3, cerul la L* 15.3; cerul ajunge la L* 15 de la 0.14", rec.Text);
+        Assert.Contains("negrul hartiei e L* 3.6 la Dmax 2.4", rec.Because);
+        Assert.Contains("100.0 % din pixeli sunt sub L* 15, unde ochiul abia mai deosebeste tonurile", rec.Because);
 
         // A sky already above the threshold: Ok, and the way down stops at the threshold, not at paper black.
         Recommendation bright = AnalysisRun.Execute(SyntheticRasters.Flat(64, 64, 0.3f), "memorie", new Parameters())
             .Recommendations.Single(x => x.Topic == Topic.Background);
         Assert.Equal(Verdict.Ok, bright.Verdict);
-        Assert.Contains("poti cobori pana la 0.15 (praful la L* 15.3, cerul la L* 15.3)", bright.Text);
+        Assert.Contains("il poti cobori pana la 0.15 (atunci praful ar fi la L* 15.3, cerul la L* 15.3)", bright.Text);
     }
 
     [Fact]
@@ -55,12 +55,14 @@ public class BackgroundRecommendationTests
         Recommendation rec = Background(SyntheticRasters.Flat(64, 64, 0.08f));
 
         Assert.Equal(Verdict.Problem, rec.Verdict);
-        Assert.StartsWith("Cerul e sub negrul hartiei", rec.Text);
+        Assert.StartsWith("Cerul e mai intunecat decat negrul hartiei", rec.Text);
         // 0.10 already puts the dust on paper black (exact 0.10); the row recommended is the first that also has the sky at L* 15.
-        Assert.Contains("Re-stretch din liniar la fundal 0.15 (simulat: praful la L* 15.3, cerul la L* 15.3; exact pe negru la 0.1", rec.Text);
-        Assert.Contains("praful (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); fara WCS) la L* 6.", rec.Because);
-        Assert.Contains("negrul hartiei L* 9.0 la Dmax 2.0", rec.Because);
-        Assert.Contains("cerul (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)) la L* 6.", rec.Because);
+        Assert.Contains("Refa stretch-ul din datele liniare pana la fundalul 0.15 (in simulare: praful la L* 15.3, cerul la L* 15.3; praful ajunge exact pe negru la 0.1", rec.Text);
+        Assert.Contains("praful la L* 6.", rec.Because);
+        Assert.Contains(" (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); fara WCS); negrul hartiei e L* 9.0 la Dmax 2.0", rec.Because);
+        Assert.Contains("negrul hartiei e L* 9.0 la Dmax 2.0", rec.Because);
+        Assert.Contains("cerul la L* 6.", rec.Because);
+        Assert.Contains(" (valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)); nivelul fundalului 0.08", rec.Because);
         Assert.Contains("nivelul fundalului 0.08", rec.Because);
         // The Dmax figure is the dust's; the sky (L* 6) is under the visibility threshold, so no paper passes as it is.
         Assert.Contains("asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.", rec.Because);
@@ -77,10 +79,10 @@ public class BackgroundRecommendationTests
         Recommendation rec = Background(r);
 
         Assert.Equal(Verdict.Attention, rec.Verdict);
-        Assert.StartsWith("Praful e sub negrul hartiei: norii de praf s-ar tipari negru pur.", rec.Text);
+        Assert.StartsWith("Praful e mai intunecat decat negrul hartiei: norii de praf ar iesi negru pur, fara detalii.", rec.Text);
         // The sky is at 0.25, above the whole grid: every row darkens, none puts the dust on
         // black; the lift it would take is on the ladder, above 0.20.
-        Assert.Contains("Nicio tinta pana la 0.20 nu aduce praful pe negrul hartiei; ar trebui ~0.", rec.Text);
+        Assert.Contains("Nicio tinta din simulare (pana la 0.20) nu ridica praful pana la negrul hartiei; ar fi nevoie de ~0.", rec.Text);
     }
 
     [Fact]
@@ -89,16 +91,19 @@ public class BackgroundRecommendationTests
         Recommendation rec = Background(WcsFixtures.BandScene());
 
         Assert.Equal(Verdict.Attention, rec.Verdict);
-        Assert.Contains("praful (cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e ", rec.Because);
-        Assert.Contains("cei mai intunecati: LDN ", rec.Because);
-        Assert.Contains("cerul (cerul din afara benzii Caii Lactee, la peste 10 grade de ea (valoarea din mijloc a dalelor de cer)) la L* 2", rec.Because);
+        Assert.StartsWith("praful la L* ", rec.Because);
+        Assert.Contains(" (cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e ", rec.Because);
+        Assert.Contains("; norii cei mai intunecati: LDN ", rec.Because);
+        Assert.Contains("cerul la L* 2", rec.Because);
+        Assert.Contains(" (cerul din afara benzii Caii Lactee, la peste 10 grade de ea (valoarea din mijloc a dalelor de cer)); nivelul fundalului", rec.Because);
         Assert.DoesNotContain("fara WCS", rec.Because);
 
         // Wholly inside the band: the sky path, named; the cloud fills the frame and is the
         // modelled sky itself, so the dust is the darkest sky.
         Recommendation inside = Background(WcsFixtures.Ldn42Scene());
-        Assert.Contains("praful (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); cadrul e in intregime in banda) la L* ", inside.Because);
-        Assert.Contains("cei mai intunecati: LDN 42 (B78) L* ", inside.Because);
+        Assert.StartsWith("praful la L* ", inside.Because);
+        Assert.Contains(" (cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf); cadrul e in intregime in banda); norii cei mai intunecati: LDN 42 (B78) L* ", inside.Because);
+        Assert.Contains("; norii cei mai intunecati: LDN 42 (B78) L* ", inside.Because);
     }
 
     [Fact]
@@ -108,7 +113,7 @@ public class BackgroundRecommendationTests
 
         Assert.Equal(Verdict.Ok, rec.Verdict);
         // The way down stops where the sky meets the visibility threshold (L* 15, the level 0.148), not at paper black.
-        Assert.StartsWith("Fundalul e print-safe asa cum e; poti cobori pana la 0.15 (praful la L* 15.3, cerul la L* 15.3).", rec.Text);
+        Assert.StartsWith("Fundalul e print-safe asa cum e; il poti cobori pana la 0.15 (atunci praful ar fi la L* 15.3, cerul la L* 15.3).", rec.Text);
     }
 
     [Fact]
@@ -121,8 +126,9 @@ public class BackgroundRecommendationTests
         Recommendation rec = Background(r);
 
         Assert.Equal(Verdict.Attention, rec.Verdict);
-        Assert.Contains("Nicio tinta pana la 0.20 nu aduce praful pe negrul hartiei", rec.Text);
-        Assert.Contains("accepta norii cei mai intunecati negri (Anexa B) sau alege alt mediu", rec.Text);
+        Assert.Contains("Nicio tinta din simulare (pana la 0.20) nu ridica praful pana la negrul hartiei", rec.Text);
+        // No WCS, so no named clouds: the sentence points at Appendix B without promising a list.
+        Assert.Contains("accepta ca norii cei mai intunecati sa iasa negri (vezi Anexa B) sau alege alta hartie", rec.Text);
     }
 
     [Fact]
@@ -130,12 +136,12 @@ public class BackgroundRecommendationTests
     {
         var dark = AnalysisRun.Execute(Scenes.DarkSky(), "memorie", Scenes.OnBuiltForPaper());
         Recommendation up = dark.Recommendations.Single(x => x.Topic == Topic.Denoise);
-        Assert.Contains("dupa re-stretch la 0.1", up.Because);
+        Assert.Contains("dupa ce refaci stretch-ul la 0.1", up.Because);
         Assert.Contains("zgomotul creste de ~", up.Because);
 
         var bright = AnalysisRun.Execute(Scenes.CleanSky(), "memorie", Scenes.OnBuiltForPaper());
         Recommendation down = bright.Recommendations.Single(x => x.Topic == Topic.Denoise);
-        Assert.Contains("dupa re-stretch la 0.1", down.Because);
+        Assert.Contains("dupa ce refaci stretch-ul la 0.1", down.Because);
         Assert.Contains("zgomotul scade de ~", down.Because);
     }
 }
