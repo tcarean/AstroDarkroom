@@ -66,8 +66,14 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
 - Structure with `--raw` / `--lens` exists only in C#; without the two flags the output is
   identical, which the 15 structure scenarios pin.
 - The capitalised diagnosis ("Fondul CADE/CRESTE spre margini") accounted for the wording-only
-  differences in the `--light` scenarios that print one; the sign *is* the diagnosis, so the
-  emphasis is deliberate.
+  differences in the `--light` scenarios that print one, until 2026-11-01; the sign *is* the
+  diagnosis, so the emphasis was deliberate.
+- On 2026-11-01 every `--light` sentence the console shares with the window's End to end tab was
+  rewritten in plain words (ADR 0082, R-105): the three diagnoses, the two undetermined reasons
+  and the closing paragraph of an undetermined series, the wide-field refusal, the warning at
+  the limit. The eleven `parity_light_*.txt` were recaptured, with the owner's yes, for those
+  text lines alone (the two diagnosis lines in nine of them, seven in the too-wide refusal, eleven
+  in the sweeping series); every figure is unchanged. A C#-only call, like the rest.
 - The second map of `--ratio` was named `-world.png` from 2026-10-25 (ADR 0062; Python wrote
   `-lume.png`): the four `parity_ratio_*.txt` were recaptured, with the owner's yes, for that
   one line each, the map's path; every figure was unchanged. A C#-only call, like the rest.

@@ -11,8 +11,8 @@ Copyright (C) 2026 Tudor Carean
     componenta radiala      :  -0.00 %   [OK]  <- ASTA e flat-ul
 
   INTERPRETARE
-    Fondul n-are componenta radiala. Flat-ul face treaba.
-    Asta e testul care conteaza - toate celelalte sunt proxy pentru el.
+    Fondul cerului a ramas la fel de luminos din centru pana in colturi: flat-ul a scos
+    vignetarea cum trebuie. Asta e proba adevarata; testele de structura doar o anticipeaza.
 
     Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.
     Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:

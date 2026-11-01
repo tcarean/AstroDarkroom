@@ -11,8 +11,8 @@ Copyright (C) 2026 Tudor Carean
     componenta radiala      : -44.40 %   [PROBLEMA]  <- ASTA e flat-ul
 
   INTERPRETARE
-    Fondul CRESTE spre margini => SUPRA-corectie. Cel mai probabil
-    flat-darks lipsa/gresite: imparti la un flat care contine offset.
+    Colturile au iesit mai luminoase decat centrul: flat-ul a corectat prea mult. Aproape intotdeauna
+    lipsesc flat-dark-urile sau bias-ul, asa ca flat-ul mai contine un offset, iar impartirea trage colturile in sus.
 
     Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.
     Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:

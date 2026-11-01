@@ -21,8 +21,8 @@ Copyright (C) 2026 Tudor Carean
     correlation w. sky grad.  : does not apply (the gradient varies by only 0.0 points)
 
     VERDICT: PROBLEM
-    The background FALLS toward the edges => UNDER-correction. The flat does not catch all
-    the vignetting: another aperture than for the lights, or a contaminated flat.
+    The corners stayed darker than the centre: the flat did not remove all the vignetting.
+    Usually the flats were shot at another aperture than the lights, or the flat holds something that is not vignetting.
 
     The mean over 6 frames is the estimate of the flat error: the spread is small,
     so the sky's radial term is stable over the series and does not contaminate it.

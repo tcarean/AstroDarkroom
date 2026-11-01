@@ -11,8 +11,8 @@ Copyright (C) 2026 Tudor Carean
     componenta radiala      : +45.89 %   [PROBLEMA]  <- ASTA e flat-ul
 
   INTERPRETARE
-    Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata
-    vignetarea: alta diafragma decat la lights, sau flat contaminat.
+    Colturile au ramas mai intunecate decat centrul: flat-ul nu a scos toata vignetarea.
+    De obicei flat-urile au fost facute la alta diafragma decat lights-urile, sau flat-ul are in el ceva ce nu e vignetare.
 
     Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.
     Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:

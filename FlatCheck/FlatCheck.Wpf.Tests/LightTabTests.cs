@@ -139,7 +139,7 @@ public class LightTabTests
 
         var vm = await Run(f);
 
-        Assert.Contains("degenerare geometrica", vm.Reasons);
+        Assert.Contains("asa e geometria", vm.Reasons);
         Assert.Contains("Structura", vm.Reasons);
         Assert.NotEmpty(vm.Field);
     }
@@ -159,7 +159,7 @@ public class LightTabTests
 
         Assert.True(vm.Refused);
         Assert.Equal("nedeterminat (FOCALLEN=20mm, fara marimea pixelului)", vm.Field);
-        Assert.Contains("Decizia s-a luat doar pe focala", vm.Reasons);
+        Assert.Contains("Campul a fost apreciat doar dupa focala", vm.Reasons);
         Assert.DoesNotContain("--fov", vm.Reasons);
     }
 
