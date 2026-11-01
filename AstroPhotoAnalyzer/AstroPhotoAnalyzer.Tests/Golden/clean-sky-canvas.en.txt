@@ -63,14 +63,14 @@ Appendix B. Background simulation: what happens if you move the background, now 
   the background at which the dust reaches exactly paper black: 0.196 at Dmax 1.5 (0.221 if the Dmax is 1.4, 0.173 if it is 1.6); as the image is, the dust stays above black from Dmax 1.3 up; the sky reaches L* 15 when the background is 0.148
 
 Appendix C. Export
-  TIFF 8-bit LZW: 0.3 MB
+  8-bit TIFF, LZW: 0.3 MB
   JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level
   q100           0.2 MB       0.611       3.5   2.24    2.49     1.8 %            64
   q95            0.0 MB       0.844       5.9   2.76    3.61     6.1 %            64
   q90            0.0 MB       0.847       8.1   2.78    3.81     6.1 %            64
-  16 -> 8 rounding: mean 0.250, max 0.498, p99.9 0.498 levels
-  shadow-lift stress (gamma 1.9), levels 8..120: from 16 bits 1 used / 0 missing; from 8 bits 1 used / 0 missing
-  plateau: no clean sky tiles (0 of 5000 positions)
+  rounding from 16 to 8 bits: on average 0.250, at most 0.498, p99.9 0.498 levels
+  shadows lifted (gamma 1.9), levels 8..120: starting from 16 bits 1 used / 0 missing; starting from 8 bits 1 used / 0 missing
+  flat areas: no smooth sky found (0 of 5000 places tried)
 
 Appendix D. Resolution and size
   stars: 64 measured; the stars' width (FWHM) 3.05 px (a quarter under 3.03, a quarter over 3.07); ~168 stars fit side by side across the width

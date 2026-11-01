@@ -69,14 +69,14 @@ Appendix B. Background simulation: what happens if you move the background, now 
   the background at which the dust reaches exactly paper black: 0.135 at Dmax 2.0 (0.154 if the Dmax is 1.9, 0.117 if it is 2.1); as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; the sky reaches L* 15 when the background is 0.152
 
 Appendix C. Export
-  TIFF 8-bit LZW: 0.2 MB
+  8-bit TIFF, LZW: 0.2 MB
   JPEG 4:4:4     size      mean err   max err   p99    p99.9   > 2 lev    mean level
   q100           0.1 MB       0.579       3.5   1.76    2.34     0.4 %            28
   q95            0.0 MB       0.575       4.7   1.85    2.57     0.5 %            30
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
-  16 -> 8 rounding: mean 0.262, max 0.498, p99.9 0.498 levels
-  shadow-lift stress (gamma 1.9), levels 8..120: from 16 bits 75 used / 0 missing; from 8 bits 52 used / 24 missing
-  plateau on the quantized sky: 2.2 px over 419 tiles of 5000 positions (8.4 % of the frame, noise left sigma 0.30 LSB); flat steps over 1.0 mm at 26 dpi on 8.38 % of the frame
+  rounding from 16 to 8 bits: on average 0.262, at most 0.498, p99.9 0.498 levels
+  shadows lifted (gamma 1.9), levels 8..120: starting from 16 bits 75 used / 0 missing; starting from 8 bits 52 used / 24 missing
+  flat areas on the sky taken to 8 bits: usually 2.2 px, in 419 small areas of smooth sky of 5000 places tried (8.4 % of the frame, noise left 0.30 levels); at 26 dpi, flat areas wider than 1.0 mm on 8.38 % of the frame
 
 Appendix D. Resolution and size
   stars: 64 measured; the stars' width (FWHM) 3.06 px (a quarter under 3.05, a quarter over 3.08); ~167 stars fit side by side across the width

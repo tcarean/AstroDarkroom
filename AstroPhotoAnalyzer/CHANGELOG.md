@@ -46,6 +46,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Export tab explains itself in plain words (R-114, ADR 0074), and so does Appendix C of the
+  report: "Zone plate pe cerul trecut pe 8 biti" instead of "Palier pe cerul cuantizat", the noise in
+  levels, "pastreaza originalul pe 16 biti", "calitate 100" for q100; the JPEG table's figures and
+  columns are unchanged.
 - The report's recommendations, the Raport tab and the console alike, are in plain words (R-112,
   ADR 0073): "Refa stretch-ul din datele liniare pana la fundalul ..." instead of "Re-stretch din
   liniar la fundal ...", the noise in levels instead of LSB, the stars' width named "latimea

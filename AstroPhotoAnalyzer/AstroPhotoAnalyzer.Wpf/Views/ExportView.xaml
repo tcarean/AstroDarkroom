@@ -29,14 +29,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <StackPanel MaxWidth="1100" HorizontalAlignment="Left">
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='JPEG, ENCODED IN MEMORY AND COMPARED WITH THE 16-BIT FILE', Ro='JPEG, ENCODAT IN MEMORIE SI COMPARAT CU FISIERUL DE 16 BITI'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='JPEG: HOW MUCH THE IMAGE CHANGES AT EACH QUALITY', Ro='JPEG: CAT SE SCHIMBA IMAGINEA LA FIECARE CALITATE'}" />
           <ItemsControl ItemsSource="{Binding JpegRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
           <ItemsControl ItemsSource="{Binding JpegGuide}" ItemTemplate="{StaticResource GuideParagraphTemplate}" Margin="0,10,0,0" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='QUANTIZATION', Ro='CUANTIZARE'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='GOING TO 8 BITS', Ro='TRECEREA PE 8 BITI'}" />
           <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" />
         </StackPanel>
       </Border>

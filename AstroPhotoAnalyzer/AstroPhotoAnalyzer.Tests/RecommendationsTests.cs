@@ -53,7 +53,7 @@ public class RecommendationsTests
         // The 16-bit master and the q100 floor are facts of the Export tab since ADR 0061, not
         // warnings: neither line is in the report, though the scene raises both measurements.
         Assert.True(a.Quantization.Keep16BitMaster);
-        Assert.DoesNotContain(Of(a, Topic.Warnings), r => r.Text.Contains("master-ul de 16 biti"));
+        Assert.DoesNotContain(Of(a, Topic.Warnings), r => r.Text.Contains("originalul pe 16 biti"));
         Assert.DoesNotContain(Of(a, Topic.Format), r => r.Text.StartsWith("Nu cobori"));
     }
 

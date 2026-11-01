@@ -35,10 +35,10 @@ public class ExportTabTests
         var export = new ExportTabViewModel();
         export.Populate(result);
 
-        MetricRow from8 = Assert.Single(export.Rows, x => x.Label == "... din 8 biti");
-        Assert.Equal("pastreaza master-ul de 16 biti", from8.Note);
+        MetricRow from8 = Assert.Single(export.Rows, x => x.Label == "... pornind din 8 biti");
+        Assert.Equal("pastreaza originalul pe 16 biti", from8.Note);
         GuideParagraph recommended = Assert.Single(export.JpegGuide, p => p.Lead == "Ce se recomanda.");
-        Assert.DoesNotContain("nu cobori sub q100", recommended.Text);
+        Assert.DoesNotContain("nu cobori sub calitatea 100", recommended.Text);
 
         // The same analysis with the JPEG figures of the owner's 2026-08-12 core denoised by Syqon
         // at 0.75 (ADR 0061: q100 at 4.5 levels, q95 at 25.3, q90 at 32.4): the paragraph names
@@ -56,13 +56,52 @@ public class ExportTabTests
         export.Populate(result);
 
         recommended = Assert.Single(export.JpegGuide, p => p.Lead == "Ce se recomanda.");
-        Assert.EndsWith($" Aici q95 ajunge la o eroare maxima de 25.3 niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub q100.", recommended.Text);
+        Assert.EndsWith($" Aici calitatea 95 ajunge la o diferenta de 25.3 niveluri (prag {Fmt.F0(Thresholds.JpegMaxErrorReject)}): nu cobori sub calitatea 100.", recommended.Text);
 
         using (Tr.Use(UiLanguage.English))
         {
             export.Populate(result);
             recommended = Assert.Single(export.JpegGuide, p => p.Lead == "What is recommended.");
-            Assert.EndsWith($" Here q95 reaches a maximum error of 25.3 levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below q100.", recommended.Text);
+            Assert.EndsWith($" Here quality 95 reaches a difference of 25.3 levels (threshold {Fmt.F0(Thresholds.JpegMaxErrorReject)}): do not go below quality 100.", recommended.Text);
         }
+    }
+
+    /// <summary>
+    /// R-114 (ADR 0074): the Export tab's texts and Appendix C of the text report are in plain
+    /// words, in both languages, on the dark scene (16 bits, flat areas measured, the 16-bit
+    /// original to keep) and on the mono sky: the rows' names, notes and descriptions, the guide's
+    /// texts and the appendix's lines use none of the method's words. The JPEG table's column
+    /// titles stay (the guide explains them), and so do the guide's leads, which name them.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R114_TheExportTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var texts = new List<string>();
+        foreach (Raster raster in new[] { Scenes.DarkSky(), Scenes.MonoSky() })
+        {
+            AnalysisResult result = Result(raster);
+            var export = new ExportTabViewModel();
+            export.Populate(result);
+            texts.AddRange(export.Rows.SelectMany(r => new[] { r.Label, r.Note, r.Description }).Where(t => t != null));
+            texts.AddRange(export.JpegGuide.Select(g => g.Text));
+            var report = new System.IO.StringWriter();
+            ReportWriter.WriteFull(result, report);
+            string[] lines = report.ToString().Split('\n');
+            int c = Array.FindIndex(lines, l => l.StartsWith(Tr.Pick("Appendix C.", "Anexa C.")));
+            int d = Array.FindIndex(lines, l => l.StartsWith(Tr.Pick("Appendix D.", "Anexa D.")));
+            Assert.True(c > 0 && d > c, "the report has Appendix C before Appendix D");
+            texts.AddRange(lines.Skip(c + 1).Take(d - c - 1)
+                .Where(l => !l.TrimStart().StartsWith("JPEG 4:4:4") && !l.TrimStart().StartsWith("q")));
+        }
+
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(esantion\w*|samples?|cuantiz\w*|quantiz\w*|palier\w*|plateau\w*|LSB|sigma|encod\w*|decod\w*|subesantion\w*|subsampling|YCbCr|monoton\w*|predictor|stres\w*|shadow-lift|master|auto-correct|tiles?|dal[ae]|dalele|pozitii|positions)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts, t => Assert.False(methodWords.IsMatch(t), t));
+        Assert.Contains(texts, t => t.Contains(Tr.Pick("keep the 16-bit original", "pastreaza originalul pe 16 biti")));
+        Assert.Contains(texts, t => t.Contains(Tr.Pick("small areas of smooth sky", "zone mici de cer neted")));
     }
 }

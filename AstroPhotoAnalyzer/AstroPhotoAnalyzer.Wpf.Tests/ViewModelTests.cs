@@ -117,7 +117,7 @@ public class ViewModelTests
         Assert.Contains("canvas 1.5 -> L* 20.7", guide);
         Assert.Equal(4, export.JpegRows.Count);
         Assert.Equal(5, export.JpegGuide.Count);
-        Assert.Contains(export.Rows, r => r.Label.StartsWith("Palier"));
+        Assert.Contains(export.Rows, r => r.Label.StartsWith("Zone plate"));
         Assert.All(export.Rows, row => Assert.False(string.IsNullOrWhiteSpace(row.Description), row.Label));
         Assert.Contains(res.Rows, r => r.Label == "Stele masurate");
         Assert.Equal(2 + 6 + 2, res.SizeRows.Count);   // 2 headers + 6 sizes + a 2-row note: no distance, no recommended row

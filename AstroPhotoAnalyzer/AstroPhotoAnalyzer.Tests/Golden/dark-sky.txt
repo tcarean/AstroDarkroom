@@ -69,14 +69,14 @@ Anexa B. Simularea fundalului: ce se intampla daca muti fundalul, acum la nivelu
   fundalul la care praful ajunge exact pe negrul hartiei: 0.135 la Dmax 2.0 (0.154 daca Dmax e 1.9, 0.117 daca e 2.1); asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.28 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; cerul ajunge la L* 15 cand fundalul e 0.152
 
 Anexa C. Export
-  TIFF 8-bit LZW: 0.2 MB
+  TIFF pe 8 biti, LZW: 0.2 MB
   JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu
   q100           0.1 MB       0.579       3.5   1.76    2.34     0.4 %            28
   q95            0.0 MB       0.575       4.7   1.85    2.57     0.5 %            30
   q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
-  rotunjire 16 -> 8: medie 0.262, maxim 0.498, p99.9 0.498 niveluri
-  stres shadow-lift (gamma 1.9), niveluri 8..120: din 16 biti 75 folosite / 0 lipsa; din 8 biti 52 folosite / 24 lipsa
-  palier pe cerul cuantizat: 2.2 px pe 419 dale din 5000 pozitii (8.4 % din cadru, zgomot ramas sigma 0.30 LSB); trepte plate de peste 1.0 mm la 26 dpi pe 8.38 % din cadru
+  rotunjirea de la 16 la 8 biti: in medie 0.262, cel mult 0.498, p99.9 0.498 niveluri
+  umbre ridicate (gamma 1.9), niveluri 8..120: pornind din 16 biti 75 folosite / 0 lipsa; pornind din 8 biti 52 folosite / 24 lipsa
+  zone plate pe cerul trecut pe 8 biti: de obicei 2.2 px, in 419 zone mici de cer neted din 5000 de locuri incercate (8.4 % din cadru, zgomot ramas 0.30 niveluri); la 26 dpi, zone plate mai late de 1.0 mm pe 8.38 % din cadru
 
 Anexa D. Rezolutie si marime
   stele: 64 masurate; latimea stelelor (FWHM) 3.06 px (un sfert sub 3.05, un sfert peste 3.08); pe latime incap ~167 de stele una langa alta
