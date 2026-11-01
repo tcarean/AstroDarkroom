@@ -22,18 +22,17 @@ Copyright (C) 2026 Tudor Carean
 
     VERDICT: NEDETERMINAT
     Media NU se poate citi ca eroare de flat:
-      - eroarea mediei (16.14) depaseste chiar pragul de OK (2.00),
-        deci seria nu rezolva flat-ul la precizia la care se pronunta
-        pragurile. Un verdict aici ar fi o parere, nu o masuratoare.
-      - componenta radiala urmareste gradientul de cer (r = 0.98
-        pe un interval de 27 puncte de gradient), semn ca ce se
-        masoara e cerul.
+      - media e prea nesigura: eroarea ei (16.14) e mai mare chiar decat pragul de OK (2.00),
+        pentru ca cadrele difera prea mult intre ele. Un verdict aici ar fi
+        o parere, nu o masuratoare.
+      - cifra radiala se misca odata cu cerul (corelatie 0.98, pe un cer care
+        s-a schimbat cu 27 puncte): ce se masoara e cerul, nu flat-ul.
 
-    Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din
-    fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat.
-    Pe date ca astea flat-ul se judeca singur, pe testele de structura ale
-    masterului, care nu implica cerul deloc. Vezi README, sectiunea
-    despre cand se poate folosi --light.
+    Acelasi flat s-a aplicat pe fiecare cadru, deci greseala lui e aceeasi in toate;
+    ce se schimba de la un cadru la altul vine din cer.
+    Pe aceste date flat-ul se judeca doar pe testele de structura ale masterului,
+    unde cerul nu intra deloc. Vezi README, sectiunea despre cand se poate
+    folosi --light.
 
     -> harta salvata: <TMP>/light_series_sweeping.png
 

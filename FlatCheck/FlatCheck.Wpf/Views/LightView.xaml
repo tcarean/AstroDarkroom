@@ -146,7 +146,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </Border>
 
             <TextBlock Style="{StaticResource Faint}" Margin="2,10,0,0"
-                       Text="{l:T En='The flat is the same on every frame by construction - it was divided out of each one. So everything that moves during the series is sky, not flat, and that is why the series says more than a single frame.', Ro='Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat, si de asta seria spune mai mult decat un cadru singur.'}" />
+                       Text="{l:T En='The same flat was applied to every frame, so its error is the same in all of them. What changes from one frame to the next comes from the sky. That is why the mean over the series says more than a single frame.', Ro='Acelasi flat s-a aplicat pe fiecare cadru, deci greseala lui e aceeasi in toate. Ce se schimba de la un cadru la altul vine din cer. De aceea media pe serie spune mai mult decat un cadru singur.'}" />
           </StackPanel>
 
           <local:ReportPanel Margin="0,16,0,0" />

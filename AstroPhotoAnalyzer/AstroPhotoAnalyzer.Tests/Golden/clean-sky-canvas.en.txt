@@ -80,8 +80,8 @@ Appendix D. Resolution and size
       40          40.0    33      2.38        8.21 m           0.85 m   60 x 60
       60          60.0    22      3.57       12.32 m           1.27 m   80 x 80
       80          80.0    16      4.76       16.42 m           1.70 m   100 x 100
-  no recommended row: "point from" and "dist. used" both grow with the width, so their ratio (9.68) is the same on every row
-    and the test does not tell the sizes apart - the wall chooses; give a viewing distance to tell them apart
+  no recommended row: without a given distance a larger print is viewed from farther away, so every size looks the same (the ratio 9.68 is the same on every row)
+    the wall chooses the size; give a viewing distance so that the program can choose one
 
 Appendix E. Background colour
   background colour, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; L* 27.0, a* 0.0, b* 0.0, chroma 0.0; from the sky patches above the bottom band

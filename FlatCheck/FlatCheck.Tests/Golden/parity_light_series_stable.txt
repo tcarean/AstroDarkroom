@@ -21,8 +21,8 @@ Copyright (C) 2026 Tudor Carean
     corelatie cu grad. de cer : nu se aplica (gradientul variaza doar 0.0 puncte)
 
     VERDICT: PROBLEMA
-    Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata
-    vignetarea: alta diafragma decat la lights, sau flat contaminat.
+    Colturile au ramas mai intunecate decat centrul: flat-ul nu a scos toata vignetarea.
+    De obicei flat-urile au fost facute la alta diafragma decat lights-urile, sau flat-ul are in el ceva ce nu e vignetare.
 
     Media pe 6 cadre e estimarea erorii de flat: imprastierea e mica,
     deci termenul radial al cerului e stabil peste serie si nu o contamineaza.

@@ -145,22 +145,20 @@ namespace FlatCheck.Wpf
         /// <param name="s">The session, for its process/ path.</param>
         /// <returns>The explanation, with the pattern and the folder.</returns>
         internal static string NoLightSeries(SirilSession s) =>
-            T($"No frame matches {SeriesFinder.DefaultPattern} in:\n"
+            T($"No {SeriesFinder.DefaultPattern} frame found in:\n"
             + $"{s.ProcessDir}\n\n"
-            + "The end-to-end test needs lights CALIBRATED with the flat, WITHOUT background "
-            + "extraction and NOT REGISTERED.\n\n"
-            + "The registered frames (r_pp_light_*) are left out on purpose: registration "
-            + "transforms the frame geometrically, so it moves the flat error - which is fixed to the "
-            + "sensor - against the centre the radial model is fitted around. It would "
-            + "corrupt the measurement without showing.",
-              $"Niciun cadru care sa se potriveasca cu {SeriesFinder.DefaultPattern} in:\n"
+            + "The test needs the lights Siril calibrated with the flat, before alignment and "
+            + "without background extraction.\n\n"
+            + "The aligned frames (r_pp_light_*) are left out on purpose: alignment shifts them, "
+            + "the vignetting would no longer sit at the centre of the frame, and the measurement "
+            + "would come out wrong without showing it.",
+              $"Nu am gasit niciun cadru {SeriesFinder.DefaultPattern} in:\n"
             + $"{s.ProcessDir}\n\n"
-            + "Testul end-to-end are nevoie de lights CALIBRATE cu flat, FARA background "
-            + "extraction si NEREGISTRATE.\n\n"
-            + "Cadrele registrate (r_pp_light_*) sunt excluse intentionat: registrarea "
-            + "transforma geometric cadrul, deci muta eroarea de flat - care e fixa pe "
-            + "senzor - fata de centrul in jurul caruia se fiteaza modelul radial. Ar "
-            + "corupe masuratoarea fara sa se vada.");
+            + "Testul are nevoie de lights-urile pe care Siril le-a calibrat cu flat-ul, inainte "
+            + "de aliniere si fara extragere de fond.\n\n"
+            + "Cadrele aliniate (r_pp_light_*) nu sunt folosite dinadins: alinierea le deplaseaza, "
+            + "vignetarea nu ar mai fi in centrul cadrului si masuratoarea ar iesi gresita fara "
+            + "sa se vada.");
 
         /// <summary>When flats/ holds no camera raw.</summary>
         /// <param name="s">The session, for its flats/ path.</param>
@@ -1131,126 +1129,125 @@ namespace FlatCheck.Wpf
         /// sign says.</summary>
         /// <returns>The line under the series' first figure.</returns>
         internal static string LightMeanNote() =>
-            T($"The mean of the radial column: the figure the verdict is given on, once the series "
-            + $"has at least {Th.LightSeriesMinFrames} frames. Under {Th.LightRadOk:F0} % it is OK, "
-            + $"above {Th.LightRadBad:F0} % a problem, suspect in between. The sign is the diagnosis: "
-            + "positive, the background falls toward the edges (under-correction: another aperture "
-            + "at the flats than at the lights, or a contaminated flat); negative, it rises "
-            + "(over-correction: almost always flat-darks missing or wrong).",
-              $"Media coloanei radial: cifra pe care se da verdictul, odata ce seria are cel putin "
-            + $"{Th.LightSeriesMinFrames} cadre. Sub {Th.LightRadOk:F0} % e OK, peste "
-            + $"{Th.LightRadBad:F0} % e problema, suspect intre ele. Semnul e diagnosticul: pozitiv, "
-            + "fondul cade spre margini (sub-corectie: alta diafragma la flats decat la lights, sau "
-            + "flat contaminat); negativ, creste (supra-corectie: aproape sigur flat-darks lipsa "
-            + "sau gresite).");
+            T($"The figure the verdict is given on, once the series has at least "
+            + $"{Th.LightSeriesMinFrames} frames. It says how much darker or brighter the corners are "
+            + "than the centre, on average over all the frames, after the flat was applied. Under "
+            + $"{Th.LightRadOk:F0} % it is OK, above {Th.LightRadBad:F0} % a problem, suspect in "
+            + "between. With a plus, the corners stayed darker: the flat corrected too little "
+            + "(another aperture at the flats than at the lights, or a dirty flat). With a minus, "
+            + "the corners came out brighter: the flat corrected too much (almost always the "
+            + "flat-darks or the bias are missing).",
+              $"Cifra care da verdictul, dupa ce seria are cel putin {Th.LightSeriesMinFrames} "
+            + "cadre. Spune cu cat sunt colturile mai intunecate sau mai luminoase decat centrul, in "
+            + $"medie pe toate cadrele, dupa aplicarea flat-ului. Sub {Th.LightRadOk:F0} % e OK, "
+            + $"peste {Th.LightRadBad:F0} % e problema, suspect intre ele. Cu plus, colturile au "
+            + "ramas mai intunecate: flat-ul a corectat prea putin (alta diafragma la flat-uri decat "
+            + "la lights, sau un flat murdar). Cu minus, colturile au iesit mai luminoase: flat-ul a "
+            + "corectat prea mult (aproape sigur lipsesc flat-dark-urile sau bias-ul).");
 
         /// <summary>What the spread is and why a mean alone is not enough.</summary>
         /// <returns>The line under the series' second figure.</returns>
         internal static string LightSpreadNote() =>
-            T("The smallest and the largest value in the radial column. A mean near zero means "
-            + "nothing when the frames sweep from far below it to far above: what sweeps like that "
-            + "is the sky, not the flat, which is the same in every frame.",
-              "Cea mai mica si cea mai mare valoare din coloana radial. O medie aproape de zero nu "
-            + "inseamna nimic cand cadrele baleiaza de departe sub ea pana departe peste ea: ce "
-            + "baleiaza asa e cerul, nu flat-ul, care e acelasi in fiecare cadru.");
+            T("The lowest and the highest frame in the series. When they are far apart, the mean "
+            + "says little: the flat is the same in every frame, so what changes from one frame to "
+            + "the next is the sky, not the flat.",
+              "Cel mai mic si cel mai mare cadru din serie. Daca sunt departe unul de altul, media "
+            + "nu spune mare lucru: flat-ul e acelasi in toate cadrele, deci ce se schimba de la un "
+            + "cadru la altul e cerul, nu flat-ul.");
 
         /// <summary>What the error of the mean is and where it stops the verdict.</summary>
         /// <returns>The line under the series' third figure.</returns>
         internal static string LightSemNote() =>
-            T("The standard deviation of the radial column divided by the square root of the frame "
-            + $"count: how tightly the series pins the mean down. Above {Th.LightSeriesSemMax:F2} "
-            + "points the series does not resolve the flat to the precision the thresholds speak at, "
-            + "and the verdict is undetermined.",
-              "Abaterea standard a coloanei radial impartita la radacina numarului de cadre: cat de "
-            + $"strans fixeaza seria media. Peste {Th.LightSeriesSemMax:F2} puncte seria nu rezolva "
-            + "flat-ul la precizia la care vorbesc pragurile, si verdictul e nedeterminat.");
+            T("How sure the mean is: the more frames, and the closer they are to each other, the "
+            + $"smaller it gets. Above {Th.LightSeriesSemMax:F2} points the mean is too uncertain to "
+            + $"be compared with the {Th.LightRadOk:F0} % and {Th.LightRadBad:F0} % thresholds, and "
+            + "the verdict stays undetermined.",
+              "Cat de sigura e media: cu cat cadrele sunt mai multe si mai apropiate intre ele, cu "
+            + $"atat e mai mica. Peste {Th.LightSeriesSemMax:F2} puncte media e prea nesigura ca sa "
+            + $"fie comparata cu pragurile de {Th.LightRadOk:F0} % si {Th.LightRadBad:F0} %, si "
+            + "verdictul ramane nedeterminat.");
 
         /// <summary>What the sky correlation is, where it stops the verdict, and when it is not
         /// checked at all.</summary>
         /// <returns>The line under the series' fourth figure.</returns>
         internal static string LightCorrelationNote() =>
-            T("Pearson's correlation between the radial column and the sky column. A \"flat error\" "
-            + $"that follows the sky is sky: above {Th.LightSeriesSkyCorr:F2} in absolute value the "
-            + "verdict is undetermined. It is checked only when the sky gradient varies by at least "
-            + $"{Th.LightSeriesSkySpanMin:F0} points over the series; on a constant sky the "
-            + "correlation is noise and would reject good data.",
-              "Corelatia Pearson intre coloana radial si coloana cer. O \"eroare de flat\" care "
-            + $"urmareste cerul e cer: peste {Th.LightSeriesSkyCorr:F2} in valoare absoluta "
-            + "verdictul e nedeterminat. Se verifica doar cand gradientul de cer variaza cu cel "
-            + $"putin {Th.LightSeriesSkySpanMin:F0} puncte peste serie; pe un cer constant corelatia "
-            + "e zgomot si ar respinge date bune.");
+            T("Checks whether the figure in the radial column moves together with the sky (the sky "
+            + $"column). When they move together, above {Th.LightSeriesSkyCorr:F2}, what is measured "
+            + "is the sky, not the flat, and the verdict stays undetermined. It is checked only when "
+            + $"the sky changed enough during the session (by at least {Th.LightSeriesSkySpanMin:F0} "
+            + "points); on a sky that stood still there is nothing to compare.",
+              "Verifica daca cifra din coloana radial se misca odata cu cerul (coloana cer). Daca se "
+            + $"misca impreuna, peste {Th.LightSeriesSkyCorr:F2}, ce masuram e cerul, nu flat-ul, si "
+            + "verdictul ramane nedeterminat. Verificarea se face doar daca cerul s-a schimbat destul "
+            + $"in timpul sesiunii (cu cel putin {Th.LightSeriesSkySpanMin:F0} puncte); pe un cer "
+            + "care a stat pe loc nu are ce compara.");
 
         /// <summary>What the picture under the table is and what its colours mean. The sign
-        /// convention is the figures': blue corners are a background that falls toward the
-        /// edges, the positive sign, under-correction.</summary>
+        /// convention is the figures': blue corners are corners that stayed darker, the positive
+        /// sign, under-correction.</summary>
         /// <returns>The paragraph under the map and its legend.</returns>
         internal static string LightMapNote() =>
-            T("The series' mean radial map: for every frame, the radial part of the fitted "
-            + "background (the R^2 and R^4 terms) drawn at the frame's size, then averaged pixel by "
-            + "pixel. It holds no star and no nebula, only the shape of the model. White is a "
-            + "background with no radial component; blue corners, a background that falls toward "
-            + "the edges (under-correction); red corners, one that rises (over-correction). The "
-            + "colour scale is the map's own interval, so a strong colour can still be a small "
-            + "figure: how much is in the figures on the left.",
-              "Harta radiala medie a seriei: pentru fiecare cadru, partea radiala a fondului fitat "
-            + "(termenii R^2 si R^4) desenata la marimea cadrului, apoi mediata pixel cu pixel. Nu "
-            + "contine nicio stea si nicio nebuloasa, doar forma modelului. Alb e un fond fara "
-            + "componenta radiala; colturi albastre, un fond care cade spre margini (sub-corectie); "
-            + "colturi rosii, unul care creste (supra-corectie). Scara de culori e intervalul "
-            + "propriu al hartii, deci o culoare puternica poate fi tot o cifra mica: cat de mult "
-            + "e in cifrele din stanga.");
+            T("What is left of the vignetting after the flat was applied, averaged over the series. "
+            + "It is not a picture of the sky: no stars, no nebula, only the shape. White: the "
+            + "corners are the same as the centre. Blue corners: they stayed darker (the flat "
+            + "corrected too little). Red corners: they came out brighter (the flat corrected too "
+            + "much). The colours are stretched over the map's own range, so a strong colour can "
+            + "still mean a small figure; how much it is, the figures on the left say.",
+              "Cum arata, in medie pe serie, ce a ramas din vignetare dupa aplicarea flat-ului. Nu e "
+            + "o poza a cerului: fara stele, fara nebuloasa, doar forma. Alb: colturile sunt la fel "
+            + "ca centrul. Colturi albastre: au ramas mai intunecate (flat-ul a corectat prea "
+            + "putin). Colturi rosii: au iesit mai luminoase (a corectat prea mult). Culorile sunt "
+            + "intinse pe tot intervalul hartii, deci o culoare tare poate insemna o cifra mica; cat "
+            + "de mult e, spun cifrele din stanga.");
 
         /// <summary>What the table's first column holds and which files are left out.</summary>
         /// <returns>The tooltip of the "frame" header.</returns>
         internal static string LightFrameTip() =>
-            T($"The calibrated lights of process/, in file-name order, those matching "
-            + $"{SeriesFinder.DefaultPattern}: the frames Siril wrote after dividing the flat out, "
-            + "before registration. Registered frames (r_pp_light_*) are left out: registration "
-            + "shifts the vignetting off the sensor's centre, and the measurement would be "
-            + "corrupted silently.",
-              $"Lights-urile calibrate din process/, in ordinea numelui de fisier, cele care se "
-            + $"potrivesc cu {SeriesFinder.DefaultPattern}: cadrele scrise de Siril dupa impartirea "
-            + "flat-ului, inainte de inregistrare. Cadrele inregistrate (r_pp_light_*) sunt lasate "
-            + "deoparte: inregistrarea muta vignetarea din centrul senzorului, si masuratoarea s-ar "
-            + "strica in tacere.");
+            T($"The lights of process/ that Siril calibrated with the flat "
+            + $"({SeriesFinder.DefaultPattern}), in file-name order. The aligned frames "
+            + "(r_pp_light_*) are not used: alignment shifts them, the vignetting would no longer "
+            + "sit at the centre of the frame, and the measurement would come out wrong without "
+            + "showing it.",
+              $"Lights-urile din process/ pe care Siril le-a calibrat cu flat-ul "
+            + $"({SeriesFinder.DefaultPattern}), in ordinea numelui. Cadrele aliniate "
+            + "(r_pp_light_*) nu sunt folosite: alinierea le deplaseaza, vignetarea nu ar mai fi in "
+            + "centrul cadrului si masuratoarea ar iesi gresita fara sa se vada.");
 
         /// <summary>What the table's radial column holds and why one row is not the
         /// answer.</summary>
         /// <returns>The tooltip of the "radial" header.</returns>
         internal static string LightRadialTip() =>
-            T("The radial component of this frame's background, in percent of its level at the "
-            + "centre, with the sign: positive, the background falls toward the edges "
-            + "(under-correction); negative, it rises (over-correction). One frame holds the sky of "
-            + "its moment too, so it is the series summary that counts, not a row.",
-              "Componenta radiala a fondului acestui cadru, in procente din nivelul lui la centru, "
-            + "cu semn: pozitiv, fondul cade spre margini (sub-corectie); negativ, creste "
-            + "(supra-corectie). Un cadru contine si cerul din clipa lui, deci conteaza sinteza pe "
-            + "serie, nu un rand.");
+            T("How much darker (plus) or brighter (minus) the corners of this frame are than its "
+            + "centre, in per cent, after the flat was applied. A single frame holds the sky of "
+            + "that moment too, so the verdict is given on the mean of the series, not on one row.",
+              "Cu cat sunt colturile acestui cadru mai intunecate (plus) sau mai luminoase (minus) "
+            + "decat centrul, in procente, dupa aplicarea flat-ului. Un singur cadru contine si "
+            + "cerul din acel moment, asa ca verdictul se da pe media seriei, nu pe un rand.");
 
         /// <summary>What the table's sky column holds and that it never votes.</summary>
         /// <returns>The tooltip of the "sky" header.</returns>
         internal static string LightSkyTip() =>
-            T("The sky gradient the fit absorbed in its plane, as a percent of the background: "
-            + "light pollution, the Moon, the frame's tilt toward the horizon. Informative, never a "
-            + $"condition; above {Th.LightPlaneWarn:F0} % the console flags it as large. If it moves "
-            + "from row to row, the sky moved during the session - and that is what the correlation "
-            + "in the series summary is checked against.",
-              "Gradientul de cer pe care fitul l-a absorbit in planul lui, in procente din fond: "
-            + "poluare luminoasa, Luna, inclinarea cadrului spre orizont. Informativ, niciodata o "
-            + $"conditie; peste {Th.LightPlaneWarn:F0} % consola il marcheaza ca mare. Daca se misca "
-            + "de la un rand la altul, cerul s-a miscat in timpul sesiunii - si cu asta se compara "
-            + "corelatia din sinteza pe serie.");
+            T("How much brighter the sky is on one side of the frame than on the other, in per "
+            + "cent: light pollution, the Moon, a nearby horizon. Information only, it never enters "
+            + $"the verdict (above {Th.LightPlaneWarn:F0} % it counts as large). If it changes from "
+            + "one row to the next, the sky changed during the session; that is what the "
+            + "correlation in the summary is compared with.",
+              "Cat de mult e cerul mai luminos pe o parte a cadrului decat pe cealalta, in procente: "
+            + "poluare luminoasa, Luna, orizontul apropiat. Doar informativ, nu intra in verdict "
+            + $"(peste {Th.LightPlaneWarn:F0} % e considerat mare). Daca se schimba de la un rand "
+            + "la altul, cerul s-a schimbat in timpul sesiunii; cu asta se compara corelatia din "
+            + "sinteza.");
 
         /// <summary>What the table's tiles column holds and what a low count means.</summary>
         /// <returns>The tooltip of the "tiles" header.</returns>
         internal static string LightTilesTip() =>
-            T("The tiles kept in the fit out of all the tiles of the frame, after four rounds of "
-            + "one-sided clipping threw out those with nebulosity or other bright structure (a "
-            + "contaminant only adds signal, so only the high side is clipped). Few kept tiles mean "
-            + "a fit with less to stand on.",
-              "Tile-urile pastrate in fit din toate tile-urile cadrului, dupa ce patru runde de "
-            + "clipping unilateral le-au scos pe cele cu nebulozitate sau alta structura luminoasa "
-            + "(un contaminant doar adauga semnal, deci se taie doar partea de sus). Putine tile-uri "
-            + "pastrate inseamna un fit cu mai putin pe ce sa stea.");
+            T("The tiles are the small squares the frame is cut into; this is how many were used "
+            + "out of how many there are. Squares with nebula or other extra light are set aside, "
+            + "so that only the sky background remains. With few squares left, the measurement "
+            + "stands on less data.",
+              "Tile-urile sunt patratelele in care e impartit cadrul; aici scrie cate au fost "
+            + "folosite din cate sunt. Patratelele cu nebuloasa sau alta lumina in plus sunt date "
+            + "la o parte, ca sa ramana doar fondul cerului. Cu putine patratele ramase, "
+            + "masuratoarea sta pe mai putine date.");
     }
 }

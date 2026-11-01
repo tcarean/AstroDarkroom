@@ -96,6 +96,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The End to end tab's explanations, and the `--light` diagnosis, reasons, refusal and warnings
+  the console shares with it, are in plain words (R-105, ADR 0082): how much darker or brighter
+  the corners are than the centre after the flat, and what is sky, with no fit, plane, Pearson,
+  standard deviation, clipping or degeneracy. The thresholds stay read from the code. The
+  `light_*` goldens and the eleven `parity_light_*` goldens were recaptured for those text lines
+  alone, every figure unchanged.
 - The Structure tab's explanations, and the sentences the console shares with it (the advices, the
   scale, the local-spot note and warning, the illumination-offset note, the depth comparison's
   block), are in plain words (R-122, ADR 0083): a usual vignetting symmetric about the centre, one

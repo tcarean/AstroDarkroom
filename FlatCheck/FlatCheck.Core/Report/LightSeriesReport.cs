@@ -109,15 +109,15 @@ namespace FlatCheck
             foreach (string line in SameFlatLines) w.WriteLine("    " + line);
             if (Ui.Current == UiLanguage.Romanian)
             {
-                w.WriteLine("    Pe date ca astea flat-ul se judeca singur, pe testele de structura ale");
-                w.WriteLine("    masterului, care nu implica cerul deloc. Vezi README, sectiunea");
-                w.WriteLine("    despre cand se poate folosi --light.");
+                w.WriteLine("    Pe aceste date flat-ul se judeca doar pe testele de structura ale masterului,");
+                w.WriteLine("    unde cerul nu intra deloc. Vezi README, sectiunea despre cand se poate");
+                w.WriteLine("    folosi --light.");
             }
             else
             {
-                w.WriteLine("    On data like these the flat has to be judged on its own, on the structure tests");
-                w.WriteLine("    of the master, which do not involve the sky at all. See the README, the section");
-                w.WriteLine("    on when --light can be used.");
+                w.WriteLine("    On these data the flat is judged only on the structure tests of the master,");
+                w.WriteLine("    where the sky does not enter at all. See the README, the section on when");
+                w.WriteLine("    --light can be used.");
             }
         }
 
@@ -144,28 +144,26 @@ namespace FlatCheck
             "sem" => Ui.Current == UiLanguage.Romanian
                 ? new[]
                 {
-                    $"eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK ({Th.LightRadOk:F2}),",
-                    "deci seria nu rezolva flat-ul la precizia la care se pronunta",
-                    "pragurile. Un verdict aici ar fi o parere, nu o masuratoare.",
+                    $"media e prea nesigura: eroarea ei ({r.Sem:F2}) e mai mare chiar decat pragul de OK ({Th.LightRadOk:F2}),",
+                    "pentru ca cadrele difera prea mult intre ele. Un verdict aici ar fi",
+                    "o parere, nu o masuratoare.",
                 }
                 : new[]
                 {
-                    $"the error of the mean ({r.Sem:F2}) exceeds even the OK threshold ({Th.LightRadOk:F2}),",
-                    "so the series does not resolve the flat to the precision the thresholds",
-                    "speak at. A verdict here would be an opinion, not a measurement.",
+                    $"the mean is too uncertain: its error ({r.Sem:F2}) is larger even than the OK threshold ({Th.LightRadOk:F2}),",
+                    "because the frames differ too much from each other. A verdict here would be",
+                    "an opinion, not a measurement.",
                 },
             "corelatie" => Ui.Current == UiLanguage.Romanian
                 ? new[]
                 {
-                    $"componenta radiala urmareste gradientul de cer (r = {r.SkyCorr:F2}",
-                    $"pe un interval de {r.SkySpan:F0} puncte de gradient), semn ca ce se",
-                    "masoara e cerul.",
+                    $"cifra radiala se misca odata cu cerul (corelatie {r.SkyCorr:F2}, pe un cer care",
+                    $"s-a schimbat cu {r.SkySpan:F0} puncte): ce se masoara e cerul, nu flat-ul.",
                 }
                 : new[]
                 {
-                    $"the radial component follows the sky gradient (r = {r.SkyCorr:F2}",
-                    $"over a range of {r.SkySpan:F0} points of gradient), a sign that what is",
-                    "measured is the sky.",
+                    $"the radial figure moves together with the sky (correlation {r.SkyCorr:F2}, on a sky",
+                    $"that changed by {r.SkySpan:F0} points): what is measured is the sky, not the flat.",
                 },
             _ => new[] { reason + "." },
         };
@@ -174,10 +172,10 @@ namespace FlatCheck
         /// console then points at the structure tests, the window at the Structure tab.</summary>
         static string[] SameFlatLines => new[]
         {
-            T("The flat is the same on every frame by construction - it was divided out of",
-              "Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din"),
-            T("each one. So everything that moves during the series is sky, not flat.",
-              "fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat."),
+            T("The same flat was applied to every frame, so its error is the same in all of them;",
+              "Acelasi flat s-a aplicat pe fiecare cadru, deci greseala lui e aceeasi in toate;"),
+            T("what changes from one frame to the next comes from the sky.",
+              "ce se schimba de la un cadru la altul vine din cer."),
         };
 
         /// <summary>Whether a condition failed.</summary>
@@ -230,8 +228,8 @@ namespace FlatCheck
             }
 
             parts.Add(string.Join(" ", SameFlatLines)
-                    + T(" On data like these the flat has to be judged on its own, on the Structure tab, which does not involve the sky at all.",
-                        " Pe date ca astea flat-ul se judeca singur, in tabul Structura, care nu implica cerul deloc."));
+                    + T(" On these data the flat is judged only on the Structure tab, where the sky does not enter at all.",
+                        " Pe aceste date flat-ul se judeca doar in tabul Structura, unde cerul nu intra deloc."));
 
             return string.Join("\n\n", parts);
         }

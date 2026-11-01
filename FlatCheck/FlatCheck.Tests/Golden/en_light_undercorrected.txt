@@ -11,8 +11,8 @@ Copyright (C) 2026 Tudor Carean
     radial component        : +45.74 %   [PROBLEM]  <- THIS is the flat
 
   INTERPRETATION
-    The background FALLS toward the edges => UNDER-correction. The flat does not catch all
-    the vignetting: another aperture than for the lights, or a contaminated flat.
+    The corners stayed darker than the centre: the flat did not remove all the vignetting.
+    Usually the flats were shot at another aperture than the lights, or the flat holds something that is not vignetting.
 
     This figure is from a single frame, so it holds the sky of that moment too.
     Give the folder instead of the file to run on the whole series and average:

@@ -78,7 +78,7 @@ public class LightExplanationsTests
         Assert.Contains($"Under {Th.LightRadOk:F0} %", vm.MeanRadialNote);
         Assert.Contains($"above {Th.LightRadBad:F0} %", vm.MeanRadialNote);
         Assert.Contains($"Above {Th.LightSeriesSemMax:F2} points", vm.SemNote);
-        Assert.Contains($"above {Th.LightSeriesSkyCorr:F2} in absolute value", vm.CorrelationNote);
+        Assert.Contains($"above {Th.LightSeriesSkyCorr:F2}", vm.CorrelationNote);
         Assert.Contains($"at least {Th.LightSeriesSkySpanMin:F0} points", vm.CorrelationNote);
         Assert.Contains($"above {Th.LightPlaneWarn:F0} %", vm.SkyTip);
         Assert.Contains(SeriesFinder.DefaultPattern, vm.FrameTip);
@@ -86,8 +86,8 @@ public class LightExplanationsTests
     }
 
     /// <summary>
-    /// The sign convention of the map is the one the figures use: blue corners are a background
-    /// that falls toward the edges, which is under-correction, the positive sign.
+    /// The sign convention of the map is the one the figures use: blue corners are corners that
+    /// stayed darker, the flat corrected too little, which is the positive sign.
     /// </summary>
     [Fact]
     public void R105_TheMapNoteReadsBlueCornersAsUnderCorrection()
@@ -95,12 +95,36 @@ public class LightExplanationsTests
         using var _ = Ui.Use(UiLanguage.English);
         var vm = new LightTabViewModel();
 
-        Assert.Contains("blue corners", vm.MapNote);
-        Assert.Contains("under-correction", vm.MapNote);
-        Assert.Contains("red corners", vm.MapNote);
-        Assert.Contains("over-correction", vm.MapNote);
-        Assert.True(vm.MapNote.IndexOf("blue corners") < vm.MapNote.IndexOf("under-correction"));
-        Assert.True(vm.MapNote.IndexOf("red corners") < vm.MapNote.IndexOf("over-correction"));
+        Assert.Contains("Blue corners", vm.MapNote);
+        Assert.Contains("corrected too little", vm.MapNote);
+        Assert.Contains("Red corners", vm.MapNote);
+        Assert.Contains("corrected too much", vm.MapNote);
+        Assert.True(vm.MapNote.IndexOf("Blue corners") < vm.MapNote.IndexOf("corrected too little"));
+        Assert.True(vm.MapNote.IndexOf("Red corners") < vm.MapNote.IndexOf("corrected too much"));
+    }
+
+    /// <summary>
+    /// The texts are for someone who does not know the method: none of them names the fit, the
+    /// plane, Pearson, the standard deviation, the clipping, the degeneracy or the radial
+    /// component, in either language. Whole words, so that "explain" does not count as "plan",
+    /// and not after a dot, so that the pattern's ".fit" does not count as "fit".
+    /// </summary>
+    [Fact]
+    public void R105_TheExplanationsAvoidTheMethodsVocabulary()
+    {
+        string[] english, romanian;
+        using (Ui.Use(UiLanguage.English)) english = All(new LightTabViewModel());
+        using (Ui.Use(UiLanguage.Romanian)) romanian = All(new LightTabViewModel());
+
+        var banned = new System.Text.RegularExpressions.Regex(
+            @"(?<![\w.])(fit|fitted|fitat|plane|plan|planul|Pearson|standard deviation|abaterea standard|clipping|degenera\w*|radial component|componenta radiala|R\^2|proxy)(?!\w)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        foreach (string text in english.Concat(romanian))
+        {
+            var hit = banned.Match(text);
+            Assert.False(hit.Success, $"'{hit.Value}' in: {text}");
+        }
     }
 
     /// <summary>
