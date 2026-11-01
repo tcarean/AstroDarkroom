@@ -49,6 +49,7 @@ Noted at the wrap-up of 2026-11-01, after the merge.
   old format sentence; they were brought in line on `claude/Align-notes-with-the-plain-words`.
 - Two texts outside the approved list still use the old words: the equalised picture's note
   above the list of files ("Masterul e stiva cadrelor de sub el") and the console's help line
-  for `--rainbow` ("The colours are ranks, not values"). They wait for the owner's decision.
+  for `--rainbow` ("The colours are ranks, not values"). The owner approved their rewording the
+  same day; they changed on `claude/Reword-the-two-remaining-texts`.
 - The branch was cut from the Structure branch, so that R-123 follows R-122. `main` was merged
   into it first (5e1f5898); the merge into `main` is f86ba91c.

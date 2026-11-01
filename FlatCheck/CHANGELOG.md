@@ -116,6 +116,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   burnt pixels and saturation; no median, distribution, CFA, Bayer, gamma, clipping, SNR, radial,
   gradient, sector, tile, rank or extrapolation. The labels stay. The goldens that print those
   sentences, parity ones included, were recaptured for the text lines alone, every figure unchanged.
+  The same goes for the note above the Histogram tab's list of files and the console's `--rainbow`
+  help line.
 - The window's folder button is disabled while the Smoothing or the Synthetic tab is busy, as
   it is during the opening chain (R-117, ADR 0077): measured on a 24 MP master, their main
   runs take 6.4-6.7 s and about 8 s, long enough for a folder change to land on the new
