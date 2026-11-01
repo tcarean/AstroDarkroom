@@ -5,13 +5,13 @@ Copyright (C) 2026 Tudor Carean
     diagonal field          :  72.4 degrees  (WCS)
 
   THE TEST DOES NOT APPLY TO THESE FRAMES
-    Beyond 40 degrees of diagonal, the light-pollution dome
-    CURVES inside the frame. The radially symmetric part of that curvature
-    has exactly the shape of the vignetting, so the fit can no longer separate them: any figure
-    that came out would be the sky, not the flat.
-    It is not a limitation of the tool, it is a geometric degeneracy.
+    The frame covers too wide a field. Beyond 40 degrees of diagonal the sky's light
+    is no longer even: it is brighter toward the horizon and fades toward the centre, like a dome,
+    which is exactly the shape the vignetting has. The two cannot be told apart, however good
+    the program: any figure that came out would be the sky, not the flat.
+    It is not a shortcoming of the program; that is the geometry.
 
-    On a wide-field setup the flat has to be judged on its own: the structure
-    tests of the master, which do not involve the sky at all.
+    On a wide field the flat is judged only on the structure tests of the master,
+    where the sky does not enter at all.
 
 [exit 1]

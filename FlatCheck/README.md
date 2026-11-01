@@ -347,6 +347,12 @@ On a real session of 32 frames over 81 minutes, the figure swept smoothly from +
 through -19.20 % to +35.73 %, with only 1.36 points between consecutive frames. Whatever moves
 like that is sky, not flat.
 
+Even on a narrow field the sky leaves its mark on single frames. On a Veil session at 135 mm (87
+frames, verdict OK at a mean of +1.13 %), the figure sat near -0.3 % for the first nine frames, rose
+smoothly to +4.31 % over the next 27 and settled near +0.4 % for the last 51, 0.30 points between
+consecutive frames. One frame from the middle of that hump would have read SUSPECT on a flat the
+series proves good.
+
 Given a folder, it runs on every frame that matches the pattern (`pp_light_*.fit` by default),
 prints a table row per frame as it goes, and averages. **But it gives a verdict only when the
 mean means something**, under three conditions:
@@ -647,6 +653,14 @@ real Milky Way session with that setup, the correlation between the radial compo
 the sky gradient came out **-0.94** (R² = 0.88): 88 % of what the tool reported as "flat" was
 explained by the sky. On data like these the flat is judged on its own, by the master's structure
 tests, which do not involve the sky at all.
+
+**A concrete positive example.** The Samyang 135 on the same D3300 covers ~12 degrees. On a Veil
+session of 87 frames, the sky gradient doubled from 7 % to 13 % over the last 51 frames while the
+radial component stayed near +0.4 %: at that field the plane and the radial terms separate, and the
+series came out OK with a mean of +1.13 %. The same master's structure run read REDO on depth
+against the lensfun profile, 0.95 stops deeper than the profile said; the lights show the flat
+corrects its vignetting to ~1 % in the corner. When the two disagree that way, the profile is wrong
+for the setup, and `--light` is the measurement to trust.
 
 ## The residual scale
 
@@ -1047,15 +1061,15 @@ the picture is. They say:
 
 | where | what it says |
 |---|---|
-| radial component, mean | The mean of the radial column: the figure the verdict is given on, once the series has at least 5 frames. Under 2 % it is OK, above 5 % a problem, suspect in between. The sign is the diagnosis: positive, the background falls toward the edges (under-correction: another aperture at the flats than at the lights, or a contaminated flat); negative, it rises (over-correction: almost always flat-darks missing or wrong). |
-| spread (min .. max) | The smallest and the largest value in the radial column. A mean near zero means nothing when the frames sweep from far below it to far above: what sweeps like that is the sky, not the flat, which is the same in every frame. |
-| error of the mean | The standard deviation of the radial column divided by the square root of the frame count: how tightly the series pins the mean down. Above 2.00 points the series does not resolve the flat to the precision the thresholds speak at, and the verdict is undetermined. |
-| correlation with the sky gradient | Pearson's correlation between the radial column and the sky column. A "flat error" that follows the sky is sky: above 0.70 in absolute value the verdict is undetermined. It is checked only when the sky gradient varies by at least 10 points over the series; on a constant sky the correlation is noise and would reject good data. |
-| frame (column) | The calibrated lights of `process/`, in file-name order, those matching `pp_light_*.fit`: the frames Siril wrote after dividing the flat out, before registration. Registered frames (`r_pp_light_*`) are left out: registration shifts the vignetting off the sensor's centre. |
-| radial (column) | The radial component of this frame's background, in per cent of its level at the centre, with its sign. One frame holds the sky of its moment too, so it is the series summary that counts, not a row. |
-| sky (column) | The sky gradient the fit absorbed in its plane, in per cent of the background: light pollution, the Moon, the frame's tilt toward the horizon. Information, never a condition; above 40 % the console flags it as large. If it moves from row to row, the sky moved during the session. |
-| tiles (column) | The tiles kept in the fit out of all the frame's tiles, after four rounds of one-sided clipping threw out those with nebulosity or other bright structure. Few kept tiles mean a fit with less to stand on. |
-| the map (under it) | The series' mean radial map: for every frame the radial part of the fitted background (the R² and R⁴ terms), drawn at the frame's size, then averaged pixel by pixel. No star, no nebula, only the shape of the model. White is a background with no radial component; blue corners, one that falls toward the edges (under-correction); red corners, one that rises (over-correction). The colour scale is the map's own range, so a strong colour can still be a small figure. |
+| radial component, mean | The figure the verdict is given on, once the series has at least 5 frames. It says how much darker or brighter the corners are than the centre, on average over all the frames, after the flat was applied. Under 2 % it is OK, above 5 % a problem, suspect in between. With a plus, the corners stayed darker: the flat corrected too little (another aperture at the flats than at the lights, or a dirty flat). With a minus, the corners came out brighter: the flat corrected too much (almost always the flat-darks or the bias are missing). |
+| spread (min .. max) | The lowest and the highest frame in the series. When they are far apart, the mean says little: the flat is the same in every frame, so what changes from one frame to the next is the sky, not the flat. |
+| error of the mean | How sure the mean is: the more frames, and the closer they are to each other, the smaller it gets. Above 2.00 points the mean is too uncertain to be compared with the 2 % and 5 % thresholds, and the verdict stays undetermined. |
+| correlation with the sky gradient | Checks whether the figure in the radial column moves together with the sky (the sky column). When they move together, above 0.70, what is measured is the sky, not the flat, and the verdict stays undetermined. It is checked only when the sky changed enough during the session (by at least 10 points); on a sky that stood still there is nothing to compare. |
+| frame (column) | The lights of `process/` that Siril calibrated with the flat (`pp_light_*.fit`), in file-name order. The aligned frames (`r_pp_light_*`) are not used: alignment shifts them, the vignetting would no longer sit at the centre of the frame, and the measurement would come out wrong without showing it. |
+| radial (column) | How much darker (plus) or brighter (minus) the corners of this frame are than its centre, in per cent, after the flat was applied. A single frame holds the sky of that moment too, so the verdict is given on the mean of the series, not on one row. |
+| sky (column) | How much brighter the sky is on one side of the frame than on the other, in per cent: light pollution, the Moon, a nearby horizon. Information only, it never enters the verdict (above 40 % it counts as large). If it changes from one row to the next, the sky changed during the session. |
+| tiles (column) | The tiles are the small squares the frame is cut into; this is how many were used out of how many there are. Squares with nebula or other extra light are set aside, so that only the sky background remains. With few squares left, the measurement stands on less data. |
+| the map (under it) | What is left of the vignetting after the flat was applied, averaged over the series. It is not a picture of the sky: no stars, no nebula, only the shape. White: the corners are the same as the centre. Blue corners: they stayed darker (the flat corrected too little). Red corners: they came out brighter (the flat corrected too much). The colours are stretched over the map's own range, so a strong colour can still mean a small figure. |
 
 ### Exposure
 

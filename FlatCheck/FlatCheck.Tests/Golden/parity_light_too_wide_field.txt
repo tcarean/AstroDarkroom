@@ -5,13 +5,13 @@ Copyright (C) 2026 Tudor Carean
     camp diagonal           :  72.4 grade  (WCS)
 
   TESTUL NU SE APLICA PE CADRELE ASTEA
-    Peste 40 de grade diagonala, cupola de poluare luminoasa se
-    CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi
-    are exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra
-    ar iesi ar fi cerul, nu flat-ul.
-    Nu e o limitare a uneltei, e o degenerare geometrica.
+    Cadrul acopera un camp prea larg. Peste 40 de grade pe diagonala lumina cerului
+    nu mai e uniforma: e mai luminoasa spre orizont si scade spre centru, ca o cupola,
+    adica exact forma pe care o are si vignetarea. Cele doua nu se pot desparti, oricat
+    de bun ar fi programul: orice cifra ar iesi ar fi cerul, nu flat-ul.
+    Nu e o lipsa a programului; asa e geometria.
 
-    Pe un setup cu camp larg flat-ul se judeca singur: testele de structura
-    ale masterului, care nu implica cerul deloc.
+    Pe un camp larg flat-ul se judeca doar pe testele de structura ale masterului,
+    unde cerul nu intra deloc.
 
 [exit 1]

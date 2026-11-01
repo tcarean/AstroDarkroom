@@ -96,13 +96,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- The Exposure, Histogram, Synthetic and Split tabs' explanations, and the sentences the console
-  shares with them (the exposure's reading, verdicts and refusal, the equalisation's caveat, the
-  synthetic flat's caveat and depth notes, the comparison's and the split's row notes), are in
-  plain words (R-123, ADR 0084): the typical level, the middle of the frame, the colour channels,
-  burnt pixels and saturation; no median, distribution, CFA, Bayer, gamma, clipping, SNR, radial,
-  gradient, sector, tile, rank or extrapolation. The labels stay. The goldens that print those
-  sentences, parity ones included, were recaptured for the text lines alone, every figure unchanged.
+- The End to end tab's explanations, and the `--light` diagnosis, reasons, refusal and warnings
+  the console shares with it, are in plain words (R-105, ADR 0082): how much darker or brighter
+  the corners are than the centre after the flat, and what is sky, with no fit, plane, Pearson,
+  standard deviation, clipping or degeneracy. The thresholds stay read from the code. The
+  `light_*` goldens and the eleven `parity_light_*` goldens were recaptured for those text lines
+  alone, every figure unchanged.
 - The Structure tab's explanations, and the sentences the console shares with it (the advices, the
   scale, the local-spot note and warning, the illumination-offset note, the depth comparison's
   block), are in plain words (R-122, ADR 0083): a usual vignetting symmetric about the centre, one
@@ -110,6 +109,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   fit, gradient, sector, Lambertian or mosaic. The thresholds stay read from the code; the names
   of the five tests stay. The `structure_*` goldens and the parity goldens that print those
   sentences were recaptured for those text lines alone, every figure unchanged.
+- The Exposure, Histogram, Synthetic and Split tabs' explanations, and the sentences the console
+  shares with them (the exposure's reading, verdicts and refusal, the equalisation's caveat, the
+  synthetic flat's caveat and depth notes, the comparison's and the split's row notes), are in
+  plain words (R-123, ADR 0084): the typical level, the middle of the frame, the colour channels,
+  burnt pixels and saturation; no median, distribution, CFA, Bayer, gamma, clipping, SNR, radial,
+  gradient, sector, tile, rank or extrapolation. The labels stay. The goldens that print those
+  sentences, parity ones included, were recaptured for the text lines alone, every figure unchanged.
 - The window's folder button is disabled while the Smoothing or the Synthetic tab is busy, as
   it is during the opening chain (R-117, ADR 0077): measured on a 24 MP master, their main
   runs take 6.4-6.7 s and about 8 s, long enough for a folder change to land on the new
