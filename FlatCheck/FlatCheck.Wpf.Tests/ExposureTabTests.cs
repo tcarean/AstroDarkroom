@@ -58,7 +58,7 @@ public class ExposureTabTests
         var vm = Attached(f);
 
         Assert.True(vm.HasError);
-        Assert.Contains("BRUT", vm.ErrorText);
+        Assert.Contains("asa cum a iesit din aparat", vm.ErrorText);
         Assert.Contains("normalizeaza", vm.ErrorText);
         Assert.Contains(".nef", vm.ErrorText);
     }
@@ -234,7 +234,7 @@ public class ExposureTabTests
         Assert.True(vm.HasResult);       // it ran
         Assert.False(vm.IsRawFlat);      // but the file is not what the mode asks for
         Assert.Equal(Stats.NotApplicable, vm.Verdict);
-        Assert.Contains("DEBAYERIZAT", vm.Advice);
+        Assert.Contains("prelucrat (debayerizat)", vm.Advice);
         Assert.Contains("Conversion", vm.Advice);
     }
 
@@ -317,7 +317,7 @@ public class ExposureTabTests
         Assert.Equal(new[] { "CFA[0,0]", "CFA[0,1]", "CFA[1,0]", "CFA[1,1]" },
                      vm.Histograms.Select(r => r.Label));
         Assert.All(vm.Histograms, r => Assert.Equal("", r.Position));
-        Assert.Contains("Nu stiu", vm.ChannelOrder);
+        Assert.Contains("Nu se stie", vm.ChannelOrder);
     }
 
     /// <summary>

@@ -203,7 +203,7 @@ public class SyntheticTabTests
             vm.SensorFormat.Options.Single(o => o.Label.StartsWith("APS-C Canon")).IsSelected = true;
 
             Assert.Equal("1.6", vm.CropText);
-            Assert.Contains("nominal, din chip-ul APS-C Canon", vm.CropNote);
+            Assert.Contains("aproximativ, dupa tipul de senzor APS-C Canon", vm.CropNote);
             Assert.Equal("APS-C Canon 1.6", vm.SensorFormat.Selected!.Label);
 
             vm.CropText = "1.15";                                // no format within 5 %: every chip off, the note says so
@@ -246,17 +246,17 @@ public class SyntheticTabTests
             vm.SelectedLens = vm.Lenses.Single();
             await vm.FormatPending;
             Assert.Contains("profil calibrat pe APS-C Canon (crop 1.61); senzorul tau APS-C (1.523): alt format", vm.FormatNote);
-            Assert.Contains("extrapolare", vm.FormatNote);      // the fixture master is square, so the corner sits further out than on 3:2
+            Assert.Contains("dincolo de ce s-a masurat", vm.FormatNote);      // the fixture master is square, so the corner sits further out than on 3:2
 
             vm.CropText = "1.0";                                 // a full frame on the same profile: the note follows the crop
             await vm.FormatPending;
             Assert.Contains("senzorul tau full frame (1): alt format", vm.FormatNote);
-            Assert.Contains("extrapolare MARE", vm.FormatNote);
+            Assert.Contains("MULT dincolo de ce s-a masurat", vm.FormatNote);
             Assert.True(vm.FormatWarning);                       // coloured, unlike the same-format line
 
             vm.CropText = "2.0";                                 // a smaller sensor sits inside the profile: no warning colour
             await vm.FormatPending;
-            Assert.Contains("in interiorul profilului", vm.FormatNote);
+            Assert.Contains("in interiorul lui", vm.FormatNote);
             Assert.False(vm.FormatWarning);
 
             vm.SelectedLens = null;

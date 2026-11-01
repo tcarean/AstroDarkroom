@@ -14,6 +14,6 @@ Copyright (C) 2026 Tudor Carean
 
     VERDICT: PREA JOS
     Creste expunerea cu ~0.9 stopuri.
-    Sub ~30% in centru masterul iese zgomotos (zgomot fixed-pattern).
+    Sub ~30 % in centru masterul iese zgomotos.
 
 [exit 3]

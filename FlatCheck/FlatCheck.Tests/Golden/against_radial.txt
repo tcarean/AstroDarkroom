@@ -6,11 +6,11 @@ Copyright (C) 2026 Tudor Carean
     B : <TMP>/b.fit
     dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
 
-    Trei coloane: fiecare flat prin bateria de structura, si raportul lor. In coloana A / B
-    cifrele sunt despre DIFERENTA: "vignetare" e diferenta de adancime (pozitiv = A cade mai
-    mult spre colt decat B) si poarta verdictul adancimii; cele cinci teste spun daca diferenta
-    e radiala sau are forma, iar harta o arata. Ce e in A si nu e in B - o sa a cerului, caderea
-    unui panou, o pata - ramane in diferenta.
+    Trei coloane: fiecare flat prin cele cinci teste, si raportul dintre ele. In coloana A / B
+    cifrele sunt despre DIFERENTA: "vignetare" e diferenta de adancime (plus = A se intuneca mai
+    mult spre colt decat B) si da verdictul adancimii; cele cinci teste spun daca diferenta e
+    simetrica in jurul centrului sau are o forma, iar harta o arata. Ce e in A si nu e in B (cupola
+    cerului, un panou vazut din unghi, o pata) ramane in diferenta.
 
                               A                                     B                                     A / B (diferenta)
     vignetare centru -> colt  0.76 stopuri                          0.46 stopuri                          0.30 stopuri [REFA]
@@ -23,7 +23,7 @@ Copyright (C) 2026 Tudor Carean
     pata maxima (o dala)      0.40 % [PERFECT]                      0.22 % [PERFECT]                      0.18 %
 
   VERDICTUL DIFERENTEI: REFA
-    forma     : PERFECT: cele cinci teste pe raport, pe scara de reziduu a structurii
+    forma     : PERFECT: cele cinci teste pe raport, pe scara lor
                 (sub 2 % PERFECT, 2-10 BUN, 10-20 ACCEPTABIL, peste 20 REFA)
     adancimea : REFA: 0.30 stopuri = 23.0 % eroare in coltul light-ului calibrat,
                 pe aceeasi scara (sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste REFA)
@@ -31,7 +31,7 @@ Copyright (C) 2026 Tudor Carean
                 care masoara acelasi lucru direct in light, i-ar spune PROBLEMA (2 % OK, 5 % PROBLEMA).
                 Dar cele doua baze de profile difera intre ele cu 0.2 stopuri, adica 15 % in colt,
                 asa ca verdictul de aici nu poate fi mai fin de atat si ramane pe scara celor cinci teste.
-    Cel mai rau dintre ele. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.
+    Verdictul e cel mai rau dintre cele doua. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.
 
     -> harta salvata: <TMP>/out.png
 

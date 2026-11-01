@@ -208,8 +208,8 @@ namespace FlatCheck
         /// <param name="r">The comparison.</param>
         /// <returns>The shape's verdict with what it is.</returns>
         internal static string ShapeDetail(AgainstResult r)
-            => T($"{VerdictWords.Of(r.Structure.Verdict)}: the five tests on the ratio, on the structure's residual scale",
-                 $"{VerdictWords.Of(r.Structure.Verdict)}: cele cinci teste pe raport, pe scara de reziduu a structurii");
+            => T($"{VerdictWords.Of(r.Structure.Verdict)}: the five tests on the ratio, on their scale",
+                 $"{VerdictWords.Of(r.Structure.Verdict)}: cele cinci teste pe raport, pe scara lor");
 
         /// <summary>"REFA: 0.30 stopuri = 23.1 % eroare in coltul light-ului
         /// calibrat".</summary>
@@ -223,8 +223,8 @@ namespace FlatCheck
         /// correct flats give.</summary>
         /// <returns>One sentence.</returns>
         internal static string WorseOfBoth()
-            => T("The worse of the two. Two correct flats of the same lens give PERFECT and 0.00 stops.",
-                 "Cel mai rau dintre ele. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.");
+            => T("The verdict is the worse of the two. Two correct flats of the same lens give PERFECT and 0.00 stops.",
+                 "Verdictul e cel mai rau dintre cele doua. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.");
 
         /// <summary>The verdict's two parts on one line, for the window, which does not have
         /// the console's block.</summary>
@@ -262,16 +262,16 @@ namespace FlatCheck
         /// window.</summary>
         /// <returns>A paragraph, lines separated by '\n'.</returns>
         internal static string Meaning()
-            => T("Three columns: each flat through the structure battery, and their ratio. In the A / B column\n"
-                 + "the figures are about the DIFFERENCE: \"vignetting\" is the depth difference (positive = A falls\n"
-                 + "more toward the corner than B) and carries the depth verdict; the five tests say whether the difference\n"
-                 + "is radial or has a shape, and the map shows it. What is in A and not in B - a saddle of the sky, a panel's\n"
-                 + "fall-off, a spot - stays in the difference.",
-                 "Trei coloane: fiecare flat prin bateria de structura, si raportul lor. In coloana A / B\n"
-                 + "cifrele sunt despre DIFERENTA: \"vignetare\" e diferenta de adancime (pozitiv = A cade mai\n"
-                 + "mult spre colt decat B) si poarta verdictul adancimii; cele cinci teste spun daca diferenta\n"
-                 + "e radiala sau are forma, iar harta o arata. Ce e in A si nu e in B - o sa a cerului, caderea\n"
-                 + "unui panou, o pata - ramane in diferenta.");
+            => T("Three columns: each flat through the five tests, and the ratio between them. In the A / B column\n"
+                 + "the figures are about the DIFFERENCE: \"vignetting\" is the depth difference (plus = A darkens\n"
+                 + "more toward the corner than B) and gives the depth verdict; the five tests say whether the difference\n"
+                 + "is symmetric about the centre or has a shape, and the map shows it. What is in A and not in B (the sky's\n"
+                 + "dome, a panel seen at an angle, a spot) stays in the difference.",
+                 "Trei coloane: fiecare flat prin cele cinci teste, si raportul dintre ele. In coloana A / B\n"
+                 + "cifrele sunt despre DIFERENTA: \"vignetare\" e diferenta de adancime (plus = A se intuneca mai\n"
+                 + "mult spre colt decat B) si da verdictul adancimii; cele cinci teste spun daca diferenta e\n"
+                 + "simetrica in jurul centrului sau are o forma, iar harta o arata. Ce e in A si nu e in B (cupola\n"
+                 + "cerului, un panou vazut din unghi, o pata) ramane in diferenta.");
 
         /// <summary>
         /// The table's rows: the depth (the key row), the centroid offset, the local spot, then
@@ -285,24 +285,24 @@ namespace FlatCheck
             {
                 new("VignetteStops", T("vignetting centre->corner", "vignetare centru -> colt"),
                     Stops(r.A), null, Stops(r.B), null, Stops(r.Structure), r.DepthVerdict,
-                    T("the depth of each and their difference (positive = A falls more toward the corner than B). "
-                      + $"The verdict is the difference's: {r.DepthErrorPct:F1} % error in the corner of a light calibrated with the wrong flat (2^|stops| - 1), on the residual scale; "
-                      + "below ACCEPTABLE it cannot be told from the model's uncertainty - the two profile databases differ from each other by ~0.2 stops on the same lens.",
-                      "adancimea fiecaruia si diferenta lor (pozitiv = A cade mai mult spre colt decat B). "
-                      + $"Verdictul e al diferentei: {r.DepthErrorPct:F1} % eroare in coltul unui light calibrat cu flatul gresit (2^|stopuri| - 1), pe scara de reziduu; "
-                      + "sub ACCEPTABIL nu se deosebeste de incertitudinea modelului - cele doua baze de profile difera intre ele cu ~0.2 stopuri pe acelasi obiectiv."), true),
+                    T("the depth of each and their difference (plus = A darkens more toward the corner than B). "
+                      + $"The verdict is the difference's: {r.DepthErrorPct:F1} % error in the corner of a light calibrated with the wrong flat, on the five tests' scale; "
+                      + "below ACCEPTABLE it cannot be told from the profile's uncertainty (the two profile databases differ from each other by ~0.2 stops on the same lens).",
+                      "adancimea fiecaruia si diferenta lor (plus = A se intuneca mai mult spre colt decat B). "
+                      + $"Verdictul e al diferentei: {r.DepthErrorPct:F1} % eroare in coltul unui light calibrat cu flatul gresit, pe scara celor cinci teste; "
+                      + "sub ACCEPTABIL nu se poate deosebi de nesiguranta profilului (cele doua baze de profile difera intre ele cu ~0.2 stopuri pe acelasi obiectiv)."), true),
                 new("CentroidOffsetPct", T("illum. centre offset", "offset centru iluminare"),
                     Offset(r.A), null, Offset(r.B), null, Offset(r.Structure), null,
-                    T("where the illumination peak sits against the sensor's centre, on each and on the ratio; "
+                    T("where the brightest point is against the sensor's centre, on each and on the ratio; "
                       + "near zero on the ratio = the difference is centred",
-                      "unde sta varful iluminarii fata de centrul senzorului, la fiecare si la raport; "
+                      "unde e punctul cel mai luminos fata de centrul senzorului, la fiecare si la raport; "
                       + "aproape de zero pe raport = diferenta e centrata"), false),
                 new("LocalSpotPct", T("local spots (dust etc.)", "pete locale (praf etc.)"),
                     Spot(r.A), null, Spot(r.B), null, Spot(r.Structure), null,
-                    T("the deepest compact spot of each; a spot present in only one stays in the difference; "
+                    T("the most pronounced small spot of each; a spot present in only one stays in the difference; "
                       + $"positions: A ({r.A.LocalSpotX}, {r.A.LocalSpotY}), B ({r.B.LocalSpotX}, {r.B.LocalSpotY}), "
                       + $"A / B ({r.Structure.LocalSpotX}, {r.Structure.LocalSpotY})",
-                      "cea mai adanca pata compacta a fiecaruia; o pata prezenta doar intr-unul ramane in diferenta; "
+                      "cea mai pronuntata pata mica a fiecaruia; o pata prezenta doar intr-unul ramane in diferenta; "
                       + $"pozitii: A ({r.A.LocalSpotX}, {r.A.LocalSpotY}), B ({r.B.LocalSpotX}, {r.B.LocalSpotY}), "
                       + $"A / B ({r.Structure.LocalSpotX}, {r.Structure.LocalSpotY})"), false),
             };
@@ -324,16 +324,16 @@ namespace FlatCheck
         /// <returns>The note, or an empty string for an unknown key.</returns>
         internal static string TestNote(string key) => key switch
         {
-            "CornerSpreadPct" => T("how much the four corners differ from each other; uneven corners in the A / B column = non-radial structure that one has and the other has not",
-                                   "cat difera cele patru colturi intre ele; colturi inegale in coloana A / B = structura neradiala pe care unul o are si celalalt nu"),
-            "AzimuthalMaxPct" => T("how much the 12 sectors of the same ring differ, in the inscribed circle; on the ratio, the azimuthal shape of the difference",
-                                   "cat difera cele 12 sectoare ale aceluiasi inel, in cercul inscris; pe raport, forma azimutala a diferentei"),
-            "ResidualPtpPct" => T("how much of each, and how much of the difference, a radial model does NOT explain; the most important",
-                                  "cat din fiecare, si cat din diferenta, NU se explica printr-un model radial; cel mai important"),
-            "TiltPct" => T("the linear gradient of each and of the difference; a source's gradient shows here",
-                           "gradientul liniar al fiecaruia si al diferentei; un gradient de sursa apare aici"),
-            "MaxTilePct" => T("the most deviant tile; a compact defect present in only one shows in the A / B column",
-                              "dala cea mai abatuta; un defect compact prezent intr-unul singur apare in coloana A / B"),
+            "CornerSpreadPct" => T("how much the four corners differ from each other; uneven corners in the A / B column = a shape that one has and the other has not",
+                                   "cat difera cele patru colturi intre ele; colturi inegale in coloana A / B = o forma pe care unul o are si celalalt nu"),
+            "AzimuthalMaxPct" => T("how much the 12 slices of the same ring differ; on the ratio, how the difference looks all around the centre",
+                                   "cat difera cele 12 felii ale aceluiasi inel; pe raport, cum arata diferenta de jur imprejurul centrului"),
+            "ResidualPtpPct" => T("how much of each, and how much of the difference, does NOT look like a usual vignetting; the most important",
+                                  "cat din fiecare, si cat din diferenta, NU arata ca o vignetare obisnuita; cel mai important"),
+            "TiltPct" => T("how much brighter one edge is than the opposite one, on each and on the difference; an uneven source shows here",
+                           "cu cat e o margine mai luminoasa decat cea opusa, la fiecare si la diferenta; o sursa neuniforma apare aici"),
+            "MaxTilePct" => T("the small square that stands out most; a small defect present in only one shows in the A / B column",
+                              "patratelul care iese cel mai mult din rand; un defect mic prezent intr-unul singur apare in coloana A / B"),
             _ => "",
         };
 

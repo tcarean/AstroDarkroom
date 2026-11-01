@@ -18,13 +18,13 @@ Copyright (C) 2026 Tudor Carean
     half the half-diagonal      :  82.2 % of the axis  ( 0.28 stops)
 
     INFORMATIVE: the synthetic flat is the lens MODEL, not a measurement of your copy. It has
-    only the vignetting, radial and achromatic (the published profiles have a single set of
-    parameters for every channel): it holds no chromatic part of the fall-off, no shading
-    specific to the body, no dust, nor any non-radial structure. The two databases differ
-    from each other by ~0.2 stops in the corner on the same lens; ask no more precision of it.
-    What it lacks against a real flat - and what it has besides: no light source,
-    so neither the sky's curvature nor a panel's fall-off. Check a real flat against
-    it with --against.
+    only the vignetting, perfectly symmetric about the centre and the same on every colour
+    (the published profiles have a single set of values for every channel): it holds no
+    differences between colours, no shading the camera adds, no dust, nor any shape that is
+    not symmetric. The two profile databases differ from each other by ~0.2 stops in the corner
+    on the same lens; ask no more precision of it. What it lacks against a real flat, and what
+    it has besides: no light source, so neither the sky's dome nor a panel seen at an angle.
+    Check a real flat against it with --against.
     The Siril scripts name pp_flat_stacked explicitly, so they do not take the synthetic flat by themselves:
     rename it in place of the master (keep the original) or give it to calibrate with -flat=.
 

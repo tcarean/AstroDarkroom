@@ -141,18 +141,18 @@ namespace FlatCheck
             if (r.LevelTooLow)
                 reasons.Add(new[]
                 {
-                    T($"The level is ~{r.CentreMedianPct:F1}% (near zero/negative) -> a flat-dark already subtracted,",
-                      $"Nivelul e ~{r.CentreMedianPct:F1}% (langa zero/negativ) -> flat-dark deja scazut,"),
-                    T("or a normalised image. --expo needs the original ADU level.",
-                      "sau imagine normalizata. --expo are nevoie de nivelul ADU original."),
+                    T($"The level is ~{r.CentreMedianPct:F1} % (near zero or negative): the flat-dark was already subtracted,",
+                      $"Nivelul e ~{r.CentreMedianPct:F1} % (aproape de zero sau negativ): flat-dark-ul a fost deja scazut,"),
+                    T("or the image is normalised. The exposure check needs the original level from the camera.",
+                      "sau imaginea e normalizata. Verificarea expunerii are nevoie de nivelul original din aparat."),
                 });
             if (r.LooksDebayered)
                 reasons.Add(new[]
                 {
-                    T($"The 4 CFA channels are almost identical (spread {r.CfaSpread:F3}) -> the file",
-                      $"Cele 4 canale CFA sunt quasi-identice (spread {r.CfaSpread:F3}) -> fisierul"),
-                    T("is DEBAYERED. --expo needs the Bayer mosaic intact.",
-                      "e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact."),
+                    T($"The 4 colour channels are almost identical (difference {r.CfaSpread:F3}): the file was",
+                      $"Cele 4 canale de culoare sunt aproape identice (diferenta {r.CfaSpread:F3}): fisierul a fost"),
+                    T("already processed (debayered). The exposure check needs the raw file, with the channels apart.",
+                      "deja prelucrat (debayerizat). Verificarea expunerii are nevoie de fisierul brut, cu canalele separate."),
                 });
             return reasons;
         }
@@ -191,7 +191,7 @@ namespace FlatCheck
                 return r.Verdict switch
                 {
                     ExposureVerdict.TooHigh =>
-                        (T("TOO HIGH", "PREA SUS") + (clipping ? T(" (CLIPPING in the centre!)", " (CLIPPING in centru!)") : T(" (risk of stars in the frame)", " (risc stele in cadru)")),
+                        (T("TOO HIGH", "PREA SUS") + (clipping ? T(" (the centre is burnt!)", " (centrul e ars!)") : T(" (risk of stars in the frame)", " (risc stele in cadru)")),
                          new[] { T("Lower the exposure.", "Scade expunerea.") }),
                     ExposureVerdict.TooLow =>
                         (T("TOO LOW for a sky flat", "PREA JOS pentru sky flat"),
@@ -201,8 +201,8 @@ namespace FlatCheck
                         (T($"OK for a sky flat  (centre {b.Lo:F0}-{b.Hi:F0}%)", $"OK pentru sky flat  (centru {b.Lo:F0}-{b.Hi:F0}%)"),
                          new[]
                          {
-                             T("On a sky flat a modest level is right. The SNR comes from the number of frames,",
-                               "La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,"),
+                             T("On a sky flat a modest level is right. The master comes out clean from the number of frames,",
+                               "La flat pe cer nivelul modest e corect. Masterul iese curat din numarul de cadre,"),
                              T("not from raising the exposure (you would risk stars). Do NOT push higher.",
                                "nu din a urca expunerea (ai risca stele). NU forta mai sus."),
                          }),
@@ -219,17 +219,17 @@ namespace FlatCheck
                         double stops = cen > 0 ? Math.Log2(b.Target / cen) : -1;
                         var lines = new List<string> { T($"Lower the exposure by ~{-stops:F1} stops.", $"Scade expunerea cu ~{-stops:F1} stopuri.") };
                         if (clipping)
-                            lines.Add(T("The centre clips -> you lose vignetting information exactly where the signal is highest.",
-                                        "Centrul clipeaza -> pierzi info de vignetare exact unde semnalul e maxim."));
-                        return (T("TOO HIGH", "PREA SUS") + (clipping ? T(" (CLIPPING in the centre!)", " (CLIPPING in centru!)") : ""), lines.ToArray());
+                            lines.Add(T("The centre is burnt: you lose the vignetting information exactly where the signal is largest.",
+                                        "Centrul e ars: pierzi informatia de vignetare exact unde semnalul e cel mai mare."));
+                        return (T("TOO HIGH", "PREA SUS") + (clipping ? T(" (the centre is burnt!)", " (centrul e ars!)") : ""), lines.ToArray());
                     }
                 case ExposureVerdict.TooLow:
                     return (T("TOO LOW", "PREA JOS"), new[]
                     {
                         T($"Raise the exposure by ~{Math.Log2(b.Target / cen):F1} stops.",
                           $"Creste expunerea cu ~{Math.Log2(b.Target / cen):F1} stopuri."),
-                        T($"Below ~{Th.ExpoTooLow:F0}% in the centre the master comes out noisy (fixed-pattern noise).",
-                          $"Sub ~{Th.ExpoTooLow:F0}% in centru masterul iese zgomotos (zgomot fixed-pattern)."),
+                        T($"Below ~{Th.ExpoTooLow:F0} % in the centre the master comes out noisy.",
+                          $"Sub ~{Th.ExpoTooLow:F0} % in centru masterul iese zgomotos."),
                     });
                 case ExposureVerdict.AcceptableLow:
                     return (T("ACCEPTABLE, but rather low", "ACCEPTABIL, dar cam jos"),
@@ -292,12 +292,12 @@ namespace FlatCheck
         internal static string HistogramReading(ExposureResult r)
         {
             if (!r.IsRaw)
-                return T("The file is not a raw flat - it is already calibrated or debayered - so what "
-                         + "shows below is its distribution of levels, not an exposure. The figures cannot "
-                         + "mean anything until you run on the camera's raw frame.",
-                         "Fisierul nu e un flat brut - e deja calibrat sau debayerizat - deci ce se "
-                         + "vede mai jos e distributia lui de niveluri, nu o expunere. Cifrele n-au "
-                         + "cum sa insemne ceva pana nu rulezi pe cadrul brut de la aparat.");
+                return T("The file is not a raw flat (it is already calibrated or processed), so what "
+                         + "shows below is only how its levels are spread, not an exposure. The figures "
+                         + "cannot mean anything until you run on the camera's raw file.",
+                         "Fisierul nu e un flat brut (e deja calibrat sau prelucrat), deci ce se vede "
+                         + "mai jos e doar cum sunt impartite nivelurile lui, nu o expunere. Cifrele nu "
+                         + "pot insemna ceva pana nu rulezi pe fisierul brut de la aparat.");
 
             ChannelLevels c = r.Channels[r.IsCfa ? r.BrightestChannel : 0];
             ExposureBands b = r.Bands;
@@ -308,53 +308,53 @@ namespace FlatCheck
                 s.Add(T("The frame is mono or already processed, so it is measured as a whole, not per channel.",
                         "Cadrul e mono sau deja procesat, deci se masoara pe tot, nu pe canale."));
             else if (c.Colour != '\0')
-                s.Add(T($"The brightest channel is {c.Label}, so it decides: it clips first.",
-                        $"Canalul cel mai luminos e {c.Label}, deci el decide: el clipeaza primul."));
+                s.Add(T($"The brightest channel is {c.Label}, so it decides: it reaches saturation first.",
+                        $"Canalul cel mai luminos e {c.Label}, deci el decide: el ajunge primul la saturatie."));
             else
                 s.Add(T($"The brightest channel is {c.Label} - its colour is not known - so it "
-                        + "decides: it clips first.",
-                        $"Canalul cel mai luminos e {c.Label} - nu stiu ce culoare are - deci el "
-                        + "decide: el clipeaza primul."));
+                        + "decides: it reaches saturation first.",
+                        $"Canalul cel mai luminos e {c.Label} - nu se stie ce culoare are - deci el "
+                        + "decide: el ajunge primul la saturatie."));
 
             // 2. where the peak sits against the band
             double cen = r.CentreMedianPct;
             if (cen < b.Lo)
-                s.Add(T($"The peak of the central window is at {cen:F1} %, {b.Lo - cen:F1} points below the "
+                s.Add(T($"The level at the middle of the frame is at {cen:F1} %, {b.Lo - cen:F1} points below the "
                         + $"{BandLabel(b)}.",
-                        $"Varful ferestrei centrale e la {cen:F1} %, cu {b.Lo - cen:F1} puncte sub "
+                        $"Nivelul din mijlocul cadrului e la {cen:F1} %, cu {b.Lo - cen:F1} puncte sub "
                         + $"{BandLabel(b)}."));
             else if (cen > b.Hi)
-                s.Add(T($"The peak of the central window is at {cen:F1} %, {cen - b.Hi:F1} points above the "
+                s.Add(T($"The level at the middle of the frame is at {cen:F1} %, {cen - b.Hi:F1} points above the "
                         + $"{BandLabel(b)}.",
-                        $"Varful ferestrei centrale e la {cen:F1} %, cu {cen - b.Hi:F1} puncte peste "
+                        $"Nivelul din mijlocul cadrului e la {cen:F1} %, cu {cen - b.Hi:F1} puncte peste "
                         + $"{BandLabel(b)}."));
             else
-                s.Add(T($"The peak of the central window is at {cen:F1} %, in the {BandLabel(b)}.",
-                        $"Varful ferestrei centrale e la {cen:F1} %, in {BandLabel(b)}."));
+                s.Add(T($"The level at the middle of the frame is at {cen:F1} %, in the {BandLabel(b)}.",
+                        $"Nivelul din mijlocul cadrului e la {cen:F1} %, in {BandLabel(b)}."));
 
             // 3. how far it still is to the top - or that there is no room left at all
             if (r.CentreClipPct > Th.ExpoClip)
                 s.Add(T($"The centre already reaches saturation ({r.CentreClipPct:F3} % of its pixels), "
-                        + "so TOO HIGH whatever the median - that is exactly where the vignetting "
-                        + "information is lost, where the signal is highest.",
+                        + "so TOO HIGH whatever the typical level: that is exactly where the vignetting "
+                        + "information is lost, where the signal is largest.",
                         $"Centrul atinge deja saturatia ({r.CentreClipPct:F3} % din pixelii lui), "
-                        + "deci PREA SUS oricare ar fi mediana - acolo se pierde exact informatia "
-                        + "de vignetare, unde semnalul e maxim."));
+                        + "deci PREA SUS oricare ar fi nivelul tipic: acolo se pierde exact informatia "
+                        + "de vignetare, unde semnalul e cel mai mare."));
             else if (c.CentreP99Pct > 0)
-                s.Add(T($"The brightest 1 % of the centre reaches {c.CentreP99Pct:F1} % of white, "
-                        + $"so there are ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stops left to saturation.",
-                        $"Cel mai luminos 1 % din centru ajunge la {c.CentreP99Pct:F1} % din white, "
-                        + $"deci mai sunt ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stopuri pana la saturatie."));
+                s.Add(T($"The brightest 1 % of the centre reaches {c.CentreP99Pct:F1} % of saturation, "
+                        + $"so there are ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stops left to it.",
+                        $"Cel mai luminos 1 % din centru ajunge la {c.CentreP99Pct:F1} % din saturatie, "
+                        + $"deci mai sunt ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stopuri pana la ea."));
 
             // 4. why the curve in the background is wide
             double drop = cen - c.MedianPct;
             if (drop > 0.5)
-                s.Add(T($"The median of the whole channel is {drop:F1} points below the centre - that is "
+                s.Add(T($"The typical level over the whole frame is {drop:F1} points below the centre: that is "
                         + "the vignetting, not underexposure, and the wide curve in the background shows it. If "
-                        + "you expose by it, you clip the centre.",
-                        $"Mediana intregului canal e cu {drop:F1} puncte sub centru - aia e "
+                        + "you expose by it, you burn the centre.",
+                        $"Nivelul tipic pe tot cadrul e cu {drop:F1} puncte sub centru: aceea e "
                         + "vignetarea, nu subexpunere, si curba lata din fundal o arata. Daca "
-                        + "expui dupa ea, clipezi centrul."));
+                        + "expui dupa ea, arzi centrul."));
 
             // 5. whether anyone else clips too
             if (r.IsCfa)
@@ -440,12 +440,12 @@ namespace FlatCheck
 
             var s = new List<string>();
             if (!r.IsRaw)
-                s.Add(T("The file is not a raw flat - it is already calibrated or debayered - so neither "
+                s.Add(T("The file is not a raw flat (it is already calibrated or processed), so neither "
                         + "of the two curves is an exposure. The comparison below stays true "
                         + "about the two renderings, nothing more.",
-                        "Fisierul nu e un flat brut - e deja calibrat sau debayerizat - deci niciuna "
+                        "Fisierul nu e un flat brut (e deja calibrat sau prelucrat), deci niciuna "
                         + "din cele doua curbe nu e o expunere. Comparatia de mai jos ramane adevarata "
-                        + "despre cele doua developari, atat."));
+                        + "despre cele doua prelucrari, atat."));
 
             ChannelLevels raw = r.Channels[r.IsCfa ? r.BrightestChannel : 0];
             ChannelLevels screen = raw.Colour != '\0'
@@ -456,43 +456,40 @@ namespace FlatCheck
             double gap = screen.CentreMedianPct - raw.CentreMedianPct;
             s.Add(T($"On the deciding channel, the sensor is at {raw.CentreMedianPct:F1} % and the camera's "
                     + $"screen shows {screen.CentreMedianPct:F1} %: {gap:+0.0;-0.0} points, in "
-                    + "the same central window of 20 %.",
+                    + "the same middle of the frame (20 %).",
                     $"Pe canalul care decide, senzorul e la {raw.CentreMedianPct:F1} % si ecranul "
                     + $"aparatului arata {screen.CentreMedianPct:F1} %: {gap:+0.0;-0.0} puncte, in "
-                    + "aceeasi fereastra centrala de 20 %."));
+                    + "acelasi mijloc al cadrului (20 %)."));
 
-            s.Add(T("Most of it is the gamma: a JPEG is gamma-encoded by definition, so as to "
-                    + "spread 256 steps the way the eye sees, not by how much the sensor receives. "
-                    + "No camera setting removes it - Picture Control Neutral and the contrast "
-                    + "at minimum cut the ADDITIONAL curve, not the encoding. The rest is the tone curve and "
-                    + "the white balance, which is different on each channel.",
-                    "Cea mai mare parte e gama: un JPEG e codificat gamma prin definitie, ca sa "
-                    + "imparta 256 de trepte dupa cum vede ochiul, nu dupa cat primeste senzorul. "
-                    + "Nicio setare din aparat n-o scoate - Picture Control Neutral si contrastul "
-                    + "la minim taie curba SUPLIMENTARA, nu codificarea. Restul e curba de ton si "
-                    + "balansul de alb, care e diferit pe fiecare canal."));
+            s.Add(T("Most of it comes from the way the camera makes the JPEG: the brightness steps are "
+                    + "spread the way the eye sees, not by how much the sensor receives, and that "
+                    + "brightens the low tones. No camera setting removes it; Picture Control Neutral and "
+                    + "the contrast at minimum cut only the ADDITIONAL curve. The rest is the tone curve "
+                    + "and the white balance, different on each channel.",
+                    "Cea mai mare parte vine din felul in care aparatul face JPEG-ul: treptele de "
+                    + "luminozitate sunt impartite dupa cum vede ochiul, nu dupa cat primeste senzorul, "
+                    + "si asta lumineaza tonurile de jos. Nicio setare din aparat nu scoate asta; Picture "
+                    + "Control Neutral si contrastul la minim taie doar curba SUPLIMENTARA. Restul e "
+                    + "curba de ton si balansul de alb, diferit pe fiecare canal."));
 
-            s.Add(T("A compressive curve stretches the low and middle levels the most, "
-                    + "which is exactly where a flat sits. That is why a flat looks alarming on the screen when it is not, "
-                    + "and why the difference is not a constant to remember: it changes with the camera, "
-                    + "with the Picture Control and with the light.",
-                    "O curba compresiva intinde cel mai tare nivelurile de jos si de mijloc, "
-                    + "adica exact unde sta un flat. De aia un flat pare alarmant pe ecran cand nu e, "
-                    + "si de aia diferenta nu e o constanta de tinut minte: se schimba cu aparatul, "
-                    + "cu Picture Control si cu lumina."));
+            s.Add(T("The low and middle tones, exactly where a flat sits, are stretched the most. That is "
+                    + "why a flat looks alarming on the screen when it is not, and why the difference is "
+                    + "not a constant to remember: it changes with the camera, with the Picture Control "
+                    + "and with the light.",
+                    "Tonurile de jos si de mijloc, exact unde sta un flat, sunt cele mai intinse. De "
+                    + "aceea un flat pare alarmant pe ecran cand nu e, si de aceea diferenta nu e o "
+                    + "constanta de tinut minte: se schimba cu aparatul, cu Picture Control si cu lumina."));
 
-            s.Add(T("What the screen is still good for: as long as the white balance amplifies a channel and the tone "
-                    + "curve reaches 255, the JPEG saturates BEFORE the sensor - on the cameras "
-                    + "measured here, by a third of a stop up to a stop. So \"not touching the "
-                    + "edge\" is a solid guarantee that nothing is burnt. \"Touching\" is no information: from "
-                    + "there on the screen stays put, however far you go over. It is a one-way "
-                    + "alarm, not a measuring instrument.",
-                    "La ce mai e bun ecranul: cat timp balansul de alb amplifica un canal si curba "
-                    + "de ton ajunge la 255, JPEG-ul se satureaza INAINTEA senzorului - pe aparatele "
-                    + "masurate aici, cu o treime de stop pana la un stop. Deci \"nu e lipit de "
-                    + "margine\" e o garantie solida ca n-ai ars nimic. \"E lipit\" nu e informatie: de "
-                    + "acolo incolo ecranul sta pe loc, oricat ai depasi. E o alarma intr-un singur "
-                    + "sens, nu un instrument de masura."));
+            s.Add(T("What the screen is still good for: the JPEG saturates BEFORE the sensor, on the "
+                    + "cameras measured here by a third of a stop up to a stop. So if the screen's "
+                    + "histogram is not touching the right edge, nothing is burnt for sure. If it is "
+                    + "touching, you know nothing: from there on the screen stays put, however far you "
+                    + "go over. It is a one-way alarm, not a measuring instrument.",
+                    "La ce mai e bun ecranul: JPEG-ul se satureaza INAINTEA senzorului, pe aparatele "
+                    + "masurate aici cu o treime de stop pana la un stop. Deci daca histograma de pe "
+                    + "ecran nu e lipita de dreapta, sigur nu ai ars nimic. Daca e lipita, nu stii "
+                    + "nimic: de acolo incolo ecranul sta pe loc, oricat ai depasi. E o alarma "
+                    + "intr-un singur sens, nu un instrument de masura."));
 
             return string.Join(" ", s);
         }
@@ -563,10 +560,10 @@ namespace FlatCheck
                  + NotRawTypicalCause + "\n\n"
                  + T("Solutions: run directly on the NEF - the application reads the raw exactly - or make a "
                      + "raw FITS with Siril's Conversion tab (NOT Open + Save), which keeps "
-                     + "the CFA mosaic undebayered.",
+                     + "the raw file unprocessed.",
                      "Solutii: ruleaza direct pe NEF - aplicatia citeste brutul exact - sau produ un "
                      + "FITS brut cu tab-ul Conversion din Siril (NU Open + Save), care pastreaza "
-                     + "mozaicul CFA nedebayerizat.");
+                     + "fisierul brut, neprelucrat.");
         }
 
         /// <summary>The four CFA channels' global medians as a percentage of the useful range,
@@ -595,20 +592,20 @@ namespace FlatCheck
         internal static string ChannelOrderNote(ExposureResult r)
         {
             if (!r.IsCfa)
-                return T("The frame no longer has a CFA mosaic, so there are no channels to name.",
-                         "Cadrul nu mai are mozaic CFA, deci nu exista canale de numit.");
+                return T("The frame no longer has its colour channels apart, so there is nothing to name.",
+                         "Cadrul nu mai are canalele de culoare separate, deci nu e nimic de numit.");
 
             return r.Cfa != null
                 ? T($"The order of the colours is read from the file ({r.Cfa.Source}: {r.Cfa.Letters}), not guessed. "
-                    + "The brightest channel clips first, so it is the limiting one.",
+                    + "The brightest channel reaches saturation first, so it limits the exposure.",
                     $"Ordinea culorilor e citita din fisier ({r.Cfa.Source}: {r.Cfa.Letters}), nu ghicita. "
-                    + "Canalul cel mai luminos clipeaza primul, deci el e cel limitant.")
-                : T("Which CFA position is R, G or B is not known - the file does not say, and the order differs "
-                    + "from camera to camera. Nor does it matter for the verdict: the brightest "
-                    + "channel clips first, so it is the limiting one.",
-                    "Nu stiu care pozitie CFA e R, G sau B - fisierul n-o spune, iar ordinea difera "
-                    + "de la aparat la aparat. Nici nu conteaza pentru verdict: canalul cel mai "
-                    + "luminos clipeaza primul, deci el e cel limitant.");
+                    + "Canalul cel mai luminos ajunge primul la saturatie, deci el limiteaza expunerea.")
+                : T("Which channel is red, green or blue is not known: the file does not say, and the order "
+                    + "differs from camera to camera. Nor does it matter for the verdict: the brightest "
+                    + "channel reaches saturation first, so it limits the exposure.",
+                    "Nu se stie care canal e rosu, verde sau albastru: fisierul nu o spune, iar ordinea "
+                    + "difera de la aparat la aparat. Nici nu conteaza pentru verdict: canalul cel mai "
+                    + "luminos ajunge primul la saturatie, deci el limiteaza expunerea.");
         }
 
         /// <summary>The caption under the window's histograms, for the raw data or for the
@@ -618,23 +615,23 @@ namespace FlatCheck
         internal static string HistogramCaption(bool preview)
             => preview
                 ? T("The horizontal axis is in % of 255. Pale curve = the whole frame, solid curve = "
-                    + "the centre 20 %, vertical line = the centre's median. NO target band: on "
+                    + "the centre (20 %), vertical line = the centre's typical level. NO target band: on "
                     + "the camera's screen there is no target, nor could there be one. The red "
                     + "stripe on the right = pixels at 255, that is where the SCREEN saturates, not "
                     + "the sensor.",
                     "Axa orizontala e in % din 255. Curba palida = tot cadrul, curba plina = "
-                    + "centrul 20 %, linia verticala = mediana centrului. FARA banda tinta: pe "
+                    + "centrul (20 %), linia verticala = nivelul tipic al centrului. FARA banda tinta: pe "
                     + "ecranul aparatului nu exista o tinta, si nici n-ar putea exista. Dunga "
                     + "rosie din dreapta = pixeli la 255, adica aici se satureaza ECRANUL, nu "
                     + "senzorul.")
-                : T("The horizontal axis is in % of white (of the sensor's useful range). Pale "
-                    + "curve = the whole channel, solid curve = the centre 20 %, vertical line = the centre's "
-                    + "median, that is the figure that decides. Green band = the target, red stripe on the "
-                    + $"right = clipping above {Th.ExpoClipWhite * 100:F0} % of white.",
-                    "Axa orizontala e in % din white (din intervalul util al senzorului). Curba "
-                    + "palida = tot canalul, curba plina = centrul 20 %, linia verticala = mediana "
-                    + "centrului, adica cifra care decide. Banda verde = tinta, dunga rosie din "
-                    + $"dreapta = clipping peste {Th.ExpoClipWhite * 100:F0} % din white.");
+                : T("The horizontal axis is in percent of saturation (the sensor's useful range). Pale "
+                    + "curve = the whole channel, solid curve = the centre (20 %), vertical line = the centre's "
+                    + "typical level, that is the figure that decides. Green band = the target, red stripe on the "
+                    + $"right = burnt pixels, above {Th.ExpoClipWhite * 100:F0} % of saturation.",
+                    "Axa orizontala e in procente din saturatie (intervalul util al senzorului). Curba "
+                    + "palida = tot canalul, curba plina = centrul (20 %), linia verticala = nivelul tipic "
+                    + "al centrului, adica cifra care decide. Banda verde = tinta, dunga rosie din "
+                    + $"dreapta = pixeli arsi, peste {Th.ExpoClipWhite * 100:F0} % din saturatie.");
 
         /// <summary>The note under a channel of the camera's preview: its share of saturated
         /// pixels, when it is over <see cref="Th.ExpoClip"/>. Nothing else - on the preview

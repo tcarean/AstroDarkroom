@@ -11,8 +11,8 @@ channel    input range                    levels used
   G2         18760 .. 34000                 256 / 256
   B          9033 .. 16320                  256 / 256
 
-LEGEND: false colours, Siril's rainbow table on one layer: magenta is the lowest level, then blue, cyan, green, yellow, and red the highest; the colours are ranks, not values.
-INFORMATIVE: the mode gives no verdict. The picture shows the SHAPE of what is not uniform - not how large it is: every grey level gets the same number of pixels, so a ripple of 0.5 % and a gradient of 10 % come out the same, and a perfect flat shows its own noise at maximum contrast. The figures are in the structure mode.
+LEGEND: false colours, Siril's rainbow table on one layer: magenta is the lowest level, then blue, cyan, green, yellow, and red the highest; the colours are only an order, not values.
+INFORMATIVE: the mode gives no verdict. The picture shows the SHAPE of what is not uniform, not how large it is: every grey step gets the same number of pixels, so a ripple of 0.5 % and one of 10 % come out the same, and a perfect flat shows its own noise at maximum contrast. The figures are in the structure mode.
 
     -> map saved: <TMP>/out.png
 

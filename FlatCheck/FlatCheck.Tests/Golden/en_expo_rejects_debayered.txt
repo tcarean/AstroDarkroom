@@ -9,8 +9,8 @@ Copyright (C) 2026 Tudor Carean
     clipping in the centre (>=98% white)  : 0.000%
 
     !! THE FILE DOES NOT LOOK LIKE A RAW FLAT !!
-    The 4 CFA channels are almost identical (spread 1.000) -> the file
-    is DEBAYERED. --expo needs the Bayer mosaic intact.
+    The 4 colour channels are almost identical (difference 1.000): the file was
+    already processed (debayered). The exposure check needs the raw file, with the channels apart.
 
     Typical cause: you opened the NEF in Siril and pressed Save (that debayers).
     SOLUTIONS:

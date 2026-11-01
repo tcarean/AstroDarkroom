@@ -132,7 +132,7 @@ public class HistEqTabTests
         Assert.NotNull(vm.Image);
         Assert.Contains("128 x 128", vm.Frame);
         Assert.NotEmpty(vm.MasterNote);
-        Assert.Contains("Masterul e stiva", vm.MasterNote);
+        Assert.Contains("Masterul e media", vm.MasterNote);
         Assert.Contains("EGALIZARE DE HISTOGRAMA", vm.Report);
         Assert.Contains(SirilSession.FlatMasterName, vm.Report);
         Assert.NotEmpty(vm.Caveat);
@@ -225,7 +225,7 @@ public class HistEqTabTests
         // changing the view does NOT reset the zoom
         Assert.False(vm.Zoom.IsFit);
         Assert.Equal(2, vm.Zoom.Zoom);
-        Assert.Contains("pozitia R", HistEqReport.ViewCaption(HistEqAnalyzer.Analyze(TestImages.FlatCfa(8, 8, 100), null), "R"));
+        Assert.Contains("canalul R", HistEqReport.ViewCaption(HistEqAnalyzer.Analyze(TestImages.FlatCfa(8, 8, 100), null), "R"));
     }
 
     /// <summary>

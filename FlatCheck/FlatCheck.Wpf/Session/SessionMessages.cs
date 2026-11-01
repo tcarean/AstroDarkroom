@@ -167,19 +167,19 @@ namespace FlatCheck.Wpf
         /// <returns>The explanation, with the folder.</returns>
         internal static string NoRawFlats(SirilSession s) =>
             T($"No camera raw file in:\n{s.FlatsDir}\n\n"
-            + "The exposure check runs on a RAW, UNCALIBRATED flat, with the CFA mosaic "
-            + "intact and the original ADU scale - stacking normalises exactly the level "
-            + "measured here, so a master cannot be used.\n\n"
+            + "The exposure check works on a flat as it came out of the camera, uncalibrated: a "
+            + "master will not do, because stacking normalises the level, and the level is exactly "
+            + "what is measured here.\n\n"
             + "The simplest is to leave the camera's own files in flats/ "
-            + "(.nef, .cr2, .cr3, .arw, .dng, .raf, .pef). On them white and black are read exactly "
-            + "from the file, not guessed from the maximum.",
+            + "(.nef, .cr2, .cr3, .arw, .dng, .raf, .pef): on them the white and the black points "
+            + "are read exactly from the file.",
               $"Niciun fisier raw de aparat in:\n{s.FlatsDir}\n\n"
-            + "Verificarea expunerii ruleaza pe un flat BRUT, NECALIBRAT, cu mozaicul CFA "
-            + "intact si scala ADU originala - stivuirea normalizeaza exact nivelul care se "
-            + "masoara aici, deci un master nu se poate folosi.\n\n"
+            + "Verificarea expunerii se face pe un flat asa cum a iesit din aparat, necalibrat: "
+            + "masterul nu merge, pentru ca la stivuire nivelul se normalizeaza, iar exact nivelul "
+            + "e ce se masoara aici.\n\n"
             + "Cel mai simplu e sa lasi in flats/ chiar fisierele de la aparat "
-            + "(.nef, .cr2, .cr3, .arw, .dng, .raf, .pef). Pe ele white si black se citesc exact "
-            + "din fisier, nu se mai ghicesc din maxim.");
+            + "(.nef, .cr2, .cr3, .arw, .dng, .raf, .pef): pe ele punctul de alb si cel de negru "
+            + "se citesc exact din fisier.");
 
         // --------------------------------------------------- how to read the tab
         //
@@ -244,22 +244,20 @@ namespace FlatCheck.Wpf
         /// readings.</summary>
         /// <returns>The guide's intro.</returns>
         internal static string HistogramGuideIntro() =>
-            T("The horizontal axis is the same one every figure of the tab sits on: percent of "
-            + "(white - black), that is of the sensor's useful range. Zero is the camera's "
-            + "black, 100 is saturation. On the camera's preview, the axis is percent "
-            + "of 255 - again \"how much of the available range\", the only way the "
-            + "two can be read side by side.\n\n"
-            + "The drawing EXPLAINS, it does not vote. The verdict is the median of the central window of the "
-            + "brightest channel, on the raw data, and nothing else - "
-            + "the histograms show where that figure comes from and what happens around it.",
-              "Axa orizontala e aceeasi pe care stau toate cifrele tabului: procente din "
-            + "(white - black), adica din intervalul util al senzorului. Zero e negrul "
-            + "aparatului, 100 e saturatia. Pe previzualizarea aparatului, axa e procente "
-            + "din 255 - tot \"cat din intervalul disponibil\", singurul fel in care cele "
-            + "doua se pot citi una langa alta.\n\n"
-            + "Desenul EXPLICA, nu voteaza. Verdictul e mediana ferestrei centrale a "
-            + "canalului celui mai luminos, pe datele brute, si nimic altceva - "
-            + "histogramele arata de unde vine cifra aia si ce se intampla in jurul ei.");
+            T("The horizontal axis is the same one every figure of the tab sits on: how much of the "
+            + "sensor's useful range, from the camera's black (0) to saturation (100). On the camera's "
+            + "preview the axis is percent of 255, again \"how much of the available range\", the only "
+            + "way the two can be read side by side.\n\n"
+            + "The drawing EXPLAINS, it does not vote. The verdict is the level at the middle of the "
+            + "frame on the brightest channel, measured on the raw data, and nothing else; the "
+            + "histograms show where that figure comes from and what is around it.",
+              "Axa orizontala e aceeasi pe care stau toate cifrele tabului: cat la suta din "
+            + "intervalul util al senzorului, de la negrul aparatului (0) la saturatie (100). Pe "
+            + "previzualizarea aparatului axa e in procente din 255, tot \"cat din intervalul "
+            + "disponibil\", singurul fel in care cele doua se pot citi una langa alta.\n\n"
+            + "Desenul EXPLICA, nu voteaza. Verdictul e nivelul din mijlocul cadrului pe canalul "
+            + "cel mai luminos, masurat pe datele brute, si nimic altceva; histogramele arata de "
+            + "unde vine cifra aceea si ce e in jurul ei.");
 
         /// <summary>
         /// How the drawing is read, in the order it is worth looking: first the two curves,
@@ -270,109 +268,107 @@ namespace FlatCheck.Wpf
         {
             (T("two curves on each channel",
                "doua curbe pe fiecare canal"),
-             T("The pale, wide one is the whole channel; the solid, narrow one is the central window "
-             + "of 20 %, the very one the verdict is taken from. Each is scaled to its own "
-             + "peak, so the HEIGHTS are not compared with each other - the positions are.",
-               "Cea palida si lata e tot canalul; cea plina si ingusta e fereastra centrala "
-             + "de 20 %, chiar cea din care se ia verdictul. Fiecare e scalata la propriul "
-             + "varf, deci INALTIMILE nu se compara intre ele - pozitiile se compara.")),
+             T("The pale, wide one is the whole frame; the solid, narrow one is only the middle of the "
+             + "frame (20 %), where the verdict is taken from. Each is drawn to its own full height, "
+             + "so the HEIGHTS are not compared with each other; the positions on the axis are.",
+               "Cea palida si lata e tot cadrul; cea plina si ingusta e doar mijlocul cadrului "
+             + "(20 %), de unde se ia verdictul. Fiecare e desenata la inaltimea ei maxima, deci "
+             + "INALTIMILE nu se compara intre ele; pozitiile pe axa se compara.")),
 
             (T("the vertical line",
                "linia verticala"),
-             T("The median of the central window, the one figure that decides. On the brightest "
-             + "channel it is the very number in the verdict pill above.",
-               "Mediana ferestrei centrale, singura cifra care decide. Pe canalul cel mai "
-             + "luminos e chiar numarul din pastila de verdict, de sus.")),
+             T("The typical level at the middle of the frame, the one figure that decides. On the "
+             + "brightest channel it is the very number in the verdict pill above.",
+               "Nivelul tipic din mijlocul cadrului, singura cifra care decide. Pe canalul cel mai "
+             + "luminos e chiar numarul din pastila de verdict de sus.")),
 
             (T("the green band",
                "banda verde"),
-             T("The target, from exactly the same thresholds as the verdict. It moves when you tick \"Sky\": "
-             + "a sky flat MUST sit lower, because the sky fades continuously and "
-             + "the SNR comes from the number of frames.",
-               "Tinta, din exact aceleasi praguri ca verdictul. Se muta cand bifezi \"Sky\": "
-             + "un sky flat TREBUIE sa stea mai jos, fiindca cerul se stinge continuu si "
-             + "SNR-ul vine din numarul de cadre.")),
+             T("The target, from exactly the same thresholds as the verdict. It moves when you tick "
+             + "\"Sky flat\": a sky flat MUST sit lower, because the sky fades continuously, and the "
+             + "master comes out clean from the number of frames, not from the exposure.",
+               "Tinta, din exact aceleasi praguri ca verdictul. Se muta cand bifezi \"Sky flat\": "
+             + "un flat pe cer TREBUIE sa stea mai jos, fiindca cerul se stinge continuu, iar "
+             + "masterul iese curat din numarul de cadre, nu din expunere.")),
 
             (T("the yellow and red bands",
                "benzile galbene si rosii"),
              T("The same scale further on: yellow \"acceptable, but\", red too low or too "
-             + "high. On the sky there is no yellow on the left - there the target starts right at "
+             + "high. On a sky flat there is no yellow on the left: there the target starts right at "
              + "the too-low threshold.",
                "Aceeasi scara mai departe: galben \"acceptabil, dar\", rosu prea jos sau prea "
-             + "sus. Pe cer nu exista galben in stanga - acolo tinta incepe chiar de la "
-             + "pragul de prea-jos.")),
+             + "sus. La flat pe cer nu exista galben in stanga: acolo tinta incepe chiar de la "
+             + "pragul de prea jos.")),
 
             (T("the red stripe on the right",
                "dunga rosie din dreapta"),
-             T("98-100 % of white: there the analyser counts the saturated pixels. Any mass of the "
-             + "solid curve in that stripe means TOO HIGH, however well-behaved the "
-             + "median - there the vignetting information is lost, exactly where the signal is highest.",
-               "98-100 % din white: acolo analizorul numara pixelii saturati. Orice masa a "
-             + "curbei pline in dunga aia inseamna PREA SUS, oricat de cuminte ar fi "
-             + "mediana - acolo se pierde informatia de vignetare, exact unde semnalul e maxim.")),
+             T("The last 2 % before saturation: there the burnt pixels are counted. If any part of "
+             + "the solid curve reaches that stripe, the verdict is TOO HIGH, however well the middle "
+             + "figure sits: there the vignetting information is lost, exactly where the signal is "
+             + "largest.",
+               "Ultimele 2 % pana la saturatie: acolo se numara pixelii arsi. Daca o parte din "
+             + "curba plina ajunge in dunga aceea, verdictul e PREA SUS, oricat de bine ar sta "
+             + "cifra din mijloc: acolo se pierde exact informatia de vignetare, unde semnalul e "
+             + "cel mai mare.")),
 
             (T("why the pale curve is much wider",
                "de ce curba palida e mult mai lata"),
-             T("That is the vignetting, not underexposure: the corners of a flat ARE darker "
-             + "by construction, and the distance between the two peaks is just how "
-             + "deep it is. If you expose by the wide curve, you clip the centre and lose exactly what "
-             + "you measure.",
-               "Aia e vignetarea, nu subexpunere: colturile unui flat SUNT mai intunecate "
-             + "prin constructie, si distanta dintre cele doua varfuri e chiar cat de "
-             + "adanca e. Daca expui dupa curba lata, clipezi centrul si pierzi exact ce "
-             + "masori.")),
+             T("That is the vignetting, not underexposure: the corners of a flat ARE darker, that is "
+             + "the lens, and the distance between the two peaks is just how deep the vignetting is. "
+             + "If you expose by the wide curve, you burn the centre and lose exactly what you measure.",
+               "Aceea e vignetarea, nu subexpunere: colturile unui flat SUNT mai intunecate, asa e "
+             + "obiectivul, iar distanta dintre cele doua varfuri e chiar cat de adanca e "
+             + "vignetarea. Daca expui dupa curba lata, arzi centrul si pierzi exact ce masori.")),
 
             (T("why the channels peak in different places",
                "de ce canalele au varfuri diferite"),
-             T("The Bayer filters pass different amounts of the source's light. On a "
-             + "warm panel R may lead, on the sky at the blue hour usually B. The "
-             + "brightest clips first, so it is the limiting one. The tool does no white "
-             + "balance - that is exactly the point.",
-               "Filtrele Bayer lasa sa treaca cantitati diferite din lumina sursei. Pe un "
-             + "panou cald poate conduce R, pe cer la ora albastra de obicei B. Cel mai "
-             + "luminos clipeaza primul, deci el e limitantul. Unealta nu face balans de "
-             + "alb - tocmai asta e ideea.")),
+             T("The coloured filters on the sensor pass different amounts of the source's light. On "
+             + "a warm panel red may lead, on the sky at the blue hour usually blue. The brightest "
+             + "reaches saturation first, so it limits the exposure. The program does no white "
+             + "balance; that is exactly the point.",
+               "Filtrele colorate de pe senzor lasa sa treaca cantitati diferite din lumina "
+             + "sursei. Pe un panou cald poate fi in fata rosul, pe cer la ora albastra de obicei "
+             + "albastrul. Cel mai luminos ajunge primul la saturatie, deci el limiteaza expunerea. "
+             + "Programul nu face balans de alb; tocmai asta e ideea.")),
 
             (T("what this drawing is NOT",
                "ce NU e desenul asta"),
-             T("It is not the camera's histogram. That one is the processed JPEG's - debayer, white "
-             + "balance, gamma - and it sits much further right. That is why a frame that looks "
-             + "\"at the limit\" on the camera's screen can be at 40 % in raw data.",
-               "Nu e histograma de pe aparat. Aia e a JPEG-ului procesat - debayer, balans "
-             + "de alb, gama - si sta mult mai la dreapta. De aceea un cadru care pare "
-             + "\"la limita\" pe ecranul aparatului poate fi la 40 % in date brute.")),
+             T("It is not the camera's histogram. That one is of the JPEG image the camera processed "
+             + "(colours, white balance, tone curve) and sits much further right. That is why a frame "
+             + "that looks \"at the limit\" on the camera's screen can be at 40 % in the raw data.",
+               "Nu e histograma de pe aparat. Aceea e a imaginii JPEG prelucrate de aparat (culori, "
+             + "balans de alb, curba de ton) si sta mult mai la dreapta. De aceea un cadru care "
+             + "pare \"la limita\" pe ecranul aparatului poate fi la 40 % in datele brute.")),
 
             (T("the switch above the drawings",
                "comutatorul de deasupra desenelor"),
-             T("It chooses what you look at: the raw data, which the tool measures, or "
-             + "the preview the camera embedded in the raw - the very image from "
-             + "which it computed its on-screen histogram. Only the raw view has the target "
-             + "band, because only it says something about the light on the sensor. On the other "
-             + "there is no target, nor could there be: it would mean exposing by the screen. "
-             + "The table under the drawings puts the two figures side by side, on each channel.",
-               "Alege la ce te uiti: datele brute, pe care le masoara unealta, sau "
-             + "previzualizarea pe care aparatul a inglobat-o in raw - chiar imaginea din "
-             + "care si-a calculat histograma de pe ecran. Numai vederea bruta are banda "
-             + "tinta, fiindca numai ea spune ceva despre lumina de pe senzor. Pe cealalta "
-             + "nu e nicio tinta, si nici n-ar putea fi: ar insemna sa expui dupa ecran. "
-             + "Tabelul de sub desene pune cele doua cifre cap la cap, pe fiecare canal.")),
+             T("It chooses what you look at: the raw data, which the program measures, or the "
+             + "preview the camera put into the raw file, the very image it made its on-screen "
+             + "histogram from. Only the raw view has the target band, because only it says "
+             + "something about the light on the sensor. On the other there is no target, nor could "
+             + "there be: it would mean exposing by the screen. The table under the drawings puts "
+             + "the two figures side by side, on each channel.",
+               "Alege la ce te uiti: datele brute, pe care le masoara programul, sau "
+             + "previzualizarea pe care aparatul a pus-o in fisierul raw, chiar imaginea din care "
+             + "si-a facut histograma de pe ecran. Numai vederea bruta are banda tinta, fiindca "
+             + "numai ea spune ceva despre lumina de pe senzor. Pe cealalta nu e nicio tinta, si "
+             + "nici n-ar putea fi: ar insemna sa expui dupa ecran. Tabelul de sub desene pune "
+             + "cele doua cifre una langa alta, pe fiecare canal.")),
 
             (T("why the screen is much further right",
                "de ce ecranul e mult mai la dreapta"),
-             T("Gamma plus the tone curve, which no camera setting removes: a JPEG "
-             + "is gamma-encoded by definition. A compressive curve stretches the low and "
-             + "middle levels the most, which is exactly where a flat sits. And, on "
-             + "the cameras measured here, the screen saturated before the sensor, by a "
-             + "third of a stop up to a stop: so it is a one-way alarm - \"not "
-             + "touching\" is a guarantee, \"touching\" is no information - not a measuring "
-             + "instrument.",
-               "Gama plus curba de ton, pe care nicio setare din aparat nu le scoate: un JPEG "
-             + "e codificat gamma prin definitie. O curba compresiva intinde cel mai tare "
-             + "nivelurile de jos si de mijloc, adica exact unde sta un flat. Si, pe "
-             + "aparatele masurate aici, ecranul s-a saturat inaintea senzorului, cu o "
-             + "treime de stop pana la un stop: deci e o alarma intr-un singur sens - \"nu "
-             + "e lipit\" e o garantie, \"e lipit\" nu e informatie - nu un instrument de "
-             + "masura.")),
+             T("The camera processes the image for the screen with a curve that brightens the low and "
+             + "middle tones the most, exactly where a flat sits; no setting removes it, every JPEG "
+             + "is made that way. And, on the cameras measured here, the screen saturated before the "
+             + "sensor, by a third of a stop up to a stop. So the screen is a one-way alarm: if the "
+             + "histogram is not touching the right edge, nothing is burnt for sure; if it is "
+             + "touching, you know nothing. It is not a measuring instrument.",
+               "Aparatul prelucreaza imaginea pentru ecran cu o curba care lumineaza cel mai tare "
+             + "tonurile de jos si de mijloc, exact unde sta un flat; nicio setare nu o scoate, asa "
+             + "e facut orice JPEG. Si, pe aparatele masurate aici, ecranul s-a saturat inaintea "
+             + "senzorului, cu o treime de stop pana la un stop. Deci ecranul e o alarma intr-un "
+             + "singur sens: daca histograma nu e lipita de dreapta, sigur nu ai ars nimic; daca e "
+             + "lipita, nu stii nimic. Nu e un instrument de masura.")),
         };
 
         // ------------------------------------------------------- the map's guide
@@ -496,19 +492,19 @@ namespace FlatCheck.Wpf
         /// <summary>What the picture is, before the list of readings.</summary>
         /// <returns>The guide's intro.</returns>
         internal static string HistEqGuideIntro() =>
-            T("It is Siril's \"Histogram\" view, redone: the image passed through its own "
-            + "distribution function, so that every grey level gets the same "
-            + "number of pixels. It is not a graph and not a measurement. On a flat, whose "
-            + "distribution is narrow against the file's scale, the curve is steep exactly over "
-            + "the vignetting's range, and everything that is not uniform comes out at maximum contrast.\n\n"
-            + "The picture EXPLAINS, it does not vote: no figure of the tool changes with what shows "
-            + "here, and no shape here enters any verdict.",
-              "E vederea \"Histogram\" din Siril, refacuta: imaginea trecuta prin propria ei "
-            + "functie de repartitie, astfel incat fiecare nivel de gri sa primeasca acelasi "
-            + "numar de pixeli. Nu e un grafic si nu e o masuratoare. Pe un flat, a carui "
-            + "distributie e ingusta fata de scala fisierului, curba e abrupta exact pe "
-            + "intervalul vignetarii, si tot ce nu e uniform iese la contrast maxim.\n\n"
-            + "Poza EXPLICA, nu voteaza: nicio cifra din unealta nu se schimba cu ce se vede "
+            T("It is Siril's \"Histogram\" view, redone: the image's levels are redistributed so "
+            + "that every grey step holds the same number of pixels. It is not a graph and not a "
+            + "measurement. On a flat, whose levels sit in a narrow range, this stretches exactly "
+            + "the vignetting's range to the maximum, and everything that is not uniform comes out "
+            + "at maximum contrast.\n\n"
+            + "The picture EXPLAINS, it does not vote: no figure of the program changes with what "
+            + "shows here, and no shape here enters any verdict.",
+              "E vederea \"Histogram\" din Siril, refacuta: nivelurile imaginii sunt reimpartite "
+            + "astfel incat fiecare treapta de gri sa aiba acelasi numar de pixeli. Nu e un grafic "
+            + "si nu e o masuratoare. Pe un flat, ale carui niveluri stau intr-un interval ingust, "
+            + "asta intinde la maximum exact intervalul vignetarii, si tot ce nu e uniform iese la "
+            + "contrast maxim.\n\n"
+            + "Poza EXPLICA, nu voteaza: nicio cifra din program nu se schimba cu ce se vede "
             + "aici, si nicio forma de aici nu intra in vreun verdict.");
 
         /// <summary>How the picture is read, in the order it is worth looking.</summary>
@@ -517,47 +513,48 @@ namespace FlatCheck.Wpf
         {
             (T("why a clean flat looks noisy",
                "de ce un flat curat arata zgomotos"),
-             T("The equalisation stretches ANY distribution over 0..255, even that of a frame with no "
-             + "structure at all. Then what is left to stretch is the noise, and it reaches maximum "
-             + "contrast. Fine grain everywhere means \"it has nothing else to show\".",
-               "Egalizarea intinde ORICE distributie pe 0..255, si a unui cadru fara nicio "
-             + "structura. Atunci ce ramane de intins e zgomotul, si el ajunge la contrast "
-             + "maxim. Granulatie fina peste tot inseamna \"n-are altceva de aratat\".")),
+             T("The stretch is applied to ANY frame, even one with no defect at all. Then what is "
+             + "left to stretch is the noise, and it reaches maximum contrast. Fine grain everywhere "
+             + "means \"it has nothing else to show\".",
+               "Intinderea se face pe ORICE cadru, si pe unul fara niciun defect. Atunci ce ramane "
+             + "de intins e zgomotul, si el ajunge la contrast maxim. Granulatie fina peste tot "
+             + "inseamna \"nu are altceva de aratat\".")),
 
             (T("why the size of a shape cannot be read",
                "de ce nu se poate citi cat de mare e o forma"),
-             T("Every grey level gets the same number of pixels, however close "
-             + "their values were. A ripple of 0.5 % and a gradient of 10 % with the same "
-             + "shape come out identical. The amplitude is in the Structure tab, not here.",
-               "Fiecare nivel de gri primeste acelasi numar de pixeli, indiferent cat de "
-             + "apropiate erau valorile lor. O unda de 0.5 % si un gradient de 10 % cu aceeasi "
-             + "forma ies identic. Amplitudinea e in tabul Structura, nu aici.")),
+             T("Every grey step gets the same number of pixels, however close their values were. A "
+             + "ripple of 0.5 % and one of 10 % with the same shape come out identical. How large a "
+             + "shape is, the figures of the Structure tab say, not the picture here.",
+               "Fiecare treapta de gri primeste acelasi numar de pixeli, indiferent cat de "
+             + "apropiate erau valorile lor. O ondulatie de 0.5 % si una de 10 % cu aceeasi forma "
+             + "ies identic. Cat de mare e o forma spun cifrele din tabul Structura, nu poza de "
+             + "aici.")),
 
             (T("the Mosaic view (the default)",
                "vederea Mozaic (implicita)"),
-             T("The whole mosaic equalised as a single layer - literally what Siril shows on a raw "
-             + "opened undebayered, as it opens it by default; that is why it comes first. The three "
-             + "colours are three populations in the same histogram, so at 100 % the mosaic's "
-             + "checkerboard shows, as in Siril; shrunk, it averages out.",
-               "Tot mozaicul egalizat ca un singur strat - literal ce arata Siril pe un raw "
-             + "deschis nedebayerizat, cum il deschide implicit; de asta e prima. Cele trei "
-             + "culori sunt trei populatii in aceeasi histograma, deci la 100 % se vede tabla "
-             + "de sah a mozaicului, ca in Siril; micsorata, se mediaza.")),
+             T("The whole raw frame, with the colour channels not separated, stretched as a single "
+             + "layer: exactly what Siril shows on a raw opened the way it opens it by default; that "
+             + "is why it comes first. The three colours sit mixed in the same histogram, so at "
+             + "100 % the sensor's checkerboard shows, as in Siril; shrunk, it smooths out.",
+               "Tot cadrul brut, cu canalele de culoare neseparate, intins ca un singur strat: "
+             + "exact ce arata Siril pe un raw deschis asa cum il deschide implicit; de asta e "
+             + "prima. Cele trei culori stau amestecate in aceeasi histograma, deci la 100 % se "
+             + "vede tabla de sah a senzorului, ca in Siril; micsorata, se netezeste.")),
 
             (T("the RGB view",
                "vederea RGB"),
-             T("The four Bayer positions, each equalised on its own distribution and put in "
-             + "its colour - Siril on a debayered image. It has more contrast than "
-             + "the mosaic, because each channel is stretched over its whole range. A uniform "
-             + "tint means nothing; a tint that VARIES across the frame means that one "
-             + "channel has another shape than the others - a source with a colour gradient, a "
-             + "coloured light leak.",
-               "Cele patru pozitii Bayer, fiecare egalizata pe repartitia ei si pusa in "
-             + "culoarea ei - Siril pe o imagine debayerizata. Are mai mult contrast decat "
-             + "mozaicul, fiindca fiecare canal e intins pe tot intervalul lui. O nuanta "
-             + "uniforma nu inseamna nimic; o nuanta care VARIAZA pe cadru inseamna ca un "
-             + "canal are alta forma decat celelalte - o sursa cu gradient de culoare, o "
-             + "scurgere de lumina colorata.")),
+             T("The sensor's four channels, each stretched on its own and put in its colour, like "
+             + "Siril on an image with the colours separated. It has more contrast than Mosaic, "
+             + "because each channel is stretched over its whole range. A uniform tint means "
+             + "nothing; a tint that CHANGES across the frame means that one channel has another "
+             + "shape than the others: a source whose colour is not the same everywhere, a coloured "
+             + "light leak.",
+               "Cele patru canale ale senzorului, fiecare intins separat si pus in culoarea lui, "
+             + "ca Siril pe o imagine cu culorile separate. Are mai mult contrast decat Mozaicul, "
+             + "fiindca fiecare canal e intins pe tot intervalul lui. O nuanta uniforma nu "
+             + "inseamna nimic; o nuanta care SE SCHIMBA pe cadru inseamna ca un canal are alta "
+             + "forma decat celelalte: o sursa a carei culoare nu e aceeasi peste tot, o scurgere "
+             + "de lumina colorata.")),
 
             (T("the per-channel views",
                "vederile pe canal"),
@@ -568,19 +565,20 @@ namespace FlatCheck.Wpf
 
             (T("the False colours chip",
                "chipul Culori false"),
-             T("Siril's rainbow table over the view on screen: the hue runs from magenta at the lowest "
-             + "level through blue, cyan, green and yellow to red at the highest, so bands of one "
-             + "colour are contours of equal rank and the SHAPE of the vignetting - round, off-centre, "
-             + "square - reads at a glance. The colours are ranks, not values: the amplitude is still "
-             + "gone. It applies to one layer - Mosaic, a channel, mono - never to the RGB view, where "
-             + "the chip is greyed out. The chip stays on when you change the view or the file.",
-               "Tabelul rainbow din Siril peste vederea de pe ecran: nuanta merge de la magenta la nivelul "
-             + "cel mai jos, prin albastru, cyan, verde si galben, pana la rosu la cel mai sus, deci "
-             + "benzile de o culoare sunt contururi de rang egal si FORMA vignetarii - rotunda, "
-             + "descentrata, patrata - se citeste dintr-o privire. Culorile sunt ranguri, nu valori: "
-             + "amplitudinea tot lipseste. Se aplica pe un singur strat - Mozaic, un canal, mono - "
-             + "niciodata pe vederea RGB, unde chipul e dezactivat. Chipul ramane bifat cand schimbi "
-             + "vederea sau fisierul.")),
+             T("Siril's rainbow colours over the view on screen: from magenta at the lowest level, "
+             + "through blue, cyan, green and yellow, to red at the highest. Bands of the same colour "
+             + "are lines of equal level, so the SHAPE of the vignetting (round, off-centre, square) "
+             + "reads at a glance. The colours are only an order, not values: how large it is still "
+             + "does not show. It applies to one layer (Mosaic, a channel, mono), never to the RGB "
+             + "view, where the button is greyed out. The button stays on when you change the view "
+             + "or the file.",
+               "Culorile curcubeu din Siril peste vederea de pe ecran: de la magenta la nivelul cel "
+             + "mai jos, prin albastru, cyan, verde si galben, pana la rosu la cel mai sus. Benzile "
+             + "de aceeasi culoare sunt linii de nivel egal, asa ca FORMA vignetarii (rotunda, "
+             + "descentrata, patrata) se citeste dintr-o privire. Culorile sunt doar o ordine, nu "
+             + "valori: cat de mare e tot nu se vede. Se aplica pe un singur strat (Mozaic, un "
+             + "canal, mono), niciodata pe vederea RGB, unde butonul e dezactivat. Butonul ramane "
+             + "bifat cand schimbi vederea sau fisierul.")),
 
             (T("zoom and pan",
                "zoom si deplasare"),
@@ -597,23 +595,23 @@ namespace FlatCheck.Wpf
 
             (T("the master against a frame",
                "masterul fata de un cadru"),
-             T("The master is the stack of the frames under it. A shape that shows on a frame and "
-             + "is missing from the master was transient - a cloud, a shadow, a flicker - and "
-             + "was averaged out. One that shows on both is fixed to the setup, and that is the one "
-             + "the figures of Structure measure. The master's lower noise makes a shared shape "
-             + "look CLEARER there, not weaker: the equalisation is by ranks.",
-               "Masterul e stiva cadrelor de sub el. O forma care se vede pe un cadru si "
-             + "lipseste de pe master a fost trecatoare - un nor, o umbra, o palpaire - si "
-             + "s-a mediat. Una care se vede pe amandoua e fixa pe montaj, si pe ea o "
-             + "masoara cifrele din Structura. Zgomotul mai mic al masterului face o forma "
-             + "comuna sa para acolo mai CLARA, nu mai slaba: egalizarea e pe ranguri.")),
+             T("The master is the mean of the frames under it. A shape that shows on a frame and is "
+             + "missing from the master was transient (a cloud, a shadow, a flicker) and was lost in "
+             + "the averaging. One that shows on both belongs to the setup, and that is the one the "
+             + "figures of Structure measure. Because the master has less noise, a shared shape "
+             + "looks CLEARER there, not weaker.",
+               "Masterul e media cadrelor de sub el. O forma care se vede pe un cadru si lipseste "
+             + "de pe master a fost trecatoare (un nor, o umbra, o palpaire) si s-a pierdut la "
+             + "mediere. Una care se vede pe amandoua tine de montaj, si pe ea o masoara cifrele "
+             + "din Structura. Pentru ca masterul are mai putin zgomot, o forma comuna pare acolo "
+             + "mai CLARA, nu mai slaba.")),
 
             (T("where the figure is",
                "unde e cifra"),
-             T("In the Structure tab: the residual after the radial model, the corners, the tilt, the worst "
-             + "spot. The picture here says WHAT SHAPE what they measure has.",
-               "In tabul Structura: reziduul dupa modelul radial, colturile, inclinarea, pata "
-             + "maxima. Poza de aici spune CE FORMA are ce masoara ele.")),
+             T("In the Structure tab: the residual, the corners, the tilt, the worst spot. The "
+             + "picture here only says WHAT SHAPE what they measure has.",
+               "In tabul Structura: reziduul, colturile, inclinarea, pata maxima. Poza de aici "
+             + "spune doar CE FORMA are ceea ce masoara ele.")),
         };
 
         // ------------------------------------------------------- the synthetic flat
@@ -627,16 +625,16 @@ namespace FlatCheck.Wpf
         /// <summary>The Sintetic tab's lead: what the file is and what it lacks.</summary>
         /// <returns>The intro.</returns>
         internal static string SyntheticGuideIntro() =>
-            T("Writes a radial flat, pp_flat_stacked" + SirilSession.SyntheticSuffix + ".fit, from the lens's published "
-            + "vignetting profile - its model, not a measurement of your copy. "
-            + "There is no light source in it, so neither the sky's curvature nor a panel's fall-off; "
-            + "nor the chromatic part, nor the dust, nor the shading specific to the body. "
-            + "\"Compare with the master\" says by how much the master photographed differs from the model, in stops, and in what shape.",
-              "Scrie un flat radial, pp_flat_stacked" + SirilSession.SyntheticSuffix + ".fit, din profilul de "
-            + "vignetare publicat al obiectivului - modelul lui, nu o masuratoare a exemplarului tau. "
-            + "N-are nicio sursa de lumina in el, deci nici curbura cerului, nici caderea unui panou; "
-            + "n-are nici partea cromatica, nici praful, nici umbrirea specifica body-ului. "
-            + "\"Compara cu masterul\" spune cu cat difera masterul fotografiat de model, in stopuri, si in ce forma.");
+            T("Writes an ideal flat, pp_flat_stacked" + SirilSession.SyntheticSuffix + ".fit, from the lens's published "
+            + "vignetting profile: the lens model, not a measurement of your copy. "
+            + "There is no light source in it, so neither the sky's dome nor a panel seen at an angle; "
+            + "nor the differences between colours, nor the dust, nor the shading the camera adds. "
+            + "\"Compare with the master\" says by how much the master photographed differs from this model, in stops, and in what shape.",
+              "Scrie un flat ideal, pp_flat_stacked" + SirilSession.SyntheticSuffix + ".fit, din profilul de "
+            + "vignetare publicat al obiectivului: modelul obiectivului, nu o masuratoare a exemplarului tau. "
+            + "Nu are in el nicio sursa de lumina, deci nici cupola cerului, nici un panou vazut din unghi; "
+            + "nu are nici diferentele dintre culori, nici praful, nici umbrele date de aparat. "
+            + "\"Compara cu masterul\" spune cu cat difera masterul fotografiat de acest model, in stopuri, si in ce forma.");
 
         /// <summary>The title of the collapsed panel about the profile sources.</summary>
         /// <returns>The title.</returns>
@@ -659,9 +657,9 @@ namespace FlatCheck.Wpf
         /// reference frame names none.</param>
         /// <returns>The note under the crop field.</returns>
         internal static string SyntheticCropUnknown(string camera) =>
-            T((string.IsNullOrWhiteSpace(camera) ? "crop unknown: the reference frame does not say which camera it is" : $"crop unknown: \"{camera.Trim()}\" is not in lensfun's camera database")
+            T((string.IsNullOrWhiteSpace(camera) ? "crop unknown: the reference frame does not say which camera it is" : $"crop unknown: \"{camera.Trim()}\" is not in lensfun's list of cameras")
             + " - choose the sensor type above, or type the crop (36 divided by the sensor's width in mm)",
-              (string.IsNullOrWhiteSpace(camera) ? "crop necunoscut: cadrul de referinta nu spune ce aparat e" : $"crop necunoscut: \"{camera.Trim()}\" nu e in baza de camere lensfun")
+              (string.IsNullOrWhiteSpace(camera) ? "crop necunoscut: cadrul de referinta nu spune ce aparat e" : $"crop necunoscut: \"{camera.Trim()}\" nu e in lista de aparate a lensfun")
             + " - alege tipul de senzor de mai sus, sau scrie crop-ul (36 impartit la latimea senzorului in mm)");
 
         /// <summary>The crop came from a sensor chip.</summary>
@@ -669,8 +667,8 @@ namespace FlatCheck.Wpf
         /// <param name="crop">The crop factor, formatted.</param>
         /// <returns>The note under the crop field.</returns>
         internal static string SyntheticCropFromFormat(string label, string crop) =>
-            T($"crop {crop} nominal, from the {label} chip; a camera in the lensfun database would give it exactly",
-              $"crop {crop} nominal, din chip-ul {label}; un aparat din baza lensfun l-ar da exact");
+            T($"crop {crop} approximate, by the {label} sensor type; a camera in the lensfun list would give it exactly",
+              $"crop {crop} aproximativ, dupa tipul de senzor {label}; un aparat din lista lensfun l-ar da exact");
 
         /// <summary>Where the field's crop is from and which format it is: "crop 1.523 din
         /// baza lensfun (Nikon D3300) - format APS-C".</summary>
