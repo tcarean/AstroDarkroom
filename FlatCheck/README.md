@@ -74,6 +74,13 @@ commands the script runs are under "Development".
 - **Adobe's lens profiles, optional.** The `.lcp` files that Adobe DNG Converter (free), Camera
   Raw or Lightroom install. Without them, the lens list holds the lensfun profiles that ship with
   FlatCheck. See mode 5.
+- **Microsoft's Visual C++ v14 runtime (x64), to read camera raw files.** Most computers have it;
+  Windows lists it as "Microsoft Visual C++ v14 Redistributable (x64)", or "2015-2022" on older
+  installations. LibRaw, which reads the raw files, needs it, and neither FlatCheck nor Astro
+  Darkroom ships it. Without it, or with one too old (the 2015 and 2017 packages lack a file
+  LibRaw needs), FITS files are read as usual and a raw file is refused with a message that
+  gives Microsoft's link to its latest version,
+  <https://aka.ms/vc14/vc_redist.x64.exe>.
 
 ## Quick start
 
@@ -977,8 +984,12 @@ licence and warranty notice (the text the console prints at `--help`) and the li
 components, each with its licence and a link to its project. It is there by obligation, not only by
 courtesy: GPLv3 asks a program with an interface to show its notice itself, and the LGPL under which
 LibRaw is taken asks for the library's notice to appear beside the program's. An `.exe` copied alone
-has no `LICENSE` and no `THIRD-PARTY-NOTICES.md` beside it, so the window is the one place where the
-notices surely travel with the program.
+has no `LICENSE` and no notices file beside it, so the window is the one place where the notices
+surely travel with the program. Each licence's whole text is in `THIRD-PARTY-NOTICES.txt`, beside
+the program in the Astro Darkroom folder, and online, at the link above the list. The window is
+never taller than the screen: on a small or highly scaled one, everything above the **Close**
+button scrolls (with the mouse wheel, or the arrow, Page Up, Page Down, Home and End keys), and the
+button stays in view.
 
 ### The six tabs
 
@@ -1301,10 +1312,12 @@ each run its options, the figures behind the verdict, the verdict and the time e
 the lens profiles found and the lenses that matched; every file written; in the window, the
 session opened, each tab's run and the buttons pressed, and the whole output of a Siril run;
 every error with its technical details, those the program works around without a word included
-(not a run you cancelled yourself, nor what the window drops while it closes); at the end the
-exit code and the time taken. The log's own words are English whatever `--lang` says; an error's
-or a refusal's message appears as you saw it, so in Romanian under `--lang ro`. It holds the
-paths of your files and the figures measured on them, not their pixels.
+(not a run you cancelled yourself, nor what the window drops while it closes), and when camera
+raw files cannot be read, where LibRaw was looked for and which DLLs of Microsoft's Visual C++
+runtime did not load; at the end the exit code and the time taken. The log's own words are
+English whatever `--lang` says; an error's or a refusal's message appears as you saw it, so in
+Romanian under `--lang ro`. It holds the paths of your files and the figures measured on them,
+not their pixels.
 
 **How much.** The environment variable `FLATCHECK_LOG` sets the level. For a program started
 from a command window, set it there first:
@@ -1358,9 +1371,13 @@ dotnet publish FlatCheck.Wpf/FlatCheck.Wpf.csproj -c Release -r win-x64 --self-c
 The last two flags of the first keep `flatcheck.exe` a single file to copy: LibRaw comes as native DLLs
 (`raw_r`, `jpeg8`, `lcms2`, `zlib1`, ~2.1 MB), and without `IncludeNativeLibrariesForSelfExtract` they
 stay separate files beside the executable. If they get lost (only the `.exe` of a plain publish copied),
-the FITS modes work unchanged and a raw is refused with a message naming what is missing; there is no
-path by which their absence produces wrong figures. The window is published without `PublishSingleFile`,
-which WPF does not pack as cleanly. Both builds and both publishes put `lensfun/` beside the executable.
+the FITS modes work unchanged and a raw is refused; there is no path by which their absence produces
+wrong figures. On Windows the message names Microsoft's Visual C++ runtime, which the DLLs import and
+which is what a user's computer lacks, since every release carries the DLLs: the error the loader
+gives cannot tell a missing DLL from a missing runtime, and names neither. The diagnostic log says
+which: the folder `raw_r.dll` was found in, or that it was in none, and the runtime's DLLs that
+Windows does not load. The window is published without `PublishSingleFile`, which WPF does not
+pack as cleanly. Both builds and both publishes put `lensfun/` beside the executable.
 
 The gate is `scripts/verify.ps1`, about 3 minutes: the files shared with the starter kit, the test data
 manifest, the decision records and the design notes, then restore, the `dotnet format` check, a build
@@ -1418,16 +1435,22 @@ and shown in the window's **About**; the copyright is printed on every run, unde
 
 ### Third-party components
 
-The tool links four components written by others and ships a database made by others, all
+The tool links seven components written by others and ships a database made by others, all
 compatible with GPLv3:
 
 | component | role | licence |
 |---|---|---|
 | Sdcb.LibRaw | the C# wrapper over LibRaw | MIT |
-| LibRaw (the native DLLs) | reading camera raw files | LGPL-2.1 (the option chosen of LibRaw's dual LGPL-2.1 / CDDL-1.0) |
-| SixLabors.ImageSharp 3.1.x | decoding the JPEG preview a raw carries | Six Labors Split License 1.0, which grants open-source projects the terms of Apache 2.0. Pinned to 3.1.x because from 4.0 the package asks for a licence key at compile time, an error on Release builds. |
+| LibRaw (`raw_r.dll`) | reading camera raw files | LGPL-2.1 (the option chosen of LibRaw's dual LGPL-2.1 / CDDL-1.0) |
+| libjpeg-turbo (`jpeg8.dll`) | decoding, for LibRaw, the JPEG-compressed data some raw files hold | IJG, BSD-3-Clause and zlib |
+| Little CMS (`lcms2.dll`) | the colour management inside LibRaw | MIT |
+| zlib (`zlib1.dll`) | decompressing, for LibRaw, the Deflate-compressed data some raw files hold | zlib |
+| SixLabors.ImageSharp 3.1.x | decoding the JPEG preview a raw carries; pinned to 3.1.x because from 4.0 the package asks for a licence key at compile time, an error on Release builds | Apache-2.0 |
 | NLog and NLog.Targets.AtomicFile 6.2.x | writing the diagnostic log (see "Logs"), two windows into one file | BSD-3-Clause |
 | the lensfun database (the `lensfun/` folder) | the vignetting profiles of mode 5 and of the structure's profile comparison; data, not code, copied unchanged | CC BY-SA 3.0 |
+
+LibRaw's DLL calls the three libraries after it, which come in the same package as DLLs of their
+own. This software is based in part on the work of the Independent JPEG Group.
 
 Adobe's profiles (`.lcp`) are not a component: they are read on the machine, where Adobe put them, and
 copied nowhere.
@@ -1435,5 +1458,7 @@ copied nowhere.
 The FITS reader, the PNG encoder, every computation and every threshold are written by hand.
 
 Why each licence is compatible, including why LibRaw is taken under the LGPL and not the CDDL, is in
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The window's **About** shows the same list, with each
-component's copyright notice.
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Each licence's whole text is in the notices the
+Astro Darkroom folder carries as `THIRD-PARTY-NOTICES.txt`,
+[AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md) in the repository. The
+window's **About** shows the same list, with each component's copyright notice, and points to both.

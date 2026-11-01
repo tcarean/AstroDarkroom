@@ -188,7 +188,7 @@ public class WindowLanguageTests
                     ("en-exposure-result", new ExposureView { DataContext = exposure }),
                     ("en-histogram-result", new HistEqView { DataContext = histeq }),
                     ("en-split-result", new SplitView { DataContext = splitVm }),
-                    ("en-about", new AboutWindow()),
+                    ("en-about", new AboutWindow(SystemParameters.WorkArea)),
                 })
                 {
                     Render(view, name);

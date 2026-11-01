@@ -23,7 +23,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      Modal, centred on the parent window, without a maximise button: it is not a work screen,
      it is a notice to read and close. Esc closes it through IsCancel. No figure and no
      sentence is written here - everything comes through AboutViewModel, so that the text is
-     the same as what the console prints in its help. -->
+     the same as what the console prints in its help.
+
+     As tall as its content, but no taller than the work area of its screen, which the code
+     behind sets as its MaxHeight: then the cards scroll and the Close button, in a row of its
+     own, stays in view (R-125, ADR 0086). Where it fits, the margins add up to the same layout
+     as before. -->
 
 <Window x:Class="FlatCheck.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -38,52 +43,71 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         TextOptions.TextFormattingMode="Display"
         Hyperlink.RequestNavigate="OpenLink">
 
-  <StackPanel Margin="24,20,24,20">
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
 
-    <!-- ============================================================ header -->
-    <Grid>
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="*" />
-      </Grid.ColumnDefinitions>
+    <!-- Transparent, not null: the wheel scrolls over the margins and the gaps between the cards
+         too, which a null background leaves to the window. The keys reach it from the window's
+         PreviewKeyDown, since the focus stays on the Close button or a link. -->
+    <ScrollViewer x:Name="Cards" Grid.Row="0" VerticalScrollBarVisibility="Auto" Focusable="False" Background="Transparent">
+      <StackPanel Margin="24,20,24,0">
 
-      <Image x:Name="Logo" Grid.Column="0" Width="72" Height="72"
-             VerticalAlignment="Top" Margin="0,2,20,0"
-             RenderOptions.BitmapScalingMode="HighQuality" />
+        <!-- ============================================================ header -->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
 
-      <StackPanel Grid.Column="1" VerticalAlignment="Center">
-        <TextBlock Text="FlatCheck" FontSize="22" FontWeight="SemiBold" />
-        <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0" Text="{Binding Tagline}" />
-        <TextBlock Margin="0,10,0,0" Text="{Binding Banner}" FontFamily="{StaticResource MonoFont}" />
-        <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Copyright}" />
+          <Image x:Name="Logo" Grid.Column="0" Width="72" Height="72"
+                 VerticalAlignment="Top" Margin="0,2,20,0"
+                 RenderOptions.BitmapScalingMode="HighQuality" />
+
+          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <TextBlock Text="FlatCheck" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,0" Text="{Binding Tagline}" />
+            <TextBlock Margin="0,10,0,0" Text="{Binding Banner}" FontFamily="{StaticResource MonoFont}" />
+            <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Copyright}" />
+          </StackPanel>
+        </Grid>
+
+        <!-- ============================================================ licence -->
+        <Border Style="{StaticResource Card}" Margin="0,18,0,0">
+          <StackPanel>
+            <TextBlock Style="{StaticResource Heading}" Text="{Binding LicenceHeading}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" Text="{Binding Warranty}" />
+            <TextBlock Margin="0,10,0,0">
+              <Hyperlink NavigateUri="{Binding LicenseUrl}">
+                <Run Text="{Binding LicenseLinkLabel, Mode=OneWay}" />
+              </Hyperlink>
+            </TextBlock>
+          </StackPanel>
+        </Border>
+
+        <!-- ============================================================ third-party components -->
+        <!-- The lead ends with "online:" and the link under it is where each licence's whole text
+             is, true from FlatCheck's own release, which carries no notices file (R-095). -->
+        <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+          <StackPanel>
+            <TextBlock Style="{StaticResource Heading}" Text="{Binding ThirdPartyHeading}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" Text="{Binding ThirdPartyLead}" />
+            <TextBlock Margin="0,2,0,12" FontSize="11" TextWrapping="Wrap">
+              <Hyperlink NavigateUri="{Binding NoticesUrl}">
+                <Run Text="{Binding NoticesUrl, Mode=OneWay}" />
+              </Hyperlink>
+            </TextBlock>
+            <ItemsControl ItemsSource="{Binding Components}"
+                          ItemTemplate="{StaticResource ComponentRowTemplate}" />
+          </StackPanel>
+        </Border>
       </StackPanel>
-    </Grid>
-
-    <!-- ============================================================ licence -->
-    <Border Style="{StaticResource Card}" Margin="0,18,0,0">
-      <StackPanel>
-        <TextBlock Style="{StaticResource Heading}" Text="{Binding LicenceHeading}" />
-        <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" Text="{Binding Warranty}" />
-        <TextBlock Margin="0,10,0,0">
-          <Hyperlink NavigateUri="{Binding LicenseUrl}">
-            <Run Text="{Binding LicenseLinkLabel, Mode=OneWay}" />
-          </Hyperlink>
-        </TextBlock>
-      </StackPanel>
-    </Border>
-
-    <!-- ============================================================ third-party components -->
-    <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-      <StackPanel>
-        <TextBlock Style="{StaticResource Heading}" Text="{Binding ThirdPartyHeading}" />
-        <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,12" Text="{Binding ThirdPartyLead}" />
-        <ItemsControl ItemsSource="{Binding Components}"
-                      ItemTemplate="{StaticResource ComponentRowTemplate}" />
-      </StackPanel>
-    </Border>
+    </ScrollViewer>
 
     <!-- ============================================================ closing -->
-    <Button Content="{l:T En='Close', Ro='Inchide'}" IsCancel="True" IsDefault="True" Click="Close"
-            HorizontalAlignment="Right" Margin="0,16,0,0" MinWidth="96" />
-  </StackPanel>
+    <Button x:Name="CloseButton" Grid.Row="1" Content="{l:T En='Close', Ro='Inchide'}" IsCancel="True" IsDefault="True" Click="Close"
+            HorizontalAlignment="Right" Margin="24,16,24,20" MinWidth="96" />
+  </Grid>
 </Window>

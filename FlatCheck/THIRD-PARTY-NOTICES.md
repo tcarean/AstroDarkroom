@@ -2,7 +2,11 @@
 
 FlatCheck is distributed under the **GNU General Public License v3 or later** (see
 [LICENSE](LICENSE)). This file lists the third-party code it links, each component's licence and
-why that licence is compatible with GPLv3.
+why that licence is compatible with GPLv3. Each licence's whole text, with the copyright notices
+of the code of others a component says it contains, is in the notices the Astro Darkroom folder
+carries as `THIRD-PARTY-NOTICES.txt`, the repository's
+[AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md); the About window
+points to both.
 
 It is not a formality: two of the entries below involve a **choice**, not a mere observation.
 LibRaw is offered under two licences of which only one is compatible with the GPL, and the
@@ -26,10 +30,13 @@ mode could not run directly on a `.NEF`.
 
 - Project: <https://github.com/sdcb/Sdcb.LibRaw>
 
-## LibRaw (the native libraries of `Sdcb.LibRaw.runtime.*`)
+## LibRaw (`raw_r.dll`, of `Sdcb.LibRaw.runtime.*`)
 
-**Role.** The actual decoding of the raw formats. It comes as native DLLs (`raw_r`, `jpeg8`,
-`lcms2`, `zlib1`), shipped beside the executable.
+**Role.** The actual decoding of the raw formats. It comes as a native DLL, `raw_r.dll`, beside
+the executable or inside a single-file one, with the three libraries it calls, each a component
+of its own below: libjpeg-turbo (`jpeg8.dll`), Little CMS (`lcms2.dll`) and zlib (`zlib1.dll`).
+The four import Microsoft's Visual C++ v14 runtime (x64), which no release of FlatCheck ships;
+without it a raw is refused with a message that names it (R-124).
 
 **Licence.** Dual, at the choice of whoever uses it: **LGPL-2.1-only OR CDDL-1.0**.
 
@@ -45,13 +52,66 @@ here, and not worked out when needed.
 
 - Project: <https://www.libraw.org/>
 
+## libjpeg-turbo (`jpeg8.dll`)
+
+**Role.** Decodes, for LibRaw, the JPEG-compressed data some raw files hold, lossy DNG among
+them. It comes in `Sdcb.LibRaw.runtime.win64` as `jpeg8.dll`, which reports itself as
+libjpeg-turbo 2.1.3.
+
+**Licence.** Three, by part of the code: the IJG licence (the code from the Independent JPEG
+Group's libjpeg), the modified (3-clause) BSD licence (the TurboJPEG API and the build system)
+and the zlib licence (the SIMD extensions).
+
+**Compatibility.** The Free Software Foundation lists all three as compatible with the GNU GPL.
+The IJG licence asks the documentation of a program distributed as executables to state that it
+is based in part on the IJG's work, which the About window's row and the README do:
+
+This software is based in part on the work of the Independent JPEG Group.
+
+Copyright (C) 1991-2020 Thomas G. Lane, Guido Vollbeding; Copyright (C) 2009-2022 D. R.
+Commander; Copyright (C) 2015 Viktor Szathmáry.
+
+- Project: <https://libjpeg-turbo.org/>
+
+## Little CMS (`lcms2.dll`)
+
+**Role.** The colour management inside LibRaw, its ICC profile transforms. It comes in
+`Sdcb.LibRaw.runtime.win64` as `lcms2.dll`, which reports itself as Little CMS 2.12.
+
+**Licence.** MIT.
+
+**Compatibility.** MIT is permissive and compatible with GPLv3.
+
+Copyright (c) 1998-2020 Marti Maria Saguer.
+
+- Project: <https://www.littlecms.com/>
+
+## zlib (`zlib1.dll`)
+
+**Role.** Decompresses, for LibRaw, the Deflate-compressed data some raw files hold, DNG among
+them. It comes in `Sdcb.LibRaw.runtime.win64` as `zlib1.dll`, which reports itself as zlib
+1.2.11.
+
+**Licence.** The zlib licence.
+
+**Compatibility.** Permissive; the Free Software Foundation lists it as compatible with the GNU
+GPL. It asks nothing of a binary distribution.
+
+Copyright (C) 1995-2017 Jean-loup Gailly and Mark Adler.
+
+- Project: <https://zlib.net/>
+
 ## SixLabors.ImageSharp
 
 **Role.** Decodes the JPEG preview the camera embeds in the raw file, the very image from which
 the camera computed its on-screen histogram. It is used for display only, in the Exposure tab: it
 enters no verdict and produces no figure that a decision about the flat rests on.
 
-**Licence.** Six Labors Split License, version 1.0 (June 2022).
+**Licence.** Apache-2.0, granted by the Six Labors Split License, version 1.0 (June 2022), to
+software under an open-source licence. Once granted, the Split License asks all documentation to
+name the granted licence only ("You must reference the granted license only in all
+documentation"), which the About window and the README do (ADR 0085); why the grant holds
+follows.
 
 **Compatibility.** It is not a single restrictive licence but a **conditional dual** one. The text
 grants the Apache 2.0 terms when:
@@ -228,4 +288,6 @@ See the kit's rule "Packages" (`.claude/rules/kit/process.md`), the rule "Packag
 [CLAUDE.md](CLAUDE.md) and the note [docs/design/dependencies.md](docs/design/dependencies.md). In
 short: a package is discussed before it is added, not after; its compatibility with GPLv3 is
 shown, not assumed; and the reason is written here, so the next reader does not have to find it
-again.
+again. A package that brings several native libraries gets an entry for each, as LibRaw's
+runtime does: `ThirdPartyTests` binds every DLL of its `runtimes/win-x64/native` folder to the
+one component that names it.

@@ -6,7 +6,8 @@
 > and the displayed list. **Covers:** by pointer, `FlatCheck.Core.csproj`, `Directory.Packages.props`,
 > `Directory.Build.props` (the audit codes kept as warnings),
 > `RawReader.cs`, `PreviewReader.cs`, `ThirdParty.cs`, `THIRD-PARTY-NOTICES.md`; in full, one
-> mechanic of the lazy loading of libraw. Cross-references such as "see X below" point at the
+> mechanic of the lazy loading of libraw and the refusal when LibRaw cannot be loaded, with
+> `VcRuntime.cs`. Cross-references such as "see X below" point at the
 > sibling notes in this folder; the index in `README.md` here maps them. A change to the code this
 > describes means this note is updated in the same task, or deleted with the decision it explains.
 
@@ -20,7 +21,9 @@ package only after its candidate, licence, size and alternatives were brought to
 measured, GPLv3 compatibility argued in `THIRD-PARTY-NOTICES.md`, per-RID native binaries a point
 against and not a veto, the three places a package touches and the two of them `ThirdPartyTests`
 enforces (the README table under "Third-party components" is the fourth copy, kept by hand), and
-the one data component the tests allow. ADR 0028 holds why the lensfun database is that component
+the one data component the tests allow. A package that brings several native libraries is one
+component per DLL, each naming its files (`NativeFiles`), as the Astro Darkroom folder's notices
+list them: LibRaw's win-x64 runtime is LibRaw, libjpeg-turbo, Little CMS and zlib (ADR 0085). ADR 0028 holds why the lensfun database is that component
 and the Adobe profiles deliberately are not; ADR 0040 holds why the list is displayed in "Despre" rather
 than shipped as a file (LGPL-2.1 §6 asks for it, and nothing rides beside a single-file exe).
 
@@ -40,13 +43,44 @@ class, so `Decode` copies what its log line needs into a `double` before the lam
 guard walks the nested types and the fields' generic arguments for that reason (the review of
 2026-10-27).
 
+**When LibRaw cannot be loaded** (R-124, ADR 0085). `Sdcb.LibRaw`'s resolver, `LibRawNativeLoader`
+(0.21.1.7), asks .NET for `raw_r.dll` and, failing that, for `libraw.dll`, which exists nowhere,
+so the `DllNotFoundException` that reaches `RawReader` names no cause. In a folder publish it
+names `libraw.dll`, both when `raw_r.dll` is missing and when Windows cannot load what it
+imports. In the single-file console it says only "Dll was not found." (measured 2026-11-01).
+What `raw_r.dll` imports is Microsoft's Visual C++ runtime: the four DLLs of `VcRuntime.Files`,
+which `LibRawLoadTests` reads from the import tables. Every
+release has LibRaw's DLLs (inside the console's single file, beside the window's exe, beside it
+in the Astro Darkroom folder) and none ships the runtime, so on Windows `CannotLoad` names the
+runtime, with Microsoft's link last; on another system it says where LibRaw's native libraries
+must be. The refusal carries no inner exception: `TabViewModel.Describe` appends every inner
+message the text does not contain, which would put the loader's `libraw.dll` back under the
+message in the window, a folder publish. The loader's exception goes to the log instead, on `RawReader`'s Warn
+line, with two answers that tell the two causes apart (R-110):
+
+- the first of the folders .NET searches before Windows' own search that holds `raw_r.dll`: the
+  host's `NATIVE_DLL_SEARCH_DIRECTORIES`, which name the program's folder, a build's
+  `runtimes/win-x64/native` and a single-file program's extraction folder (the last checked on
+  2026-11-01: the line named it when its `raw_r.dll` could not load);
+- which of the runtime's DLLs `NativeLibrary.TryLoad` does not load by name, the launcher's
+  probe. That search starts in the program's folder, while `raw_r.dll`'s imports are looked for
+  in its own folder first; the two differ only for the single-file console, whose `raw_r.dll`
+  sits in the extraction folder, where no runtime is.
+
+The probe runs on this path only, after LibRaw failed, and only when the Warn line is written:
+the launcher measured 15 to 26 ms for the four loads (AstroDarkroom ADR 0016), on a run that is
+failing anyway. A runtime with all four DLLs but older than LibRaw's build tools passes the
+probe; the line then says the four load, and the message still names the runtime, too old.
+
 ### `SixLabors.ImageSharp`
 
 ADR 0010 holds the whole of it: why a JPEG decoder is not hand-rolled, the Split License read
 and why FlatCheck qualifies for its Apache-2.0 terms all the way downstream, the pin to 3.1.x
 and what 4.x would cost (a licence key at compile time, `ColorProfileHandling.Preserve`), why
 the version is pinned at all, the one file that names an ImageSharp type (`PreviewReader.cs`),
-and `StbImageSharp` as the measured drop-in fallback if the licence ever moves.
+and `StbImageSharp` as the measured drop-in fallback if the licence ever moves. The list names
+its licence `Apache-2.0` alone, as the Split License asks of all documentation once it grants
+it (ADR 0085).
 
 ### `NLog`
 

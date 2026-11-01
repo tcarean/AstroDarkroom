@@ -31,14 +31,18 @@
 // No interpolation, no white balance, no gamma: --expo measures the original ADU level, and any
 // development would destroy it.
 //
-// The native DLLs come from the Sdcb.LibRaw.runtime.* packages and sit BESIDE the executable.
-// If they are missing (someone copied only flatcheck.exe), the FITS modes go on unchanged - this
-// type is loaded only when a raw file is asked for - and here the run ends with a message that
-// says what is missing, not with a DllNotFoundException.
+// The native DLLs come from the Sdcb.LibRaw.runtime.* packages and sit beside the executable, or
+// inside it in a single-file publish, and they import Microsoft's Visual C++ runtime, which no
+// release of the tool ships. When LibRaw cannot be loaded, the FITS modes go on unchanged - libraw
+// is reached only when a raw file is read - and here the reader refuses the raw with a message
+// that, on Windows, names the runtime, the likely cause, not with the loader's
+// DllNotFoundException, which names no cause (libraw.dll in a folder publish, nothing in a
+// single-file one); that one goes to the log (R-124, ADR 0085).
 
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using NLog;
 using Sdcb.LibRaw;
@@ -110,10 +114,10 @@ namespace FlatCheck
             {
                 return Decode(path);
             }
-            catch (DllNotFoundException e) { throw Missing(e); }
-            catch (FileNotFoundException e) when (e.FileName != path) { throw Missing(e); }
-            catch (BadImageFormatException e) { throw Missing(e); }
-            catch (TypeInitializationException e) { throw Missing(e); }
+            catch (DllNotFoundException e) { throw CannotLoad(e); }
+            catch (FileNotFoundException e) when (e.FileName != path) { throw CannotLoad(e); }
+            catch (BadImageFormatException e) { throw CannotLoad(e); }
+            catch (TypeInitializationException e) { throw CannotLoad(e); }
         }
 
         /// <summary>
@@ -134,10 +138,10 @@ namespace FlatCheck
             {
                 return ReadInfo(path);
             }
-            catch (DllNotFoundException e) { throw Missing(e); }
-            catch (FileNotFoundException e) when (e.FileName != path) { throw Missing(e); }
-            catch (BadImageFormatException e) { throw Missing(e); }
-            catch (TypeInitializationException e) { throw Missing(e); }
+            catch (DllNotFoundException e) { throw CannotLoad(e); }
+            catch (FileNotFoundException e) when (e.FileName != path) { throw CannotLoad(e); }
+            catch (BadImageFormatException e) { throw CannotLoad(e); }
+            catch (TypeInitializationException e) { throw CannotLoad(e); }
         }
 
         /// <summary>
@@ -154,22 +158,102 @@ namespace FlatCheck
             return frame;
         }
 
+        /// <summary>The DLL that Sdcb.LibRaw's resolver loads first on Windows; its last try,
+        /// libraw.dll, exists nowhere, so in a folder publish its exception names that one
+        /// whatever is missing (in a single-file one, none).</summary>
+        internal const string RawLibrary = "raw_r.dll";
+
         /// <summary>
-        /// The error that says libraw's native DLLs are missing beside the executable, and how
-        /// to publish so that they are not.
+        /// The refusal when LibRaw cannot be loaded (R-124): the message of
+        /// <see cref="CannotLoadMessage"/> for this system and no inner exception, since the
+        /// loader's names no cause (libraw.dll in a folder publish, nothing in a single-file one)
+        /// and the window adds every inner message to the text it shows. The loader's exception
+        /// goes to the log instead, on a Warn line that on Windows also says where
+        /// <see cref="RawLibrary"/> is among the folders .NET searches and which of the Visual C++
+        /// runtime's DLLs Windows does not load (R-110, ADR 0085). The probe runs here only, after
+        /// LibRaw failed: never on a working computer.
         /// </summary>
-        /// <param name="inner">The loader's own exception, kept as the inner one.</param>
-        /// <returns>An InvalidOperationException with a message for the user.</returns>
-        static Exception Missing(Exception inner)
-            => new InvalidOperationException(T(
-                "cannot load libraw, so camera raw files cannot be read. The native "
-              + "DLLs (raw_r.dll and its neighbours) must sit beside flatcheck.exe. The FITS "
-              + "modes work without them; for raw, publish with IncludeNativeLibrariesForSelfExtract "
-              + "or copy the whole folder, not only the executable. (",
-                "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "
-              + "native (raw_r.dll si vecinii) trebuie sa stea langa flatcheck.exe. Modurile "
-              + "pe FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
-              + "sau copiaza tot folderul, nu doar executabilul. (") + inner.Message + ")", inner);
+        /// <param name="cause">The loader's exception: a DllNotFoundException, a
+        /// FileNotFoundException for another file, a BadImageFormatException or a
+        /// TypeInitializationException. Logged, not kept. Not null.</param>
+        /// <returns>An InvalidOperationException with the message for the user.</returns>
+        internal static Exception CannotLoad(Exception cause)
+        {
+            bool windows = OperatingSystem.IsWindows();
+            if (Log.IsWarnEnabled)
+            {
+                IReadOnlyList<string> searched = windows ? NativeSearchFolders() : Array.Empty<string>();
+                Log.Warn(cause, CannotLoadLine(windows,
+                                               windows ? FolderHolding(RawLibrary, searched, File.Exists) : null,
+                                               searched,
+                                               windows ? VcRuntime.Missing(VcRuntime.CanLoad) : Array.Empty<string>()));
+            }
+            return new InvalidOperationException(CannotLoadMessage(windows));
+        }
+
+        /// <summary>
+        /// What the user is told when LibRaw cannot be loaded, in the run's language (R-124). On
+        /// Windows: Microsoft's Visual C++ runtime is most likely missing or too old, in the Astro
+        /// Darkroom launcher's words, then Microsoft's link last, so that nothing of the message
+        /// follows the address a user copies; no advice about publishing, which every release
+        /// makes needless.
+        /// Elsewhere, where there is no such runtime: where LibRaw's native libraries must be.
+        /// </summary>
+        /// <param name="windows">Whether the program runs on Windows.</param>
+        /// <returns>The message, lower-case first, as the console prints it after its prefix.</returns>
+        internal static string CannotLoadMessage(bool windows) => windows
+            ? T("cannot load LibRaw: most likely Microsoft's Visual C++ runtime is missing or too old, so FlatCheck "
+              + "cannot read camera raw files until its latest version is installed (the FITS modes work without it): "
+              + VcRuntime.DownloadUrl,
+                "nu pot incarca LibRaw: cel mai probabil runtime-ul Microsoft Visual C++ lipseste sau este prea vechi, "
+              + "deci FlatCheck nu poate citi fisiere raw de aparat pana nu instalezi ultima lui versiune (modurile pe "
+              + "FITS merg si fara el): " + VcRuntime.DownloadUrl)
+            : T("cannot load LibRaw, so camera raw files cannot be read (the FITS modes work without it): its native "
+              + "libraries exist for Windows x64 and Linux x64 only, and must sit beside the program or inside it, as a "
+              + "publish with IncludeNativeLibrariesForSelfExtract puts them",
+                "nu pot incarca LibRaw, deci nu pot citi fisiere raw de aparat (modurile pe FITS merg si fara el): "
+              + "bibliotecile lui native exista doar pentru Windows x64 si Linux x64 si trebuie sa stea langa program "
+              + "sau in el, cum le pune o publicare cu IncludeNativeLibrariesForSelfExtract");
+
+        /// <summary>
+        /// The log line when LibRaw cannot be loaded, the loader's exception following it (R-110):
+        /// on Windows, where <see cref="RawLibrary"/> was found among the folders searched, or that
+        /// it was in none, then the runtime's clause (<see cref="LogText.VcRuntime"/>).
+        /// </summary>
+        /// <param name="windows">Whether the program runs on Windows; elsewhere the line is its
+        /// first clause alone.</param>
+        /// <param name="rawFolder">The folder holding raw_r.dll, from <see cref="FolderHolding"/>;
+        /// null when none of <paramref name="searched"/> does.</param>
+        /// <param name="searched">The folders .NET searches for a native library; not null.</param>
+        /// <param name="missingRuntime">The runtime's DLLs that do not load, from
+        /// <see cref="VcRuntime.Missing"/>; empty when all load. Not null.</param>
+        /// <returns>The line.</returns>
+        internal static string CannotLoadLine(bool windows, string rawFolder, IReadOnlyList<string> searched, IReadOnlyList<string> missingRuntime)
+        {
+            const string Head = "LibRaw could not be loaded, so camera raw files cannot be read";
+            if (!windows) return Head;
+            return Head + "; " + RawLibrary + " in " + (rawFolder ?? "none of " + LogText.List(searched))
+                 + "; " + LogText.VcRuntime(missingRuntime);
+        }
+
+        /// <summary>The first of the folders that holds a file.</summary>
+        /// <param name="file">The file's name, such as raw_r.dll.</param>
+        /// <param name="folders">The folders, in the order they are searched; not null.</param>
+        /// <param name="exists">Whether a path names an existing file: File.Exists, or a stand-in
+        /// in a test. Not null.</param>
+        /// <returns>The folder as given; null when none holds the file.</returns>
+        internal static string FolderHolding(string file, IReadOnlyList<string> folders, Func<string, bool> exists)
+            => folders.FirstOrDefault(folder => exists(Path.Combine(folder, file)));
+
+        /// <summary>
+        /// The folders .NET searches for a native library before Windows' own search: the host's
+        /// NATIVE_DLL_SEARCH_DIRECTORIES, which name the program's folder, a build's
+        /// runtimes/win-x64/native and a single-file program's extraction folder.
+        /// </summary>
+        /// <returns>The folders, in their order; empty when the host gives none.</returns>
+        static IReadOnlyList<string> NativeSearchFolders()
+            => ((AppContext.GetData("NATIVE_DLL_SEARCH_DIRECTORIES") as string) ?? "")
+                .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         /// <summary>
         /// The full decode behind <see cref="Load"/>: Unpack, the visible mosaic, the scale, the

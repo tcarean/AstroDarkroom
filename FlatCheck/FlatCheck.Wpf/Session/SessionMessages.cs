@@ -1080,23 +1080,26 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// Why the list is here and not only in a file: LibRaw's LGPL asks for the notice where
-        /// the program shows its own copyright, and an exe copied alone has no notices file
-        /// beside it. The compatibility reasons stay in the file.
+        /// the program shows its own copyright. Each licence's whole text, and why it is
+        /// compatible, is in two places, one of them true wherever the tool came from (R-095):
+        /// THIRD-PARTY-NOTICES.txt beside the program in the Astro Darkroom folder, and online,
+        /// at the link the window shows under this lead (<see cref="ThirdParty.NoticesUrl"/>),
+        /// since FlatCheck's own release carries no notices file.
         /// </summary>
         /// <param name="linked">How many components are linked into the executable, from the
         /// core's list: the database it ships is named apart.</param>
-        /// <returns>The lead above the list.</returns>
+        /// <returns>The lead above the list, ending with a colon before the link.</returns>
         internal static string AboutThirdPartyLead(int linked) =>
             T($"The tool links {CountWord(linked)} components written by others and ships a database made by "
             + "others, all compatible with GPLv3. "
             + "The FITS reader, the PNG encoder, every computation and every threshold are written "
-            + "by hand. Why each licence is compatible is in "
-            + "THIRD-PARTY-NOTICES.md, beside the source.",
+            + "by hand. Each licence's whole text, and why it is compatible, is in THIRD-PARTY-NOTICES.txt, "
+            + "beside the program in the Astro Darkroom folder, and online:",
               $"Unealta leaga {CountWord(linked)} componente scrise de altii si livreaza o baza de date facuta de "
             + "altii, toate compatibile cu GPLv3. "
             + "Cititorul FITS, encoderul PNG, toate calculele si toate pragurile sunt scrise "
-            + "de mana. Motivele pentru care fiecare licenta e compatibila sunt in "
-            + "THIRD-PARTY-NOTICES.md, langa sursa.");
+            + "de mana. Textul intreg al fiecarei licente, si de ce e compatibila, e in THIRD-PARTY-NOTICES.txt, "
+            + "langa program in folderul Astro Darkroom, si online:");
 
         /// <summary>A small count as a word, for a sentence: <c>four</c> / <c>patru</c>; the
         /// digits past nine.</summary>
