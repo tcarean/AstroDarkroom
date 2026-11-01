@@ -1,7 +1,7 @@
 # 0010. CopyWcs is the sixth tool of the suite, listed between ImageVisualCompare and AstroPhotoAnalyzer
 
 Date: 2026-10-27
-Status: accepted 2026-10-27
+Status: accepted 2026-10-27; the description of CopyWcs superseded by 0017
 Supersedes: 0002 in part (the count of five windows)
 
 ## Context

@@ -46,12 +46,12 @@ public static class AppCatalogue
         using IDisposable scope = Use(language);
         return
         [
-            new("DarksCheck", "DarksCheck", T("Checks the darks of a session or of a library", "Verifica dark-urile unei sesiuni sau ale unei biblioteci"), "DarksCheck.Wpf.exe", "darkscheck.ico"),
-            new("FlatCheck", "FlatCheck", T("Checks the flats of a lens", "Verifica flat-urile unui obiectiv"), "FlatCheck.Wpf.exe", "flatcheck.ico"),
-            new("LightsCheck", "LightsCheck", T("Checks the lights of a session: focus, trailing, dithering, drift", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift"), "LightsCheck.Wpf.exe", "lightscheck.ico"),
-            new("ImageVisualCompare", "ImageVisualCompare", T("Compares two versions of the same processing, pixel by pixel", "Compara doua variante ale aceleiasi procesari, pixel cu pixel"), "ImageVisualCompare.Wpf.exe", "ImageVisualCompare.ico"),
-            new("WCS_Copy", "CopyWcs", T("Copies the plate solve of one FITS into another", "Copiaza plate solve-ul unui FITS in altul"), "CopyWcs.Wpf.exe", "copywcs.ico"),
-            new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", T("Checks a final image before printing", "Verifica o imagine finala inainte de print"), "AstroPhotoAnalyzer.Wpf.exe", "AstroPhotoAnalyzer.ico"),
+            new("DarksCheck", "DarksCheck", T("Checks the darks of a session or a library: light leaks, thermal drift, noise, hot and dead pixels, and whether their temperature matches the lights.", "Verifica dark-urile unei sesiuni sau biblioteci: scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti si morti, si daca au temperatura light-urilor."), "DarksCheck.Wpf.exe", "darkscheck.ico"),
+            new("FlatCheck", "FlatCheck", T("Checks the flats of a lens: exposure, symmetry, vignetting against the lens profile, and whether they correct a real light; builds a flat from the profile.", "Verifica flat-urile unui obiectiv: expunerea, simetria, vinietarea fata de profilul obiectivului si daca corecteaza un light real; face un flat din profil."), "FlatCheck.Wpf.exe", "flatcheck.ico"),
+            new("LightsCheck", "LightsCheck", T("Checks the lights of a night: which frames to leave out of the stack and why, dithering, mount drift, polar alignment, what to change next time.", "Verifica light-urile unei nopti: ce cadre sa lasi afara din stack si de ce, dithering-ul, deriva monturii, alinierea polara, ce sa schimbi data viitoare."), "LightsCheck.Wpf.exe", "lightscheck.ico"),
+            new("ImageVisualCompare", "ImageVisualCompare", T("Compares two versions of one image with a before/after slider (two stretches, with and without stars), pixel by pixel; reveals faint gradients.", "Compara doua variante ale unei imagini cu un slider inainte/dupa (doua stretch-uri, cu si fara stele), pixel cu pixel; arata gradientii slabi."), "ImageVisualCompare.Wpf.exe", "ImageVisualCompare.ico"),
+            new("WCS_Copy", "CopyWcs", T("Copies the plate solve of a FITS back into its processed version, which lost it on the way, so that annotations and catalogues find the sky again.", "Copiaza plate solve-ul unui FITS inapoi in varianta lui procesata, care l-a pierdut pe drum, ca adnotarile si cataloagele sa regaseasca cerul."), "CopyWcs.Wpf.exe", "copywcs.ico"),
+            new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", T("Prepares an image for print: simulates the paper, checks the blacks against its limits, helps edit the curves and soft-proofs with the paper's ICC profile.", "Pregateste o imagine pentru print: simuleaza hartia, verifica negrurile fata de limitele ei, ajuta la editarea curbelor si face soft proofing cu profilul ICC."), "AstroPhotoAnalyzer.Wpf.exe", "AstroPhotoAnalyzer.ico"),
         ];
     }
 }

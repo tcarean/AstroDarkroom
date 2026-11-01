@@ -135,7 +135,10 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   `Icons.LargestFrame`, which the card's first column shows at 40 px with a `DataTrigger`
   that dims it to the disabled button's opacity when the app is missing (R-010, ADR 0011),
   and `IsAvailable`, which
-  enables the button. The button's tooltip is shown on a disabled button too
+  enables the button. The description wraps in the card's middle column, what the window's
+  fixed width leaves once the margins, the icon's column and the button are taken, 416 px,
+  where every description takes at most two lines (ADR 0017): a wider button, icon or margin
+  narrows it. The button's tooltip is shown on a disabled button too
   (`ToolTipService.ShowOnDisabled`), since the reason is the one thing a disabled row must
   tell. The window does not watch the folder: a file that appears or goes away is seen at the
   next relabel, or at the click, where a missing file becomes a message box instead of a crash.

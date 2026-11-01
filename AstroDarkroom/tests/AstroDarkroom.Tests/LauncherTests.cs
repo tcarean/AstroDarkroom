@@ -29,12 +29,12 @@ public class LauncherTests
     {
         SuiteApp[] expected =
         [
-            new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau ale unei biblioteci", "DarksCheck.Wpf.exe", "darkscheck.ico"),
-            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv", "FlatCheck.Wpf.exe", "flatcheck.ico"),
-            new("LightsCheck", "LightsCheck", "Verifica light-urile unei sesiuni: focus, trailing, dithering, drift", "LightsCheck.Wpf.exe", "lightscheck.ico"),
-            new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale aceleiasi procesari, pixel cu pixel", "ImageVisualCompare.Wpf.exe", "ImageVisualCompare.ico"),
-            new("WCS_Copy", "CopyWcs", "Copiaza plate solve-ul unui FITS in altul", "CopyWcs.Wpf.exe", "copywcs.ico"),
-            new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Verifica o imagine finala inainte de print", "AstroPhotoAnalyzer.Wpf.exe", "AstroPhotoAnalyzer.ico"),
+            new("DarksCheck", "DarksCheck", "Verifica dark-urile unei sesiuni sau biblioteci: scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti si morti, si daca au temperatura light-urilor.", "DarksCheck.Wpf.exe", "darkscheck.ico"),
+            new("FlatCheck", "FlatCheck", "Verifica flat-urile unui obiectiv: expunerea, simetria, vinietarea fata de profilul obiectivului si daca corecteaza un light real; face un flat din profil.", "FlatCheck.Wpf.exe", "flatcheck.ico"),
+            new("LightsCheck", "LightsCheck", "Verifica light-urile unei nopti: ce cadre sa lasi afara din stack si de ce, dithering-ul, deriva monturii, alinierea polara, ce sa schimbi data viitoare.", "LightsCheck.Wpf.exe", "lightscheck.ico"),
+            new("ImageVisualCompare", "ImageVisualCompare", "Compara doua variante ale unei imagini cu un slider inainte/dupa (doua stretch-uri, cu si fara stele), pixel cu pixel; arata gradientii slabi.", "ImageVisualCompare.Wpf.exe", "ImageVisualCompare.ico"),
+            new("WCS_Copy", "CopyWcs", "Copiaza plate solve-ul unui FITS inapoi in varianta lui procesata, care l-a pierdut pe drum, ca adnotarile si cataloagele sa regaseasca cerul.", "CopyWcs.Wpf.exe", "copywcs.ico"),
+            new("AstroPhotoAnalyzer", "AstroPhotoAnalyzer", "Pregateste o imagine pentru print: simuleaza hartia, verifica negrurile fata de limitele ei, ajuta la editarea curbelor si face soft proofing cu profilul ICC.", "AstroPhotoAnalyzer.Wpf.exe", "AstroPhotoAnalyzer.ico"),
         ];
         Assert.Equal(expected, AppCatalogue.Apps);
     }
