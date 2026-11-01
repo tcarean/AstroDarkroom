@@ -154,6 +154,11 @@ Figures that exist in the design notes but have no case here, and why:
   through -19.20 % to +35.73 %, correlation -0.94): a 32-frame run of 24 MP lights, and the
   frames are not in the manifest. The figures are in `modes-light.md`; the behaviour is pinned
   by the synthetic series goldens.
+- The `--light` series on `Veil/2026-10-06-3h` (87 frames, Samyang 135 f/2.8 on the D3300: mean
+  +1.13 %, SEM 0.15, sky span 6.6 points, verdict OK; measured 2026-11-01 with the 2.3.0
+  console): the positive counterpart of the Smida run, an 87-frame run of 24 MP lights whose
+  frames are not in the manifest either. The figures are in `modes-light.md`, "The validity
+  limit".
 - The per-orientation numpy analyses of the flat sources (`flat-sources.md`): benches, not the
   tool.
 

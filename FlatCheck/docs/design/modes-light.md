@@ -55,6 +55,21 @@ sky gradient), the layers `LightSuitability.Check` derives the field of view fro
 the focal-only fallback prints no field figure, and why `--fov` is not a force flag. Guards:
 `AnEmptyHeaderRunsInsteadOfRefusing`, `TheFocalOnlyFallbackIsGradedOnTheFocalLength`.
 
+The positive counterpart of the Smida run, measured on 2026-11-01 with the 2.3.0 console on
+`Veil/2026-10-06-3h/process` (Samyang 135 f/2.8 on the D3300, ~12 degrees of diagonal, 87
+`pp_light_*.fit` calibrated with bias and flat, `FOCALLEN=135` and no `XPIXSZ`, so the focal-only
+fallback graded it `Ok` and the field printed as undetermined): mean +1.13 %, spread
+-1.30 .. +4.31 %, SEM 0.15, correlation not applied (the sky gradient went 6.5 .. 13.1 %, a span
+of 6.6 points), verdict OK. Over frames 37-87 the sky gradient doubled while the radial figure
+stayed near +0.4 %: at that field the plane and the radial terms separate. The radial column is
+still not noise around a constant: -0.3 % over frames 1-9, a smooth hump to +4.31 % over frames
+10-36 (mean +3.0 %), 0.30 points between consecutive frames. A single frame at 12 degrees can
+therefore carry 3-4 points of sky, and the SEM, which assumes independent frames, understates
+that; only the series mean is a measurement. The same master's structure run is GOOD on the
+five shape tests and REDO on depth against the lensfun profile (+0.95 stops); the lights show
+the flat corrects the vignetting to ~1 % in the corner, so the profile was wrong for that setup,
+not the flat. Not automated (`docs/validation.md`, "Not automated").
+
 #### Series mode - `flatcheck process/ --light`
 
 ADR 0021 holds the whole of it: why a series carries a discriminator a single frame does not,
