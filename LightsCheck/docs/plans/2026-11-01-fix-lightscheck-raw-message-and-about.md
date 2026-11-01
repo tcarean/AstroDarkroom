@@ -306,3 +306,26 @@ Other files:
     [vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, vcomp140.dll] load, so it is not the
     cause` (this PC has the runtime);
   - the inner `DllNotFoundException`, naming `libraw.dll`, in the log.
+- **The first review** (a subagent, of da5968fb) found no run-time defect. It found About's
+  height, an overclaiming log line, a wrong ADR detail, three weak tests and two stale sentences.
+  The fix commit:
+  - ADR 0030: only the window's bundle holds `vcruntime140_cor3.dll`, and each program extracts
+    under its own name.
+  - The reader's header comment: no libraw type is loaded until a raw is asked for. The type
+    itself is loaded on every run.
+  - R-007's refusal message follows `--lang` since ADR 0022.
+  - A test that the reader's failures share the process's one check
+    (`R074_TheReadersFailuresShareTheProcesssOneCheck`, with `Runtime` and `HasAsked` made
+    visible to it).
+  - The notices-heading test matches a heading's first word, not a substring: the new
+    `Sdcb.LibRaw.runtime.win64` headings had hidden a missing `## Sdcb.LibRaw`, which now fails
+    it.
+  - The import test's runtime pattern also takes `concrt` and `vccorlib`.
+  - The README's "its DLL calls".
+  - A test renamed: `EveryHeadingIsWritten`.
+- **The owner's two answers to the review**, both as recommended:
+  - The four-load line ends "so none is missing", where the plan had "so it is not the cause".
+    A runtime too old for LibRaw's DLLs may still have the four. The wording changed in the
+    code, R-074, ADR 0030, `logging.md`, the README and the test, which is now
+    `R074_WhenTheFourLoad_TheLogSaysNoneIsMissing`.
+  - The About fit is made in this branch, as APA's ADR 0070 (below).

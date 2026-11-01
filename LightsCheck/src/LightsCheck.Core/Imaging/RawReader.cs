@@ -32,8 +32,8 @@
 // The native DLLs come from the Sdcb.LibRaw.runtime.* packages and travel with the program:
 // beside it in the suite folder, inside the single file of the own release, which extracts them
 // under %TEMP%\.net\ when it starts. They import Microsoft's Visual C++ runtime, which neither
-// form ships. When libraw cannot be loaded, a FITS run is unaffected (this type is loaded only
-// when a raw is asked for) and a raw run fails naming the runtime as the likely cause, with
+// form ships. When libraw cannot be loaded, a FITS run is unaffected (no libraw type is loaded
+// until a raw is asked for) and a raw run fails naming the runtime as the likely cause, with
 // Microsoft's link; the log says once which of the runtime's DLLs Windows cannot load (R-074).
 //
 // The diagnostic log (ADR 0029) gets libraw's own figures at Debug and the lens block that
@@ -158,7 +158,7 @@ namespace LightsCheck.Core
         /// </summary>
         /// <param name="inner">The loader's own exception, kept as the inner one.</param>
         /// <returns>An InvalidOperationException with a message for the user.</returns>
-        static InvalidOperationException Missing(Exception inner) => Missing(inner, Runtime);
+        internal static InvalidOperationException Missing(Exception inner) => Missing(inner, Runtime);
 
         /// <summary>
         /// <see cref="Missing(Exception)"/> with the runtime asked through <paramref name="check"/>,
@@ -193,18 +193,19 @@ namespace LightsCheck.Core
         internal static IReadOnlyList<string> RuntimeFiles => RuntimeDlls;
 
         /// <summary>The process's own check, which asks Windows through <see cref="CanLoad"/>.</summary>
-        static readonly RuntimeCheck Runtime = new RuntimeCheck(CanLoad);
+        internal static readonly RuntimeCheck Runtime = new RuntimeCheck(CanLoad);
 
         /// <summary>
         /// The log line of the runtime check (R-074, R-071): the runtime's DLLs that do not load,
-        /// or the four loading, so the runtime is not why libraw failed.
+        /// or the four loading, so none is missing. Loading does not prove the runtime new enough
+        /// for libraw's DLLs, so the line claims no more than that (ADR 0030).
         /// </summary>
         /// <param name="missing">The DLLs that do not load, in the order of <see cref="RuntimeFiles"/>; empty when the four load.</param>
         /// <returns>The line's text.</returns>
         internal static string RuntimeLine(IReadOnlyList<string> missing)
             => missing.Count > 0
                 ? "libraw cannot be loaded; Visual C++ runtime: missing " + LogText.List(missing)
-                : "libraw cannot be loaded; Visual C++ runtime: " + LogText.List(RuntimeDlls) + " load, so it is not the cause";
+                : "libraw cannot be loaded; Visual C++ runtime: " + LogText.List(RuntimeDlls) + " load, so none is missing";
 
         /// <summary>
         /// Whether Windows loads a DLL given by its file name, searched for from this process: the
@@ -243,6 +244,9 @@ namespace LightsCheck.Core
                 ArgumentNullException.ThrowIfNull(canLoad);
                 this.canLoad = canLoad;
             }
+
+            /// <summary>Whether this check has asked already, so that a later call gives no line.</summary>
+            internal bool HasAsked => Volatile.Read(ref asked) != 0;
 
             /// <summary>The log line, the first time this check is asked from any thread; null after.</summary>
             /// <returns>The line of <see cref="RuntimeLine"/>, or null when this check gave it already.</returns>

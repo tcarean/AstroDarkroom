@@ -11,8 +11,9 @@ for x64, as read from their import tables on 2026-11-01. `raw_r.dll` imports `VC
 `zlib1.dll` import `VCRUNTIME140.dll`. Neither form of the tool ships that runtime:
 
 - The own release is the two single-file executables of `release.ps1`. Their bundles hold the
-  four LibRaw DLLs, which the program extracts under `%TEMP%\.net\lightscheck\<bundle id>\` at
-  start, and WPF's renamed `vcruntime140_cor3.dll`.
+  four LibRaw DLLs, which each program extracts under `%TEMP%\.net\<program>\<bundle id>\` at
+  start. The window's bundle also holds WPF's renamed `vcruntime140_cor3.dll`, which nothing
+  else loads.
 - The suite folder holds the four DLLs beside `LightsCheck.Wpf.exe`.
 
 Without the runtime, or with one too old to have all four DLLs (the 2015 and 2017 packages lack
@@ -47,7 +48,8 @@ and took the recommendation each time:
 - **The runtime check, once per process.** The first failure asks Windows to load
   `vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll` and `vcomp140.dll` by name, in the
   tool's own process, and writes one Warn line. The line names the DLLs that do not load, or says
-  that the four load, so the runtime is not the cause (`RawReader.RuntimeCheck`, R-071). Later
+  that the four load, so none is missing; it claims no more, since a runtime too old for
+  LibRaw's DLLs may still have the four (`RawReader.RuntimeCheck`, R-071). Later
   failures ask nothing.
 - **Six rows in About.** Sdcb.LibRaw, LibRaw, libjpeg-turbo, Little CMS, zlib and NLog: the
   suite file's list for LightsCheck without .NET and WPF, which the launcher's About leaves out

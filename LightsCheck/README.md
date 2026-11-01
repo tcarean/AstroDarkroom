@@ -376,7 +376,7 @@ took; for each frame its figures, and the class, the flags and the thresholds be
 rejection; the dithering, the drift, the sensor's pattern, the read noise and the polar alignment
 as the report's verdicts read them; every file written; in the window, the folder opened, each
 run's end and the buttons pressed; when libraw cannot be loaded, once, which of the Visual C++
-runtime's four DLLs Windows cannot load, or that the four load, so the runtime is not the cause;
+runtime's four DLLs Windows cannot load, or that the four load, so none is missing;
 every error with its technical details, those the program works
 around without a word included (not a run you stopped yourself, nor what the window drops while it
 closes); at the end the exit code and the time taken. The log's own words are English whatever
@@ -422,7 +422,7 @@ and changes no tracked file; the `.pdb` and `.xml` files beside them are not nee
 
 LightsCheck is free software, under the GNU General Public License version 3 or, at your option,
 any later version: see [LICENSE](LICENSE). Its raw and FITS readers are copied from FlatCheck.
-What the programs ship from others is libraw with the three libraries its DLLs call
+What the programs ship from others is libraw with the three libraries its DLL calls
 (libjpeg-turbo, Little CMS and zlib), libraw's C# wrapper, and NLog, which writes the log; the
 About window lists them, each with its licence. The whole text of each licence is in
 `THIRD-PARTY-NOTICES.txt` beside the programs in the Astro Darkroom suite folder, and in this

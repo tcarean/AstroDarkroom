@@ -341,11 +341,29 @@ public partial class RawReaderTests
     }
 
     /// <summary>
-    /// When the four load, the line says so: the cause is elsewhere, which a bug report needs to
-    /// know, since the user's message names the runtime as the likely cause (R-074).
+    /// The reader's own failures go through the process's one check (R-074): two failures leave it
+    /// asked and write at most one line, whichever test reached it first, where a check made per
+    /// failure would write a line, and search the PATH, at each of a series' 174 failures.
     /// </summary>
     [Fact]
-    public void R074_WhenTheFourLoad_TheLogSaysTheRuntimeIsNotTheCause()
+    public void R074_TheReadersFailuresShareTheProcesssOneCheck()
+    {
+        using LogCapture capture = LogCapture.Start();
+
+        RawReader.Missing(new DllNotFoundException("libraw.dll"));
+        RawReader.Missing(new DllNotFoundException("libraw.dll"));
+
+        Assert.True(RawReader.Runtime.HasAsked);
+        Assert.True(capture.Events.Count(e => e.Logger == nameof(RawReader)) <= 1, "two failures wrote more than one runtime line");
+    }
+
+    /// <summary>
+    /// When the four load, the line says that none is missing, which a bug report needs to know,
+    /// since the user's message names the runtime as the likely cause; it claims no more, since a
+    /// runtime too old for libraw's DLLs may still have the four (R-074, ADR 0030).
+    /// </summary>
+    [Fact]
+    public void R074_WhenTheFourLoad_TheLogSaysNoneIsMissing()
     {
         RawReader.RuntimeCheck check = new(_ => true);
         using LogCapture capture = LogCapture.Start();
@@ -355,7 +373,7 @@ public partial class RawReaderTests
         LogCapture.Captured line = Assert.Single(capture.Events, e => e.Logger == nameof(RawReader));
         Assert.Equal(NLog.LogLevel.Warn, line.Level);
         Assert.Equal(
-            "libraw cannot be loaded; Visual C++ runtime: [vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, vcomp140.dll] load, so it is not the cause",
+            "libraw cannot be loaded; Visual C++ runtime: [vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, vcomp140.dll] load, so none is missing",
             line.Message);
     }
 
@@ -418,6 +436,8 @@ public partial class RawReaderTests
         }
     }
 
-    [GeneratedRegex(@"^(vcruntime|msvcp|vcomp)\d", RegexOptions.IgnoreCase)]
+    // Every DLL of the Visual C++ v14 redistributable a native library could import, not only the
+    // four LibRaw 0.21.1 does, so a build importing another one turns the test red.
+    [GeneratedRegex(@"^(vcruntime|msvcp|vcomp|concrt|vccorlib)\d", RegexOptions.IgnoreCase)]
     private static partial Regex VcRuntimeDll();
 }

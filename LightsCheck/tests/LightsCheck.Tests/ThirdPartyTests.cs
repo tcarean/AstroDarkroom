@@ -129,7 +129,11 @@ public partial class ThirdPartyTests
         string[] headings = Heading().Matches(notices).Select(m => m.Groups[1].Value).ToArray();
         foreach (ThirdPartyComponent c in ThirdParty.Components)
         {
-            Assert.True(headings.Any(h => h.Contains(c.Name, StringComparison.Ordinal)), $"THIRD-PARTY-NOTICES.md has no heading for {c.Name}");
+            // The heading starts with the name, a word of its own: "## LibRaw (`raw_r.dll`, ...)" is
+            // LibRaw's, and "## zlib (`zlib1.dll`, din `Sdcb.LibRaw.runtime.win64`)" is no one else's.
+            Assert.True(
+                headings.Any(h => h.TrimEnd() == c.Name || h.StartsWith(c.Name + " ", StringComparison.Ordinal)),
+                $"THIRD-PARTY-NOTICES.md has no heading for {c.Name}");
         }
     }
 

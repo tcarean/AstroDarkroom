@@ -64,7 +64,7 @@ public class AboutTests
     }
 
     [Fact]
-    public void EveryHeadingAndLeadIsWritten()
+    public void EveryHeadingIsWritten()
     {
         AboutViewModel vm = new();
 
