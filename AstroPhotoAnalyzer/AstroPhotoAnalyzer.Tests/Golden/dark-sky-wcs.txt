@@ -2,8 +2,8 @@ AstroPhotoAnalyzer <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 
 Fisier: <TEMP>\cer-intunecat-wcs.fit
-  FITS float RGB, 512 x 512 (0.3 MP), -, 3.0 MB, fara profil ICC
-  Mediu: baryta (Dmax 2.0, negrul hartiei L* 9.0). Distanta de privire: 1.5 x diagonala.
+  FITS float RGB, 512 x 512 (0.3 MP), -, 3.0 MB, fara profil de culoare (ICC)
+  Mediu: baryta (Dmax 2.0, negrul hartiei L* 9.0). Distanta de privire: 1.5 x diagonala printului.
 
 VERDICT: PROBLEMA
 
@@ -38,12 +38,12 @@ VERDICT: PROBLEMA
      fiindca: fisierul nu are niciun profil; programul a masurat presupunand sRGB
 
 Anexa A. Tonuri
-  medii pe canal (0..255): 29.1 / 30.8 / 28.6
-  sub nivelul 32: 80.6 %   sub 64: 92.3 %
-  percentile canal referinta (0..255): p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
-  L* median 7.4; sub negrul hartiei (L* 9.0): 72.4 %; sub L* 15: 83.9 %; peste L* 50: 0.4 %
+  luminozitatea medie pe canal, R / G / B (0..255): 29.1 / 30.8 / 28.6
+  mai intunecat decat nivelul 32: 80.6 %   decat 64: 92.3 %
+  repere pe canalul verde (0..255), nivelul sub care sta acel procent din pixeli: p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
+  L* median (cerul) 7.4; pixeli sub negrul hartiei (L* 9.0): 72.4 %; sub L* 15, unde ochiul abia deosebeste tonurile: 83.9 %; peste L* 50: 0.4 %
 
-Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalele)
+Anexa B. Simularea fundalului: ce se intampla daca muti fundalul, acum la nivelul 0.089
   fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50
   0.05                 1.240       2.3      3.4      84.8 %     90.1 %        0.0 %
   0.06                 1.165       2.8      4.2      81.6 %     88.6 %        0.0 %
@@ -65,9 +65,9 @@ Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalel
   0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
   * = recomandat: cea mai mica tinta print-safe (praful nu cade sub negrul hartiei si cerul e la L* 15 sau peste)
   praful = cele mai intunecate zone intinse din norii de praf (pragul sub care stau 25 % din dalele de praf; praful e 5.5 % din cadru, dalele cu 0.5 L* mai intunecate decat cerul (de 4 ori zgomotul lui)) (cadrul e in intregime in banda); cerul = valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul); negru pur = dale de 32 px mai intunecate decat negrul hartiei (L* 9.0 la Dmax 2.0)
-  clase: praf 5.5 %, cer 46.5 %, nebuloasa 36.7 % (peste cerul modelat cu 0.5 L*, 4 sigma ale cerului), nebuloasa stralucitoare 10.9 % (peste 14.0 L*, pragul Otsu), varfuri 0.4 %
+  felurile de dale: praf 5.5 %, cer 46.5 %, nebuloasa 36.7 % (cu peste 0.5 L* peste cer, de 4 ori zgomotul cerului), nebuloasa stralucitoare 10.9 % (cu peste 14.0 L* peste cer: partea cea mai luminoasa a nebuloasei), varfuri 0.4 %
   fundalul la care praful ajunge exact pe negrul hartiei: 0.135 la Dmax 2.0 (0.154 daca Dmax e 1.9, 0.117 daca e 2.1); asa cum e imaginea, praful ramane deasupra negrului de la Dmax 2.28 in sus; dar nicio hartie nu salveaza printul asa cum e: cerul e sub L* 15, si singurul remediu e sa ridici fundalul cand refaci stretch-ul; cerul ajunge la L* 15 cand fundalul e 0.152
-  norii catalogati cu cel putin 9 dale (9), de la cel mai intunecat; L* = 10 % din dalele norului; tinta = unde ajunge pe negrul hartiei:
+  norii din catalog cu cel putin 9 dale (9 nori), de la cel mai intunecat; L* = pragul sub care stau 10 % din dalele norului; tinta = fundalul la care norul ajunge pe negrul hartiei:
   nor                          dale   L*     tinta
   LDN 1776                       10    3.2   0.164
   LDN 1764                        9    6.7   0.109
@@ -90,8 +90,8 @@ Anexa C. Export
   palier pe cerul cuantizat: 2.2 px pe 419 dale din 5000 pozitii (8.4 % din cadru, zgomot ramas sigma 0.30 LSB); trepte plate de peste 1.0 mm la 26 dpi pe 8.38 % din cadru
 
 Anexa D. Rezolutie si marime
-  stele: 64 masurate; FWHM median 3.06 px, Q1 3.05, Q3 3.08; detaliu real ~167 px pe latime
-  regiuni: centru 3.11 px (9); colt stanga-sus n/a (4); colt dreapta-sus n/a (2); colt stanga-jos n/a (2); colt dreapta-jos n/a (1)
+  stele: 64 masurate; latimea stelelor (FWHM) 3.06 px (un sfert sub 3.05, un sfert peste 3.08); pe latime incap ~167 de stele una langa alta
+  latimea stelelor pe zone: centru 3.11 px (9 stele); colt stanga-sus n/a (4 stele); colt dreapta-sus n/a (2 stele); colt stanga-jos n/a (2 stele); colt dreapta-jos n/a (1 stea)
   marimi pentru 512 x 512 px:
   latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm
       50          50.0    26      2.99       10.31 m           1.06 m   70 x 70

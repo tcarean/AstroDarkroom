@@ -195,6 +195,12 @@ public class ViewModelTests
         Assert.Contains(Tr.Pick(" (no WCS); sky = the middle value of the sky patches", " (fara WCS); cerul = valoarea din mijloc a dalelor de cer"), noWcs.Definition);
         Assert.StartsWith(Tr.Pick("dust = the darkest extended areas of the dust clouds (", "praful = cele mai intunecate zone intinse din norii de praf ("), band.Definition);
         Assert.StartsWith(Tr.Pick("the background at which the dust reaches exactly paper black:", "fundalul la care praful ajunge exact pe negrul hartiei:"), noWcs.ExactLine);
+
+        // A mono image has no green channel: the two labels that name it say "the only channel".
+        var mono = new TonesTabViewModel(); mono.Populate(Result(Scenes.MonoSky()));
+        Assert.Contains(mono.Rows, r => r.Label == Tr.Pick("Background level (the only channel)", "Nivelul fundalului (singurul canal)"));
+        Assert.Contains(mono.Rows, r => r.Label == Tr.Pick("Landmarks on the only channel (0..255)", "Repere pe singurul canal (0..255)"));
+        Assert.DoesNotContain(mono.Rows, r => r.Label.Contains(Tr.Pick("green", "verde")));
     }
 
     /// <summary>

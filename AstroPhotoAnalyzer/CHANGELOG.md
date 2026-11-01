@@ -50,7 +50,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   ADR 0073): "Refa stretch-ul din datele liniare pana la fundalul ..." instead of "Re-stretch din
   liniar la fundal ...", the noise in levels instead of LSB, the stars' width named "latimea
   stelelor (FWHM)", and every "fiindca" line saying what each figure is, with the same figures
-  and thresholds as before. Section 3 is now "Culoarea fundalului si marginile cadrului".
+  and thresholds as before. Section 3 is now "Culoarea fundalului si marginile cadrului". The text
+  report's header and appendices A, B and D follow: "felurile de dale", "latimea stelelor pe zone",
+  "fara profil de culoare (ICC)".
 - The Tonuri tab explains itself in plain words (R-113, ADR 0072): what each row means for the print, the
   histogram's two lines, the ladder's landmarks, the guide's six paragraphs and the simulation's
   legend and exact-target line. The definition of the dust and the sky, which the console report

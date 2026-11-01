@@ -21,7 +21,17 @@ words" (ADR 0071), in two parts.
    correction in ADR 0072 for its example figures, CHANGELOG.
 7. Gate, commit.
 
-## Part 2: the text report's appendices
+## Part 2: the text report's header and appendices A, B, D
 
-Proposed to the owner after part 1, original beside proposal; implemented on the same branch
-after their yes. The merge is proposed once both parts are in.
+Approved by the owner the same day (12 texts, "Sunt ok propunerile"), with the merge asked for
+in the same message. The appendices C, E and F go with the Export tab, the Culoare tab and the
+parameter card, whose words they repeat.
+
+1. `ReportWriter`: the header's profile and distance, Appendix A (with a mono variant), the
+   title of Appendix B, its class label and cloud lines, Appendix D's stars and zones; `Clouds`
+   and `Stars` for a count with its noun.
+2. `PrintStretchSimulator.ClassFractions`: the sky path's thresholds in plain words.
+3. The Tonuri tab's two labels that named the green channel, on a mono image: the failing
+   assertion first, in `R113_TheTonesTextsAreInPlainWords`.
+4. Goldens, R-044, R-100, R-112, R-113, the design note, ADR 0073, CHANGELOG; gate; commit; the
+   merge into main.

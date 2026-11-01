@@ -2,8 +2,8 @@ AstroPhotoAnalyzer <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 
 File: <TEMP>\cer-intunecat-wcs.fit
-  FITS float RGB, 512 x 512 (0.3 MP), -, 3.0 MB, no ICC profile
-  Medium: baryta (Dmax 2.0, paper black L* 9.0). Viewing distance: 1.5 x the diagonal.
+  FITS float RGB, 512 x 512 (0.3 MP), -, 3.0 MB, no colour profile (ICC)
+  Medium: baryta (Dmax 2.0, paper black L* 9.0). Viewing distance: 1.5 x the print's diagonal.
 
 VERDICT: PROBLEM
 
@@ -38,12 +38,12 @@ VERDICT: PROBLEM
      because: the file has no profile; the program measured assuming sRGB
 
 Appendix A. Tones
-  channel means (0..255): 29.1 / 30.8 / 28.6
-  under level 32: 80.6 %   under 64: 92.3 %
-  reference channel percentiles (0..255): p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
-  median L* 7.4; under paper black (L* 9.0): 72.4 %; under L* 15: 83.9 %; over L* 50: 0.4 %
+  mean brightness per channel, R / G / B (0..255): 29.1 / 30.8 / 28.6
+  darker than level 32: 80.6 %   than 64: 92.3 %
+  landmarks on the green channel (0..255), the level under which that share of the pixels lies: p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
+  median L* (the sky) 7.4; pixels under paper black (L* 9.0): 72.4 %; under L* 15, where the eye barely tells the tones apart: 83.9 %; over L* 50: 0.4 %
 
-Appendix B. Background simulation (from level 0.089; a gamma curve on every channel)
+Appendix B. Background simulation: what happens if you move the background, now at level 0.089
   target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
   0.05                 1.240       2.3      3.4      84.8 %     90.1 %        0.0 %
   0.06                 1.165       2.8      4.2      81.6 %     88.6 %        0.0 %
@@ -65,9 +65,9 @@ Appendix B. Background simulation (from level 0.089; a gamma curve on every chan
   0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
   * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
   dust = the darkest extended areas of the dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 5.5 % of the frame, the patches 0.5 L* darker than the sky (4 times its noise)) (the frame lies entirely in the band); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 9.0 at Dmax 2.0)
-  classes: dust 5.5 %, sky 46.5 %, nebula 36.7 % (over the modelled sky by 0.5 L*, 4 sigma of the sky), bright nebula 10.9 % (over 14.0 L*, the Otsu threshold), peaks 0.4 %
+  kinds of patches: dust 5.5 %, sky 46.5 %, nebula 36.7 % (over 0.5 L* above the sky, 4 times the sky's noise), bright nebula 10.9 % (over 14.0 L* above the sky: the brightest part of the nebula), peaks 0.4 %
   the background at which the dust reaches exactly paper black: 0.135 at Dmax 2.0 (0.154 if the Dmax is 1.9, 0.117 if it is 2.1); as the image is, the dust stays above black from Dmax 2.28 up; but no paper saves the print as it is: the sky is under L* 15, and the only remedy is to lift the background when you redo the stretch; the sky reaches L* 15 when the background is 0.152
-  the catalogued clouds with at least 9 patches (9), darkest first; L* = 10 % of the cloud's patches; target = where it reaches paper black:
+  the clouds from the catalogue with at least 9 patches (9 clouds), darkest first; L* = the threshold under which 10 % of the cloud's patches lie; target = the background at which the cloud reaches paper black:
   cloud                     patches   L*     target
   LDN 1776                       10    3.2   0.164
   LDN 1764                        9    6.7   0.109
@@ -90,8 +90,8 @@ Appendix C. Export
   plateau on the quantized sky: 2.2 px over 419 tiles of 5000 positions (8.4 % of the frame, noise left sigma 0.30 LSB); flat steps over 1.0 mm at 26 dpi on 8.38 % of the frame
 
 Appendix D. Resolution and size
-  stars: 64 measured; median FWHM 3.06 px, Q1 3.05, Q3 3.08; real detail ~167 px across the width
-  regions: centre 3.11 px (9); upper-left corner n/a (4); upper-right corner n/a (2); lower-left corner n/a (2); lower-right corner n/a (1)
+  stars: 64 measured; the stars' width (FWHM) 3.06 px (a quarter under 3.05, a quarter over 3.08); ~167 stars fit side by side across the width
+  the stars' width by zone: centre 3.11 px (9 stars); upper-left corner n/a (4 stars); upper-right corner n/a (2 stars); lower-left corner n/a (2 stars); lower-right corner n/a (1 star)
   sizes for 512 x 512 px:
    width cm     height   dpi   star mm    point from       dist. used   outer frame cm
       50          50.0    26      2.99       10.31 m           1.06 m   70 x 70

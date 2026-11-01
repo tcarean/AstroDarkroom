@@ -2,8 +2,8 @@ AstroPhotoAnalyzer <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 
 Fisier: <TEMP>\cer-curat.tif
-  TIFF 16-bit RGB, 512 x 512 (0.3 MP), necomprimat, 1.5 MB, profil ICC: sRGB IEC61966-2.1
-  Mediu: canvas (Dmax 1.5, negrul hartiei L* 20.7). Distanta de privire: 1.5 x diagonala.
+  TIFF 16-bit RGB, 512 x 512 (0.3 MP), necomprimat, 1.5 MB, profil de culoare (ICC): sRGB IEC61966-2.1
+  Mediu: canvas (Dmax 1.5, negrul hartiei L* 20.7). Distanta de privire: 1.5 x diagonala printului.
 
 VERDICT: ATENTIE
 
@@ -33,12 +33,12 @@ VERDICT: ATENTIE
    (nimic de semnalat)
 
 Anexa A. Tonuri
-  medii pe canal (0..255): 63.9 / 63.9 / 63.9
-  sub nivelul 32: 0.0 %   sub 64: 39.7 %
-  percentile canal referinta (0..255): p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
-  L* median 27.0; sub negrul hartiei (L* 20.7): 0.0 %; sub L* 15: 0.0 %; peste L* 50: 0.1 %
+  luminozitatea medie pe canal, R / G / B (0..255): 63.9 / 63.9 / 63.9
+  mai intunecat decat nivelul 32: 0.0 %   decat 64: 39.7 %
+  repere pe canalul verde (0..255), nivelul sub care sta acel procent din pixeli: p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
+  L* median (cerul) 27.0; pixeli sub negrul hartiei (L* 20.7): 0.0 %; sub L* 15, unde ochiul abia deosebeste tonurile: 0.0 %; peste L* 50: 0.1 %
 
-Anexa B. Simularea fundalului (de la nivelul 0.25; curba gamma pe toate canalele)
+Anexa B. Simularea fundalului: ce se intampla daca muti fundalul, acum la nivelul 0.25
   fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50
   0.05                 2.161       3.5      3.6     100.0 %     99.8 %        0.0 %
   0.06                 2.030       4.4      4.4     100.0 %     99.8 %        0.0 %
@@ -59,7 +59,7 @@ Anexa B. Simularea fundalului (de la nivelul 0.25; curba gamma pe toate canalele
   0.25 asa cum e       1.000      26.9     27.0       0.0 %      0.0 %        0.1 %   print-safe
   * = recomandat: cea mai mica tinta print-safe (praful nu cade sub negrul hartiei si cerul e la L* 15 sau peste)
   praful = cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf) (fara WCS); cerul = valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul); negru pur = dale de 32 px mai intunecate decat negrul hartiei (L* 20.7 la Dmax 1.5)
-  clase: praf 0.0 %, cer 75.0 %, nebuloasa 17.2 % (peste cerul modelat cu 0.2 L*, 4 sigma ale cerului), nebuloasa stralucitoare 7.4 % (peste 0.5 L*, pragul Otsu), varfuri 0.4 %
+  felurile de dale: praf 0.0 %, cer 75.0 %, nebuloasa 17.2 % (cu peste 0.2 L* peste cer, de 4 ori zgomotul cerului), nebuloasa stralucitoare 7.4 % (cu peste 0.5 L* peste cer: partea cea mai luminoasa a nebuloasei), varfuri 0.4 %
   fundalul la care praful ajunge exact pe negrul hartiei: 0.196 la Dmax 1.5 (0.221 daca Dmax e 1.4, 0.173 daca e 1.6); asa cum e imaginea, praful ramane deasupra negrului de la Dmax 1.3 in sus; cerul ajunge la L* 15 cand fundalul e 0.148
 
 Anexa C. Export
@@ -73,8 +73,8 @@ Anexa C. Export
   palier: fara dale de cer curat (0 din 5000 pozitii)
 
 Anexa D. Rezolutie si marime
-  stele: 64 masurate; FWHM median 3.05 px, Q1 3.03, Q3 3.07; detaliu real ~168 px pe latime
-  regiuni: centru 3.07 px (9); colt stanga-sus n/a (4); colt dreapta-sus n/a (2); colt stanga-jos n/a (2); colt dreapta-jos n/a (1)
+  stele: 64 masurate; latimea stelelor (FWHM) 3.05 px (un sfert sub 3.03, un sfert peste 3.07); pe latime incap ~168 de stele una langa alta
+  latimea stelelor pe zone: centru 3.07 px (9 stele); colt stanga-sus n/a (4 stele); colt dreapta-sus n/a (2 stele); colt stanga-jos n/a (2 stele); colt dreapta-jos n/a (1 stea)
   marimi pentru 512 x 512 px:
   latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm
       40          40.0    33      2.38        8.21 m           0.85 m   60 x 60

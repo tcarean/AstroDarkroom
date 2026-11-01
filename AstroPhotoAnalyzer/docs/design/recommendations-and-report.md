@@ -16,7 +16,8 @@ window's Raport tab renders them bold (`Emphasis`). The texts and their `Because
 (the rule "Plain words", ADR 0073): every figure and threshold stays, the words for the method go.
 A Romanian count before its noun goes through `Fmt.RoCount`, which adds the "de" the language
 wants from 20 on and at every hundred ("64 de stele", "16 stele", "419 zone"); the English texts
-never call it. Verdicts are monotone `Ok < Attention < Problem`; a section's verdict is its
+never call it; `ReportWriter`'s `Clouds` and `Stars` give a count with its noun, singular for
+one, in both languages. Verdicts are monotone `Ok < Attention < Problem`; a section's verdict is its
 maximum, the overall verdict the maximum of all. Topics in decision order: Format,
 Background, Colour, Size, Denoise, Warnings.
 
@@ -69,7 +70,7 @@ the window's save both go through it, and each tells the exception its own way. 
 ```
 Fisier: <path>
   <format> <bits> <RGB|mono>, W x H (MP), <compression>, <MB>, <ICC>
-  Mediu: <name> (Dmax, negrul hartiei L*). Distanta de privire: <m | 1.5 x diagonala>.
+  Mediu: <name> (Dmax, negrul hartiei L*). Distanta de privire: <m | 1.5 x diagonala printului>.
 
 VERDICT: <OK|ATENTIE|PROBLEMA>
 

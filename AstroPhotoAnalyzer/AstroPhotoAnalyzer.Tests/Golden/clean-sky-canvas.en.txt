@@ -2,8 +2,8 @@ AstroPhotoAnalyzer <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 
 File: <TEMP>\cer-curat.tif
-  TIFF 16-bit RGB, 512 x 512 (0.3 MP), uncompressed, 1.5 MB, ICC profile: sRGB IEC61966-2.1
-  Medium: canvas (Dmax 1.5, paper black L* 20.7). Viewing distance: 1.5 x the diagonal.
+  TIFF 16-bit RGB, 512 x 512 (0.3 MP), uncompressed, 1.5 MB, colour profile (ICC): sRGB IEC61966-2.1
+  Medium: canvas (Dmax 1.5, paper black L* 20.7). Viewing distance: 1.5 x the print's diagonal.
 
 VERDICT: CAUTION
 
@@ -33,12 +33,12 @@ VERDICT: CAUTION
    (nothing to report)
 
 Appendix A. Tones
-  channel means (0..255): 63.9 / 63.9 / 63.9
-  under level 32: 0.0 %   under 64: 39.7 %
-  reference channel percentiles (0..255): p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
-  median L* 27.0; under paper black (L* 20.7): 0.0 %; under L* 15: 0.0 %; over L* 50: 0.1 %
+  mean brightness per channel, R / G / B (0..255): 63.9 / 63.9 / 63.9
+  darker than level 32: 0.0 %   than 64: 39.7 %
+  landmarks on the green channel (0..255), the level under which that share of the pixels lies: p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
+  median L* (the sky) 27.0; pixels under paper black (L* 20.7): 0.0 %; under L* 15, where the eye barely tells the tones apart: 0.0 %; over L* 50: 0.1 %
 
-Appendix B. Background simulation (from level 0.25; a gamma curve on every channel)
+Appendix B. Background simulation: what happens if you move the background, now at level 0.25
   target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
   0.05                 2.161       3.5      3.6     100.0 %     99.8 %        0.0 %
   0.06                 2.030       4.4      4.4     100.0 %     99.8 %        0.0 %
@@ -59,7 +59,7 @@ Appendix B. Background simulation (from level 0.25; a gamma curve on every chann
   0.25 as is           1.000      26.9     27.0       0.0 %      0.0 %        0.1 %   print-safe
   * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
   dust = the darkest 1 % of the sky patches (no dust found) (no WCS); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 20.7 at Dmax 1.5)
-  classes: dust 0.0 %, sky 75.0 %, nebula 17.2 % (over the modelled sky by 0.2 L*, 4 sigma of the sky), bright nebula 7.4 % (over 0.5 L*, the Otsu threshold), peaks 0.4 %
+  kinds of patches: dust 0.0 %, sky 75.0 %, nebula 17.2 % (over 0.2 L* above the sky, 4 times the sky's noise), bright nebula 7.4 % (over 0.5 L* above the sky: the brightest part of the nebula), peaks 0.4 %
   the background at which the dust reaches exactly paper black: 0.196 at Dmax 1.5 (0.221 if the Dmax is 1.4, 0.173 if it is 1.6); as the image is, the dust stays above black from Dmax 1.3 up; the sky reaches L* 15 when the background is 0.148
 
 Appendix C. Export
@@ -73,8 +73,8 @@ Appendix C. Export
   plateau: no clean sky tiles (0 of 5000 positions)
 
 Appendix D. Resolution and size
-  stars: 64 measured; median FWHM 3.05 px, Q1 3.03, Q3 3.07; real detail ~168 px across the width
-  regions: centre 3.07 px (9); upper-left corner n/a (4); upper-right corner n/a (2); lower-left corner n/a (2); lower-right corner n/a (1)
+  stars: 64 measured; the stars' width (FWHM) 3.05 px (a quarter under 3.03, a quarter over 3.07); ~168 stars fit side by side across the width
+  the stars' width by zone: centre 3.07 px (9 stars); upper-left corner n/a (4 stars); upper-right corner n/a (2 stars); lower-left corner n/a (2 stars); lower-right corner n/a (1 star)
   sizes for 512 x 512 px:
    width cm     height   dpi   star mm    point from       dist. used   outer frame cm
       40          40.0    33      2.38        8.21 m           0.85 m   60 x 60

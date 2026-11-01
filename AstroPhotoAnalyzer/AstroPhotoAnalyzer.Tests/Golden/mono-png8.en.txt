@@ -2,8 +2,8 @@ AstroPhotoAnalyzer <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 
 File: <TEMP>\mono.png
-  PNG 8-bit mono, 300 x 300 (0.1 MP), Deflate, 0.0 MB, no ICC profile
-  Medium: baryta (Dmax 2.4, paper black L* 3.6). Viewing distance: 1.5 x the diagonal.
+  PNG 8-bit mono, 300 x 300 (0.1 MP), Deflate, 0.0 MB, no colour profile (ICC)
+  Medium: baryta (Dmax 2.4, paper black L* 3.6). Viewing distance: 1.5 x the print's diagonal.
 
 VERDICT: CAUTION
 
@@ -34,12 +34,12 @@ VERDICT: CAUTION
      because: the file has no profile; the program measured assuming sRGB
 
 Appendix A. Tones
-  channel means (0..255): 63.9
-  under level 32: 0.0 %   under 64: 39.6 %
-  reference channel percentiles (0..255): p0.1=61.0  p1.0=61.0  p50.0=64.0  p90.0=65.0  p99.0=66.0  p99.9=106.5  p100.0=141.0
-  median L* 27.1; under paper black (L* 3.6): 0.0 %; under L* 15: 0.0 %; over L* 50: 0.1 %
+  mean brightness, one channel (0..255): 63.9
+  darker than level 32: 0.0 %   than 64: 39.6 %
+  landmarks on the only channel (0..255), the level under which that share of the pixels lies: p0.1=61.0  p1.0=61.0  p50.0=64.0  p90.0=65.0  p99.0=66.0  p99.9=106.5  p100.0=141.0
+  median L* (the sky) 27.1; pixels under paper black (L* 3.6): 0.0 %; under L* 15, where the eye barely tells the tones apart: 0.0 %; over L* 50: 0.1 %
 
-Appendix B. Background simulation (from level 0.251; a gamma curve on every channel)
+Appendix B. Background simulation: what happens if you move the background, now at level 0.251
   target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
   0.05                 2.167       3.5      3.5      81.5 %     99.9 %        0.0 %
   0.06                 2.035       4.3      4.4       0.0 %     99.8 %        0.0 %   sky under L* 15
@@ -60,7 +60,7 @@ Appendix B. Background simulation (from level 0.251; a gamma curve on every chan
   0.251 as is          1.000      26.8     27.0       0.0 %      0.0 %        0.1 %   print-safe
   * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
   dust = the darkest 1 % of the sky patches (no dust found) (no WCS); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 3.6 at Dmax 2.4)
-  classes: dust 0.0 %, sky 81.5 %, nebula 9.9 % (over the modelled sky by 0.3 L*, 4 sigma of the sky), bright nebula 7.4 % (over 0.5 L*, the Otsu threshold), peaks 1.2 %
+  kinds of patches: dust 0.0 %, sky 81.5 %, nebula 9.9 % (over 0.3 L* above the sky, 4 times the sky's noise), bright nebula 7.4 % (over 0.5 L* above the sky: the brightest part of the nebula), peaks 1.2 %
   the background at which the dust reaches exactly paper black: 0.051 at Dmax 2.4 (0.062 if the Dmax is 2.3, <= 0.05 if it is 2.5); as the image is, the dust stays above black from Dmax 1.3 up; the sky reaches L* 15 when the background is 0.149
 
 Appendix C. Export
@@ -72,8 +72,8 @@ Appendix C. Export
   plateau: no clean sky tiles (0 of 5000 positions)
 
 Appendix D. Resolution and size
-  stars: 16 measured, 177.8 per megapixel - too few for a FWHM
-  regions: centre 3.09 px (6); upper-left corner n/a (1); upper-right corner n/a (1); lower-left corner n/a (0); lower-right corner n/a (0)
+  stars: 16 measured, 177.8 per megapixel - too few to measure the stars' width (FWHM)
+  the stars' width by zone: centre 3.09 px (6 stars); upper-left corner n/a (1 star); upper-right corner n/a (1 star); lower-left corner n/a (0 stars); lower-right corner n/a (0 stars)
   sizes for 300 x 300 px:
    width cm     height   dpi   star mm    point from       dist. used   outer frame cm
       50          50.0    15       n/a         n/a m           1.06 m   70 x 70

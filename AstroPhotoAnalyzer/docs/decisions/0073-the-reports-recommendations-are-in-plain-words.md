@@ -13,7 +13,10 @@ by both applications, so every change here is the console's too. They were writt
 method's words: "Re-stretch din liniar", LSB, "sigma median", Q1 / Q3, "dale netede", "palier",
 "dither-eaza cuantizarea", "gradient", "aplatizare", "pragul de vizibilitate", "esantioane",
 "octet_inalt". On 2026-11-01 the owner approved 31 rewrites for the part the tab shows directly,
-from an original / proposal list; the appendices of the text report are the second part.
+from an original / proposal list, and the same day 12 more for the text report behind the
+toggle: its header and the appendices A (tones), B (the simulation) and D (resolution), which
+repeat the Tonuri and Rezolutie tabs already in plain words. The appendices C, E and F repeat the
+Export tab, the Culoare tab and the parameter card, and go with them.
 
 ## Decision
 
@@ -41,6 +44,17 @@ Four details go beyond the approved list, each to keep a sentence true on every 
   "16 stele", "419 zone"). The list wrote "64 de stele" and "~167 de stele"; a fixed "de" would
   be wrong under 20.
 
+In the text report, the header says "fara profil de culoare (ICC)" and "1.5 x diagonala
+printului"; Appendix A names what each figure is ("luminozitatea medie pe canal, R / G / B",
+"repere pe canalul verde, nivelul sub care sta acel procent din pixeli", "L* median (cerul)");
+Appendix B's class list says "cu peste 0.5 L* peste cer, de 4 ori zgomotul cerului" and "partea
+cea mai luminoasa a nebuloasei" instead of "cerul modelat", sigma and Otsu; Appendix D gives the
+stars' width as on the Rezolutie tab. On a mono image, where there is one channel and no green
+one, Appendix A says "un singur canal" and "singurul canal"; the Tonuri tab's two labels that
+named the green channel (ADR 0072) said so on mono too, and now say "singurul canal" there,
+caught by `R113_TheTonesTextsAreInPlainWords` before the fix. Counts take their noun through
+`Clouds` and `Stars`: "1 nor", "9 nori", "64 de stele".
+
 Two figures that were typed are now read, with the same output: the eye's 0.29 mm at 1 m
 (`Thresholds.AcuityMmAt1m`) and the 1.5 x diagonal (`Thresholds.ViewingDistanceFactor`).
 
@@ -64,5 +78,6 @@ digits of labels that went (Q1, Q3, "(R+B)/2"). The README's excerpt of the repo
   task ("praful ramane deasupra negrul hartiei de la Dmax 2.06", the "in sus" lost); it now
   quotes the sentence as the program writes it.
 - The tests that quoted the old sentences name the new ones, with the same figures.
-- Not changed here: the appendices of the text report and the reader's notes (the next part of
-  this tab), and the Editare Curbe tab's evidence, which still writes LSB (its own task).
+- Not changed here: the appendices C, E and F (with the Export tab, the Culoare tab and the
+  parameter card), the reader's notes, and the Editare Curbe tab's evidence, which still writes
+  LSB (its own task).
