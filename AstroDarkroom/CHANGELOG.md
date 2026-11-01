@@ -8,11 +8,12 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 ### Changed
 
-- Each row of the launcher says what its tool does, in at most two lines, so that someone who
-  does not know the tools can tell what each is for (R-001, ADR 0017): AstroPhotoAnalyzer's,
-  for example, says that it simulates the paper, checks the blacks against the paper's limits,
-  helps edit the curves and soft-proofs with the paper's ICC profile. The window is one line
-  per row taller.
+- The launcher says what its tools do, for someone who does not know them (R-001, ADR 0017):
+  the subtitle, in two lines, that they take a night from its frames to the print, in the order
+  they are used, and each row, in at most two lines, what its tool checks or does;
+  AstroPhotoAnalyzer's, for example, says that it simulates the paper, checks the blacks against
+  the paper's limits, helps edit the curves and soft-proofs with the paper's ICC profile. The
+  window is seven lines taller.
 - The READMEs say that FlatCheck reads Lightroom Classic's and Lightroom's own profile folders
   too (FlatCheck ADR 0066): the root README's Lightroom row says "yes" and names
   `C:\Program Files\Adobe\<app>\Resources\LensProfiles\1.0`.

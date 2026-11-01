@@ -87,9 +87,10 @@ public partial class MainWindow : Window
     /// </summary>
     private void Relabel()
     {
+        // Two sentences, one per line: each fits on its own in the top bar's 568 px (ADR 0017).
         Subtitle.Text = T(
-            "The astrophotography tools, in the order they are used. Open one from its row.",
-            "Uneltele de astrofoto, in ordinea in care se folosesc. Deschide una din randul ei.");
+            "From the night's frames to the print: six tools for DSLR astrophotography, in the order they are used.\nEach checks or prepares one step; open it from its row.",
+            "De la cadrele noptii la print: sase unelte pentru astrofoto cu DSLR, in ordinea in care se folosesc.\nFiecare verifica sau pregateste un pas; deschide-o din randul ei.");
         PrerequisitesLine.Text = Prerequisites.Summary;
         RuntimeWarning.Visibility = _missingRuntime.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         RuntimeWarningText.Text = VcRuntime.Warning;

@@ -138,7 +138,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   enables the button. The description wraps in the card's middle column, what the window's
   fixed width leaves once the margins, the icon's column and the button are taken, 416 px,
   where every description takes at most two lines (ADR 0017): a wider button, icon or margin
-  narrows it. The button's tooltip is shown on a disabled button too
+  narrows it. The subtitle is two sentences with a line break between them, each narrower than
+  the 568 px the top bar leaves beside the logo, so each keeps a line of its own. The button's
+  tooltip is shown on a disabled button too
   (`ToolTipService.ShowOnDisabled`), since the reason is the one thing a disabled row must
   tell. The window does not watch the folder: a file that appears or goes away is seen at the
   next relabel, or at the click, where a missing file becomes a message box instead of a crash.
