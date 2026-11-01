@@ -9,8 +9,8 @@ Copyright (C) 2026 Tudor Carean
     clipping in centru (>=98% white)       : 0.000%
 
     !! FISIERUL NU PARE UN FLAT BRUT !!
-    Cele 4 canale CFA sunt quasi-identice (spread 1.000) -> fisierul
-    e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.
+    Cele 4 canale de culoare sunt aproape identice (diferenta 1.000): fisierul a fost
+    deja prelucrat (debayerizat). Verificarea expunerii are nevoie de fisierul brut, cu canalele separate.
 
     Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).
     SOLUTII:

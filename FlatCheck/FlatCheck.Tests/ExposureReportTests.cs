@@ -68,10 +68,10 @@ public class ExposureReportTests
         ExposureResult skyHigh = AtLevel(55, sky: true);
 
         Assert.Equal("PROBLEMA", ExposureReport.VerdictWord(low));
-        Assert.Contains($"Sub ~{Th.ExpoTooLow:F0}% in centru", ExposureReport.Advice(low));
+        Assert.Contains($"Sub ~{Th.ExpoTooLow:F0} % in centru", ExposureReport.Advice(low));
         Assert.Equal("ACCEPTABIL", ExposureReport.VerdictWord(skyHigh));
         Assert.Contains($"Sub {Th.ExpoSkyTooHigh:F0}% e ok", ExposureReport.Advice(skyHigh));
-        Assert.Contains($"peste {Th.ExpoClipWhite * 100:F0} % din white", ExposureReport.HistogramCaption(false));
+        Assert.Contains($"peste {Th.ExpoClipWhite * 100:F0} % din saturatie", ExposureReport.HistogramCaption(false));
         Assert.DoesNotContain("din white", ExposureReport.HistogramCaption(true));
     }
 
@@ -101,7 +101,7 @@ public class ExposureReportTests
         if (clipped)
         {
             Assert.Equal(ExposureVerdict.TooHigh, r.Verdict);
-            Assert.Contains("CLIPPING in centru", console);
+            Assert.Contains("centrul e ars", console);
         }
         string head = console.Split('\n').First(l => l.Contains("VERDICT: ")).Trim();
         Assert.Equal(head.Substring("VERDICT: ".Length), advice[0], StringComparer.OrdinalIgnoreCase);
@@ -158,7 +158,7 @@ public class ExposureReportTests
         Assert.Equal(4, lines.Length);
         Assert.Single(lines, l => l.EndsWith("(cel mai luminos)"));
         Assert.Contains("citita din fisier", ExposureReport.ChannelOrderNote(known));
-        Assert.StartsWith("Nu stiu care pozitie CFA", ExposureReport.ChannelOrderNote(AtLevel(55)));
+        Assert.StartsWith("Nu se stie care canal", ExposureReport.ChannelOrderNote(AtLevel(55)));
         Assert.Equal("+52 puncte", ExposureReport.ScreenGap(29.0, 81.2));
         Assert.Equal("-10 puncte", ExposureReport.ScreenGap(50.0, 40.0));
     }
@@ -241,7 +241,7 @@ public class ExposureReportTests
         string s = ExposureReport.HistogramReading(Vignetted());
 
         Assert.Contains("vignetarea, nu subexpunere", s);
-        Assert.Contains("clipezi centrul", s);
+        Assert.Contains("arzi centrul", s);
     }
 
     /// <summary>
@@ -253,7 +253,7 @@ public class ExposureReportTests
         string s = ExposureReport.HistogramReading(AtLevel(55));
 
         Assert.Contains("CFA[0,1]", s);
-        Assert.Contains("nu stiu ce culoare are", s);
+        Assert.Contains("nu se stie ce culoare are", s);
     }
 
     [Fact]

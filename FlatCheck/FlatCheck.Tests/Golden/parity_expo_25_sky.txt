@@ -14,7 +14,7 @@ Copyright (C) 2026 Tudor Carean
 
     [mod --sky: praguri pt flats pe cer, nu pe panou]
     VERDICT: OK pentru sky flat  (centru 15-50%)
-    La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,
+    La flat pe cer nivelul modest e corect. Masterul iese curat din numarul de cadre,
     nu din a urca expunerea (ai risca stele). NU forta mai sus.
 
 [exit 0]

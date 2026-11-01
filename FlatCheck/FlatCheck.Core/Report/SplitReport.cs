@@ -232,19 +232,19 @@ namespace FlatCheck
         /// <returns>The note; "" for an unknown key.</returns>
         internal static string RowNote(string key) => key switch
         {
-            "CornerSpreadPct" => T("how much the four corners differ from each other; on a part, uneven corners are the source's gradient in its orientation",
-                                   "cat difera cele patru colturi intre ele; pe o parte, colturi inegale sunt gradientul sursei din orientarea ei"),
-            "AzimuthalMaxPct" => T("how much the 12 sectors of the same ring differ; what is large on the parts and small on the whole is what the rotation cancelled",
-                                   "cat difera cele 12 sectoare ale aceluiasi inel; ce e mare pe parti si mic pe intreg e ce a anulat rotatia"),
-            "ResidualPtpPct" => T("how much a radial model does NOT explain; the most important. A part has fewer frames, so more noise too",
-                                  "cat NU se explica printr-un model radial; cel mai important. O parte are mai putine cadre, deci si mai mult zgomot"),
-            "TiltPct" => T("the linear gradient; at 180 degrees the parts have it with opposite signs and the whole no longer has it",
-                           "gradientul liniar; la 180 de grade partile il au cu semne opuse si intregul nu-l mai are"),
-            "MaxTilePct" => T("the most deviant tile; on a part with few frames, the noise alone raises it",
-                              "dala cea mai abatuta; pe o parte cu putine cadre, zgomotul singur o ridica"),
+            "CornerSpreadPct" => T("how much the four corners differ from each other; on a part, uneven corners mean the source was brighter on one side, in that orientation",
+                                   "cat difera cele patru colturi intre ele; pe o parte, colturi inegale inseamna ca sursa era mai luminoasa pe o latura, in orientarea aceea"),
+            "AzimuthalMaxPct" => T("how much the 12 slices of the same ring differ; what is large on the parts and small on the whole is what the rotation cancelled",
+                                   "cat difera cele 12 felii ale aceluiasi inel; ce e mare pe parti si mic pe intreg e ce a anulat rotatia"),
+            "ResidualPtpPct" => T("how much of the frame does NOT look like a usual vignetting; the most important. A part has fewer frames, so more noise too",
+                                  "cat din cadru NU arata ca o vignetare obisnuita; cel mai important. O parte are mai putine cadre, deci si mai mult zgomot"),
+            "TiltPct" => T("how much brighter one edge is than the opposite one; at 180 degrees the parts have it with opposite signs and the whole no longer has it",
+                           "cu cat e o margine mai luminoasa decat cea opusa; la 180 de grade partile il au cu semne opuse si intregul nu-l mai are"),
+            "MaxTilePct" => T("the small square that stands out most; on a part with few frames, the noise alone raises it",
+                              "patratelul care iese cel mai mult din rand; pe o parte cu putine cadre, il ridica si zgomotul singur"),
             "VignetteStops" => T("the depth of each master, in stops", "adancimea fiecarui master, in stopuri"),
-            "DiffStops" => T("how much each master falls against the profile (positive = more toward the corner), as the error in the corner of a light calibrated with it; in the profile's column, its depth",
-                             "cat cade fiecare master fata de profil (pozitiv = mai mult spre colt), ca eroare in coltul unui light calibrat cu el; in coloana profilului, adancimea lui"),
+            "DiffStops" => T("how much darker each master gets toward the corner against the profile (plus = more than the profile), as the error in the corner of a light calibrated with it; in the profile's column, its depth",
+                             "cu cat se intuneca fiecare master spre colt fata de profil (plus = mai mult decat profilul), ca eroare in coltul unui light calibrat cu el; in coloana profilului, adancimea lui"),
             "Verdict" => T("the worst of the five tests and the depth against the reference profile (the row above), on each column",
                            "cel mai rau dintre cele cinci teste si adancimea fata de profilul de referinta (randul de mai sus), pe fiecare coloana"),
             _ => "",
@@ -280,14 +280,16 @@ namespace FlatCheck
         /// <summary>How to read the parts against the whole.</summary>
         /// <returns>Four lines joined by '\n'.</returns>
         internal static string Meaning()
-            => T("Each part is the stack of a single orientation, with fewer frames so noisier; the whole is\n"
-                 + "their mean. What is large on the parts and small on the whole is what the rotation cancelled: at 180 degrees the odd\n"
-                 + "part (the gradient), at 90 degrees the saddle too. What the parts share with the whole is fixed to the camera\n"
-                 + "or radial, and no rotation removes it; the profile's column says whether the depth is the lens's.",
-                 "Fiecare parte e stiva unei singure orientari, cu mai putine cadre deci mai zgomotoasa; intregul e\n"
-                 + "media lor. Ce e mare pe parti si mic pe intreg e ce a anulat rotatia: la 180 de grade partea\n"
-                 + "impara (gradientul), la 90 de grade si saua. Ce au partile in comun cu intregul e fix pe aparat\n"
-                 + "sau radial, si nicio rotatie nu-l scoate; coloana profilului spune daca adancimea e a obiectivului.");
+            => T("Each part is the master of a single orientation, with fewer frames, so noisier; the whole is\n"
+                 + "their mean. What is large on the parts and small on the whole is what the rotation cancelled: at 180 degrees\n"
+                 + "one side of the frame brighter than the other, at 90 degrees a four-lobed shape too. What the parts share with\n"
+                 + "the whole belongs to the camera or is symmetric about the centre, and no rotation removes it; the profile's\n"
+                 + "column says whether the depth is the lens's.",
+                 "Fiecare parte e masterul unei singure orientari, cu mai putine cadre, deci mai zgomotos; intregul e\n"
+                 + "media lor. Ce e mare pe parti si mic pe intreg e ce a anulat rotatia: la 180 de grade o parte a\n"
+                 + "cadrului mai luminoasa decat cealalta, la 90 de grade si o forma in patru lobi. Ce au partile in comun\n"
+                 + "cu intregul tine de aparat sau e simetric in jurul centrului, si nicio rotatie nu il scoate; coloana\n"
+                 + "profilului spune daca adancimea e a obiectivului.");
 
         /// <summary>
         /// Writes the report: the run, the parts and their files, the table in padded columns,

@@ -18,13 +18,13 @@ Copyright (C) 2026 Tudor Carean
     jumatate de semidiagonala   :  82.2 % din axa  ( 0.28 stopuri)
 
     INFORMATIV: flatul sintetic e MODELUL obiectivului, nu o masuratoare a exemplarului tau. Are
-    doar vignetarea, radiala si acromatica (profilele publicate au un singur set de
-    parametri pentru toate canalele): nu contine partea cromatica a caderii, umbrirea
-    specifica body-ului, praful, nici vreo structura neradiala. Cele doua baze difera
-    intre ele cu ~0.2 stopuri in colt pe acelasi obiectiv; atata precizie sa-i ceri.
-    Ce ii lipseste fata de un flat real - si ce are in plus: nicio sursa de lumina,
-    deci nici curbura cerului, nici caderea unui panou. Verifica un flat real fata de
-    el cu --against.
+    doar vignetarea, perfect simetrica in jurul centrului si aceeasi pe toate culorile
+    (profilele publicate au un singur set de valori pentru toate canalele): nu contine
+    diferentele dintre culori, umbrele date de aparat, praful, nici vreo forma care nu e
+    simetrica. Cele doua baze de profile difera intre ele cu ~0.2 stopuri in colt pe acelasi
+    obiectiv; atata precizie sa-i ceri. Ce ii lipseste fata de un flat real, si ce are in
+    plus: nicio sursa de lumina, deci nici cupola cerului, nici un panou vazut din unghi.
+    Verifica un flat real fata de el cu --against.
     Scripturile Siril numesc pp_flat_stacked explicit, deci nu iau flatul sintetic singure:
     redenumeste-l in locul masterului (pastreaza originalul) sau da-l la calibrate cu -flat=.
 

@@ -96,6 +96,11 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
   note and warning, the advices. The 15 `parity_structure_*.txt` were recaptured, with the
   owner's yes, for those text lines alone (17 to 21 lines each); every figure is unchanged. A
   C#-only call, like the rest.
+- On 2026-11-01 the exposure sentences the console shares with the window's Exposure tab were
+  rewritten in plain words too (ADR 0084, R-123): the too-low advice ("Sub ~30 % in centru") and the
+  refusal of a processed file. `parity_expo_25`, `parity_expo_25_sky`, `parity_expo_30` and
+  `parity_expo_debayered` were recaptured, with the owner's yes, for one or two text lines each;
+  every figure is unchanged. A C#-only call, like the rest.
 - The goldens run in Romanian, the language the prototype spoke; the console's default is
   English since the same date, and `EnglishOutputTests` checks that each parity scenario prints
   the same numbers in English.

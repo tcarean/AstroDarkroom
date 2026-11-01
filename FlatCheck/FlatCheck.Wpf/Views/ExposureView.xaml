@@ -52,7 +52,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                        TextWrapping="Wrap" />
           </CheckBox>
           <TextBlock Style="{StaticResource Faint}" Margin="26,6,0,0"
-                     Text="{l:T En='On a sky flat a modest level is RIGHT: the sky fades continuously and is full of faint stars, so the master\'s SNR comes from the number of frames. Without this switch, a sky flat at 22 % would be wrongly reported as underexposed.', Ro='La sky flat nivelul modest e CORECT: cerul se stinge continuu si e plin de stele slabe, deci SNR-ul masterului vine din numarul de cadre. Fara comutatorul asta, un sky flat la 22 % ar fi raportat gresit ca subexpus.'}" />
+                     Text="{l:T En='On a sky flat a modest level is RIGHT: the sky fades continuously and is full of faint stars, so the master comes out clean from the number of frames, not from a longer exposure. Without this switch, a sky flat at 22 % would be wrongly reported as underexposed.', Ro='La un flat pe cer un nivel modest e CORECT: cerul se stinge continuu si e plin de stele slabe, asa ca masterul iese curat din numarul de cadre, nu dintr-o expunere mai lunga. Fara acest comutator, un flat pe cer la 22 % ar fi raportat gresit ca subexpus.'}" />
 
           <TextBlock Style="{StaticResource Heading}" Margin="0,20,0,8" Text="{l:T En='RAW FLATS', Ro='FLAT-URI BRUTE'}" />
         </StackPanel>
@@ -124,7 +124,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <StackPanel>
                   <TextBlock Text="{l:T En='CENTRE 20 %, the brightest channel', Ro='CENTRU 20 %, canalul cel mai luminos'}" FontWeight="SemiBold" />
                   <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0"
-                             Text="{l:T En='this decides the exposure: a flat has a wide distribution by definition - that IS the vignetting - and the global median is pulled down by the corners and would fool you into overexposing until the centre clips', Ro='asta decide expunerea: un flat are prin definitie o distributie larga - asta E vignetarea - iar mediana globala e trasa in jos de colturi si te-ar pacali sa supraexpui pana clipeaza centrul'}" />
+                             Text="{l:T En='this figure decides the exposure: in a flat the corners are always darker than the centre (that is the vignetting), so the level over the whole frame is pulled down by the corners and would fool you into exposing more, until the centre reaches saturation', Ro='aceasta cifra decide expunerea: intr-un flat colturile sunt mereu mai intunecate decat centrul (asta e vignetarea), asa ca nivelul pe tot cadrul e tras in jos de colturi si te-ar pacali sa expui mai mult, pana cand centrul ajunge la saturatie'}" />
                 </StackPanel>
                 <TextBlock Grid.Column="1" Style="{StaticResource Number}" FontWeight="SemiBold"
                            FontSize="15" Text="{Binding Centre}" VerticalAlignment="Top" />

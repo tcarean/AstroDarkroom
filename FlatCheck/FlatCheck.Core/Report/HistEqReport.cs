@@ -66,9 +66,9 @@ namespace FlatCheck
         /// <returns>One sentence, in the run's language.</returns>
         internal static string RainbowLegend()
             => T("false colours, Siril's rainbow table on one layer: magenta is the lowest level, then "
-                 + "blue, cyan, green, yellow, and red the highest; the colours are ranks, not values.",
+                 + "blue, cyan, green, yellow, and red the highest; the colours are only an order, not values.",
                  "culori false, tabelul rainbow din Siril pe un singur strat: magenta e nivelul cel mai jos, apoi "
-                 + "albastru, cyan, verde, galben, iar rosu cel mai sus; culorile sunt ranguri, nu valori.");
+                 + "albastru, cyan, verde, galben, iar rosu cel mai sus; culorile sunt doar o ordine, nu valori.");
 
         /// <summary>
         /// What the window says under the RGB view while the chip is on: that view is not
@@ -135,13 +135,13 @@ namespace FlatCheck
         /// </summary>
         /// <returns>The caveat: the picture shows the shape, not the size.</returns>
         internal static string Caveat()
-            => T("the mode gives no verdict. The picture shows the SHAPE of what is not uniform - not how large it is: "
-                 + "every grey level gets the same number of pixels, so a ripple of 0.5 % and a "
-                 + "gradient of 10 % come out the same, and a perfect flat shows its own noise at maximum "
+            => T("the mode gives no verdict. The picture shows the SHAPE of what is not uniform, not how large it is: "
+                 + "every grey step gets the same number of pixels, so a ripple of 0.5 % and one of "
+                 + "10 % come out the same, and a perfect flat shows its own noise at maximum "
                  + "contrast. The figures are in the structure mode.",
-                 "modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform - nu si cat de mare e: "
-                 + "fiecare nivel de gri primeste acelasi numar de pixeli, deci o unda de 0.5 % si un "
-                 + "gradient de 10 % ies la fel, iar un flat perfect isi arata propriul zgomot la contrast "
+                 "modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform, nu si cat de mare e: "
+                 + "fiecare treapta de gri primeste acelasi numar de pixeli, deci o ondulatie de 0.5 % si una "
+                 + "de 10 % ies la fel, iar un flat perfect isi arata propriul zgomot la contrast "
                  + "maxim. Cifrele sunt in modul de structura.");
 
         /// <summary>
@@ -150,16 +150,14 @@ namespace FlatCheck
         /// </summary>
         /// <returns>One paragraph.</returns>
         internal static string MasterVersusFrame()
-            => T("The master is the stack of the frames below. A shape that shows on a frame and is missing "
-                 + "from the master was transient and was averaged out; one that shows on both is fixed to the "
-                 + "setup, and that is the one the figures of the Structure tab measure. The equalisation being by ranks, "
-                 + "the master's lower noise makes a shared shape look CLEARER there, not "
-                 + "weaker.",
-                 "Masterul e stiva cadrelor de mai jos. O forma care se vede pe un cadru si lipseste "
-                 + "de pe master a fost trecatoare si s-a mediat; una care se vede pe amandoua e fixa pe "
-                 + "montaj, si pe ea o masoara cifrele din tabul Structura. Egalizarea fiind pe ranguri, "
-                 + "zgomotul mai mic al masterului face o forma comuna sa para acolo mai CLARA, nu mai "
-                 + "slaba.");
+            => T("The master is the mean of the frames below. A shape that shows on a frame and is missing "
+                 + "from the master was transient and was lost in the averaging; one that shows on both belongs "
+                 + "to the setup, and that is the one the figures of the Structure tab measure. Because the "
+                 + "master has less noise, a shared shape looks CLEARER there, not weaker.",
+                 "Masterul e media cadrelor de mai jos. O forma care se vede pe un cadru si lipseste "
+                 + "de pe master a fost trecatoare si s-a pierdut la mediere; una care se vede pe amandoua "
+                 + "tine de montaj, si pe ea o masoara cifrele din tabul Structura. Pentru ca masterul are "
+                 + "mai putin zgomot, o forma comuna pare acolo mai CLARA, nu mai slaba.");
 
         /// <summary>
         /// Which view is on screen, as the caption under the picture. The size is the
@@ -174,14 +172,14 @@ namespace FlatCheck
         {
             string what = viewLabel switch
             {
-                "RGB" when r.Cfa != null => T("the four positions, each equalised on its own distribution, put in their colours",
-                                              "cele patru pozitii egalizate fiecare pe repartitia ei, puse in culorile lor"),
-                "RGB" => T("the mean of the four positions, each equalised on its own distribution (the order of the colours is not known, so no colour)",
-                           "media celor patru pozitii egalizate fiecare pe repartitia ei (ordinea culorilor nu se stie, deci fara culoare)"),
-                "Mozaic" => T("the whole mosaic equalised as a single layer - exactly what Siril shows on an undebayered file",
-                              "tot mozaicul egalizat ca un singur strat - exact ce arata Siril pe un fisier nedebayerizat"),
-                "mono" => T("the frame equalised on its own distribution", "cadrul egalizat pe repartitia lui"),
-                _ => T($"the position {viewLabel} equalised on its own distribution", $"pozitia {viewLabel} egalizata pe repartitia ei"),
+                "RGB" when r.Cfa != null => T("the four channels, each stretched on its own, put in their colours",
+                                              "cele patru canale, fiecare intins separat, puse in culorile lor"),
+                "RGB" => T("the mean of the four channels, each stretched on its own (the order of the colours is not known, so no colour)",
+                           "media celor patru canale, fiecare intins separat (ordinea culorilor nu se stie, deci fara culoare)"),
+                "Mozaic" => T("the whole raw frame stretched as a single layer - exactly what Siril shows on a file with the channels not separated",
+                              "tot cadrul brut intins ca un singur strat - exact ce arata Siril pe un fisier cu canalele neseparate"),
+                "mono" => T("the frame stretched on its levels", "cadrul intins pe nivelurile lui"),
+                _ => T($"the channel {viewLabel} stretched on its own", $"canalul {viewLabel} intins separat"),
             };
             bool mosaic = viewLabel == "Mozaic";
             int w = mosaic ? r.SourceW : r.FullW, h = mosaic ? r.SourceH : r.FullH;

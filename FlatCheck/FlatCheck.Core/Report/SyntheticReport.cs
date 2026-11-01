@@ -129,8 +129,8 @@ namespace FlatCheck
             string head = same
                 ? T($"profile calibrated on {calib}; your sensor {yours}: the same format",
                     $"profil calibrat pe {calib}; senzorul tau {yours}: acelasi format")
-                : T($"profile calibrated on {calib}; your sensor {yours}: another format, the radius is recomputed through mm",
-                    $"profil calibrat pe {calib}; senzorul tau {yours}: alt format, raza se recalculeaza prin mm");
+                : T($"profile calibrated on {calib}; your sensor {yours}: another format, the model is recomputed for your sensor",
+                    $"profil calibrat pe {calib}; senzorul tau {yours}: alt format, modelul e recalculat pentru senzorul tau");
             return head + ExtrapolationTail(extrapolation);
         }
 
@@ -155,13 +155,13 @@ namespace FlatCheck
         {
             string es = Fmt(e, "0.00");
             if (!(e > 1.0))
-                return e < 0.97 ? T($"; your corner falls at {es} of the calibration corner, inside the profile",
-                                    $"; coltul tau cade la {es} din coltul de calibrare, in interiorul profilului") : "";
+                return e < 0.97 ? T($"; your corner falls at {es} of the corner the profile was measured on, inside the profile",
+                                    $"; coltul tau e la {es} din coltul pe care a fost masurat profilul, in interiorul lui") : "";
             return e <= SyntheticFlatResult.SmallExtrapolation
-                ? T($"; your corner falls at {es} x the calibration corner: a small extrapolation",
-                    $"; coltul tau cade la {es} x coltul de calibrare: extrapolare mica")
-                : T($"; your corner falls at {es} x the calibration corner: a LARGE extrapolation, the polynomial cannot be trusted beyond what was calibrated - take a profile calibrated on your format",
-                    $"; coltul tau cade la {es} x coltul de calibrare: extrapolare MARE, polinomul nu e de incredere dincolo de ce a fost calibrat - ia un profil calibrat pe formatul tau");
+                ? T($"; your corner is at {es} x the corner the profile was measured on: a little beyond what was measured",
+                    $"; coltul tau e la {es} x coltul pe care a fost masurat profilul: putin dincolo de ce s-a masurat")
+                : T($"; your corner is at {es} x the corner the profile was measured on: FAR beyond what was measured, there the profile cannot be trusted - take a profile measured on your format",
+                    $"; coltul tau e la {es} x coltul pe care a fost masurat profilul: MULT dincolo de ce s-a masurat, acolo profilul nu poate fi crezut - ia un profil masurat pe formatul tau");
         }
 
         /// <summary>
@@ -250,17 +250,17 @@ namespace FlatCheck
         internal static (string Label, string Value, string Note)[] DepthRows(SyntheticFlatResult r) => new[]
         {
             (T("corner (the 5 % box)", "colt (cutia de 5 %)"), Depth(r.CornerStops),
-             T("the centre of the 5 % corner box the corner test measures too, so directly comparable with the master's \"vignetting centre -> corner\"; it is the deepest point of the flat",
-               "centrul cutiei de 5 % din colt pe care o masoara si testul de colturi, deci direct comparabil cu \"vignetare centru -> colt\" al masterului; e punctul cel mai adanc al flatului")),
+             T("the corner, measured in the same 5 % box as on the master, so directly comparable with \"vignetting centre -> corner\"; it is the darkest point of the flat",
+               "coltul, masurat in aceeasi cutie de 5 % ca la master, deci direct comparabil cu \"vignetare centru -> colt\"; e punctul cel mai intunecat al flatului")),
             (T("long edge (left/right)", "marginea lunga (st/dr)"), Depth(r.LongEdgeStops),
-             T("the middle of the left / right side (95 % of the half-width, on the horizontal axis); less deep than the corner because it is nearer the axis",
-               "mijlocul laturii din stanga / dreapta (95 % din semilatime, pe axa orizontala); mai putin adanc decat coltul fiindca e mai aproape de axa")),
+             T("the middle of the left / right side; less dark than the corner, being nearer the centre",
+               "mijlocul laturii din stanga / dreapta; mai putin intunecat decat coltul, fiind mai aproape de centru")),
             (T("short edge (top/bottom)", "marginea scurta (sus/jos)"), Depth(r.ShortEdgeStops),
-             T("the middle of the top / bottom side (95 % of the half-height, on the vertical axis); the least deep of the three edge points, being nearest the axis",
-               "mijlocul laturii de sus / jos (95 % din semiinaltime, pe axa verticala); cel mai putin adanc dintre cele trei puncte de margine, fiind cel mai aproape de axa")),
+             T("the middle of the top / bottom side; the least dark of the three edge points, being nearest the centre",
+               "mijlocul laturii de sus / jos; cel mai putin intunecat dintre cele trei puncte de margine, fiind cel mai aproape de centru")),
             (T("half the half-diagonal", "jumatate de semidiagonala"), Depth(r.HalfDiagonalStops),
-             T("halfway between the centre and the corner, on the diagonal: the middle of the field, where most of the subject sits; it says how much of the fall-off is already there",
-               "la jumatatea drumului dintre centru si colt, pe diagonala: mijlocul campului, unde sta cea mai mare parte a obiectului; spune cat din cadere e deja acolo")),
+             T("halfway between the centre and the corner, on the diagonal: the middle of the field, where most of the subject sits; it says how much of the darkening is already there",
+               "la jumatatea drumului dintre centru si colt, pe diagonala: mijlocul campului, unde sta cea mai mare parte a subiectului; spune cat din intunecare e deja acolo")),
         };
 
         /// <summary>A depth as the level against the axis and in stops.</summary>
@@ -274,21 +274,21 @@ namespace FlatCheck
         /// <returns>Eight lines joined by '\n'.</returns>
         internal static string Caveat()
             => T("the synthetic flat is the lens MODEL, not a measurement of your copy. It has\n"
-                 + "only the vignetting, radial and achromatic (the published profiles have a single set of\n"
-                 + "parameters for every channel): it holds no chromatic part of the fall-off, no shading\n"
-                 + "specific to the body, no dust, nor any non-radial structure. The two databases differ\n"
-                 + "from each other by ~0.2 stops in the corner on the same lens; ask no more precision of it.\n"
-                 + "What it lacks against a real flat - and what it has besides: no light source,\n"
-                 + "so neither the sky's curvature nor a panel's fall-off. Check a real flat against\n"
-                 + "it with --against.",
+                 + "only the vignetting, perfectly symmetric about the centre and the same on every colour\n"
+                 + "(the published profiles have a single set of values for every channel): it holds no\n"
+                 + "differences between colours, no shading the camera adds, no dust, nor any shape that is\n"
+                 + "not symmetric. The two profile databases differ from each other by ~0.2 stops in the corner\n"
+                 + "on the same lens; ask no more precision of it. What it lacks against a real flat, and what\n"
+                 + "it has besides: no light source, so neither the sky's dome nor a panel seen at an angle.\n"
+                 + "Check a real flat against it with --against.",
                  "flatul sintetic e MODELUL obiectivului, nu o masuratoare a exemplarului tau. Are\n"
-                 + "doar vignetarea, radiala si acromatica (profilele publicate au un singur set de\n"
-                 + "parametri pentru toate canalele): nu contine partea cromatica a caderii, umbrirea\n"
-                 + "specifica body-ului, praful, nici vreo structura neradiala. Cele doua baze difera\n"
-                 + "intre ele cu ~0.2 stopuri in colt pe acelasi obiectiv; atata precizie sa-i ceri.\n"
-                 + "Ce ii lipseste fata de un flat real - si ce are in plus: nicio sursa de lumina,\n"
-                 + "deci nici curbura cerului, nici caderea unui panou. Verifica un flat real fata de\n"
-                 + "el cu --against.");
+                 + "doar vignetarea, perfect simetrica in jurul centrului si aceeasi pe toate culorile\n"
+                 + "(profilele publicate au un singur set de valori pentru toate canalele): nu contine\n"
+                 + "diferentele dintre culori, umbrele date de aparat, praful, nici vreo forma care nu e\n"
+                 + "simetrica. Cele doua baze de profile difera intre ele cu ~0.2 stopuri in colt pe acelasi\n"
+                 + "obiectiv; atata precizie sa-i ceri. Ce ii lipseste fata de un flat real, si ce are in\n"
+                 + "plus: nicio sursa de lumina, deci nici cupola cerului, nici un panou vazut din unghi.\n"
+                 + "Verifica un flat real fata de el cu --against.");
 
         /// <summary>
         /// How the file gets into Siril: the scripts do not take it by themselves.

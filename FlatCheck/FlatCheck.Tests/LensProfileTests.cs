@@ -998,7 +998,7 @@ public class SyntheticRunTests
         // extrapolated that far is meaningless (it goes negative on this fixture), and the report
         // says so
         Assert.InRange(ff.Result.Extrapolation, 1.45, 1.55);
-        Assert.Contains("extrapolare MARE", sw3.ToString());
+        Assert.Contains("MULT dincolo de ce s-a masurat", sw3.ToString());
         Assert.InRange(run2.Result.Extrapolation, 0.97, 1.0);            // the D3300 sits just inside the DX calibration corner
         Assert.Equal("", SyntheticReport.ExtrapolationNote(run2.Result));
         Assert.Contains("format             : profil calibrat pe APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format", sw2.ToString());
@@ -1031,14 +1031,14 @@ public class SyntheticRunTests
         string same = SyntheticReport.FormatMatch(adobe, 1.523, 6000, 4000);
         Assert.Equal("profil calibrat pe APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format", same);
         string ff = SyntheticReport.FormatMatch(adobe, 1.0, 6000, 4000);
-        Assert.StartsWith("profil calibrat pe APS-C (crop 1.5); senzorul tau full frame (1): alt format, raza se recalculeaza prin mm; coltul tau cade la 1.50 x coltul de calibrare: extrapolare MARE", ff);
+        Assert.StartsWith("profil calibrat pe APS-C (crop 1.5); senzorul tau full frame (1): alt format, modelul e recalculat pentru senzorul tau; coltul tau e la 1.50 x coltul pe care a fost masurat profilul: MULT dincolo de ce s-a masurat", ff);
         string smaller = SyntheticReport.FormatMatch(adobe, 2.0, 6000, 4000);
         Assert.Contains("Micro 4/3 (2): alt format", smaller);
-        Assert.Contains("cade la 0.75 din coltul de calibrare, in interiorul profilului", smaller);
+        Assert.Contains("e la 0.75 din coltul pe care a fost masurat profilul, in interiorul lui", smaller);
         Assert.Equal("profil calibrat pe APS-C (crop 1.5); crop-ul tau nu se stie, se ia senzorul de calibrare", SyntheticReport.FormatMatch(adobe, 0, 6000, 4000));
         var lensfun = new VignettingModel(VignettingModelKind.Lensfun, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.61);
         string d3300 = SyntheticReport.FormatMatch(lensfun, 1.523, 6016, 4016);
-        Assert.StartsWith("profil calibrat pe APS-C Canon (crop 1.61); senzorul tau APS-C (1.523): alt format, raza se recalculeaza prin mm; coltul tau cade la 1.06 x coltul de calibrare: extrapolare mica", d3300);
+        Assert.StartsWith("profil calibrat pe APS-C Canon (crop 1.61); senzorul tau APS-C (1.523): alt format, modelul e recalculat pentru senzorul tau; coltul tau e la 1.06 x coltul pe care a fost masurat profilul: putin dincolo de ce s-a masurat", d3300);
         Assert.Contains("format neobisnuit (1.15)", SyntheticReport.FormatMatch(adobe, 1.15, 6000, 4000));
     }
 
