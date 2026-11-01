@@ -404,7 +404,7 @@ public class PrintStretchSimulatorTests
         Assert.Equal("cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf)", s.DustDescription);
         Assert.Equal("valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)", s.SkyDescription);
         Assert.Contains(", nebuloasa ", s.ClassFractions);
-        Assert.Contains("sigma ale cerului", s.ClassFractions);
+        Assert.Contains("ori zgomotul cerului", s.ClassFractions);
         Assert.Equal(Lstar(0.05), s.AsIs.LstarDust, 1);
         CloudRow ldn42 = s.Clouds.Single(c => c.Name == "LDN 42 (B78)");
         Assert.Equal(Lstar(0.05), ldn42.Lstar, 1);
@@ -420,6 +420,6 @@ public class PrintStretchSimulatorTests
         Assert.Equal("cel mai intunecat 1 % din dalele de cer (nu s-a gasit praf)", s.DustDescription);
         Assert.Equal("valoarea din mijloc a dalelor de cer (dalele impartite prin comparatie cu cerul)", s.SkyDescription);
         Assert.Equal("fara WCS", s.MethodNote);
-        Assert.StartsWith("praf 0.0 %, cer 100.0 %, nebuloasa 0.0 % (peste cerul modelat cu ", s.ClassFractions);
+        Assert.StartsWith("praf 0.0 %, cer 100.0 %, nebuloasa 0.0 % (cu peste ", s.ClassFractions);
     }
 }

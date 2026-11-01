@@ -100,7 +100,7 @@ namespace AstroPhotoAnalyzer
         {
             Topic.Format => Tr.Pick("The format to send", "Formatul de trimis"),
             Topic.Background => Tr.Pick("The background and the paper", "Fundalul si hartia"),
-            Topic.Colour => Tr.Pick("The background colour and the gradients", "Culoarea fundalului si gradientele"),
+            Topic.Colour => Tr.Pick("The background colour and the frame's edges", "Culoarea fundalului si marginile cadrului"),
             Topic.Size => Tr.Pick("The size of the print", "Marimea printului"),
             Topic.Denoise => Tr.Pick("Denoise for the print version", "Denoise pentru versiunea de print"),
             Topic.Warnings => Tr.Pick("Warnings", "Avertismente"),

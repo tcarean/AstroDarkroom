@@ -635,4 +635,28 @@ public class ExposureTabTests
         Assert.False(vm.HasResult);
         Assert.Empty(vm.Verdict);
     }
+
+    // ------------------------------------------------------------------ LibRaw cannot load
+
+    /// <summary>
+    /// When LibRaw cannot be loaded, the tab's error panel shows the refusal alone (R-124): the
+    /// panel adds every inner exception's message it does not see in the text, and the loader's,
+    /// which in the window's folder names libraw.dll whatever is missing, stays in the log, so the
+    /// refusal carries none.
+    /// </summary>
+    [Fact]
+    public void R124_TheWindowShowsTheRefusalWithoutTheLoadersMessage()
+    {
+        var cause = new DllNotFoundException("Unable to load DLL 'libraw.dll' or one of its dependencies: "
+                                           + "The specified module could not be found. (0x8007007E)");
+
+        using (Ui.Use(UiLanguage.English))
+        {
+            string shown = TabViewModel.Describe(RawReader.CannotLoad(cause));
+
+            Assert.Equal(RawReader.CannotLoadMessage(windows: true), shown);
+            Assert.DoesNotContain("libraw.dll", shown);
+            Assert.EndsWith("https://aka.ms/vc14/vc_redist.x64.exe", shown);
+        }
+    }
 }

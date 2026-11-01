@@ -262,6 +262,9 @@ namespace AstroPhotoAnalyzer.Wpf
             TonalResult t = r.Tonal;
             SimulationResult s = r.Simulation;
             _result = r;
+            // A mono image has one channel, not a green one: the two labels that name the
+            // reference channel say so.
+            bool colour = t.MeanLevels.Count > 1;
             Rows = new[]
             {
                 Row(Tr.Pick("Channel means (0..255)", "Medii pe canal (0..255)"), string.Join(" / ", t.MeanLevels.Select(Fmt.F1)),
@@ -278,7 +281,7 @@ namespace AstroPhotoAnalyzer.Wpf
                         $"Cat la suta din imagine e mai intunecat decat nivelul {Thresholds.DarkLevelA} si decat {Thresholds.DarkLevelB}, "
                         + "pe scara 0..255 a histogramei din Siril. E doar un reper, ca sa compari cu ce vezi in Siril; "
                         + "verdictul pentru print se da pe scara L*, mai jos.")),
-                Row(Tr.Pick("Background level (green channel)", "Nivelul fundalului (canalul verde)"), Fmt.F3(t.BackgroundMedian),
+                Row(colour ? Tr.Pick("Background level (green channel)", "Nivelul fundalului (canalul verde)") : Tr.Pick("Background level (the only channel)", "Nivelul fundalului (singurul canal)"), Fmt.F3(t.BackgroundMedian),
                     description: Tr.Pick("How high the sky sits, on the 0..1 scale: the middle value of the green channel (in mono, of the only channel). "
                         + "As the sky fills most of the image, the middle pixel is a sky pixel. The simulation below starts from here. "
                         + "The colour of the sky is another measurement, in the Colour tab.",
@@ -311,7 +314,7 @@ namespace AstroPhotoAnalyzer.Wpf
                         + "Spune cat din cadru e ocupat de partile luminoase.")),
                 // One percentile per line: on a single line the value would be the widest in the
                 // panel and would narrow the description column for every row.
-                Row(Tr.Pick("Landmarks on the green channel (0..255)", "Repere pe canalul verde (0..255)"), string.Join("\n", TonalResult.PercentileRanks.Zip(t.ReferencePercentiles, (p, v) => $"{"p" + Fmt.F1(p),-6} = {Fmt.F1(v),5}")),
+                Row(colour ? Tr.Pick("Landmarks on the green channel (0..255)", "Repere pe canalul verde (0..255)") : Tr.Pick("Landmarks on the only channel (0..255)", "Repere pe singurul canal (0..255)"), string.Join("\n", TonalResult.PercentileRanks.Zip(t.ReferencePercentiles, (p, v) => $"{"p" + Fmt.F1(p),-6} = {Fmt.F1(v),5}")),
                     description: Tr.Pick("The level under which a given share of the green channel's pixels lies: p50 = half the pixels are under it, "
                         + "so it is the sky; p0.1 = the deepest black that counts; p99.9 and p100 = the brightest stars. p100 = 255 means burnt-out pixels.",
                         "Nivelul sub care se afla un anumit procent din pixelii canalului verde: p50 = jumatate din pixeli sunt sub el, "

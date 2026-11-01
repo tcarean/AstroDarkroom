@@ -21,8 +21,9 @@
 // section 6 asks that the LibRaw notice appear where the program shows its own
 // copyright. A package added to the csproj without an entry here would be a package
 // shipped and not shown; a package removed from the csproj with its entry left would
-// show a license we no longer use. The tests tie the two together both ways, and each
-// entry to the notices file.
+// show a license we no longer use. The tests tie the two together both ways, the native
+// DLLs of LibRaw's runtime package to the components that name them, and each entry to
+// the notices file.
 
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -44,9 +45,11 @@ public class ThirdPartyTests
     }
 
     /// <summary>
-    /// Every package in the csproj is claimed by exactly one component, and every claimed
-    /// package exists in the csproj. This is the test that fails at the next dependency
-    /// added without an entry - before it reaches the screen without a notice.
+    /// Every package in the csproj is claimed by a component, and every claimed package exists
+    /// in the csproj. This is the test that fails at the next dependency added without an entry
+    /// - before it reaches the screen without a notice. A package claimed by several components
+    /// is one whose native DLLs they divide (LibRaw's win-x64 runtime and the three libraries it
+    /// calls, R-095): each of them names its files, so no package is listed twice by mistake.
     /// </summary>
     [Fact]
     public void R095_EveryPackageTheCoreLinksIsListed()
@@ -57,12 +60,91 @@ public class ThirdPartyTests
         string[] claimed = ThirdParty.Components.SelectMany(c => c.Packages).ToArray();
 
         foreach (string p in linked)
-            Assert.True(claimed.Count(c => c == p) == 1,
-                $"the package {p} of FlatCheck.Core.csproj is not claimed by exactly one component of ThirdParty.Components");
+            Assert.True(claimed.Contains(p),
+                $"the package {p} of FlatCheck.Core.csproj is not claimed by any component of ThirdParty.Components");
 
         foreach (string p in claimed)
             Assert.True(linked.Contains(p),
                 $"ThirdParty.Components claims the package {p}, which is no longer in FlatCheck.Core.csproj");
+
+        foreach (var shared in ThirdParty.Components.SelectMany(c => c.Packages.Select(p => (Package: p, Component: c)))
+                                                     .GroupBy(x => x.Package).Where(g => g.Count() > 1))
+            foreach (var x in shared)
+                Assert.True(x.Component.NativeFiles.Length > 0,
+                    $"{x.Component.Name} shares the package {shared.Key} without naming the native files that are its own");
+    }
+
+    /// <summary>
+    /// What the window lists is what the release ships (R-095): every DLL of the win-x64
+    /// runtime in the test output, the files a publish puts beside or inside the exe, is named
+    /// by exactly one component, and every file a component names is there. Measured on
+    /// 2026-11-01: raw_r.dll (LibRaw), jpeg8.dll (libjpeg-turbo), lcms2.dll (Little CMS) and
+    /// zlib1.dll (zlib). A LibRaw build that brings a fifth DLL fails here until it is listed.
+    /// </summary>
+    [Fact]
+    public void R095_EveryNativeDllOfTheRuntimeIsNamedByExactlyOneComponent()
+    {
+        string native = Path.Combine(AppContext.BaseDirectory, "runtimes", "win-x64", "native");
+        string[] shipped = Directory.GetFiles(native, "*.dll")
+            .Select(f => Path.GetFileName(f).ToLowerInvariant())
+            .OrderBy(f => f, StringComparer.Ordinal)
+            .ToArray();
+        string[] named = ThirdParty.Components.SelectMany(c => c.NativeFiles)
+            .Select(f => f.ToLowerInvariant())
+            .OrderBy(f => f, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(new[] { "jpeg8.dll", "lcms2.dll", "raw_r.dll", "zlib1.dll" }, shipped);
+        Assert.Equal(shipped, named);
+    }
+
+    /// <summary>
+    /// The three libraries LibRaw's DLL calls are components of their own, as the Astro
+    /// Darkroom folder's notices name them, each with its own licence and copyright (R-095).
+    /// libjpeg-turbo's IJG licence asks the documentation of a binary to say the software is
+    /// based in part on the IJG's work: the copyright line, which no language changes, ends
+    /// with that sentence.
+    /// </summary>
+    [Fact]
+    public void R095_LibRawsThreeLibrariesAreListedWithTheirLicences()
+    {
+        using (Ui.Use(UiLanguage.English))
+        {
+            var jpeg = Assert.Single(ThirdParty.Components, c => c.Name == "libjpeg-turbo");
+            Assert.Equal(new[] { "jpeg8.dll" }, jpeg.NativeFiles);
+            Assert.Equal("IJG, BSD-3-Clause and zlib", jpeg.Licence);
+            Assert.EndsWith("This software is based in part on the work of the Independent JPEG Group.", jpeg.Copyright);
+            Assert.Contains("Thomas G. Lane", jpeg.Copyright);
+            Assert.Contains("D. R. Commander", jpeg.Copyright);
+
+            var lcms = Assert.Single(ThirdParty.Components, c => c.Name == "Little CMS");
+            Assert.Equal(new[] { "lcms2.dll" }, lcms.NativeFiles);
+            Assert.Equal("MIT", lcms.Licence);
+            Assert.Contains("Marti Maria Saguer", lcms.Copyright);
+
+            var zlib = Assert.Single(ThirdParty.Components, c => c.Name == "zlib");
+            Assert.Equal(new[] { "zlib1.dll" }, zlib.NativeFiles);
+            Assert.Equal("zlib", zlib.Licence);
+            Assert.Contains("Jean-loup Gailly and Mark Adler", zlib.Copyright);
+
+            foreach (var c in new[] { jpeg, lcms, zlib })
+                Assert.Equal(new[] { "Sdcb.LibRaw.runtime.win64" }, c.Packages);
+        }
+        using (Ui.Use(UiLanguage.Romanian))
+            Assert.EndsWith("Independent JPEG Group.", Assert.Single(ThirdParty.Components, c => c.Name == "libjpeg-turbo").Copyright);
+    }
+
+    /// <summary>
+    /// ImageSharp's Split License grants the Apache License 2.0 to software under an open-source
+    /// licence and asks all documentation to name the granted licence only (R-095): the list
+    /// says Apache-2.0, in both languages, and the notices file argues the grant.
+    /// </summary>
+    [Fact]
+    public void R095_ImageSharpIsNamedUnderTheApacheLicenceAlone()
+    {
+        foreach (UiLanguage language in new[] { UiLanguage.English, UiLanguage.Romanian })
+            using (Ui.Use(language))
+                Assert.Equal("Apache-2.0", Assert.Single(ThirdParty.Components, c => c.Name == "SixLabors.ImageSharp").Licence);
     }
 
     /// <summary>
@@ -91,8 +173,9 @@ public class ThirdPartyTests
     [Fact]
     public void EveryComponentNamesItsLicenceAndUrl()
     {
-        // Five since 2026-10-27: NLog joined for the diagnostic log (ADR 0070).
-        Assert.Equal(5, ThirdParty.Components.Count);
+        // Five since 2026-10-27, when NLog joined for the diagnostic log (ADR 0070); eight since
+        // 2026-11-01, when the three libraries LibRaw's DLL calls joined (ADR 0085).
+        Assert.Equal(8, ThirdParty.Components.Count);
 
         foreach (var c in ThirdParty.Components)
         {
@@ -141,6 +224,7 @@ public class ThirdPartyTests
 
         Assert.Contains("LGPL-2.1", libraw.Licence);
         Assert.Contains("LibRaw LLC", libraw.Copyright);
+        Assert.Equal(new[] { "raw_r.dll" }, libraw.NativeFiles);
     }
 
     /// <summary>

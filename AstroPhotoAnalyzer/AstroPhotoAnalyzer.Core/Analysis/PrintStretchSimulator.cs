@@ -314,8 +314,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// "praf 9.3 %, cer 65.1 %, banda 22.4 %, nori luminosi 3.0 %, varfuri 0.1 %"; on the sky
-        /// path, with the image's thresholds: "nebuloasa 12.3 % (peste cerul modelat cu 3.8 L*,
-        /// 4 sigma ale cerului), nebuloasa stralucitoare 5.2 % (peste 16.0 L*, pragul Otsu)".
+        /// path, with the image's thresholds in plain words (ADR 0073): "nebuloasa 12.3 % (cu peste
+        /// 3.8 L* peste cer, de 4 ori zgomotul cerului), nebuloasa stralucitoare 5.2 % (cu peste
+        /// 16.0 L* peste cer: partea cea mai luminoasa a nebuloasei)".
         /// </summary>
         internal string ClassFractions
         {
@@ -326,11 +327,11 @@ namespace AstroPhotoAnalyzer
                 string nebula = Of(2, PatchClass.Band), bright = Of(3, PatchClass.BrightCloud);
                 if (Map.Method == DustMethod.Sky)
                 {
-                    nebula += Tr.Pick($" (over the modelled sky by {Fmt.F1(Map.NoiseThreshold)} L*, {Fmt.F0(Thresholds.SkyNoiseK)} sigma of the sky)",
-                                      $" (peste cerul modelat cu {Fmt.F1(Map.NoiseThreshold)} L*, {Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)");
+                    nebula += Tr.Pick($" (over {Fmt.F1(Map.NoiseThreshold)} L* above the sky, {Fmt.F0(Thresholds.SkyNoiseK)} times the sky's noise)",
+                                      $" (cu peste {Fmt.F1(Map.NoiseThreshold)} L* peste cer, de {Fmt.F0(Thresholds.SkyNoiseK)} ori zgomotul cerului)");
                     bright += double.IsPositiveInfinity(Map.BrightThreshold)
-                        ? Tr.Pick(" (no patch over the Otsu threshold)", " (nicio dala peste pragul Otsu)")
-                        : Tr.Pick($" (over {Fmt.F1(Map.BrightThreshold)} L*, the Otsu threshold)", $" (peste {Fmt.F1(Map.BrightThreshold)} L*, pragul Otsu)");
+                        ? Tr.Pick(" (no patch bright enough)", " (nicio dala destul de luminoasa)")
+                        : Tr.Pick($" (over {Fmt.F1(Map.BrightThreshold)} L* above the sky: the brightest part of the nebula)", $" (cu peste {Fmt.F1(Map.BrightThreshold)} L* peste cer: partea cea mai luminoasa a nebuloasei)");
                 }
                 return $"{Of(0, PatchClass.Dust)}, {Of(1, PatchClass.Sky)}, {nebula}, {bright}, {Of(4, PatchClass.Peak)}";
             }

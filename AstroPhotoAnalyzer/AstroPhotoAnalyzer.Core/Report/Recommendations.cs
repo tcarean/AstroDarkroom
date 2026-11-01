@@ -70,20 +70,20 @@ namespace AstroPhotoAnalyzer
 
             if (q.Applicable)
                 o.Add(new Recommendation(Topic.Format, Verdict.Ok,
-                    Tr.Pick($"Send an 8-bit LZW TIFF ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). The 16 -> 8 bit conversion is pure rounding, not a loss.", $"Trimite TIFF 8-bit LZW ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). Conversia 16 -> 8 biti e rotunjire pura, nu pierdere."),
-                    Tr.Pick($"mean rounding error {Fmt.F2(q.RoundingMeanAbs)}, max {Fmt.F2(q.RoundingMax)} levels (half a level is the most possible)", $"eroare de rotunjire medie {Fmt.F2(q.RoundingMeanAbs)}, maxima {Fmt.F2(q.RoundingMax)} niveluri (jumatate de nivel e maximul posibil)")));
+                    Tr.Pick($"Send the lab an 8-bit TIFF with LZW compression, which loses nothing ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). Going from 16 to 8 bits only rounds the values; nothing is lost.", $"Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). Trecerea de la 16 la 8 biti doar rotunjeste valorile; nu se pierde nimic."),
+                    Tr.Pick($"in the rounding a pixel moves by {Fmt.F2(q.RoundingMeanAbs)} of a level on average and by {Fmt.F2(q.RoundingMax)} at most (a rounding cannot move it by more than half a level)", $"la rotunjire, un pixel se muta in medie cu {Fmt.F2(q.RoundingMeanAbs)} dintr-un nivel si cel mult cu {Fmt.F2(q.RoundingMax)} (o rotunjire nu poate muta mai mult de jumatate de nivel)")));
             else
                 o.Add(new Recommendation(Topic.Format, Verdict.Ok,
-                    Tr.Pick($"Send an 8-bit LZW TIFF ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). The source is already 8-bit; there is nothing to convert.", $"Trimite TIFF 8-bit LZW ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). Sursa e deja pe 8 biti; nu e nimic de convertit."),
-                    Tr.Pick($"the source has {r.File.BitDepth} bits per sample", $"sursa are {r.File.BitDepth} biti pe esantion")));
+                    Tr.Pick($"Send the lab an 8-bit TIFF with LZW compression, which loses nothing ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). The file is already 8-bit; there is nothing to convert.", $"Trimite laboratorului un TIFF pe 8 biti, cu compresie LZW, fara pierderi ({Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}). Fisierul e deja pe 8 biti; nu e nimic de convertit."),
+                    Tr.Pick($"the file has {r.File.BitDepth} bits on each channel", $"fisierul are {r.File.BitDepth} biti pe fiecare canal")));
 
             if (q100 != null)
             {
                 Verdict v = q100.Acceptable ? (q100.PctOverThreshold > Thresholds.JpegOverThresholdWarnPct ? Verdict.Attention : Verdict.Ok) : Verdict.Attention;
                 o.Add(new Recommendation(Topic.Format, v,
-                    Tr.Pick($"If the lab accepts only JPEG: q100, 4:4:4 ({Fmt.Mb(q100.Megabytes)}).", $"Daca laboratorul accepta doar JPEG: q100, 4:4:4 ({Fmt.Mb(q100.Megabytes)})."),
-                    Tr.Pick($"mean error {Fmt.F2(q100.MeanAbsError)}, max {Fmt.F1(q100.MaxError)} levels; {Fmt.Pct(q100.PctOverThreshold)} of the samples with an error > {Fmt.F0(Thresholds.JpegErrorCountLevels)}, at a mean level of {Fmt.F0(q100.MeanLevelOverThreshold)}", $"eroare medie {Fmt.F2(q100.MeanAbsError)}, maxima {Fmt.F1(q100.MaxError)} niveluri; {Fmt.Pct(q100.PctOverThreshold)} din esantioane cu eroare > {Fmt.F0(Thresholds.JpegErrorCountLevels)}, la nivelul mediu {Fmt.F0(q100.MeanLevelOverThreshold)}")
-                    + (q100.PctOverThreshold > 0 && q100.MeanLevelOverThreshold < Thresholds.DarkLevelB ? Tr.Pick(" (in the dark sky, where JPEG does worst)", " (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)") : "")));
+                    Tr.Pick($"If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) ({Fmt.Mb(q100.Megabytes)}).", $"Daca laboratorul primeste doar JPEG: calitate 100, cu culoarea pastrata la rezolutie intreaga (setarea 4:4:4) ({Fmt.Mb(q100.Megabytes)})."),
+                    Tr.Pick($"against the original, the JPEG changes a pixel by {Fmt.F2(q100.MeanAbsError)} levels on average and by {Fmt.F1(q100.MaxError)} at most; {Fmt.Pct(q100.PctOverThreshold)} of the values change by more than {Fmt.F0(Thresholds.JpegErrorCountLevels)} levels, mostly around level {Fmt.F0(q100.MeanLevelOverThreshold)}", $"fata de original, JPEG-ul schimba un pixel in medie cu {Fmt.F2(q100.MeanAbsError)} niveluri si cel mult cu {Fmt.F1(q100.MaxError)}; {Fmt.Pct(q100.PctOverThreshold)} din valori se schimba cu mai mult de {Fmt.F0(Thresholds.JpegErrorCountLevels)} niveluri, mai ales in jurul nivelului {Fmt.F0(q100.MeanLevelOverThreshold)}")
+                    + (q100.PctOverThreshold > 0 && q100.MeanLevelOverThreshold < Thresholds.DarkLevelB ? Tr.Pick(" (in the dark sky, where JPEG does worst)", " (in cerul intunecat, unde JPEG-ul se descurca cel mai prost)") : "")));
 
                 // The qualities under 100 that fail are a fact of the Export tab, not a warning
                 // here (ADR 0061): the lab gets the TIFF of the first line.
@@ -100,23 +100,23 @@ namespace AstroPhotoAnalyzer
                 // different places.
                 double flat = q.PlateauVisibleFramePctAt(size.Dpi);
                 string share = Fmt.Strong(Fmt.F2(flat) + " %"), limit = Fmt.Strong(Fmt.F2(Thresholds.PlateauFlatFrameWarnPct) + " %");
-                string steps = Tr.Pick($"flat steps over {Fmt.F1(Thresholds.PlateauVisibleMm)} mm at {Fmt.F0(size.Dpi)} dpi on {share} of the frame (threshold {limit})",
-                    $"trepte plate de peste {Fmt.F1(Thresholds.PlateauVisibleMm)} mm la {Fmt.F0(size.Dpi)} dpi pe {share} din cadru (prag {limit})");
-                string where = Tr.Pick($"; the typical plateau on the {q.PlateauTiles} clean tiles, {Fmt.Pct(q.PlateauFramePct)} of the frame, is {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, with the noise left at sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB",
-                    $"; palierul tipic pe cele {q.PlateauTiles} dale curate, {Fmt.Pct(q.PlateauFramePct)} din cadru, e {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, cu zgomotul ramas la sigma {Fmt.F2(q.PlateauSigmaLsb)} LSB");
+                string steps = Tr.Pick($"at {Fmt.F0(size.Dpi)} dpi, flat areas, with no change of tone, wider than {Fmt.F1(Thresholds.PlateauVisibleMm)} mm cover {share} of the frame (threshold {limit})",
+                    $"la {Fmt.F0(size.Dpi)} dpi, zonele plate, fara nicio trecere de ton, mai late de {Fmt.F1(Thresholds.PlateauVisibleMm)} mm acopera {share} din cadru (prag {limit})");
+                string where = Tr.Pick($"; in the {Fmt.Int(q.PlateauTiles)} small areas of smooth sky ({Fmt.Pct(q.PlateauFramePct)} of the frame) a flat area is usually {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, and the noise left there is {Fmt.F2(q.PlateauSigmaLsb)} levels",
+                    $"; in cele {Fmt.RoCount(Fmt.Int(q.PlateauTiles))}zone mici de cer neted ({Fmt.Pct(q.PlateauFramePct)} din cadru), o zona plata are de obicei {Fmt.F1(q.PlateauPx)} px = {Fmt.F2(q.PlateauMmAt(size.Dpi))} mm, iar zgomotul ramas acolo e de {Fmt.F2(q.PlateauSigmaLsb)} niveluri");
                 if (q.PlateauVisibleAt(size.Dpi))
                     o.Add(new Recommendation(Topic.Format, Verdict.Attention,
-                        Tr.Pick("Banding risk at 8 bits: send 16-bit if the lab accepts it, or add dither at the export.", "Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export."),
+                        Tr.Pick("At 8 bits visible steps may appear in the sky (banding): send the file at 16 bits if the lab takes it, or add a little noise at the export (dither).", "Pe 8 biti pot aparea trepte vizibile in cer (banding): trimite fisierul pe 16 biti daca laboratorul il primeste, sau adauga putin zgomot la export (dither)."),
                         steps + where));
                 else
                     o.Add(new Recommendation(Topic.Format, Verdict.Ok,
-                        Tr.Pick("No visible banding at 8 bits: flat steps on too little of the frame to show.", "Fara banding vizibil pe 8 biti: trepte plate pe prea putin din cadru ca sa se vada."),
+                        Tr.Pick("At 8 bits no visible steps appear in the sky: the flat areas cover too little of the frame to show.", "Pe 8 biti nu apar trepte vizibile in cer: zonele plate acopera prea putin din cadru ca sa se vada."),
                         steps + where));
             }
             else if (r.Noise.BandingRisk)
                 o.Add(new Recommendation(Topic.Format, Verdict.Attention,
-                    Tr.Pick("Banding risk at 8 bits (the plateau could not be measured): send 16-bit if the lab accepts it.", "Risc de banding pe 8 biti (nu s-a putut masura palierul): trimite 16-bit daca laboratorul accepta."),
-                    Tr.Pick($"residual noise sigma {Fmt.F2(r.Noise.SigmaMedianLsb)} LSB, under {Fmt.F1(Thresholds.NoiseBandingLsb)}", $"zgomot rezidual sigma {Fmt.F2(r.Noise.SigmaMedianLsb)} LSB, sub {Fmt.F1(Thresholds.NoiseBandingLsb)}")));
+                    Tr.Pick("At 8 bits steps may appear in the sky (banding), though the flat areas could not be measured: send the file at 16 bits if the lab takes it.", "Pe 8 biti pot aparea trepte in cer (banding), desi zonele plate nu s-au putut masura: trimite fisierul pe 16 biti daca laboratorul il primeste."),
+                    Tr.Pick($"the noise left in the sky is {Fmt.F2(r.Noise.SigmaMedianLsb)} levels, under {Fmt.F1(Thresholds.NoiseBandingLsb)}, where it no longer hides the steps", $"zgomotul ramas in cer e de {Fmt.F2(r.Noise.SigmaMedianLsb)} niveluri, sub {Fmt.F1(Thresholds.NoiseBandingLsb)}, unde nu mai ascunde treptele")));
         }
 
         // ------------------------------------------------------------ 2. background
@@ -136,17 +136,17 @@ namespace AstroPhotoAnalyzer
             SimulationResult s = r.Simulation;
             SimulationRow asIs = s.AsIs;
             string pass = ReportWriter.DustDmaxText(s);
-            string clouds = s.Clouds.Count == 0 ? "" : Tr.Pick("; the darkest: ", "; cei mai intunecati: ") + CloudList(s);
+            string clouds = s.Clouds.Count == 0 ? "" : Tr.Pick("; the darkest clouds: ", "; norii cei mai intunecati: ") + CloudList(s);
             string note = s.MethodNote == null ? "" : "; " + s.MethodNote;
             string because = Tr.Pick(
-                $"the dust ({s.DustDescription}{note}) at L* {Fmt.F1(asIs.LstarDust)}{clouds}; "
-                + $"paper black L* {Fmt.F1(s.PaperBlackLstar)} at Dmax {Fmt.Dmax(s.Dmax)}; "
-                + $"the sky ({s.SkyDescription}) at L* {Fmt.F1(asIs.LstarSky)}; the background level {Fmt.Level(s.BackgroundMeasured)}; {pass}; "
-                + $"the visibility threshold L* {Fmt.F0(Thresholds.LowSeparationLstar)}, under it {Fmt.Pct(asIs.PctBelowLowSeparation)} of the pixels",
-                $"praful ({s.DustDescription}{note}) la L* {Fmt.F1(asIs.LstarDust)}{clouds}; "
-                + $"negrul hartiei L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)}; "
-                + $"cerul ({s.SkyDescription}) la L* {Fmt.F1(asIs.LstarSky)}; nivelul fundalului {Fmt.Level(s.BackgroundMeasured)}; {pass}; "
-                + $"pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)}, sub el {Fmt.Pct(asIs.PctBelowLowSeparation)} din pixeli");
+                $"the dust at L* {Fmt.F1(asIs.LstarDust)} ({s.DustDescription}{note}){clouds}; "
+                + $"paper black is L* {Fmt.F1(s.PaperBlackLstar)} at Dmax {Fmt.Dmax(s.Dmax)}; "
+                + $"the sky at L* {Fmt.F1(asIs.LstarSky)} ({s.SkyDescription}); the background level {Fmt.Level(s.BackgroundMeasured)}; {pass}; "
+                + $"{Fmt.Pct(asIs.PctBelowLowSeparation)} of the pixels are under L* {Fmt.F0(Thresholds.LowSeparationLstar)}, where the eye barely tells the tones apart",
+                $"praful la L* {Fmt.F1(asIs.LstarDust)} ({s.DustDescription}{note}){clouds}; "
+                + $"negrul hartiei e L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)}; "
+                + $"cerul la L* {Fmt.F1(asIs.LstarSky)} ({s.SkyDescription}); nivelul fundalului {Fmt.Level(s.BackgroundMeasured)}; {pass}; "
+                + $"{Fmt.Pct(asIs.PctBelowLowSeparation)} din pixeli sunt sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, unde ochiul abia mai deosebeste tonurile");
             string threshold = "L* " + Fmt.F0(Thresholds.LowSeparationLstar);
 
             if (!s.DustBelowPaperBlack && !s.SkyBelowVisibility)
@@ -159,18 +159,18 @@ namespace AstroPhotoAnalyzer
                     // tells the user how close to the edge it is.
                     SimulationRow lower = s.Rows.LastOrDefault(x => x.Target < asIs.Target);
                     text = lower == null
-                        ? Tr.Pick("The background is print-safe as it is; the grid goes no lower than its level.", "Fundalul e print-safe asa cum e; grila nu coboara sub nivelul lui.")
+                        ? Tr.Pick("The background is print-safe as it is; the simulation goes no lower than its level.", "Fundalul e print-safe asa cum e; simularea nu coboara sub nivelul lui.")
                         : !lower.DustOnPaperBlack
-                            ? Tr.Pick($"The background is print-safe as it is; at {Fmt.Level(lower.Target)} the dust would drop to L* {Fmt.F1(lower.LstarDust)}, under paper black.", $"Fundalul e print-safe asa cum e; la {Fmt.Level(lower.Target)} praful ar cobori la L* {Fmt.F1(lower.LstarDust)}, sub negrul hartiei.")
-                            : Tr.Pick($"The background is print-safe as it is; at {Fmt.Level(lower.Target)} the sky would drop to L* {Fmt.F1(lower.LstarSky)}, under the visibility threshold {threshold}.", $"Fundalul e print-safe asa cum e; la {Fmt.Level(lower.Target)} cerul ar cobori la L* {Fmt.F1(lower.LstarSky)}, sub pragul de vizibilitate {threshold}.");
+                            ? Tr.Pick($"The background is print-safe as it is; if you lowered it to {Fmt.Level(lower.Target)}, the dust would reach L* {Fmt.F1(lower.LstarDust)}, under paper black.", $"Fundalul e print-safe asa cum e; daca l-ai cobori la {Fmt.Level(lower.Target)}, praful ar ajunge la L* {Fmt.F1(lower.LstarDust)}, sub negrul hartiei.")
+                            : Tr.Pick($"The background is print-safe as it is; if you lowered it to {Fmt.Level(lower.Target)}, the sky would reach L* {Fmt.F1(lower.LstarSky)}, under {threshold}, where the eye barely tells the tones apart.", $"Fundalul e print-safe asa cum e; daca l-ai cobori la {Fmt.Level(lower.Target)}, cerul ar ajunge la L* {Fmt.F1(lower.LstarSky)}, sub {threshold}, unde ochiul abia mai deosebeste tonurile.");
                 }
                 else
                 {
                     bool floor = ReferenceEquals(rec, s.Rows[0]);
-                    text = Tr.Pick($"The background is print-safe as it is; you can go down to {Fmt.Level(rec.Target)} (the dust at L* {Fmt.F1(rec.LstarDust)}, the sky at L* {Fmt.F1(rec.LstarSky)})"
-                                   + (floor ? "; the grid goes no lower." : "."),
-                                   $"Fundalul e print-safe asa cum e; poti cobori pana la {Fmt.Level(rec.Target)} (praful la L* {Fmt.F1(rec.LstarDust)}, cerul la L* {Fmt.F1(rec.LstarSky)})"
-                                   + (floor ? "; grila nu coboara mai jos." : "."));
+                    text = Tr.Pick($"The background is print-safe as it is; you can lower it down to {Fmt.Level(rec.Target)} (then the dust would be at L* {Fmt.F1(rec.LstarDust)}, the sky at L* {Fmt.F1(rec.LstarSky)})"
+                                   + (floor ? "; the simulation goes no lower." : "."),
+                                   $"Fundalul e print-safe asa cum e; il poti cobori pana la {Fmt.Level(rec.Target)} (atunci praful ar fi la L* {Fmt.F1(rec.LstarDust)}, cerul la L* {Fmt.F1(rec.LstarSky)})"
+                                   + (floor ? "; simularea nu coboara mai jos." : "."));
                 }
                 o.Add(new Recommendation(Topic.Background, Verdict.Ok, text, because));
                 return;
@@ -178,31 +178,33 @@ namespace AstroPhotoAnalyzer
 
             Verdict v = s.SkyBelowPaperBlack ? Verdict.Problem : Verdict.Attention;
             string what = s.SkyBelowPaperBlack
-                ? Tr.Pick("The sky is under paper black: the sky and the dust would print as the SAME black.", "Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru.")
+                ? Tr.Pick("The sky is darker than paper black: the sky and the dust would come out as the SAME black.", "Cerul e mai intunecat decat negrul hartiei: cerul si praful ar iesi cu ACELASI negru.")
                 : s.DustBelowPaperBlack
-                    ? Tr.Pick("The dust is under paper black: the dust clouds would print pure black.", "Praful e sub negrul hartiei: norii de praf s-ar tipari negru pur.")
-                    : Tr.Pick($"The sky is under {threshold}: the paper keeps it apart from black, but in room light it would look almost black.", $"Cerul e sub {threshold}: hartia il separa de negru, dar in lumina de camera s-ar vedea aproape negru.");
+                    ? Tr.Pick("The dust is darker than paper black: the dust clouds would come out pure black, without detail.", "Praful e mai intunecat decat negrul hartiei: norii de praf ar iesi negru pur, fara detalii.")
+                    : Tr.Pick($"The sky is under {threshold}: on paper it is not black, but in ordinary room light it would look almost black.", $"Cerul e sub {threshold}: pe hartie nu e negru, dar in lumina obisnuita de camera ar parea aproape negru.");
             string fix;
             if (s.Recommended != null)
             {
                 string exact = s.DustBelowPaperBlack
-                    ? (s.ExactTarget.HasValue ? Tr.Pick($"; exactly on black at {ReportWriter.TargetText(s.ExactTarget)}", $"; exact pe negru la {ReportWriter.TargetText(s.ExactTarget)}") : "")
-                    : Tr.Pick($"; the sky at {threshold} from {ReportWriter.TargetText(s.VisibilityTarget)}", $"; cerul la {threshold} de la {ReportWriter.TargetText(s.VisibilityTarget)}");
-                fix = Tr.Pick($" Re-stretch from linear to a background of {Fmt.Level(s.Recommended.Target)} (simulated: the dust at L* {Fmt.F1(s.Recommended.LstarDust)}, the sky at L* {Fmt.F1(s.Recommended.LstarSky)}{exact}).", $" Re-stretch din liniar la fundal {Fmt.Level(s.Recommended.Target)} (simulat: praful la L* {Fmt.F1(s.Recommended.LstarDust)}, cerul la L* {Fmt.F1(s.Recommended.LstarSky)}{exact}).");
+                    ? (s.ExactTarget.HasValue ? Tr.Pick($"; the dust reaches black exactly at {ReportWriter.TargetText(s.ExactTarget)}", $"; praful ajunge exact pe negru la {ReportWriter.TargetText(s.ExactTarget)}") : "")
+                    : Tr.Pick($"; the sky reaches {threshold} from {ReportWriter.TargetText(s.VisibilityTarget)} up", $"; cerul ajunge la {threshold} de la {ReportWriter.TargetText(s.VisibilityTarget)} in sus");
+                fix = Tr.Pick($" Redo the stretch from the linear data up to a background of {Fmt.Level(s.Recommended.Target)} (in the simulation: the dust at L* {Fmt.F1(s.Recommended.LstarDust)}, the sky at L* {Fmt.F1(s.Recommended.LstarSky)}{exact}).", $" Refa stretch-ul din datele liniare pana la fundalul {Fmt.Level(s.Recommended.Target)} (in simulare: praful la L* {Fmt.F1(s.Recommended.LstarDust)}, cerul la L* {Fmt.F1(s.Recommended.LstarSky)}{exact}).");
             }
             else if (!s.DustBelowPaperBlack || s.Rows.Any(x => x.DustOnPaperBlack))
             {
                 // The dust reaches black on the grid, but the sky does not reach the threshold on
                 // it: a sky much darker than the measured background, beside a bright nebula.
                 string top = Fmt.Level(s.Rows.Where(x => !x.AsIs).Select(x => x.Target).DefaultIfEmpty(s.AsIs.Target).Max());
-                fix = Tr.Pick($" No target up to {top} brings the sky to {threshold}; it would take {ReportWriter.TargetText(s.VisibilityTarget)}.", $" Nicio tinta pana la {top} nu aduce cerul la {threshold}; ar trebui {ReportWriter.TargetText(s.VisibilityTarget)}.");
+                fix = Tr.Pick($" No target of the simulation (up to {top}) brings the sky to {threshold}; it would take {ReportWriter.TargetText(s.VisibilityTarget)}.", $" Nicio tinta din simulare (pana la {top}) nu duce cerul la {threshold}; ar fi nevoie de {ReportWriter.TargetText(s.VisibilityTarget)}.");
             }
             else
             {
                 string top = Fmt.Level(s.Rows.Where(x => !x.AsIs).Select(x => x.Target).DefaultIfEmpty(s.AsIs.Target).Max());
+                // Appendix B lists the clouds by name only when the catalogue found some (a WCS).
+                string appendixB = s.Clouds.Count > 0 ? Tr.Pick("their list is in Appendix B", "lista lor e in Anexa B") : Tr.Pick("see Appendix B", "vezi Anexa B");
                 fix = s.ExactTarget.HasValue
-                    ? Tr.Pick($" No target up to {top} brings the dust onto paper black; it would take ~{Fmt.Level(s.ExactTarget.Value)}, too high for a night sky: accept the darkest clouds as black (Appendix B) or choose another medium.", $" Nicio tinta pana la {top} nu aduce praful pe negrul hartiei; ar trebui ~{Fmt.Level(s.ExactTarget.Value)}, prea sus pentru un cer de noapte: accepta norii cei mai intunecati negri (Anexa B) sau alege alt mediu.")
-                    : Tr.Pick($" No target up to {top} brings the dust onto paper black, not even {Fmt.Level(Thresholds.ExactTargetHi)}: the dust is practically black; accept the darkest clouds as black (Appendix B) or choose another medium.", $" Nicio tinta pana la {top} nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}: praful e practic negru; accepta norii cei mai intunecati negri (Anexa B) sau alege alt mediu.");
+                    ? Tr.Pick($" No target of the simulation (up to {top}) lifts the dust to paper black; it would take ~{Fmt.Level(s.ExactTarget.Value)}, too much for a night sky: accept that the darkest clouds come out black ({appendixB}) or choose another paper.", $" Nicio tinta din simulare (pana la {top}) nu ridica praful pana la negrul hartiei; ar fi nevoie de ~{Fmt.Level(s.ExactTarget.Value)}, prea mult pentru un cer de noapte: accepta ca norii cei mai intunecati sa iasa negri ({appendixB}) sau alege alta hartie.")
+                    : Tr.Pick($" No target of the simulation (up to {top}) lifts the dust to paper black, not even at {Fmt.Level(Thresholds.ExactTargetHi)}: the dust is practically black; accept that the darkest clouds come out black ({appendixB}) or choose another paper.", $" Nicio tinta din simulare (pana la {top}) nu ridica praful pana la negrul hartiei, nici macar la {Fmt.Level(Thresholds.ExactTargetHi)}: praful e practic negru; accepta ca norii cei mai intunecati sa iasa negri ({appendixB}) sau alege alta hartie.");
             }
             o.Add(new Recommendation(Topic.Background, v, what + fix, because));
         }
@@ -222,7 +224,7 @@ namespace AstroPhotoAnalyzer
         // ------------------------------------------------------------ 3. colour
 
         /// <summary>
-        /// Section 3, the background's colour and the gradients: the cast (or that the image is
+        /// Section 3, the background's colour and the frame's edges (the gradients): the cast (or that the image is
         /// mono, or that the background is neutral), one recommendation per flagged coloured edge
         /// region, and one note for all the flagged neutral ones (ADR 0018).
         /// </summary>
@@ -233,7 +235,7 @@ namespace AstroPhotoAnalyzer
             BackgroundResult b = r.Background;
             if (!b.ColorApplicable)
             {
-                o.Add(new Recommendation(Topic.Colour, Verdict.Ok, Tr.Pick("A mono image: there is no cast to measure.", "Imagine mono: nu exista tenta de masurat."), Tr.Pick("a single plane", "un singur plan")));
+                o.Add(new Recommendation(Topic.Colour, Verdict.Ok, Tr.Pick("A black-and-white image: it has no colour tint to measure.", "Imagine alb-negru: nu are o tenta de culoare de masurat."), Tr.Pick("a single channel", "un singur canal")));
             }
             else if (b.HasCast)
             {
@@ -241,7 +243,7 @@ namespace AstroPhotoAnalyzer
                     ? (b.GreenExcess > 0 ? Tr.Pick("green", "verde") : "magenta")
                     : (b.RedMinusBlue > 0 ? Tr.Pick("warm", "calda") : Tr.Pick("cool", "rece"));
                 o.Add(new Recommendation(Topic.Colour, Verdict.Attention,
-                    Tr.Pick($"A {kind} cast on the background: neutralize it (SCNR / BackgroundNeutralization) before printing - on paper, with no grey beside it, it still reads.", $"Tenta {kind} pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - pe hartie, fara un gri alaturi, tot se citeste."),
+                    Tr.Pick($"The background has a {kind} tint: neutralize it before printing (SCNR or BackgroundNeutralization). On paper the tint shows, even with no grey beside it to compare it with.", $"Fundalul are o tenta {kind}: neutralizeaz-o inainte de print (SCNR sau BackgroundNeutralization). Pe hartie tenta se vede, chiar fara un gri alaturi cu care s-o compari."),
                     CastBecause(b, true)));
             }
             else
@@ -277,16 +279,16 @@ namespace AstroPhotoAnalyzer
                     ? (warm ? Tr.Pick("darker and browner than the sky (the blue missing most)", "mai intunecat si mai brun decat cerul (albastrul lipseste cel mai mult)")
                         : cool ? Tr.Pick("darker and bluer than the sky (the red missing most)", "mai intunecat si mai albastru decat cerul (rosul lipseste cel mai mult)")
                         : Tr.Pick("darker than the sky, with a colour of its own", "mai intunecat decat cerul, cu o culoare a lui"))
-                    : (warm ? (e.AtBottom ? Tr.Pick("warm (horizon glow / light pollution)", "cald (lumina de orizont / poluare)") : Tr.Pick("warm (reddish)", "cald (rosiatic)"))
-                        : cool ? Tr.Pick("cool (bluish)", "rece (albastrui)")
-                        : ColourOf(e) == RegionColour.Greenish ? Tr.Pick("greenish", "verzui") : Tr.Pick("of another colour than the background", "cu alta culoare decat fundalul"));
+                    : (warm ? (e.AtBottom ? Tr.Pick("warmer than the rest of the sky (glow from the horizon or light pollution)", "mai cald decat restul cerului (lumina de la orizont sau poluare luminoasa)") : Tr.Pick("warmer, reddish, than the rest of the sky", "mai cald, rosiatic, decat restul cerului"))
+                        : cool ? Tr.Pick("cooler, bluish, than the rest of the sky", "mai rece, albastrui, decat restul cerului")
+                        : ColourOf(e) == RegionColour.Greenish ? Tr.Pick("greener than the rest of the sky", "mai verzui decat restul cerului") : Tr.Pick("of another colour than the rest of the sky", "cu alta culoare decat restul cerului"));
                 string advice = darker
-                    ? Tr.Pick("Dust at the edge of the frame, or a gradient left over (vignetting, the edge of the flattening): look at the edge yourself; a gradient is corrected on the linear data (GraXpert), dust is the object.", "Praf la marginea cadrului, sau un rest de gradient (vinietare, marginea aplatizarii): uita-te la margine; un gradient se corecteaza pe liniar (GraXpert), praful e obiectul.")
-                    : Tr.Pick("Correct it on the linear data (GraXpert) or accept it as part of the composition - not with a local curve on the stretched image.", "Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.");
+                    ? Tr.Pick("It may be dust at the edge of the frame, or a difference in brightness left over (vignetting, the edge of the background correction): look at the edge yourself. A difference left over is corrected on the linear data (GraXpert); dust is part of the object.", "Poate fi praf la marginea cadrului, sau o diferenta de luminozitate ramasa (vinietare, marginea corectiei de fundal): uita-te la margine. O diferenta ramasa se corecteaza pe datele liniare (GraXpert); praful face parte din obiect.")
+                    : Tr.Pick("Correct it on the linear data (GraXpert) or keep it as part of the composition; do not correct it with a local curve on the image already stretched.", "Corecteaz-o pe datele liniare (GraXpert) sau las-o ca parte a compozitiei; nu o corecta cu o curba locala pe imaginea deja intinsa.");
                 o.Add(new Recommendation(Topic.Colour, Verdict.Attention,
                     $"{Cap(e.Name)}: {kind}{extended}. {advice}",
-                    Tr.Pick($"against the background, {(e.OnSkyPixels ? "on the region's sky pixels" : $"on every pixel of the region (sky {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} levels (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move differently{extendedBecause}",
-                        $"fata de fundal, {(e.OnSkyPixels ? "pe pixelii de cer ai regiunii" : $"pe toti pixelii regiunii (cer {Fmt.F0(e.SkyFraction * 100)} %)")}: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca diferit{extendedBecause}")));
+                    Tr.Pick($"against the rest of the sky, measured {(e.OnSkyPixels ? "on the zone's sky pixels" : $"on every pixel of the zone (only {Fmt.F0(e.SkyFraction * 100)} % of them are sky)")}: {deltas} levels (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels do not change alike, so it is a colour{extendedBecause}",
+                        $"fata de restul cerului, masurat {(e.OnSkyPixels ? "pe pixelii de cer ai zonei" : $"pe toti pixelii zonei (doar {Fmt.F0(e.SkyFraction * 100)} % din ei sunt cer)")}: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele nu se schimba la fel, deci e o culoare{extendedBecause}")));
             }
 
             // The NEUTRAL deviations, all in a single note: an edge brighter by the same amount on
@@ -300,11 +302,11 @@ namespace AstroPhotoAnalyzer
                     $"{e.Name} {(b.ColorApplicable ? string.Join("/", e.Deltas.Select(Fmt.S1)) : Fmt.S1(e.Deltas[0]))}"));
                 bool brighter = neutral.All(e => e.Deltas.Average() > 0);
                 o.Add(new Recommendation(Topic.Colour, Verdict.Ok,
-                    Tr.Pick((brighter ? "Edges brighter than the background, without a cast: " : "Edges that differ from the background, without a cast: ")
-                            + "most likely the object itself, not a gradient - look at the edges before you correct anything.",
-                            (brighter ? "Margini mai luminoase decat fundalul, fara tenta: " : "Margini care difera de fundal, fara tenta: ")
-                            + "cel mai probabil obiectul insusi, nu un gradient - uita-te la margini inainte sa corectezi ceva."),
-                    Tr.Pick($"against the background, in levels: {list} (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); the channels move together", $"fata de fundal, in niveluri: {list} (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca impreuna")));
+                    Tr.Pick((brighter ? "Some edges are brighter than the rest of the sky, but without a colour of their own: " : "Some edges differ from the rest of the sky, but without a colour of their own: ")
+                            + "most likely it is the object itself (the Milky Way entering a corner, say), not a difference in the background; look at the edges before you correct anything.",
+                            (brighter ? "Unele margini sunt mai luminoase decat restul cerului, dar fara o culoare a lor: " : "Unele margini difera de restul cerului, dar fara o culoare a lor: ")
+                            + "cel mai probabil e chiar obiectul (de exemplu Calea Lactee intrand in colt), nu o diferenta de fundal; uita-te la margini inainte sa corectezi ceva."),
+                    Tr.Pick($"against the rest of the sky, in levels: {list} (threshold {Fmt.F1(Thresholds.CornerGradientLevels)}); all the channels change alike, so it is not a colour", $"fata de restul cerului, in niveluri: {list} (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); toate canalele se schimba la fel, deci nu e o culoare")));
             }
         }
 
@@ -362,10 +364,10 @@ namespace AstroPhotoAnalyzer
         /// <returns>The "because" text in the current language.</returns>
         static string CastBecause(BackgroundResult b, bool attention)
         {
-            string chroma = $"{Fmt.F1(b.Chroma)} (a* {Fmt.S1(b.Lab.A)}, b* {Fmt.S1(b.Lab.B)}";
+            string ab = $"a* {Fmt.S1(b.Lab.A)}, b* {Fmt.S1(b.Lab.B)}";
             return Tr.Pick(
-                $"background R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}: chroma {chroma}; threshold {Fmt.F1(Thresholds.CastWarnChroma)}{(attention ? ", passed" : "")}); G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} levels",
-                $"fundal R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}: croma {chroma}; prag {Fmt.F1(Thresholds.CastWarnChroma)}{(attention ? ", depasit" : "")}); G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} niveluri");
+                $"the background is R {Fmt.F1(b.Levels[0])}, G {Fmt.F1(b.Levels[1])}, B {Fmt.F1(b.Levels[2])}; how far it is from a grey (chroma): {Fmt.F1(b.Chroma)}, threshold {Fmt.F1(Thresholds.CastWarnChroma)}{(attention ? ", passed" : "")} ({ab}); green stands over red and blue by {Fmt.S1(b.GreenExcess)} levels, red over blue by {Fmt.S1(b.RedMinusBlue)}",
+                $"fundalul are R {Fmt.F1(b.Levels[0])}, G {Fmt.F1(b.Levels[1])}, B {Fmt.F1(b.Levels[2])}; cat de departe e de un gri (croma): {Fmt.F1(b.Chroma)}, prag {Fmt.F1(Thresholds.CastWarnChroma)}{(attention ? ", depasit" : "")} ({ab}); verdele iese peste rosu si albastru cu {Fmt.S1(b.GreenExcess)} niveluri, rosul peste albastru cu {Fmt.S1(b.RedMinusBlue)}");
         }
 
         /// <summary>
@@ -391,67 +393,79 @@ namespace AstroPhotoAnalyzer
             StarResult st = r.Stars;
             PrintSizeResult ps = r.Size;
             SizeRow row = ps.ReferenceRow;
-            string dist = ps.DistanceIsExplicit ? Tr.Pick($"the given distance {Fmt.F1(row.ViewingDistanceM)} m", $"distanta data {Fmt.F1(row.ViewingDistanceM)} m") : Tr.Pick($"the natural distance {Fmt.F2(row.NaturalDistanceM)} m (1.5 x the diagonal)", $"distanta naturala {Fmt.F2(row.NaturalDistanceM)} m (1.5 x diagonala)");
-
             if (st.Insufficient)
             {
-                // Without a FWHM the detail is not measured, only the pixel grid - a limit of the
-                // file. It says how far the file reaches; no row is recommended.
+                // Without a FWHM the detail is not measured, only whether the pixels show - a
+                // limit of the file. It says how far the file reaches; no row is recommended.
+                string acuity = Fmt.F2(Thresholds.AcuityMmAt1m);
                 string rule = ps.DistanceIsExplicit
-                    ? Tr.Pick($"from {Fmt.F1(row.ViewingDistanceM)} m the grid disappears from {Fmt.F0(ps.FallbackDpi)} dpi up", $"de la {Fmt.F1(row.ViewingDistanceM)} m grila dispare de la {Fmt.F0(ps.FallbackDpi)} dpi in sus")
-                    : Tr.Pick($"without a given distance the convention of {Fmt.F0(ps.FallbackDpi)} dpi applies (the grid invisible from ~0.5 m, when you step closer)", $"fara distanta data se cere conventia de {Fmt.F0(ps.FallbackDpi)} dpi (grila invizibila de la ~0.5 m, cand te apropii)");
+                    ? Tr.Pick($"from {Fmt.F1(row.ViewingDistanceM)} m the pixels no longer show from {Fmt.F0(ps.FallbackDpi)} dpi up", $"de la {Fmt.F1(row.ViewingDistanceM)} m pixelii nu se mai vad de la {Fmt.F0(ps.FallbackDpi)} dpi in sus")
+                    : Tr.Pick($"without a given distance the convention of {Fmt.F0(ps.FallbackDpi)} dpi applies (the pixels no longer show from ~0.5 m, when you step closer)", $"fara distanta data se cere conventia de {Fmt.F0(ps.FallbackDpi)} dpi (pixelii nu se mai vad de la ~0.5 m, cand te apropii)");
                 string reach = row.PointAtViewingDistance
-                    ? Tr.Pick($"the file reaches {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm ({Fmt.F0(row.Dpi)} dpi)", $"fisierul ajunge pana la {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm ({Fmt.F0(row.Dpi)} dpi)")
-                    : Tr.Pick($"not even the smallest width of the list ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm, {Fmt.F0(row.Dpi)} dpi) reaches the threshold", $"nici cea mai mica latime din lista ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm, {Fmt.F0(row.Dpi)} dpi) nu atinge pragul");
+                    ? Tr.Pick($"the file can be printed up to {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm ({Fmt.F0(row.Dpi)} dpi)", $"fisierul poate fi tiparit pana la {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm ({Fmt.F0(row.Dpi)} dpi)")
+                    : Tr.Pick($"not even the smallest width of the list ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm, {Fmt.F0(row.Dpi)} dpi) gets to the threshold", $"nici cea mai mica latime din lista ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm, {Fmt.F0(row.Dpi)} dpi) nu ajunge la prag");
                 string threshold = ps.DistanceIsExplicit
-                    ? Tr.Pick($"threshold {Fmt.F0(ps.FallbackDpi)} dpi = 25.4 / (0.29 mm/m x {Fmt.F1(row.ViewingDistanceM)} m)", $"prag {Fmt.F0(ps.FallbackDpi)} dpi = 25.4 / (0.29 mm/m x {Fmt.F1(row.ViewingDistanceM)} m)")
-                    : Tr.Pick($"threshold {Fmt.F0(ps.FallbackDpi)} dpi (convention: a pitch of {Fmt.F2(25.4 / ps.FallbackDpi)} mm, invisible from {Fmt.F2(25.4 / ps.FallbackDpi / Thresholds.AcuityMmAt1m)} m)", $"prag {Fmt.F0(ps.FallbackDpi)} dpi (conventie: pas {Fmt.F2(25.4 / ps.FallbackDpi)} mm, invizibil de la {Fmt.F2(25.4 / ps.FallbackDpi / Thresholds.AcuityMmAt1m)} m)");
+                    ? Tr.Pick($"the threshold is {Fmt.F0(ps.FallbackDpi)} dpi = 25.4 / ({acuity} mm/m x {Fmt.F1(row.ViewingDistanceM)} m), by how finely the eye sees from {Fmt.F1(row.ViewingDistanceM)} m", $"pragul e {Fmt.F0(ps.FallbackDpi)} dpi = 25.4 / ({acuity} mm/m x {Fmt.F1(row.ViewingDistanceM)} m), dupa cat de fin vede ochiul de la {Fmt.F1(row.ViewingDistanceM)} m")
+                    : Tr.Pick($"the threshold is {Fmt.F0(ps.FallbackDpi)} dpi (convention: pixels of {Fmt.F2(25.4 / ps.FallbackDpi)} mm, which no longer show from {Fmt.F2(25.4 / ps.FallbackDpi / Thresholds.AcuityMmAt1m)} m)", $"pragul e {Fmt.F0(ps.FallbackDpi)} dpi (conventie: pixeli de {Fmt.F2(25.4 / ps.FallbackDpi)} mm, care nu se mai vad de la {Fmt.F2(25.4 / ps.FallbackDpi / Thresholds.AcuityMmAt1m)} m)");
                 o.Add(new Recommendation(Topic.Size, Verdict.Attention,
-                    Tr.Pick($"Without stars the real resolution is not measured; only the pixel grid is judged: {rule}, and {reach}. It is a limit of the file, not of the detail - a soft nebula may need much less - so no size is recommended."
-                            + (ps.DistanceIsExplicit ? "" : " Give the viewing distance, so that the threshold is the physical one, not the convention."),
-                            $"Fara stele rezolutia reala nu se masoara; se judeca doar grila de pixeli: {rule}, si {reach}. E o limita a fisierului, nu a detaliului - o nebuloasa moale poate cere mult mai putin - deci nu se recomanda o marime."
-                            + (ps.DistanceIsExplicit ? "" : " Da distanta de privire ca pragul sa fie cel fizic, nu conventia.")),
-                    Tr.Pick($"{st.Count} stars measured, {Fmt.F1(st.DensityPerMp)} per megapixel (minimum {Thresholds.StarMinCount} and {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel); at {Fmt.F0(row.WidthCm)} cm the pixel pitch is {Fmt.F2(row.PitchMm)} mm, invisible from {Fmt.F2(row.PixelDistanceM)} m; {threshold}", $"{st.Count} stele masurate, {Fmt.F1(st.DensityPerMp)} pe megapixel (minim {Thresholds.StarMinCount} si {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel); la {Fmt.F0(row.WidthCm)} cm pasul pixelului e {Fmt.F2(row.PitchMm)} mm, invizibil de la {Fmt.F2(row.PixelDistanceM)} m; {threshold}")));
-            }
-            else if (ps.DistanceIsExplicit)
-            {
-                string evidence = Tr.Pick($"median FWHM {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stars) = real detail ~{Fmt.F0(ps.EffectiveDetailPx)} px across the width; at {Fmt.F0(row.WidthCm)} cm a star is {Fmt.F2(row.StarMm)} mm and a point from {Fmt.F2(row.MinDistanceM)} m; {dist}", $"FWHM median {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stele) = detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime; la {Fmt.F0(row.WidthCm)} cm steaua are {Fmt.F2(row.StarMm)} mm si e punct de la {Fmt.F2(row.MinDistanceM)} m; {dist}");
-                if (row.PointAtViewingDistance)
-                    o.Add(new Recommendation(Topic.Size, Verdict.Ok,
-                        Tr.Pick($"Recommended: a {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm image, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm with the passepartout and the frame.", $"Recomandat: {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm imagine, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama."),
-                        evidence));
-                else
-                    o.Add(new Recommendation(Topic.Size, Verdict.Attention,
-                        Tr.Pick($"From {Fmt.F1(row.ViewingDistanceM)} m the stars are discs at every size of the list; the smallest ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) minimizes the effect. Try smaller widths, or a longer distance if the viewer really stands further away.", $"De la {Fmt.F1(row.ViewingDistanceM)} m stelele sunt discuri la orice marime din lista; cea mai mica ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) minimizeaza efectul. Incearca latimi mai mici, sau o distanta mai mare daca privitorul chiar sta mai departe."),
-                        evidence));
+                    Tr.Pick($"Without stars it cannot be measured how much detail the image holds; it is only checked that the pixels do not show: {rule}, and {reach}. It is a limit of the file, not of the detail (a soft nebula may look fine even larger), so no size is recommended."
+                            + (ps.DistanceIsExplicit ? "" : " Give the viewing distance, so that the threshold is the one for your distance, not the convention."),
+                            $"Fara stele nu se poate masura cat detaliu are imaginea; se verifica doar sa nu se vada pixelii: {rule}, si {reach}. E o limita a fisierului, nu a detaliului (o nebuloasa moale poate arata bine si mai mare), asa ca nu se recomanda o marime."
+                            + (ps.DistanceIsExplicit ? "" : " Da distanta de privire, ca pragul sa fie cel pentru distanta ta, nu conventia.")),
+                    Tr.Pick($"only {Fmt.Int(st.Count)} stars measured, {Fmt.F1(st.DensityPerMp)} per megapixel (at least {Thresholds.StarMinCount} are needed, and {Fmt.F0(Thresholds.StarMinPerMegapixel)} per megapixel); at {Fmt.F0(row.WidthCm)} cm a pixel is {Fmt.F2(row.PitchMm)} mm and no longer shows from {Fmt.F2(row.PixelDistanceM)} m; {threshold}",
+                            $"doar {Fmt.RoCount(Fmt.Int(st.Count))}stele masurate, {Fmt.F1(st.DensityPerMp)} pe megapixel (e nevoie de cel putin {Thresholds.StarMinCount}, si de {Fmt.F0(Thresholds.StarMinPerMegapixel)} pe megapixel); la {Fmt.F0(row.WidthCm)} cm un pixel are {Fmt.F2(row.PitchMm)} mm si nu se mai vede de la {Fmt.F2(row.PixelDistanceM)} m; {threshold}")));
             }
             else
             {
-                // Without a distance, the relative sharpness is the same at any size (see
-                // PrintSizeAnalyzer): the answer is yes/no for the whole image, and the wall
-                // chooses the size. It is said as such; no choice is pretended.
-                bool sharp = row.PointAtViewingDistance;
-                o.Add(new Recommendation(Topic.Size, sharp ? Verdict.Ok : Verdict.Attention,
-                    sharp
-                        ? Tr.Pick($"Without a viewing distance no size is recommended: up to {Fmt.F0(row.WidthCm)} cm (a {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm image, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm with the passepartout and the frame) the image is equally sharp from its natural distance - choose the size by the wall. If it is seen from close up (a hallway, an office), give the distance: then the sizes separate.", $"Fara distanta de privire nu se recomanda o marime: pana la {Fmt.F0(row.WidthCm)} cm ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm imagine, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama) imaginea e la fel de clara de la distanta ei naturala - alege marimea dupa perete. Daca se priveste de aproape (hol, birou), da distanta: atunci marimile se despart.")
-                        : Tr.Pick($"From the natural distance the stars are slight discs at every size - the image is soft for its resolution; the smallest ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) minimizes the effect. Give the viewing distance, so that it is judged on that.", $"De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea."),
-                    Tr.Pick($"median FWHM {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stars) = real detail ~{Fmt.F0(ps.EffectiveDetailPx)} px across the width; at {Fmt.F0(row.WidthCm)} cm a star is {Fmt.F2(row.StarMm)} mm and a point from {Fmt.F2(row.MinDistanceM)} m, against {dist} (tolerance {Fmt.F0((Thresholds.NaturalDistanceTolerance - 1) * 100)} %); the ratio is the same at every size", $"FWHM median {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stele) = detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime; la {Fmt.F0(row.WidthCm)} cm steaua are {Fmt.F2(row.StarMm)} mm si e punct de la {Fmt.F2(row.MinDistanceM)} m fata de {dist} (toleranta {Fmt.F0((Thresholds.NaturalDistanceTolerance - 1) * 100)} %); raportul e acelasi la orice marime")));
+                // The stars' figures the two branches share: their width, how many fit side by
+                // side across the frame, and how large one is on paper at the reference row.
+                string stars = Tr.Pick(
+                    $"the stars' width (FWHM) is {Fmt.F2(st.FwhmMedian)} px (a quarter of the stars under {Fmt.F2(st.FwhmQ1)}, a quarter over {Fmt.F2(st.FwhmQ3)}; {Fmt.Int(st.Count)} stars), so ~{Fmt.F0(ps.EffectiveDetailPx)} stars fit side by side across the width; at {Fmt.F0(row.WidthCm)} cm a star is {Fmt.F2(row.StarMm)} mm",
+                    $"latimea stelelor (FWHM) e {Fmt.F2(st.FwhmMedian)} px (un sfert din stele sub {Fmt.F2(st.FwhmQ1)}, un sfert peste {Fmt.F2(st.FwhmQ3)}; {Fmt.RoCount(Fmt.Int(st.Count))}stele), deci pe latime incap ~{Fmt.RoCount(Fmt.F0(ps.EffectiveDetailPx))}stele una langa alta; la {Fmt.F0(row.WidthCm)} cm o stea are {Fmt.F2(row.StarMm)} mm");
+                if (ps.DistanceIsExplicit)
+                {
+                    string evidence = stars + Tr.Pick($" and looks like a point from {Fmt.F2(row.MinDistanceM)} m; the given distance {Fmt.F1(row.ViewingDistanceM)} m",
+                                                      $" si se vede ca punct de la {Fmt.F2(row.MinDistanceM)} m; distanta data {Fmt.F1(row.ViewingDistanceM)} m");
+                    if (row.PointAtViewingDistance)
+                        o.Add(new Recommendation(Topic.Size, Verdict.Ok,
+                            Tr.Pick($"Recommended: a {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm image, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm with the passepartout and the frame.", $"Recomandat: imaginea de {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama."),
+                            evidence));
+                    else
+                        o.Add(new Recommendation(Topic.Size, Verdict.Attention,
+                            Tr.Pick($"From {Fmt.F1(row.ViewingDistanceM)} m the stars look like discs, not points, at every size of the list; the smallest ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) makes them least visible. Try smaller widths, or a longer distance if the viewer really stands further away.", $"De la {Fmt.F1(row.ViewingDistanceM)} m stelele se vad ca discuri, nu ca puncte, la orice marime din lista; cea mai mica ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) le face cel mai putin vizibile. Incearca latimi mai mici, sau o distanta mai mare daca privitorul chiar sta mai departe."),
+                            evidence));
+                }
+                else
+                {
+                    // Without a distance, the relative sharpness is the same at any size (see
+                    // PrintSizeAnalyzer): the answer is yes/no for the whole image, and the wall
+                    // chooses the size. It is said as such; no choice is pretended.
+                    bool sharp = row.PointAtViewingDistance;
+                    string tolerance = Fmt.F0((Thresholds.NaturalDistanceTolerance - 1) * 100);
+                    string factor = Fmt.F1(Thresholds.ViewingDistanceFactor);
+                    o.Add(new Recommendation(Topic.Size, sharp ? Verdict.Ok : Verdict.Attention,
+                        sharp
+                            ? Tr.Pick($"Without a viewing distance no size is recommended: up to {Fmt.F0(row.WidthCm)} cm (a {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm image, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm with the passepartout and the frame) it looks equally sharp, because a larger print is viewed from farther away; choose the size by the wall. If it will be seen from close up (a hallway, an office), give the distance: then the program can choose a size.", $"Fara distanta de privire nu se recomanda o marime: pana la {Fmt.F0(row.WidthCm)} cm (imaginea de {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama) arata la fel de clara, fiindca un print mai mare se priveste de mai departe; alege marimea dupa perete. Daca va fi privita de aproape (hol, birou), da distanta: atunci programul poate alege o marime.")
+                            : Tr.Pick($"Seen from the usual distance for their size, the stars look like small discs at every size: the image is soft for the pixels it has. The smallest size ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) makes them least visible. Give the viewing distance, so that it is judged on that.", $"Privite de la distanta obisnuita pentru marimea lor, stelele se vad ca mici discuri la orice marime: imaginea e moale fata de cati pixeli are. Cea mai mica marime ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) le face cel mai putin vizibile. Da distanta de privire, ca judecata sa se faca pe ea."),
+                        stars + Tr.Pick($" and looks like a point {(sharp ? "" : "only ")}from {Fmt.F2(row.MinDistanceM)} m, while the print is viewed from the usual distance {Fmt.F2(row.NaturalDistanceM)} m ({factor} x the diagonal; tolerance {tolerance} %); the ratio of the two distances is the same at every size",
+                                        $" si se vede ca punct {(sharp ? "" : "abia ")}de la {Fmt.F2(row.MinDistanceM)} m, iar printul se priveste de la distanta obisnuita {Fmt.F2(row.NaturalDistanceM)} m ({factor} x diagonala; toleranta {tolerance} %); raportul dintre cele doua distante e acelasi la orice marime")));
+                }
             }
 
             if (st.SoftCorners)
                 o.Add(new Recommendation(Topic.Size, Verdict.Attention,
-                    Tr.Pick("The corners are softer than the centre: do not enlarge the whole frame to the maximum; consider a crop that leaves them out.", "Colturile sunt mai moi decat centrul: nu mari cadrul intreg la maximum; considera un decupaj care le lasa afara."),
-                    Tr.Pick($"FWHM corner / centre = {Fmt.F2(st.CornerToCenterRatio)} (threshold {Fmt.F1(Thresholds.CornerSoftRatio)}); centre {Fmt.F2(st.Regions[0].FwhmMedian)} px", $"FWHM colt / centru = {Fmt.F2(st.CornerToCenterRatio)} (prag {Fmt.F1(Thresholds.CornerSoftRatio)}); centru {Fmt.F2(st.Regions[0].FwhmMedian)} px")));
+                    Tr.Pick("The stars in the corners are wider than those in the centre: do not enlarge the whole frame to the maximum; consider a crop that leaves the corners out.", "Stelele din colturi sunt mai late decat cele din centru: nu mari cadrul intreg la maximum; gandeste-te la un decupaj care lasa colturile afara."),
+                    Tr.Pick($"the stars' width (FWHM) in the weakest corner divided by the centre's: {Fmt.F2(st.CornerToCenterRatio)} (threshold {Fmt.F1(Thresholds.CornerSoftRatio)}); in the centre {Fmt.F2(st.Regions[0].FwhmMedian)} px", $"latimea stelelor (FWHM) in cel mai slab colt impartita la cea din centru: {Fmt.F2(st.CornerToCenterRatio)} (prag {Fmt.F1(Thresholds.CornerSoftRatio)}); in centru {Fmt.F2(st.Regions[0].FwhmMedian)} px")));
 
             if (r.Crop.Needed)
                 o.Add(new Recommendation(Topic.Size, Verdict.Attention,
-                    Tr.Pick($"The target ratio needs a crop: it cuts {ReportWriter.CropCutText(r.Crop)} ({Fmt.Pct(r.Crop.CutPct)}); choose the framing yourself, not the lab.", $"Raportul tinta cere decupaj: se taie {ReportWriter.CropCutText(r.Crop)} ({Fmt.Pct(r.Crop.CutPct)}); alege tu cadrul, nu laboratorul."),
-                    Tr.Pick($"native {Fmt.F3(r.Crop.NativeAspect)}, target {Fmt.F3(r.Crop.TargetAspect.Value)}; {Fmt.Dim(r.Crop.W, r.Crop.H)} px remain", $"nativ {Fmt.F3(r.Crop.NativeAspect)}, tinta {Fmt.F3(r.Crop.TargetAspect.Value)}; ramane {Fmt.Dim(r.Crop.W, r.Crop.H)} px")));
+                    Tr.Pick($"The proportion asked for the print needs a crop: it cuts {ReportWriter.CropCutText(r.Crop)} ({Fmt.Pct(r.Crop.CutPct)}); choose yourself what stays in the frame, not the lab.", $"Proportia ceruta pentru print cere un decupaj: se taie {ReportWriter.CropCutText(r.Crop)} ({Fmt.Pct(r.Crop.CutPct)}); alege tu ce ramane in cadru, nu laboratorul."),
+                    Tr.Pick($"the image's proportion {Fmt.F3(r.Crop.NativeAspect)}, the one asked {Fmt.F3(r.Crop.TargetAspect.Value)}; {Fmt.Dim(r.Crop.W, r.Crop.H)} px remain", $"proportia imaginii {Fmt.F3(r.Crop.NativeAspect)}, cea ceruta {Fmt.F3(r.Crop.TargetAspect.Value)}; raman {Fmt.Dim(r.Crop.W, r.Crop.H)} px")));
 
             if (ps.Rows.Any(x => x.Oversize && x.PointAtViewingDistance))
                 o.Add(new Recommendation(Topic.Size, Verdict.Ok,
                     Tr.Pick($"Over {Fmt.F0(Thresholds.OversizeCm)} cm the limit is not the file but the glass, the weight and the transport.", $"Peste {Fmt.F0(Thresholds.OversizeCm)} cm nu fisierul e limita, ci sticla, greutatea si transportul."),
-                    Tr.Pick($"the rows over {Fmt.F0(Thresholds.OversizeCm)} cm pass the resolution test but are not recommended", $"randurile peste {Fmt.F0(Thresholds.OversizeCm)} cm trec testul de rezolutie dar nu se recomanda")));
+                    Tr.Pick($"the sizes over {Fmt.F0(Thresholds.OversizeCm)} cm have enough detail, but are not recommended", $"marimile peste {Fmt.F0(Thresholds.OversizeCm)} cm au destul detaliu, dar nu se recomanda")));
         }
 
         // ------------------------------------------------------------ 5. denoise
@@ -469,12 +483,12 @@ namespace AstroPhotoAnalyzer
             if (n.Insufficient)
             {
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
-                    Tr.Pick("Too little smooth sky to measure the residual noise.", "Prea putin cer neted pentru a masura zgomotul rezidual."),
-                    Tr.Pick($"{n.SmoothTiles} smooth tiles of {n.Candidates} tried (minimum {Thresholds.NoiseMinTiles})", $"{n.SmoothTiles} dale netede din {n.Candidates} incercate (minim {Thresholds.NoiseMinTiles})")));
+                    Tr.Pick("Too little smooth sky to measure the noise left.", "Prea putin cer neted ca sa se poata masura zgomotul ramas."),
+                    Tr.Pick($"only {Fmt.Int(n.SmoothTiles)} small areas of smooth sky of {Fmt.Int(n.Candidates)} tried (at least {Thresholds.NoiseMinTiles} are needed)", $"doar {Fmt.RoCount(Fmt.Int(n.SmoothTiles))}zone mici de cer neted din {Fmt.Int(n.Candidates)} incercate (e nevoie de cel putin {Thresholds.NoiseMinTiles})")));
                 return;
             }
 
-            string target = Tr.Pick($"the target for the print version: {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} LSB", $"tinta pentru versiunea de print: {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} LSB");
+            string target = Tr.Pick($"the target for print: {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} levels", $"tinta pentru print: {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} niveluri");
             string after = "";
             SimulationRow row = r.Simulation.Recommended;
             if (row != null && !row.AsIs)
@@ -483,26 +497,26 @@ namespace AstroPhotoAnalyzer
                 // the background rises (or falls: the recommendation goes both ways, ADR 0025).
                 double bg = r.Simulation.BackgroundMeasured;
                 double slope = row.Gamma * Math.Pow(bg, row.Gamma - 1);
-                after = Tr.Pick($"; after the re-stretch to {Fmt.Level(row.Target)} the noise {(slope >= 1 ? "grows" : "shrinks")} by ~{Fmt.F2(slope)} x (the slope of the curve at the background), to ~{Fmt.F2(n.SigmaMedianLsb * slope)} LSB", $"; dupa re-stretch la {Fmt.Level(row.Target)} zgomotul {(slope >= 1 ? "creste" : "scade")} de ~{Fmt.F2(slope)} x (panta curbei la fundal), la ~{Fmt.F2(n.SigmaMedianLsb * slope)} LSB");
+                after = Tr.Pick($"; after you redo the stretch to {Fmt.Level(row.Target)}, the noise {(slope >= 1 ? "grows" : "shrinks")} by ~{Fmt.F2(slope)} times (how steeply the curve climbs at the background), to ~{Fmt.F2(n.SigmaMedianLsb * slope)} levels", $"; dupa ce refaci stretch-ul la {Fmt.Level(row.Target)}, zgomotul {(slope >= 1 ? "creste" : "scade")} de ~{Fmt.F2(slope)} ori (cat de tare urca curba in dreptul fundalului), la ~{Fmt.F2(n.SigmaMedianLsb * slope)} niveluri");
             }
             // The share of the smooth tiles under the banding sigma is always told: an AI denoiser
             // can leave the median where it should be and still wipe a tail of tiles, where the
             // 8-bit plateau of section 1 is then measured.
-            string because = Tr.Pick($"median sigma {Fmt.F2(n.SigmaMedianLsb)} LSB on {n.SmoothTiles} smooth tiles (10 % {Fmt.F2(n.Sigma10thLsb)}, minimum {Fmt.F2(n.SigmaMinLsb)}; under {Fmt.F1(Thresholds.NoiseBandingLsb)} LSB, {Fmt.Pct(n.PctTilesBelowBanding)} of the tiles); {target}{after}",
-                $"sigma median {Fmt.F2(n.SigmaMedianLsb)} LSB pe {n.SmoothTiles} dale netede (10 % {Fmt.F2(n.Sigma10thLsb)}, minim {Fmt.F2(n.SigmaMinLsb)}; sub {Fmt.F1(Thresholds.NoiseBandingLsb)} LSB, {Fmt.Pct(n.PctTilesBelowBanding)} din dale); {target}{after}");
+            string because = Tr.Pick($"the noise left in the sky is {Fmt.F2(n.SigmaMedianLsb)} levels (sigma; the middle value over {Fmt.Int(n.SmoothTiles)} small areas of smooth sky; in the smoothest 10 % under {Fmt.F2(n.Sigma10thLsb)}, the lowest {Fmt.F2(n.SigmaMinLsb)}); {Fmt.Pct(n.PctTilesBelowBanding)} of the areas are under {Fmt.F1(Thresholds.NoiseBandingLsb)} levels, where the noise no longer hides the steps; {target}{after}",
+                $"zgomotul ramas in cer e de {Fmt.F2(n.SigmaMedianLsb)} niveluri (sigma; valoarea din mijloc pe {Fmt.RoCount(Fmt.Int(n.SmoothTiles))}zone mici de cer neted; in cele mai netede 10 % sub {Fmt.F2(n.Sigma10thLsb)}, cel mai mic {Fmt.F2(n.SigmaMinLsb)}); {Fmt.Pct(n.PctTilesBelowBanding)} din zone sunt sub {Fmt.F1(Thresholds.NoiseBandingLsb)} niveluri, unde zgomotul nu mai ascunde treptele; {target}{after}");
 
             if (n.BandingRisk)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
-                    Tr.Pick("Denoise is set too strong for print: the noise no longer dithers the quantization. For the print version, a lower setting keeps the texture and the faint stars.", "Denoise-ul e apasat tare pentru print: zgomotul nu mai dither-eaza cuantizarea. Pentru versiunea de print, o valoare mai mica pastreaza textura si stelele slabe."),
+                    Tr.Pick("Denoise is too strong for print: too little noise is left to hide the steps between levels (banding). For the print version, a weaker denoise keeps the sky's texture and the faint stars.", "Denoise-ul e prea puternic pentru print: a ramas prea putin zgomot ca sa ascunda treptele dintre niveluri (banding). Pentru versiunea de print, un denoise mai slab pastreaza textura cerului si stelele slabe."),
                     because));
             else if (n.UnderDenoised)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
-                    Tr.Pick("Noise visible at 100 % on screen; on paper, at the sizes of the table, it does not show - denoise only if you also want a clean screen version.", "Zgomot vizibil la 100 % pe ecran; pe hartie, la marimile din tabel, nu se vede - denoise doar daca vrei si versiunea de ecran curata."),
-                    because + Tr.Pick($"; over {Fmt.F1(Thresholds.NoiseUnderDenoisedLsb)} LSB", $"; peste {Fmt.F1(Thresholds.NoiseUnderDenoisedLsb)} LSB")));
+                    Tr.Pick("The noise shows on screen at 100 %; on paper, at the sizes of the table, it does not. Denoise only if you also want a clean version for the screen.", "Zgomotul se vede pe ecran la 100 %; pe hartie, la marimile din tabel, nu se vede. Fa denoise doar daca vrei si o versiune curata pentru ecran."),
+                    because + Tr.Pick($"; over {Fmt.F1(Thresholds.NoiseUnderDenoisedLsb)} levels the noise shows on screen", $"; peste {Fmt.F1(Thresholds.NoiseUnderDenoisedLsb)} niveluri zgomotul se vede pe ecran")));
             else if (n.GoodForPrint)
-                o.Add(new Recommendation(Topic.Denoise, Verdict.Ok, Tr.Pick("The residual noise is exactly where it should be for print.", "Zgomotul rezidual e exact unde trebuie pentru print."), because));
+                o.Add(new Recommendation(Topic.Denoise, Verdict.Ok, Tr.Pick("The noise left is exactly what print needs.", "Zgomotul ramas e exact cat trebuie pentru print."), because));
             else
-                o.Add(new Recommendation(Topic.Denoise, Verdict.Ok, Tr.Pick("The residual noise is acceptable for print.", "Zgomotul rezidual e acceptabil pentru print."), because));
+                o.Add(new Recommendation(Topic.Denoise, Verdict.Ok, Tr.Pick("The noise left is acceptable for print.", "Zgomotul ramas e acceptabil pentru print."), because));
         }
 
         // ------------------------------------------------------------ 6. warnings
@@ -521,23 +535,23 @@ namespace AstroPhotoAnalyzer
 
             if (b.IsUpscaled)
                 o.Add(new Recommendation(Topic.Warnings, Verdict.Attention,
-                    Tr.Pick("The file is 8-bit disguised as 16: there is nothing to lose at the conversion, and nothing to gain from 16 either.", "Fisierul e pe 8 biti deghizat in 16: nu ai ce pierde la conversie, dar nici ce castiga din 16."),
-                    Tr.Pick($"{Fmt.Pct(b.UpscaledFraction * 100)} of the samples with the value = high_byte x 257 (threshold {Fmt.F0(Thresholds.UpscaledFraction * 100)} %); distinct levels: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}", $"{Fmt.Pct(b.UpscaledFraction * 100)} din esantioane cu valoarea = octet_inalt x 257 (prag {Fmt.F0(Thresholds.UpscaledFraction * 100)} %); niveluri distincte: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}")));
+                    Tr.Pick("The file holds only 8 bits of information, saved as 16 bits: you lose nothing going to 8 bits, but you gain nothing from the 16 either.", "Fisierul are doar 8 biti de informatie, salvati ca 16 biti: nu pierzi nimic la trecerea pe 8 biti, dar nici nu castigi ceva din cei 16."),
+                    Tr.Pick($"{Fmt.Pct(b.UpscaledFraction * 100)} of the values are an 8-bit level copied into 16 bits (the value = the level x 257; threshold {Fmt.F0(Thresholds.UpscaledFraction * 100)} %); different levels used on each channel: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}", $"{Fmt.Pct(b.UpscaledFraction * 100)} din valori sunt un nivel de 8 biti copiat in 16 biti (valoarea = nivelul x 257; prag {Fmt.F0(Thresholds.UpscaledFraction * 100)} %); niveluri diferite folosite pe fiecare canal: {string.Join(" / ", b.DistinctLevels.Select(n => Fmt.Int(n)))}")));
 
             if (!f.HasIcc)
                 o.Add(new Recommendation(Topic.Warnings, Verdict.Attention,
-                    Tr.Pick("No ICC profile: the lab will assume sRGB. Export with the sRGB profile embedded, so that nobody assumes anything.", "Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic."),
-                    Tr.Pick("no profile in the file; the tool measured assuming sRGB", "niciun profil in fisier; unealta a masurat presupunand sRGB")));
+                    Tr.Pick("The file has no colour profile (ICC): the lab will assume sRGB. Export with the sRGB profile included in the file, so that nobody assumes anything.", "Fisierul nu are profil de culoare (ICC): laboratorul va presupune sRGB. Exporta cu profilul sRGB inclus in fisier, ca sa nu presupuna nimeni nimic."),
+                    Tr.Pick("the file has no profile; the program measured assuming sRGB", "fisierul nu are niciun profil; programul a masurat presupunand sRGB")));
             else if (f.IccLooksSrgb == false)
                 o.Add(new Recommendation(Topic.Warnings, Verdict.Attention,
-                    Tr.Pick($"The profile is not sRGB ({f.IccDescription}): tell the lab, and know that the L* measurements here assume sRGB.", $"Profilul nu e sRGB ({f.IccDescription}): spune-i laboratorului, si stii ca masuratorile de L* de aici presupun sRGB."),
+                    Tr.Pick($"The file's colour profile is not sRGB ({f.IccDescription}): tell the lab, and keep in mind that the program's L* measurements assume sRGB.", $"Profilul de culoare al fisierului nu e sRGB ({f.IccDescription}): spune-i laboratorului, si tine minte ca masuratorile de L* din program presupun sRGB."),
                     Tr.Pick("the profile's name does not contain 'sRGB'", "numele profilului nu contine 'sRGB'")));
 
             // Keeping the 16-bit master is a fact of the Export tab's stress test, not a warning
             // here (ADR 0061).
 
             if (f.ReaderNote != null)
-                o.Add(new Recommendation(Topic.Warnings, Verdict.Ok, Tr.Pick("Note from reading the file: ", "Nota cititorului: ") + f.ReaderNote + ".", Tr.Pick("an observation made while reading the file", "observatie la citirea fisierului")));
+                o.Add(new Recommendation(Topic.Warnings, Verdict.Ok, Tr.Pick("Note from reading the file: ", "Observatie de la citirea fisierului: ") + f.ReaderNote + ".", Tr.Pick("an observation made while reading the file", "observatie la citirea fisierului")));
         }
     }
 }

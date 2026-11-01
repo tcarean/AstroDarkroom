@@ -244,7 +244,7 @@ profile or a WCS file it cannot use, a linear image, a report `-o` cannot write.
 The report starts with the file and its facts (format, bit depth, pixels, compression, file
 size, ICC profile), the medium with its paper black, the viewing distance and the overall
 verdict. Six sections follow, in the order the decisions are made: 1. the format to send, 2. the
-background and the paper, 3. the background colour and the gradients, 4. the size of the print,
+background and the paper, 3. the background colour and the frame's edges, 4. the size of the print,
 5. denoise for the print version, 6. warnings. Each section has its verdict, and each
 recommendation a mark, `-` for OK, `!` for a caution, `!!` for a problem, with a `because:` line
 under it that gives the figure and the threshold. The appendices A to F follow, with the tables
@@ -257,12 +257,12 @@ reference image, `de_printat.png`, a 23 MP Milky Way frame analysed with the def
 VERDICT: CAUTION
 
 1. The format to send  [OK]
-   - Send an 8-bit LZW TIFF (20.7 MB). The 16 -> 8 bit conversion is pure rounding, not a loss.
-     because: mean rounding error 0.25, max 0.50 levels (half a level is the most possible)
-   - If the lab accepts only JPEG: q100, 4:4:4 (12.5 MB).
-     because: mean error 0.60, max 4.5 levels; 1.2 % of the samples with an error > 2, at a mean level of 31 (in the dark sky, where JPEG does worst)
-   - No visible banding at 8 bits: flat steps on too little of the frame to show.
-     because: flat steps over 1.0 mm at 151 dpi on 0.00 % of the frame (threshold 0.10 %); the typical plateau on the 20 clean tiles, 0.4 % of the frame, is 2.7 px = 0.45 mm, with the noise left at sigma 0.32 LSB
+   - Send the lab an 8-bit TIFF with LZW compression, which loses nothing (20.7 MB). Going from 16 to 8 bits only rounds the values; nothing is lost.
+     because: in the rounding a pixel moves by 0.25 of a level on average and by 0.50 at most (a rounding cannot move it by more than half a level)
+   - If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) (12.5 MB).
+     because: against the original, the JPEG changes a pixel by 0.60 levels on average and by 4.5 at most; 1.2 % of the values change by more than 2 levels, mostly around level 31 (in the dark sky, where JPEG does worst)
+   - At 8 bits no visible steps appear in the sky: the flat areas cover too little of the frame to show.
+     because: at 151 dpi, flat areas, with no change of tone, wider than 1.0 mm cover 0.00 % of the frame (threshold 0.10 %); in the 20 small areas of smooth sky (0.4 % of the frame) a flat area is usually 2.7 px = 0.45 mm, and the noise left there is 0.32 levels
 ```
 
 ## How the background is judged
@@ -338,7 +338,7 @@ The other known limits, each with what was measured, are in
 
 ## How the colour is judged
 
-The third decision, the background colour and the gradients, compares the colour of the sky with
+The third decision, the background colour and the frame's edges, compares the colour of the sky with
 a neutral grey, and the edges of the frame with the sky.
 
 The **sky's colour** is the median, on each channel, of the patches the background section calls

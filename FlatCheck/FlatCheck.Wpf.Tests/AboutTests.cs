@@ -78,27 +78,50 @@ public class AboutTests
         Assert.False(string.IsNullOrWhiteSpace(vm.LicenceHeading));
         Assert.False(string.IsNullOrWhiteSpace(vm.LicenseLinkLabel));
         Assert.False(string.IsNullOrWhiteSpace(vm.ThirdPartyHeading));
-        Assert.Contains("THIRD-PARTY-NOTICES.md", vm.ThirdPartyLead);
+        Assert.Contains("THIRD-PARTY-NOTICES.txt", vm.ThirdPartyLead);
     }
 
     /// <summary>
     /// The lead counts the linked components from the core's list, so it cannot stay behind
     /// the list: NLog made them four on 2026-10-27 and the window still said three (the review
-    /// of 2026-10-27, A5). The database is named apart, as the README does.
+    /// of 2026-10-27, A5); LibRaw's three libraries made them seven on 2026-11-01. The database
+    /// is named apart, as the README does.
     /// </summary>
     [Fact]
     public void TheLeadCountsTheLinkedComponentsFromTheCoresList()
     {
-        Assert.Equal(4, ThirdParty.Components.Count(c => !c.IsData));
+        Assert.Equal(7, ThirdParty.Components.Count(c => !c.IsData));
 
         using (Ui.Use(UiLanguage.English))
         {
             string lead = new AboutViewModel().ThirdPartyLead;
-            Assert.Contains("links four components", lead);
+            Assert.Contains("links seven components", lead);
             Assert.Contains("database", lead);
-            Assert.DoesNotContain("three", lead);
+            Assert.DoesNotContain("four", lead);
         }
         using (Ui.Use(UiLanguage.Romanian))
-            Assert.Contains("leaga patru componente", new AboutViewModel().ThirdPartyLead);
+            Assert.Contains("leaga sapte componente", new AboutViewModel().ThirdPartyLead);
+    }
+
+    /// <summary>
+    /// Where each licence's whole text is, true from the Astro Darkroom folder and from
+    /// FlatCheck's own release alike (R-095): the folder carries THIRD-PARTY-NOTICES.txt beside
+    /// the program, the own release carries no notices file, and the source repository holds
+    /// the same file at an address the window shows as a link under the lead.
+    /// </summary>
+    [Fact]
+    public void R095_TheLeadPointsToTheNoticesBesideTheProgramAndOnline()
+    {
+        using (Ui.Use(UiLanguage.English))
+            Assert.EndsWith("Each licence's whole text, and why it is compatible, is in THIRD-PARTY-NOTICES.txt, beside "
+                          + "the program in the Astro Darkroom folder, and online:", new AboutViewModel().ThirdPartyLead);
+        using (Ui.Use(UiLanguage.Romanian))
+            Assert.EndsWith("Textul intreg al fiecarei licente, si de ce e compatibila, e in THIRD-PARTY-NOTICES.txt, "
+                          + "langa program in folderul Astro Darkroom, si online:", new AboutViewModel().ThirdPartyLead);
+
+        var vm = new AboutViewModel();
+        Assert.Equal(ThirdParty.NoticesUrl, vm.NoticesUrl);
+        Assert.Equal("https://github.com/tcarean/AstroDarkroom/blob/main/AstroDarkroom/THIRD-PARTY-NOTICES.md", vm.NoticesUrl);
+        Assert.DoesNotContain("beside the source", vm.ThirdPartyLead);
     }
 }

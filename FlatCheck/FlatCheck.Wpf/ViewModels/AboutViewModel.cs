@@ -76,6 +76,10 @@ namespace FlatCheck.Wpf
         /// stay behind the list; the database is named apart.</summary>
         public string ThirdPartyLead => SessionMessages.AboutThirdPartyLead(ThirdParty.Components.Count(c => !c.IsData));
 
+        /// <summary>The link under the lead: each licence's whole text online, the same file the
+        /// Astro Darkroom folder carries beside the program (R-095).</summary>
+        public string NoticesUrl => ThirdParty.NoticesUrl;
+
         public IReadOnlyList<ComponentRow> Components { get; }
     }
 }

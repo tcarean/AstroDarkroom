@@ -2,43 +2,43 @@ AstroPhotoAnalyzer <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 
 File: <TEMP>\cer-curat.tif
-  TIFF 16-bit RGB, 512 x 512 (0.3 MP), uncompressed, 1.5 MB, ICC profile: sRGB IEC61966-2.1
-  Medium: canvas (Dmax 1.5, paper black L* 20.7). Viewing distance: 1.5 x the diagonal.
+  TIFF 16-bit RGB, 512 x 512 (0.3 MP), uncompressed, 1.5 MB, colour profile (ICC): sRGB IEC61966-2.1
+  Medium: canvas (Dmax 1.5, paper black L* 20.7). Viewing distance: 1.5 x the print's diagonal.
 
 VERDICT: CAUTION
 
 1. The format to send  [OK]
-   - Send an 8-bit LZW TIFF (0.3 MB). The 16 -> 8 bit conversion is pure rounding, not a loss.
-     because: mean rounding error 0.25, max 0.50 levels (half a level is the most possible)
-   - If the lab accepts only JPEG: q100, 4:4:4 (0.2 MB).
-     because: mean error 0.61, max 3.5 levels; 1.8 % of the samples with an error > 2, at a mean level of 64 (in the dark sky, where JPEG does worst)
+   - Send the lab an 8-bit TIFF with LZW compression, which loses nothing (0.3 MB). Going from 16 to 8 bits only rounds the values; nothing is lost.
+     because: in the rounding a pixel moves by 0.25 of a level on average and by 0.50 at most (a rounding cannot move it by more than half a level)
+   - If the lab takes only JPEG: quality 100, with the colour kept at full resolution (the 4:4:4 setting) (0.2 MB).
+     because: against the original, the JPEG changes a pixel by 0.61 levels on average and by 3.5 at most; 1.8 % of the values change by more than 2 levels, mostly around level 64 (in the dark sky, where JPEG does worst)
 
 2. The background and the paper  [OK]
-   - The background is print-safe as it is; you can go down to 0.20 (the dust at L* 21.2, the sky at L* 21.2).
-     because: the dust (the darkest 1 % of the sky patches (no dust found); no WCS) at L* 26.9; paper black L* 20.7 at Dmax 1.5; the sky (the middle value of the sky patches (the patches sorted by comparison with the sky)) at L* 27.0; the background level 0.25; as the image is, the dust stays above black from Dmax 1.3 up; the visibility threshold L* 15, under it 0.0 % of the pixels
+   - The background is print-safe as it is; you can lower it down to 0.20 (then the dust would be at L* 21.2, the sky at L* 21.2).
+     because: the dust at L* 26.9 (the darkest 1 % of the sky patches (no dust found); no WCS); paper black is L* 20.7 at Dmax 1.5; the sky at L* 27.0 (the middle value of the sky patches (the patches sorted by comparison with the sky)); the background level 0.25; as the image is, the dust stays above black from Dmax 1.3 up; 0.0 % of the pixels are under L* 15, where the eye barely tells the tones apart
 
-3. The background colour and the gradients  [OK]
+3. The background colour and the frame's edges  [OK]
    - The background is neutral.
-     because: background R 63.8 G 63.7 B 63.8: chroma 0.0 (a* 0.0, b* 0.0; threshold 3.0); G - (R+B)/2 = 0.0, R - B = 0.0 levels
+     because: the background is R 63.8, G 63.7, B 63.8; how far it is from a grey (chroma): 0.0, threshold 3.0 (a* 0.0, b* 0.0); green stands over red and blue by 0.0 levels, red over blue by 0.0
 
 4. The size of the print  [CAUTION]
-   ! From the natural distance the stars are slight discs at every size - the image is soft for its resolution; the smallest (40 x 40 cm) minimizes the effect. Give the viewing distance, so that it is judged on that.
-     because: median FWHM 3.05 px (Q1 3.03, Q3 3.07, 64 stars) = real detail ~168 px across the width; at 40 cm a star is 2.38 mm and a point from 8.21 m, against the natural distance 0.85 m (1.5 x the diagonal) (tolerance 15 %); the ratio is the same at every size
+   ! Seen from the usual distance for their size, the stars look like small discs at every size: the image is soft for the pixels it has. The smallest size (40 x 40 cm) makes them least visible. Give the viewing distance, so that it is judged on that.
+     because: the stars' width (FWHM) is 3.05 px (a quarter of the stars under 3.03, a quarter over 3.07; 64 stars), so ~168 stars fit side by side across the width; at 40 cm a star is 2.38 mm and looks like a point only from 8.21 m, while the print is viewed from the usual distance 0.85 m (1.5 x the diagonal; tolerance 15 %); the ratio of the two distances is the same at every size
 
 5. Denoise for the print version  [OK]
-   - The residual noise is exactly where it should be for print.
-     because: median sigma 1.00 LSB on 37 smooth tiles (10 % 0.99, minimum 0.97; under 0.5 LSB, 0.0 % of the tiles); the target for the print version: 0.8-1.5 LSB; after the re-stretch to 0.20 the noise shrinks by ~0.93 x (the slope of the curve at the background), to ~0.93 LSB
+   - The noise left is exactly what print needs.
+     because: the noise left in the sky is 1.00 levels (sigma; the middle value over 37 small areas of smooth sky; in the smoothest 10 % under 0.99, the lowest 0.97); 0.0 % of the areas are under 0.5 levels, where the noise no longer hides the steps; the target for print: 0.8-1.5 levels; after you redo the stretch to 0.20, the noise shrinks by ~0.93 times (how steeply the curve climbs at the background), to ~0.93 levels
 
 6. Warnings  [OK]
    (nothing to report)
 
 Appendix A. Tones
-  channel means (0..255): 63.9 / 63.9 / 63.9
-  under level 32: 0.0 %   under 64: 39.7 %
-  reference channel percentiles (0..255): p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
-  median L* 27.0; under paper black (L* 20.7): 0.0 %; under L* 15: 0.0 %; over L* 50: 0.1 %
+  mean brightness per channel, R / G / B (0..255): 63.9 / 63.9 / 63.9
+  darker than level 32: 0.0 %   than 64: 39.7 %
+  landmarks on the green channel (0..255), the level under which that share of the pixels lies: p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
+  median L* (the sky) 27.0; pixels under paper black (L* 20.7): 0.0 %; under L* 15, where the eye barely tells the tones apart: 0.0 %; over L* 50: 0.1 %
 
-Appendix B. Background simulation (from level 0.25; a gamma curve on every channel)
+Appendix B. Background simulation: what happens if you move the background, now at level 0.25
   target background    gamma   L* dust   L* sky  pure black    L* < 15      L* > 50
   0.05                 2.161       3.5      3.6     100.0 %     99.8 %        0.0 %
   0.06                 2.030       4.4      4.4     100.0 %     99.8 %        0.0 %
@@ -59,7 +59,7 @@ Appendix B. Background simulation (from level 0.25; a gamma curve on every chann
   0.25 as is           1.000      26.9     27.0       0.0 %      0.0 %        0.1 %   print-safe
   * = recommended: the lowest print-safe target (the dust does not fall under paper black and the sky is at L* 15 or above)
   dust = the darkest 1 % of the sky patches (no dust found) (no WCS); sky = the middle value of the sky patches (the patches sorted by comparison with the sky); pure black = 32 px patches darker than paper black (L* 20.7 at Dmax 1.5)
-  classes: dust 0.0 %, sky 75.0 %, nebula 17.2 % (over the modelled sky by 0.2 L*, 4 sigma of the sky), bright nebula 7.4 % (over 0.5 L*, the Otsu threshold), peaks 0.4 %
+  kinds of patches: dust 0.0 %, sky 75.0 %, nebula 17.2 % (over 0.2 L* above the sky, 4 times the sky's noise), bright nebula 7.4 % (over 0.5 L* above the sky: the brightest part of the nebula), peaks 0.4 %
   the background at which the dust reaches exactly paper black: 0.196 at Dmax 1.5 (0.221 if the Dmax is 1.4, 0.173 if it is 1.6); as the image is, the dust stays above black from Dmax 1.3 up; the sky reaches L* 15 when the background is 0.148
 
 Appendix C. Export
@@ -73,8 +73,8 @@ Appendix C. Export
   plateau: no clean sky tiles (0 of 5000 positions)
 
 Appendix D. Resolution and size
-  stars: 64 measured; median FWHM 3.05 px, Q1 3.03, Q3 3.07; real detail ~168 px across the width
-  regions: centre 3.07 px (9); upper-left corner n/a (4); upper-right corner n/a (2); lower-left corner n/a (2); lower-right corner n/a (1)
+  stars: 64 measured; the stars' width (FWHM) 3.05 px (a quarter under 3.03, a quarter over 3.07); ~168 stars fit side by side across the width
+  the stars' width by zone: centre 3.07 px (9 stars); upper-left corner n/a (4 stars); upper-right corner n/a (2 stars); lower-left corner n/a (2 stars); lower-right corner n/a (1 star)
   sizes for 512 x 512 px:
    width cm     height   dpi   star mm    point from       dist. used   outer frame cm
       40          40.0    33      2.38        8.21 m           0.85 m   60 x 60

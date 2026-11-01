@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <DockPanel Margin="0,0,0,14">
         <ContentControl DockPanel.Dock="Left" Content="{Binding VerdictLabel}"
                         ContentTemplate="{StaticResource VerdictChip}" Margin="0,0,12,0" />
-        <TextBlock Text="{local:T En='overall verdict: the most severe of the sections', Ro='verdictul general: cel mai sever dintre sectiuni'}" Style="{StaticResource Muted}" VerticalAlignment="Center" />
+        <TextBlock Text="{local:T En='overall verdict: the most serious of the verdicts of the sections below', Ro='verdictul general: cel mai grav dintre verdictele sectiunilor de mai jos'}" Style="{StaticResource Muted}" VerticalAlignment="Center" />
       </DockPanel>
 
       <ItemsControl ItemsSource="{Binding Sections}" ItemTemplate="{StaticResource SectionTemplate}" />

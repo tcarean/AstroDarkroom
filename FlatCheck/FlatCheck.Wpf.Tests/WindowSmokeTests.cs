@@ -31,7 +31,8 @@
 // What is checked: the window is built, laid out, rendered into a bitmap, and produces no
 // binding error on the way; for the Structure tab's message without Adobe (R-113), also that it
 // is on screen in its red above the rows or the gap, hidden with Adobe, and that its link leaves
-// the tab. What is not checked: how it looks.
+// the tab; for "Despre" (R-095), that its link to the notices is there, showing its address,
+// under the lead and above the list. What is not checked: how it looks.
 
 using FlatCheck.Tests;
 using System.Diagnostics;
@@ -90,7 +91,7 @@ public class WindowSmokeTests
     /// It is only how you look at it without starting the application - for example when the
     /// Windows session is locked and a screenshot would catch the lock screen.
     /// </summary>
-    static void Render(FrameworkElement el, int w = 1360, int h = 800, string? name = null)
+    internal static void Render(FrameworkElement el, int w = 1360, int h = 800, string? name = null)
     {
         el.Measure(new Size(w, h));
         el.Arrange(new Rect(0, 0, w, h));
@@ -133,21 +134,58 @@ public class WindowSmokeTests
     /// wrong name and fail only when shown.
     /// </summary>
     [Fact]
-    public void TheAboutWindowLoadsAndRenders()
-        => _sta.Invoke(() =>
+    public Task TheAboutWindowLoadsAndRenders()
+        => _sta.InvokeAsync(async () =>
         {
             using var errors = new BindingErrors();
-            var about = new AboutWindow();
+            var about = new AboutWindow(SystemParameters.WorkArea);
+            // A window never shown resolves its bindings and styles in a later dispatcher pass;
+            // measured before it, the content comes out short (397 DIP instead of 880 on
+            // 2026-11-01).
+            await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ContextIdle);
 
             // The CONTENT is rendered, not the window: a Window not shown renders
             // transparent (that is how "window" below comes out too), and the root panel
-            // inherits the DataContext and goes through the same bindings.
-            Render((FrameworkElement)about.Content, 600, 720, "about");
+            // inherits the DataContext and goes through the same bindings. At its own height,
+            // so that the render shows the whole window and no scroll bar (R-125).
+            var content = (FrameworkElement)about.Content;
+            content.Measure(new Size(600, double.PositiveInfinity));
+            Render(content, 600, (int)Math.Ceiling(content.DesiredSize.Height), "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             // the icon is the large frame, not the 16 px one scaled
             var logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);
             Assert.Equal(256, logo.PixelWidth);
+        });
+
+    /// <summary>
+    /// Where each licence's whole text is online is a link in the window, under the lead that
+    /// says so and above the components (R-095): the own release carries no notices file, so
+    /// without this link its reader would have no copy to go to. The view-model's address alone
+    /// would pass with the link gone from the XAML.
+    /// </summary>
+    [Fact]
+    public Task R095_TheAboutWindowLinksTheNoticesUnderTheLead()
+        => _sta.InvokeAsync(async () =>
+        {
+            var about = new AboutWindow(SystemParameters.WorkArea);
+            await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ContextIdle);
+            var content = (FrameworkElement)about.Content;
+            content.Measure(new Size(600, double.PositiveInfinity));
+            Render(content, 600, (int)Math.Ceiling(content.DesiredSize.Height));
+            var vm = (AboutViewModel)about.DataContext;
+
+            Hyperlink link = Assert.Single(Descendants(content).OfType<TextBlock>().SelectMany(t => t.Inlines.OfType<Hyperlink>()),
+                                           h => h.NavigateUri.AbsoluteUri == ThirdParty.NoticesUrl);
+            Assert.Equal(ThirdParty.NoticesUrl, string.Concat(link.Inlines.OfType<Run>().Select(r => r.Text)));
+            var holder = (TextBlock)link.Parent;
+            TextBlock lead = Assert.Single(Descendants(content).OfType<TextBlock>(), t => t.Text == vm.ThirdPartyLead);
+            // A row's name is a Run bound in the row template, which TextBlock.Text does not hold.
+            TextBlock firstRow = Descendants(content).OfType<TextBlock>().First(t => t.Inlines.OfType<Run>().Any(r => r.Text == vm.Components[0].Name));
+            Assert.True(holder.ActualHeight > 0);
+            Assert.True(lead.TranslatePoint(new Point(), content).Y < holder.TranslatePoint(new Point(), content).Y);
+            Assert.True(holder.TranslatePoint(new Point(), content).Y < firstRow.TranslatePoint(new Point(), content).Y);
+            about.Close();
         });
 
     /// <summary>

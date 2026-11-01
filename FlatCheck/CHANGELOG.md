@@ -8,6 +8,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- When LibRaw cannot be loaded, the diagnostic log says why, on a Warn line with the loader's
+  exception (R-110, ADR 0085): on Windows, the folder `raw_r.dll` was found in, or that none of
+  the folders .NET searches holds it, and which of the four DLLs of Microsoft's Visual C++
+  runtime Windows does not load, in the Astro Darkroom launcher's words (`Visual C++ runtime:
+  missing vcomp140.dll`).
 - The Structure tab offers `My lens` when the raw gives only a focal range (a manual lens, such as
   the Samyang 135 f/2 on a Nikon, whose "non-CPU lens" ID no profile carries) and more than one
   lens of the camera's mount has that range (R-121, ADR 0081): a picker with every lens of the
@@ -118,6 +123,26 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   sentences, parity ones included, were recaptured for the text lines alone, every figure unchanged.
   The same goes for the note above the Histogram tab's list of files and the console's `--rainbow`
   help line.
+- When LibRaw cannot be loaded, a raw is refused with a message that names Microsoft's Visual C++
+  runtime, missing or too old, as the likely cause, and ends with Microsoft's link to its latest
+  x64 package, `https://aka.ms/vc14/vc_redist.x64.exe`, in English or Romanian (R-124, ADR 0085).
+  LibRaw's DLLs import that runtime and no release ships it. The old message told the user to put
+  the DLLs beside `flatcheck.exe` and to publish with `IncludeNativeLibrariesForSelfExtract`, and
+  quoted the loader's error, which names `libraw.dll`, a file that exists nowhere (in the
+  single-file console, nothing at all). On another system the message keeps the advice about
+  LibRaw's native files.
+- About lists the three libraries LibRaw's DLL calls as components of their own, as the Astro
+  Darkroom folder's notices do: libjpeg-turbo (`jpeg8.dll`), Little CMS (`lcms2.dll`) and zlib
+  (`zlib1.dll`), each with its licence and copyright, libjpeg-turbo's with the IJG sentence; the
+  lead counts seven components (R-095, ADR 0085). ImageSharp's licence is named Apache-2.0 alone,
+  as its Split License asks. The lead now says where each licence's whole text is, true from the
+  Astro Darkroom folder and from FlatCheck's own release alike: `THIRD-PARTY-NOTICES.txt` beside
+  the program in the Astro Darkroom folder, and online, at a link under the lead; it used to point
+  to `THIRD-PARTY-NOTICES.md` "beside the source".
+- About is never taller than the work area of its screen (R-125, ADR 0086): the cards scroll, with
+  the wheel and, while they can, the arrow, Page Up, Page Down, Home and End keys, and the Close
+  button stays in view in a row of its own. With the three new rows the window would have been
+  about 1200 DIP high; it already ran off the screen at 125 % and on a 1366x768 laptop.
 - The window's folder button is disabled while the Smoothing or the Synthetic tab is busy, as
   it is during the opening chain (R-117, ADR 0077): measured on a 24 MP master, their main
   runs take 6.4-6.7 s and about 8 s, long enough for a folder change to land on the new
