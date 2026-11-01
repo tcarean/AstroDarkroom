@@ -300,6 +300,9 @@ there. It goes in a commit of its own, with its requirement, tests and ADR:
     pass, the content measured 397 DIP instead of 880.
   - `WindowSmokeTests.Render` became internal, for `AboutWindowFitTests`.
 - **The README's "Logs" paragraph** names the new log line too.
+- **One commit, not two.** The addendum asked for the fit in a commit of its own. It was built in
+  the same pass and went into the branch's first commit with the rest; splitting it afterwards
+  would have rewritten the branch's history. The first review noted it.
 - **An unrelated flaky test.**
   - `HistEqTabTests.SwitchingTheViewChangesThePictureWithoutRerunning` failed in two of nine
     full test runs, the gate's included. It passed in every run of the window tests alone and in

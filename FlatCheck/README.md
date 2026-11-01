@@ -973,8 +973,8 @@ courtesy: GPLv3 asks a program with an interface to show its notice itself, and 
 LibRaw is taken asks for the library's notice to appear beside the program's. An `.exe` copied alone
 has no `LICENSE` and no notices file beside it, so the window is the one place where the notices
 surely travel with the program. Each licence's whole text is in `THIRD-PARTY-NOTICES.txt`, beside
-the program in the Astro Darkroom folder, and online, at the link under the list. The window is
-never taller than the screen: on a small or highly scaled one, its list scrolls (with the mouse
+the program in the Astro Darkroom folder, and online, at the link above the list. The window is
+never taller than the screen: on a small or highly scaled one, its content scrolls (with the mouse
 wheel, or the arrow, Page Up, Page Down, Home and End keys) and the **Close** button stays in view.
 
 ### The six tabs

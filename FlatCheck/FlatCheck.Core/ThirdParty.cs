@@ -32,9 +32,9 @@
 // Darkroom folder's notices list them), and each name to a heading of the notices file - a
 // package or a DLL added without an entry fails the test, it does not stay unwritten on screen.
 //
-// WHERE THE WHOLE TEXTS ARE. The window says it under the list (R-095): in THIRD-PARTY-NOTICES.txt
+// WHERE THE WHOLE TEXTS ARE. The lead above the list says it (R-095): in THIRD-PARTY-NOTICES.txt
 // beside the program in the Astro Darkroom folder, and at NoticesUrl, the same file in the source
-// repository. FlatCheck's own release ships no notices file, so the address is what is true from
+// repository, a link under the lead. FlatCheck's own release ships no notices file, so the address is what is true from
 // both places the tool runs.
 //
 // The text mirrors the table of the README and the notices file BY HAND; no test compares the
@@ -84,7 +84,8 @@ namespace FlatCheck
         /// <summary>
         /// Where each licence's whole text is online: the Astro Darkroom folder's
         /// THIRD-PARTY-NOTICES.txt as the source repository holds it. The window shows it as a
-        /// link under the list, since FlatCheck's own release carries no notices file (R-095).
+        /// link under the lead, above the list, since FlatCheck's own release carries no notices
+        /// file (R-095).
         /// </summary>
         internal const string NoticesUrl = "https://github.com/tcarean/AstroDarkroom/blob/main/AstroDarkroom/THIRD-PARTY-NOTICES.md";
 

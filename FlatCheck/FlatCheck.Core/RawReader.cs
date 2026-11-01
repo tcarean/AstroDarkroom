@@ -34,10 +34,10 @@
 // The native DLLs come from the Sdcb.LibRaw.runtime.* packages and sit beside the executable, or
 // inside it in a single-file publish, and they import Microsoft's Visual C++ runtime, which no
 // release of the tool ships. When LibRaw cannot be loaded, the FITS modes go on unchanged - libraw
-// is reached only when a raw file is read - and here the run ends with a message that names the
-// runtime, the likely cause, not with the loader's DllNotFoundException, which names no cause
-// (libraw.dll in a folder publish, nothing in a single-file one); that one goes to the log
-// (R-122, ADR 0082).
+// is reached only when a raw file is read - and here the run ends with a message that, on
+// Windows, names the runtime, the likely cause, not with the loader's DllNotFoundException, which
+// names no cause (libraw.dll in a folder publish, nothing in a single-file one); that one goes to
+// the log (R-122, ADR 0082).
 
 using System;
 using System.Collections.Generic;

@@ -93,8 +93,8 @@ four recommended:
   - On Windows its message names Microsoft's Visual C++ runtime, missing or too old, as the
     likely cause.
     - It uses the launcher's words (`VcRuntime.Warning`) and puts Microsoft's link,
-      `https://aka.ms/vc14/vc_redist.x64.exe`, last, so nothing follows the address a user
-      copies.
+      `https://aka.ms/vc14/vc_redist.x64.exe`, last, so that nothing of the message follows the
+      address a user copies.
     - In full: "cannot load LibRaw: most likely Microsoft's Visual C++ runtime is missing or too
       old, so FlatCheck cannot read camera raw files until its latest version is installed (the
       FITS modes work without it): https://aka.ms/vc14/vc_redist.x64.exe".
@@ -159,9 +159,11 @@ four recommended:
 
 ## Consequences
 
-- **Where the message shows.** The window's error panel, the console's error line and the
-  Structure report's "the raw beside the master could not be read (...)" give the same message,
-  ending with the link.
+- **Where the message shows.** The window's error panel and the console's error line give the
+  message as it is, ending with the link. The Structure report ("the raw beside the master could
+  not be read (...), so the lens is not known") and the Synthetic tab's prefill note ("... could not
+  be read (...); type the aperture by hand") quote it inside a sentence of their own, so a
+  parenthesis and a few words follow the link there.
   - In the window's error panel the address is plain text, which cannot be selected, so it has
     to be typed there.
   - The console's line, and the report's text box, can be copied.

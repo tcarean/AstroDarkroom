@@ -158,6 +158,35 @@ public class WindowSmokeTests
         });
 
     /// <summary>
+    /// Where each licence's whole text is online is a link in the window, under the lead that
+    /// says so and above the components (R-095): the own release carries no notices file, so
+    /// without this link its reader would have no copy to go to. The view-model's address alone
+    /// would pass with the link gone from the XAML.
+    /// </summary>
+    [Fact]
+    public Task R095_TheAboutWindowLinksTheNoticesUnderTheLead()
+        => _sta.InvokeAsync(async () =>
+        {
+            var about = new AboutWindow(SystemParameters.WorkArea);
+            await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ContextIdle);
+            var content = (FrameworkElement)about.Content;
+            content.Measure(new Size(600, double.PositiveInfinity));
+            Render(content, 600, (int)Math.Ceiling(content.DesiredSize.Height));
+            var vm = (AboutViewModel)about.DataContext;
+
+            Hyperlink link = Assert.Single(Descendants(content).OfType<TextBlock>().SelectMany(t => t.Inlines.OfType<Hyperlink>()),
+                                           h => h.NavigateUri.AbsoluteUri == ThirdParty.NoticesUrl);
+            var holder = (TextBlock)link.Parent;
+            TextBlock lead = Assert.Single(Descendants(content).OfType<TextBlock>(), t => t.Text == vm.ThirdPartyLead);
+            // A row's name is a Run bound in the row template, which TextBlock.Text does not hold.
+            TextBlock firstRow = Descendants(content).OfType<TextBlock>().First(t => t.Inlines.OfType<Run>().Any(r => r.Text == vm.Components[0].Name));
+            Assert.True(holder.ActualHeight > 0);
+            Assert.True(lead.TranslatePoint(new Point(), content).Y < holder.TranslatePoint(new Point(), content).Y);
+            Assert.True(holder.TranslatePoint(new Point(), content).Y < firstRow.TranslatePoint(new Point(), content).Y);
+            about.Close();
+        });
+
+    /// <summary>
     /// The window and its six tabs: Structura and End to end with real results in
     /// them, the others in their opening state (their results are rendered by the tests
     /// below). An empty tab would render even with half of its templates wrong - only with

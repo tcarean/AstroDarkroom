@@ -124,11 +124,12 @@ public class AboutWindowFitTests
         });
 
     /// <summary>
-    /// The work area is the one of the window's own screen: a hidden window given a handle on the
-    /// primary screen gets from Windows the area WPF knows for that screen, and a window without a
-    /// handle gets it through the fallback. On a machine with one screen the two answers are
-    /// equal, so the area alone cannot tell them apart: the fallback writes a Debug line, which a
-    /// window with a handle must not cause.
+    /// The work area of the window's own screen: a hidden window given a handle on the primary
+    /// screen gets from Windows the area WPF knows for that screen, with no line saying the area
+    /// could not be read, and a window without a handle gets the primary screen's area. What this
+    /// cannot show: on a machine with one screen the window's screen is the primary one, so an
+    /// implementation that never asked Windows would pass too; telling them apart takes a second
+    /// screen (the window is placed on it by the main window's handle, R-123).
     /// </summary>
     [Fact]
     public void R123_TheWorkAreaIsTheOneOfTheWindowsScreen()
