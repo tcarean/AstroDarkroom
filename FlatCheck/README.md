@@ -347,6 +347,12 @@ On a real session of 32 frames over 81 minutes, the figure swept smoothly from +
 through -19.20 % to +35.73 %, with only 1.36 points between consecutive frames. Whatever moves
 like that is sky, not flat.
 
+Even on a narrow field the sky leaves its mark on single frames. On a Veil session at 135 mm (87
+frames, verdict OK at a mean of +1.13 %), the figure sat near -0.3 % for the first nine frames, rose
+smoothly to +4.31 % over the next 27 and settled near +0.4 % for the last 51, 0.30 points between
+consecutive frames. One frame from the middle of that hump would have read SUSPECT on a flat the
+series proves good.
+
 Given a folder, it runs on every frame that matches the pattern (`pp_light_*.fit` by default),
 prints a table row per frame as it goes, and averages. **But it gives a verdict only when the
 mean means something**, under three conditions:
@@ -647,6 +653,14 @@ real Milky Way session with that setup, the correlation between the radial compo
 the sky gradient came out **-0.94** (R² = 0.88): 88 % of what the tool reported as "flat" was
 explained by the sky. On data like these the flat is judged on its own, by the master's structure
 tests, which do not involve the sky at all.
+
+**A concrete positive example.** The Samyang 135 on the same D3300 covers ~12 degrees. On a Veil
+session of 87 frames, the sky gradient doubled from 7 % to 13 % over the last 51 frames while the
+radial component stayed near +0.4 %: at that field the plane and the radial terms separate, and the
+series came out OK with a mean of +1.13 %. The same master's structure run read REDO on depth
+against the lensfun profile, 0.95 stops deeper than the profile said; the lights show the flat
+corrects its vignetting to ~1 % in the corner. When the two disagree that way, the profile is wrong
+for the setup, and `--light` is the measurement to trust.
 
 ## The residual scale
 
