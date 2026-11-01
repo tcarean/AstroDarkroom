@@ -59,7 +59,8 @@ public sealed class AboutViewModel
 
     public string ThirdPartyHeading => WindowTexts.AboutThirdPartyHeading;
 
-    public string ThirdPartyLead => WindowTexts.AboutThirdPartyLead;
+    /// <summary>The lead above the list, the core's, which counts the list it heads (R-075).</summary>
+    public string ThirdPartyLead => ThirdParty.Lead;
 
     public IReadOnlyList<ComponentRow> Components { get; }
 }

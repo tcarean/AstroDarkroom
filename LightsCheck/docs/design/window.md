@@ -73,7 +73,9 @@ fixed labels are `{local:T}` pairs in the XAML (`language.md`, which also covers
 `--lang`). `WindowTexts` holds the empty and
 problem cards, the wait line (`Busy`, `BusyRegistering`), the dialog titles, the status after
 an export, the cut-out notes, the step chart's guide labels (`MoveGuide`, `WalkingNoiseGuide`,
-given the core's formatted figure) and the map's grid note (`GridNote`). The class words on
+given the core's formatted figure) and the map's grid note (`GridNote`). The About window's lead
+above the third-party list is the core's `ThirdParty.Lead`, beside the list it counts (R-075),
+and its rows are `ThirdParty.Components`. The class words on
 the elongation guides are `SeriesReport.ClassWord`, the session card's `scale` label is
 `SeriesReport.ScaleLabel`, and the `ERROR: ` / `EROARE: ` line of an export error or a failed cut-out decode
 is `RunReport.Error`, the console's own, so a verdict word or the prefix changes in `Report/`

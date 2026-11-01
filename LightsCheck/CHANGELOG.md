@@ -34,6 +34,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- When libraw cannot be loaded, the error names Microsoft's Visual C++ runtime, missing or too
+  old, as the likely cause, with Microsoft's link to its latest version,
+  `https://aka.ms/vc14/vc_redist.x64.exe`, instead of advice on where the DLLs sit and how to
+  publish, which held in neither the single-file programs nor the suite folder; the log adds,
+  once, which of the runtime's four DLLs Windows cannot load (R-074, ADR 0030).
+- About lists the six components the tool ships: libjpeg-turbo, Little CMS and zlib, the
+  libraries inside libraw's DLLs, joined Sdcb.LibRaw, LibRaw and NLog. The line above the list
+  counts them right (it said two, with three listed) and points to the licence texts in the
+  suite's `THIRD-PARTY-NOTICES.txt`, in the source `AstroDarkroom/THIRD-PARTY-NOTICES.md`
+  (R-075).
 - Without `--lang`, the console and the window now speak English; `--lang ro` gives the
   Romanian output as it was.
 - The inventory's `lens` line reads `ID 74 (Nikon F)` where it read `Nikon ID 74`: the ID is

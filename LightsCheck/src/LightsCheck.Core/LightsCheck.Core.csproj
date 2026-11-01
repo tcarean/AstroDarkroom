@@ -10,9 +10,11 @@
   </PropertyGroup>
 
   <!-- Sdcb.LibRaw, only for camera raw files: no pure managed .NET library decodes the Bayer
-       mosaic of a NEF. The native DLLs of the runtime.* packages sit beside the executable and
-       are loaded lazily, from RawReader.cs alone; without them a FITS run is unaffected and a
-       raw run says what is missing (ADR 0003, THIRD-PARTY-NOTICES.md). -->
+       mosaic of a NEF. The native DLLs of the runtime.* packages travel with the executable
+       (beside it, or inside the single file) and are loaded lazily, from RawReader.cs alone.
+       They import Microsoft's Visual C++ runtime, which nothing here ships: without it a FITS
+       run is unaffected and a raw run names the runtime and its link (R-074, ADRs 0003 and
+       0030, THIRD-PARTY-NOTICES.md). -->
   <!-- NLog, for the diagnostic log only (ADR 0029): the core logs at its seams (the readers
        adapted from FlatCheck, Session/, Runs/), never inside Analysis/ or Report/; the two
        applications configure it, in code, through Logging/LogSetup.cs. Without a configuration
