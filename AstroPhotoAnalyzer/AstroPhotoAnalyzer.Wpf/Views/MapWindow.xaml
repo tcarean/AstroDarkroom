@@ -56,11 +56,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             </ItemsControl.ItemTemplate>
           </ItemsControl>
           <CheckBox IsChecked="{Binding ShowClouds}" IsEnabled="{Binding HasWcs}" Foreground="{StaticResource TextBr}" Margin="0,0,0,8"
-                    Content="{local:T En='the catalogued clouds: circles and labels (labels on the darkest)', Ro='norii catalogati: cercuri si etichete (eticheta pe cei mai intunecati)'}" />
+                    Content="{local:T En='the catalogued dust clouds: circles and names (names only on the darkest)', Ro='norii de praf din catalog: cercuri si nume (numele doar la cei mai intunecati)'}" />
           <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Text="{Binding Definition}" />
           <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource BadBr}" Text="{Binding NoWcsWarning}"
                      Visibility="{Binding NoWcsWarning, Converter={StaticResource NotNullToVis}}" />
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='CATALOGUED CLOUDS', Ro='NORI CATALOGATI'}" Margin="0,16,0,0" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='CATALOGUED DUST CLOUDS', Ro='NORI DE PRAF DIN CATALOG'}" Margin="0,16,0,0" />
+          <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
+                     Text="{local:T En='For each cloud: its L*, the target (the background at which the cloud reaches exactly paper black) and how many patches it has.', Ro='Pentru fiecare nor: L*-ul lui, tinta (fundalul la care norul ajunge exact pe negrul hartiei) si cate dale are.'}" />
           <StackPanel Orientation="Horizontal" Margin="0,4,0,6" IsEnabled="{Binding ShowClouds}">
             <Button Content="{local:T En='All', Ro='Toti'}" Command="{Binding SelectAllClouds}" Padding="8,1" FontSize="11" />
             <Button Content="{local:T En='None', Ro='Niciunul'}" Command="{Binding DeselectAllClouds}" Padding="8,1" FontSize="11" Margin="8,0,0,0" />

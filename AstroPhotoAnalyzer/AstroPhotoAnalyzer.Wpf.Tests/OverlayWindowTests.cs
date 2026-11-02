@@ -185,9 +185,9 @@ public class OverlayWindowTests
         Assert.Contains("fara WCS", map.Definition);
         // Five layers on the sky path too, named for it, each with the image's own threshold in its legend.
         Assert.Equal(new[] { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" }, map.Layers.Select(l => l.Name).ToArray());
-        Assert.Contains("sigma ale cerului", map.Layers[2].Legend);
-        Assert.Contains("pragul Otsu", map.Layers[3].Legend);
-        Assert.Contains("L*-ul cerului = mediana lor", map.Layers[1].Legend);
+        Assert.Contains("ori zgomotul lui, care e de", map.Layers[2].Legend);
+        Assert.Contains("pragul la care nebuloasa se desparte", map.Layers[3].Legend);
+        Assert.Contains("valoarea din mijloc a acestor dale", map.Layers[1].Legend);
         Assert.All(map.Layers, l => Assert.NotNull(l.Layer));
 
         MapViewModel band = MapViewModel.From(Result(WcsFixtures.BandScene()));
@@ -282,4 +282,44 @@ public class OverlayWindowTests
             map.Layers[0].IsVisible = false;
             content.UpdateLayout();
         });
+
+    /// <summary>
+    /// R-130 and R-131 (ADR 0078): the texts of the map window and of the preview window are in
+    /// plain words, in both languages: every layer's legend on the sky path and on the band path,
+    /// the preview's caption and its two boxes for the row as it is and a lifted one, and the
+    /// texts the two windows write themselves, read from their XAML.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R130_TheMapAndPreviewTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var texts = new List<string>();
+        foreach (Raster r in new[] { Scenes.DarkSky(), WcsFixtures.BandScene() })
+        {
+            AnalysisResult result = Result(r);
+            texts.AddRange(MapViewModel.From(result).Layers.Select(l => l.Legend));
+            foreach (SimulationRow row in new[] { result.Simulation.AsIs, result.Simulation.Rows.Last() })
+            {
+                PreviewWindowViewModel p = PreviewWindowViewModel.From(result, row);
+                texts.AddRange(new[] { p.Caption, p.BlackLegend, p.LowLegend });
+            }
+        }
+        var pair = new System.Text.RegularExpressions.Regex(@"\{local:T En='([^']*)', Ro='([^']*)'\}");
+        foreach (string view in new[] { "MapWindow.xaml", "PreviewWindow.xaml" })
+            texts.AddRange(pair.Matches(Xaml(view)).Select(m => m.Groups[english ? 1 : 2].Value));
+
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(mediana|median|percentil\w*|Otsu|modelat|modelled|sigma|catalogati|etichet\w*|labels?|nivelul ei local|local level|coada|tail)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts, t => Assert.False(methodWords.IsMatch(t), t));
+        Assert.All(texts, t => Assert.DoesNotContain("|b|", t));
+        Assert.Contains(Tr.Pick("CATALOGUED DUST CLOUDS", "NORI DE PRAF DIN CATALOG"), texts);
+        Assert.Contains(texts, t => t.StartsWith(Tr.Pick("For each cloud: its L*, the target", "Pentru fiecare nor: L*-ul lui, tinta")));
+    }
+
+    /// <summary>A view's XAML, read from the source tree beside this file's project.</summary>
+    static string Xaml(string view, [System.Runtime.CompilerServices.CallerFilePath] string thisFile = "")
+        => File.ReadAllText(Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(thisFile)!)!, "AstroPhotoAnalyzer.Wpf", "Views", view));
 }

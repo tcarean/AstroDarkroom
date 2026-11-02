@@ -46,6 +46,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The map and preview windows explain themselves in plain words (R-130, R-131, ADR 0078): the map's
+  legends say "valoarea din mijloc" and "pragul sub care stau 25 % din ele" instead of median and
+  percentile, "mai luminoase decat cerul" instead of "peste cerul modelat", no `|b|`, no Otsu or
+  sigma; "norii de praf din catalog", with a sentence saying what a cloud's target is; the preview's
+  caption, second box and note in everyday words. The figures are unchanged.
 - The Soft proof tab and its full-screen window explain themselves in plain words (R-163, ADR 0077):
   "Mod de redare (intent)", the box "Culorile pe care hartia nu le poate reda" instead of
   "Avertisment gamut hartie", the paper's white and black "din 100", the three modes' help without

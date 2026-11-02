@@ -88,13 +88,13 @@ namespace AstroPhotoAnalyzer.Wpf
                 Height = h,
                 BlackLayer = RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == PreviewClass.UnderPaperBlack, BlackColour),
                 LowLayer = RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == PreviewClass.UnderLowSeparation, LowColour),
-                Caption = Tr.Pick($"{target}: gamma {Fmt.F3(row.Gamma)}; the dust at L* {Fmt.F1(row.LstarDust)}, the sky at L* {Fmt.F1(row.LstarSky)}; "
-                        + $"paper black L* {Fmt.F1(p.PaperBlackLstar)} at Dmax {Fmt.Dmax(r.Parameters.Dmax)}",
-                        $"{target}: gamma {Fmt.F3(row.Gamma)}; praful la L* {Fmt.F1(row.LstarDust)}, cerul la L* {Fmt.F1(row.LstarSky)}; "
-                        + $"negrul hartiei L* {Fmt.F1(p.PaperBlackLstar)} la Dmax {Fmt.Dmax(r.Parameters.Dmax)}")
+                Caption = Tr.Pick($"{target}: the tones lifted with a curve (gamma {Fmt.F3(row.Gamma)}); the dust at L* {Fmt.F1(row.LstarDust)}, the sky at L* {Fmt.F1(row.LstarSky)}; "
+                        + $"paper black is L* {Fmt.F1(p.PaperBlackLstar)} at Dmax {Fmt.Dmax(r.Parameters.Dmax)}",
+                        $"{target}: tonurile ridicate cu o curba (gamma {Fmt.F3(row.Gamma)}); praful la L* {Fmt.F1(row.LstarDust)}, cerul la L* {Fmt.F1(row.LstarSky)}; "
+                        + $"negrul hartiei e L* {Fmt.F1(p.PaperBlackLstar)} la Dmax {Fmt.Dmax(r.Parameters.Dmax)}")
                     + ReportWriter.RowMark(row).Replace("   ", "; "),
                 BlackLegend = Tr.Pick($"under paper black (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} of the pixels - they print as the same black", $"sub negrul hartiei (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} din pixeli - se tiparesc cu acelasi negru"),
-                LowLegend = Tr.Pick($"under L* {Fmt.F0(Thresholds.LowSeparationLstar)}, over black: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} of the pixels - the paper separates them, the eye barely", $"sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, peste negru: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} din pixeli - hartia le separa, ochiul abia"),
+                LowLegend = Tr.Pick($"between paper black and L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} of the pixels - the paper tells them apart, but the eye barely sees the difference", $"intre negrul hartiei si L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} din pixeli - pe hartie se deosebesc, dar ochiul abia le vede diferenta"),
             };
         }
     }
