@@ -40,12 +40,12 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>How to get the gamut figure when the profile is missing (R-144).</summary>
         internal static string GamutNeedsProfile => Tr.Pick(
-            "paper gamut: unknown - choose the paper's ICC profile with the \"From ICC profile...\" button beside Dmax and run again",
-            "gamutul hartiei: necunoscut - alege profilul ICC al hartiei cu butonul \"Din profil ICC...\" de langa Dmax si ruleaza din nou");
+            "the colours the paper can reproduce (the gamut): unknown - choose the paper's ICC profile with the \"From ICC profile...\" button beside Dmax and run again",
+            "culorile pe care le poate reda hartia (gamutul): necunoscute - alege profilul ICC al hartiei cu butonul \"Din profil ICC...\" de langa Dmax si ruleaza din nou");
 
         internal static string NoMonotoneCurve => Tr.Pick(
-            "No curve can be suggested: none of the variants stays increasing on the anchors of this image.",
-            "Nu se poate sugera o curba: niciuna din variante nu ramane crescatoare pe ancorele acestei imagini.");
+            "No curve can be suggested: on this image none of the variants keeps rising through its points (it would swap some tones).",
+            "Nu se poate sugera o curba: pe aceasta imagine, niciuna dintre variante nu urca tot timpul prin punctele ei (ar inversa niste tonuri).");
 
         internal static string SaveOverInput => Tr.Pick(
             "Not saving over the input image: choose another name or another folder. The input image is never changed.",
@@ -57,8 +57,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="path">The input's full path at the time of the analysis.</param>
         /// <returns>The message, which names the path and asks to open the image again.</returns>
         internal static string InputGone(string path)
-            => Tr.Pick("The input image is no longer where it was at the analysis (" + path + "): the save needs it, to keep its header. Open the image again.",
-                       "Imaginea de intrare nu mai e unde era la analiza (" + path + "): salvarea are nevoie de ea, ca sa-i pastreze antetul. Deschide imaginea din nou.");
+            => Tr.Pick("The input image is no longer where it was at the analysis (" + path + "): the save needs it, to copy the file's information (the FITS header). Open the image again.",
+                       "Imaginea de intrare nu mai e unde era la analiza (" + path + "): salvarea are nevoie de ea, ca sa copieze informatiile din fisier (antetul FITS). Deschide imaginea din nou.");
 
         /// <summary>
         /// The refusal of a save whose curved values the source FITS's integer encoding cannot
@@ -71,9 +71,9 @@ namespace AstroPhotoAnalyzer
         /// The message, which says nothing was saved and how to save a 32-bit source.
         /// </returns>
         internal static string ValuesDoNotFit(long count, int bitpix, double bzero)
-            => Tr.Pick($"{Fmt.Int(count)} values do not fit the encoding of the source FITS (BITPIX {bitpix}, BZERO {Fmt.F0(bzero)}): the curve lifts them over its end. "
+            => Tr.Pick($"{Fmt.Int(count)} values no longer fit the format of the source FITS (BITPIX {bitpix}, BZERO {Fmt.F0(bzero)}): the curve lifts them over the largest value it can hold. "
                        + "Nothing was saved. Save the source from Siril as 32 bits and analyse that one.",
-                       $"{Fmt.Int(count)} valori nu incap in codarea FITS-ului sursa (BITPIX {bitpix}, BZERO {Fmt.F0(bzero)}): curba le ridica peste capatul ei. "
+                       $"{Fmt.RoCount(Fmt.Int(count))}valori nu mai incap in formatul FITS-ului sursa (BITPIX {bitpix}, BZERO {Fmt.F0(bzero)}): curba le ridica peste valoarea maxima pe care o poate tine. "
                        + "Nu s-a salvat nimic. Salveaza sursa din Siril pe 32 de biti si analizeaz-o pe aceea.");
 
         /// <summary>
@@ -84,12 +84,12 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <returns>The caption.</returns>
         internal static string CurveCaption(bool colour)
-            => Tr.Pick("A natural cubic spline through points"
-                       + (colour ? ", the same curve on R, G and B" : "")
-                       + ": in Siril, Curves Transformation, the cubic spline mode, with the points of the table.",
-                       "Spline cubic natural prin puncte"
-                       + (colour ? ", aceeasi curba pe R, G si B" : "")
-                       + ": in Siril, Curves Transformation, modul cubic spline, cu punctele din tabel.");
+            => Tr.Pick("A smooth curve through the points of the table (a natural cubic spline)"
+                       + (colour ? ", the same on R, G and B" : "")
+                       + ". In Siril: Curves Transformation, the cubic spline mode, with the same points.",
+                       "O curba lina prin punctele din tabel (spline cubic natural)"
+                       + (colour ? ", aceeasi pe R, G si B" : "")
+                       + ". In Siril: Curves Transformation, modul cubic spline, cu aceleasi puncte.");
 
         /// <summary>What the columns of the points table mean, by the classes' path.</summary>
         /// <param name="method">The path of the classes, which names them in the note.</param>
@@ -98,12 +98,12 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <returns>The note under the table.</returns>
         internal static string PointsNote(DustMethod method, bool colour)
-            => Tr.Pick("The input and the output are pixel values 0..1" + (colour ? ", the same on R, G and B" : "") + ". The first and the last row are the ends of the curve. "
-                       + "L* is that of the class's patches, measured before and after the curve"
-                       + (method == DustMethod.Band ? " (the classes of the Milky Way band)." : " (classes relative to the modelled sky)."),
-                       "Intrarea si iesirea sunt valori 0..1 ale pixelului" + (colour ? ", aceleasi pe R, G si B" : "") + ". Primul si ultimul rand sunt capetele curbei. "
-                       + "L* e al dalelor clasei, masurat inainte si dupa curba"
-                       + (method == DustMethod.Band ? " (clasele benzii Caii Lactee)." : " (clase relative la cerul modelat)."));
+            => Tr.Pick("The input and the output are the pixel's values, on the 0..1 scale" + (colour ? ", the same on R, G and B" : "") + ". The first and the last row are the ends of the curve. "
+                       + "L* is the lightness of each kind of patch (dust, sky...), measured before and after the curve"
+                       + (method == DustMethod.Band ? " (the kinds of patches of the Milky Way band)." : " (the patches sorted by comparison with the sky)."),
+                       "Intrarea si iesirea sunt valorile pixelului, pe scara 0..1" + (colour ? ", aceleasi pe R, G si B" : "") + ". Primul si ultimul rand sunt capetele curbei. "
+                       + "L* e luminozitatea dalelor de fiecare fel (praf, cer...), masurata inainte si dupa curba"
+                       + (method == DustMethod.Band ? " (felurile de dale ale benzii Caii Lactee)." : " (dalele impartite prin comparatie cu cerul)."));
 
         /// <summary>The heading of the curve window's shadow chart (R-147).</summary>
         /// <param name="limit">
@@ -125,10 +125,10 @@ namespace AstroPhotoAnalyzer
         /// <param name="upperValue">The upper class's anchor, 0..1, not over the lower one.</param>
         /// <returns>The reason, which names both anchors.</returns>
         internal static string AnchorsNotIncreasing(string lower, double lowerValue, string upper, double upperValue)
-            => Tr.Pick($"No curve can be suggested: the anchor \"{upper}\" ({Fmt.F3(upperValue)}) is not over the anchor \"{lower}\" ({Fmt.F3(lowerValue)}). "
-                       + "The curves need five increasing steps: dust, sky, band, bright clouds, peaks.",
-                       $"Nu se poate sugera o curba: ancora \"{upper}\" ({Fmt.F3(upperValue)}) nu e peste ancora \"{lower}\" ({Fmt.F3(lowerValue)}). "
-                       + "Curbele au nevoie de cinci trepte crescatoare: praf, cer, banda, nori luminosi, varfuri.");
+            => Tr.Pick($"No curve can be suggested: the point \"{upper}\" ({Fmt.F3(upperValue)}) is not above the point \"{lower}\" ({Fmt.F3(lowerValue)}). "
+                       + "The curves need five rising steps: dust, sky, band, bright clouds, peaks.",
+                       $"Nu se poate sugera o curba: punctul \"{upper}\" ({Fmt.F3(upperValue)}) nu e mai sus decat punctul \"{lower}\" ({Fmt.F3(lowerValue)}). "
+                       + "Curbele au nevoie de cinci trepte care urca: praf, cer, banda, nori luminosi, varfuri.");
 
         /// <summary>
         /// Why no curve is suggested when a class has no patch, so no anchor (R-141).
@@ -136,9 +136,9 @@ namespace AstroPhotoAnalyzer
         /// <param name="label">The empty class's name.</param>
         /// <returns>The reason, which names the class.</returns>
         internal static string ClassEmpty(string label)
-            => Tr.Pick($"No curve can be suggested: the class \"{label}\" has no patch on this image, and the curves need five steps: dust, sky, "
+            => Tr.Pick($"No curve can be suggested: this image has no patch of the kind \"{label}\", and the curves need five steps: dust, sky, "
                        + "band or nebula, bright clouds or bright nebula, peaks.",
-                       $"Nu se poate sugera o curba: clasa \"{label}\" nu are nicio dala pe imaginea asta, si curbele au nevoie de cinci trepte: praf, cer, "
+                       $"Nu se poate sugera o curba: pe imaginea asta nu exista nicio dala de felul \"{label}\", iar curbele au nevoie de cinci trepte: praf, cer, "
                        + "banda sau nebuloasa, nori luminosi sau nebuloasa stralucitoare, varfuri.");
 
         /// <summary>
@@ -151,17 +151,17 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <returns>The reason, which names the anchor and the target.</returns>
         internal static string PeaksOverTarget(string label, double value)
-            => Tr.Pick($"No curve is suggested: the anchor \"{label}\" is already at {Fmt.F3(value)}, at or over the target {Fmt.F2(Thresholds.CurvePeakTarget)} the peaks reach "
-                       + "after a curve. There is no room left for contrast without lowering something, and the suggested curves lower no point: the image is already at the ceiling.",
-                       $"Nu se sugereaza nicio curba: ancora \"{label}\" e deja la {Fmt.F3(value)}, la sau peste tinta {Fmt.F2(Thresholds.CurvePeakTarget)} la care ajung varfurile "
-                       + "dupa o curba. Nu mai e loc de contrast fara sa cobori ceva, iar curbele sugerate nu coboara niciun punct: imaginea e deja la plafon.");
+            => Tr.Pick($"No curve is suggested: the point \"{label}\" is already at {Fmt.F3(value)}, at or over {Fmt.F2(Thresholds.CurvePeakTarget)}, where the peaks reach "
+                       + "after a curve. There is no room left for contrast without lowering something, and the suggested curves lower no point: the image is already as bright as it can be.",
+                       $"Nu se sugereaza nicio curba: punctul \"{label}\" e deja la {Fmt.F3(value)}, la sau peste {Fmt.F2(Thresholds.CurvePeakTarget)}, unde ajung varfurile "
+                       + "dupa o curba. Nu mai e loc de contrast fara sa cobori ceva, iar curbele sugerate nu coboara niciun punct: imaginea e deja cat de luminoasa poate fi.");
 
         /// <summary>The evidence line for a profile that gives no gamut figure (R-144).</summary>
         /// <param name="reason">
         /// Why the profile cannot be used, from <see cref="GamutTable.Problem"/>.
         /// </param>
         /// <returns>The line, which ends with the reason.</returns>
-        internal static string GamutUnreadable(string reason) => Tr.Pick("paper gamut: unknown - ", "gamutul hartiei: necunoscut - ") + reason;
+        internal static string GamutUnreadable(string reason) => Tr.Pick("the colours the paper can reproduce (the gamut): unknown - ", "culorile pe care le poate reda hartia (gamutul): necunoscute - ") + reason;
 
         /// <summary>
         /// Where the anchors come from, under the gallery (R-146): the Tonuri tab's classes, on
@@ -179,12 +179,13 @@ namespace AstroPhotoAnalyzer
         {
             IReadOnlyList<string> n = map.ClassNames;
             string path = map.Method == DustMethod.Band
-                ? Tr.Pick("the classes of the Milky Way band", "clasele benzii Caii Lactee")
-                : Tr.Pick($"classes relative to the modelled sky ({methodNote})", $"clase relative la cerul modelat ({methodNote})");
-            return Tr.Pick($"The anchors come from the classes of the Tones tab ({path}): the dust and the sky as there, the {n[2]} at the {Fmt.F0(Thresholds.CurveBandClassPercentile)} % percentile of its class, "
-                           + $"the {n[3]} at {Fmt.F0(Thresholds.CurveCloudClassPercentile)} %, the {n[4]} at the median.",
-                           $"Ancorele vin din clasele tabului Tonuri ({path}): praful si cerul ca acolo, {n[2]} la percentila {Fmt.F0(Thresholds.CurveBandClassPercentile)} % a clasei ei, "
-                           + $"{n[3]} la {Fmt.F0(Thresholds.CurveCloudClassPercentile)} %, {n[4]} la mediana.");
+                ? Tr.Pick("the kinds of patches of the Milky Way band", "felurile de dale ale benzii Caii Lactee")
+                : Tr.Pick($"the patches sorted by comparison with the sky ({methodNote})", $"dalele impartite prin comparatie cu cerul ({methodNote})");
+            // The fifth class is the peaks on either path ("varfuri"), so its articled form is written out.
+            return Tr.Pick($"The curve's points come from the kinds of patches of the Tones tab ({path}): the dust and the sky as there; the {n[2]} at the threshold under which {Fmt.F0(Thresholds.CurveBandClassPercentile)} % of its patches lie, "
+                           + $"the {n[3]} at {Fmt.F0(Thresholds.CurveCloudClassPercentile)} %, the {n[4]} at the middle value.",
+                           $"Punctele curbei vin din felurile de dale ale tabului Tonuri ({path}): praful si cerul ca acolo; {n[2]} la pragul sub care stau {Fmt.F0(Thresholds.CurveBandClassPercentile)} % din dalele ei, "
+                           + $"{n[3]} la {Fmt.F0(Thresholds.CurveCloudClassPercentile)} %, varfurile la valoarea din mijloc.");
         }
 
         /// <summary>
@@ -207,18 +208,18 @@ namespace AstroPhotoAnalyzer
             var o = new List<Recommendation>();
             if (sim.SkyBelowVisibility || sim.DustBelowPaperBlack)
                 o.Add(new Recommendation(Topic.Background, Verdict.Attention,
-                    Tr.Pick("The background is too low for paper: lift it at the stretch, as the Tones tab says, then come back here. The curve does not move the sky and the dust.", "Fundalul e prea jos pentru hartie: ridica-l la stretch, cum spune tabul Tonuri, apoi revino aici. Curba nu muta cerul si praful."),
-                    Tr.Pick($"the sky at L* {Fmt.F1(sim.AsIs.LstarSky)} (the visibility threshold L* {Fmt.F0(Thresholds.LowSeparationLstar)}), the dust at L* {Fmt.F1(sim.AsIs.LstarDust)}, "
-                            + $"paper black L* {Fmt.F1(sim.PaperBlackLstar)} at Dmax {Fmt.Dmax(sim.Dmax)}",
-                            $"cerul la L* {Fmt.F1(sim.AsIs.LstarSky)} (pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)}), praful la L* {Fmt.F1(sim.AsIs.LstarDust)}, "
-                            + $"negrul hartiei L* {Fmt.F1(sim.PaperBlackLstar)} la Dmax {Fmt.Dmax(sim.Dmax)}")));
+                    Tr.Pick("The background is too dark for paper: lift it when you redo the stretch, as the Tones tab says, then come back here. The curve does not move the sky and the dust.", "Fundalul e prea intunecat pentru hartie: ridica-l cand refaci stretch-ul, cum spune tabul Tonuri, apoi revino aici. Curba nu muta cerul si praful."),
+                    Tr.Pick($"the sky at L* {Fmt.F1(sim.AsIs.LstarSky)} (under L* {Fmt.F0(Thresholds.LowSeparationLstar)} the eye barely tells the tones apart), the dust at L* {Fmt.F1(sim.AsIs.LstarDust)}, "
+                            + $"paper black is L* {Fmt.F1(sim.PaperBlackLstar)} at Dmax {Fmt.Dmax(sim.Dmax)}",
+                            $"cerul la L* {Fmt.F1(sim.AsIs.LstarSky)} (sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} ochiul abia mai deosebeste tonurile), praful la L* {Fmt.F1(sim.AsIs.LstarDust)}, "
+                            + $"negrul hartiei e L* {Fmt.F1(sim.PaperBlackLstar)} la Dmax {Fmt.Dmax(sim.Dmax)}")));
             if (!double.IsNaN(e.NoiseAfterLsb) && e.NoiseAfterLsb > Thresholds.NoisePrintHiLsb)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
-                    Tr.Pick("After the curve the noise in the sky passes the print target: apply denoise before, or choose a gentler variant.", "Dupa curba zgomotul din cer trece de tinta de print: aplica denoise inainte, sau alege o varianta mai blanda."),
-                    Tr.Pick($"sigma {Fmt.F2(noise.SigmaMedianLsb)} LSB x {Fmt.F2(e.NoiseGain)} (the slope of the curve at the sky) = {Fmt.F2(e.NoiseAfterLsb)} LSB; "
-                            + $"the print target {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} LSB",
-                            $"sigma {Fmt.F2(noise.SigmaMedianLsb)} LSB x {Fmt.F2(e.NoiseGain)} (panta curbei la cer) = {Fmt.F2(e.NoiseAfterLsb)} LSB; "
-                            + $"tinta de print {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} LSB")));
+                    Tr.Pick("After the curve, the noise in the sky passes the print target: denoise before, or choose a gentler variant.", "Dupa curba, zgomotul din cer trece de tinta pentru print: fa denoise inainte, sau alege o varianta mai blanda."),
+                    Tr.Pick($"the noise {Fmt.F2(noise.SigmaMedianLsb)} levels (sigma) x {Fmt.F2(e.NoiseGain)} (how steeply the curve climbs at the sky) = {Fmt.F2(e.NoiseAfterLsb)} levels; "
+                            + $"the print target {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} levels",
+                            $"zgomotul {Fmt.F2(noise.SigmaMedianLsb)} niveluri (sigma) x {Fmt.F2(e.NoiseGain)} (cat de tare urca curba in dreptul cerului) = {Fmt.F2(e.NoiseAfterLsb)} niveluri; "
+                            + $"tinta pentru print {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} niveluri")));
             return o;
         }
 
@@ -269,8 +270,8 @@ namespace AstroPhotoAnalyzer
             foreach (Recommendation r in e.PaperChecks) o.Add(($"! {r.Text} ({Tr.Pick("because", "fiindca")}: {Fmt.Plain(r.Because)})", true));
             if (e.Gamut != null)
             {
-                o.Add((GamutLine(e.Labels, Tr.Pick($"outside the paper gamut (the chroma moved by over {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), before", $"in afara gamutului hartiei (croma mutata cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), inainte"), e.GamutBefore), false));
-                o.Add((GamutLine(e.Labels, Tr.Pick("outside the paper gamut, after", "in afara gamutului hartiei, dupa"), e.Gamut), false));
+                o.Add((GamutLine(e.Labels, Tr.Pick($"colours the paper cannot reproduce (the paper would move their colour by over {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), before", $"culori pe care hartia nu le poate reda (hartia le-ar muta culoarea cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), inainte"), e.GamutBefore), false));
+                o.Add((GamutLine(e.Labels, Tr.Pick("colours the paper cannot reproduce, after", "culori pe care hartia nu le poate reda, dupa"), e.Gamut), false));
             }
             else if (e.GamutNote != null) o.Add((e.GamutNote, false));
             return o;
@@ -290,13 +291,13 @@ namespace AstroPhotoAnalyzer
             CurveEvidence e = s.Evidence;
             return new List<string>
             {
-                Tr.Pick("points (input > output): ", "puncte (intrare > iesire): ") + string.Join(", ", s.Curve.Points.Where(p => p.Label != null).Select(p => $"{p.Label} {Fmt.F3(p.X)} > {Fmt.F3(p.Y)}")),
+                Tr.Pick("the curve's points (the input value > the output value): ", "punctele curbei (valoarea de intrare > valoarea de iesire): ") + string.Join(", ", s.Curve.Points.Where(p => p.Label != null).Select(p => $"{p.Label} {Fmt.F3(p.X)} > {Fmt.F3(p.Y)}")),
                 Tr.Pick("L* before: ", "L* inainte: ") + Levels(e.Labels, e.LstarBefore),
                 Tr.Pick("L* after: ", "L* dupa: ") + Levels(e.Labels, e.LstarAfter),
                 double.IsNaN(e.NoiseAfterLsb)
-                    ? Tr.Pick($"the noise in the sky grows by {Fmt.F2(e.NoiseGain)} x (the slope of the curve at the sky)", $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} x (panta curbei la cer)")
-                    : Tr.Pick($"the noise in the sky grows by {Fmt.F2(e.NoiseGain)} x (the slope of the curve at the sky), to {Fmt.F2(e.NoiseAfterLsb)} LSB", $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} x (panta curbei la cer), la {Fmt.F2(e.NoiseAfterLsb)} LSB"),
-                Tr.Pick($"clipped pixels (a channel at or over {Fmt.F3(Thresholds.CurveClipLevel)}): {Fmt.F2(e.PctClippedBefore)} % before, {Fmt.F2(e.PctClippedAfter)} % after", $"pixeli arsi (un canal la sau peste {Fmt.F3(Thresholds.CurveClipLevel)}): {Fmt.F2(e.PctClippedBefore)} % inainte, {Fmt.F2(e.PctClippedAfter)} % dupa"),
+                    ? Tr.Pick($"the noise in the sky grows by {Fmt.F2(e.NoiseGain)} times (how steeply the curve climbs at the sky)", $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} ori (cat de tare urca curba in dreptul cerului)")
+                    : Tr.Pick($"the noise in the sky grows by {Fmt.F2(e.NoiseGain)} times (how steeply the curve climbs at the sky), to {Fmt.F2(e.NoiseAfterLsb)} levels", $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} ori (cat de tare urca curba in dreptul cerului), la {Fmt.F2(e.NoiseAfterLsb)} niveluri"),
+                Tr.Pick($"burnt-out pixels (at least one channel at {Fmt.F3(Thresholds.CurveClipLevel)} or over): {Fmt.F2(e.PctClippedBefore)} % before, {Fmt.F2(e.PctClippedAfter)} % after", $"pixeli arsi (cel putin un canal la {Fmt.F3(Thresholds.CurveClipLevel)} sau peste): {Fmt.F2(e.PctClippedBefore)} % inainte, {Fmt.F2(e.PctClippedAfter)} % dupa"),
             };
         }
 
@@ -314,7 +315,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The text of the saved file's HISTORY cards, one piece per card (R-145): the program,
-        /// its version and the suggestion, the kind of curve, then the control points as
+        /// its version and the suggestion, the kind of curve and the Siril tool that redoes it,
+        /// then the control points as
         /// "x y" pairs at three decimals, each with its label when it has one, as many per piece
         /// as fit in 70 characters; a pair is never split.
         /// </summary>
@@ -326,8 +328,9 @@ namespace AstroPhotoAnalyzer
             var o = new List<string>
             {
                 Tr.Pick($"{VersionInfo.Banner}: curve {suggestion}, on every channel", $"{VersionInfo.Banner}: curba {suggestion}, pe fiecare canal"),
-                Tr.Pick("a natural cubic spline (Siril: Curves Transformation, cubic spline)", "spline cubic natural (Siril: Curves Transformation, cubic spline)"),
-                Tr.Pick("control points, input output:", "puncte de control, intrare iesire:"),
+                Tr.Pick("a smooth curve (a natural cubic spline)", "o curba lina (spline cubic natural)"),
+                Tr.Pick("Siril: Curves Transformation, the cubic spline mode", "Siril: Curves Transformation, modul cubic spline"),
+                Tr.Pick("the curve's points, input output:", "punctele curbei, intrare iesire:"),
             };
             string line = "";
             foreach (CurvePoint p in curve.Points)

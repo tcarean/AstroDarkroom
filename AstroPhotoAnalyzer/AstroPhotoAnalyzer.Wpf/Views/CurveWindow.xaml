@@ -89,7 +89,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
     <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}" Margin="12,0,0,0">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Heading}" Text="{local:T En='WHOLE CURVE (input - output; diagonal = no change)', Ro='CURBA INTREAGA (intrare - iesire; diagonala = fara schimbare)'}" />
+        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Heading}" Text="{local:T En='WHOLE CURVE (input - output; diagonal line = no change)', Ro='CURBA INTREAGA (intrare - iesire; linia diagonala = nicio schimbare)'}" />
         <local:CurveCanvas Points="{Binding Chart}" ControlPoints="{Binding ControlPoints}" Markers="{Binding Markers}" XMax="1"
                            Stroke="{StaticResource AccentBr}" GridBrush="{StaticResource BorderBr}" TextBrush="{StaticResource MutedBr}" />
       </DockPanel>

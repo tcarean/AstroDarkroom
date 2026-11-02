@@ -192,8 +192,8 @@ public class CurveTests
         Assert.Equal(0.5, set.Anchors.Clouds, 3);
         Assert.Equal(0.7, set.Anchors.Peaks, 3);
         Assert.All(set.Suggestions, s => Assert.Equal("nebuloasa", s.Curve.Points[3].Label));
-        Assert.Contains("clase relative la cerul modelat (fara WCS)", set.SourceSentence);
-        Assert.Contains("nebuloasa la percentila 80 %", set.SourceSentence);
+        Assert.Contains("dalele impartite prin comparatie cu cerul (fara WCS)", set.SourceSentence);
+        Assert.Contains("nebuloasa la pragul sub care stau 80 % din dalele ei", set.SourceSentence);
         Assert.All(set.Suggestions, s => Assert.Equal(set.Labels, s.Evidence.Labels));
 
         // A flat frame has one level: the anchors cannot increase, and nothing is suggested.
@@ -220,7 +220,7 @@ public class CurveTests
         // Without a bright-nebula column there is no fourth class: a problem naming it, no suggestion.
         Raster noBright = SyntheticRasters.From(512, 512, 3, (x, y, p) => x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7f : x < 32 ? 0.05f : x < 416 ? 0.15f : 0.3f);
         CurveSet empty = Suggest(AnalysisRun.Execute(noBright, "memorie", Scenes.OnBuiltForPaper()));
-        Assert.Contains("clasa \"nebuloasa stralucitoare\" nu are nicio dala", empty.Problem);
+        Assert.Contains("nu exista nicio dala de felul \"nebuloasa stralucitoare\"", empty.Problem);
         Assert.Empty(empty.Suggestions);
     }
 
@@ -232,9 +232,9 @@ public class CurveTests
         CurveSet set = Suggest(AnalysisRun.Execute(StripeScene(peak: 0.95f), "memorie", Scenes.OnBuiltForPaper()));
         Assert.Equal(0.95, set.Anchors.Peaks, 3);
         Assert.NotNull(set.Problem);
-        Assert.Contains("ancora \"varfuri\" e deja la 0.950", set.Problem);
-        Assert.Contains($"tinta {Thresholds.CurvePeakTarget:0.00}", set.Problem);
-        Assert.Contains("la plafon", set.Problem);
+        Assert.Contains("punctul \"varfuri\" e deja la 0.950", set.Problem);
+        Assert.Contains($"la sau peste {Thresholds.CurvePeakTarget:0.00}, unde ajung varfurile", set.Problem);
+        Assert.Contains("imaginea e deja cat de luminoasa poate fi", set.Problem);
         Assert.Empty(set.Suggestions);
 
         // Exactly at the target counts too; just under it does not.
@@ -507,7 +507,7 @@ public class CurveTests
         string target = ws.PathTo("out.fit");
 
         Exception e = Assert.ThrowsAny<Exception>(() => CurveExport.Save(a, new CurveSuggestion { Name = "Medie", Curve = Curve(Earlier) }, target));
-        Assert.Contains("nu incap", e.Message);
+        Assert.Contains("nu mai incap", e.Message);
         Assert.False(File.Exists(target));
         Assert.Equal(new[] { input }, Directory.GetFiles(ws.Dir));
     }
@@ -603,9 +603,9 @@ public class CurveTests
         Assert.DoesNotContain(CurveTexts.PaperChecks(a.Simulation, quiet, With(quiet)), r => r.Topic == Topic.Denoise);   // 1.2 LSB, under 1.5
         Recommendation check = Assert.Single(CurveTexts.PaperChecks(a.Simulation, loud, With(loud)), r => r.Topic == Topic.Denoise);   // 1.68 LSB
         Assert.Equal(Verdict.Attention, check.Verdict);
-        Assert.Contains("1.40 LSB x 1.20", check.Because);
-        Assert.Contains("1.68 LSB", check.Because);
-        Assert.Contains($"{Thresholds.NoisePrintHiLsb:0.0} LSB", check.Because);
+        Assert.Contains("1.40 niveluri (sigma) x 1.20", check.Because);
+        Assert.Contains("= 1.68 niveluri", check.Because);
+        Assert.Contains($"{Thresholds.NoisePrintHiLsb:0.0} niveluri", check.Because);
         Assert.DoesNotContain(CurveTexts.PaperChecks(a.Simulation, few, With(few)), r => r.Topic == Topic.Denoise);       // not enough flat sky: no figure, no check
     }
 
@@ -696,7 +696,7 @@ public class CurveTests
         foreach (CurveSuggestion s in Suggest(a, CurvePurpose.Print).Suggestions)
         {
             Assert.Null(s.Evidence.Gamut);
-            Assert.StartsWith("gamutul hartiei: necunoscut - ", s.Evidence.GamutNote);
+            Assert.StartsWith("culorile pe care le poate reda hartia (gamutul): necunoscute - ", s.Evidence.GamutNote);
             Assert.DoesNotContain("Din profil ICC...", s.Evidence.GamutNote);
         }
     }
@@ -733,5 +733,50 @@ public class CurveTests
 
         (string Text, bool Warning) row = Assert.Single(CurveTexts.EvidenceRows(s), r => r.Warning);
         Assert.Equal("! verificare (fiindca: pe 0.20 % din cadru)", row.Text);
+    }
+
+    /// <summary>
+    /// R-146 (ADR 0076): every text of the Editare Curbe tab and of the curve window is in plain
+    /// words, in both languages: where the curve's points come from, the evidence of every
+    /// suggestion for print (its paper checks and the gamut note included), the reasons no curve
+    /// is suggested, the window's caption and note, the save's messages and the saved FITS's
+    /// HISTORY lines, each of which fits its card's 72 characters.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R146_TheCurvesTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var texts = new List<string>();
+        foreach (Raster r in new[] { StripeScene(), StripeScene(peak: 0.95f), BandScene(), Scenes.DarkSky(), SyntheticRasters.Flat(64, 64, 0.2f) })
+        {
+            CurveSet set = Suggest(AnalysisRun.Execute(r, "memorie", Scenes.OnBuiltForPaper()));
+            texts.Add(set.SourceSentence);
+            texts.Add(set.Problem);
+            foreach (CurveSuggestion s in set.Suggestions)
+            {
+                texts.AddRange(CurveTexts.EvidenceLines(s));
+                texts.AddRange(CurveTexts.History(s.Name, s.Curve));
+            }
+        }
+        foreach (DustMethod method in new[] { DustMethod.Band, DustMethod.Sky })
+            foreach (bool colour in new[] { true, false })
+            {
+                texts.Add(CurveTexts.CurveCaption(colour));
+                texts.Add(CurveTexts.PointsNote(method, colour));
+            }
+        texts.AddRange(new[]
+        {
+            CurveTexts.NoMonotoneCurve, CurveTexts.GamutNeedsProfile, CurveTexts.GamutUnreadable("x"), CurveTexts.InputGone("x.fit"),
+            CurveTexts.ValuesDoNotFit(123, 16, 0), CurveTexts.AnchorsNotIncreasing("cer", 0.13, "nebuloasa", 0.12),
+            CurveTexts.ClassEmpty("varfuri"), CurveTexts.PeaksOverTarget("varfuri", 0.95),
+        });
+
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(ancor\w*|anchors?|percentil\w*|median\w*|LSB|panta|slope|clas[ae]|clasele|class|classes|modelat|modelled|vizibilitate|visibility|plafon|ceiling|crescatoare|increasing|codarea|encoding|gamutul hartiei|paper gamut|control points|puncte de control)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts.Where(t => t != null), t => Assert.False(methodWords.IsMatch(t), t));
+        Assert.All(CurveTexts.History("Puternica", Curve(Earlier)), line => Assert.True(line.Length <= 72, line));
     }
 }

@@ -1104,7 +1104,7 @@
       "measuredOn": "2026-10-06",
       "expected": {
         "curves.method": "Sky",
-        "curves.problem": "Nu se sugereaza nicio curba: ancora \"varfuri\" e deja la 0.971, la sau peste tinta 0.92 la care ajung varfurile dupa o curba. Nu mai e loc de contrast fara sa cobori ceva, iar curbele sugerate nu coboara niciun punct: imaginea e deja la plafon.",
+        "curves.problem": "Nu se sugereaza nicio curba: punctul \"varfuri\" e deja la 0.971, la sau peste 0.92, unde ajung varfurile dupa o curba. Nu mai e loc de contrast fara sa cobori ceva, iar curbele sugerate nu coboara niciun punct: imaginea e deja cat de luminoasa poate fi.",
         "curves.count": 0,
         "curves.names": "",
         "curves.previewWidth": 522,

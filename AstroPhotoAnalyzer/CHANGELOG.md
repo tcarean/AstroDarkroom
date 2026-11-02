@@ -46,6 +46,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Editare Curbe tab and the curve window explain themselves in plain words (R-146, ADR 0076):
+  "Punctele curbei vin din felurile de dale ale tabului Tonuri" instead of "Ancorele vin din
+  clasele", "cat de tare urca curba in dreptul cerului" for the curve's slope, the noise in levels,
+  "culorile pe care le poate reda hartia (gamutul)", "imaginea e deja cat de luminoasa poate fi";
+  the saved FITS's `HISTORY` lines are reworded the same way. The curves and the figures are
+  unchanged.
 - The Culoare tab explains itself in plain words (R-116, ADR 0075), and so does Appendix E of the
   report: "Cat de departe e de un gri (croma; a*, b*)", "Verde fata de rosu si albastru", the zones'
   differences "fata de cer", "(doar 14 % cer: masurat pe toti pixelii)"; two texts that sent the

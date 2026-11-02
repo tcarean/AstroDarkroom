@@ -38,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <TextBlock Text="{local:T En='Contrast curves for:', Ro='Curbe de contrast pentru:'}" VerticalAlignment="Center" Margin="0,0,12,0" />
       <RadioButton Content="Print" GroupName="CurvePurpose" IsChecked="{Binding IsPrint}" Foreground="{StaticResource TextBr}"
                    VerticalAlignment="Center" Margin="0,0,14,0"
-                   ToolTip="{local:T En='The same curves; the evidence of each also gets the paper checks: the background, the noise against the print target, the gamut', Ro='Aceleasi curbe; dovada fiecareia primeste si verificarile de hartie: fundalul, zgomotul fata de tinta de print, gamutul'}" />
+                   ToolTip="{local:T En='The same curves; each one also gets the checks for paper: the background, the noise against the print target and the colours the paper cannot reproduce (the gamut)', Ro='Aceleasi curbe; la fiecare se adauga si verificarile pentru hartie: fundalul, zgomotul fata de tinta de print si culorile pe care hartia nu le poate reda (gamutul)'}" />
       <RadioButton Content="{local:T En='Screen', Ro='Ecran'}" GroupName="CurvePurpose" IsChecked="{Binding IsScreen}" Foreground="{StaticResource TextBr}"
                    VerticalAlignment="Center" Margin="0,0,20,0" ToolTip="{local:T En='The same curves, without the paper checks', Ro='Aceleasi curbe, fara verificarile de hartie'}" />
       <Button Content="{local:T En='Calculate', Ro='Calculeaza'}" Command="{Binding Calculate}" Padding="14,3"
@@ -127,7 +127,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </ItemsControl>
       <TextBlock Style="{StaticResource Faint}" Text="{Binding AnchorSource}" TextWrapping="Wrap" Margin="0,6,0,0" />
       <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
-                 Text="{local:T En='The curves do not move the dust or the sky: a background too low for paper is lifted at the stretch (the Tones tab). The preview is a reduced copy; the pixels are assumed to be sRGB.', Ro='Curbele nu muta praful si cerul: un fundal prea jos pentru hartie se ridica la stretch (tabul Tonuri). Previzualizarea e o copie redusa; pixelii sunt presupusi sRGB.'}" />
+                 Text="{local:T En='The curves do not move the dust and the sky: a background too dark for paper is lifted when you redo the stretch (see the Tones tab). The image here is a reduced copy; the program assumes the pixels are sRGB.', Ro='Curbele nu muta praful si cerul: un fundal prea intunecat pentru hartie se ridica atunci cand refaci stretch-ul (vezi tabul Tonuri). Imaginea de aici e o copie micsorata; programul presupune ca pixelii sunt sRGB.'}" />
       <!-- A fixed place, two lines high, for the save message: its appearance does not
            move the image. -->
       <Grid Height="34" Margin="0,4,0,0">

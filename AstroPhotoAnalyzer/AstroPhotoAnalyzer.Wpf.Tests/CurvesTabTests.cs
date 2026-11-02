@@ -62,7 +62,7 @@ public class CurvesTabTests
         Assert.Equal($"1 / {tab.Items.Count}", tab.Position);
         Assert.InRange(tab.Current.Image.PixelWidth, 1, 800);
         Assert.InRange(tab.Current.Image.PixelHeight, 1, 500);
-        Assert.Contains("clasele", tab.AnchorSource);
+        Assert.Contains("felurile de dale", tab.AnchorSource);
 
         // The original has no curve to show or to save.
         Assert.False(tab.OpenCurve.CanExecute(null));
@@ -206,8 +206,8 @@ public class CurvesTabTests
         Assert.True(tab.IsProblem);
         Assert.False(tab.HasGallery);
         Assert.Empty(tab.Items);
-        Assert.Contains($"tinta {Thresholds.CurvePeakTarget:0.00}", tab.Message);
-        Assert.Contains("clasele tabului Tonuri", tab.AnchorSource);
+        Assert.Contains($"la sau peste {Thresholds.CurvePeakTarget:0.00}, unde ajung varfurile", tab.Message);
+        Assert.Contains("felurile de dale ale tabului Tonuri", tab.AnchorSource);
 
         // A gallery clears the mark; so does opening another image.
         tab.Populate(Result());
@@ -250,9 +250,9 @@ public class CurvesTabTests
         }
 
         CurveWindowViewModel classes = Open(Result());
-        Assert.Contains("aceeasi curba pe R, G si B", classes.Caption);
-        Assert.Contains("L* e al dalelor clasei", classes.PointsNote);
-        Assert.Contains("clasele benzii", classes.PointsNote);
+        Assert.Contains("aceeasi pe R, G si B", classes.Caption);
+        Assert.Contains("L* e luminozitatea dalelor de fiecare fel", classes.PointsNote);
+        Assert.Contains("felurile de dale ale benzii Caii Lactee", classes.PointsNote);
         Assert.Contains(classes.Rows, r => r.Label == "banda");
 
         // A mono frame without a WCS: no R, G and B to speak of, and the sky-relative classes behind the points.
@@ -260,7 +260,7 @@ public class CurvesTabTests
         CurveWindowViewModel frame = Open(AnalysisRun.Execute(mono, "memorie", Scenes.OnBuiltForPaper()));
         Assert.DoesNotContain("R, G si B", frame.Caption);
         Assert.DoesNotContain("R, G si B", frame.PointsNote);
-        Assert.Contains("clase relative la cerul modelat", frame.PointsNote);
+        Assert.Contains("dalele impartite prin comparatie cu cerul", frame.PointsNote);
         Assert.Contains(frame.Rows, r => r.Label == "nebuloasa stralucitoare");
     }
 
