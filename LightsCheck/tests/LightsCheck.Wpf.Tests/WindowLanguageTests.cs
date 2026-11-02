@@ -307,6 +307,39 @@ public class WindowLanguageTests
         }
     }
 
+    /// <summary>
+    /// The rendered Rejected tab, its heading line, paragraphs, button note and the frames'
+    /// reasons, on a session with an unread frame, names none of the method's words, in either
+    /// language (R-081).
+    /// </summary>
+    [Fact]
+    public async Task R081_TheRejectedTabUsesNoneOfTheMethodsWords()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);
+        try
+        {
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                Ui.Default = language;
+                await _sta.InvokeAsync(async () =>
+                {
+                    MainViewModel vm = new();
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+                    foreach (string text in Texts(Render(new RejectedView { DataContext = vm }, null)))
+                    {
+                        PlainWords.AssertPlain(text.Replace(f.Root, "", StringComparison.Ordinal), $"the Rejected tab ({language})");
+                    }
+                });
+            }
+        }
+        finally
+        {
+            Ui.Default = UiLanguage.Romanian;
+        }
+    }
+
     [Fact]
     public async Task R063_TheSameWindowInRomanianStillShowsRezumat()
     {
@@ -454,6 +487,7 @@ public class WindowLanguageTests
         "alinia", "comune", "obisnuit", "semnaleaza", "vecine", "putine", "stivuire", "satelit", "referinta", "adica", "ceata", "scoate",
         "citeste", "marite", "rotunde", "alungite", "sfarsitul", "paranteza", "sageata", "incotro", "grupul", "negru", "imaginii", "catelea",
         "intinse", "galbena", "rosie", "rasare", "poluar", "trecatoare", "punctata", "numerele", "culoarea",
+        "hotarasti", "angrenaj", "gresita", "acestor", "lovitur", "in stiva",
     ];
 
     /// <summary>The English texts hold none of the Romanian words.</summary>

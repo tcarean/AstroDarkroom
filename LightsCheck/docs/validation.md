@@ -95,6 +95,12 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-02, fourth run: the Rejected tab and the console's REJECTED line in plain words (R-081,
+  ADR 0036); all 13 cases re-run with `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Failed:
+  2, Passed: 11, Skipped: 0, Total: 13, Duration: 7 m 31 s`. V-008 (`polarErrorMax: the frame
+  yielded no figure (null)`) and V-011 (`frame 2: cell 'RA 5 px', expected 'RA 5 px ← V'`)
+  failed as in the runs below, the solved `result.fit` still being in `procesate\`. No figure
+  moved.
 - 2026-11-02, third run: the Frames tab and the reasons in plain words (R-079, ADR 0034); all 13
   cases re-run with `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Failed: 2, Passed: 11,
   Skipped: 0, Total: 13, Duration: 6 m 18 s`. V-008 (`polarErrorMax: the frame yielded no figure

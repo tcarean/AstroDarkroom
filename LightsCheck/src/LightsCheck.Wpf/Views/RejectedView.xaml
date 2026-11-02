@@ -47,7 +47,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </ItemsControl.ItemTemplate>
         </ItemsControl>
         <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,10" TextWrapping="Wrap"
-                   Text="{local:T En='The \&quot;Write the files...\&quot; button in the top bar also saves the list of names (lightscheck-rejected.txt), one per line, to take out of the sequence in Siril.', Ro='Butonul \&quot;Scrie fisierele...\&quot; din bara de sus salveaza si lista numelor (lightscheck-rejected.txt), cate unul pe linie, de scos din secventa in Siril.'}" />
+                   Text="{local:T En='The \&quot;Write the files...\&quot; button in the top bar also saves the names of these frames in a file (lightscheck-rejected.txt), one per line, so you can take them out of the sequence in Siril.', Ro='Butonul \&quot;Scrie fisierele...\&quot; din bara de sus salveaza si numele acestor cadre intr-un fisier (lightscheck-rejected.txt), cate unul pe rand, ca sa le scoti din secventa in Siril.'}" />
         <ItemsControl ItemsSource="{Binding Rejected}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>

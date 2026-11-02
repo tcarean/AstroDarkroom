@@ -66,7 +66,7 @@ Copyright (C) 2026 Tudor Carean
     pattern fix        : tarie 0.0 ADU pe R (0 % din zgomotul unui cadru), 0.0 pe G1 (0 %), 0.0 pe G2 (0 %), 0.0 pe B (0 %); 0 pixeli calzi la un milion de pixeli, adica cei de peste 10 ori zgomotul unui cadru (din 9 cadre, pe 480 x 480 px din centru); 2 dark-uri in darks\, cu care Siril scoate pattern-ul
     verdict            : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; 3 miscari la 9 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe
 
-  RESPINSE (1 cadre slabe, 1 necitite; cele la limita raman la alegerea ta)
+  RESPINSE (1 cadru slab si 1 cadru necitit; cele la limita raman in stiva, la alegerea ta)
       7  DSC_0007.fit          alungire 1.76 (de la 1.60 cadrul e slab), dara la 90 grade
       9  DSC_0009.fit          nu s-a putut citi: FITS: fisierul nu incepe cu SIMPLE.
 

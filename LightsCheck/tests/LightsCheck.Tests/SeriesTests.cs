@@ -354,6 +354,35 @@ public class SeriesTests
         }
     }
 
+    /// <summary>
+    /// The Rejected heading counts the bad and the unread frames, singular for one, on the
+    /// pattern session (2 bad) and the classes session with an unreadable frame (1 bad, 1 unread),
+    /// and neither it nor the explanation's paragraphs name any of the method's words, in either
+    /// language (R-081).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R081_TheRejectedHeadingAndExplanationAreInPlainWords(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        SeriesResult pattern = RunPattern();
+        using SessionFixture classes = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(classes.LightsDir, "DSC_0009.fit"), new byte[100]);
+        SeriesResult mixed = SeriesRun.Run(classes.Root, new SeriesOptions(Threads: 2));
+
+        Assert.Equal(
+            english ? "2 bad frames; the marginal ones stay in the stack, your choice" : "2 cadre slabe; cele la limita raman in stiva, la alegerea ta",
+            SeriesReport.RejectedHeading(pattern));
+        Assert.Equal(
+            english ? "1 bad frame and 1 unread frame; the marginal ones stay in the stack, your choice" : "1 cadru slab si 1 cadru necitit; cele la limita raman in stiva, la alegerea ta",
+            SeriesReport.RejectedHeading(mixed));
+        foreach (string text in SeriesReport.RejectedExplanation.Select(p => p.Text).Append(SeriesReport.RejectedHeading(mixed)))
+        {
+            PlainWords.AssertPlain(text, "the Rejected tab");
+        }
+    }
+
     [Fact]
     public void R019_TheDitherPatternIsReadBack()
     {
@@ -510,7 +539,7 @@ public class SeriesTests
         IReadOnlyList<ReportParagraph> paragraphs = SeriesReport.RejectedExplanation;
         Assert.True(paragraphs.Count >= 3, "fewer than three paragraphs");
         ReportParagraph bold = Assert.Single(paragraphs, p => p.Emphasis);
-        Assert.StartsWith("Dara pe RA", bold.Text, StringComparison.Ordinal);
+        Assert.StartsWith("O dara pe RA", bold.Text, StringComparison.Ordinal);
         Assert.Contains("pe DEC", bold.Text, StringComparison.Ordinal);
 
         IReadOnlyList<ReportTable> t = SeriesReport.DitherTables(r);
