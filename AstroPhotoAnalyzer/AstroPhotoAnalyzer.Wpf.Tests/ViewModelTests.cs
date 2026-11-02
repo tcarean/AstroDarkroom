@@ -366,4 +366,44 @@ public class ViewModelTests
         Assert.Equal(5, reduced.PixelWidth);
         Assert.Equal(5, reduced.PixelHeight);
     }
+
+    /// <summary>
+    /// R-116 (ADR 0075): the Culoare tab's texts and Appendix E of the text report are in plain
+    /// words, in both languages, on the dark scene (the tint's figures, a coloured corner measured
+    /// on every pixel) and on the mono sky: the rows' names, notes and descriptions, the zones'
+    /// rows, the guide and the appendix's lines use none of the method's words, and none sends the
+    /// reader to a tab called Fundal, which does not exist (ADR 0013).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R116_TheColourTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        var texts = new List<string>();
+        foreach (Raster raster in new[] { Scenes.DarkSky(), Scenes.MonoSky() })
+        {
+            AnalysisResult result = Result(raster);
+            var colour = new BackgroundTabViewModel();
+            colour.Populate(result);
+            texts.AddRange(colour.Rows.SelectMany(r => new[] { r.Label, r.Note, r.Description }).Where(t => t != null));
+            texts.AddRange(colour.RegionRows);
+            texts.AddRange(colour.Guide.SelectMany(g => new[] { g.Lead, g.Text }));
+            var report = new System.IO.StringWriter();
+            ReportWriter.WriteFull(result, report);
+            string[] lines = report.ToString().Split('\n');
+            int e = Array.FindIndex(lines, l => l.StartsWith(Tr.Pick("Appendix E.", "Anexa E.")));
+            int f = Array.FindIndex(lines, l => l.StartsWith(Tr.Pick("Appendix F.", "Anexa F.")));
+            Assert.True(e > 0 && f > e, "the report has Appendix E before Appendix F");
+            texts.AddRange(lines.Skip(e + 1).Take(f - e - 1));
+        }
+
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(median\w*|delta|sqrt|abatere\w*|departure\w*|regiun\w*|regions?|gradient\w*|mono|stretch-uit\w*|tabul Fundal|Background tab)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts, t => Assert.False(methodWords.IsMatch(t), t));
+        Assert.Contains(texts, t => t == Tr.Pick("How far from a grey (chroma; a*, b*)", "Cat de departe e de un gri (croma; a*, b*)"));
+        Assert.Contains(texts, t => t.Contains(Tr.Pick("against the sky", "fata de cer")));
+        Assert.Contains(texts, t => t.Contains(Tr.Pick("% sky: measured on every pixel)", "% cer: masurat pe toti pixelii)")));
+    }
 }

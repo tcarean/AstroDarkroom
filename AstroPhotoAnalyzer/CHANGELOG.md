@@ -46,6 +46,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Culoare tab explains itself in plain words (R-116, ADR 0075), and so does Appendix E of the
+  report: "Cat de departe e de un gri (croma; a*, b*)", "Verde fata de rosu si albastru", the zones'
+  differences "fata de cer", "(doar 14 % cer: masurat pe toti pixelii)"; two texts that sent the
+  reader to a "Fundal" tab, which does not exist, name the Tonuri tab. The figures are unchanged.
 - The Export tab explains itself in plain words (R-114, ADR 0074), and so does Appendix C of the
   report: "Zone plate pe cerul trecut pe 8 biti" instead of "Palier pe cerul cuantizat", the noise in
   levels, "pastreaza originalul pe 16 biti", "calitate 100" for q100; the JPEG table's figures and

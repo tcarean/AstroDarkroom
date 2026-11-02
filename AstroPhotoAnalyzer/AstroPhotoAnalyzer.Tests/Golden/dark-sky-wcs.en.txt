@@ -104,15 +104,15 @@ Appendix D. Resolution and size
     the wall chooses the size; give a viewing distance so that the program can choose one
 
 Appendix E. Background colour
-  background colour, R / G / B (0..255): 20.4 / 22.4 / 20.4; G - (R+B)/2 = +2.0; R - B = 0.0; L* 7.2, a* -1.4, b* +1.0, chroma 1.7; from the sky patches above the bottom band
-  upper-left corner  20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
-  upper-right corner 20.4 / 22.3 / 20.4     delta 0.0 / -0.1 / 0.0
-  lower-left corner  20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
-  lower-right corner 30.4 / 22.4 / 12.4     delta +9.9 / 0.0 / -8.0  (sky 14 %: every pixel)  !
-  top edge           20.2 / 22.1 / 20.1     delta -0.3 / -0.3 / -0.3
-  bottom edge        20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
-  left edge          20.5 / 22.5 / 20.5     delta 0.0 / +0.1 / +0.1
-  right edge         20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
+  background colour, R / G / B (0..255): 20.4 / 22.4 / 20.4; green over red and blue +2.0; red over blue 0.0; L* 7.2, a* -1.4, b* +1.0, how far from a grey (chroma) 1.7; measured on the sky patches above the bottom band
+  upper-left corner  20.4 / 22.4 / 20.4     against the sky 0.0 / 0.0 / 0.0
+  upper-right corner 20.4 / 22.3 / 20.4     against the sky 0.0 / -0.1 / 0.0
+  lower-left corner  20.4 / 22.4 / 20.4     against the sky 0.0 / 0.0 / 0.0
+  lower-right corner 30.4 / 22.4 / 12.4     against the sky +9.9 / 0.0 / -8.0  (only 14 % sky: measured on every pixel)  !
+  top edge           20.2 / 22.1 / 20.1     against the sky -0.3 / -0.3 / -0.3
+  bottom edge        20.5 / 22.5 / 20.5     against the sky +0.1 / +0.1 / +0.1
+  left edge          20.5 / 22.5 / 20.5     against the sky 0.0 / +0.1 / +0.1
+  right edge         20.5 / 22.5 / 20.5     against the sky +0.1 / +0.1 / +0.1
 
 Appendix F. Parameters
   medium baryta, Dmax 2.0 (explicit); widths 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, frame 3 cm

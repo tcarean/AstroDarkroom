@@ -85,15 +85,15 @@ Appendix D. Resolution and size
   no recommended row: without stars it is not known how much detail the image holds, only that the pixels do not show (threshold 180 dpi) - a limit of the file, not of the image
 
 Appendix E. Background colour
-  the background, one channel (0..255): 64.0; from the sky patches above the bottom band
-  upper-left corner  64.0                   delta 0.0
-  upper-right corner 64.0                   delta 0.0
-  lower-left corner  64.0                   delta 0.0
-  lower-right corner 64.0                   delta 0.0
-  top edge           64.0                   delta 0.0
-  bottom edge        64.0                   delta 0.0
-  left edge          64.0                   delta 0.0
-  right edge         64.0                   delta 0.0
+  the background, one channel (0..255): 64.0; measured on the sky patches above the bottom band
+  upper-left corner  64.0                   against the sky 0.0
+  upper-right corner 64.0                   against the sky 0.0
+  lower-left corner  64.0                   against the sky 0.0
+  lower-right corner 64.0                   against the sky 0.0
+  top edge           64.0                   against the sky 0.0
+  bottom edge        64.0                   against the sky 0.0
+  left edge          64.0                   against the sky 0.0
+  right edge         64.0                   against the sky 0.0
 
 Appendix F. Parameters
   medium baryta, Dmax 2.4; widths 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, frame 3 cm

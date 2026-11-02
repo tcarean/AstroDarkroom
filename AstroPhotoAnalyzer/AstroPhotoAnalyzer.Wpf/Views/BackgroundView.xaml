@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='CORNERS AND EDGES, AGAINST THE BACKGROUND (R / G / B, levels); ! = over the threshold, coloured or neutral', Ro='COLTURI SI LATURI, FATA DE FUNDAL (R / G / B, niveluri); ! = peste prag, colorat sau neutru'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='CORNERS AND EDGES, AGAINST THE REST OF THE SKY (R / G / B, in levels); ! = differs over the threshold: coloured or neutral', Ro='COLTURILE SI MARGINILE, FATA DE RESTUL CERULUI (R / G / B, in niveluri); ! = difera peste prag: colorat sau neutru'}" />
           <ItemsControl ItemsSource="{Binding RegionRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
           <ItemsControl ItemsSource="{Binding Guide}" ItemTemplate="{StaticResource GuideParagraphTemplate}" Margin="0,10,0,0" />
         </StackPanel>
