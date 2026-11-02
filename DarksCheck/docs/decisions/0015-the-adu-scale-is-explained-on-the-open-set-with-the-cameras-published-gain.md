@@ -1,7 +1,7 @@
 # 0015. The ADU scale is explained on the open set, with the camera's published gain
 
 Date: 2026-10-20
-Status: accepted 2026-10-20
+Status: accepted 2026-10-20; the words of the provenance and the row name gasit superseded by 0028
 
 ## Context
 

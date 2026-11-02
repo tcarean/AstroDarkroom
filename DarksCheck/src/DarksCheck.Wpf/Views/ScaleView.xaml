@@ -27,7 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="{Binding ScaleTitle}" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,8" TextWrapping="Wrap"
-                     Text="{l:T En='What one ADU is worth on the open set: the file scale, the normalisation, the noises, the thresholds and what was found, in raw ADU, ADU-eq and electrons.', Ro='Cat valoreaza un ADU pe setul deschis: scara fisierului, normalizarea, zgomotele, pragurile si ce s-a gasit, in ADU brut, ADU-eq si electroni.'}" />
+                     Text="{l:T En='ADU is the unit in which the file writes how bright each pixel is. Here you see what 1 ADU means on the open set: how much the file holds, how much noise there is, where the thresholds start and what was found.', Ro='ADU e unitatea in care fisierul scrie cat de luminos e fiecare pixel. Aici vezi ce inseamna 1 ADU pe setul deschis: cat incape in fisier, cat zgomot e, de unde incep pragurile si ce s-a gasit.'}" />
           <ItemsControl ItemsSource="{Binding ScaleRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>

@@ -191,3 +191,7 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   10, Passed: 10, Total time: 10.0908 Minutes`; no figure moved outside its tolerance. The final
   version leaves `Analysis/` and `Session/` as they were: the check sits in the reader's
   failure path (LightsCheck's hunk).
+- 2026-11-02: after the ADU scale section in plain words (R-081, ADR 0028: words only, in
+  `Report/ScaleReport.cs` and `Analysis/CameraFacts.cs`; no formula or constant changed), all ten
+  cases re-run with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed:
+  10, Total time: 10.0383 Minutes`; no figure moved outside its tolerance.

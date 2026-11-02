@@ -87,44 +87,50 @@ Copyright (C) 2026 Tudor Carean
       3  light_0003.fit        23:46:23   500.0    6.41        245       20    0.504  0.484  0.528
 
   EXPLICATII SCARA ADU
-    fisier             : 16 biti, 0 .. 65535 ADU; negrul la 200, albul la 65535: semnal util 0 .. 65335 ADU
-    1 ADU-eq           : 1 ADU brut: setul e la ISO 400, 120.0 s, scara de referinta (ISO 400 si 120 s)
-    cuantizare         : pas 1 ADU langa negru
-    electroni          : 1 ADU = 2.07 e- la ISO 400 (Nikon D3300, photonstophotos.net din curbele DxOMark, citit 2026-10-20; metoda supraestimeaza castigul pe senzorii mici); 1 ADU-eq = 1.00 ADU = 2.1 e-; full well 34446 e-, QE 56 %
-    zgomot de citire   : 2.03 ADU pe pixel (G1, din bias-uri) = 4.2 e-
-    zgomot pe cadru    : sigma 3.01 ADU pe pixel pe un dark; curentul de intuneric median -0.03 ADU la ISO 400, 120.0 s
-    zgomot in master   : dark: 1.89 ADU pe pixel (mediana a 4 cadre); stack lights: 4.2 ADU pe pixel cu media, 5.0 cu mediana (3 lights; cu zgomotul masterului dark inclus)
-    praguri pe set     : pixel fierbinte 20 ADU-eq = 20 ADU; scurgere pe harta 1.0 ADU-eq = 1.0 ADU; lumina constanta pe o latura 0.15 ADU-eq = 0.15 ADU; lumina pe un cadru 0.1 ADU-eq = 0.10 ADU
-    gasit              : nimic peste praguri
-    cer                : mediana 500.0 ADU peste negru pe un light (G1, 3 lights), sigma 6.4 ADU pe pixel
-    saturatie          : 65535 ADU (34446 e- full well dupa sursa)
+    fisier             : valori de la 0 la 65535 ADU (16 biti); negrul camerei e la 200 si albul la 65535, deci pentru lumina raman 0 .. 65335 ADU
+    1 ADU-eq           : 1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s
+    pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU
+    electroni          : la ISO 400, 1 ADU = 2.07 electroni (senzorul transforma lumina in electroni, iar camera ii numara in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electroni; intr-un pixel incap 34446 electroni (full well), iar pixelul prinde 56 % din lumina care cade pe el (QE). Cifre pentru Nikon D3300 de pe photonstophotos.net, scoase din masuratorile DxOMark, citite pe 2026-10-20; la senzorii mici metoda da prea multi electroni pe ADU.
+    zgomot de citire   : 2.03 ADU pe pixel = 4.2 electroni: zgomotul pe care camera il adauga cand citeste senzorul, masurat pe bias-uri (pixelii verzi G1)
+    zgomot pe un dark  : un dark are 3.01 ADU de zgomot pe pixel; curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e -0.03 ADU la ISO 400, 120.0 s
+    zgomot in master   : masterul dark, facut din 4 cadre, mai are 1.89 ADU de zgomot pe pixel; stack-ul celor 3 lights are 4.2 ADU pe pixel daca il faci cu media si 5.0 daca il faci cu mediana (cu zgomotul masterului dark inclus)
+    praguri pe set     : pixel fierbinte: peste 20 ADU-eq (20 ADU in fisier); scurgere de lumina pe harta: peste 1.0 ADU-eq (1.0 ADU); lumina constanta pe o latura: peste 0.15 ADU-eq (0.15 ADU); lumina pe un singur cadru: peste 0.1 ADU-eq (0.10 ADU)
+    ce s-a gasit       : nimic peste praguri
+    cer                : pe un light, cerul e la 500.0 ADU peste negru, cu 6.4 ADU de zgomot pe pixel (pixelii verzi G1, din 3 lights)
+    saturatie          : la 65535 ADU pixelul e plin si nu mai poate creste; dupa sursa, intr-un pixel incap 34446 electroni (full well)
 
-    ADU e unitatea fisierului: pe 16 biti, de la 0 la 65535, cu negrul camerei la 200. ADU-eq e
-    ADU brut adus la ISO 400 si 120 s, ca seriile cu setari diferite sa se compare intre ele: pe
-    acest set 1 ADU-eq = 1.00 ADU brut. Un pas de cuantizare are 1 ADU, dar o medie pe multi
-    pixeli se masoara mult sub el, pentru ca zgomotul amesteca treptele.
+    ADU e unitatea in care fisierul scrie cat de luminos e fiecare pixel: aici numere intregi de
+    la 0 la 65535 (16 biti), cu negrul camerei la 200. ADU-eq e acelasi ADU recalculat ca si cum
+    cadrul ar fi fost facut la ISO 400 si 120 s, ca sa poti compara serii facute cu setari
+    diferite: pe acest set 1 ADU-eq = 1.00 ADU din fisier. Fisierul urca din 1 in 1 ADU, dar
+    media multor pixeli poate iesi si o fractiune de ADU, pentru ca zgomotul face ca unii pixeli
+    sa cada pe o treapta si altii pe urmatoarea.
 
-    O abatere din masterul dark (o scurgere de lumina, un offset) nu e zgomot: masterul se scade
-    din fiecare light, deci abaterea ramane intreaga in stack, oricate cadre ai aduna, pe cand
-    zgomotul aleator scade cu radacina numarului de cadre. Masterul dark, mediana a 4 cadre, mai
-    are 1.89 ADU pe pixel; cu el se compara o abatere, nu cu zgomotul unui cadru. Pe un singur
-    pixel, cei 3.0 ADU de zgomot ai unui dark acopera orice abatere sub 1 ADU; dar raportul
-    dintre o abatere si zgomot creste cu radacina numarului de pixeli priviti impreuna: pe un
-    petic de 50 x 50 e de 50 de ori mai mare decat pe un pixel, si o treapta de 1 ADU cu margine
-    dreapta se vede la o intindere tare pe cer intunecat.
+    O greseala din masterul dark nu e zgomot. De exemplu: lumina intrata in aparat, sau un nivel
+    de negru putin mutat. Masterul se scade din fiecare light, asa ca greseala ajunge intreaga
+    in stack, oricate cadre ai aduna. Zgomotul, in schimb, scade cand aduni cadre: de 4 ori mai
+    multe cadre il injumatatesc. Masterul dark, facut din 4 cadre, mai are 1.89 ADU de zgomot pe
+    pixel; cu acesta compari o greseala, nu cu zgomotul unui singur cadru. Pe un singur pixel,
+    cei 3.0 ADU de zgomot ai unui dark ascund orice greseala sub 1 ADU. Dar ochiul vede zone, nu
+    pixeli: intr-o zona de 50 x 50 pixeli zgomotul se compenseaza, iar greseala se vede de 50 de
+    ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta se vede cand
+    intinzi tare (stretch) un cer intunecat.
 
-    Fata de cer: un light al acestei sesiuni are 500.0 ADU peste negru, deci 1 ADU e 0.20 % din
-    cer, cam cat eroarea unui flat; in stack-ul celor 3 lights zgomotul pe pixel scade la 4.15
-    ADU cu media (5.01 cu mediana): 6.4 / sqrt(3) de la lights, plus zgomotul masterului dark
-    (1.89 ADU) in cuadratura, care nu se mediaza; iar un offset de 1 ADU din master ramane 1
-    ADU.
+    Fata de cer: pe un light al acestei sesiuni cerul e la 500.0 ADU peste negru, deci 1 ADU e
+    0.20 % din cer, cam cat greseste de obicei un flat. In stack-ul celor 3 lights zgomotul pe
+    pixel scade la 4.15 ADU daca il faci cu media (5.01 cu mediana). In cifra asta intra doua
+    zgomote. Al lights-urilor (6.4 ADU pe un light) scade cu cat aduni mai multe. Al masterului
+    dark (1.89 ADU) nu scade, pentru ca acelasi master se scade din toate lights-urile. Iar o
+    greseala de 1 ADU din master ramane 1 ADU in stack.
 
-    Pragurile: 20 ADU-eq pentru un pixel fierbinte; 1.0 ADU-eq pe harta pentru o scurgere
-    evidenta (nivelul analizei de mana); 0.15 ADU-eq si de 3 ori eroarea pentru lumina constanta
-    pe o latura; 0.1 ADU-eq si de 5 ori abaterea tipica pentru lumina pe un cadru. Ultimele doua
-    spun 'e lumina reala, masurata', nu 'se vede in imagine': la 0.15 ADU brut efectul e la
-    marginea vizibilului, la 1.0 ADU brut se vede; remedierea (ocularul acoperit, seria
-    refacuta) costa la fel in ambele cazuri.
+    Pragurile: un pixel e fierbinte peste 20 ADU-eq. Pe harta din tab-ul Harti, o scurgere de
+    lumina e evidenta peste 1.0 ADU-eq (pragul din analiza facuta de mana). Lumina constanta pe
+    o latura conteaza peste 0.15 ADU-eq, si doar daca e de peste 3 ori mai mare decat cat poate
+    gresi masuratoarea. Lumina pe un singur cadru conteaza peste 0.1 ADU-eq, si doar daca e de
+    peste 5 ori mai mare decat cat difera de obicei un cadru de celelalte. Ultimele doua praguri
+    spun 'aici e lumina reala, masurata', nu 'se vede in imagine': la 0.15 ADU in fisier abia
+    s-ar vedea, la 1.0 ADU se vede. Remediul e acelasi in ambele cazuri: acoperi vizorul si
+    refaci seria.
 --- stderr ---
 (progresul, omis)
 --- exit 0 ---

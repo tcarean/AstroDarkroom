@@ -38,10 +38,13 @@ namespace DarksCheck.Core;
 /// <param name="UnityIso">The measured ISO at which one electron makes one ADU.</param>
 internal sealed record CameraFacts(string Model, IReadOnlyList<(double Iso, double ElectronsPerAdu)> Gain, double FullWellElectrons, double ReadNoiseElectrons, double QuantumEfficiencyPercent, double UnityIso)
 {
-    /// <summary>The provenance, as the report prints it, in the run's language.</summary>
+    /// <summary>
+    /// The provenance with the source's caveat, in the run's language, as the report prints it after
+    /// "Figures for &lt;camera&gt; from" and in brackets (ADR 0028).
+    /// </summary>
     internal static string SourceWords => T(
-        "photonstophotos.net from the DxOMark curves, read 2026-10-20; the method overestimates the gain on small sensors",
-        "photonstophotos.net din curbele DxOMark, citit 2026-10-20; metoda supraestimeaza castigul pe senzorii mici");
+        "photonstophotos.net, worked out from DxOMark's measurements, read on 2026-10-20; on small sensors the method gives too many electrons per ADU",
+        "photonstophotos.net, scoase din masuratorile DxOMark, citite pe 2026-10-20; la senzorii mici metoda da prea multi electroni pe ADU");
 
     /// <summary>
     /// The D3300 on 12 bits: 2^y of the gain chart's y at nominal ISO 100 .. 25600 (3.136, 2.096,

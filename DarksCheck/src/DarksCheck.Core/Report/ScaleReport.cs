@@ -59,8 +59,9 @@ internal static class ScaleReport
     /// <param name="Gain">The electrons per ADU at the darks' ISO, or null when unknown.</param>
     /// <param name="BiasIso">The ISO of the first readable bias, or null.</param>
     /// <param name="Stack">The lights' sky figures, or null without lights.</param>
-    /// <param name="MasterNoise">The dark master's noise per pixel in raw ADU; NaN for a single
-    /// frame.</param>
+    /// <param name="MasterNoise">The dark master's noise per pixel in raw ADU; NaN only when the
+    /// frames' own noise could not be measured (a single frame gets a figure predicted from its
+    /// noise, R-024).</param>
     private sealed record Figures(
         DarkSeriesAnalysis Darks,
         int ReferencePlane,
@@ -110,31 +111,41 @@ internal static class ScaleReport
         return
         [
             new(T("file", "fisier"), g.Bits is int bits
-                ? T($"{bits} bits, 0 .. {F(d.White, 0)} ADU; black at {F(d.Black, 0)}, white at {F(d.White, 0)}: useful signal 0 .. {F(d.White - d.Black, 0)} ADU",
-                    $"{bits} biti, 0 .. {F(d.White, 0)} ADU; negrul la {F(d.Black, 0)}, albul la {F(d.White, 0)}: semnal util 0 .. {F(d.White - d.Black, 0)} ADU")
-                : T($"floating-point values, file scale 0 .. {F(d.White, 3)}; black at {F(d.Black, 3)}",
-                    $"valori in virgula mobila, scara fisierului 0 .. {F(d.White, 3)}; negrul la {F(d.Black, 3)}")),
+                ? T($"values from 0 to {F(d.White, 0)} ADU ({bits} bits); the camera's black is at {F(d.Black, 0)} and the white at {F(d.White, 0)}, so 0 .. {F(d.White - d.Black, 0)} ADU are left for light",
+                    $"valori de la 0 la {F(d.White, 0)} ADU ({bits} biti); negrul camerei e la {F(d.Black, 0)} si albul la {F(d.White, 0)}, deci pentru lumina raman 0 .. {F(d.White - d.Black, 0)} ADU")
+                : T($"values with decimals (floating point), from 0 to {F(d.White, 3)}; the black at {F(d.Black, 3)}",
+                    $"valori cu zecimale (virgula mobila), de la 0 la {F(d.White, 3)}; negrul la {F(d.Black, 3)}")),
             new("1 ADU-eq", !g.SettingsKnown
-                ? T("ISO or exposure unknown: ADU-eq is taken equal to raw ADU", "ISO sau expunere necunoscute: ADU-eq e luat egal cu ADU brut")
+                ? T("the files do not give the ISO or the exposure, so 1 ADU-eq is taken equal to 1 ADU in the file", "fisierele nu spun ISO-ul sau expunerea, deci 1 ADU-eq e luat egal cu 1 ADU din fisier")
                 : Math.Abs(g.Norm - 1) < 1e-9
-                    ? T($"1 raw ADU: the set is at {g.Settings}, the reference scale (ISO 400 and 120 s)", $"1 ADU brut: setul e la {g.Settings}, scara de referinta (ISO 400 si 120 s)")
-                    : T($"{F(g.Norm, 2)} raw ADU at {g.Settings} (ADU-eq is ADU brought to ISO 400 and 120 s)", $"{F(g.Norm, 2)} ADU brut la {g.Settings} (ADU-eq e ADU adus la ISO 400 si 120 s)")),
-            new(T("quantisation", "cuantizare"), T($"step of {d.QuantStep} ADU near the black", $"pas {d.QuantStep} ADU langa negru")),
+                    ? T($"1 ADU in the file: the set was taken at the reference settings themselves, {g.Settings}", $"1 ADU din fisier: setul e facut chiar la setarile de referinta, {g.Settings}")
+                    : T($"{F(g.Norm, 2)} ADU in the file at {g.Settings} (ADU-eq is the ADU as it would be at ISO 400 and 120 s)", $"{F(g.Norm, 2)} ADU din fisier la {g.Settings} (ADU-eq e ADU-ul recalculat ca pentru ISO 400 si 120 s)")),
+            new(T("value step", "pasul valorilor"), T($"near the black, the file's values go up {d.QuantStep} by {d.QuantStep} ADU", $"langa negru, valorile din fisier cresc din {d.QuantStep} in {d.QuantStep} ADU")),
             new(T("electrons", "electroni"), Electrons(g)),
             new(T("read noise", "zgomot de citire"), ReadNoise(r, g)),
-            new(T("noise per frame", "zgomot pe cadru"), FrameNoise(r, g)),
+            new(T("noise on one dark", "zgomot pe un dark"), FrameNoise(r, g)),
             MasterNoiseRow(g),
             new(T("this set's limits", "praguri pe set"), T(
-                $"hot pixel {F(Th.HotAdu, 0)} ADU-eq = {F(Th.HotAdu * g.Norm, 0)} ADU; leak on the map {F(Th.LeakAdu, 1)} ADU-eq = {F(Th.LeakAdu * g.Norm, 1)} ADU; constant light on a side {F(Th.LeakConstantAdu, 2)} ADU-eq = {F(Th.LeakConstantAdu * g.Norm, 2)} ADU; light on a frame {F(Th.LeakFrameAdu, 1)} ADU-eq = {F(Th.LeakFrameAdu * g.Norm, 2)} ADU",
-                $"pixel fierbinte {F(Th.HotAdu, 0)} ADU-eq = {F(Th.HotAdu * g.Norm, 0)} ADU; scurgere pe harta {F(Th.LeakAdu, 1)} ADU-eq = {F(Th.LeakAdu * g.Norm, 1)} ADU; lumina constanta pe o latura {F(Th.LeakConstantAdu, 2)} ADU-eq = {F(Th.LeakConstantAdu * g.Norm, 2)} ADU; lumina pe un cadru {F(Th.LeakFrameAdu, 1)} ADU-eq = {F(Th.LeakFrameAdu * g.Norm, 2)} ADU")),
+                $"hot pixel: above {F(Th.HotAdu, 0)} ADU-eq ({F(Th.HotAdu * g.Norm, 0)} ADU in the file); light leak on the map: above {F(Th.LeakAdu, 1)} ADU-eq ({F(Th.LeakAdu * g.Norm, 1)} ADU); constant light on a side: above {F(Th.LeakConstantAdu, 2)} ADU-eq ({F(Th.LeakConstantAdu * g.Norm, 2)} ADU); light on a single frame: above {F(Th.LeakFrameAdu, 1)} ADU-eq ({F(Th.LeakFrameAdu * g.Norm, 2)} ADU)",
+                $"pixel fierbinte: peste {F(Th.HotAdu, 0)} ADU-eq ({F(Th.HotAdu * g.Norm, 0)} ADU in fisier); scurgere de lumina pe harta: peste {F(Th.LeakAdu, 1)} ADU-eq ({F(Th.LeakAdu * g.Norm, 1)} ADU); lumina constanta pe o latura: peste {F(Th.LeakConstantAdu, 2)} ADU-eq ({F(Th.LeakConstantAdu * g.Norm, 2)} ADU); lumina pe un singur cadru: peste {F(Th.LeakFrameAdu, 1)} ADU-eq ({F(Th.LeakFrameAdu * g.Norm, 2)} ADU)")),
             Found(r, g),
             new(T("sky", "cer"), g.Stack is StackNoise st
-                ? T($"median {F(st.SkyAdu, 1)} ADU above the black on a light ({g.Plane}, {st.Lights} lights), sigma {F(st.SkySigmaAdu, 1)} ADU per pixel",
-                    $"mediana {F(st.SkyAdu, 1)} ADU peste negru pe un light ({g.Plane}, {st.Lights} lights), sigma {F(st.SkySigmaAdu, 1)} ADU pe pixel")
+                ? T($"on a light, the sky is at {F(st.SkyAdu, 1)} ADU above the black, with {F(st.SkySigmaAdu, 1)} ADU of noise per pixel ({PlaneWords(g.Plane)}, from {st.Lights} lights)",
+                    $"pe un light, cerul e la {F(st.SkyAdu, 1)} ADU peste negru, cu {F(st.SkySigmaAdu, 1)} ADU de zgomot pe pixel ({PlaneWords(g.Plane)}, din {st.Lights} lights)")
                 : T("no lights in the session", "fara lights in sesiune")),
-            new(T("saturation", "saturatie"), $"{F(d.White, 0)} ADU" + (g.Facts is null ? "" : T($" ({F(g.Facts.FullWellElectrons, 0)} e- full well, per the source)", $" ({F(g.Facts.FullWellElectrons, 0)} e- full well dupa sursa)"))),
+            new(T("saturation", "saturatie"), T($"at {F(d.White, 0)} ADU the pixel is full and cannot go higher", $"la {F(d.White, 0)} ADU pixelul e plin si nu mai poate creste")
+                + (g.Facts is null ? "" : T($"; per the source, a pixel holds {F(g.Facts.FullWellElectrons, 0)} electrons (full well)", $"; dupa sursa, intr-un pixel incap {F(g.Facts.FullWellElectrons, 0)} electroni (full well)"))),
         ];
     }
+
+    /// <summary>
+    /// The pixels a figure on the reference position was measured on, for the rows: its colour and
+    /// name when it is a green, its name alone otherwise (a colour order the file does not give).
+    /// </summary>
+    /// <param name="plane">The reference position's name, such as <c>G1</c> or <c>CFA[0,1]</c>.</param>
+    /// <returns>The words, in the run's language.</returns>
+    private static string PlaneWords(string plane) =>
+        plane.StartsWith('G') ? T($"the green pixels {plane}", $"pixelii verzi {plane}") : T($"the pixels {plane}", $"pixelii {plane}");
 
     /// <summary>The four paragraphs, with the set's numbers in them.</summary>
     /// <param name="r">The run's result; not null.</param>
@@ -145,47 +156,47 @@ internal static class ScaleReport
         Figures g = Figures.Of(r);
         DarkSeriesAnalysis d = g.Darks;
         string scale = g.Bits is int bits
-            ? T($"{bits} bits, from 0 to {F(d.White, 0)}, with the camera's black at {F(d.Black, 0)}", $"pe {bits} biti, de la 0 la {F(d.White, 0)}, cu negrul camerei la {F(d.Black, 0)}")
-            : T($"here floating-point values from 0 to {F(d.White, 3)}, with the black at {F(d.Black, 3)}", $"aici valori in virgula mobila de la 0 la {F(d.White, 3)}, cu negrul la {F(d.Black, 3)}");
+            ? T($"here whole numbers from 0 to {F(d.White, 0)} ({bits} bits), with the camera's black at {F(d.Black, 0)}", $"aici numere intregi de la 0 la {F(d.White, 0)} ({bits} biti), cu negrul camerei la {F(d.Black, 0)}")
+            : T($"here values with decimals (floating point) from 0 to {F(d.White, 3)}, with the black at {F(d.Black, 3)}", $"aici valori cu zecimale (virgula mobila) de la 0 la {F(d.White, 3)}, cu negrul la {F(d.Black, 3)}");
         // The camera the table does not know: the paragraph says so, not only the electrons row (ADR 0023).
         string unknownCamera = g.Facts is not null ? "" : T(
-            (g.First?.Camera is string cameraEn ? $" {cameraEn} is not in the application's table" : " The frames do not name the camera")
-            + ", so no figure of this section is given in electrons, and the source's full well and read noise are missing.",
-            (g.First?.Camera is string cameraRo ? $" Aparatul {cameraRo} nu e in tabelul aplicatiei" : " Cadrele nu spun aparatul")
-            + ", deci nicio cifra de aici nu e data in electroni, iar full well-ul si zgomotul de citire din sursa lipsesc.");
+            (g.First?.Camera is string cameraEn ? $" {cameraEn} is not in the application's table" : " The files do not say which camera took them")
+            + ", so no figure here is given in electrons, and the source's figures are missing: how many electrons a pixel holds (full well) and the read noise.",
+            (g.First?.Camera is string cameraRo ? $" Aparatul {cameraRo} nu e in tabelul aplicatiei" : " Fisierele nu spun ce aparat le-a facut")
+            + ", asa ca nicio cifra de aici nu e data in electroni si lipsesc cifrele din sursa: cati electroni incap intr-un pixel (full well) si zgomotul de citire.");
         string p1 = T(
-            $"ADU is the file's unit: {scale}. "
-            + $"ADU-eq is raw ADU brought to ISO 400 and 120 s, so that series taken with different settings compare with one another: on this set 1 ADU-eq = {F(g.Norm, 2)} raw ADU. "
-            + $"A quantisation step is {d.QuantStep} ADU, but a mean over many pixels is measured far below it, because the noise blends the steps.",
-            $"ADU e unitatea fisierului: {scale}. "
-            + $"ADU-eq e ADU brut adus la ISO 400 si 120 s, ca seriile cu setari diferite sa se compare intre ele: pe acest set 1 ADU-eq = {F(g.Norm, 2)} ADU brut. "
-            + $"Un pas de cuantizare are {d.QuantStep} ADU, dar o medie pe multi pixeli se masoara mult sub el, pentru ca zgomotul amesteca treptele.")
+            $"ADU is the unit in which the file writes how bright each pixel is: {scale}. "
+            + $"ADU-eq is the same ADU worked out as if the frame had been taken at ISO 400 and 120 s, so that you can compare series taken with different settings: on this set 1 ADU-eq = {F(g.Norm, 2)} ADU in the file. "
+            + $"The file goes up {d.QuantStep} by {d.QuantStep} ADU, but the mean of many pixels can come out as a fraction of an ADU, because the noise makes some pixels land on one step and others on the next.",
+            $"ADU e unitatea in care fisierul scrie cat de luminos e fiecare pixel: {scale}. "
+            + $"ADU-eq e acelasi ADU recalculat ca si cum cadrul ar fi fost facut la ISO 400 si 120 s, ca sa poti compara serii facute cu setari diferite: pe acest set 1 ADU-eq = {F(g.Norm, 2)} ADU din fisier. "
+            + $"Fisierul urca din {d.QuantStep} in {d.QuantStep} ADU, dar media multor pixeli poate iesi si o fractiune de ADU, pentru ca zgomotul face ca unii pixeli sa cada pe o treapta si altii pe urmatoarea.")
             + unknownCamera;
         string masterWords = double.IsNaN(g.MasterNoise) ? "" : T(
-            $" The dark master, the median of {d.Used} frames, still has {F(g.MasterNoise, 2)} ADU per pixel; a deviation is set against that, not against the noise of one frame.",
-            $" Masterul dark, mediana a {d.Used} cadre, mai are {F(g.MasterNoise, 2)} ADU pe pixel; cu el se compara o abatere, nu cu zgomotul unui cadru.");
+            $" The dark master, made of {d.Used} frames, still has {F(g.MasterNoise, 2)} ADU of noise per pixel; that is what you compare an error with, not the noise of a single frame.",
+            $" Masterul dark, facut din {d.Used} cadre, mai are {F(g.MasterNoise, 2)} ADU de zgomot pe pixel; cu acesta compari o greseala, nu cu zgomotul unui singur cadru.");
         string p2 = T(
-            "A deviation in the dark master (a light leak, an offset) is not noise: the master is subtracted from every light, so the deviation stays whole in the stack however many frames you add, while random noise falls with the square root of the number of frames."
+            "An error in the dark master is not noise. For example: light that got into the camera, or a black level moved a little. The master is subtracted from every light, so the error reaches the stack whole, however many frames you add. The noise, on the other hand, falls as you add frames: 4 times more frames halve it."
             + masterWords
-            + $" On a single pixel, the noise of one dark, {F(d.Noise.SigmaFrame, 1)} ADU, hides any deviation below 1 ADU; but the ratio of a deviation to the noise grows with the square root of the number of pixels looked at together: on a 50 x 50 patch it is 50 times larger than on one pixel, and a 1 ADU step with a straight edge shows under a hard stretch of a dark sky.",
-            "O abatere din masterul dark (o scurgere de lumina, un offset) nu e zgomot: masterul se scade din fiecare light, deci abaterea ramane intreaga in stack, oricate cadre ai aduna, pe cand zgomotul aleator scade cu radacina numarului de cadre."
+            + $" On a single pixel, the {F(d.Noise.SigmaFrame, 1)} ADU of noise of one dark hides any error below 1 ADU. But the eye sees areas, not pixels: on an area of 50 x 50 pixels the noise evens out, and the error shows 50 times better than on one pixel. That is why a step of 1 ADU with a straight edge shows when you stretch a dark sky hard.",
+            "O greseala din masterul dark nu e zgomot. De exemplu: lumina intrata in aparat, sau un nivel de negru putin mutat. Masterul se scade din fiecare light, asa ca greseala ajunge intreaga in stack, oricate cadre ai aduna. Zgomotul, in schimb, scade cand aduni cadre: de 4 ori mai multe cadre il injumatatesc."
             + masterWords
-            + $" Pe un singur pixel, cei {F(d.Noise.SigmaFrame, 1)} ADU de zgomot ai unui dark acopera orice abatere sub 1 ADU; dar raportul dintre o abatere si zgomot creste cu radacina numarului de pixeli priviti impreuna: pe un petic de 50 x 50 e de 50 de ori mai mare decat pe un pixel, si o treapta de 1 ADU cu margine dreapta se vede la o intindere tare pe cer intunecat.");
+            + $" Pe un singur pixel, cei {F(d.Noise.SigmaFrame, 1)} ADU de zgomot ai unui dark ascund orice greseala sub 1 ADU. Dar ochiul vede zone, nu pixeli: intr-o zona de 50 x 50 pixeli zgomotul se compenseaza, iar greseala se vede de 50 de ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta se vede cand intinzi tare (stretch) un cer intunecat.");
         string p3 = g.Stack is StackNoise st && st.SkyAdu > 0
             ? T(
-                $"Against the sky: a light of this session has {F(st.SkyAdu, 1)} ADU above the black, so 1 ADU is {F(100 / st.SkyAdu, 2)} % of the sky, about the error of a flat; "
-                + $"in the stack of the {st.Lights} lights the noise per pixel falls to {F(st.MeanStackAdu, 2)} ADU with the mean ({F(st.MedianStackAdu, 2)} with the median): {F(st.SkySigmaAdu, 1)} / sqrt({st.Lights}) from the lights, plus the dark master's noise ({F(st.MasterNoiseAdu, 2)} ADU) in quadrature, which does not average out; and an offset of 1 ADU in the master stays 1 ADU.",
-                $"Fata de cer: un light al acestei sesiuni are {F(st.SkyAdu, 1)} ADU peste negru, deci 1 ADU e {F(100 / st.SkyAdu, 2)} % din cer, cam cat eroarea unui flat; "
-                + $"in stack-ul celor {st.Lights} lights zgomotul pe pixel scade la {F(st.MeanStackAdu, 2)} ADU cu media ({F(st.MedianStackAdu, 2)} cu mediana): {F(st.SkySigmaAdu, 1)} / sqrt({st.Lights}) de la lights, plus zgomotul masterului dark ({F(st.MasterNoiseAdu, 2)} ADU) in cuadratura, care nu se mediaza; iar un offset de 1 ADU din master ramane 1 ADU.")
-            : T("Against the sky: the session has no lights, so the report cannot say how much 1 ADU is against your sky and how much noise stays in the stack; open the session with its lights and the rows `master noise` and `sky` are filled in.",
-                "Fata de cer: sesiunea nu are lights, deci raportul nu poate spune cat e 1 ADU fata de cerul tau si cat ramane zgomotul in stack; deschide sesiunea cu lights si randurile `zgomot in master` si `cer` se completeaza.");
+                $"Against the sky: on a light of this session the sky is at {F(st.SkyAdu, 1)} ADU above the black, so 1 ADU is {F(100 / st.SkyAdu, 2)} % of the sky, about as much as a flat is usually off. "
+                + $"In the stack of the {st.Lights} lights the noise per pixel falls to {F(st.MeanStackAdu, 2)} ADU if you make it with the mean ({F(st.MedianStackAdu, 2)} with the median). Two noises go into this figure. The lights' noise ({F(st.SkySigmaAdu, 1)} ADU on one light) falls the more lights you add. The dark master's noise ({F(st.MasterNoiseAdu, 2)} ADU) does not fall, because the same master is subtracted from every light. And an error of 1 ADU in the master stays 1 ADU in the stack.",
+                $"Fata de cer: pe un light al acestei sesiuni cerul e la {F(st.SkyAdu, 1)} ADU peste negru, deci 1 ADU e {F(100 / st.SkyAdu, 2)} % din cer, cam cat greseste de obicei un flat. "
+                + $"In stack-ul celor {st.Lights} lights zgomotul pe pixel scade la {F(st.MeanStackAdu, 2)} ADU daca il faci cu media ({F(st.MedianStackAdu, 2)} cu mediana). In cifra asta intra doua zgomote. Al lights-urilor ({F(st.SkySigmaAdu, 1)} ADU pe un light) scade cu cat aduni mai multe. Al masterului dark ({F(st.MasterNoiseAdu, 2)} ADU) nu scade, pentru ca acelasi master se scade din toate lights-urile. Iar o greseala de 1 ADU din master ramane 1 ADU in stack.")
+            : T("Against the sky: the session has no lights, so there is no saying how much 1 ADU is against your sky, nor how much noise stays in the stack. Open the session together with its lights and the rows `master noise` and `sky` are filled in.",
+                "Fata de cer: sesiunea nu are lights, deci nu se poate spune cat inseamna 1 ADU fata de cerul tau, nici cat zgomot ramane in stack. Deschide sesiunea impreuna cu lights-urile ei si randurile `zgomot in master` si `cer` se completeaza.");
         string p4 = T(
-            $"The thresholds: {F(Th.HotAdu, 0)} ADU-eq for a hot pixel; {F(Th.LeakAdu, 1)} ADU-eq on the map for an obvious leak (the level of the hand analysis); "
-            + $"{F(Th.LeakConstantAdu, 2)} ADU-eq and {F(Th.LeakConstantSigmas, 0)} times the error for constant light on a side; {F(Th.LeakFrameAdu, 1)} ADU-eq and {F(Th.LeakFrameSigmas, 0)} times the typical deviation for light on a frame. "
-            + $"The last two say 'this is real light, measured', not 'it shows in the image': at {F(Th.LeakConstantAdu * g.Norm, 2)} raw ADU the effect is at the edge of what can be seen, at {F(Th.LeakAdu * g.Norm, 1)} raw ADU it shows; the remedy (the eyepiece covered, the series taken again) costs the same in both cases.",
-            $"Pragurile: {F(Th.HotAdu, 0)} ADU-eq pentru un pixel fierbinte; {F(Th.LeakAdu, 1)} ADU-eq pe harta pentru o scurgere evidenta (nivelul analizei de mana); "
-            + $"{F(Th.LeakConstantAdu, 2)} ADU-eq si de {F(Th.LeakConstantSigmas, 0)} ori eroarea pentru lumina constanta pe o latura; {F(Th.LeakFrameAdu, 1)} ADU-eq si de {F(Th.LeakFrameSigmas, 0)} ori abaterea tipica pentru lumina pe un cadru. "
-            + $"Ultimele doua spun 'e lumina reala, masurata', nu 'se vede in imagine': la {F(Th.LeakConstantAdu * g.Norm, 2)} ADU brut efectul e la marginea vizibilului, la {F(Th.LeakAdu * g.Norm, 1)} ADU brut se vede; remedierea (ocularul acoperit, seria refacuta) costa la fel in ambele cazuri.");
+            $"The thresholds: a pixel is hot above {F(Th.HotAdu, 0)} ADU-eq. On the map of the Maps tab, a light leak is obvious above {F(Th.LeakAdu, 1)} ADU-eq (the threshold of the analysis made by hand). "
+            + $"Constant light on a side counts above {F(Th.LeakConstantAdu, 2)} ADU-eq, and only if it is more than {F(Th.LeakConstantSigmas, 0)} times what the measurement can be off by. Light on a single frame counts above {F(Th.LeakFrameAdu, 1)} ADU-eq, and only if it is more than {F(Th.LeakFrameSigmas, 0)} times what a frame usually differs from the others. "
+            + $"The last two thresholds say 'this is real light, measured', not 'it shows in the image': at {F(Th.LeakConstantAdu * g.Norm, 2)} ADU in the file it would barely show, at {F(Th.LeakAdu * g.Norm, 1)} ADU it shows. The remedy is the same in both cases: cover the viewfinder and take the series again.",
+            $"Pragurile: un pixel e fierbinte peste {F(Th.HotAdu, 0)} ADU-eq. Pe harta din tab-ul Harti, o scurgere de lumina e evidenta peste {F(Th.LeakAdu, 1)} ADU-eq (pragul din analiza facuta de mana). "
+            + $"Lumina constanta pe o latura conteaza peste {F(Th.LeakConstantAdu, 2)} ADU-eq, si doar daca e de peste {F(Th.LeakConstantSigmas, 0)} ori mai mare decat cat poate gresi masuratoarea. Lumina pe un singur cadru conteaza peste {F(Th.LeakFrameAdu, 1)} ADU-eq, si doar daca e de peste {F(Th.LeakFrameSigmas, 0)} ori mai mare decat cat difera de obicei un cadru de celelalte. "
+            + $"Ultimele doua praguri spun 'aici e lumina reala, masurata', nu 'se vede in imagine': la {F(Th.LeakConstantAdu * g.Norm, 2)} ADU in fisier abia s-ar vedea, la {F(Th.LeakAdu * g.Norm, 1)} ADU se vede. Remediul e acelasi in ambele cazuri: acoperi vizorul si refaci seria.");
         return [p1, p2, p3, p4];
     }
 
@@ -277,7 +288,7 @@ internal static class ScaleReport
         {
             string stackWords = $"{F(st.MeanStackAdu, 1)} ADU";
             bold.Add(stackWords);
-            words += T($" and {F(rawAdu / st.MeanStackAdu, 2)} times the lights stack's ({stackWords})", $" si {F(rawAdu / st.MeanStackAdu, 2)} din al stack-ului de lights ({stackWords})");
+            words += T($" and {F(rawAdu / st.MeanStackAdu, 2)} times the noise of the lights stack ({stackWords})", $" si {F(rawAdu / st.MeanStackAdu, 2)} din zgomotul stack-ului de lights ({stackWords})");
         }
 
         return (words, bold);
@@ -288,29 +299,30 @@ internal static class ScaleReport
     /// the lights' stack's, both bold (ADR 0016).
     /// </summary>
     /// <param name="g">The set's figures.</param>
-    /// <returns>The row; UNMEASURED (NEMASURAT) for a single frame.</returns>
+    /// <returns>The row; UNMEASURED (NEMASURAT) when the master's noise is NaN.</returns>
     private static ReportRow MasterNoiseRow(Figures g)
     {
         if (double.IsNaN(g.MasterNoise))
         {
-            return new(MasterNoiseLabel, T("UNMEASURED: a single frame has no master whose noise could be measured", "NEMASURAT: un singur cadru nu are master cu zgomot de masurat"));
+            return new(MasterNoiseLabel, T("UNMEASURED: with a single frame there is no master, and so no master noise", "NEMASURAT: cu un singur cadru nu exista master, deci nici zgomotul lui"));
         }
 
         string dark = $"{F(g.MasterNoise, 2)} ADU";
         List<string> bold = [dark];
-        string darkWords = T($"dark: {dark} per pixel (median of {g.Darks.Used} frames", $"dark: {dark} pe pixel (mediana a {g.Darks.Used} cadre") + (Math.Abs(g.Norm - 1) < 1e-9 ? ")" : $"; {F(g.MasterNoise / g.Norm, 2)} ADU-eq)");
+        string eq = Math.Abs(g.Norm - 1) < 1e-9 ? "" : $" ({F(g.MasterNoise / g.Norm, 2)} ADU-eq)";
+        string darkWords = T($"the dark master, made of {g.Darks.Used} frames, still has {dark}{eq} of noise per pixel", $"masterul dark, facut din {g.Darks.Used} cadre, mai are {dark}{eq} de zgomot pe pixel");
         string stackWords;
         if (g.Stack is StackNoise st)
         {
             string mean = $"{F(st.MeanStackAdu, 1)} ADU";
             bold.Add(mean);
             stackWords = T(
-                $"lights stack: {mean} per pixel with the mean, {F(st.MedianStackAdu, 1)} with the median ({st.Lights} lights; the dark master's noise included)",
-                $"stack lights: {mean} pe pixel cu media, {F(st.MedianStackAdu, 1)} cu mediana ({st.Lights} lights; cu zgomotul masterului dark inclus)");
+                $"the stack of the {st.Lights} lights has {mean} per pixel if you make it with the mean and {F(st.MedianStackAdu, 1)} if you make it with the median (the dark master's noise included)",
+                $"stack-ul celor {st.Lights} lights are {mean} pe pixel daca il faci cu media si {F(st.MedianStackAdu, 1)} daca il faci cu mediana (cu zgomotul masterului dark inclus)");
         }
         else
         {
-            stackWords = T("lights stack: no lights", "stack lights: fara lights");
+            stackWords = T("the lights stack: the session has no lights", "stack-ul de lights: sesiunea nu are lights");
         }
 
         return new(MasterNoiseLabel, $"{darkWords}; {stackWords}", bold);
@@ -331,18 +343,20 @@ internal static class ScaleReport
         if (g.Facts is not CameraFacts facts)
         {
             return T(
-                $"unknown for {g.First?.Camera ?? "the camera of these frames"}: what 1 ADU is worth in electrons is not in the application's table",
-                $"necunoscut pentru {g.First?.Camera ?? "aparatul acestor cadre"}: cat valoreaza 1 ADU in electroni nu e in tabelul aplicatiei");
+                $"unknown for {g.First?.Camera ?? "the camera of these frames"}: the application's table does not say how many electrons 1 ADU is on this camera",
+                $"necunoscut pentru {g.First?.Camera ?? "aparatul acestor cadre"}: aplicatia nu are in tabel cati electroni inseamna 1 ADU la acest aparat");
         }
 
         if (g.Gain is not double gain || g.First?.Iso is not double iso)
         {
             return T(
-                $"{facts.Model}: the gain is known between ISO {F(facts.Gain[0].Iso, 0)} and {F(facts.Gain[^1].Iso, 0)} ({CameraFacts.SourceWords}), not at the ISO of these frames",
-                $"{facts.Model}: castigul e cunoscut intre ISO {F(facts.Gain[0].Iso, 0)} si {F(facts.Gain[^1].Iso, 0)} ({CameraFacts.SourceWords}), nu la ISO-ul acestor cadre");
+                $"{facts.Model}: the electrons per ADU are known only between ISO {F(facts.Gain[0].Iso, 0)} and {F(facts.Gain[^1].Iso, 0)} ({CameraFacts.SourceWords}), not at the ISO of these frames",
+                $"{facts.Model}: cati electroni inseamna 1 ADU se stie doar intre ISO {F(facts.Gain[0].Iso, 0)} si {F(facts.Gain[^1].Iso, 0)} ({CameraFacts.SourceWords}), nu si la ISO-ul acestor cadre");
         }
 
-        return $"1 ADU = {F(gain, 2)} e-" + T(" at ISO ", " la ISO ") + $"{F(iso, 0)} ({facts.Model}, {CameraFacts.SourceWords}); 1 ADU-eq = {F(g.Norm, 2)} ADU = {F(gain * g.Norm, 1)} e-; full well {F(facts.FullWellElectrons, 0)} e-, QE {F(facts.QuantumEfficiencyPercent, 0)} %";
+        return T(
+            $"at ISO {F(iso, 0)}, 1 ADU = {F(gain, 2)} electrons (the sensor turns light into electrons, and the camera counts them in ADU); 1 ADU-eq = {F(g.Norm, 2)} ADU = {F(gain * g.Norm, 1)} electrons; a pixel holds {F(facts.FullWellElectrons, 0)} electrons (full well), and it catches {F(facts.QuantumEfficiencyPercent, 0)} % of the light that falls on it (QE). Figures for {facts.Model} from {CameraFacts.SourceWords}.",
+            $"la ISO {F(iso, 0)}, 1 ADU = {F(gain, 2)} electroni (senzorul transforma lumina in electroni, iar camera ii numara in ADU); 1 ADU-eq = {F(g.Norm, 2)} ADU = {F(gain * g.Norm, 1)} electroni; intr-un pixel incap {F(facts.FullWellElectrons, 0)} electroni (full well), iar pixelul prinde {F(facts.QuantumEfficiencyPercent, 0)} % din lumina care cade pe el (QE). Cifre pentru {facts.Model} de pe {CameraFacts.SourceWords}.");
     }
 
     /// <summary>
@@ -358,35 +372,39 @@ internal static class ScaleReport
         {
             double rn = b.ReadNoise[g.ReferencePlane];
             double? biasGain = g.BiasIso is double iso ? g.Facts?.GainAt(iso) : null;
-            string electrons = biasGain is double bg ? $" = {F(rn * bg, 1)} e-" + (g.First?.Iso == g.BiasIso ? "" : T($" (at ISO {F(g.BiasIso!.Value, 0)}, the biases')", $" (la ISO {F(g.BiasIso!.Value, 0)}, al bias-urilor)")) : "";
-            return T($"{F(rn, 2)} ADU per pixel ({g.Plane}, from the biases){electrons}", $"{F(rn, 2)} ADU pe pixel ({g.Plane}, din bias-uri){electrons}");
+            string electrons = biasGain is double bg
+                ? T($" = {F(rn * bg, 1)} electrons", $" = {F(rn * bg, 1)} electroni") + (g.First?.Iso == g.BiasIso ? "" : T($" (at the biases' ISO, {F(g.BiasIso!.Value, 0)})", $" (la ISO-ul bias-urilor, {F(g.BiasIso!.Value, 0)})"))
+                : "";
+            return T($"{F(rn, 2)} ADU per pixel{electrons}: the noise the camera adds when it reads the sensor, measured on the biases ({PlaneWords(g.Plane)})",
+                $"{F(rn, 2)} ADU pe pixel{electrons}: zgomotul pe care camera il adauga cand citeste senzorul, masurat pe bias-uri ({PlaneWords(g.Plane)})");
         }
 
-        return T("UNMEASURED: no biases", "NEMASURAT: fara bias-uri") + (g.Facts is null ? "" : T($" (the source gives {F(g.Facts.ReadNoiseElectrons, 1)} e- for {g.Facts.Model})", $" (sursa da {F(g.Facts.ReadNoiseElectrons, 1)} e- pentru {g.Facts.Model})"));
+        return T("UNMEASURED: the session has no biases", "NEMASURAT: sesiunea nu are bias-uri") + (g.Facts is null ? "" : T($" (the source gives {F(g.Facts.ReadNoiseElectrons, 1)} electrons for {g.Facts.Model})", $" (sursa da {F(g.Facts.ReadNoiseElectrons, 1)} electroni pentru {g.Facts.Model})"));
     }
 
     /// <summary>
-    /// The <c>noise per frame</c> row: a dark's noise per pixel and the median dark current.
+    /// The <c>noise on one dark</c> row (<c>zgomot pe un dark</c>): a dark's noise per pixel and
+    /// the dark current of the typical pixel (the median).
     /// </summary>
     /// <param name="r">The run's result.</param>
     /// <param name="g">The set's figures.</param>
     /// <returns>The row's value, in the run's language.</returns>
     private static string FrameNoise(DarkSeriesResult r, Figures g)
     {
-        string sigma = double.IsNaN(g.Darks.Noise.SigmaFrame) ? T("UNMEASURED", "NEMASURAT") : T($"sigma {F(g.Darks.Noise.SigmaFrame, 2)} ADU per pixel on one dark", $"sigma {F(g.Darks.Noise.SigmaFrame, 2)} ADU pe pixel pe un dark");
+        string noise = double.IsNaN(g.Darks.Noise.SigmaFrame) ? T("UNMEASURED", "NEMASURAT") : T($"one dark has {F(g.Darks.Noise.SigmaFrame, 2)} ADU of noise per pixel", $"un dark are {F(g.Darks.Noise.SigmaFrame, 2)} ADU de zgomot pe pixel");
         if (r.DarkCurrent is not DarkCurrent dc)
         {
-            return sigma + T("; the dark current needs biases", "; curentul de intuneric cere bias-uri");
+            return noise + T("; the dark current (what a pixel gathers from the sensor's heat) can be measured only with biases", "; curentul de intuneric (ce aduna un pixel din caldura senzorului) se masoara doar cu bias-uri");
         }
 
         string eq = Math.Abs(g.Norm - 1) < 1e-9 ? "" : $" ({F(dc.Median / g.Norm, 2)} {g.Eq})";
-        return T($"{sigma}; median dark current {F(dc.Median, 2)} ADU{eq} at {g.Settings}", $"{sigma}; curentul de intuneric median {F(dc.Median, 2)} ADU{eq} la {g.Settings}");
+        return T($"{noise}; the dark current (what a typical pixel gathers from the sensor's heat) is {F(dc.Median, 2)} ADU{eq} at {g.Settings}", $"{noise}; curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e {F(dc.Median, 2)} ADU{eq} la {g.Settings}");
     }
 
     /// <summary>
-    /// The <c>found</c> row: check 2's constant light, the largest light on a frame and the map
-    /// offset over the threshold, each in ADU-eq, raw ADU and electrons when known, set against the
-    /// masters' noise.
+    /// The <c>what was found</c> row (<c>ce s-a gasit</c>): check 2's constant light, the largest
+    /// light on a frame and the map offset over the threshold, each in ADU-eq, ADU in the file and
+    /// electrons when known, set against the masters' noise.
     /// </summary>
     /// <param name="r">The run's result.</param>
     /// <param name="g">The set's figures.</param>
@@ -404,8 +422,8 @@ internal static class ScaleReport
             string eq = $"{Signed(c.LightAdu)} {g.Eq}";
             bold.Add(eq);
             bold.AddRange(b);
-            parts.Add(T($"constant light {eq} on the {DarkReport.SideName(c.Side)} side = {Signed(raw)} ADU", $"lumina constanta {eq} pe latura de {DarkReport.SideName(c.Side)} = {Signed(raw)} ADU")
-                + (g.Gain is double gain ? $" = {Signed(raw * gain)} e-" + T(" per pixel", " pe pixel") : "") + (against.Length == 0 ? "" : $"; {against}"));
+            parts.Add(T($"constant light on the {DarkReport.SideName(c.Side)} side: {eq} = {Signed(raw)} ADU in the file", $"lumina constanta pe latura de {DarkReport.SideName(c.Side)}: {eq} = {Signed(raw)} ADU in fisier")
+                + (g.Gain is double gain ? T($" = {Signed(raw * gain)} electrons per pixel", $" = {Signed(raw * gain)} electroni pe pixel") : "") + (against.Length == 0 ? "" : $"; {against}"));
         }
 
         if (l.Frames is FrameLight fl && fl.LitFrames.Count > 0)
@@ -416,16 +434,16 @@ internal static class ScaleReport
             string eq = $"{Signed(max)} {g.Eq}";
             bold.Add(eq);
             bold.AddRange(b);
-            parts.Add(T($"light on frames up to {eq} = {Signed(raw)} ADU in {RunReport.Frames(fl.LitFrames.Count)}", $"lumina pe cadre pana la {eq} = {Signed(raw)} ADU in {RunReport.Frames(fl.LitFrames.Count)}")
-                + (g.Gain is double gain2 ? $" ({Signed(raw * gain2)} e-" + T(" per pixel)", " pe pixel)") : "") + (against.Length == 0 ? "" : $"; {against}"));
+            parts.Add(T($"light on frames: up to {eq} = {Signed(raw)} ADU in the file, in {RunReport.Frames(fl.LitFrames.Count)}", $"lumina pe cadre: pana la {eq} = {Signed(raw)} ADU in fisier, in {RunReport.Frames(fl.LitFrames.Count)}")
+                + (g.Gain is double gain2 ? T($" ({Signed(raw * gain2)} electrons per pixel)", $" ({Signed(raw * gain2)} electroni pe pixel)") : "") + (against.Length == 0 ? "" : $"; {against}"));
         }
 
         if (!double.IsNaN(l.OffsetAdu) && Math.Abs(l.OffsetAdu) > Th.LeakAdu)
         {
-            parts.Add(T($"{DarkReport.RegionName(l.Where)} at {Signed(l.OffsetAdu)} {g.Eq} from the centre = {Signed(l.OffsetAdu * g.Norm)} ADU", $"{DarkReport.RegionName(l.Where)} la {Signed(l.OffsetAdu)} {g.Eq} de centru = {Signed(l.OffsetAdu * g.Norm)} ADU"));
+            parts.Add(T($"{DarkReport.RegionName(l.Where)}: {Signed(l.OffsetAdu)} {g.Eq} against the centre ({Signed(l.OffsetAdu * g.Norm)} ADU in the file)", $"{DarkReport.RegionName(l.Where)}: {Signed(l.OffsetAdu)} {g.Eq} fata de centru ({Signed(l.OffsetAdu * g.Norm)} ADU in fisier)"));
         }
 
-        string label = T("found", "gasit");
+        string label = T("what was found", "ce s-a gasit");
         return parts.Count == 0 ? new(label, T("nothing over the thresholds", "nimic peste praguri")) : new(label, string.Join("; ", parts), bold);
     }
 

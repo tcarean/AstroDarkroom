@@ -1,7 +1,7 @@
 # 0016. The masters' noise stands beside every light found, and the window shows both in bold
 
 Date: 2026-10-21
-Status: accepted 2026-10-21
+Status: accepted 2026-10-21; the words of the ratio to the stack and the row name gasit superseded by 0028
 
 ## Context
 

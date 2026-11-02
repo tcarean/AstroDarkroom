@@ -34,6 +34,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The ADU scale section, the window's `ADU scale explained` tab and the console's last block, is
+  in plain words, in English and Romanian: each row and paragraph says what a figure means
+  without the method's terms (no sigma, square root, quadrature, raw ADU or `e-`), the figures
+  unchanged (R-080, R-081, ADR 0028). Three rows are renamed: `value step` (`pasul valorilor`),
+  `noise on one dark` (`zgomot pe un dark`) and `what was found` (`ce s-a gasit`). Check 2's
+  ratio to the lights stack reads the same way on the Summary tab.
+
 - When LibRaw cannot be loaded, every raw's error names Microsoft's Visual C++ runtime, missing
   or too old, as the likely cause and gives Microsoft's link to its latest version, in English or
   Romanian, instead of saying where the DLLs must sit and how to publish them; the log says once
