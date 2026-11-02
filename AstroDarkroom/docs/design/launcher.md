@@ -127,13 +127,13 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   icon is not reliably the largest; `Icons.Launcher` names the launcher's own, for the two
   logos.
 - `MainWindow` reads `release.json` once. The XAML carries no user text: the constructor sets
-  the two texts that are the same in both languages, the banner, `VersionInfo.Banner`, and the
-  copyright, `VersionInfo.Copyright`, at the left of the bottom bar (R-019, ADR 0018), a `Faint`
-  line that trims with an ellipsis it never needs: the notice's 167 px fit the bar's first
-  column, 340 px in Romanian, where `Despre` is wider than `About`. The window shows no path; the
-  suite folder is in the log (R-012). `Relabel()` assigns every other label (the subtitle, the
-  prerequisites line under it from `Prerequisites.Summary`, the runtime's warning under that, the
-  selector's tooltip, the about button and its tooltip) through `T` and
+  the banner, `VersionInfo.Banner`, and the copyright, `VersionInfo.Copyright`, at the left of
+  the bottom bar (R-019, ADR 0018), neither of which changes with the language; the copyright is
+  a `Faint` line that trims with an ellipsis it never needs: the notice's 167 px fit the bar's
+  first column, 340 px in Romanian, where `Despre` is wider than `About`. The window shows no
+  path; the suite folder is in the log (R-012). `Relabel()` assigns the other labels (the
+  subtitle, the prerequisites line under it from `Prerequisites.Summary`, the runtime's warning
+  under that, the selector's tooltip, the about button and its tooltip) through `T` and
   builds one `AppRow` per catalogue app: the app, its `AppLocation`, its `ComponentInfo` or
   null. The row's properties are the strings the XAML binds (`OpenLabel`, `VersionHint` as
   `version X` / `versiunea X` or `version unknown` / `versiune necunoscuta`, `ButtonHint` as

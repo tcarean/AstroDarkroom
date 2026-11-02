@@ -54,6 +54,12 @@ en: window 680x848, client 664x809, dpi scale 1; line "Copyright (C) 2026 Tudor 
 ro: window 680x848, client 664x809, dpi scale 1; line "Copyright (C) 2026 Tudor Carean" at x 20 y 777, column 340 px, text 167.0 px (Segoe UI 11); selector at x 372
 ```
 
+The launcher itself, started from a suite folder published from this branch
+(`scripts/release.ps1 -Version 1.0.0 -PublishOnly`) and driven through UI Automation alone, gave
+the same: the line `Copyright (C) 2026 Tudor Carean` at 347 × 13 px in English, 340 × 13 px
+after a switch to Romanian, 347 × 13 px again after the switch back, in a window of 680 × 848 px;
+its log ends with `Process exit 0 after 4.1 s` and has no `WARN` or `ERROR` line.
+
 The column is narrower in Romanian, where `Despre` is wider than `About`. The window keeps the
 848 px of ADR 0017: the notice takes one line, as the path did. A notice up to 340 px, about
 twice today's, fits; a longer one, with a range of years or a second name, is cut with an
