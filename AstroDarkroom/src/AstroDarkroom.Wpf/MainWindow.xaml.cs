@@ -18,7 +18,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -32,12 +31,13 @@ namespace AstroDarkroom.Wpf;
 
 /// <summary>
 /// The launcher's window: a row per app of the catalogue, each with its open button, the
-/// language selector and the about button, and a warning when the Visual C++ runtime the raw
-/// tools need is missing or too old, asked again at each activation while it shows (R-018). It
-/// shows what the core says about the suite folder and starts what the core plans (R-002,
-/// R-003); it decides nothing itself. Every label is assigned in
-/// <see cref="Relabel"/>, in the current language, which is what lets a change of language apply
-/// at once (R-006). What it does goes to the diagnostic log (R-012).
+/// suite's copyright (R-019), the language selector and the about button, and a warning when the
+/// Visual C++ runtime the raw tools need is missing or too old, asked again at each activation
+/// while it shows (R-018). It shows what the core says about the suite folder and starts what the
+/// core plans (R-002, R-003); it decides nothing itself. Every label worded in two languages is
+/// assigned in <see cref="Relabel"/>, in the current language, which is what lets a change of
+/// language apply at once (R-006); the banner and the copyright, the same in both, once in the
+/// constructor. What it does goes to the diagnostic log (R-012).
 /// </summary>
 public partial class MainWindow : Window
 {
@@ -74,6 +74,7 @@ public partial class MainWindow : Window
         RuntimeLink.NavigateUri = new Uri(VcRuntime.DownloadUrl);
         Logo.Source = Icons.LargestFrame(Icons.Launcher);
         Banner.Text = VersionInfo.Banner;
+        CopyrightLine.Text = VersionInfo.Copyright;
         // Checking the current language fires LanguageChecked, which sees no change and does
         // nothing; from here on the selector fires only for the user's clicks.
         (Ui.Current == UiLanguage.Romanian ? RomanianChoice : EnglishChoice).IsChecked = true;
@@ -81,9 +82,9 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Assigns every text of the window in the current language and rebuilds the rows, whose
-    /// texts come from the core in that language too. Called once at start and at every change
-    /// of the selector.
+    /// Assigns every text of the window worded in two languages, in the current one, and rebuilds
+    /// the rows, whose texts come from the core in that language too. Called once at start and at
+    /// every change of the selector.
     /// </summary>
     private void Relabel()
     {
@@ -95,11 +96,6 @@ public partial class MainWindow : Window
         RuntimeWarning.Visibility = _missingRuntime.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         RuntimeWarningText.Text = VcRuntime.Warning;
         RuntimeLinkText.Text = VcRuntime.DownloadUrl;
-        // BaseDirectory ends with a separator; shown without it, so no backslash dangles before the dash.
-        string shownFolder = Path.TrimEndingDirectorySeparator(_folder.BaseDirectory);
-        FolderLine.Text = _release is { Date.Length: > 0 } r
-            ? shownFolder + T("  -  release of ", "  -  release din ") + r.Date
-            : shownFolder;
         EnglishChoice.ToolTip = RomanianChoice.ToolTip = T("Interface language", "Limba interfetei");
         AboutButton.Content = T("About", "Despre");
         AboutButton.ToolTip = T("Version, licence, components (F1)", "Versiune, licenta, componente (F1)");

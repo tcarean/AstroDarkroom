@@ -32,10 +32,13 @@ public static class VersionInfo
     /// <summary>The version, such as "0.1.0", as Directory.Build.props sets it.</summary>
     public static string Value { get; } = Read();
 
-    /// <summary>The name and the version, exactly as the "Despre" window's first line shows them.</summary>
+    /// <summary>The name and the version, as the main window's top bar and "Despre", under its tagline, show them.</summary>
     public static string Banner => Name + " " + Value;
 
-    /// <summary>The copyright notice, the second line of "Despre" (GPLv3 asks every copy to carry it).</summary>
+    /// <summary>
+    /// The copyright notice, the same in both languages: the left of the main window's bottom bar
+    /// (R-019) and the line under the banner in "Despre" (GPLv3 asks every copy to carry it).
+    /// </summary>
     public static string Copyright { get; } = ReadCopyright();
 
     /// <summary>
