@@ -86,7 +86,7 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal string PixelsNote => OnSkyPixels
             ? ""
-            : Tr.Pick($"  (sky {Fmt.F0(SkyFraction * 100)} %: every pixel)", $"  (cer {Fmt.F0(SkyFraction * 100)} %: toti pixelii)");
+            : Tr.Pick($"  (only {Fmt.F0(SkyFraction * 100)} % sky: measured on every pixel)", $"  (doar {Fmt.F0(SkyFraction * 100)} % cer: masurat pe toti pixelii)");
 
         internal double MaxAbsDelta => Deltas.Max(d => Math.Abs(d));
         internal bool Flagged => MaxAbsDelta > Thresholds.CornerGradientLevels;

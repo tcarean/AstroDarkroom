@@ -247,7 +247,7 @@ public class BackgroundAnalyzerTests
         Assert.Equal(-12, top.Deltas[2], 0);
         Assert.True(top.Flagged);
         Assert.True(top.Coloured);
-        Assert.Equal("  (cer 17 %: toti pixelii)", top.PixelsNote);
+        Assert.Equal("  (doar 17 % cer: masurat pe toti pixelii)", top.PixelsNote);
     }
 
     [Fact]

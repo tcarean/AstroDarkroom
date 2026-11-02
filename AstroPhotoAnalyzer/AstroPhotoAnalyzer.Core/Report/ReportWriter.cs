@@ -507,10 +507,11 @@ namespace AstroPhotoAnalyzer
                 ? Tr.Pick("background colour, R / G / B (0..255)", "culoarea fundalului, R / G / B (0..255)")
                 : Tr.Pick("the background, one channel (0..255)", "fundalul, un singur canal (0..255)");
             w.WriteLine($"  {levels}: {string.Join(" / ", b.Levels.Select(Fmt.F1))}"
-                + (b.ColorApplicable ? $"; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}; R - B = {Fmt.S1(b.RedMinusBlue)}; L* {Fmt.F1(b.Lab.L)}, a* {Fmt.S1(b.Lab.A)}, b* {Fmt.S1(b.Lab.B)}, {Tr.Pick("chroma", "croma")} {Fmt.F1(b.Chroma)}" : "")
-                + $"; {Tr.Pick("from", "de pe")} {b.SourceText}");
+                + (b.ColorApplicable ? Tr.Pick($"; green over red and blue {Fmt.S1(b.GreenExcess)}; red over blue {Fmt.S1(b.RedMinusBlue)}; L* {Fmt.F1(b.Lab.L)}, a* {Fmt.S1(b.Lab.A)}, b* {Fmt.S1(b.Lab.B)}, how far from a grey (chroma) {Fmt.F1(b.Chroma)}",
+                                                $"; verdele peste rosu si albastru {Fmt.S1(b.GreenExcess)}; rosul peste albastru {Fmt.S1(b.RedMinusBlue)}; L* {Fmt.F1(b.Lab.L)}, a* {Fmt.S1(b.Lab.A)}, b* {Fmt.S1(b.Lab.B)}, cat de departe e de un gri (croma) {Fmt.F1(b.Chroma)}") : "")
+                + $"; {Tr.Pick("measured on", "masurat pe")} {b.SourceText}");
             foreach (EdgeRegion e in b.Regions)
-                w.WriteLine($"  {e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{e.PixelsNote}{(e.Flagged ? "  !" : "")}");
+                w.WriteLine($"  {e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} {Tr.Pick("against the sky", "fata de cer")} {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{e.PixelsNote}{(e.Flagged ? "  !" : "")}");
         }
 
         /// <summary>

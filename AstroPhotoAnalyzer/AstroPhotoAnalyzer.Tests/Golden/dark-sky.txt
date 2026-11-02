@@ -92,15 +92,15 @@ Anexa D. Rezolutie si marime
   * = recomandat
 
 Anexa E. Culoarea fundalului
-  culoarea fundalului, R / G / B (0..255): 20.4 / 22.4 / 20.4; G - (R+B)/2 = +2.0; R - B = 0.0; L* 7.2, a* -1.4, b* +1.0, croma 1.7; de pe dalele de cer de deasupra benzii de jos
-  colt stanga-sus    20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / 0.0
-  colt dreapta-sus   20.4 / 22.3 / 20.4     delta 0.0 / -0.1 / 0.0
-  colt stanga-jos    20.4 / 22.4 / 20.4     delta 0.0 / 0.0 / -0.1
-  colt dreapta-jos   30.4 / 22.4 / 12.4     delta +9.9 / 0.0 / -8.0  (cer 14 %: toti pixelii)  !
-  latura de sus      20.2 / 22.1 / 20.1     delta -0.3 / -0.3 / -0.3
-  latura de jos      20.5 / 22.5 / 20.5     delta 0.0 / +0.1 / 0.0
-  latura stanga      20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
-  latura dreapta     20.5 / 22.5 / 20.5     delta +0.1 / +0.1 / +0.1
+  culoarea fundalului, R / G / B (0..255): 20.4 / 22.4 / 20.4; verdele peste rosu si albastru +2.0; rosul peste albastru 0.0; L* 7.2, a* -1.4, b* +1.0, cat de departe e de un gri (croma) 1.7; masurat pe dalele de cer de deasupra benzii de jos
+  colt stanga-sus    20.4 / 22.4 / 20.4     fata de cer 0.0 / 0.0 / 0.0
+  colt dreapta-sus   20.4 / 22.3 / 20.4     fata de cer 0.0 / -0.1 / 0.0
+  colt stanga-jos    20.4 / 22.4 / 20.4     fata de cer 0.0 / 0.0 / -0.1
+  colt dreapta-jos   30.4 / 22.4 / 12.4     fata de cer +9.9 / 0.0 / -8.0  (doar 14 % cer: masurat pe toti pixelii)  !
+  latura de sus      20.2 / 22.1 / 20.1     fata de cer -0.3 / -0.3 / -0.3
+  latura de jos      20.5 / 22.5 / 20.5     fata de cer 0.0 / +0.1 / 0.0
+  latura stanga      20.5 / 22.5 / 20.5     fata de cer +0.1 / +0.1 / +0.1
+  latura dreapta     20.5 / 22.5 / 20.5     fata de cer +0.1 / +0.1 / +0.1
 
 Anexa F. Parametri
   mediu baryta, Dmax 2.0 (explicit); latimi 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm

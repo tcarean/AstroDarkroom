@@ -84,15 +84,15 @@ Appendix D. Resolution and size
     the wall chooses the size; give a viewing distance so that the program can choose one
 
 Appendix E. Background colour
-  background colour, R / G / B (0..255): 63.8 / 63.7 / 63.8; G - (R+B)/2 = 0.0; R - B = 0.0; L* 27.0, a* 0.0, b* 0.0, chroma 0.0; from the sky patches above the bottom band
-  upper-left corner  63.6 / 63.8 / 63.8     delta -0.1 / 0.0 / +0.1
-  upper-right corner 63.7 / 63.7 / 63.7     delta -0.1 / 0.0 / -0.1
-  lower-left corner  63.8 / 63.9 / 63.7     delta +0.1 / +0.1 / -0.1
-  lower-right corner 63.7 / 63.7 / 63.8     delta 0.0 / 0.0 / 0.0
-  top edge           63.8 / 63.8 / 63.8     delta 0.0 / 0.0 / 0.0
-  bottom edge        63.8 / 63.8 / 63.8     delta 0.0 / 0.0 / 0.0
-  left edge          63.8 / 63.7 / 63.8     delta 0.0 / 0.0 / 0.0
-  right edge         63.8 / 63.7 / 63.7     delta 0.0 / 0.0 / 0.0
+  background colour, R / G / B (0..255): 63.8 / 63.7 / 63.8; green over red and blue 0.0; red over blue 0.0; L* 27.0, a* 0.0, b* 0.0, how far from a grey (chroma) 0.0; measured on the sky patches above the bottom band
+  upper-left corner  63.6 / 63.8 / 63.8     against the sky -0.1 / 0.0 / +0.1
+  upper-right corner 63.7 / 63.7 / 63.7     against the sky -0.1 / 0.0 / -0.1
+  lower-left corner  63.8 / 63.9 / 63.7     against the sky +0.1 / +0.1 / -0.1
+  lower-right corner 63.7 / 63.7 / 63.8     against the sky 0.0 / 0.0 / 0.0
+  top edge           63.8 / 63.8 / 63.8     against the sky 0.0 / 0.0 / 0.0
+  bottom edge        63.8 / 63.8 / 63.8     against the sky 0.0 / 0.0 / 0.0
+  left edge          63.8 / 63.7 / 63.8     against the sky 0.0 / 0.0 / 0.0
+  right edge         63.8 / 63.7 / 63.7     against the sky 0.0 / 0.0 / 0.0
 
 Appendix F. Parameters
   medium canvas, Dmax 1.5; widths 40, 60, 80 cm; passepartout 7 cm, frame 3 cm
