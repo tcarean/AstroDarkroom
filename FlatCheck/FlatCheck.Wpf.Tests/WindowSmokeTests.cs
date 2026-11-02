@@ -323,9 +323,11 @@ public class WindowSmokeTests
     /// R-126: the one scale on screen. Compared, every interval in stops is drawn once - in the
     /// table under the card, below the card's last line, not in the card - on the same line as
     /// its percent and to its right, under a column heading; the cells marked are exactly the two
-    /// verdicts'; the sentence on the stops is drawn once, under the table. With nothing compared
-    /// the stops heading and every stops cell take no width, and the percent cell keeps its
-    /// mark. The result comes through Populate, on hand-made profile sources.
+    /// verdicts'; the sentence on the stops is drawn once, under the table; the paragraph on why
+    /// the residual matters stands under the five tests, above the vignetting card, not under the
+    /// scale. With nothing compared the stops heading and every stops cell take no width, and
+    /// the percent cell keeps its mark. The result comes through Populate, on hand-made profile
+    /// sources.
     /// </summary>
     [Fact]
     public void R126_TheOneScaleDrawsTheStopsBesideThePercentOnlyWhenCompared()
@@ -381,6 +383,12 @@ public class WindowSmokeTests
             }
             TextBlock stopsNote = Assert.Single(texts, t => t.Text == vm.ScaleDepthNote);   // once: not in the card
             Assert.True(stopsNote.TranslatePoint(new Point(), view).Y > lastRow);
+
+            // Why the residual matters: under the five tests' rows, before the vignetting card.
+            double why = Assert.Single(texts, t => t.Text == vm.WhyResidual).TranslatePoint(new Point(), view).Y;
+            double lastTest = texts.Where(t => vm.Tests.Any(x => x.Label == t.Text)).Max(t => t.TranslatePoint(new Point(), view).Y);
+            double profiles = Assert.Single(texts, t => t.Text == StructureReport.ProfilesHeading).TranslatePoint(new Point(), view).Y;
+            Assert.True(why > lastTest && why < profiles, $"paragraph at {why}, last test at {lastTest}, profiles card at {profiles}");
 
             vm.Populate(new StructureOutcome(r, null, null, null));
             Render(view, h: 1800);

@@ -96,3 +96,10 @@ Noted at the wrap-up of 2026-11-02, before the commit.
   cases came out equal to the recorded figures (`docs/validation.md`, History, 2026-11-02).
 - The marked cell is drawn with the background the marked row had, in bright semibold text, not
   with the blue tint of the chat mockup: the scale keeps the mark it always had, now on a cell.
+- After the commit, a subagent's code review found no code bug and five smaller points. Four were
+  fixed in a7a6fe14: ADR 0088's line on `/validate`, R-126's example named as the test fixture,
+  `language.md`'s plural, and stronger render checks (the card's real last line, the stops
+  sentence's place, the zero-width stops cells, the no-raw case with a catalog). On the fifth the
+  owner chose to move the paragraph on why the residual matters to the foot of the tests card:
+  under the one scale its "the most important one" read as outranking the depth. R-126 and ADR
+  0088 say so, and the render test checks its place.

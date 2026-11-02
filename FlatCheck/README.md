@@ -1014,9 +1014,9 @@ file that cannot be read gives the defaults.
 
 ### Structure
 
-It shows the console's figures: the five deviation tests with each one's verdict, the informative
-rows with no verdict, the dust warning under the verdict when there is one, each row with its
-description under it; plus the residual map.
+It shows the console's figures: the five deviation tests with each one's verdict and, under them,
+why the residual matters most; the informative rows with no verdict, the dust warning under the
+verdict when there is one, each row with its description under it; plus the residual map.
 
 Under the tests stands **the vignetting against the lens's profile**. When `flats/` holds a raw, the
 run is the console's with `--raw` on the first of them (the lens and the aperture from the raw, the
@@ -1051,7 +1051,7 @@ interval for the five tests in percent and, when the vignetting was compared, th
 depth in stops (the five tests' scale translated, not a new threshold, as the line under the table
 says), then what the band means. The cell each verdict fell in is marked, so the five tests and the
 depth read apart when they fall in different bands. Without a comparison the table has the percent
-column alone. Under it, why the residual matters most.
+column alone.
 
 It saves in the session folder:
 

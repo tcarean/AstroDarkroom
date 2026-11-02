@@ -106,7 +106,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the vignetting was compared with the lens profile, the same band for the depth in stops, then
   what the band means. The cell each verdict fell in is marked, not the row, so the five tests and
   the depth read apart when they land in different bands. The card no longer carries a depth
-  scale of its own; the console's report does not change.
+  scale of its own, and the paragraph on why the residual matters most now stands under the
+  five tests it speaks of. The console's report does not change.
 - The End to end tab's explanations, and the `--light` diagnosis, reasons, refusal and warnings
   the console shares with it, are in plain words (R-105, ADR 0082): how much darker or brighter
   the corners are than the centre after the flat, and what is sky, with no fit, plane, Pearson,

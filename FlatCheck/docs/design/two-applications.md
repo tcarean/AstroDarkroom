@@ -115,7 +115,9 @@ keeps `ProfileLightNote` alone. The theme's `ScaleRowTemplate` marks a cell, not
 the two verdicts can fall in different bands; its two interval columns are `Auto` with a
 `SharedSizeGroup`, so the header row in `StructureView.xaml`, inside the same
 `Grid.IsSharedSizeScope` panel, lines up with every row, and the stops column takes no width
-without a comparison.
+without a comparison. `WhyResidual` stands at the foot of the tests card, not under the scale:
+its "the most important one" points at the five rows above it, and under a table that also
+judges the depth it read as outranking the depth.
 
 **The box at the top of the card, `NoFilters`, turns that comparison off** (R-118, ADR 0078).
 `RunAsync` takes the folder's `SessionSettings` and sets the box from them without writing or

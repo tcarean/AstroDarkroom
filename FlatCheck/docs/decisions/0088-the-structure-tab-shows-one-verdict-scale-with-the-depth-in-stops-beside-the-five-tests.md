@@ -26,6 +26,11 @@ scale's own four meanings go: the corner error they named is the percent column 
 ACCEPTABIL clause on the profile's uncertainty is said by `DepthAdvice` and
 `DepthLightScaleNote`, which stays in the card. The console keeps its two scales.
 
+The paragraph on why the residual matters (`StructureReport.WhyResidualMatters`), which stood
+under the five tests' scale, moves unchanged to the foot of the tests card, under the five rows
+it speaks of. Under the one scale its "the most important one" read as outranking the depth,
+while the verdict is the worse of the two (the code review's finding; the owner chose the move).
+
 ## Alternatives rejected
 
 - **Two tables, each saying it is the same scale.** What the tab did already; the owner asked for
@@ -37,6 +42,8 @@ ACCEPTABIL clause on the profile's uncertainty is said by `DepthAdvice` and
   lens) a column of bands for a depth nobody judged reads as a result.
 - **The console merged too.** Its depth scale is already one line inside the vignetting block;
   moving it would reorder the report and its golden files for no gain to its reader.
+- **The residual paragraph left under the scale.** A shape PERFECT and a depth REFA put "the most
+  important one is the residual" right under the marked REFA cell.
 
 ## Consequences
 

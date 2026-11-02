@@ -956,7 +956,8 @@ namespace FlatCheck
 
         /// <summary>
         /// Why the residual after the radial model is the one that matters. Taken out separately
-        /// for the same reason as <see cref="Scale"/>: the window shows it too, under the table.
+        /// for the same reason as <see cref="Scale"/>: the window shows it too, at the foot of the
+        /// five tests (R-126), where its "the most important one" points at their rows.
         /// </summary>
         /// <returns>Eight lines joined by '\n'.</returns>
         internal static string WhyResidualMatters()
