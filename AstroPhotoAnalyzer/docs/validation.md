@@ -71,7 +71,7 @@ stops on a drift instead of editing them.
 | V-009 | the PNG; kind `curves` | measured 2026-10-05, re-measured 2026-10-06 (ADR 0033): the same without a WCS: the anchors from the sky-relative classes (0.057, 0.099, 0.216, 0.395, 0.593); four suggestions, `Maxima` with the peaks at 0.920, a gain of 1.29 and 0.33 % clipped against 0.10 %; one paper check on each (the sky at L\* 8.9); the saved file a float FITS of 5938 px, no WCS, the PNG's hash unchanged |
 | V-010 | the Rosetta FITS; none | measured 2026-10-06 (ADR 0033): the sky-relative classes on a deep-sky frame without a WCS: 8325 patches, no cloud; the dust class 18 patches (0.2 %, under the 5 % floor), so the dust is the darkest sky, L\* 6.1, and the sky 8.1; paper black 3.6 on baryta; the recommended row 0.16 (the sky reaches L\* 15 at 0.154), the exact target 0.067 (0.079 at Dmax 2.3, 0.055 at 2.5), passes as is from Dmax 2.17; the overall verdict ATENTIE; since ADR 0054, 1 star on this starless frame (2858 at 2.62 px before: the grain) and the size table on the dpi rule; and every other figure of the run |
 | V-011 | the Rosetta FITS; kind `curves` | measured 2026-10-06: the curves anchored on the sky-relative classes: anchors 0.077, 0.093, 0.272, 0.419, 0.603; four suggestions, `Puternica` with the points 0.409, 0.628, 0.793 and the five L\* from 6.1, 8.1, 30.2, 46.0, 63.5 to 6.2, 8.3, 42.9, 61.2, 77.6, a gain of 1.06; `Maxima` to 0.920 with 0.72 % clipped against 0.17 %; one paper check on each (the sky at L\* 8.1); the noise figure n/a (too little flat sky) |
-| V-012 | the Orion FITS; kind `curves` | measured 2026-10-06: a frame at the ceiling: anchors 0.114, 0.137, 0.365, 0.738, 0.971; the peaks over `CurvePeakTarget`, so no suggestion and the problem sentence naming the anchor, 0.971 and the target 0.92 |
+| V-012 | the Orion FITS; kind `curves` | measured 2026-10-06: a frame at the ceiling: anchors 0.114, 0.137, 0.365, 0.738, 0.971; the peaks over `CurvePeakTarget`, so no suggestion and the problem sentence naming the peaks' point, 0.971 and the target 0.92 (worded as of 2026-11-02, ADR 0076) |
 | V-013 | the Veil FITS; none | measured 2026-10-11 (ADR 0037): the sky path on a frame inside the band but narrower than it: method `Sky` for the reason `NarrowField`, the patch centres spanning 10.9 degrees of latitude; sky 96.4 %, nebula 2.9 %, bright nebula 0.5 %, peaks 0.1 %; 20 125 patches, 6 clouds named (LDN 873 first, 68 patches, L\* 7.6), the dust class 1 patch, so the dust is the darkest sky, L\* 6.3, and the sky 9.3; the recommended row 0.16 (the sky reaches L\* 15 at 0.155), the exact target 0.074, passes as is from Dmax 2.16; no smooth tile for the noise; 1 star since ADR 0054 (22 485 at FWHM 2.18 px before: the grain of a starless frame) and the size table on the dpi rule, the reference row 70 cm; and every other figure of the run |
 | V-014 | the Veil FITS; kind `curves` | measured 2026-10-11: the curves anchored on the nebula's own classes: anchors 0.078, 0.102, 0.166, 0.359, 0.498; four suggestions, `Puternica` taking the five L\* from 6.3, 9.3, 17.2, 38.8, 53.2 to 6.3, 10.0, 23.1, 49.4, 63.6 with a noise gain of 1.20, `Maxima` the peaks to 0.92 with a gain of 1.47; one paper check (the sky under L\* 15); the save keeps all 93 cards and the WCS |
 | V-015 | the plate-solved FITS; kind `proof`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-30: the soft proof through the lab's baryta profile (R-160 to R-162, ADR 0066): the paper white of the `wtpt` tag L\* 97.19, a\* -0.01, b\* +1.11, shown as sRGB 248, 247, 245 under the simulation; the paper black L\* 3.49 at Dmax 2.41 (V-006); the proof 1946 px wide (stride 3); 1.37 % of its pixels outside the paper's gamut (V-008 reads 1.36 % on the tonal subsample); the mean L\* of the proof 17.0 on `Perceptual`, 19.7 on `Relative`, 18.2 on `RelativeNoBpc` (18.0, 20.4 and 19.1 simulated): the three intents differ, and the compensated one keeps the most of the shadows |
@@ -210,6 +210,22 @@ exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), and the image passes as it
 LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6, LDN 559 at 4.7.
 
 ## History
+
+- 2026-11-02 (ADR 0076, the Editare Curbe tab in plain words,
+  `docs/plans/2026-11-02-explain-the-curves-tab-plainly.md`): the texts of `Report/CurveTexts.cs`
+  reworded and a comment of `Analysis/PrintStretchSimulator.cs` corrected; no formula moved.
+  V-012's `curves.problem` takes the new sentence, which the owner approved with the texts:
+  `Nu se sugereaza nicio curba: ancora "varfuri" e deja la 0.971, la sau peste tinta 0.92 la care
+  ajung varfurile ... imaginea e deja la plafon.` -> `Nu se sugereaza nicio curba: punctul "varfuri"
+  e deja la 0.971, la sau peste 0.92, unde ajung varfurile ... imaginea e deja cat de luminoasa
+  poate fi.`; its figures, 0.971 and 0.92, stay. Re-run on the branch, the twelve files of the
+  manifest hard-linked into the worktree, their hashes checked: of the 1290 figures the fifteen
+  cases record, 1288 are identical, and the same two as since 2026-10-23 differ by 0.0001,
+  inside the 0.01 tolerance (V-011 `curves.Maxima.lstar.clouds` 67.1502 -> 67.1503, V-014
+  `curves.Maxima.lstar.peaks` 77.9226 -> 77.9227); V-012 reads the new sentence. The fifteen
+  cases and the eleven star-pair checks pass, in 5.8 min. The run also covers the five
+  text-only tasks merged since 2026-10-31 without a run of their own, the Rezolutie, Tonuri,
+  Raport, Export and Culoare tabs (ADRs 0071 to 0075).
 
 - 2026-10-31 (ADR 0069, the diagnostic log, `docs/plans/2026-10-31-add-a-diagnostic-log-with-nlog.md`):
   log lines in the four readers of `Input/` and in `Runs/`, a `Cause` on `GamutTable` and

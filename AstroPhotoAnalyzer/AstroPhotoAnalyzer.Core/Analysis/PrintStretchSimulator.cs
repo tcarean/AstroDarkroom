@@ -286,9 +286,9 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// "mediana dalelor de cer, in afara benzii (|b| peste 10 grade)", "mediana dalelor de cer
-        /// (clase relative la cerul modelat)" or, without any sky patch, "mediana tuturor dalelor
-        /// (nicio dala de cer)".
+        /// "the sky outside the Milky Way band, over 10 degrees from it (the middle value of the sky
+        /// patches)", "the middle value of the sky patches (the patches sorted by comparison with the
+        /// sky)" or, without any sky patch, "the middle value of all the patches (no sky found)".
         /// </summary>
         internal string SkyDescription => Map.SkyClassEmpty
             ? Tr.Pick("the middle value of all the patches (no sky found)", "valoarea din mijloc a tuturor dalelor (nu s-a gasit cer)")
