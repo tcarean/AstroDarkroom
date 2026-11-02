@@ -269,6 +269,44 @@ public class WindowLanguageTests
         });
     }
 
+    /// <summary>
+    /// The rendered Quality tab, its headings, notes and the line above its charts, and the
+    /// elongation chart's guide labels name none of the method's words, in either language, and
+    /// the tab opens with the line that says what a point and its colour are (R-080).
+    /// </summary>
+    [Fact]
+    public async Task R080_TheQualityTabUsesNoneOfTheMethodsWords()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        try
+        {
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                Ui.Default = language;
+                await _sta.InvokeAsync(async () =>
+                {
+                    MainViewModel vm = new();
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+
+                    List<string> texts = [.. Texts(Render(new QualityView { DataContext = vm }, null, h: 1200))];
+                    texts.AddRange(vm.ElongationGuides.Select(g => g.Label));
+                    foreach (string text in texts)
+                    {
+                        PlainWords.AssertPlain(text, $"the Quality tab ({language})");
+                    }
+
+                    string opening = language == UiLanguage.Romanian ? "Fiecare punct e un cadru" : "Each point is a frame";
+                    Assert.Contains(texts, t => t.StartsWith(opening, StringComparison.Ordinal));
+                });
+            }
+        }
+        finally
+        {
+            Ui.Default = UiLanguage.Romanian;
+        }
+    }
+
     [Fact]
     public async Task R063_TheSameWindowInRomanianStillShowsRezumat()
     {
@@ -415,6 +453,7 @@ public class WindowLanguageTests
         "gasite", "lumina", "ramane",
         "alinia", "comune", "obisnuit", "semnaleaza", "vecine", "putine", "stivuire", "satelit", "referinta", "adica", "ceata", "scoate",
         "citeste", "marite", "rotunde", "alungite", "sfarsitul", "paranteza", "sageata", "incotro", "grupul", "negru", "imaginii", "catelea",
+        "intinse", "galbena", "rosie", "rasare", "poluar", "trecatoare", "punctata", "numerele", "culoarea",
     ];
 
     /// <summary>The English texts hold none of the Romanian words.</summary>

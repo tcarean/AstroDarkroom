@@ -34,6 +34,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Quality tab speaks in plain words (R-080, ADR 0035): its four charts are headed `the stars'
+  width (FWHM)`, `how elongated the stars are`, `stars found` and `the sky background, on green
+  (ADU above the black level)`, each note says what the figure is in each frame and what moves
+  it, and a new line above the charts says that each point is a frame, in the order they were
+  shot, and what the colours of the first two charts mean.
 - The Frames tab and the reasons a frame is flagged speak in plain words (R-079, ADR 0034),
   wherever the reasons are printed: on the Frames and Rejected tabs and in the console's REJECTED
   section and frame table. A reason names the class its figure gives
