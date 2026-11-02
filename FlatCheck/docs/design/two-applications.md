@@ -100,11 +100,22 @@ on the first open, under the busy overlay, which says so). Without a raw the run
 one, the report identical to `flatcheck master`, and the card under TESTE shows
 `StructureReport.GapText` computed by `StructureRun.Compare` on the master's header alone.
 The rows are `LensProfileRow` (public copy of the core's `ProfileRow`), rendered by a
-template local to `StructureView.xaml`; `Tests` stays five, so the scale heading is
-untouched. `Populate` is
+template local to `StructureView.xaml`; `Tests` stays five, so the scale's column heading
+`the five tests` stays true. `Populate` is
 `internal` and sets `HasResult` for the smoke test. The one thing the window cannot do
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
+
+**One verdict scale for both verdicts** (R-126, ADR 0088). `FillScale` rebuilds `Scale` in
+every `Populate`, once the comparison is known: the rows of `StructureReport.Scale()`, each
+given its interval in stops from `DepthScaleRows` (looked up by band) when the vignetting was
+compared, `IsCurrent` on the five tests' verdict and `IsDepthCurrent` on the nearest
+profile's; `ScaleHasDepth` and `ScaleDepthNote` (`DepthScaleNote`) go with it, and the card
+keeps `ProfileLightNote` alone. The theme's `ScaleRowTemplate` marks a cell, not a row, since
+the two verdicts can fall in different bands; its two interval columns are `Auto` with a
+`SharedSizeGroup`, so the header row in `StructureView.xaml`, inside the same
+`Grid.IsSharedSizeScope` panel, lines up with every row, and the stops column takes no width
+without a comparison.
 
 **The box at the top of the card, `NoFilters`, turns that comparison off** (R-118, ADR 0078).
 `RunAsync` takes the folder's `SessionSettings` and sets the box from them without writing or

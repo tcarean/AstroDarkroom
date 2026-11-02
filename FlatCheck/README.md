@@ -1014,16 +1014,15 @@ file that cannot be read gives the defaults.
 
 ### Structure
 
-It shows the console's figures: the five deviation tests with each one's verdict, the residual scale
-with the current band marked, the informative rows with no verdict, the dust warning under the
-verdict when there is one, each row with its description under it; plus the residual map.
+It shows the console's figures: the five deviation tests with each one's verdict, the informative
+rows with no verdict, the dust warning under the verdict when there is one, each row with its
+description under it; plus the residual map.
 
 Under the tests stands **the vignetting against the lens's profile**. When `flats/` holds a raw, the
 run is the console's with `--raw` on the first of them (the lens and the aperture from the raw, the
 crop from the lensfun database by `INSTRUME`): one row per profile, the row that gives the verdict
-marked with an accent bar, a lighter background and the words **gives the verdict**, the depth scale as a table of four bands in stops (the same residual scale, translated, not a
-new threshold) with the verdict's band marked, and the run's verdict, the worse of shape and depth,
-in the pill at the top, with its two parts written under it. With no raw, the card says why nothing
+marked with an accent bar, a lighter background and the words **gives the verdict**, and the run's
+verdict, the worse of shape and depth, in the pill at the top, with its two parts written under it. With no raw, the card says why nothing
 could be compared, and the report stays the plain one. With the box **I didn't use any filters on
 my lens** at the top of the card unticked, nothing is compared either, on purpose: the card keeps
 the master's depth and says why, the verdict is the five tests', and the report is the plain one;
@@ -1046,6 +1045,13 @@ matched by its focal range alone. Under it: install the free Adobe DNG Converter
 Adobe's page in the browser), or Lightroom Classic, Lightroom or Photoshop's Camera Raw, then
 restart FlatCheck; and the folders it looked in. The console's report does not carry this
 paragraph.
+
+Under the card stands **the verdict scale**, one table for both verdicts: each band with its
+interval for the five tests in percent and, when the vignetting was compared, the same band for the
+depth in stops (the five tests' scale translated, not a new threshold, as the line under the table
+says), then what the band means. The cell each verdict fell in is marked, so the five tests and the
+depth read apart when they fall in different bands. Without a comparison the table has the percent
+column alone. Under it, why the residual matters most.
 
 It saves in the session folder:
 

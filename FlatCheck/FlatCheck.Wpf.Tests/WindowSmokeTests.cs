@@ -320,6 +320,82 @@ public class WindowSmokeTests
     }
 
     /// <summary>
+    /// R-126: the one scale on screen. Compared, every interval in stops is drawn once - in the
+    /// table under the card, not in the card - on the same line as its percent and to its right,
+    /// under a column heading; the cells marked are exactly the two verdicts'. With nothing
+    /// compared the stops heading is collapsed and the percent cell keeps its mark. The result
+    /// comes through Populate, on hand-made profile sources.
+    /// </summary>
+    [Fact]
+    public void R126_TheOneScaleDrawsTheStopsBesideThePercentOnlyWhenCompared()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
+        var master = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" }, FocalMm = 20, Camera = "Nikon D3300" };
+        var raw = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(),
+            FocalMm = 20,
+            FNumber = 2.8,
+            Camera = "NIKON D3300",
+            LensId = 139,
+            LensMinFocalMm = 11,
+            LensMaxFocalMm = 20,
+            LensMaxAperture = 2.8,
+        };
+        StructureOutcome compared = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw });
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+
+            var vm = new StructureTabViewModel();
+            vm.Populate(compared);
+            var view = new StructureView { DataContext = vm };
+            Render(view, h: 1800);
+            List<TextBlock> texts = Descendants(view).OfType<TextBlock>().ToList();
+
+            TextBlock heading = Assert.Single(texts, t => t.Text == "adancimea fata de profil");
+            TextBlock percentHeading = Assert.Single(texts, t => t.Text == "cele cinci teste");
+            Assert.True(heading.ActualWidth > 0);
+            double cardBottom = texts.Where(t => vm.ProfileRows.Any(p => p.Lens == t.Text)).Max(t => t.TranslatePoint(new Point(), view).Y);
+            Assert.Contains(vm.Scale, s => s.IsCurrent);
+            Assert.Contains(vm.Scale, s => s.IsDepthCurrent);
+            foreach (ScaleRow row in vm.Scale)
+            {
+                TextBlock percent = Assert.Single(texts, t => t.Text == row.Range);
+                TextBlock stops = Assert.Single(texts, t => t.Text == row.DepthRange);   // once: the card has no scale
+                Point p = percent.TranslatePoint(new Point(), view), s = stops.TranslatePoint(new Point(), view);
+                Assert.True(s.X > p.X, row.Band);
+                Assert.True(Math.Abs(s.Y - p.Y) < 1, row.Band);
+                Assert.True(s.Y > cardBottom, row.Band);
+                Assert.True(Math.Abs(heading.TranslatePoint(new Point(), view).X - s.X) < 1, row.Band);
+                Assert.True(Math.Abs(percentHeading.TranslatePoint(new Point(), view).X - p.X) < 1, row.Band);
+                Assert.Equal(row.IsCurrent, Marked(percent));
+                Assert.Equal(row.IsDepthCurrent, Marked(stops));
+            }
+
+            vm.Populate(new StructureOutcome(r, null, null, null));
+            Render(view, h: 1800);
+            texts = Descendants(view).OfType<TextBlock>().ToList();
+
+            Assert.Equal(0, Assert.Single(texts, t => t.Text == "adancimea fata de profil").ActualWidth);
+            foreach (var (_, range) in StructureReport.DepthScaleRows())
+                Assert.DoesNotContain(texts, t => t.Text == range && t.ActualWidth > 0);
+            foreach (ScaleRow row in vm.Scale)
+                Assert.Equal(row.IsCurrent, Marked(Assert.Single(texts, t => t.Text == row.Range)));
+
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
+    /// <summary>Whether a cell of the verdict scale is drawn marked: its text sits in a border
+    /// with a visible background.</summary>
+    static bool Marked(TextBlock cell)
+        => VisualTreeHelper.GetParent(cell) is Border b && b.Background is SolidColorBrush s && s.Color.A > 0;
+
+    /// <summary>
     /// R-121: the structure tab on a raw that gives only a range - the prompt and the picker
     /// over the rows - first with no choice (both rows), then with the Samyang chosen (its row
     /// alone, the picker on it). The result comes through Populate, on hand-made sources.

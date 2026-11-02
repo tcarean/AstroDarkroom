@@ -568,33 +568,77 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Grid>
   </DataTemplate>
 
+  <!-- A band of the Structure tab's one verdict scale (R-126, ADR 0088): the pill, the five
+       tests' interval, the depth's in stops (collapsed when nothing was compared), the meaning.
+       The cell a verdict fell in is marked, not the row: the five tests and the depth can fall
+       in different bands. The two interval columns share their widths with the header row
+       above the list through SharedSizeGroup, so the size scope must enclose both. -->
+  <Style x:Key="ScaleCell" TargetType="Border">
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="9,6" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
   <DataTemplate x:Key="ScaleRowTemplate">
-    <Border CornerRadius="4" Padding="9,6" Margin="0,0,0,3">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="96" />
-          <ColumnDefinition Width="102" />
-          <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <ContentControl Grid.Column="0" Content="{Binding Band}"
-                        ContentTemplate="{StaticResource VerdictChip}"
-                        HorizontalAlignment="Left" />
-        <TextBlock Grid.Column="1" Style="{StaticResource Muted}" Text="{Binding Range}"
-                   VerticalAlignment="Center" />
-        <TextBlock Grid.Column="2" Style="{StaticResource Muted}" Text="{Binding Meaning}"
-                   VerticalAlignment="Center" />
-      </Grid>
-      <Border.Style>
-        <Style TargetType="Border">
-          <Setter Property="Background" Value="Transparent" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
-              <Setter Property="Background" Value="#2F2F35" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </Border.Style>
-    </Border>
+    <Grid Margin="0,0,0,3">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="105" />
+        <ColumnDefinition Width="Auto" SharedSizeGroup="ScalePercent" />
+        <ColumnDefinition Width="Auto" SharedSizeGroup="ScaleStops" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <ContentControl Grid.Column="0" Margin="9,0,0,0" Content="{Binding Band}"
+                      ContentTemplate="{StaticResource VerdictChip}"
+                      HorizontalAlignment="Left" VerticalAlignment="Center" />
+      <Border Grid.Column="1">
+        <Border.Style>
+          <Style TargetType="Border" BasedOn="{StaticResource ScaleCell}">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                <Setter Property="Background" Value="#2F2F35" />
+                <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Border.Style>
+        <TextBlock Text="{Binding Range}" VerticalAlignment="Center">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                  <Setter Property="Foreground" Value="{StaticResource TextBr}" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </Border>
+      <Border Grid.Column="2" Visibility="{Binding HasDepth, Converter={StaticResource BoolToVis}}">
+        <Border.Style>
+          <Style TargetType="Border" BasedOn="{StaticResource ScaleCell}">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsDepthCurrent}" Value="True">
+                <Setter Property="Background" Value="#2F2F35" />
+                <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Border.Style>
+        <TextBlock Text="{Binding DepthRange}" VerticalAlignment="Center">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDepthCurrent}" Value="True">
+                  <Setter Property="Foreground" Value="{StaticResource TextBr}" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+      </Border>
+      <TextBlock Grid.Column="3" Style="{StaticResource Muted}" Margin="9,6" Text="{Binding Meaning}"
+                 VerticalAlignment="Center" />
+    </Grid>
   </DataTemplate>
 
   <!-- The fold button: a chevron plus the label from Content. It appeared written by hand a
