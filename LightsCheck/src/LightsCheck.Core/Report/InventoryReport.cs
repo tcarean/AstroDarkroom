@@ -111,7 +111,7 @@ internal static class InventoryReport
     {
         string rel = dir == root ? "." : Path.GetRelativePath(root, dir) + "\\";
         string ext = frames.Count > 0 ? Path.GetExtension(frames[0]) : "";
-        return $"{rel} ({frames.Count} {(frames.Count == 1 ? T("frame", "cadru") : T("frames", "cadre"))} {ext})";
+        return $"{rel} ({T($"{frames.Count} {(frames.Count == 1 ? "frame" : "frames")}", RoCount(frames.Count) + (frames.Count == 1 ? "cadru" : "cadre"))} {ext})";
     }
 
     /// <summary>The distinct non-blank values (compared ordinally), joined by " / ".</summary>
@@ -215,7 +215,7 @@ internal static class InventoryReport
 
         string from = start.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), to = end.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         string length = RunReport.Duration(c.SpanSeconds), total = RunReport.Duration(c.IntegrationSeconds), duty = RunReport.F(c.DutyPct, 0);
-        string frames = c.TimedFrames == 1 ? T("1 frame", "1 cadru") : T($"{c.TimedFrames} frames", $"{c.TimedFrames} cadre");
+        string frames = c.TimedFrames == 1 ? T("1 frame", "1 cadru") : T($"{c.TimedFrames} frames", RoCount(c.TimedFrames) + "cadre");
         return T(
             $"from {from} to {to} ({length}); total exposure {total}, from {frames} (the camera was exposing {duty} % of the time)",
             $"de la {from} pana la {to} ({length}); expunere totala {total}, din {frames} (aparatul a expus {duty} % din timp)");

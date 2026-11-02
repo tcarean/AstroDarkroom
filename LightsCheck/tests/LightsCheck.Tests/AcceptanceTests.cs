@@ -157,8 +157,8 @@ public class AcceptanceTests
         Assert.Contains("=== CADRU 2: DSC_0002.fit ===", stdout, StringComparison.Ordinal);
         Assert.Contains("640 x 480 px; scara 0 .. 65535 ADU (FITS (presupus din BITPIX 16))", stdout, StringComparison.Ordinal);
         Assert.Contains("nivele CFA         : R 400", stdout, StringComparison.Ordinal);
-        Assert.Contains("stele              : 40 detectate", stdout, StringComparison.Ordinal);
-        Assert.Contains("inregistrare       : 40 stele retinute", stdout, StringComparison.Ordinal);
+        Assert.Contains("stele              : 40 de detectate", stdout, StringComparison.Ordinal);
+        Assert.Contains("inregistrare       : 40 de stele retinute", stdout, StringComparison.Ordinal);
     }
 
     [Theory]

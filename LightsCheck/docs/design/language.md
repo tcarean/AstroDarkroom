@@ -125,6 +125,13 @@ plain terms below.
 | E / V (sensul pe RA) | E / W |
 | stanga / dreapta / sus / jos (sageti) | left / right / up / down |
 
+A Romanian count of 20 and up takes `de` before the word it counts, unless its last two digits
+are 01 to 19 (R-082, ADR 0037): `Ui.RoCount` writes the figure and a space, with `de ` when the
+count takes one, for a count or a whole figure as the text shows it (`-90 de grade`). Every
+Romanian count goes through it, directly or through `SeriesReport.Count`, `FramesWord`,
+`TimesWord`, `PairsWord` and `SharingPairsWords`; a figure with decimals and the units (`px`,
+`s`, `min`, `h`, `%`, `ADU`) never do. The English halves write the count as before.
+
 ## Tests
 
 The Romanian goldens and every test written before run in Romanian through the module
@@ -149,3 +156,5 @@ rows, tables, paragraphs, reasons and cut-out lines against, linked from `Lights
 It measures every reason a trailed frame can get, in both languages, in the cell's font and the
 window's whole-pixel text, against the Frames table's reasons cell as the tab lays it out (R-079).
 With `LIGHTSCHECK_DUMP_SCREENS` it saves the English screens as `en-*.png`.
+`R082_ARomanianCountOfTwentyAndUpTakesDe` (`SeriesTests`) pins `Ui.RoCount`'s edges and scans the
+Romanian report of a 24-frame session for a count of 20 and up without `de`.

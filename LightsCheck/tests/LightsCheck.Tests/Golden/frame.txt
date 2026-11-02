@@ -5,11 +5,11 @@ Copyright (C) 2026 Tudor Carean
     dimensiune         : 640 x 480 px; scara 0 .. 65535 ADU (FITS (presupus din BITPIX 16))
     nivele CFA         : R 399 (saturati 0, min 237)  G1 2002 (saturati 0, min 1831)  G2 2001 (saturati 0, min 1847)  B 2300 (saturati 0, min 2119)  [ADU peste black]
     fond verde         : median 2000, centru 2000, colturi 2000 .. 2000 (dale 1998 .. 2001); zgomot sigma 27.7
-    stele              : 40 detectate, 40 luminoase, 0 saturate; 40 masurate
+    stele              : 40 de detectate, 40 de luminoase, 0 saturate; 40 de masurate
     FWHM               : 3.25 px median (p90 3.32); centru 3.24 (8), mijloc 3.26 (23), margine 3.24 (9)
     alungire           : 1.01 mediana (p90 1.03); 0 % peste 1.3; unghi -, coerenta -; centru 1.01 (8), margine 1.01 (9)
-    halo               : -0.000 (inel 5-10 px / nucleu 3 px, la cele mai luminoase 40 stele)
+    halo               : -0.000 (inel 5-10 px / nucleu 3 px, la cele mai luminoase 40 de stele)
     dare               : 0
-    inregistrare       : 40 stele retinute
+    inregistrare       : 40 de stele retinute
 --- stderr ---
 --- exit 0 ---

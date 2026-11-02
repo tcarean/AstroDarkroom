@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
+using System.Text.RegularExpressions;
 using LightsCheck.Cli;
 using LightsCheck.Core;
 
@@ -348,7 +350,7 @@ public class SeriesTests
 
         if (!english)
         {
-            Assert.Equal("alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 grade)", SeriesReport.Reason(flags[0]));
+            Assert.Equal("alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 de grade)", SeriesReport.Reason(flags[0]));
             Assert.Equal("1 dara de satelit sau avion (Siril o scoate la stivuire)", SeriesReport.Reason(flags[6]));
             Assert.Equal("3 dare de satelit sau avion (Siril le scoate la stivuire)", SeriesReport.Reason(flags[7]));
         }
@@ -381,6 +383,54 @@ public class SeriesTests
         {
             PlainWords.AssertPlain(text, "the Rejected tab");
         }
+    }
+
+    /// <summary>
+    /// A Romanian count of 20 and up takes "de" before the word it counts, unless its last two
+    /// digits are 01 to 19; a figure with decimals or a text that is no number takes none; the
+    /// Romanian report of a 24-frame session writes every count so, its English report as before
+    /// (R-082).
+    /// </summary>
+    [Fact]
+    public void R082_ARomanianCountOfTwentyAndUpTakesDe()
+    {
+        Assert.Equal("0 ", Ui.RoCount(0));
+        Assert.Equal("1 ", Ui.RoCount(1));
+        Assert.Equal("19 ", Ui.RoCount(19));
+        Assert.Equal("20 de ", Ui.RoCount(20));
+        Assert.Equal("99 de ", Ui.RoCount(99));
+        Assert.Equal("100 de ", Ui.RoCount(100));
+        Assert.Equal("101 ", Ui.RoCount(101));
+        Assert.Equal("119 ", Ui.RoCount(119));
+        Assert.Equal("120 de ", Ui.RoCount(120));
+        Assert.Equal("-90 de ", Ui.RoCount("-90"));
+        Assert.Equal("-5 ", Ui.RoCount("-5"));
+        Assert.Equal("2.0 ", Ui.RoCount("2.0"));
+        Assert.Equal("- ", Ui.RoCount("-"));
+
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] frames = [.. SessionFixture.Pattern, .. SessionFixture.Pattern, .. SessionFixture.Pattern];
+        using SessionFixture f = new SessionFixture().WithStarSeries(frames, biases: 2);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        string Report(UiLanguage language)
+        {
+            using IDisposable _ = Ui.Use(language);
+            using StringWriter w = new();
+            SeriesReport.Write(r, w);
+            return w.ToString();
+        }
+
+        string ro = Report(UiLanguage.Romanian);
+        Assert.Contains(@"lights\ (24 de cadre .fit)", ro, StringComparison.Ordinal);
+        Assert.Contains("din 24 de cadre", ro, StringComparison.Ordinal);
+        Assert.Contains("(-90 de grade)", ro, StringComparison.Ordinal);
+        Regex counted = new(@"(?<![\w.:-])(-?\d+) (?!de )(cadre|cadru|perechi|miscari|locuri|ori|grade|dark-uri|pixeli|stele|slabe|bune|necitite|singure|detectate|luminoase|masurate|retinute)\b");
+        foreach (Match m in counted.Matches(ro))
+        {
+            long n = Math.Abs(long.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture)), last = n % 100;
+            Assert.False(n != 0 && (last == 0 || last >= 20), $"a count of 20 and up without de: {m.Value}");
+        }
+
+        Assert.Contains(@"lights\ (24 frames .fit)", Report(UiLanguage.English), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -482,7 +532,7 @@ public class SeriesTests
         Assert.Equal(Axis.Y, s.RaAxis);
         FrameFlag flag = Assert.Single(s.Flags[2]);
         Assert.Equal(TrailAxis.Ra, flag.On);
-        Assert.Equal($"alungire {RunReport.F(flag.Value, 2)} (de la 1.60 cadrul e slab), dara pe RA (-90 grade)", SeriesReport.Reasons(s.Flags[2]));
+        Assert.Equal($"alungire {RunReport.F(flag.Value, 2)} (de la 1.60 cadrul e slab), dara pe RA (-90 de grade)", SeriesReport.Reasons(s.Flags[2]));
         Assert.Equal(TrailAxis.Ra, s.TrailOn);
         Assert.Contains(", adica pe RA", SeriesReport.TrailRows(r).Single(x => x.Label == "directia darelor").Value, StringComparison.Ordinal);
 
