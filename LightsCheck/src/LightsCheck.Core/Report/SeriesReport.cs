@@ -291,7 +291,7 @@ internal static class SeriesReport
         string fwhm = RunReport.F(c.Star.Fwhm, 1), elongation = RunReport.F(c.Star.Elongation, 2), angle = RunReport.F(c.Star.AngleDeg, 0);
         return T(
             $"{c.Where}: width (FWHM) {fwhm} px, elongation {elongation}, angle {angle} degrees",
-            $"{c.Where}: latime (FWHM) {fwhm} px, alungire {elongation}, unghi {angle} grade");
+            $"{c.Where}: latime (FWHM) {fwhm} px, alungire {elongation}, unghi {RoCount(angle)}grade");
     }
 
     /// <summary>
@@ -363,7 +363,7 @@ internal static class SeriesReport
             new(T("dew", "roua"), dt, dv),
             new(T("trailed frames", "cadre miscate"), T(
                 $"{s.BadCount.ToString(Inv)} bad, {s.MarginalCount.ToString(Inv)} marginal, {s.GoodCount.ToString(Inv)} good{(s.UnknownCount > 0 ? ", " + s.UnknownCount.ToString(Inv) + " unread" : "")} (of {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}",
-                $"{s.BadCount.ToString(Inv)} slabe, {s.MarginalCount.ToString(Inv)} la limita, {s.GoodCount.ToString(Inv)} bune{(s.UnknownCount > 0 ? ", " + s.UnknownCount.ToString(Inv) + " necitite" : "")} (din {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}")),
+                $"{RoCount(s.BadCount)}slabe, {s.MarginalCount.ToString(Inv)} la limita, {RoCount(s.GoodCount)}bune{(s.UnknownCount > 0 ? ", " + RoCount(s.UnknownCount) + "necitite" : "")} (din {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}")),
             new("dithering", ditherText, dither),
             new(T("polar alignment", "aliniere polara"), polarText, polarVerdict),
             new(T("leave out of stack", "de scos din stiva"), Keep(r)),
@@ -387,7 +387,7 @@ internal static class SeriesReport
         return
         [
             new(T("the stars' width (FWHM)", "latimea stelelor (FWHM)"), $"{Px(s.SessionFwhm, r)} {typically}"),
-            new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {s.Fwhm.Count.ToString(Inv)} cadre bune"), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
+            new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {RoCount(s.Fwhm.Count)}cadre bune"), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
             new(T("in the centre / in the middle / at the edge", "in centru / la mijloc / la margine"), T($"the stars' width {ZoneMedians(r)} {typically}", $"latimea stelelor {ZoneMedians(r)} {typically}")),
             new("verdict", ft, fv),
         ];
@@ -514,7 +514,7 @@ internal static class SeriesReport
         SeriesAnalysis s = r.Series;
         string bad = RunReport.F(Th.ElongationBad, 2), marginal = RunReport.F(Th.ElongationMarginal, 2);
         string direction = s.TrailAngleDeg is double ta
-            ? RunReport.F(ta, 0) + T(" degrees from the horizontal, on the bad frames", " grade fata de orizontala, pe cadrele slabe") + (s.TrailOn == TrailAxis.Unknown ? "" : T(", that is ", ", adica ") + AxisWord(s.TrailOn))
+            ? T(RunReport.F(ta, 0) + " degrees from the horizontal, on the bad frames", RoCount(RunReport.F(ta, 0)) + "grade fata de orizontala, pe cadrele slabe") + (s.TrailOn == TrailAxis.Unknown ? "" : T(", that is ", ", adica ") + AxisWord(s.TrailOn))
             : T("not known (too few bad frames with trails in the same direction)", "nu se stie (prea putine cadre slabe cu dare in aceeasi directie)");
         return
         [
@@ -573,7 +573,7 @@ internal static class SeriesReport
     /// <returns>The pair count, singular for one, and the kind of pairs.</returns>
     private static string PairsWord(SeriesAnalysis s)
     {
-        string pairs = s.DriftPairs == 1 ? T("1 pair", "1 pereche") : T($"{s.DriftPairs.ToString(Inv)} pairs", $"{s.DriftPairs.ToString(Inv)} perechi");
+        string pairs = s.DriftPairs == 1 ? T("1 pair", "1 pereche") : T($"{s.DriftPairs.ToString(Inv)} pairs", RoCount(s.DriftPairs) + "perechi");
         return s.DriftApproximate
             ? T($"from {pairs} of frames with a pause; approximate, since the small dither moves count in the figure", $"din {pairs} de cadre cu pauza; aproximativ, fiindca in cifra intra si miscarile mici de dithering")
             : T($"from {pairs} of frames without a pause between them", $"din {pairs} de cadre fara pauza intre ele");
@@ -595,7 +595,7 @@ internal static class SeriesReport
             : r.Dither.Registered < 2 ? T("- (the frames could not be aligned)", "- (cadrele nu s-au putut alinia)")
             : s.StarDriftPerMin is null && (s.DriftApproximate || s.DriftXPerMin is null || s.DriftPairs < Th.DriftMinPairs) ? T(
                 $"cannot be measured (under {Th.DriftMinPairs.ToString(Inv)} pairs of frames in a row, with no pause and no move between them; 10 or more frames in a row without dithering would do)",
-                $"nu se poate masura (sub {Th.DriftMinPairs.ToString(Inv)} perechi de cadre la rand, fara pauza si fara miscare intre ele; 10 sau mai multe cadre la rand fara dithering ar ajunge)")
+                $"nu se poate masura (sub {RoCount(Th.DriftMinPairs)}perechi de cadre la rand, fara pauza si fara miscare intre ele; 10 sau mai multe cadre la rand fara dithering ar ajunge)")
             : s.RaAxis == Axis.Unknown ? T("- (it is not known which axis is RA)", "- (nu se stie care axa e RA)")
             : r.ArcsecPerPixel is null ? T("- (the scale is not known)", "- (nu se stie scara)")
             : T("- (the exposure is not known)", "- (nu se stie expunerea)");
@@ -670,7 +670,7 @@ internal static class SeriesReport
         string driftMax = RunReport.F(s.PolarDriftMaxPx ?? 0, 2);
         return T(
             $"{PolarBounds(s)} (found from the DEC drift, {decDrift}\"/min, and from the image's rotation, {perHour}'/h without dithering, at DEC {decDeg} degrees); because of this the stars move at most {driftMax} px {exposure} ({driftMin} px for certain){elongation}",
-            $"{PolarBounds(s)} (aflat din driftul pe DEC, {decDrift}\"/min, si din rotatia imaginii, {perHour}'/h fara dithering, la DEC {decDeg} grade); din cauza asta stelele se misca cel mult {driftMax} px {exposure} (sigur {driftMin} px){elongation}");
+            $"{PolarBounds(s)} (aflat din driftul pe DEC, {decDrift}\"/min, si din rotatia imaginii, {perHour}'/h fara dithering, la DEC {RoCount(decDeg)}grade); din cauza asta stelele se misca cel mult {driftMax} px {exposure} (sigur {driftMin} px){elongation}");
     }
 
     /// <summary>
@@ -949,7 +949,7 @@ internal static class SeriesReport
         {
             0 => T($"no two frames sat under {share} px from each other", $"nicio pereche de cadre n-a stat la sub {share} px una de alta"),
             1 => T($"1 pair of frames sat under {share} px from each other, and its pattern adds up", $"1 pereche de cadre a stat la sub {share} px una de alta, iar pattern-ul ei se aduna"),
-            _ => T($"{n} pairs of frames sat under {share} px from each other, and their pattern adds up", $"{n} perechi de cadre au stat la sub {share} px una de alta, iar pattern-ul lor se aduna"),
+            _ => T($"{n} pairs of frames sat under {share} px from each other, and their pattern adds up", $"{RoCount(n)}perechi de cadre au stat la sub {share} px una de alta, iar pattern-ul lor se aduna"),
         };
     }
 
@@ -970,11 +970,11 @@ internal static class SeriesReport
         SensorPattern p = r.Pattern;
         string darks = r.Session.DarksDir is null
             ? T("no darks in the session, the pattern stays in the frames", "fara dark-uri in sesiune, pattern-ul ramane in cadre")
-            : T($"{r.Session.Darks.Count.ToString(Inv)} darks in {SessionFolder.DarksName}\\, with which Siril takes the pattern out", $"{r.Session.Darks.Count.ToString(Inv)} dark-uri in {SessionFolder.DarksName}\\, cu care Siril scoate pattern-ul");
+            : T($"{r.Session.Darks.Count.ToString(Inv)} darks in {SessionFolder.DarksName}\\, with which Siril takes the pattern out", $"{RoCount(r.Session.Darks.Count)}dark-uri in {SessionFolder.DarksName}\\, cu care Siril scoate pattern-ul");
         string value = p.Status switch
         {
             PatternStatus.Measured => MeasuredPattern(p),
-            PatternStatus.TooFewFrames => T($"cannot be measured (fewer than {Th.PatternMinFrames.ToString(Inv)} frames measured)", $"nu se poate masura (mai putin de {Th.PatternMinFrames.ToString(Inv)} cadre masurate)"),
+            PatternStatus.TooFewFrames => T($"cannot be measured (fewer than {Th.PatternMinFrames.ToString(Inv)} frames measured)", $"nu se poate masura (mai putin de {RoCount(Th.PatternMinFrames)}cadre masurate)"),
             PatternStatus.Unregistered => T("cannot be measured (the frames could not be aligned)", "nu se poate masura (cadrele nu s-au putut alinia)"),
             PatternStatus.FramesDidNotMove => T(
                 $"cannot be measured (the frames stayed in place too much and the stars cannot be told apart from the pattern; the largest group in the same spot (within {RunReport.F(Th.CoverageTight, 0)} px) has {FramesWord(r.Dither.LargestClusterTight)} of {r.Dither.Registered.ToString(Inv)})",
@@ -1003,7 +1003,7 @@ internal static class SeriesReport
         string hot = RunReport.F(p.HotPerMpx, 0), hotSigma = RunReport.F(Th.PatternHotSigma, 0), crop = p.CropSize.ToString(Inv);
         return T(
             $"strength {string.Join(", ", sigmas)}; {hot} hot pixels per million pixels, that is, those above {hotSigma} times one frame's noise (from {FramesWord(p.Frames)}, on {crop} x {crop} px from the centre)",
-            $"tarie {string.Join(", ", sigmas)}; {hot} pixeli calzi la un milion de pixeli, adica cei de peste {hotSigma} ori zgomotul unui cadru (din {FramesWord(p.Frames)}, pe {crop} x {crop} px din centru)");
+            $"tarie {string.Join(", ", sigmas)}; {RoCount(hot)}pixeli calzi la un milion de pixeli, adica cei de peste {RoCount(hotSigma)}ori zgomotul unui cadru (din {FramesWord(p.Frames)}, pe {crop} x {crop} px din centru)");
     }
 
     /// <summary>
@@ -1163,13 +1163,19 @@ internal static class SeriesReport
 
     /// <summary>A frame count with its noun in the right number.</summary>
     /// <param name="frames">The count.</param>
-    /// <returns>"1 frame" ("1 cadru"), or "N frames" ("N cadre") for any other count.</returns>
-    private static string FramesWord(int frames) => $"{frames.ToString(Inv)} {(frames == 1 ? T("frame", "cadru") : T("frames", "cadre"))}";
+    /// <returns>
+    /// "1 frame" ("1 cadru"), or "N frames" ("N cadre", "20 de cadre" from 20 up as
+    /// <see cref="Ui.RoCount(long)"/> writes it) for any other count.
+    /// </returns>
+    private static string FramesWord(int frames) => T($"{frames.ToString(Inv)} {(frames == 1 ? "frame" : "frames")}", RoCount(frames) + (frames == 1 ? "cadru" : "cadre"));
 
     /// <summary>A number of times with its noun in the right number.</summary>
     /// <param name="times">The count.</param>
-    /// <returns>"1 time" ("1 data"), or "N times" ("N ori") for any other count.</returns>
-    private static string TimesWord(int times) => $"{times.ToString(Inv)} {(times == 1 ? T("time", "data") : T("times", "ori"))}";
+    /// <returns>
+    /// "1 time" ("1 data"), or "N times" ("N ori", "22 de ori" from 20 up as
+    /// <see cref="Ui.RoCount(long)"/> writes it) for any other count.
+    /// </returns>
+    private static string TimesWord(int times) => T($"{times.ToString(Inv)} {(times == 1 ? "time" : "times")}", RoCount(times) + (times == 1 ? "data" : "ori"));
 
     /// <summary>A size class of the moves in pixels.</summary>
     /// <param name="c">
@@ -1271,8 +1277,8 @@ internal static class SeriesReport
     /// <returns>The suffix, starting with ", ", or "".</returns>
     private static string TrailSuffix(FrameFlag f)
         => f.Detail is null ? ""
-            : f.On == TrailAxis.Unknown ? T($", trail at {f.Detail} degrees", $", dara la {f.Detail} grade")
-            : T($", trail {AxisWord(f.On)} ({f.Detail} degrees)", $", dara {AxisWord(f.On)} ({f.Detail} grade)");
+            : f.On == TrailAxis.Unknown ? T($", trail at {f.Detail} degrees", $", dara la {RoCount(f.Detail)}grade")
+            : T($", trail {AxisWord(f.On)} ({f.Detail} degrees)", $", dara {AxisWord(f.On)} ({RoCount(f.Detail)}grade)");
 
     /// <summary>The mount axis a trail falls on, as the report's sentences say it.</summary>
     /// <param name="on">The trail's axis.</param>
@@ -1426,7 +1432,7 @@ internal static class SeriesReport
             ? (0, T("OK for hot pixels", "OK pentru pixeli calzi"), null)
             : (2, T("WARNING on hot pixels", "ATENTIE la pixeli calzi"), T(
                 $"hot pixels: more than {Th.HotPixelRunMax.ToString(Inv)} frames in a row in the same spot (within {RunReport.F(Th.CoverageTight, 0)} px)",
-                $"pixeli calzi: mai mult de {Th.HotPixelRunMax.ToString(Inv)} cadre la rand in acelasi loc (la {RunReport.F(Th.CoverageTight, 0)} px)"));
+                $"pixeli calzi: mai mult de {RoCount(Th.HotPixelRunMax)}cadre la rand in acelasi loc (la {RunReport.F(Th.CoverageTight, 0)} px)"));
         string run = d.WalkingStretch is FrameStretch w ? StretchWord(w) : NoRun();
         string drift = s.DriftPerExposurePx is double dpe
             ? T($"the drift is {RunReport.F(dpe, 2)} px over one exposure; {run}", $"driftul e de {RunReport.F(dpe, 2)} px intr-o expunere; {run}")
@@ -1449,7 +1455,7 @@ internal static class SeriesReport
         string both = Count(d.MovesOnBoth, ("move on both axes", "miscare pe ambele axe"), ("moves on both axes", "miscari pe ambele axe"));
         string counts = T(
             $"{moves} over {frames} frames, {spots} (within {loose} px), {alone}, {both}",
-            $"{moves} la {frames} cadre, {spots} (la {loose} px), {alone}, {both}");
+            $"{moves} la {RoCount(frames)}cadre, {spots} (la {loose} px), {alone}, {both}");
         return ($"{first.Word}, {second.Word}", string.Join("; ", new[] { first.Detail, second.Detail, counts }.Where(x => x is not null)));
     }
 
@@ -1457,9 +1463,12 @@ internal static class SeriesReport
     /// <param name="n">The count, 0 or more.</param>
     /// <param name="one">The noun for a count of one, in English and in Romanian.</param>
     /// <param name="many">The noun for any other count, in English and in Romanian.</param>
-    /// <returns>`1 frame alone` (`1 cadru singur`), or `3 frames alone` (`3 cadre singure`).</returns>
+    /// <returns>
+    /// `1 frame alone` (`1 cadru singur`), or `3 frames alone` (`3 cadre singure`; `20 de cadre
+    /// singure` from 20 up, as <see cref="Ui.RoCount(long)"/> writes it).
+    /// </returns>
     private static string Count(int n, (string En, string Ro) one, (string En, string Ro) many)
-        => $"{n.ToString(Inv)} {(n == 1 ? T(one.En, one.Ro) : T(many.En, many.Ro))}";
+        => T($"{n.ToString(Inv)} {(n == 1 ? one.En : many.En)}", RoCount(n) + (n == 1 ? one.Ro : many.Ro));
 
     /// <summary>
     /// The `leave out of stack` (`de scos din stiva`) cell, in plain words (R-078): how many

@@ -41,7 +41,7 @@ Copyright (C) 2026 Tudor Carean
   CADRE MISCATE
     slabe (alungire de cel putin 1.60): 3, 6
     la limita (alungire intre 1.35 si 1.60): niciunul
-    directia darelor   : -90 grade fata de orizontala, pe cadrele slabe, adica pe RA; RA e axa Y a imaginii, DEC axa X (aflat din directia darelor: presupunem ca le-a facut urmarirea, deci sunt pe RA)
+    directia darelor   : -90 de grade fata de orizontala, pe cadrele slabe, adica pe RA; RA e axa Y a imaginii, DEC axa X (aflat din directia darelor: presupunem ca le-a facut urmarirea, deci sunt pe RA)
 
   DRIFT SI ROTATIE
     drift intre cadre la rand, fara dithering: X +0.25 px/min, Y +0.03 px/min = +1.5 / +0.2 "/min (din 4 perechi de cadre fara pauza intre ele)
@@ -66,17 +66,17 @@ Copyright (C) 2026 Tudor Carean
     verdict            : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; 3 miscari la 8 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe
 
   RESPINSE (2 cadre slabe; cele la limita raman in stiva, la alegerea ta)
-      3  DSC_0003.fit          alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 grade)
-      6  DSC_0006.fit          alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 grade)
+      3  DSC_0003.fit          alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 de grade)
+      6  DSC_0006.fit          alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 de grade)
 
   TABEL PE CADRE
      nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  dithering                                   acelasi loc     motive
       1  DSC_0001.fit          20:35:03  bun        1.01   3.25      40   2000      -      -     0.0     0.0  -                                           -               
       2  DSC_0002.fit          20:37:04  bun        1.01   3.25      40   2000    1 s    0.5     0.5     0.2  -                                           -               
-      3  DSC_0003.fit          20:39:34  SLAB       1.76   4.59      40   2000   30 s   11.5    12.0    -0.0  DEC 12 px                                   -               alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 grade)
+      3  DSC_0003.fit          20:39:34  SLAB       1.76   4.59      40   2000   30 s   11.5    12.0    -0.0  DEC 12 px                                   -               alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 de grade)
       4  DSC_0004.fit          20:41:35  bun        1.01   3.26      40   2000    1 s    0.6    12.5     0.3  -                                           -               
       5  DSC_0005.fit          20:44:05  bun        1.01   3.25      40   2000   30 s   15.3    12.0   -15.0  RA 15 px                                    -               
-      6  DSC_0006.fit          20:46:06  SLAB       1.76   4.60      40   2001    1 s    0.5    12.5   -15.0  -                                           -               alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 grade)
+      6  DSC_0006.fit          20:46:06  SLAB       1.76   4.60      40   2001    1 s    0.5    12.5   -15.0  -                                           -               alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 de grade)
       7  DSC_0007.fit          20:48:36  bun        1.01   3.24      40   2001   30 s   27.5    40.0   -15.0  DEC 27 px                                   -               
       8  DSC_0008.fit          20:50:37  bun        1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               
 --- stderr ---

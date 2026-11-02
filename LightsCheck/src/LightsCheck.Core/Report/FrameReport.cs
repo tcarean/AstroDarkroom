@@ -58,7 +58,7 @@ internal static class FrameReport
         string saturated = m.SaturatedStars.ToString(CultureInfo.InvariantCulture), measured = m.Shapes.Count.ToString(CultureInfo.InvariantCulture);
         w.WriteLine(T(
             $"    stars              : {detected} detected, {bright} bright, {saturated} saturated; {measured} measured",
-            $"    stele              : {detected} detectate, {bright} luminoase, {saturated} saturate; {measured} masurate"));
+            $"    stele              : {RoCount(detected)}detectate, {RoCount(bright)}luminoase, {RoCount(saturated)}saturate; {RoCount(measured)}masurate"));
         string fwhm = Opt(m.FwhmMedian, 2, " px"), fwhm90 = Opt(m.FwhmP90, 2);
         string fc = Zone(m.Centre, z => z.Fwhm), fm = Zone(m.Mid, z => z.Fwhm), fe = Zone(m.Edge, z => z.Fwhm);
         w.WriteLine(T(
@@ -68,17 +68,17 @@ internal static class FrameReport
         string ratio = RunReport.F(Th.ElongatedRatio, 1), coherence = Opt(m.AngleCoherence, 2), ec = Zone(m.Centre, z => z.Elongation), ee = Zone(m.Edge, z => z.Elongation);
         w.WriteLine(T(
             $"    elongation         : {elong} median (p90 {elong90}); {share} % above {ratio}; angle {Opt(m.AngleDeg, 0, " degrees")}, coherence {coherence}; centre {ec}, edge {ee}",
-            $"    alungire           : {elong} mediana (p90 {elong90}); {share} % peste {ratio}; unghi {Opt(m.AngleDeg, 0, " grade")}, coerenta {coherence}; centru {ec}, margine {ee}"));
+            $"    alungire           : {elong} mediana (p90 {elong90}); {share} % peste {ratio}; unghi {(m.AngleDeg is double a ? RoCount(RunReport.F(a, 0)) + "grade" : "-")}, coerenta {coherence}; centru {ec}, margine {ee}"));
         string halo = Opt(m.Halo, 3), haloStars = Th.HaloStars.ToString(CultureInfo.InvariantCulture);
         w.WriteLine(T(
             $"    halo               : {halo} (ring 5-10 px / core 3 px, over the {haloStars} brightest stars)",
-            $"    halo               : {halo} (inel 5-10 px / nucleu 3 px, la cele mai luminoase {haloStars} stele)"));
+            $"    halo               : {halo} (inel 5-10 px / nucleu 3 px, la cele mai luminoase {RoCount(haloStars)}stele)"));
         string trails = m.Trails.Count.ToString(CultureInfo.InvariantCulture) + (m.Trails.Count > 0
             ? " (" + string.Join(", ", m.Trails.Select(t => $"{RunReport.F(t.Length, 0)} px {T("at", "la")} ({t.X.ToString(CultureInfo.InvariantCulture)},{t.Y.ToString(CultureInfo.InvariantCulture)})")) + ")"
             : "");
         w.WriteLine(T($"    trails             : {trails}", $"    dare               : {trails}"));
         string kept = m.RegistrationStars.Count.ToString(CultureInfo.InvariantCulture);
-        w.WriteLine(T($"    registration       : {kept} stars kept", $"    inregistrare       : {kept} stele retinute"));
+        w.WriteLine(T($"    registration       : {kept} stars kept", $"    inregistrare       : {RoCount(kept)}stele retinute"));
     }
 
     /// <summary>An optional figure with a fixed number of decimals and its unit, or "-".</summary>

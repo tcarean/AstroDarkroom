@@ -105,6 +105,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- Romanian counts of 20 and up take `de` before the word they count, as Romanian writes them
+  (R-082, ADR 0037): `lights\ (87 de cadre .NEF)`, `din 87 de cadre`, `22 de cadre slabe`, `din 39
+  de perechi de cadre`, `22 de ori` in the dithering table, `dara pe RA (-90 de grade)`, and in
+  `--frame` `40 de stele retinute`. Counts under 20 or ending in 01 to 19, figures with decimals
+  and units are written as before, and so is the English; the validation case V-010 records
+  `22 de ori`, its figure unchanged.
 - About fits the screen it opens on: never taller than the screen's work area, its cards
   scrolling with the wheel and the keys when they are taller, the Close button always in view.
   It overflowed a 1366x768 laptop and a 1080p screen at 150 %, and with this version's six

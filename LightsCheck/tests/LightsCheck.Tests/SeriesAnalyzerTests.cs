@@ -261,11 +261,11 @@ public class SeriesAnalyzerTests
             Frame(3, Measurement(3.1, 1.4, 10000, 122)),                      // marginal, coherent: `pe RA`
             Frame(4, Measurement(3.0, 1.7, 9000, 121, coherence: 0.5)));      // bad, the stars disagree: angle alone
         Assert.Equal(TrailAxis.Ra, s.Flags[1][0].On);
-        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara pe RA (88 grade)", SeriesReport.Reason(s.Flags[1][0]));
+        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara pe RA (88 de grade)", SeriesReport.Reason(s.Flags[1][0]));
         Assert.Equal(TrailAxis.Ra, s.Flags[2][0].On);
-        Assert.Equal("alungire 1.40 (de la 1.35 cadrul e la limita), dara pe RA (88 grade)", SeriesReport.Reason(s.Flags[2][0]));
+        Assert.Equal("alungire 1.40 (de la 1.35 cadrul e la limita), dara pe RA (88 de grade)", SeriesReport.Reason(s.Flags[2][0]));
         Assert.Equal(TrailAxis.Unknown, s.Flags[3][0].On);
-        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara la 88 grade", SeriesReport.Reason(s.Flags[3][0]));
+        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara la 88 de grade", SeriesReport.Reason(s.Flags[3][0]));
 
         // One bad frame cannot set the axis from the trails (Th.TrailAxisMinFrames is 2): no axis, the angle alone.
         SeriesAnalysis u = Analyze(
@@ -274,8 +274,8 @@ public class SeriesAnalyzerTests
             Frame(3, Measurement(3.1, 1.4, 10000, 122)));
         Assert.Equal(Axis.Unknown, u.RaAxis);
         Assert.Equal(TrailAxis.Unknown, u.TrailOn);
-        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara la 88 grade", SeriesReport.Reason(u.Flags[1][0]));
-        Assert.Equal("alungire 1.40 (de la 1.35 cadrul e la limita), dara la 88 grade", SeriesReport.Reason(u.Flags[2][0]));
+        Assert.Equal("alungire 1.70 (de la 1.60 cadrul e slab), dara la 88 de grade", SeriesReport.Reason(u.Flags[1][0]));
+        Assert.Equal("alungire 1.40 (de la 1.35 cadrul e la limita), dara la 88 de grade", SeriesReport.Reason(u.Flags[2][0]));
     }
 
     [Fact]
