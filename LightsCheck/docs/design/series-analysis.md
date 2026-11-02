@@ -238,7 +238,8 @@ verdict word and the value, and the window binds the same rows (ADR 0008). A sec
 therefore has one label column; a label longer than the field pushes its colon right.
 `FrameRows` formats the table's cells once for the console and the window (`SpotCell` the
 `k/n from f` cell of a run, `-` outside one), `RejectedRows` and `RejectedHeading` the
-REJECTED block, `CropCaption` the caption of a star cut-out (`StarCrops` cuts, this file
+REJECTED block (the heading counts the bad and the unread frames through `Count`, singular for
+one, R-081), `CropCaption` the caption of a star cut-out (`StarCrops` cuts, this file
 words). `Reason` words a flag in plain words (R-079), a trailing one as `elongation v (from t
 the frame is bad)`, or `is marginal`, plus `TrailSuffix`: `, trail on RA (a degrees)` when the
 flag has an axis (`AxisWord`), `, trail at a degrees` when it has only the angle; the satellite

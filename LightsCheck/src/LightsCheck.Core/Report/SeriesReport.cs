@@ -132,21 +132,25 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The text in the REJECTED (RESPINSE) heading's parentheses: the counts and the rule for the marginal
-    /// frames.
+    /// The text in the REJECTED (RESPINSE) heading's parentheses, in plain words (R-081): the bad
+    /// frames, the unread ones when there are any, each count singular for one, and that the
+    /// marginal frames stay in the stack.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The bad count, the unread count when there are any, and the marginal frames' rule.
+    /// `2 bad frames; the marginal ones stay in the stack, your choice`, with ` and 1 unread frame`
+    /// after the bad count when frames went unread (`2 cadre slabe; cele la limita raman in stiva,
+    /// la alegerea ta`, ` si 1 cadru necitit`).
     /// </returns>
     internal static string RejectedHeading(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
         SeriesAnalysis s = r.Series;
-        string bad = s.BadCount.ToString(Inv), unread = s.UnknownCount.ToString(Inv);
-        return T(
-            $"{bad} bad {(s.BadCount == 1 ? "frame" : "frames")}{(s.UnknownCount > 0 ? ", " + unread + " unread" : "")}; the marginal ones stay, your choice",
-            $"{bad} cadre slabe{(s.UnknownCount > 0 ? ", " + unread + " necitite" : "")}; cele la limita raman la alegerea ta");
+        string bad = Count(s.BadCount, ("bad frame", "cadru slab"), ("bad frames", "cadre slabe"));
+        string unread = s.UnknownCount > 0
+            ? T(" and ", " si ") + Count(s.UnknownCount, ("unread frame", "cadru necitit"), ("unread frames", "cadre necitite"))
+            : "";
+        return bad + unread + T("; the marginal ones stay in the stack, your choice", "; cele la limita raman in stiva, la alegerea ta");
     }
 
     /// <summary>
@@ -253,24 +257,24 @@ internal static class SeriesReport
         => run is null ? "-" : $"{run.Ordinal.ToString(Inv)}/{run.Frames.ToString(Inv)} {T("from", "de la")} {run.FirstIndex.ToString(Inv)}";
 
     /// <summary>
-    /// What the Rejected tab says under its heading, one paragraph per line: the elongation, where
-    /// the marginal frames are, the trail and its axis, and in bold what each axis points to
-    /// (R-035, R-036). Built when read, in the language of that moment.
+    /// What the Rejected tab says under its heading, one paragraph per line, in plain words
+    /// (R-081): the elongation, where the marginal frames are, the trail and its axis, and in bold
+    /// what each axis points to (R-035, R-036). Built when read, in the language of that moment.
     /// </summary>
     internal static IReadOnlyList<ReportParagraph> RejectedExplanation => IsRomanian
     ?
     [
-        new($"Alungirea e raportul dintre axa lunga si axa scurta a stelelor (1 = rotunde), mediana pe cadru: de la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
-        new($"Intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} cadrul e la limita si ramane, la alegerea ta: lista lui e randul 'la limita' din CADRE MISCATE, tabul Rezumat; in tabul Cadre are clasa galbena.", false),
-        new("Dara e directia in care s-au intins stelele in timpul expunerii: unghiul fata de orizontala imaginii si, cand se stie care axa a imaginii e RA si stelele cadrului sunt de acord intre ele (coerenta), axa monturii pe care cade.", false),
-        new("Dara pe RA vine din urmarire: eroarea periodica, viteza, backlash-ul pe RA. Dara pe DEC vine din alinierea polara, vant sau o atingere a monturii. Oblica: amandoua, sau o lovitura.", true),
+        new($"Alungirea spune de cate ori sunt stelele mai lungi decat late, de obicei, intr-un cadru (1 = rotunde). De la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
+        new($"Intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} cadrul e la limita si ramane in stiva, daca nu hotarasti altfel. Cadrele la limita sunt pe randul 'la limita' din CADRE MISCATE, pe tabul Rezumat, iar pe tabul Cadre au clasa galbena.", false),
+        new("Dara e directia in care s-au intins stelele in timpul expunerii, data ca unghi fata de orizontala imaginii. Cand se stie care axa a imaginii e RA si stelele cadrului s-au intins toate cam in aceeasi directie, motivul spune si pe ce axa a monturii cade dara.", false),
+        new("O dara pe RA vine de la urmarire: eroarea periodica a monturii, o viteza de urmarire gresita sau jocul din angrenaje (backlash) pe RA. O dara pe DEC vine de la alinierea polara, de la vant sau de la o atingere a monturii. Una oblica vine de la amandoua sau de la o lovitura.", true),
     ]
     :
     [
-        new($"The elongation is the ratio of the stars' long axis to their short axis (1 = round), the median over the frame: from {RunReport.F(Th.ElongationBad, 2)} the frame is bad and leaves the stack.", false),
-        new($"Between {RunReport.F(Th.ElongationMarginal, 2)} and {RunReport.F(Th.ElongationBad, 2)} the frame is marginal and stays, your choice: its list is the 'marginal' row of TRAILED FRAMES, on the Summary tab; on the Frames tab its class is yellow.", false),
-        new("The trail is the direction the stars were stretched in during the exposure: its angle to the image's horizontal and, when it is known which image axis is RA and the frame's stars agree with one another (coherence), the mount axis it falls on.", false),
-        new("A trail on RA comes from the tracking: periodic error, rate, backlash on RA. A trail on DEC comes from the polar alignment, wind or a touch on the mount. Oblique: both, or a knock.", true),
+        new($"The elongation says how many times longer than wide the stars are, typically, in a frame (1 = round). From {RunReport.F(Th.ElongationBad, 2)} the frame is bad and leaves the stack.", false),
+        new($"Between {RunReport.F(Th.ElongationMarginal, 2)} and {RunReport.F(Th.ElongationBad, 2)} the frame is marginal and stays in the stack unless you decide otherwise. The marginal frames are on the 'marginal' row of TRAILED FRAMES, on the Summary tab, and on the Frames tab their class is yellow.", false),
+        new("The trail is the direction the stars were stretched in during the exposure, given as an angle to the image's horizontal. When it is known which image axis is RA and the frame's stars were all stretched about the same way, the reason also says which mount axis the trail falls on.", false),
+        new("A trail on RA comes from the tracking: the mount's periodic error, a wrong tracking rate or the play in the gears (backlash) on RA. A trail on DEC comes from the polar alignment, the wind or a touch on the mount. An oblique one comes from both, or from a knock.", true),
     ];
 
     /// <summary>

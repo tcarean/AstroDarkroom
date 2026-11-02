@@ -80,10 +80,9 @@ before `NO `).
 
 The English follows Siril's and the usual astrophotography vocabulary, British in spelling
 (`centre`, `colour`, `analysed`); a term is translated the same way everywhere. The words are
-plain ones (the rule "Plain words", R-077 to R-080): the Dithering, Summary, Frames and Quality
-tabs, the reasons wherever they are printed, and the console's sections and session lines they
-share, use the plain terms below; the Rejected tab's explanation keeps its older words until its
-own rewrite.
+plain ones (the rule "Plain words", R-077 to R-081): every tab of the window, the reasons wherever
+they are printed, and the console's sections, session lines and REJECTED line they share use the
+plain terms below.
 
 | Romanian | English |
 | --- | --- |
@@ -109,6 +108,8 @@ own rewrite.
 | scara | scale |
 | decupaje | cut-outs |
 | respinse / de scos din stiva | rejected / leave out of stack |
+| cele la limita raman in stiva, la alegerea ta | the marginal ones stay in the stack, your choice |
+| eroarea periodica / jocul din angrenaje (backlash) | periodic error / the play in the gears (backlash) |
 | de la 1.60 cadrul e slab / de la 1.35 cadrul e la limita | from 1.60 the frame is bad / from 1.35 the frame is marginal |
 | stele late / prea putine stele / latimea obisnuita din sesiune | wide stars / too few stars / the session's usual width |
 | fondul cerului sare cu ... fata de cadrele vecine (se semnaleaza de la ...) | the sky background jumps by ... against the neighbouring frames (flagged from ...) |
@@ -141,9 +142,9 @@ tab with a real result, the problem card, the empty window and the About window 
 collects every text of the visual tree plus the charts' own labels, none of which may hold a
 Romanian word; checks that the same window in Romanian shows `Rezumat`; and checks that every
 verdict and class word the core writes for a result colours the same in both languages. It
-also renders the Dithering, Summary, Frames and Quality tabs in each language, the Frames tab
-with a frame's cut-outs, and holds their texts, the tooltips and the charts' labels included,
-against the method's words of `PlainWords` (R-077 to R-080), the list `SeriesTests` holds the core's
+also renders the Dithering, Summary, Frames, Quality and Rejected tabs in each language, the
+Frames tab with a frame's cut-outs, and holds their texts, the tooltips and the charts' labels
+included, against the method's words of `PlainWords` (R-077 to R-081), the list `SeriesTests` holds the core's
 rows, tables, paragraphs, reasons and cut-out lines against, linked from `LightsCheck.Tests`.
 It measures every reason a trailed frame can get, in both languages, in the cell's font and the
 window's whole-pixel text, against the Frames table's reasons cell as the tab lays it out (R-079).

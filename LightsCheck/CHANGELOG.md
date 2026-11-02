@@ -34,6 +34,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Rejected tab and the console's REJECTED line speak in plain words (R-081, ADR 0036): the
+  line under the heading counts each kind of frame in the singular for one (`1 cadru slab si 1
+  cadru necitit` in Romanian, which read `1 cadre slabe, 1 necitite`) and says that the marginal
+  frames stay in the stack; the four paragraphs say what the elongation is (how many times
+  longer than wide the stars are), where the marginal frames are listed, what a trail and its
+  angle are and what a trail on each axis comes from, and the button note says the file holds
+  these frames' names. Every figure is unchanged.
 - The Quality tab speaks in plain words (R-080, ADR 0035): its four charts are headed `the stars'
   width (FWHM)`, `how elongated the stars are`, `stars found` and `the sky background, on green
   (ADU above the black level)`, each note says what the figure is in each frame and what moves
