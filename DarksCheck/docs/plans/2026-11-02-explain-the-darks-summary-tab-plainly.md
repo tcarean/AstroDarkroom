@@ -147,3 +147,7 @@ figures before and after. The window's Lights and Index tabs show the same rows.
 - Part 3: the analysis's error messages that a row quotes (`niciun light nu s-a putut decoda`,
   `niciun dark al partenerului nu s-a putut decoda`, and the darks' and biases' in the console)
   keep `decoda`: they were not in the list; R-082 leaves them out, and the owner is asked.
+- `README.md`: its three report examples (the start on Smida, check 9 and INDEX on Smida, the
+  partner rows against the library) are taken again from runs on the sessions, and the words it
+  quotes (the check titles, `1 ADU-eq`, `not in the master`, check 9's verdicts) are the report's
+  new ones; its explanations of the method keep their words, for a task of their own.
