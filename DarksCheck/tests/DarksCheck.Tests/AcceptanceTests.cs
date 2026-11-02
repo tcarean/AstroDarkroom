@@ -193,12 +193,12 @@ public class AcceptanceTests
         Assert.Equal(0, code);
         Assert.Contains("masurare dark-uri: 4 / 4", stderr, StringComparison.Ordinal);
         Assert.Contains("=== DARK-URI: cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din bias-uri), filtre de culoare RGGB ===", stdout, StringComparison.Ordinal);
-        foreach (string section in new[] { "  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "  3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "  4. ZGOMOT PE CADRU", "  5. PIXELI FIERBINTI", "  6. MODEL FIX", "  7. PIXELI MORTI SI SATURATI", "  8. CATE DARK-URI AJUNG", "  TABEL PE CADRE" })
+        foreach (string section in new[] { "  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "  3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "  4. ZGOMOTUL FIECARUI CADRU", "  5. PIXELI FIERBINTI", "  6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "  7. PIXELI MORTI SI SATURATI", "  8. CATE DARK-URI AJUNG", "  TABEL PE CADRE" })
         {
             Assert.Contains(section + "\n", stdout, StringComparison.Ordinal);
         }
 
-        Assert.Contains("master peste nivel : 10: 5; 20: 4; 50: 3; 100: 2; 500: 1  [ADU peste negru, mediana seriei, toate planurile]", stdout, StringComparison.Ordinal);
+        Assert.Contains("pixeli peste prag  : peste 10: 5; peste 20: 4; peste 50: 3; peste 100: 2; peste 500: 1  [pixeli ai masterului, ADU peste negru, toate culorile]", stdout, StringComparison.Ordinal);
         Assert.Contains("verdict            : OK: niciun pixel mort sau saturat pe master", stdout, StringComparison.Ordinal);
         Assert.Contains("  1  DSC_0001.fit          00:48:53 ", stdout, StringComparison.Ordinal);
     }

@@ -184,7 +184,7 @@ public class MainViewModelTests
 
         // one card per check, the rows the core wrote, the verdict as a chip with the rest beside it
         Assert.Equal(DarkReport.Sections(r).Select(s => s.Title), vm.Sections.Select(s => s.Title));
-        Assert.Equal(["2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOT PE CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. LIGHTS FATA DE DARK", "INDEX"], vm.Sections.Select(s => s.Title));
+        Assert.Equal(["2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOTUL FIECARUI CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. LIGHTS FATA DE DARK", "INDEX"], vm.Sections.Select(s => s.Title));
         RowVm verdict = vm.Sections[0].Rows[^1];
         Assert.Equal("verdict", verdict.Label);
         Assert.True(verdict.HasVerdict);

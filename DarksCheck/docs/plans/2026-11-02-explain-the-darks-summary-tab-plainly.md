@@ -48,6 +48,34 @@ change.
 
 The rest of the session card stays, and so do the three maps' labels and `glow / constant`.
 
+## Part 2, approved as proposed ("Aprobat", 2026-11-02)
+
+The texts of the Smida session, or of the light-leak set where Smida has no example; an example
+the two sets do not reach is made up, with the same figures before and after.
+
+| # | Text | Before | After |
+| --- | --- | --- | --- |
+| 1 | check 4's title | `4. ZGOMOT PE CADRU` | `4. ZGOMOTUL FIECARUI CADRU` |
+| 2 | `sigma rezidual`, renamed `zgomot fata de master` (see "What deviated") | `R 1.60 .. 1.88; G1 1.47 .. 1.56 (mediana 1.52); ...  [ADU, cadru - master]`; `NEMASURAT: un singur cadru nu are rezidual fata de propria mediana` | `R 1.60 .. 1.88; G1 1.47 .. 1.56 (de obicei 1.52); ...  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]`; `NEMASURAT: un singur cadru nu are cu ce fi comparat` |
+| 3 | zgomot de citire | `R 1.56  G1 1.26  G2 1.26  B 1.45 ADU (din 29 perechi de bias-uri consecutive); zgomot temporal peste citire pe G1 ~0.67 ADU (sqrt(sigma_t^2 - citire^2): curent de intuneric si cuantizare)`; `NEMASURAT: fara bias-uri` | `... ADU (din 29 de perechi de bias-uri luate unul dupa altul); zgomotul adaugat in timpul expunerii, peste cel de citire, pe pixelii verzi G1: ~0.67 ADU (vine din caldura senzorului si din pasul valorilor)`; `NEMASURAT: sesiunea nu are bias-uri` |
+| 4 | benzi aleatoare | `orizontale 0.114 ADU rms pe rand (de 4.1 ori zgomotul alb), verticale de 1.0 ori` | `orizontale: randurile difera intre ele cu 0.114 ADU, de 4.1 ori cat ar da zgomotul singur; verticale: de 1.0 ori (1 inseamna fara benzi)` |
+| 5 | check 4's verdict | `OK: niciun cadru cu zgomot peste 1.5 x mediana (1.52 ADU)`; `ATENTIE: 2 cadre cu zgomot peste 1.5 x mediana (1.52 ADU): 4, 7` | `OK: niciun cadru nu are zgomotul de peste 1.5 ori mai mare decat de obicei (1.52 ADU)`; `ATENTIE: 2 cadre au zgomotul de peste 1.5 ori mai mare decat de obicei (1.52 ADU): 4, 7` |
+| 6 | `master peste nivel`, renamed `pixeli peste prag` | `10: 2283; 20: 443; 50: 111; 100: 24; 500: 0  [ADU-eq peste negru, mediana seriei, toate planurile]` | `peste 10: 2283; peste 20: 443; peste 50: 111; peste 100: 24; peste 500: 0  [pixeli ai masterului, ADU-eq peste negru, toate culorile]` |
+| 7 | `pe plan la 20`, renamed `pe culori, peste 20` | `R 79  G1 143  G2 142  B 79` | the value stays |
+| 8 | `amplitudine`, renamed `cat de fierbinti` | `mediana 33, p10 21, p90 81, p99 275 ADU-eq (din 443)` | `de obicei 33 ADU-eq; 80 % dintre ei intre 21 si 81; cei mai fierbinti 1 % peste 275 (din 443 de pixeli)` |
+| 9 | stabilitate | `412 din 443 peste jumatate din prag in toate cele 20 de cadre, 19 lipsesc din 2 sau mai multe; sigma temporala 5.58 ADU la cei fierbinti, 1.45 la restul; 92 candidati RTS pe G1 (sigma temporala peste 6 x zgomotul unui cadru, 1.51)` | `412 din 443 se vad (peste jumatate din prag) in toate cele 20 de cadre, 19 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 5.58 ADU, ceilalti pixeli cu 1.45; 92 de pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 1.51)` |
+| 10 | check 5's verdict | `OK (informativ): 443 de pixeli peste 20 ADU-eq in 24.2 Mpx` | the verdict stays |
+| 11 | check 6's title | `6. MODEL FIX` | `6. MODEL FIX: CE E LA FEL IN TOATE CADRELE` |
+| 12 | `benzi structurate`, renamed `benzi fixe` | `randuri 0.030 ADU-eq rms (0.39 varf la varf, G1), coloane 0.022 (0.17, B)  [profilul masterului minus mediana glisanta pe 101]` | `randurile masterului difera intre ele cu 0.030 ADU-eq (0.39 intre cel mai luminos si cel mai intunecat, pe G1), coloanele cu 0.022 (0.17, pe B)  [dupa ce se scot variatiile lente, pe cate 101 randuri sau coloane]` |
+| 13 | glow | `+0.05 ADU-eq la stanga-sus, partea care creste cu incalzirea (constant +0.05 in afara ei; dark - bias)` | `+0.05 ADU-eq la stanga-sus, partea care creste cand senzorul se incalzeste (in afara ei, constant +0.05; pe dark minus bias)` |
+| 14 | check 6's verdict | `OK: benzi sub 2.0 ADU-eq varf la varf si margini sub 1.0`; `ATENTIE: benzi de 2.50 ADU-eq varf la varf si glow de +1.20 ADU-eq; modelul ramane in lights fara dark-uri`; `NEMASURAT: harta sau profilele nu au valori` | `OK: benzile fixe raman sub 2.0 ADU-eq intre cel mai luminos si cel mai intunecat rand, iar marginile sub 1.0 fata de centru`; `ATENTIE: benzi fixe de 2.50 ADU-eq intre cel mai luminos si cel mai intunecat rand si glow de +1.20 ADU-eq; fara dark-uri, desenul acesta ramane in lights`; `NEMASURAT: cadrele sunt prea mici pentru harta sau pentru benzi` |
+| 15 | check 7's `master` | `0 sub negru - 50 ADU, 10 la alb (4095)` (the light-leak set) | `0 pixeli morti (sub negru minus 50 ADU), 10 saturati (la alb, 4095)`; the verdict stays |
+| 16 | `zgomotul mediei`, renamed `zgomot dupa medie` | `n=1 1.43 (asteptat 1.51); n=2 1.02 (asteptat 1.07); ...; n=10 0.47 (asteptat 0.48)  [G1, centrul de 2048 px, ADU, sigma temporala = cadru fata de cadru]`; `NEMASURAT: sub 2 cadre` | `1 cadru: 1.43 (se astepta 1.51); 2 cadre: 1.02 (se astepta 1.07); ...; 10 cadre: 0.47 (se astepta 0.48)  [pixelii verzi G1, centrul de 2048 px, ADU; masurat de la un cadru la altul]`; `NEMASURAT: sunt mai putin de 2 cadre` |
+| 17 | check 8's `master` | `20 de cadre -> 0.40 ADU zgomot al masterului median (1.25 x sigma temporala 1.43 / sqrt(20)); mediana a 10 fata de media a 10: 0.79` | `20 de cadre dau un master cu 0.40 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 1.43); un master din 10 cadre facut cu mediana si unul din celelalte 10 facut cu media difera cu 0.79 ADU`, `0.40 ADU` still bold in the window |
+| 18 | check 8's verdict | `OK: 20 de cadre ajung; zgomotul masterului median (0.40 ADU) e sub pasul de cuantizare (2 ADU) si intra in cuadratura in fiecare light calibrat`; `ATENTIE: doar 4 cadre; mediana cere cel putin 10 ca un cadru ciudat sa n-o traga (zgomotul masterului ar fi 1.87 ADU)`; `ATENTIE: zgomotul masterului median (2.10 ADU) e peste pasul de cuantizare (2 ADU); ar cobori sub pas de la 57 de cadre` | `OK: 20 de cadre ajung; zgomotul masterului (0.40 ADU) e sub pasul valorilor din fisier (2 ADU), iar el se adauga la fiecare light calibrat`; `ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.87 ADU)`; `ATENTIE: zgomotul masterului (2.10 ADU) e peste pasul valorilor din fisier (2 ADU); ar cobori sub el de la 57 de cadre` |
+
+The English says the same, with the same figures in the same order.
+
 ## Steps, per part
 
 1. Requirements: the rows that quote the part's texts take the new words; R-082, new, names the
@@ -70,3 +98,15 @@ The rest of the session card stays, and so do the three maps' labels and `glow /
 - Part 1: the `1 ADU-eq` row said `setul e facut chiar la setarile de referinta` whenever the factor
   was 1, which a set at ISO 800 and 60 s also has; it now says so only at ISO 400 and 120 s, and
   the ADU tab's row, approved with the same words on the ADU branch, takes the same test.
+- Part 2: the owner approved `zgomot fata de master` for check 4's first row; it is 21 characters
+  and the console aligns the labels on 19, so its colon would stand two columns right of the
+  others. The label is `fata de master` (`against the master`), which the title above it,
+  `4. ZGOMOTUL FIECARUI CADRU`, completes; the owner is asked whether to keep it.
+- Part 2: variants the list did not show take the same shape: one pixel that jumps, `1 pixel verde
+  G1 sare`, and a red or blue plane without `verde`; an odd series, `un master din 3 cadre facut cu
+  mediana si unul din celelalte 2`, or `din cadrul ramas` when one frame is left; a single frame,
+  `din zgomotul cadrului, 2.99, fiind unul singur`; the glow without its split, `-0.14 ADU la
+  stanga-sus fata de centru (pe dark minus bias)`; the counts of check 7 with `de` from 20 and
+  their singular, `1 pixel mort`, `1 saturat`.
+- Part 2: the doc comment of check 3's row still named it `amplitudine`, part 1's old label; it
+  names `pixeli fierbinti` now, like the comments of the rows part 2 renamed.

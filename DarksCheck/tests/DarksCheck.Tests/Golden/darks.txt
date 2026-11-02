@@ -31,32 +31,32 @@ Copyright (C) 2026 Tudor Carean
     de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
     verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci fara platou
 
-  4. ZGOMOT PE CADRU
-    sigma rezidual     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (mediana 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU, cadru - master]
-    zgomot de citire   : R 2.02  G1 2.02  G2 2.03  B 2.03 ADU (din 2 perechi de bias-uri consecutive); zgomot temporal peste citire pe G1 ~2.20 ADU (sqrt(sigma_t^2 - citire^2): curent de intuneric si cuantizare)
-    benzi aleatoare    : orizontale 0.242 ADU rms pe rand (de 1.0 ori zgomotul alb), verticale de 1.0 ori
-    verdict            : OK: niciun cadru cu zgomot peste 1.5 x mediana (2.66 ADU)
+  4. ZGOMOTUL FIECARUI CADRU
+    fata de master     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (de obicei 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
+    zgomot de citire   : R 2.02  G1 2.02  G2 2.03  B 2.03 ADU (din 2 perechi de bias-uri luate unul dupa altul); zgomotul adaugat in timpul expunerii, peste cel de citire, pe pixelii verzi G1: ~2.20 ADU (vine din caldura senzorului si din pasul valorilor)
+    benzi aleatoare    : orizontale: randurile difera intre ele cu 0.242 ADU, de 1.0 ori cat ar da zgomotul singur; verticale: de 1.0 ori (1 inseamna fara benzi)
+    verdict            : OK: niciun cadru nu are zgomotul de peste 1.5 ori mai mare decat de obicei (2.66 ADU)
 
   5. PIXELI FIERBINTI
-    master peste nivel : 10: 5; 20: 4; 50: 3; 100: 2; 500: 1  [ADU peste negru, mediana seriei, toate planurile]
-    pe plan la 20      : R 1  G1 1  G2 1  B 1
-    amplitudine        : mediana 102, p10 38, p90 465, p99 588 ADU (din 4)
-    stabilitate        : 4 din 4 peste jumatate din prag in toate cele 4 cadre, 0 lipsesc din 2 sau mai multe; sigma temporala 9.25 ADU la cei fierbinti, 2.38 la restul; 0 candidati RTS pe G1 (sigma temporala peste 6 x zgomotul unui cadru, 3.01)
+    pixeli peste prag  : peste 10: 5; peste 20: 4; peste 50: 3; peste 100: 2; peste 500: 1  [pixeli ai masterului, ADU peste negru, toate culorile]
+    pe culori, peste 20: R 1  G1 1  G2 1  B 1
+    cat de fierbinti   : de obicei 102 ADU; 80 % dintre ei intre 38 si 465; cei mai fierbinti 1 % peste 588 (din 4 pixeli)
+    stabilitate        : 4 din 4 se vad (peste jumatate din prag) in toate cele 4 cadre, 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 9.25 ADU, ceilalti pixeli cu 2.38; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
     verdict            : OK (informativ): 4 pixeli peste 20 ADU in 0.05 Mpx
 
-  6. MODEL FIX
-    benzi structurate  : randuri 0.146 ADU rms (0.80 varf la varf, R), coloane 0.171 (0.97, B)  [profilul masterului minus mediana glisanta pe 101]
-    glow               : -0.14 ADU la stanga-sus fata de centru (dark - bias)
-    verdict            : OK: benzi sub 2.0 ADU varf la varf si margini sub 1.0
+  6. MODEL FIX: CE E LA FEL IN TOATE CADRELE
+    benzi fixe         : randurile masterului difera intre ele cu 0.146 ADU (0.80 intre cel mai luminos si cel mai intunecat, pe R), coloanele cu 0.171 (0.97, pe B)  [dupa ce se scot variatiile lente, pe cate 101 randuri sau coloane]
+    glow               : -0.14 ADU la stanga-sus fata de centru (pe dark minus bias)
+    verdict            : OK: benzile fixe raman sub 2.0 ADU intre cel mai luminos si cel mai intunecat rand, iar marginile sub 1.0 fata de centru
 
   7. PIXELI MORTI SI SATURATI
-    master             : 0 sub negru - 50 ADU, 0 la alb (65535)
+    master             : 0 pixeli morti (sub negru minus 50 ADU), 0 saturati (la alb, 65535)
     verdict            : OK: niciun pixel mort sau saturat pe master
 
   8. CATE DARK-URI AJUNG
-    zgomotul mediei    : n=1 2.99 (asteptat 3.01); n=2 2.16 (asteptat 2.13)  [G1, centrul de 192 px, ADU, sigma temporala = cadru fata de cadru]
-    master             : 4 cadre -> 1.87 ADU zgomot al masterului median (1.25 x sigma temporala 2.99 / sqrt(4)); mediana a 2 fata de media a 2: 3.06
-    verdict            : ATENTIE: doar 4 cadre; mediana cere cel putin 10 ca un cadru ciudat sa n-o traga (zgomotul masterului ar fi 1.87 ADU)
+    zgomot dupa medie  : 1 cadru: 2.99 (se astepta 3.01); 2 cadre: 2.16 (se astepta 2.13)  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
+    master             : 4 cadre dau un master cu 1.87 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.06 ADU
+    verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.87 ADU)
 
   9. LIGHTS FATA DE DARK
     verdict            : NEMASURAT: sesiunea nu are lights

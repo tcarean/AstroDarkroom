@@ -33,32 +33,32 @@ Copyright (C) 2026 Tudor Carean
     to discard         : UNMEASURED: there are fewer than 6 frames with hot pixels
     verdict            : OK: every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); there are fewer than 6 frames, so no plateau
 
-  4. NOISE PER FRAME
-    residual sigma     : R 2.65 .. 2.71; G1 2.65 .. 2.72 (median 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU, frame - master]
-    read noise         : R 2.02  G1 2.03  G2 2.03  B 2.03 ADU (from 1 pairs of consecutive biases); temporal noise above the read noise on G1 ~2.23 ADU (sqrt(sigma_t^2 - read^2): dark current and quantisation)
-    random banding     : horizontal 0.238 ADU rms per row (1.0 times the white noise), vertical 1.0 times
-    verdict            : OK: no frame with noise above 1.5 x the median (2.69 ADU)
+  4. THE NOISE OF EACH FRAME
+    against the master : R 2.65 .. 2.71; G1 2.65 .. 2.72 (usually 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
+    read noise         : R 2.02  G1 2.03  G2 2.03  B 2.03 ADU (from 1 pairs of biases taken one after the other); the noise the exposure adds above the read noise, on the green pixels G1: ~2.23 ADU (it comes from the sensor's heat and from the value step)
+    random banding     : horizontal: the rows differ from one another by 0.238 ADU, 1.0 times what the noise alone would give; vertical: 1.0 times (1 means no banding)
+    verdict            : OK: no frame has noise more than 1.5 times the usual (2.69 ADU)
 
   5. HOT PIXELS
-    master above level : 10: 20; 20: 20; 50: 20; 100: 20; 500: 0  [ADU above the black, the series' median, all planes]
-    per plane at 20    : R 20  G1 0  G2 0  B 0
-    amplitude          : median 240, p10 238, p90 240, p99 241 ADU (of 20)
-    stability          : 20 of 20 above half the threshold in all 4 frames, 0 missing from 2 or more; temporal sigma 2.57 ADU on the hot ones, 2.38 on the rest; 0 RTS candidates on G1 (temporal sigma above 6 x the noise of one frame, 3.01)
+    above the threshold: above 10: 20; above 20: 20; above 50: 20; above 100: 20; above 500: 0  [the master's pixels, ADU above the black, all colours]
+    by colour, above 20: R 20  G1 0  G2 0  B 0
+    how hot            : usually 240 ADU; 80 % of them between 238 and 240; the hottest 1 % above 241 (of 20 pixels)
+    stability          : 20 of 20 show (above half the threshold) in all 4 frames, 0 are missing from 2 or more; from one frame to the next they vary by 2.57 ADU, the other pixels by 2.38; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
     verdict            : OK (informative): 20 pixels above 20 ADU in 0.05 Mpx
 
-  6. FIXED PATTERN
-    structured banding : rows 0.206 ADU rms (1.17 peak to peak, R), columns 0.222 (1.45, R)  [the master's profile minus a running median over 101]
-    glow               : -0.40 ADU at the top-left against the centre (dark - bias)
-    verdict            : OK: banding under 2.0 ADU peak to peak and edges under 1.0
+  6. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME
+    fixed banding      : the master's rows differ from one another by 0.206 ADU (1.17 between the brightest and the darkest, on R), the columns by 0.222 (1.45, on R)  [once the slow changes are taken out, over 101 rows or columns at a time]
+    glow               : -0.40 ADU at the top-left against the centre (on dark minus bias)
+    verdict            : OK: the fixed banding stays under 2.0 ADU between the brightest and the darkest row, and the edges under 1.0 from the centre
 
   7. DEAD AND SATURATED PIXELS
-    master             : 0 below the black - 50 ADU, 0 at the white (65535)
+    master             : 0 dead pixels (below the black minus 50 ADU), 0 saturated (at the white, 65535)
     verdict            : OK: no dead or saturated pixel in the master
 
   8. HOW MANY DARKS ARE ENOUGH
-    noise of the mean  : n=1 3.01 (expected 3.01); n=2 2.14 (expected 2.13)  [G1, the central 192 px, ADU, temporal sigma = frame against frame]
-    master             : 4 frames -> 1.89 ADU noise of the median master (1.25 x temporal sigma 3.01 / sqrt(4)); the median of 2 against the mean of 2: 3.03
-    verdict            : WARNING: only 4 frames; the median needs at least 10 so that one odd frame does not pull it (the master's noise would be 1.89 ADU)
+    noise when averaged: 1 frame: 3.01 (expected 3.01); 2 frames: 2.14 (expected 2.13)  [the green pixels G1, the central 192 px, ADU; measured from one frame to the next]
+    master             : 4 frames give a master with 1.89 ADU of noise per pixel (from the noise from one frame to the next, 3.01); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.03 ADU
+    verdict            : WARNING: only 4 frames; at least 10 are needed, so that one odd frame does not spoil the master (the master's noise would be 1.89 ADU)
 
   9. LIGHTS AGAINST THE DARK
     hot pixels         : 20 pixels persistent in the lights (isolated, above 6 local sigma, in at least 3 of 3 frames)

@@ -352,7 +352,7 @@ public partial class DarkSeriesTests
         DarkReport.Write(rg, swg);
         Assert.Contains("): e glow-ul senzorului, dark-urile raman bune", swg.ToString(), StringComparison.Ordinal);
         Assert.Contains("    glow / constant    : la ", swg.ToString(), StringComparison.Ordinal);
-        Assert.Contains(", partea care creste cu incalzirea (constant ", swg.ToString(), StringComparison.Ordinal);
+        Assert.Contains(", partea care creste cand senzorul se incalzeste (in afara ei, constant ", swg.ToString(), StringComparison.Ordinal);
         Assert.InRange(rg.Verdicts.Pattern.GlowAdu, 2.6, 3.4);
 
         // leak: the same edge constant on every dark and absent from flat biases
@@ -697,10 +697,11 @@ public partial class DarkSeriesTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void R082_TheSummarysSessionHeaderAndChecks2And3AreInPlainWords(bool english)
+    public void R082_TheSummarysSessionHeaderAndChecks2To8AreInPlainWords(bool english)
     {
         // the variants the fixtures reach: lights and biases, a bare series, the eyepiece band of R029 with biases, a
-        // series climbing to a plateau, one still climbing at its end, one whose first frame is cold, a flat one
+        // series climbing to a plateau, one still climbing at its end, one whose first frame is cold, a flat one, a
+        // single frame, a noisy frame among quiet ones, a row banding fixed in every frame, ten quiet frames
         static double Band(int x, int y) => y < 64 ? 2 : 0;
         static SyntheticLight Light(int i) => new() { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.0, Stars = SyntheticLight.ThreeStars };
         using SessionFixture full = new SessionFixture().WithDarkSeries(6, Plain, biases: 3).WithLights(4, Light);
@@ -711,17 +712,22 @@ public partial class DarkSeriesTests
         using SessionFixture climbing = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.8 + 0.05 * i });
         using SessionFixture cold = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 0 ? 0.5 : 1.0 });
         using SessionFixture flat = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot });
+        using SessionFixture one = new SessionFixture().WithDarkSeries(1, Plain);
+        using SessionFixture noisy = new SessionFixture().WithDarkSeries(6, i => i == 3 ? new SyntheticDark { Seed = 100 + i, Noise = 9 } : Plain(i));
+        using SessionFixture rows = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Extra = (x, y) => y % 8 == 0 ? 5 : 0 });
+        using SessionFixture quiet = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 2 });
         System.Text.RegularExpressions.Regex method = english ? EnglishSummaryWords() : RomanianSummaryWords();
         using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
         {
             List<string> texts = [];
-            foreach (SessionFixture s in new[] { full, bare, leak, edge, plateau, climbing, cold, flat })
+            foreach (SessionFixture s in new[] { full, bare, leak, edge, plateau, climbing, cold, flat, one, noisy, rows, quiet })
             {
                 DarkSeriesResult r = Run(s);
                 texts.AddRange(InventoryReport.HeaderRows(r.Inventory).SelectMany(row => new[] { row.Label, row.Value }));
                 texts.Add(DarkReport.HeaderLine(r));
                 texts.AddRange(DarkReport.HeaderRows(r).SelectMany(row => new[] { row.Label, row.Value }));
-                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Title.StartsWith("2.", StringComparison.Ordinal) || x.Title.StartsWith("3.", StringComparison.Ordinal)))
+                // checks 2 to 8, the parts approved so far (ADR 0030)
+                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Title[0] is >= '2' and <= '8'))
                 {
                     texts.Add(section.Title);
                     texts.AddRange(section.Rows.SelectMany(row => new[] { row.Label, row.Value }));
@@ -736,16 +742,27 @@ public partial class DarkSeriesTests
             Assert.Contains(english ? "too far from the master for Siril to match it with -opt" : "prea departe de master ca Siril sa il potriveasca cu -opt", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the series did not warm" : "seria nu s-a incalzit", all, StringComparison.Ordinal);
             Assert.Contains(english ? "light that got in or a level difference of the readout" : "lumina intrata sau o diferenta de nivel din citire", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "a single frame has nothing to be compared with" : "un singur cadru nu are cu ce fi comparat", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "pairs of biases taken one after the other" : "perechi de bias-uri luate unul dupa altul", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the session has no biases" : "sesiunea nu are bias-uri", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "WARNING: 1 frame has noise more than 1.5 times the usual" : "ATENTIE: 1 cadru are zgomotul de peste 1.5 ori mai mare decat de obicei", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the part that grows as the sensor warms" : "partea care creste cand senzorul se incalzeste", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "WARNING: fixed banding of " : "ATENTIE: benzi fixe de ", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "as it is the only one" : "fiind unul singur", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "are enough; the master's noise" : "ajung; zgomotul masterului", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "so that one odd frame does not spoil the master" : "ca un cadru ciudat sa nu strice masterul", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "; it would drop under it from " : "; ar cobori sub el de la ", all, StringComparison.Ordinal);
             List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
             Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
         }
     }
 
-    // R-082's words of the method in the summary's session, header and checks 2 and 3
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|median\w*|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p99|amplitudin\w*|normaliz\w*|cuantiz\w*|gradient\w*|deriv\w*)\b|x eroarea|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    // R-082's words of the method in the summary's session, header and checks 2 to 8; the median only where check 8
+    // names how a master is made
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex RomanianSummaryWords();
 
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|median\w*|deviation\w*|offset\w*|raw ADU|extrapolat\w*|decod\w*|BITPIX|CFA|p1|p99|amplitude\w*|normali[sz]\w*|quanti[sz]\w*|gradient\w*|drift\w*)\b|x the error|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|deviation\w*|offset\w*|raw ADU|extrapolat\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|amplitude\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gradient\w*|drift\w*|residual\w*|temporal\w*|candidate\w*|rms)\b|(?<!\bwith the )\bmedian\w*|x the error|white noise|peak to peak|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
     private static partial System.Text.RegularExpressions.Regex EnglishSummaryWords();
 
     // R-081's words of the method, whole words in any case; the median only where it names how a stack is made
@@ -812,7 +829,7 @@ public partial class DarkSeriesTests
         using StringWriter sw = new();
         DarkReport.Write(single, sw);
         Assert.Contains("=== DARK-URI: cadre citite 1 din 1", sw.ToString(), StringComparison.Ordinal);
-        Assert.Contains("sigma rezidual     : NEMASURAT: un singur cadru", sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains("fata de master     : NEMASURAT: un singur cadru nu are cu ce fi comparat", sw.ToString(), StringComparison.Ordinal);
         Assert.Contains("stabilitate        : NEMASURAT: stabilitatea cere cel putin 2 cadre", sw.ToString(), StringComparison.Ordinal);
         Assert.DoesNotContain("0.00 .. 0.00", sw.ToString(), StringComparison.Ordinal);
 
