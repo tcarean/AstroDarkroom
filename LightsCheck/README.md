@@ -131,16 +131,16 @@ default 4 threads, the 87 raws of 24 MP of the Veil night take about two minutes
   one exposure and the walking-noise streak it draws, the field rotation, the polar alignment and
   the drift along RA (explained below).
 - **DITHERING**: the pauses and the moves (a step of 5 px or more), how often (every how many
-  frames), how far, on which axes and in which sense, and how close the frames sit to each other
-  (the nearest other frame, the distinct positions, the runs of consecutive frames in the same
-  spot); then:
-  - `scale`: what a move of 5 px and one of 10 px are on the sky at the session's focal length;
-  - `pattern in the stack`: how much of one frame's pattern stays in the mean after stacking,
-    against 1 / frames, the ideal when no two frames share a spot;
-  - `fixed pattern`: the sensor's fixed pattern, read from the median of the frames taken
-    without aligning them, so that the stars move with the dithers and only the pattern stays:
-    its sigma on each channel, in ADU and as a share of one frame's noise, the hot pixels per
-    megapixel, and whether the session has darks to take it out;
+  frames), how far, on which axes and which way, and how close the frames are to each other (the
+  nearest other frame, the different spots, the runs of frames in a row in the same spot); then:
+  - `scale`: how far on the sky the mount must move the frame for 5 px and for 10 px, at the
+    session's focal length;
+  - `pattern in the stack`: how much of one frame's pattern stays after stacking, against 1
+    divided by the number of frames, the ideal when no two frames share a spot;
+  - `fixed pattern`: the sensor's fixed pattern, read from the frames laid one on another without
+    aligning them, so that the stars move with the dithers and only the pattern stays: its
+    strength on each channel, in ADU and as a share of one frame's noise, the hot pixels per
+    million pixels, and whether the session has darks to take it out;
   - the verdict, for walking noise and for hot pixels, with its figures (below).
 - **REJECTED**: each bad frame with its reason, its threshold and the axis of its trail, and each
   frame that could not be read. The marginal frames stay in, your choice; their list is in
@@ -184,30 +184,34 @@ need the exact place and time, which the raws do not carry.
 
 ### Dithering and walking noise
 
-Walking noise is the sensor's fixed pattern (the hot pixels, what is left of the dark) dragged
-into streaks: the drift moves it from one frame to the next, and the stack adds up the copies
-along its path, in the runs of consecutive frames that stayed in the same spot. The same drift and
-the same dither move are more pixels the longer the focal length. On the Veil night, at 135 mm,
-the drift was 1.52 px per exposure and drew a streak of 13.7 px over frames 61 to 70; at Smida, at
-20 mm, it was 0.17 px per exposure, and a run of 12 frames in one spot drew 1.9 px. A short focal
-length forgives; a long one asks for a dither on every frame, on both axes, in a random direction.
-How often matters more than how far: 5 px are enough once two neighbouring frames no longer share a
-spot, while a big jump every 2 frames leaves runs in which the drift draws dashes.
+Walking noise means fine streaks, all in the same direction, in the stacked image. The sensor's
+fixed pattern makes them: the hot pixels and the faint marks the sensor always has in the same
+place, what a dark takes out. When the stack aligns the frames on the stars, the pattern moves
+with the drift from one frame to the next, and its copies line up into a streak, in the runs of
+frames in a row that stayed in the same spot. The longer the focal length, the more pixels the
+same drift and the same dither move make. On the Veil night, at 135 mm, the drift was 1.52 px
+per exposure and drew a streak of 13.7 px over frames 61 to 70; at Smida, at 20 mm, it was
+0.17 px per exposure, and a run of 12 frames in one spot drew 1.9 px. A short focal length
+forgives; a long one asks for a dither after every frame, on both axes, each time in another
+direction, at random. How often you move matters more than how far: 5 px are enough as long as
+two neighbouring frames do not stay in the same spot, while a big jump every 2 frames leaves
+pairs of frames in the same spot, in which the drift draws short streaks.
 
-Darks take the pattern out before it gets to walk, and they do not ask you to take the filter off
-the lens: take the lens off with its filter on, put the body cap on, close the viewfinder's
-eyepiece and shoot 20 frames at the same ISO, the same exposure and the same temperature, at the
-end of the session. The flats stay valid. The window says the same under its DITHERING card.
+Darks take the pattern out before it gets to make streaks. You do not need to take the filter off
+the lens: take the lens off with the filter on it, put the body cap on, cover the viewfinder's
+eyepiece and shoot 20 frames at the same ISO, with the same exposure time and at the same
+temperature, at the end of the session. The flats stay good. The window says the same under its
+DITHERING card.
 
 The verdict of DITHERING reads the drift as well as the map:
 
-- `OK for walking noise` when at least half the frames sit at distinct positions within 10 px, at
+- `OK for walking noise` when at least half the frames sit in different spots (10 px apart), at
   least 30 % stand 10 px or more from every other frame, and each axis carries at least a quarter
   of the moves;
 - `NO walking noise` when the streak the drift draws over the longest run within 10 px is under
   3 px, whatever the map looks like;
 - `INSUFFICIENT for walking noise` otherwise, with the streak in pixels and its axis;
-- `OK for hot pixels` while no more than 3 consecutive frames sit within 3 px of one spot, else
+- `OK for hot pixels` while no more than 3 frames in a row sit within 3 px of one spot, else
   `WARNING on hot pixels`.
 
 ### The frame table

@@ -95,6 +95,20 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-02: the Dithering texts in plain words (R-077, ADR 0032); all 13 cases re-run with
+  `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 13`, 10 passed, `Total time:
+  8.5354 Minutes`. V-010 failed on its words alone: `cat de mult: measured [de obicei | 13.29 px
+  = 81.2" || 5-10 px | 10 || 10-20 px | 23 || 20+ px | 8], expected [median | 13.29 px = 81.2" ||
+  ...]`; its tables now read `de obicei`, `pe ambele` and the title `apropierea cadrelor` for
+  `median`, `ambele` and `acoperire`, and a console run on Veil the same day printed every one of
+  its figures unchanged. V-008 (`polarErrorMax: the frame yielded no figure (null)`) and V-011
+  (`frame 2: cell 'RA 5 px', expected 'RA 5 px ← V'`) failed because the Veil session's root no
+  longer holds the plate-solved `result.fit`, which sits in `procesate\` since 2026-10-27 12:53:
+  without a solve at the root the moves have no sense on the sky and the polar alignment no upper
+  bound (R-025, R-038, R-050). At the owner's word the same day: V-010's three words became the
+  new ones (`de obicei`, `pe ambele`, the title `apropierea cadrelor`), every figure kept, its
+  `measuredOn` kept at 2026-10-09; V-008 and V-011 stay as recorded and fail until a solved FITS
+  is back at the Veil root, which the owner left as it is.
 - 2026-10-27: the pixel size of a raw session comes from the raw's 35 mm-equivalent focal
   length over its mosaic's diagonal (R-066, ADR 0026), 4.00 um on the D3300 at 135 mm instead of
   the 3.92 um constant, so the Veil scale is 6.11 "/px instead of 5.99; all 13 cases re-run on

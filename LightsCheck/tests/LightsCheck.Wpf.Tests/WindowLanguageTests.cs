@@ -121,6 +121,43 @@ public class WindowLanguageTests
         }
     }
 
+    /// <summary>
+    /// The rendered Dithering tab, its captions, rows, tables and paragraphs, and what its charts
+    /// draw themselves (the guide lines, the map's labels and grid note, the bars' tips), names
+    /// none of the method's words, in either language (R-077).
+    /// </summary>
+    [Fact]
+    public async Task R077_TheDitheringTabUsesNoneOfTheMethodsWords()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        try
+        {
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                Ui.Default = language;
+                await _sta.InvokeAsync(async () =>
+                {
+                    MainViewModel vm = new();
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+
+                    List<string> texts = [.. Texts(Render(new DitherView { DataContext = vm }, null, h: 1200))];
+                    texts.AddRange(vm.StepGuides.Select(g => g.Label));
+                    texts.AddRange([vm.MapXLabel, vm.MapYLabel, WindowTexts.GridNote("10")]);
+                    texts.AddRange(vm.StepPoints.Select(p => p.Tip ?? ""));
+                    foreach (string text in texts)
+                    {
+                        PlainWords.AssertPlain(text, $"the Dithering tab ({language})");
+                    }
+                });
+            }
+        }
+        finally
+        {
+            Ui.Default = UiLanguage.Romanian;
+        }
+    }
+
     [Fact]
     public async Task R063_TheSameWindowInRomanianStillShowsRezumat()
     {
@@ -243,6 +280,8 @@ public class WindowLanguageTests
         "Inchide", "LICENTA", "TERTE", "nimic", "decupaj", "pozitii", "acoperire", "intindere", "aliniere", "perechi", "scara",
         "verde", "BUN", "LA LIMITA", "SLAB", "necitit", "inregistr", "Acest program", "grila", "Scris", "Unealta", "Verificare",
         "Folderul", "Analiza", "sesiun", "centru", "stanga", "dreapta",
+        "MUTAT", "DINAINTE", "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "niciodata", "alunec",
+        "dunga", "dungi", "Bara ",
     ];
 
     /// <summary>The English texts hold none of the Romanian words.</summary>

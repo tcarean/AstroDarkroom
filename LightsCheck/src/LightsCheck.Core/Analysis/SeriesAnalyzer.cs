@@ -374,10 +374,10 @@ internal sealed record SeriesAnalysis(
 internal static class SeriesAnalyzer
 {
     /// <summary>
-    /// The RA axis's source when it comes from the trails, in the run's language (R-025): the
-    /// report quotes it as it is.
+    /// The RA axis's source when it comes from the trails, in the run's language and in plain
+    /// words (R-025, R-077): the report quotes it as it is, after "found from" ("aflat din").
     /// </summary>
-    private static string TrailSource => T("the direction of the trails (assumed: the tracking is on RA)", "directia darelor (presupus: urmarirea e pe RA)");
+    private static string TrailSource => T("the direction of the trails: we assume the tracking made them, so they lie on RA", "directia darelor: presupunem ca le-a facut urmarirea, deci sunt pe RA");
 
     /// <summary>
     /// The sidereal rate in arcseconds per minute: a full turn in 23 h 56 min 4.09 s.

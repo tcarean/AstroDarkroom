@@ -131,22 +131,23 @@ public class SeriesTests
     {
         SeriesResult r = RunPattern();
         ReportRow row = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == "scara");
-        Assert.Equal("1 px = 5.99\"; o miscare de 5 px (pragul) cere 30\" pe cer, una de 10 px 60\"", row.Value);
+        Assert.Equal("1 px = 5.99\" pe cer; ca sa muti cadrul 5 px (cea mai mica miscare numarata) trebuie 30\" pe cer, iar pentru 10 px, 60\"", row.Value);
         Assert.Equal(row.Value, Assert.Single(SeriesReport.DitherScalarRows(r), x => x.Label == "scara").Value);
         Assert.Equal("verdict", SeriesReport.DitherScalarRows(r)[^1].Label);
     }
 
-    /// <summary>The explanation under the Dithering card: five paragraphs, the one on what breaks walking noise in bold, the thresholds of Th quoted (R-045).</summary>
+    /// <summary>The explanation under the Dithering card: five paragraphs, the one on what stops walking noise in bold, the thresholds of Th quoted, the 20 mm figure of paragraph 2 as ADR 0032 computes it (R-045).</summary>
     [Fact]
     public void R045_TheDitherExplanationQuotesTheThresholds()
     {
         IReadOnlyList<ReportParagraph> p = SeriesReport.DitherExplanation;
         Assert.Equal(5, p.Count);
         Assert.Single(p, x => x.Emphasis);
-        Assert.StartsWith("Ce rupe walking noise-ul", p.Single(x => x.Emphasis).Text, StringComparison.Ordinal);
-        Assert.Contains($"sub {Th.WalkingStreakVisible:0} px", p[4].Text, StringComparison.Ordinal);
+        Assert.StartsWith("Ce opreste walking noise-ul", p.Single(x => x.Emphasis).Text, StringComparison.Ordinal);
+        Assert.Contains($"Sub {Th.WalkingStreakVisible:0} px dunga nu se vede", p[4].Text, StringComparison.Ordinal);
         Assert.Contains($"{Th.DitherStep:0} px ajung", p[2].Text, StringComparison.Ordinal);
         Assert.Contains("capacul de body", p[3].Text, StringComparison.Ordinal);
+        Assert.Contains("0.15 px la 20 mm", p[1].Text, StringComparison.Ordinal);
     }
 
     /// <summary>The 8-frame pattern with the synthetic sensor: its bulk field of 8 ADU and its 20 hot pixels come back from the lights' median, and the darks line says what Siril will do (R-046, R-042).</summary>
@@ -170,16 +171,16 @@ public class SeriesTests
         Assert.Equal(3, r.Session.Darks.Count);
 
         ReportRow row = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == "pattern fix");
-        Assert.StartsWith("sigma ", row.Value, StringComparison.Ordinal);
+        Assert.StartsWith("tarie ", row.Value, StringComparison.Ordinal);
         Assert.Contains(" ADU pe R (", row.Value, StringComparison.Ordinal);
         Assert.Contains(" % din zgomotul unui cadru)", row.Value, StringComparison.Ordinal);
-        Assert.Contains("pixeli fierbinti / Mpx peste 10 sigma", row.Value, StringComparison.Ordinal);
-        Assert.EndsWith("3 dark-uri in darks\\, Siril le scade", row.Value, StringComparison.Ordinal);
+        Assert.Contains("pixeli calzi la un milion de pixeli, adica cei de peste 10 ori zgomotul unui cadru", row.Value, StringComparison.Ordinal);
+        Assert.EndsWith("3 dark-uri in darks\\, cu care Siril scoate pattern-ul", row.Value, StringComparison.Ordinal);
 
         using SessionFixture g = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(4).ToList());
         SeriesResult q = SeriesRun.Run(g.Root, new SeriesOptions(Threads: 2));
         Assert.Equal(PatternStatus.TooFewFrames, q.Pattern.Status);
-        Assert.EndsWith("fara dark-uri in sesiune: raman in cadre", Assert.Single(SeriesReport.DitherRows(q), x => x.Label == "pattern fix").Value, StringComparison.Ordinal);
+        Assert.EndsWith("fara dark-uri in sesiune, pattern-ul ramane in cadre", Assert.Single(SeriesReport.DitherRows(q), x => x.Label == "pattern fix").Value, StringComparison.Ordinal);
     }
 
     /// <summary>The eight-frame pattern: four pairs at one spot, so 4 sharing pairs and (8 + 8) / 64 = 25 % of one frame's pattern in the mean, against 12.5 % ideal (R-048).</summary>
@@ -190,8 +191,63 @@ public class SeriesTests
         Assert.Equal(4, r.Dither.SharingPairs);
         Assert.Equal(0.25, r.Dither.PatternSurviving!.Value, 0.001);
         ReportRow row = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == "pattern in stiva");
-        Assert.Equal("25.0 % din al unui cadru ramane in medie (ideal 12.5 % la 8 cadre; perechi de cadre la sub 1.5 px: 4)", row.Value);
+        Assert.Equal("in stiva ramane 25.0 % din pattern-ul unui cadru (ideal 12.5 %, cu 8 cadre; 4 perechi de cadre au stat la sub 1.5 px una de alta, iar pattern-ul lor se aduna)", row.Value);
         Assert.Equal(row.Value, Assert.Single(SeriesReport.DitherScalarRows(r), x => x.Label == "pattern in stiva").Value);
+    }
+
+    /// <summary>
+    /// The Dithering texts (the console's rows, the window's rows and tables, the explanation)
+    /// name none of the method's words in either language, over sessions that reach the
+    /// pattern's and the verdict's branches; the eight-frame pattern's verdict reads as R-077
+    /// quotes it (R-077).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R077_TheDitheringTextsAvoidTheMethodsVocabulary(bool english)
+    {
+        // Eight frames within 3 px of one spot: the pattern cannot be read and the hot pixels warn.
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] still = [.. Enumerable.Range(0, 8).Select(i => (0.3 * i, 0.2 * i, 1.0, 1.0))];
+        // Twelve frames drifting 1 px each along Y, no move: a long streak, INSUFFICIENT.
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] drifting = [.. Enumerable.Range(0, 12).Select(i => (0.0, 1.0 * i, 1.0, 1.0))];
+        // Five frames at one spot and one 40 px away: one frame alone, worded in the singular.
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] oneAway = [(0, 0, 1.0, 0), (0.5, 0.3, 1.0, 1), (1.0, 0.5, 1.0, 1), (1.2, 0.8, 1.0, 1), (40, 0, 1.0, 30), (1.5, 1.0, 1.0, 30)];
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture pattern = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using SessionFixture darks = new SessionFixture().WithStarSeries(SessionFixture.Pattern, darks: 3, sensorPattern: true);
+        using SessionFixture few = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(4).ToList());
+        using SessionFixture stayed = new SessionFixture().WithStarSeries(still);
+        using SessionFixture walked = new SessionFixture().WithStarSeries(drifting);
+        using SessionFixture lone = new SessionFixture().WithStarSeries(oneAway);
+        List<SeriesResult> results = [.. new[] { pattern, darks, few, stayed, walked, lone }.Select(f => SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2)))];
+
+        foreach (SeriesResult r in results)
+        {
+            foreach (ReportRow row in SeriesReport.DitherRows(r).Concat(SeriesReport.DitherScalarRows(r)))
+            {
+                PlainWords.AssertPlain($"{row.Label}: {row.Verdict} {row.Value}", "a DITHERING row");
+            }
+
+            foreach (ReportTable t in SeriesReport.DitherTables(r))
+            {
+                PlainWords.AssertPlain(string.Join(" | ", t.Columns.Prepend(t.Title).Concat(t.Rows.SelectMany(cells => cells))), "a DITHERING table");
+            }
+        }
+
+        foreach (ReportParagraph p in SeriesReport.DitherExplanation)
+        {
+            PlainWords.AssertPlain(p.Text, "the DITHERING explanation");
+        }
+
+        Assert.Equal(1, results[5].Dither.IsolatedLoose);
+        Assert.Contains(english ? ", 1 frame alone, " : ", 1 cadru singur, ", SeriesReport.DitherScalarRows(results[5])[^1].Value, StringComparison.Ordinal);
+
+        if (!english)
+        {
+            Assert.Equal(
+                "dare de walking noise de cel mult 0.5 px: driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; 3 miscari la 8 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe",
+                SeriesReport.DitherScalarRows(results[0])[^1].Value);
+        }
     }
 
     [Fact]
@@ -354,22 +410,22 @@ public class SeriesTests
         Assert.Contains("pe DEC", bold.Text, StringComparison.Ordinal);
 
         IReadOnlyList<ReportTable> t = SeriesReport.DitherTables(r);
-        Assert.Equal(["cat de des", "cat de mult", "directie", "acoperire", "grupuri in acelasi loc"], t.Select(x => x.Title));
-        Assert.Equal(["la fiecare", "de cate ori"], t[0].Columns);
+        Assert.Equal(["cat de des", "cat de mult", "directie", "apropierea cadrelor", "grupuri in acelasi loc"], t.Select(x => x.Title));
+        Assert.Equal(["o miscare la fiecare", "de cate ori"], t[0].Columns);
         Assert.Equal(["2 cadre | 2 ori"], Rows(t[0]));
-        Assert.Equal(["marime", "miscari"], t[1].Columns);
-        Assert.Equal(["median | 15.32 px = 91.7\"", "5-10 px | 0", "10-20 px | 2", "20+ px | 1"], Rows(t[1]));
-        Assert.Equal(["axa", "numai pe ea", "semn +", "semn -"], t[2].Columns);
-        Assert.Equal(["X = DEC | 2 | 2 | 0", "Y = RA | 1 | 0 | 1", "ambele | 0 |  | "], Rows(t[2]));
-        Assert.Equal(["raza", "cu alt cadru sub raza", "pozitii distincte", "grupuri de 3+ consecutive"], t[3].Columns);
+        Assert.Equal(["cat de mare", "cate miscari"], t[1].Columns);
+        Assert.Equal(["de obicei | 15.32 px = 91.7\"", "5-10 px | 0", "10-20 px | 2", "20+ px | 1"], Rows(t[1]));
+        Assert.Equal(["axa", "doar pe ea", "spre +", "spre -"], t[2].Columns);
+        Assert.Equal(["X = DEC | 2 | 2 | 0", "Y = RA | 1 | 0 | 1", "pe ambele | 0 |  | "], Rows(t[2]));
+        Assert.Equal(["distanta", "cu alt cadru mai aproape", "locuri diferite", "grupuri de 3+ cadre la rand"], t[3].Columns);
         Assert.Equal(["3 px | 8 | - | -", "5 px | 8 | 4 | 0", "10 px | 8 | 4 | 0"], Rows(t[3]));
-        Assert.Equal(["raza", "cadre", "cate", "minute"], t[4].Columns);
+        Assert.Equal(["distanta", "cadrele", "cate", "cat timp"], t[4].Columns);
         Assert.Equal(["5 px | niciunul | - | -", "10 px | niciunul | - | -"], Rows(t[4]));
 
         // The scalar rows of R-036 plus the `scara` and `pattern fix` rows of R-044 and R-046, the verdict last.
-        Assert.Equal(["pauze > 5 s", "cel mai lung interval intre doua miscari", "acoperire", "intindere", "axe", "scara", "pattern in stiva", "pattern fix", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
-        Assert.Equal("X 40 px, Y 16 px", SeriesReport.DitherScalarRows(r)[3].Value);
-        Assert.StartsWith("axa Y a imaginii = RA, X = DEC", SeriesReport.DitherScalarRows(r)[4].Value, StringComparison.Ordinal);
+        Assert.Equal(["pauze de peste 5 s", "cel mai lung sir fara miscare", "apropierea cadrelor", "zona pozitiilor", "axe", "scara", "pattern in stiva", "pattern fix", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
+        Assert.Equal("40 px pe X, 16 px pe Y", SeriesReport.DitherScalarRows(r)[3].Value);
+        Assert.StartsWith("RA e axa Y a imaginii, DEC axa X", SeriesReport.DitherScalarRows(r)[4].Value, StringComparison.Ordinal);
     }
 
     /// <summary>A run of three frames fills the runs table at both radii with its frames, its length and its minutes; a session without moves keeps the console's words (R-036).</summary>
