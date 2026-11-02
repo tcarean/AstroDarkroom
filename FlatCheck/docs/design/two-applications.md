@@ -101,8 +101,10 @@ on the first open, under the busy overlay, which says so). Without a raw the run
 one, the report identical to `flatcheck master`, and the card under TESTE shows
 `StructureReport.GapText` computed by `StructureRun.Compare` on the master's header alone.
 The rows are `LensProfileRow` (public copy of the core's `ProfileRow`), rendered by a
-template local to `StructureView.xaml`; `Tests` stays five, so the scale's column heading
-`the five tests` stays true. `Populate` is
+template local to `StructureView.xaml`; the row with `GivesVerdict` is drawn marked, and its
+note starts with `StructureReport.VerdictRowNote`, the console marker's words (the lens chosen,
+the Adobe profile under R-128, or the nearest), so the view-model composes no sentence of its
+own. `Tests` stays five, so the scale's column heading `the five tests` stays true. `Populate` is
 `internal` and sets `HasResult` for the smoke test. The one thing the window cannot do
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
@@ -110,8 +112,8 @@ explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
 **One verdict scale for both verdicts** (R-126, ADR 0088). `FillScale` rebuilds `Scale` in
 every `Populate`, once the comparison is known: the rows of `StructureReport.Scale()`, each
 given its interval in stops from `DepthScaleRows` (looked up by band) when the vignetting was
-compared, `IsCurrent` on the five tests' verdict and `IsDepthCurrent` on the nearest
-profile's; `ScaleHasDepth` and `ScaleDepthNote` (`DepthScaleNote`) go with it, and the card
+compared, `IsCurrent` on the five tests' verdict and `IsDepthCurrent` on the deciding
+profile's (R-128); `ScaleHasDepth` and `ScaleDepthNote` (`DepthScaleNote`) go with it, and the card
 keeps `ProfileLightNote` alone. The theme's `ScaleRowTemplate` marks a cell, not a row, since
 the two verdicts can fall in different bands; its two interval columns are `Auto` with a
 `SharedSizeGroup`, so the header row in `StructureView.xaml`, inside the same

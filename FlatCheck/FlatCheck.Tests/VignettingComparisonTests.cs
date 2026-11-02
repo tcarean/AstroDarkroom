@@ -82,7 +82,7 @@ public class VignettingComparisonTests
         ProfileDepth adobe = c.Profiles.First(p => p.Profile.Lens.Source == ProfileSource.Adobe);
         Assert.Equal(0.0, adobe.DiffStops, 2);                        // same raster, same operator
         Assert.Equal("PERFECT", adobe.Verdict);
-        Assert.Same(adobe, c.Nearest);
+        Assert.Same(adobe, c.Deciding);
         Assert.Equal("PERFECT", c.Verdict);
         Assert.Equal(r.VignetteStops, c.MasterStops);
         Assert.True(c.SpreadStops > 0.05, $"spread {c.SpreadStops}");   // the two databases disagree, as in life
@@ -105,22 +105,26 @@ public class VignettingComparisonTests
     }
 
     /// <summary>
-    /// A master that sits on one database and 0.2 stops off the other is not wrong: the two
-    /// databases disagree by about that much on the same lens, so the verdict follows the
-    /// nearest profile. "Worst" would have called the good monitor masters REFA.
+    /// Without an Adobe row (and by range alone) a master that sits on one calibration and 0.2
+    /// stops off the other is not wrong: the profiles disagree by about that much on the same
+    /// lens, so the verdict follows the nearest one, not the worst (ADR 0031). With an Adobe row
+    /// among lenses the raw named, the Adobe row decides instead (R-128, AdobeVerdictTests).
     /// </summary>
     [Fact]
-    public void TheVerdictIsTheNearestProfiles_NotTheWorst()
+    public void WithoutAnAdobeRowTheVerdictIsTheNearestProfiles_NotTheWorst()
     {
         using var ws = new TempWorkspace();
-        var (r, shot, sources) = Setup(ws);
+        var (r, shot, sources) = Setup(ws, tokinaOnTwoFormats: true);
+        var lensfun = shot.Candidates.Where(l => l.Source == ProfileSource.Lensfun).ToList();
 
-        VignettingComparison c = VignettingComparer.Analyze(r, shot, sources.Catalog);
+        VignettingComparison c = VignettingComparer.Analyze(r, shot, sources.Catalog, lensfun);
 
-        ProfileDepth other = c.Profiles.First(p => !ReferenceEquals(p, c.Nearest));
-        Assert.True(Math.Abs(other.DiffStops) > Math.Abs(c.Nearest.DiffStops));
-        Assert.True(Stats.Severity(other.Verdict) >= Stats.Severity(c.Nearest.Verdict));
-        Assert.Equal(c.Nearest.Verdict, c.Verdict);
+        Assert.Equal(2, c.Profiles.Count);
+        Assert.False(c.AdobeDecides);
+        ProfileDepth other = c.Profiles.First(p => !ReferenceEquals(p, c.Deciding));
+        Assert.True(Math.Abs(other.DiffStops) > Math.Abs(c.Deciding.DiffStops));
+        Assert.True(Stats.Severity(other.Verdict) >= Stats.Severity(c.Deciding.Verdict));
+        Assert.Equal(c.Deciding.Verdict, c.Verdict);
     }
 
     /// <summary>
@@ -145,7 +149,7 @@ public class VignettingComparisonTests
         Assert.NotEqual(lensfun[0].Profile.Lens.Where, lensfun[1].Profile.Lens.Where);
         Assert.NotEqual(lensfun[0].Profile.Model.CropFactor, lensfun[1].Profile.Model.CropFactor);
         Assert.True(Math.Abs(lensfun[0].CornerStops - lensfun[1].CornerStops) > 0.1, "two calibrations, two depths");
-        Assert.Equal(ProfileSource.Adobe, c.Nearest.Profile.Lens.Source);   // the master IS the Adobe model
+        Assert.Equal(ProfileSource.Adobe, c.Deciding.Profile.Lens.Source);   // the master IS the Adobe model
 
         var rows = StructureReport.ProfileRows(c);
         Assert.Equal(3, rows.Select(x => x.Key).Distinct().Count());
@@ -205,7 +209,7 @@ public class VignettingComparisonTests
         Assert.Null(c.Verdict);
         Assert.Equal(ComparisonGap.NoRaw, c.Gap);
         Assert.Empty(c.Profiles);
-        Assert.Null(c.Nearest);
+        Assert.Null(c.Deciding);
     }
 
     /// <summary>

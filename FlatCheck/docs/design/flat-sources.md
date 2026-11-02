@@ -20,7 +20,11 @@
 
 The reference depths quoted throughout, for the Tokina 11-20 at 20 mm f/2.8: Adobe 0.66-0.69
 stops, lensfun 0.85-0.92 (the D7100 and 7D2 entries). The two databases disagree by ~0.2 stops
-on the same lens, which is the resolution of everything below.
+on the same lens, which is the resolution of everything below. The sixth-test verdicts quoted
+below were measured when the nearest profile decided; since 2026-11-02 the Adobe row decides on
+these sessions (ADR 0090, which takes its reason from them: the sky flat of section 1 and the
+panel flats of sections 2-4 bound the lens between 0.27 and 0.76 stops, Adobe inside, both
+lensfun entries above), and the paper and monitor-close masters read one band stricter.
 
 ## 1. Twilight sky, no diffuser (Tokina, 2026-09-16)
 

@@ -416,8 +416,8 @@ public class StructureTabTests
 
     /// <summary>
     /// With a raw beside the master the run is the console's "--raw": the vignetting is
-    /// compared with every profile the raw's lens ID points at, the nearest one gives the
-    /// depth verdict, the tab's verdict is the worse of shape and depth, and the saved
+    /// compared with every profile the raw's lens ID points at, the Adobe one gives the depth
+    /// verdict (R-128), the tab's verdict is the worse of shape and depth, and the saved
     /// report is - character for character - what the console prints for the same query.
     /// </summary>
     [Fact]
@@ -430,15 +430,15 @@ public class StructureTabTests
         Assert.True(vm.HasResult, vm.ErrorText);
         Assert.True(vm.HasProfileRows);
         Assert.Equal(2, vm.ProfileRows.Count);                        // the Nikon Adobe file and the lensfun entry
-        Assert.Single(vm.ProfileRows, r => r.IsNearest);
-        Assert.Contains("da verdictul", vm.ProfileRows.Single(r => r.IsNearest).Note);
+        Assert.Single(vm.ProfileRows, r => r.GivesVerdict);
+        Assert.Contains("da verdictul", vm.ProfileRows.Single(r => r.GivesVerdict).Note);
         Assert.All(vm.ProfileRows, r => Assert.NotEmpty(r.Verdict));
         Assert.Empty(vm.ProfileGap);
         Assert.Contains("stopuri", vm.ProfileMaster);
-        Assert.Contains("profilul cel mai apropiat", vm.ProfileSummary);
+        Assert.Contains("dat de profilul Adobe", vm.ProfileSummary);
         Assert.Equal(4, vm.Scale.Count);                               // the depth, in stops, in the one scale (R-126)
         Assert.True(vm.ScaleHasDepth);
-        Assert.Equal(vm.ProfileRows.Single(r => r.IsNearest).Verdict, Assert.Single(vm.Scale, s => s.IsDepthCurrent).Band);
+        Assert.Equal(vm.ProfileRows.Single(r => r.GivesVerdict).Verdict, Assert.Single(vm.Scale, s => s.IsDepthCurrent).Band);
         Assert.Contains("Nu e un prag nou", vm.ScaleDepthNote);
         Assert.All(vm.ProfileRows, r => Assert.NotEmpty(r.Note));
         Assert.Contains("simetrica in jurul centrului", vm.ProfileNote);
@@ -454,6 +454,30 @@ public class StructureTabTests
             new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => RawFrame() });
         RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
         Assert.Equal(expected.ToString(), File.ReadAllText(f.Session.ResultTextPath));
+    }
+
+    /// <summary>
+    /// R-128 on the tab: the raw's lens ID found the lens and Adobe has its file, so the Adobe
+    /// row is the one marked, its note says the Adobe profile gives the verdict, no other row
+    /// claims it, and the scale's current band is that row's verdict. The master (k = 0.7 on the
+    /// fixture's 128 px) sits next to the lensfun entry, so the nearest rule would have marked
+    /// that one.
+    /// </summary>
+    [Fact]
+    public async Task R128_TheStructureTabMarksTheAdobeRowAndSaysSo()
+    {
+        using var f = new SessionFixture().WithFlatMaster(FitsTestData.Radial(128, 128, k: 0.7)).WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+
+        Assert.True(vm.HasProfileRows, vm.ErrorText);
+        LensProfileRow nearest = vm.ProfileRows.OrderBy(r => Math.Abs(double.Parse(r.Diff.Split(' ')[0], System.Globalization.CultureInfo.InvariantCulture))).First();
+        Assert.Equal("lensfun", nearest.Source);                       // the case: lensfun is the nearer
+        LensProfileRow marked = Assert.Single(vm.ProfileRows, r => r.GivesVerdict);
+        Assert.Equal("Adobe", marked.Source);
+        Assert.StartsWith("Profilul Adobe - da verdictul.", marked.Note);
+        Assert.All(vm.ProfileRows.Where(r => !r.GivesVerdict), r => Assert.DoesNotContain("da verdictul", r.Note));
+        Assert.Equal(marked.Verdict, Assert.Single(vm.Scale, s => s.IsDepthCurrent).Band);
     }
 
     /// <summary>
@@ -519,7 +543,7 @@ public class StructureTabTests
         var (vm, _) = await RunWithProfiles(f, ws);
 
         string shape = vm.Tests.Select(t => t.Verdict).OrderByDescending(Stats.Severity).First();
-        string depth = vm.ProfileRows.Single(r => r.IsNearest).Verdict;
+        string depth = vm.ProfileRows.Single(r => r.GivesVerdict).Verdict;
         Assert.True(Stats.Severity(depth) > Stats.Severity(shape), $"depth {depth}, shape {shape}");
         Assert.Equal(depth, vm.Verdict);
         Assert.Contains("MAI", vm.Advice);                             // the depth's advice, not the shape's
@@ -1003,7 +1027,7 @@ public class StructureTabTests
 
         Assert.True(vm.HasResult, vm.ErrorText);
         Assert.Equal(2, vm.ProfileRows.Count);
-        Assert.Equal(vm.ProfileRows.Single(r => r.IsNearest).Verdict, vm.Verdict);
+        Assert.Equal(vm.ProfileRows.Single(r => r.GivesVerdict).Verdict, vm.Verdict);
         Assert.NotEqual(shape, vm.Verdict);
         Assert.Contains("adancimea", vm.VerdictDetail);
         Assert.Empty(vm.FilteredNote);
@@ -1164,7 +1188,7 @@ public class StructureTabTests
         Assert.True(vm.HasResult, vm.ErrorText);
         LensProfileRow row = Assert.Single(vm.ProfileRows);
         Assert.Equal(LensProfileTestData.Samyang135, row.Lens);
-        Assert.True(row.IsNearest);
+        Assert.True(row.GivesVerdict);
         Assert.Equal(3, vm.LensOptions.Count);
         Assert.Equal(key, vm.SelectedLens.Key);
         Assert.Contains(LensProfileTestData.Nikkor135Dc, vm.ProfileSummary);   // the lens left out, named
@@ -1314,7 +1338,7 @@ public class StructureTabTests
     /// R-126: with the vignetting compared, the five tests' scale and the depth's are one table:
     /// every band carries its interval in percent, the same band in stops (the core's
     /// DepthScaleRows, not a list of the window's) and the console's meaning. The five tests'
-    /// verdict marks a percent cell and the nearest profile's verdict a stops cell - on this
+    /// verdict marks a percent cell and the deciding profile's verdict a stops cell - on this
     /// fixture in two different rows, which is why a row cannot be what is marked. The sentence
     /// that the stops are the same scale sits under the table; the card keeps only what the End
     /// to end test would read.
@@ -1338,7 +1362,7 @@ public class StructureTabTests
         Assert.All(vm.Scale, s => Assert.True(s.HasDepth));
 
         string shape = ShapeVerdict(vm);
-        string depth = vm.ProfileRows.Single(r => r.IsNearest).Verdict;
+        string depth = vm.ProfileRows.Single(r => r.GivesVerdict).Verdict;
         Assert.NotEqual(shape, depth);                                 // two verdicts, two rows
         Assert.Equal(shape, Assert.Single(vm.Scale, s => s.IsCurrent).Band);
         Assert.Equal(depth, Assert.Single(vm.Scale, s => s.IsDepthCurrent).Band);
@@ -1391,7 +1415,7 @@ public class StructureTabTests
         using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
         using var ws = new TempWorkspace();
         var (vm, _) = await RunWithProfiles(f, ws);
-        string depth = vm.ProfileRows.Single(r => r.IsNearest).Verdict;
+        string depth = vm.ProfileRows.Single(r => r.GivesVerdict).Verdict;
         Assert.True(vm.ScaleHasDepth);
 
         vm.NoFilters = false;

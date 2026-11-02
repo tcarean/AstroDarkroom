@@ -147,7 +147,10 @@ namespace FlatCheck
         /// <param name="r">The split result.</param>
         /// <returns>The profile's line, or why there is none.</returns>
         internal static string ReferenceLine(SplitResult r)
-            => r.HasReference
+            => r.ReferenceByAdobe
+                ? T($"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (the whole's Adobe profile, the same on every column)",
+                    $"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (profilul Adobe al intregului, acelasi pe toate coloanele)")
+                : r.HasReference
                 ? T($"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (the nearest to the whole, the same on every column)",
                     $"{r.ReferenceProfile.Lens.SourceLabel} {r.ReferenceProfile.Lens.Title}, {r.ReferenceProfile.Settings} (cel mai apropiat de intreg, acelasi pe toate coloanele)")
                 : T("none: the whole could not be compared with the lens profiles (no raw beside the master, or no profiles)",
@@ -180,9 +183,8 @@ namespace FlatCheck
             rows.Add(new SplitRow("VignetteStops", T("vignetting centre -> corner", "vignetare centru -> colt"), depth, RowNote("VignetteStops"), false, false));
 
             // one row per profile, as on the Structura tab: each column's difference against it,
-            // and
-            // in the profile's column its depth; the reference one (the nearest to the whole) is
-            // marked
+            // and in the profile's column its depth; the reference one (the row that gives the
+            // whole's verdict, R-128) is marked
             foreach (ProfileDepth p in r.Profiles)
             {
                 bool isReference = ReferenceEquals(p, r.ReferenceDepth);
@@ -193,7 +195,7 @@ namespace FlatCheck
                         : new SplitCell(T($"{d.DiffStops:+0.00;-0.00} stops = {d.ErrorPct:F1} %", $"{d.DiffStops:+0.00;-0.00} stopuri = {d.ErrorPct:F1} %"), d.Verdict);
                 }).ToList();
                 diff.Add(new SplitCell(Stops(p.CornerStops), null));
-                rows.Add(new SplitRow(DiffKey, ProfileLabel(p.Profile), diff, ProfileNote(p, isReference), false, isReference));
+                rows.Add(new SplitRow(DiffKey, ProfileLabel(p.Profile), diff, ProfileNote(p, isReference, r.ReferenceByAdobe), false, isReference));
             }
 
             // The verdict row's value is the verdict itself, worded; its Verdict stays the key
@@ -217,14 +219,18 @@ namespace FlatCheck
         /// <param name="p">The profile's row against the whole.</param>
         /// <param name="isReference">True for the reference profile, which gives the depth
         /// verdict.</param>
+        /// <param name="byAdobe">True when the reference is the whole's Adobe row (R-128), false
+        /// when it is the whole's nearest row.</param>
         /// <returns>The profile's settings and where it comes from, then the row's
         /// meaning.</returns>
-        internal static string ProfileNote(ProfileDepth p, bool isReference)
+        internal static string ProfileNote(ProfileDepth p, bool isReference, bool byAdobe)
             => T($"profile {p.Profile.Settings} [{p.Profile.Lens.Where}]: ", $"profil {p.Profile.Settings} [{p.Profile.Lens.Where}]: ")
-             + (isReference
-                 ? T("the nearest to the whole - the REFERENCE, gives the depth verdict on every column. ",
-                     "cel mai apropiat de intreg - REFERINTA, da verdictul adancimii pe fiecare coloana. ")
-                 : "")
+             + (!isReference ? ""
+                : byAdobe
+                ? T("the whole's Adobe profile - the REFERENCE, gives the depth verdict on every column. ",
+                    "profilul Adobe al intregului - REFERINTA, da verdictul adancimii pe fiecare coloana. ")
+                : T("the nearest to the whole - the REFERENCE, gives the depth verdict on every column. ",
+                    "cel mai apropiat de intreg - REFERINTA, da verdictul adancimii pe fiecare coloana. "))
              + RowNote(DiffKey);
 
         /// <summary>What a row means when the columns are parts of one master.</summary>

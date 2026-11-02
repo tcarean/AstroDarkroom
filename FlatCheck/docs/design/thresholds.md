@@ -24,7 +24,7 @@ the last inline ones there and the `--expo` midpoints). Full picture:
 | tilt (linear term) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | worst tile (`pata maxima`) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | local spot (`pete locale`) | structure | 2% = warning only, never a verdict | | `Th.LocalSpotWarn` |
-| vignetting vs the lens profile (nearest) | structure, `--raw`/`--lens` | *residual scale* through `2^|D| - 1`: 0.03 / 0.14 / 0.26 stops; the report also prints what `--light`'s 2 / 5 % would say of the same corner error, and the reference's own spread (`Th.ProfileDatabaseSpreadStops` = 0.2 stops = 15 %) - informative, never a verdict | | `Th.Resid*` via `Stats.DepthVerdict`; `Stats.DepthOnLightScale` for the note |
+| vignetting vs the lens profile (the one that decides, R-128) | structure, `--raw`/`--lens` | *residual scale* through `2^|D| - 1`: 0.03 / 0.14 / 0.26 stops; the report also prints what `--light`'s 2 / 5 % would say of the same corner error, and the reference's own spread (`Th.ProfileDatabaseSpreadStops` = 0.2 stops = 15 %) - informative, never a verdict | | `Th.Resid*` via `Stats.DepthVerdict`; `Stats.DepthOnLightScale` for the note |
 | \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |
 | field of view (diagonal) | light | 20° | 40° = refused | `Th.LightFovOk/Max` |
 | focal length, no pixel size | light | 120 mm | below 60 mm = refused | `Th.LightFocalOk/Min` |

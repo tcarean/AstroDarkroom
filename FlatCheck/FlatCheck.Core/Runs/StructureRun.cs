@@ -235,7 +235,10 @@ namespace FlatCheck
                 if (chosen != null) { shot.ChosenLens = chosen; lenses = new[] { chosen }; }
                 else Log.Debug("the chosen lens " + query.LensKey + " is not among the candidates; every candidate is compared");
             }
-            var cmp = VignettingComparer.Analyze(r, shot, query.Sources?.Catalog, lenses);
+            // Only the candidates the raw's lens ID or name found are the camera's own naming; a
+            // --lens text is a search that may match lenses of several makers (R-128).
+            var cmp = VignettingComparer.Analyze(r, shot, query.Sources?.Catalog, lenses,
+                                                 lensesNamedByRaw: string.IsNullOrWhiteSpace(query.LensText) && shot.RawNamesLens && !shot.CandidatesByRangeOnly);
             if (Log.IsDebugEnabled)
                 Log.Debug("lenses compared " + LogText.List(lenses?.Select(l => l.Key)) + ": " + LogText.Comparison(cmp));
             return new StructureOutcome(r, cmp, shot, rawError);

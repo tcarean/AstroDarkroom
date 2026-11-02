@@ -1,7 +1,7 @@
 # 0054. The Split tab builds temp sessions from a copy of the flats and compares their masters with the whole session's, against one reference profile
 
 Date: 2026-09-28
-Status: accepted 2026-09-28
+Status: accepted 2026-09-28; the reference profile as the whole session's nearest profile superseded by 0090
 
 ## Context
 

@@ -30,8 +30,8 @@ namespace FlatCheck
     /// A row of the table "the vignetting against the lens's profile", ready formatted: the
     /// source (Adobe / lensfun), the lens, the mount and the calibration (Where), the profile
     /// used, its depth, the difference from the master, the error at the corner and the verdict;
-    /// IsNearest on the one that gives the verdict, Note with the calibration format against the
-    /// sensor (IsWarning when it is a large extrapolation).
+    /// GivesVerdict on the one that gives the verdict, Note with the calibration format against
+    /// the sensor (IsWarning when it is a large extrapolation).
     /// </summary>
     /// <param name="Key">The lens's catalog key.</param>
     /// <param name="Source">"Adobe" or "lensfun", as displayed.</param>
@@ -42,14 +42,15 @@ namespace FlatCheck
     /// <param name="Diff">The master's depth minus the profile's, in stops, signed.</param>
     /// <param name="Error">The corner error that difference leaves, in percent.</param>
     /// <param name="Verdict">The row's verdict, on the residual scale.</param>
-    /// <param name="IsNearest">True on the row that gives the comparison's verdict.</param>
+    /// <param name="GivesVerdict">True on the row that gives the comparison's verdict (R-128:
+    /// an Adobe row when the raw named the lens, the nearest otherwise).</param>
     /// <param name="Note">The calibration format against the sensor, and any mismatch
     /// warning.</param>
     /// <param name="IsWarning">True when the note is a warning: a large extrapolation or a
     /// profile far from the shot's settings.</param>
     internal sealed record ProfileRow(string Key, string Source, string Lens, string Where, string Profile,
                                       string Depth, string Diff, string Error, string Verdict,
-                                      bool IsNearest, string Note, bool IsWarning);
+                                      bool GivesVerdict, string Note, bool IsWarning);
 
     /// <summary>
     /// The words of the structure mode: the console report of a <see cref="StructureResult"/>
@@ -169,15 +170,16 @@ namespace FlatCheck
                 w.WriteLine($"    {row.Source,-7} {row.Lens}  [{row.Where}]");
                 w.WriteLine(T($"        profile {row.Profile,-23}: {row.Depth}   difference {row.Diff} = {row.Error} [{VerdictWords.Of(row.Verdict)}]",
                               $"        profil {row.Profile,-24}: {row.Depth}   diferenta {row.Diff} = {row.Error} [{VerdictWords.Of(row.Verdict)}]")
-                          + (!row.IsNearest ? ""
+                          + (!row.GivesVerdict ? ""
                              : o.Shot?.ChosenLens != null ? T("  <- the lens you chose, gives the verdict", "  <- obiectivul ales de tine, da verdictul")
+                             : c.AdobeDecides ? T("  <- Adobe, gives the verdict", "  <- Adobe, da verdictul")
                              : T("  <- the nearest, gives the verdict", "  <- cel mai apropiat, da verdictul")));
                 if (row.IsWarning) w.WriteLine("        " + row.Note);
             }
             Indent(ComparisonSummary(c), w);
             w.WriteLine($"    ({AgainstReport.DepthScale()})");
             Indent(DepthScaleNote(), w);
-            Indent(DepthLightScaleNote(c.Nearest.DiffStops), w);
+            Indent(DepthLightScaleNote(c.Deciding.DiffStops), w);
             Indent(ComparisonNote(), w);
         }
 
@@ -309,15 +311,29 @@ namespace FlatCheck
                 if (mismatch != null) { note += T(" WARNING: ", " ATENTIE: ") + mismatch; warning = true; }
                 rows.Add(new ProfileRow(p.Lens.Key, p.Lens.SourceLabel, p.Lens.Name, p.Lens.Where, p.Settings,
                     Depth(d.CornerStops), T($"{d.DiffStops:+0.00;-0.00} stops", $"{d.DiffStops:+0.00;-0.00} stopuri"), $"{d.ErrorPct:F1} %", d.Verdict,
-                    ReferenceEquals(d, c.Nearest), note, warning));
+                    ReferenceEquals(d, c.Deciding), note, warning));
             }
             return rows;
         }
 
         /// <summary>
-        /// Whose the verdict is and how much the profiles differ among themselves. "The nearest",
-        /// not "the worst": the two databases differ from each other by ~0.2 stops on the same
-        /// lens, and a master that matches one of them is not wrong.
+        /// The note the window puts on the row that gives the verdict, in the words of the
+        /// console's marker: the lens the person chose, the Adobe profile (R-128), or the
+        /// nearest profile. The other rows carry none.
+        /// </summary>
+        /// <param name="c">The comparison, with at least one row.</param>
+        /// <returns>One sentence ending with a space, to go before the row's own note.</returns>
+        internal static string VerdictRowNote(VignettingComparison c)
+            => c.Shot?.ChosenLens != null ? T("The lens you chose - it gives the verdict. ", "Obiectivul ales de tine - da verdictul. ")
+             : c.AdobeDecides ? T("The Adobe profile - it gives the verdict. ", "Profilul Adobe - da verdictul. ")
+             : T("The nearest profile - it gives the verdict. ", "Cel mai apropiat profil - da verdictul. ");
+
+        /// <summary>
+        /// Whose the verdict is and how much the profiles differ among themselves. When the raw
+        /// named the lens and Adobe has its file, the Adobe profile's, and the lensfun rows are for
+        /// comparison (R-128, ADR 0090); otherwise "the nearest", not "the worst": the two
+        /// databases differ from each other by ~0.2 stops on the same lens, and a master that
+        /// matches one of them is not wrong.
         /// </summary>
         /// <param name="c">The comparison, with at least one row.</param>
         /// <returns>Two or three lines joined by '\n'.</returns>
@@ -328,16 +344,26 @@ namespace FlatCheck
             // left out, and the single-profile sentence, which would blame a missing second
             // database, is not printed.
             bool chosen = c.Shot?.ChosenLens != null;
-            string who = $"{c.Nearest.Profile.Lens.SourceLabel} {c.Nearest.Profile.Lens.Title}";
+            string who = $"{c.Deciding.Profile.Lens.SourceLabel} {c.Deciding.Profile.Lens.Title}";
             string whose = chosen
                 ? T($"given by the profile of the lens you chose ({who})", $"dat de profilul obiectivului ales de tine ({who})")
+                : c.AdobeDecides ? T($"given by the Adobe profile ({who})", $"dat de profilul Adobe ({who})")
                 : T($"given by the nearest profile ({who})", $"dat de profilul cel mai apropiat ({who})");
             string verdict = T(
                 $"the comparison's verdict: {VerdictWords.Of(c.Verdict)}, {whose}: "
-                + $"{c.Nearest.DiffStops:+0.00;-0.00} stops against the profile = {c.Nearest.ErrorPct:F1} % error in the corner of a light calibrated with the master",
+                + $"{c.Deciding.DiffStops:+0.00;-0.00} stops against the profile = {c.Deciding.ErrorPct:F1} % error in the corner of a light calibrated with the master",
                 $"verdictul comparatiei: {VerdictWords.Of(c.Verdict)}, {whose}: "
-                + $"{c.Nearest.DiffStops:+0.00;-0.00} stopuri fata de profil = {c.Nearest.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul");
-            string spread = c.Profiles.Count > 1
+                + $"{c.Deciding.DiffStops:+0.00;-0.00} stopuri fata de profil = {c.Deciding.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul");
+            // The reason names lensfun only when a lensfun row is there to compare (--source
+            // adobe, or lensfun rows skipped for want of a crop, leave Adobe rows alone).
+            bool lensfunShown = c.Profiles.Any(p => p.Profile.Lens.Source == ProfileSource.Lensfun);
+            string spread = c.Profiles.Count > 1 && c.AdobeDecides && lensfunShown
+                ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner; the Adobe profile decides, because the lensfun ones are measured by volunteers, each with their own camera and diffuser; they are shown for comparison",
+                    $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; decide profilul Adobe, pentru ca cele lensfun sunt masurate de voluntari, fiecare cu aparatul si difuzorul lui; sunt aratate pentru comparatie")
+                : c.Profiles.Count > 1 && c.AdobeDecides
+                ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner",
+                    $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt")
+                : c.Profiles.Count > 1
                 ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner; a master that matches one of them is not wrong",
                     $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; un master care coincide cu unul din ele nu e gresit")
                 : chosen ? ""
@@ -564,11 +590,11 @@ namespace FlatCheck
         /// coltul light-ului calibrat".
         /// </summary>
         /// <param name="o">The run, with a comparison made.</param>
-        /// <returns>The depth verdict, the difference against the nearest profile and its corner
-        /// error.</returns>
+        /// <returns>The depth verdict, the difference against the profile that gives it and its
+        /// corner error.</returns>
         internal static string DepthDetail(StructureOutcome o)
         {
-            ProfileDepth n = o.Profiles.Nearest;
+            ProfileDepth n = o.Profiles.Deciding;
             return T($"{VerdictWords.Of(o.Profiles.Verdict)} - by {n.DiffStops:+0.00;-0.00} stops against the {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title} profile, that is {n.ErrorPct:F1} % error in the corner of the calibrated light",
                      $"{VerdictWords.Of(o.Profiles.Verdict)} - cu {n.DiffStops:+0.00;-0.00} stopuri fata de profilul {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title}, adica {n.ErrorPct:F1} % eroare in coltul light-ului calibrat");
         }
@@ -582,7 +608,7 @@ namespace FlatCheck
         /// <param name="o">The run, with a comparison made.</param>
         /// <returns>The advice, lines joined by '\n'.</returns>
         internal static string Advice(StructureOutcome o)
-            => o.DepthCarriesTheVerdict ? DepthAdvice(o.Profiles.Nearest.DiffStops, o.Profiles.Verdict) : Advice(o.Structure.Verdict);
+            => o.DepthCarriesTheVerdict ? DepthAdvice(o.Profiles.Deciding.DiffStops, o.Profiles.Verdict) : Advice(o.Structure.Verdict);
 
         /// <summary>
         /// What the person should do when the master's vignetting is not the lens's. The sign is
@@ -593,7 +619,8 @@ namespace FlatCheck
         /// More rotations do not help: the excess rotates with the camera or is symmetrised by
         /// the rotation.
         /// </summary>
-        /// <param name="diffStops">The master's depth minus the nearest profile's, stops.</param>
+        /// <param name="diffStops">The master's depth minus the deciding profile's (R-128),
+        /// stops.</param>
         /// <param name="verdict">The depth verdict; "REFA" adds the advice to reshoot.</param>
         /// <returns>The cause by the sign and its weight, lines joined by '\n'.</returns>
         internal static string DepthAdvice(double diffStops, string verdict)

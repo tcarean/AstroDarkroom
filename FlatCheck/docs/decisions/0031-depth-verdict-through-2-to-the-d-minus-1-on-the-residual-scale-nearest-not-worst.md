@@ -1,7 +1,7 @@
 # 0031. The vignetting-depth verdict goes through 2^|D| - 1 onto the residual scale, against the nearest profile, with the --light reading printed as a note
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the nearest profile's verdict where an Adobe file is among lenses not found by range alone superseded by 0090
 
 ## Context
 

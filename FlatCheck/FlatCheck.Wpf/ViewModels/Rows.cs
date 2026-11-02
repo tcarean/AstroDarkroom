@@ -109,7 +109,9 @@ namespace FlatCheck.Wpf
         public string Diff { get; init; }         // "+0.59 stopuri"
         public string Error { get; init; }        // "50.8 %"
         public string Verdict { get; init; }
-        public bool IsNearest { get; init; }
+        /// <summary>True on the row that gives the verdict (R-128: the Adobe row when the raw
+        /// named the lens, the nearest otherwise).</summary>
+        public bool GivesVerdict { get; init; }
         public string Note { get; init; }
         public bool IsWarning { get; init; }
         public string DiffAndError => $"{Diff} = {Error}";

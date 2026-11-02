@@ -29,13 +29,23 @@ internal static class LensProfileTestData
     internal const double A1 = -1.903047, A2 = 4.514725, A3 = -4.657911;   // Adobe, 20 mm, f/2.8, infinity
     internal const double K1 = -0.6195, K2 = 0.3276, K3 = -0.1494;         // lensfun pa, 20 mm, f/2.8, crop 1.61
 
-    internal static string Lcp(string make = "NIKON CORPORATION", string lens = "Tokina AT-X 11-20mm F2.8 PRO DX") => $@"<x:xmpmeta xmlns:x=""adobe:ns:meta/"">
+    /// <summary>
+    /// The Tokina's Adobe file. <paramref name="lensId"/> is the file's own <c>stCamera:LensID</c>
+    /// on its two 20 mm profiles; 139 stays in <c>AlternateLensIDs</c> whatever it is. The AT-X
+    /// PRO DX file carries 122 with 139 as the alternate, the atx-i CF file 139 itself, with the
+    /// same coefficients (the real pair, compared 2026-11-02).
+    /// </summary>
+    /// <param name="make">The camera maker the file is for, as in its name.</param>
+    /// <param name="lens">The lens's tags inside the file.</param>
+    /// <param name="lensId">The file's own lens ID.</param>
+    /// <returns>The file's text.</returns>
+    internal static string Lcp(string make = "NIKON CORPORATION", string lens = "Tokina AT-X 11-20mm F2.8 PRO DX", string lensId = "122") => $@"<x:xmpmeta xmlns:x=""adobe:ns:meta/"">
  <rdf:RDF xmlns:rdf=""http://www.w3.org/1999/02/22-rdf-syntax-ns#"">
   <rdf:Description rdf:about="""" xmlns:photoshop=""http://ns.adobe.com/photoshop/1.0/"" xmlns:stCamera=""http://ns.adobe.com/photoshop/1.0/camera-profile"">
    <photoshop:CameraProfiles>
     <rdf:Seq>
      <rdf:li>
-      <rdf:Description stCamera:Make=""{make}"" stCamera:CameraRawProfile=""True"" stCamera:LensID=""122""
+      <rdf:Description stCamera:Make=""{make}"" stCamera:CameraRawProfile=""True"" stCamera:LensID=""{lensId}""
        stCamera:Lens=""{lens}"" stCamera:CameraPrettyName=""{make}"" stCamera:LensPrettyName=""{lens}""
        stCamera:SensorFormatFactor=""1.5"" stCamera:FocalLength=""20"" stCamera:FocusDistance=""10000"" stCamera:ApertureValue=""2.970854"">
       <stCamera:AlternateLensIDs><rdf:Seq><rdf:li>139</rdf:li></rdf:Seq></stCamera:AlternateLensIDs>
@@ -56,7 +66,7 @@ internal static class LensProfileTestData
       </rdf:Description>
      </rdf:li>
      <rdf:li>
-      <rdf:Description stCamera:Make=""{make}"" stCamera:CameraRawProfile=""True"" stCamera:LensID=""122""
+      <rdf:Description stCamera:Make=""{make}"" stCamera:CameraRawProfile=""True"" stCamera:LensID=""{lensId}""
        stCamera:Lens=""{lens}"" stCamera:CameraPrettyName=""{make}"" stCamera:LensPrettyName=""{lens}""
        stCamera:SensorFormatFactor=""1.5"" stCamera:FocalLength=""20"" stCamera:FocusDistance=""10000"" stCamera:ApertureValue=""4"">
       <stCamera:PerspectiveModel>
@@ -391,6 +401,12 @@ internal static class LensProfileTestData
     internal const string Samyang135 = "Samyang 135mm f/2.0 ED UMC";
 
     /// <summary>
+    /// The Tokina's second Adobe name (R-128): the atx-i CF, Tokina's re-release of the AT-X PRO
+    /// DX, as the file's name spells it; its file carries the raw's 139 as its own ID.
+    /// </summary>
+    internal const string TokinaAtxi = "Tokina atx-i 11-20mm f2.8 CF";
+
+    /// <summary>
     /// A D3300 raw with a manual lens (R-121): the "non-CPU lens" ID 74, no name, the range
     /// 135 mm f/2.0 from the camera's menu, shot at f/2.8. Points at the range pair by range
     /// alone.
@@ -454,8 +470,10 @@ internal static class LensProfileTestData
     /// mount definitions and two Tokinas of the raw's range on mounts the D3300 does not take.
     /// With <paramref name="rangePair"/> it also carries the two 135 f/2 lenses of R-121: Adobe's
     /// Nikkor 135 f/2 DC file (no lens ID) and lensfun's Samyang (<see cref="LensfunRangePairXml"/>).
+    /// With <paramref name="atxi"/> it also carries the Tokina's Nikon file under its atx-i CF name
+    /// (<see cref="TokinaAtxi"/>), its own ID 139, its coefficients the AT-X file's (R-128).
     /// </summary>
-    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool mounts = false, bool rangePair = false)
+    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool mounts = false, bool rangePair = false, bool atxi = false)
     {
         string dir = Path.Combine(ws.Dir, "profiles");
         Directory.CreateDirectory(Path.Combine(dir, "Tokina"));
@@ -465,6 +483,9 @@ internal static class LensProfileTestData
         File.WriteAllText(Path.Combine(dir, "lensfun", "slr-tokina.xml"), LensfunXml);
         if (tokinaOnTwoFormats)
             File.WriteAllText(Path.Combine(dir, "lensfun", "slr-tokina-ff.xml"), LensfunTokinaFullFrameXml);
+        if (atxi)
+            File.WriteAllText(Path.Combine(dir, "Tokina", $"NIKON CORPORATION ({TokinaAtxi}) - RAW.lcp"),
+                Lcp(lens: "Tokina atx-i 11-20mm F2.8 CF", lensId: "139"));
         if (otherMounts)
         {
             // The file names follow Adobe's "<Camera> (<Lens>) - RAW.lcp"; the tags inside are the
@@ -512,11 +533,12 @@ internal static class LensProfileTestData
     /// Adobe folder searched is one that does not exist, so only lensfun/ is read: a computer
     /// without Adobe software (R-113). With <paramref name="mounts"/> the lensfun half carries the
     /// Nikon mount definitions and the two Tokinas on other mounts (R-116). With
-    /// <paramref name="rangePair"/> it carries the two 135 f/2 lenses of R-121.
+    /// <paramref name="rangePair"/> it carries the two 135 f/2 lenses of R-121. With
+    /// <paramref name="atxi"/> the Adobe half carries the Tokina under its two names (R-128).
     /// </summary>
-    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool withAdobe = true, bool mounts = false, bool rangePair = false)
+    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false, bool otherMounts = false, bool withAdobe = true, bool mounts = false, bool rangePair = false, bool atxi = false)
     {
-        string dir = ProfilesDir(ws, tokinaOnTwoFormats, otherMounts, mounts, rangePair);
+        string dir = ProfilesDir(ws, tokinaOnTwoFormats, otherMounts, mounts, rangePair, atxi);
         string adobe = withAdobe ? dir : Path.Combine(ws.Dir, "no-adobe");
         return ProfileLocator.Locate(new[] { adobe }, Path.Combine(dir, "lensfun"));
     }

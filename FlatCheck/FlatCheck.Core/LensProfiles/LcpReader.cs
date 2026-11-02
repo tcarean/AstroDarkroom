@@ -111,7 +111,8 @@ namespace FlatCheck
                 if (lensName != "?") aliases.Add(lensName);
                 if (lens != null) aliases.Add(lens);
                 var ids = new List<long>();
-                if (ParseLensId(Prop("LensID")) is long id0) ids.Add(id0);
+                long? ownId = ParseLensId(Prop("LensID"));
+                if (ownId is long id0) ids.Add(id0);
                 foreach (XElement e in holder.Descendants(St + "AlternateLensIDs").Descendants(Rdf + "li"))
                     if (ParseLensId(e.Value) is long id) ids.Add(id);
 
@@ -123,7 +124,7 @@ namespace FlatCheck
                 double fStop = Math.Pow(2, av.Value / 2);
                 double distance = Num(Prop("FocusDistance")) ?? double.NaN;
                 result.Add(new LensProfile(new LensChoice(ProfileSource.Adobe, LensMaker(lensName, make), lensName, mount),
-                    aliases.Distinct().ToList(), ids.Distinct().ToList(), focal.Value, fStop, distance, model, file));
+                    aliases.Distinct().ToList(), ids.Distinct().ToList(), focal.Value, fStop, distance, model, file, ownId));
             }
             return result;
         }

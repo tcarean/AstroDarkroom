@@ -559,7 +559,7 @@ namespace FlatCheck.Wpf
             StructureOutcome explained = o.Profiles != null ? o : gap;
             bool compared = explained != null && explained.Compared;
             // One scale for both verdicts (R-126): the stops column only when the vignetting was
-            // compared, its cell marked on the nearest profile's verdict.
+            // compared, its cell marked on the verdict of the profile that decides (R-128).
             FillScale(o.Structure.Verdict, compared ? explained.Profiles.Verdict : null);
             if (compared)
             {
@@ -577,14 +577,12 @@ namespace FlatCheck.Wpf
                     Diff = r.Diff,
                     Error = r.Error,
                     Verdict = r.Verdict,
-                    IsNearest = r.IsNearest,
-                    Note = (!r.IsNearest ? ""
-                            : explained.Shot?.ChosenLens != null ? T("The lens you chose - it gives the verdict. ", "Obiectivul ales de tine - da verdictul. ")
-                            : T("The nearest profile - it gives the verdict. ", "Cel mai apropiat profil - da verdictul. ")) + r.Note,
+                    GivesVerdict = r.GivesVerdict,
+                    Note = (r.GivesVerdict ? StructureReport.VerdictRowNote(c) : "") + r.Note,
                     IsWarning = r.IsWarning,
                 }).ToList();
                 ProfileSummary = StructureReport.ComparisonSummary(c).Replace('\n', ' ');
-                ProfileLightNote = StructureReport.DepthLightScaleNote(c.Nearest.DiffStops).Replace('\n', ' ');
+                ProfileLightNote = StructureReport.DepthLightScaleNote(c.Deciding.DiffStops).Replace('\n', ' ');
                 ProfileNote = StructureReport.ComparisonNote().Replace('\n', ' ');
                 ShowLensPicker(explained.Shot);
             }
@@ -645,7 +643,7 @@ namespace FlatCheck.Wpf
         /// marked on that verdict, and the sentence that the stops are the same scale.
         /// </summary>
         /// <param name="shape">The five tests' verdict.</param>
-        /// <param name="depth">The depth's verdict, the nearest profile's; null when nothing was
+        /// <param name="depth">The depth's verdict, the deciding profile's (R-128); null when nothing was
         /// compared, and the scale then has no stops column.</param>
         void FillScale(string shape, string depth)
         {

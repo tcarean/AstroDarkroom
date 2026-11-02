@@ -30,13 +30,19 @@ public class SplitRunTests
     static string WriteFlat(TempWorkspace ws, string name, double k)
         => ws.WriteFile(name, FitsTestData.BuildFits(Size, Size, FitsTestData.Radial(Size, Size, k: k)));
 
+    /// <summary>
+    /// A fabricated raw of the Tokina's range with a lens ID no profile carries, so the lenses
+    /// come by the range alone and the nearest row decides on each master: the path where a
+    /// part's own deciding row can differ from the whole's (with the raw's 139 the Adobe row
+    /// decides on every master, R-128, and AdobeVerdictTests pins that).
+    /// </summary>
     static LoadedFrame RawFrame() => new()
     {
         Header = new Dictionary<string, string>(),
         FocalMm = 20,
         FNumber = 2.8,
         Camera = "NIKON D3300",
-        LensId = 139,
+        LensId = 1,
         LensMinFocalMm = 11,
         LensMaxFocalMm = 20,
         LensMaxAperture = 2.8,
@@ -44,9 +50,9 @@ public class SplitRunTests
 
     /// <summary>
     /// The whole at k = 0.45 and two parts either side of it, with the fixture profiles on two
-    /// formats and a fabricated raw: the whole's nearest is the full-frame lensfun entry (0.905
-    /// stops), the deeper part's own nearest is the Adobe one (1.248), so the reference rule has
-    /// something to pin.
+    /// formats and a fabricated raw found by range: the whole's nearest is the full-frame
+    /// lensfun entry (0.905 stops), the deeper part's own nearest is the Adobe one (1.248), so
+    /// the reference rule has something to pin.
     /// </summary>
     static (string Whole, string[] Parts, StructureQuery? Query) Fixture(TempWorkspace ws, bool withRaw = true)
     {
@@ -72,11 +78,14 @@ public class SplitRunTests
         Assert.Equal(new[] { "partea 1 din 2", "partea 2 din 2", "intreg" }, r.Columns.Select(c => c.Label));
         Assert.Equal(4, SplitReport.Headers(r).Count);
 
-        // the reference is the whole's nearest profile, and every column is measured against that
-        // same one - which only means something when a part's own nearest is a different profile
-        // (ADR 0054's measurement)
-        Assert.Same(r.Whole.Outcome.Profiles.Nearest.Profile, r.ReferenceProfile);
-        Assert.Contains(r.Parts, p => !ReferenceEquals(p.Outcome.Profiles.Nearest.Profile, r.ReferenceProfile));
+        // the reference is the row that gives the whole's verdict (by range alone, its nearest),
+        // and every column is measured against that same one - which only means something when a
+        // part's own deciding row is a different profile (ADR 0054's measurement)
+        Assert.False(r.ReferenceByAdobe);
+        Assert.Contains("cel mai apropiat de intreg", SplitReport.ReferenceLine(r));
+        Assert.Contains("cel mai apropiat de intreg - REFERINTA", Assert.Single(SplitReport.Rows(r), x => x.IsReference).Note);
+        Assert.Same(r.Whole.Outcome.Profiles.Deciding.Profile, r.ReferenceProfile);
+        Assert.Contains(r.Parts, p => !ReferenceEquals(p.Outcome.Profiles.Deciding.Profile, r.ReferenceProfile));
         Assert.All(r.Columns, c => Assert.Equal(r.ReferenceProfile.File, c.Reference.Profile.File));
         Assert.All(r.Columns, c => Assert.Equal(c.Outcome.Structure.VignetteStops - c.Reference.CornerStops, c.Reference.DiffStops, 9));
     }

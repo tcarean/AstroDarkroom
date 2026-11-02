@@ -223,7 +223,8 @@ namespace FlatCheck
         internal static string Comparison(VignettingComparison c)
             => c == null ? "none"
              : "masterStops=" + Num(c.MasterStops) + " gap=" + c.Gap + " spreadStops=" + Num(c.SpreadStops) + " verdict=" + Str(c.Verdict)
-             + " nearest=" + Depth(c.Nearest) + " skippedForCrop=" + List(c.SkippedForCrop?.Select(l => l.Key))
+             + " adobeDecides=" + (c.AdobeDecides ? "yes" : "no") + " decides=" + Depth(c.Deciding)
+             + " skippedForCrop=" + List(c.SkippedForCrop?.Select(l => l.Key))
              + " profiles=" + List(c.Profiles?.Select(Depth));
 
         /// <summary>The field-of-view check of a <c>--light</c> run.</summary>
@@ -298,7 +299,8 @@ namespace FlatCheck
              + " depthDiffStops=" + Num(r.DepthDiffStops) + " depthErrorPct=" + Num(r.DepthErrorPct) + " depthVerdict=" + Str(r.DepthVerdict)
              + " verdict=" + Str(r.Verdict) + " ratio {" + Structure(r.Structure) + "}";
 
-        /// <summary>A split run: each part against the whole's nearest profile.</summary>
+        /// <summary>A split run: each part against the whole's reference profile, the row that
+        /// gives the whole's verdict (R-128).</summary>
         /// <param name="r">The result.</param>
         /// <returns>The text.</returns>
         internal static string Split(SplitResult r)

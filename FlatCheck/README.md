@@ -252,12 +252,20 @@ at the analysis size, and its vignetting is measured with **exactly the master's
 median of the 5 % corner boxes against the centre.
 
 The difference in stops, master minus profile, goes through the same arithmetic as `--against`:
-`2^|D| - 1` is the error it leaves in the corner of a light calibrated with the master, read on
-the residual scale, so under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, above
-that REDO. **The comparison's verdict is the nearest profile's**, not the worst one's: the two
-databases differ from each other by ~0.2 stops on the same lens, and a master that matches one of
-them is not wrong. The run's verdict is the worse of the shape (the five tests) and the depth, and
-the exit code follows it.
+`2^|D| - 1` is the error it leaves in the corner of a light calibrated with the master, read on the
+residual scale, so under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, above that
+REDO. **When the raw's lens ID or name found the lens and Adobe has a file for it, the Adobe
+profile gives the verdict**; the lensfun rows stay in the list, for comparison. Adobe measures each
+lens itself; lensfun's profiles come from volunteers, each with their own camera and diffuser: on
+the author's Tokina both lensfun entries came out deeper than any of the author's panel flats
+allows, so taking the nearest profile let a panel's own falloff pass as the lens's. When Adobe has
+the same lens under two names with the same figures (the Tokina AT-X 11-20 PRO DX and its
+re-release, the atx-i 11-20 CF), the file whose own lens ID is the raw's gives the verdict. When
+the lenses came by the focal range alone (a manual lens, below), with `--lens` (a search, which may
+match lenses of several makers), when you chose your lens, or when no Adobe file is among them,
+**the nearest profile gives the verdict**, not the worst one: the two databases differ from each
+other by ~0.2 stops on the same lens, and a master that matches one of them is not wrong. The run's
+verdict is the worse of the shape (the five tests) and the depth, and the exit code follows it.
 
 **Two scales for one quantity.** The error in the corner of the calibrated light is exactly what
 `--light` measures too, directly in the light, with its thresholds of 2 % OK and 5 % PROBLEM.
@@ -277,18 +285,28 @@ light, a reflection in the lens hood. More rotations do not help, because the ex
 the camera or is symmetrised by the rotation.
 
 Measured on the author's library (D3300, `--raw` with the first raw of `flats/`; recorded on
-2026-09-18, re-measured unchanged on 2026-10-26, `docs/validation.md`):
+2026-09-18, re-measured on 2026-11-02 when the Adobe profile started to decide,
+`docs/validation.md`):
 
-| master | vignetting (stops) | nearest profile | difference | depth verdict |
+| master | vignetting (stops) | profile that decides | difference | depth verdict |
 |---|---|---|---|---|
-| Tokina 20 mm f/2.8, tablet + 7 matte covers | 1.26 | lensfun 0.91 | +0.34 | REDO |
-| Tokina 20 mm f/2.8, tablet + 15 covers | 1.24 | lensfun 0.91 | +0.33 | REDO |
+| Tokina 20 mm f/2.8, tablet + 7 matte covers | 1.26 | Adobe 0.66 | +0.59 | REDO |
+| Tokina 20 mm f/2.8, tablet + 15 covers | 1.24 | Adobe 0.66 | +0.58 | REDO |
+| Tokina 20 mm f/2.8, tablet + 3 sheets of paper | 0.81 | Adobe 0.66 | +0.15 | ACCEPTABLE |
+| Tokina 20 mm f/2.8, tablet + 4 sheets of paper | 0.80 | Adobe 0.66 | +0.14 | ACCEPTABLE |
+| Tokina 20 mm f/2.8, 3 sheets, rotated in place | 0.76 | Adobe 0.66 | +0.10 | GOOD |
 | Tokina 20 mm f/2.8, sky, no diffuser | 0.27 | Adobe 0.66 | -0.39 | REDO |
-| Tokina 20 mm f/2.8, monitor, diffuser close | 0.85 | lensfun 0.85 | 0.00 | PERFECT |
-| Tokina 20 mm f/2.8, on the monitor | 0.78 | lensfun 0.85 | -0.07 | GOOD |
+| Tokina 20 mm f/2.8, monitor, diffuser close | 0.85 | Adobe 0.66 | +0.19 | ACCEPTABLE |
+| Tokina 20 mm f/2.8, on the monitor | 0.78 | Adobe 0.66 | +0.11 | GOOD |
 | Nikkor 35 DX f/2.8, sky (ISO 400 / 800) | 0.63 / 0.62 | Adobe 0.52 | +0.11 / +0.10 | GOOD |
-| Samyang 135 f/2, sky (ISO 400 / 1600) | 0.61 / 0.60 | Nikkor 135 f/2 DC 0.50 | +0.11 / +0.10 | GOOD |
-| Samyang 135 f/2.8, sky | 0.15 | lensfun Samyang 0.14 | +0.01 | PERFECT |
+| Samyang 135 f/2, sky (ISO 400 / 1600) | 0.61 / 0.60 | nearest: Nikkor 135 f/2 DC 0.50 | +0.11 / +0.10 | GOOD |
+| Samyang 135 f/2.8, sky | 0.15 | nearest: lensfun Samyang 0.14 | +0.01 | PERFECT |
+
+The Tokina's two lensfun entries read 0.91 and 0.85 stops: every panel flat above (monitor, tablet
+and paper) is deeper than Adobe's 0.66 and the sky flat, which fills the corners, shallower, as the
+light sources make them; against lensfun four of the five panel flats with a real diffuser would
+read shallower than the lens, which a panel cannot do. The Samyang is a manual lens, compared by
+range, so its rows keep the nearest profile.
 
 What it cannot know: the profile is the model of the lens, not your copy of it, and it is
 achromatic; the master is the 2x2 mean of the mosaic. **A manual lens** (the Samyang) carries no
@@ -1260,11 +1278,12 @@ tests, each cell with its value and its verdict pill right after it; the vignett
 per profile** (every profile the Structure tab shows, Adobe and lensfun), with each column's difference
 from it and its verdict, and in the `vignetting profile` column the depth that profile predicts; the
 reference profile's row marked; and, on the last row, each column's verdict, the worse of its shape and
-its depth against the reference profile (not against the column's own nearest profile, so that the
-rows speak of the same profile). The reference profile is **the whole's nearest profile, the same for
-every column**: "nearest" is chosen on each master separately, and on the first real session part 1
-and the whole had chosen different profiles; a table with another reference per column would compare
-nothing. Under the table stand the residual maps, side by side, on a switchable scale.
+its depth against the reference profile (not against the column's own profile, so that the rows
+speak of the same profile). The reference profile is **the profile that gives the whole's verdict,
+the same for every column**: the Adobe one when the raw's lens ID or name found the lens, else the
+whole's nearest. The deciding profile is chosen on each master separately, and on the first real
+session part 1 and the whole had chosen different ones; a table with another reference per column
+would compare nothing. Under the table stand the residual maps, side by side, on a switchable scale.
 
 In the session folder it saves `Split result.txt` (the version banner, the date and time, the table,
 what it means) and `flatcheck-split.png`: the parts from left to right, then the whole, **on one colour

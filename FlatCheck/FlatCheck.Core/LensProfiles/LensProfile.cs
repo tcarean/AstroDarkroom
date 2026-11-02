@@ -213,6 +213,13 @@ namespace FlatCheck
         internal readonly double DistanceM;
         internal readonly VignettingModel Model;
         internal readonly string File;
+        /// <summary>
+        /// The file's own lens ID, its <c>stCamera:LensID</c>, apart from the ones it lists in
+        /// <c>AlternateLensIDs</c>; null for a file without one and for lensfun. The Tokina's
+        /// atx-i CF file has 139, the raw's; the AT-X PRO DX file 122, with 139 as an alternate
+        /// (R-128).
+        /// </summary>
+        internal readonly long? OwnLensId;
 
         /// <summary>A profile.</summary>
         /// <param name="lens">The lens it belongs to.</param>
@@ -223,8 +230,10 @@ namespace FlatCheck
         /// <param name="distanceM">The focus distance in metres; NaN when not given.</param>
         /// <param name="model">The vignetting model.</param>
         /// <param name="file">The file it was read from.</param>
+        /// <param name="ownLensId">The file's own <c>stCamera:LensID</c>, one of
+        /// <paramref name="lensIds"/>; null for none.</param>
         internal LensProfile(LensChoice lens, IReadOnlyList<string> aliases, IReadOnlyList<long> lensIds,
-                             double focalMm, double fStop, double distanceM, VignettingModel model, string file)
+                             double focalMm, double fStop, double distanceM, VignettingModel model, string file, long? ownLensId = null)
         {
             Lens = lens;
             Aliases = aliases ?? Array.Empty<string>();
@@ -234,13 +243,14 @@ namespace FlatCheck
             DistanceM = distanceM;
             Model = model;
             File = file;
+            OwnLensId = ownLensId;
         }
 
         /// <summary>The same profile under another lens identity.</summary>
         /// <param name="lens">The identity to carry.</param>
         /// <returns>A copy with <paramref name="lens"/>.</returns>
         internal LensProfile WithLens(LensChoice lens)
-            => new LensProfile(lens, Aliases, LensIds, FocalMm, FStop, DistanceM, Model, File);
+            => new LensProfile(lens, Aliases, LensIds, FocalMm, FStop, DistanceM, Model, File, OwnLensId);
 
         /// <summary>The distance of a profile that does not say it.</summary>
         internal static string DistanceUnspecified => T("unspecified", "nespecificata");

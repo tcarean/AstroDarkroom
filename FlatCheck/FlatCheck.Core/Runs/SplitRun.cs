@@ -23,10 +23,11 @@
 // ever needed (ADR 0054). Each column's figures are exactly those of the structure run on its
 // file - StructureRun.Analyze, the same function.
 //
-// THE REFERENCE PROFILE is the WHOLE's nearest profile, the same on every column. "Nearest" is
-// chosen on each master separately, and on the first real session part 1 and the whole chose
-// different profiles (Adobe +0.07 against lensfun -0.08); a table with a different reference on
-// each column would compare nothing.
+// THE REFERENCE PROFILE is the row that gives the WHOLE's verdict, the same on every column: the
+// whole's Adobe row when the raw named the lens (R-128), its nearest row otherwise. The deciding row
+// is chosen on each master separately, and on the first real session part 1 and the whole chose
+// different profiles under the nearest rule (Adobe +0.07 against lensfun -0.08); a table with a
+// different reference on each column would compare nothing.
 
 using System;
 using System.Collections.Generic;
@@ -51,7 +52,7 @@ namespace FlatCheck
         /// <summary>
         /// The column's verdict: the worst of the five tests and the depth against THE
         /// REFERENCE PROFILE - not the run's verdict (Outcome.Verdict), which takes the depth
-        /// against the column's own nearest profile; in the table the row above is against the
+        /// against the column's own deciding row (R-128); in the table the row above is against the
         /// reference, and the two rows must speak about the same profile.
         /// Without a reference, the five tests' verdict.
         /// </summary>
@@ -83,8 +84,8 @@ namespace FlatCheck
     {
         internal readonly IReadOnlyList<SplitColumn> Parts;
         internal readonly SplitColumn Whole;
-        /// <summary>The whole's nearest profile, or null when the whole could not be
-        /// compared.</summary>
+        /// <summary>The profile of the row that gives the whole's verdict (R-128), or null when
+        /// the whole could not be compared.</summary>
         internal readonly LensProfile ReferenceProfile;
         /// <summary>The reference profile's depth, measured with the master's operator; null
         /// without a reference.</summary>
@@ -102,7 +103,8 @@ namespace FlatCheck
         /// whole's comparison.</summary>
         /// <param name="parts">The parts' columns, in order.</param>
         /// <param name="whole">The whole session's column.</param>
-        /// <param name="referenceProfile">The whole's nearest profile, or null.</param>
+        /// <param name="referenceProfile">The profile of the row that gives the whole's verdict
+        /// (R-128), or null.</param>
         /// <param name="referenceDepth">That profile's depth on the whole, or null.</param>
         /// <param name="framesPerPart">The frames each part had; 0 when unknown.</param>
         /// <param name="when">The run's date and time.</param>
@@ -121,6 +123,10 @@ namespace FlatCheck
         }
 
         internal bool HasReference => ReferenceProfile != null;
+
+        /// <summary>True when the reference is the whole's Adobe row by R-128; false when it is
+        /// the whole's nearest row, or when there is none.</summary>
+        internal bool ReferenceByAdobe => HasReference && Whole.Outcome.Profiles.AdobeDecides;
 
         /// <summary>The parts in order, then the whole - the order of the columns and of the
         /// tiles.</summary>
@@ -175,7 +181,8 @@ namespace FlatCheck
 
         /// <summary>
         /// Runs <see cref="StructureRun.Analyze"/> on the whole and on each part, takes the
-        /// whole's nearest profile as the reference and reads every part against it. Throws an
+        /// profile of the row that gives the whole's verdict (R-128) as the reference and reads
+        /// every part against it. Throws an
         /// <see cref="ArgumentException"/> when there is no part, and what the structure run
         /// throws on a master it cannot read.
         /// </summary>
@@ -195,7 +202,7 @@ namespace FlatCheck
             var parts = new List<StructureOutcome>(partPaths.Count);
             foreach (string p in partPaths) parts.Add(StructureRun.Analyze(p, query));
 
-            ProfileDepth referenceDepth = whole.Compared ? whole.Profiles.Nearest : null;
+            ProfileDepth referenceDepth = whole.Compared ? whole.Profiles.Deciding : null;
             LensProfile reference = referenceDepth?.Profile;
 
             var columns = new List<SplitColumn>(partPaths.Count);
