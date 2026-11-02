@@ -78,8 +78,9 @@ do not spell out:
 - `Stats.DepthOnLightScale` reads the corner error through the same `Verdict` and the same
   `Th.LightRad*` that `LightAnalyzer` uses, and `StructureReport.DepthLightScaleNote` prints it
   (the reference's spread from `Th`, never written out) under the depth scale in the console,
-  under `--against`'s depth line, glued to the scale note on the Structure tab and to the
-  verdict detail on the Sintetic tab.
+  under `--against`'s depth line, under the comparison's summary in the Structure tab's card
+  (the scale itself is a column of the tab's one verdict scale, R-126) and with the verdict
+  detail on the Sintetic tab.
 - `ComparisonGap` names the reason when nothing can be compared: no profiles on the machine,
   no raw and no `--lens`, a raw that was read but says nothing about the lens (`RawWithoutLens`,
   `ShotIdentity.RawSaysNoLens`: no lens ID and no focal range, a camera on a telescope; ADR

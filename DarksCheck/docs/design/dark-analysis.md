@@ -243,7 +243,12 @@ normalisation. Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
 writes section 9, `INDEX` (the index, the label, the lights' equivalent index, the partner's
-lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; `DarkOutputs.LightsCsv`
+lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; one `MatchText` words
+every match verdict, the lights' and the partner's, from where the set's hot pixels are (`in
+lights`, `in dark-urile sesiunii`) against the master (`in dark`, `la partener`), and `Warmth`
+turns a match's degrees into the clause of the INDEX rows (`adica cu 7.5 grade mai reci decat
+partenerul`; `la aceeasi temperatura` under `Th.SameTemperatureCelsius`; none for a ratio that
+gives no degrees); `DarkOutputs.LightsCsv`
 writes `darkscheck-lights.csv` beside the darks' and biases' writers, with the columns `index,
 file, time, exposure_s, iso, error, skipped`, then per plane `<P>_sky_median, <P>_sky_sigma,
 <P>_local_sigma`, then `candidates, isolated_hot, amp_ratio_median, amp_ratio_q25,
@@ -252,14 +257,21 @@ amp_ratio_q75`. How the two analyzers work is in `lights-and-index.md`.
 ## The report as rows
 
 `DarkReport` builds the report as data first (ADR 0009): `HeaderLine` is the `=== DARK-URI`
-line, `HeaderRows` the rows under it (`normalizare`, `cuantizare`, the biases' warnings),
+line, `HeaderRows` the rows under it (`1 ADU-eq`, `pasul valorilor`, the biases' warnings),
 `Sections` the nine `ReportSection(Title, Rows)` of checks 2 to 9 and INDEX, `FrameRows` and
 `LightRows` the two tables as `DarkTableRow` / `LightTableRow` of formatted cells, with
 `FrameTableHeader` and `LightTableHeader` as the header lines. `Write` prints exactly those:
 a row as `    {label,-19}: {value}`, a table row with the console's column widths
 (`FrameLine` for a dark: the cells, then the row's `Note` after the last column when the frame
 is off the plateau, `Plateau` being its degrees from the plateau or `-` without a fit), a file
-name cut to 20 characters at print time only. `WarmingChartNote` is the sentence the window
+name cut to 20 characters at print time only. The header line takes the scale's source as
+`FrameStack` words it: a raw's `libraw (exact)`, the copied reader's label, becomes
+`citite exact din raw` (`RawSource`), a FITS says its bits and where its white and black came
+from, and `HeaderLine` puts only a FITS's words in brackets. The `1 ADU-eq` rows, the header's
+and the scale section's, call a set at
+the reference settings themselves (`AtReference`: ISO `Th.NormIso` and `Th.NormExposureSeconds`)
+by those words and any other set, a factor of 1 at ISO 800 and 60 s included, by its factor.
+`WarmingChartNote` is the sentence the window
 puts under its warming chart: the plateau and the band of the frames to discard, when there
 is a fit. A `ReportRow` reads its own verdict word off the
 value (`Verdict`: OK, ATENTIE or NEMASURAT, or their English WARNING and UNMEASURED, when the value

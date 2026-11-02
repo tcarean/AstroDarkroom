@@ -90,7 +90,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Grid.ColumnDefinitions>
       <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,14,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{l:T En='9. LIGHTS AGAINST THE DARK', Ro='9. LIGHTS FATA DE DARK'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{l:T En='9. HOW WELL THE DARK FITS THE LIGHTS', Ro='9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE'}" />
           <ItemsControl ItemsSource="{Binding LightRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>

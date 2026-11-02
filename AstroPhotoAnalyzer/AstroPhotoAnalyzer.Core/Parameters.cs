@@ -183,8 +183,8 @@ namespace AstroPhotoAnalyzer
         {
             double v = RoundTargetBackground(given);
             if (double.IsNaN(v) || double.IsInfinity(v) || v <= 0 || v >= 1)
-                return Tr.Pick($"the target background must be a number strictly between 0 and 1 (it is rounded to {TargetBackgroundDecimals} decimals); got {Quote(given)}",
-                               $"fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {Quote(given)}");
+                return Tr.Pick($"the target background must be over 0 and under 1 (it is rounded to {TargetBackgroundDecimals} decimals); got {Quote(given)}",
+                               $"fundalul-tinta trebuie sa fie mai mare decat 0 si mai mic decat 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {Quote(given)}");
             return null;
         }
 
@@ -283,7 +283,7 @@ namespace AstroPhotoAnalyzer
             string notANumber = FiniteError("Dmax", DmaxOverride)
                 ?? FiniteError(Tr.Pick("the viewing distance", "distanta de privire"), ViewingDistanceM)
                 ?? (CandidateWidthsCm ?? Array.Empty<double>()).Select(w => FiniteError(Tr.Pick("the print width", "latimea de print"), w)).FirstOrDefault(e => e != null)
-                ?? PositiveError(Tr.Pick("the aspect ratio", "raportul de aspect"), TargetAspect)
+                ?? PositiveError(Tr.Pick("the print proportions", "proportia printului"), TargetAspect)
                 ?? FiniteError(Tr.Pick("the passepartout", "passepartout-ul"), PassepartoutCm)
                 ?? FiniteError(Tr.Pick("the frame", "rama"), FrameCm);
             if (notANumber != null) return notANumber;

@@ -101,15 +101,25 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- The depth verdict of the vignetting comparison comes from the lens's Adobe profile when the
-  raw's lens ID or name found the lens and Adobe has a file for it (R-128, ADR 0090);
-  the lensfun rows stay in the list for comparison. Of two Adobe names with the same figures (the
-  Tokina AT-X 11-20 PRO DX and atx-i 11-20 CF), the file whose own lens ID is the raw's decides.
-  By range alone (a manual lens), with a `--lens` text, with a lens chosen, or without an Adobe
-  file, the nearest profile still decides. On the author's library the run's verdict of 3 of 15 masters moves one band
-  stricter: the Tokina monitor master with the diffuser close (GOOD to ACCEPTABLE; its depth
-  PERFECT to ACCEPTABLE, +0.19 stops) and the two paper masters (GOOD to ACCEPTABLE, +0.15 and
-  +0.14). The Split tab's reference profile follows.
+- The depth verdict of the vignetting comparison comes from the lens's Adobe profile when the raw's
+  lens ID or name found the lens and Adobe has a file for it (R-128, ADR 0090); the lensfun rows
+  stay in the list for comparison. Of two Adobe names with the same figures (the Tokina AT-X 11-20
+  PRO DX and atx-i 11-20 CF), the file whose own lens ID is the raw's decides. By range alone (a
+  manual lens), with a `--lens` text, with a lens chosen, or without an Adobe file, the nearest
+  profile still decides. On the author's library the run's verdict of 3 of 15 masters moves one band
+  stricter: the Tokina monitor master with the diffuser close (GOOD to ACCEPTABLE; its depth PERFECT
+  to ACCEPTABLE, +0.19 stops) and the two paper masters (GOOD to ACCEPTABLE, +0.15 and +0.14). The
+  Split tab's reference profile follows.
+- The Structure tab's guide under the residual map, `How to read the map`, is open when the window
+  starts (R-127, ADR 0089); folded by hand, it stays folded until the window closes. Its card is
+  capped by its own scroll bar, so a maximized 1920 x 1080 window keeps 85 % of the map's size.
+- The Structure tab shows one verdict scale instead of two (R-126, ADR 0088): under the vignetting
+  card, `THE VERDICT SCALE` gives each band its interval for the five tests in percent and, when
+  the vignetting was compared with the lens profile, the same band for the depth in stops, then
+  what the band means. The cell each verdict fell in is marked, not the row, so the five tests and
+  the depth read apart when they land in different bands. The card no longer carries a depth
+  scale of its own, and the paragraph on why the residual matters most now stands under the
+  five tests it speaks of. The console's report does not change.
 - The End to end tab's explanations, and the `--light` diagnosis, reasons, refusal and warnings
   the console shares with it, are in plain words (R-105, ADR 0082): how much darker or brighter
   the corners are than the centre after the flat, and what is sky, with no fit, plane, Pearson,

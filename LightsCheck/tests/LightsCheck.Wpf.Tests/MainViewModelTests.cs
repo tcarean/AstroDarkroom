@@ -259,7 +259,7 @@ public class MainViewModelTests
         await vm.OpenAsync(f.Root);
 
         Assert.Equal([3, 6], vm.Rejected.Select(r => r.Index));
-        Assert.All(vm.Rejected, r => Assert.Contains("prag", r.Reasons, StringComparison.Ordinal));
+        Assert.All(vm.Rejected, r => Assert.Contains("(de la 1.60 cadrul e slab)", r.Reasons, StringComparison.Ordinal));
         Assert.Equal(SeriesReport.RejectedHeading(vm.Result!), vm.RejectedHeading);
         Assert.StartsWith("2 cadre slabe", vm.RejectedHeading, StringComparison.Ordinal);
     }

@@ -102,7 +102,7 @@ public class IccPickerTests
         f.Dmax = "1.6";
         p = f.TryBuild(out _);
         Assert.Null(p!.DmaxProfile);
-        Assert.Equal(" (explicit)", ReportWriter.DmaxOrigin(p));
+        Assert.Equal(" (dat)", ReportWriter.DmaxOrigin(p));
 
         f.UseProfile(vm.Profiles.Single(x => x.Name == "Zeta baryta"));
         f.Medium = "canvas";
@@ -140,7 +140,7 @@ public class IccPickerTests
 
         Assert.False(f.HasProfile);
         Assert.Null(f.Profile);
-        Assert.Equal("(niciunul: Dmax-ul mediului)", f.ProfileText);
+        Assert.Equal("(niciunul: Dmax-ul suportului ales)", f.ProfileText);
         Assert.False(f.ProfileIsProblem);
 
         IccProfileRow baryta = vm.Profiles.Single(p => p.Name == "Zeta baryta");
@@ -158,7 +158,7 @@ public class IccPickerTests
         // A Dmax typed over the profile's drops it at once; retyping it does not bring it back.
         f.Dmax = "1.6";
         Assert.False(f.HasProfile);
-        Assert.Equal("(niciunul: Dmax-ul mediului)", f.ProfileText);
+        Assert.Equal("(niciunul: Dmax-ul suportului ales)", f.ProfileText);
         Assert.Null(f.TryBuild(out _)!.DmaxProfile);
         f.Dmax = "1.52";
         Assert.False(f.HasProfile);

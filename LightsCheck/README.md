@@ -338,8 +338,10 @@ The analysis starts by itself, the same as `lightscheck <folder>`, with a progre
   the step and the mount's move), the distance to the nearest other frame, and on the right the
   DITHERING card: its rows, its tables (how often, how far, direction, how close the frames are at
   each distance, the runs) and the explanation of walking noise.
-- **Quality**: FWHM, elongation (with its 1.35 and 1.6 lines), stars and sky background, frame by
-  frame.
+- **Quality**: the stars' width (FWHM), how elongated they are (with the yellow 1.35 and red 1.6
+  lines), the stars found and the sky background, frame by frame, each chart with a line on what
+  moves it; above them, a line says that each point is a frame and that on the first two charts
+  its colour is the frame's class.
 - **Rejected**: the bad and the unreadable frames with their reasons and thresholds, under an
   explanation of the words (the elongation, the trail and its axis, and in bold what a trail on RA
   and one on DEC point to). The marginal frames stay your choice; their list is in TRAILED FRAMES,

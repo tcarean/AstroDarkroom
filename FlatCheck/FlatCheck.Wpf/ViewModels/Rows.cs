@@ -45,14 +45,30 @@ namespace FlatCheck.Wpf
         public bool HasNote => !string.IsNullOrEmpty(Note);
     }
 
-    /// <summary>A band of the residual scale, marked when it is the one the verdict fell
-    /// in.</summary>
+    /// <summary>A band of the Structure tab's one verdict scale (R-126): its interval for the
+    /// five tests and, when the vignetting was compared, for the depth, each cell marked when
+    /// its verdict fell in this band.</summary>
     public sealed class ScaleRow
     {
         public string Band { get; init; }
+
+        /// <summary>The five tests' interval, in percent.</summary>
         public string Range { get; init; }
+
+        /// <summary>The same band for the depth against the lens profile, in stops; empty when
+        /// nothing was compared, and the cell is then off the table.</summary>
+        public string DepthRange { get; init; }
+
         public string Meaning { get; init; }
+
+        /// <summary>The five tests' verdict fell in this band: the percent cell is
+        /// marked.</summary>
         public bool IsCurrent { get; init; }
+
+        /// <summary>The depth's verdict fell in this band: the stops cell is marked.</summary>
+        public bool IsDepthCurrent { get; init; }
+
+        public bool HasDepth => !string.IsNullOrEmpty(DepthRange);
     }
 
     /// <summary>

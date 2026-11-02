@@ -48,11 +48,11 @@ public class ParametersTests
 
         var given = new StringWriter();
         ReportWriter.WriteBody(AnalysisRun.Execute(Scenes.CleanSky(), "memorie", new Parameters { DmaxOverride = 1.8 }), given);
-        Assert.Contains("Dmax 1.8 (explicit)", given.ToString());
+        Assert.Contains("Dmax 1.8 (dat)", given.ToString());
 
         var same = new StringWriter();
         ReportWriter.WriteBody(AnalysisRun.Execute(Scenes.CleanSky(), "memorie", new Parameters { DmaxOverride = 2.4 }), same);
-        Assert.DoesNotContain("(explicit)", same.ToString());
+        Assert.DoesNotContain("Dmax 2.4 (dat)", same.ToString());
     }
 
     /// <summary>One list of names, the core's, in the enum's order; the console and the window both read it.</summary>
@@ -75,7 +75,7 @@ public class ParametersTests
         ReportWriter.WriteBody(AnalysisRun.Execute(Scenes.CleanSky(), "memorie", new Parameters { DmaxOverride = 2.35 }), w);
 
         Assert.Contains("Mediu: baryta (Dmax 2.35, negrul hartiei L* 4.0)", w.ToString());
-        Assert.Contains("mediu baryta, Dmax 2.35 (explicit)", w.ToString());
+        Assert.Contains("printat pe baryta, Dmax 2.35 (dat)", w.ToString());
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public class ParametersTests
         else
         {
             Assert.NotNull(error);
-            Assert.StartsWith("fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la 3 zecimale); a primit ", error);
+            Assert.StartsWith("fundalul-tinta trebuie sa fie mai mare decat 0 si mai mic decat 1 (se rotunjeste la 3 zecimale); a primit ", error);
             Assert.DoesNotContain("--target-bg", error);
             if (double.IsNaN(given)) Assert.EndsWith("a primit NaN, care nu e un numar", error);
             if (double.IsPositiveInfinity(given)) Assert.EndsWith("a primit infinit", error);
@@ -196,9 +196,9 @@ public class ParametersTests
     [InlineData("Distance", double.NegativeInfinity, "distanta de privire trebuie sa fie un numar; a primit minus infinit")]
     [InlineData("Width", double.NaN, "latimea de print trebuie sa fie un numar; a primit NaN, care nu e un numar")]
     [InlineData("Width", double.PositiveInfinity, "latimea de print trebuie sa fie un numar; a primit infinit")]
-    [InlineData("Aspect", double.NaN, "raportul de aspect trebuie sa fie un numar pozitiv; a primit NaN, care nu e un numar")]
-    [InlineData("Aspect", double.PositiveInfinity, "raportul de aspect trebuie sa fie un numar pozitiv; a primit infinit")]
-    [InlineData("Aspect", 0.0, "raportul de aspect trebuie sa fie un numar pozitiv; a primit 0")]
+    [InlineData("Aspect", double.NaN, "proportia printului trebuie sa fie un numar pozitiv; a primit NaN, care nu e un numar")]
+    [InlineData("Aspect", double.PositiveInfinity, "proportia printului trebuie sa fie un numar pozitiv; a primit infinit")]
+    [InlineData("Aspect", 0.0, "proportia printului trebuie sa fie un numar pozitiv; a primit 0")]
     [InlineData("Passepartout", double.NaN, "passepartout-ul trebuie sa fie un numar; a primit NaN, care nu e un numar")]
     [InlineData("Frame", double.PositiveInfinity, "rama trebuie sa fie un numar; a primit infinit")]
     public void R024_NaNAndInfinityAreRefusedByValidateWithOneMessagePerParameter(string which, double value, string message)

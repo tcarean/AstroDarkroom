@@ -169,17 +169,17 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Where the Dmax comes from, in Appendix F: nothing when it is the medium's, the profile
-        /// when it was read from one, otherwise "(explicit)".
+        /// when it was read from one, otherwise "(given)".
         /// </summary>
         /// <param name="p">The parameters the analysis ran with.</param>
         /// <returns>
-        /// " (from the ICC profile "name")" (Romanian " (din profilul ICC "name")"), " (explicit)"
-        /// for a given Dmax that differs from the medium's, or "" (each with its leading space, to
-        /// follow the Dmax).
+        /// " (from the ICC profile "name")" (Romanian " (din profilul ICC "name")"), " (given)"
+        /// (" (dat)") for a given Dmax that differs from the medium's, or "" (each with its leading
+        /// space, to follow the Dmax).
         /// </returns>
         internal static string DmaxOrigin(Parameters p)
             => p.DmaxProfile != null && p.DmaxOverride.HasValue ? Tr.Pick($" (from the ICC profile \"{p.DmaxProfile}\")", $" (din profilul ICC \"{p.DmaxProfile}\")")
-             : p.DmaxIsExplicit ? " (explicit)"
+             : p.DmaxIsExplicit ? Tr.Pick(" (given)", " (dat)")
              : "";
 
         /// <summary>A count of clouds with its noun: "1 cloud", "9 clouds"; "1 nor", "9 nori", "20 de nori".</summary>
@@ -527,17 +527,18 @@ namespace AstroPhotoAnalyzer
             w.WriteLine();
             w.WriteLine(Tr.Pick("Appendix F. Parameters", "Anexa F. Parametri"));
             string widths = string.Join(", ", p.CandidateWidthsCm.Select(Fmt.F0));
-            w.WriteLine(Tr.Pick($"  medium {Parameters.NameOf(p.Medium)}, Dmax {Fmt.Dmax(p.Dmax)}{DmaxOrigin(p)}; widths {widths} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, frame {Fmt.F0(p.FrameCm)} cm",
-                                $"  mediu {Parameters.NameOf(p.Medium)}, Dmax {Fmt.Dmax(p.Dmax)}{DmaxOrigin(p)}; latimi {widths} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, rama {Fmt.F0(p.FrameCm)} cm"));
+            w.WriteLine(Tr.Pick($"  printed on {Parameters.NameOf(p.Medium)}, Dmax {Fmt.Dmax(p.Dmax)}{DmaxOrigin(p)}; widths tried {widths} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, frame {Fmt.F0(p.FrameCm)} cm",
+                                $"  printat pe {Parameters.NameOf(p.Medium)}, Dmax {Fmt.Dmax(p.Dmax)}{DmaxOrigin(p)}; latimile incercate {widths} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, rama {Fmt.F0(p.FrameCm)} cm"));
             if (p.DmaxProfile != null && p.DmaxOverride.HasValue && p.DmaxProfileNote != null)
                 w.WriteLine(Tr.Pick("  the profile's note: ", "  nota profilului: ") + p.DmaxProfileNote);
-            string distance = p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : Tr.Pick("natural", "naturala");
-            string aspect = p.TargetAspect.HasValue ? Fmt.F3(p.TargetAspect.Value) : Tr.Pick("native", "nativ");
+            string distance = p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m"
+                : Tr.Pick($"{Fmt.F1(Thresholds.ViewingDistanceFactor)} x the diagonal of each size", $"{Fmt.F1(Thresholds.ViewingDistanceFactor)} x diagonala fiecarei marimi");
+            string aspect = p.TargetAspect.HasValue ? Fmt.F3(p.TargetAspect.Value) : Tr.Pick("the image's own", "cea a imaginii");
             string target = p.TargetBackground.HasValue ? Fmt.Level(p.TargetBackground.Value) : Tr.Pick("none", "niciunul");
             string grid = $"{Fmt.Level(p.SimulationTargets.Min())}..{Fmt.Level(p.SimulationTargets.Max())}";
             string wcs = p.WcsPath ?? (r.Raster.Source?.Wcs != null ? Tr.Pick("from the file", "din fisier") : Tr.Pick("none", "fara"));
-            w.WriteLine(Tr.Pick($"  distance {distance}; target ratio {aspect}; target background {target} (grid {grid}); WCS {wcs}; seed {p.Seed}",
-                                $"  distanta {distance}; raport tinta {aspect}; fundal-tinta {target} (grila {grid}); WCS {wcs}; samanta {p.Seed}"));
+            w.WriteLine(Tr.Pick($"  distance: {distance}; proportions: {aspect}; extra target background: {target} (the simulation tries {grid}); sky coordinates (WCS): {wcs}; the starting number of the choice of patches (seed): {p.Seed}",
+                                $"  distanta: {distance}; proportia: {aspect}; fundal-tinta in plus: {target} (simularea incearca {grid}); coordonate pe cer (WCS): {wcs}; numarul de pornire al alegerii dalelor (seed): {p.Seed}"));
         }
     }
 }

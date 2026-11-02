@@ -103,8 +103,8 @@ Anexa E. Culoarea fundalului
   latura dreapta     20.5 / 22.5 / 20.5     fata de cer +0.1 / +0.1 / +0.1
 
 Anexa F. Parametri
-  mediu baryta, Dmax 2.0 (explicit); latimi 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm
-  distanta 1.5 m; raport tinta 1.429; fundal-tinta niciunul (grila 0.05..0.20); WCS fara; samanta 0
+  printat pe baryta, Dmax 2.0 (dat); latimile incercate 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm
+  distanta: 1.5 m; proportia: 1.429; fundal-tinta in plus: niciunul (simularea incearca 0.05..0.20); coordonate pe cer (WCS): fara; numarul de pornire al alegerii dalelor (seed): 0
 
 --- stderr ---
 --- exit 3

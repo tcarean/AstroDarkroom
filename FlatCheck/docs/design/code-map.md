@@ -227,9 +227,10 @@ a library extraction and not a copy is ADR 0011.
     Structure rows, through the console's ratios) - all window-only, like `MapScaleLabel`,
     and for the same reason. `StructureReport` also owns the profile block: `ProfileRows`,
     `MasterDepth`, `ComparisonSummary`, `ComparisonNote`, `DepthScaleRows` /
-    `DepthScaleNote` (the depth scale as four bands in stops, `Th.Resid*` through
-    `Stats.StopsForError`, and the sentence that it is the residual scale translated, not a
-    new threshold - the user asked whether it was a second scale), `GapText` / `GapMeaning`
+    `DepthScaleNote` (the four bands' intervals in stops, `Th.Resid*` through
+    `Stats.StopsForError`, the stops column of the window's one verdict scale, and the sentence
+    that it is the residual scale translated, not a new threshold - the user asked whether it
+    was a second scale, then for the two to be one table, R-126), `GapText` / `GapMeaning`
     (one sentence per `ComparisonGap`), `ShapeDetail` / `DepthDetail` (the two halves of
     the verdict; the console pads them into `VerdictDetail`, the window labels them itself)
     and `DepthAdvice`, which replaces `Advice` when the depth carried the verdict
@@ -344,8 +345,8 @@ a library extraction and not a copy is ADR 0011.
     properties only, ADR 0040), and two small companions of the residual map:
     `MapScaleViewModel` (the scale chips, which translate a choice into a
     `PngWriter.MapRange` and decide nothing; on every tab with a residual map - Structure,
-    Sintetic, Split) and `MapGuideViewModel` (on Structure; the
-    shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
+    Sintetic, Split) and `MapGuideViewModel` (on Structure; the shape guide's text and its
+    fold, open by default since R-127). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
     either. `SensorFormatViewModel` is the same pattern on the Sintetic tab: six chips that
     show the format of whatever crop is in the box (`Follow`: the nearest nominal crop

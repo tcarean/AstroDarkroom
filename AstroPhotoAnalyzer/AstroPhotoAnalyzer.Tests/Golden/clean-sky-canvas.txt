@@ -95,8 +95,8 @@ Anexa E. Culoarea fundalului
   latura dreapta     63.8 / 63.7 / 63.7     fata de cer 0.0 / 0.0 / 0.0
 
 Anexa F. Parametri
-  mediu canvas, Dmax 1.5; latimi 40, 60, 80 cm; passepartout 7 cm, rama 3 cm
-  distanta naturala; raport tinta nativ; fundal-tinta niciunul (grila 0.05..0.20); WCS fara; samanta 0
+  printat pe canvas, Dmax 1.5; latimile incercate 40, 60, 80 cm; passepartout 7 cm, rama 3 cm
+  distanta: 1.5 x diagonala fiecarei marimi; proportia: cea a imaginii; fundal-tinta in plus: niciunul (simularea incearca 0.05..0.20); coordonate pe cer (WCS): fara; numarul de pornire al alegerii dalelor (seed): 0
 
 --- stderr ---
 --- exit 2

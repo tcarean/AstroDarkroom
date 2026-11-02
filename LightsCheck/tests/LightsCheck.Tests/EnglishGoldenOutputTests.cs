@@ -124,6 +124,7 @@ public class EnglishGoldenOutputTests
         "BUN", "LA LIMITA", "SLAB", "necitit", "inregistr", "Acest program",
         "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "niciodata", "alunec", "dunga", "dungi",
         "latimea", "montura", "fotografiere", "totala", "nivelul", "inseamna", "rotit", "deviata", "gasite", "lumina", "ramane",
+        "alinia", "comune", "obisnuit", "semnaleaza", "vecine", "putine", "stivuire", "satelit", "referinta", "adica", "ceata", "scoate",
     ];
 
     /// <summary>The English text holds none of the Romanian words.</summary>

@@ -70,7 +70,9 @@ namespace FlatCheck.Wpf
         string _localSpotWarning = "";
         string _verdictDetail = "";
         string _whyResidual = StructureReport.WhyResidualMatters();
-        string _profileMaster = "", _profileSummary = "", _profileScaleNote = "", _profileNote = "", _profileGap = "";
+        string _profileMaster = "", _profileSummary = "", _profileLightNote = "", _profileNote = "", _profileGap = "";
+        string _scaleDepthNote = "";
+        bool _scaleHasDepth;
         string _adobeMissing = "", _adobeSearched = "";
         bool _noFilters = true;
         string _filteredNote = "";
@@ -91,7 +93,6 @@ namespace FlatCheck.Wpf
         CancellationToken _ct;
         StructureResult _structure;
         string _masterPath, _rawPath;
-        IReadOnlyList<ScaleRow> _profileScale = Array.Empty<ScaleRow>();
         IReadOnlyList<LensProfileRow> _profileRows = Array.Empty<LensProfileRow>();
         string _savedTo = "";
         string _saveError = "";
@@ -187,13 +188,10 @@ namespace FlatCheck.Wpf
         /// themselves.</summary>
         public string ProfileSummary { get => _profileSummary; private set => Set(ref _profileSummary, value); }
 
-        /// <summary>The depth scale in stops - the same four bands as the residual scale, with the
-        /// verdict's band marked.</summary>
-        public IReadOnlyList<ScaleRow> ProfileScale { get => _profileScale; private set => Set(ref _profileScale, value); }
-
-        /// <summary>Where the scale above comes from: the five tests' scale translated into stops,
-        /// not a new threshold.</summary>
-        public string ProfileScaleNote { get => _profileScaleNote; private set => Set(ref _profileScaleNote, value); }
+        /// <summary>What the End to end test would read from the same difference, and why the
+        /// depth's verdict stays on the five tests' scale (StructureReport.DepthLightScaleNote);
+        /// empty when nothing was compared. The scale itself is the tab's one table (R-126).</summary>
+        public string ProfileLightNote { get => _profileLightNote; private set => Set(ref _profileLightNote, value); }
 
         /// <summary>What the comparison can and cannot say.</summary>
         public string ProfileNote { get => _profileNote; private set => Set(ref _profileNote, value); }
@@ -314,7 +312,22 @@ namespace FlatCheck.Wpf
 
         public ObservableCollection<MetricRow> Tests { get; } = new();
         public ObservableCollection<MetricRow> Informative { get; } = new();
+
+        /// <summary>
+        /// The one verdict scale (R-126): the four bands with the five tests' interval and, when
+        /// the vignetting was compared, the depth's in stops, each verdict's cell marked. The
+        /// rows are rebuilt, not edited, on every run and recompare.
+        /// </summary>
         public ObservableCollection<ScaleRow> Scale { get; } = new();
+
+        /// <summary>True when the scale carries the stops column: the vignetting was compared
+        /// (R-126).</summary>
+        public bool ScaleHasDepth { get => _scaleHasDepth; private set => Set(ref _scaleHasDepth, value); }
+
+        /// <summary>Under the scale when it carries the stops: that they are the five tests'
+        /// scale translated, not a new threshold (StructureReport.DepthScaleNote); empty
+        /// otherwise.</summary>
+        public string ScaleDepthNote { get => _scaleDepthNote; private set => Set(ref _scaleDepthNote, value); }
 
         /// <summary>
         /// Runs the mode and saves the report. The session gives both the input file and the
@@ -513,9 +526,9 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>Shows a run's outcome: the structure rows, the combined verdict and its two
-        /// parts, the profile card or the reason it is empty, and what the profile search left
-        /// out of it. Sets <see cref="TabViewModel.HasResult"/>; the map and the report are the
-        /// caller's.</summary>
+        /// parts, the one verdict scale with or without the depth's stops, the profile card or the
+        /// reason it is empty, and what the profile search left out of it. Sets
+        /// <see cref="TabViewModel.HasResult"/>; the map and the report are the caller's.</summary>
         /// <param name="o">The run, with or without a comparison.</param>
         /// <param name="gap">Without a comparison in the run: a comparison that says why it could
         /// not; null otherwise.</param>
@@ -544,7 +557,11 @@ namespace FlatCheck.Wpf
                 : "";
 
             StructureOutcome explained = o.Profiles != null ? o : gap;
-            if (explained != null && explained.Compared)
+            bool compared = explained != null && explained.Compared;
+            // One scale for both verdicts (R-126): the stops column only when the vignetting was
+            // compared, its cell marked on the verdict of the profile that decides (R-128).
+            FillScale(o.Structure.Verdict, compared ? explained.Profiles.Verdict : null);
+            if (compared)
             {
                 VignettingComparison c = explained.Profiles;
                 ProfileGap = "";
@@ -565,19 +582,14 @@ namespace FlatCheck.Wpf
                     IsWarning = r.IsWarning,
                 }).ToList();
                 ProfileSummary = StructureReport.ComparisonSummary(c).Replace('\n', ' ');
-                ProfileScale = StructureReport.DepthScaleRows()
-                    .Select(s => new ScaleRow { Band = s.Band, Range = s.Range, Meaning = s.Meaning, IsCurrent = s.Band == c.Verdict })
-                    .ToList();
-                ProfileScaleNote = StructureReport.DepthScaleNote().Replace('\n', ' ') + " "
-                                 + StructureReport.DepthLightScaleNote(c.Deciding.DiffStops).Replace('\n', ' ');
+                ProfileLightNote = StructureReport.DepthLightScaleNote(c.Deciding.DiffStops).Replace('\n', ' ');
                 ProfileNote = StructureReport.ComparisonNote().Replace('\n', ' ');
                 ShowLensPicker(explained.Shot);
             }
             else
             {
                 ProfileRows = Array.Empty<LensProfileRow>();
-                ProfileScale = Array.Empty<ScaleRow>();
-                ProfileSummary = ProfileScaleNote = ProfileNote = "";
+                ProfileSummary = ProfileLightNote = ProfileNote = "";
                 // On a gap the picker stays only when the gap is the choice's doing: a chosen
                 // lens whose profile makes no row must still be undone from the screen, or the
                 // choice kept in flatcheck.json would lock the card on the gap. A gap nothing was
@@ -624,9 +636,39 @@ namespace FlatCheck.Wpf
             Raise(nameof(SelectedLens));
         }
 
+        /// <summary>
+        /// Rebuilds the one verdict scale (R-126): the four bands of the core's scale, each with
+        /// its interval in percent and its meaning, the percent cell marked on the five tests'
+        /// verdict; with a depth verdict, also each band's interval in stops, the stops cell
+        /// marked on that verdict, and the sentence that the stops are the same scale.
+        /// </summary>
+        /// <param name="shape">The five tests' verdict.</param>
+        /// <param name="depth">The depth's verdict, the deciding profile's (R-128); null when nothing was
+        /// compared, and the scale then has no stops column.</param>
+        void FillScale(string shape, string depth)
+        {
+            // Both lists come from the core in the same band order; the stops are still looked
+            // up by band, so a reordering there cannot shift a column here.
+            Dictionary<string, string> stops = depth == null ? null
+                : StructureReport.DepthScaleRows().ToDictionary(s => s.Band, s => s.Range);
+            Scale.Clear();
+            foreach (var (band, range, meaning) in StructureReport.Scale())
+                Scale.Add(new ScaleRow
+                {
+                    Band = band,
+                    Range = range,
+                    DepthRange = stops?[band] ?? "",
+                    Meaning = meaning,
+                    IsCurrent = band == shape,
+                    IsDepthCurrent = band == depth,
+                });
+            ScaleHasDepth = depth != null;
+            ScaleDepthNote = depth == null ? "" : StructureReport.DepthScaleNote().Replace('\n', ' ');
+        }
+
         /// <summary>Shows the five tests' side: size, levels, the test and informative rows, the
-        /// spot warning, the residual scale with the verdict's band marked, the verdict and its
-        /// advice.</summary>
+        /// spot warning, the verdict and its advice. The scale is <see cref="FillScale"/>'s, once
+        /// the comparison is known.</summary>
         /// <param name="r">The structure result.</param>
         void Populate(StructureResult r)
         {
@@ -646,16 +688,6 @@ namespace FlatCheck.Wpf
 
             // The warning, not a verdict: the text and the threshold come from the core.
             LocalSpotWarning = StructureReport.LocalSpotWarning(r) ?? "";
-
-            Scale.Clear();
-            foreach (var (band, range, meaning) in StructureReport.Scale())
-                Scale.Add(new ScaleRow
-                {
-                    Band = band,
-                    Range = range,
-                    Meaning = meaning,
-                    IsCurrent = band == r.Verdict,
-                });
 
             Verdict = r.Verdict;
             Advice = StructureReport.Advice(r.Verdict);
@@ -718,8 +750,9 @@ namespace FlatCheck.Wpf
             LocalSpotWarning = "";
             VerdictDetail = "";
             ProfileRows = Array.Empty<LensProfileRow>();
-            ProfileScale = Array.Empty<ScaleRow>();
-            ProfileMaster = ProfileSummary = ProfileScaleNote = ProfileNote = ProfileGap = "";
+            ProfileMaster = ProfileSummary = ProfileLightNote = ProfileNote = ProfileGap = "";
+            ScaleHasDepth = false;
+            ScaleDepthNote = "";
             AdobeMissing = AdobeSearched = "";
             FilteredNote = "";
             ShowLensPicker(null);

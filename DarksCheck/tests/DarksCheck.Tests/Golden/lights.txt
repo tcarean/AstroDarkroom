@@ -8,72 +8,72 @@ Copyright (C) 2026 Tudor Carean
     aparat             : NIKON D3300
     expunere darks     : 120.0 s la ISO 400 (toate cadrele)
     expunere lights    : 120.0 s la ISO 400 (toate cadrele)
-    interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 cadre la 120.0 s; fara pauze peste 5 s
-    interval lights    : 2026-08-12 23:36:23 -> 2026-08-12 23:48:23 (12 min); 5 cadre la 150.0 s; 4 pauze peste 5 s (cea mai lunga 30 s inainte de cadrul 2)
-    potrivire          : OK: dark-urile au expunerea (120.0 s) si ISO-ul (400) lights-urilor
+    interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 cadre, cate unul la 120.0 s; fara pauze peste 5 s
+    interval lights    : 2026-08-12 23:36:23 -> 2026-08-12 23:48:23 (12 min); 5 cadre, cate unul la 150.0 s; 4 pauze peste 5 s (cea mai lunga 30 s inainte de cadrul 2)
+    potrivire          : OK: dark-urile au aceeasi expunere (120.0 s) si acelasi ISO (400) ca lights-urile
     bias               : (lipsa)
 
-=== DARK-URI: 4 cadre decodate din 4, 256 x 192 px, scara 200 .. 65535 ADU (FITS (presupus din BITPIX 16), negru 200 estimat din mediana cadrului 1), CFA RGGB ===
-    normalizare        : ISO 400, 120.0 s -> x1.00 fata de ISO 400 si 120 s (ADU-eq = ADU)
-    cuantizare         : pas 1 ADU langa negru; 23 de valori distincte in primul cadru (G1)
+=== DARK-URI: cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din valoarea obisnuita a cadrului 1), filtre de culoare RGGB ===
+    1 ADU-eq           : 1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s
+    pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU; primul cadru are 23 de valori diferite (pixelii verzi G1)
 
-  2. SCURGERI DE LUMINA SI GRADIENT
-    master dark        : centru -0.02, colturi -0.11 / 0.12 / 0.03 / 0.10 (SS / DS / SJ / DJ), margini sus -0.01 jos 0.00 stanga -0.05 dreapta -0.03  [G1, ADU peste negru, media a 4 cadre, blocuri de 32 px]
-    lumina pe cadre    : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    glow / constant    : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    lumina constanta   : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU de centru (cel mai departe +0.13 la dreapta-sus, pe masterul dark (fara bias)); lumina pe cadre NEMASURATA
+  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU
+    master dark        : centru -0.02, colturi -0.11 / 0.12 / 0.03 / 0.10 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.01 jos 0.00 stanga -0.05 dreapta -0.03  [pixelii verzi G1, ADU peste negru, media a 4 cadre, pe patrate de 32 px]
+    lumina pe cadre    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    glow / constant    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    lumina constanta   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult +0.13, la dreapta-sus, pe masterul dark (fara bias-uri)); lumina pe cadre nu s-a putut masura
 
-  3. DERIVA TERMICA IN SERIE
-    amplitudine        : pixelii fierbinti la 1.00 din master in primul cadru, 1.00 in ultimul (20 de pixeli peste 20 ADU)
-    platou             : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    de aruncat         : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    verdict            : OK: toate cadrele stau in 0.7 .. 1.4 din master (sub 6 cadre, fara platou)
+  3. INCALZIREA CAMEREI IN TIMPUL SERIEI
+    pixeli fierbinti   : in primul cadru sunt la 1.00 din nivelul din master, in ultimul la 1.00 (20 de pixeli peste 20 ADU); cresc cu temperatura, deci arata cat de cald era senzorul
+    platou             : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci fara platou
 
-  4. ZGOMOT PE CADRU
-    sigma rezidual     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (mediana 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU, cadru - master]
-    zgomot de citire   : NEMASURAT: fara bias-uri
-    benzi aleatoare    : orizontale 0.242 ADU rms pe rand (de 1.0 ori zgomotul alb), verticale de 1.0 ori
-    verdict            : OK: niciun cadru cu zgomot peste 1.5 x mediana (2.66 ADU)
+  4. ZGOMOTUL FIECARUI CADRU
+    fata de master     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (de obicei 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]
+    zgomot de citire   : NEMASURAT: sesiunea nu are bias-uri
+    benzi aleatoare    : orizontale: randurile difera intre ele cu 0.242 ADU, de 1.0 ori cat ar da zgomotul singur; verticale: de 1.0 ori (1 inseamna fara benzi)
+    verdict            : OK: niciun cadru nu are zgomotul de peste 1.5 ori mai mare decat de obicei (2.66 ADU)
 
   5. PIXELI FIERBINTI
-    master peste nivel : 10: 20; 20: 20; 50: 20; 100: 20; 500: 0  [ADU peste negru, mediana seriei, toate planurile]
-    pe plan la 20      : R 20  G1 0  G2 0  B 0
-    amplitudine        : mediana 120, p10 118, p90 121, p99 121 ADU (din 20)
-    stabilitate        : 20 din 20 peste jumatate din prag in toate cele 4 cadre, 0 lipsesc din 2 sau mai multe; sigma temporala 2.23 ADU la cei fierbinti, 2.38 la restul; 0 candidati RTS pe G1 (sigma temporala peste 6 x zgomotul unui cadru, 3.01)
+    pixeli peste prag  : peste 10: 20; peste 20: 20; peste 50: 20; peste 100: 20; peste 500: 0  [pixeli ai masterului, ADU peste negru, toate culorile]
+    pe culori, peste 20: R 20  G1 0  G2 0  B 0
+    cat de fierbinti   : de obicei 120 ADU; 80 % dintre ei intre 118 si 121; cei mai fierbinti 1 % peste 121 (din 20 de pixeli)
+    stabilitate        : 20 din 20 se vad (peste jumatate din prag) in toate cele 4 cadre, 0 lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu 2.23 ADU, ceilalti pixeli cu 2.38; 0 pixeli verzi G1 sar intre doua niveluri (RTS: variaza de peste 6 ori cat zgomotul unui cadru, 3.01)
     verdict            : OK (informativ): 20 de pixeli peste 20 ADU in 0.05 Mpx
 
-  6. MODEL FIX
-    benzi structurate  : randuri 0.204 ADU rms (1.14 varf la varf, R), coloane 0.215 (1.43, R)  [profilul masterului minus mediana glisanta pe 101]
-    glow               : +0.13 ADU la dreapta-sus fata de centru (masterul dark)
-    verdict            : OK: benzi sub 2.0 ADU varf la varf si margini sub 1.0
+  6. MODEL FIX: CE E LA FEL IN TOATE CADRELE
+    benzi fixe         : randurile masterului difera intre ele cu 0.204 ADU (1.14 intre cel mai luminos si cel mai intunecat, pe R), coloanele cu 0.215 (1.43, pe R)  [dupa ce se scot variatiile lente, pe cate 101 randuri sau coloane]
+    glow               : +0.13 ADU la dreapta-sus fata de centru (pe masterul dark)
+    verdict            : OK: benzile fixe raman sub 2.0 ADU intre cel mai luminos si cel mai intunecat rand, iar marginile sub 1.0 fata de centru
 
   7. PIXELI MORTI SI SATURATI
-    master             : 0 sub negru - 50 ADU, 0 la alb (65535)
+    master             : 0 pixeli morti (sub negru minus 50 ADU), 0 saturati (la alb, 65535)
     verdict            : OK: niciun pixel mort sau saturat pe master
 
   8. CATE DARK-URI AJUNG
-    zgomotul mediei    : n=1 2.99 (asteptat 3.01); n=2 2.16 (asteptat 2.13)  [G1, centrul de 192 px, ADU, sigma temporala = cadru fata de cadru]
-    master             : 4 cadre -> 1.87 ADU zgomot al masterului median (1.25 x sigma temporala 2.99 / sqrt(4)); mediana a 2 fata de media a 2: 3.06
-    verdict            : ATENTIE: doar 4 cadre; mediana cere cel putin 10 ca un cadru ciudat sa n-o traga (zgomotul masterului ar fi 1.87 ADU)
+    zgomot dupa medie  : 1 cadru: 2.99 (se astepta 3.01); 2 cadre: 2.16 (se astepta 2.13)  [pixelii verzi G1, centrul de 192 px, ADU; masurat de la un cadru la altul]
+    master             : 4 cadre dau un master cu 1.87 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.06 ADU
+    verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.87 ADU)
 
-  9. LIGHTS FATA DE DARK
-    pixeli fierbinti   : 20 de pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 4 din 5 cadre)
-    in masterul dark   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [ADU]
-    master in lights   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)
-    nepotriviti        : niciun pixel persistent in lights sub pragul masterului
-    amplitudine        : lights / dark 1.30 pe noapte (mediana pe 5 cadre; primul 1.33, ultimul 1.32; 20 de pixeli)
-    verdict            : ATENTIE: scade cu -opt (raport 1.30, in 0.7 .. 1.4; dark-ul e mai rece cu 2.3 grade, -opt scaleaza amplitudinea)
+  9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE
+    pixeli fierbinti   : 20 de pixeli fierbinti se vad in lights in acelasi loc, in cel putin 4 din 5 cadre (pixeli singuri, nu parte dintr-o stea, mai luminosi decat imprejurimea cu peste 6 ori zgomotul ei)
+    in masterul dark   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in ADU]
+    masterul in lights : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre pixelii masterului de peste fiecare prag se vad si in lights]
+    lipsesc din master : niciunul: toti pixelii fierbinti din lights sunt peste 20 ADU si in master
+    lights fata de dark: in lights, pixelii fierbinti sunt de obicei de 1.30 ori cat in dark (pe cele 5 cadre; in primul 1.33, in ultimul 1.32; pe 20 de pixeli)
+    verdict            : ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 1.30 ori cat in dark, intre 0.7 si 1.4: dark-ul e mai rece cu 2.3 grade
 
   INDEX
-    dark-uri           : idx121 (121.0 ADU-eq: mediana pixelilor de pe rangurile 5-20 pe Mpx, al 2-lea .. al 2-lea din 0.05 Mpx, normalizat la ISO 400 si 120 s)
+    dark-uri           : idx121 (121.0 ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
     eticheta           : <sesiune>-idx121
-    lights             : echivalent idx157 (dark x 1.30, adica +2.3 grade fata de dark)
-    partener           : <partener>: idx241 (241.0 ADU-eq; 3 cadre din 3, ISO 400, 120.0 s); eticheta <partener>-idx241
-    dark-uri / partener: 0.50 (q25 0.50, q75 0.50, 20 de pixeli comuni) dupa normalizare, adica dark-urile sesiunii sunt cu -6.0 grade fata de partener
+    lights             : ca un dark cu idx157 (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)
+    partener           : <partener>: idx241 (241.0 ADU-eq; cadre citite 3 din 3, ISO 400, 120.0 s); eticheta <partener>-idx241
+    dark-uri / partener: pixelii fierbinti sunt in dark-urile sesiunii de 0.50 ori cat la partener, la aceleasi setari (jumatate dintre ei intre 0.50 si 0.50; 20 de pixeli fierbinti in amandoua), adica dark-urile sesiunii sunt cu 6.0 grade mai reci decat partenerul
     pixeli comuni      : 20 din 20 ai sesiunii peste 50 ADU-eq sunt peste 50 si la partener (100 %); 20 din 20 ai partenerului peste 50 sunt peste 20 in sesiune (100 %)
-    lights / partener  : 0.65 (prin dark-urile sesiunii), adica lights-urile sunt cu -3.7 grade fata de partener
-    verdict partener   : ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.65, partenerul e mai cald cu 3.7 grade si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta
+    lights / partener  : pixelii fierbinti sunt in lights de 0.65 ori cat la partener (socotit prin dark-urile sesiunii), adica lights-urile sunt cu 3.7 grade mai reci decat partenerul
+    verdict partener   : ATENTIE: foloseste partenerul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.65 ori cat la partener: partenerul e mai cald cu 3.7 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre
 
   TABEL PE CADRE
      nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste 2.0 grade de platou (verificarea 3); lumina = ADU peste dreapta mediei pe incalzire; latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)]

@@ -121,7 +121,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// the name and the sentence are the core's.
         /// </summary>
         public string ProfileText
-            => _profile == null ? Tr.Pick("(none: the medium's Dmax)", "(niciunul: Dmax-ul mediului)") : _profile.Name + " - " + _profile.Detail;
+            => _profile == null ? Tr.Pick("(none: the Dmax of what you print on)", "(niciunul: Dmax-ul suportului ales)") : _profile.Name + " - " + _profile.Detail;
 
         /// <summary>
         /// The Dmax of a profile chosen in the "Din profil ICC..." window: it goes into the
@@ -309,7 +309,10 @@ namespace AstroPhotoAnalyzer.Wpf
             if (string.IsNullOrWhiteSpace(text)) return null;
             double v = ParseNumber(text, what);
             bool tooLow = allowZero ? v < lo : v <= lo;
-            if (tooLow || v > hi) throw new FormatException(Tr.Pick($"{what}: {text} is outside the interval {(allowZero ? "[" : "(")}{Fmt.F1(lo)}, {Fmt.F1(hi)}]", $"{what}: {text} e in afara intervalului {(allowZero ? "[" : "(")}{Fmt.F1(lo)}, {Fmt.F1(hi)}]"));
+            if (tooLow || v > hi)
+                throw new FormatException(allowZero
+                    ? Tr.Pick($"{what}: {text} must be between {Fmt.F1(lo)} and {Fmt.F1(hi)}", $"{what}: {text} trebuie sa fie intre {Fmt.F1(lo)} si {Fmt.F1(hi)}")
+                    : Tr.Pick($"{what}: {text} must be over {Fmt.F1(lo)} and at most {Fmt.F1(hi)}", $"{what}: {text} trebuie sa fie mai mare decat {Fmt.F1(lo)} si cel mult {Fmt.F1(hi)}"));
             return v;
         }
 
@@ -319,92 +322,80 @@ namespace AstroPhotoAnalyzer.Wpf
         /// characters cannot be read. A test asks at least two paragraphs of each.
         /// </summary>
         public string DistanceHelp => Tr.Pick(
-            "From how many metres the print will be seen. The size test: the star (FWHM x the pixel pitch on paper) "
-            + "must be a point from this distance - the eye resolves ~0.29 mm at 1 m. With a given distance "
-            + "(a hallway, an office, a sofa) the sizes separate and the table recommends a row."
+            "How many metres away the print will be seen from. The program checks whether the stars look like points from this distance, "
+            + $"by their width on paper (FWHM): from 1 m, the eye tells apart about {Fmt.F2(Thresholds.AcuityMmAt1m)} mm. If you give a distance "
+            + "(a hallway, an office, a sofa), the sizes separate and the table recommends one."
             + "\n\n"
-            + "Without stars, the distance gives the threshold of the pixel grid, 25.4 / (0.29 x d) dpi, instead of the convention of 180."
+            + $"If the image has no stars, the distance says how many pixels per inch (dpi) are needed for the eye not to see the pixels, instead of the {Fmt.F0(Thresholds.FallbackMinDpi)} labs usually ask for."
             + "\n\n"
-            + "Empty = 1.5 x the diagonal of each size, the natural distance from which a picture is seen; then "
-            + "\"point from\" and the distance both grow with the width, the verdict is the same on every row and no "
-            + "size is recommended - the wall chooses it."
+            + $"Empty = {Fmt.F1(Thresholds.ViewingDistanceFactor)} x the diagonal of each size, the distance a picture is usually seen from. Then, the larger "
+            + "the print, the farther you look at it from, so the answer is the same for every size and none is recommended: you choose the size by the wall."
             + "\n\n"
-            + "1.5 comes from the print and framing rule \"1-2 x the diagonal\": 1 x is the distance with the perspective "
-            + "of the lens (a normal focal length = the frame's diagonal), 2 x is gallery practice; at 1.5 x the picture "
-            + "subtends ~37 degrees and is taken in whole without moving the head.",
-            "De la cati metri se va privi printul. Testul de marime: steaua (FWHM x pasul pixelului pe hartie) "
-            + "trebuie sa fie punct de la distanta asta - ochiul desface ~0.29 mm la 1 m. Cu o distanta data "
-            + "(hol, birou, canapea) marimile se despart si tabelul recomanda un rand."
+            + $"Why {Fmt.F1(Thresholds.ViewingDistanceFactor)}: from there you take in the whole picture without moving your head, and still see the detail.",
+            "De la cati metri va fi privit printul. Programul verifica daca stelele se vad ca puncte de la distanta asta, "
+            + $"dupa latimea lor pe hartie (FWHM): de la 1 m, ochiul deosebeste cam {Fmt.F2(Thresholds.AcuityMmAt1m)} mm. Daca dai o distanta "
+            + "(hol, birou, canapea), marimile se despart si tabelul recomanda una."
             + "\n\n"
-            + "Fara stele, distanta da pragul grilei de pixeli, 25.4 / (0.29 x d) dpi, in locul conventiei de 180."
+            + $"Daca imaginea nu are stele, distanta spune de cati pixeli pe inch (dpi) e nevoie ca ochiul sa nu vada pixelii, in loc de cei {Fmt.F0(Thresholds.FallbackMinDpi)} pe care ii cer de obicei laboratoarele."
             + "\n\n"
-            + "Gol = 1.5 x diagonala fiecarei marimi, distanta naturala de la care se priveste un tablou; atunci "
-            + "\"punct de la\" si distanta cresc amandoua cu latimea, verdictul e acelasi pe fiecare rand si nu se "
-            + "recomanda nicio marime - o alege peretele."
+            + $"Gol = {Fmt.F1(Thresholds.ViewingDistanceFactor)} x diagonala fiecarei marimi, distanta de la care se priveste de obicei un tablou. Atunci, cu cat "
+            + "printul e mai mare, cu atat il privesti de mai departe, asa ca raspunsul e acelasi la toate marimile si nu se recomanda niciuna: marimea o alegi dupa perete."
             + "\n\n"
-            + "1.5 vine din regula de print si inramare \"1-2 x diagonala\": 1 x e distanta cu perspectiva "
-            + "obiectivului (focala normala = diagonala cadrului), 2 x e practica de galerie; la 1.5 x tabloul "
-            + "subintinde ~37 de grade si se cuprinde intreg fara sa misti capul.");
+            + $"De ce {Fmt.F1(Thresholds.ViewingDistanceFactor)}: de la distanta asta cuprinzi tabloul intreg fara sa misti capul, dar vezi inca detaliile.");
 
         public string AspectHelp => Tr.Pick(
-            "The width:height ratio of the print, e.g. 50:35 or 50x35. Empty = the image's native ratio, no crop - "
-            + "that is how it goes to a fine-art lab, which prints to the centimetre, any size; a ready-made frame "
-            + "does not constrain it either, the passepartout absorbs the difference."
+            "The print's proportions, width:height, for example 50:35 or 50x35. Empty = the image's proportions, nothing cut. That is how you send it "
+            + "to a fine-art lab, which prints any size, to the centimetre; no ready-made frame gets in the way either, because the passepartout covers the difference."
             + "\n\n"
-            + "Fill it in only for a lab with fixed "
-            + "formats (20x30, 35x50, 50x70...): the ratio says how much is cut and on which side, so that you choose the framing, not they.",
-            "Raportul latime:inaltime al printului, ex. 50:35 sau 50x35. Gol = raportul nativ al imaginii, fara decupaj - "
-            + "asa se trimite la un laborator fine-art, care printeaza la centimetru, orice dimensiune; rama gata facuta "
-            + "nu constrange nici ea, passepartout-ul absoarbe diferenta."
+            + "Fill it in only for a lab with fixed formats (20x30, 35x50, 50x70...): you see how much is cut and from which side, so that you choose what stays, not the lab.",
+            "Proportia printului, latime:inaltime, de exemplu 50:35 sau 50x35. Gol = proportia imaginii, fara nimic taiat. Asa trimiti "
+            + "la un laborator fine-art, care printeaza la orice marime, la centimetru; nici o rama gata facuta nu te incurca, pentru ca passepartout-ul acopera diferenta."
             + "\n\n"
-            + "Completeaza-l doar pentru un laborator cu formate "
-            + "fixe (20x30, 35x50, 50x70...): raportul spune cat se taie si pe ce latura, ca sa alegi tu cadrul, nu ei.");
+            + "Completeaza campul doar pentru un laborator cu formate fixe (20x30, 35x50, 50x70...): vezi cat se taie si din ce parte, ca sa alegi tu ce ramane, nu laboratorul.");
 
         public string TargetBgHelp => Tr.Pick(
-            $"One more level for the simulation to try, strictly between 0 and 1 and rounded to {Parameters.TargetBackgroundDecimals} decimals, besides its grid "
-            + $"{Fmt.Level(D.SimulationTargets.Min())}..{Fmt.Level(D.SimulationTargets.Max())}: its row appears in the table marked "
-            + "\"(given)\". Empty = the grid only."
+            $"One more target background for the simulation of the Tones tab to try, besides its usual ones, from {Fmt.Level(D.SimulationTargets.Min())} to {Fmt.Level(D.SimulationTargets.Max())}. "
+            + $"Write a number over 0 and under 1; it is rounded to {Parameters.TargetBackgroundDecimals} decimals, and its row appears in the table marked \"(given)\". Empty = the usual ones only."
             + "\n\n"
-            + "The background level = the median of the green channel over the whole image (the sky dominates the frame). The simulation applies "
-            + "gamma = ln(target) / ln(background) on every channel and re-measures the dust and the sky. It is a simulation, not Siril's stretch, "
+            + "The background level is the middle value of the green channel over the whole image (the sky fills most of the frame). The simulation lifts the tones "
+            + "with a simple curve (gamma) until the background reaches the target, then measures the dust and the sky again. It is not Siril's stretch, "
             + "but the background ends up in the same place."
             + "\n\n"
-            + $"On screen a sky at {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} looks good; "
-            + "on paper everything under its black prints as the same black, and a print wants the sky at "
-            + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}. The report's recommendation is the minimum level "
-            + $"at which the dust still stays over paper black and the sky at L* {Fmt.F0(Thresholds.LowSeparationLstar)} or above; this field does not change it.",
-            $"Un nivel in plus pe care sa-l incerce simularea, strict intre 0 si 1 si rotunjit la {Parameters.TargetBackgroundDecimals} zecimale, pe langa grila ei "
-            + $"{Fmt.Level(D.SimulationTargets.Min())}..{Fmt.Level(D.SimulationTargets.Max())}: randul lui apare in tabel marcat "
-            + "\"(dat)\". Gol = doar grila."
+            + $"On screen, a sky at {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} looks good; "
+            + "on paper, everything darker than its black prints as the same black, so a print wants the sky at "
+            + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}. The report recommends the lowest level "
+            + $"at which the dust stays over paper black and the sky reaches L* {Fmt.F0(Thresholds.LowSeparationLstar)} or above; this field does not change the recommendation.",
+            $"Un fundal-tinta in plus, pe care sa-l incerce simularea din tabul Tonuri, pe langa cele obisnuite, de la {Fmt.Level(D.SimulationTargets.Min())} la {Fmt.Level(D.SimulationTargets.Max())}. "
+            + $"Scrie un numar mai mare decat 0 si mai mic decat 1; se rotunjeste la {Parameters.TargetBackgroundDecimals} zecimale, iar randul lui apare in tabel cu semnul \"(dat)\". Gol = doar cele obisnuite."
             + "\n\n"
-            + "Nivelul fundalului = mediana canalului verde pe toata imaginea (cerul domina cadrul). Simularea aplica "
-            + "gamma = ln(tinta) / ln(fundal) pe toate canalele si remasoara praful si cerul. E o simulare, nu stretch-ul lui Siril, "
+            + "Nivelul fundalului e valoarea din mijloc a canalului verde pe toata imaginea (cerul ocupa cea mai mare parte din cadru). Simularea ridica tonurile "
+            + "cu o curba simpla (gamma) pana cand fundalul ajunge la tinta, apoi masoara din nou praful si cerul. Nu e stretch-ul din Siril, "
             + "dar fundalul ajunge in acelasi loc."
             + "\n\n"
-            + $"Pe ecran un cer la {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} arata bine; "
-            + "pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru, si un print vrea cerul la "
-            + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}. Recomandarea din raport e nivelul minim "
-            + $"la care praful mai ramane deasupra negrului hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste; campul asta nu o schimba.");
+            + $"Pe ecran, un cer la {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} arata bine; "
+            + "pe hartie, tot ce e mai intunecat decat negrul ei iese la fel de negru, asa ca un print vrea cerul la "
+            + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}. Raportul recomanda cel mai mic nivel "
+            + $"la care praful ramane deasupra negrului hartiei si cerul ajunge la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau mai sus; campul acesta nu schimba recomandarea.");
 
         public string WcsHelp => Tr.Pick(
-            "The path of a plate-solved FITS (Siril: Image Information > Plate solving, or a solved stack) with the same "
-            + "width and height as the analysed image. Its header says where on the sky each pixel is, and with the Lynds catalogue "
-            + "the tool recognizes the dust clouds of the frame by name: the dust and the sky are measured on them, not on a fraction of the frame."
+            "The path of a FITS with sky coordinates (plate-solved; in Siril: Image Information > Plate solving), of the same width and height as the analysed image. "
+            + "From it the program learns where on the sky each pixel is and, with the Lynds catalogue, recognizes the dust clouds of the frame by name; "
+            + "the dust and the sky are then measured on those clouds."
             + "\n\n"
-            + "A TIFF or PNG exported from Siril does not carry the WCS; the stack it came from has it, and this is how it is lent. "
-            + "Empty = the WCS of the analysed file, if it is a plate-solved FITS; otherwise the dust and the sky are measured without the catalogue, "
+            + "A TIFF or a PNG exported from Siril has no coordinates; the stack it came from has them, so you can give that here. "
+            + "Empty = the coordinates of the analysed file, if it is a plate-solved FITS; otherwise the dust and the sky are found without the catalogue, "
             + "and the Tones tab says so in red."
             + "\n\n"
-            + "The size must be identical: a crop or a resize between the stack and the export moves the clouds.",
-            "Calea unui FITS plate-solved (Siril: Image Information > Plate solving, sau un stack rezolvat) cu aceeasi "
-            + "latime si inaltime ca imaginea analizata. Antetul lui spune unde pe cer e fiecare pixel, si cu catalogul Lynds "
-            + "unealta recunoaste norii de praf din cadru pe nume: praful si cerul se masoara pe ei, nu pe o fractie din cadru."
+            + "The size must be the same: if you cropped or resized the image after the stack, the clouds no longer fall where they should.",
+            "Calea unui FITS cu coordonate pe cer (plate-solved; in Siril: Image Information > Plate solving), de aceeasi latime si inaltime ca imaginea analizata. "
+            + "Din el programul afla unde pe cer e fiecare pixel si, cu catalogul Lynds, recunoaste pe nume norii de praf din cadru; "
+            + "praful si cerul se masoara apoi pe acesti nori."
             + "\n\n"
-            + "Un TIFF sau PNG exportat din Siril nu poarta WCS-ul; stack-ul din care a iesit il are, si asa se imprumuta. "
-            + "Gol = WCS-ul fisierului analizat, daca e un FITS plate-solved; altfel praful si cerul se masoara fara catalog, "
-            + "si tabul Tonuri o spune cu rosu."
+            + "Un TIFF sau un PNG exportat din Siril nu are coordonatele; le are stack-ul din care a iesit, asa ca il poti da aici. "
+            + "Gol = coordonatele fisierului analizat, daca e un FITS plate-solved; altfel praful si cerul se cauta fara catalog, "
+            + "iar tabul Tonuri o spune cu rosu."
             + "\n\n"
-            + "Marimea trebuie sa fie identica: un decupaj sau o redimensionare intre stack si export muta norii.");
+            + "Marimea trebuie sa fie aceeasi: daca ai decupat sau redimensionat imaginea dupa stack, norii nu mai cad unde trebuie.");
 
         public string PassepartoutHelp => Tr.Pick(
             "The width of the board between the image and the frame, on each side. The framers' rule: "
@@ -463,7 +454,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 && double.TryParse(parts[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double h)
                 && double.IsFinite(w) && double.IsFinite(h) && w > 0 && h > 0)
                 return w / h;
-            throw new FormatException(Tr.Pick($"ratio: '{text}' is not width:height (e.g. 50:35)", $"raportul: '{text}' nu e latime:inaltime (ex. 50:35)"));
+            throw new FormatException(Tr.Pick($"proportions: '{text}' is not of the form width:height (e.g. 50:35)", $"proportia: '{text}' nu e de forma latime:inaltime (ex. 50:35)"));
         }
     }
 }

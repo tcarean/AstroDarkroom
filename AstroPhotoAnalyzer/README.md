@@ -32,7 +32,8 @@ the figures do not.
 - **Optionally, a plate-solved FITS**, so that the dark nebulae in the frame are found by name.
   Siril writes the result of plate solving, the WCS, into the FITS header. A TIFF or PNG exported
   from Siril carries no header, but the stack it came from does: give that FITS with `--wcs`, or
-  in the window's "WCS from a FITS" field. It must have exactly the image's size.
+  in the window's "Sky coordinates (WCS) from a FITS" field. It must have exactly the image's
+  size.
 
 ## Getting the programs
 
@@ -60,7 +61,7 @@ Darkroom launcher, it speaks the launcher's language.
 
 **On the left, the parameters**, then **Analyse**:
 
-- **Print medium** and **Dmax**. The Dmax field shows the value the analysis will use: choosing
+- **What you print on** and **Dmax**. The Dmax field shows the value the analysis will use: choosing
   a medium writes that medium's Dmax into it, and you can type your paper's over it (emptied, it
   means the medium's again). **From ICC profile...**, beside it, lists the printer profiles
   installed in Windows, each with its Dmax, and **Choose file...** adds a `.icc` or `.icm` file
@@ -73,11 +74,12 @@ Darkroom launcher, it speaks the launcher's language.
   remembered in `%LOCALAPPDATA%\AstroPhotoAnalyzer\settings.json` and is still in use when the
   window is next opened; if its file has gone meanwhile, the bar says so in red and the medium's
   Dmax is used until you choose another or press **Clear**.
-- **Viewing distance** (empty: 1.5 x the diagonal of each print size), **candidate widths**,
-  **target aspect ratio** (empty: the image's own, no crop), **extra target background** (one
-  more row in the background simulation), **WCS from a FITS**, **passepartout** and **frame**.
-  Hover over the distance, the aspect ratio, the target background, the WCS, the passepartout or
-  the frame to read what it means, where its default comes from and when to change it.
+- **Viewing distance** (empty: 1.5 x the diagonal of each print size), **widths to try**,
+  **print proportions** (empty: the image's own, no crop), **extra target background to try**
+  (one more row in the background simulation), **sky coordinates (WCS) from a FITS**,
+  **passepartout** and **frame**. Hover over the distance, the proportions, the target
+  background, the WCS, the passepartout or the frame to read what it means, where its default
+  comes from and when to change it.
 - Numbers take a decimal point, whatever the language of Windows. The parameters apply to the
   next analysis.
 
@@ -160,15 +162,14 @@ Two buttons under the image:
   made for redoing the curve by hand in Siril: *Curves Transformation*, *cubic spline* mode, the
   same points on R, G and B.
 - **Save as...** writes a new `.fit` file with the curve applied to the whole image, whatever the
-  input's format. From a FITS it keeps every card of the header (WCS, exposure, instrument) and
-  the data's encoding, and adds `HISTORY` lines with the suggestion and its points; from a PNG,
-  TIFF or JPEG it writes a 32-bit float FITS, without the source's ICC profile. A WCS given in
-  the "WCS from a FITS" field serves the analysis only and is not written. The orientation is
-  Siril's: a FITS is read with the file's first row at the bottom, as Siril shows it whatever its
-  `ROWORDER` says; the new FITS keeps a FITS input's own row order, and from a PNG, TIFF or JPEG
-  it is written from the bottom up with `ROWORDER = 'BOTTOM-UP'`, so that Siril shows the new
-  file exactly as it was analysed. The input image is never modified, and saving over it is
-  refused.
+  input's format. From a FITS it keeps every card of the header (WCS, exposure, instrument) and the
+  data's encoding, and adds `HISTORY` lines with the suggestion and its points; from a PNG, TIFF or
+  JPEG it writes a 32-bit float FITS, without the source's ICC profile. A WCS given in the "Sky
+  coordinates (WCS) from a FITS" field serves the analysis only and is not written. The orientation
+  is Siril's: a FITS is read with the file's first row at the bottom, as Siril shows it whatever its
+  `ROWORDER` says; the new FITS keeps a FITS input's own row order, and from a PNG, TIFF or JPEG it
+  is written from the bottom up with `ROWORDER = 'BOTTOM-UP'`, so that Siril shows the new file
+  exactly as it was analysed. The input image is never modified, and saving over it is refused.
 
 ### Soft proofing
 

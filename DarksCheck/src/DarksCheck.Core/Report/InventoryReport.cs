@@ -210,7 +210,7 @@ internal static class InventoryReport
         string combo = (g.ExposureSeconds is double e ? Exposure(e) + " s" : "? s") + (g.Iso is double i ? T(" at ISO ", " la ISO ") + RunReport.F(i, 0) : "");
         return g.Uniform
             ? combo + T(" (all frames)", " (toate cadrele)")
-            : combo + T($" ({g.Frames} of {RunReport.Frames(g.Readable)}; different exposures or ISOs)", $" ({g.Frames} din {RunReport.Frames(g.Readable)}; expuneri sau ISO diferite)");
+            : combo + T($" ({g.Frames} of {RunReport.Frames(g.Readable)}; the others have another exposure or ISO)", $" ({g.Frames} din {RunReport.Frames(g.Readable)}; celelalte au alta expunere sau alt ISO)");
     }
 
     /// <summary>A group's time span, its median interval and its long pauses.</summary>
@@ -223,7 +223,7 @@ internal static class InventoryReport
             return T("unknown (the frames carry no time or exposure)", "necunoscut (cadrele nu au ora sau expunerea)");
         }
 
-        string interval = c.MedianIntervalSeconds is double mi ? $"; {RunReport.Frames(c.TimedFrames)}" + T(" every ", " la ") + $"{RunReport.F(mi, 1)} s" : $"; {RunReport.Frames(c.TimedFrames)}";
+        string interval = c.MedianIntervalSeconds is double mi ? $"; {RunReport.Frames(c.TimedFrames)}" + T(", one every ", ", cate unul la ") + $"{RunReport.F(mi, 1)} s" : $"; {RunReport.Frames(c.TimedFrames)}";
         string pauses = c.LongPauses.Count switch
         {
             0 => T($"no gap over {RunReport.F(Th.PauseSeconds, 0)} s", $"fara pauze peste {RunReport.F(Th.PauseSeconds, 0)} s"),
@@ -265,16 +265,16 @@ internal static class InventoryReport
                 string exposure = Exposure(m.Darks!.ExposureSeconds);
                 string iso = Opt(m.Darks.Iso, 0);
                 return partner
-                    ? T($"OK: the partner's darks have the lights' exposure ({exposure} s) and ISO ({iso})", $"OK: dark-urile partenerului au expunerea ({exposure} s) si ISO-ul ({iso}) lights-urilor")
-                    : T($"OK: the darks have the lights' exposure ({exposure} s) and ISO ({iso})", $"OK: dark-urile au expunerea ({exposure} s) si ISO-ul ({iso}) lights-urilor");
+                    ? T($"OK: the partner's darks have the same exposure ({exposure} s) and the same ISO ({iso}) as the lights", $"OK: dark-urile partenerului au aceeasi expunere ({exposure} s) si acelasi ISO ({iso}) ca lights-urile")
+                    : T($"OK: the darks have the same exposure ({exposure} s) and the same ISO ({iso}) as the lights", $"OK: dark-urile au aceeasi expunere ({exposure} s) si acelasi ISO ({iso}) ca lights-urile");
             default:
                 string settings = $"{Exposure(m.Darks!.ExposureSeconds)} s";
                 string darkIso = Opt(m.Darks.Iso, 0);
                 string lights = $"{Exposure(m.Lights!.ExposureSeconds)} s";
                 string lightIso = Opt(m.Lights.Iso, 0);
                 return partner
-                    ? T($"WARNING: the partner's darks at {settings}, ISO {darkIso}, lights at {lights}, ISO {lightIso}", $"ATENTIE: dark-uri ale partenerului de {settings} la ISO {darkIso}, lights de {lights} la ISO {lightIso}")
-                    : T($"WARNING: darks at {settings}, ISO {darkIso}, lights at {lights}, ISO {lightIso}", $"ATENTIE: dark-uri de {settings} la ISO {darkIso}, lights de {lights} la ISO {lightIso}");
+                    ? T($"WARNING: the partner's darks ({settings}, ISO {darkIso}) do not have the lights' settings ({lights}, ISO {lightIso})", $"ATENTIE: dark-urile partenerului ({settings}, ISO {darkIso}) nu au setarile lights-urilor ({lights}, ISO {lightIso})")
+                    : T($"WARNING: the darks ({settings}, ISO {darkIso}) do not have the lights' settings ({lights}, ISO {lightIso})", $"ATENTIE: dark-urile ({settings}, ISO {darkIso}) nu au setarile lights-urilor ({lights}, ISO {lightIso})");
         }
     }
 
@@ -290,11 +290,11 @@ internal static class InventoryReport
             case Verdict.Unmeasured:
                 return m.Biases is null ? None : T("UNMEASURED: the frames do not state the exposure", "NEMASURAT: cadrele nu spun expunerea");
             case Verdict.Ok:
-                return $"OK: {Exposure(m.Biases!.ExposureSeconds)} s";
+                return T($"OK: {Exposure(m.Biases!.ExposureSeconds)} s, short enough for a bias", $"OK: {Exposure(m.Biases!.ExposureSeconds)} s, destul de scurt pentru un bias");
             default:
                 return T(
-                    $"WARNING: {Exposure(m.Biases!.ExposureSeconds)} s is not a bias (over {RunReport.F(Th.BiasMaxExposureSeconds, 0)} s)",
-                    $"ATENTIE: {Exposure(m.Biases!.ExposureSeconds)} s nu e un bias (peste {RunReport.F(Th.BiasMaxExposureSeconds, 0)} s)");
+                    $"WARNING: {Exposure(m.Biases!.ExposureSeconds)} s is too long for a bias (at most {RunReport.F(Th.BiasMaxExposureSeconds, 0)} s)",
+                    $"ATENTIE: {Exposure(m.Biases!.ExposureSeconds)} s e prea lung pentru un bias (cel mult {RunReport.F(Th.BiasMaxExposureSeconds, 0)} s)");
         }
     }
 

@@ -97,17 +97,17 @@ public class LightsAndIndexTests
         Assert.Equal(1, l.Missed);
         Assert.InRange(l.MissedDarkExcessMedian, -4, 4);
         string report = Report(Run(s));
-        Assert.Contains($"pixeli fierbinti   : {Ui.RoCount(l.Persistent)}pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 4 din 5 cadre)", report, StringComparison.Ordinal);
+        Assert.Contains($"pixeli fierbinti   : {Ui.RoCount(l.Persistent)}pixeli fierbinti se vad in lights in acelasi loc, in cel putin 4 din 5 cadre (pixeli singuri, nu parte dintr-o stea, mai luminosi decat imprejurimea cu peste 6 ori zgomotul ei)", report, StringComparison.Ordinal);
         Assert.Contains($"in masterul dark   : peste 10: {l.Persistent - 1} din {l.Persistent} (95 %); peste 20: {l.Persistent - 1} din {l.Persistent} (95 %); peste 50: ", report, StringComparison.Ordinal);
-        Assert.Contains($"master in lights   : peste 10: {l.Persistent - 1} din 20 (", report, StringComparison.Ordinal);
-        Assert.Contains("nepotriviti        : 1 pixel persistent in lights sub 20 ADU in master", report, StringComparison.Ordinal);
+        Assert.Contains($"masterul in lights : peste 10: {l.Persistent - 1} din 20 (", report, StringComparison.Ordinal);
+        Assert.Contains("lipsesc din master : 1 pixel fierbinte din lights e sub 20 ADU in master", report, StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData(1.0, "Direct", "OK: scadere directa (raport 1.0")]
-    [InlineData(1.3, "WithOpt", "ATENTIE: scade cu -opt (raport 1.3")]
-    [InlineData(0.5, "CosmeticOnly", "ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.5")]
-    [InlineData(1.6, "Unmatched", "ATENTIE: nepotrivit (raport 1.6")]
+    [InlineData(1.0, "Direct", "OK: dark-ul se poate scadea asa cum e; in lights pixelii fierbinti sunt de 1.0")]
+    [InlineData(1.3, "WithOpt", "ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 1.3")]
+    [InlineData(0.5, "CosmeticOnly", "ATENTIE: foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.5")]
+    [InlineData(1.6, "Unmatched", "ATENTIE: nu se potrivesc; in lights pixelii fierbinti sunt de 1.6")]
     public void R052_TheAmplitudeRatioOfTheLightsOverTheMasterGivesTheVerdict(double factor, string verdict, string text)
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, factor));
@@ -136,14 +136,14 @@ public class LightsAndIndexTests
             Assert.True(l.Frames[i].AmpRatioQ25 < l.Frames[i].AmpRatioMedian && l.Frames[i].AmpRatioMedian < l.Frames[i].AmpRatioQ75);
         }
 
-        Assert.Contains($"amplitudine        : lights / dark {l.LightsOverDark.Ratio.ToString("0.00", CultureInfo.InvariantCulture)} pe noapte (mediana pe 5 cadre; primul {l.RatioFirst.ToString("0.00", CultureInfo.InvariantCulture)}, ultimul {l.RatioLast.ToString("0.00", CultureInfo.InvariantCulture)}; 20 de pixeli)", Report(Run(s)), StringComparison.Ordinal);
+        Assert.Contains($"lights fata de dark: in lights, pixelii fierbinti sunt de obicei de {l.LightsOverDark.Ratio.ToString("0.00", CultureInfo.InvariantCulture)} ori cat in dark (pe cele 5 cadre; in primul {l.RatioFirst.ToString("0.00", CultureInfo.InvariantCulture)}, in ultimul {l.RatioLast.ToString("0.00", CultureInfo.InvariantCulture)}; pe 20 de pixeli)", Report(Run(s)), StringComparison.Ordinal);
 
         // lights at ISO 800 with twice the amplitude are at the same temperature as darks at ISO 400
         using SessionFixture iso = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i, 2.0), iso: 800);
         DarkSeriesResult ri = Run(iso);
         Assert.InRange(ri.Lights!.LightsOverDark.Ratio, 0.95, 1.05);
         Assert.Equal(0, ri.Lights.AssumedSettings);
-        Assert.DoesNotContain("presupuse ale dark-urilor", Report(ri), StringComparison.Ordinal);
+        Assert.DoesNotContain("s-au luat cele ale dark-urilor", Report(ri), StringComparison.Ordinal);
 
         // lights without an ISO card are taken at the darks' settings, and the report says so
         using SessionFixture noIso = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i), iso: null);
@@ -151,7 +151,7 @@ public class LightsAndIndexTests
         Assert.Equal(3, rn.Lights!.AssumedSettings);
         Assert.All(rn.Lights.Frames, f => Assert.True(f.AssumedSettings));
         Assert.InRange(rn.Lights.LightsOverDark.Ratio, 0.95, 1.05);
-        Assert.Contains("ATENTIE            : 3 lights nu spun ISO-ul sau expunerea; presupuse ale dark-urilor (normalizare x1.00)", Report(rn), StringComparison.Ordinal);
+        Assert.Contains("ATENTIE            : 3 lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor (1 ADU-eq = 1.00 ADU)", Report(rn), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -166,9 +166,9 @@ public class LightsAndIndexTests
         Assert.True(m.Q25 <= 0);
         Assert.True(double.IsNaN(r.LightsIndex) || r.LightsIndex <= 0.05 * r.Index.Index);
         string report = Report(r);
-        Assert.Contains("verdict            : ATENTIE: nepotrivit: lights-urile nu arata pixelii fierbinti ai dark-ului (raport ", report, StringComparison.Ordinal);
-        Assert.Contains("; reducere de zgomot in aparat, alt aparat sau alta orientare?)", report, StringComparison.Ordinal);
-        Assert.DoesNotContain("NEMASURAT: niciun pixel fierbinte", report, StringComparison.Ordinal);
+        Assert.Contains("verdict            : ATENTIE: nu se potrivesc: in lights nu se vad pixelii fierbinti ai dark-ului (de ", report, StringComparison.Ordinal);
+        Assert.Contains(" ori cat in dark; poate reducerea de zgomot din aparat, alt aparat sau cadre rotite?)", report, StringComparison.Ordinal);
+        Assert.DoesNotContain("NEMASURAT: masterul nu are niciun pixel fierbinte", report, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -180,8 +180,8 @@ public class LightsAndIndexTests
         Assert.Null(r.LightsError);
         Assert.True(double.IsNaN(r.LightsIndex));
         string report = Report(r);
-        Assert.Contains("  9. LIGHTS FATA DE DARK\n    verdict            : NEMASURAT: sesiunea nu are lights", report.ReplaceLineEndings("\n"), StringComparison.Ordinal);
-        Assert.DoesNotContain("echivalent idx", report, StringComparison.Ordinal);
+        Assert.Contains("  9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE\n    verdict            : NEMASURAT: sesiunea nu are lights", report.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.DoesNotContain("ca un dark cu idx", report, StringComparison.Ordinal);
         Assert.DoesNotContain("TABEL PE LIGHTS", report, StringComparison.Ordinal);
     }
 
@@ -193,10 +193,11 @@ public class LightsAndIndexTests
         File.WriteAllBytes(Path.Combine(s.LightsDir, "light_0004.fit"), new SyntheticLight { Width = 128, Height = 96, Hot = [], Stars = [] }.Build(SessionFixture.FirstStart));
         (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2");
         Assert.Equal(1, code);
-        Assert.Contains("ATENTIE            : 2 lights nu s-au putut decoda (primul: light_0003.fit:", stdout, StringComparison.Ordinal);
-        Assert.Contains("(mediana pe 3 cadre; ", stdout, StringComparison.Ordinal);
+        Assert.Contains("ATENTIE            : 2 lights nu s-au putut citi (primul: light_0003.fit:", stdout, StringComparison.Ordinal);
+        Assert.Contains("); sunt in tabelul de lights", stdout, StringComparison.Ordinal);
+        Assert.Contains("(pe cele 3 cadre; ", stdout, StringComparison.Ordinal);
         Assert.Contains("light_0004.fit        eroare: dimensiune diferita: 128 x 96 fata de 256 x 192", stdout, StringComparison.Ordinal);
-        Assert.Matches(@"pixeli fierbinti   : (18 |19 |20 de )pixeli persistenti in lights \(izolati, peste 6 sigma locale, in cel putin 3 din 3 cadre\)", stdout);
+        Assert.Matches(@"pixeli fierbinti   : (18 |19 |20 de )pixeli fierbinti se vad in lights in acelasi loc, in cel putin 3 din 3 cadre \(pixeli singuri, nu parte dintr-o stea, mai luminosi decat imprejurimea cu peste 6 ori zgomotul ei\)", stdout);
 
         // the cap: one light in two is decoded, the others are skipped, no error
         using SessionFixture capped = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
@@ -204,7 +205,7 @@ public class LightsAndIndexTests
         Assert.False(r.HasErrors);
         Assert.Equal(3, r.Lights!.Used);
         Assert.Equal(2, r.Lights.Frames.Count(f => f.Skipped));
-        Assert.Contains("lights sarite      : 2 din 5 (plafonul de cadre; folosite 3)", Report(r), StringComparison.Ordinal);
+        Assert.Contains("lights sarite      : 2 din 5 (peste numarul maxim de cadre; s-au folosit 3)", Report(r), StringComparison.Ordinal);
 
         // no light decodes: check 9 says why, the run exits 1
         using SessionFixture none = new SessionFixture().WithDarkSeries(6, Dark).WithLights(2, i => Light(i));
@@ -279,7 +280,7 @@ public class LightsAndIndexTests
         Assert.Equal(2, r.Index.RankHigh);
         Assert.InRange(r.Index.Index, 114, 126);
         Assert.Contains("    dark-uri           : idx1", Report(r), StringComparison.Ordinal);
-        Assert.Contains(" ADU-eq: mediana pixelilor de pe rangurile 5-20 pe Mpx, al 2-lea .. al 2-lea din 0.05 Mpx, normalizat la ISO 400 si 120 s)", Report(r), StringComparison.Ordinal);
+        Assert.Contains(" ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)", Report(r), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -368,12 +369,64 @@ public class LightsAndIndexTests
         Assert.Equal(6.0, twice.DeltaCelsius, 1e-6);
         Assert.Equal(MatchVerdict.Unmatched, twice.Verdict);
         Assert.Same(MatchFigures.None, IndexAnalyzer.Match([]));
-        Assert.Equal("OK: scadere directa (raport 1.00, in 0.9 .. 1.1; dark-ul e la aceeasi temperatura)", DarkReport.MatchText(m, false, "lights-urile"));
-        Assert.Equal("ATENTIE: nepotrivit (raport 2.00: partenerul e mai rece cu 6.0 grade; prea rece, pierde pixelii fierbinti slabi)", DarkReport.MatchText(twice, true, "dark-urile sesiunii"));
+        Assert.Equal("OK: dark-ul se poate scadea asa cum e; in lights pixelii fierbinti sunt de 1.00 ori cat in dark, intre 0.9 si 1.1: dark-ul e la aceeasi temperatura", DarkReport.MatchText(m, false, "in lights"));
+        Assert.Equal("ATENTIE: nu se potrivesc; in dark-urile sesiunii pixelii fierbinti sunt de 2.00 ori cat la partener: partenerul e mai rece cu 6.0 grade; e prea rece si ii pierde pe cei slabi", DarkReport.MatchText(twice, true, "in dark-urile sesiunii"));
         MatchFigures none = IndexAnalyzer.Match([-0.01f, 0.02f, 0f]);
         Assert.Equal(MatchVerdict.Unmatched, none.Verdict);
         Assert.True(double.IsNaN(none.DeltaCelsius));
-        Assert.Equal("ATENTIE: nepotrivit: dark-urile sesiunii nu arata pixelii fierbinti ai partenerului (raport 0.00; reducere de zgomot in aparat, alt aparat sau alta orientare?)", DarkReport.MatchText(none, true, "dark-urile sesiunii"));
+        Assert.Equal("ATENTIE: nu se potrivesc: in dark-urile sesiunii nu se vad pixelii fierbinti ai partenerului (de 0.00 ori cat la partener; poate reducerea de zgomot din aparat, alt aparat sau cadre rotite?)", DarkReport.MatchText(none, true, "in dark-urile sesiunii"));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R082_Check9AndTheIndexAreInPlainWords(bool english)
+    {
+        // the variants the fixtures reach: lights at the dark's temperature, warmer (-opt), colder (cosmetic
+        // correction only), far warmer (they do not match) and without the dark's hot pixels, lights without an
+        // ISO, a cap that skips lights, lights against a partner, darks against a partner without lights, lights
+        // that take the partner's darks as their own, a session without lights
+        static SyntheticDark PartnerDark(int i, double factor) => new() { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = factor };
+        using SessionFixture same = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
+        using SessionFixture warmer = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 1.3));
+        using SessionFixture colder = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 0.5));
+        using SessionFixture far = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 1.6));
+        using SessionFixture none = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i, 0));
+        using SessionFixture noIso = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i), iso: null);
+        using SessionFixture darks = new SessionFixture().WithDarkSeries(6, Dark);
+        using SessionFixture alone = new SessionFixture().WithLights(4, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture hotter = new SessionFixture().WithDarkSeries(5, i => PartnerDark(i, 2), inSubfolder: false);
+        using SessionFixture warm = new SessionFixture().WithDarkSeries(5, i => PartnerDark(i, 1.2), inSubfolder: false);
+        System.Text.RegularExpressions.Regex method = english ? DarkSeriesTests.EnglishSummaryWords() : DarkSeriesTests.RomanianSummaryWords();
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            List<string> texts = [];
+            foreach (DarkSeriesResult r in new[] { Run(same), Run(warmer), Run(colder), Run(far), Run(none), Run(noIso), Run(same, maxFrames: 3), Run(same, hotter.Root), Run(darks, warm.Root), Run(alone, hotter.Root), Run(darks) })
+            {
+                foreach (ReportSection section in DarkReport.Sections(r).Where(x => x.Title.StartsWith("9.", StringComparison.Ordinal) || x.Title == "INDEX"))
+                {
+                    texts.Add(section.Title);
+                    texts.AddRange(section.Rows.SelectMany(row => new[] { row.Label, row.Value }));
+                }
+            }
+
+            // the scenes reached their variants, so the words below were looked at
+            string all = string.Join("\n", texts);
+            Assert.Contains(english ? "OK: the dark can be subtracted as it is" : "OK: dark-ul se poate scadea asa cum e", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "WARNING: subtract the dark with -opt" : "ATENTIE: scade dark-ul cu -opt", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "WARNING: use the dark for the cosmetic correction only" : "ATENTIE: foloseste dark-ul doar pentru corectia cosmetica", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "it is too cold and misses the faint ones" : "e prea rece si ii pierde pe cei slabi", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the dark's hot pixels do not show" : "nu se vad pixelii fierbinti ai dark-ului", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the darks' were taken" : "s-au luat cele ale dark-urilor", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "(over the maximum number of frames; " : "(peste numarul maxim de cadre; ", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "times what they are at the partner, at the same settings" : "ori cat la partener, la aceleasi setari", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "(worked out through the session's darks)" : "(socotit prin dark-urile sesiunii)", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "WARNING: subtract the partner with -opt" : "ATENTIE: scade partenerul cu -opt", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "darks (partner)" : "dark-uri (partener)", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "UNMEASURED: the session has no lights" : "NEMASURAT: sesiunea nu are lights", all, StringComparison.Ordinal);
+            List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
+            Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+        }
     }
 
     [Fact]
@@ -404,15 +457,16 @@ public class LightsAndIndexTests
 
         string report = Report(r);
         Assert.Contains($"    partener           : {p.Root}: {partner.Index.Tag} (", report, StringComparison.Ordinal);
-        Assert.Contains("; 5 cadre din 5, ISO 400, 120.0 s); eticheta " + partner.Label, report, StringComparison.Ordinal);
+        Assert.Contains("; cadre citite 5 din 5, ISO 400, 120.0 s); eticheta " + partner.Label, report, StringComparison.Ordinal);
         Assert.Equal(0, partner.Failed);
         Assert.Null(partner.FirstError);
-        Assert.Contains("    dark-uri / partener: 0.5", report, StringComparison.Ordinal);
-        Assert.Contains("20 de pixeli comuni) dupa normalizare, adica dark-urile sesiunii sunt cu -6.", report, StringComparison.Ordinal);
+        Assert.Contains("    dark-uri / partener: pixelii fierbinti sunt in dark-urile sesiunii de 0.5", report, StringComparison.Ordinal);
+        Assert.Contains("; 20 de pixeli fierbinti in amandoua), adica dark-urile sesiunii sunt cu 6.", report, StringComparison.Ordinal);
+        Assert.Contains(" grade mai reci decat partenerul", report, StringComparison.Ordinal);
         Assert.Contains("    pixeli comuni      : 20 din 20 ai sesiunii peste 50 ADU-eq sunt peste 50 si la partener (100 %); 20 din 20 ai partenerului peste 50 sunt peste 20 in sesiune (100 %)", report, StringComparison.Ordinal);
         // the lights at the darks' temperature: the chained ratio is the darks' and so is the verdict
-        Assert.Contains("    lights / partener  : 0.5", report, StringComparison.Ordinal);
-        Assert.Contains("    verdict partener   : ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.5", report, StringComparison.Ordinal);
+        Assert.Contains("    lights / partener  : pixelii fierbinti sunt in lights de 0.5", report, StringComparison.Ordinal);
+        Assert.Contains("    verdict partener   : ATENTIE: foloseste partenerul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.5", report, StringComparison.Ordinal);
         Assert.Contains("partenerul e mai cald cu 6.", report, StringComparison.Ordinal);
     }
 
@@ -439,9 +493,9 @@ public class LightsAndIndexTests
         File.WriteAllBytes(Path.Combine(oneBad.Root, "DSC_0002.fit"), new byte[100]);
         (int code1, string stdout1, _) = Cli.Run(s.Root, "--threads", "2", "--against", oneBad.Root);
         Assert.Equal(1, code1);
-        Assert.Contains("; 3 cadre din 4, ISO 400, 120.0 s); eticheta ", stdout1, StringComparison.Ordinal);
+        Assert.Contains("; cadre citite 3 din 4, ISO 400, 120.0 s); eticheta ", stdout1, StringComparison.Ordinal);
         Assert.Contains("    ATENTIE            : 1 dark al partenerului nu s-a putut folosi (primul: DSC_0002.fit: ", stdout1, StringComparison.Ordinal);
-        Assert.Contains("    dark-uri / partener: 1.0", stdout1, StringComparison.Ordinal);
+        Assert.Contains("    dark-uri / partener: pixelii fierbinti sunt in dark-urile sesiunii de 1.0", stdout1, StringComparison.Ordinal);
 
         // --out inside the partner folder is refused before the run, like inside the session
         using SessionFixture p = new SessionFixture().WithDarkSeries(3, Dark, inSubfolder: false);
@@ -470,8 +524,8 @@ public class LightsAndIndexTests
         // without lights the verdict is the darks' against the partner
         using SessionFixture warm = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.2 }, inSubfolder: false);
         string report = Report(Run(s, warm.Root));
-        Assert.Contains("    verdict partener   : ATENTIE: scade cu -opt (raport 0.8", report, StringComparison.Ordinal);
-        Assert.Contains(" (dark-urile sesiunii fata de partener)", report, StringComparison.Ordinal);
+        Assert.Contains("    verdict partener   : ATENTIE: scade partenerul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); ", report, StringComparison.Ordinal);
+        Assert.Contains("; in dark-urile sesiunii pixelii fierbinti sunt de 0.8", report, StringComparison.Ordinal);
         Assert.DoesNotContain("lights / partener", report, StringComparison.Ordinal);
     }
 
@@ -487,11 +541,12 @@ public class LightsAndIndexTests
         Assert.InRange(expected, 148, 164);
         Assert.InRange(r.Partner!.LightsOverPartner.Ratio, 0.95, 1.05);
         Assert.Equal(MatchVerdict.Direct, r.Partner.LightsOverPartner.Verdict);
-        Assert.Contains($"    lights             : echivalent idx{expected} (dark x 1.3", report, StringComparison.Ordinal);
-        Assert.Contains("adica +2.", report, StringComparison.Ordinal);
+        Assert.Contains($"    lights             : ca un dark cu idx{expected} (de 1.3", report, StringComparison.Ordinal);
+        Assert.Contains(" ori cat dark-ul, adica cu 2.", report, StringComparison.Ordinal);
+        Assert.Contains(" grade mai calde decat el)", report, StringComparison.Ordinal);
         // the lights are at the partner's temperature: chained ratio 1.3 x (1 / 1.3) = 1, direct subtraction
-        Assert.Contains("    lights / partener  : 1.0", report, StringComparison.Ordinal);
-        Assert.Contains("    verdict partener   : OK: scadere directa (raport 1.0", report, StringComparison.Ordinal);
+        Assert.Contains("    lights / partener  : pixelii fierbinti sunt in lights de 1.0", report, StringComparison.Ordinal);
+        Assert.Contains("    verdict partener   : OK: partenerul se poate scadea asa cum e; in lights pixelii fierbinti sunt de 1.0", report, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -520,15 +575,15 @@ public class LightsAndIndexTests
         Assert.Equal(Verdict.Ok, b.Inventory.Match.DarksVsLights);
 
         string report = Report(b);
-        Assert.Contains($"=== DARK-URI (ale partenerului {library.Root}): 5 cadre decodate din 5", report, StringComparison.Ordinal);
+        Assert.Contains($"=== DARK-URI (ale partenerului {library.Root}): cadre citite 5 din 5", report, StringComparison.Ordinal);
         Assert.Contains($"    darks              : (lipsa; se folosesc dark-urile partenerului {library.Root})", report, StringComparison.Ordinal);
         Assert.Contains("    expunere partener  : 120.0 s la ISO 400 (toate cadrele)", report, StringComparison.Ordinal);
         Assert.Contains("    interval darks     : (lipsa)", report, StringComparison.Ordinal);
-        Assert.Contains("    potrivire          : OK: dark-urile partenerului au expunerea (120.0 s) si ISO-ul (400) lights-urilor", report, StringComparison.Ordinal);
+        Assert.Contains("    potrivire          : OK: dark-urile partenerului au aceeasi expunere (120.0 s) si acelasi ISO (400) ca lights-urile", report, StringComparison.Ordinal);
         Assert.Contains("    dark-uri (partener): idx", report, StringComparison.Ordinal);
         Assert.Contains("    eticheta           : " + b.Label, report, StringComparison.Ordinal);
-        Assert.Contains("    lights             : echivalent idx", report, StringComparison.Ordinal);
-        Assert.Contains("    verdict            : ATENTIE: scade cu -opt (raport 1.3", report, StringComparison.Ordinal);
+        Assert.Contains("    lights             : ca un dark cu idx", report, StringComparison.Ordinal);
+        Assert.Contains("    verdict            : ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 1.3", report, StringComparison.Ordinal);
         Assert.DoesNotContain("    partener           :", report, StringComparison.Ordinal);
         Assert.DoesNotContain("dark-uri / partener", report, StringComparison.Ordinal);
         Assert.DoesNotContain("lights / partener", report, StringComparison.Ordinal);
@@ -537,7 +592,7 @@ public class LightsAndIndexTests
         using SessionFixture iso800 = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, iso: 800, inSubfolder: false);
         DarkSeriesResult c = Run(alone, iso800.Root);
         Assert.Equal(Verdict.Warning, c.Inventory.Match.DarksVsLights);
-        Assert.Contains("    potrivire          : ATENTIE: dark-uri ale partenerului de 120.0 s la ISO 800, lights de 120.0 s la ISO 400", Report(c), StringComparison.Ordinal);
+        Assert.Contains("    potrivire          : ATENTIE: dark-urile partenerului (120.0 s, ISO 800) nu au setarile lights-urilor (120.0 s, ISO 400)", Report(c), StringComparison.Ordinal);
 
         // without a partner the run refuses, naming what to give
         InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => Run(alone));

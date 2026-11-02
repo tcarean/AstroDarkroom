@@ -877,7 +877,7 @@ same file for the same master, and the chips stay an aid to looking.
 The map is the image divided by the radial model, so everything that was radially symmetric has
 been removed: **what is left cannot be vignetting**. Read the figures first, which say *how much*,
 and only then the shape, which says *why*. The same list is in the window, under the map, in
-"How to read the map".
+"How to read the map", open when the window starts.
 
 | shape | what it meant |
 |---|---|
@@ -1032,16 +1032,15 @@ file that cannot be read gives the defaults.
 
 ### Structure
 
-It shows the console's figures: the five deviation tests with each one's verdict, the residual scale
-with the current band marked, the informative rows with no verdict, the dust warning under the
+It shows the console's figures: the five deviation tests with each one's verdict and, under them,
+why the residual matters most; the informative rows with no verdict, the dust warning under the
 verdict when there is one, each row with its description under it; plus the residual map.
 
 Under the tests stands **the vignetting against the lens's profile**. When `flats/` holds a raw, the
 run is the console's with `--raw` on the first of them (the lens and the aperture from the raw, the
 crop from the lensfun database by `INSTRUME`): one row per profile, the row that gives the verdict
-marked with an accent bar, a lighter background and the words **gives the verdict**, the depth scale as a table of four bands in stops (the same residual scale, translated, not a
-new threshold) with the verdict's band marked, and the run's verdict, the worse of shape and depth,
-in the pill at the top, with its two parts written under it. With no raw, the card says why nothing
+marked with an accent bar, a lighter background and the words **gives the verdict**, and the run's
+verdict, the worse of shape and depth, in the pill at the top, with its two parts written under it. With no raw, the card says why nothing
 could be compared, and the report stays the plain one. With the box **I didn't use any filters on
 my lens** at the top of the card unticked, nothing is compared either, on purpose: the card keeps
 the master's depth and says why, the verdict is the five tests', and the report is the plain one;
@@ -1065,6 +1064,13 @@ Adobe's page in the browser), or Lightroom Classic, Lightroom or Photoshop's Cam
 restart FlatCheck; and the folders it looked in. The console's report does not carry this
 paragraph.
 
+Under the card stands **the verdict scale**, one table for both verdicts: each band with its
+interval for the five tests in percent and, when the vignetting was compared, the same band for the
+depth in stops (the five tests' scale translated, not a new threshold, as the line under the table
+says), then what the band means. The cell each verdict fell in is marked, so the five tests and the
+depth read apart when they fall in different bands. Without a comparison the table has the percent
+column alone.
+
 It saves in the session folder:
 
 - **`Test result.txt`**: the console's output, identical: the version banner, the copyright, the
@@ -1072,8 +1078,9 @@ It saves in the session folder:
 - **`flatcheck.png`**: the map on the automatic scale, the same bytes the console would write.
 
 The map on screen has the scale chips and the legend described under "The colour scale", plus the
-shape guide under it. The file stays on the automatic scale whichever chip is pressed, so it matches
-the `auto` chip, not necessarily what you see.
+shape guide under it, open when the window starts; folded, it stays folded until the window
+closes. The file stays on the automatic scale whichever chip is pressed, so it matches the `auto`
+chip, not necessarily what you see.
 
 ### End to end
 

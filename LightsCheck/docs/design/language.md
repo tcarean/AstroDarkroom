@@ -80,18 +80,20 @@ before `NO `).
 
 The English follows Siril's and the usual astrophotography vocabulary, British in spelling
 (`centre`, `colour`, `analysed`); a term is translated the same way everywhere. The words are
-plain ones (the rule "Plain words", R-077, R-078): the Dithering and Summary tabs, and the
-console's sections and session lines they share, use the plain terms below; the Frames, Quality
-and Rejected tabs keep their older words until their own rewrite.
+plain ones (the rule "Plain words", R-077 to R-080): the Dithering, Summary, Frames and Quality
+tabs, the reasons wherever they are printed, and the console's sections and session lines they
+share, use the plain terms below; the Rejected tab's explanation keeps its older words until its
+own rewrite.
 
 | Romanian | English |
 | --- | --- |
 | cadru / cadre | frame / frames |
 | light, bias, dark, flat, stack, dithering, walking noise, FWHM, halo | the same |
-| alungire | elongation |
+| alungire / cat de alungite sunt stelele | elongation / how elongated the stars are |
 | dara (stea) / dare de walking noise | trail / walking-noise streaks |
 | roua | dew |
 | fond (de cer) | (sky) background |
+| stele gasite | stars found |
 | zgomot de citire / shot/citire / zgomot in plus | read noise / shot/read / extra noise |
 | latimea stelelor (FWHM) / lumina din jurul stelelor (halo) | the stars' width (FWHM) / the light around the stars (halo) |
 | expunere totala / la fotografiere / montura | total exposure / when shot / mount |
@@ -103,10 +105,15 @@ and Rejected tabs keep their older words until their own rewrite.
 | de obicei (the median move) / tarie (of the fixed pattern) | typically / strength |
 | aliniere polara / rotatie de camp | polar alignment / field rotation |
 | pattern fix / pixeli calzi | fixed pattern / hot pixels |
-| aliniat (DITHERING); inregistrat (the other tabs, until their rewrite) | aligned; registered |
+| aliniat (DITHERING), nu s-a putut alinia (the reasons); inregistrat (elsewhere, until its rewrite) | aligned, could not be aligned; registered |
 | scara | scale |
 | decupaje | cut-outs |
 | respinse / de scos din stiva | rejected / leave out of stack |
+| de la 1.60 cadrul e slab / de la 1.35 cadrul e la limita | from 1.60 the frame is bad / from 1.35 the frame is marginal |
+| stele late / prea putine stele / latimea obisnuita din sesiune | wide stars / too few stars / the session's usual width |
+| fondul cerului sare cu ... fata de cadrele vecine (se semnaleaza de la ...) | the sky background jumps by ... against the neighbouring frames (flagged from ...) |
+| dara / dare de satelit sau avion (Siril o / le scoate la stivuire) | satellite or plane trail / trails (Siril takes it / them out when stacking) |
+| cadrul dinainte / cadrul de referinta / nivelul de negru | the frame before / the reference frame / the black level |
 | REZUMAT, EXPUNERE SI ZGOMOT, ROUA, CADRE MISCATE, DRIFT SI ROTATIE | SUMMARY, EXPOSURE AND NOISE, DEW, TRAILED FRAMES, DRIFT AND ROTATION |
 | bun / la limita / SLAB / necitit (clasa) | good / marginal / BAD / unread |
 | BUN(A), LA LIMITA, NU, DA, POSIBIL, ATENTIE | GOOD, MARGINAL, NO, YES, POSSIBLE, WARNING |
@@ -134,7 +141,10 @@ tab with a real result, the problem card, the empty window and the About window 
 collects every text of the visual tree plus the charts' own labels, none of which may hold a
 Romanian word; checks that the same window in Romanian shows `Rezumat`; and checks that every
 verdict and class word the core writes for a result colours the same in both languages. It
-also renders the Dithering tab and the Summary tab in each language and holds their texts, the
-charts' labels included, against the method's words of `PlainWords` (R-077, R-078), the list `SeriesTests` holds the
-core's rows, tables and paragraphs against, linked from `LightsCheck.Tests`. With
-`LIGHTSCHECK_DUMP_SCREENS` it saves the English screens as `en-*.png`.
+also renders the Dithering, Summary, Frames and Quality tabs in each language, the Frames tab
+with a frame's cut-outs, and holds their texts, the tooltips and the charts' labels included,
+against the method's words of `PlainWords` (R-077 to R-080), the list `SeriesTests` holds the core's
+rows, tables, paragraphs, reasons and cut-out lines against, linked from `LightsCheck.Tests`.
+It measures every reason a trailed frame can get, in both languages, in the cell's font and the
+window's whole-pixel text, against the Frames table's reasons cell as the tab lays it out (R-079).
+With `LIGHTSCHECK_DUMP_SCREENS` it saves the English screens as `en-*.png`.

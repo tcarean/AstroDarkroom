@@ -41,7 +41,7 @@ namespace FlatCheck.Wpf
     /// <see cref="SessionMessages"/>.</summary>
     public sealed class MapGuideViewModel : ObservableObject
     {
-        bool _expanded;
+        bool _expanded = true;
 
         /// <summary>How to read the map, before the list of shapes.</summary>
         public string Intro => SessionMessages.MapGuideIntro();
@@ -54,10 +54,12 @@ namespace FlatCheck.Wpf
                 .ToList();
 
         /// <summary>
-        /// Collapsed by default: six rows of text under every map, on every run, would drown the
-        /// very figures. The state lives here and not in the control so a test can open it - a
-        /// wrong binding in a collapsed panel compiles and fails only when shown, and that is
-        /// exactly what WindowSmokeTests catches.
+        /// Open by default (R-127, ADR 0089): the owner wants the shapes' reading at hand under the
+        /// map, and the panel's own scroll bar caps its height, so on a maximized 1920 x 1080
+        /// window the map keeps 85 % of its size. A fold by the user holds until the window
+        /// closes: Reset does not touch it. The state lives here and not in the control so a test
+        /// can set it - a wrong binding in a folded panel compiles and fails only when shown, and
+        /// that is exactly what WindowSmokeTests catches.
         /// </summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
@@ -83,8 +85,8 @@ namespace FlatCheck.Wpf
                 .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
                 .ToList();
 
-        /// <summary>Collapsed by default, like the map guide: the verdict must stay the first
-        /// thing visible.</summary>
+        /// <summary>Collapsed by default, unlike the map guide (R-127): the verdict must stay the
+        /// first thing visible.</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
 
@@ -106,7 +108,7 @@ namespace FlatCheck.Wpf
                 .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
                 .ToList();
 
-        /// <summary>Collapsed by default, like the other two guides.</summary>
+        /// <summary>Collapsed by default, like the Structure tab's "How to read the tab".</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
 
@@ -127,7 +129,7 @@ namespace FlatCheck.Wpf
                 .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
                 .ToList();
 
-        /// <summary>Collapsed by default, like the other three.</summary>
+        /// <summary>Collapsed by default, like every guide but the map's (R-127).</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
 }

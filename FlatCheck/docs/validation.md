@@ -192,6 +192,14 @@ Every case also prints its measured figures as a JSON line, and appends it to th
   approved plan predicted from the rows of the old output; the other 28 cases and the 8 raw
   samples did not move.
 
+- 2026-11-02: re-measured at the wrap-up of the task that merged the Structure tab's two scales
+  into one (R-126, ADR 0088), on `claude/Merge-the-Structure-tab-scales` before its commit, over
+  `main` at d41bf12e. The task removed the depth scale's four meaning texts from
+  `Report/StructureReport.cs` (`DepthScaleRows`) without touching a formula: the 36 large files
+  present with their hashes, 44 passed in 3 min 39 s (the 36 cases and the 8 raw samples), and
+  with the dump compared to `validation.json` case by case, every figure and verdict of the 36
+  cases equal to the recorded one. No figure changed; no formula moved.
+
 - 2026-11-01: re-measured at the wrap-up of the plain-words series (ADRs 0082 to 0084), on `main`
   at 91bd006e. The series reworded the explanations in `Report/StructureReport.cs`,
   `LightReport.cs`, `LightSeriesReport.cs`, `ExposureReport.cs`, `HistEqReport.cs`,

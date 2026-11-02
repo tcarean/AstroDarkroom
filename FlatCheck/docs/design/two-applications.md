@@ -41,7 +41,8 @@ and ADR 0033. The "Despre" window, which formulates nothing, is ADR 0040; it fit
 area of its screen, its cards scrolling, as the launcher's and AstroPhotoAnalyzer's do (R-125,
 ADR 0086). The three viewing
 aids around the residual map (the scale switch with its caps from `Th.Resid*`, the legend, the
-collapsed shape guide), why the guide is documentation and not a classifier, why End-to-end
+shape guide, open by default since R-127 and ADR 0089, its card capped at 300 px by its own
+scroll bar), why the guide is documentation and not a classifier, why End-to-end
 gets the legend and no shape guide, why the guide texts mirror the README by hand and why the
 guide's ring row was rewritten are ADR 0036 (the ring row also ADR 0018). Two mechanics the
 ADRs do not spell out: the scale switch defaults to ±10 %, and the guide's text is in
@@ -103,10 +104,23 @@ The rows are `LensProfileRow` (public copy of the core's `ProfileRow`), rendered
 template local to `StructureView.xaml`; the row with `GivesVerdict` is drawn marked, and its
 note starts with `StructureReport.VerdictRowNote`, the console marker's words (the lens chosen,
 the Adobe profile under R-128, or the nearest), so the view-model composes no sentence of its
-own. `Tests` stays five, so the scale heading is untouched. `Populate` is
+own. `Tests` stays five, so the scale's column heading `the five tests` stays true. `Populate` is
 `internal` and sets `HasResult` for the smoke test. The one thing the window cannot do
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).
+
+**One verdict scale for both verdicts** (R-126, ADR 0088). `FillScale` rebuilds `Scale` in
+every `Populate`, once the comparison is known: the rows of `StructureReport.Scale()`, each
+given its interval in stops from `DepthScaleRows` (looked up by band) when the vignetting was
+compared, `IsCurrent` on the five tests' verdict and `IsDepthCurrent` on the deciding
+profile's (R-128); `ScaleHasDepth` and `ScaleDepthNote` (`DepthScaleNote`) go with it, and the card
+keeps `ProfileLightNote` alone. The theme's `ScaleRowTemplate` marks a cell, not a row, since
+the two verdicts can fall in different bands; its two interval columns are `Auto` with a
+`SharedSizeGroup`, so the header row in `StructureView.xaml`, inside the same
+`Grid.IsSharedSizeScope` panel, lines up with every row, and the stops column takes no width
+without a comparison. `WhyResidual` stands at the foot of the tests card, not under the scale:
+its "the most important one" points at the five rows above it, and under a table that also
+judges the depth it read as outranking the depth.
 
 **The box at the top of the card, `NoFilters`, turns that comparison off** (R-118, ADR 0078).
 `RunAsync` takes the folder's `SessionSettings` and sets the box from them without writing or
