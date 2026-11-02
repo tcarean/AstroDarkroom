@@ -46,6 +46,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The parameter card explains itself in plain words (R-026, ADR 0079), and so does Appendix F of the
+  report: "Pe ce printezi" instead of "Mediu de print", "Latimile de incercat", "Proportia
+  printului", "Coordonate pe cer (WCS) din FITS"; the help texts without the median or the gamma's
+  formula, their numbers taken from the program's thresholds; "trebuie sa fie mai mare decat 0 si
+  mai mic decat 1" instead of "strict intre 0 si 1"; Appendix F reads "printat pe baryta", "(dat)"
+  instead of "(explicit)", "1.5 x diagonala fiecarei marimi" instead of "naturala" and names the
+  seed. The figures are unchanged.
 - The map and preview windows explain themselves in plain words (R-130, R-131, ADR 0078): the map's
   legends say "valoarea din mijloc" and "pragul sub care stau 25 % din ele" instead of median and
   percentile, "mai luminoase decat cerul" instead of "peste cerul modelat", no `|b|`, no Otsu or

@@ -198,7 +198,7 @@ public class IccPaperBlackTests
         Assert.Equal("", err);
         Assert.NotEqual(1, code);
         Assert.Contains("Mediu: baryta (Dmax 1.52, negrul hartiei L* 20.1)", output);
-        Assert.Contains("mediu baryta, Dmax 1.52 (din profilul ICC \"Hartie de test\")", output);
+        Assert.Contains("printat pe baryta, Dmax 1.52 (din profilul ICC \"Hartie de test\")", output);
 
         (code, output, err) = Run(tif, "--icc", notIcc);
         Assert.Equal(1, code);

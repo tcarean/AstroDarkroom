@@ -19,14 +19,14 @@
 | `Dmax` (derived) | baryta 2.4 / canvas 1.5 / acrylic 2.2 (ADR 0028) | | | Tonal, Simulation |
 | `DmaxProfile` | null | `--icc file` (sets it with `DmaxOverride`; excludes `--dmax`) | `Din profil ICC...` | Anexa F: where the Dmax came from (R-028) |
 | `DmaxProfilePath` | null | set with `DmaxProfile`, the same file | set with `DmaxProfile` | the Editare Curbe tab's gamut figure re-opens the profile (R-144); the report does not print it |
-| `CandidateWidthsCm` | 50, 60, 70, 80, 90, 100 | `--sizes a,b,c` | "Latimi candidate" | PrintSize |
+| `CandidateWidthsCm` | 50, 60, 70, 80, 90, 100 | `--sizes a,b,c` | "Latimile de incercat" | PrintSize |
 | `ViewingDistanceM` | null = 1.5 x diagonal per row (then no row is recommended) | `--distance m` | "Distanta de privire" | PrintSize |
 | `PassepartoutCm` | 7 | `--passepartout cm` | field | PrintSize (outer size) |
 | `FrameCm` | 3 | `--frame cm` | field | PrintSize (outer size) |
-| `TargetAspect` | null = native | `--aspect w:h` (also `wxh`) | "Raport de aspect" | Crop, PrintSize |
-| `TargetBackground` | null = none | `--target-bg`, strictly inside (0, 1) once rounded to 3 decimals (the core's `TargetBackgroundError`, one message for both applications; ADR 0040) | "Fundal-tinta in plus" | Simulation (one more row, marked `(dat)`, the primary one) |
+| `TargetAspect` | null = native | `--aspect w:h` (also `wxh`) | "Proportia printului" | Crop, PrintSize |
+| `TargetBackground` | null = none | `--target-bg`, strictly inside (0, 1) once rounded to 3 decimals (the core's `TargetBackgroundError`, one message for both applications; ADR 0040) | "Fundal-tinta in plus de incercat" | Simulation (one more row, marked `(dat)`, the primary one) |
 | `SimulationTargets` | 0.05 .. 0.20 by 0.01 | - | - | Simulation (the grid) |
-| `WcsPath` | null = the file's own WCS | `--wcs file.fit` | "WCS din FITS" | the dust and the sky (R-027: a FITS header lent to a TIFF/PNG of the same size) |
+| `WcsPath` | null = the file's own WCS | `--wcs file.fit` | "Coordonate pe cer (WCS) din FITS" | the dust and the sky (R-027: a FITS header lent to a TIFF/PNG of the same size) |
 | `Seed` | 0 | - | - | Noise tiles |
 
 The console (`Options.cs`) and the window (`ParameterFields.cs`) validate syntax only,

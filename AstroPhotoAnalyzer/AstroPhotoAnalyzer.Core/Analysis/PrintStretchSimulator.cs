@@ -257,10 +257,11 @@ namespace AstroPhotoAnalyzer
                       $"dalele cu {Fmt.F1(Map.NoiseThreshold)} L* mai intunecate decat cerul (de {Fmt.F0(Thresholds.SkyNoiseK)} ori zgomotul lui)");
 
         /// <summary>
-        /// What the dust is, by what gave its L* (ADR 0033): "percentila 25 % a dalelor de praf
-        /// (cu 5 L* sub nivelul local al benzii sau sub cerul modelat; 9.3 % din cadru)" when the
-        /// dust class decides; otherwise "cel mai intunecat 1 % al dalelor de cer", with why not
-        /// the dust class: empty, under DustClassMinFraction of the frame, or lighter.
+        /// What the dust is, by what gave its L* (ADR 0033): "the darkest extended areas of the
+        /// dust clouds (the threshold under which 25 % of the dust patches lie; the dust is 9.3 %
+        /// of the frame, ...)" when the dust class decides; otherwise "the darkest 1 % of the sky
+        /// patches", with why not the dust class: empty, under DustClassMinFraction of the frame,
+        /// or lighter.
         /// </summary>
         internal string DustDescription
         {
