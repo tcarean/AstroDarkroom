@@ -314,10 +314,10 @@ namespace AstroPhotoAnalyzer
         /// <summary>The refusal of a profile missing a table, naming it.</summary>
         /// <param name="table">The table's tag: B2A0, B2A1, A2B1, or B2A for either.</param>
         /// <returns>The sentence, in the interface language.</returns>
-        static string NoB2A(string table) => Tr.Pick($"the profile has no table towards the printer ({table})", $"profilul nu are tabela spre imprimanta ({table})");
+        static string NoB2A(string table) => Tr.Pick($"the profile lacks the part that prepares the colours for the printer (the {table} table)", $"profilului ii lipseste partea care pregateste culorile pentru imprimanta (tabela {table})");
         static string Unreadable => Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ");
-        static string BlackUnusable => Tr.Pick("the profile's table from the printer (A2B1) gives no black between 0 and the paper white; the profile is probably damaged",
-            "tabela profilului dinspre imprimanta (A2B1) nu da un negru intre 0 si albul hartiei; profilul e probabil stricat");
+        static string BlackUnusable => Tr.Pick("the profile does not show properly how black the paper prints (the A2B1 table gives no black between 0 and the paper white); the profile is probably damaged",
+            "profilul nu arata corect cat de negru tipareste hartia (tabela A2B1 nu da un negru intre 0 si albul hartiei); profilul e probabil stricat");
     }
 
     /// <summary>The proof of a reduced image: the proofed image, and how it was made.</summary>

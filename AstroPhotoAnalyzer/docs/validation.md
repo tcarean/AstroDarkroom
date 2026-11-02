@@ -211,6 +211,16 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-11-02 (ADR 0077, the Soft proof tab in plain words,
+  `docs/plans/2026-11-02-explain-the-soft-proof-tab-plainly.md`): the texts of
+  `Report/ProofTexts.cs` and the reasons `Analysis/SoftProof.cs` and `Analysis/GamutAnalyzer.cs`
+  give for a refused profile reworded; no formula moved, and no recorded figure is one of these
+  sentences. Re-run on the branch, the twelve files of the manifest hard-linked into the
+  worktree, their hashes checked: of the 1290 figures the fifteen cases record, 1288 are
+  identical, and the same two as since 2026-10-23 differ by 0.0001, inside the 0.01 tolerance
+  (V-011 `curves.Maxima.lstar.clouds` 67.1502 -> 67.1503, V-014 `curves.Maxima.lstar.peaks`
+  77.9226 -> 77.9227). The fifteen cases and the eleven star-pair checks pass, in 4.4 min.
+
 - 2026-11-02 (ADR 0076, the Editare Curbe tab in plain words,
   `docs/plans/2026-11-02-explain-the-curves-tab-plainly.md`): the texts of `Report/CurveTexts.cs`
   reworded and a comment of `Analysis/PrintStretchSimulator.cs` corrected; no formula moved.

@@ -177,7 +177,7 @@ profile chosen for the Dmax (**From ICC profile...**); without one it shows only
 saying so. It is modelled on Lightroom Classic's soft proofing and, like it, is for looking only:
 nothing is edited, nothing is written. The proof is computed right after the analysis.
 
-- **Intent**: **Perceptual** (the profile's own perceptual table, Lightroom's default),
+- **Rendering (intent)**: **Perceptual** (the profile's own perceptual table, Lightroom's default),
   **Relative** (the colorimetric table with black point compensation, so the image's black lands
   on the paper's black, as Lightroom's Relative), and a third Lightroom does not have,
   **Relative, no black point compensation**: every tone darker than the paper's black prints as
@@ -185,9 +185,9 @@ nothing is edited, nothing is written. The proof is computed right after the ana
 - The paper's white shows as its own colour and its black as its own grey, always: the print
   as it will look beside a white. The margin around the image is that white by default, so the
   eye has it to adapt to.
-- **Paper gamut warning** paints in red the pixels whose colour the paper does not reproduce, by
-  the rule of the **Curves Editing** tab, so its share, in the legend under the image, is the
-  same figure.
+- **Colours the paper cannot reproduce** paints in red the pixels whose colour the paper does
+  not reproduce, by the rule of the **Curves Editing** tab, so its share, in the legend under
+  the image, is the same figure.
 - **Original** shows the image as it is inside the same margin, for comparison.
 - **Margin**: **Paper white** by default; the others are fixed greys, white to black.
 - In the tab and in the window, the mouse wheel zooms around the cursor, up to 8:1 at 100 % display scaling, dragging

@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf">
   <WrapPanel Orientation="Horizontal" Margin="0,0,0,4">
     <StackPanel Orientation="Horizontal" Margin="0,0,20,4" VerticalAlignment="Center">
-      <TextBlock Text="{local:T En='Intent:', Ro='Intent:'}" VerticalAlignment="Center" Margin="0,0,10,0" />
+      <TextBlock Text="{local:T En='Rendering (intent):', Ro='Mod de redare (intent):'}" VerticalAlignment="Center" Margin="0,0,10,0" />
       <RadioButton Content="{Binding PerceptualName}" IsChecked="{Binding IsPerceptual}" ToolTip="{Binding PerceptualHelp}"
                    Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,12,0" />
       <RadioButton Content="{Binding RelativeName}" IsChecked="{Binding IsRelative}" ToolTip="{Binding RelativeHelp}"
@@ -38,16 +38,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                    Foreground="{StaticResource TextBr}" VerticalAlignment="Center" />
     </StackPanel>
     <CheckBox IsChecked="{Binding ShowPaperGamut}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,16,4"
-              Content="{local:T En='Paper gamut warning', Ro='Avertisment gamut hartie'}"
-              ToolTip="{local:T En='Paints in red the pixels whose colour the paper does not reproduce, by the rule of the Curves Editing tab. Key G in the full-screen window.', Ro='Picteaza cu rosu pixelii a caror culoare hartia nu o reda, dupa regula din tabul Editare Curbe. Tasta G in fereastra pe tot ecranul.'}" />
+              Content="{local:T En='Colours the paper cannot reproduce', Ro='Culorile pe care hartia nu le poate reda'}"
+              ToolTip="{local:T En='Paints in red the pixels whose colour the paper cannot reproduce, by the same rule as in the Curves Editing tab. In full screen: key G.', Ro='Coloreaza cu rosu pixelii a caror culoare hartia nu o poate reda, dupa aceeasi regula ca in tabul Editare Curbe. Pe ecran intreg: tasta G.'}" />
     <CheckBox IsChecked="{Binding ShowOriginal}" Foreground="{StaticResource TextBr}" VerticalAlignment="Center" Margin="0,0,20,4"
               Content="{local:T En='Original', Ro='Originalul'}"
-              ToolTip="{local:T En='The image as it is, inside the same margin, for comparison; the warning is not painted over it. Key O.', Ro='Imaginea asa cum e, in aceeasi margine, pentru comparatie; avertismentul nu se picteaza peste ea. Tasta O.'}" />
+              ToolTip="{local:T En='The image as it is, without the simulation, inside the same margin, so that you can compare; nothing is painted red over it. Key O.', Ro='Imaginea asa cum e, fara simulare, in aceeasi margine, ca s-o poti compara; peste ea nu se coloreaza nimic cu rosu. Tasta O.'}" />
     <StackPanel Orientation="Horizontal" Margin="0,0,20,4" VerticalAlignment="Center">
       <TextBlock Text="{local:T En='Margin:', Ro='Margine:'}" VerticalAlignment="Center" Margin="0,0,8,0" />
       <!-- Named: the full-screen window keeps its panel shown while this list is open (R-164). -->
       <ComboBox x:Name="MarginList" SelectedValuePath="Tag" SelectedValue="{Binding Margin}" MinWidth="120" VerticalAlignment="Center"
-                ToolTip="{local:T En='The background around the image: the white of the paper, the one the white of the image becomes, or a fixed grey, white to black', Ro='Fundalul din jurul imaginii: albul hartiei, cel in care se transforma albul imaginii, sau un gri fix, de la alb la negru'}">
+                ToolTip="{local:T En='The colour around the image: the paper white (the white of the image turns into it) or a fixed grey, white to black.', Ro='Culoarea din jurul imaginii: albul hartiei (in el se transforma albul imaginii) sau un gri fix, de la alb la negru.'}">
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.PaperWhite}" Content="{local:T En='Paper white', Ro='Albul hartiei'}" />
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.White}" Content="{local:T En='White', Ro='Alb'}" />
         <ComboBoxItem Tag="{x:Static local:ProofMarginChoice.LightGrey}" Content="{local:T En='Light grey', Ro='Gri deschis'}" />
@@ -58,6 +58,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </StackPanel>
     <Button Content="{local:T En='Full screen', Ro='Ecran intreg'}" Command="{Binding FullScreen}" Padding="14,3" VerticalAlignment="Center" Margin="0,0,0,4"
             Visibility="{Binding ShowFullScreenButton, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"
-            ToolTip="{local:T En='The same proof over the whole screen; the controls appear while the mouse is at the top; Esc or Close leaves it', Ro='Acelasi proof pe tot ecranul; controalele apar cat timp mouse-ul e sus; Esc sau Inchide iese'}" />
+            ToolTip="{local:T En='The same simulation over the whole screen; the buttons appear when you move the mouse to the top; Esc or Close leaves it.', Ro='Aceeasi simulare pe tot ecranul; butoanele apar cand duci mouse-ul sus; Esc sau Inchide iese.'}" />
   </WrapPanel>
 </UserControl>

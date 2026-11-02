@@ -80,10 +80,9 @@ writes one Debug line per render (`logging.md`).
 ## The texts (`Report/ProofTexts.cs`)
 
 The sentences, all pairs in the interface language (ADR 0048): the two refusals, "computing",
-the profile's line with its tables, the paper white and black lines, the legend with its share
-and the threshold it quotes, the three intents' names and one-line helps (the radio
-buttons' tooltips) and the caption (profile and intent). The window
-writes none of them.
+the profile's line (its name alone, ADR 0077), the paper white and black lines, the legend with
+its share and the threshold it quotes, the three intents' names and one-line helps (the radio
+buttons' tooltips) and the caption (profile and intent). The window writes none of them.
 
 ## The tab and the window (`ViewModels/SoftProofTab.cs`, the three views)
 

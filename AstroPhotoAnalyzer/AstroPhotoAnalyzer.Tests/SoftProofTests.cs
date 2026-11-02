@@ -22,7 +22,8 @@ namespace AstroPhotoAnalyzer.Tests;
 /// carries the tables towards the printer: a grey comes back to itself under the relative
 /// intent with the black compensated, the paper's white and black appear under the simulation,
 /// the third intent crushes the tones under the paper's black, the perceptual intent uses the
-/// profile's own table; the two warnings on a hand-built table; the problems.
+/// profile's own table; the two warnings on a hand-built table; the problems; and the plain
+/// words of every text of the tab (R-163).
 /// </summary>
 public class SoftProofTests
 {
@@ -242,5 +243,44 @@ public class SoftProofTests
         Assert.Contains(Fmt.F0(Thresholds.CurveGamutDeltaAb), ProofTexts.PaperGamutLegend(1.4));
         Assert.Equal("Relativ, fara compensarea negrului", ProofTexts.IntentName(ProofIntent.RelativeNoBpc));
         Assert.Contains("Tonuri", ProofTexts.IntentHelp(ProofIntent.RelativeNoBpc));
+    }
+
+    /// <summary>
+    /// R-163 (ADR 0077): every text of the Soft proof tab and of its full-screen window is in plain
+    /// words, in both languages: the core's sentences (the refusals, the profile's facts, the
+    /// legend, the intents' names and help, the caption) and the texts the three views write
+    /// themselves, read from their XAML. None uses the method's words, and none calls the margin
+    /// a background: "Fundal" names the sky (ADR 0013).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R163_TheSoftProofTextsAreInPlainWords(bool english)
+    {
+        using IDisposable scope = Tr.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using var ws = new TempWorkspace();
+        ProofProfile p = ProofProfile.Open(Profile(ws, white: TintedWhite));
+        var texts = new List<string>
+        {
+            ProofTexts.NoProfile, ProofTexts.Computing, ProofTexts.ProfileLine(p), ProofTexts.PaperWhiteLine(p),
+            ProofTexts.PaperBlackLine(p), ProofTexts.PaperGamutLegend(1.4),
+            ProofProfile.Open(Profile(ws, withB2A: false, name: "fara-b2a.icc")).Problem,
+            ProofProfile.Open(Profile(ws, withPerceptual: false, name: "fara-b2a0.icc")).Problem,
+        };
+        foreach (ProofIntent intent in Enum.GetValues<ProofIntent>())
+            texts.AddRange(new[] { ProofTexts.IntentName(intent), ProofTexts.IntentHelp(intent), ProofTexts.Caption(p, intent) });
+        var pair = new System.Text.RegularExpressions.Regex(@"\{local:T En='([^']*)', Ro='([^']*)'\}");
+        foreach (string view in new[] { "SoftProofView.xaml", "SoftProofControls.xaml", "SoftProofWindow.xaml" })
+            texts.AddRange(pair.Matches(File.ReadAllText(Path.Combine(TestData.RepoDir(), "AstroPhotoAnalyzer.Wpf", "Views", view)))
+                .Select(m => m.Groups[english ? 1 : 2].Value));
+
+        var methodWords = new System.Text.RegularExpressions.Regex(
+            @"\b(gamutul hartiei|gamut hartie|in afara gamutului|paper gamut|paper's gamut|albul mediului|media white|dispozitivului|device black|colorimetric\w*|tabela lui|tabelele lui|its tables|dus-intors|round trip|intentul|next intent|third intent|al treilea intent|fundal\w*|background)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        Assert.All(texts, t => Assert.False(methodWords.IsMatch(t), t));
+        Assert.Contains(Tr.Pick("Rendering (intent):", "Mod de redare (intent):"), texts);
+        Assert.Contains(Tr.Pick("Colours the paper cannot reproduce", "Culorile pe care hartia nu le poate reda"), texts);
+        Assert.Contains(Tr.Pick("(the gamut)", "(gamutul)"), ProofTexts.PaperGamutLegend(1.4));
+        Assert.Contains(Tr.Pick(" of 100,", " din 100,"), ProofTexts.PaperWhiteLine(p));
     }
 }
