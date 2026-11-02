@@ -484,8 +484,9 @@ tabs:
   yellow.
 - **Maps**: the three maps of check 2 (master dark, master bias, dark minus bias), the same as the
   PNG files of `--out`, each with its row of the report under it.
-- **Hot pixels**: the rows of check 5 and the curve of check 8, the noise of the mean of n
-  frames against sigma / sqrt(n); hold the mouse over a point to see its figures.
+- **Hot pixels**: the rows of check 5 and the chart of check 8: how much noise is left after the
+  mean of more and more frames, against a dotted line of what a random noise would leave (4 times
+  the frames, half the noise); hold the mouse over a point to see its figures.
 - **Lights**: the rows of check 9, the lights / dark ratio of every light with the thresholds
   as lines (0.9 and 1.1 green, 0.7 and 1.4 amber, 0.4 red), and the lights table.
 - **Index**: the label in large type with **Copy label** (it goes to the clipboard, and you

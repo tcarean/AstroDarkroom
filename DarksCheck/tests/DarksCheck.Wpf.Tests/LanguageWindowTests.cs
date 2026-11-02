@@ -215,6 +215,53 @@ public partial class LanguageWindowTests
         });
     }
 
+    /// <summary>
+    /// The Pixeli fierbinti tab in plain words (R-085, ADR 0033): the text under check 5's rows, the
+    /// noise chart's title and sentence and the hints of its points name no part of the method, in
+    /// either language; each hint names its frames as the Rezumat's check 8 does.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task R085_TheHotPixelsTabIsInPlainWords(bool english)
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture f = WindowFixture.Session();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+            {
+                MainViewModel vm = new();
+                await vm.OpenAsync(f.Root);
+                Assert.True(vm.HasResult);
+                HotPixelsView view = new() { DataContext = vm };
+                Render(view, 1360, 1800);
+                List<string> texts = [.. TextsOf(view), .. vm.NoisePoints.Select(p => p.Tip ?? "")];
+
+                // the scenes reached their variants, so the words below were looked at
+                string all = string.Join("\n", texts);
+                Assert.Contains(english ? "8. HOW THE NOISE FALLS WITH MORE FRAMES (ADU)" : "8. CAT SCADE ZGOMOTUL CU MAI MULTE CADRE (ADU)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "(4 times the frames, half the noise)" : "(de 4 ori mai multe cadre, zgomot de 2 ori mai mic)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "how many jump between two levels from one frame to the next (RTS). For information only: this check never warns." : "cati sar intre doua niveluri de la un cadru la altul (RTS). Doar de informare: verificarea asta nu da niciodata avertizare.", all, StringComparison.Ordinal);
+
+                // six darks give the points of one and two frames: the singular and the plural
+                Assert.True(vm.NoisePoints.Count >= 2);
+                string[] frames = english ? ["1 frame", "2 frames"] : ["1 cadru", "2 cadre"];
+                for (int i = 0; i < 2; i++)
+                {
+                    string measured = RunReport.F(vm.NoisePoints[i].Y, 3), expected = RunReport.F(vm.NoiseExpected[i].Y, 3);
+                    Assert.Equal(english ? $"{frames[i]}: measured {measured}, expected {expected}" : $"{frames[i]}: masurat {measured}, se astepta {expected}", vm.NoisePoints[i].Tip);
+                }
+
+                Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+                List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
+                Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+            }
+        });
+    }
+
     private static void Render(FrameworkElement el, int w = 1360, int h = 820)
     {
         el.Measure(new Size(w, h));

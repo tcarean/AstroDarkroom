@@ -119,10 +119,12 @@ internal static class WindowTexts
     internal static string HotHeader => ">" + RunReport.F(Th.HotAdu, 0);
 
     internal static string HotTabLead => T(
-        $"The hot pixels of the median master at five levels, on planes at {RunReport.F(Th.HotAdu, 0)} ADU-eq, with their amplitudes and how stable "
-        + "they are from one frame to the next; the RTS candidates are the pixels whose value jumps between frames. Informative: how many the sensor has, not a verdict.",
-        $"Pixelii fierbinti ai masterului median la cinci niveluri, pe planuri la {RunReport.F(Th.HotAdu, 0)} ADU-eq, cu amplitudinile lor si cat de stabili "
-        + "sunt de la un cadru la altul; candidatii RTS sunt pixelii a caror valoare sare intre cadre. Informativ: cati are senzorul, nu un verdict.");
+        $"The hot pixels of the master: how many are above each of the five thresholds (from {RunReport.F(Th.HotLevelsAdu[0], 0)} to {RunReport.F(Th.HotLevelsAdu[^1], 0)} ADU-eq), "
+        + $"how many of each colour are above {RunReport.F(Th.HotAdu, 0)}, how hot they are, whether they show in every frame, and how many jump between two levels "
+        + "from one frame to the next (RTS). For information only: this check never warns.",
+        $"Pixelii fierbinti din master: cati sunt peste fiecare din cele cinci praguri (de la {RunReport.F(Th.HotLevelsAdu[0], 0)} la {RunReport.F(Th.HotLevelsAdu[^1], 0)} ADU-eq), "
+        + $"cati sunt peste {RunReport.F(Th.HotAdu, 0)} pe fiecare culoare, cat de fierbinti sunt, daca se vad in toate cadrele si cati sar intre doua niveluri "
+        + "de la un cadru la altul (RTS). Doar de informare: verificarea asta nu da niciodata avertizare.");
 
     internal static string CandidatesTip => T(
         $"pixels above {RunReport.F(Th.LightHotSigmas, 0)} local sigma, below saturation",

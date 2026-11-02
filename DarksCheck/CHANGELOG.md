@@ -34,6 +34,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Pixeli fierbinti tab's own texts speak plain words, in English and Romanian (R-085, ADR
+  0033): the text under the rows says what they count and that check 5 never warns, the noise
+  chart is titled `HOW THE NOISE FALLS WITH MORE FRAMES`, its sentence explains the dotted line
+  (`4 times the frames, half the noise`), and a point's hint reads `1 frame: measured 1.426,
+  expected 1.514`.
+
 - The Harti tab's own texts speak plain words, in English and Romanian (R-084, ADR 0032): the lead
   says what the three maps show and how each map's contrast is set, the third map is titled
   `DARK MINUS BIAS`, and a missing map says why (`the frames are smaller than 32 px`; for the bias
