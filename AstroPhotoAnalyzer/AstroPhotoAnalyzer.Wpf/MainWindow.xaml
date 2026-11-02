@@ -91,7 +91,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Button x:Name="ClearProfileButton" Grid.Column="1" Content="{local:T En='Clear', Ro='Scoate'}" Click="ClearProfile" Padding="8,2" FontSize="11" Margin="10,0,0,0"
                     Visibility="{Binding HasProfile, Converter={StaticResource BoolToVis}}"
                     IsEnabled="{Binding DataContext.IsIdle, RelativeSource={RelativeSource AncestorType=Window}}"
-                    ToolTip="{local:T En='Stops using the profile: the Dmax of the medium is back, and the analysis runs again', Ro='Nu mai foloseste profilul: revine Dmax-ul mediului, si analiza se reia'}" />
+                    ToolTip="{local:T En='Stops using the profile: the Dmax of what you print on is back, and the analysis runs again', Ro='Nu mai foloseste profilul: revine Dmax-ul suportului ales, iar analiza se reia'}" />
           </Grid>
         </StackPanel>
 
@@ -128,10 +128,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <StackPanel>
             <TextBlock Style="{StaticResource Heading}" Text="{local:T En='PARAMETERS', Ro='PARAMETRI'}" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Print medium', Ro='Mediu de print'}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='What you print on', Ro='Pe ce printezi'}" />
             <ComboBox ItemsSource="{Binding Media}" SelectedItem="{Binding Medium, Mode=TwoWay}" Margin="0,3,0,10" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Dmax (of the chosen medium; can be changed)', Ro='Dmax (al mediului ales; se poate schimba)'}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='How black it can print (Dmax; can be changed)', Ro='Cat de negru poate tipari (Dmax; il poti schimba)'}" />
             <Grid Margin="0,3,0,10">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="80" />
@@ -144,22 +144,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                       ToolTip="{local:T En='Reads the Dmax from the ICC profile of the paper on its printer: the list of installed profiles, or a file; the analysis then runs again', Ro='Citeste Dmax-ul din profilul ICC al hartiei pe imprimanta ei: lista profilelor instalate, sau un fisier; analiza se reia apoi'}" />
             </Grid>
 
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Viewing distance, m (empty = 1.5 x diagonal)', Ro='Distanta de privire, m (gol = 1.5 x diagonala)'}" ToolTip="{Binding DistanceHelp}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Viewing distance, m (empty = by size)', Ro='Distanta de privire, m (gol = dupa marime)'}" ToolTip="{Binding DistanceHelp}" />
             <TextBox Style="{StaticResource Field}" Text="{Binding Distance, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
                      ToolTip="{Binding DistanceHelp}" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Candidate widths, cm', Ro='Latimi candidate, cm'}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Widths to try, cm', Ro='Latimile de incercat, cm'}" />
             <TextBox Style="{StaticResource Field}" Text="{Binding Sizes, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Target aspect ratio, e.g. 50:35 (empty = native)', Ro='Raport de aspect tinta, ex. 50:35 (gol = nativ)'}" ToolTip="{Binding AspectHelp}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Print proportions, e.g. 50:35 (empty = as the image)', Ro='Proportia printului, ex. 50:35 (gol = cea a imaginii)'}" ToolTip="{Binding AspectHelp}" />
             <TextBox Style="{StaticResource Field}" Text="{Binding Aspect, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
                      ToolTip="{Binding AspectHelp}" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Extra target background in the simulation (0..1, empty = grid only)', Ro='Fundal-tinta in plus in simulare (0..1, gol = doar grila)'}" ToolTip="{Binding TargetBgHelp}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Extra target background to try (0..1, empty = none)', Ro='Fundal-tinta in plus de incercat (0..1, gol = niciunul)'}" ToolTip="{Binding TargetBgHelp}" />
             <TextBox Style="{StaticResource Field}" Text="{Binding TargetBg, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
                      ToolTip="{Binding TargetBgHelp}" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='WCS from a FITS (optional, same size)', Ro='WCS din FITS (optional, aceeasi marime)'}" ToolTip="{Binding WcsHelp}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='Sky coordinates (WCS) from a FITS, same size', Ro='Coordonate pe cer (WCS) din FITS, aceeasi marime'}" ToolTip="{Binding WcsHelp}" />
             <TextBox Style="{StaticResource Field}" Text="{Binding WcsPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
                      ToolTip="{Binding WcsHelp}" />
 
@@ -184,7 +184,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Button Content="{local:T En='Analyse', Ro='Analizeaza'}" Click="Analyze" Margin="0,6,0,0"
                     IsEnabled="{Binding DataContext.CanRun, RelativeSource={RelativeSource AncestorType=Window}}" />
             <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap"
-                       Text="{local:T En='Numbers with a decimal point. The parameters apply to the next analysis.', Ro='Numerele cu punct zecimal. Parametrii se aplica la urmatoarea analiza.'}" />
+                       Text="{local:T En='Write numbers with a decimal point (1.5, not 1,5). The parameters apply to the next analysis.', Ro='Scrie numerele cu punct zecimal (1.5, nu 1,5). Parametrii se aplica la urmatoarea analiza.'}" />
           </StackPanel>
         </Border>
       </ScrollViewer>

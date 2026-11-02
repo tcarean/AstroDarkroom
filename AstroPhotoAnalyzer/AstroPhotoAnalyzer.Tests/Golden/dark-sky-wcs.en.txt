@@ -115,8 +115,8 @@ Appendix E. Background colour
   right edge         20.5 / 22.5 / 20.5     against the sky +0.1 / +0.1 / +0.1
 
 Appendix F. Parameters
-  medium baryta, Dmax 2.0 (explicit); widths 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, frame 3 cm
-  distance natural; target ratio native; target background 0.135 (grid 0.05..0.20); WCS from the file; seed 0
+  printed on baryta, Dmax 2.0 (given); widths tried 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, frame 3 cm
+  distance: 1.5 x the diagonal of each size; proportions: the image's own; extra target background: 0.135 (the simulation tries 0.05..0.20); sky coordinates (WCS): from the file; the starting number of the choice of patches (seed): 0
 
 --- stderr ---
 --- exit 3

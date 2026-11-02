@@ -41,7 +41,7 @@ public class ProfileBarTests
     }
 
     /// <summary>The Anexa F line of the report shown, where the Dmax's origin is named.</summary>
-    static string DmaxLine(MainViewModel vm) => vm.Report.Text.Split('\n').Single(l => l.TrimStart().StartsWith("mediu ") && l.Contains("Dmax "));
+    static string DmaxLine(MainViewModel vm) => vm.Report.Text.Split('\n').Single(l => l.TrimStart().StartsWith("printat pe ") && l.Contains("Dmax "));
 
     [Fact]
     public async Task R155_ChoosingAProfileRerunsAndTheReportNamesIt()
