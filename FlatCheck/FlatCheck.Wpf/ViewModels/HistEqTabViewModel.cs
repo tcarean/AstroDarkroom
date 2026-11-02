@@ -188,9 +188,11 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>Equalises the chosen file, guarded, after the heavy-run gate, superseding any
-        /// run still going, and shows the result and the console's report.</summary>
+        /// run still going, and shows the result and the console's report. Private, as the
+        /// Exposure tab's: only a pick starts a run, and a test awaits <see cref="Pending"/>
+        /// (ADR 0077, ADR 0087).</summary>
         /// <returns>A task that completes when the run ended; it never faults.</returns>
-        internal Task RecomputeAsync()
+        Task RecomputeAsync()
         {
             HistEqFileRow row = Selected;
             if (row == null) return Task.CompletedTask;

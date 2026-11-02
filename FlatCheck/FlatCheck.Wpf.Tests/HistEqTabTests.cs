@@ -29,10 +29,10 @@ namespace FlatCheck.Wpf.Tests;
 /// </summary>
 public class HistEqTabTests
 {
-    // Every test that picks a file awaits Pending, the run the pick started (ADR 0087). A second
-    // run started with RecomputeAsync would supersede it, and a superseded run that had already
-    // begun computing goes on until HistEqRun.Execute returns: a test that looked at Pending
-    // then failed 16 times in 150 in a loop (2026-11-02).
+    // Every test that picks a file awaits Pending, the run the pick started (ADR 0087). The tests
+    // used to start a second run with RecomputeAsync, now private, which superseded the first;
+    // a superseded run that had already begun computing goes on until HistEqRun.Execute
+    // returns, and a test that looked at Pending failed 16 times in 150 in a loop (2026-11-02).
 
     static HistEqTabViewModel Attached(SessionFixture f)
     {

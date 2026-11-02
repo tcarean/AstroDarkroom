@@ -46,7 +46,10 @@ test calls `RecomputeAsync()` after a pick.
 - **The histogram tests.** Every test that picks a histogram file awaits `Pending`, the run the
   pick started, as most of them already did. The six tests of `HistEqTabTests` and the one of
   `MainViewModelTests` that started a second run with `RecomputeAsync()` after a pick no longer
-  do, and no test calls it any more.
+  do.
+- **`HistEqTabViewModel.RecomputeAsync` becomes private,** as the Exposure tab's did (ADR
+  0077). Only `Recompute`, called by a pick, starts a run, so the compiler keeps the tests on
+  `Pending`. This was the second review's suggestion, taken at the owner's word on 2026-11-02.
 - **The split test.** `R092_TheProgressCoversEveryPartAndReachesTheEnd` moves into a class of
   its own, `SplitTabProgressTests`, in the `window` collection. It runs `StartAsync` on that
   collection's dispatcher (`StaFixture.InvokeAsync`), as the window runs it, with the fixtures
@@ -77,6 +80,8 @@ test calls `RecomputeAsync()` after a pick.
   runs. Another possible cause is not addressed: a file held briefly by the antivirus during
   heavy disk use. If the test fails again, its message is needed, and the gate's quiet output
   hides it.
+- **No test can start a second histogram run beside a pick's,** since `RecomputeAsync` is
+  private: the race cannot come back through a new test.
 - **Only the progress test runs in the `window` collection.** The other split tests run
   without the collection's Application, as before, with the Siril runner's lines handled inline.
   The test assembly runs its collections one at a time (`DisableTestParallelization`).
