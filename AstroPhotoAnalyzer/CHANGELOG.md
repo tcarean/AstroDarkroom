@@ -46,6 +46,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Soft proof tab and its full-screen window explain themselves in plain words (R-163, ADR 0077):
+  "Mod de redare (intent)", the box "Culorile pe care hartia nu le poate reda" instead of
+  "Avertisment gamut hartie", the paper's white and black "din 100", the three modes' help without
+  the profile's table names, plainer reasons for a profile that cannot be used; the margin is no
+  longer called a background. The figures are unchanged.
 - The Editare Curbe tab and the curve window explain themselves in plain words (R-146, ADR 0076):
   "Punctele curbei vin din felurile de dale ale tabului Tonuri" instead of "Ancorele vin din
   clasele", "cat de tare urca curba in dreptul cerului" for the curve's slope, the noise in levels,

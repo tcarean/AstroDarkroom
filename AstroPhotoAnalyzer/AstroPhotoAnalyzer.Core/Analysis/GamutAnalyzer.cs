@@ -124,7 +124,7 @@ namespace AstroPhotoAnalyzer
                             t.Da[i] = (float)da;
                             t.Db[i] = (float)db;
                         }
-                foreach (float v in t.Da) if (float.IsNaN(v)) return new GamutTable { Problem = Tr.Pick("the profile has no table towards the printer (B2A)", "profilul nu are tabela spre imprimanta (B2A)") };
+                foreach (float v in t.Da) if (float.IsNaN(v)) return new GamutTable { Problem = Tr.Pick("the profile lacks the part that prepares the colours for the printer (the B2A table)", "profilului ii lipseste partea care pregateste culorile pentru imprimanta (tabela B2A)") };
                 t.Exact = (r, g, b) => RoundTrip(config, r, g, b);
                 return t;
             }
