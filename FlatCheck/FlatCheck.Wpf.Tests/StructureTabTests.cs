@@ -1359,7 +1359,9 @@ public class StructureTabTests
         using var filtered = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
         using var ws = new TempWorkspace();
         var sources = LensProfileTestData.Sources(ws);
-        StructureTabViewModel noRaw = await Run(plain);
+        // The window's own case: a catalog, and no raw in flats/ to name the lens.
+        var noRaw = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        await noRaw.RunAsync(plain.Session, CancellationToken.None);
         var withFilter = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
         withFilter.NoFilters = false;
         await withFilter.RunAsync(filtered.Session, CancellationToken.None);

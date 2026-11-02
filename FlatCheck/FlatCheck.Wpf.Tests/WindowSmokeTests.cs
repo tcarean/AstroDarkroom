@@ -321,10 +321,11 @@ public class WindowSmokeTests
 
     /// <summary>
     /// R-126: the one scale on screen. Compared, every interval in stops is drawn once - in the
-    /// table under the card, not in the card - on the same line as its percent and to its right,
-    /// under a column heading; the cells marked are exactly the two verdicts'. With nothing
-    /// compared the stops heading is collapsed and the percent cell keeps its mark. The result
-    /// comes through Populate, on hand-made profile sources.
+    /// table under the card, below the card's last line, not in the card - on the same line as
+    /// its percent and to its right, under a column heading; the cells marked are exactly the two
+    /// verdicts'; the sentence on the stops is drawn once, under the table. With nothing compared
+    /// the stops heading and every stops cell take no width, and the percent cell keeps its
+    /// mark. The result comes through Populate, on hand-made profile sources.
     /// </summary>
     [Fact]
     public void R126_TheOneScaleDrawsTheStopsBesideThePercentOnlyWhenCompared()
@@ -359,9 +360,11 @@ public class WindowSmokeTests
             TextBlock heading = Assert.Single(texts, t => t.Text == "adancimea fata de profil");
             TextBlock percentHeading = Assert.Single(texts, t => t.Text == "cele cinci teste");
             Assert.True(heading.ActualWidth > 0);
-            double cardBottom = texts.Where(t => vm.ProfileRows.Any(p => p.Lens == t.Text)).Max(t => t.TranslatePoint(new Point(), view).Y);
+            TextBlock cardLast = Assert.Single(texts, t => t.Text == vm.ProfileNote);   // the card's last line
+            double cardBottom = cardLast.TranslatePoint(new Point(), view).Y + cardLast.ActualHeight;
             Assert.Contains(vm.Scale, s => s.IsCurrent);
             Assert.Contains(vm.Scale, s => s.IsDepthCurrent);
+            double lastRow = 0;
             foreach (ScaleRow row in vm.Scale)
             {
                 TextBlock percent = Assert.Single(texts, t => t.Text == row.Range);
@@ -374,17 +377,25 @@ public class WindowSmokeTests
                 Assert.True(Math.Abs(percentHeading.TranslatePoint(new Point(), view).X - p.X) < 1, row.Band);
                 Assert.Equal(row.IsCurrent, Marked(percent));
                 Assert.Equal(row.IsDepthCurrent, Marked(stops));
+                lastRow = Math.Max(lastRow, s.Y);
             }
+            TextBlock stopsNote = Assert.Single(texts, t => t.Text == vm.ScaleDepthNote);   // once: not in the card
+            Assert.True(stopsNote.TranslatePoint(new Point(), view).Y > lastRow);
 
             vm.Populate(new StructureOutcome(r, null, null, null));
             Render(view, h: 1800);
             texts = Descendants(view).OfType<TextBlock>().ToList();
 
             Assert.Equal(0, Assert.Single(texts, t => t.Text == "adancimea fata de profil").ActualWidth);
-            foreach (var (_, range) in StructureReport.DepthScaleRows())
-                Assert.DoesNotContain(texts, t => t.Text == range && t.ActualWidth > 0);
             foreach (ScaleRow row in vm.Scale)
-                Assert.Equal(row.IsCurrent, Marked(Assert.Single(texts, t => t.Text == row.Range)));
+            {
+                TextBlock percent = Assert.Single(texts, t => t.Text == row.Range);
+                Assert.Equal(row.IsCurrent, Marked(percent));
+                // The stops cell beside it takes no width: no empty padded cell is left behind.
+                var line = (Grid)VisualTreeHelper.GetParent(VisualTreeHelper.GetParent(percent));
+                Border stopsCell = Assert.Single(line.Children.OfType<Border>(), b => Grid.GetColumn(b) == 2);
+                Assert.Equal(0, stopsCell.ActualWidth);
+            }
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });

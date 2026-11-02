@@ -40,7 +40,7 @@ string returned there stayed Romanian on the English screens. On a plain propert
 runs, so nothing re-reads it. A
 text built in code is a `T(...)` pair, in `SessionMessages` or where the view-model builds it.
 A verdict pill binds its colour to the key (`VerdictToBrush`) and its text to the word
-(`VerdictToWord`); `VerdictChip` does the same for the rows' chips and the scale tables. Three
+(`VerdictToWord`); `VerdictChip` does the same for the rows' chips and the verdict scale. Three
 places compared a text and now compare a key or a flag: the Histogram tab's views carry a
 `Key` beside their label (`"Mozaic"` for `HistEqReport.ViewCaption`), the Synthetic tab keeps
 `_cropUnknown` instead of matching "crop necunoscut", and the Split table compares a cell's
@@ -69,7 +69,7 @@ key stays a `const`.
 
 The analysis hands out verdicts as the Romanian words they were (`OK`, `SUSPECT`, `PROBLEMA`,
 `PERFECT`, `BUN`, `ACCEPTABIL`, `REFA`, `NEDETERMINAT`, `INAPLICABIL`); `FlatCheckCli.ExitFor`,
-`Stats.Severity`, `StructureReport.Advice`, the window's `VerdictPalette` and the scale tables
+`Stats.Severity`, `StructureReport.Advice`, the window's `VerdictPalette` and the verdict scale
 compare those keys. Only printing translates them: every place that writes a verdict calls
 `VerdictWords.Of(key)`. `SplitCell` keeps the key in `Verdict` and the word in `Value` on the
 verdict row; `SplitReport.Cell` compares the value with the word. The same split for the corner

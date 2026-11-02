@@ -45,7 +45,9 @@ ACCEPTABIL clause on the profile's uncertainty is said by `DepthAdvice` and
   `IsDepthCurrent`; `StructureTabViewModel.ScaleHasDepth`, `ScaleDepthNote` and
   `ProfileLightNote` replace `ProfileScale` and `ProfileScaleNote`; `ScaleRowTemplate` marks
   cells, its two interval columns lined up with a header row by shared sizes.
-- No golden file moves and no figure moves: `/validate` is not re-run.
+- No golden file moves and no figure moves. `/validate`, run at the wrap-up because `Report/`
+  changed, found the 36 cases equal to their recorded figures (`docs/validation.md`, History,
+  2026-11-02).
 - Guards: the `R126_` tests in `StructureTabTests`, the scale checks in
   `WithARawBesideTheMasterTheVignettingIsComparedWithTheLensProfiles` and
   `TheDepthScaleRowsAreTheResidualScaleInStops`, the renders of `WindowSmokeTests` with their
