@@ -50,7 +50,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </CheckBox>
         </StackPanel>
         <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
-                   Text="{local:T En='A gamma curve on a reduced copy, not the stretch in Siril; on screen it looks flat, the paper brings it back. The pixels are assumed to be sRGB.', Ro='Curba gamma pe o copie redusa, nu stretch-ul lui Siril; pe ecran pare plata, hartia o aduce inapoi. Pixelii sunt presupusi sRGB.'}" />
+                   Text="{local:T En='A reduced copy, with the tones lifted by a simple curve (gamma), not by the stretch in Siril. On screen it looks washed out, but on paper it comes back. The program assumes the pixels are sRGB.', Ro='E o copie micsorata, cu tonurile ridicate printr-o curba simpla (gamma), nu prin stretch-ul din Siril. Pe ecran pare stearsa, dar pe hartie revine. Programul presupune ca pixelii sunt sRGB.'}" />
       </StackPanel>
     </Border>
 
