@@ -2,7 +2,7 @@
 
 Date: 2026-11-02
 Status: accepted 2026-11-02
-Supersedes: 0031 in part (the nearest profile's verdict where an Adobe file is among lenses not found by range alone)
+Supersedes: 0031 in part (the nearest profile's verdict where an Adobe file is among lenses not found by range alone); 0054 in part (the reference profile as the whole session's nearest profile)
 
 ## Context
 
@@ -33,7 +33,9 @@ them, the depth verdict is an Adobe row's (R-128): the files whose own `LensID` 
 first, the nearest of them, and the nearest Adobe row when no file carries the raw's ID as its
 own. The lensfun rows stay in the list for comparison. By range alone (a manual lens, ADR 0030),
 with a lens the person chose (ADR 0081), or with no Adobe row, the nearest row decides as before;
-the Split tab's reference profile is the row that gives the whole's verdict (R-093). The owner
+lenses a `--lens` text names count as named, whatever the raw's range found. The Split tab's
+reference profile is the row that gives the whole's verdict (R-093), no longer always its nearest
+(ADR 0054). The owner
 chose the rule on 2026-11-02 after the measurement below ("Da, Adobe decide").
 
 ## Alternatives rejected

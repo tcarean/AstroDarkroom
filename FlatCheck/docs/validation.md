@@ -12,10 +12,10 @@ Three kinds of case, one per run the figures come from:
 | Kind | What runs | What is recorded | Tolerance |
 | --- | --- | --- | --- |
 | `structure` | `StructureRun` on the master, no profiles | the five deviation tests, the vignetting depth, the local spot, the verdict | 0.05 points |
-| `profile` | `StructureRun` with the first raw of `flats/` as `--raw` | the master's depth, the nearest profile and the difference in stops, the depth verdict, the run's verdict | 0.02 stops |
+| `profile` | `StructureRun` with the first raw of `flats/` as `--raw` | the master's depth, the profile that decides (R-128) and the difference in stops, the depth verdict, the run's verdict | 0.02 stops |
 | `against` | `SyntheticRun` from the lens's Adobe profile at 20 mm f/2.8, crop 1.523, then `AgainstRun` | the two depths, the difference in stops and as corner error, the ratio's residual, shape / depth / overall verdict | 0.02 stops |
 
-The `nearest` lens name and the verdict words are compared exactly; positions (`spotAt`) are
+The `decides` lens name and the verdict words are compared exactly; positions (`spotAt`) are
 information, not compared.
 
 ## Cases
@@ -91,7 +91,8 @@ The part masters exist only while the tab runs (the temp sessions are deleted af
 analysis, ADR 0054), so there is no `validation.json` case: these are the tables the tab
 saved as `Rezultat split.txt`, driven headless through `MainViewModel` on the build of that
 day (banner 2.2.0, before the bump). Five tests as corners / azimuthal / residual / tilt /
-worst tile, in %; the reference profile is the whole's nearest, the same for every column.
+worst tile, in %; the reference profile was the whole's nearest then (since 2026-11-02 the row
+that gives the whole's verdict, R-128), the same for every column.
 
 `Tokina tablet, 3 sheets of paper, rotated in place` (V-013), 4 x 10 frames at 90°, 185 s
 end to end (copy, four Siril runs, analysis); reference lensfun AT-X 11-20 Aspherical (7D2),

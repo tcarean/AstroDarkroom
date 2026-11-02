@@ -357,9 +357,15 @@ namespace FlatCheck
                 + $"{c.Deciding.DiffStops:+0.00;-0.00} stops against the profile = {c.Deciding.ErrorPct:F1} % error in the corner of a light calibrated with the master",
                 $"verdictul comparatiei: {VerdictWords.Of(c.Verdict)}, {whose}: "
                 + $"{c.Deciding.DiffStops:+0.00;-0.00} stopuri fata de profil = {c.Deciding.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul");
-            string spread = c.Profiles.Count > 1 && c.AdobeDecides
+            // The reason names lensfun only when a lensfun row is there to compare (--source
+            // adobe, or lensfun rows skipped for want of a crop, leave Adobe rows alone).
+            bool lensfunShown = c.Profiles.Any(p => p.Profile.Lens.Source == ProfileSource.Lensfun);
+            string spread = c.Profiles.Count > 1 && c.AdobeDecides && lensfunShown
                 ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner; the Adobe profile decides, because the lensfun ones are measured by volunteers, each with their own camera and diffuser, and vary more; they are shown for comparison",
                     $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; decide profilul Adobe, pentru ca cele lensfun sunt masurate de voluntari, fiecare cu aparatul si difuzorul lui, si variaza mai mult; sunt aratate pentru comparatie")
+                : c.Profiles.Count > 1 && c.AdobeDecides
+                ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner",
+                    $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt")
                 : c.Profiles.Count > 1
                 ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner; a master that matches one of them is not wrong",
                     $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; un master care coincide cu unul din ele nu e gresit")
@@ -616,7 +622,8 @@ namespace FlatCheck
         /// More rotations do not help: the excess rotates with the camera or is symmetrised by
         /// the rotation.
         /// </summary>
-        /// <param name="diffStops">The master's depth minus the nearest profile's, stops.</param>
+        /// <param name="diffStops">The master's depth minus the deciding profile's (R-128),
+        /// stops.</param>
         /// <param name="verdict">The depth verdict; "REFA" adds the advice to reshoot.</param>
         /// <returns>The cause by the sign and its weight, lines joined by '\n'.</returns>
         internal static string DepthAdvice(double diffStops, string verdict)

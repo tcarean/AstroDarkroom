@@ -458,16 +458,20 @@ public class StructureTabTests
     /// <summary>
     /// R-128 on the tab: the raw's lens ID found the lens and Adobe has its file, so the Adobe
     /// row is the one marked, its note says the Adobe profile gives the verdict, no other row
-    /// claims it, and the scale's current band is that row's verdict.
+    /// claims it, and the scale's current band is that row's verdict. The master (k = 0.7 on the
+    /// fixture's 128 px) sits next to the lensfun entry, so the nearest rule would have marked
+    /// that one.
     /// </summary>
     [Fact]
     public async Task R128_TheStructureTabMarksTheAdobeRowAndSaysSo()
     {
-        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var f = new SessionFixture().WithFlatMaster(FitsTestData.Radial(128, 128, k: 0.7)).WithRawFlats("DSC_0001.NEF");
         using var ws = new TempWorkspace();
         var (vm, _) = await RunWithProfiles(f, ws);
 
         Assert.True(vm.HasProfileRows, vm.ErrorText);
+        LensProfileRow nearest = vm.ProfileRows.OrderBy(r => Math.Abs(double.Parse(r.Diff.Split(' ')[0], System.Globalization.CultureInfo.InvariantCulture))).First();
+        Assert.Equal("lensfun", nearest.Source);                       // the case: lensfun is the nearer
         LensProfileRow marked = Assert.Single(vm.ProfileRows, r => r.GivesVerdict);
         Assert.Equal("Adobe", marked.Source);
         Assert.StartsWith("Profilul Adobe - da verdictul.", marked.Note);

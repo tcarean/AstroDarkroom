@@ -82,6 +82,8 @@ public class SplitRunTests
         // and every column is measured against that same one - which only means something when a
         // part's own deciding row is a different profile (ADR 0054's measurement)
         Assert.False(r.ReferenceByAdobe);
+        Assert.Contains("cel mai apropiat de intreg", SplitReport.ReferenceLine(r));
+        Assert.Contains("cel mai apropiat de intreg - REFERINTA", Assert.Single(SplitReport.Rows(r), x => x.IsReference).Note);
         Assert.Same(r.Whole.Outcome.Profiles.Deciding.Profile, r.ReferenceProfile);
         Assert.Contains(r.Parts, p => !ReferenceEquals(p.Outcome.Profiles.Deciding.Profile, r.ReferenceProfile));
         Assert.All(r.Columns, c => Assert.Equal(r.ReferenceProfile.File, c.Reference.Profile.File));

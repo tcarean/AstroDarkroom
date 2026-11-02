@@ -106,9 +106,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the lensfun rows stay in the list for comparison. Of two Adobe names with the same figures (the
   Tokina AT-X 11-20 PRO DX and atx-i 11-20 CF), the file whose own lens ID is the raw's decides.
   By range alone (a manual lens), with a lens chosen, or without an Adobe file, the nearest profile
-  still decides. On the author's library 3 of 15 masters read one band stricter: the Tokina
-  monitor master with the diffuser close (PERFECT to ACCEPTABLE on depth, +0.19 stops) and the two
-  paper masters (GOOD to ACCEPTABLE, +0.15 and +0.14). The Split tab's reference profile follows.
+  still decides. On the author's library the run's verdict of 3 of 15 masters moves one band
+  stricter: the Tokina monitor master with the diffuser close (GOOD to ACCEPTABLE; its depth
+  PERFECT to ACCEPTABLE, +0.19 stops) and the two paper masters (GOOD to ACCEPTABLE, +0.15 and
+  +0.14). The Split tab's reference profile follows.
 - The End to end tab's explanations, and the `--light` diagnosis, reasons, refusal and warnings
   the console shares with it, are in plain words (R-105, ADR 0082): how much darker or brighter
   the corners are than the centre after the flat, and what is sky, with no fit, plane, Pearson,

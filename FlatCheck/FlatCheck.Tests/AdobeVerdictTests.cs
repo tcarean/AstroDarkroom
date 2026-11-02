@@ -177,6 +177,66 @@ public class AdobeVerdictTests
     }
 
     /// <summary>
+    /// R-128: lenses a --lens text names count as named, even beside a raw whose lens came by
+    /// its range alone: among the Nikkor 135 DC (Adobe) and the Samyang (lensfun) the text
+    /// "135mm" finds, the Adobe row decides though the lensfun row is the nearer.
+    /// </summary>
+    [Fact]
+    public void R128_LensesALensTextNamesCountAsNamedBesideARangeRaw()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, rangePair: true);
+        var r = MasterFrom(ProfileOf(sources, l => l.Name == LensProfileTestData.Samyang135, 135, 2.8), 1.0);
+
+        StructureOutcome o = StructureRun.Compare(r, Master("135"), new StructureQuery
+        {
+            Sources = sources,
+            RawPath = "DSC_0001.NEF",
+            LoadInfo = _ => LensProfileTestData.Range135Raw(),
+            LensText = "135mm",
+        });
+
+        Assert.True(o.Compared, o.Profiles.Gap.ToString());
+        Assert.True(o.Shot.CandidatesByRangeOnly);                      // the raw alone found them by range
+        VignettingComparison c = o.Profiles;
+        ProfileDepth adobe = Assert.Single(c.Profiles, p => p.Profile.Lens.Source == ProfileSource.Adobe);
+        ProfileDepth lensfun = Assert.Single(c.Profiles, p => p.Profile.Lens.Source == ProfileSource.Lensfun);
+        Assert.True(Math.Abs(lensfun.DiffStops) < Math.Abs(adobe.DiffStops), $"lensfun {lensfun.DiffStops:F3}, Adobe {adobe.DiffStops:F3}");
+        Assert.True(c.AdobeDecides);
+        Assert.Equal(adobe.Verdict, c.Verdict);
+        Assert.Equal(adobe.Profile.Lens.Key, Deciding(c).Key);
+    }
+
+    /// <summary>
+    /// R-128: with Adobe rows alone (`--source adobe`, the Tokina under its two names) the summary
+    /// says how far the profiles differ, without lensfun as the reason and without the nearest
+    /// rule's "not wrong".
+    /// </summary>
+    [Fact]
+    public void R128_WithAdobeRowsAloneTheSummaryNamesNoLensfunRow()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, atxi: true);
+        var r = MasterFrom(TokinaAdobe(sources), 1.3);
+
+        StructureOutcome o = StructureRun.Compare(r, Master(), new StructureQuery
+        {
+            Sources = sources,
+            RawPath = "DSC_0001.NEF",
+            LoadInfo = _ => TokinaRaw(),
+            Source = ProfileSource.Adobe,
+        });
+
+        Assert.True(o.Compared, o.Profiles.Gap.ToString());
+        Assert.Equal(2, o.Profiles.Profiles.Count);
+        Assert.True(o.Profiles.AdobeDecides);
+        string summary = StructureReport.ComparisonSummary(o.Profiles);
+        Assert.Contains("cele 2 profile difera intre ele", summary);
+        Assert.DoesNotContain("lensfun", summary);
+        Assert.DoesNotContain("nu e gresit", summary);
+    }
+
+    /// <summary>
     /// R-128: with no Adobe row among the lenses (`--source lensfun` on the ID path) the
     /// nearest row decides as before, among the lensfun entry's two calibrations.
     /// </summary>
@@ -248,6 +308,10 @@ public class AdobeVerdictTests
         ProfileDepth nearest = r.Whole.Outcome.Profiles.Profiles.OrderBy(p => Math.Abs(p.DiffStops)).First();
         Assert.Equal(ProfileSource.Lensfun, nearest.Profile.Lens.Source);   // the case: lensfun is the whole's nearest
         Assert.Equal(ProfileSource.Adobe, r.ReferenceProfile.Lens.Source);
+        Assert.True(r.ReferenceByAdobe);
         Assert.All(r.Columns, col => Assert.Equal(r.ReferenceProfile.File, col.Reference.Profile.File));
+        Assert.Contains("profilul Adobe al intregului", SplitReport.ReferenceLine(r));
+        SplitRow reference = Assert.Single(SplitReport.Rows(r), x => x.IsReference);
+        Assert.Contains("profilul Adobe al intregului - REFERINTA", reference.Note);
     }
 }

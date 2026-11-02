@@ -52,7 +52,7 @@ namespace FlatCheck
         /// <summary>
         /// The column's verdict: the worst of the five tests and the depth against THE
         /// REFERENCE PROFILE - not the run's verdict (Outcome.Verdict), which takes the depth
-        /// against the column's own nearest profile; in the table the row above is against the
+        /// against the column's own deciding row (R-128); in the table the row above is against the
         /// reference, and the two rows must speak about the same profile.
         /// Without a reference, the five tests' verdict.
         /// </summary>
@@ -103,7 +103,8 @@ namespace FlatCheck
         /// whole's comparison.</summary>
         /// <param name="parts">The parts' columns, in order.</param>
         /// <param name="whole">The whole session's column.</param>
-        /// <param name="referenceProfile">The whole's nearest profile, or null.</param>
+        /// <param name="referenceProfile">The profile of the row that gives the whole's verdict
+        /// (R-128), or null.</param>
         /// <param name="referenceDepth">That profile's depth on the whole, or null.</param>
         /// <param name="framesPerPart">The frames each part had; 0 when unknown.</param>
         /// <param name="when">The run's date and time.</param>
@@ -180,7 +181,8 @@ namespace FlatCheck
 
         /// <summary>
         /// Runs <see cref="StructureRun.Analyze"/> on the whole and on each part, takes the
-        /// whole's nearest profile as the reference and reads every part against it. Throws an
+        /// profile of the row that gives the whole's verdict (R-128) as the reference and reads
+        /// every part against it. Throws an
         /// <see cref="ArgumentException"/> when there is no part, and what the structure run
         /// throws on a master it cannot read.
         /// </summary>

@@ -623,7 +623,9 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
   the Samyang is the nearest already (+0.01).
 - The row that decides (R-128, ADR 0090): `VignettingComparison.Deciding`, with
   `AdobeDecides` true when an Adobe row is among lenses not found by range alone and none was
-  chosen. Then the Adobe rows whose `OwnLensId` is the raw's `LensId` are taken first and the
+  chosen; `StructureRun.Compare` passes `lensesByRange` false for the lenses a `--lens` text
+  names, whatever the raw's range found, and a degenerate (NaN) Adobe row is no Adobe row.
+  With Adobe rows alone the summary gives the spread without lensfun as the reason. Then the Adobe rows whose `OwnLensId` is the raw's `LensId` are taken first and the
   nearest of them decides (all the Adobe rows when none has it, as on a `--lens` text or a name
   match without the ID); otherwise the nearest row of all, a NaN difference never winning
   either way. The report marks the row `<- Adobe, gives the verdict`, the summary says

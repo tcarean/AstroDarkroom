@@ -203,8 +203,12 @@ namespace FlatCheck
         /// <param name="gap">Why nothing was compared, or None.</param>
         /// <param name="skippedForCrop">The lensfun lenses skipped for want of a crop; null for
         /// none.</param>
+        /// <param name="lensesByRange">True when the rows' lenses are the raw's candidates found
+        /// by its range alone, false when they were named (the raw's ID or name, or a --lens
+        /// text); null takes <paramref name="shot"/>'s
+        /// <see cref="ShotIdentity.CandidatesByRangeOnly"/>.</param>
         internal VignettingComparison(double masterStops, ShotIdentity shot, IReadOnlyList<ProfileDepth> profiles,
-                                      ComparisonGap gap, IReadOnlyList<LensChoice> skippedForCrop)
+                                      ComparisonGap gap, IReadOnlyList<LensChoice> skippedForCrop, bool? lensesByRange = null)
         {
             MasterStops = masterStops;
             Shot = shot;
@@ -217,7 +221,8 @@ namespace FlatCheck
                 // is a single row: there, and without an Adobe row, the nearest decides. A
                 // degenerate Adobe row (a NaN difference) is no Adobe row: NaN never decides.
                 var adobe = Profiles.Where(p => p.Profile.Lens.Source == ProfileSource.Adobe && !double.IsNaN(p.DiffStops)).ToList();
-                AdobeDecides = adobe.Count > 0 && shot?.CandidatesByRangeOnly != true && shot?.ChosenLens == null;
+                bool byRange = lensesByRange ?? shot?.CandidatesByRangeOnly == true;
+                AdobeDecides = adobe.Count > 0 && !byRange && shot?.ChosenLens == null;
                 if (AdobeDecides)
                 {
                     // Two Adobe names of one optic carry the same figures (the Tokina's AT-X PRO
@@ -264,10 +269,13 @@ namespace FlatCheck
         /// <param name="catalog">The profiles on the machine; null when none was loaded.</param>
         /// <param name="lenses">The lenses to compare with; null for the identity's
         /// candidates.</param>
+        /// <param name="lensesByRange">True when <paramref name="lenses"/> are the raw's
+        /// candidates found by its range alone, false when they were named (a --lens text);
+        /// null takes the identity's <see cref="ShotIdentity.CandidatesByRangeOnly"/> (R-128).</param>
         /// <returns>The comparison, or one carrying the <see cref="ComparisonGap"/> that kept it
         /// from being made; never null.</returns>
         internal static VignettingComparison Analyze(StructureResult master, ShotIdentity shot, LensCatalog catalog,
-                                                     IReadOnlyList<LensChoice> lenses = null)
+                                                     IReadOnlyList<LensChoice> lenses = null, bool? lensesByRange = null)
         {
             lenses ??= shot?.Candidates ?? Array.Empty<LensChoice>();
             double masterStops = master.VignetteStops;
@@ -304,7 +312,7 @@ namespace FlatCheck
                 rows.Add(Measure(p, master, crop, all));
             }
             ComparisonGap gap = rows.Count > 0 ? ComparisonGap.None : skipped.Count > 0 ? ComparisonGap.NoCrop : ComparisonGap.NoLensMatch;
-            return new VignettingComparison(masterStops, shot, rows, gap, skipped);
+            return new VignettingComparison(masterStops, shot, rows, gap, skipped, lensesByRange);
         }
 
         /// <summary>

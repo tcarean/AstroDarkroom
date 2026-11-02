@@ -118,3 +118,29 @@ the reference is the profile that gives the whole's verdict.
 - The owner's case end to end: the console on `Tokina\ISO400\f2.8-tableta-lipita-coperti-7-foi`
   with `-o` in the scratchpad (no file of theirs touched): the atx-i row marked, +0.59 REFA.
 - The window's Structure card rendered with `FLATCHECK_DUMP_SCREENS` to see the marked row.
+
+## Outcome (2026-11-02)
+
+Implemented as planned; committed as ff396f9c with the gate green (1110 + 381 tests) and
+`/validate` 44 of 44 after V-023 to V-030 were re-recorded. Where the work left the plan:
+
+- The R-093 Split tests did not move to a fixture without Adobe: with the lensfun calibrations
+  alone every master picked the same one, so the "a part's own deciding row differs" clause
+  pinned nothing. Their fabricated raw now carries a lens ID no profile has, so the lenses come
+  by range and the nearest decides on each master, the scenario they were written for.
+- V-025 (Tokina sky) changed too, by name only: the atx-i file, whose own ID is the raw's,
+  decides where the AT-X file decided before, with the same figures (-0.395).
+- Reading the diff back showed that a degenerate Adobe row (a NaN difference) could decide;
+  it is now left out of the Adobe rows, so NaN never decides, pinned by
+  `R128_ADegenerateAdobeRowNeverDecides`.
+- `StructureReportTests.TheProfileBlockNamesTheMasterEveryProfileAndTheNearestOne` became
+  `...AndTheOneThatDecides` and looks for the Adobe marker; `two-applications.md` says where the
+  window's row note comes from. Neither was listed in the plan.
+- The subagent review of ff396f9c, applied in the second commit: a `--lens` text beside a raw
+  found by range left the nearest deciding (the comparison read the raw's flag, not where the
+  lenses came from; `lensesByRange` now); with Adobe rows alone (`--source adobe`) the spread
+  sentence named lensfun rows that were not there; ADR 0054's reference rule was changed but not
+  marked superseded; old "nearest" wording in comments, `validation.md` and the JSON comment; the
+  window test's master was not next to the lensfun entry, and the Split texts had no test; the
+  CHANGELOG counted V-023's two-band depth move as one. Main had meanwhile taken
+  `claude/Merge-the-Structure-tab-scales` (516ab092): merging it in is the owner's call.
