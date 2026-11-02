@@ -33,10 +33,14 @@ public class PairLabelLayoutTests
     }
 
     [Fact]
-    public void R065_ANameIsNeverWiderThan360()
+    public void R065_ALongNameTakesAllTheRoomItNeeds()
     {
-        Assert.Equal(new PairLabelLayout(360, 100), PairLabelLayout.For(double.PositiveInfinity, 500, 100, 260));
-        Assert.Equal(new PairLabelLayout(360, 360), PairLabelLayout.For(2000, 400, 361, 260));
+        // No cap of its own (ADR 0048): a name of 500 beside one of 100 is shown whole.
+        Assert.Equal(new PairLabelLayout(500, 100), PairLabelLayout.For(double.PositiveInfinity, 500, 100, 260));
+        Assert.Equal(new PairLabelLayout(400, 361), PairLabelLayout.For(2000, 400, 361, 260));
+
+        // 1000 of room for the names: the long one is cut only to the 900 the short one leaves.
+        Assert.Equal(new PairLabelLayout(900, 100), PairLabelLayout.For(1260, 1200, 100, 260));
     }
 
     [Fact]

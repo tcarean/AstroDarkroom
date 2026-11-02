@@ -51,6 +51,30 @@ public class PairLabelPanelTests
         });
     }
 
+    /// <summary>
+    /// The owner's file names of 2026-11-02 were cut at 360 DIPs with most of the toolbar empty;
+    /// a long name now takes the room left of the tools (ADR 0048).
+    /// </summary>
+    [Fact]
+    public async Task R065_ALongName_IsShownWhole_WhenTheRoomHoldsIt()
+    {
+        await WpfThread.RunAsync(() =>
+        {
+            (PairLabelPanel panel, TextBlock nameA, TextBlock nameB, double fixedWidth) = Label();
+            nameA.Text = "starless_denoised_syqon_studio_in_max_0.75_stretch0.12-logd4_Moderate_sat0.25.tif";
+            nameB.Text = "starless_denoised_syqon_studio_in_max_0.75_stretch0.12-logd4_Moderate_sat0.35.tif";
+            double naturalA = Natural(nameA);
+            double naturalB = Natural(nameB);
+            Assert.True(naturalA > 400, $"the long name measures {naturalA}");
+
+            panel.Measure(new Size(fixedWidth + naturalA + naturalB + 10, 26));
+            panel.Arrange(new Rect(0, 0, panel.DesiredSize.Width, 26));
+
+            Assert.Equal(naturalA, nameA.DesiredSize.Width, 0.5);
+            Assert.Equal(naturalB, nameB.DesiredSize.Width, 0.5);
+        });
+    }
+
     [Fact]
     public async Task R065_WithoutRoom_TheNamesAreCutToTheLayoutsWidths_AndTheButtonsKeepTheirs()
     {

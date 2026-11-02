@@ -61,8 +61,8 @@ the dispatcher; the same dialogs pick `c.png` for one image, so the change of on
 divider and the other image's `Source`, which has to be the same bitmap object, and the loader
 records the paths, so a mode switch after the change is seen to decode the new file.
 `PairLabelLayoutTests` pins the widths the two names get (Core); `PairLabelPanelTests` measures
-the panel itself on the WPF test thread, with room and without, and with the names set after the
-first layout, the case in which the first panel left them invisible (`shell.md`). For the display modes (R-113, R-114) it uses a loader that decodes a 2 × 2
+the panel itself on the WPF test thread, with room and without, with two of the owner's long
+names in room that holds them, and with the names set after the first layout, the case in which the first panel left them invisible (`shell.md`). For the display modes (R-113, R-114) it uses a loader that decodes a 2 × 2
 bitmap at once and records the mode of every load: it clicks Open, waits between pumps of the
 dispatcher until the pair line of the status bar is filled, moves the divider, calls
 `ToggleModeAsync` and reads the buttons, the status bar and the divider back; the keys `H` and
