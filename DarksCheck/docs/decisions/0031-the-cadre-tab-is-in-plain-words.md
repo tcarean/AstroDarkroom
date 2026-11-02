@@ -21,9 +21,10 @@ question left from the Rezumat: the analysis's messages when no frame of a kind 
 1. **The rule of ADR 0028 holds**: what a figure means for the frames, in short sentences and
    everyday words; the figures as the result gives them.
 2. **Three columns are renamed** in the console and the window alike: `sigma`, `rezid.` and
-   `amplit.` become `zgomot`, `dif.` and `fierb.` (`noise`, `diff.` and `hot` in English). Each new
-   name ends where the old one ended, so the right-aligned figures stay under it; the note
-   beside the header says what every column means, `dif. = cat difera cadrul de master, ADU`.
+   `amplit.` become `zgomot`, `dif.` and `fierb.` (`noise`, `diff.` and `hot` in English). Each
+   name ends in the column where its right-aligned figures end (the old names ended one column
+   short, `>20` two, and the review moved them); the note beside the header says what every
+   column means, `dif. = cat difera cadrul de master, ADU`.
 3. **A frame's reason to discard says what was measured**: `de aruncat: pixelii fierbinti sunt la
    0.826 din master, sub 0.87, adica la peste 2.0 grade sub platou (1.10)`; a skipped frame reads
    `sarit (peste 60 de cadre se citeste doar unul din 2)`, in the lights table too.

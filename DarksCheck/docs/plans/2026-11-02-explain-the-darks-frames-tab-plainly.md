@@ -76,11 +76,15 @@ The review of the branch found six texts to change; the owner took every recomme
   (item 2); without biases `(fara bias-uri, cu glow)`; unmeasured `latura = latura cu cea mai
   multa lumina constanta fata de centru (NEMASURAT)`.
 - A frame above the plateau reads `... peste 1.38, adica la peste 2.0 grade peste platou (1.10)`.
+- The second review, on the two fix commits, found no bug in the code; it asked for tests of the
+  left and right side words and of the singular skip reason, and for these two sentences on the
+  header. It also found the lights table's header one column short the same way: that is the
+  Lights tab's.
 - The list of the method's words lives in `tests/DarksCheck.Tests/PlainWords.cs`, linked into
   the window's test project like the session fixture, so the two R083 tests share it.
 - The review's eight other findings changed no approved word: the skip reason's singular for a
   cap of 1, one helper for the darks' and the lights' skip reason, the console header's names
-  moved one column right to end where their figures end (they had ended one column short since
+  moved right to end where their figures end (they had ended one column short, `>20` two, since
   the table was made), the long English chart heading wrapping, R083 reading the bias, light and
   partner messages and the lights' skip reason, more words in the lists, R-028 and two design and
   README sentences, and ADR 0031's supersession of ADR 0030's sentence on the messages.

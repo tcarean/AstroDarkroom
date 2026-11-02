@@ -418,6 +418,31 @@ public partial class DarkSeriesTests
     }
 
     [Fact]
+    public void R029_ALeftOrRightSideIsNamedWithItsPreposition()
+    {
+        // the band of the test below on the right 64 columns, with flat biases: every side text names it "latura din
+        // dreapta", where the top band reads "latura de sus" (ADR 0031); the English keeps "the right side"
+        static double Band(int x, int y) => x >= 192 ? 2 : 0;
+        using SessionFixture leak = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 }, biases: 4);
+        DarkSeriesResult r = Run(leak);
+        Assert.Equal(MapSide.Right, r.Verdicts.Leak.WorstSide!.Side);
+        Assert.NotNull(r.Verdicts.Leak.ConstantLight);
+        foreach (bool english in new[] { false, true })
+        {
+            using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+            {
+                using StringWriter sw = new();
+                DarkReport.Write(r, sw);
+                string text = sw.ToString();
+                Assert.Contains(english ? "in every frame the right side has +" : "in toate cadrele latura din dreapta are +", text, StringComparison.Ordinal);
+                Assert.Contains(english ? "; the right side goes over 0.15 and over 3 times" : "; latura din dreapta trece de 0.15 si de 3 ori", text, StringComparison.Ordinal);
+                Assert.Contains(english ? "side = the right side against the centre, once the bias is taken off (glow included), ADU" : "latura = latura din dreapta fata de centru, dupa scaderea bias-ului (cu glow), ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+                Assert.Contains(ScaleReport.Rows(r), row => row.Value.Contains(english ? "constant light on the right side: " : "lumina constanta pe latura din dreapta: ", StringComparison.Ordinal));
+            }
+        }
+    }
+
+    [Fact]
     public void R029_LightInEveryFrameIsReadPerSideAndTheBiasClearsAReadoutBand()
     {
         // a band of +2 ADU over the top 64 rows (the top third) of every dark, the raised mirror's shadow of an eyepiece leak
@@ -1051,6 +1076,11 @@ public partial class DarkSeriesTests
         Assert.Equal([1, 4], stack.Decoded.Select(f => f.Info.Index));
         Assert.Contains("sarit (peste 2 cadre se citeste doar unul din 3)", stack.Frames[1].Error, StringComparison.Ordinal);
         Assert.Equal(5, stack.Frames.Count);
+
+        // a cap of 1 takes the singular
+        FrameStack one = FrameStack.Load(SessionFolder.Open(s.Root).Darks, 2, maxFrames: 1);
+        Assert.Single(one.Decoded);
+        Assert.Equal("sarit (peste 1 cadru se citeste doar unul din 5)", one.Frames[1].Error);
     }
 
     /// <summary>A corrupt first file does not hand the geometry to whichever thread finishes first: the next file in order sets it.</summary>
