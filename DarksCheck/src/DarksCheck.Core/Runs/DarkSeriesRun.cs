@@ -378,7 +378,7 @@ internal static class DarkSeriesRun
         FrameStack stack = FrameStack.Load(session.Darks, threads, maxFrames, progress, null, own.Normalisation, cancel);
         if (stack.Decoded.Count == 0)
         {
-            throw new InvalidOperationException(T("none of the partner's darks could be decoded", "niciun dark al partenerului nu s-a putut decoda") + FrameStack.FirstErrors(stack));
+            throw new InvalidOperationException(T("none of the partner's darks could be read", "niciun dark al partenerului nu s-a putut citi") + FrameStack.FirstErrors(stack));
         }
 
         if (stack.Width != own.Width || stack.Height != own.Height)

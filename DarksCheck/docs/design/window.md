@@ -102,8 +102,9 @@ they are now.
   `RowVm`, the `ReportRow` template) and `ScaleParagraphs` (`ScaleReport.Paragraphs`, one
   wrapped `TextBlock` each) under `ScaleTitle`, the core's title;
 - the two tables take `DarkReport.FrameRows` and `LightRows` as `FrameRowVm` / `LightRowVm`,
-  the console's cells as they are, with the unit note of the table header (`[G1; ...]`) as
-  the last column's header; a dark row's `Off` is set when the core gave it a `Note` (a frame
+  the console's cells as they are, with the unit note of the table header (`[pixelii verzi G1; ...]`, `[G1; ...]` for the lights) as
+  the last column's header, and the hints of `zgomot` and `>20` set from the core with it
+  (`NoiseHeaderTip`, `HotHeaderTip`), since they name the series' pixels; a dark row's `Off` is set when the core gave it a `Note` (a frame
   off the plateau, R-023), and `FramesView` then tints the row (`FrameRowGrid`, the note as
   its tooltip), colours the `platou` cell bold (`PlateauCell`) and shows the note on a second
   row of the row's grid, under the cells and spanning them, all in the attention colour of
@@ -166,7 +167,8 @@ pairs read as properties. The verdict chips colour either language's words
 (`VerdictPalette.Severity`). The window still finds the maps' rows by the labels `master dark`,
 `master bias` and `dark - bias` and the sections by their `5.`, `9.` and `INDEX` prefixes,
 which the report keeps the same in both languages. `LanguageWindowTests` render every tab in an
-English scope and look for Romanian words.
+English scope and look for Romanian words, and the Cadre tab in both languages for the method's
+words of R-083, the list `PlainWords.cs` that the core's tests share, linked like the fixtures.
 
 ## Culture, title bar, icon
 

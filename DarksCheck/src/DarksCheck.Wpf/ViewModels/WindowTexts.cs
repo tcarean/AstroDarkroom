@@ -114,10 +114,6 @@ internal static class WindowTexts
 
     internal static string HotHeader => ">" + RunReport.F(Th.HotAdu, 0);
 
-    internal static string HotHeaderTip => T(
-        $"pixels above {RunReport.F(Th.HotAdu, 0)} ADU-eq on the reference plane",
-        $"pixeli peste {RunReport.F(Th.HotAdu, 0)} ADU-eq pe planul de referinta");
-
     internal static string HotTabLead => T(
         $"The hot pixels of the median master at five levels, on planes at {RunReport.F(Th.HotAdu, 0)} ADU-eq, with their amplitudes and how stable "
         + "they are from one frame to the next; the RTS candidates are the pixels whose value jumps between frames. Informative: how many the sensor has, not a verdict.",

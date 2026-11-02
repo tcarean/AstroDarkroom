@@ -206,3 +206,8 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed: 10, Total time:
   6.1051 Minutes` (the sessions read from the disk's cache after the day's runs); no figure moved
   outside its tolerance.
+- 2026-11-02: after the Cadre tab in plain words (R-083, ADR 0031: words only, in
+  `Report/DarkReport.cs`, the skipped and the no-frame messages of `Analysis/` and `Runs/`, and
+  the window; no formula or constant changed), all ten cases re-run with
+  `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed: 10, Total time:
+  5.8406 Minutes`; no figure moved outside its tolerance.

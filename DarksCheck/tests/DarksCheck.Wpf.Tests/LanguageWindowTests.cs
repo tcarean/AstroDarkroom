@@ -128,6 +128,50 @@ public partial class LanguageWindowTests
         });
     }
 
+    /// <summary>
+    /// The Cadre tab in plain words (R-083, ADR 0031): its column names and hints, the table's note,
+    /// the reasons of the frames to discard, the chart cards and the guide lines name no part of the
+    /// method, in either language.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task R083_TheFramesTabIsInPlainWords(bool english)
+    {
+        using TestSettings.Own _ = new();
+        (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
+        using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) }, biases: 3);
+
+        await _sta.InvokeAsync(async () =>
+        {
+            using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+            {
+                MainViewModel vm = new();
+                await vm.OpenAsync(f.Root);
+                Assert.True(vm.HasResult);
+                FramesView view = new() { DataContext = vm };
+                Render(view, 1360, 1800);
+                List<string> texts = [.. TextsOf(view), vm.WarmingNote, vm.FrameTableNote, vm.PlateauHeaderTip, vm.HotHeaderTip];
+                texts.AddRange(vm.WarmingGuides.Concat(vm.ResidualGuides).Concat(vm.BandingGuides).Select(g => g.Label));
+
+                // the scenes reached their variants, so the words below were looked at
+                string all = string.Join("\n", texts);
+                Assert.Contains(english ? "HOW MUCH EACH FRAME DIFFERS FROM THE MASTER (ADU)" : "CAT DIFERA FIECARE CADRU DE MASTER (ADU)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "1.5 times the usual noise" : "de 1.5 ori zgomotul obisnuit", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "no banding" : "fara benzi", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "the noise of the frame, in ADU, on the green pixels G1" : "zgomotul cadrului, in ADU, pe pixelii verzi G1", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "how many pixels of the frame go over 20 ADU-eq, on the green pixels G1" : "cati pixeli din cadru trec de 20 ADU-eq, pe pixelii verzi G1", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "RANDOM BANDING (1 = NO BANDING)" : "BENZI ALEATOARE (1 = FARA BENZI)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "How many times more the rows of the frame differ from one another" : "De cate ori difera randurile cadrului intre ele", all, StringComparison.Ordinal);
+                Regex method = english ? PlainWords.EnglishFramesWords() : PlainWords.RomanianFramesWords();
+                List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
+                Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+            }
+        });
+    }
+
     private static void Render(FrameworkElement el, int w = 1360, int h = 820)
     {
         el.Measure(new Size(w, h));

@@ -124,20 +124,23 @@ public class WindowSmokeTests
     [Fact]
     public async Task R071_EveryColumnHeaderOfTheTablesHasAHint()
     {
-        await _sta.InvokeAsync(() =>
+        // with a result, as the tabs are seen: the hints of zgomot and >20 name the series' pixels (R-083)
+        using TestSettings.Own _ = new();
+        using SessionFixture f = WindowFixture.Session();
+        await _sta.InvokeAsync(async () =>
         {
             MainViewModel vm = new();
+            await vm.OpenAsync(f.Root);
+            Assert.True(vm.HasResult);
             foreach (FrameworkElement view in new FrameworkElement[] { new FramesView { DataContext = vm }, new LightsView { DataContext = vm } })
             {
                 Render(view);
                 Style head = (Style)view.FindResource("Head"), leftHead = (Style)view.FindResource("LeftHead");
-                // the header TextBlocks: the two header styles, with a text (the table note's header is empty without a result)
+                // the header TextBlocks: the two header styles, with a text
                 List<TextBlock> headers = Descendants(view).OfType<TextBlock>().Where(t => (t.Style == head || t.Style == leftHead) && !string.IsNullOrEmpty(t.Text)).ToList();
                 Assert.True(headers.Count >= 10, $"{view.GetType().Name}: {headers.Count} headers");
                 Assert.All(headers, t => Assert.False(string.IsNullOrWhiteSpace(t.ToolTip as string), $"{view.GetType().Name}: column '{t.Text}' has no hint"));
             }
-
-            return Task.CompletedTask;
         });
     }
 
@@ -255,7 +258,7 @@ public class WindowSmokeTests
             using BindingErrors errors = new();
             FramesView view = new() { DataContext = vm };
             Render(view, name: "tab-frames-off");
-            TextBlock[] notes = Descendants<TextBlock>(view).Where(t => t.Text.StartsWith("de aruncat: amplit.", StringComparison.Ordinal) && t.Visibility == Visibility.Visible).ToArray();
+            TextBlock[] notes = Descendants<TextBlock>(view).Where(t => t.Text.StartsWith("de aruncat: pixelii fierbinti", StringComparison.Ordinal) && t.Visibility == Visibility.Visible).ToArray();
             Assert.Equal(2, notes.Length);
             Grid row = (Grid)notes[0].Parent;
             Assert.Equal(vm.Frames[0].Note, row.ToolTip);

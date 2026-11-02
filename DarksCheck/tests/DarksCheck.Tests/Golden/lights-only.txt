@@ -74,7 +74,7 @@ Copyright (C) 2026 Tudor Carean
     lights             : ca un dark cu idx121 (de 0.50 ori cat dark-ul, adica cu 5.9 grade mai reci decat el)
 
   TABEL PE CADRE
-     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste 2.0 grade de platou (verificarea 3); lumina = ADU peste dreapta mediei pe incalzire; latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)]
+     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb.  platou  lumina  latura   >20   [pixelii verzi G1; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); platou = cu cate grade e cadrul fata de temperatura stabila a seriei; de aruncat = la peste 2.0 grade de ea (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, ADU; latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)]
       1  DSC_0001.fit          00:48:53    0.11    3.02    2.65     1.0    0.998       -       -       -     0
       2  DSC_0002.fit          00:50:53    0.11    2.99    2.71     1.0    1.005       -       -       -     0
       3  DSC_0003.fit          00:52:53    0.09    3.02    2.72     1.0    0.993       -       -       -     0

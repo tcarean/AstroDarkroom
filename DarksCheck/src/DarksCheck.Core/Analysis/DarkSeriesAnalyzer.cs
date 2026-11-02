@@ -395,7 +395,7 @@ internal static class DarkSeriesAnalyzer
         IReadOnlyList<StackFrame> decoded = stack.Decoded;
         if (decoded.Count == 0)
         {
-            throw new InvalidOperationException(T("no dark could be decoded", "niciun dark nu s-a putut decoda") + FrameStack.FirstErrors(stack));
+            throw new InvalidOperationException(T("no dark could be read", "niciun dark nu s-a putut citi") + FrameStack.FirstErrors(stack));
         }
 
         int w = stack.Width, h = stack.Height, n = decoded.Count;
@@ -526,7 +526,7 @@ internal static class DarkSeriesAnalyzer
         IReadOnlyList<StackFrame> decoded = stack.Decoded;
         if (decoded.Count == 0)
         {
-            throw new InvalidOperationException(T("none of the partner's darks could be decoded", "niciun dark al partenerului nu s-a putut decoda") + FrameStack.FirstErrors(stack));
+            throw new InvalidOperationException(T("none of the partner's darks could be read", "niciun dark al partenerului nu s-a putut citi") + FrameStack.FirstErrors(stack));
         }
 
         float[] median = new float[stack.Width * stack.Height];

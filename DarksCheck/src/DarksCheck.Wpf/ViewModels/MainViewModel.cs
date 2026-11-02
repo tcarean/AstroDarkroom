@@ -228,7 +228,9 @@ public sealed class MainViewModel : ObservableObject
 
     public string HotHeader => WindowTexts.HotHeader;
 
-    public string HotHeaderTip => WindowTexts.HotHeaderTip;
+    public string HotHeaderTip { get; private set; } = "";
+
+    public string NoiseHeaderTip { get; private set; } = "";
 
     public string PlateauHeaderTip => DarkReport.PlateauColumnTip;
 
@@ -605,7 +607,7 @@ public sealed class MainViewModel : ObservableObject
         Report = "";
         SessionRows = HotRows = LightRows = IndexRows = ScaleRows = [];
         ScaleParagraphs = [];
-        HeaderLine = Label = Tag = FrameTableNote = LightTableNote = WarmingNote = "";
+        HeaderLine = Label = Tag = FrameTableNote = LightTableNote = WarmingNote = NoiseHeaderTip = HotHeaderTip = "";
         Sections = [];
         Frames = [];
         Lights = [];
@@ -643,6 +645,8 @@ public sealed class MainViewModel : ObservableObject
         Frames = DarkReport.FrameRows(r).Select(FrameRowVm.From).ToList();
         Lights = DarkReport.LightRows(r).Select(LightRowVm.From).ToList();
         FrameTableNote = DarkReport.FrameTableNote(r);
+        NoiseHeaderTip = DarkReport.NoiseColumnTip(r);
+        HotHeaderTip = DarkReport.HotColumnTip(r);
         LightTableNote = r.Lights is null ? "" : DarkReport.LightTableNote(r);
         Label = r.Label;
         Tag = r.Index.Tag;
@@ -672,7 +676,7 @@ public sealed class MainViewModel : ObservableObject
 
         WarmingPoints = warming;
         Warming wm = d.Warming;
-        GuideLine master = new(1.0, T("the master (median of the series)", "masterul (mediana seriei)"), VerdictPalette.Neutral);
+        GuideLine master = new(1.0, T("the master", "masterul"), VerdictPalette.Neutral);
         WarmingGuides = wm.HasFit
             ?
             [
@@ -684,9 +688,9 @@ public sealed class MainViewModel : ObservableObject
             : [master];
         WarmingNote = DarkReport.WarmingChartNote(r);
         ResidualPoints = residual;
-        ResidualGuides = double.IsNaN(r.Verdicts.Noise.OutlierLimitAdu) ? [] : [new GuideLine(r.Verdicts.Noise.OutlierLimitAdu, T($"{RunReport.F(Th.NoiseOutlierFactor, 1)} x median", $"{RunReport.F(Th.NoiseOutlierFactor, 1)} x mediana"), VerdictPalette.Warn)];
+        ResidualGuides = double.IsNaN(r.Verdicts.Noise.OutlierLimitAdu) ? [] : [new GuideLine(r.Verdicts.Noise.OutlierLimitAdu, T($"{RunReport.F(Th.NoiseOutlierFactor, 1)} times the usual noise", $"de {RunReport.F(Th.NoiseOutlierFactor, 1)} ori zgomotul obisnuit"), VerdictPalette.Warn)];
         BandingPoints = banding;
-        BandingGuides = [new GuideLine(1.0, T("white noise", "zgomot alb"), VerdictPalette.Neutral)];
+        BandingGuides = [new GuideLine(1.0, T("no banding", "fara benzi"), VerdictPalette.Neutral)];
         NoisePoints = d.Noise.Curve.Select(p => new ChartPoint(p.N, p.Measured, p.N.ToString(CultureInfo.InvariantCulture), VerdictPalette.Accent, T($"n={p.N}: {RunReport.F(p.Measured, 3)} measured, {RunReport.F(p.Expected, 3)} expected", $"n={p.N}: {RunReport.F(p.Measured, 3)} masurat, {RunReport.F(p.Expected, 3)} asteptat"))).ToList();
         NoiseExpected = d.Noise.Curve.Select(p => new ChartPoint(p.N, p.Expected, p.N.ToString(CultureInfo.InvariantCulture), VerdictPalette.Neutral)).ToList();
 
@@ -738,7 +742,7 @@ public sealed class MainViewModel : ObservableObject
         foreach (string name in new[]
         {
             nameof(HasResult), nameof(SessionRows), nameof(HeaderLine), nameof(Sections), nameof(Frames), nameof(Lights), nameof(HasLights),
-            nameof(FrameTableNote), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides), nameof(WarmingNote),
+            nameof(FrameTableNote), nameof(NoiseHeaderTip), nameof(HotHeaderTip), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides), nameof(WarmingNote),
             nameof(ResidualPoints), nameof(ResidualGuides), nameof(BandingPoints), nameof(BandingGuides), nameof(NoisePoints), nameof(NoiseExpected),
             nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(ScaleRows), nameof(ScaleParagraphs), nameof(Label), nameof(Tag),
         })
