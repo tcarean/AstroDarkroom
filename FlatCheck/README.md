@@ -252,20 +252,20 @@ at the analysis size, and its vignetting is measured with **exactly the master's
 median of the 5 % corner boxes against the centre.
 
 The difference in stops, master minus profile, goes through the same arithmetic as `--against`:
-`2^|D| - 1` is the error it leaves in the corner of a light calibrated with the master, read on
-the residual scale, so under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, above
-that REDO. **When the raw's lens ID or name, or `--lens`, found the lens and Adobe has a file for
-it, the Adobe profile gives the verdict**; the lensfun rows stay in the list, for comparison. Adobe
-measures each lens itself; lensfun's profiles come from volunteers, each with their own camera and
-diffuser, and they vary more: on the author's Tokina both lensfun entries came out deeper than
-any of the author's panel flats allows, so taking the nearest profile let a panel's own falloff
-pass as the lens's. When Adobe has the same lens under two names with the same figures (the Tokina AT-X
-11-20 PRO DX and its re-release, the atx-i 11-20 CF), the file whose own lens ID is the raw's
-gives the verdict. When the lenses came by the focal range alone (a manual lens, below), when you
-chose your lens, or when no Adobe file is among them, **the nearest profile gives the verdict**, not
-the worst one: the two databases differ from each other by ~0.2 stops on the same lens, and a
-master that matches one of them is not wrong. The run's verdict is the worse of the shape (the
-five tests) and the depth, and the exit code follows it.
+`2^|D| - 1` is the error it leaves in the corner of a light calibrated with the master, read on the
+residual scale, so under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, above that
+REDO. **When the raw's lens ID or name found the lens and Adobe has a file for it, the Adobe
+profile gives the verdict**; the lensfun rows stay in the list, for comparison. Adobe measures each
+lens itself; lensfun's profiles come from volunteers, each with their own camera and diffuser: on
+the author's Tokina both lensfun entries came out deeper than any of the author's panel flats
+allows, so taking the nearest profile let a panel's own falloff pass as the lens's. When Adobe has
+the same lens under two names with the same figures (the Tokina AT-X 11-20 PRO DX and its
+re-release, the atx-i 11-20 CF), the file whose own lens ID is the raw's gives the verdict. When
+the lenses came by the focal range alone (a manual lens, below), with `--lens` (a search, which may
+match lenses of several makers), when you chose your lens, or when no Adobe file is among them,
+**the nearest profile gives the verdict**, not the worst one: the two databases differ from each
+other by ~0.2 stops on the same lens, and a master that matches one of them is not wrong. The run's
+verdict is the worse of the shape (the five tests) and the depth, and the exit code follows it.
 
 **Two scales for one quantity.** The error in the corner of the calibrated light is exactly what
 `--light` measures too, directly in the light, with its thresholds of 2 % OK and 5 % PROBLEM.

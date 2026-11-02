@@ -43,7 +43,7 @@ namespace FlatCheck
     /// <param name="Error">The corner error that difference leaves, in percent.</param>
     /// <param name="Verdict">The row's verdict, on the residual scale.</param>
     /// <param name="GivesVerdict">True on the row that gives the comparison's verdict (R-128:
-    /// an Adobe row when the lens was named, the nearest otherwise).</param>
+    /// an Adobe row when the raw named the lens, the nearest otherwise).</param>
     /// <param name="Note">The calibration format against the sensor, and any mismatch
     /// warning.</param>
     /// <param name="IsWarning">True when the note is a warning: a large extrapolation or a
@@ -332,8 +332,8 @@ namespace FlatCheck
              : T("The nearest profile - it gives the verdict. ", "Cel mai apropiat profil - da verdictul. ");
 
         /// <summary>
-        /// Whose the verdict is and how much the profiles differ among themselves. When the lens
-        /// was named and Adobe has its file, the Adobe profile's, and the lensfun rows are for
+        /// Whose the verdict is and how much the profiles differ among themselves. When the raw
+        /// named the lens and Adobe has its file, the Adobe profile's, and the lensfun rows are for
         /// comparison (R-128, ADR 0090); otherwise "the nearest", not "the worst": the two
         /// databases differ from each other by ~0.2 stops on the same lens, and a master that
         /// matches one of them is not wrong.
@@ -361,8 +361,8 @@ namespace FlatCheck
             // adobe, or lensfun rows skipped for want of a crop, leave Adobe rows alone).
             bool lensfunShown = c.Profiles.Any(p => p.Profile.Lens.Source == ProfileSource.Lensfun);
             string spread = c.Profiles.Count > 1 && c.AdobeDecides && lensfunShown
-                ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner; the Adobe profile decides, because the lensfun ones are measured by volunteers, each with their own camera and diffuser, and vary more; they are shown for comparison",
-                    $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; decide profilul Adobe, pentru ca cele lensfun sunt masurate de voluntari, fiecare cu aparatul si difuzorul lui, si variaza mai mult; sunt aratate pentru comparatie")
+                ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner; the Adobe profile decides, because the lensfun ones are measured by volunteers, each with their own camera and diffuser; they are shown for comparison",
+                    $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; decide profilul Adobe, pentru ca cele lensfun sunt masurate de voluntari, fiecare cu aparatul si difuzorul lui; sunt aratate pentru comparatie")
                 : c.Profiles.Count > 1 && c.AdobeDecides
                 ? T($"\nthe {c.Profiles.Count} profiles differ from each other by {c.SpreadStops:F2} stops in the corner",
                     $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt")

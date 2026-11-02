@@ -28,15 +28,15 @@ panel's own falloff pass as the lens's.
 
 ## Decision
 
-When the lenses were not found by the raw's range alone and at least one Adobe file is among
-them, the depth verdict is an Adobe row's (R-128): the files whose own `LensID` is the raw's
+When the lenses are the candidates the raw's lens ID or name found and at least one Adobe file
+is among them, the depth verdict is an Adobe row's (R-128): the files whose own `LensID` is the raw's
 first, the nearest of them, and the nearest Adobe row when no file carries the raw's ID as its
 own. The lensfun rows stay in the list for comparison. By range alone (a manual lens, ADR 0030),
-with a lens the person chose (ADR 0081), or with no Adobe row, the nearest row decides as before;
-lenses a `--lens` text names count as named, whatever the raw's range found. The Split tab's
+with a lens the person chose (ADR 0081), with a `--lens` text, or with no Adobe row, the nearest
+row decides as before. The Split tab's
 reference profile is the row that gives the whole's verdict (R-093), no longer always its nearest
-(ADR 0054). The owner
-chose the rule on 2026-11-02 after the measurement below ("Da, Adobe decide").
+(ADR 0054). The owner chose the rule on 2026-11-02 after the measurement below ("Da, Adobe
+decide").
 
 ## Alternatives rejected
 
@@ -46,6 +46,10 @@ chose the rule on 2026-11-02 after the measurement below ("Da, Adobe decide").
   stay the lenient ones; the reader has to weigh the line against them.
 - **Adobe on every path, by range too.** On the Samyang the Adobe row is another lens, the Nikkor
   135 f/2 DC; there the R-121 picker lets the person name their lens.
+- **A `--lens` text counted as the lens's name** (the plan's first reading, taken back by the
+  owner on 2026-11-02 after the second review). A text is a search: `--lens 135mm` beside the
+  Samyang's range raw lists the Adobe Nikkor 135 f/2 DC and the lensfun Samyang, and the
+  Nikkor, another lens, would have decided, the very case the range path keeps the nearest for.
 - **The two Adobe names told apart by catalog order.** The AT-X file sorts first and would mark
   the PRO DX name the owner's lens does not carry, though the figures are the same.
 

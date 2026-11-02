@@ -46,16 +46,16 @@ Copyright (C) 2026 Tudor Carean
   VIGNETTING against the lens profile
     master                  : 1.12 stops (corner = 46 % of centre)
     Adobe   Tokina AT-X 11-20mm F2.8 PRO DX  [NIKON CORPORATION]
-        profile 20 mm, f/2.8, infinity : 0.66 stops (corner = 63 % of centre)   difference +0.46 stops = 37.5 % [REDO]  <- Adobe, gives the verdict
+        profile 20 mm, f/2.8, infinity : 0.66 stops (corner = 63 % of centre)   difference +0.46 stops = 37.5 % [REDO]
     lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8  [Canon EF / Nikon F AF, calibrated on APS-C Canon 1.61]
-        profile 20 mm, f/2.8, distance unspecified: 0.85 stops (corner = 56 % of centre)   difference +0.28 stops = 21.1 % [REDO]
-    the comparison's verdict: REDO, given by the Adobe profile (Adobe Tokina AT-X 11-20mm F2.8 PRO DX): +0.46 stops against the profile = 37.5 % error in the corner of a light calibrated with the master
-    the 2 profiles differ from each other by 0.18 stops in the corner; the Adobe profile decides, because the lensfun ones are measured by volunteers, each with their own camera and diffuser, and vary more; they are shown for comparison
+        profile 20 mm, f/2.8, distance unspecified: 0.85 stops (corner = 56 % of centre)   difference +0.28 stops = 21.1 % [REDO]  <- the nearest, gives the verdict
+    the comparison's verdict: REDO, given by the nearest profile (lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 (calibrated on APS-C Canon 1.61)): +0.28 stops against the profile = 21.1 % error in the corner of a light calibrated with the master
+    the 2 profiles differ from each other by 0.18 stops in the corner; a master that matches one of them is not wrong
     (under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, over REDO)
     The same scale as the five tests' (2 / 10 / 20 %), applied to the error the depth
     difference leaves in the corner of a light calibrated with the master, and translated
     into stops. It is not a new threshold.
-    In the corner of a light calibrated with this master the error would be 37.5 %. The End-to-end test,
+    In the corner of a light calibrated with this master the error would be 21.1 %. The End-to-end test,
     which measures the same thing directly in the light, would call it PROBLEM (2 % OK, 5 % PROBLEM).
     But the two profile databases differ from each other by 0.2 stops, that is 15 % in the corner,
     so the verdict here cannot be finer than that and stays on the five tests' scale.
@@ -65,7 +65,7 @@ Copyright (C) 2026 Tudor Carean
 
   VERDICT: REDO
     shape     : GOOD - the five tests
-    depth     : REDO - by +0.46 stops against the Adobe Tokina AT-X 11-20mm F2.8 PRO DX profile, that is 37.5 % error in the corner of the calibrated light
+    depth     : REDO - by +0.28 stops against the lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 (calibrated on APS-C Canon 1.61) profile, that is 21.1 % error in the corner of the calibrated light
     The verdict is the worse of the two.
     The master darkens toward the corner MORE than the lens profile says: the light source is
     weaker seen at an angle, a panel (monitor, tablet) too close or without a real diffuser; matte

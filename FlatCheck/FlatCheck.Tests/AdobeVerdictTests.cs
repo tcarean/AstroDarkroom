@@ -18,10 +18,11 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// R-128: when the lens was found by the raw's ID or name, or named with --lens, and an Adobe
-/// file is among the lenses, the depth verdict is an Adobe row's, not the nearest row of all;
-/// among the Adobe rows the file whose own lens ID is the raw's comes first. By range alone,
-/// with a lens chosen, or without an Adobe row, the nearest row still decides. The fixture is
+/// R-128: when the raw's lens ID or name found the lens and an Adobe file is among the lenses,
+/// the depth verdict is an Adobe row's, not the nearest row of all; among the Adobe rows the
+/// file whose own lens ID is the raw's comes first. By range alone, with a --lens text (a
+/// search), with a lens chosen, or without an Adobe row, the nearest row still decides. The
+/// fixture is
 /// the Tokina's: Adobe 0.66 stops at the corner, the lensfun entry about 0.2 deeper, so a
 /// master deeper than Adobe sits next to lensfun - the owner's panel flats.
 /// </summary>
@@ -177,12 +178,12 @@ public class AdobeVerdictTests
     }
 
     /// <summary>
-    /// R-128: lenses a --lens text names count as named, even beside a raw whose lens came by
-    /// its range alone: among the Nikkor 135 DC (Adobe) and the Samyang (lensfun) the text
-    /// "135mm" finds, the Adobe row decides though the lensfun row is the nearer.
+    /// R-128: a --lens text is a search, not the camera's naming: "135mm" finds the Nikkor 135 DC
+    /// (Adobe) and the Samyang (lensfun), two lenses, so the nearest row decides, here the
+    /// Samyang, and not the Adobe file of another lens (the owner, 2026-11-02).
     /// </summary>
     [Fact]
-    public void R128_LensesALensTextNamesCountAsNamedBesideARangeRaw()
+    public void R128_ALensTextIsASearchSoTheNearestRowDecides()
     {
         using var ws = new TempWorkspace();
         var sources = LensProfileTestData.Sources(ws, rangePair: true);
@@ -202,9 +203,10 @@ public class AdobeVerdictTests
         ProfileDepth adobe = Assert.Single(c.Profiles, p => p.Profile.Lens.Source == ProfileSource.Adobe);
         ProfileDepth lensfun = Assert.Single(c.Profiles, p => p.Profile.Lens.Source == ProfileSource.Lensfun);
         Assert.True(Math.Abs(lensfun.DiffStops) < Math.Abs(adobe.DiffStops), $"lensfun {lensfun.DiffStops:F3}, Adobe {adobe.DiffStops:F3}");
-        Assert.True(c.AdobeDecides);
-        Assert.Equal(adobe.Verdict, c.Verdict);
-        Assert.Equal(adobe.Profile.Lens.Key, Deciding(c).Key);
+        Assert.NotEqual(adobe.Verdict, lensfun.Verdict);                // so the two rules would part here
+        Assert.False(c.AdobeDecides);
+        Assert.Equal(lensfun.Verdict, c.Verdict);
+        Assert.Equal(lensfun.Profile.Lens.Key, Deciding(c).Key);
     }
 
     /// <summary>
@@ -234,6 +236,13 @@ public class AdobeVerdictTests
         Assert.Contains("cele 2 profile difera intre ele", summary);
         Assert.DoesNotContain("lensfun", summary);
         Assert.DoesNotContain("nu e gresit", summary);
+        using (Ui.Use(UiLanguage.English))
+        {
+            string english = StructureReport.ComparisonSummary(o.Profiles);
+            Assert.Contains("the 2 profiles differ from each other", english);
+            Assert.DoesNotContain("lensfun", english);
+            Assert.DoesNotContain("not wrong", english);
+        }
     }
 
     /// <summary>
@@ -267,12 +276,40 @@ public class AdobeVerdictTests
     }
 
     /// <summary>
-    /// R-128 in the console: `--lens Tokina` on a master of 0.86 stops, next to the lensfun
-    /// entry and 0.2 deeper than Adobe, reads ACCEPTABIL on depth and on the run, exit 2, and
-    /// the marker sits on the Adobe row.
+    /// R-128 for the run: with the raw's ID 139 beside a master of 0.86 stops (next to the
+    /// lensfun entry, 0.2 deeper than Adobe) the report marks the Adobe row, the depth and the
+    /// run read ACCEPTABIL, and the console's exit code for that verdict is 2.
     /// </summary>
     [Fact]
-    public void R128_TheConsolesRunVerdictAndExitCodeFollowTheAdobeRow()
+    public void R128_TheRunsVerdictAndExitCodeFollowTheAdobeRow()
+    {
+        using var ws = new TempWorkspace();
+        string reference = GoldenOutputTests.Reference(ws, k: 0.5);
+        var w = new StringWriter();
+
+        StructureOutcome o = StructureRun.Execute(reference, w, new StructureQuery
+        {
+            Sources = LensProfileTestData.Sources(ws),
+            RawPath = "DSC_0001.NEF",
+            LoadInfo = _ => TokinaRaw(),
+        }).Result;
+
+        string[] lines = w.ToString().Split('\n');
+        int adobeRow = Array.FindIndex(lines, l => l.TrimStart().StartsWith("Adobe "));
+        Assert.True(adobeRow >= 0, w.ToString());
+        Assert.Contains("<- Adobe, da verdictul", lines[adobeRow + 1]);
+        Assert.Equal("ACCEPTABIL", o.Profiles.Verdict);
+        Assert.Equal("ACCEPTABIL", o.Verdict);
+        Assert.Equal(2, FlatCheckCli.ExitFor(o.Verdict));
+    }
+
+    /// <summary>
+    /// R-128 in the console: `--lens Tokina` is a search, so on the same master the nearest row
+    /// decides - the lensfun entry, PERFECT on depth - and the run keeps the shape's verdict,
+    /// exit 0, where the Adobe row would have made it ACCEPTABIL, exit 2.
+    /// </summary>
+    [Fact]
+    public void R128_TheConsolesLensTextLeavesTheNearestRowDeciding()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -281,12 +318,13 @@ public class AdobeVerdictTests
         var (output, exit) = GoldenOutputTests.RunCli(ws, reference, "--lens", "Tokina", "--fstop", "2.8", "--profiles", profiles, "-o", ws.PathTo("out.png"));
 
         string[] lines = output.Split('\n');
-        int adobeRow = Array.FindIndex(lines, l => l.TrimStart().StartsWith("Adobe "));
-        Assert.True(adobeRow >= 0, output);
-        Assert.Contains("da verdictul", lines[adobeRow + 1]);
-        Assert.Contains("adancimea : ACCEPTABIL", output);
-        Assert.Contains("VERDICT: ACCEPTABIL", output);
-        Assert.Equal(2, exit);
+        int lensfunRow = Array.FindIndex(lines, l => l.TrimStart().StartsWith("lensfun "));
+        Assert.True(lensfunRow >= 0, output);
+        Assert.Contains("<- cel mai apropiat, da verdictul", lines[lensfunRow + 1]);
+        Assert.DoesNotContain("<- Adobe", output);
+        Assert.Contains("adancimea : PERFECT", output);
+        Assert.DoesNotContain("VERDICT: ACCEPTABIL", output);
+        Assert.Equal(0, exit);
     }
 
     /// <summary>

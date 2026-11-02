@@ -34,15 +34,16 @@
 //
 // THE VERDICT IS AN ADOBE ROW'S WHEN THE LENS WAS NAMED, THE NEAREST ROW'S OTHERWISE, never the
 // worst one's. The two databases differ from each other by ~0.2 stops on the same lens
-// (docs/design/lens-profiles.md, section 8). When the raw's ID or name, or --lens, found the
-// lens and an Adobe file is among the rows, an Adobe row decides and the lensfun rows are for
+// (docs/design/lens-profiles.md, section 8). When the raw's lens ID or name found the lens and
+// an Adobe file is among the rows, an Adobe row decides and the lensfun rows are for
 // comparison (R-128, ADR 0090): on the owner's Tokina both lensfun entries came out deeper than
 // every panel flat allows - the five panel flats read +0.10..+0.19 stops against Adobe and
 // -0.15..+0.00 against lensfun, a sign no panel can give - so the nearest let the panel's own
 // falloff pass as the lens's. Of two Adobe names of one optic, the file whose own ID is the
-// raw's decides. By range alone the Adobe row may be another lens of the range, a chosen lens is
-// a single row, and without an Adobe row there is nothing to prefer: there the nearest decides,
-// since a master that matches one database is not wrong (ADR 0031). The thresholds are not
+// raw's decides. By range alone, or among the matches of a --lens text (a search), the Adobe
+// row may be another lens; a chosen lens is a single row; and without an Adobe row there is
+// nothing to prefer: there the nearest decides, since a master that matches one database is not
+// wrong (ADR 0031). The thresholds are not
 // new: the difference in stops goes through Stats.DepthErrorPct (2^|D| - 1) onto the residual
 // scale, exactly like the depth of --against. The sign is the diagnosis: plus = the master falls
 // more than the model (the source falls with the angle: a panel without a real diffuser, too
@@ -172,8 +173,9 @@ namespace FlatCheck
         /// </summary>
         internal readonly ProfileDepth Deciding;
         /// <summary>
-        /// True when an Adobe row decides (R-128): there is one, the lenses were not found by
-        /// the raw's range alone, and none was chosen. False when the nearest row of all decides.
+        /// True when an Adobe row decides (R-128): there is one, the lenses are the candidates
+        /// the raw's lens ID or name found (not by its range alone, not a --lens text), and none
+        /// was chosen. False when the nearest row of all decides.
         /// </summary>
         internal readonly bool AdobeDecides;
         /// <summary>
@@ -203,12 +205,12 @@ namespace FlatCheck
         /// <param name="gap">Why nothing was compared, or None.</param>
         /// <param name="skippedForCrop">The lensfun lenses skipped for want of a crop; null for
         /// none.</param>
-        /// <param name="lensesByRange">True when the rows' lenses are the raw's candidates found
-        /// by its range alone, false when they were named (the raw's ID or name, or a --lens
-        /// text); null takes <paramref name="shot"/>'s
-        /// <see cref="ShotIdentity.CandidatesByRangeOnly"/>.</param>
+        /// <param name="lensesNamedByRaw">True when the rows' lenses are the candidates the raw's
+        /// lens ID or name found; false when they came by its range alone or from a --lens text,
+        /// a search; null takes it from <paramref name="shot"/>: a raw that names its lens and
+        /// candidates not found by range alone.</param>
         internal VignettingComparison(double masterStops, ShotIdentity shot, IReadOnlyList<ProfileDepth> profiles,
-                                      ComparisonGap gap, IReadOnlyList<LensChoice> skippedForCrop, bool? lensesByRange = null)
+                                      ComparisonGap gap, IReadOnlyList<LensChoice> skippedForCrop, bool? lensesNamedByRaw = null)
         {
             MasterStops = masterStops;
             Shot = shot;
@@ -217,12 +219,13 @@ namespace FlatCheck
             SkippedForCrop = skippedForCrop ?? Array.Empty<LensChoice>();
             if (Profiles.Count > 0)
             {
-                // By range alone the Adobe row may be another lens of the range, and a chosen lens
-                // is a single row: there, and without an Adobe row, the nearest decides. A
-                // degenerate Adobe row (a NaN difference) is no Adobe row: NaN never decides.
+                // By range alone, or among a --lens text's matches, the Adobe row may be another
+                // lens, and a chosen lens is a single row: there, and without an Adobe row, the
+                // nearest decides. A degenerate Adobe row (a NaN difference) is no Adobe row: NaN
+                // never decides.
                 var adobe = Profiles.Where(p => p.Profile.Lens.Source == ProfileSource.Adobe && !double.IsNaN(p.DiffStops)).ToList();
-                bool byRange = lensesByRange ?? shot?.CandidatesByRangeOnly == true;
-                AdobeDecides = adobe.Count > 0 && !byRange && shot?.ChosenLens == null;
+                bool named = lensesNamedByRaw ?? (shot != null && shot.RawNamesLens && !shot.CandidatesByRangeOnly);
+                AdobeDecides = adobe.Count > 0 && named && shot?.ChosenLens == null;
                 if (AdobeDecides)
                 {
                     // Two Adobe names of one optic carry the same figures (the Tokina's AT-X PRO
@@ -269,13 +272,13 @@ namespace FlatCheck
         /// <param name="catalog">The profiles on the machine; null when none was loaded.</param>
         /// <param name="lenses">The lenses to compare with; null for the identity's
         /// candidates.</param>
-        /// <param name="lensesByRange">True when <paramref name="lenses"/> are the raw's
-        /// candidates found by its range alone, false when they were named (a --lens text);
-        /// null takes the identity's <see cref="ShotIdentity.CandidatesByRangeOnly"/> (R-128).</param>
+        /// <param name="lensesNamedByRaw">True when <paramref name="lenses"/> are the candidates
+        /// the raw's lens ID or name found, false when they came by its range alone or from a
+        /// --lens text; null takes it from the identity (R-128).</param>
         /// <returns>The comparison, or one carrying the <see cref="ComparisonGap"/> that kept it
         /// from being made; never null.</returns>
         internal static VignettingComparison Analyze(StructureResult master, ShotIdentity shot, LensCatalog catalog,
-                                                     IReadOnlyList<LensChoice> lenses = null, bool? lensesByRange = null)
+                                                     IReadOnlyList<LensChoice> lenses = null, bool? lensesNamedByRaw = null)
         {
             lenses ??= shot?.Candidates ?? Array.Empty<LensChoice>();
             double masterStops = master.VignetteStops;
@@ -312,7 +315,7 @@ namespace FlatCheck
                 rows.Add(Measure(p, master, crop, all));
             }
             ComparisonGap gap = rows.Count > 0 ? ComparisonGap.None : skipped.Count > 0 ? ComparisonGap.NoCrop : ComparisonGap.NoLensMatch;
-            return new VignettingComparison(masterStops, shot, rows, gap, skipped, lensesByRange);
+            return new VignettingComparison(masterStops, shot, rows, gap, skipped, lensesNamedByRaw);
         }
 
         /// <summary>

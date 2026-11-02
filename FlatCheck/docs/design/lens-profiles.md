@@ -623,12 +623,13 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
   the Samyang is the nearest already (+0.01).
 - The row that decides (R-128, ADR 0090): `VignettingComparison.Deciding`, with
   `AdobeDecides` true when an Adobe row is among lenses not found by range alone and none was
-  chosen; `StructureRun.Compare` passes `lensesByRange` false for the lenses a `--lens` text
-  names, whatever the raw's range found, and a degenerate (NaN) Adobe row is no Adobe row.
-  With Adobe rows alone the summary gives the spread without lensfun as the reason. Then the Adobe rows whose `OwnLensId` is the raw's `LensId` are taken first and the
-  nearest of them decides (all the Adobe rows when none has it, as on a `--lens` text or a name
-  match without the ID); otherwise the nearest row of all, a NaN difference never winning
-  either way. The report marks the row `<- Adobe, gives the verdict`, the summary says
+  chosen; `StructureRun.Compare` passes `lensesNamedByRaw` true only for the candidates the
+  raw's lens ID or name found (a `--lens` text is a search, so false there), and a degenerate
+  (NaN) Adobe row is no Adobe row.
+  Then the Adobe rows whose `OwnLensId` is the raw's `LensId` are taken first and the nearest
+  of them decides (all the Adobe rows when none has it, as on a name match without the ID);
+  otherwise the nearest row of all, a NaN difference never winning either
+  way. With Adobe rows alone the summary gives the spread without lensfun as the reason. The report marks the row `<- Adobe, gives the verdict`, the summary says
   `given by the Adobe profile` and why lensfun does not decide; the window's row note comes
   from `StructureReport.VerdictRowNote`; the Split tab's reference is the same row
   (`SplitResult.ReferenceByAdobe` picks its two texts); the log's comparison line carries

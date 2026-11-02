@@ -24,7 +24,7 @@
 // file - StructureRun.Analyze, the same function.
 //
 // THE REFERENCE PROFILE is the row that gives the WHOLE's verdict, the same on every column: the
-// whole's Adobe row when the lens was named (R-128), its nearest row otherwise. The deciding row
+// whole's Adobe row when the raw named the lens (R-128), its nearest row otherwise. The deciding row
 // is chosen on each master separately, and on the first real session part 1 and the whole chose
 // different profiles under the nearest rule (Adobe +0.07 against lensfun -0.08); a table with a
 // different reference on each column would compare nothing.

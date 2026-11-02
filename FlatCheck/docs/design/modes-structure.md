@@ -62,8 +62,9 @@ scale), the two scales for one number and option A over option B, the nearest pr
 verdict rather than the worst, the worse of shape and depth with `DepthAdvice` reading the
 sign, `ComparisonGap` voting nothing, the byte-identical run without `--raw`/`--lens`, the
 library figures of 2026-09-18 and the guards. ADR 0090 holds why, since 2026-11-02, an Adobe
-row gives the verdict when the lens was named (R-128: the file whose own ID is the raw's
-first; by range alone, with a chosen lens or without an Adobe row the nearest still decides).
+row gives the verdict when the raw's lens ID or name found the lens (R-128: the file whose own
+ID is the raw's first; by range alone, with a `--lens` text, with a chosen lens or without an
+Adobe row the nearest still decides).
 ADR 0030 holds how the lens is identified (`LensIdentification`). The mechanics the decisions
 do not spell out:
 

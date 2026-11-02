@@ -556,7 +556,7 @@ alone, byte-identical output to before the sixth existed.
 | Member | Unit | Meaning | `validation.json` key (kind `profile`) |
 | --- | --- | --- | --- |
 | `Structure` | `StructureResult` | the five tests, exactly as without a query | `masterStops` reads `Structure.VignetteStops`; `shapeVerdict` reads `Structure.Verdict` |
-| `Profiles` | `VignettingComparison` or null | null without a query; with one, **always present**, even when nothing could be compared (`Gap` says why) | `diffStops` reads `Profiles.Nearest.DiffStops`; `nearest` is `Nearest.Profile.Lens.Name` followed by `Lens.Where` in square brackets; `depthVerdict` reads `Profiles.Verdict` |
+| `Profiles` | `VignettingComparison` or null | null without a query; with one, **always present**, even when nothing could be compared (`Gap` says why) | `diffStops` reads `Profiles.Deciding.DiffStops`; `decides` is `Deciding.Profile.Lens.Name` followed by `Lens.Where` in square brackets; `depthVerdict` reads `Profiles.Verdict` |
 | `Shot` | `ShotIdentity` | what was identified from the master, the raw and the overrides (focal, f-stop, crop, camera, candidate lenses) | |
 | `RawError` | string or null | the raw beside the master could not be read: the message | |
 | `Verdict` | residual-scale word | the worse (by `Stats.Severity`) of `Structure.Verdict` and `Profiles.Verdict`, the latter only when `Compared`; otherwise `Structure.Verdict` | `verdict` |
@@ -587,7 +587,7 @@ is run on it, so the two sides share the half-pixel artefact and the 5 % box.
 | `Shot` | `ShotIdentity` | as in the outcome |
 | `Profiles` | list of `ProfileDepth`, catalog order; empty when not compared | one row per candidate lens |
 | `Deciding` | `ProfileDepth` or null | the row that gives the verdict: with `AdobeDecides`, the nearest of the Adobe rows whose `LensProfile.OwnLensId` is the raw's `LensId` (all the Adobe rows when none is); otherwise the row with the smallest magnitude of `DiffStops`; a `NaN` row never wins; null when not compared |
-| `AdobeDecides` | bool | an Adobe row that can be read (not NaN) is among the rows, the lenses were not found by the raw's range alone (a `--lens` text counts as named: `lensesByRange`) and none was chosen (R-128, ADR 0090); false: **the nearest profile decides, not the worst**, because the two profile bases differ by about 0.2 stops between themselves |
+| `AdobeDecides` | bool | an Adobe row that can be read (not NaN) is among the rows, the lenses are the candidates the raw's lens ID or name found (not by range alone, not a `--lens` text: `lensesNamedByRaw`) and none was chosen (R-128, ADR 0090); false: **the nearest profile decides, not the worst**, because the two profile bases differ by about 0.2 stops between themselves |
 | `Verdict` | residual-scale word or null | `Deciding.Verdict`; null when not compared |
 | `SpreadStops` | stops, `max - min` of `CornerStops` across the rows | how far the candidates disagree in the corner; 0 with one row, `NaN` with none |
 | `Gap` | `ComparisonGap` | why nothing was compared; `None` when it was |

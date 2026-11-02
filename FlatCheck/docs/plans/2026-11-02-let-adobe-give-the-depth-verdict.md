@@ -144,3 +144,10 @@ Implemented as planned; committed as ff396f9c with the gate green (1110 + 381 te
   window test's master was not next to the lensfun entry, and the Split texts had no test; the
   CHANGELOG counted V-023's two-band depth move as one. Main had meanwhile taken
   `claude/Merge-the-Structure-tab-scales` (516ab092): merging it in is the owner's call.
+- The second review, of 8b25e256, found that a broad `--lens` text (`135mm` beside the Samyang's
+  range raw lists the Adobe Nikkor 135 f/2 DC and the lensfun Samyang) let another lens's Adobe
+  file decide, and that the summary then added the range-only note under an Adobe verdict. Put
+  to the owner, who chose on 2026-11-02 that a `--lens` text is a search where the nearest
+  decides (`lensesNamedByRaw`; R-128 and ADR 0090 say so); the console goldens are again main's.
+  The owner also had "and vary more" taken out of the reason the summary gives. Two notes still
+  named the old member (`code-map.md`, `thresholds.md`); fixed in the third commit.
