@@ -29,6 +29,11 @@ namespace FlatCheck.Wpf.Tests;
 /// </summary>
 public class HistEqTabTests
 {
+    // Every test that picks a file awaits Pending, the run the pick started (ADR 0087). The tests
+    // used to start a second run with RecomputeAsync, now private, which superseded the first;
+    // a superseded run that had already begun computing goes on until HistEqRun.Execute
+    // returns, and a test that looked at Pending failed 16 times in 150 in a loop (2026-11-02).
+
     static HistEqTabViewModel Attached(SessionFixture f)
     {
         var vm = new HistEqTabViewModel();
@@ -126,7 +131,7 @@ public class HistEqTabTests
         var vm = Attached(f);
 
         vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.True(vm.HasResult);
         Assert.NotNull(vm.Image);
@@ -149,12 +154,12 @@ public class HistEqTabTests
         var vm = Attached(f);
 
         vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
+        await vm.Pending;
         ImageSource master = vm.Image!;
         vm.Zoom.Manual(3);
 
         vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.True(vm.HasResult);
         Assert.NotSame(master, vm.Image);
@@ -179,7 +184,7 @@ public class HistEqTabTests
         f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var vm = Attached(f);
         vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         var mosaic = (BitmapSource)vm.Image!;
         Assert.Equal((128, 128), (mosaic.PixelWidth, mosaic.PixelHeight));
@@ -205,7 +210,7 @@ public class HistEqTabTests
         f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var vm = Attached(f);
         vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
+        await vm.Pending;
         ImageSource mosaic = vm.Image!;
         string report = vm.Report;
         vm.Zoom.Manual(2);
@@ -241,7 +246,7 @@ public class HistEqTabTests
         f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var vm = Attached(f);
         vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
+        await vm.Pending;
         var grey = (BitmapSource)vm.Image!;
         string report = vm.Report;
         Assert.False(vm.View.Rainbow);
@@ -295,7 +300,7 @@ public class HistEqTabTests
         // a new file keeps the chip; Reset clears it
         vm.View.Rainbow = true;
         vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
+        await vm.Pending;
         Assert.True(vm.View.Rainbow);
         Assert.Equal(PixelFormats.Rgb24, ((BitmapSource)vm.Image!).Format);
         vm.Reset();
@@ -404,7 +409,7 @@ public class HistEqTabTests
         using var f = new SessionFixture().WithFlatMaster();
         var vm = Attached(f);
         vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         vm.Zoom.Manual(2);
         vm.Reset();
