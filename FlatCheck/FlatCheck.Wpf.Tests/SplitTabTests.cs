@@ -25,13 +25,8 @@ namespace FlatCheck.Wpf.Tests;
 /// Siril is replaced by a runner that writes a generated master where the script would;
 /// the temp root is redirected into the test workspace so nothing touches %TEMP%.
 /// </summary>
-[Collection("window")]
 public class SplitTabTests
 {
-    readonly StaFixture _sta;
-
-    public SplitTabTests(StaFixture sta) => _sta = sta;
-
     const int Size = 128;
     static readonly DateTime When = new(2026, 9, 28, 10, 31, 0);
 
@@ -51,7 +46,7 @@ public class SplitTabTests
     /// </summary>
     static readonly byte[] OneMiB = new byte[1 << 20];
 
-    static SessionFixture Session(int flats, int biases = 3, int lights = 3, bool readme = true)
+    internal static SessionFixture Session(int flats, int biases = 3, int lights = 3, bool readme = true)
     {
         var f = new SessionFixture().WithFlatMaster().WithFlats();
         for (int i = 1; i <= flats; i++) File.WriteAllBytes(Path.Combine(f.FlatsDir, $"DSC_{i:D4}.NEF"), OneMiB);
@@ -68,7 +63,7 @@ public class SplitTabTests
     }
 
     /// <summary>What the fake Siril saw in a part folder when it was started.</summary>
-    sealed record Seen(string Folder, string[] Biases, string[] Lights, string[] Flats, string[] Darks, bool HadProcess);
+    internal sealed record Seen(string Folder, string[] Biases, string[] Lights, string[] Flats, string[] Darks, bool HadProcess);
 
     static string[] Names(string dir) => Directory.Exists(dir)
         ? Directory.EnumerateFiles(dir).Select(p => Path.GetFileName(p)!).OrderBy(n => n, StringComparer.Ordinal).ToArray()
@@ -79,7 +74,7 @@ public class SplitTabTests
     /// master into process/, prints a few lines. <paramref name="exitCodeFor"/> decides the
     /// exit code per part (1-based); a non-zero one writes no master.
     /// </summary>
-    static Func<string, string, SirilRunner> FakeSiril(List<Seen> seen, Func<int, int>? exitCodeFor = null, bool writeMaster = true)
+    internal static Func<string, string, SirilRunner> FakeSiril(List<Seen> seen, Func<int, int>? exitCodeFor = null, bool writeMaster = true)
         => (folder, script) => (onLine, ct) =>
         {
             seen.Add(new Seen(folder,
@@ -104,7 +99,7 @@ public class SplitTabTests
             return Task.FromResult(code);
         };
 
-    static SplitTabViewModel Vm(SessionFixture f, TempWorkspace ws, Func<string, string, SirilRunner> runner,
+    internal static SplitTabViewModel Vm(SessionFixture f, TempWorkspace ws, Func<string, string, SirilRunner> runner,
                                 bool cli = true, Func<bool>? gui = null, string? scriptText = null)
     {
         var vm = new SplitTabViewModel(() => FakeInstall(ws, cli, scriptText), gui ?? (() => false), runner,
@@ -349,28 +344,6 @@ public class SplitTabTests
         Assert.False(vm.HasError);
         Assert.False(Directory.Exists(Path.Combine(ws.Dir, "temp")));
         Assert.True(vm.CanStart);
-    }
-
-    [Fact]
-    public async Task R092_TheProgressCoversEveryPartAndReachesTheEnd()
-    {
-        using var f = Session(flats: 4);
-        using var ws = new TempWorkspace();
-        var phases = new List<string>();
-        var vm = Vm(f, ws, FakeSiril(new List<Seen>()));
-        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.Phase) && vm.Phase.Length > 0) phases.Add(vm.Phase); };
-
-        // On a dispatcher, as the window runs it: there the copy's progress reports arrive in
-        // order, before the split's end. On the thread pool a test has otherwise, they arrive in
-        // no fixed order, and a late one could overwrite the final 1 (one failure under load on
-        // 2026-11-01, not reproduced in 140 runs; ADR 0087).
-        await _sta.InvokeAsync(() => vm.StartAsync());
-
-        Assert.True(vm.HasResult, vm.ErrorText);
-        Assert.Contains(phases, p => p.Contains("1 din 2"));
-        Assert.Contains(phases, p => p.Contains("2 din 2"));
-        Assert.Equal(1.0, vm.Progress, 6);
-        Assert.True(vm.ProgressKnown);
     }
 
     /// <summary>

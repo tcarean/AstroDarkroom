@@ -20,10 +20,12 @@ On 2026-11-02 a scratch harness ran each test in a loop and counted its failures
 - Setting `Selected` starts a run and keeps it in `Pending`.
 - The test then started a second run with `RecomputeAsync()`, which supersedes the first, and
   awaited only the second.
-- The superseded run checks its token only after `HistEqRun.Execute` returns, so it was often
-  still running when the test asserted.
-- Seven other tests of the class started the same second run. None looked at `Pending`, so none
-  failed, but each left a superseded run computing after it ended.
+- A superseded run stops at its token. If its computation had not started yet, `Task.Run`
+  never starts it. If it had, the run checks the token only after `HistEqRun.Execute` returns,
+  so it was often still running when the test asserted.
+- Five other tests of the class started the same second run, seven times in all, and so did
+  one test of `MainViewModelTests`. None looked at `Pending`, so none failed, but in
+  `HistEqTabTests` each could leave a superseded run computing after it ended.
 - The application is not at fault: in the window only the pick starts a run.
 
 **The split test did not fail again:** 0 failures in 80 runs without load, and 0 in 60 with the
@@ -35,20 +37,28 @@ step's `Progress<double>` posts its reports to the thread pool, in no fixed orde
 could overwrite the final `Progress = 1`. In the window the dispatcher keeps them in order, ahead
 of the run's end.
 
-The owner chose on 2026-11-02 to change all eight histogram tests and the split test.
+The owner chose on 2026-11-02 to change all six histogram tests, eight waits in all, and the
+split test. The review of the same day added the one wait in `MainViewModelTests`, so that no
+test starts a second run after a pick.
 
 ## Decision
 
-- **The histogram tests.** Every histogram test that picks a file awaits `vm.Pending`, the run
-  the pick started. None calls `RecomputeAsync()` after a pick.
-- **The split test.** `SplitTabTests` joins the `window` collection, and
-  `R092_TheProgressCoversEveryPartAndReachesTheEnd` runs `StartAsync` on that collection's
-  dispatcher (`StaFixture.InvokeAsync`), as the window runs it.
+- **The histogram tests.** Every test that picks a histogram file awaits `Pending`, the run the
+  pick started: the six of `HistEqTabTests` and one of `MainViewModelTests`. None calls
+  `RecomputeAsync()` after a pick.
+- **The split test.** `R092_TheProgressCoversEveryPartAndReachesTheEnd` moves into a class of
+  its own, `SplitTabProgressTests`, in the `window` collection. It runs `StartAsync` on that
+  collection's dispatcher (`StaFixture.InvokeAsync`), as the window runs it, with the fixtures
+  of `SplitTabTests`, now internal.
 
 ## Alternatives rejected
 
-- **The failing histogram test alone.** The other seven would keep starting a second run that
-  goes on computing after them, loading the tests that follow.
+- **The failing histogram test alone.** The other five would keep starting a second run that
+  can go on computing after them, loading the tests that follow.
+- **The whole of `SplitTabTests` in the `window` collection.** Its fifteen other tests would
+  then run beside the collection's Application, and the Siril runner would send their lines to
+  the collection's thread through a blocking `Dispatcher.Invoke`. A stuck thread would then
+  hang those tests instead of failing them (the review of 2026-11-02).
 - **Monotonic progress in the view-model.** The window already keeps the reports in order.
   Changing the application for an ordering only the test lacks would stop the test from
   checking the window's own behaviour.
@@ -65,5 +75,6 @@ The owner chose on 2026-11-02 to change all eight histogram tests and the split 
   runs. Another possible cause is not addressed: a file held briefly by the antivirus during
   heavy disk use. If the test fails again, its message is needed, and the gate's quiet output
   hides it.
-- **`SplitTabTests` now runs in the `window` collection.** The test assembly already runs its
-  collections one at a time (`DisableTestParallelization`), so nothing else changes.
+- **Only the progress test runs in the `window` collection.** The other split tests run
+  without the collection's Application, as before, with the Siril runner's lines handled inline.
+  The test assembly runs its collections one at a time (`DisableTestParallelization`).

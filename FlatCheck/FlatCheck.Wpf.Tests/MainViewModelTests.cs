@@ -541,7 +541,7 @@ public class MainViewModelTests
         await vm.OpenAsync(good.Root);
         Assert.True(vm.Structure.HasResult);
         vm.HistEq.Selected = vm.HistEq.Files[0];
-        await vm.HistEq.RecomputeAsync();
+        await vm.HistEq.Pending;
         Assert.True(vm.HistEq.HasResult);
 
         await vm.OpenAsync(bad.Root);
