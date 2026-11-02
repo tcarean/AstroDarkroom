@@ -158,7 +158,7 @@ internal static class LightsAnalyzer
             string path = paths[i];
             if (i % step != 0)
             {
-                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), T($"skipped (over {maxFrames} frames, one in {step} is decoded)", $"sarit (peste {maxFrames} cadre, se decodeaza unul din {step})"), true, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), T($"skipped (over {maxFrames} frames, one in {step} is decoded)", $"sarit (peste {RoCount(maxFrames)}cadre, se decodeaza unul din {step})"), true, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }

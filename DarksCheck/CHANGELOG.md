@@ -185,6 +185,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The Romanian texts write `de` after a count of 20 and up, as Romanian grammar wants:
+  `20 de cadre`, `443 de pixeli`, `32 de lights`, but `19 cadre` and `101 cadre`; figures with
+  decimals and units are as before, and the English is unchanged (R-095, ADR 0029).
+
 - About's lead said the program links two components written by others while it listed three;
   a test now holds the lead's count to the list (R-120).
 

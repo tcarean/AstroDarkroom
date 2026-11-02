@@ -97,7 +97,7 @@ public class LightsAndIndexTests
         Assert.Equal(1, l.Missed);
         Assert.InRange(l.MissedDarkExcessMedian, -4, 4);
         string report = Report(Run(s));
-        Assert.Contains($"pixeli fierbinti   : {l.Persistent} pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 4 din 5 cadre)", report, StringComparison.Ordinal);
+        Assert.Contains($"pixeli fierbinti   : {Ui.RoCount(l.Persistent)}pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 4 din 5 cadre)", report, StringComparison.Ordinal);
         Assert.Contains($"in masterul dark   : peste 10: {l.Persistent - 1} din {l.Persistent} (95 %); peste 20: {l.Persistent - 1} din {l.Persistent} (95 %); peste 50: ", report, StringComparison.Ordinal);
         Assert.Contains($"master in lights   : peste 10: {l.Persistent - 1} din 20 (", report, StringComparison.Ordinal);
         Assert.Contains("nepotriviti        : 1 pixel persistent in lights sub 20 ADU in master", report, StringComparison.Ordinal);
@@ -136,7 +136,7 @@ public class LightsAndIndexTests
             Assert.True(l.Frames[i].AmpRatioQ25 < l.Frames[i].AmpRatioMedian && l.Frames[i].AmpRatioMedian < l.Frames[i].AmpRatioQ75);
         }
 
-        Assert.Contains($"amplitudine        : lights / dark {l.LightsOverDark.Ratio.ToString("0.00", CultureInfo.InvariantCulture)} pe noapte (mediana pe 5 cadre; primul {l.RatioFirst.ToString("0.00", CultureInfo.InvariantCulture)}, ultimul {l.RatioLast.ToString("0.00", CultureInfo.InvariantCulture)}; 20 pixeli)", Report(Run(s)), StringComparison.Ordinal);
+        Assert.Contains($"amplitudine        : lights / dark {l.LightsOverDark.Ratio.ToString("0.00", CultureInfo.InvariantCulture)} pe noapte (mediana pe 5 cadre; primul {l.RatioFirst.ToString("0.00", CultureInfo.InvariantCulture)}, ultimul {l.RatioLast.ToString("0.00", CultureInfo.InvariantCulture)}; 20 de pixeli)", Report(Run(s)), StringComparison.Ordinal);
 
         // lights at ISO 800 with twice the amplitude are at the same temperature as darks at ISO 400
         using SessionFixture iso = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i, 2.0), iso: 800);
@@ -196,7 +196,7 @@ public class LightsAndIndexTests
         Assert.Contains("ATENTIE            : 2 lights nu s-au putut decoda (primul: light_0003.fit:", stdout, StringComparison.Ordinal);
         Assert.Contains("(mediana pe 3 cadre; ", stdout, StringComparison.Ordinal);
         Assert.Contains("light_0004.fit        eroare: dimensiune diferita: 128 x 96 fata de 256 x 192", stdout, StringComparison.Ordinal);
-        Assert.Matches(@"pixeli fierbinti   : (18|19|20) pixeli persistenti in lights \(izolati, peste 6 sigma locale, in cel putin 3 din 3 cadre\)", stdout);
+        Assert.Matches(@"pixeli fierbinti   : (18 |19 |20 de )pixeli persistenti in lights \(izolati, peste 6 sigma locale, in cel putin 3 din 3 cadre\)", stdout);
 
         // the cap: one light in two is decoded, the others are skipped, no error
         using SessionFixture capped = new SessionFixture().WithDarkSeries(6, Dark).WithLights(5, i => Light(i));
@@ -408,7 +408,7 @@ public class LightsAndIndexTests
         Assert.Equal(0, partner.Failed);
         Assert.Null(partner.FirstError);
         Assert.Contains("    dark-uri / partener: 0.5", report, StringComparison.Ordinal);
-        Assert.Contains("20 pixeli comuni) dupa normalizare, adica dark-urile sesiunii sunt cu -6.", report, StringComparison.Ordinal);
+        Assert.Contains("20 de pixeli comuni) dupa normalizare, adica dark-urile sesiunii sunt cu -6.", report, StringComparison.Ordinal);
         Assert.Contains("    pixeli comuni      : 20 din 20 ai sesiunii peste 50 ADU-eq sunt peste 50 si la partener (100 %); 20 din 20 ai partenerului peste 50 sunt peste 20 in sesiune (100 %)", report, StringComparison.Ordinal);
         // the lights at the darks' temperature: the chained ratio is the darks' and so is the verdict
         Assert.Contains("    lights / partener  : 0.5", report, StringComparison.Ordinal);

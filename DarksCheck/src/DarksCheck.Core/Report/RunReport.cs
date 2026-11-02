@@ -60,10 +60,10 @@ internal static class RunReport
             "LICENSE file, or at <" + LicenseUrl + ">.",
         ];
 
-    /// <summary>"1 frame", "20 frames"; "1 cadru", "20 cadre".</summary>
+    /// <summary>"1 frame", "20 frames"; "1 cadru", "19 cadre", "20 de cadre" (R-095).</summary>
     /// <param name="n">The frame count.</param>
     /// <returns>The count with the word for frames.</returns>
-    internal static string Frames(int n) => n == 1 ? T("1 frame", "1 cadru") : n.ToString(CultureInfo.InvariantCulture) + T(" frames", " cadre");
+    internal static string Frames(int n) => n == 1 ? T("1 frame", "1 cadru") : T(n.ToString(CultureInfo.InvariantCulture) + " frames", RoCount(n) + "cadre");
 
     /// <summary>
     /// The refusal of a session with lights and no darks run without a partner (R-002, R-054): what
