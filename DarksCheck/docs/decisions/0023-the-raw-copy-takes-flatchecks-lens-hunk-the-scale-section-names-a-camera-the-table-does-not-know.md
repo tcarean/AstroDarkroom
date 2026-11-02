@@ -1,7 +1,7 @@
 # 0023. The raw copy takes FlatCheck's lens-on-every-mount hunk; the scale section names a camera the table does not know
 
 Date: 2026-10-26
-Status: accepted 2026-10-26
+Status: accepted 2026-10-26; the words for frames that name no camera superseded by 0028
 
 ## Context
 

@@ -21,7 +21,7 @@ using DarksCheck.Core;
 namespace DarksCheck.Tests;
 
 /// <summary>Checks 2 to 8 on synthetic darks with known answers (R-020 to R-041).</summary>
-public class DarkSeriesTests
+public partial class DarkSeriesTests
 {
     private static DarkSeriesResult Run(SessionFixture s) => DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2));
 
@@ -543,18 +543,19 @@ public class DarkSeriesTests
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, Plain, biases: 3).WithLights(4, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.0, Stars = SyntheticLight.ThreeStars });
         DarkSeriesResult r = Run(s);
         IReadOnlyList<ReportRow> rows = ScaleReport.Rows(r);
-        Assert.Equal(["fisier", "1 ADU-eq", "cuantizare", "electroni", "zgomot de citire", "zgomot pe cadru", "zgomot in master", "praguri pe set", "gasit", "cer", "saturatie"], rows.Select(x => x.Label));
+        Assert.Equal(["fisier", "1 ADU-eq", "pasul valorilor", "electroni", "zgomot de citire", "zgomot pe un dark", "zgomot in master", "praguri pe set", "ce s-a gasit", "cer", "saturatie"], rows.Select(x => x.Label));
         string Value(string label) => rows.Single(x => x.Label == label).Value;
-        Assert.Equal("16 biti, 0 .. 65535 ADU; negrul la 200, albul la 65535: semnal util 0 .. 65335 ADU", Value("fisier"));
-        Assert.Equal("1 ADU brut: setul e la ISO 400, 120.0 s, scara de referinta (ISO 400 si 120 s)", Value("1 ADU-eq"));
-        Assert.Equal("pas 1 ADU langa negru", Value("cuantizare"));
-        Assert.StartsWith("1 ADU = 2.07 e- la ISO 400 (Nikon D3300, photonstophotos.net din curbele DxOMark, citit 2026-10-20; metoda supraestimeaza castigul pe senzorii mici); 1 ADU-eq = 1.00 ADU = 2.1 e-; full well 34446 e-, QE 56 %", Value("electroni"), StringComparison.Ordinal);
-        Assert.Matches(@"^[0-9.]+ ADU pe pixel \(G1, din bias-uri\) = [0-9.]+ e-$", Value("zgomot de citire"));
-        Assert.Contains("; curentul de intuneric median ", Value("zgomot pe cadru"), StringComparison.Ordinal);
-        Assert.Equal("pixel fierbinte 20 ADU-eq = 20 ADU; scurgere pe harta 1.0 ADU-eq = 1.0 ADU; lumina constanta pe o latura 0.15 ADU-eq = 0.15 ADU; lumina pe un cadru 0.1 ADU-eq = 0.10 ADU", Value("praguri pe set"));
-        Assert.Equal("nimic peste praguri", Value("gasit"));
-        Assert.Matches(@"^mediana [0-9.]+ ADU peste negru pe un light \(G1, 4 lights\), sigma [0-9.]+ ADU pe pixel$", Value("cer"));
-        Assert.Matches(@"^dark: [0-9.]+ ADU pe pixel \(mediana a 6 cadre\); stack lights: [0-9.]+ ADU pe pixel cu media, [0-9.]+ cu mediana \(4 lights; cu zgomotul masterului dark inclus\)$", Value("zgomot in master"));
+        Assert.Equal("valori de la 0 la 65535 ADU (16 biti); negrul camerei e la 200 si albul la 65535, deci pentru lumina raman 0 .. 65335 ADU", Value("fisier"));
+        Assert.Equal("1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s", Value("1 ADU-eq"));
+        Assert.Equal("langa negru, valorile din fisier cresc din 1 in 1 ADU", Value("pasul valorilor"));
+        Assert.Equal("la ISO 400, 1 ADU = 2.07 electroni (senzorul transforma lumina in electroni, iar camera ii numara in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electroni; intr-un pixel incap 34446 electroni (full well), iar pixelul prinde 56 % din lumina care cade pe el (QE). Cifre pentru Nikon D3300 de pe photonstophotos.net, scoase din masuratorile DxOMark, citite pe 2026-10-20; la senzorii mici metoda da prea multi electroni pe ADU.", Value("electroni"));
+        Assert.Matches(@"^[0-9.]+ ADU pe pixel = [0-9.]+ electroni: zgomotul pe care camera il adauga cand citeste senzorul, masurat pe bias-uri \(pixelii verzi G1\)$", Value("zgomot de citire"));
+        Assert.StartsWith($"un dark are {r.Darks.Noise.SigmaFrame:F2} ADU de zgomot pe pixel; ", Value("zgomot pe un dark"), StringComparison.Ordinal);
+        Assert.Contains("; curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e ", Value("zgomot pe un dark"), StringComparison.Ordinal);
+        Assert.Equal("pixel fierbinte: peste 20 ADU-eq (20 ADU in fisier); scurgere de lumina pe harta: peste 1.0 ADU-eq (1.0 ADU); lumina constanta pe o latura: peste 0.15 ADU-eq (0.15 ADU); lumina pe un singur cadru: peste 0.1 ADU-eq (0.10 ADU)", Value("praguri pe set"));
+        Assert.Equal("nimic peste praguri", Value("ce s-a gasit"));
+        Assert.Matches(@"^pe un light, cerul e la [0-9.]+ ADU peste negru, cu [0-9.]+ ADU de zgomot pe pixel \(pixelii verzi G1, din 4 lights\)$", Value("cer"));
+        Assert.Matches(@"^masterul dark, facut din 6 cadre, mai are [0-9.]+ ADU de zgomot pe pixel; stack-ul celor 4 lights are [0-9.]+ ADU pe pixel daca il faci cu media si [0-9.]+ daca il faci cu mediana \(cu zgomotul masterului dark inclus\)$", Value("zgomot in master"));
         ReportRow masterRow = rows.Single(x => x.Label == "zgomot in master");
         Assert.Equal(2, masterRow.BoldParts.Count);
         Assert.All(masterRow.BoldParts, b => Assert.Contains(b, masterRow.Value, StringComparison.Ordinal));
@@ -568,15 +569,15 @@ public class DarkSeriesTests
         Assert.Equal(0, StackNoise.Of(r.Lights, r.ReferencePlane, double.NaN)!.MasterNoiseAdu);
         Assert.Null(StackNoise.Of(null, 0, 1));
         Assert.Contains("cu zgomotul masterului dark inclus)", Value("zgomot in master"), StringComparison.Ordinal);
-        Assert.Contains("plus zgomotul masterului dark (", ScaleReport.Paragraphs(r)[2], StringComparison.Ordinal);
-        Assert.Equal("65535 ADU (34446 e- full well dupa sursa)", Value("saturatie"));
+        Assert.Contains($" Al masterului dark ({stack.MasterNoiseAdu:F2} ADU) nu scade, pentru ca acelasi master se scade din toate lights-urile.", ScaleReport.Paragraphs(r)[2], StringComparison.Ordinal);
+        Assert.Equal("la 65535 ADU pixelul e plin si nu mai poate creste; dupa sursa, intr-un pixel incap 34446 electroni (full well)", Value("saturatie"));
         IReadOnlyList<string> paragraphs = ScaleReport.Paragraphs(r);
         Assert.Equal(4, paragraphs.Count);
-        Assert.StartsWith("ADU e unitatea fisierului: pe 16 biti, de la 0 la 65535, cu negrul camerei la 200.", paragraphs[0], StringComparison.Ordinal);
-        Assert.Contains("in stack-ul celor 4 lights zgomotul pe pixel scade la ", paragraphs[2], StringComparison.Ordinal);
-        Assert.Contains("pe un petic de 50 x 50 e de 50 de ori mai mare decat pe un pixel", paragraphs[1], StringComparison.Ordinal);
-        Assert.Contains($"Masterul dark, mediana a 6 cadre, mai are {r.Darks.Noise.MasterNoise:F2} ADU pe pixel", paragraphs[1], StringComparison.Ordinal);
-        Assert.Contains("0.15 ADU-eq si de 3 ori eroarea pentru lumina constanta pe o latura", paragraphs[3], StringComparison.Ordinal);
+        Assert.StartsWith("ADU e unitatea in care fisierul scrie cat de luminos e fiecare pixel: aici numere intregi de la 0 la 65535 (16 biti), cu negrul camerei la 200.", paragraphs[0], StringComparison.Ordinal);
+        Assert.Contains("In stack-ul celor 4 lights zgomotul pe pixel scade la ", paragraphs[2], StringComparison.Ordinal);
+        Assert.Contains("intr-o zona de 50 x 50 pixeli zgomotul se compenseaza, iar greseala se vede de 50 de ori mai bine decat pe un pixel", paragraphs[1], StringComparison.Ordinal);
+        Assert.Contains($"Masterul dark, facut din 6 cadre, mai are {r.Darks.Noise.MasterNoise:F2} ADU de zgomot pe pixel", paragraphs[1], StringComparison.Ordinal);
+        Assert.Contains("Lumina constanta pe o latura conteaza peste 0.15 ADU-eq, si doar daca e de peste 3 ori mai mare decat cat poate gresi masuratoarea.", paragraphs[3], StringComparison.Ordinal);
 
         // the console: the block at the end, the paragraphs wrapped under 96 columns
         using StringWriter sw = new();
@@ -585,16 +586,27 @@ public class DarkSeriesTests
         int at = text.IndexOf("\n  EXPLICATII SCARA ADU\n", StringComparison.Ordinal);
         Assert.True(at > text.IndexOf("TABEL PE LIGHTS", StringComparison.Ordinal), "the block comes after the tables");
         string block = text[at..];
-        Assert.Contains("    electroni          : 1 ADU = 2.07 e-", block, StringComparison.Ordinal);
+        Assert.Contains("    electroni          : la ISO 400, 1 ADU = 2.07 electroni", block, StringComparison.Ordinal);
         Assert.All(block.Split('\n'), line => Assert.True(line.Length <= 96 || line.Contains(':', StringComparison.Ordinal), $"wrapped line too long: {line}"));
-        Assert.Contains("\n    ADU e unitatea fisierului", block, StringComparison.Ordinal);
+        Assert.Contains("\n    ADU e unitatea in care fisierul", block, StringComparison.Ordinal);
 
         // without biases and lights: the rows say what is missing
         using SessionFixture bare = new SessionFixture().WithDarkSeries(4, Plain);
         IReadOnlyList<ReportRow> bareRows = ScaleReport.Rows(Run(bare));
-        Assert.Equal("NEMASURAT: fara bias-uri (sursa da 2.0 e- pentru Nikon D3300)", bareRows.Single(x => x.Label == "zgomot de citire").Value);
+        Assert.Equal("NEMASURAT: sesiunea nu are bias-uri (sursa da 2.0 electroni pentru Nikon D3300)", bareRows.Single(x => x.Label == "zgomot de citire").Value);
         Assert.Equal("fara lights in sesiune", bareRows.Single(x => x.Label == "cer").Value);
-        Assert.EndsWith("; stack lights: fara lights", bareRows.Single(x => x.Label == "zgomot in master").Value, StringComparison.Ordinal);
+        Assert.EndsWith("; stack-ul de lights: sesiunea nu are lights", bareRows.Single(x => x.Label == "zgomot in master").Value, StringComparison.Ordinal);
+        Assert.EndsWith("; curentul de intuneric (ce aduna un pixel din caldura senzorului) se masoara doar cu bias-uri", bareRows.Single(x => x.Label == "zgomot pe un dark").Value, StringComparison.Ordinal);
+
+        // frames whose noise could not be measured leave no master noise either (a single frame gets one, R-024);
+        // no fixture reaches it, so the figure is taken away by hand
+        DarkSeriesResult measured = Run(bare);
+        DarkSeriesResult unmeasured = measured with { Darks = measured.Darks with { Noise = measured.Darks.Noise with { MasterNoise = double.NaN } } };
+        Assert.Equal("NEMASURAT: zgomotul cadrelor nu s-a putut masura, deci nici al masterului", ScaleReport.Rows(unmeasured).Single(x => x.Label == "zgomot in master").Value);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("UNMEASURED: the frames' noise could not be measured, so neither could the master's", ScaleReport.Rows(unmeasured).Single(x => x.Label == "master noise").Value);
+        }
         Assert.StartsWith("Fata de cer: sesiunea nu are lights", ScaleReport.Paragraphs(Run(bare))[2], StringComparison.Ordinal);
 
         // the camera table: the D3300 by any spelling, the log2 interpolation, nothing outside it, no other camera
@@ -615,27 +627,79 @@ public class DarkSeriesTests
         // a camera the table does not know (ADR 0023): the electroni row says so, and now the first paragraph too
         using SessionFixture canon = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, Camera = "Canon EOS 6D" });
         DarkSeriesResult r = Run(canon);
-        Assert.Equal("necunoscut pentru Canon EOS 6D: cat valoreaza 1 ADU in electroni nu e in tabelul aplicatiei", ScaleReport.Rows(r).Single(x => x.Label == "electroni").Value);
-        Assert.EndsWith(" Aparatul Canon EOS 6D nu e in tabelul aplicatiei, deci nicio cifra de aici nu e data in electroni, iar full well-ul si zgomotul de citire din sursa lipsesc.", ScaleReport.Paragraphs(r)[0], StringComparison.Ordinal);
-        Assert.Equal("NEMASURAT: fara bias-uri", ScaleReport.Rows(r).Single(x => x.Label == "zgomot de citire").Value);
+        Assert.Equal("necunoscut pentru Canon EOS 6D: aplicatia nu are in tabel cati electroni inseamna 1 ADU la acest aparat", ScaleReport.Rows(r).Single(x => x.Label == "electroni").Value);
+        Assert.EndsWith(" Aparatul Canon EOS 6D nu e in tabelul aplicatiei, asa ca nicio cifra de aici nu e data in electroni si lipsesc cifrele din sursa: cati electroni incap intr-un pixel (full well) si zgomotul de citire.", ScaleReport.Paragraphs(r)[0], StringComparison.Ordinal);
+        Assert.Equal("NEMASURAT: sesiunea nu are bias-uri", ScaleReport.Rows(r).Single(x => x.Label == "zgomot de citire").Value);
+        Assert.Equal("la 65535 ADU pixelul e plin si nu mai poate creste", ScaleReport.Rows(r).Single(x => x.Label == "saturatie").Value);
         using (Ui.Use(UiLanguage.English))
         {
-            Assert.EndsWith(" Canon EOS 6D is not in the application's table, so no figure of this section is given in electrons, and the source's full well and read noise are missing.", ScaleReport.Paragraphs(r)[0], StringComparison.Ordinal);
+            Assert.EndsWith(" Canon EOS 6D is not in the application's table, so no figure here is given in electrons, and the source's figures are missing: how many electrons a pixel holds (full well) and the read noise.", ScaleReport.Paragraphs(r)[0], StringComparison.Ordinal);
         }
 
         // no readable dark names the camera
         using SessionFixture unnamed = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, Camera = null });
         DarkSeriesResult r2 = Run(unnamed);
-        Assert.EndsWith(" Cadrele nu spun aparatul, deci nicio cifra de aici nu e data in electroni, iar full well-ul si zgomotul de citire din sursa lipsesc.", ScaleReport.Paragraphs(r2)[0], StringComparison.Ordinal);
+        Assert.EndsWith(" Fisierele nu spun ce aparat le-a facut, asa ca nicio cifra de aici nu e data in electroni si lipsesc cifrele din sursa: cati electroni incap intr-un pixel (full well) si zgomotul de citire.", ScaleReport.Paragraphs(r2)[0], StringComparison.Ordinal);
         using (Ui.Use(UiLanguage.English))
         {
-            Assert.Contains(" The frames do not name the camera, so no figure", ScaleReport.Paragraphs(r2)[0], StringComparison.Ordinal);
+            Assert.Contains(" The files do not say which camera took them, so no figure", ScaleReport.Paragraphs(r2)[0], StringComparison.Ordinal);
         }
 
         // the D3300 gets no such sentence
         using SessionFixture nikon = new SessionFixture().WithDarkSeries(4, Plain);
-        Assert.EndsWith("pentru ca zgomotul amesteca treptele.", ScaleReport.Paragraphs(Run(nikon))[0], StringComparison.Ordinal);
+        Assert.EndsWith("pentru ca zgomotul face ca unii pixeli sa cada pe o treapta si altii pe urmatoarea.", ScaleReport.Paragraphs(Run(nikon))[0], StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R081_TheScaleSectionIsInPlainWords(bool english)
+    {
+        // every variant of the rows and the paragraphs the fixtures reach, in both languages: lights and biases, a
+        // bare series, the eyepiece band of R029 found with lights beside it (the ratio to the stack), a camera the
+        // table does not know, and frames that name no camera
+        static double Band(int x, int y) => y < 64 ? 2 : 0;
+        static SyntheticLight Light(int i) => new() { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.0, Stars = SyntheticLight.ThreeStars };
+        using SessionFixture full = new SessionFixture().WithDarkSeries(6, Plain, biases: 3).WithLights(4, Light);
+        using SessionFixture bare = new SessionFixture().WithDarkSeries(4, Plain);
+        using SessionFixture leak = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 }, biases: 4).WithLights(4, Light);
+        using SessionFixture canon = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, Camera = "Canon EOS 6D" });
+        using SessionFixture unnamed = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, Camera = null });
+        System.Text.RegularExpressions.Regex method = english ? EnglishMethodWords() : RomanianMethodWords();
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            List<string> texts = [];
+            foreach (SessionFixture s in new[] { full, bare, leak, canon, unnamed })
+            {
+                DarkSeriesResult r = Run(s);
+                texts.AddRange(ScaleReport.Rows(r).SelectMany(row => new[] { row.Label, row.Value }));
+                texts.AddRange(ScaleReport.Paragraphs(r));
+            }
+
+            // the master-noise row of frames whose noise could not be measured, which no fixture reaches
+            DarkSeriesResult measured = Run(bare);
+            DarkSeriesResult unmeasured = measured with { Darks = measured.Darks with { Noise = measured.Darks.Noise with { MasterNoise = double.NaN } } };
+            texts.AddRange(ScaleReport.Rows(unmeasured).SelectMany(row => new[] { row.Label, row.Value }));
+            texts.AddRange(ScaleReport.Paragraphs(unmeasured));
+
+            // the scenes reached their variants, so every wording below was looked at
+            string all = string.Join("\n", texts);
+            Assert.Contains(english ? " times the noise of the lights stack (" : " din zgomotul stack-ului de lights (", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "Canon EOS 6D is not in the application's table" : "Aparatul Canon EOS 6D nu e in tabelul aplicatiei", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "The files do not say which camera took them" : "Fisierele nu spun ce aparat le-a facut", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "UNMEASURED: the frames' noise could not be measured" : "NEMASURAT: zgomotul cadrelor nu s-a putut masura", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the dark current (what a typical pixel gathers from the sensor's heat) is " : "curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e ", all, StringComparison.Ordinal);
+            List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
+            Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+        }
+    }
+
+    // R-081's words of the method, whole words in any case; the median only where it names how a stack is made
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|cuadratur\w*|radacin\w*|cuantiz\w*|normaliz\w*|abater\w*|offset\w*|castig\w*|brut\w*|petic\w*|supraestim\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bcu )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex RomanianMethodWords();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|quadrature|square root|quanti[sz]\w*|normali[sz]\w*|deviation\w*|offset\w*|gain\w*|overestimat\w*|raw|patch\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bwith the )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    private static partial System.Text.RegularExpressions.Regex EnglishMethodWords();
 
     [Fact]
     public void R029_ASeriesThatDidNotWarmLeavesTheSplitUnmeasured()

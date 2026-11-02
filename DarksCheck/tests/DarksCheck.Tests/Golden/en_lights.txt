@@ -91,45 +91,51 @@ Copyright (C) 2026 Tudor Carean
       5  light_0005.fit        23:46:23   500.0    6.50        240       20    1.322  1.271  1.365
 
   ADU SCALE EXPLAINED
-    file               : 16 bits, 0 .. 65535 ADU; black at 200, white at 65535: useful signal 0 .. 65335 ADU
-    1 ADU-eq           : 1 raw ADU: the set is at ISO 400, 120.0 s, the reference scale (ISO 400 and 120 s)
-    quantisation       : step of 1 ADU near the black
-    electrons          : 1 ADU = 2.07 e- at ISO 400 (Nikon D3300, photonstophotos.net from the DxOMark curves, read 2026-10-20; the method overestimates the gain on small sensors); 1 ADU-eq = 1.00 ADU = 2.1 e-; full well 34446 e-, QE 56 %
-    read noise         : UNMEASURED: no biases (the source gives 2.0 e- for Nikon D3300)
-    noise per frame    : sigma 3.01 ADU per pixel on one dark; the dark current needs biases
-    master noise       : dark: 1.87 ADU per pixel (median of 4 frames); lights stack: 3.4 ADU per pixel with the mean, 4.0 with the median (5 lights; the dark master's noise included)
-    this set's limits  : hot pixel 20 ADU-eq = 20 ADU; leak on the map 1.0 ADU-eq = 1.0 ADU; constant light on a side 0.15 ADU-eq = 0.15 ADU; light on a frame 0.1 ADU-eq = 0.10 ADU
-    found              : nothing over the thresholds
-    sky                : median 500.0 ADU above the black on a light (G1, 5 lights), sigma 6.3 ADU per pixel
-    saturation         : 65535 ADU (34446 e- full well, per the source)
+    file               : values from 0 to 65535 ADU (16 bits); the camera's black is at 200 and the white at 65535, so 0 .. 65335 ADU are left for light
+    1 ADU-eq           : 1 ADU in the file: the set was taken at the reference settings themselves, ISO 400, 120.0 s
+    value step         : near the black, the file's values go up 1 by 1 ADU
+    electrons          : at ISO 400, 1 ADU = 2.07 electrons (the sensor turns light into electrons, and the camera counts them in ADU); 1 ADU-eq = 1.00 ADU = 2.1 electrons; a pixel holds 34446 electrons (full well), and it catches 56 % of the light that falls on it (QE). Figures for Nikon D3300 from photonstophotos.net, worked out from DxOMark's measurements, read on 2026-10-20; on small sensors the method gives too many electrons per ADU.
+    read noise         : UNMEASURED: the session has no biases (the source gives 2.0 electrons for Nikon D3300)
+    noise on one dark  : one dark has 3.01 ADU of noise per pixel; the dark current (what a pixel gathers from the sensor's heat) can be measured only with biases
+    master noise       : the dark master, made of 4 frames, still has 1.87 ADU of noise per pixel; the stack of the 5 lights has 3.4 ADU per pixel if you make it with the mean and 4.0 if you make it with the median (the dark master's noise included)
+    this set's limits  : hot pixel: above 20 ADU-eq (20 ADU in the file); light leak on the map: above 1.0 ADU-eq (1.0 ADU); constant light on a side: above 0.15 ADU-eq (0.15 ADU); light on a single frame: above 0.1 ADU-eq (0.10 ADU)
+    what was found     : nothing over the thresholds
+    sky                : on a light, the sky is at 500.0 ADU above the black, with 6.3 ADU of noise per pixel (the green pixels G1, from 5 lights)
+    saturation         : at 65535 ADU the pixel is full and cannot go higher; per the source, a pixel holds 34446 electrons (full well)
 
-    ADU is the file's unit: 16 bits, from 0 to 65535, with the camera's black at 200. ADU-eq is
-    raw ADU brought to ISO 400 and 120 s, so that series taken with different settings compare
-    with one another: on this set 1 ADU-eq = 1.00 raw ADU. A quantisation step is 1 ADU, but a
-    mean over many pixels is measured far below it, because the noise blends the steps.
+    ADU is the unit in which the file writes how bright each pixel is: here whole numbers from 0
+    to 65535 (16 bits), with the camera's black at 200. ADU-eq is the same ADU worked out as if
+    the frame had been taken at ISO 400 and 120 s, so that you can compare series taken with
+    different settings: on this set 1 ADU-eq = 1.00 ADU in the file. The file goes up 1 by 1
+    ADU, but the mean of many pixels can come out as a fraction of an ADU, because the noise
+    makes some pixels land on one step and others on the next.
 
-    A deviation in the dark master (a light leak, an offset) is not noise: the master is
-    subtracted from every light, so the deviation stays whole in the stack however many frames
-    you add, while random noise falls with the square root of the number of frames. The dark
-    master, the median of 4 frames, still has 1.87 ADU per pixel; a deviation is set against
-    that, not against the noise of one frame. On a single pixel, the noise of one dark, 3.0 ADU,
-    hides any deviation below 1 ADU; but the ratio of a deviation to the noise grows with the
-    square root of the number of pixels looked at together: on a 50 x 50 patch it is 50 times
-    larger than on one pixel, and a 1 ADU step with a straight edge shows under a hard stretch
-    of a dark sky.
+    An error in the dark master is not noise. For example: light that got into the camera, or a
+    black level moved a little. The master is subtracted from every light, so the error reaches
+    the stack whole, however many frames you add. The noise, on the other hand, falls as you add
+    frames: 4 times more frames halve it. The dark master, made of 4 frames, still has 1.87 ADU
+    of noise per pixel; that is what you compare an error with, not the noise of a single frame.
+    On a single pixel, the 3.0 ADU of noise of one dark hides any error below 1 ADU. But the eye
+    sees areas, not pixels: on an area of 50 x 50 pixels the noise evens out, and the error
+    shows 50 times better than on one pixel. That is why a step of 1 ADU with a straight edge
+    shows when you stretch a dark sky hard.
 
-    Against the sky: a light of this session has 500.0 ADU above the black, so 1 ADU is 0.20 %
-    of the sky, about the error of a flat; in the stack of the 5 lights the noise per pixel
-    falls to 3.40 ADU with the mean (4.02 with the median): 6.3 / sqrt(5) from the lights, plus
-    the dark master's noise (1.87 ADU) in quadrature, which does not average out; and an offset
-    of 1 ADU in the master stays 1 ADU.
+    Against the sky: on a light of this session the sky is at 500.0 ADU above the black, so 1
+    ADU is 0.20 % of the sky, about as much as a flat is usually off. In the stack of the 5
+    lights the noise per pixel falls to 3.40 ADU if you make it with the mean (4.02 with the
+    median). Two noises go into this figure. The lights' noise (6.3 ADU on one light) falls the
+    more lights you add. The dark master's noise (1.87 ADU) does not fall, because the same
+    master is subtracted from every light. And an error of 1 ADU in the master stays 1 ADU in
+    the stack.
 
-    The thresholds: 20 ADU-eq for a hot pixel; 1.0 ADU-eq on the map for an obvious leak (the
-    level of the hand analysis); 0.15 ADU-eq and 3 times the error for constant light on a side;
-    0.1 ADU-eq and 5 times the typical deviation for light on a frame. The last two say 'this is
-    real light, measured', not 'it shows in the image': at 0.15 raw ADU the effect is at the
-    edge of what can be seen, at 1.0 raw ADU it shows; the remedy (the eyepiece covered, the
-    series taken again) costs the same in both cases.
+    The thresholds: a pixel is hot above 20 ADU-eq. On the map of the Maps tab, a light leak is
+    obvious above 1.0 ADU-eq (the threshold of the analysis made by hand). Constant light on a
+    side counts above 0.15 ADU-eq, and only if it is more than 3 times what the measurement can
+    be off by. Light on a single frame counts above 0.1 ADU-eq, and only if it is more than 5
+    times what a frame usually differs from the others. The last two thresholds say 'this is
+    real light, measured', not 'it shows in the image': at 0.15 ADU in the file it would barely
+    show, at 1.0 ADU it shows. The remedy is the same in both cases: cover the viewfinder and
+    take the series again.
 --- stderr ---
 (progress, omitted)
 --- exit 0 ---

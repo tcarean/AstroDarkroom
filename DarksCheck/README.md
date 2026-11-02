@@ -343,12 +343,13 @@ The end of the report's sections on Smida:
 
 #### ADU scale explained
 
-The last section of the report, and the window's tab of the same name: what one ADU is worth on
-the open set, in raw ADU, ADU-eq and electrons. Its rows give the file's scale, the
-normalisation, the quantisation step, the read noise, the noise per frame and the dark current,
-the noise of the masters, the set's thresholds in raw ADU, what check 2 found, the sky of a light
-(with lights) and the saturation; four paragraphs then say why a fraction of an ADU in the master
-matters, with the set's own numbers. The yardstick is the noise left in the masters: the row
+The last section of the report, and the window's tab of the same name: what one ADU means on the
+open set, in plain words, in the file's ADU, in ADU-eq and in electrons. Its rows give the file's
+range, what 1 ADU-eq is, the step of the file's values (`value step`), the electrons, the read
+noise, the noise on one dark and the dark current, the noise of the masters, the set's
+thresholds, what check 2 found (`what was found`), the sky of a light (with lights) and the
+saturation; four paragraphs then say why a fraction of an ADU in the master matters, with the
+set's own numbers. The yardstick is the noise left in the masters: the row
 `master noise` gives the per-pixel noise of the dark master (check 8's) and of the lights stack,
 with the mean and with the median, and every light check 2 finds is also written as a fraction
 of them. In the window the masters' noise and the light found are in bold.

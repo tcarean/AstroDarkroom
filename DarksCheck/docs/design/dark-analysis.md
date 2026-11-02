@@ -196,7 +196,11 @@ case) and `GainAt` interpolates the gain on the log2 scale between the listed IS
 returning null outside them, so a row never guesses; when `For` returns null the `electroni`
 row says `necunoscut pentru <camera>`, the `saturatie` and `zgomot de citire` rows drop the
 source's figures, and the first paragraph gains its last sentence, built in `Paragraphs` from
-the first dark's `Camera` or the words for no camera (ADR 0023). The console writes the rows as
+the first dark's `Camera` or the words for no camera (ADR 0023). The words are plain (R-081,
+ADR 0028): `PlaneWords` names the reference position as the green pixels `G1` when its name
+starts with `G` and by its name alone otherwise, and `CameraFacts.SourceWords` is the one
+provenance phrase, after `Cifre pentru <camera> de pe` in the `electroni` row and in brackets
+when the ISO is outside the table. The console writes the rows as
 `label : value` and the paragraphs through `ScaleReport.Wrap` at 96 columns with a four-space
 indent; the window binds `Rows` and `Paragraphs` as they are. `StackNoise.Of` holds the lights'
 sky median, sky sigma and count on the reference plane with the mean and median stack's noise,
@@ -204,7 +208,7 @@ the lights' share sigma / sqrt(N) plus the dark master's noise in quadrature (th
 subtracted from every light alike, so its noise does not average out);
 `ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its
 ratio to the dark master's noise (`NoiseVsN.MasterNoise`) and to the stack's, used by the
-`zgomot in master` and `gasit` rows and by check 2's `lumina pe cadre`, `lumina constanta` and
+`ce s-a gasit` row and by check 2's `lumina pe cadre`, `lumina constanta` and
 verdict rows in `DarkReport`. A `ReportRow` carries `Bold`, the value's substrings the window
 emphasises (ADR 0016); the console ignores it.
 

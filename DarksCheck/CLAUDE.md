@@ -108,6 +108,14 @@ varies a kit rule names it.
   `T("english", "romana")` pair where it is composed, a `{l:T En='...', Ro='...'}` pair in XAML,
   the Romanian without diacritics (ADR 0021). Those Romanian wordings, and the tests and docs
   that quote them, are the one exception; never leave a file in two languages otherwise.
+- **Plain words** (ADR 0028). Every text the user reads, in the window and in the console, is in
+  words anyone can follow: what a figure means for the frames and the image, short sentences,
+  everyday words, no part of the method named (no sigma, square root, quadrature, quantisation,
+  normalisation, deviation, raw ADU, `e-`). A term a figure is known by stays only with its
+  meaning in the same sentence: "intr-un pixel incap 34446 electroni (full well)". The numbers
+  stay those of the result and `Thresholds.cs` (the rule "Computed only in the core"). A text
+  rewrite is shown to the owner first, original and proposal side by side, and edited only on
+  their yes. The same register in chat with the owner: short sentences, no jargon.
 - **Copied files stay copies** (ADR 0003). A file under `src/DarksCheck.Core/Imaging/` is
   not improved here: a fix goes to its source (LightsCheck, or FlatCheck through it) first,
   then the copy is refreshed. `RawReader.cs` and `ImageLoader.cs` carry LightsCheck's
