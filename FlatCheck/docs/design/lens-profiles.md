@@ -586,9 +586,11 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
 `Th.ProfileDatabaseSpreadStops`) instead of aligning the bands. The candidates come from
 `LensIdentification` (ADR 0030). Mechanics the ADR does not spell out:
 
-- The scale is printed both ways: the one-line form in stops (`AgainstReport.DepthScale`)
-  and, in the window, four bands with the verdict's marked (`StructureReport.DepthScaleRows`),
-  each followed by the sentence that it is the residual scale translated into stops.
+- The scale is printed both ways: the one-line form in stops (`AgainstReport.DepthScale`) in
+  the console, followed by the sentence that it is the residual scale translated into stops; in
+  the window, the stops column of the Structure tab's one verdict scale
+  (`StructureReport.DepthScaleRows`, R-126, ADR 0088), its band's cell marked, with the same
+  sentence under the table.
 - The `--light` note is printed under the depth scale in the console, under `--against`'s
   depth line and on both tabs of the window. The example that raised the question: on the
   paper-diffused tablet masters +0.10 stops is 7 %, BUN here and PROBLEMA there.

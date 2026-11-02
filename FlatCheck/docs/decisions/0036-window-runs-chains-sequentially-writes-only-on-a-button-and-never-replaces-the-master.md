@@ -30,6 +30,9 @@ viewing aids and wording, not numbers.
 
 ## Alternatives rejected
 
+(Restated 2026-11-02: the shape guide the decision calls collapsed is open by default since R-127,
+ADR 0089; it stays a viewing aid, not a number.)
+
 - **Running structure and the series in parallel.** The time saved would not be worth a gigabyte
   of peak memory.
 - **Writing the smoothed / synthetic flat on open.** A ~96 MB file for looking at a folder.

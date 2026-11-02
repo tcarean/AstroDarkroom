@@ -51,7 +51,6 @@ public class StructurePlainWordsTests
         foreach (string verdict in new[] { "PERFECT", "BUN", "ACCEPTABIL", "REFA" }) yield return StructureReport.Advice(verdict);
         yield return StructureReport.DepthAdvice(0.3, "REFA");
         yield return StructureReport.DepthAdvice(-0.3, "BUN");
-        foreach (var (_, _, meaning) in StructureReport.DepthScaleRows()) yield return meaning;
         yield return StructureReport.DepthScaleNote();
         yield return StructureReport.DepthLightScaleNote(0.3);
         yield return StructureReport.DepthLightScaleNote(double.NaN);
@@ -62,8 +61,9 @@ public class StructurePlainWordsTests
     }
 
     /// <summary>
-    /// Thirty-two texts in each language, none naming the fit, the model, a gradient, a sector
-    /// or the rest of the method's vocabulary.
+    /// Twenty-eight texts in each language, none naming the fit, the model, a gradient, a sector
+    /// or the rest of the method's vocabulary. The depth scale's four meanings left with R-126:
+    /// the window's one scale shows the five tests' meanings beside the stops.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -73,7 +73,7 @@ public class StructurePlainWordsTests
         using var _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
         string[] texts = Texts().ToArray();
 
-        Assert.Equal(32, texts.Length);
+        Assert.Equal(28, texts.Length);
         foreach (string text in texts)
         {
             Assert.False(string.IsNullOrWhiteSpace(text));

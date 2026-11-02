@@ -23,13 +23,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      map on the same scale can show the same guide. It binds to MapGuide.* of the tab's
      view-model, exactly as ReportPanel does to Report.
 
-     Folded by default: six lines of text under each map would drown the very figures. The
-     state sits in the view-model (MapGuide.IsExpanded), not in a local ElementName, so that
-     a test can open it - a wrong binding in a folded panel compiles and fails only on
-     display.
+     Open by default (R-127, ADR 0089), the user can fold it. The state sits in the view-model
+     (MapGuide.IsExpanded), not in a local ElementName, so that a test can set it - a wrong
+     binding in a folded panel compiles and fails only on display.
 
      Height bounded with a ScrollViewer: the map sits on an elastic row, so a guide unfolded
-     without a ceiling would squeeze it until it is useless. -->
+     without a ceiling would squeeze it until it is useless. With the ceiling, a maximized
+     1920 x 1080 window keeps 85 % of the map's size with the guide open. -->
 
 <UserControl x:Class="FlatCheck.Wpf.MapGuidePanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

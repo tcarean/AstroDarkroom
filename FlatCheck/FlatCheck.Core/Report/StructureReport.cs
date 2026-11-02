@@ -188,8 +188,9 @@ namespace FlatCheck
         /// reference's uncertainty, Th.ProfileDatabaseSpreadStops, translated into the same
         /// corner error. The two scales judge the same quantity with different uncertainties; the
         /// report shows both instead of choosing for the reader. Printed by the console under the
-        /// depth scale and by --against under its depth row; the window glues it to the scale's
-        /// note. On NaN it says it cannot be read, like the rest of the block.
+        /// depth scale and by --against under its depth row; the Structure tab shows it in the
+        /// profile card, under the comparison's summary. On NaN it says it cannot be read, like
+        /// the rest of the block.
         /// </summary>
         /// <param name="diffStops">The master's depth minus the profile's, stops; NaN when
         /// undetermined.</param>
@@ -215,32 +216,28 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// The depth scale as data, for the window: the same four bands as the residual scale,
-        /// with the interval in stops and the corner error that corresponds to it. The thresholds
-        /// are still Th.Resid*, passed through Stats.StopsForError - not a second list of numbers.
+        /// The depth scale as data, for the window's one verdict scale (R-126): the same four
+        /// bands as the residual scale, with the interval in stops, shown beside the five tests'
+        /// interval in percent and their meaning. The thresholds are still Th.Resid*, passed
+        /// through Stats.StopsForError - not a second list of numbers.
         /// </summary>
-        /// <returns>Four rows, PERFECT to REFA: the band, its interval in stops, its
-        /// meaning.</returns>
-        internal static IReadOnlyList<(string Band, string Range, string Meaning)> DepthScaleRows()
+        /// <returns>Four rows, PERFECT to REFA: the band and its interval in stops.</returns>
+        internal static IReadOnlyList<(string Band, string Range)> DepthScaleRows()
         {
             string S(double pct) => Stats.StopsForError(pct).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
             return new[]
             {
-                ("PERFECT", T($"under {S(Th.ResidPerfect)} stops", $"sub {S(Th.ResidPerfect)} stopuri"),
-                    T($"corner error under {Th.ResidPerfect:F0} %", $"eroare in colt sub {Th.ResidPerfect:F0} %")),
-                ("BUN", T($"{S(Th.ResidPerfect)} - {S(Th.ResidUsable)} stops", $"{S(Th.ResidPerfect)} - {S(Th.ResidUsable)} stopuri"),
-                    T($"corner error {Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %", $"eroare in colt {Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %")),
-                ("ACCEPTABIL", T($"{S(Th.ResidUsable)} - {S(Th.ResidCheck)} stops", $"{S(Th.ResidUsable)} - {S(Th.ResidCheck)} stopuri"),
-                    T($"corner error {Th.ResidUsable:F0} - {Th.ResidCheck:F0} %; below that it cannot be told from the profile's uncertainty",
-                      $"eroare in colt {Th.ResidUsable:F0} - {Th.ResidCheck:F0} %; sub atat nu se poate deosebi de nesiguranta profilului")),
-                ("REFA", T($"over {S(Th.ResidCheck)} stops", $"peste {S(Th.ResidCheck)} stopuri"),
-                    T($"corner error over {Th.ResidCheck:F0} %; redo the flats", $"eroare in colt peste {Th.ResidCheck:F0} %; refa flat-urile")),
+                ("PERFECT", T($"under {S(Th.ResidPerfect)} stops", $"sub {S(Th.ResidPerfect)} stopuri")),
+                ("BUN", T($"{S(Th.ResidPerfect)} - {S(Th.ResidUsable)} stops", $"{S(Th.ResidPerfect)} - {S(Th.ResidUsable)} stopuri")),
+                ("ACCEPTABIL", T($"{S(Th.ResidUsable)} - {S(Th.ResidCheck)} stops", $"{S(Th.ResidUsable)} - {S(Th.ResidCheck)} stopuri")),
+                ("REFA", T($"over {S(Th.ResidCheck)} stops", $"peste {S(Th.ResidCheck)} stopuri")),
             };
         }
 
         /// <summary>
         /// Where the depth scale comes from: it is not a new threshold, it is the five tests' scale
-        /// translated into stops.
+        /// translated into stops. The console prints it in the profile block; the window puts it
+        /// under its one verdict scale (R-126).
         /// </summary>
         /// <returns>Three lines joined by '\n'.</returns>
         internal static string DepthScaleNote()
@@ -937,8 +934,9 @@ namespace FlatCheck
         ///
         /// It is returned as data, not as text already written, because two consumers read it:
         /// the report below, which lays it out in columns, and the WPF application, which puts it
-        /// in a table with the current band highlighted. The thresholds stay the only ones in Th;
-        /// a second list of bands would have diverged at the first recalibration.
+        /// in one table with the depth's interval in stops beside it (<see cref="DepthScaleRows"/>)
+        /// and marks the cell each verdict fell in (R-126). The thresholds stay the only ones in
+        /// Th; a second list of bands would have diverged at the first recalibration.
         /// </summary>
         /// <returns>Four rows, PERFECT to REFA: the band, its interval in percent, its
         /// meaning.</returns>
@@ -958,7 +956,8 @@ namespace FlatCheck
 
         /// <summary>
         /// Why the residual after the radial model is the one that matters. Taken out separately
-        /// for the same reason as <see cref="Scale"/>: the window shows it too, under the table.
+        /// for the same reason as <see cref="Scale"/>: the window shows it too, at the foot of the
+        /// five tests (R-126), where its "the most important one" points at their rows.
         /// </summary>
         /// <returns>Eight lines joined by '\n'.</returns>
         internal static string WhyResidualMatters()

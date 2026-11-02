@@ -423,8 +423,8 @@ public class StructureReportTests
 
     /// <summary>
     /// The depth scale is the residual scale in stops - the same Th.Resid* through
-    /// 2^|D| - 1 - and the rows say so: the boundaries in stops must be the ones the
-    /// one-line scale prints, and the note must say it is not a new threshold.
+    /// 2^|D| - 1: the boundaries in stops must be the ones the one-line scale prints, and the
+    /// note under the window's one table (R-126) must say it is not a new threshold.
     /// </summary>
     [Fact]
     public void TheDepthScaleRowsAreTheResidualScaleInStops()
@@ -435,7 +435,6 @@ public class StructureReportTests
         Assert.Contains("sub 0.03 stopuri", rows[0].Range);
         Assert.Contains("0.14 - 0.26 stopuri", rows[2].Range);
         Assert.Contains("peste 0.26 stopuri", rows[3].Range);
-        Assert.Contains("sub 2 %", rows[0].Meaning);
         foreach (string boundary in new[] { "0.03", "0.14", "0.26" })
             Assert.Contains(boundary, AgainstReport.DepthScale());
         Assert.Contains("2 / 10 / 20 %", StructureReport.DepthScaleNote());

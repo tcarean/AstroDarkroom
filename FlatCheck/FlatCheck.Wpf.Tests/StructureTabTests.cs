@@ -317,8 +317,9 @@ public class StructureTabTests
         Assert.Equal(new[] { "PERFECT", "BUN", "ACCEPTABIL", "REFA" },
                      vm.Scale.Select(s => s.Band).ToArray());
 
-        // The XAML's title counts the TESTS, not the bands, and it stayed "PATRU" for a
-        // whole version after the tests had become five - seen only in a render.
+        // The table's column header counts the TESTS, not the bands; the title did until
+        // R-126, and it stayed "PATRU" for a whole version after the tests had become five -
+        // seen only in a render.
         Assert.Equal(5, vm.Tests.Count);
 
         var current = Assert.Single(vm.Scale.Where(s => s.IsCurrent));
@@ -435,10 +436,10 @@ public class StructureTabTests
         Assert.Empty(vm.ProfileGap);
         Assert.Contains("stopuri", vm.ProfileMaster);
         Assert.Contains("profilul cel mai apropiat", vm.ProfileSummary);
-        Assert.Equal(4, vm.ProfileScale.Count);                        // the depth scale, in stops, band marked
-        Assert.Single(vm.ProfileScale, s => s.IsCurrent);
-        Assert.Equal(vm.ProfileRows.Single(r => r.IsNearest).Verdict, vm.ProfileScale.Single(s => s.IsCurrent).Band);
-        Assert.Contains("Nu e un prag nou", vm.ProfileScaleNote);
+        Assert.Equal(4, vm.Scale.Count);                               // the depth, in stops, in the one scale (R-126)
+        Assert.True(vm.ScaleHasDepth);
+        Assert.Equal(vm.ProfileRows.Single(r => r.IsNearest).Verdict, Assert.Single(vm.Scale, s => s.IsDepthCurrent).Band);
+        Assert.Contains("Nu e un prag nou", vm.ScaleDepthNote);
         Assert.All(vm.ProfileRows, r => Assert.NotEmpty(r.Note));
         Assert.Contains("simetrica in jurul centrului", vm.ProfileNote);
         Assert.Contains("forma", vm.VerdictDetail);
@@ -871,20 +872,21 @@ public class StructureTabTests
         Assert.NotEmpty(vm.MapGuide.Shapes);
     }
 
-    /// <summary>Collapsed by default, and the state survives the change of folder like the
-    /// scale.</summary>
+    /// <summary>R-127: open when the window starts; folded by the user, it stays folded across
+    /// the change of folder, like the scale. The tab's other guide still starts folded.</summary>
     [Fact]
-    public async Task TheGuideStartsCollapsedAndKeepsItsStateAcrossReset()
+    public async Task R127_TheMapGuideStartsOpenAndKeepsTheUsersFoldAcrossReset()
     {
         using var f = new SessionFixture().WithFlatMaster();
         var vm = await Run(f);
 
-        Assert.False(vm.MapGuide.IsExpanded);
+        Assert.True(vm.MapGuide.IsExpanded);
+        Assert.False(vm.HowToRead.IsExpanded);
 
-        vm.MapGuide.IsExpanded = true;
+        vm.MapGuide.IsExpanded = false;
         vm.Reset();
 
-        Assert.True(vm.MapGuide.IsExpanded);
+        Assert.False(vm.MapGuide.IsExpanded);
     }
 
     // ------------------------------------------------- the "no filters" box (R-118)
@@ -1304,5 +1306,126 @@ public class StructureTabTests
         Assert.False(vm.OffersLensChoice);
         Assert.Empty(vm.LensChoicePrompt);
         Assert.Null(vm.SelectedLens);
+    }
+
+    // ------------------------------------------------------ the one verdict scale (R-126)
+
+    /// <summary>
+    /// R-126: with the vignetting compared, the five tests' scale and the depth's are one table:
+    /// every band carries its interval in percent, the same band in stops (the core's
+    /// DepthScaleRows, not a list of the window's) and the console's meaning. The five tests'
+    /// verdict marks a percent cell and the nearest profile's verdict a stops cell - on this
+    /// fixture in two different rows, which is why a row cannot be what is marked. The sentence
+    /// that the stops are the same scale sits under the table; the card keeps only what the End
+    /// to end test would read.
+    /// </summary>
+    [Fact]
+    public async Task R126_WithTheVignettingComparedOneScaleCarriesTheStopsAndMarksEachVerdictsCell()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+        Assert.True(vm.HasProfileRows, vm.ErrorText);
+
+        var percent = StructureReport.Scale();
+        var stops = StructureReport.DepthScaleRows();
+        Assert.True(vm.ScaleHasDepth);
+        Assert.Equal(new[] { "PERFECT", "BUN", "ACCEPTABIL", "REFA" }, vm.Scale.Select(s => s.Band).ToArray());
+        Assert.Equal(percent.Select(p => p.Band), stops.Select(d => d.Band));
+        Assert.Equal(percent.Select(p => p.Range), vm.Scale.Select(s => s.Range));
+        Assert.Equal(stops.Select(d => d.Range), vm.Scale.Select(s => s.DepthRange));
+        Assert.Equal(percent.Select(p => p.Meaning), vm.Scale.Select(s => s.Meaning));
+        Assert.All(vm.Scale, s => Assert.True(s.HasDepth));
+
+        string shape = ShapeVerdict(vm);
+        string depth = vm.ProfileRows.Single(r => r.IsNearest).Verdict;
+        Assert.NotEqual(shape, depth);                                 // two verdicts, two rows
+        Assert.Equal(shape, Assert.Single(vm.Scale, s => s.IsCurrent).Band);
+        Assert.Equal(depth, Assert.Single(vm.Scale, s => s.IsDepthCurrent).Band);
+
+        Assert.Equal(StructureReport.DepthScaleNote().Replace('\n', ' '), vm.ScaleDepthNote);
+        Assert.Contains("Testul End-to-end", vm.ProfileLightNote);
+        Assert.DoesNotContain("Nu e un prag nou", vm.ProfileLightNote);
+    }
+
+    /// <summary>
+    /// R-126: with nothing compared - no raw in flats/, or the box unticked for a filter - the
+    /// table is the five tests' alone: no stops in any row, no stops cell marked, no sentence
+    /// about stops; the percent cell of the five tests' verdict is still marked.
+    /// </summary>
+    [Fact]
+    public async Task R126_WithNothingComparedTheScaleHasThePercentColumnAlone()
+    {
+        using var plain = new SessionFixture().WithFlatMaster();
+        using var filtered = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        // The window's own case: a catalog, and no raw in flats/ to name the lens.
+        var noRaw = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        await noRaw.RunAsync(plain.Session, CancellationToken.None);
+        var withFilter = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        withFilter.NoFilters = false;
+        await withFilter.RunAsync(filtered.Session, CancellationToken.None);
+
+        foreach (StructureTabViewModel vm in new[] { noRaw, withFilter })
+        {
+            Assert.True(vm.HasResult, vm.ErrorText);
+            Assert.False(vm.ScaleHasDepth);
+            Assert.Equal(4, vm.Scale.Count);
+            Assert.All(vm.Scale, s => Assert.False(s.HasDepth));
+            Assert.DoesNotContain(vm.Scale, s => s.IsDepthCurrent);
+            Assert.Equal(ShapeVerdict(vm), Assert.Single(vm.Scale, s => s.IsCurrent).Band);
+            Assert.Empty(vm.ScaleDepthNote);
+            Assert.Empty(vm.ProfileLightNote);
+        }
+    }
+
+    /// <summary>
+    /// R-126: the box redraws the table with the comparison. Unticked, the stops column and its
+    /// sentence go and only the five tests' cell stays marked; ticked again, they come back with
+    /// the depth's cell: the recompare rebuilds the scale, it does not keep the last one.
+    /// </summary>
+    [Fact]
+    public async Task R126_TheBoxTakesTheStopsColumnAwayAndBringsItBack()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+        string depth = vm.ProfileRows.Single(r => r.IsNearest).Verdict;
+        Assert.True(vm.ScaleHasDepth);
+
+        vm.NoFilters = false;
+        await vm.Pending;
+
+        Assert.False(vm.ScaleHasDepth);
+        Assert.All(vm.Scale, s => Assert.False(s.HasDepth));
+        Assert.DoesNotContain(vm.Scale, s => s.IsDepthCurrent);
+        Assert.Empty(vm.ScaleDepthNote);
+        Assert.Equal(ShapeVerdict(vm), Assert.Single(vm.Scale, s => s.IsCurrent).Band);
+
+        vm.NoFilters = true;
+        await vm.Pending;
+
+        Assert.True(vm.ScaleHasDepth);
+        Assert.Equal(depth, Assert.Single(vm.Scale, s => s.IsDepthCurrent).Band);
+        Assert.NotEmpty(vm.ScaleDepthNote);
+    }
+
+    /// <summary>R-126: Reset leaves no stops column and no sentence about stops for the next
+    /// folder.</summary>
+    [Fact]
+    public async Task R126_ResetClearsTheStopsColumn()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+        Assert.True(vm.ScaleHasDepth);
+
+        vm.Reset();
+
+        Assert.False(vm.ScaleHasDepth);
+        Assert.Empty(vm.Scale);
+        Assert.Empty(vm.ScaleDepthNote);
+        Assert.Empty(vm.ProfileLightNote);
     }
 }
