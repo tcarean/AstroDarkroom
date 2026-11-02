@@ -71,7 +71,7 @@ internal static class WindowTexts
     /// <returns>"Written:" ("Scris:") followed by one path per line.</returns>
     internal static string Written(IReadOnlyList<string> paths) => T("Written:", "Scris:") + "\n" + string.Join("\n", paths);
 
-    internal static string CropsBusy => T("Decoding the frame for the cut-outs...", "Se decodeaza cadrul pentru decupaje...");
+    internal static string CropsBusy => T("Reading the frame for the cut-outs...", "Se citeste cadrul pentru decupaje...");
 
     internal static string NoCrops => T("No cut-outs: the frame has no measured stars or could not be read.", "Niciun decupaj: cadrul nu are stele masurate sau nu s-a putut citi.");
 

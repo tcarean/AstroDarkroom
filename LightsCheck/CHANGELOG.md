@@ -34,6 +34,18 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Frames tab and the reasons a frame is flagged speak in plain words (R-079, ADR 0034),
+  wherever the reasons are printed: on the Frames and Rejected tabs and in the console's REJECTED
+  section and frame table. A reason names the class its figure gives
+  (`elongation 1.76 (from 1.60 the frame is bad)`), compares the stars' width and count with the
+  session's usual ones (`wide stars: ...`, `too few stars: ...`), says the sky background jumps
+  against the neighbouring frames, that Siril takes a satellite or plane trail out when stacking,
+  and that a frame could not be aligned. The column tooltips, the cut-outs' caption and wait note,
+  and the line under each cut-out (`width (FWHM)`, the angle in degrees) are rewritten the same
+  way; the Romanian plural of trails reads `3 dare`. The Frames table's reasons column widens
+  from 280 to 560 px, so the reason of a trailed frame, bad or marginal, shows whole in either
+  language; a longer one is still whole in its tooltip and on the Rejected tab. Every figure is
+  unchanged.
 - The Summary tab, the console's session lines (`--inventory` too) and its sections SUMMARY,
   FOCUS, EXPOSURE AND NOISE, DEW, TRAILED FRAMES and DRIFT AND ROTATION speak in plain words
   (R-078, ADR 0033): `the stars' width (FWHM)` and `typically` for the median, `total exposure`

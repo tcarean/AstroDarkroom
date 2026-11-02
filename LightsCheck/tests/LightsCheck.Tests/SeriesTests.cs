@@ -303,6 +303,57 @@ public class SeriesTests
         }
     }
 
+    /// <summary>
+    /// The reasons of every flag kind, the frame table's and the rejected list's reasons of the
+    /// classes session, and the lines under a frame's star cut-outs name none of the method's
+    /// words in either language; the Romanian reasons read as R-079 quotes them (R-079).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R079_TheReasonsAvoidTheMethodsVocabulary(bool english)
+    {
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        FrameFlag[] flags =
+        [
+            new(FlagKind.Trailed, 1.76, Th.ElongationBad, "-90", TrailAxis.Ra),
+            new(FlagKind.MarginalTrail, 1.40, Th.ElongationMarginal, "-85", TrailAxis.Dec),
+            new(FlagKind.Trailed, 1.70, Th.ElongationBad, "88"),
+            new(FlagKind.Soft, 4.5, 4.06),
+            new(FlagKind.Clouds, 400, 600),
+            new(FlagKind.BackgroundJump, 25, Th.BackgroundJumpPct),
+            new(FlagKind.Trails, 1, 0),
+            new(FlagKind.Trails, 3, 0),
+            new(FlagKind.Unregistered, 0, 0),
+            new(FlagKind.Unreadable, 0, 0, "x"),
+        ];
+        foreach (FrameFlag flag in flags)
+        {
+            PlainWords.AssertPlain(SeriesReport.Reason(flag), $"the reason of {flag.Kind}");
+        }
+
+        using SessionFixture classes = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(classes.LightsDir, "DSC_0009.fit"), new byte[100]);
+        SeriesResult r = SeriesRun.Run(classes.Root, new SeriesOptions(Threads: 2));
+        foreach (string reasons in SeriesReport.FrameRows(r).Select(row => row.Reasons).Concat(SeriesReport.RejectedRows(r).Select(row => row.Reasons)))
+        {
+            PlainWords.AssertPlain(reasons, "a frame's reasons");
+        }
+
+        AnalyzedFrame measured = r.Frames.First(f => f.Measurement is not null);
+        foreach (StarCrop crop in StarCrops.Build(measured.Info.Path, measured.Measurement!))
+        {
+            PlainWords.AssertPlain(SeriesReport.CropCaption(crop), "the line under a cut-out");
+        }
+
+        if (!english)
+        {
+            Assert.Equal("alungire 1.76 (de la 1.60 cadrul e slab), dara pe RA (-90 grade)", SeriesReport.Reason(flags[0]));
+            Assert.Equal("1 dara de satelit sau avion (Siril o scoate la stivuire)", SeriesReport.Reason(flags[6]));
+            Assert.Equal("3 dare de satelit sau avion (Siril le scoate la stivuire)", SeriesReport.Reason(flags[7]));
+        }
+    }
+
     [Fact]
     public void R019_TheDitherPatternIsReadBack()
     {
@@ -402,7 +453,7 @@ public class SeriesTests
         Assert.Equal(Axis.Y, s.RaAxis);
         FrameFlag flag = Assert.Single(s.Flags[2]);
         Assert.Equal(TrailAxis.Ra, flag.On);
-        Assert.Equal($"alungire {RunReport.F(flag.Value, 2)} (prag 1.60), dara pe RA (-90 grade)", SeriesReport.Reasons(s.Flags[2]));
+        Assert.Equal($"alungire {RunReport.F(flag.Value, 2)} (de la 1.60 cadrul e slab), dara pe RA (-90 grade)", SeriesReport.Reasons(s.Flags[2]));
         Assert.Equal(TrailAxis.Ra, s.TrailOn);
         Assert.Contains(", adica pe RA", SeriesReport.TrailRows(r).Single(x => x.Label == "directia darelor").Value, StringComparison.Ordinal);
 

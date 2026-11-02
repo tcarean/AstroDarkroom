@@ -85,7 +85,7 @@ internal static class StarCrops
         List<(string, StarShape?)> picks =
         [
             (T("centre", "centru"), Pick(s => Math.Abs(s.Y - cy) < h / 5.0 && Math.Abs(s.X - cx) < w / 5.0)),
-            (T("centre, second", "centru, a doua"), byFlux.Where(s => Math.Abs(s.Y - cy) < h / 5.0 && Math.Abs(s.X - cx) < w / 5.0).Skip(1).FirstOrDefault()),
+            (T("centre, second star", "centru, a doua stea"), byFlux.Where(s => Math.Abs(s.Y - cy) < h / 5.0 && Math.Abs(s.X - cx) < w / 5.0).Skip(1).FirstOrDefault()),
             (T("top left", "stanga sus"), Pick(s => s.Y < h / 4.0 && s.X < w / 4.0)),
             (T("top right", "dreapta sus"), Pick(s => s.Y < h / 4.0 && s.X > 3 * w / 4.0)),
             (T("bottom left", "stanga jos"), Pick(s => s.Y > 3 * h / 4.0 && s.X < w / 4.0)),

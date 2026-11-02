@@ -190,6 +190,85 @@ public class WindowLanguageTests
         }
     }
 
+    /// <summary>
+    /// The rendered Frames tab, its column titles and tooltips, the reasons and a frame's star
+    /// cut-outs with their caption, and the cut-outs' wait note name none of the method's words,
+    /// in either language (R-079).
+    /// </summary>
+    [Fact]
+    public async Task R079_TheFramesTabUsesNoneOfTheMethodsWords()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);
+        try
+        {
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                Ui.Default = language;
+                await _sta.InvokeAsync(async () =>
+                {
+                    MainViewModel vm = new();
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+                    vm.SelectedFrame = vm.Frames[2];
+                    await vm.CropsPending;
+                    Assert.NotEmpty(vm.Crops);
+
+                    List<string> texts = [.. Texts(Render(new FramesView { DataContext = vm }, null))];
+                    texts.Add(WindowTexts.CropsBusy);
+                    foreach (string text in texts)
+                    {
+                        PlainWords.AssertPlain(text.Replace(f.Root, "", StringComparison.Ordinal), $"the Frames tab ({language})");
+                    }
+                });
+            }
+        }
+        finally
+        {
+            Ui.Default = UiLanguage.Romanian;
+        }
+    }
+
+    /// <summary>
+    /// Every reason a trailed frame can get, bad or marginal, on RA, on DEC, oblique or with its
+    /// angle alone, fits whole in the Frames table's reasons cell, in either language (R-079):
+    /// measured in the cell's font and in the window's text formatting, whose whole-pixel letters
+    /// are the widest at 100 % scaling, against the cell as the tab lays it out.
+    /// </summary>
+    [Fact]
+    public async Task R079_EveryTrailReasonFitsTheReasonsColumn()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        await _sta.InvokeAsync(async () =>
+        {
+            MainViewModel vm = new();
+            await vm.OpenAsync(f.Root);
+            FramesView view = new() { DataContext = vm };
+            TextOptions.SetTextFormattingMode(view, TextOptions.GetTextFormattingMode(new MainWindow(vm)));
+            string reasons = vm.Frames[2].Reasons;
+            TextBlock cell = TextBlocks(Render(view, null)).First(tb => tb.Text == reasons);
+
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                using IDisposable _ = Ui.Use(language);
+                foreach (FlagKind kind in new[] { FlagKind.Trailed, FlagKind.MarginalTrail })
+                {
+                    foreach (TrailAxis on in new[] { TrailAxis.Ra, TrailAxis.Dec, TrailAxis.Oblique, TrailAxis.Unknown })
+                    {
+                        FrameFlag flag = kind == FlagKind.Trailed
+                            ? new(kind, 2.45, Th.ElongationBad, "-65", on)
+                            : new(kind, 1.59, Th.ElongationMarginal, "-65", on);
+                        string reason = SeriesReport.Reason(flag);
+                        TextBlock probe = new() { Text = reason, FontFamily = cell.FontFamily, FontSize = cell.FontSize, FontWeight = cell.FontWeight, FontStyle = cell.FontStyle };
+                        TextOptions.SetTextFormattingMode(probe, TextOptions.GetTextFormattingMode(cell));
+                        probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                        Assert.True(probe.DesiredSize.Width <= cell.ActualWidth, $"{probe.DesiredSize.Width:F0} px of text in a cell of {cell.ActualWidth:F0} px ({language}): {reason}");
+                    }
+                }
+            }
+        });
+    }
+
     [Fact]
     public async Task R063_TheSameWindowInRomanianStillShowsRezumat()
     {
@@ -301,6 +380,25 @@ public class WindowLanguageTests
         }
     }
 
+    /// <summary>Every text block of the visual tree under an element.</summary>
+    private static IEnumerable<TextBlock> TextBlocks(DependencyObject root)
+    {
+        Stack<DependencyObject> todo = new([root]);
+        while (todo.Count > 0)
+        {
+            DependencyObject d = todo.Pop();
+            if (d is TextBlock tb)
+            {
+                yield return tb;
+            }
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+            {
+                todo.Push(VisualTreeHelper.GetChild(d, i));
+            }
+        }
+    }
+
     // Romanian words and stems that English never holds.
     private static readonly string[] RomanianWords =
     [
@@ -315,6 +413,8 @@ public class WindowLanguageTests
         "MUTAT", "DINAINTE", "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "niciodata", "alunec",
         "dunga", "dungi", "Bara ", "latimea", "montura", "fotografiere", "totala", "nivelul", "inseamna", "rotit", "deviata",
         "gasite", "lumina", "ramane",
+        "alinia", "comune", "obisnuit", "semnaleaza", "vecine", "putine", "stivuire", "satelit", "referinta", "adica", "ceata", "scoate",
+        "citeste", "marite", "rotunde", "alungite", "sfarsitul", "paranteza", "sageata", "incotro", "grupul", "negru", "imaginii", "catelea",
     ];
 
     /// <summary>The English texts hold none of the Romanian words.</summary>
