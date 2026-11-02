@@ -5,7 +5,7 @@
 The behaviour is R-050 to R-065; the decisions are ADR 0004 (the index as a rank statistic,
 the matching as a ratio on shared pixels, no reference file) and ADR 0008 (the lights read one
 by one, the isolated detector, the pixels two masters match on). The run that calls these two
-(`DarkSeriesRun`), the report sections `9. LIGHTS FATA DE DARK`, `INDEX` and `TABEL PE LIGHTS`
+(`DarkSeriesRun`), the report sections `9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE`, `INDEX` and `TABEL PE LIGHTS`
 and the file `darkscheck-lights.csv` are described with the rest of the run in
 `dark-analysis.md`. The oracle is the lights loop of `prototype/analyze_darks.py`
 (`local_excess`, `neighbour_max`) and `docs/validation/2026-08-12-smida/report.md`, section 9.

@@ -8,61 +8,61 @@ Copyright (C) 2026 Tudor Carean
     camera             : NIKON D3300
     darks exposure     : 120.0 s at ISO 400 (all frames)
     biases exposure    : 0.0002 s at ISO 400 (all frames)
-    darks interval     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 frames every 120.0 s; no gap over 5 s
+    darks interval     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 frames, one every 120.0 s; no gap over 5 s
     match              : UNMEASURED: there are no lights
-    bias               : OK: 0.0002 s
+    bias               : OK: 0.0002 s, short enough for a bias
 
-=== DARKS: 4 frames decoded of 4, 256 x 192 px, scale 200 .. 65535 ADU (FITS (assumed from BITPIX 16), black 200 from the biases), CFA RGGB ===
-    normalisation      : ISO 400, 120.0 s -> x1.00 relative to ISO 400 and 120 s (ADU-eq = ADU)
-    quantisation       : step 1 ADU near the black; 24 distinct values in the first frame (G1)
+=== DARKS: frames read 4 of 4, 256 x 192 px, values from 200 (black) to 65535 ADU (white) (FITS of 16 bits, the white deduced from the file, the black taken from the biases), colour filters RGGB ===
+    1 ADU-eq           : 1 ADU in the file: the set was taken at the reference settings themselves, ISO 400, 120.0 s
+    value step         : near the black, the file's values go up 1 by 1 ADU; the first frame has 24 different values (the green pixels G1)
 
-  2. LIGHT LEAKS AND GRADIENT
-    master dark        : centre -0.02, corners 0.01 / 0.12 / 0.03 / 0.10 (TL / TR / BL / BR), edges top 0.00 bottom 0.00 left -0.03 right -0.03  [G1, ADU above the black, mean of 4 frames, blocks of 32 px]
-    master bias        : centre -0.07, corners 0.10 / -0.01 / -0.05 / 0.13 (TL / TR / BL / BR), edges top 0.05 bottom -0.03 left -0.02 right 0.03  [G1, ADU above the black, mean of 3 frames]
-    dark - bias        : centre 0.05, corners -0.09 / 0.13 / 0.08 / -0.04 (TL / TR / BL / BR), edges top -0.04 bottom 0.03 left -0.01 right -0.06; median -0.03, -0.25 .. 0.23 (p1 .. p99)
-    light per frame    : UNMEASURED: fewer than 6 frames with hot pixels
-    glow / constant    : UNMEASURED: fewer than 6 frames with hot pixels
-    constant light     : UNMEASURED: fewer than 6 frames with hot pixels
-    verdict            : OK: no edge or corner more than 1.0 ADU from the centre (the farthest -0.14 at the top-left, on dark - bias); light per frame UNMEASURED
+  2. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME
+    master dark        : centre -0.02, corners 0.01 / 0.12 / 0.03 / 0.10 (top-left / top-right / bottom-left / bottom-right), edges top 0.00 bottom 0.00 left -0.03 right -0.03  [the green pixels G1, ADU above the black, mean of 4 frames, in squares of 32 px]
+    master bias        : centre -0.07, corners 0.10 / -0.01 / -0.05 / 0.13 (top-left / top-right / bottom-left / bottom-right), edges top 0.05 bottom -0.03 left -0.02 right 0.03  [the green pixels G1, ADU above the black, mean of 3 frames]
+    dark - bias        : centre 0.05, corners -0.09 / 0.13 / 0.08 / -0.04 (top-left / top-right / bottom-left / bottom-right), edges top -0.04 bottom 0.03 left -0.01 right -0.06; the typical pixel -0.03, nearly all (98 %) between -0.25 and 0.23
+    light per frame    : UNMEASURED: there are fewer than 6 frames with hot pixels
+    glow / constant    : UNMEASURED: there are fewer than 6 frames with hot pixels
+    constant light     : UNMEASURED: there are fewer than 6 frames with hot pixels
+    verdict            : OK: no edge and no corner differs from the centre by more than 1.0 ADU (the most -0.14, at the top-left, on dark minus bias); the light per frame could not be measured
 
-  3. THERMAL DRIFT IN THE SERIES
-    amplitude          : the hot pixels at 0.89 of the master in the first frame, 1.12 in the last (4 pixels above 20 ADU)
-    plateau            : UNMEASURED: fewer than 6 frames with hot pixels
-    to discard         : UNMEASURED: fewer than 6 frames with hot pixels
-    verdict            : OK: every frame lies in 0.7 .. 1.4 of the master (fewer than 6 frames, no plateau)
+  3. THE CAMERA'S WARMING DURING THE SERIES
+    hot pixels         : in the first frame they are at 0.89 of their level in the master, in the last at 1.12 (4 pixels above 20 ADU); they rise with the temperature, so they show how warm the sensor was
+    plateau            : UNMEASURED: there are fewer than 6 frames with hot pixels
+    to discard         : UNMEASURED: there are fewer than 6 frames with hot pixels
+    verdict            : OK: every frame is close enough to the master for Siril to match it with -opt (between 0.7 and 1.4); there are fewer than 6 frames, so no plateau
 
-  4. NOISE PER FRAME
-    residual sigma     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (median 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU, frame - master]
-    read noise         : R 2.02  G1 2.02  G2 2.03  B 2.03 ADU (from 2 pairs of consecutive biases); temporal noise above the read noise on G1 ~2.20 ADU (sqrt(sigma_t^2 - read^2): dark current and quantisation)
-    random banding     : horizontal 0.242 ADU rms per row (1.0 times the white noise), vertical 1.0 times
-    verdict            : OK: no frame with noise above 1.5 x the median (2.66 ADU)
+  4. THE NOISE OF EACH FRAME
+    against the master : R 2.64 .. 2.75; G1 2.64 .. 2.71 (usually 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]
+    read noise         : R 2.02  G1 2.02  G2 2.03  B 2.03 ADU (from 2 pairs of biases taken one after the other); the noise the exposure adds above the read noise, on the green pixels G1: ~2.20 ADU (it comes from the sensor's heat and from the value step)
+    random banding     : horizontal: the rows differ from one another by 0.242 ADU, 1.0 times what the noise alone would give; vertical: 1.0 times (1 means no banding)
+    verdict            : OK: no frame has noise more than 1.5 times the usual (2.66 ADU)
 
   5. HOT PIXELS
-    master above level : 10: 5; 20: 4; 50: 3; 100: 2; 500: 1  [ADU above the black, the series' median, all planes]
-    per plane at 20    : R 1  G1 1  G2 1  B 1
-    amplitude          : median 102, p10 38, p90 465, p99 588 ADU (of 4)
-    stability          : 4 of 4 above half the threshold in all 4 frames, 0 missing from 2 or more; temporal sigma 9.25 ADU on the hot ones, 2.38 on the rest; 0 RTS candidates on G1 (temporal sigma above 6 x the noise of one frame, 3.01)
+    above the threshold: above 10: 5; above 20: 4; above 50: 3; above 100: 2; above 500: 1  [the master's pixels, ADU above the black, all colours]
+    by colour, above 20: R 1  G1 1  G2 1  B 1
+    how hot            : usually 102 ADU; 80 % of them between 38 and 465; the hottest 1 % above 588 (of 4 pixels)
+    stability          : 4 of 4 show (above half the threshold) in all 4 frames, 0 are missing from 2 or more; from one frame to the next they vary by 9.25 ADU, the other pixels by 2.38; 0 green pixels G1 jump between two levels (RTS: they vary more than 6 times the noise of one frame, 3.01)
     verdict            : OK (informative): 4 pixels above 20 ADU in 0.05 Mpx
 
-  6. FIXED PATTERN
-    structured banding : rows 0.146 ADU rms (0.80 peak to peak, R), columns 0.171 (0.97, B)  [the master's profile minus a running median over 101]
-    glow               : -0.14 ADU at the top-left against the centre (dark - bias)
-    verdict            : OK: banding under 2.0 ADU peak to peak and edges under 1.0
+  6. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME
+    fixed banding      : the master's rows differ from one another by 0.146 ADU (0.80 between the brightest and the darkest, on R), the columns by 0.171 (0.97, on B)  [once the slow changes are taken out, over 101 rows or columns at a time]
+    glow               : -0.14 ADU at the top-left against the centre (on dark minus bias)
+    verdict            : OK: the fixed banding stays under 2.0 ADU between the brightest and the darkest row, and the edges under 1.0 from the centre
 
   7. DEAD AND SATURATED PIXELS
-    master             : 0 below the black - 50 ADU, 0 at the white (65535)
+    master             : 0 dead pixels (below the black minus 50 ADU), 0 saturated (at the white, 65535)
     verdict            : OK: no dead or saturated pixel in the master
 
   8. HOW MANY DARKS ARE ENOUGH
-    noise of the mean  : n=1 2.99 (expected 3.01); n=2 2.16 (expected 2.13)  [G1, the central 192 px, ADU, temporal sigma = frame against frame]
-    master             : 4 frames -> 1.87 ADU noise of the median master (1.25 x temporal sigma 2.99 / sqrt(4)); the median of 2 against the mean of 2: 3.06
-    verdict            : WARNING: only 4 frames; the median needs at least 10 so that one odd frame does not pull it (the master's noise would be 1.87 ADU)
+    noise when averaged: 1 frame: 2.99 (expected 3.01); 2 frames: 2.16 (expected 2.13)  [the green pixels G1, the central 192 px, ADU; measured from one frame to the next]
+    master             : 4 frames give a master with 1.87 ADU of noise per pixel (from the noise from one frame to the next, 2.99); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.06 ADU
+    verdict            : WARNING: only 4 frames; at least 10 are needed, so that one odd frame does not spoil the master (the master's noise would be 1.87 ADU)
 
-  9. LIGHTS AGAINST THE DARK
+  9. HOW WELL THE DARK FITS THE LIGHTS
     verdict            : UNMEASURED: the session has no lights
 
   INDEX
-    darks              : idx145 (145.0 ADU-eq: the median of the pixels ranked 5-20 per Mpx, ranks 2 .. 2 of 0.05 Mpx, normalised to ISO 400 and 120 s)
+    darks              : idx145 (145.0 ADU-eq: the usual value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
     label              : <session>-idx145
 
   FRAMES TABLE

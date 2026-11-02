@@ -112,10 +112,9 @@ internal static class DarkReport
     {
         ArgumentNullException.ThrowIfNull(r);
         DarkSeriesAnalysis d = r.Darks;
-        string used = d.Used.ToString(CultureInfo.InvariantCulture);
         return T(
-            $"=== DARKS{(r.DarksFromPartner is string pe ? $" (the partner's, {pe})" : "")}: {(d.Used == 1 ? "1 frame decoded" : used + " frames decoded")} of {d.Frames.Count}, {d.Width} x {d.Height} px, scale {F(d.Black, 0)} .. {F(d.White, 0)} ADU ({d.ScaleSource}), CFA {d.CfaLetters ?? "unknown"} ===",
-            $"=== DARK-URI{(r.DarksFromPartner is string pr ? $" (ale partenerului {pr})" : "")}: {(d.Used == 1 ? "1 cadru decodat" : RoCount(d.Used) + "cadre decodate")} din {d.Frames.Count}, {d.Width} x {d.Height} px, scara {F(d.Black, 0)} .. {F(d.White, 0)} ADU ({d.ScaleSource}), CFA {d.CfaLetters ?? "necunoscut"} ===");
+            $"=== DARKS{(r.DarksFromPartner is string pe ? $" (the partner's, {pe})" : "")}: frames read {d.Used} of {d.Frames.Count}, {d.Width} x {d.Height} px, values from {F(d.Black, 0)} (black) to {F(d.White, 0)} ADU (white){ScaleSource(d)}, {(d.CfaLetters is string cfaEn ? "colour filters " + cfaEn : "colour filter order unknown")} ===",
+            $"=== DARK-URI{(r.DarksFromPartner is string pr ? $" (ale partenerului {pr})" : "")}: cadre citite {d.Used} din {d.Frames.Count}, {d.Width} x {d.Height} px, valori de la {F(d.Black, 0)} (negru) la {F(d.White, 0)} ADU (alb){ScaleSource(d)}, {(d.CfaLetters is string cfaRo ? "filtre de culoare " + cfaRo : "ordinea filtrelor de culoare necunoscuta")} ===");
     }
 
     /// <summary>
@@ -130,10 +129,10 @@ internal static class DarkReport
         DarkSeriesAnalysis d = r.Darks;
         List<ReportRow> rows =
         [
-            new(T("normalisation", "normalizare"), Normalisation(d)),
-            new(T("quantisation", "cuantizare"), T(
-                $"step {d.QuantStep} ADU near the black; {d.UniqueValues} distinct values in the first frame ({d.PlaneNames[r.ReferencePlane]})",
-                $"pas {d.QuantStep} ADU langa negru; {RoCount(d.UniqueValues)}valori distincte in primul cadru ({d.PlaneNames[r.ReferencePlane]})")),
+            new("1 ADU-eq", Normalisation(d)),
+            new(T("value step", "pasul valorilor"), T(
+                $"near the black, the file's values go up {d.QuantStep} by {d.QuantStep} ADU; the first frame has {d.UniqueValues} different values ({ScaleReport.PlaneWords(d.PlaneNames[r.ReferencePlane])})",
+                $"langa negru, valorile din fisier cresc din {d.QuantStep} in {d.QuantStep} ADU; primul cadru are {RoCount(d.UniqueValues)}valori diferite ({ScaleReport.PlaneWords(d.PlaneNames[r.ReferencePlane])})")),
         ];
         if (r.BiasError is not null)
         {
@@ -144,16 +143,16 @@ internal static class DarkReport
         if (badBiases.Length > 0)
         {
             rows.Add(new(T("WARNING", "ATENTIE"), T(
-                $"{badBiases.Length} {(badBiases.Length == 1 ? "bias could not be decoded" : "biases could not be decoded")} (the first: {badBiases[0].Info.FileName}: {badBiases[0].Error}); see {DarkOutputs.BiasesCsvName} with --out",
-                $"{RoCount(badBiases.Length)}{(badBiases.Length == 1 ? "bias nu s-a putut decoda" : "bias-uri nu s-au putut decoda")} (primul: {badBiases[0].Info.FileName}: {badBiases[0].Error}); vezi {DarkOutputs.BiasesCsvName} cu --out")));
+                $"{badBiases.Length} {(badBiases.Length == 1 ? "bias could not be read" : "biases could not be read")} (the first: {badBiases[0].Info.FileName}: {badBiases[0].Error}); the list is in {DarkOutputs.BiasesCsvName}, written with --out",
+                $"{RoCount(badBiases.Length)}{(badBiases.Length == 1 ? "bias nu s-a putut citi" : "bias-uri nu s-au putut citi")} (primul: {badBiases[0].Info.FileName}: {badBiases[0].Error}); lista e in {DarkOutputs.BiasesCsvName}, scris cu --out")));
         }
 
         int skippedBiases = r.Biases?.Frames.Count(f => f.Skipped) ?? 0;
         if (skippedBiases > 0)
         {
             rows.Add(new(T("skipped biases", "bias-uri sarite"), T(
-                $"{skippedBiases} of {r.Biases!.Frames.Count} (the frame cap; {r.Biases.Used} used)",
-                $"{skippedBiases} din {r.Biases!.Frames.Count} (plafonul de cadre; folosite {r.Biases.Used})")));
+                $"{skippedBiases} of {r.Biases!.Frames.Count} (over the maximum number of frames; {r.Biases.Used} used)",
+                $"{skippedBiases} din {r.Biases!.Frames.Count} (peste numarul maxim de cadre; s-au folosit {r.Biases.Used})")));
         }
 
         return rows;
@@ -179,18 +178,20 @@ internal static class DarkReport
         // "master dark", "master bias" and "dark - bias" are the same in both languages: the
         // window finds the maps' rows by them.
         List<ReportRow> leak = [new("master dark", RegionsLine(d.MeanMaps[rp].Regions, n) + T(
-            $"  [{g}, {eq} above the black, mean of {RunReport.Frames(d.Used)}, blocks of {Th.BinPx * 2} px]",
-            $"  [{g}, {eq} peste negru, media a {RunReport.Frames(d.Used)}, blocuri de {Th.BinPx * 2} px]"))];
+            $"  [{ScaleReport.PlaneWords(g)}, {eq} above the black, mean of {RunReport.Frames(d.Used)}, in squares of {Th.BinPx * 2} px]",
+            $"  [{ScaleReport.PlaneWords(g)}, {eq} peste negru, media a {RunReport.Frames(d.Used)}, pe patrate de {Th.BinPx * 2} px]"))];
         if (r.Biases is BiasAnalysis b)
         {
             leak.Add(new("master bias", RegionsLine(b.MeanMaps[rp].Regions, 1) + T(
-                $"  [{g}, ADU above the black, mean of {RunReport.Frames(b.Used)}]",
-                $"  [{g}, ADU peste negru, media a {RunReport.Frames(b.Used)}]")));
+                $"  [{ScaleReport.PlaneWords(g)}, ADU above the black, mean of {RunReport.Frames(b.Used)}]",
+                $"  [{ScaleReport.PlaneWords(g)}, ADU peste negru, media a {RunReport.Frames(b.Used)}]")));
         }
 
         if (r.DarkCurrent is DarkCurrent dc)
         {
-            leak.Add(new("dark - bias", $"{RegionsLine(dc.Maps[rp].Regions, n)}; {T("median", "mediana")} {F(dc.Median / n, 2)}, {F(dc.P1 / n, 2)} .. {F(dc.P99 / n, 2)} (p1 .. p99)"));
+            leak.Add(new("dark - bias", RegionsLine(dc.Maps[rp].Regions, n) + T(
+                $"; the typical pixel {F(dc.Median / n, 2)}, nearly all (98 %) between {F(dc.P1 / n, 2)} and {F(dc.P99 / n, 2)}",
+                $"; pixelul obisnuit {F(dc.Median / n, 2)}, aproape toti (98 %) intre {F(dc.P1 / n, 2)} si {F(dc.P99 / n, 2)}")));
         }
 
         leak.Add(FrameLightRow(v.Leak, eq, n, masterNoise, stack));
@@ -200,53 +201,53 @@ internal static class DarkReport
 
         return
         [
-            new(T("2. LIGHT LEAKS AND GRADIENT", "2. SCURGERI DE LUMINA SI GRADIENT"), leak),
-            new(T("3. THERMAL DRIFT IN THE SERIES", "3. DERIVA TERMICA IN SERIE"),
+            new(T("2. LIGHT LEAKS AND DIFFERENCES ACROSS THE FRAME", "2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU"), leak),
+            new(T("3. THE CAMERA'S WARMING DURING THE SERIES", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI"),
             [
-                new(T("amplitude", "amplitudine"), Amplitude(d)),
+                new(T("hot pixels", "pixeli fierbinti"), Amplitude(d)),
                 new(T("plateau", "platou"), PlateauRow(d.Warming, d.Normalisation)),
                 new(T("to discard", "de aruncat"), OffPlateauRow(d.Warming)),
                 new("verdict", Drift(v.Drift, d.Normalisation)),
             ]),
-            new(T("4. NOISE PER FRAME", "4. ZGOMOT PE CADRU"),
+            new(T("4. THE NOISE OF EACH FRAME", "4. ZGOMOTUL FIECARUI CADRU"),
             [
-                new(T("residual sigma", "sigma rezidual"), ResidualRange(d, rp) + T("  [ADU, frame - master]", "  [ADU, cadru - master]")),
+                new(T("against the master", "fata de master"), ResidualRange(d, rp) + T("  [ADU: how much each frame differs from the master, from the quietest frame to the noisiest]", "  [ADU: cat difera fiecare cadru de master, de la cel mai linistit cadru la cel mai zgomotos]")),
                 new(T("read noise", "zgomot de citire"), ReadNoise(r, rp)),
                 new(T("random banding", "benzi aleatoare"), Banding(v.Noise)),
                 new("verdict", Noise(v.Noise)),
             ]),
             new(T("5. HOT PIXELS", "5. PIXELI FIERBINTI"),
             [
-                new(T("master above level", "master peste nivel"), Levels(d)),
-                new(T($"per plane at {F(Th.HotAdu, 0)}", $"pe plan la {F(Th.HotAdu, 0)}"), PerPlane(d, Th.HotLevelIndex)),
-                new(T("amplitude", "amplitudine"), Percentiles(d.Hot, n, eq)),
+                new(T("above the threshold", "pixeli peste prag"), Levels(d)),
+                new(T($"by colour, above {F(Th.HotAdu, 0)}", $"pe culori, peste {F(Th.HotAdu, 0)}"), PerPlane(d, Th.HotLevelIndex)),
+                new(T("how hot", "cat de fierbinti"), Percentiles(d.Hot, n, eq)),
                 new(T("stability", "stabilitate"), Stability(d, rp)),
                 new("verdict", T(
                     $"OK (informative): {d.Hot.Hot} pixels above {F(Th.HotAdu, 0)} {eq} in {F(mpx, mpx < 1 ? 2 : 1)} Mpx",
                     $"OK (informativ): {RoCount(d.Hot.Hot)}pixeli peste {F(Th.HotAdu, 0)} {eq} in {F(mpx, mpx < 1 ? 2 : 1)} Mpx")),
             ]),
-            new(T("6. FIXED PATTERN", "6. MODEL FIX"),
+            new(T("6. FIXED PATTERN: WHAT IS THE SAME IN EVERY FRAME", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE"),
             [
-                new(T("structured banding", "benzi structurate"), StructuredBanding(d)),
+                new(T("fixed banding", "benzi fixe"), StructuredBanding(d)),
                 new("glow", Glow(v.Leak, v.Pattern, eq)),
                 new("verdict", Pattern(v.Pattern, eq)),
             ]),
             new(T("7. DEAD AND SATURATED PIXELS", "7. PIXELI MORTI SI SATURATI"),
             [
                 new("master", T(
-                    $"{v.DeadSat.Dead} below the black - {F(Th.DeadBelowAdu, 0)} ADU, {v.DeadSat.Saturated} at the white ({F(d.White, 0)})",
-                    $"{v.DeadSat.Dead} sub negru - {F(Th.DeadBelowAdu, 0)} ADU, {v.DeadSat.Saturated} la alb ({F(d.White, 0)})")),
+                    $"{v.DeadSat.Dead} {(v.DeadSat.Dead == 1 ? "dead pixel" : "dead pixels")} (below the black minus {F(Th.DeadBelowAdu, 0)} ADU), {v.DeadSat.Saturated} saturated (at the white, {F(d.White, 0)})",
+                    $"{RoCount(v.DeadSat.Dead)}{(v.DeadSat.Dead == 1 ? "pixel mort" : "pixeli morti")} (sub negru minus {F(Th.DeadBelowAdu, 0)} ADU), {RoCount(v.DeadSat.Saturated)}{(v.DeadSat.Saturated == 1 ? "saturat" : "saturati")} (la alb, {F(d.White, 0)})")),
                 new("verdict", DeadSat(v.DeadSat)),
             ]),
             new(T("8. HOW MANY DARKS ARE ENOUGH", "8. CATE DARK-URI AJUNG"),
             [
-                new(T("noise of the mean", "zgomotul mediei"), Curve(d.Noise) + T(
-                    $"  [{g}, the central {d.Noise.CropPx} px, ADU, temporal sigma = frame against frame]",
-                    $"  [{g}, centrul de {d.Noise.CropPx} px, ADU, sigma temporala = cadru fata de cadru]")),
+                new(T("noise when averaged", "zgomot dupa medie"), Curve(d.Noise) + T(
+                    $"  [{ScaleReport.PlaneWords(g)}, the central {d.Noise.CropPx} px, ADU; measured from one frame to the next]",
+                    $"  [{ScaleReport.PlaneWords(g)}, centrul de {d.Noise.CropPx} px, ADU; masurat de la un cadru la altul]")),
                 new("master", Enough(d, v.Enough), double.IsNaN(v.Enough.MasterNoise) ? null : [$"{F(v.Enough.MasterNoise, 2)} ADU"]),
                 new("verdict", EnoughVerdictText(v.Enough)),
             ]),
-            new(T("9. LIGHTS AGAINST THE DARK", "9. LIGHTS FATA DE DARK"), LightsRows(r, eq)),
+            new(T("9. HOW WELL THE DARK FITS THE LIGHTS", "9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE"), LightsRows(r, eq)),
             new("INDEX", IndexRows(r)),
         ];
     }
@@ -273,44 +274,55 @@ internal static class DarkReport
         if (bad.Length > 0)
         {
             rows.Add(new(T("WARNING", "ATENTIE"), T(
-                $"{bad.Length} {(bad.Length == 1 ? "light could not be decoded" : "lights could not be decoded")} (the first: {bad[0].Info.FileName}: {bad[0].Error}); see the table",
-                $"{RoCount(bad.Length)}{(bad.Length == 1 ? "light nu s-a putut decoda" : "lights nu s-au putut decoda")} (primul: {bad[0].Info.FileName}: {bad[0].Error}); vezi tabelul")));
+                $"{bad.Length} {(bad.Length == 1 ? "light could not be read" : "lights could not be read")} (the first: {bad[0].Info.FileName}: {bad[0].Error}); {(bad.Length == 1 ? "it is" : "they are")} in the lights table",
+                $"{RoCount(bad.Length)}{(bad.Length == 1 ? "light nu s-a putut citi" : "lights nu s-au putut citi")} (primul: {bad[0].Info.FileName}: {bad[0].Error}); {(bad.Length == 1 ? "e" : "sunt")} in tabelul de lights")));
         }
 
         int skipped = l.Frames.Count(f => f.Skipped);
         if (skipped > 0)
         {
             rows.Add(new(T("skipped lights", "lights sarite"), T(
-                $"{skipped} of {l.Frames.Count} (the frame cap; {l.Used} used)",
-                $"{skipped} din {l.Frames.Count} (plafonul de cadre; folosite {l.Used})")));
+                $"{skipped} of {l.Frames.Count} (over the maximum number of frames; {l.Used} used)",
+                $"{skipped} din {l.Frames.Count} (peste numarul maxim de cadre; s-au folosit {l.Used})")));
         }
 
         if (l.AssumedSettings > 0)
         {
             rows.Add(new(T("WARNING", "ATENTIE"), T(
-                $"{l.AssumedSettings} {(l.AssumedSettings == 1 ? "light does not give its ISO or exposure; the darks' are assumed" : "lights do not give their ISO or exposure; the darks' are assumed")} (normalisation x{F(r.Darks.Norm, 2)})",
-                $"{RoCount(l.AssumedSettings)}{(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; presupuse ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; presupuse ale dark-urilor")} (normalizare x{F(r.Darks.Norm, 2)})")));
+                $"{l.AssumedSettings} {(l.AssumedSettings == 1 ? "light does not give its ISO or exposure; the darks' were taken" : "lights do not give their ISO or exposure; the darks' were taken")} (1 ADU-eq = {F(r.Darks.Norm, 2)} ADU)",
+                $"{RoCount(l.AssumedSettings)}{(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; s-au luat cele ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; s-au luat cele ale dark-urilor")} (1 ADU-eq = {F(r.Darks.Norm, 2)} ADU)")));
         }
 
+        bool one = l.Persistent == 1;
+        string seen = one ? T("1 hot pixel shows", "1 pixel fierbinte se vede") : T($"{l.Persistent} hot pixels show", $"{RoCount(l.Persistent)}pixeli fierbinti se vad");
         rows.Add(new(T("hot pixels", "pixeli fierbinti"), T(
-            $"{Pixels(l.Persistent)} persistent in the lights (isolated, above {F(Th.LightHotSigmas, 0)} local sigma, in at least {l.PersistentThreshold} of {RunReport.Frames(l.Used)})",
-            $"{Pixels(l.Persistent)} persistenti in lights (izolati, peste {F(Th.LightHotSigmas, 0)} sigma locale, in cel putin {l.PersistentThreshold} din {RunReport.Frames(l.Used)})")));
+            $"{seen} in the lights at the same place, in at least {l.PersistentThreshold} of {RunReport.Frames(l.Used)} ({(one ? "a single pixel" : "single pixels")}, not part of a star, brighter than {(one ? "its" : "their")} surroundings by more than {F(Th.LightHotSigmas, 0)} times the noise there)",
+            $"{seen} in lights in acelasi loc, in cel putin {l.PersistentThreshold} din {RunReport.Frames(l.Used)} ({(one ? "un pixel singur, nu parte dintr-o stea, mai luminos" : "pixeli singuri, nu parte dintr-o stea, mai luminosi")} decat imprejurimea cu peste {RoCount(F(Th.LightHotSigmas, 0))}ori zgomotul ei)")));
         string above = T("above", "peste");
         string of = T("of", "din");
-        rows.Add(new(T("in the dark master", "in masterul dark"), $"{string.Join("; ", l.Overlap.Select(o => $"{above} {F(o.LevelAdu, 0)}: {o.Both} {of} {l.Persistent}" + (l.Persistent > 0 ? $" ({F(100.0 * o.Both / l.Persistent, 0)} %)" : "")))}  [{eq}]"));
-        rows.Add(new("master in lights", string.Join("; ", l.Overlap.Select(o => $"{above} {F(o.LevelAdu, 0)}: {o.Both} {of} {o.DarkCount}" + (o.DarkCount > 0 ? $" ({F(100.0 * o.Both / o.DarkCount, 0)} %)" : "")))));
-        rows.Add(new(T("unmatched", "nepotriviti"), l.Missed == 0
-            ? T("no persistent pixel in the lights under the master's threshold", "niciun pixel persistent in lights sub pragul masterului")
-            : T(
-                $"{l.Missed} {(l.Missed == 1 ? "persistent pixel" : "persistent pixels")} in the lights under {F(Th.HotAdu, 0)} {eq} in the master (their median in the master {F(l.MissedDarkExcessMedian, 0)} {eq})",
-                $"{RoCount(l.Missed)}{(l.Missed == 1 ? "pixel persistent" : "pixeli persistenti")} in lights sub {F(Th.HotAdu, 0)} {eq} in master (mediana lor in master {F(l.MissedDarkExcessMedian, 0)} {eq})")));
+        rows.Add(new(T("in the dark master", "in masterul dark"), string.Join("; ", l.Overlap.Select(o => $"{above} {F(o.LevelAdu, 0)}: {o.Both} {of} {l.Persistent}" + (l.Persistent > 0 ? $" ({F(100.0 * o.Both / l.Persistent, 0)} %)" : "")))
+            + T($"  [how many of these pixels are in the dark master too, above each threshold in {eq}]", $"  [cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in {eq}]")));
+        rows.Add(new(T("master in lights", "masterul in lights"), string.Join("; ", l.Overlap.Select(o => $"{above} {F(o.LevelAdu, 0)}: {o.Both} {of} {o.DarkCount}" + (o.DarkCount > 0 ? $" ({F(100.0 * o.Both / o.DarkCount, 0)} %)" : "")))
+            + T("  [how many of the master's pixels above each threshold show in the lights too]", "  [cati dintre pixelii masterului de peste fiecare prag se vad si in lights]")));
+        string hot = $"{F(Th.HotAdu, 0)} {eq}";
+        rows.Add(new(T("not in the master", "lipsesc din master"), l.Missed switch
+        {
+            0 => T($"none: every hot pixel of the lights is above {hot} in the master too", $"niciunul: toti pixelii fierbinti din lights sunt peste {hot} si in master"),
+            1 => T(
+                $"1 hot pixel of the lights is under {hot} in the master (it has {F(l.MissedDarkExcessMedian, 0)} {eq} there)",
+                $"1 pixel fierbinte din lights e sub {hot} in master (acolo are {F(l.MissedDarkExcessMedian, 0)} {eq})"),
+            _ => T(
+                $"{l.Missed} hot pixels of the lights are under {hot} in the master (there they usually have {F(l.MissedDarkExcessMedian, 0)} {eq})",
+                $"{RoCount(l.Missed)}pixeli fierbinti din lights sunt sub {hot} in master (acolo au de obicei {F(l.MissedDarkExcessMedian, 0)} {eq})"),
+        }));
         MatchFigures m = l.LightsOverDark;
-        rows.Add(new(T("amplitude", "amplitudine"), m.Verdict == MatchVerdict.Unmeasured
-            ? T("UNMEASURED: no hot pixel under saturation in the master", "NEMASURAT: niciun pixel fierbinte sub saturatie in master")
+        string over = m.Pixels == 1 ? T("over the one frame", "pe singurul cadru") : T($"over the {RunReport.Frames(m.Pixels)}", $"pe cele {RunReport.Frames(m.Pixels)}");
+        rows.Add(new(T("lights against dark", "lights fata de dark"), m.Verdict == MatchVerdict.Unmeasured
+            ? T("UNMEASURED: the master has no hot pixel that is not saturated", "NEMASURAT: masterul nu are niciun pixel fierbinte care sa nu fie saturat")
             : T(
-                $"lights / dark {F(m.Ratio, 2)} over the night (median over {RunReport.Frames(m.Pixels)}; the first {F(l.RatioFirst, 2)}, the last {F(l.RatioLast, 2)}; {Pixels(l.AmpPixels)})",
-                $"lights / dark {F(m.Ratio, 2)} pe noapte (mediana pe {RunReport.Frames(m.Pixels)}; primul {F(l.RatioFirst, 2)}, ultimul {F(l.RatioLast, 2)}; {Pixels(l.AmpPixels)})")));
-        rows.Add(new("verdict", MatchText(m, partner: false, T("the lights", "lights-urile"))));
+                $"in the lights, the hot pixels are usually {F(m.Ratio, 2)} times what they are in the dark ({over}; in the first {F(l.RatioFirst, 2)}, in the last {F(l.RatioLast, 2)}; on {Pixels(l.AmpPixels)})",
+                $"in lights, pixelii fierbinti sunt de obicei de {F(m.Ratio, 2)} ori cat in dark ({over}; in primul {F(l.RatioFirst, 2)}, in ultimul {F(l.RatioLast, 2)}; pe {Pixels(l.AmpPixels)})")));
+        rows.Add(new("verdict", MatchText(m, partner: false, T("in the lights", "in lights"))));
         return rows;
     }
 
@@ -329,15 +341,17 @@ internal static class DarkReport
         List<ReportRow> rows =
         [
             new(r.DarksFromPartner is null ? T("darks", "dark-uri") : T("darks (partner)", "dark-uri (partener)"), T(
-                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: the median of the pixels ranked {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} per Mpx, ranks {ix.RankLow + 1} .. {ix.RankHigh} of {F(mpx, mpx < 1 ? 2 : 1)} Mpx, normalised to ISO {F(Th.NormIso, 0)} and {F(Th.NormExposureSeconds, 0)} s)",
-                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: mediana pixelilor de pe rangurile {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe Mpx, al {ix.RankLow + 1}-lea .. al {ix.RankHigh}-lea din {F(mpx, mpx < 1 ? 2 : 1)} Mpx, normalizat la ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s)")),
+                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: the usual value of the hot pixels at places {ix.RankLow + 1} .. {ix.RankHigh}, counting from the hottest, that is {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} per Mpx of {F(mpx, mpx < 1 ? 2 : 1)} Mpx; worked out for ISO {F(Th.NormIso, 0)} and {F(Th.NormExposureSeconds, 0)} s)",
+                $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile {ix.RankLow + 1} .. {ix.RankHigh}, numarand de la cel mai fierbinte, adica {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe fiecare Mpx din {F(mpx, mpx < 1 ? 2 : 1)} Mpx; socotita pentru ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s)")),
             new(T("label", "eticheta"), r.Label),
         ];
         if (r.Lights is LightsAnalysis l && !double.IsNaN(r.LightsIndex))
         {
+            string like = F(Math.Round(r.LightsIndex, MidpointRounding.AwayFromZero), 0);
+            string warmth = Warmth(l.LightsOverDark.DeltaCelsius, "", T("it", "el"));
             rows.Add(new("lights", T(
-                $"equivalent idx{F(Math.Round(r.LightsIndex, MidpointRounding.AwayFromZero), 0)} (dark x {F(l.LightsOverDark.Ratio, 2)}, that is {Signed(l.LightsOverDark.DeltaCelsius, 1)} degrees against the dark)",
-                $"echivalent idx{F(Math.Round(r.LightsIndex, MidpointRounding.AwayFromZero), 0)} (dark x {F(l.LightsOverDark.Ratio, 2)}, adica {Signed(l.LightsOverDark.DeltaCelsius, 1)} grade fata de dark)")));
+                $"like a dark of idx{like} ({F(l.LightsOverDark.Ratio, 2)} times the dark{warmth})",
+                $"ca un dark cu idx{like} (de {F(l.LightsOverDark.Ratio, 2)} ori cat dark-ul{warmth})")));
         }
 
         if (r.PartnerError is not null)
@@ -350,8 +364,8 @@ internal static class DarkReport
             MatchFigures m = p.OwnOverPartner;
             string settings = p.Iso is double iso && p.ExposureSeconds is double e ? $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s" : T("unknown settings", "setari necunoscute");
             rows.Add(new(T("partner", "partener"), T(
-                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; {RunReport.Frames(p.Used)} of {p.Frames}, {settings}); label {p.Label}",
-                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; {RunReport.Frames(p.Used)} din {p.Frames}, {settings}); eticheta {p.Label}")));
+                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; frames read {p.Used} of {p.Frames}, {settings}); label {p.Label}",
+                $"{p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; cadre citite {p.Used} din {p.Frames}, {settings}); eticheta {p.Label}")));
             if (p.Failed > 0)
             {
                 rows.Add(new(T("WARNING", "ATENTIE"), T(
@@ -359,11 +373,13 @@ internal static class DarkReport
                     $"{RoCount(p.Failed)}{(p.Failed == 1 ? "dark al partenerului nu s-a putut folosi" : "dark-uri ale partenerului nu s-au putut folosi")} (primul: {p.FirstError})")));
             }
 
+            string partnerWords = T("the partner", "partenerul");
+            string ownWarmth = Warmth(m.DeltaCelsius, T("the session's darks are ", "dark-urile sesiunii sunt "), partnerWords);
             rows.Add(new(T("darks / partner", "dark-uri / partener"), m.Verdict == MatchVerdict.Unmeasured
-                ? T("UNMEASURED: no shared pixel", "NEMASURAT: niciun pixel comun")
+                ? T("UNMEASURED: no pixel is hot in both", "NEMASURAT: niciun pixel nu e fierbinte in amandoua")
                 : T(
-                    $"{F(m.Ratio, 2)} (q25 {F(m.Q25, 2)}, q75 {F(m.Q75, 2)}, {(m.Pixels == 1 ? "1 shared pixel" : $"{m.Pixels} shared pixels")}) after normalisation, that is the session's darks run {Degrees(m)} against the partner",
-                    $"{F(m.Ratio, 2)} (q25 {F(m.Q25, 2)}, q75 {F(m.Q75, 2)}, {(m.Pixels == 1 ? "1 pixel comun" : $"{RoCount(m.Pixels)}pixeli comuni")}) dupa normalizare, adica dark-urile sesiunii sunt cu {Degrees(m)} fata de partener")));
+                    $"in the session's darks the hot pixels are {F(m.Ratio, 2)} times what they are at the partner, at the same settings (half of them between {F(m.Q25, 2)} and {F(m.Q75, 2)}; {(m.Pixels == 1 ? "1 pixel hot in both" : $"{m.Pixels} pixels hot in both")}){ownWarmth}",
+                    $"pixelii fierbinti sunt in dark-urile sesiunii de {F(m.Ratio, 2)} ori cat la partener, la aceleasi setari (jumatate dintre ei intre {F(m.Q25, 2)} si {F(m.Q75, 2)}; {(m.Pixels == 1 ? "1 pixel fierbinte in amandoua" : $"{RoCount(m.Pixels)}pixeli fierbinti in amandoua")}){ownWarmth}")));
             string lvl = F(Th.PartnerOverlapAdu, 0);
             string ownShare = p.OwnHot50 > 0 ? $" ({F(100.0 * p.OwnHot50InPartner50 / p.OwnHot50, 0)} %)" : "";
             string partnerShare = p.PartnerHot50 > 0 ? $" ({F(100.0 * p.PartnerHot50InOwn20 / p.PartnerHot50, 0)} %)" : "";
@@ -375,14 +391,15 @@ internal static class DarkReport
                 // lights over the partner, through the session's darks: (lights / dark) x (dark /
                 // partner)
                 MatchFigures chained = p.LightsOverPartner;
+                string lightsWarmth = Warmth(chained.DeltaCelsius, T("the lights are ", "lights-urile sunt "), partnerWords);
                 rows.Add(new(T("lights / partner", "lights / partener"), T(
-                    $"{F(chained.Ratio, 2)} (through the session's darks), that is the lights run {Degrees(chained)} against the partner",
-                    $"{F(chained.Ratio, 2)} (prin dark-urile sesiunii), adica lights-urile sunt cu {Degrees(chained)} fata de partener")));
-                rows.Add(new(T("partner verdict", "verdict partener"), MatchText(chained, partner: true, T("the lights", "lights-urile"))));
+                    $"in the lights the hot pixels are {F(chained.Ratio, 2)} times what they are at the partner (worked out through the session's darks){lightsWarmth}",
+                    $"pixelii fierbinti sunt in lights de {F(chained.Ratio, 2)} ori cat la partener (socotit prin dark-urile sesiunii){lightsWarmth}")));
+                rows.Add(new(T("partner verdict", "verdict partener"), MatchText(chained, partner: true, T("in the lights", "in lights"))));
             }
             else
             {
-                rows.Add(new(T("partner verdict", "verdict partener"), MatchText(m, partner: true, T("the session's darks", "dark-urile sesiunii")) + T(" (the session's darks against the partner)", " (dark-urile sesiunii fata de partener)")));
+                rows.Add(new(T("partner verdict", "verdict partener"), MatchText(m, partner: true, T("in the session's darks", "in dark-urile sesiunii"))));
             }
         }
 
@@ -592,57 +609,83 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// "+2.3 degrees", or "0.0 degrees" when the ratio is not positive (no degrees from a ratio of
-    /// 0); "grade" in Romanian.
+    /// The clause after a ratio that says how much warmer or colder a set is than the master it is
+    /// measured against: ", adica cu 7.2 grade mai reci decat el"; at the same temperature under
+    /// <see cref="Th.SameTemperatureCelsius"/>; nothing when the ratio gives no degrees.
     /// </summary>
-    /// <param name="m">The match, whose temperature offset is printed.</param>
-    /// <returns>The signed degrees with one decimal and the word for degrees.</returns>
-    private static string Degrees(MatchFigures m) => (double.IsNaN(m.DeltaCelsius) ? "0.0" : Signed(m.DeltaCelsius, 1)) + T(" degrees", " grade");
+    /// <param name="deltaCelsius">The set's degrees against the master, positive when the set is
+    /// warmer; NaN when the ratio is not positive.</param>
+    /// <param name="subject">The set's words before the comparison, with their verb and a trailing
+    /// space ("dark-urile sesiunii sunt "), or empty when the row names the set already.</param>
+    /// <param name="than">The master's words after "than" ("el", "partenerul"), in the run's
+    /// language.</param>
+    /// <returns>The clause, starting with its comma, in the run's language; empty for NaN.</returns>
+    private static string Warmth(double deltaCelsius, string subject, string than)
+    {
+        if (double.IsNaN(deltaCelsius))
+        {
+            return "";
+        }
+
+        if (Math.Abs(deltaCelsius) < Th.SameTemperatureCelsius)
+        {
+            return T($", that is {subject}at the same temperature", $", adica {subject}la aceeasi temperatura");
+        }
+
+        string degrees = F(Math.Abs(deltaCelsius), 1);
+        return deltaCelsius < 0
+            ? T($", that is {subject}{degrees} degrees colder than {than}", $", adica {subject}cu {degrees} grade mai reci decat {than}")
+            : T($", that is {subject}{degrees} degrees warmer than {than}", $", adica {subject}cu {degrees} grade mai calde decat {than}");
+    }
 
     /// <summary>
     /// The words of a match verdict, the master being the session's dark or the partner and
-    /// <paramref name="set"/> the set measured against it ("the lights", "the session's darks"):
-    /// what Siril can do with it.
+    /// <paramref name="where"/> naming the set measured against it ("in the lights", "in the
+    /// session's darks"): what Siril can do with the master, and why.
     /// </summary>
     /// <param name="m">The match; not null.</param>
     /// <param name="partner">True when the master is the partner, false when it is the session's
     /// dark.</param>
-    /// <param name="set">The words for the set measured against the master, in the run's
-    /// language.</param>
+    /// <param name="where">Where the set's hot pixels are, as the sentence names it ("in lights",
+    /// "in dark-urile sesiunii"), in the run's language.</param>
     /// <returns>The verdict's words, opening with OK, WARNING or UNMEASURED (OK, ATENTIE or
     /// NEMASURAT in Romanian).</returns>
-    internal static string MatchText(MatchFigures m, bool partner, string set)
+    internal static string MatchText(MatchFigures m, bool partner, string where)
     {
         ArgumentNullException.ThrowIfNull(m);
+        string atMaster = partner ? T("at the partner", "la partener") : T("in the dark", "in dark");
         if (m.Verdict == MatchVerdict.Unmatched && (m.Ratio <= 0 || m.Q25 <= 0))
         {
             // the ratios sit around zero: the set shows none of the master's hot pixels
             return T(
-                $"WARNING: mismatched: {set} show none of the {(partner ? "partner's" : "dark's")} hot pixels (ratio {F(m.Ratio, 2)}; in-camera noise reduction, another camera or another orientation?)",
-                $"ATENTIE: nepotrivit: {set} nu arata pixelii fierbinti ai {(partner ? "partenerului" : "dark-ului")} (raport {F(m.Ratio, 2)}; reducere de zgomot in aparat, alt aparat sau alta orientare?)");
+                $"WARNING: they do not match: {where} the {(partner ? "partner's" : "dark's")} hot pixels do not show ({F(m.Ratio, 2)} times what they are {atMaster}; perhaps the camera's noise reduction, another camera or rotated frames?)",
+                $"ATENTIE: nu se potrivesc: {where} nu se vad pixelii fierbinti ai {(partner ? "partenerului" : "dark-ului")} (de {F(m.Ratio, 2)} ori cat {atMaster}; poate reducerea de zgomot din aparat, alt aparat sau cadre rotite?)");
         }
 
         string master = partner ? T("the partner", "partenerul") : T("the dark", "dark-ul");
-        string where = Math.Abs(m.DeltaCelsius) < Th.SameTemperatureCelsius
+        string temperature = Math.Abs(m.DeltaCelsius) < Th.SameTemperatureCelsius
             ? T($"{master} is at the same temperature", $"{master} e la aceeasi temperatura")
             : T(
                 $"{master} is {(m.DeltaCelsius < 0 ? "warmer" : "colder")} by {F(Math.Abs(m.DeltaCelsius), 1)} degrees",
                 $"{master} e {(m.DeltaCelsius < 0 ? "mai cald" : "mai rece")} cu {F(Math.Abs(m.DeltaCelsius), 1)} grade");
+        string ratio = T(
+            $"{where} the hot pixels are {F(m.Ratio, 2)} times what they are {atMaster}",
+            $"{where} pixelii fierbinti sunt de {F(m.Ratio, 2)} ori cat {atMaster}");
         return m.Verdict switch
         {
             MatchVerdict.Unmeasured => T("UNMEASURED", "NEMASURAT"),
             MatchVerdict.Direct => T(
-                $"OK: direct subtraction (ratio {F(m.Ratio, 2)}, in {F(Th.MatchDirectLow, 1)} .. {F(Th.MatchDirectHigh, 1)}; {where})",
-                $"OK: scadere directa (raport {F(m.Ratio, 2)}, in {F(Th.MatchDirectLow, 1)} .. {F(Th.MatchDirectHigh, 1)}; {where})"),
+                $"OK: {master} can be subtracted as it is; {ratio}, between {F(Th.MatchDirectLow, 1)} and {F(Th.MatchDirectHigh, 1)}: {temperature}",
+                $"OK: {master} se poate scadea asa cum e; {ratio}, intre {F(Th.MatchDirectLow, 1)} si {F(Th.MatchDirectHigh, 1)}: {temperature}"),
             MatchVerdict.WithOpt => T(
-                $"WARNING: subtract with -opt (ratio {F(m.Ratio, 2)}, in {F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)}; {where}, -opt scales the amplitude)",
-                $"ATENTIE: scade cu -opt (raport {F(m.Ratio, 2)}, in {F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)}; {where}, -opt scaleaza amplitudinea)"),
+                $"WARNING: subtract {master} with -opt (-opt: Siril multiplies it so that it matches the lights); {ratio}, between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)}: {temperature}",
+                $"ATENTIE: scade {master} cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); {ratio}, intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)}: {temperature}"),
             MatchVerdict.CosmeticOnly => T(
-                $"WARNING: cosmetic correction only (-cc=dark): ratio {F(m.Ratio, 2)}, {where} and still finds every hot pixel, but subtracting it would overcorrect",
-                $"ATENTIE: doar corectie cosmetica (-cc=dark): raport {F(m.Ratio, 2)}, {where} si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta"),
+                $"WARNING: use {master} for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); {ratio}: {temperature}, it sees them all, but subtracted it would take out too much and leave black dots",
+                $"ATENTIE: foloseste {master} doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); {ratio}: {temperature}, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre"),
             _ => T(
-                $"WARNING: mismatched (ratio {F(m.Ratio, 2)}: {where}; {(m.Ratio > 1 ? "too cold, it misses the faint hot pixels" : "too warm")})",
-                $"ATENTIE: nepotrivit (raport {F(m.Ratio, 2)}: {where}; {(m.Ratio > 1 ? "prea rece, pierde pixelii fierbinti slabi" : "prea cald")})"),
+                $"WARNING: they do not match; {ratio}: {temperature}; {(m.Ratio > 1 ? "it is too cold and misses the faint ones" : "it is too warm")}",
+                $"ATENTIE: nu se potrivesc; {ratio}: {temperature}; {(m.Ratio > 1 ? "e prea rece si ii pierde pe cei slabi" : "e prea cald")}"),
         };
     }
 
@@ -675,18 +718,40 @@ internal static class DarkReport
     {
         ArgumentNullException.ThrowIfNull(d);
         FrameInfo? first = d.Frames.FirstOrDefault(f => f.Error is null)?.Info;
-        string from = first?.Iso is double iso && first.ExposureSeconds is double e
-            ? $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s"
-            : T("ISO or exposure unknown", "ISO sau expunere necunoscute");
         string gain = d.Normalisation.IsoFactorPerStop == 2 ? "" : T(
-            $"; gain x{F(d.Normalisation.IsoFactorPerStop, 2)} per ISO stop",
-            $"; castig x{F(d.Normalisation.IsoFactorPerStop, 2)} pe treapta de ISO");
-        string against = T("relative to", "fata de");
-        string andWord = T("and", "si");
-        return Math.Abs(d.Norm - 1) < 1e-9
-            ? $"{from} -> x1.00 {against} ISO {F(Th.NormIso, 0)} {andWord} {F(Th.NormExposureSeconds, 0)} s (ADU-eq = ADU){gain}"
-            : $"{from} -> x{F(d.Norm, 2)} {against} ISO {F(Th.NormIso, 0)} {andWord} {F(Th.NormExposureSeconds, 0)} s (1 ADU-eq = {F(d.Norm, 2)} ADU){gain}";
+            $"; one ISO stop multiplies the signal by {F(d.Normalisation.IsoFactorPerStop, 2)} (your setting)",
+            $"; o treapta de ISO inmulteste semnalul cu {F(d.Normalisation.IsoFactorPerStop, 2)} (setarea ta)");
+        if (first?.Iso is not double iso || first.ExposureSeconds is not double e)
+        {
+            return T("the files do not give the ISO or the exposure, so 1 ADU-eq is taken equal to 1 ADU in the file", "fisierele nu spun ISO-ul sau expunerea, deci 1 ADU-eq e luat egal cu 1 ADU din fisier") + gain;
+        }
+
+        string settings = $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s";
+        string reference = $"ISO {F(Th.NormIso, 0)}" + T(" and ", " si ") + $"{F(Th.NormExposureSeconds, 0)} s";
+        return (AtReference(iso, e)
+            ? T($"1 ADU in the file: the set was taken at the reference settings themselves, {settings}", $"1 ADU din fisier: setul e facut chiar la setarile de referinta, {settings}")
+            : T($"{F(d.Norm, 2)} ADU in the file at {settings} (ADU-eq is the ADU as it would be at {reference})", $"{F(d.Norm, 2)} ADU din fisier la {settings} (ADU-eq e ADU-ul recalculat ca pentru {reference})")) + gain;
     }
+
+    /// <summary>
+    /// Whether a frame was taken at the reference settings themselves, ISO `Th.NormIso` and
+    /// `Th.NormExposureSeconds`, and not at other settings whose factor happens to be 1 too
+    /// (ISO 800 and 60 s).
+    /// </summary>
+    /// <param name="iso">The frame's ISO.</param>
+    /// <param name="exposureSeconds">The frame's exposure, in seconds.</param>
+    /// <returns>True at ISO 400 within half a stop's rounding and 120 s within 0.05 s.</returns>
+    internal static bool AtReference(double iso, double exposureSeconds) =>
+        Math.Abs(iso - Th.NormIso) < 0.5 && Math.Abs(exposureSeconds - Th.NormExposureSeconds) < 0.05;
+
+    /// <summary>
+    /// The scale's source as the header line writes it after "(white)": the raw's words as they
+    /// stand, a FITS's in brackets.
+    /// </summary>
+    /// <param name="d">The dark series.</param>
+    /// <returns>The words with their leading space.</returns>
+    private static string ScaleSource(DarkSeriesAnalysis d) =>
+        d.ScaleSource.StartsWith("FITS", StringComparison.Ordinal) ? $" ({d.ScaleSource})" : $" {d.ScaleSource}";
 
     /// <summary>The name of a map region (a corner or an edge), in the run's language.</summary>
     /// <param name="r">The region.</param>
@@ -711,8 +776,8 @@ internal static class DarkReport
     /// <param name="n">The normalisation factor the values are divided by; 1 for raw ADU.</param>
     /// <returns>The line, in the run's language.</returns>
     private static string RegionsLine(Regions r, double n) => T(
-        $"centre {F(r.Centre / n, 2)}, corners {F(r.TopLeft / n, 2)} / {F(r.TopRight / n, 2)} / {F(r.BottomLeft / n, 2)} / {F(r.BottomRight / n, 2)} (TL / TR / BL / BR), edges top {F(r.Top / n, 2)} bottom {F(r.Bottom / n, 2)} left {F(r.Left / n, 2)} right {F(r.Right / n, 2)}",
-        $"centru {F(r.Centre / n, 2)}, colturi {F(r.TopLeft / n, 2)} / {F(r.TopRight / n, 2)} / {F(r.BottomLeft / n, 2)} / {F(r.BottomRight / n, 2)} (SS / DS / SJ / DJ), margini sus {F(r.Top / n, 2)} jos {F(r.Bottom / n, 2)} stanga {F(r.Left / n, 2)} dreapta {F(r.Right / n, 2)}");
+        $"centre {F(r.Centre / n, 2)}, corners {F(r.TopLeft / n, 2)} / {F(r.TopRight / n, 2)} / {F(r.BottomLeft / n, 2)} / {F(r.BottomRight / n, 2)} (top-left / top-right / bottom-left / bottom-right), edges top {F(r.Top / n, 2)} bottom {F(r.Bottom / n, 2)} left {F(r.Left / n, 2)} right {F(r.Right / n, 2)}",
+        $"centru {F(r.Centre / n, 2)}, colturi {F(r.TopLeft / n, 2)} / {F(r.TopRight / n, 2)} / {F(r.BottomLeft / n, 2)} / {F(r.BottomRight / n, 2)} (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus {F(r.Top / n, 2)} jos {F(r.Bottom / n, 2)} stanga {F(r.Left / n, 2)} dreapta {F(r.Right / n, 2)}");
 
     /// <summary>
     /// Check 2's verdict row: the words of <see cref="Leak"/>, with the constant light and the
@@ -750,25 +815,25 @@ internal static class DarkReport
     /// NEMASURAT in Romanian).</returns>
     private static string Leak(LeakVerdict l, string eq, string against)
     {
-        string source = l.FromDarkMinusBias ? T("on dark - bias", "pe dark - bias") : T("on the dark master (no biases)", "pe masterul dark (fara bias)");
+        string source = l.FromDarkMinusBias ? T("on dark minus bias", "pe dark minus bias") : T("on the dark master (no biases)", "pe masterul dark (fara bias-uri)");
         string framesTail = l.Frames is null
-            ? T("light per frame UNMEASURED", "lumina pe cadre NEMASURATA")
-            : T("no frame with light above the series' warming", "niciun cadru cu lumina peste incalzirea seriei");
+            ? T("the light per frame could not be measured", "lumina pe cadre nu s-a putut masura")
+            : T("no frame has more light", "niciun cadru nu are lumina in plus");
         if (l.Verdict == Verdict.Unmeasured)
         {
-            return T("UNMEASURED: the map has no values (frames smaller than a block)", "NEMASURAT: harta nu are valori (cadre mai mici de un bloc)");
+            return T($"UNMEASURED: the frames are too small for the map (under a square of {Th.BinPx * 2} px)", $"NEMASURAT: cadrele sunt prea mici pentru harta (sub un patrat de {Th.BinPx * 2} px)");
         }
 
         if (l.Verdict == Verdict.Ok)
         {
             string sidesTail = l.SidesAfterBias
                 ? T(
-                    $"; no side with constant light above {F(Th.LeakConstantAdu, 2)} and {F(Th.LeakConstantSigmas, 0)} x the error",
-                    $"; nicio latura cu lumina constanta peste {F(Th.LeakConstantAdu, 2)} si {F(Th.LeakConstantSigmas, 0)} x eroarea")
+                    $"; no side has constant light above {F(Th.LeakConstantAdu, 2)} {eq}",
+                    $"; nicio latura nu are lumina constanta peste {F(Th.LeakConstantAdu, 2)} {eq}")
                 : "";
             return T(
-                $"OK: no edge or corner more than {F(Th.LeakAdu, 1)} {eq} from the centre (the farthest {Signed(l.OffsetAdu, 2)} at the {RegionName(l.Where)}, {source}); {framesTail}{sidesTail}",
-                $"OK: nicio margine sau colt la mai mult de {F(Th.LeakAdu, 1)} {eq} de centru (cel mai departe {Signed(l.OffsetAdu, 2)} la {RegionName(l.Where)}, {source}); {framesTail}{sidesTail}");
+                $"OK: no edge and no corner differs from the centre by more than {F(Th.LeakAdu, 1)} {eq} (the most {Signed(l.OffsetAdu, 2)}, at the {RegionName(l.Where)}, {source}); {framesTail}{sidesTail}",
+                $"OK: nicio margine si niciun colt nu difera de centru cu peste {F(Th.LeakAdu, 1)} {eq} (cel mai mult {Signed(l.OffsetAdu, 2)}, la {RegionName(l.Where)}, {source}); {framesTail}{sidesTail}");
         }
 
         SideLight? constant = l.ConstantLight;
@@ -784,8 +849,8 @@ internal static class DarkReport
         if (constant is SideLight c)
         {
             parts.Add(T(
-                $"constant light in every frame: {Signed(c.LightAdu, 2)} {eq} (±{F(c.ErrorAdu, 2)}) on the {SideName(c.Side)} side against the centre, not in the bias: a light leak (eyepiece, mount)",
-                $"lumina constanta in toate cadrele: {Signed(c.LightAdu, 2)} {eq} (±{F(c.ErrorAdu, 2)}) pe latura de {SideName(c.Side)} fata de centru, nu e in bias: scurgere de lumina (ocular, montura)")
+                $"in every frame the {SideName(c.Side)} side has {Signed(c.LightAdu, 2)} {eq} (+/-{F(c.ErrorAdu, 2)}) of constant light against the centre, which does not come from the bias: light gets into the camera (through the eyepiece or the lens mount)",
+                $"in toate cadrele latura de {SideName(c.Side)} are {Signed(c.LightAdu, 2)} {eq} (+/-{F(c.ErrorAdu, 2)}) lumina constanta fata de centru, care nu vine din bias: lumina intra in aparat (prin ocular sau prin montura obiectivului)")
                 + (against.Length == 0 ? "" : T("; that is, ", "; adica ") + against));
         }
 
@@ -793,13 +858,13 @@ internal static class DarkReport
         {
             string cause = l.OffsetAdu > 0
                 ? CauseWords(l)
-                : T("an edge darker than the centre, a readout offset or a mismatched bias", "margine mai intunecata decat centrul, offset de citire sau bias nepotrivit");
+                : T("the edge is darker than the centre: a level difference of the readout or a mismatched bias", "marginea e mai intunecata decat centrul: o diferenta de nivel din citire sau un bias nepotrivit");
             parts.Add(T(
-                $"the {RegionName(l.Where)} is at {Signed(l.OffsetAdu, 2)} {eq} from the centre ({source}); above {F(Th.LeakAdu, 1)}: {cause}",
-                $"{RegionName(l.Where)} e la {Signed(l.OffsetAdu, 2)} {eq} de centru ({source}); peste {F(Th.LeakAdu, 1)}: {cause}"));
+                $"the {RegionName(l.Where)} differs from the centre by {Signed(l.OffsetAdu, 2)} {eq} ({source}), over the threshold of {F(Th.LeakAdu, 1)}: {cause}",
+                $"{RegionName(l.Where)} difera de centru cu {Signed(l.OffsetAdu, 2)} {eq} ({source}), peste pragul de {F(Th.LeakAdu, 1)}: {cause}"));
         }
 
-        return T("WARNING: ", "ATENTIE: ") + string.Join(T("; also ", "; in plus "), parts);
+        return T("WARNING: ", "ATENTIE: ") + string.Join(T("; also, ", "; in plus, "), parts);
     }
 
     /// <summary>
@@ -831,22 +896,22 @@ internal static class DarkReport
         MapSide[] order = [MapSide.Top, MapSide.Bottom, MapSide.Left, MapSide.Right];
         if (!l.SidesAfterBias)
         {
-            return new(label, T("without biases it cannot be told from the readout offset: constant ", "fara bias nu se desparte de offsetul de citire: constant ") + string.Join(", ", order.Select(s => $"{SideName(s)} {Signed(l.Sides.First(x => x.Side == s).ConstantAdu, 2)}")) + $" {eq}");
+            return new(label, T("without biases it cannot be told from a level difference of the readout: constant ", "fara bias-uri nu se poate desparti de diferenta de nivel din citire: constant ") + string.Join(", ", order.Select(s => $"{SideName(s)} {Signed(l.Sides.First(x => x.Side == s).ConstantAdu, 2)}")) + $" {eq}");
         }
 
-        string sides = string.Join(", ", order.Select(s => l.Sides.First(x => x.Side == s)).Select(s => $"{SideName(s.Side)} {Signed(s.LightAdu, 2)} (±{F(s.ErrorAdu, 2)})"));
+        string sides = string.Join(", ", order.Select(s => l.Sides.First(x => x.Side == s)).Select(s => $"{SideName(s.Side)} {Signed(s.LightAdu, 2)} (+/-{F(s.ErrorAdu, 2)})"));
         if (l.ConstantLight is not SideLight c)
         {
             return new(label, T(
-                $"after the bias, against the centre: {sides} {eq}; none above {F(Th.LeakConstantAdu, 2)} and above {F(Th.LeakConstantSigmas, 0)} x the error; a uniform light over the whole frame, in every frame, has no reference",
-                $"dupa bias, fata de centru: {sides} {eq}; niciuna peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea; o lumina uniforma pe tot cadrul, in toate cadrele, nu are reper"));
+                $"against the centre, once the bias is taken off: {sides} {eq}; no side goes over {F(Th.LeakConstantAdu, 2)} and over {F(Th.LeakConstantSigmas, 0)} times what the measurement can be off by; a light even over the whole frame does not show here, as there is nothing to compare it with",
+                $"fata de centru, dupa scaderea bias-ului: {sides} {eq}; nicio latura nu trece de {F(Th.LeakConstantAdu, 2)} si de {RoCount(F(Th.LeakConstantSigmas, 0))}ori cat poate gresi masuratoarea; o lumina egala pe tot cadrul nu se vede aici, pentru ca nu are cu ce fi comparata"));
         }
 
         (string against, IReadOnlyList<string> bold) = ScaleReport.AgainstMasters(c.LightAdu * norm, masterNoise, stack);
         string tail = against.Length == 0 ? "" : $"; {against}";
         return new(label, T(
-            $"after the bias, against the centre: {sides} {eq}; above {F(Th.LeakConstantAdu, 2)} and above {F(Th.LeakConstantSigmas, 0)} x the error on the {SideName(c.Side)} side{tail}",
-            $"dupa bias, fata de centru: {sides} {eq}; peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea la {SideName(c.Side)}{tail}"), [$"{Signed(c.LightAdu, 2)} (±{F(c.ErrorAdu, 2)})", .. bold]);
+            $"against the centre, once the bias is taken off: {sides} {eq}; the {SideName(c.Side)} side goes over {F(Th.LeakConstantAdu, 2)} and over {F(Th.LeakConstantSigmas, 0)} times what the measurement can be off by{tail}",
+            $"fata de centru, dupa scaderea bias-ului: {sides} {eq}; latura de {SideName(c.Side)} trece de {F(Th.LeakConstantAdu, 2)} si de {RoCount(F(Th.LeakConstantSigmas, 0))}ori cat poate gresi masuratoarea{tail}"), [$"{Signed(c.LightAdu, 2)} (+/-{F(c.ErrorAdu, 2)})", .. bold]);
     }
 
     /// <summary>The name of a side of the frame, in the run's language.</summary>
@@ -873,17 +938,17 @@ internal static class DarkReport
         return l.Cause switch
         {
             LeakCause.Glow => T(
-                $"it grows with the warming (glow {Signed(s!.GlowAdu, 2)}, constant {Signed(s.ConstantAdu, 2)}): the sensor's glow, the darks stay good",
-                $"creste cu incalzirea (glow {Signed(s!.GlowAdu, 2)}, constant {Signed(s.ConstantAdu, 2)}): glow al senzorului, dark-urile raman bune"),
+                $"it grows as the sensor warms (glow {Signed(s!.GlowAdu, 2)}, constant {Signed(s.ConstantAdu, 2)}): it is the sensor's glow, the darks stay good",
+                $"creste cand senzorul se incalzeste (glow {Signed(s!.GlowAdu, 2)}, constant {Signed(s.ConstantAdu, 2)}): e glow-ul senzorului, dark-urile raman bune"),
             LeakCause.Leak => T(
-                $"it does not grow with the warming and is not in the bias (constant {Signed(s!.RemainderAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): a light leak, redo the darks",
-                $"nu creste cu incalzirea si nu e in bias (constant {Signed(s!.RemainderAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): scurgere de lumina, refa dark-urile"),
+                $"it does not grow with the warming and does not come from the bias (constant {Signed(s!.RemainderAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): it is light that got into the camera, redo the darks",
+                $"nu creste cu incalzirea si nu vine din bias (constant {Signed(s!.RemainderAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): e lumina intrata in aparat, refa dark-urile"),
             LeakCause.Readout => T(
-                $"it is in the bias too (readout offset {Signed(s!.ReadoutAdu!.Value, 2)}, glow {Signed(s.GlowAdu, 2)}): a readout offset, not light",
-                $"e si in bias (offset de citire {Signed(s!.ReadoutAdu!.Value, 2)}, glow {Signed(s.GlowAdu, 2)}): offset de citire, nu lumina"),
+                $"it shows in the bias too ({Signed(s!.ReadoutAdu!.Value, 2)}, glow {Signed(s.GlowAdu, 2)}): it is a level difference of the readout, not light",
+                $"apare si in bias ({Signed(s!.ReadoutAdu!.Value, 2)}, glow {Signed(s.GlowAdu, 2)}): e o diferenta de nivel din citire, nu lumina"),
             LeakCause.Constant => T(
-                $"it does not grow with the warming (constant {Signed(s!.ConstantAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): a light leak or a readout offset; without biases the two cannot be told apart",
-                $"nu creste cu incalzirea (constant {Signed(s!.ConstantAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): scurgere de lumina sau offset de citire, fara bias-uri nu se pot deosebi"),
+                $"it does not grow with the warming (constant {Signed(s!.ConstantAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): light that got in or a level difference of the readout; without biases the two cannot be told apart",
+                $"nu creste cu incalzirea (constant {Signed(s!.ConstantAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): lumina intrata sau o diferenta de nivel din citire; fara bias-uri nu se pot deosebi"),
             _ => T("a light leak or glow", "scurgere de lumina sau glow"),
         };
     }
@@ -923,14 +988,14 @@ internal static class DarkReport
         string label = T("light per frame", "lumina pe cadre");
         if (l.Frames is not FrameLight fl)
         {
-            return new(label, T($"UNMEASURED: fewer than {Th.LeakFitMinFrames} frames with hot pixels", $"NEMASURAT: sub {RoCount(Th.LeakFitMinFrames)}cadre cu pixeli fierbinti"));
+            return new(label, T($"UNMEASURED: there are fewer than {Th.LeakFitMinFrames} frames with hot pixels", $"NEMASURAT: sunt mai putin de {RoCount(Th.LeakFitMinFrames)}cadre cu pixeli fierbinti"));
         }
 
         if (fl.LitFrames.Count == 0)
         {
             return new(label, T(
-                $"no frame above {F(Th.LeakFrameSigmas, 0)} x the typical deviation ({F(fl.ScaleAdu, 2)} {eq}) and above {F(Th.LeakFrameAdu, 1)} {eq} from the line of the mean against the warming",
-                $"niciun cadru peste {F(Th.LeakFrameSigmas, 0)} x abaterea tipica ({F(fl.ScaleAdu, 2)} {eq}) si peste {F(Th.LeakFrameAdu, 1)} {eq} fata de dreapta mediei pe incalzire"));
+                $"no frame is brighter than its warming explains (threshold: above {F(Th.LeakFrameAdu, 1)} {eq} and more than {F(Th.LeakFrameSigmas, 0)} times the usual spread of the frames, {F(fl.ScaleAdu, 2)} {eq})",
+                $"niciun cadru nu e mai luminos decat ar explica incalzirea (prag: peste {F(Th.LeakFrameAdu, 1)} {eq} si de peste {RoCount(F(Th.LeakFrameSigmas, 0))}ori variatia obisnuita a cadrelor, {F(fl.ScaleAdu, 2)} {eq})"));
         }
 
         int n = fl.LitFrames.Count;
@@ -938,8 +1003,8 @@ internal static class DarkReport
         (string against, IReadOnlyList<string> bold) = ScaleReport.AgainstMasters(max * norm, masterNoise, stack);
         string tail = against.Length == 0 ? "" : T($"; the brightest, {Signed(max, 2)} {eq}: {against}", $"; cel mai luminat, {Signed(max, 2)} {eq}: {against}");
         return new(label, T(
-            $"{n} {(n == 1 ? "frame" : "frames")}: {LitList(fl, " ")} {eq} above the line of the mean against the warming (typical deviation {F(fl.ScaleAdu, 2)}){tail}",
-            $"{RoCount(n)}{(n == 1 ? "cadru" : "cadre")}: {LitList(fl, " ")} {eq} peste dreapta mediei pe incalzire (abaterea tipica {F(fl.ScaleAdu, 2)}){tail}"), bold.Count == 0 ? null : [$"{Signed(max, 2)} {eq}", .. bold]);
+            $"{n} {(n == 1 ? "frame is brighter than its" : "frames are brighter than their")} warming explains: {LitList(fl, ": ")} {eq} (usual spread {F(fl.ScaleAdu, 2)}){tail}",
+            $"{RoCount(n)}{(n == 1 ? "cadru e mai luminos" : "cadre sunt mai luminoase")} decat ar explica incalzirea: {LitList(fl, ": ")} {eq} (variatia obisnuita {F(fl.ScaleAdu, 2)}){tail}"), bold.Count == 0 ? null : [$"{Signed(max, 2)} {eq}", .. bold]);
     }
 
     /// <summary>
@@ -953,21 +1018,21 @@ internal static class DarkReport
     {
         if (l.Frames is not FrameLight fl)
         {
-            return T($"UNMEASURED: fewer than {Th.LeakFitMinFrames} frames with hot pixels", $"NEMASURAT: sub {RoCount(Th.LeakFitMinFrames)}cadre cu pixeli fierbinti");
+            return T($"UNMEASURED: there are fewer than {Th.LeakFitMinFrames} frames with hot pixels", $"NEMASURAT: sunt mai putin de {RoCount(Th.LeakFitMinFrames)}cadre cu pixeli fierbinti");
         }
 
         if (fl.RatioSpan < Th.LeakFitMinSpan)
         {
             return T(
-                $"UNMEASURED: the series warmed too little to separate the glow from the constant (the amplitude ratio spans {F(fl.RatioSpan, 2)}, under {F(Th.LeakFitMinSpan, 1)})",
-                $"NEMASURAT: seria s-a incalzit prea putin ca sa desparta glow-ul de constant (raportul de amplitudine se intinde pe {F(fl.RatioSpan, 2)}, sub {F(Th.LeakFitMinSpan, 1)})");
+                $"UNMEASURED: the series warmed too little to tell the glow from the constant light (the hot pixels vary by only {F(fl.RatioSpan, 2)} of the master, at least {F(Th.LeakFitMinSpan, 1)} is needed)",
+                $"NEMASURAT: seria s-a incalzit prea putin ca sa se poata desparti glow-ul de lumina constanta (pixelii fierbinti variaza doar cu {F(fl.RatioSpan, 2)} din master, trebuie cel putin {F(Th.LeakFitMinSpan, 1)})");
         }
 
         if (fl.FramesKept < minFrames)
         {
             return T(
-                $"UNMEASURED: too few frames left once the lit ones are out ({fl.FramesKept}, under {minFrames})",
-                $"NEMASURAT: prea putine cadre ramase dupa cele luminate ({fl.FramesKept}, sub {minFrames})");
+                $"UNMEASURED: without the lit frames too few are left ({fl.FramesKept}, at least {minFrames} are needed)",
+                $"NEMASURAT: fara cadrele luminate raman prea putine ({fl.FramesKept}, trebuie cel putin {minFrames})");
         }
 
         return null;
@@ -993,18 +1058,18 @@ internal static class DarkReport
             return T("UNMEASURED", "NEMASURAT");
         }
 
-        string raw = Math.Abs(norm - 1) < 1e-9 ? "" : $" ({T("raw", "brut")}: glow {Signed(s.GlowAdu * norm, 2)}, constant {Signed(s.ConstantAdu * norm, 2)} ADU)";
+        string raw = Math.Abs(norm - 1) < 1e-9 ? "" : $" ({T("in the file", "in fisier")}: glow {Signed(s.GlowAdu * norm, 2)}, constant {Signed(s.ConstantAdu * norm, 2)} ADU)";
         return s.ReadoutAdu is double ro
             ? T(
-                $"at the {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (grows with the warming), constant {Signed(s.ConstantAdu, 2)}, of which in the bias {Signed(ro, 2)}, leaving {Signed(s.RemainderAdu, 2)} {eq}{raw}",
-                $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)}, din care in bias {Signed(ro, 2)}, ramane {Signed(s.RemainderAdu, 2)} {eq}{raw}")
+                $"at the {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (grows as the sensor warms), constant {Signed(s.ConstantAdu, 2)}, of which {Signed(ro, 2)} comes from the bias, leaving {Signed(s.RemainderAdu, 2)} {eq}{raw}",
+                $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cand senzorul se incalzeste), constant {Signed(s.ConstantAdu, 2)}, din care {Signed(ro, 2)} vine din bias, raman {Signed(s.RemainderAdu, 2)} {eq}{raw}")
             : T(
-                $"at the {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (grows with the warming), constant {Signed(s.ConstantAdu, 2)} {eq} (no biases: light or a readout offset){raw}",
-                $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)} {eq} (fara bias: lumina sau offset de citire){raw}");
+                $"at the {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (grows as the sensor warms), constant {Signed(s.ConstantAdu, 2)} {eq} (without biases there is no telling light from a level difference of the sensor's readout){raw}",
+                $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cand senzorul se incalzeste), constant {Signed(s.ConstantAdu, 2)} {eq} (fara bias-uri nu se stie daca e lumina sau o diferenta de nivel din citirea senzorului){raw}");
     }
 
     /// <summary>
-    /// The <c>amplitudine</c> row of check 3: the hot pixels' level in the first and the last frame
+    /// The <c>pixeli fierbinti</c> row of check 3: the hot pixels' level in the first and the last frame
     /// against the master.
     /// </summary>
     /// <param name="d">The dark series.</param>
@@ -1013,13 +1078,13 @@ internal static class DarkReport
         double.IsNaN(d.Warming.FirstRatio)
             ? T("UNMEASURED: too few frames or no hot pixel", "NEMASURAT: prea putine cadre sau niciun pixel fierbinte")
             : T(
-                $"the hot pixels at {F(d.Warming.FirstRatio, 2)} of the master in the first frame, {F(d.Warming.LastRatio, 2)} in the last ({d.Warming.Pixels} pixels above {F(Th.HotAdu, 0)} {Eq(d)})",
-                $"pixelii fierbinti la {F(d.Warming.FirstRatio, 2)} din master in primul cadru, {F(d.Warming.LastRatio, 2)} in ultimul ({RoCount(d.Warming.Pixels)}pixeli peste {F(Th.HotAdu, 0)} {Eq(d)})");
+                $"in the first frame they are at {F(d.Warming.FirstRatio, 2)} of their level in the master, in the last at {F(d.Warming.LastRatio, 2)} ({d.Warming.Pixels} pixels above {F(Th.HotAdu, 0)} {Eq(d)}); they rise with the temperature, so they show how warm the sensor was",
+                $"in primul cadru sunt la {F(d.Warming.FirstRatio, 2)} din nivelul din master, in ultimul la {F(d.Warming.LastRatio, 2)} ({RoCount(d.Warming.Pixels)}pixeli peste {F(Th.HotAdu, 0)} {Eq(d)}); cresc cu temperatura, deci arata cat de cald era senzorul");
 
     /// <summary>The words of a series too short for a plateau, in the run's language.</summary>
     private static string NoPlateau => T(
-        $"UNMEASURED: fewer than {Th.WarmingFitMinFrames} frames with hot pixels",
-        $"NEMASURAT: sub {RoCount(Th.WarmingFitMinFrames)}cadre cu pixeli fierbinti");
+        $"UNMEASURED: there are fewer than {Th.WarmingFitMinFrames} frames with hot pixels",
+        $"NEMASURAT: sunt mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre cu pixeli fierbinti");
 
     /// <summary>
     /// The `platou` row of check 3: the plateau, the time constant, the master's and the last
@@ -1039,20 +1104,21 @@ internal static class DarkReport
         if (firstOffset < Th.SettledCelsius && Math.Abs(w.SettleCelsius) < Th.SettledCelsius)
         {
             return T(
-                $"the series is flat: the plateau at {F(w.Plateau, 2)} of the master, the first frame less than {F(Th.SettledCelsius, 1)} degrees from it",
-                $"seria e plata: platoul la {F(w.Plateau, 2)} din master, primul cadru la mai putin de {F(Th.SettledCelsius, 1)} grade de el");
+                $"the series did not warm: the level stayed at {F(w.Plateau, 2)} of the master, and the first frame is less than {F(Th.SettledCelsius, 1)} degrees from it",
+                $"seria nu s-a incalzit: nivelul a stat la {F(w.Plateau, 2)} din master, iar primul cadru e la mai putin de {F(Th.SettledCelsius, 1)} grade de el");
         }
 
+        bool warming = w.Plateau >= w.FirstRatio;
         string tauFigure = F(w.TauMinutes, 0);
         string tauWords = w.TimeFromStamps ? tauFigure + " min" : T(tauFigure + " frames", RoCount(tauFigure) + "cadre");
         string tau = w.TauAtGridTop
             ? T(
-                $"a time constant of at least {tauWords}, the series is too short to measure it",
-                $"constanta de timp de cel putin {tauWords}, seria e prea scurta ca s-o masoare")
-            : T($"time constant {tauWords}", $"constanta de timp {tauWords}");
+                $"the series is too short to show how fast it {(warming ? "warms" : "cools")} (two thirds of the way would take at least {tauWords})",
+                $"seria e prea scurta ca sa se vada cat de repede se {(warming ? "incalzeste" : "raceste")} (doua treimi din drum ar lua cel putin {tauWords})")
+            : T($"it covers two thirds of the way in {tauWords}", $"face doua treimi din drum in {tauWords}");
         return T(
-            $"the series approaches a plateau at {F(w.Plateau, 2)} of the master ({tau}); the master, the series' median, is {FromPlateau(w.PlateauCelsius)}; at the last frame it is still {Signed(w.SettleCelsius, 1)} degrees from the plateau",
-            $"seria se apropie de un platou la {F(w.Plateau, 2)} din master ({tau}); masterul, mediana seriei, e {FromPlateau(w.PlateauCelsius)}; la ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou");
+            $"the series {(warming ? "warms" : "cools")} towards a steady temperature (the plateau), at {F(w.Plateau, 2)} of the master; {tau}; the master is {FromPlateau(w.PlateauCelsius)}; the last frame is still {Signed(w.SettleCelsius, 1)} degrees from the plateau",
+            $"seria se {(warming ? "incalzeste" : "raceste")} spre o temperatura stabila (platou), la {F(w.Plateau, 2)} din master; {tau}; masterul e {FromPlateau(w.PlateauCelsius)}; ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou");
     }
 
     /// <summary>
@@ -1072,8 +1138,8 @@ internal static class DarkReport
         if (w.OffPlateauFrames.Count == 0)
         {
             return T(
-                $"no frame more than {deg} degrees from the plateau (ampl. between {F(w.OffPlateauLow, 2)} and {F(w.OffPlateauHigh, 2)})",
-                $"niciun cadru la peste {deg} grade de platou (amplit. intre {F(w.OffPlateauLow, 2)} si {F(w.OffPlateauHigh, 2)})");
+                $"no frame is more than {deg} degrees from the plateau (the hot pixels between {F(w.OffPlateauLow, 2)} and {F(w.OffPlateauHigh, 2)} of the master)",
+                $"niciun cadru nu e la mai mult de {deg} grade de platou (pixelii fierbinti intre {F(w.OffPlateauLow, 2)} si {F(w.OffPlateauHigh, 2)} din master)");
         }
 
         string without = double.IsNaN(w.MasterWithoutOffCelsius)
@@ -1082,8 +1148,8 @@ internal static class DarkReport
                 $"without them the master would be {FromPlateau(w.MasterWithoutOffCelsius)}, but with {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % more noise",
                 $"fara ele masterul ar fi {FromPlateau(w.MasterWithoutOffCelsius)}, dar cu {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % mai mult zgomot");
         return T(
-            $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) more than {deg} degrees from the plateau (ampl. below {F(w.OffPlateauLow, 2)} or above {F(w.OffPlateauHigh, 2)}; the plateau {F(w.Plateau, 2)}); {without}",
-            $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) la peste {deg} grade de platou (amplit. sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)}; platoul {F(w.Plateau, 2)}); {without}");
+            $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) {(w.OffPlateauFrames.Count == 1 ? "is" : "are")} more than {deg} degrees from the plateau (the hot pixels below {F(w.OffPlateauLow, 2)} or above {F(w.OffPlateauHigh, 2)} of the master; the plateau {F(w.Plateau, 2)}); {without}",
+            $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) {(w.OffPlateauFrames.Count == 1 ? "e" : "sunt")} la mai mult de {deg} grade de platou (pixelii fierbinti sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)} din master; platoul {F(w.Plateau, 2)}); {without}");
     }
 
     /// <summary>
@@ -1097,7 +1163,7 @@ internal static class DarkReport
     private static string Drift(DriftVerdict v, Normalisation nz)
     {
         Warming w = v.Warming;
-        string span = T($"{F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)} of the master", $"{F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)} din master");
+        string within = T($"(between {F(Th.MatchOptLow, 1)} and {F(Th.MatchOptHigh, 1)})", $"(intre {F(Th.MatchOptLow, 1)} si {F(Th.MatchOptHigh, 1)})");
         if (v.Verdict == Verdict.Unmeasured)
         {
             return T("UNMEASURED", "NEMASURAT");
@@ -1108,14 +1174,14 @@ internal static class DarkReport
             if (!w.HasFit)
             {
                 return T(
-                    $"OK: every frame lies in {span} (fewer than {Th.WarmingFitMinFrames} frames, no plateau)",
-                    $"OK: toate cadrele stau in {span} (sub {RoCount(Th.WarmingFitMinFrames)}cadre, fara platou)");
+                    $"OK: every frame is close enough to the master for Siril to match it with -opt {within}; there are fewer than {Th.WarmingFitMinFrames} frames, so no plateau",
+                    $"OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt {within}; sunt mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre, deci fara platou");
             }
 
-            string rule = T($"the doubling rule at {F(nz.DoublingCelsius, 0)} degrees", $"regula dublarii la {RoCount(F(nz.DoublingCelsius, 0))}grade");
-            string minutes = double.IsNaN(w.Minutes) ? "" : $" in {F(w.Minutes, 0)} min";
+            string rule = T($"the degrees reckoned with the rule that the thermal signal doubles every {F(nz.DoublingCelsius, 0)} degrees", $"gradele socotite cu regula: semnalul termic se dubleaza la fiecare {RoCount(F(nz.DoublingCelsius, 0))}grade");
+            string minutes = double.IsNaN(w.Minutes) ? "" : T($" over {F(w.Minutes, 0)} min", $" din {F(w.Minutes, 0)} min");
             string warmup = Math.Abs(w.DeltaCelsius) < 0.05
-                ? T($"the series is flat ({rule})", $"seria e plata ({rule})")
+                ? T($"the series did not warm ({rule})", $"seria nu s-a incalzit ({rule})")
                 : T(
                     $"the {(w.DeltaCelsius > 0 ? "warming" : "cooling")} of {F(Math.Abs(w.DeltaCelsius), 1)} degrees{minutes} is at the start ({rule})",
                     $"{(w.DeltaCelsius > 0 ? "incalzirea" : "racirea")} de {F(Math.Abs(w.DeltaCelsius), 1)} grade{minutes} e la inceput ({rule})");
@@ -1123,28 +1189,28 @@ internal static class DarkReport
                 ? T("no frame to discard", "niciun cadru de aruncat")
                 : T("the frames to discard are in the row above", "cadrele de aruncat sunt in randul de mai sus");
             return T(
-                $"OK: the series settled (at the last frame it is still {Signed(w.SettleCelsius, 1)} degrees from the plateau, under {F(Th.SettledCelsius, 1)}) and every frame lies in {span}; {warmup}, {off}",
-                $"OK: seria s-a asezat (la ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, sub {F(Th.SettledCelsius, 1)}) si toate cadrele stau in {span}; {warmup}, {off}");
+                $"OK: the series settled (the last frame is still {Signed(w.SettleCelsius, 1)} degrees from the plateau, under {F(Th.SettledCelsius, 1)}) and every frame is close enough to the master for Siril to match it with -opt {within}; {warmup}; {off}",
+                $"OK: seria s-a stabilizat (ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, sub {F(Th.SettledCelsius, 1)}) si toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt {within}; {warmup}; {off}");
         }
 
         List<string> parts = [];
         if (!v.Settled)
         {
-            string extrapolated = w.TauAtGridTop ? T(", the plateau is extrapolated", ", platoul e extrapolat") : "";
+            string extrapolated = w.TauAtGridTop ? T("; the plateau is guessed from the curve", "; platoul e ghicit din curba") : "";
             string advice = w.OffPlateauFrames.Count > 0
                 ? T("continue the series or discard the frames in the row above", "continua seria sau arunca cadrele din randul de mai sus")
                 : T("continue the series", "continua seria");
             parts.Add(T(
-                $"the series is still {(w.SettleCelsius > 0 ? "warming" : "cooling")} at the last frame (still {Signed(w.SettleCelsius, 1)} degrees from the plateau, above {F(Th.SettledCelsius, 1)}{extrapolated}): the master belongs to no single temperature; {advice}",
-                $"seria inca se {(w.SettleCelsius > 0 ? "incalzeste" : "raceste")} la ultimul cadru (mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, peste {F(Th.SettledCelsius, 1)}{extrapolated}): masterul nu apartine unei temperaturi; {advice}"));
+                $"the series is still {(w.SettleCelsius > 0 ? "warming" : "cooling")} at the last frame (still {Signed(w.SettleCelsius, 1)} degrees from the plateau, above {F(Th.SettledCelsius, 1)}{extrapolated}): the master mixes different temperatures; {advice}",
+                $"seria inca se {(w.SettleCelsius > 0 ? "incalzeste" : "raceste")} la ultimul cadru (mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, peste {F(Th.SettledCelsius, 1)}{extrapolated}): masterul amesteca temperaturi diferite; {advice}"));
         }
 
         if (v.OutsideFrames.Count > 0)
         {
             int n = v.OutsideFrames.Count;
             parts.Add(T(
-                $"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "falls" : "fall")} outside {span} (the farthest {F(v.FarthestRatio, 2)}): the series started {(v.FarthestRatio < 1 ? "cold" : "warm")}; discard {(n == 1 ? "it" : "them")}",
-                $"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "iese" : "ies")} din {span} (cel mai departe {F(v.FarthestRatio, 2)}): seria a pornit {(v.FarthestRatio < 1 ? "rece" : "calda")}; arunca-{(n == 1 ? "l" : "le")}"));
+                $"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "is" : "are")} too far from the master for Siril to match {(n == 1 ? "it" : "them")} with -opt (outside {F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)}; the farthest {F(v.FarthestRatio, 2)}): the series started {(v.FarthestRatio < 1 ? "cold" : "warm")}; discard {(n == 1 ? "it" : "them")}",
+                $"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "e prea departe" : "sunt prea departe")} de master ca Siril sa {(n == 1 ? "il" : "le")} potriveasca cu -opt (in afara {F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)}; cel mai departe {F(v.FarthestRatio, 2)}): seria a pornit {(v.FarthestRatio < 1 ? "rece" : "calda")}; arunca-{(n == 1 ? "l" : "le")}"));
         }
 
         return T("WARNING: ", "ATENTIE: ") + string.Join("; ", parts);
@@ -1199,7 +1265,7 @@ internal static class DarkReport
     }
 
     /// <summary>
-    /// The <c>sigma rezidual</c> row of check 4: each plane's smallest and largest
+    /// The <c>fata de master</c> row of check 4: each plane's smallest and largest
     /// frame-minus-master sigma, with the median on the reference plane.
     /// </summary>
     /// <param name="d">The dark series.</param>
@@ -1209,7 +1275,7 @@ internal static class DarkReport
     {
         if (d.Used < 2)
         {
-            return T("UNMEASURED: a single frame has no residual against its own median", "NEMASURAT: un singur cadru nu are rezidual fata de propria mediana");
+            return T("UNMEASURED: a single frame has nothing to be compared with", "NEMASURAT: un singur cadru nu are cu ce fi comparat");
         }
 
         List<string> parts = [];
@@ -1221,7 +1287,7 @@ internal static class DarkReport
                 continue;
             }
 
-            parts.Add($"{d.PlaneNames[p]} {F(s.Min(), 2)} .. {F(s.Max(), 2)}" + (p == rp ? $" ({T("median", "mediana")} {F(Planes.Median([.. s.Select(x => (float)x)]), 2)})" : ""));
+            parts.Add($"{d.PlaneNames[p]} {F(s.Min(), 2)} .. {F(s.Max(), 2)}" + (p == rp ? $" ({T("usually", "de obicei")} {F(Planes.Median([.. s.Select(x => (float)x)]), 2)})" : ""));
         }
 
         return parts.Count == 0 ? T("UNMEASURED", "NEMASURAT") : string.Join("; ", parts);
@@ -1239,18 +1305,18 @@ internal static class DarkReport
     {
         if (r.Biases is not BiasAnalysis b)
         {
-            return T("UNMEASURED: no biases", "NEMASURAT: fara bias-uri");
+            return T("UNMEASURED: the session has no biases", "NEMASURAT: sesiunea nu are bias-uri");
         }
 
         string planes = string.Join("  ", Enumerable.Range(0, 4).Select(p => $"{b.PlaneNames[p]} {F(b.ReadNoise[p], 2)}"));
         string shot = r.Verdicts.Noise.NoiseOverRead is double s
             ? T(
-                $"; temporal noise above the read noise on {b.PlaneNames[rp]} ~{F(s, 2)} ADU (sqrt(sigma_t^2 - read^2): dark current and quantisation)",
-                $"; zgomot temporal peste citire pe {b.PlaneNames[rp]} ~{F(s, 2)} ADU (sqrt(sigma_t^2 - citire^2): curent de intuneric si cuantizare)")
+                $"; the noise the exposure adds above the read noise, on {ScaleReport.PlaneWords(b.PlaneNames[rp])}: ~{F(s, 2)} ADU (it comes from the sensor's heat and from the value step)",
+                $"; zgomotul adaugat in timpul expunerii, peste cel de citire, pe {ScaleReport.PlaneWords(b.PlaneNames[rp])}: ~{F(s, 2)} ADU (vine din caldura senzorului si din pasul valorilor)")
             : "";
         return T(
-            $"{planes} ADU (from {Math.Max(b.Used - 1, 0)} pairs of consecutive biases){shot}",
-            $"{planes} ADU (din {Math.Max(b.Used - 1, 0)} perechi de bias-uri consecutive){shot}");
+            $"{planes} ADU (from {Math.Max(b.Used - 1, 0)} pairs of biases taken one after the other){shot}",
+            $"{planes} ADU (din {RoCount(Math.Max(b.Used - 1, 0))}perechi de bias-uri luate unul dupa altul){shot}");
     }
 
     /// <summary>
@@ -1263,8 +1329,8 @@ internal static class DarkReport
         double.IsNaN(v.RowBandingAdu)
             ? T("UNMEASURED", "NEMASURAT")
             : T(
-                $"horizontal {F(v.RowBandingAdu, 3)} ADU rms per row ({F(v.RowBandingRatio, 1)} times the white noise), vertical {F(v.ColBandingRatio, 1)} times",
-                $"orizontale {F(v.RowBandingAdu, 3)} ADU rms pe rand (de {F(v.RowBandingRatio, 1)} ori zgomotul alb), verticale de {F(v.ColBandingRatio, 1)} ori");
+                $"horizontal: the rows differ from one another by {F(v.RowBandingAdu, 3)} ADU, {F(v.RowBandingRatio, 1)} times what the noise alone would give; vertical: {F(v.ColBandingRatio, 1)} times (1 means no banding)",
+                $"orizontale: randurile difera intre ele cu {F(v.RowBandingAdu, 3)} ADU, de {F(v.RowBandingRatio, 1)} ori cat ar da zgomotul singur; verticale: de {F(v.ColBandingRatio, 1)} ori (1 inseamna fara benzi)");
 
     /// <summary>The verdict row of check 4.</summary>
     /// <param name="v">Check 4's verdict.</param>
@@ -1277,16 +1343,16 @@ internal static class DarkReport
         {
             Verdict.Unmeasured => T("UNMEASURED", "NEMASURAT"),
             Verdict.Ok => T(
-                $"OK: no frame with noise above {F(Th.NoiseOutlierFactor, 1)} x the median ({F(v.MedianSigma, 2)} ADU)",
-                $"OK: niciun cadru cu zgomot peste {F(Th.NoiseOutlierFactor, 1)} x mediana ({F(v.MedianSigma, 2)} ADU)"),
+                $"OK: no frame has noise more than {F(Th.NoiseOutlierFactor, 1)} times the usual ({F(v.MedianSigma, 2)} ADU)",
+                $"OK: niciun cadru nu are zgomotul de peste {F(Th.NoiseOutlierFactor, 1)} ori mai mare decat de obicei ({F(v.MedianSigma, 2)} ADU)"),
             _ => T(
-                $"WARNING: {v.OutlierFrames.Count} {(v.OutlierFrames.Count == 1 ? "frame" : "frames")} with noise above {F(Th.NoiseOutlierFactor, 1)} x the median ({F(v.MedianSigma, 2)} ADU): {frames}",
-                $"ATENTIE: {RoCount(v.OutlierFrames.Count)}{(v.OutlierFrames.Count == 1 ? "cadru" : "cadre")} cu zgomot peste {F(Th.NoiseOutlierFactor, 1)} x mediana ({F(v.MedianSigma, 2)} ADU): {frames}"),
+                $"WARNING: {v.OutlierFrames.Count} {(v.OutlierFrames.Count == 1 ? "frame has" : "frames have")} noise more than {F(Th.NoiseOutlierFactor, 1)} times the usual ({F(v.MedianSigma, 2)} ADU): {frames}",
+                $"ATENTIE: {RoCount(v.OutlierFrames.Count)}{(v.OutlierFrames.Count == 1 ? "cadru are" : "cadre au")} zgomotul de peste {F(Th.NoiseOutlierFactor, 1)} ori mai mare decat de obicei ({F(v.MedianSigma, 2)} ADU): {frames}"),
         };
     }
 
     /// <summary>
-    /// The <c>master peste nivel</c> row of check 5: how many master pixels lie above each hot
+    /// The <c>pixeli peste prag</c> row of check 5: how many master pixels lie above each hot
     /// level, all planes together.
     /// </summary>
     /// <param name="d">The dark series.</param>
@@ -1297,10 +1363,10 @@ internal static class DarkReport
         for (int k = 0; k < Th.HotLevelsAdu.Count; k++)
         {
             int total = d.Master.Sum(m => m.Above[k]);
-            parts.Add($"{F(Th.HotLevelsAdu[k], 0)}: {total}");
+            parts.Add(T($"above {F(Th.HotLevelsAdu[k], 0)}: {total}", $"peste {F(Th.HotLevelsAdu[k], 0)}: {total}"));
         }
 
-        return string.Join("; ", parts) + T($"  [{Eq(d)} above the black, the series' median, all planes]", $"  [{Eq(d)} peste negru, mediana seriei, toate planurile]");
+        return string.Join("; ", parts) + T($"  [the master's pixels, {Eq(d)} above the black, all colours]", $"  [pixeli ai masterului, {Eq(d)} peste negru, toate culorile]");
     }
 
     /// <summary>How many master pixels of each plane lie above one hot level.</summary>
@@ -1311,7 +1377,7 @@ internal static class DarkReport
         string.Join("  ", d.Master.Select(m => $"{m.Name} {m.Above[level]}"));
 
     /// <summary>
-    /// The <c>amplitudine</c> row of check 5: the hot pixels' percentiles above the black.
+    /// The <c>cat de fierbinti</c> row of check 5: the hot pixels' percentiles above the black.
     /// </summary>
     /// <param name="h">The hot pixels' figures, in raw ADU.</param>
     /// <param name="n">The normalisation factor the percentiles are divided by.</param>
@@ -1321,8 +1387,8 @@ internal static class DarkReport
         h.Hot == 0
             ? T("UNMEASURED: no hot pixel", "NEMASURAT: niciun pixel fierbinte")
             : T(
-                $"median {F(h.P50 / n, 0)}, p10 {F(h.P10 / n, 0)}, p90 {F(h.P90 / n, 0)}, p99 {F(h.P99 / n, 0)} {eq} (of {h.Hot})",
-                $"mediana {F(h.P50 / n, 0)}, p10 {F(h.P10 / n, 0)}, p90 {F(h.P90 / n, 0)}, p99 {F(h.P99 / n, 0)} {eq} (din {h.Hot})");
+                $"usually {F(h.P50 / n, 0)} {eq}; 80 % of them between {F(h.P10 / n, 0)} and {F(h.P90 / n, 0)}; the hottest 1 % above {F(h.P99 / n, 0)} (of {h.Hot} {(h.Hot == 1 ? "pixel" : "pixels")})",
+                $"de obicei {F(h.P50 / n, 0)} {eq}; 80 % dintre ei intre {F(h.P10 / n, 0)} si {F(h.P90 / n, 0)}; cei mai fierbinti 1 % peste {F(h.P99 / n, 0)} (din {RoCount(h.Hot)}{(h.Hot == 1 ? "pixel" : "pixeli")})");
 
     /// <summary>
     /// The <c>stabilitate</c> row of check 5: the hot pixels present in every frame, the flickering
@@ -1344,13 +1410,18 @@ internal static class DarkReport
             return T("UNMEASURED: the stability needs at least 2 frames", "NEMASURAT: stabilitatea cere cel putin 2 cadre");
         }
 
+        string plane = d.PlaneNames[rp];
+        bool green = plane.StartsWith('G');
+        string rts = h.RtsCandidates == 1
+            ? T($"1 {(green ? "green " : "")}pixel {plane} jumps", $"1 pixel {(green ? "verde " : "")}{plane} sare")
+            : T($"{h.RtsCandidates} {(green ? "green " : "")}pixels {plane} jump", $"{RoCount(h.RtsCandidates)}pixeli {(green ? "verzi " : "")}{plane} sar");
         return T(
-            $"{h.Always} of {h.Hot} above half the threshold in all {RunReport.Frames(d.Used)}, {h.Flicker} missing from 2 or more; temporal sigma {F(h.HotTemporalStd, 2)} ADU on the hot ones, {F(h.QuietTemporalStd, 2)} on the rest; {h.RtsCandidates} RTS candidates on {d.PlaneNames[rp]} (temporal sigma above {F(Th.RtsSigmaFactor, 0)} x the noise of one frame, {F(d.Noise.SigmaFrame, 2)})",
-            $"{h.Always} din {h.Hot} peste jumatate din prag in toate cele {RunReport.Frames(d.Used)}, {h.Flicker} lipsesc din 2 sau mai multe; sigma temporala {F(h.HotTemporalStd, 2)} ADU la cei fierbinti, {F(h.QuietTemporalStd, 2)} la restul; {h.RtsCandidates} candidati RTS pe {d.PlaneNames[rp]} (sigma temporala peste {F(Th.RtsSigmaFactor, 0)} x zgomotul unui cadru, {F(d.Noise.SigmaFrame, 2)})");
+            $"{h.Always} of {h.Hot} show (above half the threshold) in all {RunReport.Frames(d.Used)}, {h.Flicker} are missing from 2 or more; from one frame to the next they vary by {F(h.HotTemporalStd, 2)} ADU, the other pixels by {F(h.QuietTemporalStd, 2)}; {rts} between two levels (RTS: they vary more than {F(Th.RtsSigmaFactor, 0)} times the noise of one frame, {F(d.Noise.SigmaFrame, 2)})",
+            $"{h.Always} din {h.Hot} se vad (peste jumatate din prag) in toate cele {RunReport.Frames(d.Used)}, {h.Flicker} lipsesc din 2 sau mai multe; de la un cadru la altul variaza cu {F(h.HotTemporalStd, 2)} ADU, ceilalti pixeli cu {F(h.QuietTemporalStd, 2)}; {rts} intre doua niveluri (RTS: variaza de peste {RoCount(F(Th.RtsSigmaFactor, 0))}ori cat zgomotul unui cadru, {F(d.Noise.SigmaFrame, 2)})");
     }
 
     /// <summary>
-    /// The <c>benzi structurate</c> row of check 6: the worst planes' row and column profiles of
+    /// The <c>benzi fixe</c> row of check 6: the worst planes' row and column profiles of
     /// the master.
     /// </summary>
     /// <param name="d">The dark series.</param>
@@ -1361,8 +1432,8 @@ internal static class DarkReport
         BandingFigures worstCol = d.Banding.MaxBy(b => b.ColP2p)!;
         double n = d.Norm;
         return T(
-            $"rows {F(worstRow.RowStd / n, 3)} {Eq(d)} rms ({F(worstRow.RowP2p / n, 2)} peak to peak, {worstRow.Name}), columns {F(worstCol.ColStd / n, 3)} ({F(worstCol.ColP2p / n, 2)}, {worstCol.Name})  [the master's profile minus a running median over {Th.BandingWindow}]",
-            $"randuri {F(worstRow.RowStd / n, 3)} {Eq(d)} rms ({F(worstRow.RowP2p / n, 2)} varf la varf, {worstRow.Name}), coloane {F(worstCol.ColStd / n, 3)} ({F(worstCol.ColP2p / n, 2)}, {worstCol.Name})  [profilul masterului minus mediana glisanta pe {Th.BandingWindow}]");
+            $"the master's rows differ from one another by {F(worstRow.RowStd / n, 3)} {Eq(d)} ({F(worstRow.RowP2p / n, 2)} between the brightest and the darkest, on {worstRow.Name}), the columns by {F(worstCol.ColStd / n, 3)} ({F(worstCol.ColP2p / n, 2)}, on {worstCol.Name})  [once the slow changes are taken out, over {Th.BandingWindow} rows or columns at a time]",
+            $"randurile masterului difera intre ele cu {F(worstRow.RowStd / n, 3)} {Eq(d)} ({F(worstRow.RowP2p / n, 2)} intre cel mai luminos si cel mai intunecat, pe {worstRow.Name}), coloanele cu {F(worstCol.ColStd / n, 3)} ({F(worstCol.ColP2p / n, 2)}, pe {worstCol.Name})  [dupa ce se scot variatiile lente, pe cate {RoCount(Th.BandingWindow)}randuri sau coloane]");
     }
 
     /// <summary>
@@ -1375,7 +1446,7 @@ internal static class DarkReport
     /// <returns>The row's value, in the run's language.</returns>
     private static string Glow(LeakVerdict l, PatternVerdict p, string eq)
     {
-        string source = l.FromDarkMinusBias ? "dark - bias" : T("the dark master", "masterul dark");
+        string source = l.FromDarkMinusBias ? T("on dark minus bias", "pe dark minus bias") : T("on the dark master", "pe masterul dark");
         if (double.IsNaN(p.GlowAdu))
         {
             return T("UNMEASURED", "NEMASURAT");
@@ -1383,8 +1454,8 @@ internal static class DarkReport
 
         return l.Split is EdgeSplit s
             ? T(
-                $"{Signed(p.GlowAdu, 2)} {eq} at the {RegionName(l.Where)}, the part that grows with the warming (constant {Signed(s.ConstantAdu, 2)} besides it; {source})",
-                $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)}, partea care creste cu incalzirea (constant {Signed(s.ConstantAdu, 2)} in afara ei; {source})")
+                $"{Signed(p.GlowAdu, 2)} {eq} at the {RegionName(l.Where)}, the part that grows as the sensor warms (besides it, constant {Signed(s.ConstantAdu, 2)}; {source})",
+                $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)}, partea care creste cand senzorul se incalzeste (in afara ei, constant {Signed(s.ConstantAdu, 2)}; {source})")
             : T(
                 $"{Signed(p.GlowAdu, 2)} {eq} at the {RegionName(l.Where)} against the centre ({source})",
                 $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)} fata de centru ({source})");
@@ -1401,13 +1472,13 @@ internal static class DarkReport
         bool glow = Math.Abs(p.GlowAdu) > Th.LeakAdu;
         return p.Verdict switch
         {
-            Verdict.Unmeasured => T("UNMEASURED: the map or the profiles have no values", "NEMASURAT: harta sau profilele nu au valori"),
+            Verdict.Unmeasured => T("UNMEASURED: the frames are too small for the map or the banding", "NEMASURAT: cadrele sunt prea mici pentru harta sau pentru benzi"),
             Verdict.Ok => T(
-                $"OK: banding under {F(Th.BandingAdu, 1)} {eq} peak to peak and edges under {F(Th.LeakAdu, 1)}",
-                $"OK: benzi sub {F(Th.BandingAdu, 1)} {eq} varf la varf si margini sub {F(Th.LeakAdu, 1)}"),
+                $"OK: the fixed banding stays under {F(Th.BandingAdu, 1)} {eq} between the brightest and the darkest row, and the edges under {F(Th.LeakAdu, 1)} from the centre",
+                $"OK: benzile fixe raman sub {F(Th.BandingAdu, 1)} {eq} intre cel mai luminos si cel mai intunecat rand, iar marginile sub {F(Th.LeakAdu, 1)} fata de centru"),
             _ => T(
-                $"WARNING: {(banding ? $"banding of {F(p.BandingP2pAdu, 2)} {eq} peak to peak" : "")}{(banding && glow ? " and " : "")}{(glow ? $"glow of {Signed(p.GlowAdu, 2)} {eq}" : "")}; the pattern stays in lights calibrated without darks",
-                $"ATENTIE: {(banding ? $"benzi de {F(p.BandingP2pAdu, 2)} {eq} varf la varf" : "")}{(banding && glow ? " si " : "")}{(glow ? $"glow de {Signed(p.GlowAdu, 2)} {eq}" : "")}; modelul ramane in lights fara dark-uri"),
+                $"WARNING: {(banding ? $"fixed banding of {F(p.BandingP2pAdu, 2)} {eq} between the brightest and the darkest row" : "")}{(banding && glow ? " and " : "")}{(glow ? $"glow of {Signed(p.GlowAdu, 2)} {eq}" : "")}; without darks this pattern stays in the lights",
+                $"ATENTIE: {(banding ? $"benzi fixe de {F(p.BandingP2pAdu, 2)} {eq} intre cel mai luminos si cel mai intunecat rand" : "")}{(banding && glow ? " si " : "")}{(glow ? $"glow de {Signed(p.GlowAdu, 2)} {eq}" : "")}; fara dark-uri, desenul acesta ramane in lights"),
         };
     }
 
@@ -1422,17 +1493,17 @@ internal static class DarkReport
             $"ATENTIE: {RoCount(v.Dead)}{(v.Dead == 1 ? "pixel mort" : "pixeli morti")}, {RoCount(v.Saturated)}{(v.Saturated == 1 ? "saturat" : "saturati")}");
 
     /// <summary>
-    /// The <c>zgomotul mediei</c> row of check 8: the measured and the expected noise of the mean
+    /// The <c>zgomot dupa medie</c> row of check 8: the measured and the expected noise of the mean
     /// of n frames.
     /// </summary>
     /// <param name="nv">The noise-against-n figures.</param>
     /// <returns>The row's value, in the run's language.</returns>
     private static string Curve(NoiseVsN nv)
     {
-        string expected = T("expected", "asteptat");
+        string expected = T("expected", "se astepta");
         return nv.Curve.Count == 0
-            ? T("UNMEASURED: fewer than 2 frames", "NEMASURAT: sub 2 cadre")
-            : string.Join("; ", nv.Curve.Select(p => $"n={p.N} {F(p.Measured, 2)} ({expected} {F(p.Expected, 2)})"));
+            ? T("UNMEASURED: there are fewer than 2 frames", "NEMASURAT: sunt mai putin de 2 cadre")
+            : string.Join("; ", nv.Curve.Select(p => $"{RunReport.Frames(p.N)}: {F(p.Measured, 2)} ({expected} {F(p.Expected, 2)})"));
     }
 
     /// <summary>
@@ -1449,16 +1520,18 @@ internal static class DarkReport
         }
 
         string basis = double.IsNaN(d.Noise.TemporalSigma)
-            ? T($"sigma {F(d.Noise.SigmaFrame, 2)}, a single frame", $"sigma {F(d.Noise.SigmaFrame, 2)}, un singur cadru")
-            : T($"temporal sigma {F(d.Noise.TemporalSigma, 2)}", $"sigma temporala {F(d.Noise.TemporalSigma, 2)}");
+            ? T($"from the frame's noise, {F(d.Noise.SigmaFrame, 2)}, as it is the only one", $"din zgomotul cadrului, {F(d.Noise.SigmaFrame, 2)}, fiind unul singur")
+            : T($"from the noise from one frame to the next, {F(d.Noise.TemporalSigma, 2)}", $"din zgomotul de la un cadru la altul, {F(d.Noise.TemporalSigma, 2)}");
+        int byMedian = e.Frames - e.Frames / 2;
+        int byMean = e.Frames / 2;
         string half = e.Frames >= 2
             ? T(
-                $"; the median of {e.Frames - e.Frames / 2} against the mean of {e.Frames / 2}: {F(d.Noise.MedianHalfVsMeanHalf, 2)}",
-                $"; mediana a {e.Frames - e.Frames / 2} fata de media a {e.Frames / 2}: {F(d.Noise.MedianHalfVsMeanHalf, 2)}")
+                $"; a master of {RunReport.Frames(byMedian)} made with the median and one of {(byMean == 1 ? "the frame left" : $"the other {byMean}")} made with the mean differ by {F(d.Noise.MedianHalfVsMeanHalf, 2)} ADU",
+                $"; un master din {RunReport.Frames(byMedian)} facut cu mediana si unul din {(byMean == 1 ? "cadrul ramas" : $"celelalte {byMean}")} facut cu media difera cu {F(d.Noise.MedianHalfVsMeanHalf, 2)} ADU")
             : "";
         return T(
-            $"{RunReport.Frames(e.Frames)} -> {F(e.MasterNoise, 2)} ADU noise of the median master ({F(Th.MedianNoiseFactor, 2)} x {basis} / sqrt({e.Frames})){half}",
-            $"{RunReport.Frames(e.Frames)} -> {F(e.MasterNoise, 2)} ADU zgomot al masterului median ({F(Th.MedianNoiseFactor, 2)} x {basis} / sqrt({e.Frames})){half}");
+            $"{RunReport.Frames(e.Frames)} {(e.Frames == 1 ? "gives" : "give")} a master with {F(e.MasterNoise, 2)} ADU of noise per pixel ({basis}){half}",
+            $"{RunReport.Frames(e.Frames)} {(e.Frames == 1 ? "da" : "dau")} un master cu {F(e.MasterNoise, 2)} ADU de zgomot pe pixel ({basis}){half}");
     }
 
     /// <summary>The verdict row of check 8.</summary>
@@ -1469,14 +1542,14 @@ internal static class DarkReport
     {
         Verdict.Unmeasured => T("UNMEASURED: a single frame is not a series", "NEMASURAT: un singur cadru nu e o serie"),
         Verdict.Ok => T(
-            $"OK: {RunReport.Frames(e.Frames)} are enough; the median master's noise ({F(e.MasterNoise, 2)} ADU) is under the quantisation step ({e.QuantStep} ADU) and adds in quadrature in every calibrated light",
-            $"OK: {RunReport.Frames(e.Frames)} ajung; zgomotul masterului median ({F(e.MasterNoise, 2)} ADU) e sub pasul de cuantizare ({e.QuantStep} ADU) si intra in cuadratura in fiecare light calibrat"),
+            $"OK: {RunReport.Frames(e.Frames)} are enough; the master's noise ({F(e.MasterNoise, 2)} ADU) is under the file's value step ({e.QuantStep} ADU), and it adds to every calibrated light",
+            $"OK: {RunReport.Frames(e.Frames)} ajung; zgomotul masterului ({F(e.MasterNoise, 2)} ADU) e sub pasul valorilor din fisier ({e.QuantStep} ADU), iar el se adauga la fiecare light calibrat"),
         _ when e.TooFew => T(
-            $"WARNING: only {RunReport.Frames(e.Frames)}; the median needs at least {Th.MinDarks} so that one odd frame does not pull it (the master's noise would be {F(e.MasterNoise, 2)} ADU)",
-            $"ATENTIE: doar {RunReport.Frames(e.Frames)}; mediana cere cel putin {Th.MinDarks} ca un cadru ciudat sa n-o traga (zgomotul masterului ar fi {F(e.MasterNoise, 2)} ADU)"),
+            $"WARNING: only {RunReport.Frames(e.Frames)}; at least {Th.MinDarks} are needed, so that one odd frame does not spoil the master (the master's noise would be {F(e.MasterNoise, 2)} ADU)",
+            $"ATENTIE: doar {RunReport.Frames(e.Frames)}; trebuie cel putin {Th.MinDarks}, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi {F(e.MasterNoise, 2)} ADU)"),
         _ => T(
-            $"WARNING: the median master's noise ({F(e.MasterNoise, 2)} ADU) is above the quantisation step ({e.QuantStep} ADU); it would drop under the step from {e.FramesNeeded} frames",
-            $"ATENTIE: zgomotul masterului median ({F(e.MasterNoise, 2)} ADU) e peste pasul de cuantizare ({e.QuantStep} ADU); ar cobori sub pas de la {RoCount(e.FramesNeeded)}cadre"),
+            $"WARNING: the master's noise ({F(e.MasterNoise, 2)} ADU) is above the file's value step ({e.QuantStep} ADU); it would drop under it from {e.FramesNeeded} frames",
+            $"ATENTIE: zgomotul masterului ({F(e.MasterNoise, 2)} ADU) e peste pasul valorilor din fisier ({e.QuantStep} ADU); ar cobori sub el de la {RoCount(e.FramesNeeded)}cadre"),
     };
 
     /// <summary>A ratio with three decimals, or "-" when NaN.</summary>
