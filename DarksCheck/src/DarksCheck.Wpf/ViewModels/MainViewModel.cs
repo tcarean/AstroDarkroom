@@ -658,7 +658,7 @@ public sealed class MainViewModel : ObservableObject
         [
             new MapVm("MASTER DARK", Map(d.MeanMaps[rp]), Note(leak, "master dark"), WindowTexts.NoMap),
             new MapVm("MASTER BIAS", r.Biases is null ? null : Map(r.Biases.MeanMaps[rp]), Note(leak, "master bias"), WindowTexts.NoMap),
-            new MapVm("DARK - BIAS", r.DarkCurrent is null ? null : Map(r.DarkCurrent.Maps[rp]), Note(leak, "dark - bias"), WindowTexts.NoMap),
+            new MapVm("DARK MINUS BIAS", r.DarkCurrent is null ? null : Map(r.DarkCurrent.Maps[rp]), Note(leak, "dark - bias"), WindowTexts.NoMap),
         ];
 
         // the charts: one point per dark, NaN where the frame has no figure

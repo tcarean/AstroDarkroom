@@ -110,9 +110,10 @@ they are now.
   row of the row's grid, under the cells and spanning them, all in the attention colour of
   `VerdictPalette.Warn` as local brushes;
 - the Harti tab takes the three `BinnedMap`s of the reference plane through
-  `DarkOutputs.MapRaster` and `RasterBitmaps.Grey`, each with the section-2 row of the same
-  name as its note; a map without blocks, or an absent group, is a `MapVm` without image and
-  the card says so;
+  `DarkOutputs.MapRaster` and `RasterBitmaps.Grey`, each with its section-2 row (`master dark`,
+  `master bias`, `dark - bias`) as its note under the titles `MASTER DARK`, `MASTER BIAS` and
+  `DARK MINUS BIAS`; a map without blocks, or an absent group, is a `MapVm` without image and
+  the card says so (`WindowTexts.NoMap`);
 - the charts take `ChartPoint(X, Y, Label, Colour, Tip)` lists: the warming (every dark's
   `AmpRatioMedian`, the frames of `Warming.OffPlateauFrames` in the attention colour, guide
   at 1 and, with a fit, at `Plateau`, `OffPlateauLow` and `OffPlateauHigh`; the card's
