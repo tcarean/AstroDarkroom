@@ -10,28 +10,28 @@ Copyright (C) 2026 Tudor Carean
     expunere biases    : 0.0002 s la ISO 400 (toate cadrele)
     expunere lights    : 120.0 s la ISO 400 (toate cadrele)
     interval darks     : (lipsa)
-    interval lights    : 2026-08-12 23:41:23 -> 2026-08-12 23:48:23 (7 min); 3 cadre la 150.0 s; 2 pauze peste 5 s (cea mai lunga 30 s inainte de cadrul 2)
-    potrivire          : OK: dark-urile partenerului au expunerea (120.0 s) si ISO-ul (400) lights-urilor
-    bias               : OK: 0.0002 s
+    interval lights    : 2026-08-12 23:41:23 -> 2026-08-12 23:48:23 (7 min); 3 cadre, cate unul la 150.0 s; 2 pauze peste 5 s (cea mai lunga 30 s inainte de cadrul 2)
+    potrivire          : OK: dark-urile partenerului au aceeasi expunere (120.0 s) si acelasi ISO (400) ca lights-urile
+    bias               : OK: 0.0002 s, destul de scurt pentru un bias
 
-=== DARK-URI (ale partenerului <partener>): 4 cadre decodate din 4, 256 x 192 px, scara 200 .. 65535 ADU (FITS (presupus din BITPIX 16), negru 200 din bias-uri), CFA RGGB ===
-    normalizare        : ISO 400, 120.0 s -> x1.00 fata de ISO 400 si 120 s (ADU-eq = ADU)
-    cuantizare         : pas 1 ADU langa negru; 24 de valori distincte in primul cadru (G1)
+=== DARK-URI (ale partenerului <partener>): cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din bias-uri), filtre de culoare RGGB ===
+    1 ADU-eq           : 1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s
+    pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU; primul cadru are 24 de valori diferite (pixelii verzi G1)
 
-  2. SCURGERI DE LUMINA SI GRADIENT
-    master dark        : centru 0.12, colturi -0.01 / -0.04 / -0.11 / 0.00 (SS / DS / SJ / DJ), margini sus -0.02 jos 0.00 stanga -0.02 dreapta -0.01  [G1, ADU peste negru, media a 4 cadre, blocuri de 32 px]
-    master bias        : centru -0.11, colturi 0.16 / 0.02 / -0.08 / 0.15 (SS / DS / SJ / DJ), margini sus 0.06 jos -0.05 stanga -0.02 dreapta 0.06  [G1, ADU peste negru, media a 2 cadre]
-    dark - bias        : centru 0.23, colturi -0.17 / -0.05 / -0.04 / -0.14 (SS / DS / SJ / DJ), margini sus -0.08 jos 0.05 stanga -0.01 dreapta -0.07; mediana -0.03, -0.31 .. 0.23 (p1 .. p99)
-    lumina pe cadre    : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    glow / constant    : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    lumina constanta   : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU de centru (cel mai departe -0.40 la stanga-sus, pe dark - bias); lumina pe cadre NEMASURATA
+  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU
+    master dark        : centru 0.12, colturi -0.01 / -0.04 / -0.11 / 0.00 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.02 jos 0.00 stanga -0.02 dreapta -0.01  [pixelii verzi G1, ADU peste negru, media a 4 cadre, pe patrate de 32 px]
+    master bias        : centru -0.11, colturi 0.16 / 0.02 / -0.08 / 0.15 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus 0.06 jos -0.05 stanga -0.02 dreapta 0.06  [pixelii verzi G1, ADU peste negru, media a 2 cadre]
+    dark - bias        : centru 0.23, colturi -0.17 / -0.05 / -0.04 / -0.14 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.08 jos 0.05 stanga -0.01 dreapta -0.07; pixelul obisnuit -0.03, aproape toti (98 %) intre -0.31 si 0.23
+    lumina pe cadre    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    glow / constant    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    lumina constanta   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult -0.40, la stanga-sus, pe dark minus bias); lumina pe cadre nu s-a putut masura
 
-  3. DERIVA TERMICA IN SERIE
-    amplitudine        : pixelii fierbinti la 1.00 din master in primul cadru, 1.00 in ultimul (20 de pixeli peste 20 ADU)
-    platou             : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    de aruncat         : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    verdict            : OK: toate cadrele stau in 0.7 .. 1.4 din master (sub 6 cadre, fara platou)
+  3. INCALZIREA CAMEREI IN TIMPUL SERIEI
+    pixeli fierbinti   : in primul cadru sunt la 1.00 din nivelul din master, in ultimul la 1.00 (20 de pixeli peste 20 ADU); cresc cu temperatura, deci arata cat de cald era senzorul
+    platou             : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci fara platou
 
   4. ZGOMOT PE CADRU
     sigma rezidual     : R 2.65 .. 2.71; G1 2.65 .. 2.72 (mediana 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU, cadru - master]

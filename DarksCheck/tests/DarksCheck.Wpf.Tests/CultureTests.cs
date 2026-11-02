@@ -100,7 +100,7 @@ public class CultureTests
         await ro.OpenAsync(f.Root);
 
         Assert.Equal(invariant, ro.Report);
-        Assert.Contains("x1.00 fata de ISO 400", invariant, StringComparison.Ordinal);
-        Assert.DoesNotContain("x1,00", ro.Report, StringComparison.Ordinal);
+        Assert.Matches(@"expunere darks     : [0-9]+\.[0-9] s la ISO", invariant);
+        Assert.DoesNotMatch(@"[0-9]+,[0-9] s la ISO", ro.Report);
     }
 }

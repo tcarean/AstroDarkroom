@@ -8,27 +8,27 @@ Copyright (C) 2026 Tudor Carean
     aparat             : NIKON D3300
     expunere darks     : 120.0 s la ISO 400 (toate cadrele)
     expunere lights    : 120.0 s la ISO 400 (toate cadrele)
-    interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 cadre la 120.0 s; fara pauze peste 5 s
-    interval lights    : 2026-08-12 23:36:23 -> 2026-08-12 23:48:23 (12 min); 5 cadre la 150.0 s; 4 pauze peste 5 s (cea mai lunga 30 s inainte de cadrul 2)
-    potrivire          : OK: dark-urile au expunerea (120.0 s) si ISO-ul (400) lights-urilor
+    interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 cadre, cate unul la 120.0 s; fara pauze peste 5 s
+    interval lights    : 2026-08-12 23:36:23 -> 2026-08-12 23:48:23 (12 min); 5 cadre, cate unul la 150.0 s; 4 pauze peste 5 s (cea mai lunga 30 s inainte de cadrul 2)
+    potrivire          : OK: dark-urile au aceeasi expunere (120.0 s) si acelasi ISO (400) ca lights-urile
     bias               : (lipsa)
 
-=== DARK-URI: 4 cadre decodate din 4, 256 x 192 px, scara 200 .. 65535 ADU (FITS (presupus din BITPIX 16), negru 200 estimat din mediana cadrului 1), CFA RGGB ===
-    normalizare        : ISO 400, 120.0 s -> x1.00 fata de ISO 400 si 120 s (ADU-eq = ADU)
-    cuantizare         : pas 1 ADU langa negru; 23 de valori distincte in primul cadru (G1)
+=== DARK-URI: cadre citite 4 din 4, 256 x 192 px, valori de la 200 (negru) la 65535 ADU (alb) (FITS pe 16 biti, albul dedus din fisier, negrul luat din valoarea obisnuita a cadrului 1), filtre de culoare RGGB ===
+    1 ADU-eq           : 1 ADU din fisier: setul e facut chiar la setarile de referinta, ISO 400, 120.0 s
+    pasul valorilor    : langa negru, valorile din fisier cresc din 1 in 1 ADU; primul cadru are 23 de valori diferite (pixelii verzi G1)
 
-  2. SCURGERI DE LUMINA SI GRADIENT
-    master dark        : centru -0.02, colturi -0.11 / 0.12 / 0.03 / 0.10 (SS / DS / SJ / DJ), margini sus -0.01 jos 0.00 stanga -0.05 dreapta -0.03  [G1, ADU peste negru, media a 4 cadre, blocuri de 32 px]
-    lumina pe cadre    : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    glow / constant    : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    lumina constanta   : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU de centru (cel mai departe +0.13 la dreapta-sus, pe masterul dark (fara bias)); lumina pe cadre NEMASURATA
+  2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU
+    master dark        : centru -0.02, colturi -0.11 / 0.12 / 0.03 / 0.10 (stanga-sus / dreapta-sus / stanga-jos / dreapta-jos), margini sus -0.01 jos 0.00 stanga -0.05 dreapta -0.03  [pixelii verzi G1, ADU peste negru, media a 4 cadre, pe patrate de 32 px]
+    lumina pe cadre    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    glow / constant    : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    lumina constanta   : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    verdict            : OK: nicio margine si niciun colt nu difera de centru cu peste 1.0 ADU (cel mai mult +0.13, la dreapta-sus, pe masterul dark (fara bias-uri)); lumina pe cadre nu s-a putut masura
 
-  3. DERIVA TERMICA IN SERIE
-    amplitudine        : pixelii fierbinti la 1.00 din master in primul cadru, 1.00 in ultimul (20 de pixeli peste 20 ADU)
-    platou             : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    de aruncat         : NEMASURAT: sub 6 cadre cu pixeli fierbinti
-    verdict            : OK: toate cadrele stau in 0.7 .. 1.4 din master (sub 6 cadre, fara platou)
+  3. INCALZIREA CAMEREI IN TIMPUL SERIEI
+    pixeli fierbinti   : in primul cadru sunt la 1.00 din nivelul din master, in ultimul la 1.00 (20 de pixeli peste 20 ADU); cresc cu temperatura, deci arata cat de cald era senzorul
+    platou             : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    de aruncat         : NEMASURAT: sunt mai putin de 6 cadre cu pixeli fierbinti
+    verdict            : OK: toate cadrele sunt destul de aproape de master ca Siril sa le potriveasca cu -opt (intre 0.7 si 1.4); sunt mai putin de 6 cadre, deci fara platou
 
   4. ZGOMOT PE CADRU
     sigma rezidual     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (mediana 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU, cadru - master]

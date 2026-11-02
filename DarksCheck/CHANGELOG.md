@@ -34,6 +34,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Rezumat tab and the console's report speak plain words, in English and Romanian (R-082,
+  ADR 0030), the figures unchanged: the session card, the `=== DARK-URI` header (`frames read 20
+  of 20`, `values from 150 (black) to 4095 ADU (white)`) and its rows, now `1 ADU-eq` and
+  `value step` (`pasul valorilor`), and checks 2 and 3, now titled `2. LIGHT LEAKS AND
+  DIFFERENCES ACROSS THE FRAME` and `3. THE CAMERA'S WARMING DURING THE SERIES`, whose row
+  `amplitude` is `hot pixels`. An error reads `+/-` instead of `±`.
+
 - The ADU scale section, the window's `ADU scale explained` tab and the console's last block, is
   in plain words, in English and Romanian: each row and paragraph says what a figure means
   without the method's terms (no sigma, square root, quadrature, raw ADU or `e-`), the figures

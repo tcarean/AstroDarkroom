@@ -173,10 +173,10 @@ public class LanguageTests
         (_, string en, _) = Cli.Run(s.Root, "--threads", "2", "--lang", "en");
 
         Assert.Contains("darks\\ (20 de cadre .fit)", ro, StringComparison.Ordinal);
-        Assert.Contains("=== DARK-URI: 20 de cadre decodate din 20", ro, StringComparison.Ordinal);
+        Assert.Contains(", media a 20 de cadre, pe patrate de ", ro, StringComparison.Ordinal);
         Assert.Contains("masterul dark, facut din 20 de cadre, mai are ", ro, StringComparison.Ordinal);
         Assert.Contains("darks\\ (20 frames .fit)", en, StringComparison.Ordinal);
-        Assert.Contains("=== DARKS: 20 frames decoded of 20", en, StringComparison.Ordinal);
+        Assert.Contains(", mean of 20 frames, in squares of ", en, StringComparison.Ordinal);
         Assert.DoesNotContain(" de ", en, StringComparison.Ordinal);
     }
 }

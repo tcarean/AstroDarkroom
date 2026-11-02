@@ -9,10 +9,10 @@ Copyright (C) 2026 Tudor Carean
     expunere darks     : 119.2 s la ISO 400 (toate cadrele)
     expunere biases    : 0.0002 s la ISO 400 (toate cadrele)
     expunere lights    : 119.2 s la ISO 400 (toate cadrele)
-    interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:54:52 (5 min); 3 cadre la 120.0 s; fara pauze peste 5 s
-    interval lights    : 2026-08-12 23:43:53 -> 2026-08-12 23:48:22 (4 min); 2 cadre la 150.0 s; 1 pauza peste 5 s (31 s inainte de cadrul 2)
-    potrivire          : OK: dark-urile au expunerea (119.2 s) si ISO-ul (400) lights-urilor
-    bias               : OK: 0.0002 s
+    interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:54:52 (5 min); 3 cadre, cate unul la 120.0 s; fara pauze peste 5 s
+    interval lights    : 2026-08-12 23:43:53 -> 2026-08-12 23:48:22 (4 min); 2 cadre, cate unul la 150.0 s; 1 pauza peste 5 s (31 s inainte de cadrul 2)
+    potrivire          : OK: dark-urile au aceeasi expunere (119.2 s) si acelasi ISO (400) ca lights-urile
+    bias               : OK: 0.0002 s, destul de scurt pentru un bias
     ATENTIE            : 1 cadru nu s-a putut citi (vezi tabelele)
 
   DARKS

@@ -520,11 +520,11 @@ public class LightsAndIndexTests
         Assert.Equal(Verdict.Ok, b.Inventory.Match.DarksVsLights);
 
         string report = Report(b);
-        Assert.Contains($"=== DARK-URI (ale partenerului {library.Root}): 5 cadre decodate din 5", report, StringComparison.Ordinal);
+        Assert.Contains($"=== DARK-URI (ale partenerului {library.Root}): cadre citite 5 din 5", report, StringComparison.Ordinal);
         Assert.Contains($"    darks              : (lipsa; se folosesc dark-urile partenerului {library.Root})", report, StringComparison.Ordinal);
         Assert.Contains("    expunere partener  : 120.0 s la ISO 400 (toate cadrele)", report, StringComparison.Ordinal);
         Assert.Contains("    interval darks     : (lipsa)", report, StringComparison.Ordinal);
-        Assert.Contains("    potrivire          : OK: dark-urile partenerului au expunerea (120.0 s) si ISO-ul (400) lights-urilor", report, StringComparison.Ordinal);
+        Assert.Contains("    potrivire          : OK: dark-urile partenerului au aceeasi expunere (120.0 s) si acelasi ISO (400) ca lights-urile", report, StringComparison.Ordinal);
         Assert.Contains("    dark-uri (partener): idx", report, StringComparison.Ordinal);
         Assert.Contains("    eticheta           : " + b.Label, report, StringComparison.Ordinal);
         Assert.Contains("    lights             : echivalent idx", report, StringComparison.Ordinal);
@@ -537,7 +537,7 @@ public class LightsAndIndexTests
         using SessionFixture iso800 = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, iso: 800, inSubfolder: false);
         DarkSeriesResult c = Run(alone, iso800.Root);
         Assert.Equal(Verdict.Warning, c.Inventory.Match.DarksVsLights);
-        Assert.Contains("    potrivire          : ATENTIE: dark-uri ale partenerului de 120.0 s la ISO 800, lights de 120.0 s la ISO 400", Report(c), StringComparison.Ordinal);
+        Assert.Contains("    potrivire          : ATENTIE: dark-urile partenerului (120.0 s, ISO 800) nu au setarile lights-urilor (120.0 s, ISO 400)", Report(c), StringComparison.Ordinal);
 
         // without a partner the run refuses, naming what to give
         InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => Run(alone));

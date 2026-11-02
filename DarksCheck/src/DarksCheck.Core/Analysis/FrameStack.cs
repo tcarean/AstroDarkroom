@@ -244,10 +244,9 @@ internal sealed class FrameStack
         FrameStack stack = new(frames, gw, gh, gb, gwhite, gcfa, gsource, gnorm, nz);
         if (double.IsNaN(gb))
         {
-            string fmt(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
             if (fitsBlack is double known)
             {
-                stack = new FrameStack(frames, gw, gh, known, gwhite, gcfa, gsource + T($", black {fmt(known)} from the biases", $", negru {fmt(known)} din bias-uri"), gnorm, nz, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, known, gwhite, gcfa, gsource + T(", the black taken from the biases", ", negrul luat din bias-uri"), gnorm, nz, blackEstimated: true);
             }
             else
             {
@@ -255,7 +254,7 @@ internal sealed class FrameStack
                 // plane
                 StackFrame first = frames.First(f => f.Pixels is not null);
                 double black = Planes.Median(Planes.Extract(first.Pixels!, gw, gh, stack.ReferencePlane));
-                stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + T($", black {fmt(black)} estimated from the median of frame {first.Info.Index}", $", negru {fmt(black)} estimat din mediana cadrului {first.Info.Index}"), gnorm, nz, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + T($", the black taken from the usual value of frame {first.Info.Index}", $", negrul luat din valoarea obisnuita a cadrului {first.Info.Index}"), gnorm, nz, blackEstimated: true);
             }
         }
 
@@ -417,6 +416,16 @@ internal sealed class FrameStack
     internal static double NormOf(FrameInfo info) => Normalisation.Default.NormOf(info);
 
     /// <summary>
+    /// The raw reader's label of where the scale came from, in the run's words: the copied
+    /// reader's "libraw (exact)" reads as values read exactly from the raw; any other label stands
+    /// as it is.
+    /// </summary>
+    /// <param name="source">The reader's label; not null.</param>
+    /// <returns>The words for the header line of the report.</returns>
+    private static string RawSource(string source) =>
+        source == "libraw (exact)" ? T("read exactly from the raw", "citite exact din raw") : source;
+
+    /// <summary>
     /// A decoded frame's raster as 16-bit values, rounded and clamped to 0..65535, with its
     /// scale: the file's black and white, or for a FITS a NaN black and the white BITPIX
     /// allows; a float FITS on 0..1 is multiplied by 65535, one already in ADU is kept, both
@@ -431,7 +440,9 @@ internal sealed class FrameStack
         // NaN marks a missing black level; Load replaces it with the first frame's median
         double black = f.Scale?.Black ?? double.NaN;
         double white = f.Scale?.White ?? (f.Bitpix < 0 ? 1.0 : (1 << Math.Min(f.Bitpix, 16)) - 1);
-        string source = f.Scale?.Source ?? T($"FITS (assumed from BITPIX {f.Bitpix})", $"FITS (presupus din BITPIX {f.Bitpix})");
+        string source = f.Scale?.Source is string given ? RawSource(given) : f.Bitpix < 0
+            ? T($"FITS of {-f.Bitpix} bits with decimals", $"FITS pe {-f.Bitpix} biti cu zecimale")
+            : T($"FITS of {f.Bitpix} bits, the white deduced from the file", $"FITS pe {f.Bitpix} biti, albul dedus din fisier");
         double factor = 1;
         if (f.Scale is null && f.Bitpix < 0)
         {
@@ -447,7 +458,7 @@ internal sealed class FrameStack
             else
             {
                 white = 65535;
-                source += T(", values in ADU, white assumed 65535", ", valori in ADU, alb presupus 65535");
+                source += T(", values in ADU, the white assumed 65535", ", valori in ADU, albul presupus 65535");
             }
         }
 

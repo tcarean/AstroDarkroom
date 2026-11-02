@@ -178,13 +178,13 @@ public class MainViewModelTests
 
         // the session card: the inventory lines and the darks' header rows, as the console prints them
         Assert.Contains(vm.SessionRows, row => row.Label == "darks" && row.Value.Contains("6 cadre", StringComparison.Ordinal));
-        Assert.Contains(vm.SessionRows, row => row.Label == "normalizare");
-        Assert.StartsWith("=== DARK-URI: 6 cadre decodate din 6", vm.HeaderLine, StringComparison.Ordinal);
+        Assert.Contains(vm.SessionRows, row => row.Label == "1 ADU-eq");
+        Assert.StartsWith("=== DARK-URI: cadre citite 6 din 6", vm.HeaderLine, StringComparison.Ordinal);
         Assert.Equal(InventoryReport.HeaderRows(r.Inventory).Select(row => row.Label), vm.SessionRows.Take(InventoryReport.HeaderRows(r.Inventory).Count).Select(row => row.Label));
 
         // one card per check, the rows the core wrote, the verdict as a chip with the rest beside it
         Assert.Equal(DarkReport.Sections(r).Select(s => s.Title), vm.Sections.Select(s => s.Title));
-        Assert.Equal(["2. SCURGERI DE LUMINA SI GRADIENT", "3. DERIVA TERMICA IN SERIE", "4. ZGOMOT PE CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. LIGHTS FATA DE DARK", "INDEX"], vm.Sections.Select(s => s.Title));
+        Assert.Equal(["2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOT PE CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. LIGHTS FATA DE DARK", "INDEX"], vm.Sections.Select(s => s.Title));
         RowVm verdict = vm.Sections[0].Rows[^1];
         Assert.Equal("verdict", verdict.Label);
         Assert.True(verdict.HasVerdict);
@@ -403,7 +403,7 @@ public class MainViewModelTests
         Assert.InRange(ratio, 1.25, 1.35);
         Assert.Equal(12 * Math.Log2(ratio), vm.Result.Lights.LightsOverDark.DeltaCelsius, 1e-9);
         Assert.Equal(12.0, vm.Result.Darks.Normalisation.DoublingCelsius);
-        Assert.Contains("regula dublarii la 12 grade", vm.Report, StringComparison.Ordinal);
+        Assert.Contains("semnalul termic se dubleaza la fiecare 12 grade", vm.Report, StringComparison.Ordinal);
 
         // a gain of 1 per stop: ISO changes nothing, so lights at ISO 800 read their raw ratio
         using SessionFixture iso = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice })
@@ -414,7 +414,7 @@ public class MainViewModelTests
         MainViewModel flat = new() { IsoFactorText = "1" };
         await flat.OpenAsync(iso.Root);
         Assert.InRange(flat.Result!.Lights!.LightsOverDark.Ratio, 1.9, 2.1);
-        Assert.Contains("castig x1.00 pe treapta de ISO", flat.Report, StringComparison.Ordinal);
+        Assert.Contains("o treapta de ISO inmulteste semnalul cu 1.00 (setarea ta)", flat.Report, StringComparison.Ordinal);
     }
 
     [Fact]

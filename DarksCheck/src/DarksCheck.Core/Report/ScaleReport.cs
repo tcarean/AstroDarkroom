@@ -117,7 +117,7 @@ internal static class ScaleReport
                     $"valori cu zecimale (virgula mobila), de la 0 la {F(d.White, 3)}; negrul la {F(d.Black, 3)}")),
             new("1 ADU-eq", !g.SettingsKnown
                 ? T("the files do not give the ISO or the exposure, so 1 ADU-eq is taken equal to 1 ADU in the file", "fisierele nu spun ISO-ul sau expunerea, deci 1 ADU-eq e luat egal cu 1 ADU din fisier")
-                : Math.Abs(g.Norm - 1) < 1e-9
+                : DarkReport.AtReference(g.First!.Iso!.Value, g.First.ExposureSeconds!.Value)
                     ? T($"1 ADU in the file: the set was taken at the reference settings themselves, {g.Settings}", $"1 ADU din fisier: setul e facut chiar la setarile de referinta, {g.Settings}")
                     : T($"{F(g.Norm, 2)} ADU in the file at {g.Settings} (ADU-eq is the ADU as it would be at ISO 400 and 120 s)", $"{F(g.Norm, 2)} ADU din fisier la {g.Settings} (ADU-eq e ADU-ul recalculat ca pentru ISO 400 si 120 s)")),
             new(T("value step", "pasul valorilor"), T($"near the black, the file's values go up {d.QuantStep} by {d.QuantStep} ADU", $"langa negru, valorile din fisier cresc din {d.QuantStep} in {d.QuantStep} ADU")),
@@ -144,7 +144,7 @@ internal static class ScaleReport
     /// </summary>
     /// <param name="plane">The reference position's name, such as <c>G1</c> or <c>CFA[0,1]</c>.</param>
     /// <returns>The words, in the run's language.</returns>
-    private static string PlaneWords(string plane) =>
+    internal static string PlaneWords(string plane) =>
         plane.StartsWith('G') ? T($"the green pixels {plane}", $"pixelii verzi {plane}") : T($"the pixels {plane}", $"pixelii {plane}");
 
     /// <summary>The four paragraphs, with the set's numbers in them.</summary>
