@@ -49,5 +49,7 @@
     <!-- The log's file checks, so R-073 runs here on the build of NLog.Targets.AtomicFile the
          window ships (net8.0-windows), which LightsCheck.Tests does not load. -->
     <Compile Include="..\LightsCheck.Tests\LogFiles.cs" Link="Shared\LogFiles.cs" />
+    <!-- One list of the method's words for the core's texts and the window's (R-077). -->
+    <Compile Include="..\LightsCheck.Tests\PlainWords.cs" Link="Shared\PlainWords.cs" />
   </ItemGroup>
 </Project>

@@ -80,10 +80,13 @@ internal static class WindowTexts
     /// <returns>`move >= 5 px` (`miscare >= 5 px`).</returns>
     internal static string MoveGuide(string px) => T($"move >= {px} px", $"miscare >= {px} px");
 
-    /// <summary>The step chart's guide label at the coverage radius of walking noise.</summary>
-    /// <param name="px">The radius in px, formatted by the core.</param>
-    /// <returns>`10 px (walking noise)`.</returns>
-    internal static string WalkingNoiseGuide(string px) => $"{px} px (walking noise)";
+    /// <summary>
+    /// The charts' guide label at the distance beyond which a frame stands in another spot, its
+    /// hot pixels no longer on those of the frame it is measured against (R-077).
+    /// </summary>
+    /// <param name="px">The distance in px, formatted by the core.</param>
+    /// <returns>`10 px: another spot` (`10 px: alt loc`).</returns>
+    internal static string WalkingNoiseGuide(string px) => T($"{px} px: another spot", $"{px} px: alt loc");
 
     /// <summary>The note on the dither map's x axis label: the grid spacing.</summary>
     /// <param name="px">The spacing in px, formatted whole.</param>

@@ -34,6 +34,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Dithering tab and the console's DITHERING section speak in plain words (R-077, ADR 0032):
+  `frames aligned` for registered, `how close the frames are` for coverage, `different spots`,
+  `frames alone`, `area of the positions`, `hot pixels per million pixels`, `typically` for the
+  median move, and no sigma or Mpx; the captions under the map and the charts and the five
+  paragraphs under the card are rewritten the same way, and the Summary rows that share a piece
+  (`trailed frames`, `trail direction`, `drift over one exposure`, `dithering`) follow. The
+  explanation no longer says a 3"/min drift stays under a pixel for a whole session at 20 mm: it is
+  0.15 px per 2-minute exposure there, against about 1 px at 135 mm. Every figure is unchanged;
+  the validation case V-010 records the tables' new words, its figures kept.
 - When libraw cannot be loaded, the error names Microsoft's Visual C++ runtime, missing or too
   old, as the likely cause, with Microsoft's link to its latest version,
   `https://aka.ms/vc14/vc_redist.x64.exe`, instead of advice on where the DLLs sit and how to

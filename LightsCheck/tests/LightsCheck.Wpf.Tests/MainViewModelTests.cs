@@ -505,8 +505,8 @@ public class MainViewModelTests
 
         Assert.Equal(SeriesReport.DitherTables(vm.Result!).Select(t => t.Title), vm.DitherTables.Select(t => t.Title));
         Assert.Equal(5, vm.DitherTables.Count);
-        Assert.Equal(["axa", "numai pe ea", "semn +", "semn -"], vm.DitherTables[2].Columns);
-        Assert.Equal(["X = DEC", "Y = RA", "ambele"], vm.DitherTables[2].Rows.Select(r => r[0]));
+        Assert.Equal(["axa", "doar pe ea", "spre +", "spre -"], vm.DitherTables[2].Columns);
+        Assert.Equal(["X = DEC", "Y = RA", "pe ambele"], vm.DitherTables[2].Rows.Select(r => r[0]));
         Assert.Equal(SeriesReport.DitherScalarRows(vm.Result!).Select(r => r.Label), vm.DitherRows.Select(r => r.Label));
         Assert.Equal("verdict", vm.DitherRows[^1].Label);
     }

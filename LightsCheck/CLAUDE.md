@@ -108,6 +108,14 @@ varies a kit rule names it.
   single literal (`docs/design/language.md`). `README.md` is English and quotes the English
   output; `THIRD-PARTY-NOTICES.md` stays Romanian. A comment quotes such output as the user sees
   it. Never leave a file in two languages; the pairs are the one exception.
+- **Plain words** (ADR 0032). Every text the user reads, in the window and in the console, is in
+  words anyone can follow: what a figure means for the frames and the stack, short sentences,
+  everyday words, no part of the method named (no median, mean, sigma, registered, coverage,
+  radius, distinct, isolated, consecutive). A term stays where the astrophotographer knows the
+  figure by it (dithering, walking noise, drift, dark, flat, stack, fixed pattern, FWHM, ADU, RA,
+  DEC, plate solve), and so do the chips' verdict words. The numbers stay read from
+  `Thresholds.cs`. A text rewrite is shown to the owner first, original and proposal side by
+  side, and made only on their yes. The same register in chat with the owner.
 - **Copied files stay copies** (ADR 0003, ADR 0018). A file under `src/LightsCheck.Core/Imaging/`
   marked "copied from FlatCheck unchanged" is not improved here: a fix, a comment included, goes
   to FlatCheck first, then the copy is refreshed. Its code is FlatCheck 2.3.0's, with the edits

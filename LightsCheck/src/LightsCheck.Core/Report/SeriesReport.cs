@@ -713,9 +713,9 @@ internal static class SeriesReport
     private static string DriftPerExposureLabel => T("drift over one exposure", "drift intr-o expunere");
 
     /// <summary>
-    /// `walking-noise streaks of up to 11 px (frames 61-70, 10 frames within 10 px)`, the dash of
-    /// R-043 (`dare de walking noise de pana la ...` in Romanian); without a stretch of two frames
-    /// there is no dash.
+    /// `walking-noise streaks of up to 11 px (frames 61-70, 10 frames in a row in the same spot,
+    /// within 10 px)`, the dash of R-043 (`dare de walking noise de pana la ...` in Romanian);
+    /// without a stretch of two frames there is no dash.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
@@ -731,7 +731,8 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// `frames 61-70, 10 frames within 10 px` (`cadrele 61-70, 10 cadre la 10 px`): the stretch of consecutive frames whose span is the
+    /// `frames 61-70, 10 frames in a row in the same spot, within 10 px` (`cadrele 61-70, 10 cadre
+    /// la rand in acelasi loc, la 10 px`): the stretch of consecutive frames whose span is the
     /// dash.
     /// </summary>
     /// <param name="w">The stretch: its first and last frame index and its frame count.</param>
@@ -739,16 +740,16 @@ internal static class SeriesReport
     private static string StretchWord(FrameStretch w)
     {
         string range = $"{w.FirstIndex.ToString(Inv)}-{w.LastIndex.ToString(Inv)}", radius = RunReport.F(Th.CoverageLoose, 0);
-        return T($"frames {range}, {FramesWord(w.Frames)} within {radius} px", $"cadrele {range}, {FramesWord(w.Frames)} la {radius} px");
+        return T($"frames {range}, {FramesWord(w.Frames)} in a row in the same spot, within {radius} px", $"cadrele {range}, {FramesWord(w.Frames)} la rand in acelasi loc, la {radius} px");
     }
 
     /// <summary>
-    /// `no run of 2+ consecutive frames within 10 px`: the frames that would share the dash do
-    /// not exist.
+    /// `never 2 frames in a row in the same spot, within 10 px`: the frames that would share the
+    /// dash do not exist. No parentheses of its own: the DRIFT row puts it inside its own.
     /// </summary>
     /// <returns>The sentence, at <see cref="Th.CoverageLoose"/> px.</returns>
     private static string NoRun()
-        => T($"no run of 2+ consecutive frames within {RunReport.F(Th.CoverageLoose, 0)} px", $"niciun grup de 2+ cadre consecutive la {RunReport.F(Th.CoverageLoose, 0)} px");
+        => T($"never 2 frames in a row in the same spot, within {RunReport.F(Th.CoverageLoose, 0)} px", $"niciodata 2 cadre la rand in acelasi loc, la {RunReport.F(Th.CoverageLoose, 0)} px");
 
     /// <summary>
     /// The axis the drift mostly runs along: RA or DEC when the RA axis is known, else the image
@@ -767,9 +768,10 @@ internal static class SeriesReport
 
     /// <summary>
     /// The DITHERING section: the pauses and moves, how often and how far the mount moved, the
-    /// directions, the coverage, the distinct positions, the groups at
+    /// directions, how close the frames are, the different spots, the runs under
     /// <see cref="Th.CoverageMid"/> and <see cref="Th.CoverageLoose"/> px, the scale on the sky,
-    /// the pattern left in the stack, the sensor pattern, and the verdict.
+    /// the pattern left in the stack, the sensor pattern, and the verdict, in plain words
+    /// (R-077).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>The thirteen rows, in the console's order.</returns>
@@ -779,23 +781,24 @@ internal static class SeriesReport
         SeriesAnalysis s = r.Series;
         DitherAnalysis d = r.Dither;
         (string verdict, string text) = DitherVerdict(r);
+        string tight = RunReport.F(Th.CoverageTight, 0), mid = RunReport.F(Th.CoverageMid, 0), loose = RunReport.F(Th.CoverageLoose, 0);
         return
         [
             PausesRow(r, d),
             new(HowOftenLabel, HowOften(d)),
             LongestRow(r, d),
-            new(HowFarLabel, $"median {Px(d.MedianMove, r)}; " + string.Join("; ", d.Sizes.Select(c => $"{SizeWord(c)}: {c.Count.ToString(Inv)}"))),
+            new(HowFarLabel, $"{TypicallyWord} {Px(d.MedianMove, r)}; " + string.Join("; ", d.Sizes.Select(c => $"{SizeWord(c)}: {c.Count.ToString(Inv)}"))),
             new(DirectionLabel, T(
-                $"X only: {d.MovesOnXOnly.ToString(Inv)}; Y only: {d.MovesOnYOnly.ToString(Inv)}; both: {d.MovesOnBoth.ToString(Inv)}; sign X: +{d.MovesXPlus.ToString(Inv)} / -{d.MovesXMinus.ToString(Inv)}; sign Y: +{d.MovesYPlus.ToString(Inv)} / -{d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}",
-                $"numai X: {d.MovesOnXOnly.ToString(Inv)}; numai Y: {d.MovesOnYOnly.ToString(Inv)}; ambele: {d.MovesOnBoth.ToString(Inv)}; semn X: +{d.MovesXPlus.ToString(Inv)} / -{d.MovesXMinus.ToString(Inv)}; semn Y: +{d.MovesYPlus.ToString(Inv)} / -{d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}")),
+                $"on X only: {d.MovesOnXOnly.ToString(Inv)}; on Y only: {d.MovesOnYOnly.ToString(Inv)}; on both: {d.MovesOnBoth.ToString(Inv)}; on X towards + / towards -: {d.MovesXPlus.ToString(Inv)} / {d.MovesXMinus.ToString(Inv)}; on Y towards + / towards -: {d.MovesYPlus.ToString(Inv)} / {d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}",
+                $"doar pe X: {d.MovesOnXOnly.ToString(Inv)}; doar pe Y: {d.MovesOnYOnly.ToString(Inv)}; pe ambele: {d.MovesOnBoth.ToString(Inv)}; pe X spre + / spre -: {d.MovesXPlus.ToString(Inv)} / {d.MovesXMinus.ToString(Inv)}; pe Y spre + / spre -: {d.MovesYPlus.ToString(Inv)} / {d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}")),
             new(CoverageLabel, T(
-                $"nearest other frame median {Opt(Median(d.NearestOther), 1)} px; under {RunReport.F(Th.CoverageTight, 0)} px: {d.WithinTight.ToString(Inv)}, under {RunReport.F(Th.CoverageMid, 0)}: {d.WithinMid.ToString(Inv)}, under {RunReport.F(Th.CoverageLoose, 0)}: {d.WithinLoose.ToString(Inv)}; isolated (>= {RunReport.F(Th.CoverageLoose, 0)} px from any): {d.IsolatedLoose.ToString(Inv)}",
-                $"cel mai apropiat alt cadru median {Opt(Median(d.NearestOther), 1)} px; sub {RunReport.F(Th.CoverageTight, 0)} px: {d.WithinTight.ToString(Inv)}, sub {RunReport.F(Th.CoverageMid, 0)}: {d.WithinMid.ToString(Inv)}, sub {RunReport.F(Th.CoverageLoose, 0)}: {d.WithinLoose.ToString(Inv)}; izolate (>= {RunReport.F(Th.CoverageLoose, 0)} px de orice): {d.IsolatedLoose.ToString(Inv)}")),
-            new(T("distinct positions", "pozitii distincte"), T(
-                $"{d.DistinctMid.ToString(Inv)} within {RunReport.F(Th.CoverageMid, 0)} px, {d.DistinctLoose.ToString(Inv)} within {RunReport.F(Th.CoverageLoose, 0)} px; span X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px",
-                $"{d.DistinctMid.ToString(Inv)} la {RunReport.F(Th.CoverageMid, 0)} px, {d.DistinctLoose.ToString(Inv)} la {RunReport.F(Th.CoverageLoose, 0)} px; intindere X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px")),
-            new(T($"runs within {RunReport.F(Th.CoverageMid, 0)} px", $"grupuri in {RunReport.F(Th.CoverageMid, 0)} px"), Runs(d.RunsMid, r)),
-            new(T($"runs within {RunReport.F(Th.CoverageLoose, 0)} px", $"grupuri in {RunReport.F(Th.CoverageLoose, 0)} px"), Runs(d.RunsLoose, r)),
+                $"{NearestWords(d)}; with another frame under {tight} px: {d.WithinTight.ToString(Inv)}, under {mid}: {d.WithinMid.ToString(Inv)}, under {loose}: {d.WithinLoose.ToString(Inv)}; {AloneWords(d)}",
+                $"{NearestWords(d)}; cu alt cadru la sub {tight} px: {d.WithinTight.ToString(Inv)}, la sub {mid}: {d.WithinMid.ToString(Inv)}, la sub {loose}: {d.WithinLoose.ToString(Inv)}; {AloneWords(d)}")),
+            new(T("different spots", "locuri diferite"), T(
+                $"{d.DistinctMid.ToString(Inv)} within {mid} px, {d.DistinctLoose.ToString(Inv)} within {loose} px; area of the positions {AreaWords(d)}",
+                $"{d.DistinctMid.ToString(Inv)} la {mid} px, {d.DistinctLoose.ToString(Inv)} la {loose} px; zona pozitiilor {AreaWords(d)}")),
+            new(T($"runs under {mid} px", $"grupuri sub {mid} px"), Runs(d.RunsMid, r)),
+            new(T($"runs under {loose} px", $"grupuri sub {loose} px"), Runs(d.RunsLoose, r)),
             ScaleRow(r),
             SurvivingRow(r),
             PatternRow(r),
@@ -805,11 +808,11 @@ internal static class SeriesReport
 
     /// <summary>
     /// The DITHERING rows that are not tables, for the window's Dithering tab beside
-    /// <see cref="DitherTables"/> (R-036).
+    /// <see cref="DitherTables"/> (R-036), in the words of <see cref="DitherRows"/>.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The nine rows, the coverage cut to the median nearest frame and the isolated ones.
+    /// The nine rows, how close the frames are cut to the nearest frame and the frames alone.
     /// </returns>
     internal static IReadOnlyList<ReportRow> DitherScalarRows(SeriesResult r)
     {
@@ -820,10 +823,8 @@ internal static class SeriesReport
         [
             PausesRow(r, d),
             LongestRow(r, d),
-            new(CoverageLabel, T(
-                $"nearest other frame median {Opt(Median(d.NearestOther), 1)} px; isolated (>= {RunReport.F(Th.CoverageLoose, 0)} px from any): {d.IsolatedLoose.ToString(Inv)}",
-                $"cel mai apropiat alt cadru median {Opt(Median(d.NearestOther), 1)} px; izolate (>= {RunReport.F(Th.CoverageLoose, 0)} px de orice): {d.IsolatedLoose.ToString(Inv)}")),
-            new(T("span", "intindere"), $"X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px"),
+            new(CoverageLabel, $"{NearestWords(d)}; {AloneWords(d)}"),
+            new(T("area of the positions", "zona pozitiilor"), AreaWords(d)),
             new(T("axes", "axe"), AxisLine(r.Series)),
             ScaleRow(r),
             SurvivingRow(r),
@@ -833,8 +834,8 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// What a move means on the sky at this focal length: `1 px = 5.99"; a move of 5 px (the
-    /// threshold) takes 30" on the sky, one of 10 px 60"` (R-044).
+    /// What a move means on the sky at this focal length: `1 px = 5.99" on the sky; to move the
+    /// frame 5 px (the smallest move counted) takes 30" on the sky, and 10 px, 60"` (R-044).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>The `scale` row; `unknown (no focal length)` when the scale is unknown.</returns>
@@ -848,13 +849,14 @@ internal static class SeriesReport
         string px = RunReport.F(a, 2), step = RunReport.F(Th.DitherStep, 0), stepSky = RunReport.F(Th.DitherStep * a, 0);
         string loose = RunReport.F(Th.CoverageLoose, 0), looseSky = RunReport.F(Th.CoverageLoose * a, 0);
         return new(ScaleLabel, T(
-            $"1 px = {px}\"; a move of {step} px (the threshold) takes {stepSky}\" on the sky, one of {loose} px {looseSky}\"",
-            $"1 px = {px}\"; o miscare de {step} px (pragul) cere {stepSky}\" pe cer, una de {loose} px {looseSky}\""));
+            $"1 px = {px}\" on the sky; to move the frame {step} px (the smallest move counted) takes {stepSky}\" on the sky, and {loose} px, {looseSky}\"",
+            $"1 px = {px}\" pe cer; ca sa muti cadrul {step} px (cea mai mica miscare numarata) trebuie {stepSky}\" pe cer, iar pentru {loose} px, {looseSky}\""));
     }
 
     /// <summary>
-    /// How much of one frame's pattern the mean of the stack keeps (R-048): `1.6 % of one
-    /// frame's stays in the mean (ideally 1.1 % with 87 frames; pairs of frames under 1.5 px: 27)`.
+    /// How much of one frame's pattern the mean of the stack keeps (R-048): `1.6 % of one frame's
+    /// pattern stays in the stack (ideally 1.1 %, with 87 frames; 16 pairs of frames sat under
+    /// 1.5 px from each other, and their pattern adds up)`.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>The `pattern in the stack` (`pattern in stiva`) row.</returns>
@@ -863,49 +865,69 @@ internal static class SeriesReport
         DitherAnalysis d = r.Dither;
         if (d.PatternSurviving is not double f)
         {
-            return new(SurvivingLabel, T("- (frames not registered)", "- (cadre neinregistrate)"));
+            return new(SurvivingLabel, T("- (the frames could not be aligned)", "- (cadrele nu s-au putut alinia)"));
         }
 
-        string kept = RunReport.F(100 * f, 1), ideal = RunReport.F(100.0 / d.Registered, 1), share = RunReport.F(Th.PatternSharePx, 1), pairs = d.SharingPairs.ToString(Inv);
+        string kept = RunReport.F(100 * f, 1), ideal = RunReport.F(100.0 / d.Registered, 1), frames = FramesWord(d.Registered);
         return new(SurvivingLabel, T(
-            $"{kept} % of one frame's pattern stays in the mean (ideally {ideal} % with {FramesWord(d.Registered)}; pairs of frames under {share} px: {pairs})",
-            $"{kept} % din al unui cadru ramane in medie (ideal {ideal} % la {FramesWord(d.Registered)}; perechi de cadre la sub {share} px: {pairs})"));
+            $"{kept} % of one frame's pattern stays in the stack (ideally {ideal} %, with {frames}; {SharingPairsWords(d.SharingPairs)})",
+            $"in stiva ramane {kept} % din pattern-ul unui cadru (ideal {ideal} %, cu {frames}; {SharingPairsWords(d.SharingPairs)})"));
+    }
+
+    /// <summary>
+    /// The pairs of frames that share the sensor's pattern pixel for pixel, in words that fit
+    /// their count (R-048).
+    /// </summary>
+    /// <param name="pairs">The pairs of registered frames closer than <see cref="Th.PatternSharePx"/>.</param>
+    /// <returns>
+    /// `4 pairs of frames sat under 1.5 px from each other, and their pattern adds up`; the
+    /// singular for one pair; `no two frames sat under 1.5 px from each other` for none.
+    /// </returns>
+    private static string SharingPairsWords(int pairs)
+    {
+        string share = RunReport.F(Th.PatternSharePx, 1), n = pairs.ToString(Inv);
+        return pairs switch
+        {
+            0 => T($"no two frames sat under {share} px from each other", $"nicio pereche de cadre n-a stat la sub {share} px una de alta"),
+            1 => T($"1 pair of frames sat under {share} px from each other, and its pattern adds up", $"1 pereche de cadre a stat la sub {share} px una de alta, iar pattern-ul ei se aduna"),
+            _ => T($"{n} pairs of frames sat under {share} px from each other, and their pattern adds up", $"{n} perechi de cadre au stat la sub {share} px una de alta, iar pattern-ul lor se aduna"),
+        };
     }
 
     /// <summary>
     /// The sensor's pattern read from the lights, and whether the session's darks will take it
-    /// out of the stack (R-046, R-042): `sigma 1.4 ADU on R (12 % of one frame's noise), 2.1 on
-    /// G1 (10 %), 2.1 on G2 (10 %), 2.3 on B (10 %); 4 hot pixels / Mpx above 10 sigma (median of
-    /// 87 unregistered frames, 512 x 512 px from the centre); no darks in the session: they stay
-    /// in the frames`.
+    /// out of the stack (R-046, R-042): `strength 1.4 ADU on R (12 % of one frame's noise), 2.1
+    /// on G1 (10 %), 2.1 on G2 (10 %), 2.3 on B (10 %); 4 hot pixels per million pixels, that is,
+    /// those above 10 times one frame's noise (from 87 frames, on 512 x 512 px from the centre);
+    /// no darks in the session, the pattern stays in the frames`.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The `fixed pattern` row: the figures when the pattern was measured, else why not, and in
-    /// both cases what the session's darks do.
+    /// The `fixed pattern` row: the figures when the pattern was measured, else why it cannot be,
+    /// and in both cases what the session's darks do.
     /// </returns>
     private static ReportRow PatternRow(SeriesResult r)
     {
         SensorPattern p = r.Pattern;
         string darks = r.Session.DarksDir is null
-            ? T("no darks in the session: the pattern stays in the frames", "fara dark-uri in sesiune: raman in cadre")
-            : T($"{r.Session.Darks.Count.ToString(Inv)} darks in {SessionFolder.DarksName}\\, Siril subtracts the pattern", $"{r.Session.Darks.Count.ToString(Inv)} dark-uri in {SessionFolder.DarksName}\\, Siril le scade");
+            ? T("no darks in the session, the pattern stays in the frames", "fara dark-uri in sesiune, pattern-ul ramane in cadre")
+            : T($"{r.Session.Darks.Count.ToString(Inv)} darks in {SessionFolder.DarksName}\\, with which Siril takes the pattern out", $"{r.Session.Darks.Count.ToString(Inv)} dark-uri in {SessionFolder.DarksName}\\, cu care Siril scoate pattern-ul");
         string value = p.Status switch
         {
             PatternStatus.Measured => MeasuredPattern(p),
-            PatternStatus.TooFewFrames => T($"undetermined (under {Th.PatternMinFrames.ToString(Inv)} frames measured)", $"nedeterminat (sub {Th.PatternMinFrames.ToString(Inv)} cadre masurate)"),
-            PatternStatus.Unregistered => T("undetermined (frames not registered)", "nedeterminat (cadre neinregistrate)"),
+            PatternStatus.TooFewFrames => T($"cannot be measured (fewer than {Th.PatternMinFrames.ToString(Inv)} frames measured)", $"nu se poate masura (mai putin de {Th.PatternMinFrames.ToString(Inv)} cadre masurate)"),
+            PatternStatus.Unregistered => T("cannot be measured (the frames could not be aligned)", "nu se poate masura (cadrele nu s-au putut alinia)"),
             PatternStatus.FramesDidNotMove => T(
-                $"undetermined (the frames stayed in place: the stars stay in the median; the largest group within {RunReport.F(Th.CoverageTight, 0)} px has {FramesWord(r.Dither.LargestClusterTight)} of {r.Dither.Registered.ToString(Inv)})",
-                $"nedeterminat (cadrele au stat pe loc: stelele raman in mediana; grupul cel mai mare la {RunReport.F(Th.CoverageTight, 0)} px are {FramesWord(r.Dither.LargestClusterTight)} din {r.Dither.Registered.ToString(Inv)})"),
-            _ => T("undetermined (no frame decoded)", "nedeterminat (niciun cadru decodat)"),
+                $"cannot be measured (the frames stayed in place too much and the stars cannot be told apart from the pattern; the largest group in the same spot (within {RunReport.F(Th.CoverageTight, 0)} px) has {FramesWord(r.Dither.LargestClusterTight)} of {r.Dither.Registered.ToString(Inv)})",
+                $"nu se poate masura (cadrele au stat prea mult pe loc si stelele nu se pot desparti de pattern; cel mai mare grup in acelasi loc (la {RunReport.F(Th.CoverageTight, 0)} px) are {FramesWord(r.Dither.LargestClusterTight)} din {r.Dither.Registered.ToString(Inv)})"),
+            _ => T("cannot be measured (no frame read)", "nu se poate masura (niciun cadru citit)"),
         };
         return new(PatternLabel, $"{value}; {darks}");
     }
 
     /// <summary>
-    /// The figures of a measured sensor pattern: its sigma per CFA position with its share of one
-    /// frame's noise, the hot pixels per megapixel and where it was read (R-046).
+    /// The figures of a measured sensor pattern: its strength per CFA position with its share of
+    /// one frame's noise, the hot pixels per million pixels and where it was read (R-046).
     /// </summary>
     /// <param name="p">The measured pattern; not null.</param>
     /// <returns>The figures, the first position carrying the units and the noun.</returns>
@@ -921,33 +943,34 @@ internal static class SeriesReport
         });
         string hot = RunReport.F(p.HotPerMpx, 0), hotSigma = RunReport.F(Th.PatternHotSigma, 0), crop = p.CropSize.ToString(Inv);
         return T(
-            $"sigma {string.Join(", ", sigmas)}; {hot} hot pixels / Mpx above {hotSigma} sigma (median of {FramesWord(p.Frames)}, not registered, {crop} x {crop} px from the centre)",
-            $"sigma {string.Join(", ", sigmas)}; {hot} pixeli fierbinti / Mpx peste {hotSigma} sigma (mediana a {FramesWord(p.Frames)} neinregistrate, {crop} x {crop} px din centru)");
+            $"strength {string.Join(", ", sigmas)}; {hot} hot pixels per million pixels, that is, those above {hotSigma} times one frame's noise (from {FramesWord(p.Frames)}, on {crop} x {crop} px from the centre)",
+            $"tarie {string.Join(", ", sigmas)}; {hot} pixeli calzi la un milion de pixeli, adica cei de peste {hotSigma} ori zgomotul unui cadru (din {FramesWord(p.Frames)}, pe {crop} x {crop} px din centru)");
     }
 
     /// <summary>
-    /// What the Dithering tab says under its card: what walking noise is, why the focal
-    /// length decides how much the same drift and the same dither are in pixels, what breaks
-    /// it (bold), how to take darks without touching the lens, and where the figures come from
-    /// (R-045). Built from Th so the thresholds it quotes follow a change there, and when read,
-    /// in the language of that moment.
+    /// What the Dithering tab says under its card, in plain words (R-045, R-077): what walking
+    /// noise is, why the focal length decides how many pixels the same drift and the same dither
+    /// make (the figures of paragraph 2 computed for the D3300's 3.92 um pixel, ADR 0032), what
+    /// stops it (bold), how to take darks without touching the lens, and where the figures are.
+    /// Built from Th so the thresholds it quotes follow a change there, and when read, in the
+    /// language of that moment.
     /// </summary>
     internal static IReadOnlyList<ReportParagraph> DitherExplanation => IsRomanian
     ?
     [
-        new($"Walking noise-ul e pattern-ul fix al senzorului (pixelii calzi, restul de dark) tras in dare: driftul il muta de la un cadru la altul, iar stiva aduna copiile pe traseul lui. Rezulta un zgomot corelat, alungit pe directia driftului, in grupurile de cadre consecutive ramase in acelasi loc la {RunReport.F(Th.CoverageLoose, 0)} px.", false),
-        new("Aceeasi deriva a monturii si aceeasi miscare de dithering inseamna de atatea ori mai multi pixeli cu cat focala e mai lunga: la 20 mm un drift de 3\"/min sta sub un pixel pe toata sesiunea si nimic nu merge, la 135 mm e peste un pixel pe expunere. Focala scurta iarta; focala lunga cere dithering la fiecare cadru.", false),
-        new($"Ce rupe walking noise-ul: o miscare la fiecare cadru, pe ambele axe, in directie aleatoare. Frecventa conteaza mai mult decat marimea: {RunReport.F(Th.DitherStep, 0)} px ajung cand doua cadre vecine nu mai impart acelasi loc; un salt mare la 2 cadre lasa grupuri in care driftul trage liniute.", true),
-        new("Dark-urile scot pattern-ul inainte sa apuce sa mearga, si nu cer demontarea obiectivului sau a filtrului: scoti obiectivul cu tot cu filtru, pui capacul de body, inchizi ocularul vizorului si tragi 20 de cadre la acelasi ISO, acelasi timp si aceeasi temperatura, la finalul sesiunii. Flat-urile raman valabile.", false),
-        new($"Cifrele: randul '{DriftPerExposureLabel}' din DRIFT SI ROTATIE da driftul pe un cadru si dara de walking noise, cat de intins e cel mai intins grup de cadre consecutive ramase la {RunReport.F(Th.CoverageLoose, 0)} px; sub {RunReport.F(Th.WalkingStreakVisible, 0)} px nu e walking noise, oricum ar arata harta. Randul '{SurvivingLabel}' spune cat din pattern-ul unui cadru ramane in medie dupa stivuire (1 / cadre cand niciun cadru nu sta peste altul), iar '{PatternLabel}' cat de mare e pattern-ul senzorului fata de zgomotul unui cadru si daca sesiunea are dark-uri care sa-l scoata.", false),
+        new($"Walking noise-ul inseamna dungi fine, toate in aceeasi directie, in imaginea stivuita. Le face pattern-ul fix al senzorului: pixelii calzi si urmele slabe pe care senzorul le are mereu in acelasi loc, adica ce scoate un dark. Montura aluneca putin de la un cadru la altul (driftul). Cand stiva aliniaza cadrele dupa stele, pattern-ul se muta cu fiecare cadru, iar copiile lui se insira intr-o dunga. Asta se intampla in grupurile de cadre la rand care au stat in acelasi loc (la mai putin de {RunReport.F(Th.CoverageLoose, 0)} px).", false),
+        new("Cu cat focala e mai lunga, cu atat aceeasi alunecare a monturii si aceeasi miscare de dithering inseamna mai multi pixeli. Un drift de 3\"/min muta cadrul cam 1 px intr-o expunere de 2 minute la 135 mm, dar numai 0.15 px la 20 mm. De aceea focala scurta iarta, iar focala lunga cere dithering dupa fiecare cadru.", false),
+        new($"Ce opreste walking noise-ul: muti montura dupa fiecare cadru, pe ambele axe, de fiecare data in alta directie, la intamplare. Conteaza mai mult cat de des muti decat cat de mult: {RunReport.F(Th.DitherStep, 0)} px ajung, cat timp doua cadre vecine nu stau in acelasi loc. Un salt mare la fiecare 2 cadre lasa perechi de cadre in acelasi loc, iar in ele driftul trage dungi scurte.", true),
+        new("Dark-urile scot pattern-ul inainte sa apuce sa faca dungi. Nu trebuie sa scoti filtrul de pe obiectiv: dai jos obiectivul cu filtrul pe el, pui capacul de body, acoperi ocularul vizorului si faci 20 de cadre cu acelasi ISO, acelasi timp de expunere si la aceeasi temperatura, la sfarsitul sesiunii. Flat-urile raman bune.", false),
+        new($"Unde gasesti cifrele: randul '{DriftPerExposureLabel}' din DRIFT SI ROTATIE (tabul Rezumat) spune cat aluneca un cadru intr-o expunere si cat de lunga e cea mai lunga dunga de walking noise. Sub {RunReport.F(Th.WalkingStreakVisible, 0)} px dunga nu se vede, oricum ar arata harta. Randul '{SurvivingLabel}' spune cat din pattern-ul unui cadru ramane dupa stivuire; ideal e 1 impartit la numarul de cadre, cand niciun cadru nu sta peste altul. Randul '{PatternLabel}' spune cat de tare e pattern-ul senzorului fata de zgomotul unui cadru si daca ai dark-uri care sa-l scoata.", false),
     ]
     :
     [
-        new($"Walking noise is the sensor's fixed pattern (the hot pixels, what is left of the dark) dragged into streaks: the drift moves it from one frame to the next, and the stack adds up the copies along its path. The result is a correlated noise, stretched along the drift's direction, in the runs of consecutive frames that stayed in the same spot within {RunReport.F(Th.CoverageLoose, 0)} px.", false),
-        new("The same mount drift and the same dither move cover more pixels the longer the focal length: at 20 mm a drift of 3\"/min stays under one pixel over the whole session and nothing walks, at 135 mm it is over one pixel per exposure. A short focal length forgives; a long one asks for a dither on every frame.", false),
-        new($"What breaks walking noise: a move on every frame, on both axes, in a random direction. How often matters more than how far: {RunReport.F(Th.DitherStep, 0)} px are enough once two neighbouring frames no longer share the same spot; a big jump every 2 frames leaves runs in which the drift draws dashes.", true),
-        new("Darks take the pattern out before it gets to walk, and they do not ask you to take the filter off the lens: take the lens off with its filter on, put the body cap on, close the viewfinder's eyepiece and shoot 20 frames at the same ISO, the same exposure and the same temperature, at the end of the session. The flats stay valid.", false),
-        new($"The figures: the '{DriftPerExposureLabel}' row of DRIFT AND ROTATION gives the drift over one frame and the walking-noise streak, how far the most spread-out run of consecutive frames that stayed within {RunReport.F(Th.CoverageLoose, 0)} px stretches; under {RunReport.F(Th.WalkingStreakVisible, 0)} px there is no walking noise, whatever the map looks like. The '{SurvivingLabel}' row says how much of one frame's pattern stays in the mean after stacking (1 / frames when no frame sits on another), and '{PatternLabel}' how large the sensor's pattern is against one frame's noise and whether the session has darks to take it out.", false),
+        new($"Walking noise means fine streaks, all in the same direction, in the stacked image. The sensor's fixed pattern makes them: the hot pixels and the faint marks the sensor always has in the same place, that is, what a dark takes out. The mount slides a little from one frame to the next (the drift). When the stack aligns the frames on the stars, the pattern moves with every frame, and its copies line up into a streak. This happens in the runs of frames in a row that stayed in the same spot (less than {RunReport.F(Th.CoverageLoose, 0)} px).", false),
+        new("The longer the focal length, the more pixels the same slide of the mount and the same dither move make. A drift of 3\"/min moves the frame about 1 px in a 2-minute exposure at 135 mm, but only 0.15 px at 20 mm. That is why a short focal length forgives, and a long one asks for a dither after every frame.", false),
+        new($"What stops walking noise: move the mount after every frame, on both axes, each time in another direction, at random. How often you move matters more than how far: {RunReport.F(Th.DitherStep, 0)} px are enough, as long as two neighbouring frames do not stay in the same spot. A big jump every 2 frames leaves pairs of frames in the same spot, and in them the drift draws short streaks.", true),
+        new("Darks take the pattern out before it gets to make streaks. You do not need to take the filter off the lens: take the lens off with the filter on it, put the body cap on, cover the viewfinder's eyepiece and shoot 20 frames at the same ISO, with the same exposure time and at the same temperature, at the end of the session. The flats stay good.", false),
+        new($"Where to find the figures: the '{DriftPerExposureLabel}' row of DRIFT AND ROTATION (the Summary tab) says how far a frame slides in one exposure and how long the longest walking-noise streak is. Under {RunReport.F(Th.WalkingStreakVisible, 0)} px the streak does not show, whatever the map looks like. The '{SurvivingLabel}' row says how much of one frame's pattern stays after stacking; the ideal is 1 divided by the number of frames, when no frame sits on another. The '{PatternLabel}' row says how strong the sensor's pattern is against one frame's noise and whether you have darks to take it out.", false),
     ];
 
     /// <summary>The label of the DITHERING row and table of how often the mount moved.</summary>
@@ -959,8 +982,44 @@ internal static class SeriesReport
     /// <summary>The label of the DITHERING row and table of the moves' directions.</summary>
     private static string DirectionLabel => T("direction", "directie");
 
-    /// <summary>The label of the DITHERING row and table of the coverage.</summary>
-    private static string CoverageLabel => T("coverage", "acoperire");
+    /// <summary>The label of the DITHERING row and table of how close the frames are to each other.</summary>
+    private static string CoverageLabel => T("how close the frames are", "apropierea cadrelor");
+
+    /// <summary>The word before the median move, in the how-far row and as the table's first row.</summary>
+    private static string TypicallyWord => T("typically", "de obicei");
+
+    /// <summary>
+    /// How close half the frames have another frame: the median distance to the nearest other
+    /// frame, `half the frames have another frame within 0.6 px`.
+    /// </summary>
+    /// <param name="d">The dither analysis of the series.</param>
+    /// <returns>The words with the median, `-` for it without a registered frame.</returns>
+    private static string NearestWords(DitherAnalysis d)
+    {
+        string near = Opt(Median(d.NearestOther), 1);
+        return T($"half the frames have another frame within {near} px", $"jumatate din cadre au alt cadru la cel mult {near} px");
+    }
+
+    /// <summary>
+    /// The frames with no other frame within <see cref="Th.CoverageLoose"/> px: `frames alone
+    /// (10 px or more from any other): 0`.
+    /// </summary>
+    /// <param name="d">The dither analysis of the series.</param>
+    /// <returns>The words with the count.</returns>
+    private static string AloneWords(DitherAnalysis d)
+    {
+        string loose = RunReport.F(Th.CoverageLoose, 0), alone = d.IsolatedLoose.ToString(Inv);
+        return T($"frames alone ({loose} px or more from any other): {alone}", $"cadre singure (la {loose} px sau mai mult de oricare altul): {alone}");
+    }
+
+    /// <summary>The area the positions spread over: `40 px on X, 16 px on Y`.</summary>
+    /// <param name="d">The dither analysis of the series.</param>
+    /// <returns>The span on each image axis, in whole pixels.</returns>
+    private static string AreaWords(DitherAnalysis d)
+    {
+        string x = RunReport.F(d.SpanX, 0), y = RunReport.F(d.SpanY, 0);
+        return T($"{x} px on X, {y} px on Y", $"{x} px pe X, {y} px pe Y");
+    }
 
     /// <summary>The label of the DITHERING row of the pattern left in the stack (R-048).</summary>
     private static string SurvivingLabel => T("pattern in the stack", "pattern in stiva");
@@ -969,13 +1028,14 @@ internal static class SeriesReport
     private static string PatternLabel => T("fixed pattern", "pattern fix");
 
     /// <summary>
-    /// The DITHERING figures that are tables, for the window (R-036): how often, how far,
-    /// direction, coverage, runs; the console keeps its rows (ADR 0012).
+    /// The DITHERING figures that are tables, for the window (R-036), in plain words (R-077): how
+    /// often, how far, direction, how close the frames are, runs; the console keeps its rows
+    /// (ADR 0012).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
     /// The five tables in that order; how often has a single row with the console's words when
-    /// no interval between moves was counted, the runs table one row per run and radius.
+    /// no interval between moves was counted, the runs table one row per run and distance.
     /// </returns>
     internal static IReadOnlyList<ReportTable> DitherTables(SeriesResult r)
     {
@@ -990,41 +1050,41 @@ internal static class SeriesReport
             often.Add([HowOften(d), "-"]);   // "no move" or "a single move", the console's words
         }
 
-        List<IReadOnlyList<string>> sizes = [["median", Px(d.MedianMove, r)]];
+        List<IReadOnlyList<string>> sizes = [[TypicallyWord, Px(d.MedianMove, r)]];
         sizes.AddRange(d.Sizes.Select(c => (IReadOnlyList<string>)[SizeWord(c), c.Count.ToString(Inv)]));
         List<IReadOnlyList<string>> runs = [.. RunRows(d.RunsMid, Th.CoverageMid, r), .. RunRows(d.RunsLoose, Th.CoverageLoose, r)];
         return
         [
-            new(HowOftenLabel, [T("every", "la fiecare"), T("times", "de cate ori")], often),
-            new(HowFarLabel, [T("size", "marime"), T("moves", "miscari")], sizes),
-            new(DirectionLabel, [T("axis", "axa"), T("on it alone", "numai pe ea"), T("sign +", "semn +"), T("sign -", "semn -")],
+            new(HowOftenLabel, [T("a move every", "o miscare la fiecare"), T("times", "de cate ori")], often),
+            new(HowFarLabel, [T("how big", "cat de mare"), T("how many moves", "cate miscari")], sizes),
+            new(DirectionLabel, [T("axis", "axa"), T("on it only", "doar pe ea"), T("towards +", "spre +"), T("towards -", "spre -")],
             [
                 [xAxis, d.MovesOnXOnly.ToString(Inv), d.MovesXPlus.ToString(Inv), d.MovesXMinus.ToString(Inv)],
                 [yAxis, d.MovesOnYOnly.ToString(Inv), d.MovesYPlus.ToString(Inv), d.MovesYMinus.ToString(Inv)],
-                [T("both", "ambele"), d.MovesOnBoth.ToString(Inv), "", ""],
+                [T("on both", "pe ambele"), d.MovesOnBoth.ToString(Inv), "", ""],
             ]),
-            new(CoverageLabel, [T("radius", "raza"), T("with another frame within it", "cu alt cadru sub raza"), T("distinct positions", "pozitii distincte"), T($"runs of {Th.RunMinFrames.ToString(Inv)}+ consecutive", $"grupuri de {Th.RunMinFrames.ToString(Inv)}+ consecutive")],
+            new(CoverageLabel, [T("distance", "distanta"), T("with another frame closer", "cu alt cadru mai aproape"), T("different spots", "locuri diferite"), T($"runs of {Th.RunMinFrames.ToString(Inv)}+ frames in a row", $"grupuri de {Th.RunMinFrames.ToString(Inv)}+ cadre la rand")],
             [
                 [PxWord(Th.CoverageTight), d.WithinTight.ToString(Inv), "-", "-"],
                 [PxWord(Th.CoverageMid), d.WithinMid.ToString(Inv), d.DistinctMid.ToString(Inv), d.RunsMid.Count.ToString(Inv)],
                 [PxWord(Th.CoverageLoose), d.WithinLoose.ToString(Inv), d.DistinctLoose.ToString(Inv), d.RunsLoose.Count.ToString(Inv)],
             ]),
-            new(T("runs in the same spot", "grupuri in acelasi loc"), [T("radius", "raza"), T("frames", "cadre"), T("how many", "cate"), T("minutes", "minute")], runs),
+            new(T("runs in the same spot", "grupuri in acelasi loc"), [T("distance", "distanta"), T("frames", "cadrele"), T("how many", "cate"), T("how long", "cat timp")], runs),
         ];
     }
 
     /// <summary>
     /// The first DITHERING row: the pauses longer than <see cref="Th.DitherPause"/>, the moves of
-    /// at least <see cref="Th.DitherStep"/>, the pauses without a move, the moves without a
-    /// pause, and how many frames were registered.
+    /// at least <see cref="Th.DitherStep"/>, the pauses after which the frame stayed put, the
+    /// moves without a pause before them, and how many frames were aligned.
     /// </summary>
     /// <param name="r">The result of the series run, for its frame count.</param>
     /// <param name="d">The dither analysis of the series.</param>
     /// <returns>The row, labelled with the pause threshold.</returns>
     private static ReportRow PausesRow(SeriesResult r, DitherAnalysis d)
-        => new(T($"pauses > {RunReport.F(Th.DitherPause, 0)} s", $"pauze > {RunReport.F(Th.DitherPause, 0)} s"), T(
-            $"{d.Pauses.ToString(Inv)}; moves >= {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauses without a move: {d.PausesWithoutMove.ToString(Inv)}; moves without a pause: {d.MovesWithoutPause.ToString(Inv)}; frames registered: {d.Registered.ToString(Inv)} of {r.Frames.Count.ToString(Inv)}",
-            $"{d.Pauses.ToString(Inv)}; miscari >= {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauze fara miscare: {d.PausesWithoutMove.ToString(Inv)}; miscari fara pauza: {d.MovesWithoutPause.ToString(Inv)}; cadre inregistrate: {d.Registered.ToString(Inv)} din {r.Frames.Count.ToString(Inv)}"));
+        => new(T($"pauses over {RunReport.F(Th.DitherPause, 0)} s", $"pauze de peste {RunReport.F(Th.DitherPause, 0)} s"), T(
+            $"{d.Pauses.ToString(Inv)}; moves of at least {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauses after which the frame stayed put: {d.PausesWithoutMove.ToString(Inv)}; moves without a pause before: {d.MovesWithoutPause.ToString(Inv)}; frames aligned: {d.Registered.ToString(Inv)} of {r.Frames.Count.ToString(Inv)}",
+            $"{d.Pauses.ToString(Inv)}; miscari de cel putin {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauze dupa care cadrul a ramas pe loc: {d.PausesWithoutMove.ToString(Inv)}; miscari fara pauza inainte: {d.MovesWithoutPause.ToString(Inv)}; cadre aliniate: {d.Registered.ToString(Inv)} din {r.Frames.Count.ToString(Inv)}"));
 
     /// <summary>
     /// The row of the longest stretch between two moves: its first and last frame, its frame
@@ -1032,14 +1092,14 @@ internal static class SeriesReport
     /// </summary>
     /// <param name="r">The result of the series run, for the times of the frames.</param>
     /// <param name="d">The dither analysis of the series.</param>
-    /// <returns>The `longest stretch between two moves` row.</returns>
+    /// <returns>The `longest stretch without a move` row.</returns>
     private static ReportRow LongestRow(SeriesResult r, DitherAnalysis d)
     {
-        string range = $"{d.LongestStretchFirst.ToString(Inv)}-{d.LongestStretchLast.ToString(Inv)}", frames = d.LongestStretchFrames.ToString(Inv);
+        string range = $"{d.LongestStretchFirst.ToString(Inv)}-{d.LongestStretchLast.ToString(Inv)}", frames = FramesWord(d.LongestStretchFrames);
         string minutes = Minutes(r, d.LongestStretchFirst, d.LongestStretchLast);
-        return new(T("longest stretch between two moves", "cel mai lung interval intre doua miscari"), T(
-            $"frames {range} ({frames} frames from one move to the next{minutes})",
-            $"cadrele {range} ({frames} cadre de la o miscare la urmatoarea{minutes})"));
+        return new(T("longest stretch without a move", "cel mai lung sir fara miscare"), T(
+            $"frames {range} ({frames} in a row{minutes})",
+            $"cadrele {range} ({frames} la rand{minutes})"));
     }
 
     /// <summary>A frame count with its noun in the right number.</summary>
@@ -1261,14 +1321,17 @@ internal static class SeriesReport
         null => (T("UNDETERMINED", "NEDETERMINAT"), T("too few good frames", "prea putine cadre bune")),
     };
 
-    /// <summary>Which image axis is RA and which DEC, and where that came from.</summary>
+    /// <summary>Which image axis is RA and which DEC, and where that came from (R-077).</summary>
     /// <param name="s">The series analysis, with the RA axis and its source.</param>
-    /// <returns>The sentence, or `RA axis undetermined` when the RA axis is unknown.</returns>
+    /// <returns>
+    /// `RA is the image's Y axis, DEC the X axis (found from plate solve (WCS))`, or `it is not
+    /// known which axis is RA` when the RA axis is unknown.
+    /// </returns>
     private static string AxisLine(SeriesAnalysis s) => s.RaAxis switch
     {
-        Axis.X => T($"image axis X = RA, Y = DEC ({s.AxisSource})", $"axa X a imaginii = RA, Y = DEC ({s.AxisSource})"),
-        Axis.Y => T($"image axis Y = RA, X = DEC ({s.AxisSource})", $"axa Y a imaginii = RA, X = DEC ({s.AxisSource})"),
-        _ => T("RA axis undetermined", "axa RA nedeterminata"),
+        Axis.X => T($"RA is the image's X axis, DEC the Y axis (found from {s.AxisSource})", $"RA e axa X a imaginii, DEC axa Y (aflat din {s.AxisSource})"),
+        Axis.Y => T($"RA is the image's Y axis, DEC the X axis (found from {s.AxisSource})", $"RA e axa Y a imaginii, DEC axa X (aflat din {s.AxisSource})"),
+        _ => T("it is not known which axis is RA", "nu se stie care axa e RA"),
     };
 
     /// <summary>
@@ -1276,12 +1339,12 @@ internal static class SeriesReport
     /// colour (R-021, R-043): walking noise `OK` by the dither rule, `NO` (`FARA`) when the drift
     /// draws a dash under Th.WalkingStreakVisible in the longest run at 10 px, `INSUFFICIENT`
     /// (`INSUFICIENT`) otherwise; hot pixels `OK` or `WARNING` (`ATENTIE`). The words stay short for the chip; the dash,
-    /// the drift, the run and the hot-pixel rule open the text.
+    /// the drift, the run and the hot-pixel rule open the text, in plain words (R-077).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The two words joined by ", " and the text, the counts of the moves and positions last;
-    /// UNDETERMINED (NEDETERMINAT) when fewer than two frames were registered.
+    /// The two words joined by ", " and the text, the counts of the moves and spots last;
+    /// UNDETERMINED (NEDETERMINAT) when fewer than two frames were aligned.
     /// </returns>
     private static (string Verdict, string Text) DitherVerdict(SeriesResult r)
     {
@@ -1289,18 +1352,18 @@ internal static class SeriesReport
         SeriesAnalysis s = r.Series;
         if (d.Registered < 2)
         {
-            return (T("UNDETERMINED", "NEDETERMINAT"), T("frames not registered", "cadre neinregistrate"));
+            return (T("UNDETERMINED", "NEDETERMINAT"), T("the frames could not be aligned", "cadrele nu s-au putut alinia"));
         }
 
         (int Severity, string Word, string? Detail) hot = d.HotPixelsOk
             ? (0, T("OK for hot pixels", "OK pentru pixeli calzi"), null)
             : (2, T("WARNING on hot pixels", "ATENTIE la pixeli calzi"), T(
-                $"hot pixels: over {Th.HotPixelRunMax.ToString(Inv)} consecutive frames within {RunReport.F(Th.CoverageTight, 0)} px",
-                $"pixeli calzi: peste {Th.HotPixelRunMax.ToString(Inv)} cadre consecutive in {RunReport.F(Th.CoverageTight, 0)} px"));
+                $"hot pixels: more than {Th.HotPixelRunMax.ToString(Inv)} frames in a row in the same spot (within {RunReport.F(Th.CoverageTight, 0)} px)",
+                $"pixeli calzi: mai mult de {Th.HotPixelRunMax.ToString(Inv)} cadre la rand in acelasi loc (la {RunReport.F(Th.CoverageTight, 0)} px)"));
         string run = d.WalkingStretch is FrameStretch w ? StretchWord(w) : NoRun();
         string drift = s.DriftPerExposurePx is double dpe
-            ? T($"drift {RunReport.F(dpe, 2)} px per exposure, {run}", $"drift {RunReport.F(dpe, 2)} px pe expunere, {run}")
-            : T($"drift not measured, {run}", $"drift nemasurat, {run}");
+            ? T($"the drift is {RunReport.F(dpe, 2)} px over one exposure; {run}", $"driftul e de {RunReport.F(dpe, 2)} px intr-o expunere; {run}")
+            : T($"the drift could not be measured; {run}", $"driftul nu s-a putut masura; {run}");
         (int Severity, string Word, string? Detail) walk = s.WalkingNoise switch
         {
             WalkingNoise.Ok => (0, T("OK for walking noise", "OK pentru walking noise"), null),
@@ -1312,11 +1375,24 @@ internal static class SeriesReport
                 : $"walking noise: {drift}"),
         };
         (var first, var second) = walk.Severity >= hot.Severity ? (walk, hot) : (hot, walk);
+        string loose = RunReport.F(Th.CoverageLoose, 0), frames = d.Registered.ToString(Inv);
+        string moves = Count(d.Moves, ("move", "miscare"), ("moves", "miscari"));
+        string spots = Count(d.DistinctLoose, ("spot", "loc"), ("different spots", "locuri diferite"));
+        string alone = Count(d.IsolatedLoose, ("frame alone", "cadru singur"), ("frames alone", "cadre singure"));
+        string both = Count(d.MovesOnBoth, ("move on both axes", "miscare pe ambele axe"), ("moves on both axes", "miscari pe ambele axe"));
         string counts = T(
-            $"{d.Moves.ToString(Inv)} moves over {d.Registered.ToString(Inv)} frames, {d.DistinctLoose.ToString(Inv)} distinct positions within {RunReport.F(Th.CoverageLoose, 0)} px, {d.IsolatedLoose.ToString(Inv)} isolated, {d.MovesOnBoth.ToString(Inv)} moves on both axes",
-            $"{d.Moves.ToString(Inv)} miscari la {d.Registered.ToString(Inv)} cadre, {d.DistinctLoose.ToString(Inv)} pozitii distincte la {RunReport.F(Th.CoverageLoose, 0)} px, {d.IsolatedLoose.ToString(Inv)} izolate, {d.MovesOnBoth.ToString(Inv)} miscari pe ambele axe");
+            $"{moves} over {frames} frames, {spots} (within {loose} px), {alone}, {both}",
+            $"{moves} la {frames} cadre, {spots} (la {loose} px), {alone}, {both}");
         return ($"{first.Word}, {second.Word}", string.Join("; ", new[] { first.Detail, second.Detail, counts }.Where(x => x is not null)));
     }
+
+    /// <summary>A count and its noun, the noun singular for one, in the language of the moment.</summary>
+    /// <param name="n">The count, 0 or more.</param>
+    /// <param name="one">The noun for a count of one, in English and in Romanian.</param>
+    /// <param name="many">The noun for any other count, in English and in Romanian.</param>
+    /// <returns>`1 frame alone` (`1 cadru singur`), or `3 frames alone` (`3 cadre singure`).</returns>
+    private static string Count(int n, (string En, string Ro) one, (string En, string Ro) many)
+        => $"{n.ToString(Inv)} {(n == 1 ? T(one.En, one.Ro) : T(many.En, many.Ro))}";
 
     /// <summary>
     /// The `leave out of stack` (`de scos din stiva`) cell: how many frames to leave out (bad and unreadable), how many

@@ -256,16 +256,20 @@ the frame has no step.
 
 Beside the rows, the report gives the window shapes it cannot derive from prose (ADR 0012):
 `AxisLabels` and `PositionHeaders` word the RA/DEC axis for the map and the table headers;
-`DitherTables` builds the five `ReportTable`s (how often, how far, direction, coverage, runs)
-from the same `DitherAnalysis` figures the `DitherRows` print, through the helpers both use
-(`SizeWord`, `FramesWord`, `TimesWord`, `PausesRow`, `LongestRow`, `HowOften` for the
-no-move words) so a wording lives once; the runs table has its own `RunRows` and
-`MinutesCell` beside the rows' `Runs` and `Minutes`, which differ in shape, not in words.
+`DitherTables` builds the five `ReportTable`s (how often, how far, direction, how close the
+frames are, runs) from the same `DitherAnalysis` figures the `DitherRows` print, through the
+helpers both use (`SizeWord`, `FramesWord`, `TimesWord`, `PausesRow`, `LongestRow`, `HowOften`
+for the no-move words, `TypicallyWord` before the median move, and `NearestWords`,
+`AloneWords` and `AreaWords`, which `DitherScalarRows` shares too) so a wording lives once;
+the runs table has its own `RunRows` and `MinutesCell` beside the rows' `Runs` and `Minutes`,
+which differ in shape, not in words. Every one of these texts is in plain words (R-077):
+`PlainWords` in the tests holds the method's words they must not use.
 `DitherScalarRows` is the DITHERING rows that are not tables, plus the `axes` row that names
 the RA axis and its source, which the console carries on its `direction` row; both end with
 `ScaleRow` (what a move of `Th.DitherStep` and `Th.CoverageLoose` is in arcseconds at the
-session's scale, R-044), `SurvivingRow` (the surviving fraction against `1 / n`, R-048),
-`PatternRow` (the `SensorPattern` by its status, the sigmas with their fractions, the hot
+session's scale, R-044), `SurvivingRow` (the surviving fraction against `1 / n`, R-048, its
+sharing pairs worded by `SharingPairsWords` for none, one or more),
+`PatternRow` (the `SensorPattern` by its status, the strengths with their fractions, the hot
 rate and the darks clause, R-046) and the verdict. `DriftRows` adds `DriftPerExposure`, the drift over the median
 exposure on its axis (`DriftAxisWord`) and the dash of `Streak`, `no walking-noise streak` without a run;
 its first row names the pairs through `PairsWord` (`without a pause`, or `with a pause, approximate`

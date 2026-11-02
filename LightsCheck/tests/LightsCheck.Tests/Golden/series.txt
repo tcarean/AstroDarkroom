@@ -15,8 +15,8 @@ Copyright (C) 2026 Tudor Carean
     focus              : BUN - FWHM median 3.25 px = 19.4" pe cadrele bune, 3.25 / 3.25 px (-0 %) la inceput / sfarsit: a tinut toata sesiunea
     expunere           : BUNA - fond G 2000 -> 2000 ADU; canalul cel mai slab B: shot/citire 10.0, penalizare 5 %
     roua               : NU - FWHM -0 %, halo +0.001
-    cadre miscate      : 2 slabe, 0 la limita, 6 bune (din 8); axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
-    dithering          : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: drift 0.50 px pe expunere, cadrele 1-2, 2 cadre la 10 px; 3 miscari la 8 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
+    cadre miscate      : 2 slabe, 0 la limita, 6 bune (din 8); RA e axa Y a imaginii, DEC axa X (aflat din directia darelor: presupunem ca le-a facut urmarirea, deci sunt pe RA)
+    dithering          : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; 3 miscari la 8 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe
     aliniere polara    : eroare de cel putin 5.7', costa cel putin 0.50 px intr-o expunere (fara plate solve nu se stie declinatia pentru limita de sus)
     de scos din stiva  : 2 cadre (lista la RESPINSE); raman 6 = 12 min
 
@@ -41,29 +41,29 @@ Copyright (C) 2026 Tudor Carean
   CADRE MISCATE
     slabe (alungire >= 1.60): 3, 6
     la limita (1.35 .. 1.60): niciunul
-    directia darelor   : -90 grade fata de orizontala pe cadrele slabe = pe RA; axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
+    directia darelor   : -90 grade fata de orizontala pe cadrele slabe = pe RA; RA e axa Y a imaginii, DEC axa X (aflat din directia darelor: presupunem ca le-a facut urmarirea, deci sunt pe RA)
 
   DRIFT SI ROTATIE
     drift intre cadre consecutive fara dithering: X +0.25 px/min, Y +0.03 px/min (4 perechi fara pauza) = +1.5 / +0.2 "/min
-    drift intr-o expunere: 0.50 px = 3.0" pe 120 s, pe DEC; dare de walking noise de pana la 0.5 px (cadrele 1-2, 2 cadre la 10 px)
+    drift intr-o expunere: 0.50 px = 3.0" pe 120 s, pe DEC; dare de walking noise de pana la 0.5 px (cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px)
     rotatie de camp    : -0.0 arcmin in total, -0.1 arcmin/h; in colt, intr-o expunere: 0.00 px
     aliniere polara    : eroare de cel putin 5.7' (driftul pe DEC de 1.5"/min; fara plate solve nu se stie declinatia pentru limita de sus); drift din aliniere cel putin 0.50 px intr-o expunere de 120 s
     drift pe RA        : 0.2"/min (fara plate solve nu se stie cat e din aliniere)
 
   DITHERING
-    pauze > 5 s        : 3; miscari >= 5 px: 3; pauze fara miscare: 0; miscari fara pauza: 0; cadre inregistrate: 8 din 8
+    pauze de peste 5 s : 3; miscari de cel putin 5 px: 3; pauze dupa care cadrul a ramas pe loc: 0; miscari fara pauza inainte: 0; cadre aliniate: 8 din 8
     cat de des         : la fiecare 2 cadre: 2 ori
-    cel mai lung interval intre doua miscari: cadrele 1-2 (2 cadre de la o miscare la urmatoarea, 4 min)
-    cat de mult        : median 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
-    directie           : numai X: 2; numai Y: 1; ambele: 0; semn X: +2 / -0; semn Y: +0 / -1; axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
-    acoperire          : cel mai apropiat alt cadru median 0.6 px; sub 3 px: 8, sub 5: 8, sub 10: 8; izolate (>= 10 px de orice): 0
-    pozitii distincte  : 4 la 5 px, 4 la 10 px; intindere X 40 px, Y 16 px
-    grupuri in 5 px    : niciunul
-    grupuri in 10 px   : niciunul
-    scara              : 1 px = 5.99"; o miscare de 5 px (pragul) cere 30" pe cer, una de 10 px 60"
-    pattern in stiva   : 25.0 % din al unui cadru ramane in medie (ideal 12.5 % la 8 cadre; perechi de cadre la sub 1.5 px: 4)
-    pattern fix        : sigma 0.0 ADU pe R (0 % din zgomotul unui cadru), 0.0 pe G1 (0 %), 0.0 pe G2 (0 %), 0.8 pe B (2 %); 0 pixeli fierbinti / Mpx peste 10 sigma (mediana a 8 cadre neinregistrate, 480 x 480 px din centru); fara dark-uri in sesiune: raman in cadre
-    verdict            : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: drift 0.50 px pe expunere, cadrele 1-2, 2 cadre la 10 px; 3 miscari la 8 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
+    cel mai lung sir fara miscare: cadrele 1-2 (2 cadre la rand, 4 min)
+    cat de mult        : de obicei 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
+    directie           : doar pe X: 2; doar pe Y: 1; pe ambele: 0; pe X spre + / spre -: 2 / 0; pe Y spre + / spre -: 0 / 1; RA e axa Y a imaginii, DEC axa X (aflat din directia darelor: presupunem ca le-a facut urmarirea, deci sunt pe RA)
+    apropierea cadrelor: jumatate din cadre au alt cadru la cel mult 0.6 px; cu alt cadru la sub 3 px: 8, la sub 5: 8, la sub 10: 8; cadre singure (la 10 px sau mai mult de oricare altul): 0
+    locuri diferite    : 4 la 5 px, 4 la 10 px; zona pozitiilor 40 px pe X, 16 px pe Y
+    grupuri sub 5 px   : niciunul
+    grupuri sub 10 px  : niciunul
+    scara              : 1 px = 5.99" pe cer; ca sa muti cadrul 5 px (cea mai mica miscare numarata) trebuie 30" pe cer, iar pentru 10 px, 60"
+    pattern in stiva   : in stiva ramane 25.0 % din pattern-ul unui cadru (ideal 12.5 %, cu 8 cadre; 4 perechi de cadre au stat la sub 1.5 px una de alta, iar pattern-ul lor se aduna)
+    pattern fix        : tarie 0.0 ADU pe R (0 % din zgomotul unui cadru), 0.0 pe G1 (0 %), 0.0 pe G2 (0 %), 0.8 pe B (2 %); 0 pixeli calzi la un milion de pixeli, adica cei de peste 10 ori zgomotul unui cadru (din 8 cadre, pe 480 x 480 px din centru); fara dark-uri in sesiune, pattern-ul ramane in cadre
+    verdict            : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; 3 miscari la 8 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe
 
   RESPINSE (2 cadre slabe; cele la limita raman la alegerea ta)
       3  DSC_0003.fit          alungire 1.76 (prag 1.60), dara pe RA (-90 grade)

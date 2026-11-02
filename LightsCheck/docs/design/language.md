@@ -1,6 +1,6 @@
 # The interface language
 
-**Covers:** `src/LightsCheck.Core/Language/Ui.cs`, `src/LightsCheck.Core/Language/LanguageArgument.cs`, `src/LightsCheck.Wpf/Presentation/TExtension.cs`, `src/LightsCheck.Wpf/Presentation/VerdictPalette.cs`, `src/LightsCheck.Wpf/App.xaml.cs`, `tests/LightsCheck.Tests/RomanianByDefault.cs`, `tests/LightsCheck.Tests/LanguageTests.cs`, `tests/LightsCheck.Tests/EnglishGoldenOutputTests.cs`, `tests/LightsCheck.Wpf.Tests/WindowLanguageTests.cs`.
+**Covers:** `src/LightsCheck.Core/Language/Ui.cs`, `src/LightsCheck.Core/Language/LanguageArgument.cs`, `src/LightsCheck.Wpf/Presentation/TExtension.cs`, `src/LightsCheck.Wpf/Presentation/VerdictPalette.cs`, `src/LightsCheck.Wpf/App.xaml.cs`, `tests/LightsCheck.Tests/RomanianByDefault.cs`, `tests/LightsCheck.Tests/LanguageTests.cs`, `tests/LightsCheck.Tests/EnglishGoldenOutputTests.cs`, `tests/LightsCheck.Tests/PlainWords.cs`, `tests/LightsCheck.Wpf.Tests/WindowLanguageTests.cs`.
 
 The behaviour is R-060 to R-064, the reasons ADR 0022 (the design is FlatCheck's, its ADR
 0062). This note is how the code does it.
@@ -79,7 +79,10 @@ before `NO `).
 ## Glossary
 
 The English follows Siril's and the usual astrophotography vocabulary, British in spelling
-(`centre`, `colour`, `analysed`); a term is translated the same way everywhere.
+(`centre`, `colour`, `analysed`); a term is translated the same way everywhere. The words are
+plain ones (the rule "Plain words", R-077): the Dithering tab and the console's DITHERING
+section use the plain terms below; the other tabs keep their older words until their own
+rewrite.
 
 | Romanian | English |
 | --- | --- |
@@ -91,12 +94,13 @@ The English follows Siril's and the usual astrophotography vocabulary, British i
 | fond (de cer) | (sky) background |
 | zgomot de citire / shot/citire / penalizare | read noise / shot/read / penalty |
 | miscare / pas | move / step |
-| acoperire / pozitii distincte / intindere | coverage / distinct positions / span |
-| grup (de cadre consecutive) / acelasi loc | run / same spot |
-| izolate | isolated |
+| apropierea cadrelor / locuri diferite / zona pozitiilor | how close the frames are / different spots / area of the positions |
+| grup (de cadre la rand) / acelasi loc | run (of frames in a row) / same spot |
+| cadre singure | frames alone |
+| de obicei (the median move) / tarie (of the fixed pattern) | typically / strength |
 | aliniere polara / rotatie de camp | polar alignment / field rotation |
 | pattern fix / pixeli calzi | fixed pattern / hot pixels |
-| inregistrat | registered |
+| aliniat (DITHERING); inregistrat (the other tabs, until their rewrite) | aligned; registered |
 | scara | scale |
 | decupaje | cut-outs |
 | respinse / de scos din stiva | rejected / leave out of stack |
@@ -126,5 +130,8 @@ real `lightscheck.exe` beside the tests, whose `Ui.Default` no test touched, and
 tab with a real result, the problem card, the empty window and the About window in English and
 collects every text of the visual tree plus the charts' own labels, none of which may hold a
 Romanian word; checks that the same window in Romanian shows `Rezumat`; and checks that every
-verdict and class word the core writes for a result colours the same in both languages. With
+verdict and class word the core writes for a result colours the same in both languages. It
+also renders the Dithering tab in each language and holds its texts, the charts' labels
+included, against the method's words of `PlainWords` (R-077), the list `SeriesTests` holds the
+core's rows, tables and paragraphs against, linked from `LightsCheck.Tests`. With
 `LIGHTSCHECK_DUMP_SCREENS` it saves the English screens as `en-*.png`.
