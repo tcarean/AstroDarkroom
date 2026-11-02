@@ -17,7 +17,7 @@ The launcher is two layers: a core that answers three questions about a folder (
 exist, which of them are there, how to start one), reads two files (`release.json`, the
 language setting) and words every answer in one of two languages, and a window that asks those
 questions at start-up and at every change of language and shows the answers. The requirements
-are R-001 to R-010 and R-015 to R-018 in `docs/requirements.md`; the choice of a compiled-in catalogue
+are R-001 to R-010 and R-015 to R-019 in `docs/requirements.md`; the choice of a compiled-in catalogue
 over a scan of the folder is ADR 0002, the split with no test project for the window is ADR
 0001, the two languages and the live switch are ADR 0006. What the launcher writes to its
 diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
@@ -67,7 +67,9 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   read leaves one line in the diagnostic log, the versions or why there are none.
   `ReleaseInfo.Find(name)` is the lookup the rows use, by `SuiteApp.Folder`.
 - `VersionInfo` reads `<Version>` and `<Copyright>` back from the assembly attributes MSBuild
-  writes from `Directory.Build.props`; `Banner` is `"Astro Darkroom " + Value`. `LicenseInfo`
+  writes from `Directory.Build.props`; `Banner` is `"Astro Darkroom " + Value`, and `Copyright`
+  the notice as written there, the same in both languages, which the main window's bottom bar
+  and "Despre" show (R-019). `LicenseInfo`
   holds the warranty paragraph, a pair picked at each read, and the licence URL for the about
   window.
 - `Prerequisites` holds what the suite needs on the machine, as texts only (R-009, ADR 0007):
@@ -124,10 +126,14 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   dictionary (the rows are rebuilt at every change of language), since the first frame of an
   icon is not reliably the largest; `Icons.Launcher` names the launcher's own, for the two
   logos.
-- `MainWindow` reads `release.json` once. The XAML carries no user text: `Relabel()` assigns
-  every label (the subtitle, the prerequisites line under it from `Prerequisites.Summary`, the
-  runtime's warning under that, the folder line, the selector's tooltip, the about button and
-  its tooltip) through `T` and
+- `MainWindow` reads `release.json` once. The XAML carries no user text: the constructor sets
+  the two texts that are the same in both languages, the banner, `VersionInfo.Banner`, and the
+  copyright, `VersionInfo.Copyright`, at the left of the bottom bar (R-019, ADR 0018), a `Faint`
+  line that trims with an ellipsis it never needs: the notice's 167 px fit the bar's first
+  column, 340 px in Romanian, where `Despre` is wider than `About`. The window shows no path; the
+  suite folder is in the log (R-012). `Relabel()` assigns every other label (the subtitle, the
+  prerequisites line under it from `Prerequisites.Summary`, the runtime's warning under that, the
+  selector's tooltip, the about button and its tooltip) through `T` and
   builds one `AppRow` per catalogue app: the app, its `AppLocation`, its `ComponentInfo` or
   null. The row's properties are the strings the XAML binds (`OpenLabel`, `VersionHint` as
   `version X` / `versiunea X` or `version unknown` / `versiune necunoscuta`, `ButtonHint` as
@@ -156,8 +162,7 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
   setting and calls `Relabel()`, so every text and every row changes at once.
 - `OpenApp` asks `Launcher.Plan` and calls `Process.Start` with `UseShellExecute`, the plan's
   working directory and its arguments string, disposing the returned handle at
-  once (the started app is not affected). The bottom line shows the base directory without its
-  trailing separator. `Win32Exception` (Windows refused the start) and
+  once (the started app is not affected). `Win32Exception` (Windows refused the start) and
   `InvalidOperationException` (the file went away) end in a message box with the row's title.
   The start asked for and its outcome go to the diagnostic log; the started process's id is
   read through `IdOf`, which never throws, so the log line cannot turn a start that worked into

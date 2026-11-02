@@ -18,10 +18,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- MainWindow: the suite's banner, one card per app of the catalogue with its open button,
-     and the bottom bar with the language selector and the about button. Everything shown comes
-     from AppRow, built from the core; the labels are assigned by the code behind in the current
-     language (Relabel), so no user text is written here; the window's own code starts the
-     process the core planned. -->
+     and the bottom bar with the suite's copyright, the language selector and the about button.
+     Everything shown comes from AppRow, built from the core; the labels are assigned by the
+     code behind, in the current language (Relabel), so no user text is written here; the
+     window's own code starts the process the core planned. -->
 
 <Window x:Class="AstroDarkroom.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -118,7 +118,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="Auto" />
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
-        <TextBlock x:Name="FolderLine" Grid.Column="0" Style="{StaticResource Faint}" VerticalAlignment="Center"
+        <!-- The suite's copyright (R-019), the same words in both languages; the folder's path
+             is in the log, the release's date in About (ADR 0018). -->
+        <TextBlock x:Name="CopyrightLine" Grid.Column="0" Style="{StaticResource Faint}" VerticalAlignment="Center"
                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
         <!-- The language selector (R-006): each language named in itself, with its flag drawn
              in App.xaml (ADR 0007), so a user finds theirs whatever the current language; the

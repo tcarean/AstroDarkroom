@@ -35,7 +35,10 @@ public static class VersionInfo
     /// <summary>The name and the version, exactly as the "Despre" window's first line shows them.</summary>
     public static string Banner => Name + " " + Value;
 
-    /// <summary>The copyright notice, the second line of "Despre" (GPLv3 asks every copy to carry it).</summary>
+    /// <summary>
+    /// The copyright notice, the same in both languages: the left of the main window's bottom bar
+    /// (R-019) and the second line of "Despre" (GPLv3 asks every copy to carry it).
+    /// </summary>
     public static string Copyright { get; } = ReadCopyright();
 
     /// <summary>
