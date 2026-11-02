@@ -76,6 +76,32 @@ the two sets do not reach is made up, with the same figures before and after.
 
 The English says the same, with the same figures in the same order.
 
+## Part 3, approved as proposed ("Da, toate", 2026-11-02)
+
+The texts of the Smida session and of the Veil session, both against the 2026-10-10 library, or
+of the golden sets where neither has an example; a rare variant is made up, with the same
+figures before and after. The window's Lights and Index tabs show the same rows.
+
+| # | Text | Before | After |
+| --- | --- | --- | --- |
+| 1 | check 9's title | `9. LIGHTS FATA DE DARK` | `9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE` |
+| 2 | lights not read | `ATENTIE: 2 lights nu s-au putut decoda (primul: ...); vezi tabelul` | `ATENTIE: 2 lights nu s-au putut citi (primul: ...); sunt in tabelul de lights` |
+| 3 | lights sarite (Veil) | `43 din 87 (plafonul de cadre; folosite 44)` | `43 din 87 (peste numarul maxim de cadre; s-au folosit 44)`, as part 1's biases |
+| 4 | lights without ISO or exposure | `ATENTIE: 3 lights nu spun ISO-ul sau expunerea; presupuse ale dark-urilor (normalizare x0.99)` | `...; s-au luat cele ale dark-urilor (1 ADU-eq = 0.99 ADU)` |
+| 5 | pixeli fierbinti | `86 de pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 26 din 32 de cadre)` | `86 de pixeli fierbinti se vad in lights in acelasi loc, in cel putin 26 din 32 de cadre (pixeli singuri, nu parte dintr-o stea, mai luminosi decat imprejurimea cu peste 6 ori zgomotul ei)` |
+| 6 | in masterul dark | `peste 10: 85 din 86 (99 %); ...  [ADU-eq]` | the values stay, then `[cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in ADU-eq]` |
+| 7 | `master in lights`, renamed `masterul in lights` | `peste 10: 85 din 2283 (4 %); ...` | the values stay, then `[cati dintre pixelii masterului de peste fiecare prag se vad si in lights]` |
+| 8 | `nepotriviti`, renamed `lipsesc din master` | `1 pixel persistent in lights sub 20 ADU-eq in master (mediana lor in master 3 ADU-eq)`; `niciun pixel persistent in lights sub pragul masterului` | `1 pixel fierbinte din lights e sub 20 ADU-eq in master (acolo are 3 ADU-eq)`; Veil `12 pixeli fierbinti din lights sunt sub 20 ADU-eq in master (acolo au de obicei 3 ADU-eq)`; `niciunul: toti pixelii fierbinti din lights sunt peste 20 ADU-eq si in master` |
+| 9 | `amplitudine`, renamed `lights fata de dark` | `lights / dark 1.00 pe noapte (mediana pe 32 de cadre; primul 0.72, ultimul 0.94; 443 de pixeli)`; `NEMASURAT: niciun pixel fierbinte sub saturatie in master` | `in lights, pixelii fierbinti sunt de obicei de 1.00 ori cat in dark (pe cele 32 de cadre; in primul 0.72, in ultimul 0.94; pe 443 de pixeli)`; `NEMASURAT: masterul nu are niciun pixel fierbinte care sa nu fie saturat` |
+| 10 | the verdict, the partner's too (`la partener` for `in dark`) | `OK: scadere directa (raport 1.00, in 0.9 .. 1.1; dark-ul e la aceeasi temperatura)`; `ATENTIE: scade cu -opt (raport 1.30, in 0.7 .. 1.4; dark-ul e mai rece cu 2.3 grade, -opt scaleaza amplitudinea)`; `ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.43, dark-ul e mai cald cu 7.2 grade si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta`; `ATENTIE: nepotrivit (raport 1.60: ...; prea rece, pierde pixelii fierbinti slabi)`; `ATENTIE: nepotrivit: lights-urile nu arata pixelii fierbinti ai dark-ului (raport 0.00; reducere de zgomot in aparat, alt aparat sau alta orientare?)` | `OK: dark-ul se poate scadea asa cum e; in lights pixelii fierbinti sunt de 1.00 ori cat in dark, intre 0.9 si 1.1: dark-ul e la aceeasi temperatura`; `ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 1.30 ori cat in dark, intre 0.7 si 1.4: dark-ul e mai rece cu 2.3 grade`; `ATENTIE: foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.43 ori cat in dark: dark-ul e mai cald cu 7.2 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre`; `ATENTIE: nu se potrivesc; in lights pixelii fierbinti sunt de 1.60 ori cat in dark: dark-ul e mai rece cu 4.1 grade; e prea rece si ii pierde pe cei slabi`; `ATENTIE: nu se potrivesc: in lights nu se vad pixelii fierbinti ai dark-ului (de 0.00 ori cat in dark; poate reducerea de zgomot din aparat, alt aparat sau cadre rotite?)` |
+| 11 | INDEX, dark-uri | `idx25 (25.2 ADU-eq: mediana pixelilor de pe rangurile 5-20 pe Mpx, al 122-lea .. al 483-lea din 24.2 Mpx, normalizat la ISO 400 si 120 s)` | `idx25 (25.2 ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 122 .. 483, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 24.2 Mpx; socotita pentru ISO 400 si 120 s)` |
+| 12 | lights | `echivalent idx25 (dark x 1.00, adica +0.0 grade fata de dark)`; Veil `echivalent idx29 (dark x 0.43, adica -7.2 grade fata de dark)` | `ca un dark cu idx25 (de 1.00 ori cat dark-ul, adica la aceeasi temperatura)`; Veil `ca un dark cu idx29 (de 0.43 ori cat dark-ul, adica cu 7.2 grade mai reci decat el)` |
+| 13 | partener | `...: idx67 (67.4 ADU-eq; 30 de cadre din 30, ISO 1600, 120.2 s); eticheta ...` | `cadre citite 30 din 30`, as in the header; the rest stays |
+| 14 | dark-uri / partener | `0.42 (q25 0.38, q75 0.44, 434 de pixeli comuni) dupa normalizare, adica dark-urile sesiunii sunt cu -7.5 grade fata de partener`; `NEMASURAT: niciun pixel comun` | `pixelii fierbinti sunt in dark-urile sesiunii de 0.42 ori cat la partener, la aceleasi setari (jumatate dintre ei intre 0.38 si 0.44; 434 de pixeli fierbinti in amandoua), adica dark-urile sesiunii sunt cu 7.5 grade mai reci decat partenerul`; `NEMASURAT: niciun pixel nu e fierbinte in amandoua` |
+| 15 | lights / partener | `0.42 (prin dark-urile sesiunii), adica lights-urile sunt cu -7.5 grade fata de partener` | `pixelii fierbinti sunt in lights de 0.42 ori cat la partener (socotit prin dark-urile sesiunii), adica lights-urile sunt cu 7.5 grade mai reci decat partenerul` |
+| 16 | verdict partener | `ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.42, partenerul e mai cald cu 7.5 grade si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta`; without lights `... (dark-urile sesiunii fata de partener)` | the shape of 10, `ATENTIE: foloseste partenerul doar pentru corectia cosmetica (-cc=dark: ...); in lights pixelii fierbinti sunt de 0.42 ori cat la partener: partenerul e mai cald cu 7.5 grade, ...`; without lights the sentence names `in dark-urile sesiunii`, so the tail goes |
+| 17 | they stay | `NEMASURAT: sesiunea nu are lights`, `eticheta`, `pixeli comuni`, `dark-uri (partener)`, the partner's errors | |
+
 ## Steps, per part
 
 1. Requirements: the rows that quote the part's texts take the new words; R-082, new, names the
@@ -110,3 +136,14 @@ The English says the same, with the same figures in the same order.
   their singular, `1 pixel mort`, `1 saturat`.
 - Part 2: the doc comment of check 3's row still named it `amplitudine`, part 1's old label; it
   names `pixeli fierbinti` now, like the comments of the rows part 2 renamed.
+- Part 2: the owner kept `fata de master` with part 3's "Da, toate" (the question was asked with
+  it, the recommendation first).
+- Part 3: the window's Lights tab carries check 9's title as its heading; it takes the new title.
+- Part 3: variants the list did not show take the same shape: one hot pixel, `1 pixel fierbinte se
+  vede ... (un pixel singur, ... mai luminos ...)`; one light read, `pe singurul cadru`; one light
+  not read, `e in tabelul de lights`; lights warmer than the master, `adica cu 2.3 grade mai calde
+  decat el`; an INDEX row whose ratio gives no degrees (not positive) drops its `adica ...` clause,
+  where it printed `0.0 grade`; `-opt` for the partner, `scade partenerul cu -opt`.
+- Part 3: the analysis's error messages that a row quotes (`niciun light nu s-a putut decoda`,
+  `niciun dark al partenerului nu s-a putut decoda`, and the darks' and biases' in the console)
+  keep `decoda`: they were not in the list; R-082 leaves them out, and the owner is asked.

@@ -58,11 +58,11 @@ Copyright (C) 2026 Tudor Carean
     master             : 4 cadre dau un master cu 1.87 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.06 ADU
     verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.87 ADU)
 
-  9. LIGHTS FATA DE DARK
+  9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE
     verdict            : NEMASURAT: sesiunea nu are lights
 
   INDEX
-    dark-uri           : idx145 (145.0 ADU-eq: mediana pixelilor de pe rangurile 5-20 pe Mpx, al 2-lea .. al 2-lea din 0.05 Mpx, normalizat la ISO 400 si 120 s)
+    dark-uri           : idx145 (145.0 ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
     eticheta           : <sesiune>-idx145
 
   TABEL PE CADRE

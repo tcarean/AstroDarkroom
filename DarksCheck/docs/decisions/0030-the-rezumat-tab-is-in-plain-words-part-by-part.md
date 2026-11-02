@@ -41,9 +41,26 @@ records each part's list.
      CADRELE`; the rows `pixeli peste prag`, `pe culori, peste 20`, `cat de fierbinti`, `benzi
      fixe` and `zgomot dupa medie`. Check 4's first row is `fata de master`: the owner approved
      `zgomot fata de master`, which is two characters wider than the console's label column, and
-     the title above it already says it is the noise.
-4. **R-082 guards it**, growing with each part: `R082_...` reads every variant the fixtures reach,
-   in both languages, and fails on a word of the method.
+     the title above it already says it is the noise; asked, the owner kept it.
+4. **Part 3** (approved "Da, toate"): the words of the plan's third list, check 9 and INDEX.
+   - A match says what its ratio means for the hot pixels: `in lights pixelii fierbinti sunt de
+     1.30 ori cat in dark` (or `la partener`), with no `raport`, `q25` or `q75`; the quartiles are
+     `jumatate dintre ei intre 0.38 si 0.44`.
+   - The verdicts say what to do in Siril, with the option's meaning beside it: `se poate scadea
+     asa cum e`, `scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu
+     lights-urile)`, `foloseste dark-ul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in
+     el pixelii fierbinti si ii repara in lights)`, `nu se potrivesc`.
+   - The degrees of the INDEX rows are words, `cu 7.5 grade mai reci decat partenerul` or `la
+     aceeasi temperatura` (under `Th.SameTemperatureCelsius`, the verdicts' limit), not a signed
+     figure.
+   - The index says what it is: `valoarea obisnuita a pixelilor fierbinti de pe locurile 122 ..
+     483, numarand de la cel mai fierbinte`.
+   - Check 9's title becomes `9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE`, the Lights
+     tab's heading too; the rows `masterul in lights`, `lipsesc din master` and `lights fata de
+     dark`.
+5. **R-082 guards it**, growing with each part: `R082_...` reads every variant the fixtures reach,
+   in both languages, and fails on a word of the method; an error message of the analysis that a
+   row quotes is outside it.
 
 ## Alternatives rejected
 
@@ -56,8 +73,10 @@ records each part's list.
 
 - The requirements that quote part 1's texts take the new words (R-003, R-006, R-007, R-020,
   R-021, R-023, R-025, R-028, R-029, R-041, R-071, R-072, R-076, R-095); R-082 is new. Part 2's
-  take them in R-024, R-025 and R-040, and R-082 covers checks 4 to 8.
+  take them in R-024, R-025 and R-040, and R-082 covers checks 4 to 8; part 3's in R-025, R-051 to
+  R-054, R-060, R-062 to R-064 and R-093, and R-082 covers the whole tab.
 - The `1 ADU-eq` row named a set at the reference settings whenever its factor was 1, which ISO
   800 at 60 s also gives; it now names the reference settings only at ISO 400 and 120 s, in the
   header and in the ADU tab alike (`DarkReport.AtReference`).
-- Part 3 adds its list to the plan and its words to R-082 before the merge.
+- The analysis's error messages that a row quotes still say `nu s-a putut decoda`; the console prints them
+  too, so their words go with the console's texts.

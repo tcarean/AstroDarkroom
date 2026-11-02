@@ -243,7 +243,12 @@ normalisation. Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
 writes section 9, `INDEX` (the index, the label, the lights' equivalent index, the partner's
-lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; `DarkOutputs.LightsCsv`
+lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; one `MatchText` words
+every match verdict, the lights' and the partner's, from where the set's hot pixels are (`in
+lights`, `in dark-urile sesiunii`) against the master (`in dark`, `la partener`), and `Warmth`
+turns a match's degrees into the clause of the INDEX rows (`adica cu 7.5 grade mai reci decat
+partenerul`; `la aceeasi temperatura` under `Th.SameTemperatureCelsius`; none for a ratio that
+gives no degrees); `DarkOutputs.LightsCsv`
 writes `darkscheck-lights.csv` beside the darks' and biases' writers, with the columns `index,
 file, time, exposure_s, iso, error, skipped`, then per plane `<P>_sky_median, <P>_sky_sigma,
 <P>_local_sigma`, then `candidates, isolated_hot, amp_ratio_median, amp_ratio_q25,

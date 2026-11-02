@@ -757,13 +757,13 @@ public partial class DarkSeriesTests
         }
     }
 
-    // R-082's words of the method in the summary's session, header and checks 2 to 8; the median only where check 8
-    // names how a master is made
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
-    private static partial System.Text.RegularExpressions.Regex RomanianSummaryWords();
+    // R-082's words of the method in the summary, every section; the median only where check 8 names how a master is
+    // made; LightsAndIndexTests reads check 9 and INDEX with the same words
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms|rang\w*|persistent\w*|izolat\w*|raport\w*|supracorect\w*|scaleaz\w*)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    internal static partial System.Text.RegularExpressions.Regex RomanianSummaryWords();
 
-    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|deviation\w*|offset\w*|raw ADU|extrapolat\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|amplitude\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gradient\w*|drift\w*|residual\w*|temporal\w*|candidate\w*|rms)\b|(?<!\bwith the )\bmedian\w*|x the error|white noise|peak to peak|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
-    private static partial System.Text.RegularExpressions.Regex EnglishSummaryWords();
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|deviation\w*|offset\w*|raw ADU|extrapolat\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitude\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gradient\w*|drift\w*|residual\w*|temporal\w*|candidate\w*|rms|rank\w*|persistent\w*|isolated|ratio\w*|overcorrect\w*|scales)\b|(?<!\bwith the )\bmedian\w*|x the error|white noise|peak to peak|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
+    internal static partial System.Text.RegularExpressions.Regex EnglishSummaryWords();
 
     // R-081's words of the method, whole words in any case; the median only where it names how a stack is made
     [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|cuadratur\w*|radacin\w*|cuantiz\w*|normaliz\w*|abater\w*|offset\w*|castig\w*|brut\w*|petic\w*|supraestim\w*)\b|(?<![\w-])e-(?!\w)|(?<!\bcu )\bmedian\w*", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]

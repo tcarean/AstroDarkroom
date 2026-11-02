@@ -184,7 +184,7 @@ public class MainViewModelTests
 
         // one card per check, the rows the core wrote, the verdict as a chip with the rest beside it
         Assert.Equal(DarkReport.Sections(r).Select(s => s.Title), vm.Sections.Select(s => s.Title));
-        Assert.Equal(["2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOTUL FIECARUI CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. LIGHTS FATA DE DARK", "INDEX"], vm.Sections.Select(s => s.Title));
+        Assert.Equal(["2. SCURGERI DE LUMINA SI DIFERENTE PE CADRU", "3. INCALZIREA CAMEREI IN TIMPUL SERIEI", "4. ZGOMOTUL FIECARUI CADRU", "5. PIXELI FIERBINTI", "6. MODEL FIX: CE E LA FEL IN TOATE CADRELE", "7. PIXELI MORTI SI SATURATI", "8. CATE DARK-URI AJUNG", "9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE", "INDEX"], vm.Sections.Select(s => s.Title));
         RowVm verdict = vm.Sections[0].Rows[^1];
         Assert.Equal("verdict", verdict.Label);
         Assert.True(verdict.HasVerdict);
@@ -304,10 +304,10 @@ public class MainViewModelTests
         await vm.OpenAsync(f.Root);
         Assert.NotNull(vm.Result!.Partner);
         Assert.Equal(p.Root, vm.Result.Partner!.Folder);
-        Assert.Contains(vm.IndexRows, row => row.Label == "dark-uri / partener" && row.Value.StartsWith("0.5", StringComparison.Ordinal));
+        Assert.Contains(vm.IndexRows, row => row.Label == "dark-uri / partener" && row.Value.StartsWith("pixelii fierbinti sunt in dark-urile sesiunii de 0.5", StringComparison.Ordinal));
         // lights at 1.3 of darks that are 0.5 of the partner: 0.65, cosmetic correction only
-        Assert.Contains(vm.IndexRows, row => row.Label == "lights / partener" && row.Value.StartsWith("0.6", StringComparison.Ordinal));
-        Assert.Contains(vm.IndexRows, row => row.Label == "verdict partener" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("doar corectie cosmetica", StringComparison.Ordinal));
+        Assert.Contains(vm.IndexRows, row => row.Label == "lights / partener" && row.Value.StartsWith("pixelii fierbinti sunt in lights de 0.6", StringComparison.Ordinal));
+        Assert.Contains(vm.IndexRows, row => row.Label == "verdict partener" && row.Verdict == "ATENTIE" && row.Rest.StartsWith("foloseste partenerul doar pentru corectia cosmetica", StringComparison.Ordinal));
 
         // changing the partner after a run only says so; the next run takes it
         vm.Partner = null;

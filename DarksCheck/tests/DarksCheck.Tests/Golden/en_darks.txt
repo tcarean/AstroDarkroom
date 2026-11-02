@@ -58,11 +58,11 @@ Copyright (C) 2026 Tudor Carean
     master             : 4 frames give a master with 1.87 ADU of noise per pixel (from the noise from one frame to the next, 2.99); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.06 ADU
     verdict            : WARNING: only 4 frames; at least 10 are needed, so that one odd frame does not spoil the master (the master's noise would be 1.87 ADU)
 
-  9. LIGHTS AGAINST THE DARK
+  9. HOW WELL THE DARK FITS THE LIGHTS
     verdict            : UNMEASURED: the session has no lights
 
   INDEX
-    darks              : idx145 (145.0 ADU-eq: the median of the pixels ranked 5-20 per Mpx, ranks 2 .. 2 of 0.05 Mpx, normalised to ISO 400 and 120 s)
+    darks              : idx145 (145.0 ADU-eq: the usual value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
     label              : <session>-idx145
 
   FRAMES TABLE

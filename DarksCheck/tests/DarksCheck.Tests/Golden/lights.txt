@@ -57,23 +57,23 @@ Copyright (C) 2026 Tudor Carean
     master             : 4 cadre dau un master cu 1.87 ADU de zgomot pe pixel (din zgomotul de la un cadru la altul, 2.99); un master din 2 cadre facut cu mediana si unul din celelalte 2 facut cu media difera cu 3.06 ADU
     verdict            : ATENTIE: doar 4 cadre; trebuie cel putin 10, ca un cadru ciudat sa nu strice masterul (zgomotul masterului ar fi 1.87 ADU)
 
-  9. LIGHTS FATA DE DARK
-    pixeli fierbinti   : 20 de pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 4 din 5 cadre)
-    in masterul dark   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [ADU]
-    master in lights   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)
-    nepotriviti        : niciun pixel persistent in lights sub pragul masterului
-    amplitudine        : lights / dark 1.30 pe noapte (mediana pe 5 cadre; primul 1.33, ultimul 1.32; 20 de pixeli)
-    verdict            : ATENTIE: scade cu -opt (raport 1.30, in 0.7 .. 1.4; dark-ul e mai rece cu 2.3 grade, -opt scaleaza amplitudinea)
+  9. CAT DE BINE SE POTRIVESTE DARK-UL CU LIGHTS-URILE
+    pixeli fierbinti   : 20 de pixeli fierbinti se vad in lights in acelasi loc, in cel putin 4 din 5 cadre (pixeli singuri, nu parte dintr-o stea, mai luminosi decat imprejurimea cu peste 6 ori zgomotul ei)
+    in masterul dark   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre acesti pixeli sunt si in masterul dark, peste fiecare prag in ADU]
+    masterul in lights : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [cati dintre pixelii masterului de peste fiecare prag se vad si in lights]
+    lipsesc din master : niciunul: toti pixelii fierbinti din lights sunt peste 20 ADU si in master
+    lights fata de dark: in lights, pixelii fierbinti sunt de obicei de 1.30 ori cat in dark (pe cele 5 cadre; in primul 1.33, in ultimul 1.32; pe 20 de pixeli)
+    verdict            : ATENTIE: scade dark-ul cu -opt (-opt: Siril il inmulteste cat sa se potriveasca cu lights-urile); in lights pixelii fierbinti sunt de 1.30 ori cat in dark, intre 0.7 si 1.4: dark-ul e mai rece cu 2.3 grade
 
   INDEX
-    dark-uri           : idx121 (121.0 ADU-eq: mediana pixelilor de pe rangurile 5-20 pe Mpx, al 2-lea .. al 2-lea din 0.05 Mpx, normalizat la ISO 400 si 120 s)
+    dark-uri           : idx121 (121.0 ADU-eq: valoarea obisnuita a pixelilor fierbinti de pe locurile 2 .. 2, numarand de la cel mai fierbinte, adica 5-20 pe fiecare Mpx din 0.05 Mpx; socotita pentru ISO 400 si 120 s)
     eticheta           : <sesiune>-idx121
-    lights             : echivalent idx157 (dark x 1.30, adica +2.3 grade fata de dark)
-    partener           : <partener>: idx241 (241.0 ADU-eq; 3 cadre din 3, ISO 400, 120.0 s); eticheta <partener>-idx241
-    dark-uri / partener: 0.50 (q25 0.50, q75 0.50, 20 de pixeli comuni) dupa normalizare, adica dark-urile sesiunii sunt cu -6.0 grade fata de partener
+    lights             : ca un dark cu idx157 (de 1.30 ori cat dark-ul, adica cu 2.3 grade mai calde decat el)
+    partener           : <partener>: idx241 (241.0 ADU-eq; cadre citite 3 din 3, ISO 400, 120.0 s); eticheta <partener>-idx241
+    dark-uri / partener: pixelii fierbinti sunt in dark-urile sesiunii de 0.50 ori cat la partener, la aceleasi setari (jumatate dintre ei intre 0.50 si 0.50; 20 de pixeli fierbinti in amandoua), adica dark-urile sesiunii sunt cu 6.0 grade mai reci decat partenerul
     pixeli comuni      : 20 din 20 ai sesiunii peste 50 ADU-eq sunt peste 50 si la partener (100 %); 20 din 20 ai partenerului peste 50 sunt peste 20 in sesiune (100 %)
-    lights / partener  : 0.65 (prin dark-urile sesiunii), adica lights-urile sunt cu -3.7 grade fata de partener
-    verdict partener   : ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.65, partenerul e mai cald cu 3.7 grade si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta
+    lights / partener  : pixelii fierbinti sunt in lights de 0.65 ori cat la partener (socotit prin dark-urile sesiunii), adica lights-urile sunt cu 3.7 grade mai reci decat partenerul
+    verdict partener   : ATENTIE: foloseste partenerul doar pentru corectia cosmetica (-cc=dark: Siril gaseste in el pixelii fierbinti si ii repara in lights); in lights pixelii fierbinti sunt de 0.65 ori cat la partener: partenerul e mai cald cu 3.7 grade, ii vede pe toti, dar scazut ar scoate prea mult si ar lasa puncte negre
 
   TABEL PE CADRE
      nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste 2.0 grade de platou (verificarea 3); lumina = ADU peste dreapta mediei pe incalzire; latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)]

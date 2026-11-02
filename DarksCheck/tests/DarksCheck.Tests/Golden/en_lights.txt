@@ -57,23 +57,23 @@ Copyright (C) 2026 Tudor Carean
     master             : 4 frames give a master with 1.87 ADU of noise per pixel (from the noise from one frame to the next, 2.99); a master of 2 frames made with the median and one of the other 2 made with the mean differ by 3.06 ADU
     verdict            : WARNING: only 4 frames; at least 10 are needed, so that one odd frame does not spoil the master (the master's noise would be 1.87 ADU)
 
-  9. LIGHTS AGAINST THE DARK
-    hot pixels         : 20 pixels persistent in the lights (isolated, above 6 local sigma, in at least 4 of 5 frames)
-    in the dark master : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [ADU]
-    master in lights   : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)
-    unmatched          : no persistent pixel in the lights under the master's threshold
-    amplitude          : lights / dark 1.30 over the night (median over 5 frames; the first 1.33, the last 1.32; 20 pixels)
-    verdict            : WARNING: subtract with -opt (ratio 1.30, in 0.7 .. 1.4; the dark is colder by 2.3 degrees, -opt scales the amplitude)
+  9. HOW WELL THE DARK FITS THE LIGHTS
+    hot pixels         : 20 hot pixels show in the lights at the same place, in at least 4 of 5 frames (single pixels, not part of a star, brighter than their surroundings by more than 6 times the noise there)
+    in the dark master : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of these pixels are in the dark master too, above each threshold in ADU]
+    master in lights   : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [how many of the master's pixels above each threshold show in the lights too]
+    not in the master  : none: every hot pixel of the lights is above 20 ADU in the master too
+    lights against dark: in the lights, the hot pixels are usually 1.30 times what they are in the dark (over the 5 frames; in the first 1.33, in the last 1.32; on 20 pixels)
+    verdict            : WARNING: subtract the dark with -opt (-opt: Siril multiplies it so that it matches the lights); in the lights the hot pixels are 1.30 times what they are in the dark, between 0.7 and 1.4: the dark is colder by 2.3 degrees
 
   INDEX
-    darks              : idx121 (121.0 ADU-eq: the median of the pixels ranked 5-20 per Mpx, ranks 2 .. 2 of 0.05 Mpx, normalised to ISO 400 and 120 s)
+    darks              : idx121 (121.0 ADU-eq: the usual value of the hot pixels at places 2 .. 2, counting from the hottest, that is 5-20 per Mpx of 0.05 Mpx; worked out for ISO 400 and 120 s)
     label              : <session>-idx121
-    lights             : equivalent idx157 (dark x 1.30, that is +2.3 degrees against the dark)
-    partner            : <partner>: idx241 (241.0 ADU-eq; 3 frames of 3, ISO 400, 120.0 s); label <partner>-idx241
-    darks / partner    : 0.50 (q25 0.50, q75 0.50, 20 shared pixels) after normalisation, that is the session's darks run -6.0 degrees against the partner
+    lights             : like a dark of idx157 (1.30 times the dark, that is 2.3 degrees warmer than it)
+    partner            : <partner>: idx241 (241.0 ADU-eq; frames read 3 of 3, ISO 400, 120.0 s); label <partner>-idx241
+    darks / partner    : in the session's darks the hot pixels are 0.50 times what they are at the partner, at the same settings (half of them between 0.50 and 0.50; 20 pixels hot in both), that is the session's darks are 6.0 degrees colder than the partner
     shared pixels      : 20 of the session's 20 above 50 ADU-eq are above 50 at the partner too (100 %); 20 of the partner's 20 above 50 are above 20 in the session (100 %)
-    lights / partner   : 0.65 (through the session's darks), that is the lights run -3.7 degrees against the partner
-    partner verdict    : WARNING: cosmetic correction only (-cc=dark): ratio 0.65, the partner is warmer by 3.7 degrees and still finds every hot pixel, but subtracting it would overcorrect
+    lights / partner   : in the lights the hot pixels are 0.65 times what they are at the partner (worked out through the session's darks), that is the lights are 3.7 degrees colder than the partner
+    partner verdict    : WARNING: use the partner for the cosmetic correction only (-cc=dark: Siril finds the hot pixels in it and repairs them in the lights); in the lights the hot pixels are 0.65 times what they are at the partner: the partner is warmer by 3.7 degrees, it sees them all, but subtracted it would take out too much and leave black dots
 
   FRAMES TABLE
      no  file                  time       mean   sigma  resid.   bands    ampl. plateau   light    side  >20   [G1; mean = ADU above the black; bands = rows / white noise; ampl. = the hot pixels against the master; plateau = degrees from the series' plateau; to discard = more than 2.0 degrees from the plateau (check 3); light = ADU above the line of the mean against the warming; side = the side with the most constant light - centre (UNMEASURED)]
