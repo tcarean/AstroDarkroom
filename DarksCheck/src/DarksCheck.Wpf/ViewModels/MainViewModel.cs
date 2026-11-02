@@ -228,7 +228,9 @@ public sealed class MainViewModel : ObservableObject
 
     public string HotHeader => WindowTexts.HotHeader;
 
-    public string HotHeaderTip => WindowTexts.HotHeaderTip;
+    public string HotHeaderTip { get; private set; } = "";
+
+    public string NoiseHeaderTip { get; private set; } = "";
 
     public string PlateauHeaderTip => DarkReport.PlateauColumnTip;
 
@@ -605,7 +607,7 @@ public sealed class MainViewModel : ObservableObject
         Report = "";
         SessionRows = HotRows = LightRows = IndexRows = ScaleRows = [];
         ScaleParagraphs = [];
-        HeaderLine = Label = Tag = FrameTableNote = LightTableNote = WarmingNote = "";
+        HeaderLine = Label = Tag = FrameTableNote = LightTableNote = WarmingNote = NoiseHeaderTip = HotHeaderTip = "";
         Sections = [];
         Frames = [];
         Lights = [];
@@ -643,6 +645,8 @@ public sealed class MainViewModel : ObservableObject
         Frames = DarkReport.FrameRows(r).Select(FrameRowVm.From).ToList();
         Lights = DarkReport.LightRows(r).Select(LightRowVm.From).ToList();
         FrameTableNote = DarkReport.FrameTableNote(r);
+        NoiseHeaderTip = DarkReport.NoiseColumnTip(r);
+        HotHeaderTip = DarkReport.HotColumnTip(r);
         LightTableNote = r.Lights is null ? "" : DarkReport.LightTableNote(r);
         Label = r.Label;
         Tag = r.Index.Tag;
@@ -738,7 +742,7 @@ public sealed class MainViewModel : ObservableObject
         foreach (string name in new[]
         {
             nameof(HasResult), nameof(SessionRows), nameof(HeaderLine), nameof(Sections), nameof(Frames), nameof(Lights), nameof(HasLights),
-            nameof(FrameTableNote), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides), nameof(WarmingNote),
+            nameof(FrameTableNote), nameof(NoiseHeaderTip), nameof(HotHeaderTip), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides), nameof(WarmingNote),
             nameof(ResidualPoints), nameof(ResidualGuides), nameof(BandingPoints), nameof(BandingGuides), nameof(NoisePoints), nameof(NoiseExpected),
             nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(ScaleRows), nameof(ScaleParagraphs), nameof(Label), nameof(Tag),
         })

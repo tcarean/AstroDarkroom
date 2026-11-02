@@ -422,7 +422,7 @@ internal static class ScaleReport
             string eq = $"{Signed(c.LightAdu)} {g.Eq}";
             bold.Add(eq);
             bold.AddRange(b);
-            parts.Add(T($"constant light on the {DarkReport.SideName(c.Side)} side: {eq} = {Signed(raw)} ADU in the file", $"lumina constanta pe latura de {DarkReport.SideName(c.Side)}: {eq} = {Signed(raw)} ADU in fisier")
+            parts.Add(T($"constant light on {DarkReport.SideWithPreposition(c.Side)} side: {eq} = {Signed(raw)} ADU in the file", $"lumina constanta pe latura {DarkReport.SideWithPreposition(c.Side)}: {eq} = {Signed(raw)} ADU in fisier")
                 + (g.Gain is double gain ? T($" = {Signed(raw * gain)} electrons per pixel", $" = {Signed(raw * gain)} electroni pe pixel") : "") + (against.Length == 0 ? "" : $"; {against}"));
         }
 

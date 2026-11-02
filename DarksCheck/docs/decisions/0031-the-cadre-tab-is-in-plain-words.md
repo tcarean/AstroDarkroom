@@ -33,7 +33,15 @@ question left from the Rezumat: the analysis's messages when no frame of a kind 
    have, not "in the attention colour".
 5. **Read, not decoded**: the messages when no dark, bias, light or partner dark can be read say
    `nu s-a putut citi` (`could not be read`), the words the Rezumat's warnings took in ADR 0030.
-6. **R-083 guards it**: `R083_...` reads the core's texts over every variant the fixtures reach
+6. **After the review**, as the owner approved: the plateau is "the steady temperature of the
+   series", with no direction, in the note, the chart and the hint, since a series may climb,
+   come down or stay; a left or right side is `latura din stanga` / `latura din dreapta` in every
+   side text, the Rezumat's and the ADU tab's too; the `ora` hint says a FITS from Siril carries
+   the UTC time; the hints of `zgomot` and `>20` name the series' pixels (`pe pixelii verzi G1`),
+   the core's words, since the note that names them is often out of view; a frame whose hot
+   pixels do not show at all gets its reason, `de aruncat: pixelii fierbinti ai masterului nu se
+   vad in acest cadru`.
+7. **R-083 guards it**: `R083_...` reads the core's texts over every variant the fixtures reach
    and renders the Cadre tab in both languages, with one list of the method's words that the
    two test projects share (`tests/DarksCheck.Tests/PlainWords.cs`, linked into the window's).
 

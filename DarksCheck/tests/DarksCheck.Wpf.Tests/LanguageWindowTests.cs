@@ -161,6 +161,8 @@ public partial class LanguageWindowTests
                 Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "1.5 times the usual noise" : "de 1.5 ori zgomotul obisnuit", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "no banding" : "fara benzi", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "the noise of the frame, in ADU, on the green pixels G1" : "zgomotul cadrului, in ADU, pe pixelii verzi G1", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "how many pixels of the frame go over 20 ADU-eq, on the green pixels G1" : "cati pixeli din cadru trec de 20 ADU-eq, pe pixelii verzi G1", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "RANDOM BANDING (1 = NO BANDING)" : "BENZI ALEATOARE (1 = FARA BENZI)", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "How many times more the rows of the frame differ from one another" : "De cate ori difera randurile cadrului intre ele", all, StringComparison.Ordinal);
                 Regex method = english ? PlainWords.EnglishFramesWords() : PlainWords.RomanianFramesWords();

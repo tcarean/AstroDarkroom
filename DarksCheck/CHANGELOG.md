@@ -40,7 +40,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   means, a frame to discard reads `de aruncat: pixelii fierbinti sunt la 0.826 din master, sub
   0.87, adica la peste 2.0 grade sub platou (1.10)`, and the charts' titles, sentences and lines
   lose the method's words. When no dark, bias, light or partner dark can be read, the message
-  says `nu s-a putut citi` (`could not be read`).
+  says `nu s-a putut citi` (`could not be read`). A left or right side reads `latura din stanga` /
+  `latura din dreapta` in every text, and a frame whose hot pixels do not show gets its reason to
+  discard in the table.
 
 - The Rezumat tab and the console's report speak plain words, in English and Romanian (R-082,
   ADR 0030), the figures unchanged: the session card, the `=== DARK-URI` header (`frames read 20

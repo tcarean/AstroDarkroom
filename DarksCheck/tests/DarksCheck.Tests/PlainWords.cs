@@ -33,6 +33,6 @@ internal static partial class PlainWords
 
     /// <summary>R-083's words of the method in the Cadre tab's English texts.</summary>
     /// <returns>The pattern; a match is a word the text must lose.</returns>
-    [GeneratedRegex(@"\b(sigma|sqrt|resid\w*|deviation\w*|offset\w*|amplitude\w*|ampl|median\w*|metadata|decod\w*|outlier\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gain\w*|raw)\b|(?<![\w-])e-(?!\w)|square root|white noise|reference plane|attention colou?r", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(sigma|sqrt|resid\w*|deviation\w*|offset\w*|amplitude\w*|ampl|median\w*|metadata|decod\w*|outlier\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gain\w*)\b|raw ADU|(?<![\w-])e-(?!\w)|square root|white noise|reference plane|attention colou?r", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     internal static partial Regex EnglishFramesWords();
 }

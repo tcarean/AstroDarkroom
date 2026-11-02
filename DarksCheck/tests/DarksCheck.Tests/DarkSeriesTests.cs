@@ -181,11 +181,27 @@ public partial class DarkSeriesTests
         Assert.Null(rows[2].Note);
         Assert.Null(rows[11].Note);
         Assert.StartsWith("-0.", rows[11].Plateau, StringComparison.Ordinal);
-        Assert.Contains("platou = cu cate grade e cadrul fata de temperatura spre care urca seria; de aruncat = la peste 2.0 grade de ea (verificarea 3)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        Assert.Contains("platou = cu cate grade e cadrul fata de temperatura stabila a seriei; de aruncat = la peste 2.0 grade de ea (verificarea 3)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         Assert.Contains("platou", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         string line = DarkReport.FrameLine(rows[0]);
         Assert.EndsWith(rows[0].Note, line, StringComparison.Ordinal);
         Assert.DoesNotContain("de aruncat", DarkReport.FrameLine(rows[11]), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R025_AFrameWithoutTheMastersHotPixelsIsMarkedToDiscard()
+    {
+        // the plateau series of R023 with its seventh frame's hot pixels under the background: a ratio under 0, so no
+        // degrees, but the analysis puts it off the plateau, and the table says why and tints it
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 6 ? -0.5 : 1.2 - 0.4 * Math.Exp(-i / 3.0) });
+        DarkSeriesResult r = Run(s);
+        Warming w = r.Darks.Warming;
+        Assert.True(w.HasFit);
+        Assert.True(r.Darks.Frames[6].AmpRatioMedian <= 0, $"ratio {r.Darks.Frames[6].AmpRatioMedian}");
+        Assert.Contains(7, w.OffPlateauFrames);
+        DarkTableRow row = DarkReport.FrameRows(r)[6];
+        Assert.Equal("-", row.Plateau);
+        Assert.Equal("de aruncat: pixelii fierbinti ai masterului nu se vad in acest cadru", row.Note);
     }
 
     [Fact]
@@ -763,12 +779,13 @@ public partial class DarkSeriesTests
     public void R083_TheFramesTablesWordsAreInPlainWords(bool english)
     {
         // the variants the fixtures reach: a series that climbs to its plateau with frames to discard below it, one that
-        // comes down to it with frames above it, the eyepiece band of R029 with biases, an edge without biases, a short
+        // comes down to it with frames above it, one with a frame whose hot pixels do not show, the eyepiece band of R029 with biases, an edge without biases, a short
         // series without a plateau, a capped one with skipped darks and lights; and the messages when no dark, bias,
         // light or partner dark can be read
         static double Band(int x, int y) => y < 64 ? 2 : 0;
         using SessionFixture climbing = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
         using SessionFixture cooling = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.9 + 0.4 * Math.Exp(-i / 3.0) });
+        using SessionFixture blind = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 6 ? -0.5 : 1.2 - 0.4 * Math.Exp(-i / 3.0) });
         using SessionFixture leak = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 }, biases: 4);
         using SessionFixture edge = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = (x, y) => x < 32 ? 3 : 0 });
         using SessionFixture bare = new SessionFixture().WithDarkSeries(4, Plain);
@@ -789,7 +806,7 @@ public partial class DarkSeriesTests
         {
             List<string> texts = [DarkReport.PlateauColumnTip];
             List<string> lightSkips = [];
-            foreach (DarkSeriesResult r in new[] { Run(climbing), Run(cooling), Run(leak), Run(edge), Run(bare), DarkSeriesRun.Run(capped.Root, new DarkOptions(Threads: 2, MaxFrames: 2)) })
+            foreach (DarkSeriesResult r in new[] { Run(climbing), Run(cooling), Run(blind), Run(leak), Run(edge), Run(bare), DarkSeriesRun.Run(capped.Root, new DarkOptions(Threads: 2, MaxFrames: 2)) })
             {
                 texts.Add(DarkReport.FrameTableHeader(r));
                 texts.Add(DarkReport.WarmingChartNote(r));
@@ -808,7 +825,8 @@ public partial class DarkSeriesTests
             string all = string.Join("\n", texts);
             Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
             Assert.Contains(english ? ", that is more than 2.0 degrees above the plateau" : ", adica la peste 2.0 grade peste platou", all, StringComparison.Ordinal);
-            Assert.Contains(english ? "the temperature the series comes down to" : "temperatura spre care coboara seria", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "The steady temperature of the series (the plateau) is at " : "Temperatura stabila a seriei (platoul) e la ", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "to discard: the hot pixels of the master do not show in this frame" : "de aruncat: pixelii fierbinti ai masterului nu se vad in acest cadru", all, StringComparison.Ordinal);
             Assert.Contains(english ? ", once the bias is taken off (glow included)" : ", dupa scaderea bias-ului (cu glow)", all, StringComparison.Ordinal);
             Assert.Contains(english ? " (no biases, glow included)" : " (fara bias-uri, cu glow)", all, StringComparison.Ordinal);
             Assert.Contains(english ? "against the centre (UNMEASURED)" : "fata de centru (NEMASURAT)", all, StringComparison.Ordinal);

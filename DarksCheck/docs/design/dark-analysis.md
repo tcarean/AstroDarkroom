@@ -273,10 +273,11 @@ the reference settings themselves (`AtReference`: ISO `Th.NormIso` and `Th.NormE
 by those words and any other set, a factor of 1 at ISO 800 and 60 s included, by its factor.
 `WarmingChartNote` is the sentence the window
 puts under its warming chart: the plateau and the band of the frames to discard, when there
-is a fit. It and `FrameTableNote` say the series climbs to its plateau, or comes down to it when
-the plateau is under the first frame (`Plateau` < `FirstRatio`, the rule of check 3's `platou`
-row); the note names the side with its preposition (`SideWithPreposition`: `latura de sus`,
-`latura din dreapta`). A `ReportRow` reads its own verdict word off the
+is a fit. Every side text, check 2's, the note's and the ADU scale section's, names a side
+with its preposition (`SideWithPreposition`: `latura de sus`, `latura din dreapta`). A frame
+whose hot pixels do not show at all (a ratio at or under 0) is off the plateau in `WarmingOf`,
+and `FrameRows` gives it its own reason, with no degrees; `NoiseColumnTip` and `HotColumnTip`
+are the hints of two columns that name the series' pixels. A `ReportRow` reads its own verdict word off the
 value (`Verdict`: OK, ATENTIE or NEMASURAT, or their English WARNING and UNMEASURED, when the value
 opens with it as a word, or ATENTIE (WARNING) when that is the row's label, the warnings about frames that failed; `Rest` the value without
 a leading word and the `: ` or space after it, the whole value otherwise), so the window shows

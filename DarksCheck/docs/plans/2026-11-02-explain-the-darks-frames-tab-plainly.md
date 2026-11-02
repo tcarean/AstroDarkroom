@@ -41,6 +41,19 @@ They stay: the title `TABEL PE CADRE`, the hints of `nr` and `fisier`, the error
 diferita: ...` and `setari diferite de primul cadru: ...`, the warming chart's title. The English
 says the same, with the same figures in the same order.
 
+## The review's six texts, approved ("Da, toate", 2026-11-02)
+
+The review of the branch found six texts to change; the owner took every recommendation.
+
+| # | Text | Before | After |
+| --- | --- | --- | --- |
+| 1 | the plateau's direction (note, chart, hint) | `... temperatura spre care urca seria`, `Seria urca spre o temperatura stabila (platoul), la 1.10 din master; ...`; `coboara` for a cooling series, but the hint always `urca`, and a flat series ("seria nu s-a incalzit" in the Rezumat) one or the other by noise | `platou = cu cate grade e cadrul fata de temperatura stabila a seriei; ...`; `Temperatura stabila a seriei (platoul) e la 1.10 din master; ...`; `cu cate grade e cadrul fata de temperatura stabila a seriei (platoul), dupa pixelii fierbinti; ...` |
+| 2 | a left or right side | `latura din dreapta` in the note, `latura de dreapta` in check 2 and the ADU tab | `latura din stanga` / `latura din dreapta` everywhere; `latura de sus` / `de jos` stay |
+| 3 | hint `ora` | `ora la care a inceput expunerea, cum a scris-o aparatul in fisier` | `ora la care a inceput expunerea, cum e scrisa in fisier (la un raw, ora aparatului; la un FITS de la Siril, ora UTC)` |
+| 4 | hints `zgomot`, `>20` | `... (pe pixelii scrisi in nota din dreapta)`, a note out of view at 1366 px | `zgomotul cadrului, in ADU, pe pixelii verzi G1`; `cati pixeli din cadru trec de 20 ADU-eq, pe pixelii verzi G1`, with the series' pixels |
+| 5 | a frame whose hot pixels do not show | off the plateau in the chart and the Rezumat, no reason and no tint in the table | `de aruncat: pixelii fierbinti ai masterului nu se vad in acest cadru` |
+| 6 | the outlier line's label | `de 1.5 ori zgomotul obisnuit` | it stays |
+
 ## Steps
 
 1. Requirements: R-083, new, names the method's words the tab must not use; R-025, R-027,
@@ -55,13 +68,19 @@ says the same, with the same figures in the same order.
 
 ## What deviated
 
-- The note and the warming chart say the series climbs to its plateau, `urca`, or comes down to
-  it, `coboara`, when the plateau is under the first frame (the Rezumat's rule for `platou`);
-  the hint of `platou`, which knows no series, keeps `urca`, the usual case of a camera that warms
-  itself.
+- The first version said `urca` or `coboara` for the plateau and kept `urca` in the hint; the
+  review found a flat series worded by noise and the hint against the note, and the owner chose
+  words without a direction (the review's item 1).
 - The side in the note takes its preposition, `latura de sus`, `latura din dreapta`, as the list
-  showed for the right side; without biases `(fara bias-uri, cu glow)`; unmeasured `latura =
-  latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)`.
+  showed for the right side, and so do check 2's and the ADU tab's side texts since the review
+  (item 2); without biases `(fara bias-uri, cu glow)`; unmeasured `latura = latura cu cea mai
+  multa lumina constanta fata de centru (NEMASURAT)`.
 - A frame above the plateau reads `... peste 1.38, adica la peste 2.0 grade peste platou (1.10)`.
 - The list of the method's words lives in `tests/DarksCheck.Tests/PlainWords.cs`, linked into
   the window's test project like the session fixture, so the two R083 tests share it.
+- The review's eight other findings changed no approved word: the skip reason's singular for a
+  cap of 1, one helper for the darks' and the lights' skip reason, the console header's names
+  moved one column right to end where their figures end (they had ended one column short since
+  the table was made), the long English chart heading wrapping, R083 reading the bias, light and
+  partner messages and the lights' skip reason, more words in the lists, R-028 and two design and
+  README sentences, and ADR 0031's supersession of ADR 0030's sentence on the messages.
