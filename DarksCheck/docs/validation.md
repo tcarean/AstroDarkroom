@@ -200,3 +200,9 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   no formula or constant changed), all ten cases re-run with
   `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed: 10, Total time:
   11.8670 Minutes`; no figure moved outside its tolerance.
+- 2026-11-02: after the Rezumat in plain words (R-082, ADR 0030: words only, in
+  `Report/DarkReport.cs`, `Report/InventoryReport.cs`, `Report/ScaleReport.cs` and the scale's
+  source in `Analysis/FrameStack.cs`; no formula or constant changed), all ten cases re-run with
+  `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed: 10, Total time:
+  6.1051 Minutes` (the sessions read from the disk's cache after the day's runs); no figure moved
+  outside its tolerance.
