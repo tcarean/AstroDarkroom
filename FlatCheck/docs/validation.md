@@ -47,7 +47,7 @@ the second decimal is the check that the port and the notes describe the same th
 
 ### The sixth test with the raw beside the master (V-016 to V-030, V-049)
 
-| ID | Master | Nearest profile | diff (stops) | depth | run | earlier figure |
+| ID | Master | Profile that decides | diff (stops) | depth | run | earlier figure |
 | --- | --- | --- | --- | --- | --- | --- |
 | V-016 | Nikkor 35 DX ISO400 | Adobe, Nikkor 35/1.8G DX (D90) | +0.110 | BUN | BUN | +0.11 BUN |
 | V-017 | Nikkor 35 DX ISO800 | same | +0.103 | BUN | ACCEPTABIL (shape) | +0.10 BUN |
@@ -56,18 +56,21 @@ the second decimal is the check that the port and the notes describe the same th
 | V-020 | Samyang sursa_neuniforma f/2.8 | lensfun, Samyang 135 f/2 | +0.034 | BUN | BUN | |
 | V-021 | Samyang ISO400 f/2 sky | Adobe, Nikkor 135 f/2 DC | +0.109 | BUN | BUN | |
 | V-022 | Samyang ISO400 f/2.8 sky | lensfun, Samyang 135 f/2 | +0.006 | PERFECT | ACCEPTABIL (shape) | +0.01 PERFECT |
-| V-023 | Tokina monitor, diffuser close | lensfun, AT-X 11-20 Aspherical (7D2) | +0.004 | PERFECT | BUN | 0.00 PERFECT |
-| V-024 | Tokina monitor, on the monitor | same | -0.069 | BUN | ACCEPTABIL (shape) | -0.07 BUN |
-| V-025 | Tokina sky, no diffuser | Adobe, AT-X 11-20 | -0.395 | REFA | REFA | -0.39 REFA |
-| V-026 | Tokina tablet, 15 covers | lensfun, AF 11-20 (D7100) | +0.332 | REFA | REFA | +0.33 REFA, exit 3 |
-| V-027 | Tokina tablet, 7 covers | same | +0.345 | REFA | REFA | +0.34 REFA |
-| V-028 | Tokina paper, rotated in place | lensfun, Aspherical (7D2) | -0.085 | BUN | BUN | |
-| V-029 | Tokina paper, 3 sheets | same | -0.036 | BUN | BUN | |
-| V-030 | Tokina paper, 4 sheets | same | -0.046 | BUN | BUN | |
+| V-023 | Tokina monitor, diffuser close | Adobe, atx-i 11-20 CF (own ID 139, the raw's) | +0.188 | ACCEPTABIL | ACCEPTABIL | +0.004 PERFECT, run BUN, against the lensfun Aspherical (7D2) entry until 2026-11-02 |
+| V-024 | Tokina monitor, on the monitor | same | +0.115 | BUN | ACCEPTABIL (shape) | -0.069 BUN against the lensfun 7D2 entry until 2026-11-02 |
+| V-025 | Tokina sky, no diffuser | same | -0.395 | REFA | REFA | -0.39 REFA (the AT-X PRO DX file, same figures, until 2026-11-02) |
+| V-026 | Tokina tablet, 15 covers | same | +0.579 | REFA | REFA | +0.332 REFA, exit 3, against the lensfun AF 11-20 (D7100) entry until 2026-11-02 |
+| V-027 | Tokina tablet, 7 covers | same | +0.593 | REFA | REFA | +0.345 REFA against the lensfun D7100 entry until 2026-11-02 |
+| V-028 | Tokina paper, rotated in place | same | +0.099 | BUN | BUN | -0.085 BUN against the lensfun 7D2 entry until 2026-11-02 |
+| V-029 | Tokina paper, 3 sheets | same | +0.148 | ACCEPTABIL | ACCEPTABIL | -0.036 BUN against the lensfun 7D2 entry until 2026-11-02 |
+| V-030 | Tokina paper, 4 sheets | same | +0.138 | ACCEPTABIL | ACCEPTABIL | -0.046 BUN against the lensfun 7D2 entry until 2026-11-02 |
 | V-049 | Nikkor 35 DX ISO400, lensfun alone (`sources: lensfun`, no Adobe folder: a computer without Adobe's profiles) | lensfun, Nikkor 35/1.8G DX (full frame 1), 3 profiles | +0.207 | ACCEPTABIL | ACCEPTABIL | before ADR 0076: 6 profiles, +0.20 ACCEPTABIL from the Viltrox AF 35mm f/1.8 Z (2026-10-28) |
 
 The library on 2026-09-25 holds 15 sessions with a raw beside every master, so every session is
-here; the ten quoted in `modes-structure.md` are a subset.
+here; the ten quoted in `modes-structure.md` are a subset. Since 2026-11-02 (R-128, ADR 0090) the
+profile that decides is the Adobe file of the raw's lens ID where the ID found the lens (the
+Tokina and the Nikkor 35); by range alone (the Samyang) and without Adobe (V-049) it is the
+nearest profile, as before.
 
 ### The master against its lens's Adobe synthetic (V-036 to V-040)
 
@@ -174,6 +177,19 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 `FLATCHECK_VALIDATION_DUMP` when that is set; that is how the expected values were first filled.
 
 ## History
+
+- 2026-11-02: V-023 to V-030 re-recorded after R-128 / ADR 0090 (the Adobe profile gives the depth
+  verdict when the raw's lens ID found the lens), on `claude/Let-Adobe-give-the-depth-verdict`
+  from main 472bfb7b, with the 36 large files present with their hashes (44 run in 1 min 50 s).
+  The key `nearest` became `decides` in all 16 profile cases. The Adobe file of the raw's ID 139,
+  `Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]`, now decides on every Tokina case: V-023
+  diffStops 0.004 -> 0.188, depth PERFECT -> ACCEPTABIL, verdict BUN -> ACCEPTABIL; V-024 -0.069
+  -> 0.115 (BUN, the run ACCEPTABIL by its shape as before); V-025 the deciding file's name only
+  (the AT-X PRO DX file before, the same figures, -0.395); V-026 0.332 -> 0.579 and V-027 0.345
+  -> 0.593 (REFA as before); V-028 -0.085 -> 0.099 (BUN as before); V-029 -0.036 -> 0.148 and
+  V-030 -0.046 -> 0.138, depth and verdict BUN -> ACCEPTABIL. These are the figures the owner's
+  approved plan predicted from the rows of the old output; the other 28 cases and the 8 raw
+  samples did not move.
 
 - 2026-11-01: re-measured at the wrap-up of the plain-words series (ADRs 0082 to 0084), on `main`
   at 91bd006e. The series reworded the explanations in `Report/StructureReport.cs`,

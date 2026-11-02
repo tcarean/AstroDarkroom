@@ -559,6 +559,12 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   file has `LensID` 122 with 139 in `AlternateLensIDs`; the atx-i file has `LensID` 139. The
   author's raw reports 139, so the copy is the atx-i (Tokina's 2020 rebadge of the 2015
   AT-X, same optical formula). The lensfun entries are named for the AT-X and apply to it.
+  On 2026-11-02 the Canon pair was compared too: the four files' vignetting attributes and
+  piecewise tables hash identically, so Adobe has one measurement of the lens. lensfun's own
+  `Tokina ATX-i 11-20mm F2.8 CF` entry has distortion and TCA only, so it is never a row.
+  `LcpReader` keeps the file's own `stCamera:LensID` apart from its alternates as
+  `LensProfile.OwnLensId` (null without one, and for lensfun), which is how R-128 lets the
+  atx-i file decide.
 - The test fixtures (`LensProfileTestData`) are a hand-written LCP in the attribute form
   (three entries: 20 mm f/2.8 with the piecewise table, 20 mm f/4, 18 mm decentred) on two
   mounts and a lensfun file with the Tokina, a lens without vignetting and the D3300
@@ -580,7 +586,8 @@ each session's `flats/`.
 **Why, and how.** ADR 0031 holds both: the tablet masters that read PERFECT on all five tests
 with 1.26 stops of vignetting, the profile's depth measured with the master's own operator
 (`Metrics.CornerStats` on a raster of the model at the analysis size), `Stats.DepthErrorPct`
-onto the residual scale, the verdict of the nearest profile, the run's verdict as the worse
+onto the residual scale, the verdict of the nearest profile (since 2026-11-02 only where no
+Adobe row decides, ADR 0090), the run's verdict as the worse
 of shape and depth, and the note of 2026-09-23 that reads the same corner error on
 `--light`'s scale (`StructureReport.DepthLightScaleNote`, `Stats.DepthOnLightScale`,
 `Th.ProfileDatabaseSpreadStops`) instead of aligning the bands. The candidates come from
@@ -614,8 +621,19 @@ of shape and depth, and the note of 2026-09-23 that reads the same corner error 
   f/2 masters above this is the difference between the Nikkor DC row and the Samyang row:
   +0.11 / +0.10 (BUN) against +0.15 / +0.14 (ACCEPTABIL) at f/2, and nothing at f/2.8, where
   the Samyang is the nearest already (+0.01).
+- The row that decides (R-128, ADR 0090): `VignettingComparison.Deciding`, with
+  `AdobeDecides` true when an Adobe row is among lenses not found by range alone and none was
+  chosen. Then the Adobe rows whose `OwnLensId` is the raw's `LensId` are taken first and the
+  nearest of them decides (all the Adobe rows when none has it, as on a `--lens` text or a name
+  match without the ID); otherwise the nearest row of all, a NaN difference never winning
+  either way. The report marks the row `<- Adobe, gives the verdict`, the summary says
+  `given by the Adobe profile` and why lensfun does not decide; the window's row note comes
+  from `StructureReport.VerdictRowNote`; the Split tab's reference is the same row
+  (`SplitResult.ReferenceByAdobe` picks its two texts); the log's comparison line carries
+  `adobeDecides=` and `decides=`.
 
-**Measured** (corner, stops; "nearest" is the profile that gives the verdict):
+**Measured** (corner, stops; "nearest" is the profile that gives the verdict under the rule
+of the time, the nearest one):
 
 | session | master | Adobe | lensfun | nearest | diff | depth | shape | run | exit |
 |---|---|---|---|---|---|---|---|---|---|
@@ -649,6 +667,12 @@ Readings:
   +0.14 (ACCEPTABIL); at f/2.8 both profiles agree within 0.03 stops.
 - Shape and depth are independent: the tablet master is PERFECT on shape and REFA on
   depth, the on-monitor one the reverse.
+- Under ADR 0090 (re-measured 2026-11-02 on V-016 to V-030) the Tokina rows are judged
+  against the Adobe file of the raw's ID, the atx-i CF: the tablet masters +0.59 / +0.58
+  (REFA), the sky -0.39 (REFA), the monitor close +0.19 (ACCEPTABIL, the run ACCEPTABIL
+  instead of BUN), on the monitor +0.11 (BUN), the paper masters +0.10 / +0.15 / +0.14 (BUN,
+  ACCEPTABIL, ACCEPTABIL: the last two were BUN against the lensfun 7D2 entry). The Nikkor
+  35 rows were Adobe's already; the Samyang, by range, keeps the nearest.
 
 **What was left out** (a mid-field column, the worst-profile rule, a lens picker for a folder
 without a raw) and why is ADR 0031. The mid-field column would show the panel's 0.1-stop

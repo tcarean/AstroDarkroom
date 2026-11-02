@@ -560,10 +560,8 @@ namespace FlatCheck.Wpf
                     Diff = r.Diff,
                     Error = r.Error,
                     Verdict = r.Verdict,
-                    IsNearest = r.IsNearest,
-                    Note = (!r.IsNearest ? ""
-                            : explained.Shot?.ChosenLens != null ? T("The lens you chose - it gives the verdict. ", "Obiectivul ales de tine - da verdictul. ")
-                            : T("The nearest profile - it gives the verdict. ", "Cel mai apropiat profil - da verdictul. ")) + r.Note,
+                    GivesVerdict = r.GivesVerdict,
+                    Note = (r.GivesVerdict ? StructureReport.VerdictRowNote(c) : "") + r.Note,
                     IsWarning = r.IsWarning,
                 }).ToList();
                 ProfileSummary = StructureReport.ComparisonSummary(c).Replace('\n', ' ');
@@ -571,7 +569,7 @@ namespace FlatCheck.Wpf
                     .Select(s => new ScaleRow { Band = s.Band, Range = s.Range, Meaning = s.Meaning, IsCurrent = s.Band == c.Verdict })
                     .ToList();
                 ProfileScaleNote = StructureReport.DepthScaleNote().Replace('\n', ' ') + " "
-                                 + StructureReport.DepthLightScaleNote(c.Nearest.DiffStops).Replace('\n', ' ');
+                                 + StructureReport.DepthLightScaleNote(c.Deciding.DiffStops).Replace('\n', ' ');
                 ProfileNote = StructureReport.ComparisonNote().Replace('\n', ' ');
                 ShowLensPicker(explained.Shot);
             }

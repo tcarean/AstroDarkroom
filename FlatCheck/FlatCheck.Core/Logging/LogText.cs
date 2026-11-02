@@ -223,7 +223,8 @@ namespace FlatCheck
         internal static string Comparison(VignettingComparison c)
             => c == null ? "none"
              : "masterStops=" + Num(c.MasterStops) + " gap=" + c.Gap + " spreadStops=" + Num(c.SpreadStops) + " verdict=" + Str(c.Verdict)
-             + " nearest=" + Depth(c.Nearest) + " skippedForCrop=" + List(c.SkippedForCrop?.Select(l => l.Key))
+             + " adobeDecides=" + (c.AdobeDecides ? "yes" : "no") + " decides=" + Depth(c.Deciding)
+             + " skippedForCrop=" + List(c.SkippedForCrop?.Select(l => l.Key))
              + " profiles=" + List(c.Profiles?.Select(Depth));
 
         /// <summary>The field-of-view check of a <c>--light</c> run.</summary>

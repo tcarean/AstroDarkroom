@@ -268,7 +268,7 @@
         "shapeVerdict": "BUN",
         "verdict": "BUN",
         "diffStops": 0.11,
-        "nearest": "Nikon AF-S DX NIKKOR 35mm f1.8G [NIKON D90]",
+        "decides": "Nikon AF-S DX NIKKOR 35mm f1.8G [NIKON D90]",
         "depthVerdict": "BUN"
       }
     },
@@ -284,7 +284,7 @@
         "shapeVerdict": "ACCEPTABIL",
         "verdict": "ACCEPTABIL",
         "diffStops": 0.103,
-        "nearest": "Nikon AF-S DX NIKKOR 35mm f1.8G [NIKON D90]",
+        "decides": "Nikon AF-S DX NIKKOR 35mm f1.8G [NIKON D90]",
         "depthVerdict": "BUN"
       }
     },
@@ -300,7 +300,7 @@
         "shapeVerdict": "ACCEPTABIL",
         "verdict": "ACCEPTABIL",
         "diffStops": 0.104,
-        "nearest": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
+        "decides": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
         "depthVerdict": "BUN"
       }
     },
@@ -316,7 +316,7 @@
         "shapeVerdict": "BUN",
         "verdict": "BUN",
         "diffStops": 0.131,
-        "nearest": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
+        "decides": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
         "depthVerdict": "BUN"
       }
     },
@@ -332,7 +332,7 @@
         "shapeVerdict": "BUN",
         "verdict": "BUN",
         "diffStops": 0.034,
-        "nearest": "Samyang 135mm f/2 ED UMC [Nikon F / Canon EF / Pentax KAF / Micro 4/3 System / Sony Alpha / Sony E / Fujifilm X / Samsung NX, calibrat pe full frame 1]",
+        "decides": "Samyang 135mm f/2 ED UMC [Nikon F / Canon EF / Pentax KAF / Micro 4/3 System / Sony Alpha / Sony E / Fujifilm X / Samsung NX, calibrat pe full frame 1]",
         "depthVerdict": "BUN"
       }
     },
@@ -348,7 +348,7 @@
         "shapeVerdict": "BUN",
         "verdict": "BUN",
         "diffStops": 0.109,
-        "nearest": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
+        "decides": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
         "depthVerdict": "BUN"
       }
     },
@@ -364,7 +364,7 @@
         "shapeVerdict": "ACCEPTABIL",
         "verdict": "ACCEPTABIL",
         "diffStops": 0.006,
-        "nearest": "Samyang 135mm f/2 ED UMC [Nikon F / Canon EF / Pentax KAF / Micro 4/3 System / Sony Alpha / Sony E / Fujifilm X / Samsung NX, calibrat pe full frame 1]",
+        "decides": "Samyang 135mm f/2 ED UMC [Nikon F / Canon EF / Pentax KAF / Micro 4/3 System / Sony Alpha / Sony E / Fujifilm X / Samsung NX, calibrat pe full frame 1]",
         "depthVerdict": "PERFECT"
       }
     },
@@ -374,14 +374,14 @@
       "master": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/flats/DSC_0060.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-02",
       "expected": {
         "masterStops": 0.852,
         "shapeVerdict": "BUN",
-        "verdict": "BUN",
-        "diffStops": 0.004,
-        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
-        "depthVerdict": "PERFECT"
+        "verdict": "ACCEPTABIL",
+        "diffStops": 0.188,
+        "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
+        "depthVerdict": "ACCEPTABIL"
       }
     },
     {
@@ -390,13 +390,13 @@
       "master": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/flats/DSC_0001.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-02",
       "expected": {
         "masterStops": 0.779,
         "shapeVerdict": "ACCEPTABIL",
         "verdict": "ACCEPTABIL",
-        "diffStops": -0.069,
-        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
+        "diffStops": 0.115,
+        "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
         "depthVerdict": "BUN"
       }
     },
@@ -406,13 +406,13 @@
       "master": "Tokina/ISO400/f2.8-sky-no-difuser/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-sky-no-difuser/flats/DSC_0001.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-02",
       "expected": {
         "masterStops": 0.269,
         "shapeVerdict": "ACCEPTABIL",
         "verdict": "REFA",
         "diffStops": -0.395,
-        "nearest": "Tokina AT-X 11-20mm F2.8 PRO DX [NIKON CORPORATION]",
+        "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
         "depthVerdict": "REFA"
       }
     },
@@ -422,13 +422,13 @@
       "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/flats/DSC_0071.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-02",
       "expected": {
         "masterStops": 1.243,
         "shapeVerdict": "BUN",
         "verdict": "REFA",
-        "diffStops": 0.332,
-        "nearest": "Tokina AF 11-20mm f/2.8 AT-X Pro DX [Nikon F AF / Canon EF, calibrat pe APS-C 1.534]",
+        "diffStops": 0.579,
+        "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
         "depthVerdict": "REFA"
       }
     },
@@ -438,13 +438,13 @@
       "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/flats/DSC_0001.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-02",
       "expected": {
         "masterStops": 1.257,
         "shapeVerdict": "PERFECT",
         "verdict": "REFA",
-        "diffStops": 0.345,
-        "nearest": "Tokina AF 11-20mm f/2.8 AT-X Pro DX [Nikon F AF / Canon EF, calibrat pe APS-C 1.534]",
+        "diffStops": 0.593,
+        "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
         "depthVerdict": "REFA"
       }
     },
@@ -454,13 +454,13 @@
       "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/flats/DSC_0001.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-02",
       "expected": {
         "masterStops": 0.763,
         "shapeVerdict": "BUN",
         "verdict": "BUN",
-        "diffStops": -0.085,
-        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
+        "diffStops": 0.099,
+        "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
         "depthVerdict": "BUN"
       }
     },
@@ -470,14 +470,14 @@
       "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/flats/DSC_0001.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-02",
       "expected": {
         "masterStops": 0.812,
         "shapeVerdict": "BUN",
-        "verdict": "BUN",
-        "diffStops": -0.036,
-        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
-        "depthVerdict": "BUN"
+        "verdict": "ACCEPTABIL",
+        "diffStops": 0.148,
+        "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
+        "depthVerdict": "ACCEPTABIL"
       }
     },
     {
@@ -486,14 +486,14 @@
       "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/process/pp_flat_stacked.fit",
       "raw": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/flats/DSC_0071.NEF",
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-02",
       "expected": {
         "masterStops": 0.802,
         "shapeVerdict": "BUN",
-        "verdict": "BUN",
-        "diffStops": -0.046,
-        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
-        "depthVerdict": "BUN"
+        "verdict": "ACCEPTABIL",
+        "diffStops": 0.138,
+        "decides": "Tokina atx-i 11-20mm f2.8 CF [NIKON CORPORATION]",
+        "depthVerdict": "ACCEPTABIL"
       }
     },
     {
@@ -624,7 +624,7 @@
         "shapeVerdict": "BUN",
         "verdict": "ACCEPTABIL",
         "diffStops": 0.207,
-        "nearest": "Nikon AF-S DX Nikkor 35mm f/1.8G [Nikon F AF, calibrat pe full frame 1]",
+        "decides": "Nikon AF-S DX Nikkor 35mm f/1.8G [Nikon F AF, calibrat pe full frame 1]",
         "depthVerdict": "ACCEPTABIL",
         "profiles": 3
       }

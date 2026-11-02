@@ -25,8 +25,8 @@ namespace FlatCheck.Tests;
 /// The acceptance figures measured on the real masters, read from docs/validation.json so the
 /// document and the test cannot drift apart (ADR 0004). Three kinds of case, one per run the
 /// figures were measured with: <c>structure</c> (the five tests, the vignetting depth and the
-/// local spot on a master), <c>profile</c> (the master's depth against the nearest lens
-/// profile, identified from a raw beside it) and
+/// local spot on a master), <c>profile</c> (the master's depth against the lens profile that
+/// gives the verdict, R-128, identified from a raw beside it) and
 /// <c>against</c> (the master against the synthetic flat written from its lens's Adobe profile).
 ///
 /// Not in the gate: trait Category=Validation, minutes on 96 MB files. A case whose file is
@@ -141,8 +141,8 @@ public class ValidationTests
         };
         if (o.Compared)
         {
-            m["diffStops"] = R(o.Profiles.Nearest.DiffStops);
-            m["nearest"] = o.Profiles.Nearest.Profile.Lens.Name + " [" + o.Profiles.Nearest.Profile.Lens.Where + "]";
+            m["diffStops"] = R(o.Profiles.Deciding.DiffStops);
+            m["decides"] = o.Profiles.Deciding.Profile.Lens.Name + " [" + o.Profiles.Deciding.Profile.Lens.Where + "]";
             m["depthVerdict"] = o.Profiles.Verdict;
             m["profiles"] = o.Profiles.Profiles.Count;
         }

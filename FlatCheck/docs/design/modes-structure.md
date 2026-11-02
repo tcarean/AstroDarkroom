@@ -61,8 +61,11 @@ operator (ADR 0013), no new threshold (`Stats.DepthErrorPct`, `2^|D| - 1`, onto 
 scale), the two scales for one number and option A over option B, the nearest profile's
 verdict rather than the worst, the worse of shape and depth with `DepthAdvice` reading the
 sign, `ComparisonGap` voting nothing, the byte-identical run without `--raw`/`--lens`, the
-library figures of 2026-09-18 and the guards. ADR 0030 holds how the lens is identified
-(`LensIdentification`). The mechanics the decisions do not spell out:
+library figures of 2026-09-18 and the guards. ADR 0090 holds why, since 2026-11-02, an Adobe
+row gives the verdict when the lens was named (R-128: the file whose own ID is the raw's
+first; by range alone, with a chosen lens or without an Adobe row the nearest still decides).
+ADR 0030 holds how the lens is identified (`LensIdentification`). The mechanics the decisions
+do not spell out:
 
 - `VignettingComparer.Analyze` puts the master beside every candidate lens's nearest profile
   (focal, then f-stop in stops, then farthest distance - `LensCatalog.Nearest`); the model is

@@ -370,7 +370,7 @@ public class StructureReportTests
     }
 
     [Fact]
-    public void TheProfileBlockNamesTheMasterEveryProfileAndTheNearestOne()
+    public void TheProfileBlockNamesTheMasterEveryProfileAndTheOneThatDecides()
     {
         using var ws = new TempWorkspace();
         StructureOutcome o = Compared(ws);
@@ -384,8 +384,8 @@ public class StructureReportTests
         Assert.Contains("master                  : " + StructureReport.MasterDepth(o.Profiles), text);
         var rows = StructureReport.ProfileRows(o.Profiles);
         Assert.Equal(2, rows.Count);
-        Assert.Single(rows, r => r.IsNearest);
-        Assert.Contains("<- cel mai apropiat, da verdictul", text);
+        Assert.Single(rows, r => r.GivesVerdict);
+        Assert.Contains("<- Adobe, da verdictul", text);                // the raw's ID found the lens (R-128)
         Assert.Contains(AgainstReport.DepthScale(), text);
         Assert.Contains("simetrica in jurul centrului", text);
         foreach (ProfileRow row in rows)
@@ -417,8 +417,8 @@ public class StructureReportTests
         Assert.Contains("adancimea : " + o.Profiles.Verdict, detail);
         Assert.Contains(detail.Split('\n')[0], text);
         // the advice is the depth's, with the sign read as the cause
-        Assert.Equal(StructureReport.DepthAdvice(o.Profiles.Nearest.DiffStops, o.Profiles.Verdict), StructureReport.Advice(o));
-        Assert.Contains(o.Profiles.Nearest.DiffStops > 0 ? "MAI MULT" : "MAI PUTIN", StructureReport.Advice(o));
+        Assert.Equal(StructureReport.DepthAdvice(o.Profiles.Deciding.DiffStops, o.Profiles.Verdict), StructureReport.Advice(o));
+        Assert.Contains(o.Profiles.Deciding.DiffStops > 0 ? "MAI MULT" : "MAI PUTIN", StructureReport.Advice(o));
     }
 
     /// <summary>

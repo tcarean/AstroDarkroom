@@ -32,13 +32,17 @@
 // median of a 5 % box" and "the value at a point" does not exist, and the half-pixel artefact
 // (known issue 5) is the same on both sides. The cost is ~1.5 M evaluations, tens of ms.
 //
-// THE VERDICT IS THE NEAREST PROFILE'S, not the worst one's. The two databases differ from
-// each other by ~0.2 stops on the same lens (docs/design/lens-profiles.md, section 8), and
-// the tool cannot accuse a master with more precision than the databases have between them: a
-// master that matches one of them is not wrong. "The worst" would have lowered the good
-// monitor masters to ACCEPTABIL and BUN instead of PERFECT and BUN (monitor-difuzor-aproape +0.19
-// stops against Adobe, monitor-difuzor-pe-monitor -0.13 against lensfun AF; measured
-// 2026-09-27, V-036 and V-038). The thresholds are not
+// THE VERDICT IS AN ADOBE ROW'S WHEN THE LENS WAS NAMED, THE NEAREST ROW'S OTHERWISE, never the
+// worst one's. The two databases differ from each other by ~0.2 stops on the same lens
+// (docs/design/lens-profiles.md, section 8). When the raw's ID or name, or --lens, found the
+// lens and an Adobe file is among the rows, an Adobe row decides and the lensfun rows are for
+// comparison (R-128, ADR 0090): on the owner's Tokina both lensfun entries came out deeper than
+// every panel flat allows - the five panel flats read +0.10..+0.19 stops against Adobe and
+// -0.15..+0.00 against lensfun, a sign no panel can give - so the nearest let the panel's own
+// falloff pass as the lens's. Of two Adobe names of one optic, the file whose own ID is the
+// raw's decides. By range alone the Adobe row may be another lens of the range, a chosen lens is
+// a single row, and without an Adobe row there is nothing to prefer: there the nearest decides,
+// since a master that matches one database is not wrong (ADR 0031). The thresholds are not
 // new: the difference in stops goes through Stats.DepthErrorPct (2^|D| - 1) onto the residual
 // scale, exactly like the depth of --against. The sign is the diagnosis: plus = the master falls
 // more than the model (the source falls with the angle: a panel without a real diffuser, too
@@ -149,7 +153,8 @@ namespace FlatCheck
 
     /// <summary>
     /// The sixth structure test: the master's corner depth against every candidate lens's
-    /// profile, the nearest one's verdict, or the gap that kept it from being made.
+    /// profile, the verdict of the row that decides (R-128), or the gap that kept it from being
+    /// made.
     /// </summary>
     internal sealed class VignettingComparison
     {
@@ -160,11 +165,19 @@ namespace FlatCheck
         /// </summary>
         internal readonly IReadOnlyList<ProfileDepth> Profiles;
         /// <summary>
-        /// The one with the smallest difference in absolute value; null when it did not compare.
+        /// The row that gives the verdict; null when it did not compare. When
+        /// <see cref="AdobeDecides"/>, the nearest of the Adobe rows whose own lens ID is the
+        /// raw's, or of every Adobe row when none has it; otherwise the row with the smallest
+        /// difference in absolute value.
         /// </summary>
-        internal readonly ProfileDepth Nearest;
+        internal readonly ProfileDepth Deciding;
         /// <summary>
-        /// The comparison's verdict = the nearest profile's; null when it did not compare.
+        /// True when an Adobe row decides (R-128): there is one, the lenses were not found by
+        /// the raw's range alone, and none was chosen. False when the nearest row of all decides.
+        /// </summary>
+        internal readonly bool AdobeDecides;
+        /// <summary>
+        /// The comparison's verdict = the deciding row's; null when it did not compare.
         /// </summary>
         internal readonly string Verdict;
         /// <summary>
@@ -181,8 +194,8 @@ namespace FlatCheck
         internal bool Compared => Verdict != null;
 
         /// <summary>
-        /// A comparison: picks the nearest row (a NaN difference never wins) and the spread
-        /// between the profiles.
+        /// A comparison: picks the row that decides (R-128; a NaN difference never wins) and the
+        /// spread between the profiles.
         /// </summary>
         /// <param name="masterStops">The master's depth at the corner, stops.</param>
         /// <param name="shot">What is known of the shot; null when nothing.</param>
@@ -200,13 +213,34 @@ namespace FlatCheck
             SkippedForCrop = skippedForCrop ?? Array.Empty<LensChoice>();
             if (Profiles.Count > 0)
             {
-                // NaN (a degenerate profile) never wins: Min on a NaN key could take it.
-                Nearest = Profiles.OrderBy(p => double.IsNaN(p.DiffStops) ? double.PositiveInfinity : Math.Abs(p.DiffStops)).First();
-                Verdict = Nearest.Verdict;
+                // By range alone the Adobe row may be another lens of the range, and a chosen lens
+                // is a single row: there, and without an Adobe row, the nearest decides. A
+                // degenerate Adobe row (a NaN difference) is no Adobe row: NaN never decides.
+                var adobe = Profiles.Where(p => p.Profile.Lens.Source == ProfileSource.Adobe && !double.IsNaN(p.DiffStops)).ToList();
+                AdobeDecides = adobe.Count > 0 && shot?.CandidatesByRangeOnly != true && shot?.ChosenLens == null;
+                if (AdobeDecides)
+                {
+                    // Two Adobe names of one optic carry the same figures (the Tokina's AT-X PRO
+                    // DX and atx-i CF): the file whose own ID is the raw's names the lens on it.
+                    long? rawId = shot?.Raw?.LensId;
+                    var own = rawId == null ? adobe : adobe.Where(p => p.Profile.OwnLensId == rawId).ToList();
+                    Deciding = NearestOf(own.Count > 0 ? own : adobe);
+                }
+                else Deciding = NearestOf(Profiles);
+                Verdict = Deciding.Verdict;
                 SpreadStops = Profiles.Max(p => p.CornerStops) - Profiles.Min(p => p.CornerStops);
             }
             else SpreadStops = double.NaN;
         }
+
+        /// <summary>
+        /// The row with the smallest difference in absolute value; a NaN difference (a
+        /// degenerate profile) never wins, which Min on a NaN key could let it.
+        /// </summary>
+        /// <param name="rows">The rows to choose from; not empty.</param>
+        /// <returns>The nearest row, the first in order on a tie.</returns>
+        static ProfileDepth NearestOf(IEnumerable<ProfileDepth> rows)
+            => rows.OrderBy(p => double.IsNaN(p.DiffStops) ? double.PositiveInfinity : Math.Abs(p.DiffStops)).First();
     }
 
     /// <summary>

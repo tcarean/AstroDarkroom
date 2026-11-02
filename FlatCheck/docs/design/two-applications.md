@@ -100,8 +100,10 @@ on the first open, under the busy overlay, which says so). Without a raw the run
 one, the report identical to `flatcheck master`, and the card under TESTE shows
 `StructureReport.GapText` computed by `StructureRun.Compare` on the master's header alone.
 The rows are `LensProfileRow` (public copy of the core's `ProfileRow`), rendered by a
-template local to `StructureView.xaml`; `Tests` stays five, so the scale heading is
-untouched. `Populate` is
+template local to `StructureView.xaml`; the row with `GivesVerdict` is drawn marked, and its
+note starts with `StructureReport.VerdictRowNote`, the console marker's words (the lens chosen,
+the Adobe profile under R-128, or the nearest), so the view-model composes no sentence of its
+own. `Tests` stays five, so the scale heading is untouched. `Populate` is
 `internal` and sets `HasResult` for the smoke test. The one thing the window cannot do
 that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
 explanation, not a lens picker (ADR 0031: the raws are always in `flats/`).

@@ -48,7 +48,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Setter Property="BorderThickness" Value="3,0,0,0" />
             <Setter Property="BorderBrush" Value="Transparent" />
             <Style.Triggers>
-              <DataTrigger Binding="{Binding IsNearest}" Value="True">
+              <DataTrigger Binding="{Binding GivesVerdict}" Value="True">
                 <Setter Property="BorderBrush" Value="{StaticResource AccentBr}" />
                 <Setter Property="Background" Value="{StaticResource PanelBg2}" />
               </DataTrigger>
@@ -77,7 +77,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                      Text="{Binding Where}" VerticalAlignment="Center" />
           <TextBlock DockPanel.Dock="Right" Margin="10,0,0,0" Foreground="{StaticResource AccentBr}"
                      Text="{l:T En='gives the verdict', Ro='da verdictul'}" VerticalAlignment="Center"
-                     Visibility="{Binding IsNearest, Converter={StaticResource BoolToVis}}" />
+                     Visibility="{Binding GivesVerdict, Converter={StaticResource BoolToVis}}" />
           <TextBlock Text="{Binding Lens}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
         </DockPanel>
 
@@ -107,7 +107,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Grid.Style>
           <Style TargetType="Grid">
             <Style.Triggers>
-              <DataTrigger Binding="{Binding IsNearest}" Value="True">
+              <DataTrigger Binding="{Binding GivesVerdict}" Value="True">
                 <Setter Property="TextElement.FontWeight" Value="SemiBold" />
               </DataTrigger>
             </Style.Triggers>
