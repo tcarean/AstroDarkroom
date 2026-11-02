@@ -61,10 +61,10 @@ error, which is what makes the console exit 1. `InventoryReport.Write` prints th
 the table. `WriteHeader` is shared: the series report opens with the same session lines
 (folders with their frame counts and extension, camera, lens, exposure, interval, and a
 `WARNING` line when frames could not be read). The lens line puts the shot's focal length
-and f-number first, then the lens as its chip declares it (`lens 135 mm f/2.0`, a range
+and f-number first, then the lens as its chip declares it (`135 mm f/2.0 lens`, a range
 for a zoom) and the lens as the raw names it: the name in quotes, then the ID and the mount in
-one parenthesis (`"EF50mm f/1.4 USM" (ID 198, Canon EF)`), or the ID with the mount when the
-raw gives no name (`ID 74 (Nikon F)`), nothing for a mount alone (R-065); the frame read is the
+one parenthesis (`"EF50mm f/1.4 USM" (ID 198, Canon EF mount)`), or the ID with the mount when the
+raw gives no name (`ID 74 (Nikon F mount)`), nothing for a mount alone (R-065); the frame read is the
 first readable one with a focal length, an ID or a name; the exposure line lists each distinct exposure and ISO
 pair and says `(different exposures)` when there is more than one; the interval line is start,
 end, span, integration, timed frame count and duty. The table prints one row per light with

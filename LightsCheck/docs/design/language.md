@@ -80,9 +80,9 @@ before `NO `).
 
 The English follows Siril's and the usual astrophotography vocabulary, British in spelling
 (`centre`, `colour`, `analysed`); a term is translated the same way everywhere. The words are
-plain ones (the rule "Plain words", R-077): the Dithering tab and the console's DITHERING
-section use the plain terms below; the other tabs keep their older words until their own
-rewrite.
+plain ones (the rule "Plain words", R-077, R-078): the Dithering and Summary tabs, and the
+console's sections and session lines they share, use the plain terms below; the Frames, Quality
+and Rejected tabs keep their older words until their own rewrite.
 
 | Romanian | English |
 | --- | --- |
@@ -92,7 +92,10 @@ rewrite.
 | dara (stea) / dare de walking noise | trail / walking-noise streaks |
 | roua | dew |
 | fond (de cer) | (sky) background |
-| zgomot de citire / shot/citire / penalizare | read noise / shot/read / penalty |
+| zgomot de citire / shot/citire / zgomot in plus | read noise / shot/read / extra noise |
+| latimea stelelor (FWHM) / lumina din jurul stelelor (halo) | the stars' width (FWHM) / the light around the stars (halo) |
+| expunere totala / la fotografiere / montura | total exposure / when shot / mount |
+| axa monturii e deviata de la pol cu / asta muta stelele cu | the mount's axis is off the pole by / this moves the stars by |
 | miscare / pas | move / step |
 | apropierea cadrelor / locuri diferite / zona pozitiilor | how close the frames are / different spots / area of the positions |
 | grup (de cadre la rand) / acelasi loc | run (of frames in a row) / same spot |
@@ -131,7 +134,7 @@ tab with a real result, the problem card, the empty window and the About window 
 collects every text of the visual tree plus the charts' own labels, none of which may hold a
 Romanian word; checks that the same window in Romanian shows `Rezumat`; and checks that every
 verdict and class word the core writes for a result colours the same in both languages. It
-also renders the Dithering tab in each language and holds its texts, the charts' labels
-included, against the method's words of `PlainWords` (R-077), the list `SeriesTests` holds the
+also renders the Dithering tab and the Summary tab in each language and holds their texts, the
+charts' labels included, against the method's words of `PlainWords` (R-077, R-078), the list `SeriesTests` holds the
 core's rows, tables and paragraphs against, linked from `LightsCheck.Tests`. With
 `LIGHTSCHECK_DUMP_SCREENS` it saves the English screens as `en-*.png`.

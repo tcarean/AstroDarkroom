@@ -6,49 +6,49 @@ Copyright (C) 2026 Tudor Carean
     biases             : biases\ (2 cadre .fit)
     darks              : darks\ (2 cadre .fit)
     aparat             : NIKON D3300
-    obiectiv           : 135 mm (poza)
+    obiectiv           : 135 mm (la fotografiere)
     expunere           : 120.0 s la ISO 1600 (toate cadrele)
-    interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:57:08 (22 min); integrare 18 min din 9 cadre (82 % din interval)
-    ATENTIE            : 1 cadru nu s-a putut citi (vezi tabelul)
-    scara              : 5.99 "/px; pixel 3.92 um (din fisier (XPIXSZ)); referinta cadrul 1
+    interval           : de la 2026-10-06 20:35:03 pana la 2026-10-06 20:57:08 (22 min); expunere totala 18 min, din 9 cadre (aparatul a expus 82 % din timp)
+    ATENTIE            : 1 cadru nu s-a putut citi (vezi lista cadrelor)
+    scara              : 1 px = 5.99" pe cer; pixelul are 3.92 um (scris in fisier (XPIXSZ)); cadrele sunt aliniate dupa cadrul 1
 
   REZUMAT
-    focus              : BUN - FWHM median 3.25 px = 19.5" pe cadrele bune, 3.25 / 3.25 px (+0 %) la inceput / sfarsit: a tinut toata sesiunea
-    expunere           : BUNA - fond G 2000 -> 2000 ADU; canalul cel mai slab B: shot/citire 10.0, penalizare 5 %
-    roua               : NU - FWHM +0 %, halo +0.002
+    focus              : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.5" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (+0 %): focusul a tinut toata sesiunea
+    expunere           : BUNA - cerul pe verde: 2000 -> 2000 ADU; cel mai slab e canalul B: shot/citire 10.0 (bine e de la 10), zgomotul de citire adauga 5 %
+    roua               : NU - latimea stelelor +0 %, lumina din jurul stelelor (halo) +0.002
     cadre miscate      : 1 slabe, 3 la limita, 5 bune, 1 necitite (din 10); nu se stie care axa e RA
     dithering          : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: driftul e de 0.50 px intr-o expunere; cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px; 3 miscari la 9 cadre, 4 locuri diferite (la 10 px), 0 cadre singure, 0 miscari pe ambele axe
-    aliniere polara    : - (fara axa RA)
-    de scos din stiva  : 2 cadre (lista la RESPINSE); raman 8 = 16 min
+    aliniere polara    : - (nu se stie care axa e RA)
+    de scos din stiva  : 2 cadre (lista e la RESPINSE); raman 8 cadre, adica 16 min de expunere
 
   FOCUS
-    FWHM median (cadre bune): 3.25 px = 19.5"
-    primele / ultimele 2 bune: 3.25 / 3.25 px (+0 %) -> focusul a tinut
-    centru / mijloc / margine: 3.25 / 3.25 / 3.25 px (mediane pe cadrele bune)
-    verdict            : BUN - FWHM median 3.25 px = 19.5" pe cadrele bune, 3.25 / 3.25 px (+0 %) la inceput / sfarsit: a tinut toata sesiunea
+    latimea stelelor (FWHM): 3.25 px = 19.5" (de obicei, pe cadrele bune)
+    primele / ultimele 2 cadre bune: 3.25 px / 3.25 px (+0 %): focusul a tinut
+    in centru / la mijloc / la margine: latimea stelelor 3.25 / 3.25 / 3.25 px (de obicei, pe cadrele bune)
+    verdict            : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.5" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (+0 %): focusul a tinut toata sesiunea
 
   EXPUNERE SI ZGOMOT
-    fond de cer (ADU peste black, cadrele bune, primele -> ultimele): 2000 -> 2000 pe verde (+0 %)
-    zgomot de citire   : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (din perechea de bias-uri)
-    cadrul   1         : R: cer 399, shot/citire 10.1, penalizare 4.8 %  G1: cer 2002, shot/citire 10.1, penalizare 4.8 %  G2: cer 2001, shot/citire 10.2, penalizare 4.8 %  B: cer 2300, shot/citire 10.0, penalizare 4.9 %
-    cadrul   5         : R: cer 400, shot/citire 10.1, penalizare 4.8 %  G1: cer 1999, shot/citire 10.1, penalizare 4.9 %  G2: cer 2000, shot/citire 10.1, penalizare 4.8 %  B: cer 2300, shot/citire 10.1, penalizare 4.8 %
-    cadrul  10         : R: cer 400, shot/citire 10.3, penalizare 4.7 %  G1: cer 2001, shot/citire 10.2, penalizare 4.8 %  G2: cer 2002, shot/citire 10.2, penalizare 4.8 %  B: cer 2300, shot/citire 10.1, penalizare 4.8 %
-    scara              : shot/citire peste 10 = cerul ineaca zgomotul de citire (penalizare sub 5 %); sub = canalul e limitat de citire, subexpuneri mai lungi ar ajuta
+    fondul cerului (cadrele bune, primele -> ultimele): 2000 -> 2000 ADU pe verde, peste nivelul de negru (+0 %)
+    zgomot de citire   : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (zgomotul pe care il adauga senzorul la fiecare cadru, masurat din doua bias-uri)
+    cadrul   1         : R: cer 399, shot/citire 10.1, zgomot in plus 4.8 %  G1: cer 2002, shot/citire 10.1, zgomot in plus 4.8 %  G2: cer 2001, shot/citire 10.2, zgomot in plus 4.8 %  B: cer 2300, shot/citire 10.0, zgomot in plus 4.9 %
+    cadrul   5         : R: cer 400, shot/citire 10.1, zgomot in plus 4.8 %  G1: cer 1999, shot/citire 10.1, zgomot in plus 4.9 %  G2: cer 2000, shot/citire 10.1, zgomot in plus 4.8 %  B: cer 2300, shot/citire 10.1, zgomot in plus 4.8 %
+    cadrul  10         : R: cer 400, shot/citire 10.3, zgomot in plus 4.7 %  G1: cer 2001, shot/citire 10.2, zgomot in plus 4.8 %  G2: cer 2002, shot/citire 10.2, zgomot in plus 4.8 %  B: cer 2300, shot/citire 10.1, zgomot in plus 4.8 %
+    ce inseamna        : shot/citire de la 10 in sus: cerul acopera zgomotul de citire, care adauga sub 5 %; sub 10: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta
 
   ROUA
-    halo primele / ultimele: 0.001 / 0.002; stele detectate 40 -> 40 (+0 %); FWHM 3.25 / 3.25 px (+0 %)
-    verdict            : NU - FWHM +0 %, halo +0.002
+    halo (lumina din jurul stelelor), primele / ultimele: 0.001 / 0.002; stele gasite 40 -> 40 (+0 %); latimea stelelor 3.25 / 3.25 px (+0 %)
+    verdict            : NU - latimea stelelor +0 %, lumina din jurul stelelor (halo) +0.002
 
   CADRE MISCATE
-    slabe (alungire >= 1.60): 7
-    la limita (1.35 .. 1.60): 3, 4, 5
-    directia darelor   : nedeterminata (prea putine cadre slabe cu directie coerenta); nu se stie care axa e RA
+    slabe (alungire de cel putin 1.60): 7
+    la limita (alungire intre 1.35 si 1.60): 3, 4, 5
+    directia darelor   : nu se stie (prea putine cadre slabe cu dare in aceeasi directie); nu se stie care axa e RA
 
   DRIFT SI ROTATIE
-    drift intre cadre consecutive fara dithering: X +0.25 px/min, Y +0.03 px/min (4 perechi fara pauza) = +1.5 / +0.2 "/min
-    drift intr-o expunere: 0.50 px = 3.0" pe 120 s, pe X; dare de walking noise de pana la 0.5 px (cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px)
-    rotatie de camp    : -0.0 arcmin in total, -0.1 arcmin/h; in colt, intr-o expunere: 0.00 px
-    aliniere polara    : - (fara axa RA)
+    drift intre cadre la rand, fara dithering: X +0.25 px/min, Y +0.03 px/min = +1.5 / +0.2 "/min (din 4 perechi de cadre fara pauza intre ele)
+    drift intr-o expunere: 0.50 px = 3.0" in 120 s, pe X; dare de walking noise de pana la 0.5 px (cadrele 1-2, 2 cadre la rand in acelasi loc, la 10 px)
+    rotatie de camp    : imaginea s-a rotit cu -0.0' in total, -0.1' pe ora; din cauza asta, o stea din colt se misca 0.00 px intr-o expunere
+    aliniere polara    : - (nu se stie care axa e RA)
     drift pe RA        : -
 
   DITHERING

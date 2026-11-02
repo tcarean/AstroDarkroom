@@ -111,23 +111,24 @@ default 4 threads, the 87 raws of 24 MP of the Veil night take about two minutes
 - **SUMMARY**: one row per question, each opening with its verdict: the focus, the exposure
   against the read noise of the biases, dew, the trailed frames, the dithering, the polar
   alignment, and how many frames to leave out of the stack and how much exposure stays.
-- **FOCUS**: the median FWHM of the good frames, at the start and at the end of the night and in
-  three radial zones (centre, middle, edge), and the verdict.
-- **EXPOSURE AND NOISE**: the sky background, the read noise of each channel, and on the first,
-  the middle and the last frame the shot/read ratio of each channel: above 10 the sky swamps the
-  read noise; under 10 the channel is limited by the read noise, and longer subs would help.
-- **DEW**: the halo of the bright stars and the star count at the start and at the end, and the
-  verdict.
-- **TRAILED FRAMES**: the bad frames (a median elongation of 1.60 or more) and the marginal ones
-  (1.35 to 1.60), the direction of the trails and which image axis is RA. When the RA axis is
-  known and a frame's stars agree on their direction (a coherence above 0.8), the reason of a
-  trailed frame names the mount axis its trail falls on:
+- **FOCUS**: the stars' width (FWHM) on the good frames, at the start and at the end of the night
+  and in three zones (centre, middle, edge), and the verdict.
+- **EXPOSURE AND NOISE**: the sky background, the read noise of each channel (the noise the sensor
+  adds to every frame), and on the first, the middle and the last frame the shot/read ratio of each
+  channel: from 10 up the sky covers the read noise; under 10 the channel suffers from the read
+  noise, and longer exposures would help.
+- **DEW**: the light around the bright stars (the halo) and the star count at the start and at the
+  end, and the verdict.
+- **TRAILED FRAMES**: the bad frames (an elongation of 1.60 or more) and the marginal ones (1.35
+  to 1.60), the direction of the trails and which image axis is RA. When the RA axis is known and
+  a frame's stars agree on their direction (above 0.8, where 1 is all the same way), the reason of
+  a trailed frame names the mount axis its trail falls on:
   - `trail on RA (-90 degrees)`: the tracking (periodic error, rate, backlash on RA);
   - `trail on DEC`: the polar alignment, wind or a touch on the mount;
   - `trail oblique`: both, or a knock.
 
   Without the axis it gives the angle alone: `trail at -90 degrees`.
-- **DRIFT AND ROTATION**: the drift between consecutive frames without dithering, the drift over
+- **DRIFT AND ROTATION**: the drift between frames in a row without dithering, the drift over
   one exposure and the walking-noise streak it draws, the field rotation, the polar alignment and
   the drift along RA (explained below).
 - **DITHERING**: the pauses and the moves (a step of 5 px or more), how often (every how many
@@ -161,8 +162,8 @@ the longest run of consecutive frames, 2 or more, that stayed within 10 px of th
 The polar alignment is read from the drift along DEC and from the field rotation: a polar axis
 off by an angle e makes the stars slide along DEC and the field rotate, in proportions that depend
 on the declination alone. The DEC drift alone gives a lower bound of the error
-(`error of at least 5.7'`). The field rotation, put down entirely to the alignment, gives the
-upper bound (`error between 4.5' and 6.7'`), once it is cleared of the dithers' slews: each move
+(`the mount's axis is off the pole by at least 5.7'`). The field rotation, put down entirely to the alignment, gives the
+upper bound (`by 4.5' to 6.7'`), once it is cleared of the dithers' slews: each move
 in RA turns the frame a little, by its change of right ascension times the sine of the
 declination, and on the Veil night that was most of the rotation the registration saw. The upper bound needs the declination,
 from the plate solve at the root, and a session of an hour or more. The row also says what the
@@ -263,9 +264,9 @@ raws of the Veil night:
     biases             : biases\ (30 frames .NEF)
     darks              : (missing)
     camera             : Nikon D3300
-    lens               : 135 mm f/2.8 (as shot), lens 135 mm f/2.0, ID 74 (Nikon F)
+    lens               : 135 mm f/2.8 (when shot), 135 mm f/2.0 lens, ID 74 (Nikon F mount)
     exposure           : 120.2 s at ISO 1600; 133.2 s at ISO 1600 (different exposures)
-    interval           : 2026-10-06 23:35:03 -> 2026-10-07 02:57:49 (3 h 22 min); integration 2 h 54 min from 87 frames (86 % of the interval)
+    interval           : from 2026-10-06 23:35:03 to 2026-10-07 02:57:49 (3 h 22 min); total exposure 2 h 54 min, from 87 frames (the camera was exposing 86 % of the time)
 
   FRAMES
      no  file                  time      exposure    ISO    f/    focal   pause
@@ -335,8 +336,8 @@ The analysis starts by itself, the same as `lightscheck <folder>`, with a progre
   frame's class; a ring instead of a dot marks a frame in a run of 3 or more in the same spot), the
   step from the previous frame (yellow = a move of 5 px or more; hover over a bar for the frame,
   the step and the mount's move), the distance to the nearest other frame, and on the right the
-  DITHERING card: its rows, its tables (how often, how far, direction, coverage per radius, the
-  runs) and the explanation of walking noise.
+  DITHERING card: its rows, its tables (how often, how far, direction, how close the frames are at
+  each distance, the runs) and the explanation of walking noise.
 - **Quality**: FWHM, elongation (with its 1.35 and 1.6 lines), stars and sky background, frame by
   frame.
 - **Rejected**: the bad and the unreadable frames with their reasons and thresholds, under an

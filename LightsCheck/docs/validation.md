@@ -95,6 +95,12 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-11-02, later: the Summary tab and its console sections in plain words (R-078, ADR 0033);
+  all 13 cases re-run with `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 13`,
+  11 passed, `Total time: 10.7914 Minutes`. V-008 (`polarErrorMax: the frame yielded no figure
+  (null)`) and V-011 (`frame 2: cell 'RA 5 px', expected 'RA 5 px ← V'`) failed as in the run
+  below, the solved `result.fit` still being in `procesate\`; V-010 passed with its new words.
+  No figure moved.
 - 2026-11-02: the Dithering texts in plain words (R-077, ADR 0032); all 13 cases re-run with
   `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 13`, 10 passed, `Total time:
   8.5354 Minutes`. V-010 failed on its words alone: `cat de mult: measured [de obicei | 13.29 px

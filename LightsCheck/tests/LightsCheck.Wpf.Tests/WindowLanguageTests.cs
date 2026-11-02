@@ -158,6 +158,38 @@ public class WindowLanguageTests
         }
     }
 
+    /// <summary>
+    /// The rendered Summary tab, its cards' titles, labels and rows, on a session with an unread
+    /// frame and no RA axis, names none of the method's words, in either language (R-078).
+    /// </summary>
+    [Fact]
+    public async Task R078_TheSummaryTabUsesNoneOfTheMethodsWords()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);
+        try
+        {
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                Ui.Default = language;
+                await _sta.InvokeAsync(async () =>
+                {
+                    MainViewModel vm = new();
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+                    foreach (string text in Texts(Render(new SummaryView { DataContext = vm }, null, h: 1400)))
+                    {
+                        PlainWords.AssertPlain(text.Replace(f.Root, "", StringComparison.Ordinal), $"the Summary tab ({language})");
+                    }
+                });
+            }
+        }
+        finally
+        {
+            Ui.Default = UiLanguage.Romanian;
+        }
+    }
+
     [Fact]
     public async Task R063_TheSameWindowInRomanianStillShowsRezumat()
     {
@@ -281,7 +313,8 @@ public class WindowLanguageTests
         "verde", "BUN", "LA LIMITA", "SLAB", "necitit", "inregistr", "Acest program", "grila", "Scris", "Unealta", "Verificare",
         "Folderul", "Analiza", "sesiun", "centru", "stanga", "dreapta",
         "MUTAT", "DINAINTE", "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "niciodata", "alunec",
-        "dunga", "dungi", "Bara ",
+        "dunga", "dungi", "Bara ", "latimea", "montura", "fotografiere", "totala", "nivelul", "inseamna", "rotit", "deviata",
+        "gasite", "lumina", "ramane",
     ];
 
     /// <summary>The English texts hold none of the Romanian words.</summary>

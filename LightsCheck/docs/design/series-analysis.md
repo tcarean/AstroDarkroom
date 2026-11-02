@@ -272,8 +272,8 @@ sharing pairs worded by `SharingPairsWords` for none, one or more),
 `PatternRow` (the `SensorPattern` by its status, the strengths with their fractions, the hot
 rate and the darks clause, R-046) and the verdict. `DriftRows` adds `DriftPerExposure`, the drift over the median
 exposure on its axis (`DriftAxisWord`) and the dash of `Streak`, `no walking-noise streak` without a run;
-its first row names the pairs through `PairsWord` (`without a pause`, or `with a pause, approximate`
-for the fallback), and it closes with `PolarRow` (the bracket of `PolarBounds` with what gave
+its first row names the pairs through `PairsWord` (`without a pause between them`, or `with a pause;
+approximate` for the fallback, a single pair in the singular), its rotation row is `RotationWords`, and it closes with `PolarRow` (the bracket of `PolarBounds` with what gave
 each bound, the drift per exposure and the elongation, or the lower bound alone without a
 solve) and `RaDriftRow` (the RA drift with the stars' sense when signed, the alignment's share
 and whether the rest is the tracking). `PolarReason` is the one place that words why the

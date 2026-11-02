@@ -309,21 +309,26 @@ internal static class SeriesReport
     internal static string ScaleLabel => T("scale", "scara");
 
     /// <summary>
-    /// The `scale` (`scara`) line: the image scale, the pixel size and its source, the reference frame.
+    /// The `scale` (`scara`) line, in plain words (R-078): the image scale, the pixel size and
+    /// its source, the frame the others are aligned on.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The scale in arcseconds per pixel (unknown without a focal length), the pixel size in
-    /// micrometres, and the reference frame's index, or `none` when none was chosen.
+    /// `1 px = 6.11" on the sky; the pixel is 4.00 um (worked out from the raw, ...); the frames
+    /// are aligned on frame 1`; the scale `not known` without a focal length, and `the frames were
+    /// not aligned` when no reference was chosen.
     /// </returns>
     internal static string ScaleLine(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
-        string scale = r.ArcsecPerPixel is double sc ? RunReport.F(sc, 2) + " \"/px" : T("unknown (no focal length)", "necunoscuta (fara focala)");
-        string reference = r.ReferenceIndex > 0 ? r.ReferenceIndex.ToString(Inv) : T("none", "niciunul");
+        string scale = r.ArcsecPerPixel is double sc ? T($"1 px = {RunReport.F(sc, 2)}\" on the sky", $"1 px = {RunReport.F(sc, 2)}\" pe cer") : T("not known (no focal length)", "nu se stie (lipseste focala)");
+        string pixel = RunReport.F(r.PixelSizeUm, 2);
+        string reference = r.ReferenceIndex > 0
+            ? T($"the frames are aligned on frame {r.ReferenceIndex.ToString(Inv)}", $"cadrele sunt aliniate dupa cadrul {r.ReferenceIndex.ToString(Inv)}")
+            : T("the frames were not aligned", "cadrele nu s-au aliniat");
         return T(
-            $"{scale}; pixel {RunReport.F(r.PixelSizeUm, 2)} um ({r.PixelSizeSource}); reference frame {reference}",
-            $"{scale}; pixel {RunReport.F(r.PixelSizeUm, 2)} um ({r.PixelSizeSource}); referinta cadrul {reference}");
+            $"{scale}; the pixel is {pixel} um ({r.PixelSizeSource}); {reference}",
+            $"{scale}; pixelul are {pixel} um ({r.PixelSizeSource}); {reference}");
     }
 
     // ------------------------------------------------------------------ the sections
@@ -359,8 +364,9 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The FOCUS section: the session's median FWHM, the first against the last good frames and
-    /// whether the focus held, the zone medians, and the verdict.
+    /// The FOCUS section, in plain words (R-078): the stars' width on the good frames, the first
+    /// against the last good frames and whether the focus held, the width in three zones, and the
+    /// verdict.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>The four rows, in the console's order.</returns>
@@ -369,14 +375,21 @@ internal static class SeriesReport
         ArgumentNullException.ThrowIfNull(r);
         SeriesAnalysis s = r.Series;
         (string fv, string ft) = Focus(s, r);
+        string held = s.FocusHeld is bool fh ? (fh ? T("the focus held", "focusul a tinut") : T("the focus changed", "focusul s-a schimbat")) : T("too few good frames", "prea putine cadre bune");
+        string typically = T("(typically, on the good frames)", "(de obicei, pe cadrele bune)");
         return
         [
-            new(T("median FWHM (good frames)", "FWHM median (cadre bune)"), Px(s.SessionFwhm, r)),
-            new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {s.Fwhm.Count.ToString(Inv)} bune"), $"{TrendPx(s.Fwhm)} -> {(s.FocusHeld is bool fh ? (fh ? T("the focus held", "focusul a tinut") : T("the focus moved", "focusul s-a miscat")) : T("too few good frames", "prea putine cadre bune"))}"),
-            new(T("centre / middle / edge", "centru / mijloc / margine"), $"{ZoneMedians(r)} {T("(medians over the good frames)", "(mediane pe cadrele bune)")}"),
+            new(T("the stars' width (FWHM)", "latimea stelelor (FWHM)"), $"{Px(s.SessionFwhm, r)} {typically}"),
+            new(T($"first / last {s.Fwhm.Count.ToString(Inv)} good frames", $"primele / ultimele {s.Fwhm.Count.ToString(Inv)} cadre bune"), $"{Opt(s.Fwhm.First, 2)} px / {Opt(s.Fwhm.Last, 2)} px{ChangeWord(s.Fwhm)}: {held}"),
+            new(T("in the centre / in the middle / at the edge", "in centru / la mijloc / la margine"), T($"the stars' width {ZoneMedians(r)} {typically}", $"latimea stelelor {ZoneMedians(r)} {typically}")),
             new("verdict", ft, fv),
         ];
     }
+
+    /// <summary>The relative change of a trend as a suffix: ` (+14 %)`.</summary>
+    /// <param name="t">The trend; its change may be null.</param>
+    /// <returns>The signed change in percent in brackets after a space, or "" when unknown.</returns>
+    private static string ChangeWord(Trend t) => t.RelativeChange is double rc ? " (" + Signed(100 * rc, 0) + " %)" : "";
 
     /// <summary>
     /// The map's axis labels: which image axis is RA and which DEC, plain `X` / `Y` without an
@@ -413,50 +426,55 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The EXPOSURE AND NOISE section: the sky background of the first and last good frames,
-    /// the read noise per channel from the bias pair, then per sampled frame the sky, the
-    /// shot-to-read ratio and the noise penalty of each channel, and the row that explains the
-    /// ratio's scale.
+    /// The EXPOSURE AND NOISE section, in plain words (R-078): the sky background of the first
+    /// and last good frames, the read noise per channel from the bias pair, then per sampled frame
+    /// the sky, the shot-to-read ratio and the extra noise of each channel, and the row that says
+    /// what the ratio means.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The rows in the console's order; only the background and a `not measured` read-noise row
-    /// when the session has no two biases.
+    /// The rows in the console's order; only the background and a `could not be measured`
+    /// read-noise row when the session has no two biases.
     /// </returns>
     internal static IReadOnlyList<ReportRow> NoiseRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
         SeriesAnalysis s = r.Series;
+        string first = Opt(s.Background.First, 0), last = Opt(s.Background.Last, 0);
         List<ReportRow> rows =
         [
-            new(T("sky background (ADU above black, good frames, first -> last)", "fond de cer (ADU peste black, cadrele bune, primele -> ultimele)"), $"{Opt(s.Background.First, 0)} -> {Opt(s.Background.Last, 0)} {T("on green", "pe verde")}{(s.Background.RelativeChange is double bc ? " (" + Signed(100 * bc, 0) + " %)" : "")}"),
+            new(T("sky background (good frames, first -> last)", "fondul cerului (cadrele bune, primele -> ultimele)"), T(
+                $"{first} -> {last} ADU on green, above the black level{ChangeWord(s.Background)}",
+                $"{first} -> {last} ADU pe verde, peste nivelul de negru{ChangeWord(s.Background)}")),
         ];
+        string readNoise = T("read noise", "zgomot de citire");
         if (s.ReadNoise is null)
         {
-            rows.Add(new(T("read noise", "zgomot de citire"), T("not measured (no two biases in biases\\)", "nemasurat (fara doua bias-uri in biases\\)")));
+            rows.Add(new(readNoise, T("could not be measured (at least two biases are needed in biases\\)", "nu s-a putut masura (trebuie cel putin doua bias-uri in biases\\)")));
             return rows;
         }
 
-        rows.Add(new(T("read noise", "zgomot de citire"), string.Join("  ", s.ReadNoise.Select(n => $"{n.Name} {RunReport.F(n.PairSigma, 1)}")) + T(" ADU (from the pair of biases)", " ADU (din perechea de bias-uri)")));
+        rows.Add(new(readNoise, string.Join("  ", s.ReadNoise.Select(n => $"{n.Name} {RunReport.F(n.PairSigma, 1)}")) + T(" ADU (the noise the sensor adds to every frame, measured from two biases)", " ADU (zgomotul pe care il adauga senzorul la fiecare cadru, masurat din doua bias-uri)")));
         for (int i = 0; i < s.SwampingFrames.Count; i++)
         {
             rows.Add(new($"{T("frame", "cadrul")} {s.SwampingFrames[i].ToString(Inv),3}", string.Join("  ", s.Swamping![i].Select(c =>
             {
-                string sky = RunReport.F(c.Sky, 0), ratio = RunReport.F(c.SwampingRatio, 1), penalty = double.IsNaN(c.PenaltyPct) ? "-" : RunReport.F(c.PenaltyPct, 1) + " %";
-                return T($"{c.Name}: sky {sky}, shot/read {ratio}, penalty {penalty}", $"{c.Name}: cer {sky}, shot/citire {ratio}, penalizare {penalty}");
+                string sky = RunReport.F(c.Sky, 0), ratio = RunReport.F(c.SwampingRatio, 1), extra = double.IsNaN(c.PenaltyPct) ? "-" : RunReport.F(c.PenaltyPct, 1) + " %";
+                return T($"{c.Name}: sky {sky}, shot/read {ratio}, extra noise {extra}", $"{c.Name}: cer {sky}, shot/citire {ratio}, zgomot in plus {extra}");
             }))));
         }
 
         string ok = RunReport.F(Th.SwampingRatioOk, 0);
-        rows.Add(new(ScaleLabel, T(
-            $"shot/read above {ok} = the sky swamps the read noise (penalty under 5 %); below = the channel is read-noise limited, longer subs would help",
-            $"shot/citire peste {ok} = cerul ineaca zgomotul de citire (penalizare sub 5 %); sub = canalul e limitat de citire, subexpuneri mai lungi ar ajuta")));
+        rows.Add(new(T("what it means", "ce inseamna"), T(
+            $"shot/read from {ok} up: the sky covers the read noise, which adds under 5 %; under {ok}: the channel suffers from the read noise, and longer exposures would help",
+            $"shot/citire de la {ok} in sus: cerul acopera zgomotul de citire, care adauga sub 5 %; sub {ok}: canalul sufera de zgomotul de citire, iar expuneri mai lungi ar ajuta")));
         return rows;
     }
 
     /// <summary>
-    /// The DEW section: the halo, the detected stars and the FWHM of the first against the last
-    /// good frames, and the dew verdict.
+    /// The DEW section, in plain words (R-078): the light around the bright stars (the halo), the
+    /// stars found and the stars' width of the first against the last good frames, and the dew
+    /// verdict.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>The two rows, in the console's order.</returns>
@@ -465,17 +483,21 @@ internal static class SeriesReport
         ArgumentNullException.ThrowIfNull(r);
         SeriesAnalysis s = r.Series;
         (string dv, string dt) = Dew(s);
+        string halo = $"{Opt(s.Halo.First, 3)} / {Opt(s.Halo.Last, 3)}", stars = $"{Opt(s.Stars.First, 0)} -> {Opt(s.Stars.Last, 0)}{ChangeWord(s.Stars)}";
         return
         [
-            new(T("halo first / last", "halo primele / ultimele"), $"{Opt(s.Halo.First, 3)} / {Opt(s.Halo.Last, 3)}; {T("stars detected", "stele detectate")} {Opt(s.Stars.First, 0)} -> {Opt(s.Stars.Last, 0)}{(s.Stars.RelativeChange is double sr ? " (" + Signed(100 * sr, 0) + " %)" : "")}; FWHM {TrendPx(s.Fwhm)}"),
+            new(T("halo (the light around the stars), first / last", "halo (lumina din jurul stelelor), primele / ultimele"), T(
+                $"{halo}; stars found {stars}; the stars' width {TrendPx(s.Fwhm)}",
+                $"{halo}; stele gasite {stars}; latimea stelelor {TrendPx(s.Fwhm)}")),
             new("verdict", dt, dv),
         ];
     }
 
     /// <summary>
-    /// The TRAILED FRAMES section: the bad frames, the marginal frames (each row naming its
-    /// elongation bounds, <see cref="Th.ElongationBad"/> and <see cref="Th.ElongationMarginal"/>),
-    /// and the direction of the trails with the mount axis it falls on.
+    /// The TRAILED FRAMES section, in plain words (R-078): the bad frames, the marginal frames
+    /// (each row naming its elongation bounds, <see cref="Th.ElongationBad"/> and
+    /// <see cref="Th.ElongationMarginal"/>), and the direction of the trails with the mount axis it
+    /// falls on.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>The three rows, in the console's order.</returns>
@@ -483,18 +505,22 @@ internal static class SeriesReport
     {
         ArgumentNullException.ThrowIfNull(r);
         SeriesAnalysis s = r.Series;
+        string bad = RunReport.F(Th.ElongationBad, 2), marginal = RunReport.F(Th.ElongationMarginal, 2);
+        string direction = s.TrailAngleDeg is double ta
+            ? RunReport.F(ta, 0) + T(" degrees from the horizontal, on the bad frames", " grade fata de orizontala, pe cadrele slabe") + (s.TrailOn == TrailAxis.Unknown ? "" : T(", that is ", ", adica ") + AxisWord(s.TrailOn))
+            : T("not known (too few bad frames with trails in the same direction)", "nu se stie (prea putine cadre slabe cu dare in aceeasi directie)");
         return
         [
-            new(T($"bad (elongation >= {RunReport.F(Th.ElongationBad, 2)})", $"slabe (alungire >= {RunReport.F(Th.ElongationBad, 2)})"), List(r, FrameClass.Bad)),
-            new(T($"marginal ({RunReport.F(Th.ElongationMarginal, 2)} .. {RunReport.F(Th.ElongationBad, 2)})", $"la limita ({RunReport.F(Th.ElongationMarginal, 2)} .. {RunReport.F(Th.ElongationBad, 2)})"), List(r, FrameClass.Marginal)),
-            new(T("trail direction", "directia darelor"), $"{(s.TrailAngleDeg is double ta ? RunReport.F(ta, 0) + T(" degrees from the horizontal on the bad frames", " grade fata de orizontala pe cadrele slabe") + (s.TrailOn == TrailAxis.Unknown ? "" : " = " + AxisWord(s.TrailOn)) : T("undetermined (too few bad frames with a coherent direction)", "nedeterminata (prea putine cadre slabe cu directie coerenta)"))}; {AxisLine(s)}"),
+            new(T($"bad (elongation of at least {bad})", $"slabe (alungire de cel putin {bad})"), List(r, FrameClass.Bad)),
+            new(T($"marginal (elongation between {marginal} and {bad})", $"la limita (alungire intre {marginal} si {bad})"), List(r, FrameClass.Marginal)),
+            new(T("trail direction", "directia darelor"), $"{direction}; {AxisLine(s)}"),
         ];
     }
 
     /// <summary>
-    /// The DRIFT AND ROTATION section: the drift between consecutive undithered frames in pixels
-    /// per minute (and arcseconds per minute when the scale is known), the drift over one
-    /// exposure, the field rotation, the polar alignment and the RA drift.
+    /// The DRIFT AND ROTATION section, in plain words (R-078): the drift between frames in a row
+    /// without dithering in pixels per minute (and arcseconds per minute when the scale is known),
+    /// the drift over one exposure, the field rotation, the polar alignment and the RA drift.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>The five rows, in the console's order.</returns>
@@ -502,30 +528,53 @@ internal static class SeriesReport
     {
         ArgumentNullException.ThrowIfNull(r);
         SeriesAnalysis s = r.Series;
+        string arcsec = r.ArcsecPerPixel is double a1 && s.DriftXPerMin is double dxm && s.DriftYPerMin is double dym ? $" = {Signed(dxm * a1, 1)} / {Signed(dym * a1, 1)} \"/min" : "";
         return
         [
-            new(T("drift between consecutive undithered frames", "drift intre cadre consecutive fara dithering"), $"X {Signed(s.DriftXPerMin, 2)} px/min, Y {Signed(s.DriftYPerMin, 2)} px/min ({PairsWord(s)}){(r.ArcsecPerPixel is double a1 && s.DriftXPerMin is double dxm && s.DriftYPerMin is double dym ? $" = {Signed(dxm * a1, 1)} / {Signed(dym * a1, 1)} \"/min" : "")}"),
+            new(T("drift between frames in a row, without dithering", "drift intre cadre la rand, fara dithering"), $"X {Signed(s.DriftXPerMin, 2)} px/min, Y {Signed(s.DriftYPerMin, 2)} px/min{arcsec} ({PairsWord(s)})"),
             new(DriftPerExposureLabel, DriftPerExposure(r)),
-            new(T("field rotation", "rotatie de camp"), $"{(s.RotationTotalDeg is double rt ? RunReport.F(rt * 60, 1) + " arcmin in total" : "-")}{(s.RotationPerHourDeg is double rh ? ", " + RunReport.F(rh * 60, 1) + " arcmin/h" : "")}{(s.CornerShiftPerExposurePx is double cs ? T("; in the corner, over one exposure: ", "; in colt, intr-o expunere: ") + RunReport.F(cs, 2) + " px" : "")}"),
+            new(T("field rotation", "rotatie de camp"), RotationWords(s)),
             new(T("polar alignment", "aliniere polara"), PolarRow(r)),
             new(T("RA drift", "drift pe RA"), RaDriftRow(r)),
         ];
     }
 
     /// <summary>
-    /// `39 pairs without a pause`, or `29 pairs with a pause, approximate: the small dither steps
-    /// are in the figure` when the drift fell back to the paused pairs (R-049).
+    /// The field rotation in plain words (R-078): `the image turned by 8.5' in all, 2.5' an hour;
+    /// because of this, a star in the corner moves 0.09 px over one exposure`.
     /// </summary>
-    /// <param name="s">The series analysis, with the drift's pair count; not null.</param>
-    /// <returns>The pair count and the kind of pairs the drift was measured on.</returns>
-    private static string PairsWord(SeriesAnalysis s)
-        => s.DriftApproximate
-            ? T($"{s.DriftPairs.ToString(Inv)} pairs with a pause, approximate: the small dither steps are in the figure", $"{s.DriftPairs.ToString(Inv)} perechi cu pauza, aproximativ: pasii mici de dithering intra in cifra")
-            : T($"{s.DriftPairs.ToString(Inv)} pairs without a pause", $"{s.DriftPairs.ToString(Inv)} perechi fara pauza");
+    /// <param name="s">The series analysis, with the rotation and the corner shift; not null.</param>
+    /// <returns>The parts that are known; `-` in place of the total when it is not.</returns>
+    private static string RotationWords(SeriesAnalysis s)
+    {
+        string total = s.RotationTotalDeg is double rt
+            ? T($"the image turned by {RunReport.F(rt * 60, 1)}' in all", $"imaginea s-a rotit cu {RunReport.F(rt * 60, 1)}' in total")
+            : "-";
+        string perHour = s.RotationPerHourDeg is double rh ? T($", {RunReport.F(rh * 60, 1)}' an hour", $", {RunReport.F(rh * 60, 1)}' pe ora") : "";
+        string corner = s.CornerShiftPerExposurePx is double cs
+            ? T($"; because of this, a star in the corner moves {RunReport.F(cs, 2)} px over one exposure", $"; din cauza asta, o stea din colt se misca {RunReport.F(cs, 2)} px intr-o expunere")
+            : "";
+        return total + perHour + corner;
+    }
 
     /// <summary>
-    /// Why the polar alignment is not measured, or null when it is (R-050): no registered pairs,
-    /// under three drift pairs, no RA axis, no scale, no exposure.
+    /// The pairs the drift was measured on (R-049, R-078): `from 39 pairs of frames without a pause
+    /// between them`, or `from 29 pairs of frames with a pause; approximate, since the small dither
+    /// moves count in the figure` when the drift fell back to the paused pairs.
+    /// </summary>
+    /// <param name="s">The series analysis, with the drift's pair count; not null.</param>
+    /// <returns>The pair count, singular for one, and the kind of pairs.</returns>
+    private static string PairsWord(SeriesAnalysis s)
+    {
+        string pairs = s.DriftPairs == 1 ? T("1 pair", "1 pereche") : T($"{s.DriftPairs.ToString(Inv)} pairs", $"{s.DriftPairs.ToString(Inv)} perechi");
+        return s.DriftApproximate
+            ? T($"from {pairs} of frames with a pause; approximate, since the small dither moves count in the figure", $"din {pairs} de cadre cu pauza; aproximativ, fiindca in cifra intra si miscarile mici de dithering")
+            : T($"from {pairs} of frames without a pause between them", $"din {pairs} de cadre fara pauza intre ele");
+    }
+
+    /// <summary>
+    /// Why the polar alignment is not measured, or null when it is (R-050, in the words of
+    /// R-078): the frames not aligned, under three drift pairs, no RA axis, no scale, no exposure.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
@@ -536,17 +585,17 @@ internal static class SeriesReport
     {
         SeriesAnalysis s = r.Series;
         return s.PolarErrorMinArcmin is not null ? null
-            : r.Dither.Registered < 2 ? T("- (frames not registered)", "- (cadre neinregistrate)")
+            : r.Dither.Registered < 2 ? T("- (the frames could not be aligned)", "- (cadrele nu s-au putut alinia)")
             : s.StarDriftPerMin is null && (s.DriftApproximate || s.DriftXPerMin is null || s.DriftPairs < Th.DriftMinPairs) ? T(
-                $"not measurable (under {Th.DriftMinPairs.ToString(Inv)} pairs of consecutive frames with no pause and no move between them; a run of 10+ frames without dithering would measure it)",
-                $"nemasurabila (sub {Th.DriftMinPairs.ToString(Inv)} perechi de cadre consecutive fara pauza si fara miscare intre ele; o serie de 10+ cadre fara dithering ar masura-o)")
-            : s.RaAxis == Axis.Unknown ? T("- (no RA axis)", "- (fara axa RA)")
-            : r.ArcsecPerPixel is null ? T("- (no scale)", "- (fara scara)")
-            : T("- (no exposure)", "- (fara expunere)");
+                $"cannot be measured (under {Th.DriftMinPairs.ToString(Inv)} pairs of frames in a row, with no pause and no move between them; 10 or more frames in a row without dithering would do)",
+                $"nu se poate masura (sub {Th.DriftMinPairs.ToString(Inv)} perechi de cadre la rand, fara pauza si fara miscare intre ele; 10 sau mai multe cadre la rand fara dithering ar ajunge)")
+            : s.RaAxis == Axis.Unknown ? T("- (it is not known which axis is RA)", "- (nu se stie care axa e RA)")
+            : r.ArcsecPerPixel is null ? T("- (the scale is not known)", "- (nu se stie scara)")
+            : T("- (the exposure is not known)", "- (nu se stie expunerea)");
     }
 
     /// <summary>
-    /// Why there is no upper bound when the lower one exists (R-050): no solve for the
+    /// Why there is no upper bound when the lower one exists (R-050, R-078): no solve for the
     /// declination, or a span under Th.PolarRotationMinHours.
     /// </summary>
     /// <param name="s">The series analysis; not null.</param>
@@ -555,12 +604,13 @@ internal static class SeriesReport
     /// </returns>
     private static string NoUpperBound(SeriesAnalysis s)
         => s.DeclinationDeg is null
-            ? T("without a plate solve the declination for the upper bound is not known", "fara plate solve nu se stie declinatia pentru limita de sus")
-            : T($"session under {RunReport.F(Th.PolarRotationMinHours, 0)} h: the rotation gives no upper bound yet", $"sesiune sub {RunReport.F(Th.PolarRotationMinHours, 0)} h: rotatia nu da inca limita de sus");
+            ? T("without a plate solve the declination is not known, so neither is how large it can be", "fara plate solve nu se stie declinatia, deci nici cat poate fi cel mult")
+            : T($"the session is under {RunReport.F(Th.PolarRotationMinHours, 0)} h, too short to find how large it can be", $"sesiunea are sub {RunReport.F(Th.PolarRotationMinHours, 0)} h, prea putin ca sa se afle cat poate fi cel mult");
 
     /// <summary>
-    /// `error between 4.2' and 10.4'`, `error of 5.7'` when the bounds meet, `error of at least
-    /// 5.7'` without an upper bound (`eroare intre ...`, `eroare de ...` in Romanian).
+    /// How far the mount's axis is off the pole (R-050, R-078): `the mount's axis is off the pole
+    /// by 4.2' to 10.4'`, `by 5.7'` when the bounds meet, `by at least 5.7'` without an upper bound
+    /// (`axa monturii e deviata de la pol cu ...` in Romanian).
     /// </summary>
     /// <param name="s">
     /// The series analysis, with the polar error's bounds in arcminutes; not null.
@@ -570,16 +620,18 @@ internal static class SeriesReport
     /// </returns>
     private static string PolarBounds(SeriesAnalysis s)
     {
+        string axis = T("the mount's axis is off the pole by", "axa monturii e deviata de la pol cu");
         string min = RunReport.F(s.PolarErrorMinArcmin ?? 0, 1);
         return s.PolarErrorMaxArcmin is double max
-            ? (RunReport.F(max, 1) == min ? T($"error of {min}'", $"eroare de {min}'") : T($"error between {min}' and {RunReport.F(max, 1)}'", $"eroare intre {min}' si {RunReport.F(max, 1)}'"))
-            : T($"error of at least {min}'", $"eroare de cel putin {min}'");
+            ? (RunReport.F(max, 1) == min ? $"{axis} {min}'" : T($"{axis} {min}' to {RunReport.F(max, 1)}'", $"{axis} {min}' pana la {RunReport.F(max, 1)}'"))
+            : T($"{axis} at least {min}'", $"{axis} cel putin {min}'");
     }
 
     /// <summary>
-    /// The `polar alignment` row of DRIFT AND ROTATION (R-050): the bracket with what gave each
-    /// bound, the drift the alignment causes in one exposure and the elongation it adds; the
-    /// lower bound alone without a solve; or why nothing is measured.
+    /// The `polar alignment` row of DRIFT AND ROTATION (R-050, in the words of R-078): how far the
+    /// mount's axis is off the pole with what gave each bound, how far that moves the stars in
+    /// one exposure and the elongation it makes; the lower bound alone without a solve; or why
+    /// nothing is measured.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
@@ -596,30 +648,29 @@ internal static class SeriesReport
         string seconds = RunReport.F(s.MedianExposureSeconds ?? 0, 0);
         string exposure = T($"over an exposure of {seconds} s", $"intr-o expunere de {seconds} s");
         string decDrift = RunReport.F(Math.Abs(s.StarDriftPerMin!.DecPxPerMin) * (r.ArcsecPerPixel ?? 0), 1);
-        string dec = T($"the DEC drift of {decDrift}\"/min", $"driftul pe DEC de {decDrift}\"/min");
         string driftMin = RunReport.F(s.PolarDriftMinPx ?? 0, 2);
         if (s.PolarErrorMaxArcmin is null)
         {
             return T(
-                $"{PolarBounds(s)} ({dec}; {NoUpperBound(s)}); drift from the alignment at least {driftMin} px {exposure}",
-                $"{PolarBounds(s)} ({dec}; {NoUpperBound(s)}); drift din aliniere cel putin {driftMin} px {exposure}");
+                $"{PolarBounds(s)} (found from the DEC drift, {decDrift}\"/min; {NoUpperBound(s)}); because of this the stars move at least {driftMin} px {exposure}",
+                $"{PolarBounds(s)} (aflat din driftul pe DEC, {decDrift}\"/min; {NoUpperBound(s)}); din cauza asta stelele se misca cel putin {driftMin} px {exposure}");
         }
 
         string perHour = RunReport.F(Math.Abs(s.PolarRotationPerHourDeg ?? 0) * 60, 1), decDeg = Signed(s.DeclinationDeg, 1);
-        string rotation = T($"the rotation of {perHour}'/h without dithering at DEC {decDeg} degrees", $"rotatia de {perHour}'/h fara dithering la DEC {decDeg} grade");
         string elongation = s.PolarElongation is double el
-            ? T($", elongation added at most {RunReport.F(el, 2)} on a FWHM of {RunReport.F(s.SessionFwhm ?? 0, 2)} px", $", alungire adaugata cel mult {RunReport.F(el, 2)} pe FWHM {RunReport.F(s.SessionFwhm ?? 0, 2)} px")
+            ? T($", and the elongation it makes is at most {RunReport.F(el, 2)} (1 = round), at a star width (FWHM) of {RunReport.F(s.SessionFwhm ?? 0, 2)} px", $", iar alungirea pe care o produce e cel mult {RunReport.F(el, 2)} (1 = rotund), la o latime a stelelor (FWHM) de {RunReport.F(s.SessionFwhm ?? 0, 2)} px")
             : "";
         string driftMax = RunReport.F(s.PolarDriftMaxPx ?? 0, 2);
         return T(
-            $"{PolarBounds(s)} ({dec}; {rotation}); drift from the alignment at most {driftMax} px {exposure} ({driftMin} px for certain){elongation}",
-            $"{PolarBounds(s)} ({dec}; {rotation}); drift din aliniere cel mult {driftMax} px {exposure} ({driftMin} px sigur){elongation}");
+            $"{PolarBounds(s)} (found from the DEC drift, {decDrift}\"/min, and from the image's rotation, {perHour}'/h without dithering, at DEC {decDeg} degrees); because of this the stars move at most {driftMax} px {exposure} ({driftMin} px for certain){elongation}",
+            $"{PolarBounds(s)} (aflat din driftul pe DEC, {decDrift}\"/min, si din rotatia imaginii, {perHour}'/h fara dithering, la DEC {decDeg} grade); din cauza asta stelele se misca cel mult {driftMax} px {exposure} (sigur {driftMin} px){elongation}");
     }
 
     /// <summary>
-    /// The `RA drift` (`drift pe RA`) row (R-050): the RA drift in arcseconds per minute with the stars' sense
-    /// when the solve gives it, how much of it the alignment can explain (the rotation times
-    /// tan DEC) and that the rest is the tracking; `-` when the alignment is not measured.
+    /// The `RA drift` (`drift pe RA`) row (R-050, in the words of R-078): the RA drift in
+    /// arcseconds per minute with the stars' sense when the solve gives it, how much of it can
+    /// come from the alignment (the rotation times tan DEC) and that the rest comes from the
+    /// tracking; `-` when the alignment is not measured.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
@@ -640,27 +691,28 @@ internal static class SeriesReport
         if (s.PolarRaDriftMaxArcsecPerMin is not double raMax)
         {
             string unknown = s.DeclinationDeg is null
-                ? T("without a plate solve it is not known how much of it comes from the alignment", "fara plate solve nu se stie cat e din aliniere")
-                : T($"session under {RunReport.F(Th.PolarRotationMinHours, 0)} h: it is not known yet how much of it comes from the alignment", $"sesiune sub {RunReport.F(Th.PolarRotationMinHours, 0)} h: nu se stie inca cat e din aliniere");
+                ? T("without a plate solve it is not known how much of it comes from the alignment", "fara plate solve nu se stie cat din el vine din aliniere")
+                : T($"the session is under {RunReport.F(Th.PolarRotationMinHours, 0)} h: it is not known yet how much comes from the alignment", $"sesiunea are sub {RunReport.F(Th.PolarRotationMinHours, 0)} h: nu se stie inca cat vine din aliniere");
             return $"{RunReport.F(ra, 1)}\"/min{sense} ({unknown})";
         }
 
-        string share = T($"from the alignment at most {RunReport.F(raMax, 1)}\"/min", $"din aliniere cel mult {RunReport.F(raMax, 1)}\"/min");
+        string share = T($"at most {RunReport.F(raMax, 1)}\"/min comes from the alignment", $"din aliniere vine cel mult {RunReport.F(raMax, 1)}\"/min");
         return ra > raMax
-            ? $"{RunReport.F(ra, 1)}\"/min{sense}; {share}{T(", the rest is the tracking (rate, periodic error, flexure), not the alignment", ", restul e urmarirea (viteza, eroarea periodica, flexiune), nu alinierea")}"
-            : $"{RunReport.F(ra, 1)}\"/min{sense}; {share}{T(": it may all be the alignment", ": poate fi toata din aliniere")}";
+            ? $"{RunReport.F(ra, 1)}\"/min{sense}; {share}{T(", the rest comes from the tracking (rate, periodic error, flexure)", ", restul vine din urmarire (viteza, eroarea periodica, flexiune)")}"
+            : $"{RunReport.F(ra, 1)}\"/min{sense}; {share}{T(": it may all come from the alignment", ": poate veni tot din aliniere")}";
     }
 
     /// <summary>
-    /// The SUMMARY row `polar alignment` (R-050): the verdict word (`OK`, `MARGINAL`, `WARNING`;
-    /// `OK`, `LA LIMITA`, `ATENTIE` in Romanian; none when unknown) and the bracket with what it costs in one exposure, or why nothing
-    /// is measured.
+    /// The SUMMARY row `polar alignment` (R-050, in the words of R-078): the verdict word (`OK`,
+    /// `MARGINAL`, `WARNING`; `OK`, `LA LIMITA`, `ATENTIE` in Romanian; none when unknown), how far
+    /// the mount's axis is off the pole and how far that moves the stars in one exposure, or why
+    /// nothing is measured.
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
-    /// The verdict word, null when there is none, and the text: the error's bracket and its cost
-    /// in pixels per exposure, at least the lower drift for WARNING or without an upper bound,
-    /// both drifts for MARGINAL, otherwise at most the upper one.
+    /// The verdict word, null when there is none, and the text: the error's bracket and what it
+    /// moves the stars by in pixels per exposure, at least the lower drift for WARNING or without
+    /// an upper bound, both drifts for MARGINAL, otherwise at most the upper one.
     /// </returns>
     private static (string? Verdict, string Text) PolarSummary(SeriesResult r)
     {
@@ -671,9 +723,9 @@ internal static class SeriesReport
 
         SeriesAnalysis s = r.Series;
         string min = RunReport.F(s.PolarDriftMinPx ?? 0, 2), max = RunReport.F(s.PolarDriftMaxPx ?? 0, 2);
-        string cost = s.PolarAlignment == PolarAlignment.Attention || s.PolarDriftMaxPx is null ? T($"costs at least {min} px over one exposure", $"costa cel putin {min} px intr-o expunere")
-            : s.PolarAlignment == PolarAlignment.Marginal ? T($"costs between {min} and {max} px over one exposure", $"costa intre {min} si {max} px intr-o expunere")
-            : T($"costs at most {max} px over one exposure", $"costa cel mult {max} px intr-o expunere");
+        string cost = s.PolarAlignment == PolarAlignment.Attention || s.PolarDriftMaxPx is null ? T($"this moves the stars by at least {min} px over one exposure", $"asta muta stelele cu cel putin {min} px intr-o expunere")
+            : s.PolarAlignment == PolarAlignment.Marginal ? T($"this moves the stars by {min} to {max} px over one exposure", $"asta muta stelele cu {min} pana la {max} px intr-o expunere")
+            : T($"this moves the stars by at most {max} px over one exposure", $"asta muta stelele cu cel mult {max} px intr-o expunere");
         string suffix = s.PolarErrorMaxArcmin is null ? $" ({NoUpperBound(s)})" : "";
         string? verdict = s.PolarAlignment switch
         {
@@ -682,28 +734,28 @@ internal static class SeriesReport
             PolarAlignment.Attention => T("WARNING", "ATENTIE"),
             _ => null,
         };
-        return (verdict, $"{PolarBounds(s)}, {cost}{suffix}");
+        return (verdict, $"{PolarBounds(s)}; {cost}{suffix}");
     }
 
     /// <summary>
     /// The drift over one exposure and the walking-noise dash it draws inside the longest run at
-    /// 10 px (R-043).
+    /// 10 px (R-043, in the words of R-078).
     /// </summary>
     /// <param name="r">The result of the series run; not null.</param>
     /// <returns>
     /// The drift, the median exposure in seconds, the axis it runs along and the dash; a `-`
-    /// sentence when there are no consecutive undithered frames.
+    /// sentence when there is no pair of frames in a row without dithering.
     /// </returns>
     private static string DriftPerExposure(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
         if (s.DriftPerExposurePx is not double d)
         {
-            return T("- (no pairs of consecutive undithered frames)", "- (fara perechi de cadre consecutive fara dithering)");
+            return T("- (no pair of frames in a row without dithering)", "- (nicio pereche de cadre la rand fara dithering)");
         }
 
         string seconds = RunReport.F(s.MedianExposureSeconds ?? 0, 0);
-        return T($"{Px(d, r)} over {seconds} s, along {DriftAxisWord(s)}; {Streak(r)}", $"{Px(d, r)} pe {seconds} s, pe {DriftAxisWord(s)}; {Streak(r)}");
+        return T($"{Px(d, r)} in {seconds} s, along {DriftAxisWord(s)}; {Streak(r)}", $"{Px(d, r)} in {seconds} s, pe {DriftAxisWord(s)}; {Streak(r)}");
     }
 
     /// <summary>
@@ -725,7 +777,7 @@ internal static class SeriesReport
     private static string Streak(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
-        return s.WalkingStreakPx is not double st ? T("walking-noise streak unknown (no drift)", "dara de walking noise necunoscuta (fara drift)")
+        return s.WalkingStreakPx is not double st ? T("the walking-noise streak is not known (the drift could not be measured)", "nu se stie dara de walking noise (driftul nu s-a putut masura)")
             : r.Dither.WalkingStretch is not FrameStretch w ? T($"no walking-noise streak ({NoRun()})", $"nicio dara de walking noise ({NoRun()})")
             : T($"walking-noise streaks of up to {RunReport.F(st, 1)} px ({StretchWord(w)})", $"dare de walking noise de pana la {RunReport.F(st, 1)} px ({StretchWord(w)})");
     }
@@ -1247,14 +1299,15 @@ internal static class SeriesReport
     };
 
     /// <summary>
-    /// The focus verdict and its text: the session's FWHM and whether the focus held.
+    /// The focus verdict and its text, in plain words (R-078): the stars' width on the good frames
+    /// and whether the focus held.
     /// </summary>
     /// <param name="s">The series analysis.</param>
     /// <param name="r">The result of the series run, for the scale.</param>
     /// <returns>
-    /// UNDETERMINED without a good frame, WARNING when the focus moved, GOOD otherwise (also when
+    /// UNDETERMINED without a good frame, WARNING when the focus changed, GOOD otherwise (also when
     /// too few good frames show a trend; NEDETERMINAT, ATENTIE, BUN in Romanian); the text gives
-    /// the median FWHM and the trend.
+    /// the stars' width and its start and end.
     /// </returns>
     private static (string Verdict, string Text) Focus(SeriesAnalysis s, SeriesResult r)
     {
@@ -1264,48 +1317,50 @@ internal static class SeriesReport
         }
 
         string held = s.FocusHeld is bool h
-            ? (h ? T("it held the whole session", "a tinut toata sesiunea") : T("it moved", "s-a miscat"))
-            : T("too few good frames for a trend", "prea putine cadre bune pentru tendinta");
+            ? (h ? T("the focus held the whole session", "focusul a tinut toata sesiunea") : T("the focus changed", "focusul s-a schimbat"))
+            : T("too few good frames to see whether it changed", "prea putine cadre bune ca sa se vada daca s-a schimbat");
+        string first = Opt(s.Fwhm.First, 2), last = Opt(s.Fwhm.Last, 2);
         return (s.FocusHeld is false ? T("WARNING", "ATENTIE") : T("GOOD", "BUN"), T(
-            $"median FWHM {Px(s.SessionFwhm, r)} on the good frames, {TrendPx(s.Fwhm)} at the start / end: {held}",
-            $"FWHM median {Px(s.SessionFwhm, r)} pe cadrele bune, {TrendPx(s.Fwhm)} la inceput / sfarsit: {held}"));
+            $"the stars' width (FWHM) is typically {Px(s.SessionFwhm, r)} on the good frames; {first} px at the start and {last} px at the end{ChangeWord(s.Fwhm)}: {held}",
+            $"latimea stelelor (FWHM) e de obicei {Px(s.SessionFwhm, r)} pe cadrele bune; {first} px la inceput si {last} px la sfarsit{ChangeWord(s.Fwhm)}: {held}"));
     }
 
     /// <summary>
-    /// The exposure verdict and its text, from the channel whose shot-to-read ratio is the lowest
-    /// of all the sampled frames.
+    /// The exposure verdict and its text, in plain words (R-078), from the channel whose
+    /// shot-to-read ratio is the lowest of all the sampled frames.
     /// </summary>
     /// <param name="s">The series analysis.</param>
     /// <param name="r">The result of the series run (not read).</param>
     /// <returns>
     /// GOOD (BUNA) when that ratio reaches <see cref="Th.SwampingRatioOk"/>, MARGINAL (LA LIMITA)
     /// under it, NOT MEASURED (NEMASURAT) without biases or without a finite ratio; the text opens
-    /// with the green background of the first and last good frames in ADU.
+    /// with the sky on green of the first and last good frames in ADU.
     /// </returns>
     private static (string Verdict, string Text) Exposure(SeriesAnalysis s, SeriesResult r)
     {
         string bg = s.Background.First is double bf && s.Background.Last is double bl
-            ? T($"G background {RunReport.F(bf, 0)} -> {RunReport.F(bl, 0)} ADU", $"fond G {RunReport.F(bf, 0)} -> {RunReport.F(bl, 0)} ADU")
-            : T("background unknown", "fond necunoscut");
+            ? T($"the sky on green: {RunReport.F(bf, 0)} -> {RunReport.F(bl, 0)} ADU", $"cerul pe verde: {RunReport.F(bf, 0)} -> {RunReport.F(bl, 0)} ADU")
+            : T("the sky could not be measured", "cerul nu s-a putut masura");
         if (s.Swamping is null || s.Swamping.Count == 0)
         {
-            return (T("NOT MEASURED", "NEMASURAT"), bg + T("; read noise not measured (no biases)", "; zgomotul de citire nemasurat (fara bias-uri)"));
+            return (T("NOT MEASURED", "NEMASURAT"), bg + T("; the read noise could not be measured (the biases are missing)", "; zgomotul de citire nu s-a putut masura (lipsesc bias-urile)"));
         }
 
         ChannelNoise? worst = s.Swamping.SelectMany(x => x).Where(c => !double.IsNaN(c.SwampingRatio) && !double.IsInfinity(c.SwampingRatio)).MinBy(c => c.SwampingRatio);
         if (worst is null)
         {
-            return (T("NOT MEASURED", "NEMASURAT"), bg + T("; the shot/read ratio could not be measured (noise window too small)", "; raportul shot/citire nu s-a putut masura (fereastra de zgomot prea mica)"));
+            return (T("NOT MEASURED", "NEMASURAT"), bg + T("; the shot/read ratio could not be measured (the measured area is too small)", "; raportul shot/citire nu s-a putut masura (zona masurata e prea mica)"));
         }
 
-        string ratio = RunReport.F(worst.SwampingRatio, 1), penalty = RunReport.F(worst.PenaltyPct, 0);
+        string ratio = RunReport.F(worst.SwampingRatio, 1), extra = RunReport.F(worst.PenaltyPct, 0), ok = RunReport.F(Th.SwampingRatioOk, 0);
         return (worst.SwampingRatio >= Th.SwampingRatioOk ? T("GOOD", "BUNA") : T("MARGINAL", "LA LIMITA"), T(
-            $"{bg}; weakest channel {worst.Name}: shot/read {ratio}, penalty {penalty} %",
-            $"{bg}; canalul cel mai slab {worst.Name}: shot/citire {ratio}, penalizare {penalty} %"));
+            $"{bg}; the weakest is channel {worst.Name}: shot/read {ratio} (good from {ok}), the read noise adds {extra} %",
+            $"{bg}; cel mai slab e canalul {worst.Name}: shot/citire {ratio} (bine e de la {ok}), zgomotul de citire adauga {extra} %"));
     }
 
     /// <summary>
-    /// The dew verdict and its text: the change of the FWHM in percent and of the halo.
+    /// The dew verdict and its text, in plain words (R-078): the change of the stars' width in
+    /// percent and of the light around them (the halo).
     /// </summary>
     /// <param name="s">The series analysis.</param>
     /// <returns>
@@ -1315,9 +1370,11 @@ internal static class SeriesReport
     private static (string Verdict, string Text) Dew(SeriesAnalysis s) => s.DewSuspected switch
     {
         true => (T("POSSIBLE", "POSIBIL"), T(
-            $"FWHM rose by {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} % and the halo by {Signed(s.Halo.Change ?? 0, 3)}",
-            $"FWHM a crescut cu {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} % si halo-ul cu {Signed(s.Halo.Change ?? 0, 3)}")),
-        false => (T("NO", "NU"), $"FWHM {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} %, halo {Signed(s.Halo.Change ?? 0, 3)}"),
+            $"the stars' width rose by {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} %, and the light around them (halo) by {Signed(s.Halo.Change ?? 0, 3)}",
+            $"latimea stelelor a crescut cu {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} %, iar lumina din jurul lor (halo) cu {Signed(s.Halo.Change ?? 0, 3)}")),
+        false => (T("NO", "NU"), T(
+            $"the stars' width {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} %, the light around the stars (halo) {Signed(s.Halo.Change ?? 0, 3)}",
+            $"latimea stelelor {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} %, lumina din jurul stelelor (halo) {Signed(s.Halo.Change ?? 0, 3)}")),
         null => (T("UNDETERMINED", "NEDETERMINAT"), T("too few good frames", "prea putine cadre bune")),
     };
 
@@ -1395,11 +1452,15 @@ internal static class SeriesReport
         => $"{n.ToString(Inv)} {(n == 1 ? T(one.En, one.Ro) : T(many.En, many.Ro))}";
 
     /// <summary>
-    /// The `leave out of stack` (`de scos din stiva`) cell: how many frames to leave out (bad and unreadable), how many
-    /// stay (good and marginal) and their total exposure.
+    /// The `leave out of stack` (`de scos din stiva`) cell, in plain words (R-078): how many
+    /// frames to leave out (bad and unreadable), how many stay (good and marginal) and their total
+    /// exposure.
     /// </summary>
     /// <param name="r">The result of the series run.</param>
-    /// <returns>The cell; frames without an exposure time add nothing to the duration.</returns>
+    /// <returns>
+    /// `22 frames (the list is under REJECTED); 65 frames stay, that is 2 h 10 min of exposure`;
+    /// frames without an exposure time add nothing to the duration.
+    /// </returns>
     private static string Keep(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
@@ -1412,10 +1473,11 @@ internal static class SeriesReport
             }
         }
 
-        string leave = (s.BadCount + s.UnknownCount).ToString(Inv), stay = (s.GoodCount + s.MarginalCount).ToString(Inv);
+        int stayCount = s.GoodCount + s.MarginalCount;
+        string leave = FramesWord(s.BadCount + s.UnknownCount), stay = FramesWord(stayCount), duration = RunReport.Duration(kept);
         return T(
-            $"{leave} frames (the list under REJECTED); {stay} stay = {RunReport.Duration(kept)}",
-            $"{leave} cadre (lista la RESPINSE); raman {stay} = {RunReport.Duration(kept)}");
+            $"{leave} (the list is under REJECTED); {stay} {(stayCount == 1 ? "stays" : "stay")}, that is {duration} of exposure",
+            $"{leave} (lista e la RESPINSE); {(stayCount == 1 ? "ramane" : "raman")} {stay}, adica {duration} de expunere");
     }
 
     /// <summary>

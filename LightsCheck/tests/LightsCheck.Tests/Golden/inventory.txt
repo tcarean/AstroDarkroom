@@ -6,10 +6,10 @@ Copyright (C) 2026 Tudor Carean
     biases             : biases\ (3 cadre .fit)
     darks              : (lipsa)
     aparat             : NIKON D3300
-    obiectiv           : 135 mm (poza)
+    obiectiv           : 135 mm (la fotografiere)
     expunere           : 120.2 s la ISO 1600 (toate cadrele)
-    interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:46:27 (11 min); integrare 10 min din 5 cadre (88 % din interval)
-    ATENTIE            : 1 cadru nu s-a putut citi (vezi tabelul)
+    interval           : de la 2026-10-06 20:35:03 pana la 2026-10-06 20:46:27 (11 min); expunere totala 10 min, din 5 cadre (aparatul a expus 88 % din timp)
+    ATENTIE            : 1 cadru nu s-a putut citi (vezi lista cadrelor)
 
   CADRE
      nr  fisier                ora       expunere   ISO    f/   focala   pauza
