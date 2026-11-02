@@ -19,8 +19,8 @@ namespace ImageVisualCompare.Core;
 
 /// <summary>
 /// The widths of the two file names in the toolbar's pair label, <c>A.png  Change A…  vs  B.tif
-/// Change B…</c> (R-065), in device-independent pixels. Each name takes its own width up to
-/// <see cref="MaxName"/>; when the five items do not fit the width the label has, the names give
+/// Change B…</c> (R-065), in device-independent pixels. Each name takes its own width, however
+/// long (ADR 0048); only when the five items do not fit the width the label has do the names give
 /// up the excess, the longer one first, down to <see cref="MinName"/> each, and the buttons and
 /// <c>vs</c> never shrink, so the button that changes B is never pushed out of sight by a long
 /// name. A name shorter than <see cref="MinName"/> keeps its own width.
@@ -29,9 +29,6 @@ namespace ImageVisualCompare.Core;
 /// <param name="NameBWidth">The width image B's name is given.</param>
 public readonly record struct PairLabelLayout(double NameAWidth, double NameBWidth)
 {
-    /// <summary>The most a name is given, whatever the room: a longer one is trimmed.</summary>
-    public const double MaxName = 360;
-
     /// <summary>The least a name gives up to: below it a file name says nothing.</summary>
     public const double MinName = 48;
 
@@ -46,7 +43,7 @@ public readonly record struct PairLabelLayout(double NameAWidth, double NameBWid
     /// margins, 0 or more.
     /// </param>
     /// <returns>
-    /// The two widths: the names' own up to <see cref="MaxName"/> when they fit, the longer one
+    /// The two widths: the names' own when they fit, the longer one
     /// cut to what is left otherwise, and both cut equally when that is not enough, never below
     /// <see cref="MinName"/> or the name's own width. The sum can exceed the room only at that
     /// floor, where the label is clipped.
@@ -63,26 +60,24 @@ public readonly record struct PairLabelLayout(double NameAWidth, double NameBWid
             throw new ArgumentOutOfRangeException(nameof(available), "The width available cannot be NaN.");
         }
 
-        double a = Math.Min(nameA, MaxName);
-        double b = Math.Min(nameB, MaxName);
         double room = available - fixedWidth;
-        if (a + b <= room)
+        if (nameA + nameB <= room)
         {
-            return new PairLabelLayout(a, b);
+            return new PairLabelLayout(nameA, nameB);
         }
 
         // The longer name gives first: cut to what the shorter leaves, when that still keeps it
         // at least as long as the shorter one, and never below its floor (the second review of
         // 2026-10-30: a short name beside a long one in little room cut the long one under 48).
-        double shorter = Math.Min(a, b);
+        double shorter = Math.Min(nameA, nameB);
         if (room - shorter >= shorter)
         {
-            double longer = Math.Max(room - shorter, Math.Min(MinName, Math.Max(a, b)));
-            return a >= b ? new PairLabelLayout(longer, b) : new PairLabelLayout(a, longer);
+            double longer = Math.Max(room - shorter, Math.Min(MinName, Math.Max(nameA, nameB)));
+            return nameA >= nameB ? new PairLabelLayout(longer, nameB) : new PairLabelLayout(nameA, longer);
         }
 
         // Both give equally, each down to its floor.
         double half = Math.Max(room, 0) / 2;
-        return new PairLabelLayout(Math.Max(half, Math.Min(MinName, a)), Math.Max(half, Math.Min(MinName, b)));
+        return new PairLabelLayout(Math.Max(half, Math.Min(MinName, nameA)), Math.Max(half, Math.Min(MinName, nameB)));
     }
 }
