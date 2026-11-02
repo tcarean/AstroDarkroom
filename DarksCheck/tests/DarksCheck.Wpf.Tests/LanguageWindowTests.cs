@@ -175,7 +175,7 @@ public partial class LanguageWindowTests
     /// <summary>
     /// The Harti tab in plain words (R-084, ADR 0032): its lead, its map titles and the message of a
     /// missing map name no part of the method, in either language; a session without biases shows
-    /// that message under the bias master and dark minus bias.
+    /// the bias maps' message, one of tiny frames the dark master's.
     /// </summary>
     /// <param name="english">True for the English pass, false for the Romanian one.</param>
     [Theory]
@@ -185,23 +185,29 @@ public partial class LanguageWindowTests
     {
         using TestSettings.Own _ = new();
         using SessionFixture f = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i });
+        using SessionFixture tiny = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i, Width = 24, Height = 16 });
 
         await _sta.InvokeAsync(async () =>
         {
             using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
             {
-                MainViewModel vm = new();
-                await vm.OpenAsync(f.Root);
-                Assert.True(vm.HasResult);
-                MapsView view = new() { DataContext = vm };
-                Render(view, 1360, 1800);
-                List<string> texts = [.. TextsOf(view)];
+                List<string> texts = [];
+                foreach (SessionFixture s in new[] { f, tiny })
+                {
+                    MainViewModel vm = new();
+                    await vm.OpenAsync(s.Root);
+                    Assert.True(vm.HasResult);
+                    MapsView view = new() { DataContext = vm };
+                    Render(view, 1360, 1800);
+                    texts.AddRange(TextsOf(view));
+                }
 
                 // the scenes reached their variants, so the words below were looked at
                 string all = string.Join("\n", texts);
                 Assert.Contains("DARK MINUS BIAS", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "Each map has its own contrast" : "Fiecare harta are contrastul ei", all, StringComparison.Ordinal);
-                Assert.Contains(english ? "No map: the frames are smaller than 32 px, or the session has no biases." : "Nu e harta: cadrele sunt mai mici de 32 px, sau sesiunea nu are bias-uri.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "No map: the session has no biases that can be used, or the frames are smaller than 32 px." : "Nu e harta: sesiunea nu are bias-uri care sa se poata folosi, sau cadrele sunt mai mici de 32 px.", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "No map: the frames are smaller than 32 px." : "Nu e harta: cadrele sunt mai mici de 32 px.", all, StringComparison.Ordinal);
                 Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
                 List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
                 Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));

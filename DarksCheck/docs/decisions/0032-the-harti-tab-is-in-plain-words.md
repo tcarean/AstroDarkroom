@@ -24,8 +24,11 @@ owner approved the plan's list of the three, shown with their real texts, with "
    each map does (`pixelii verzi G1`).
 3. **The third map is titled `DARK MINUS BIAS`**, in the Rezumat's words (`pe dark minus bias`).
    The row under it keeps its label `dark - bias`, by which the window finds it (ADR 0030).
-4. **A missing map says why in the user's terms**: `Nu e harta: cadrele sunt mai mici de 32 px,
-   sau sesiunea nu are bias-uri.`
+4. **A missing map says why in the user's terms**, the dark master's `Nu e harta: cadrele sunt mai
+   mici de 32 px.`, the two bias maps' `Nu e harta: sesiunea nu are bias-uri care sa se poata
+   folosi, sau cadrele sunt mai mici de 32 px.` The list's one message for all three named the
+   biases under the dark master and said "no biases" for biases that could not be used; the review
+   found it and the owner approved the two.
 5. **R-084 guards it**: `R084_...` renders the tab in both languages, with the word list R-083's
    tests use, which now also holds `percentila` / `percentile` and `planul... de referinta`.
 

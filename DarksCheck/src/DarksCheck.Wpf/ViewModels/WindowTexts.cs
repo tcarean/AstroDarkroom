@@ -108,9 +108,13 @@ internal static class WindowTexts
         + $"ISO {RunReport.F(Th.NormIso, 0)} si {RunReport.F(Th.NormExposureSeconds, 0)} s. Eticheta e numele folderului plus idx<NN>: o copiezi "
         + "si redenumesti folderul tu; programul nu scrie si nu redenumeste nimic in folderele cu poze.");
 
-    internal static string NoMap => T(
-        $"No map: the frames are smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px, or the session has no biases.",
-        $"Nu e harta: cadrele sunt mai mici de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px, sau sesiunea nu are bias-uri.");
+    internal static string NoDarkMap => T(
+        $"No map: the frames are smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.",
+        $"Nu e harta: cadrele sunt mai mici de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.");
+
+    internal static string NoBiasMap => T(
+        $"No map: the session has no biases that can be used, or the frames are smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.",
+        $"Nu e harta: sesiunea nu are bias-uri care sa se poata folosi, sau cadrele sunt mai mici de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.");
 
     internal static string HotHeader => ">" + RunReport.F(Th.HotAdu, 0);
 

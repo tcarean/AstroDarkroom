@@ -33,5 +33,10 @@ The English says the same, with the same figures.
 
 ## What deviated
 
+- The review found the one missing-map message wrong under the dark master (it named the biases)
+  and for biases that cannot be used ("no biases"); the owner approved two messages, `Nu e harta:
+  cadrele sunt mai mici de 32 px.` and `Nu e harta: sesiunea nu are bias-uri care sa se poata
+  folosi, sau cadrele sunt mai mici de 32 px.`, and kept the lead, which speaks of the tab in
+  general. R084 now reaches tiny frames too.
 - R-083's word list lives in `tests/DarksCheck.Tests/PlainWords.cs`; it now serves both tabs, so
   its two patterns are named `RomanianTabWords` and `EnglishTabWords`.

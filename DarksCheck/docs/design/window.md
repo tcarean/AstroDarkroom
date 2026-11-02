@@ -113,7 +113,7 @@ they are now.
   `DarkOutputs.MapRaster` and `RasterBitmaps.Grey`, each with its section-2 row (`master dark`,
   `master bias`, `dark - bias`) as its note under the titles `MASTER DARK`, `MASTER BIAS` and
   `DARK MINUS BIAS`; a map without blocks, or an absent group, is a `MapVm` without image and
-  the card says so (`WindowTexts.NoMap`);
+  the card says why (`WindowTexts.NoDarkMap`, `NoBiasMap`);
 - the charts take `ChartPoint(X, Y, Label, Colour, Tip)` lists: the warming (every dark's
   `AmpRatioMedian`, the frames of `Warming.OffPlateauFrames` in the attention colour, guide
   at 1 and, with a fit, at `Plateau`, `OffPlateauLow` and `OffPlateauHigh`; the card's
