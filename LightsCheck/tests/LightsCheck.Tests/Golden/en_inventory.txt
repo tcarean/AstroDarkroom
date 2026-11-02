@@ -6,10 +6,10 @@ Copyright (C) 2026 Tudor Carean
     biases             : biases\ (3 frames .fit)
     darks              : (missing)
     camera             : NIKON D3300
-    lens               : 135 mm (as shot)
+    lens               : 135 mm (when shot)
     exposure           : 120.2 s at ISO 1600 (all frames)
-    interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:46:27 (11 min); integration 10 min from 5 frames (88 % of the interval)
-    WARNING            : 1 frame could not be read (see the table)
+    interval           : from 2026-10-06 20:35:03 to 2026-10-06 20:46:27 (11 min); total exposure 10 min, from 5 frames (the camera was exposing 88 % of the time)
+    WARNING            : 1 frame could not be read (see the list of frames)
 
   FRAMES
      no  file                  time      exposure    ISO    f/    focal   pause

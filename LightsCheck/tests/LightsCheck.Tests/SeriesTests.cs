@@ -106,7 +106,7 @@ public class SeriesTests
         }
 
         Assert.Equal(206.265 * 3.92 / 135, r.ArcsecPerPixel!.Value, 0.01);
-        Assert.Equal("din fisier (XPIXSZ)", r.PixelSizeSource);
+        Assert.Equal("scris in fisier (XPIXSZ)", r.PixelSizeSource);
     }
 
     [Fact]
@@ -250,6 +250,59 @@ public class SeriesTests
         }
     }
 
+    /// <summary>
+    /// The Summary tab's texts (the session lines with the scale, then REZUMAT, FOCUS, EXPUNERE
+    /// SI ZGOMOT, ROUA, CADRE MISCATE and DRIFT SI ROTATIE, as the console prints them) name none
+    /// of the method's words in either language, over sessions that reach their branches; the
+    /// eight-frame pattern's FOCUS verdict reads as R-078 quotes it (R-078).
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R078_TheSummaryTextsAvoidTheMethodsVocabulary(bool english)
+    {
+        // Frames 1 px apart, each after a pause: every pair is a paused one, the drift approximate.
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] paused = [(0, 0, 1.0, 0), (1, 0.5, 1.0, 30), (2, 1, 1.0, 30), (3, 1.5, 1.0, 30), (4, 2, 1.0, 30)];
+        // Siril's solve at DEC +30, as R050's: the polar rows with a declination.
+        string[] solve =
+        [
+            FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
+            FitsTestData.Card("CRVAL1", "314.43"), FitsTestData.Card("CRVAL2", "30.0"),
+            FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "1"), FitsTestData.Card("PC2_1", "1"), FitsTestData.Card("PC2_2", "-0.0037"),
+        ];
+        using IDisposable _ = Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian);
+        using SessionFixture pattern = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        using SessionFixture noBiases = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using SessionFixture classes = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2, darks: 2);
+        File.WriteAllBytes(Path.Combine(classes.LightsDir, "DSC_0009.fit"), new byte[100]);
+        using SessionFixture drifting = new SessionFixture().WithStarSeries(paused);
+        using SessionFixture shortSolved = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        File.WriteAllBytes(Path.Combine(shortSolved.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: solve));
+        using SessionFixture solved = new SessionFixture().WithStarSeries(SessionFixture.Pattern, exposure: 600);
+        File.WriteAllBytes(Path.Combine(solved.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: solve));
+
+        string patternSummary = "";
+        foreach (SessionFixture f in new[] { pattern, noBiases, classes, drifting, shortSolved, solved })
+        {
+            using StringWriter sw = new();
+            SeriesReport.Write(SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2)), sw);
+            string text = sw.ToString().Replace(f.Root, "", StringComparison.Ordinal);
+            string summary = text[..text.IndexOf("  DITHERING", StringComparison.Ordinal)];
+            foreach (string line in summary.Split('\n'))
+            {
+                PlainWords.AssertPlain(line, "the session lines or a Summary section");
+            }
+
+            patternSummary = f == pattern ? summary : patternSummary;
+        }
+
+        if (!english)
+        {
+            Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.4\" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea", patternSummary, StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public void R019_TheDitherPatternIsReadBack()
     {
@@ -351,7 +404,7 @@ public class SeriesTests
         Assert.Equal(TrailAxis.Ra, flag.On);
         Assert.Equal($"alungire {RunReport.F(flag.Value, 2)} (prag 1.60), dara pe RA (-90 grade)", SeriesReport.Reasons(s.Flags[2]));
         Assert.Equal(TrailAxis.Ra, s.TrailOn);
-        Assert.Contains("= pe RA", SeriesReport.TrailRows(r).Single(x => x.Label == "directia darelor").Value, StringComparison.Ordinal);
+        Assert.Contains(", adica pe RA", SeriesReport.TrailRows(r).Single(x => x.Label == "directia darelor").Value, StringComparison.Ordinal);
 
         string[] csv = SeriesOutputs.Csv(r).Split('\n');
         int col = Array.IndexOf(CsvCells(csv[0]), "trail_on");
@@ -398,10 +451,10 @@ public class SeriesTests
         ReportRow focus = SeriesReport.FocusRows(r)[^1];
         Assert.Equal("verdict", focus.Label);
         Assert.Equal("BUN", focus.Verdict);
-        Assert.StartsWith("FWHM median 3.25 px", focus.Value, StringComparison.Ordinal);
+        Assert.StartsWith("latimea stelelor (FWHM) e de obicei 3.25 px", focus.Value, StringComparison.Ordinal);
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
-        Assert.Contains("    verdict            : BUN - FWHM median 3.25 px = 19.4\" pe cadrele bune, 3.25 / 3.25 px (-0 %) la inceput / sfarsit: a tinut toata sesiunea", sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains("    verdict            : BUN - latimea stelelor (FWHM) e de obicei 3.25 px = 19.4\" pe cadrele bune; 3.25 px la inceput si 3.25 px la sfarsit (-0 %): focusul a tinut toata sesiunea", sw.ToString(), StringComparison.Ordinal);
 
         IReadOnlyList<ReportParagraph> paragraphs = SeriesReport.RejectedExplanation;
         Assert.True(paragraphs.Count >= 3, "fewer than three paragraphs");
@@ -598,11 +651,11 @@ public class SeriesTests
         Assert.True(s.DriftApproximate);
         Assert.Equal(4, s.DriftPairs);
         IReadOnlyList<ReportRow> rows = SeriesReport.DriftRows(r);
-        Assert.Contains("(4 perechi cu pauza, aproximativ: pasii mici de dithering intra in cifra)", rows.Single(x => x.Label == "drift intre cadre consecutive fara dithering").Value, StringComparison.Ordinal);
-        Assert.StartsWith("nemasurabila (sub 3 perechi de cadre consecutive fara pauza si fara miscare", rows.Single(x => x.Label == "aliniere polara").Value, StringComparison.Ordinal);
+        Assert.Contains("(din 4 perechi de cadre cu pauza; aproximativ, fiindca in cifra intra si miscarile mici de dithering)", rows.Single(x => x.Label == "drift intre cadre la rand, fara dithering").Value, StringComparison.Ordinal);
+        Assert.StartsWith("nu se poate masura (sub 3 perechi de cadre la rand, fara pauza si fara miscare", rows.Single(x => x.Label == "aliniere polara").Value, StringComparison.Ordinal);
         ReportRow summary = SeriesReport.SummaryRows(r).Single(x => x.Label == "aliniere polara");
         Assert.Null(summary.Verdict);
-        Assert.StartsWith("nemasurabila", summary.Value, StringComparison.Ordinal);
+        Assert.StartsWith("nu se poate masura", summary.Value, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -630,8 +683,8 @@ public class SeriesTests
         Assert.Equal(5.7, rs.Series.PolarErrorMinArcmin!.Value, 0.3);
         Assert.Null(rs.Series.PolarErrorMaxArcmin);
         Assert.Equal(PolarAlignment.Unknown, rs.Series.PolarAlignment);
-        Assert.Contains("sesiune sub 1 h: rotatia nu da inca limita de sus", SeriesReport.DriftRows(rs).Single(x => x.Label == "aliniere polara").Value, StringComparison.Ordinal);
-        Assert.Contains("(sesiune sub 1 h: nu se stie inca cat e din aliniere)", SeriesReport.DriftRows(rs).Single(x => x.Label == "drift pe RA").Value, StringComparison.Ordinal);
+        Assert.Contains("sesiunea are sub 1 h, prea putin ca sa se afle cat poate fi cel mult", SeriesReport.DriftRows(rs).Single(x => x.Label == "aliniere polara").Value, StringComparison.Ordinal);
+        Assert.Contains("(sesiunea are sub 1 h: nu se stie inca cat vine din aliniere)", SeriesReport.DriftRows(rs).Single(x => x.Label == "drift pe RA").Value, StringComparison.Ordinal);
 
         using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, exposure: 600);
         File.WriteAllBytes(Path.Combine(f.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
@@ -650,14 +703,14 @@ public class SeriesTests
         Assert.Equal(PolarAlignment.Ok, s.PolarAlignment);
 
         IReadOnlyList<ReportRow> rows = SeriesReport.DriftRows(r);
-        Assert.Contains("(4 perechi fara pauza)", rows.Single(x => x.Label == "drift intre cadre consecutive fara dithering").Value, StringComparison.Ordinal);
+        Assert.Contains("(din 4 perechi de cadre fara pauza intre ele)", rows.Single(x => x.Label == "drift intre cadre la rand, fara dithering").Value, StringComparison.Ordinal);
         string polar = rows.Single(x => x.Label == "aliniere polara").Value;
-        Assert.StartsWith("eroare ", polar, StringComparison.Ordinal);
-        Assert.Contains("'/h fara dithering la DEC +30.0 grade", polar, StringComparison.Ordinal);
+        Assert.StartsWith("axa monturii e deviata de la pol cu ", polar, StringComparison.Ordinal);
+        Assert.Contains("'/h fara dithering, la DEC +30.0 grade", polar, StringComparison.Ordinal);
         Assert.Contains("intr-o expunere de 600 s", polar, StringComparison.Ordinal);
-        Assert.Contains("alungire adaugata cel mult 1.0", polar, StringComparison.Ordinal);
+        Assert.Contains("alungirea pe care o produce e cel mult 1.0", polar, StringComparison.Ordinal);
         string ra = rows.Single(x => x.Label == "drift pe RA").Value;
-        Assert.Contains("din aliniere cel mult", ra, StringComparison.Ordinal);
+        Assert.Contains("din aliniere vine cel mult", ra, StringComparison.Ordinal);
         ReportRow summary = SeriesReport.SummaryRows(r).Single(x => x.Label == "aliniere polara");
         Assert.Equal("OK", summary.Verdict);
         Assert.Contains("intr-o expunere", summary.Value, StringComparison.Ordinal);

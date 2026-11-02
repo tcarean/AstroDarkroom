@@ -22,7 +22,7 @@ namespace LightsCheck.Tests;
 /// <summary>
 /// The inventory's lens line (R-065) on frames fabricated with the values libraw gave FlatCheck
 /// for each make on 2026-10-26: the record is what the readers would have filled, so no raw is
-/// needed. The FITS wording the goldens pin (`135 mm (as shot)`) must not move.
+/// needed. The words are R-078's plain ones, `(when shot)` and the mount named as one.
 /// </summary>
 public class InventoryReportTests
 {
@@ -48,23 +48,23 @@ public class InventoryReportTests
         using (Ui.Use(UiLanguage.English))
         {
             // Canon EOS 7D Mark II: the name, Canon's lens type and the mount; the chip's range too
-            Assert.Equal("50 mm f/4.0 (as shot), lens 50 mm f/1.4, \"EF50mm f/1.4 USM\" (ID 198, Canon EF)",
+            Assert.Equal("50 mm f/4.0 (when shot), 50 mm f/1.4 lens, \"EF50mm f/1.4 USM\" (ID 198, Canon EF mount)",
                 LensLine(Frame("Canon EOS 7D Mark II", 50, 4, 198, "Canon EF", "EF50mm f/1.4 USM", 50, 50, 1.4142135)));
             // Pentax K-70: the ID pair as libraw reads it, no name, no range
-            Assert.Equal("18 mm f/5.6 (as shot), ID 2263 (Pentax K)",
+            Assert.Equal("18 mm f/5.6 (when shot), ID 2263 (Pentax K mount)",
                 LensLine(Frame("Pentax K-70", 18, 5.6, 2263, "Pentax K", null)));
             // Sony ILCE-7M3 by its name alone
-            Assert.Equal("32 mm f/4.0 (as shot), lens 16-35 mm f/2.8, \"FE 16-35mm F2.8 GM\" (Sony E)",
+            Assert.Equal("32 mm f/4.0 (when shot), 16-35 mm f/2.8 lens, \"FE 16-35mm F2.8 GM\" (Sony E mount)",
                 LensLine(Frame("Sony ILCE-7M3", 32, 4, null, "Sony E", "FE 16-35mm F2.8 GM", 16, 35, 2.8)));
             // the Veil session's D3300 with the Samyang 135: what read "Nikon ID 74" until 2026-10-27
-            Assert.Equal("135 mm f/2.8 (as shot), lens 135 mm f/2.0, ID 74 (Nikon F)",
+            Assert.Equal("135 mm f/2.8 (when shot), 135 mm f/2.0 lens, ID 74 (Nikon F mount)",
                 LensLine(Frame("Nikon D3300", 135, 2.8, 74, "Nikon F", null, 135, 135, 2.0)));
             // a D3300 on a telescope: the mount alone says nothing about the lens
-            Assert.Equal("135 mm f/2.8 (as shot)", LensLine(Frame("Nikon D3300", 135, 2.8, null, "Nikon F", null)));
-            // a FITS: the focal length only, the wording the goldens pin
-            Assert.Equal("135 mm (as shot)", LensLine(Frame("Nikon D3300", 135, null, null, null, null)));
+            Assert.Equal("135 mm f/2.8 (when shot)", LensLine(Frame("Nikon D3300", 135, 2.8, null, "Nikon F", null)));
+            // a FITS: the focal length only
+            Assert.Equal("135 mm (when shot)", LensLine(Frame("Nikon D3300", 135, null, null, null, null)));
             // a raw with an ID but no focal length is still the frame the line is read from
-            Assert.Equal("ID 2263 (Pentax K)", LensLine(Frame("Pentax K-70", null, null, 2263, "Pentax K", null)));
+            Assert.Equal("ID 2263 (Pentax K mount)", LensLine(Frame("Pentax K-70", null, null, 2263, "Pentax K", null)));
             Assert.Equal("unknown", LensLine(Frame("Nikon D3300", null, null, null, null, null)));
         }
     }
@@ -74,11 +74,11 @@ public class InventoryReportTests
     {
         using (Ui.Use(UiLanguage.Romanian))
         {
-            Assert.Equal("50 mm f/4.0 (poza), obiectiv 50 mm f/1.4, \"EF50mm f/1.4 USM\" (ID 198, Canon EF)",
+            Assert.Equal("50 mm f/4.0 (la fotografiere), obiectiv de 50 mm f/1.4, \"EF50mm f/1.4 USM\" (ID 198, montura Canon EF)",
                 LensLine(Frame("Canon EOS 7D Mark II", 50, 4, 198, "Canon EF", "EF50mm f/1.4 USM", 50, 50, 1.4142135)));
-            Assert.Equal("135 mm f/2.8 (poza), obiectiv 135 mm f/2.0, ID 74 (Nikon F)",
+            Assert.Equal("135 mm f/2.8 (la fotografiere), obiectiv de 135 mm f/2.0, ID 74 (montura Nikon F)",
                 LensLine(Frame("Nikon D3300", 135, 2.8, 74, "Nikon F", null, 135, 135, 2.0)));
-            Assert.Equal("135 mm (poza)", LensLine(Frame("Nikon D3300", 135, null, null, null, null)));
+            Assert.Equal("135 mm (la fotografiere)", LensLine(Frame("Nikon D3300", 135, null, null, null, null)));
             Assert.Equal("necunoscut", LensLine(Frame("Nikon D3300", null, null, null, null, null)));
         }
     }

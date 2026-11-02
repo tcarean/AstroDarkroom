@@ -96,13 +96,13 @@ public class PixelPitchTests
         {
             SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
             // the fixture's FITS carry XPIXSZ 3.92: the file wins, as the goldens pin
-            Assert.Equal("from the file (XPIXSZ)", r.PixelSizeSource);
+            Assert.Equal("written in the file (XPIXSZ)", r.PixelSizeSource);
             Assert.Equal(3.92, r.PixelSizeUm);
         }
 
         using (Ui.Use(UiLanguage.Romanian))
         {
-            Assert.Equal("din fisier (XPIXSZ)", SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2)).PixelSizeSource);
+            Assert.Equal("scris in fisier (XPIXSZ)", SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2)).PixelSizeSource);
         }
     }
 }

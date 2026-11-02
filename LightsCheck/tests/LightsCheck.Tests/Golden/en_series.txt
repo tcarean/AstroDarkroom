@@ -6,48 +6,48 @@ Copyright (C) 2026 Tudor Carean
     biases             : biases\ (2 frames .fit)
     darks              : (missing)
     camera             : NIKON D3300
-    lens               : 135 mm (as shot)
+    lens               : 135 mm (when shot)
     exposure           : 120.0 s at ISO 1600 (all frames)
-    interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:52:37 (17 min); integration 16 min from 8 frames (91 % of the interval)
-    scale              : 5.99 "/px; pixel 3.92 um (from the file (XPIXSZ)); reference frame 1
+    interval           : from 2026-10-06 20:35:03 to 2026-10-06 20:52:37 (17 min); total exposure 16 min, from 8 frames (the camera was exposing 91 % of the time)
+    scale              : 1 px = 5.99" on the sky; the pixel is 3.92 um (written in the file (XPIXSZ)); the frames are aligned on frame 1
 
   SUMMARY
-    focus              : GOOD - median FWHM 3.25 px = 19.4" on the good frames, 3.25 / 3.25 px (-0 %) at the start / end: it held the whole session
-    exposure           : GOOD - G background 2000 -> 2000 ADU; weakest channel B: shot/read 10.0, penalty 5 %
-    dew                : NO - FWHM -0 %, halo +0.001
+    focus              : GOOD - the stars' width (FWHM) is typically 3.25 px = 19.4" on the good frames; 3.25 px at the start and 3.25 px at the end (-0 %): the focus held the whole session
+    exposure           : GOOD - the sky on green: 2000 -> 2000 ADU; the weakest is channel B: shot/read 10.0 (good from 10), the read noise adds 5 %
+    dew                : NO - the stars' width -0 %, the light around the stars (halo) +0.001
     trailed frames     : 2 bad, 0 marginal, 6 good (of 8); RA is the image's Y axis, DEC the X axis (found from the direction of the trails: we assume the tracking made them, so they lie on RA)
     dithering          : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px: the drift is 0.50 px over one exposure; frames 1-2, 2 frames in a row in the same spot, within 10 px; 3 moves over 8 frames, 4 different spots (within 10 px), 0 frames alone, 0 moves on both axes
-    polar alignment    : error of at least 5.7', costs at least 0.50 px over one exposure (without a plate solve the declination for the upper bound is not known)
-    leave out of stack : 2 frames (the list under REJECTED); 6 stay = 12 min
+    polar alignment    : the mount's axis is off the pole by at least 5.7'; this moves the stars by at least 0.50 px over one exposure (without a plate solve the declination is not known, so neither is how large it can be)
+    leave out of stack : 2 frames (the list is under REJECTED); 6 frames stay, that is 12 min of exposure
 
   FOCUS
-    median FWHM (good frames): 3.25 px = 19.4"
-    first / last 3 good frames: 3.25 / 3.25 px (-0 %) -> the focus held
-    centre / middle / edge: 3.25 / 3.25 / 3.24 px (medians over the good frames)
-    verdict            : GOOD - median FWHM 3.25 px = 19.4" on the good frames, 3.25 / 3.25 px (-0 %) at the start / end: it held the whole session
+    the stars' width (FWHM): 3.25 px = 19.4" (typically, on the good frames)
+    first / last 3 good frames: 3.25 px / 3.25 px (-0 %): the focus held
+    in the centre / in the middle / at the edge: the stars' width 3.25 / 3.25 / 3.24 px (typically, on the good frames)
+    verdict            : GOOD - the stars' width (FWHM) is typically 3.25 px = 19.4" on the good frames; 3.25 px at the start and 3.25 px at the end (-0 %): the focus held the whole session
 
   EXPOSURE AND NOISE
-    sky background (ADU above black, good frames, first -> last): 2000 -> 2000 on green (+0 %)
-    read noise         : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (from the pair of biases)
-    frame   1          : R: sky 399, shot/read 10.1, penalty 4.8 %  G1: sky 2002, shot/read 10.1, penalty 4.8 %  G2: sky 2001, shot/read 10.2, penalty 4.8 %  B: sky 2300, shot/read 10.0, penalty 4.9 %
-    frame   5          : R: sky 401, shot/read 10.2, penalty 4.8 %  G1: sky 2000, shot/read 10.1, penalty 4.8 %  G2: sky 2000, shot/read 10.2, penalty 4.8 %  B: sky 2300, shot/read 10.1, penalty 4.8 %
-    frame   8          : R: sky 401, shot/read 10.1, penalty 4.8 %  G1: sky 2002, shot/read 10.2, penalty 4.8 %  G2: sky 2001, shot/read 10.2, penalty 4.8 %  B: sky 2300, shot/read 10.2, penalty 4.8 %
-    scale              : shot/read above 10 = the sky swamps the read noise (penalty under 5 %); below = the channel is read-noise limited, longer subs would help
+    sky background (good frames, first -> last): 2000 -> 2000 ADU on green, above the black level (+0 %)
+    read noise         : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (the noise the sensor adds to every frame, measured from two biases)
+    frame   1          : R: sky 399, shot/read 10.1, extra noise 4.8 %  G1: sky 2002, shot/read 10.1, extra noise 4.8 %  G2: sky 2001, shot/read 10.2, extra noise 4.8 %  B: sky 2300, shot/read 10.0, extra noise 4.9 %
+    frame   5          : R: sky 401, shot/read 10.2, extra noise 4.8 %  G1: sky 2000, shot/read 10.1, extra noise 4.8 %  G2: sky 2000, shot/read 10.2, extra noise 4.8 %  B: sky 2300, shot/read 10.1, extra noise 4.8 %
+    frame   8          : R: sky 401, shot/read 10.1, extra noise 4.8 %  G1: sky 2002, shot/read 10.2, extra noise 4.8 %  G2: sky 2001, shot/read 10.2, extra noise 4.8 %  B: sky 2300, shot/read 10.2, extra noise 4.8 %
+    what it means      : shot/read from 10 up: the sky covers the read noise, which adds under 5 %; under 10: the channel suffers from the read noise, and longer exposures would help
 
   DEW
-    halo first / last  : 0.001 / 0.001; stars detected 40 -> 40 (+0 %); FWHM 3.25 / 3.25 px (-0 %)
-    verdict            : NO - FWHM -0 %, halo +0.001
+    halo (the light around the stars), first / last: 0.001 / 0.001; stars found 40 -> 40 (+0 %); the stars' width 3.25 / 3.25 px (-0 %)
+    verdict            : NO - the stars' width -0 %, the light around the stars (halo) +0.001
 
   TRAILED FRAMES
-    bad (elongation >= 1.60): 3, 6
-    marginal (1.35 .. 1.60): none
-    trail direction    : -90 degrees from the horizontal on the bad frames = on RA; RA is the image's Y axis, DEC the X axis (found from the direction of the trails: we assume the tracking made them, so they lie on RA)
+    bad (elongation of at least 1.60): 3, 6
+    marginal (elongation between 1.35 and 1.60): none
+    trail direction    : -90 degrees from the horizontal, on the bad frames, that is on RA; RA is the image's Y axis, DEC the X axis (found from the direction of the trails: we assume the tracking made them, so they lie on RA)
 
   DRIFT AND ROTATION
-    drift between consecutive undithered frames: X +0.25 px/min, Y +0.03 px/min (4 pairs without a pause) = +1.5 / +0.2 "/min
-    drift over one exposure: 0.50 px = 3.0" over 120 s, along DEC; walking-noise streaks of up to 0.5 px (frames 1-2, 2 frames in a row in the same spot, within 10 px)
-    field rotation     : -0.0 arcmin in total, -0.1 arcmin/h; in the corner, over one exposure: 0.00 px
-    polar alignment    : error of at least 5.7' (the DEC drift of 1.5"/min; without a plate solve the declination for the upper bound is not known); drift from the alignment at least 0.50 px over an exposure of 120 s
+    drift between frames in a row, without dithering: X +0.25 px/min, Y +0.03 px/min = +1.5 / +0.2 "/min (from 4 pairs of frames without a pause between them)
+    drift over one exposure: 0.50 px = 3.0" in 120 s, along DEC; walking-noise streaks of up to 0.5 px (frames 1-2, 2 frames in a row in the same spot, within 10 px)
+    field rotation     : the image turned by -0.0' in all, -0.1' an hour; because of this, a star in the corner moves 0.00 px over one exposure
+    polar alignment    : the mount's axis is off the pole by at least 5.7' (found from the DEC drift, 1.5"/min; without a plate solve the declination is not known, so neither is how large it can be); because of this the stars move at least 0.50 px over an exposure of 120 s
     RA drift           : 0.2"/min (without a plate solve it is not known how much of it comes from the alignment)
 
   DITHERING

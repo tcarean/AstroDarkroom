@@ -123,6 +123,7 @@ public class EnglishGoldenOutputTests
         "implicit", "pozitii", "acoperire", "intindere", "aliniere", "perechi", "scara", "verde",
         "BUN", "LA LIMITA", "SLAB", "necitit", "inregistr", "Acest program",
         "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "niciodata", "alunec", "dunga", "dungi",
+        "latimea", "montura", "fotografiere", "totala", "nivelul", "inseamna", "rotit", "deviata", "gasite", "lumina", "ramane",
     ];
 
     /// <summary>The English text holds none of the Romanian words.</summary>

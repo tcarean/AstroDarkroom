@@ -255,7 +255,7 @@ public class AcceptanceTests
         using SessionFixture s = new SessionFixture().WithLights(3, exposure: 120, cadence: 150);
         (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         // 3 frames: starts at 0, 150, 300 s; the last ends at 420 s; 360 s of shutter over 420 = 86 %.
-        Assert.Contains("interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:42:03 (7 min); integrare 6 min din 3 cadre (86 % din interval)", stdout, StringComparison.Ordinal);
+        Assert.Contains("interval           : de la 2026-10-06 20:35:03 pana la 2026-10-06 20:42:03 (7 min); expunere totala 6 min, din 3 cadre (aparatul a expus 86 % din timp)", stdout, StringComparison.Ordinal);
     }
 
     [Fact]

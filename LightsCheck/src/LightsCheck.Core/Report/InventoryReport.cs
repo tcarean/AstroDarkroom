@@ -62,8 +62,8 @@ internal static class InventoryReport
         {
             int n = inv.Lights.Count(f => f.Error is not null);
             w.WriteLine(T(
-                $"    WARNING            : {n} {(n == 1 ? "frame could not be read" : "frames could not be read")} (see the table)",
-                $"    ATENTIE            : {n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi tabelul)"));
+                $"    WARNING            : {n} {(n == 1 ? "frame could not be read" : "frames could not be read")} (see the list of frames)",
+                $"    ATENTIE            : {n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi lista cadrelor)"));
         }
     }
 
@@ -145,28 +145,31 @@ internal static class InventoryReport
         List<string> parts = [];
         if (f.FocalMm is double focal)
         {
-            parts.Add(RunReport.F(focal, 0) + " mm" + (f.FNumber is double fn ? " f/" + RunReport.F(fn, 1) : "") + T(" (as shot)", " (poza)"));
+            parts.Add(RunReport.F(focal, 0) + " mm" + (f.FNumber is double fn ? " f/" + RunReport.F(fn, 1) : "") + T(" (when shot)", " (la fotografiere)"));
         }
 
-        // The lens as its chip declares it: "135 mm f/2.0" for a prime, "11-20 mm f/2.8" for a
-        // zoom.
+        // The lens as its chip declares it: "135 mm f/2.0 lens" ("obiectiv de 135 mm f/2.0") for
+        // a prime, "11-20 mm f/2.8 lens" for a zoom; no English article, which would depend on
+        // how the number is said ("an 11-20 mm").
         if (f.LensMinFocalMm is double lo && f.LensMaxFocalMm is double hi)
         {
             string range = lo == hi ? RunReport.F(lo, 0) : RunReport.F(lo, 0) + "-" + RunReport.F(hi, 0);
-            parts.Add(T("lens ", "obiectiv ") + range + " mm" + (f.LensMaxAperture is double ap ? " f/" + RunReport.F(ap, 1) : ""));
+            string lens = range + " mm" + (f.LensMaxAperture is double ap ? " f/" + RunReport.F(ap, 1) : "");
+            parts.Add(T($"{lens} lens", $"obiectiv de {lens}"));
         }
 
-        // The lens as the raw names it: "EF50mm f/1.4 USM" (ID 198, Canon EF), ID 74 (Nikon F),
-        // "FE 16-35mm F2.8 GM" (Sony E). The same in both languages: "ID" is one word in both.
+        // The lens as the raw names it: "EF50mm f/1.4 USM" (ID 198, Canon EF mount), ID 74 (Nikon F
+        // mount), "FE 16-35mm F2.8 GM" (Sony E mount). "ID" is one word in both languages.
         string id = f.LensId is long n ? "ID " + n.ToString(CultureInfo.InvariantCulture) : "";
+        string? mount = f.LensMount is string m ? T($"{m} mount", $"montura {m}") : null;
         if (f.LensName is string name)
         {
-            string inside = string.Join(", ", new[] { id, f.LensMount }.Where(p => !string.IsNullOrEmpty(p)));
+            string inside = string.Join(", ", new[] { id, mount }.Where(p => !string.IsNullOrEmpty(p)));
             parts.Add("\"" + name + "\"" + (inside.Length > 0 ? " (" + inside + ")" : ""));
         }
         else if (id.Length > 0)
         {
-            parts.Add(id + (f.LensMount is string mount ? " (" + mount + ")" : ""));
+            parts.Add(id + (mount is not null ? " (" + mount + ")" : ""));
         }
 
         return string.Join(", ", parts);
@@ -194,11 +197,14 @@ internal static class InventoryReport
     }
 
     /// <summary>
-    /// The interval cell: first and last time of capture, the span, the integration time, the
-    /// timed frame count and the share of the span spent exposing.
+    /// The interval cell, in plain words (R-078): first and last time of capture, the span, the
+    /// total exposure, the timed frame count and the share of the span spent exposing.
     /// </summary>
     /// <param name="inv">The inventory, whose cadence holds the figures.</param>
-    /// <returns>The cell, or an "unknown" sentence when the frames carry no time.</returns>
+    /// <returns>
+    /// `from ... to ... (3 h 22 min); total exposure 2 h 54 min, from 87 frames (the camera was
+    /// exposing 86 % of the time)`, or an "unknown" sentence when the frames carry no time.
+    /// </returns>
     private static string Interval(Inventory inv)
     {
         Cadence c = inv.Cadence;
@@ -207,11 +213,12 @@ internal static class InventoryReport
             return T("unknown (the frames carry no time)", "necunoscut (cadrele nu au ora)");
         }
 
-        string span = $"{start.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} -> {end.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} ({RunReport.Duration(c.SpanSeconds)})";
-        string integration = RunReport.Duration(c.IntegrationSeconds), duty = RunReport.F(c.DutyPct, 0);
+        string from = start.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture), to = end.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        string length = RunReport.Duration(c.SpanSeconds), total = RunReport.Duration(c.IntegrationSeconds), duty = RunReport.F(c.DutyPct, 0);
+        string frames = c.TimedFrames == 1 ? T("1 frame", "1 cadru") : T($"{c.TimedFrames} frames", $"{c.TimedFrames} cadre");
         return T(
-            $"{span}; integration {integration} from {c.TimedFrames} frames ({duty} % of the interval)",
-            $"{span}; integrare {integration} din {c.TimedFrames} cadre ({duty} % din interval)");
+            $"from {from} to {to} ({length}); total exposure {total}, from {frames} (the camera was exposing {duty} % of the time)",
+            $"de la {from} pana la {to} ({length}); expunere totala {total}, din {frames} (aparatul a expus {duty} % din timp)");
     }
 
     /// <summary>A time of capture as HH:mm:ss, or "-".</summary>

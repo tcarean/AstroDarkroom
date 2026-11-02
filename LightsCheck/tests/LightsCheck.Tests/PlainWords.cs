@@ -20,14 +20,17 @@ using System.Text.RegularExpressions;
 namespace LightsCheck.Tests;
 
 /// <summary>
-/// The method's words a text in plain words never holds (R-077), English and Romanian, whole
-/// words in any case; one list for the core's test and the window's, which links this file.
+/// The method's words a text in plain words never holds (R-077, R-078), English and Romanian,
+/// whole words in any case; one list for every tab, the core's tests and the window's, which
+/// link this file.
 /// </summary>
 internal static class PlainWords
 {
     private static readonly Regex MethodWords = new(
-        @"\b(median|mean|sigma|mpx|registered|unregistered|correlated|distinct|isolated|coverage|radius|consecutive|sign|span|threshold"
-        + @"|mediana|medie|inregistrat|inregistrate|neinregistrat|neinregistrate|corelat|distincte|izolate|acoperire|raza|fierbinti|semn|intindere|pragul)\b",
+        @"\b(median|medians|mean|sigma|mpx|registered|unregistered|correlated|distinct|isolated|coverage|radius|consecutive|sign|span|threshold"
+        + @"|penalty|coherent|integration|arcmin"
+        + @"|mediana|mediane|medie|inregistrat|inregistrate|neinregistrat|neinregistrate|corelat|distincte|izolate|acoperire|raza|fierbinti|semn|intindere|pragul"
+        + @"|penalizare|coerent|coerenta|integrare)\b",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     /// <summary>Fails when the text holds one of the method's words.</summary>

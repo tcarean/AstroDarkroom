@@ -243,14 +243,15 @@ internal static class SeriesRun
         clock.Lap("pattern");
 
         // The pixel scale: the files' XPIXSZ, else the typed size, else the raw's own, else the
-        // D3300's (R-066); the words are the report's, the choice is PixelPitch's.
+        // D3300's (R-066); the words are the report's, in plain words (R-078), the choice is
+        // PixelPitch's.
         (double pixel, PixelPitchSource source) = PixelPitch.Choose(infos, options.PixelSizeUm);
         string pixelSource = source switch
         {
-            PixelPitchSource.File => T("from the file (XPIXSZ)", "din fisier (XPIXSZ)"),
-            PixelPitchSource.Entered => T("entered", "introdus"),
-            PixelPitchSource.Raw => T("from the raw (35 mm-equivalent focal length)", "din raw (focala echivalenta 35 mm)"),
-            _ => T("default, Nikon D3300", "implicit, Nikon D3300"),
+            PixelPitchSource.File => T("written in the file (XPIXSZ)", "scris in fisier (XPIXSZ)"),
+            PixelPitchSource.Entered => T("typed by you", "introdus de tine"),
+            PixelPitchSource.Raw => T("worked out from the raw, from the 35 mm-equivalent focal length", "calculat din raw, din focala echivalenta 35 mm"),
+            _ => T("the Nikon D3300's value, by default", "valoarea pentru Nikon D3300, implicit"),
         };
         double? focal = infos.Select(f => f.FocalMm).FirstOrDefault(f => f is not null);
         double? scale = focal is double fm && fm > 0 ? 206.265 * pixel / fm : null;

@@ -34,6 +34,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Summary tab, the console's session lines (`--inventory` too) and its sections SUMMARY,
+  FOCUS, EXPOSURE AND NOISE, DEW, TRAILED FRAMES and DRIFT AND ROTATION speak in plain words
+  (R-078, ADR 0033): `the stars' width (FWHM)` and `typically` for the median, `total exposure`
+  for the integration, `extra noise` for the penalty, `the light around the stars (halo)`, the
+  polar error as how far the mount's axis is off the pole and its cost as how far it moves the
+  stars, angles in `'`, `(when shot)` and the lens's mount named as one, and a legend under the
+  noise rows labelled `what it means`. Every figure is unchanged.
 - The Dithering tab and the console's DITHERING section speak in plain words (R-077, ADR 0032):
   `frames aligned` for registered, `how close the frames are` for coverage, `different spots`,
   `frames alone`, `area of the positions`, `hot pixels per million pixels`, `typically` for the
