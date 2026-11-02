@@ -190,6 +190,45 @@ public class WindowLanguageTests
         }
     }
 
+    /// <summary>
+    /// The rendered Frames tab, its column titles and tooltips, the reasons and a frame's star
+    /// cut-outs with their caption, and the cut-outs' wait note name none of the method's words,
+    /// in either language (R-079).
+    /// </summary>
+    [Fact]
+    public async Task R079_TheFramesTabUsesNoneOfTheMethodsWords()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);
+        try
+        {
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                Ui.Default = language;
+                await _sta.InvokeAsync(async () =>
+                {
+                    MainViewModel vm = new();
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+                    vm.SelectedFrame = vm.Frames[2];
+                    await vm.CropsPending;
+                    Assert.NotEmpty(vm.Crops);
+
+                    List<string> texts = [.. Texts(Render(new FramesView { DataContext = vm }, null))];
+                    texts.Add(WindowTexts.CropsBusy);
+                    foreach (string text in texts)
+                    {
+                        PlainWords.AssertPlain(text.Replace(f.Root, "", StringComparison.Ordinal), $"the Frames tab ({language})");
+                    }
+                });
+            }
+        }
+        finally
+        {
+            Ui.Default = UiLanguage.Romanian;
+        }
+    }
+
     [Fact]
     public async Task R063_TheSameWindowInRomanianStillShowsRezumat()
     {
@@ -315,6 +354,8 @@ public class WindowLanguageTests
         "MUTAT", "DINAINTE", "aliniat", "singure", "locuri", "pozitiilor", "tarie", "apropier", "obicei", "niciodata", "alunec",
         "dunga", "dungi", "Bara ", "latimea", "montura", "fotografiere", "totala", "nivelul", "inseamna", "rotit", "deviata",
         "gasite", "lumina", "ramane",
+        "alinia", "comune", "obisnuit", "semnaleaza", "vecine", "putine", "stivuire", "satelit", "referinta", "adica", "ceata", "scoate",
+        "citeste", "marite", "rotunde", "alungite", "sfarsitul", "paranteza", "sageata", "incotro", "grupul", "negru", "imaginii", "catelea",
     ];
 
     /// <summary>The English texts hold none of the Romanian words.</summary>

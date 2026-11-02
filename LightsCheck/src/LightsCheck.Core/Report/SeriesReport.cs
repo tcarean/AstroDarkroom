@@ -277,14 +277,17 @@ internal static class SeriesReport
     /// The caption of a star cut-out: where it was taken and the star's three figures.
     /// </summary>
     /// <param name="c">The cut-out and its star; not null.</param>
-    /// <returns>The place, the FWHM in pixels, the elongation and the angle in degrees.</returns>
+    /// <returns>
+    /// The place, the width (FWHM) in pixels, the elongation and the angle in degrees, each
+    /// named in plain words (R-079).
+    /// </returns>
     internal static string CropCaption(StarCrop c)
     {
         ArgumentNullException.ThrowIfNull(c);
         string fwhm = RunReport.F(c.Star.Fwhm, 1), elongation = RunReport.F(c.Star.Elongation, 2), angle = RunReport.F(c.Star.AngleDeg, 0);
         return T(
-            $"{c.Where}: FWHM {fwhm} px, elongation {elongation}, angle {angle}",
-            $"{c.Where}: FWHM {fwhm} px, alungire {elongation}, unghi {angle}");
+            $"{c.Where}: width (FWHM) {fwhm} px, elongation {elongation}, angle {angle} degrees",
+            $"{c.Where}: latime (FWHM) {fwhm} px, alungire {elongation}, unghi {angle} grade");
     }
 
     /// <summary>
@@ -1231,7 +1234,10 @@ internal static class SeriesReport
 
     // ------------------------------------------------------------------ the words
 
-    /// <summary>The words of a flag: the kind, the figure and the threshold.</summary>
+    /// <summary>
+    /// The words of a flag, plain (R-079): what was found, its figure and the value from which it
+    /// counts, said as what it means for the frame.
+    /// </summary>
     /// <param name="f">The flag; not null.</param>
     /// <returns>The flag in words; the kind's name for a kind without words.</returns>
     internal static string Reason(FrameFlag f)
@@ -1239,14 +1245,14 @@ internal static class SeriesReport
         ArgumentNullException.ThrowIfNull(f);
         return f.Kind switch
         {
-            FlagKind.Trailed => T($"elongation {RunReport.F(f.Value, 2)} (threshold {RunReport.F(f.Threshold, 2)}){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (prag {RunReport.F(f.Threshold, 2)}){TrailSuffix(f)}"),
-            FlagKind.MarginalTrail => T($"elongation {RunReport.F(f.Value, 2)} marginal (threshold {RunReport.F(f.Threshold, 2)}){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} la limita (prag {RunReport.F(f.Threshold, 2)}){TrailSuffix(f)}"),
-            FlagKind.Soft => T($"FWHM {RunReport.F(f.Value, 2)} px, above {RunReport.F(f.Threshold, 2)} ({RunReport.F(Th.SoftFwhmFactor, 1)} x the session's median)", $"FWHM {RunReport.F(f.Value, 2)} px, peste {RunReport.F(f.Threshold, 2)} ({RunReport.F(Th.SoftFwhmFactor, 1)} x mediana sesiunii)"),
-            FlagKind.Clouds => T($"stars {RunReport.F(f.Value, 0)}, under {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % of the median): clouds or haze", $"stele {RunReport.F(f.Value, 0)}, sub {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % din mediana): nori sau ceata"),
-            FlagKind.BackgroundJump => T($"background jump {Signed(f.Value, 0)} % relative to the neighbours (threshold {RunReport.F(f.Threshold, 0)} %)", $"salt de fond {Signed(f.Value, 0)} % fata de vecini (prag {RunReport.F(f.Threshold, 0)} %)"),
-            FlagKind.Trails => T($"{RunReport.F(f.Value, 0)} {(f.Value == 1 ? "trail (satellite/plane; sigma clipping removes it)" : "trails (satellite/plane; sigma clipping removes them)")}", $"{RunReport.F(f.Value, 0)} dara (satelit/avion; sigma clipping o scoate)"),
+            FlagKind.Trailed => T($"elongation {RunReport.F(f.Value, 2)} (from {RunReport.F(f.Threshold, 2)} the frame is bad){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (de la {RunReport.F(f.Threshold, 2)} cadrul e slab){TrailSuffix(f)}"),
+            FlagKind.MarginalTrail => T($"elongation {RunReport.F(f.Value, 2)} (from {RunReport.F(f.Threshold, 2)} the frame is marginal){TrailSuffix(f)}", $"alungire {RunReport.F(f.Value, 2)} (de la {RunReport.F(f.Threshold, 2)} cadrul e la limita){TrailSuffix(f)}"),
+            FlagKind.Soft => T($"wide stars: width (FWHM) {RunReport.F(f.Value, 2)} px, over {RunReport.F(f.Threshold, 2)}, that is {RunReport.F(Th.SoftFwhmFactor, 1)} times the session's usual width", $"stele late: latimea (FWHM) {RunReport.F(f.Value, 2)} px, peste {RunReport.F(f.Threshold, 2)}, adica de {RunReport.F(Th.SoftFwhmFactor, 1)} ori latimea obisnuita din sesiune"),
+            FlagKind.Clouds => T($"too few stars: {RunReport.F(f.Value, 0)}, under {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % of a frame's usual count): clouds or haze", $"prea putine stele: {RunReport.F(f.Value, 0)}, sub {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % din cate are de obicei un cadru): nori sau ceata"),
+            FlagKind.BackgroundJump => T($"the sky background jumps by {Signed(f.Value, 0)} % against the neighbouring frames (flagged from {RunReport.F(f.Threshold, 0)} %)", $"fondul cerului sare cu {Signed(f.Value, 0)} % fata de cadrele vecine (se semnaleaza de la {RunReport.F(f.Threshold, 0)} %)"),
+            FlagKind.Trails => Count((int)f.Value, ("satellite or plane trail (Siril takes it out when stacking)", "dara de satelit sau avion (Siril o scoate la stivuire)"), ("satellite or plane trails (Siril takes them out when stacking)", "dare de satelit sau avion (Siril le scoate la stivuire)")),
             FlagKind.Unreadable => T("could not be read", "nu s-a putut citi") + (f.Detail is null ? "" : ": " + f.Detail),
-            FlagKind.Unregistered => T("not registered (too few stars matched with the reference)", "neinregistrat (prea putine stele potrivite cu referinta)"),
+            FlagKind.Unregistered => T("could not be aligned (too few stars in common with the reference frame)", "nu s-a putut alinia (prea putine stele comune cu cadrul de referinta)"),
             _ => f.Kind.ToString(),
         };
     }

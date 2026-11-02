@@ -66,17 +66,17 @@ Copyright (C) 2026 Tudor Carean
     verdict            : NO walking noise, OK for hot pixels - walking-noise streaks of at most 0.5 px: the drift is 0.50 px over one exposure; frames 1-2, 2 frames in a row in the same spot, within 10 px; 3 moves over 8 frames, 4 different spots (within 10 px), 0 frames alone, 0 moves on both axes
 
   REJECTED (2 bad frames; the marginal ones stay, your choice)
-      3  DSC_0003.fit          elongation 1.76 (threshold 1.60), trail on RA (-90 degrees)
-      6  DSC_0006.fit          elongation 1.76 (threshold 1.60), trail on RA (-90 degrees)
+      3  DSC_0003.fit          elongation 1.76 (from 1.60 the frame is bad), trail on RA (-90 degrees)
+      6  DSC_0006.fit          elongation 1.76 (from 1.60 the frame is bad), trail on RA (-90 degrees)
 
   FRAME BY FRAME
      no  file                  time      class     elong   FWHM   stars     bg  pause   step      dX      dY  dithering                                   same spot       reasons
       1  DSC_0001.fit          20:35:03  good       1.01   3.25      40   2000      -      -     0.0     0.0  -                                           -               
       2  DSC_0002.fit          20:37:04  good       1.01   3.25      40   2000    1 s    0.5     0.5     0.2  -                                           -               
-      3  DSC_0003.fit          20:39:34  BAD        1.76   4.59      40   2000   30 s   11.5    12.0    -0.0  DEC 12 px                                   -               elongation 1.76 (threshold 1.60), trail on RA (-90 degrees)
+      3  DSC_0003.fit          20:39:34  BAD        1.76   4.59      40   2000   30 s   11.5    12.0    -0.0  DEC 12 px                                   -               elongation 1.76 (from 1.60 the frame is bad), trail on RA (-90 degrees)
       4  DSC_0004.fit          20:41:35  good       1.01   3.26      40   2000    1 s    0.6    12.5     0.3  -                                           -               
       5  DSC_0005.fit          20:44:05  good       1.01   3.25      40   2000   30 s   15.3    12.0   -15.0  RA 15 px                                    -               
-      6  DSC_0006.fit          20:46:06  BAD        1.76   4.60      40   2001    1 s    0.5    12.5   -15.0  -                                           -               elongation 1.76 (threshold 1.60), trail on RA (-90 degrees)
+      6  DSC_0006.fit          20:46:06  BAD        1.76   4.60      40   2001    1 s    0.5    12.5   -15.0  -                                           -               elongation 1.76 (from 1.60 the frame is bad), trail on RA (-90 degrees)
       7  DSC_0007.fit          20:48:36  good       1.01   3.24      40   2001   30 s   27.5    40.0   -15.0  DEC 27 px                                   -               
       8  DSC_0008.fit          20:50:37  good       1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               
 --- stderr ---
