@@ -179,7 +179,7 @@ internal sealed class FrameStack
             string path = paths[i];
             if (i % step != 0)
             {
-                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, T($"skipped (over {maxFrames} frames only one in {step} is read)", $"sarit (peste {RoCount(maxFrames)}cadre se citeste doar unul din {step})"), Skipped: true);
+                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, SkippedReason(maxFrames, step), Skipped: true);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }
@@ -393,6 +393,18 @@ internal sealed class FrameStack
         bool sameExposure = a.ExposureSeconds is not double ea || first.ExposureSeconds is not double eb || MatchAnalyzer.SameExposure(ea, eb);
         return sameIso && sameExposure;
     }
+
+    /// <summary>
+    /// The reason a frame the cap skipped gives, the same for the darks, the biases and the lights:
+    /// one file in <paramref name="step"/> is read when there are more than
+    /// <paramref name="maxFrames"/>.
+    /// </summary>
+    /// <param name="maxFrames">The cap, at least 1.</param>
+    /// <param name="step">How many files there are for each one read, at least 2.</param>
+    /// <returns>The reason, in the run's language.</returns>
+    internal static string SkippedReason(int maxFrames, int step) => maxFrames == 1
+        ? T($"skipped (over 1 frame only one in {step} is read)", $"sarit (peste 1 cadru se citeste doar unul din {step})")
+        : T($"skipped (over {maxFrames} frames only one in {step} is read)", $"sarit (peste {RoCount(maxFrames)}cadre se citeste doar unul din {step})");
 
     /// <summary>
     /// ": file: error; file: error" for the first three frames that failed (not the skipped ones),

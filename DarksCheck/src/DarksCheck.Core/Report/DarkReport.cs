@@ -410,14 +410,14 @@ internal static class DarkReport
     /// The frames table's header line: the column names, then <see cref="FrameTableNote"/>.
     /// </summary>
     /// <param name="r">The run's result; not null.</param>
-    /// <returns>The header line, in the run's language; each column name ends where the
-    /// Romanian one ends, so the right-aligned figures stay under it.</returns>
+    /// <returns>The header line, in the run's language; each column name ends in the column where
+    /// <see cref="FrameLine"/>'s figures under it end, in both languages.</returns>
     internal static string FrameTableHeader(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
         return T(
-            $"     no  file                  time       mean   noise   diff.   bands      hot plateau   light    side  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}",
-            $"     nr  fisier                ora       medie  zgomot    dif.   benzi   fierb.  platou  lumina  latura  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}");
+            $"     no  file                  time        mean   noise   diff.   bands      hot plateau   light    side   >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}",
+            $"     nr  fisier                ora        medie  zgomot    dif.   benzi   fierb.  platou  lumina  latura   >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}");
     }
 
     /// <summary>

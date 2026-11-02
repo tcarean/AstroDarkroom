@@ -172,7 +172,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Border>
         <Border Style="{StaticResource Card}" Margin="0,14,0,0">
           <StackPanel>
-            <TextBlock Style="{StaticResource Heading}" Text="{l:T En='HOW MUCH EACH FRAME DIFFERS FROM THE MASTER (ADU)', Ro='CAT DIFERA FIECARE CADRU DE MASTER (ADU)'}" />
+            <TextBlock Style="{StaticResource Heading}" TextWrapping="Wrap" Text="{l:T En='HOW MUCH EACH FRAME DIFFERS FROM THE MASTER (ADU)', Ro='CAT DIFERA FIECARE CADRU DE MASTER (ADU)'}" />
             <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
                        Text="{l:T En='The noise of each frame against the master; a frame above the dotted line is much noisier than the others (check 4).', Ro='Zgomotul fiecarui cadru fata de master; un cadru peste linia punctata e mult mai zgomotos decat celelalte (verificarea 4).'}" />
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">

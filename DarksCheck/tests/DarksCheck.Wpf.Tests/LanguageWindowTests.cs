@@ -161,6 +161,8 @@ public partial class LanguageWindowTests
                 Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "1.5 times the usual noise" : "de 1.5 ori zgomotul obisnuit", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "no banding" : "fara benzi", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "RANDOM BANDING (1 = NO BANDING)" : "BENZI ALEATOARE (1 = FARA BENZI)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? "How many times more the rows of the frame differ from one another" : "De cate ori difera randurile cadrului intre ele", all, StringComparison.Ordinal);
                 Regex method = english ? PlainWords.EnglishFramesWords() : PlainWords.RomanianFramesWords();
                 List<string> left = texts.Where(t => method.IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
                 Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));

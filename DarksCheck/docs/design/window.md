@@ -102,7 +102,7 @@ they are now.
   `RowVm`, the `ReportRow` template) and `ScaleParagraphs` (`ScaleReport.Paragraphs`, one
   wrapped `TextBlock` each) under `ScaleTitle`, the core's title;
 - the two tables take `DarkReport.FrameRows` and `LightRows` as `FrameRowVm` / `LightRowVm`,
-  the console's cells as they are, with the unit note of the table header (`[G1; ...]`) as
+  the console's cells as they are, with the unit note of the table header (`[pixelii verzi G1; ...]`, `[G1; ...]` for the lights) as
   the last column's header; a dark row's `Off` is set when the core gave it a `Note` (a frame
   off the plateau, R-023), and `FramesView` then tints the row (`FrameRowGrid`, the note as
   its tooltip), colours the `platou` cell bold (`PlateauCell`) and shows the note on a second

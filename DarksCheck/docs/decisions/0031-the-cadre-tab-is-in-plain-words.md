@@ -2,6 +2,7 @@
 
 Date: 2026-11-02
 Status: accepted 2026-11-02
+Supersedes: 0030 in part (the words of the no-frame messages)
 
 ## Context
 
@@ -45,6 +46,7 @@ question left from the Rezumat: the analysis's messages when no frame of a kind 
 
 ## Consequences
 
-- R-025, R-027, R-053, R-071 and R-110 quote the new words; R-083 is new.
-- The console's `--help` and the window's `THREADS` hint still say `se decodeaza`: they are the
-  console's and the top bar's texts, not the Cadre tab's.
+- R-025, R-027, R-028, R-053, R-071 and R-110 quote the new words; R-083 is new.
+- The console's `--help`, the window's `THREADS` hint, the start screen (`sunt decodate si
+  masurate`) and the progress lines (`decodare dark-uri: 3 / 20`) still say it: they are the
+  console's, the top bar's and the start screen's texts, not the Cadre tab's.

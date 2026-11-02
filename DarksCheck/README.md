@@ -230,7 +230,7 @@ degree to go: the master belongs to no temperature, continue the series) or when
 the start is only stated. Under 6 frames no plateau is fitted and the verdict rests on the 0.7
 to 1.4 margin alone. In the frames table the column `plateau` gives every frame's degrees from
 the plateau, and a frame to discard has its reason at the end of its row; in the window, the
-Frames tab shows that row, the value and the reason in the attention colour, and the chart has
+Frames tab shows that row, the value and the reason in yellow, and the chart has
 the plateau and the two bounds.
 
 #### Checks 4 to 8
@@ -338,7 +338,7 @@ The end of the report's sections on Smida:
 
 ```
   FRAMES TABLE
-     no  file                  time       mean   noise   diff.   bands      hot plateau   light    side  >20   [the green pixels G1; mean = how far the frame is above the black, ADU; ...
+     no  file                  time        mean   noise   diff.   bands      hot plateau   light    side   >20   [the green pixels G1; mean = how far the frame is above the black, ADU; ...
       1  DSC_0034.NEF          00:48:53   -0.45    1.46    1.47     4.3    0.826    -2.5   +0.02   +0.03   115   to discard: the hot pixels are at 0.826 of the master, below 0.87, that is more than 2.0 degrees below the plateau (1.10)
       2  DSC_0035.NEF          00:50:53   -0.47    1.46    1.47     4.3    0.846    -2.2   +0.00   +0.02   110   to discard: the hot pixels are at 0.846 of the master, below 0.87, that is more than 2.0 degrees below the plateau (1.10)
       3  DSC_0036.NEF          00:52:53   -0.41    1.48    1.49     5.0    0.900    -1.7   +0.05   -0.03   125
