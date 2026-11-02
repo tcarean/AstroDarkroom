@@ -25,10 +25,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              xmlns:local="clr-namespace:LightsCheck.Wpf">
   <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18">
     <StackPanel>
+      <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,12" TextWrapping="Wrap" Text="{local:T En='Each point is a frame, in the order they were shot (the numbers along the bottom). On the first two charts the colour gives the frame\'s class: green good, yellow marginal, red bad.', Ro='Fiecare punct e un cadru, in ordinea fotografierii (numerele de jos). Pe primele doua grafice culoarea spune clasa cadrului: verde bun, galben la limita, rosu slab.'}" />
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='MEDIAN FWHM (px)', Ro='FWHM MEDIAN (px)'}" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="{local:T En='The focus and the seeing; a trailed frame rises too, since the trail is wider.', Ro='Focusul si seeing-ul; un cadru miscat creste si el, fiindca dara e mai lata.'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='THE STARS\' WIDTH (FWHM, px)', Ro='LATIMEA STELELOR (FWHM, px)'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap" Text="{local:T En='How wide the stars are in each frame, typically. They come out wider when the focus slips or the air is unsteady (seeing); a trailed frame stands higher too, since its stars are stretched.', Ro='Cat de late sunt stelele in fiecare cadru, de obicei. Ies mai late cand se pierde focusul sau cand aerul e agitat (seeing); un cadru miscat iese si el mai sus, fiindca stelele lui sunt intinse.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding FwhmPoints}" />
           </Border>
@@ -36,8 +37,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='MEDIAN ELONGATION', Ro='ALUNGIREA MEDIANA'}" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="{local:T En='1 = round stars; above the dotted lines the frame is marginal, then bad.', Ro='1 = stele rotunde; peste liniile punctate cadrul e la limita, apoi slab.'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='HOW ELONGATED THE STARS ARE', Ro='CAT DE ALUNGITE SUNT STELELE'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap" Text="{local:T En='1 = round stars. Above the yellow dotted line the frame is marginal; above the red one it is bad and leaves the stack.', Ro='1 = stele rotunde. Peste linia punctata galbena cadrul e la limita; peste cea rosie e slab si iese din stiva.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding ElongationPoints}" Guides="{Binding ElongationGuides}" Minimum="1" />
           </Border>
@@ -45,8 +46,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='STARS DETECTED', Ro='STELE DETECTATE'}" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="{local:T En='They fall with clouds, haze and dew; they fall a little when the background rises too.', Ro='Scad cu norii, cu ceata si cu roua; scad putin si cand fondul creste.'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='STARS FOUND', Ro='STELE GASITE'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap" Text="{local:T En='How many stars were found in each frame. They drop when clouds or haze pass and when dew forms on the lens; they drop a little when the sky brightens too.', Ro='Cate stele s-au gasit in fiecare cadru. Scad cand trec nori sau ceata si cand se pune roua pe obiectiv; scad putin si cand cerul se lumineaza.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding StarPoints}" />
           </Border>
@@ -54,8 +55,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='SKY BACKGROUND ON GREEN (ADU above black)', Ro='FOND DE CER PE VERDE (ADU peste black)'}" />
-          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="{local:T En='The field sinking lower, the moon, light pollution; a jump on a single frame is a passing light or a different exposure.', Ro='Campul care coboara, luna, poluarea luminoasa; un salt pe un singur cadru e o lumina de moment sau o expunere diferita.'}" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='THE SKY BACKGROUND, ON GREEN (ADU above the black level)', Ro='FONDUL CERULUI, PE VERDE (ADU peste nivelul de negru)'}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap" Text="{local:T En='How bright the sky is in each frame. It rises as the field sinks toward the horizon, when the moon rises, or with light pollution; a jump on a single frame comes from a passing light or a different exposure.', Ro='Cat de luminos e cerul in fiecare cadru. Urca atunci cand campul coboara spre orizont, cand rasare luna sau din cauza poluarii luminoase; un salt pe un singur cadru vine de la o lumina trecatoare sau de la o expunere diferita.'}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:SeriesChart Height="180" Points="{Binding BackgroundPoints}" />
           </Border>

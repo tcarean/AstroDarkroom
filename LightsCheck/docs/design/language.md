@@ -80,19 +80,20 @@ before `NO `).
 
 The English follows Siril's and the usual astrophotography vocabulary, British in spelling
 (`centre`, `colour`, `analysed`); a term is translated the same way everywhere. The words are
-plain ones (the rule "Plain words", R-077, R-078, R-079): the Dithering, Summary and Frames tabs,
-the reasons wherever they are printed, and the console's sections and session lines they share,
-use the plain terms below; the Quality tab and the Rejected tab's explanation keep their older
-words until their own rewrite.
+plain ones (the rule "Plain words", R-077 to R-080): the Dithering, Summary, Frames and Quality
+tabs, the reasons wherever they are printed, and the console's sections and session lines they
+share, use the plain terms below; the Rejected tab's explanation keeps its older words until its
+own rewrite.
 
 | Romanian | English |
 | --- | --- |
 | cadru / cadre | frame / frames |
 | light, bias, dark, flat, stack, dithering, walking noise, FWHM, halo | the same |
-| alungire | elongation |
+| alungire / cat de alungite sunt stelele | elongation / how elongated the stars are |
 | dara (stea) / dare de walking noise | trail / walking-noise streaks |
 | roua | dew |
 | fond (de cer) | (sky) background |
+| stele gasite | stars found |
 | zgomot de citire / shot/citire / zgomot in plus | read noise / shot/read / extra noise |
 | latimea stelelor (FWHM) / lumina din jurul stelelor (halo) | the stars' width (FWHM) / the light around the stars (halo) |
 | expunere totala / la fotografiere / montura | total exposure / when shot / mount |
@@ -140,9 +141,9 @@ tab with a real result, the problem card, the empty window and the About window 
 collects every text of the visual tree plus the charts' own labels, none of which may hold a
 Romanian word; checks that the same window in Romanian shows `Rezumat`; and checks that every
 verdict and class word the core writes for a result colours the same in both languages. It
-also renders the Dithering, Summary and Frames tabs in each language, the Frames tab with a
-frame's cut-outs, and holds their texts, the tooltips and the charts' labels included, against
-the method's words of `PlainWords` (R-077, R-078, R-079), the list `SeriesTests` holds the core's
+also renders the Dithering, Summary, Frames and Quality tabs in each language, the Frames tab
+with a frame's cut-outs, and holds their texts, the tooltips and the charts' labels included,
+against the method's words of `PlainWords` (R-077 to R-080), the list `SeriesTests` holds the core's
 rows, tables, paragraphs, reasons and cut-out lines against, linked from `LightsCheck.Tests`.
 It measures every reason a trailed frame can get, in both languages, in the cell's font and the
 window's whole-pixel text, against the Frames table's reasons cell as the tab lays it out (R-079).
