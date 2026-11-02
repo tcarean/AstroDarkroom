@@ -143,5 +143,7 @@ verdict and class word the core writes for a result colours the same in both lan
 also renders the Dithering, Summary and Frames tabs in each language, the Frames tab with a
 frame's cut-outs, and holds their texts, the tooltips and the charts' labels included, against
 the method's words of `PlainWords` (R-077, R-078, R-079), the list `SeriesTests` holds the core's
-rows, tables, paragraphs, reasons and cut-out lines against, linked from `LightsCheck.Tests`. With
-`LIGHTSCHECK_DUMP_SCREENS` it saves the English screens as `en-*.png`.
+rows, tables, paragraphs, reasons and cut-out lines against, linked from `LightsCheck.Tests`.
+It measures every reason a trailed frame can get, in both languages, in the cell's font and the
+window's whole-pixel text, against the Frames table's reasons cell as the tab lays it out (R-079).
+With `LIGHTSCHECK_DUMP_SCREENS` it saves the English screens as `en-*.png`.

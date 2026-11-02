@@ -229,6 +229,46 @@ public class WindowLanguageTests
         }
     }
 
+    /// <summary>
+    /// Every reason a trailed frame can get, bad or marginal, on RA, on DEC, oblique or with its
+    /// angle alone, fits whole in the Frames table's reasons cell, in either language (R-079):
+    /// measured in the cell's font and in the window's text formatting, whose whole-pixel letters
+    /// are the widest at 100 % scaling, against the cell as the tab lays it out.
+    /// </summary>
+    [Fact]
+    public async Task R079_EveryTrailReasonFitsTheReasonsColumn()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        await _sta.InvokeAsync(async () =>
+        {
+            MainViewModel vm = new();
+            await vm.OpenAsync(f.Root);
+            FramesView view = new() { DataContext = vm };
+            TextOptions.SetTextFormattingMode(view, TextOptions.GetTextFormattingMode(new MainWindow(vm)));
+            string reasons = vm.Frames[2].Reasons;
+            TextBlock cell = TextBlocks(Render(view, null)).First(tb => tb.Text == reasons);
+
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                using IDisposable _ = Ui.Use(language);
+                foreach (FlagKind kind in new[] { FlagKind.Trailed, FlagKind.MarginalTrail })
+                {
+                    foreach (TrailAxis on in new[] { TrailAxis.Ra, TrailAxis.Dec, TrailAxis.Oblique, TrailAxis.Unknown })
+                    {
+                        FrameFlag flag = kind == FlagKind.Trailed
+                            ? new(kind, 2.45, Th.ElongationBad, "-65", on)
+                            : new(kind, 1.59, Th.ElongationMarginal, "-65", on);
+                        string reason = SeriesReport.Reason(flag);
+                        TextBlock probe = new() { Text = reason, FontFamily = cell.FontFamily, FontSize = cell.FontSize, FontWeight = cell.FontWeight, FontStyle = cell.FontStyle };
+                        TextOptions.SetTextFormattingMode(probe, TextOptions.GetTextFormattingMode(cell));
+                        probe.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                        Assert.True(probe.DesiredSize.Width <= cell.ActualWidth, $"{probe.DesiredSize.Width:F0} px of text in a cell of {cell.ActualWidth:F0} px ({language}): {reason}");
+                    }
+                }
+            }
+        });
+    }
+
     [Fact]
     public async Task R063_TheSameWindowInRomanianStillShowsRezumat()
     {
@@ -331,6 +371,25 @@ public class WindowLanguageTests
             if (d is FrameworkElement { ToolTip: string tip })
             {
                 yield return tip;
+            }
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+            {
+                todo.Push(VisualTreeHelper.GetChild(d, i));
+            }
+        }
+    }
+
+    /// <summary>Every text block of the visual tree under an element.</summary>
+    private static IEnumerable<TextBlock> TextBlocks(DependencyObject root)
+    {
+        Stack<DependencyObject> todo = new([root]);
+        while (todo.Count > 0)
+        {
+            DependencyObject d = todo.Pop();
+            if (d is TextBlock tb)
+            {
+                yield return tb;
             }
 
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)

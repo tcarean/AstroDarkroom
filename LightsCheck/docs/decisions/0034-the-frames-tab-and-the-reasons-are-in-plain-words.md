@@ -26,10 +26,25 @@ aligned. The reasons change wherever they are printed, the Rejected tab and the 
 included. The column titles, the class words and the cells with figures stay. The words prag,
 consecutiv, decodeaza and decoding join the one list of `PlainWords`.
 
+The Frames table's reasons column widens from 280 to 560 px (the owner, in chat on 2026-11-02).
+The window draws its text with whole-pixel letters (`TextFormattingMode` Display), so a letter of
+the table's 12 px Consolas takes 7 px on a screen at 100 % scaling, the owner's and the widest
+case. At 280 px the cell shows 38 letters, and the new reasons run from 64 to 94. At 560 px every
+reason of a trailed frame, bad or marginal, on RA, on DEC, oblique or with its angle alone, fits
+whole in both languages (78 letters and 546 px at most, the English marginal one with an oblique
+trail). The longer reasons (wide stars, too few stars, the sky jump, two flags joined) stay cut,
+whole in their tooltip and on the Rejected tab.
+
 ## Alternatives rejected
 
 - **The window only.** The reasons are composed once (ADR 0008, ADR 0012) and the console's
   reader is the same person; ADR 0032 rejected the same split.
+- **A reasons column of 480 or 530 px.** At 100 % scaling 480 px holds 67 letters, which cuts
+  the marginal reasons in both languages; 530 px holds 74, every Romanian reason but not the
+  English marginal ones (76 to 78 letters). The owner chose each on a width measured too low, and
+  each went back to the owner when the measure was redone.
+- **Keeping the column at 280 px.** The tooltip and the Rejected tab show a reason whole, but the
+  cell would cut every reason in the middle of its sentence.
 - **Keeping `sigma clipping` by name.** It is the name of Siril's step, but the reader needs to
   know only that the stack takes the trail out; the word `sigma` is the method's.
 
@@ -37,7 +52,8 @@ consecutiv, decodeaza and decoding join the one list of `PlainWords`.
 
 - `R079_TheReasonsAvoidTheMethodsVocabulary` (the reasons and cut-out lines from the core, both
   languages) and `R079_TheFramesTabUsesNoneOfTheMethodsWords` (the rendered tab with its
-  tooltips and cut-outs, both languages) check it.
+  tooltips and cut-outs, both languages) check it, and `R079_EveryTrailReasonFitsTheReasonsColumn`
+  measures every trail reason, in both languages, against the rendered cell.
 - The goldens `series` and `series-classes` and their English twins change on their RESPINSE
   lines and the reasons of their frame tables; every number in them is unchanged.
 - The Quality and Rejected tabs follow; the Rejected tab keeps its explanation paragraphs and

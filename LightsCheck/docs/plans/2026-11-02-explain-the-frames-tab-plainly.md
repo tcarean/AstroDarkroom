@@ -85,3 +85,10 @@ the cells with figures (`RA 17 px ← V`, `7/10 de la 61`) stay.
   over the four goldens).
 - The same-spot tooltip's `10 px` stays a literal in the XAML, as it was; it is
   `Th.CoverageLoose`.
+- Added after the first commit, at the owner's word: the reasons column widens from 280 to 560 px
+  (R-079, ADR 0034), with `R079_EveryTrailReasonFitsTheReasonsColumn` failing first at 280 px
+  (`448 px of text in a cell of 272 px`). The owner first said yes to 480 px, then chose 530 px,
+  each time on a width I had measured too low: first without the English marginal reasons, then
+  without the window's whole-pixel letters (7 px a letter at 100 % scaling, this PC's). Each
+  answer went back to the owner with the new figure, and 560 px is the width measured as the
+  window draws.

@@ -51,7 +51,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="60" />
           <ColumnDefinition Width="200" />
           <ColumnDefinition Width="100" />
-          <ColumnDefinition Width="280" />
+          <ColumnDefinition Width="560" />
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Column="0" Style="{StaticResource Cell}" Text="{Binding Index}" />
         <TextBlock Grid.Column="1" Style="{StaticResource Cell}" Text="{Binding File}" TextTrimming="CharacterEllipsis" />
@@ -101,7 +101,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="60" />
             <ColumnDefinition Width="200" />
             <ColumnDefinition Width="100" />
-            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="560" />
           </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="{local:T En='no', Ro='nr'}" />
           <TextBlock Grid.Column="1" Style="{StaticResource Head}" Text="{local:T En='file', Ro='fisier'}" />
