@@ -25,8 +25,13 @@ namespace FlatCheck.Wpf.Tests;
 /// Siril is replaced by a runner that writes a generated master where the script would;
 /// the temp root is redirected into the test workspace so nothing touches %TEMP%.
 /// </summary>
+[Collection("window")]
 public class SplitTabTests
 {
+    readonly StaFixture _sta;
+
+    public SplitTabTests(StaFixture sta) => _sta = sta;
+
     const int Size = 128;
     static readonly DateTime When = new(2026, 9, 28, 10, 31, 0);
 
@@ -355,7 +360,11 @@ public class SplitTabTests
         var vm = Vm(f, ws, FakeSiril(new List<Seen>()));
         vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.Phase) && vm.Phase.Length > 0) phases.Add(vm.Phase); };
 
-        await vm.StartAsync();
+        // On a dispatcher, as the window runs it: there the copy's progress reports arrive in
+        // order, before the split's end. On the thread pool a test has otherwise, they arrive in
+        // no fixed order, and a late one could overwrite the final 1 (one failure under load on
+        // 2026-11-01, not reproduced in 140 runs; ADR 0087).
+        await _sta.InvokeAsync(() => vm.StartAsync());
 
         Assert.True(vm.HasResult, vm.ErrorText);
         Assert.Contains(phases, p => p.Contains("1 din 2"));

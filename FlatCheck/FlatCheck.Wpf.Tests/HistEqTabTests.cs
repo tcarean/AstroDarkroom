@@ -29,6 +29,10 @@ namespace FlatCheck.Wpf.Tests;
 /// </summary>
 public class HistEqTabTests
 {
+    // Picking a file starts its run, kept in Pending, and a test awaits that run. Starting a
+    // second one with RecomputeAsync would supersede the first, which goes on computing to its
+    // token check after the second ended: a test that looked at Pending then failed 16 times in
+    // 150 in a loop (2026-11-02, ADR 0087).
     static HistEqTabViewModel Attached(SessionFixture f)
     {
         var vm = new HistEqTabViewModel();
@@ -126,7 +130,7 @@ public class HistEqTabTests
         var vm = Attached(f);
 
         vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.True(vm.HasResult);
         Assert.NotNull(vm.Image);
@@ -149,12 +153,12 @@ public class HistEqTabTests
         var vm = Attached(f);
 
         vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
+        await vm.Pending;
         ImageSource master = vm.Image!;
         vm.Zoom.Manual(3);
 
         vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         Assert.True(vm.HasResult);
         Assert.NotSame(master, vm.Image);
@@ -179,7 +183,7 @@ public class HistEqTabTests
         f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var vm = Attached(f);
         vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         var mosaic = (BitmapSource)vm.Image!;
         Assert.Equal((128, 128), (mosaic.PixelWidth, mosaic.PixelHeight));
@@ -205,7 +209,7 @@ public class HistEqTabTests
         f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var vm = Attached(f);
         vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
+        await vm.Pending;
         ImageSource mosaic = vm.Image!;
         string report = vm.Report;
         vm.Zoom.Manual(2);
@@ -241,7 +245,7 @@ public class HistEqTabTests
         f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var vm = Attached(f);
         vm.Selected = vm.Files[1];
-        await vm.RecomputeAsync();
+        await vm.Pending;
         var grey = (BitmapSource)vm.Image!;
         string report = vm.Report;
         Assert.False(vm.View.Rainbow);
@@ -295,7 +299,7 @@ public class HistEqTabTests
         // a new file keeps the chip; Reset clears it
         vm.View.Rainbow = true;
         vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
+        await vm.Pending;
         Assert.True(vm.View.Rainbow);
         Assert.Equal(PixelFormats.Rgb24, ((BitmapSource)vm.Image!).Format);
         vm.Reset();
@@ -404,7 +408,7 @@ public class HistEqTabTests
         using var f = new SessionFixture().WithFlatMaster();
         var vm = Attached(f);
         vm.Selected = vm.Files[0];
-        await vm.RecomputeAsync();
+        await vm.Pending;
 
         vm.Zoom.Manual(2);
         vm.Reset();
