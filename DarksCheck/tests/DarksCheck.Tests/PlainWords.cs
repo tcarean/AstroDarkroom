@@ -20,19 +20,20 @@ using System.Text.RegularExpressions;
 namespace DarksCheck.Tests;
 
 /// <summary>
-/// The words of the method the Cadre and Harti tabs' texts must not use (ADR 0028, R-083, R-084),
-/// shared by the core's tests and the window's, which link this file; one list per language, whole
-/// words in any case. The earlier tabs' lists stay beside their tests in DarkSeriesTests.
+/// The words of the method the Cadre, Harti and Pixeli fierbinti tabs' texts must not use (ADR 0028,
+/// R-083, R-084, R-085), shared by the core's tests and the window's, which link this file; one list
+/// per language, whole words in any case. The earlier tabs' lists stay beside their tests in
+/// DarkSeriesTests.
 /// </summary>
 internal static partial class PlainWords
 {
-    /// <summary>R-083's and R-084's words of the method in the Cadre and Harti tabs' Romanian texts.</summary>
+    /// <summary>R-083's, R-084's and R-085's words of the method in the three tabs' Romanian texts.</summary>
     /// <returns>The pattern; a match is a word the text must lose.</returns>
-    [GeneratedRegex(@"\b(sigma|sqrt|rezid\w*|deviat\w*|abater\w*|offset\w*|amplit\w*|median\w*|metadat\w*|decod\w*|outlier\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|radacin\w*|castig\w*|brut\w*|percentil\w*)\b|(?<![\w-])e-(?!\w)|zgomot\w* alb|planul\w* de referinta|culoarea de atentie", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(sigma|sqrt|rezid\w*|deviat\w*|abater\w*|offset\w*|amplit\w*|median\w*|metadat\w*|decod\w*|outlier\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|radacin\w*|castig\w*|brut\w*|percentil\w*|temporal\w*|candidat\w*|planuri\w*)\b|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|zgomot\w* alb|planul\w* de referinta|culoarea de atentie", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     internal static partial Regex RomanianTabWords();
 
-    /// <summary>R-083's and R-084's words of the method in the Cadre and Harti tabs' English texts.</summary>
+    /// <summary>R-083's, R-084's and R-085's words of the method in the three tabs' English texts.</summary>
     /// <returns>The pattern; a match is a word the text must lose.</returns>
-    [GeneratedRegex(@"\b(sigma|sqrt|resid\w*|deviation\w*|offset\w*|amplitude\w*|ampl|median\w*|metadata|decod\w*|outlier\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gain\w*|percentile\w*)\b|raw ADU|(?<![\w-])e-(?!\w)|square root|white noise|reference plane|attention colou?r", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(sigma|sqrt|resid\w*|deviation\w*|offset\w*|amplitude\w*|ampl|median\w*|metadata|decod\w*|outlier\w*|normali[sz]\w*|quanti[sz]\w*|quadrature|gain\w*|percentile\w*|temporal\w*|candidate\w*|planes)\b|raw ADU|(?<![\w-])e-(?!\w)|(?<![\w-])n ?=|square root|white noise|reference plane|attention colou?r", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     internal static partial Regex EnglishTabWords();
 }
