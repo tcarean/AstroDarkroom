@@ -100,7 +100,7 @@ public class SplitTabTests
         };
 
     internal static SplitTabViewModel Vm(SessionFixture f, TempWorkspace ws, Func<string, string, SirilRunner> runner,
-                                bool cli = true, Func<bool>? gui = null, string? scriptText = null)
+                                         bool cli = true, Func<bool>? gui = null, string? scriptText = null)
     {
         var vm = new SplitTabViewModel(() => FakeInstall(ws, cli, scriptText), gui ?? (() => false), runner,
                                        clock: () => When, tempRootFor: _ => Path.Combine(ws.Dir, "temp"));

@@ -39,13 +39,14 @@ of the run's end.
 
 The owner chose on 2026-11-02 to change all six histogram tests, eight waits in all, and the
 split test. The review of the same day added the one wait in `MainViewModelTests`, so that no
-test starts a second run after a pick.
+test calls `RecomputeAsync()` after a pick.
 
 ## Decision
 
 - **The histogram tests.** Every test that picks a histogram file awaits `Pending`, the run the
-  pick started: the six of `HistEqTabTests` and one of `MainViewModelTests`. None calls
-  `RecomputeAsync()` after a pick.
+  pick started, as most of them already did. The six tests of `HistEqTabTests` and the one of
+  `MainViewModelTests` that started a second run with `RecomputeAsync()` after a pick no longer
+  do, and no test calls it any more.
 - **The split test.** `R092_TheProgressCoversEveryPartAndReachesTheEnd` moves into a class of
   its own, `SplitTabProgressTests`, in the `window` collection. It runs `StartAsync` on that
   collection's dispatcher (`StaFixture.InvokeAsync`), as the window runs it, with the fixtures
@@ -55,10 +56,11 @@ test starts a second run after a pick.
 
 - **The failing histogram test alone.** The other five would keep starting a second run that
   can go on computing after them, loading the tests that follow.
-- **The whole of `SplitTabTests` in the `window` collection.** Its fifteen other tests would
-  then run beside the collection's Application, and the Siril runner would send their lines to
-  the collection's thread through a blocking `Dispatcher.Invoke`. A stuck thread would then
-  hang those tests instead of failing them (the review of 2026-11-02).
+- **The whole of `SplitTabTests` in the `window` collection.** Its eighteen other tests would
+  then run beside the collection's Application. In those that run the fake Siril, the Siril
+  runner would send its lines to the collection's thread through a blocking
+  `Dispatcher.Invoke`, and a stuck thread would hang those tests instead of failing them (the
+  review of 2026-11-02).
 - **Monotonic progress in the view-model.** The window already keeps the reports in order.
   Changing the application for an ordering only the test lacks would stop the test from
   checking the window's own behaviour.
