@@ -7,7 +7,8 @@
     <!-- Camera raw files: the undebayered Bayer mosaic, the exact black and white levels and
          the shot metadata (exposure, ISO, time). The same libraw that rawpy binds, so the
          figures match the Python prototype in prototype/. Native DLLs come from the two
-         runtime packages; the versions are FlatCheck's (ADR 0003). -->
+         runtime packages and import Microsoft's Visual C++ v14 runtime, which nothing here
+         ships (R-110, ADR 0026); the versions are FlatCheck's (ADR 0003). -->
     <PackageVersion Include="Sdcb.LibRaw" Version="0.21.1.7" />
     <PackageVersion Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
     <PackageVersion Include="Sdcb.LibRaw.runtime.linux64" Version="0.21.1" />

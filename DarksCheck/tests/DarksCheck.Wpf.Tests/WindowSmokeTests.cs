@@ -74,7 +74,11 @@ public class WindowSmokeTests
         }
     }
 
-    private static void Render(FrameworkElement el, int w = 1360, int h = 820, string? name = null)
+    /// <summary>
+    /// Lays an element out at a size, renders it to a bitmap and, with DARKSCHECK_DUMP_SCREENS
+    /// set, saves it under <paramref name="name"/>; About's fit tests lay out the same way.
+    /// </summary>
+    internal static void Render(FrameworkElement el, int w = 1360, int h = 820, string? name = null)
     {
         el.Measure(new Size(w, h));
         el.Arrange(new Rect(0, 0, w, h));
@@ -156,11 +160,12 @@ public class WindowSmokeTests
         => _sta.Invoke(() =>
         {
             using BindingErrors errors = new();
-            AboutWindow about = new();
+            AboutWindow about = new(new Rect(0, 0, 1920, 1040));
 
             // The content, not the window: an unshown Window renders transparent, while the
-            // root panel inherits the DataContext and goes through the same bindings.
-            Render((FrameworkElement)about.Content, 600, 760, "about");
+            // root panel inherits the DataContext and goes through the same bindings. Tall
+            // enough for all six components without scrolling, so the dump shows them all.
+            Render((FrameworkElement)about.Content, 600, 1100, "about");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             BitmapSource logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);

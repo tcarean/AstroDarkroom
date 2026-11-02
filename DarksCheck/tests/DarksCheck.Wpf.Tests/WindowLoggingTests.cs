@@ -19,6 +19,7 @@ using System.Reflection;
 using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Navigation;
 using DarksCheck.Core;
@@ -258,7 +259,7 @@ public class WindowLoggingTests
     public void R101_ALinkThatCannotBeOpenedIsADebugLineAndTheWindowStays()
         => _sta.Invoke(() =>
         {
-            AboutWindow about = new();
+            AboutWindow about = new(new Rect(0, 0, 1920, 1040));
             RequestNavigateEventArgs args = new(new Uri("THIRD-PARTY-NOTICES.md", UriKind.Relative), null)
             {
                 RoutedEvent = Hyperlink.RequestNavigateEvent,

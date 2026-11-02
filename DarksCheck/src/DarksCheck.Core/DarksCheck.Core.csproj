@@ -10,9 +10,11 @@
   </PropertyGroup>
 
   <!-- Sdcb.LibRaw, only for camera raw files: no pure managed .NET library decodes the Bayer
-       mosaic of a NEF. The native DLLs of the runtime.* packages sit beside the executable and
-       are loaded lazily, from RawReader.cs alone; without them a FITS run is unaffected and a
-       raw run says what is missing (ADR 0003, THIRD-PARTY-NOTICES.md). -->
+       mosaic of a NEF. The native DLLs of the runtime.* packages go inside the published single
+       file (beside the window in the Astro Darkroom folder) and are loaded lazily, from
+       RawReader.cs alone; they import Microsoft's Visual C++ v14 runtime, which nothing here
+       ships. When they cannot be loaded, a FITS run is unaffected and every raw's error names
+       that runtime (R-110, ADR 0026; ADR 0003, THIRD-PARTY-NOTICES.md). -->
   <!-- NLog, for the diagnostic log only (ADR 0025): the core logs at its seams (the two readers
        adapted from LightsCheck, Session/, Runs/, the two decoding loops of Analysis/), never in
        the rest of Analysis/, in Report/ or in the other copies of Imaging/; the two applications

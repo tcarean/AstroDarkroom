@@ -21,22 +21,21 @@ using DarksCheck.Core;
 
 namespace DarksCheck.Wpf;
 
-/// <summary>A third-party component as the About window lists it.</summary>
+/// <summary>A third-party component as the "About" window lists it.</summary>
 /// <param name="Name">The component's name.</param>
-/// <param name="Role">What it does in the program.</param>
-/// <param name="Licence">Its licence.</param>
+/// <param name="Role">What DarksCheck uses it for.</param>
+/// <param name="Licence">The licence it is taken under.</param>
 /// <param name="Copyright">Its copyright line.</param>
-/// <param name="Url">Where it comes from.</param>
+/// <param name="Url">Where its source and licence are.</param>
 public sealed record ComponentRow(string Name, string Role, string Licence, string Copyright, string Url);
 
 /// <summary>
-/// The About window: the banner, the GPLv3 notice and the third-party list, all from the core.
+/// The "About" window: the banner, the GPLv3 notice and the third-party list, all from the core.
 /// </summary>
 public sealed class AboutViewModel
 {
     /// <summary>
-    /// The window's texts, with the third-party list taken from the core's
-    /// <see cref="ThirdParty"/>.
+    /// The About window's state, with one row per component of the core's third-party list.
     /// </summary>
     public AboutViewModel()
     {
@@ -62,7 +61,8 @@ public sealed class AboutViewModel
 
     public string ThirdPartyHeading => WindowTexts.AboutThirdPartyHeading;
 
-    public string ThirdPartyLead => WindowTexts.AboutThirdPartyLead;
+    /// <summary>The lead above the list, the core's, which counts the list it heads (R-120).</summary>
+    public string ThirdPartyLead => ThirdParty.Lead;
 
     public IReadOnlyList<ComponentRow> Components { get; }
 }

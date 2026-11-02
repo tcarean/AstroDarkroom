@@ -26,10 +26,23 @@ published; opened from the suite's launcher, it starts in the launcher's languag
 is not part of the suite: build it from this folder, as "Building" says below.
 
 What it needs: Windows 10 or 11, x64, and memory: a session of 20 darks, 30 biases and 32 lights
-of 24 MP takes up to 6 GB. The published executables are self-contained, so there is nothing
-else to install, no .NET and no Siril. It reads camera raws (`.nef`, `.cr2`, `.cr3`,
+of 24 MP takes up to 6 GB. The published executables are self-contained, so there is no .NET to
+install and no Siril. It reads camera raws (`.nef`, `.cr2`, `.cr3`,
 `.arw`, `.dng`, `.raf`, `.pef`) through LibRaw, and FITS files. Its thresholds and figures were measured
 on a Nikon D3300 only, and the electrons of the ADU scale are known for the D3300 alone.
+
+Reading camera raws needs one more thing, which most computers already have: Microsoft's Visual
+C++ v14 runtime (x64), which Windows lists as "Microsoft Visual C++ v14 Redistributable (x64)" or,
+for older versions, "Microsoft Visual C++ 2015-2022 Redistributable (x64)". LibRaw's DLLs use it,
+and neither the program nor the suite ships it; the suite's launcher checks for it. When it is
+missing, or too old (the 2015 and 2017 versions lack one of its files), every raw's row says so:
+
+```
+cannot load libraw: Microsoft's Visual C++ runtime is likely missing or too old, so camera raw files cannot be read until its latest version is installed (FITS frames are not affected): https://aka.ms/vc14/vc_redist.x64.exe
+```
+
+That link is Microsoft's own, for the latest x64 version; install it and run the program again.
+LightsCheck says the same, word for word.
 
 ## The folder you give it
 
@@ -496,7 +509,11 @@ per doubling.
 
 **Write the files...** writes the files of `--out` into a folder you choose; the dialog opens in
 the session folder, which is refused, as is the partner's, so choose a folder outside both.
-**About** (F1) shows the version, the licence and the third-party components.
+**About** (F1) shows the version, the licence and the six third-party components the program
+ships, LibRaw's three libraries listed apart from it, with where their licence texts are. It is
+never taller than the screen it opens on: on a screen too low for it, such as a 1080-line screen
+at 125 % or more or a 1366x768 laptop, its cards scroll (the wheel, or the arrows, Page Up, Page
+Down, Home and End) and the Close button stays in view.
 
 ## Logs
 
@@ -525,8 +542,9 @@ masters, the noise curve, the warming, the maps' regions, the six verdicts, the 
 and the partner; every file it writes for you; in the window, the folder opened, each run's end, the dialogs
 and the buttons pressed; every error with its technical details, those the program works around
 without a word included (not a run you stopped yourself, nor what the window drops while it
-closes); at the end the exit code and the time taken. The log's own words are English whatever
-`--lang` says; an error's or a refusal's message appears as you saw it, so in Romanian under
+closes); the first time LibRaw cannot be loaded, which of the Visual C++ runtime's four DLLs
+Windows cannot load, or that it loads all four; at the end the exit code and the time taken.
+The log's own words are English whatever `--lang` says; an error's or a refusal's message appears as you saw it, so in Romanian under
 `--lang ro`. It holds the paths of your files and the figures measured on them, not their pixels.
 
 **How much.** The environment variable `DARKSCHECK_LOG` sets the level: `off`, `fatal`, `error`,
@@ -563,6 +581,14 @@ writes `artifacts\1.0.0\console\darkscheck.exe` (67 MB) and `artifacts\1.0.0\wpf
 run them. `-Version` only names the folder: the version the programs print is `<Version>` in
 `Directory.Build.props`.
 
+Each file carries LibRaw's four DLLs, `raw_r.dll`, `jpeg8.dll`, `lcms2.dll` and `zlib1.dll`, and
+extracts them when it starts; the Visual C++ runtime they need is not inside ("Getting it").
+Published another way, without `-p:IncludeNativeLibrariesForSelfExtract=true`, the four DLLs land
+beside the executable and must stay there: an executable copied alone cannot read raws. Its
+error then names the runtime too, since the loader's own error never does: it names
+`libraw.dll`, or says only `Dll was not found.`, whatever is missing. The log keeps that error,
+and its runtime line says whether the four runtime DLLs load.
+
 ## For developers
 
 The rules of the work are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the behaviour, with
@@ -578,4 +604,8 @@ comments in the code do not repeat it.
 DarksCheck is free software, under the GNU General Public License version 3 or, at your option,
 any later version: see [LICENSE](LICENSE). Its raw and FITS readers are copied from LightsCheck,
 which copied them from FlatCheck. What the programs ship from others is listed, each with its
-licence and why it is compatible, in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+licence and why it is compatible, in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). The whole
+text of each of those licences is in the Astro Darkroom suite's notices, where About points:
+`THIRD-PARTY-NOTICES.txt` in the suite's folder, beside the programs, and
+[../AstroDarkroom/THIRD-PARTY-NOTICES.md](../AstroDarkroom/THIRD-PARTY-NOTICES.md) in this
+repository.
