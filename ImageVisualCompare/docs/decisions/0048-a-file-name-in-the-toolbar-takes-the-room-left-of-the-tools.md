@@ -25,13 +25,16 @@ trimmed only then.
 - **A larger cap.** Any fixed value trims a name somewhere with room to spare on a wide screen,
   which is what the owner asked to end.
 - **Trim at the start of the name instead of the end.** WPF's `TextTrimming` cuts only at the
-  end; the room the cap wasted is enough for the owner's names on their screen, and a trimmed
-  name still shows its whole text in the title bar.
+  end, so it would need a trimming of the project's own; the owner asked for the room, not for
+  another cut.
 
 ## Consequences
 
 - R-065 says it, and `PairLabelLayoutTests.R065_ALongNameTakesAllTheRoomItNeeds` and
   `PairLabelPanelTests.R065_ALongName_IsShownWhole_WhenTheRoomHoldsIt` fail on the code before
   (the long name was cut at 360).
+- When the room is short the names are still cut at the end, so two names that differ only
+  there, as the owner's do, read the same in the toolbar. The window's title holds both names,
+  but Windows trims it too in a narrow window.
 - `PairLabelPanel` and `MainWindow.xaml` are unchanged: the panel already measured the names at
   the whole width of the column left of the tools.

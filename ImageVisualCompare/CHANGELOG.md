@@ -60,8 +60,6 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   message of plain text (R-072, R-075, ADR 0045).
 - The projects target .NET 8 instead of .NET 9, so the Astro Darkroom suite ships one runtime
   (ADR 0037).
-- A long file name in the toolbar takes all the room up to the tools on the right before it is
-  trimmed; each name was cut at 360 pixels before, however much room was left (R-065, ADR 0048).
 
 - A TIFF of 32-bit float samples, as Siril and GraXpert export, is reported `32-bit float RGB`
   (or gray, RGBA) and shown as stored, as a FITS of the same samples is, with the same 0..1 or
