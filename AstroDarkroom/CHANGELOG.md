@@ -10,7 +10,8 @@ and is the version of the whole Astro Darkroom suite (ADR 0002).
 
 - The launcher's main window shows the copyright, `Copyright (C) 2026 Tudor Carean`, at the
   left of its bottom bar, where the folder it runs from and the release's date were (R-019,
-  ADR 0018); the folder is still in the log, the date in "Despre".
+  ADR 0018); the folder is still in the log, the date in "Despre", with the components'
+  versions.
 - The launcher says what its tools do, for someone who does not know them (R-001, ADR 0017):
   the subtitle, in two lines, that they take a night from its frames to the print, in the order
   they are used, and each row, in at most two lines, what its tool checks or does;

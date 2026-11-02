@@ -23,8 +23,8 @@ namespace AstroDarkroom.Tests;
 /// <summary>
 /// The version is bumped by the owner in Directory.Build.props (the kit's ADR 0029) and is the
 /// suite's version (ADR 0002); VersionInfo reads it from the assembly. These tests check the
-/// plumbing, the banner the "Despre" window shows and the copyright the main window's bottom
-/// bar shows too (R-019).
+/// plumbing, the banner the "Despre" window shows and the copyright notice the core gives the
+/// main window's bottom bar (R-019); the window itself has no test (ADR 0001).
 /// </summary>
 public partial class VersionTests
 {
@@ -57,7 +57,7 @@ public partial class VersionTests
 
         using IDisposable scope = Ui.Use(UiLanguage.English);
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Copyright);
-        // A notice, never a T pair: the Romanian window shows the same words.
+        // Not translated: read in Romanian, the core gives the same words.
         Assert.Equal(VersionInfo.Copyright, romanian);
     }
 

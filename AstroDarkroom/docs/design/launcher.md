@@ -129,11 +129,10 @@ diagnostic log, and how, is in `logging.md` (R-011 to R-014, ADR 0012).
 - `MainWindow` reads `release.json` once. The XAML carries no user text: the constructor sets
   the banner, `VersionInfo.Banner`, and the copyright, `VersionInfo.Copyright`, at the left of
   the bottom bar (R-019, ADR 0018), neither of which changes with the language; the copyright is
-  a `Faint` line that trims with an ellipsis it never needs: the notice's 167 px fit the bar's
-  first column, 340 px in Romanian, where `Despre` is wider than `About`. The window shows no
-  path; the suite folder is in the log (R-012). `Relabel()` assigns the other labels (the
-  subtitle, the prerequisites line under it from `Prerequisites.Summary`, the runtime's warning
-  under that, the selector's tooltip, the about button and its tooltip) through `T` and
+  a `Faint` line in the bar's first column, what the selector and the about button leave, and
+  trims with an ellipsis when wider. `Relabel()` assigns the other labels (the subtitle, the
+  prerequisites line under it from `Prerequisites.Summary`, the runtime's warning under that,
+  the selector's tooltip, the about button and its tooltip) through `T` and
   builds one `AppRow` per catalogue app: the app, its `AppLocation`, its `ComponentInfo` or
   null. The row's properties are the strings the XAML binds (`OpenLabel`, `VersionHint` as
   `version X` / `versiunea X` or `version unknown` / `versiune necunoscuta`, `ButtonHint` as

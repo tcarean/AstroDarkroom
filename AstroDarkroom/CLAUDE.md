@@ -94,7 +94,8 @@ varies a kit rule names it.
   ADRs 0003, 0006 and 0009). Every text the user sees in the windows is a pair
   `T("english", "romana")` where it is composed, the Romanian without diacritics, never a single
   literal; the only single literals are the product name `Astro Darkroom`, the language
-  selector's own labels (each language named in itself), symbols such as `?`, and a third-party
+  selector's own labels (each language named in itself), symbols such as `?`, the suite's
+  copyright notice, which `Directory.Build.props` gives (ADR 0018), and a third-party
   component's name, licence identifier, copyright line and address (ADR 0013). The window
   switches between the two live and remembers the choice. The diagnostic log is English
   whatever the language: no log line goes through `T` (R-012, `LoggingTests`). `README.md`,
