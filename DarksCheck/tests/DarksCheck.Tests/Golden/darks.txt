@@ -14,7 +14,7 @@ Copyright (C) 2026 Tudor Carean
 
 === DARK-URI: 4 cadre decodate din 4, 256 x 192 px, scara 200 .. 65535 ADU (FITS (presupus din BITPIX 16), negru 200 din bias-uri), CFA RGGB ===
     normalizare        : ISO 400, 120.0 s -> x1.00 fata de ISO 400 si 120 s (ADU-eq = ADU)
-    cuantizare         : pas 1 ADU langa negru; 24 valori distincte in primul cadru (G1)
+    cuantizare         : pas 1 ADU langa negru; 24 de valori distincte in primul cadru (G1)
 
   2. SCURGERI DE LUMINA SI GRADIENT
     master dark        : centru -0.02, colturi 0.01 / 0.12 / 0.03 / 0.10 (SS / DS / SJ / DJ), margini sus 0.00 jos 0.00 stanga -0.03 dreapta -0.03  [G1, ADU peste negru, media a 4 cadre, blocuri de 32 px]
@@ -98,9 +98,9 @@ Copyright (C) 2026 Tudor Carean
     multe cadre il injumatatesc. Masterul dark, facut din 4 cadre, mai are 1.87 ADU de zgomot pe
     pixel; cu acesta compari o greseala, nu cu zgomotul unui singur cadru. Pe un singur pixel,
     cei 3.0 ADU de zgomot ai unui dark ascund orice greseala sub 1 ADU. Dar ochiul vede zone, nu
-    pixeli: intr-o zona de 50 x 50 pixeli zgomotul se compenseaza, iar greseala se vede de 50 de
-    ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta se vede cand
-    intinzi tare (stretch) un cer intunecat.
+    pixeli: intr-o zona de 50 x 50 de pixeli zgomotul se compenseaza, iar greseala se vede de 50
+    de ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta se vede
+    cand intinzi tare (stretch) un cer intunecat.
 
     Fata de cer: sesiunea nu are lights, deci nu se poate spune cat inseamna 1 ADU fata de cerul
     tau, nici cat zgomot ramane in stack. Deschide sesiunea impreuna cu lights-urile ei si

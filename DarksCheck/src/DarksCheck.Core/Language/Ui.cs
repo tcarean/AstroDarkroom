@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
+
 namespace DarksCheck.Core;
 
 /// <summary>The two languages of the interface (R-090).</summary>
@@ -58,6 +60,35 @@ internal static class Ui
     /// <param name="ro">The Romanian wording; ASCII, without diacritics.</param>
     /// <returns><paramref name="ro"/> in Romanian, <paramref name="en"/> otherwise.</returns>
     internal static string T(string en, string ro) => Current == UiLanguage.Romanian ? ro : en;
+
+    /// <summary>
+    /// A count as a Romanian wording writes it before the word it counts (R-095, ADR 0029): the
+    /// figure, a space, and "de " from 20 up unless the last two digits are 01 to 19, so
+    /// "20 de cadre", "101 cadre", "120 de cadre". Only Romanian wordings call it.
+    /// </summary>
+    /// <param name="n">The count; not negative.</param>
+    /// <returns>The figure and a space, with "de " after it when the count takes one.</returns>
+    internal static string RoCount(long n) => RoCount(n.ToString(CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// A figure as a Romanian wording writes it before the word it counts: a whole number takes
+    /// "de " as <see cref="RoCount(long)"/> says, by its digits as shown; a figure with decimals or
+    /// any other text takes none (R-095).
+    /// </summary>
+    /// <param name="figure">The figure exactly as the text shows it, such as "6", "-20" or "2.0";
+    /// not null.</param>
+    /// <returns>The figure and a space, with "de " after it when the count takes one.</returns>
+    internal static string RoCount(string figure)
+    {
+        ArgumentNullException.ThrowIfNull(figure);
+        if (!long.TryParse(figure, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out long n))
+        {
+            return figure + " ";
+        }
+
+        long lastTwo = Math.Abs(n % 100);
+        return figure + (n != 0 && (lastTwo == 0 || lastTwo >= 20) ? " de " : " ");
+    }
 
     /// <summary>
     /// Opens a scope in which <see cref="Current"/> is <paramref name="language"/>, on this flow and

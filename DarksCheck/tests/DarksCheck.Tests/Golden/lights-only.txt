@@ -16,7 +16,7 @@ Copyright (C) 2026 Tudor Carean
 
 === DARK-URI (ale partenerului <partener>): 4 cadre decodate din 4, 256 x 192 px, scara 200 .. 65535 ADU (FITS (presupus din BITPIX 16), negru 200 din bias-uri), CFA RGGB ===
     normalizare        : ISO 400, 120.0 s -> x1.00 fata de ISO 400 si 120 s (ADU-eq = ADU)
-    cuantizare         : pas 1 ADU langa negru; 24 valori distincte in primul cadru (G1)
+    cuantizare         : pas 1 ADU langa negru; 24 de valori distincte in primul cadru (G1)
 
   2. SCURGERI DE LUMINA SI GRADIENT
     master dark        : centru 0.12, colturi -0.01 / -0.04 / -0.11 / 0.00 (SS / DS / SJ / DJ), margini sus -0.02 jos 0.00 stanga -0.02 dreapta -0.01  [G1, ADU peste negru, media a 4 cadre, blocuri de 32 px]
@@ -28,7 +28,7 @@ Copyright (C) 2026 Tudor Carean
     verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU de centru (cel mai departe -0.40 la stanga-sus, pe dark - bias); lumina pe cadre NEMASURATA
 
   3. DERIVA TERMICA IN SERIE
-    amplitudine        : pixelii fierbinti la 1.00 din master in primul cadru, 1.00 in ultimul (20 pixeli peste 20 ADU)
+    amplitudine        : pixelii fierbinti la 1.00 din master in primul cadru, 1.00 in ultimul (20 de pixeli peste 20 ADU)
     platou             : NEMASURAT: sub 6 cadre cu pixeli fierbinti
     de aruncat         : NEMASURAT: sub 6 cadre cu pixeli fierbinti
     verdict            : OK: toate cadrele stau in 0.7 .. 1.4 din master (sub 6 cadre, fara platou)
@@ -44,7 +44,7 @@ Copyright (C) 2026 Tudor Carean
     pe plan la 20      : R 20  G1 0  G2 0  B 0
     amplitudine        : mediana 240, p10 238, p90 240, p99 241 ADU (din 20)
     stabilitate        : 20 din 20 peste jumatate din prag in toate cele 4 cadre, 0 lipsesc din 2 sau mai multe; sigma temporala 2.57 ADU la cei fierbinti, 2.38 la restul; 0 candidati RTS pe G1 (sigma temporala peste 6 x zgomotul unui cadru, 3.01)
-    verdict            : OK (informativ): 20 pixeli peste 20 ADU in 0.05 Mpx
+    verdict            : OK (informativ): 20 de pixeli peste 20 ADU in 0.05 Mpx
 
   6. MODEL FIX
     benzi structurate  : randuri 0.206 ADU rms (1.17 varf la varf, R), coloane 0.222 (1.45, R)  [profilul masterului minus mediana glisanta pe 101]
@@ -61,11 +61,11 @@ Copyright (C) 2026 Tudor Carean
     verdict            : ATENTIE: doar 4 cadre; mediana cere cel putin 10 ca un cadru ciudat sa n-o traga (zgomotul masterului ar fi 1.89 ADU)
 
   9. LIGHTS FATA DE DARK
-    pixeli fierbinti   : 20 pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 3 din 3 cadre)
+    pixeli fierbinti   : 20 de pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 3 din 3 cadre)
     in masterul dark   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [ADU]
     master in lights   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)
     nepotriviti        : niciun pixel persistent in lights sub pragul masterului
-    amplitudine        : lights / dark 0.50 pe noapte (mediana pe 3 cadre; primul 0.51, ultimul 0.50; 20 pixeli)
+    amplitudine        : lights / dark 0.50 pe noapte (mediana pe 3 cadre; primul 0.51, ultimul 0.50; 20 de pixeli)
     verdict            : ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.50, dark-ul e mai cald cu 5.9 grade si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta
 
   INDEX
@@ -112,9 +112,9 @@ Copyright (C) 2026 Tudor Carean
     multe cadre il injumatatesc. Masterul dark, facut din 4 cadre, mai are 1.89 ADU de zgomot pe
     pixel; cu acesta compari o greseala, nu cu zgomotul unui singur cadru. Pe un singur pixel,
     cei 3.0 ADU de zgomot ai unui dark ascund orice greseala sub 1 ADU. Dar ochiul vede zone, nu
-    pixeli: intr-o zona de 50 x 50 pixeli zgomotul se compenseaza, iar greseala se vede de 50 de
-    ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta se vede cand
-    intinzi tare (stretch) un cer intunecat.
+    pixeli: intr-o zona de 50 x 50 de pixeli zgomotul se compenseaza, iar greseala se vede de 50
+    de ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta se vede
+    cand intinzi tare (stretch) un cer intunecat.
 
     Fata de cer: pe un light al acestei sesiuni cerul e la 500.0 ADU peste negru, deci 1 ADU e
     0.20 % din cer, cam cat greseste de obicei un flat. In stack-ul celor 3 lights zgomotul pe

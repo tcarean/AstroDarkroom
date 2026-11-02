@@ -108,7 +108,11 @@ Every text the user sees is a pair, `T(english, romanian)` (`Ui.T`, imported wit
 any scope, English unless a start-up sets it. A text that used to be a `const` or a
 `static readonly` field is a property, so it is picked when it is shown; a type initialiser
 would freeze the first language. No culture follows the language: every number is formatted
-with the invariant culture in both.
+with the invariant culture in both. A Romanian wording that counts writes its figure through
+`Ui.RoCount` (R-095, ADR 0029), which adds the `de` Romanian puts after a whole count of 20 and
+up: `$"{RoCount(n)}cadre"`. `RunReport.Frames` and `DarkReport.Pixels` call it; the overload on a
+string takes a figure already formatted, such as `F(x, 0)`, and leaves one with decimals alone.
+English wordings never call it.
 
 `LanguageArgument.Extract(args)` takes every `--lang <code>` and `--lang=<code>` out of the
 arguments, the name and the code case-insensitive, the last one counting; in the spaced form

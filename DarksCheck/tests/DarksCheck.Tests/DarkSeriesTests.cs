@@ -575,7 +575,7 @@ public partial class DarkSeriesTests
         Assert.Equal(4, paragraphs.Count);
         Assert.StartsWith("ADU e unitatea in care fisierul scrie cat de luminos e fiecare pixel: aici numere intregi de la 0 la 65535 (16 biti), cu negrul camerei la 200.", paragraphs[0], StringComparison.Ordinal);
         Assert.Contains("In stack-ul celor 4 lights zgomotul pe pixel scade la ", paragraphs[2], StringComparison.Ordinal);
-        Assert.Contains("intr-o zona de 50 x 50 pixeli zgomotul se compenseaza, iar greseala se vede de 50 de ori mai bine decat pe un pixel", paragraphs[1], StringComparison.Ordinal);
+        Assert.Contains("intr-o zona de 50 x 50 de pixeli zgomotul se compenseaza, iar greseala se vede de 50 de ori mai bine decat pe un pixel", paragraphs[1], StringComparison.Ordinal);
         Assert.Contains($"Masterul dark, facut din 6 cadre, mai are {r.Darks.Noise.MasterNoise:F2} ADU de zgomot pe pixel", paragraphs[1], StringComparison.Ordinal);
         Assert.Contains("Lumina constanta pe o latura conteaza peste 0.15 ADU-eq, si doar daca e de peste 3 ori mai mare decat cat poate gresi masuratoarea.", paragraphs[3], StringComparison.Ordinal);
 

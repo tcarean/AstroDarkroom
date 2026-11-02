@@ -146,4 +146,37 @@ public class LanguageTests
         Assert.Equal(2, stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);
         Assert.StartsWith("darkscheck ", stdout, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void R095_ARomanianCountOfTwentyAndUpTakesDe()
+    {
+        // the rule's edges: from 20 up, unless the last two digits are 01 to 19; a figure with decimals takes none
+        Assert.Equal("0 ", Ui.RoCount(0));
+        Assert.Equal("1 ", Ui.RoCount(1));
+        Assert.Equal("19 ", Ui.RoCount(19));
+        Assert.Equal("20 de ", Ui.RoCount(20));
+        Assert.Equal("99 de ", Ui.RoCount(99));
+        Assert.Equal("100 de ", Ui.RoCount(100));
+        Assert.Equal("101 ", Ui.RoCount(101));
+        Assert.Equal("119 ", Ui.RoCount(119));
+        Assert.Equal("120 de ", Ui.RoCount(120));
+        Assert.Equal("1019 ", Ui.RoCount(1019));
+        Assert.Equal("3933 de ", Ui.RoCount(3933));
+        Assert.Equal("6 ", Ui.RoCount("6"));
+        Assert.Equal("-20 de ", Ui.RoCount("-20"));
+        Assert.Equal("20.5 ", Ui.RoCount("20.5"));
+        Assert.Equal("2.0 ", Ui.RoCount("2.0"));
+
+        // a session of 20 darks: the inventory and the report count them with "de"; the English has no such word
+        using SessionFixture s = new SessionFixture().WithDarkSeries(20, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel });
+        (_, string ro, _) = Cli.Run(s.Root, "--threads", "2", "--lang", "ro");
+        (_, string en, _) = Cli.Run(s.Root, "--threads", "2", "--lang", "en");
+
+        Assert.Contains("darks\\ (20 de cadre .fit)", ro, StringComparison.Ordinal);
+        Assert.Contains("=== DARK-URI: 20 de cadre decodate din 20", ro, StringComparison.Ordinal);
+        Assert.Contains("masterul dark, facut din 20 de cadre, mai are ", ro, StringComparison.Ordinal);
+        Assert.Contains("darks\\ (20 frames .fit)", en, StringComparison.Ordinal);
+        Assert.Contains("=== DARKS: 20 frames decoded of 20", en, StringComparison.Ordinal);
+        Assert.DoesNotContain(" de ", en, StringComparison.Ordinal);
+    }
 }

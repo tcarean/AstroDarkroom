@@ -110,7 +110,7 @@ internal static class InventoryReport
             int n = inv.ErrorCount;
             rows.Add(new(T("WARNING", "ATENTIE"), n == 1
                 ? T("1 frame could not be read (see the tables)", "1 cadru nu s-a putut citi (vezi tabelele)")
-                : T($"{n} frames could not be read (see the tables)", $"{n} cadre nu s-au putut citi (vezi tabelele)")));
+                : T($"{n} frames could not be read (see the tables)", $"{RoCount(n)}cadre nu s-au putut citi (vezi tabelele)")));
         }
 
         return rows;
@@ -242,7 +242,7 @@ internal static class InventoryReport
         LongPause longest = c.LongPauses.MaxBy(p => p.Seconds)!;
         return T(
             $"{c.LongPauses.Count} gaps over {RunReport.F(Th.PauseSeconds, 0)} s (the longest {RunReport.F(longest.Seconds, 0)} s before frame {longest.FrameIndex})",
-            $"{c.LongPauses.Count} pauze peste {RunReport.F(Th.PauseSeconds, 0)} s (cea mai lunga {RunReport.F(longest.Seconds, 0)} s inainte de cadrul {longest.FrameIndex})");
+            $"{RoCount(c.LongPauses.Count)}pauze peste {RunReport.F(Th.PauseSeconds, 0)} s (cea mai lunga {RunReport.F(longest.Seconds, 0)} s inainte de cadrul {longest.FrameIndex})");
     }
 
     /// <summary>

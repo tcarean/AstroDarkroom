@@ -195,3 +195,8 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   `Report/ScaleReport.cs` and `Analysis/CameraFacts.cs`; no formula or constant changed), all ten
   cases re-run with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed:
   10, Total time: 10.0383 Minutes`; no figure moved outside its tolerance.
+- 2026-11-02: after the Romanian `de` before counts of 20 and up (R-095, ADR 0029: words only, in
+  `Report/` and in the skipped-frame text of `Analysis/FrameStack.cs` and `LightsAnalyzer.cs`;
+  no formula or constant changed), all ten cases re-run with
+  `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed: 10, Total time:
+  11.8670 Minutes`; no figure moved outside its tolerance.

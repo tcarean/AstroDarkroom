@@ -131,7 +131,7 @@ internal static class ScaleReport
             Found(r, g),
             new(T("sky", "cer"), g.Stack is StackNoise st
                 ? T($"on a light, the sky is at {F(st.SkyAdu, 1)} ADU above the black, with {F(st.SkySigmaAdu, 1)} ADU of noise per pixel ({PlaneWords(g.Plane)}, from {st.Lights} lights)",
-                    $"pe un light, cerul e la {F(st.SkyAdu, 1)} ADU peste negru, cu {F(st.SkySigmaAdu, 1)} ADU de zgomot pe pixel ({PlaneWords(g.Plane)}, din {st.Lights} lights)")
+                    $"pe un light, cerul e la {F(st.SkyAdu, 1)} ADU peste negru, cu {F(st.SkySigmaAdu, 1)} ADU de zgomot pe pixel ({PlaneWords(g.Plane)}, din {RoCount(st.Lights)}lights)")
                 : T("no lights in the session", "fara lights in sesiune")),
             new(T("saturation", "saturatie"), T($"at {F(d.White, 0)} ADU the pixel is full and cannot go higher", $"la {F(d.White, 0)} ADU pixelul e plin si nu mai poate creste")
                 + (g.Facts is null ? "" : T($"; per the source, a pixel holds {F(g.Facts.FullWellElectrons, 0)} electrons (full well)", $"; dupa sursa, intr-un pixel incap {F(g.Facts.FullWellElectrons, 0)} electroni (full well)"))),
@@ -174,20 +174,20 @@ internal static class ScaleReport
             + unknownCamera;
         string masterWords = double.IsNaN(g.MasterNoise) ? "" : T(
             $" The dark master, made of {d.Used} frames, still has {F(g.MasterNoise, 2)} ADU of noise per pixel; that is what you compare an error with, not the noise of a single frame.",
-            $" Masterul dark, facut din {d.Used} cadre, mai are {F(g.MasterNoise, 2)} ADU de zgomot pe pixel; cu acesta compari o greseala, nu cu zgomotul unui singur cadru.");
+            $" Masterul dark, facut din {RoCount(d.Used)}cadre, mai are {F(g.MasterNoise, 2)} ADU de zgomot pe pixel; cu acesta compari o greseala, nu cu zgomotul unui singur cadru.");
         string p2 = T(
             "An error in the dark master is not noise. For example: light that got into the camera, or a black level moved a little. The master is subtracted from every light, so the error reaches the stack whole, however many frames you add. The noise, on the other hand, falls as you add frames: 4 times more frames halve it."
             + masterWords
             + $" On a single pixel, the {F(d.Noise.SigmaFrame, 1)} ADU of noise of one dark hides any error below 1 ADU. But the eye sees areas, not pixels: on an area of 50 x 50 pixels the noise evens out, and the error shows 50 times better than on one pixel. That is why a step of 1 ADU with a straight edge shows when you stretch a dark sky hard.",
             "O greseala din masterul dark nu e zgomot. De exemplu: lumina intrata in aparat, sau un nivel de negru putin mutat. Masterul se scade din fiecare light, asa ca greseala ajunge intreaga in stack, oricate cadre ai aduna. Zgomotul, in schimb, scade cand aduni cadre: de 4 ori mai multe cadre il injumatatesc."
             + masterWords
-            + $" Pe un singur pixel, cei {F(d.Noise.SigmaFrame, 1)} ADU de zgomot ai unui dark ascund orice greseala sub 1 ADU. Dar ochiul vede zone, nu pixeli: intr-o zona de 50 x 50 pixeli zgomotul se compenseaza, iar greseala se vede de 50 de ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta se vede cand intinzi tare (stretch) un cer intunecat.");
+            + $" Pe un singur pixel, cei {F(d.Noise.SigmaFrame, 1)} ADU de zgomot ai unui dark ascund orice greseala sub 1 ADU. Dar ochiul vede zone, nu pixeli: intr-o zona de 50 x 50 de pixeli zgomotul se compenseaza, iar greseala se vede de 50 de ori mai bine decat pe un pixel. De aceea o treapta de 1 ADU cu margine dreapta se vede cand intinzi tare (stretch) un cer intunecat.");
         string p3 = g.Stack is StackNoise st && st.SkyAdu > 0
             ? T(
                 $"Against the sky: on a light of this session the sky is at {F(st.SkyAdu, 1)} ADU above the black, so 1 ADU is {F(100 / st.SkyAdu, 2)} % of the sky, about as much as a flat is usually off. "
                 + $"In the stack of the {st.Lights} lights the noise per pixel falls to {F(st.MeanStackAdu, 2)} ADU if you make it with the mean ({F(st.MedianStackAdu, 2)} with the median). Two noises go into this figure. The lights' noise ({F(st.SkySigmaAdu, 1)} ADU on one light) falls the more lights you add. The dark master's noise ({F(st.MasterNoiseAdu, 2)} ADU) does not fall, because the same master is subtracted from every light. And an error of 1 ADU in the master stays 1 ADU in the stack.",
                 $"Fata de cer: pe un light al acestei sesiuni cerul e la {F(st.SkyAdu, 1)} ADU peste negru, deci 1 ADU e {F(100 / st.SkyAdu, 2)} % din cer, cam cat greseste de obicei un flat. "
-                + $"In stack-ul celor {st.Lights} lights zgomotul pe pixel scade la {F(st.MeanStackAdu, 2)} ADU daca il faci cu media ({F(st.MedianStackAdu, 2)} cu mediana). In cifra asta intra doua zgomote. Al lights-urilor ({F(st.SkySigmaAdu, 1)} ADU pe un light) scade cu cat aduni mai multe. Al masterului dark ({F(st.MasterNoiseAdu, 2)} ADU) nu scade, pentru ca acelasi master se scade din toate lights-urile. Iar o greseala de 1 ADU din master ramane 1 ADU in stack.")
+                + $"In stack-ul celor {RoCount(st.Lights)}lights zgomotul pe pixel scade la {F(st.MeanStackAdu, 2)} ADU daca il faci cu media ({F(st.MedianStackAdu, 2)} cu mediana). In cifra asta intra doua zgomote. Al lights-urilor ({F(st.SkySigmaAdu, 1)} ADU pe un light) scade cu cat aduni mai multe. Al masterului dark ({F(st.MasterNoiseAdu, 2)} ADU) nu scade, pentru ca acelasi master se scade din toate lights-urile. Iar o greseala de 1 ADU din master ramane 1 ADU in stack.")
             : T("Against the sky: the session has no lights, so there is no saying how much 1 ADU is against your sky, nor how much noise stays in the stack. Open the session together with its lights and the rows `master noise` and `sky` are filled in.",
                 "Fata de cer: sesiunea nu are lights, deci nu se poate spune cat inseamna 1 ADU fata de cerul tau, nici cat zgomot ramane in stack. Deschide sesiunea impreuna cu lights-urile ei si randurile `zgomot in master` si `cer` se completeaza.");
         string p4 = T(
@@ -195,7 +195,7 @@ internal static class ScaleReport
             + $"Constant light on a side counts above {F(Th.LeakConstantAdu, 2)} ADU-eq, and only if it is more than {F(Th.LeakConstantSigmas, 0)} times what the measurement can be off by. Light on a single frame counts above {F(Th.LeakFrameAdu, 1)} ADU-eq, and only if it is more than {F(Th.LeakFrameSigmas, 0)} times what a frame usually differs from the others. "
             + $"The last two thresholds say 'this is real light, measured', not 'it shows in the image': at {F(Th.LeakConstantAdu * g.Norm, 2)} ADU in the file it would barely show, at {F(Th.LeakAdu * g.Norm, 1)} ADU it shows. The remedy is the same in both cases: cover the viewfinder and take the series again.",
             $"Pragurile: un pixel e fierbinte peste {F(Th.HotAdu, 0)} ADU-eq. Pe harta din tab-ul Harti, o scurgere de lumina e evidenta peste {F(Th.LeakAdu, 1)} ADU-eq (pragul din analiza facuta de mana). "
-            + $"Lumina constanta pe o latura conteaza peste {F(Th.LeakConstantAdu, 2)} ADU-eq, si doar daca e de peste {F(Th.LeakConstantSigmas, 0)} ori mai mare decat cat poate gresi masuratoarea. Lumina pe un singur cadru conteaza peste {F(Th.LeakFrameAdu, 1)} ADU-eq, si doar daca e de peste {F(Th.LeakFrameSigmas, 0)} ori mai mare decat cat difera de obicei un cadru de celelalte. "
+            + $"Lumina constanta pe o latura conteaza peste {F(Th.LeakConstantAdu, 2)} ADU-eq, si doar daca e de peste {RoCount(F(Th.LeakConstantSigmas, 0))}ori mai mare decat cat poate gresi masuratoarea. Lumina pe un singur cadru conteaza peste {F(Th.LeakFrameAdu, 1)} ADU-eq, si doar daca e de peste {RoCount(F(Th.LeakFrameSigmas, 0))}ori mai mare decat cat difera de obicei un cadru de celelalte. "
             + $"Ultimele doua praguri spun 'aici e lumina reala, masurata', nu 'se vede in imagine': la {F(Th.LeakConstantAdu * g.Norm, 2)} ADU in fisier abia s-ar vedea, la {F(Th.LeakAdu * g.Norm, 1)} ADU se vede. Remediul e acelasi in ambele cazuri: acoperi vizorul si refaci seria.");
         return [p1, p2, p3, p4];
     }
@@ -310,7 +310,7 @@ internal static class ScaleReport
         string dark = $"{F(g.MasterNoise, 2)} ADU";
         List<string> bold = [dark];
         string eq = Math.Abs(g.Norm - 1) < 1e-9 ? "" : $" ({F(g.MasterNoise / g.Norm, 2)} ADU-eq)";
-        string darkWords = T($"the dark master, made of {g.Darks.Used} frames, still has {dark}{eq} of noise per pixel", $"masterul dark, facut din {g.Darks.Used} cadre, mai are {dark}{eq} de zgomot pe pixel");
+        string darkWords = T($"the dark master, made of {g.Darks.Used} frames, still has {dark}{eq} of noise per pixel", $"masterul dark, facut din {RoCount(g.Darks.Used)}cadre, mai are {dark}{eq} de zgomot pe pixel");
         string stackWords;
         if (g.Stack is StackNoise st)
         {
@@ -318,7 +318,7 @@ internal static class ScaleReport
             bold.Add(mean);
             stackWords = T(
                 $"the stack of the {st.Lights} lights has {mean} per pixel if you make it with the mean and {F(st.MedianStackAdu, 1)} if you make it with the median (the dark master's noise included)",
-                $"stack-ul celor {st.Lights} lights are {mean} pe pixel daca il faci cu media si {F(st.MedianStackAdu, 1)} daca il faci cu mediana (cu zgomotul masterului dark inclus)");
+                $"stack-ul celor {RoCount(st.Lights)}lights are {mean} pe pixel daca il faci cu media si {F(st.MedianStackAdu, 1)} daca il faci cu mediana (cu zgomotul masterului dark inclus)");
         }
         else
         {
