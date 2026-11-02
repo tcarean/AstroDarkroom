@@ -304,7 +304,7 @@ internal static class ScaleReport
     {
         if (double.IsNaN(g.MasterNoise))
         {
-            return new(MasterNoiseLabel, T("UNMEASURED: with a single frame there is no master, and so no master noise", "NEMASURAT: cu un singur cadru nu exista master, deci nici zgomotul lui"));
+            return new(MasterNoiseLabel, T("UNMEASURED: the frames' noise could not be measured, so neither could the master's", "NEMASURAT: zgomotul cadrelor nu s-a putut masura, deci nici al masterului"));
         }
 
         string dark = $"{F(g.MasterNoise, 2)} ADU";

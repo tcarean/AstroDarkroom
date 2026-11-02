@@ -71,12 +71,14 @@ synthetic session's of the goldens and stay what they are.
 - The English writes the step `1 by 1 ADU`, so it carries the figure twice, as the Romanian
   `din 1 in 1` does: `EnglishGoldenOutputTests` holds both languages to the same figures in the
   same order, and it failed on `in steps of 1 ADU`.
-- Row 9's `NEMASURAT: cu un singur cadru nu exista master, deci nici zgomotul lui` is kept as
-  approved, but it is wrong: a single frame gets a master noise predicted from its own noise
-  (R-024), and the row says `NEMASURAT` only when the frames' noise could not be measured. The
-  old words said the same. It goes to the owner as a question, with a wording that says what
-  happens; the comments of `ScaleReport` that said "NaN for a single frame" now say when it is.
-  `R081_...` therefore has no single-frame scene: no fixture reaches that row.
+- Row 9's `NEMASURAT: cu un singur cadru nu exista master, deci nici zgomotul lui` was wrong,
+  as the old words were: a single frame gets a master noise predicted from its own noise
+  (R-024), and the row says `NEMASURAT` only when the frames' noise could not be measured. Put
+  to the owner, who approved a wording that says what happens ("Da, schimba-l"): `NEMASURAT:
+  zgomotul cadrelor nu s-a putut masura, deci nici al masterului` (`UNMEASURED: the frames'
+  noise could not be measured, so neither could the master's`). No fixture reaches that row,
+  so R-080's test and `R081_...` take a result's master noise away by hand; the comments of
+  `ScaleReport` that said "NaN for a single frame" now say when it is.
 - The design note's sentence that `AgainstMasters` serves the `zgomot in master` row was wrong
   (only `ce s-a gasit` and check 2 call it) and was fixed with the row names.
 - The README's description of the tab takes the new row names.

@@ -45,6 +45,10 @@ who does not know the method could not follow them. The owner approved the eight
      check 2's rows too, so the two tabs say it the same way.
    - Frames that name no camera read `Fisierele nu spun ce aparat le-a facut`.
    - The reference position reads `pixelii verzi G1` when it is a green, its name alone otherwise.
+   - The master-noise row of frames whose noise could not be measured reads `NEMASURAT: zgomotul
+     cadrelor nu s-a putut masura, deci nici al masterului`. The first approved words, `cu un singur
+     cadru nu exista master`, were wrong, as the old ones were: a single frame gets a master noise
+     predicted from its own noise (R-024). The owner chose the new words in chat.
 4. **R-081 guards it.** `R081_TheScaleSectionIsInPlainWords` reads every row and paragraph, in
    both languages, over scenes that reach the variants, and fails on a word of the method.
 

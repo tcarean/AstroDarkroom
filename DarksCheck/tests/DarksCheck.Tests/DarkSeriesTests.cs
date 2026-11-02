@@ -597,6 +597,16 @@ public partial class DarkSeriesTests
         Assert.Equal("fara lights in sesiune", bareRows.Single(x => x.Label == "cer").Value);
         Assert.EndsWith("; stack-ul de lights: sesiunea nu are lights", bareRows.Single(x => x.Label == "zgomot in master").Value, StringComparison.Ordinal);
         Assert.EndsWith("; curentul de intuneric (ce aduna un pixel din caldura senzorului) se masoara doar cu bias-uri", bareRows.Single(x => x.Label == "zgomot pe un dark").Value, StringComparison.Ordinal);
+
+        // frames whose noise could not be measured leave no master noise either (a single frame gets one, R-024);
+        // no fixture reaches it, so the figure is taken away by hand
+        DarkSeriesResult measured = Run(bare);
+        DarkSeriesResult unmeasured = measured with { Darks = measured.Darks with { Noise = measured.Darks.Noise with { MasterNoise = double.NaN } } };
+        Assert.Equal("NEMASURAT: zgomotul cadrelor nu s-a putut masura, deci nici al masterului", ScaleReport.Rows(unmeasured).Single(x => x.Label == "zgomot in master").Value);
+        using (Ui.Use(UiLanguage.English))
+        {
+            Assert.Equal("UNMEASURED: the frames' noise could not be measured, so neither could the master's", ScaleReport.Rows(unmeasured).Single(x => x.Label == "master noise").Value);
+        }
         Assert.StartsWith("Fata de cer: sesiunea nu are lights", ScaleReport.Paragraphs(Run(bare))[2], StringComparison.Ordinal);
 
         // the camera table: the D3300 by any spelling, the log2 interpolation, nothing outside it, no other camera
@@ -666,11 +676,18 @@ public partial class DarkSeriesTests
                 texts.AddRange(ScaleReport.Paragraphs(r));
             }
 
+            // the master-noise row of frames whose noise could not be measured, which no fixture reaches
+            DarkSeriesResult measured = Run(bare);
+            DarkSeriesResult unmeasured = measured with { Darks = measured.Darks with { Noise = measured.Darks.Noise with { MasterNoise = double.NaN } } };
+            texts.AddRange(ScaleReport.Rows(unmeasured).SelectMany(row => new[] { row.Label, row.Value }));
+            texts.AddRange(ScaleReport.Paragraphs(unmeasured));
+
             // the scenes reached their variants, so every wording below was looked at
             string all = string.Join("\n", texts);
             Assert.Contains(english ? " times the noise of the lights stack (" : " din zgomotul stack-ului de lights (", all, StringComparison.Ordinal);
             Assert.Contains(english ? "Canon EOS 6D is not in the application's table" : "Aparatul Canon EOS 6D nu e in tabelul aplicatiei", all, StringComparison.Ordinal);
             Assert.Contains(english ? "The files do not say which camera took them" : "Fisierele nu spun ce aparat le-a facut", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "UNMEASURED: the frames' noise could not be measured" : "NEMASURAT: zgomotul cadrelor nu s-a putut masura", all, StringComparison.Ordinal);
             Assert.Contains(english ? "the dark current (what a typical pixel gathers from the sensor's heat) is " : "curentul de intuneric (ce aduna un pixel obisnuit din caldura senzorului) e ", all, StringComparison.Ordinal);
             List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
             Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
