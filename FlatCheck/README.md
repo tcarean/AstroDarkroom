@@ -859,7 +859,7 @@ same file for the same master, and the chips stay an aid to looking.
 The map is the image divided by the radial model, so everything that was radially symmetric has
 been removed: **what is left cannot be vignetting**. Read the figures first, which say *how much*,
 and only then the shape, which says *why*. The same list is in the window, under the map, in
-"How to read the map".
+"How to read the map", open when the window starts.
 
 | shape | what it meant |
 |---|---|
@@ -1060,8 +1060,9 @@ It saves in the session folder:
 - **`flatcheck.png`**: the map on the automatic scale, the same bytes the console would write.
 
 The map on screen has the scale chips and the legend described under "The colour scale", plus the
-shape guide under it. The file stays on the automatic scale whichever chip is pressed, so it matches
-the `auto` chip, not necessarily what you see.
+shape guide under it, open when the window starts; folded, it stays folded until the window
+closes. The file stays on the automatic scale whichever chip is pressed, so it matches the `auto`
+chip, not necessarily what you see.
 
 ### End to end
 

@@ -103,3 +103,7 @@ Noted at the wrap-up of 2026-11-02, before the commit.
   owner chose to move the paragraph on why the residual matters to the foot of the tests card:
   under the one scale its "the most important one" read as outranking the depth. R-126 and ADR
   0088 say so, and the render test checks its place.
+- Also on this branch, at the owner's request after the review: the map guide on the Structure tab
+  opens by default (R-127, ADR 0089), measured first with the real window off-screen (a 3:2
+  master's map 714 x 476 px folded, 609 x 406 open at 1920 x 1040). A small change, so no plan of
+  its own; the throwaway measuring test was deleted.

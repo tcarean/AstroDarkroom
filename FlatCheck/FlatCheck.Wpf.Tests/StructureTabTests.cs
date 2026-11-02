@@ -872,20 +872,21 @@ public class StructureTabTests
         Assert.NotEmpty(vm.MapGuide.Shapes);
     }
 
-    /// <summary>Collapsed by default, and the state survives the change of folder like the
-    /// scale.</summary>
+    /// <summary>R-127: open when the window starts; folded by the user, it stays folded across
+    /// the change of folder, like the scale. The tab's other guide still starts folded.</summary>
     [Fact]
-    public async Task TheGuideStartsCollapsedAndKeepsItsStateAcrossReset()
+    public async Task R127_TheMapGuideStartsOpenAndKeepsTheUsersFoldAcrossReset()
     {
         using var f = new SessionFixture().WithFlatMaster();
         var vm = await Run(f);
 
-        Assert.False(vm.MapGuide.IsExpanded);
+        Assert.True(vm.MapGuide.IsExpanded);
+        Assert.False(vm.HowToRead.IsExpanded);
 
-        vm.MapGuide.IsExpanded = true;
+        vm.MapGuide.IsExpanded = false;
         vm.Reset();
 
-        Assert.True(vm.MapGuide.IsExpanded);
+        Assert.False(vm.MapGuide.IsExpanded);
     }
 
     // ------------------------------------------------- the "no filters" box (R-118)

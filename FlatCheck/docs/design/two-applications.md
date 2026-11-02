@@ -41,7 +41,8 @@ and ADR 0033. The "Despre" window, which formulates nothing, is ADR 0040; it fit
 area of its screen, its cards scrolling, as the launcher's and AstroPhotoAnalyzer's do (R-125,
 ADR 0086). The three viewing
 aids around the residual map (the scale switch with its caps from `Th.Resid*`, the legend, the
-collapsed shape guide), why the guide is documentation and not a classifier, why End-to-end
+shape guide, open by default since R-127 and ADR 0089, its card capped at 300 px by its own
+scroll bar), why the guide is documentation and not a classifier, why End-to-end
 gets the legend and no shape guide, why the guide texts mirror the README by hand and why the
 guide's ring row was rewritten are ADR 0036 (the ring row also ADR 0018). Two mechanics the
 ADRs do not spell out: the scale switch defaults to ±10 %, and the guide's text is in

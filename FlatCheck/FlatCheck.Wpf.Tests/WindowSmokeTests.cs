@@ -221,9 +221,9 @@ public class WindowSmokeTests
             // state at opening; its result is rendered in the dedicated test.
             Render(new SplitView { DataContext = vm.Split }, name: "tab-split-empty");
 
-            // The map guide, expanded. Collapsed, its bindings inside the card are never
-            // evaluated - and a binding that fails only when shown is exactly what this
-            // suite exists to catch.
+            // Both guides open: the map's is open by default (R-127), the tab's is folded.
+            // Folded, a guide's bindings inside the card are never evaluated - and a binding
+            // that fails only when shown is exactly what this suite exists to catch.
             vm.Structure.MapGuide.IsExpanded = true;
             vm.Structure.HowToRead.IsExpanded = true;
             Render(new StructureView { DataContext = vm.Structure }, name: "tab-structure-guide");
@@ -407,6 +407,43 @@ public class WindowSmokeTests
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
+    }
+
+    /// <summary>
+    /// R-127: on a fresh tab the guide under the map is open - its intro and every shape are
+    /// laid out under the map - and the guide under the verdict is not.
+    /// </summary>
+    [Fact]
+    public void R127_TheMapGuideIsOpenOnAFreshTab()
+    {
+        var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+
+            var vm = new StructureTabViewModel();
+            vm.Populate(new StructureOutcome(r, null, null, null));
+            var view = new StructureView { DataContext = vm };
+            Render(view, h: 1800);
+            List<TextBlock> texts = Descendants(view).OfType<TextBlock>().ToList();
+
+            Assert.True(Shown(Assert.Single(texts, t => t.Text == vm.MapGuide.Intro)));
+            Assert.All(vm.MapGuide.Shapes, s => Assert.True(Shown(Assert.Single(texts, t => t.Text == s.Shape))));
+            Assert.False(Shown(Assert.Single(texts, t => t.Text == vm.HowToRead.Intro)));
+
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
+    /// <summary>Whether an element is on screen: it and every ancestor are visible. Its own
+    /// size does not tell: a text inside a panel folded after the first layout keeps the size of
+    /// that layout.</summary>
+    static bool Shown(DependencyObject node)
+    {
+        for (; node != null; node = VisualTreeHelper.GetParent(node))
+            if (node is UIElement e && e.Visibility != Visibility.Visible) return false;
+        return true;
     }
 
     /// <summary>Whether a cell of the verdict scale is drawn marked: its text sits in a border

@@ -101,6 +101,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Structure tab's guide under the residual map, `How to read the map`, is open when the window
+  starts (R-127, ADR 0089); folded by hand, it stays folded until the window closes. Its card is
+  capped by its own scroll bar, so a maximized 1920 x 1080 window keeps 85 % of the map's size.
 - The Structure tab shows one verdict scale instead of two (R-126, ADR 0088): under the vignetting
   card, `THE VERDICT SCALE` gives each band its interval for the five tests in percent and, when
   the vignetting was compared with the lens profile, the same band for the depth in stops, then
