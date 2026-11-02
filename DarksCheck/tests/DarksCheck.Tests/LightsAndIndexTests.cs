@@ -216,7 +216,7 @@ public class LightsAndIndexTests
 
         (int code2, string stdout2, _) = Cli.Run(none.Root, "--threads", "2");
         Assert.Equal(1, code2);
-        Assert.Contains("verdict            : NEMASURAT: lights-urile nu s-au putut folosi: niciun light nu s-a putut decoda: light_0001.fit:", stdout2, StringComparison.Ordinal);
+        Assert.Contains("verdict            : NEMASURAT: lights-urile nu s-au putut folosi: niciun light nu s-a putut citi: light_0001.fit:", stdout2, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -512,7 +512,7 @@ public class LightsAndIndexTests
             File.WriteAllBytes(f, new byte[100]);
         }
 
-        Assert.StartsWith("niciun dark al partenerului nu s-a putut decoda: DSC_0001.fit:", Run(s, broken.Root).PartnerError, StringComparison.Ordinal);
+        Assert.StartsWith("niciun dark al partenerului nu s-a putut citi: DSC_0001.fit:", Run(s, broken.Root).PartnerError, StringComparison.Ordinal);
 
         // frames of another size
         using SessionFixture small = new SessionFixture().WithDarks(3, inSubfolder: false);

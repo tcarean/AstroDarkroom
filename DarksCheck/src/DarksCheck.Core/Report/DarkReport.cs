@@ -416,8 +416,8 @@ internal static class DarkReport
     {
         ArgumentNullException.ThrowIfNull(r);
         return T(
-            $"     no  file                  time       mean   sigma  resid.   bands    ampl. plateau   light    side  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}",
-            $"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}");
+            $"     no  file                  time       mean   noise   diff.   bands      hot plateau   light    side  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}",
+            $"     nr  fisier                ora       medie  zgomot    dif.   benzi   fierb.  platou  lumina  latura  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}");
     }
 
     /// <summary>
@@ -454,12 +454,14 @@ internal static class DarkReport
         string eq = Eq(r.Darks);
         string side = r.Verdicts.Leak.WorstSide is SideLight w
             ? T(
-                $"side = {SideName(w.Side)} - centre{(w.RemainderAdu is null ? " (no biases, glow included)" : " after the bias (glow included)")}, {eq}",
-                $"latura = {SideName(w.Side)} - centru{(w.RemainderAdu is null ? " (fara bias, glow inclus)" : " dupa bias (glow inclus)")}, {eq}")
-            : T("side = the side with the most constant light - centre (UNMEASURED)", "latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)");
+                $"side = {SideWithPreposition(w.Side)} side against the centre{(w.RemainderAdu is null ? " (no biases, glow included)" : ", once the bias is taken off (glow included)")}, {eq}",
+                $"latura = latura {SideWithPreposition(w.Side)} fata de centru{(w.RemainderAdu is null ? " (fara bias-uri, cu glow)" : ", dupa scaderea bias-ului (cu glow)")}, {eq}")
+            : T("side = the side with the most constant light against the centre (UNMEASURED)", "latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)");
+        Warming wm = r.Darks.Warming;
+        bool cooling = wm.HasFit && wm.Plateau < wm.FirstRatio;
         return T(
-            $"[{r.Darks.PlaneNames[r.ReferencePlane]}; mean = ADU above the black; bands = rows / white noise; ampl. = the hot pixels against the master; plateau = degrees from the series' plateau; to discard = more than {F(Th.OffPlateauCelsius, 1)} degrees from the plateau (check 3); light = {eq} above the line of the mean against the warming; {side}]",
-            $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste {F(Th.OffPlateauCelsius, 1)} grade de platou (verificarea 3); lumina = {eq} peste dreapta mediei pe incalzire; {side}]");
+            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); plateau = how many degrees the frame is from the temperature the series {(cooling ? "comes down" : "climbs")} to; to discard = more than {F(Th.OffPlateauCelsius, 1)} degrees from it (check 3); light = the light above what the warming explains, {eq}; {side}]",
+            $"[{ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane])}; medie = cat e cadrul peste negru, ADU; zgomot = zgomotul cadrului, ADU; dif. = cat difera cadrul de master, ADU; benzi = de cate ori difera randurile intre ele mai mult decat ar da zgomotul singur (1 = fara benzi); fierb. = pixelii fierbinti fata de master (1 = la fel); platou = cu cate grade e cadrul fata de temperatura spre care {(cooling ? "coboara" : "urca")} seria; de aruncat = la peste {F(Th.OffPlateauCelsius, 1)} grade de ea (verificarea 3); lumina = lumina in plus fata de cat explica incalzirea, {eq}; {side}]");
     }
 
     /// <summary>
@@ -468,8 +470,8 @@ internal static class DarkReport
     /// read.
     /// </summary>
     internal static string PlateauColumnTip => T(
-        $"the frame's degrees from the series' plateau, read from the hot pixels; a frame more than {F(Th.OffPlateauCelsius, 1)} degrees from the plateau is one to discard and has its reason on the line under its cells (check 3)",
-        $"gradele cadrului fata de platoul seriei, citite din pixelii fierbinti; un cadru la peste {F(Th.OffPlateauCelsius, 1)} grade de platou e de aruncat si are motivul pe randul de sub celule (verificarea 3)");
+        $"how many degrees the frame is from the steady temperature the series climbs to (the plateau), by the hot pixels; a frame more than {F(Th.OffPlateauCelsius, 1)} degrees from the plateau is one to discard and has its reason on the line under it (check 3)",
+        $"cu cate grade e cadrul fata de temperatura stabila spre care urca seria (platoul), dupa pixelii fierbinti; un cadru la peste {F(Th.OffPlateauCelsius, 1)} grade de platou e de aruncat si are motivul pe randul de sub el (verificarea 3)");
 
     /// <summary>
     /// The sentence under the window's warming chart (R-071): what the points are, and with a fit
@@ -482,15 +484,16 @@ internal static class DarkReport
         ArgumentNullException.ThrowIfNull(r);
         Warming w = r.Darks.Warming;
         string what = T(
-            "The amplitude of the master's hot pixels in each frame, against the master: the slope is the camera warming during the series (check 3).",
-            "Amplitudinea pixelilor fierbinti ai masterului in fiecare cadru, fata de master: panta e incalzirea camerei in timpul seriei (verificarea 3).");
+            "How hot the master's hot pixels are in each frame, against the master: when the curve climbs, the camera warms during the series (check 3).",
+            "Cat de fierbinti sunt pixelii fierbinti ai masterului in fiecare cadru, fata de master: cand curba urca, camera se incalzeste in timpul seriei (verificarea 3).");
+        bool cooling = w.HasFit && w.Plateau < w.FirstRatio;
         return w.HasFit
             ? T(
-                $"{what} The series' plateau is at {F(w.Plateau, 2)} of the master; the frames under {F(w.OffPlateauLow, 2)} or over {F(w.OffPlateauHigh, 2)} (more than {F(Th.OffPlateauCelsius, 1)} degrees from the plateau) are to discard and show in the attention colour.",
-                $"{what} Platoul seriei e la {F(w.Plateau, 2)} din master; cadrele sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)} (la peste {F(Th.OffPlateauCelsius, 1)} grade de platou) sunt de aruncat si apar in culoarea de atentie.")
+                $"{what} The series {(cooling ? "comes down" : "climbs")} towards a steady temperature (the plateau), at {F(w.Plateau, 2)} of the master; the frames under {F(w.OffPlateauLow, 2)} or over {F(w.OffPlateauHigh, 2)} (more than {F(Th.OffPlateauCelsius, 1)} degrees from the plateau) are to discard and show in yellow.",
+                $"{what} Seria {(cooling ? "coboara" : "urca")} spre o temperatura stabila (platoul), la {F(w.Plateau, 2)} din master; cadrele sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)} (la peste {F(Th.OffPlateauCelsius, 1)} grade de platou) sunt de aruncat si apar in galben.")
             : T(
-                $"{what} With fewer than {Th.WarmingFitMinFrames} frames with hot pixels no plateau is fitted.",
-                $"{what} Sub {RoCount(Th.WarmingFitMinFrames)}cadre cu pixeli fierbinti nu se potriveste un platou.");
+                $"{what} With fewer than {Th.WarmingFitMinFrames} frames with hot pixels the plateau cannot be found.",
+                $"{what} Cu mai putin de {RoCount(Th.WarmingFitMinFrames)}cadre cu pixeli fierbinti nu se poate gasi platoul.");
     }
 
     /// <summary>
@@ -536,8 +539,8 @@ internal static class DarkReport
             {
                 bool under = f.AmpRatioMedian < wm.OffPlateauLow;
                 note = T(
-                    $"to discard: ampl. {Ratio(f.AmpRatioMedian)} {(under ? "below" : "above")} {F(under ? wm.OffPlateauLow : wm.OffPlateauHigh, 2)} (more than {F(Th.OffPlateauCelsius, 1)} degrees {(under ? "below" : "above")} the plateau {F(wm.Plateau, 2)})",
-                    $"de aruncat: amplit. {Ratio(f.AmpRatioMedian)} {(under ? "sub" : "peste")} {F(under ? wm.OffPlateauLow : wm.OffPlateauHigh, 2)} (peste {F(Th.OffPlateauCelsius, 1)} grade {(under ? "sub" : "peste")} platoul {F(wm.Plateau, 2)})");
+                    $"to discard: the hot pixels are at {Ratio(f.AmpRatioMedian)} of the master, {(under ? "below" : "above")} {F(under ? wm.OffPlateauLow : wm.OffPlateauHigh, 2)}, that is more than {F(Th.OffPlateauCelsius, 1)} degrees {(under ? "below" : "above")} the plateau ({F(wm.Plateau, 2)})",
+                    $"de aruncat: pixelii fierbinti sunt la {Ratio(f.AmpRatioMedian)} din master, {(under ? "sub" : "peste")} {F(under ? wm.OffPlateauLow : wm.OffPlateauHigh, 2)}, adica la peste {F(Th.OffPlateauCelsius, 1)} grade {(under ? "sub" : "peste")} platou ({F(wm.Plateau, 2)})");
             }
 
             rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), plateau, double.IsNaN(light) ? "-" : Signed(light, 2), side, p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture), note));
@@ -924,6 +927,20 @@ internal static class DarkReport
         MapSide.Bottom => T("bottom", "jos"),
         MapSide.Left => T("left", "stanga"),
         _ => T("right", "dreapta"),
+    };
+
+    /// <summary>
+    /// A side as it follows "latura" in Romanian, with its preposition ("de sus", "din dreapta"),
+    /// or as it goes before "side" in English ("the top", "the right").
+    /// </summary>
+    /// <param name="s">The side.</param>
+    /// <returns>The words, in the run's language.</returns>
+    private static string SideWithPreposition(MapSide s) => s switch
+    {
+        MapSide.Top => T("the top", "de sus"),
+        MapSide.Bottom => T("the bottom", "de jos"),
+        MapSide.Left => T("the left", "din stanga"),
+        _ => T("the right", "din dreapta"),
     };
 
     /// <summary>

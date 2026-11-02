@@ -115,8 +115,8 @@ internal static class WindowTexts
     internal static string HotHeader => ">" + RunReport.F(Th.HotAdu, 0);
 
     internal static string HotHeaderTip => T(
-        $"pixels above {RunReport.F(Th.HotAdu, 0)} ADU-eq on the reference plane",
-        $"pixeli peste {RunReport.F(Th.HotAdu, 0)} ADU-eq pe planul de referinta");
+        $"how many pixels of the frame go over {RunReport.F(Th.HotAdu, 0)} ADU-eq (on the pixels named in the note on the right)",
+        $"cati pixeli din cadru trec de {RunReport.F(Th.HotAdu, 0)} ADU-eq (pe pixelii scrisi in nota din dreapta)");
 
     internal static string HotTabLead => T(
         $"The hot pixels of the median master at five levels, on planes at {RunReport.F(Th.HotAdu, 0)} ADU-eq, with their amplitudes and how stable "

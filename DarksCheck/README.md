@@ -323,10 +323,11 @@ The end of the report's sections on Smida:
 
 #### The tables
 
-- **FRAMES TABLE**, one row per dark, on G1: the time, the mean above the black, sigma, the
-  residual sigma, the banding (times the white noise), the hot pixels' amplitude against the
-  master, `plateau` (degrees from the plateau of the series), `light` (ADU-eq above the line of
-  the mean against the warming; `-` under 6 frames), `side` (the side with the most constant
+- **FRAMES TABLE**, one row per dark, on G1: the time, the mean above the black, `noise` (the
+  frame's noise), `diff.` (how much the frame differs from the master), `bands` (how many times
+  more the rows differ from one another than the noise alone would give), `hot` (the hot pixels
+  against the master, 1 = the same), `plateau` (degrees from the plateau of the series), `light`
+  (ADU-eq above what the warming explains; `-` under 6 frames), `side` (the side with the most constant
   light against the centre in that frame, after the bias when there are biases, glow included,
   in ADU-eq; the note names the side, and only its constant part is light), and the pixels above
   20 ADU-eq. A frame the cap skipped reads `skipped (...)`, one that could not be read
@@ -337,9 +338,9 @@ The end of the report's sections on Smida:
 
 ```
   FRAMES TABLE
-     no  file                  time       mean   sigma  resid.   bands    ampl. plateau   light    side  >20   [G1; mean = ADU above the black; ...
-      1  DSC_0034.NEF          00:48:53   -0.45    1.46    1.47     4.3    0.826    -2.5   +0.02   +0.03   115   to discard: ampl. 0.826 below 0.87 (more than 2.0 degrees below the plateau 1.10)
-      2  DSC_0035.NEF          00:50:53   -0.47    1.46    1.47     4.3    0.846    -2.2   +0.00   +0.02   110   to discard: ampl. 0.846 below 0.87 (more than 2.0 degrees below the plateau 1.10)
+     no  file                  time       mean   noise   diff.   bands      hot plateau   light    side  >20   [the green pixels G1; mean = how far the frame is above the black, ADU; ...
+      1  DSC_0034.NEF          00:48:53   -0.45    1.46    1.47     4.3    0.826    -2.5   +0.02   +0.03   115   to discard: the hot pixels are at 0.826 of the master, below 0.87, that is more than 2.0 degrees below the plateau (1.10)
+      2  DSC_0035.NEF          00:50:53   -0.47    1.46    1.47     4.3    0.846    -2.2   +0.00   +0.02   110   to discard: the hot pixels are at 0.846 of the master, below 0.87, that is more than 2.0 degrees below the plateau (1.10)
       3  DSC_0036.NEF          00:52:53   -0.41    1.48    1.49     5.0    0.900    -1.7   +0.05   -0.03   125
 ```
 
@@ -476,10 +477,11 @@ tabs:
 - **Summary**: the session's lines, then every check as a card of rows, its verdict a coloured
   chip (green `OK`, amber `WARNING`, grey `UNMEASURED`) with the rest of the text beside it.
 - **Frames**: the frames table, every column header with an explanation under the mouse, and
-  beside it three charts, frame by frame: the hot pixels' amplitude against the master (the
-  warming, with the plateau and the two bounds of check 3), the residual sigma (with the line at
-  1.5 times the median) and the random banding. A frame to discard shows its `plateau` value in
-  bold and its reason on a second line, in the attention colour.
+  beside it three charts, frame by frame: the hot pixels against the master (the warming, with
+  the plateau and the two bounds of check 3), how much each frame differs from the master (with
+  the line at 1.5 times the usual noise) and the random banding (with the line at 1, no banding).
+  A frame to discard shows its `plateau` value in bold and its reason on a second line, in
+  yellow.
 - **Maps**: the three maps of check 2 (master dark, master bias, dark - bias), the same as the
   PNG files of `--out`, each with its row of the report under it.
 - **Hot pixels**: the rows of check 5 and the curve of check 8, the noise of the mean of n

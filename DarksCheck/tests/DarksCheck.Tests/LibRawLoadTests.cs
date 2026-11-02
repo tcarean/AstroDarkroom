@@ -205,7 +205,7 @@ public partial class LibRawLoadTests
         // nothing is deleted between the runs, which a scanner holding the closed file could fail.
         (code, _, string stderr) = RunCopy(app, session);
         Assert.Equal(1, code);
-        Assert.Contains("ERROR: no dark could be decoded: DSC_0001.NEF: " + English + "; DSC_0002.NEF: " + English, stderr, StringComparison.Ordinal);
+        Assert.Contains("ERROR: no dark could be read: DSC_0001.NEF: " + English + "; DSC_0002.NEF: " + English, stderr, StringComparison.Ordinal);
         Assert.Equal(["WARN", "WARN"], RuntimeLines(logs));
     }
 

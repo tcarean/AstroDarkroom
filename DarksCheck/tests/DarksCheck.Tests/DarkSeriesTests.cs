@@ -174,14 +174,14 @@ public partial class DarkSeriesTests
         // the table: the degrees from the plateau per frame, the note on the frames off it
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         Assert.StartsWith("-3.", rows[0].Plateau, StringComparison.Ordinal);
-        Assert.StartsWith("de aruncat: amplit. 0.7", rows[0].Note, StringComparison.Ordinal);
+        Assert.StartsWith("de aruncat: pixelii fierbinti sunt la 0.7", rows[0].Note, StringComparison.Ordinal);
         Assert.Contains(" sub 0.8", rows[0].Note, StringComparison.Ordinal);
-        Assert.Contains("(peste 2.0 grade sub platoul 1.0", rows[0].Note, StringComparison.Ordinal);
+        Assert.Contains(", adica la peste 2.0 grade sub platou (1.0", rows[0].Note, StringComparison.Ordinal);
         Assert.NotNull(rows[1].Note);
         Assert.Null(rows[2].Note);
         Assert.Null(rows[11].Note);
         Assert.StartsWith("-0.", rows[11].Plateau, StringComparison.Ordinal);
-        Assert.Contains("platou = grade fata de platoul seriei; de aruncat = la peste 2.0 grade de platou (verificarea 3)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        Assert.Contains("platou = cu cate grade e cadrul fata de temperatura spre care urca seria; de aruncat = la peste 2.0 grade de ea (verificarea 3)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         Assert.Contains("platou", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         string line = DarkReport.FrameLine(rows[0]);
         Assert.EndsWith(rows[0].Note, line, StringComparison.Ordinal);
@@ -286,8 +286,8 @@ public partial class DarkSeriesTests
         ReportRow litRow = DarkReport.Sections(r)[0].Rows.Single(x => x.Label == "lumina pe cadre");
         Assert.Contains($"{r.Darks.Noise.MasterNoise:F2} ADU", litRow.BoldParts);
         Assert.All(litRow.BoldParts, b => Assert.Contains(b, litRow.Value, StringComparison.Ordinal));
-        Assert.Contains("  amplit.  platou  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
-        Assert.Contains("lumina = ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        Assert.Contains("   fierb.  platou  lumina  latura  >20   [pixelii verzi G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("lumina = lumina in plus fata de cat explica incalzirea, ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         Assert.StartsWith("+0.", rows[6].Light, StringComparison.Ordinal);
         Assert.Matches("^[+-]0\\.0[0-9]$", rows[0].Light);
@@ -450,8 +450,8 @@ public partial class DarkSeriesTests
         Assert.Equal([masterNoise], enough.BoldParts);
         Assert.Contains(masterNoise, enough.Value, StringComparison.Ordinal);
         Assert.Empty(sections[0].Rows.Single(x => x.Label == "master dark").BoldParts);
-        Assert.Contains("  amplit.  platou  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
-        Assert.Contains("latura = sus - centru dupa bias (glow inclus), ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        Assert.Contains("   fierb.  platou  lumina  latura  >20   [pixelii verzi G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("latura = latura de sus fata de centru, dupa scaderea bias-ului (cu glow), ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         // one frame, three regions of 256 synthetic pixels each: a noisy column, the band still in every frame
         Assert.All(rows, row => Assert.InRange(double.Parse(row.Side, CultureInfo.InvariantCulture), 1.0, 3.0));
@@ -479,7 +479,7 @@ public partial class DarkSeriesTests
         using StringWriter swn = new();
         DarkReport.Write(rn, swn);
         Assert.Contains("    lumina constanta   : fara bias-uri nu se poate desparti de diferenta de nivel din citire: constant sus +", swn.ToString(), StringComparison.Ordinal);
-        Assert.Contains("latura = sus - centru (fara bias, glow inclus), ADU", DarkReport.FrameTableNote(rn), StringComparison.Ordinal);
+        Assert.Contains("latura = latura de sus fata de centru (fara bias-uri, cu glow), ADU", DarkReport.FrameTableNote(rn), StringComparison.Ordinal);
 
         // under six frames: unmeasured, like the split
         using SessionFixture few = new SessionFixture().WithDarkSeries(4, Plain, biases: 3);
@@ -487,7 +487,7 @@ public partial class DarkSeriesTests
         Assert.Empty(rf.Verdicts.Leak.Sides);
         Assert.Null(rf.Verdicts.Leak.WorstSide);
         Assert.Equal("-", DarkReport.FrameRows(rf)[0].Side);
-        Assert.Contains("latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)", DarkReport.FrameTableNote(rf), StringComparison.Ordinal);
+        Assert.Contains("latura = latura cu cea mai multa lumina constanta fata de centru (NEMASURAT)", DarkReport.FrameTableNote(rf), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -757,6 +757,52 @@ public partial class DarkSeriesTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R083_TheFramesTablesWordsAreInPlainWords(bool english)
+    {
+        // the variants the fixtures reach: a series that climbs to its plateau with frames to discard below it, one that
+        // comes down to it with frames above it, the eyepiece band of R029 with biases, an edge without biases, a short
+        // series without a plateau, a capped one with skipped frames; and the message when no dark can be read
+        static double Band(int x, int y) => y < 64 ? 2 : 0;
+        using SessionFixture climbing = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
+        using SessionFixture cooling = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.9 + 0.4 * Math.Exp(-i / 3.0) });
+        using SessionFixture leak = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 }, biases: 4);
+        using SessionFixture edge = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = (x, y) => x < 32 ? 3 : 0 });
+        using SessionFixture bare = new SessionFixture().WithDarkSeries(4, Plain);
+        using SessionFixture capped = new SessionFixture().WithDarkSeries(5, Plain);
+        using TempWorkspace broken = new();
+        File.WriteAllBytes(broken.PathTo("DSC_0001.fit"), new byte[100]);
+        System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishFramesWords() : PlainWords.RomanianFramesWords();
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            List<string> texts = [DarkReport.PlateauColumnTip];
+            foreach (DarkSeriesResult r in new[] { Run(climbing), Run(cooling), Run(leak), Run(edge), Run(bare), DarkSeriesRun.Run(capped.Root, new DarkOptions(Threads: 2, MaxFrames: 2)) })
+            {
+                texts.Add(DarkReport.FrameTableHeader(r));
+                texts.Add(DarkReport.WarmingChartNote(r));
+                texts.AddRange(DarkReport.FrameRows(r).Select(row => row.Note ?? row.Skipped ?? row.Error ?? ""));
+            }
+
+            texts.Add(Assert.ThrowsAny<Exception>(() => DarkSeriesRun.Run(broken.Dir, new DarkOptions(Threads: 2))).Message);
+
+            // the scenes reached their variants, so the words below were looked at
+            string all = string.Join("\n", texts);
+            Assert.Contains(english ? "to discard: the hot pixels are at " : "de aruncat: pixelii fierbinti sunt la ", all, StringComparison.Ordinal);
+            Assert.Contains(english ? ", that is more than 2.0 degrees above the plateau" : ", adica la peste 2.0 grade peste platou", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the temperature the series comes down to" : "temperatura spre care coboara seria", all, StringComparison.Ordinal);
+            Assert.Contains(english ? ", once the bias is taken off (glow included)" : ", dupa scaderea bias-ului (cu glow)", all, StringComparison.Ordinal);
+            Assert.Contains(english ? " (no biases, glow included)" : " (fara bias-uri, cu glow)", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "against the centre (UNMEASURED)" : "fata de centru (NEMASURAT)", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "the plateau cannot be found" : "nu se poate gasi platoul", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "frames only one in 3 is read)" : "cadre se citeste doar unul din 3)", all, StringComparison.Ordinal);
+            Assert.Contains(english ? "no dark could be read" : "niciun dark nu s-a putut citi", all, StringComparison.Ordinal);
+            List<string> left = texts.Where(t => method.IsMatch(t)).Select(t => $"'{method.Match(t).Value}' in: {t}").ToList();
+            Assert.True(left.Count == 0, "the method's words are left:\n" + string.Join("\n", left));
+        }
+    }
+
     // R-082's words of the method in the summary, every section; the median only where check 8 names how a master is
     // made; LightsAndIndexTests reads check 9 and INDEX with the same words
     [System.Text.RegularExpressions.GeneratedRegex(@"\b(sigma|sqrt|abater\w*|offset\w*|brut\w*|extrapol\w*|decod\w*|BITPIX|CFA|p1|p10|p90|p99|q25|q75|amplitudin\w*|normaliz\w*|cuantiz\w*|cuadratur\w*|gradient\w*|deriv\w*|rezidual\w*|temporal\w*|glisant\w*|candidat\w*|rms|rang\w*|persistent\w*|izolat\w*|raport\w*|supracorect\w*|scaleaz\w*)\b|(?<!\bcu )\bmedian\w*|x eroarea|zgomot\w* alb|varf la varf|\bn=|±", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant)]
@@ -964,7 +1010,7 @@ public partial class DarkSeriesTests
         FrameStack stack = FrameStack.Load(SessionFolder.Open(s.Root).Darks, 2, maxFrames: 2);
         Assert.Equal(2, stack.Decoded.Count);
         Assert.Equal([1, 4], stack.Decoded.Select(f => f.Info.Index));
-        Assert.Contains("sarit (peste 2 cadre, se decodeaza unul din 3)", stack.Frames[1].Error, StringComparison.Ordinal);
+        Assert.Contains("sarit (peste 2 cadre se citeste doar unul din 3)", stack.Frames[1].Error, StringComparison.Ordinal);
         Assert.Equal(5, stack.Frames.Count);
     }
 

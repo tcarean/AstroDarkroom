@@ -66,7 +66,7 @@ Copyright (C) 2026 Tudor Carean
     label              : <session>-idx145
 
   FRAMES TABLE
-     no  file                  time       mean   sigma  resid.   bands    ampl. plateau   light    side  >20   [G1; mean = ADU above the black; bands = rows / white noise; ampl. = the hot pixels against the master; plateau = degrees from the series' plateau; to discard = more than 2.0 degrees from the plateau (check 3); light = ADU above the line of the mean against the warming; side = the side with the most constant light - centre (UNMEASURED)]
+     no  file                  time       mean   noise   diff.   bands      hot plateau   light    side  >20   [the green pixels G1; mean = how far the frame is above the black, ADU; noise = the noise of the frame, ADU; diff. = how much the frame differs from the master, ADU; bands = how many times more the rows differ from one another than the noise alone would give (1 = no banding); hot = the hot pixels against the master (1 = the same); plateau = how many degrees the frame is from the temperature the series climbs to; to discard = more than 2.0 degrees from it (check 3); light = the light above what the warming explains, ADU; side = the side with the most constant light against the centre (UNMEASURED)]
       1  DSC_0001.fit          00:48:53    0.00    3.01    2.64     1.0    0.888       -       -       -     1
       2  DSC_0002.fit          00:50:53    0.01    2.99    2.67     1.0    0.950       -       -       -     1
       3  DSC_0003.fit          00:52:53    0.02    3.03    2.71     1.0    1.050       -       -       -     1

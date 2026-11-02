@@ -158,7 +158,7 @@ internal static class LightsAnalyzer
             string path = paths[i];
             if (i % step != 0)
             {
-                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), T($"skipped (over {maxFrames} frames, one in {step} is decoded)", $"sarit (peste {RoCount(maxFrames)}cadre, se decodeaza unul din {step})"), true, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), T($"skipped (over {maxFrames} frames only one in {step} is read)", $"sarit (peste {RoCount(maxFrames)}cadre se citeste doar unul din {step})"), true, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }
@@ -211,7 +211,7 @@ internal static class LightsAnalyzer
 
         if (used == 0)
         {
-            throw new InvalidOperationException(T("no light could be decoded", "niciun light nu s-a putut decoda") + FirstErrors(frames));
+            throw new InvalidOperationException(T("no light could be read", "niciun light nu s-a putut citi") + FirstErrors(frames));
         }
 
         // persistence and overlap with the dark master

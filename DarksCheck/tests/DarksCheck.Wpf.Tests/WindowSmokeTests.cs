@@ -255,7 +255,7 @@ public class WindowSmokeTests
             using BindingErrors errors = new();
             FramesView view = new() { DataContext = vm };
             Render(view, name: "tab-frames-off");
-            TextBlock[] notes = Descendants<TextBlock>(view).Where(t => t.Text.StartsWith("de aruncat: amplit.", StringComparison.Ordinal) && t.Visibility == Visibility.Visible).ToArray();
+            TextBlock[] notes = Descendants<TextBlock>(view).Where(t => t.Text.StartsWith("de aruncat: pixelii fierbinti", StringComparison.Ordinal) && t.Visibility == Visibility.Visible).ToArray();
             Assert.Equal(2, notes.Length);
             Grid row = (Grid)notes[0].Parent;
             Assert.Equal(vm.Frames[0].Note, row.ToolTip);

@@ -166,7 +166,8 @@ pairs read as properties. The verdict chips colour either language's words
 (`VerdictPalette.Severity`). The window still finds the maps' rows by the labels `master dark`,
 `master bias` and `dark - bias` and the sections by their `5.`, `9.` and `INDEX` prefixes,
 which the report keeps the same in both languages. `LanguageWindowTests` render every tab in an
-English scope and look for Romanian words.
+English scope and look for Romanian words, and the Cadre tab in both languages for the method's
+words of R-083, the list `PlainWords.cs` that the core's tests share, linked like the fixtures.
 
 ## Culture, title bar, icon
 

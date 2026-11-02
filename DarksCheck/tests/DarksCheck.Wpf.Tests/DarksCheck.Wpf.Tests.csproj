@@ -45,6 +45,8 @@
     <Compile Include="..\DarksCheck.Tests\FitsTestData.cs" Link="Shared\FitsTestData.cs" />
     <Compile Include="..\DarksCheck.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
     <Compile Include="..\DarksCheck.Tests\TestData.cs" Link="Shared\TestData.cs" />
+    <!-- R-083's words of the method, one list for the core's tests and the window's (ADR 0031). -->
+    <Compile Include="..\DarksCheck.Tests\PlainWords.cs" Link="Shared\PlainWords.cs" />
     <!-- LogCapture configures the diagnostic log for the whole test assembly and lets a test read
          its own lines, here as in DarksCheck.Tests (ADR 0025). -->
     <Compile Include="..\DarksCheck.Tests\LogCapture.cs" Link="Shared\LogCapture.cs" />

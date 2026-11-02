@@ -179,7 +179,7 @@ internal sealed class FrameStack
             string path = paths[i];
             if (i % step != 0)
             {
-                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, T($"skipped (over {maxFrames} frames, one in {step} is decoded)", $"sarit (peste {RoCount(maxFrames)}cadre, se decodeaza unul din {step})"), Skipped: true);
+                frames[i] = new StackFrame(FrameInfo.Read(i + 1, path), null, T($"skipped (over {maxFrames} frames only one in {step} is read)", $"sarit (peste {RoCount(maxFrames)}cadre se citeste doar unul din {step})"), Skipped: true);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }

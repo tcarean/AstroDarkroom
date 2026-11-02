@@ -97,7 +97,7 @@ internal static class BiasAnalyzer
         IReadOnlyList<StackFrame> decoded = stack.Decoded;
         if (decoded.Count == 0)
         {
-            throw new InvalidOperationException(T("no bias could be decoded", "niciun bias nu s-a putut decoda") + FrameStack.FirstErrors(stack));
+            throw new InvalidOperationException(T("no bias could be read", "niciun bias nu s-a putut citi") + FrameStack.FirstErrors(stack));
         }
 
         int w = stack.Width, h = stack.Height, n = decoded.Count;

@@ -46,7 +46,7 @@ public class MainViewModelTests
         Assert.True(vm.Frames[0].Off);
         Assert.Equal(rows[0].Plateau, vm.Frames[0].Plateau);
         Assert.Equal(rows[0].Note, vm.Frames[0].Note);
-        Assert.StartsWith("de aruncat: amplit. ", vm.Frames[0].Note, StringComparison.Ordinal);
+        Assert.StartsWith("de aruncat: pixelii fierbinti sunt la ", vm.Frames[0].Note, StringComparison.Ordinal);
         Assert.False(vm.Frames[11].Off);
         Assert.Null(vm.Frames[11].Note);
 
@@ -200,7 +200,7 @@ public class MainViewModelTests
         Assert.Equal(DarkReport.LightRows(r).Select(LightRowVm.From), vm.Lights);
         Assert.Equal(DarkReport.FrameRows(r)[1].Residual, vm.Frames[1].Residual);
         Assert.Equal(DarkReport.FrameRows(r)[1].Light, vm.Frames[1].Light);
-        Assert.StartsWith("[G1;", vm.FrameTableNote, StringComparison.Ordinal);
+        Assert.StartsWith("[pixelii verzi G1;", vm.FrameTableNote, StringComparison.Ordinal);
         Assert.StartsWith("[G1;", vm.LightTableNote, StringComparison.Ordinal);
 
         // the three maps, with the report's row under each
