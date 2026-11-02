@@ -34,6 +34,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Harti tab's own texts speak plain words, in English and Romanian (R-084, ADR 0032): the lead
+  says what the three maps show and how each map's contrast is set, the third map is titled
+  `DARK MINUS BIAS`, and a missing map says why (`the frames are smaller than 32 px`; for the bias
+  maps, `the session has no biases that can be used`).
+
 - The Cadre tab and the console's frames table speak plain words, in English and Romanian (R-083,
   ADR 0031), the figures unchanged: the columns `sigma`, `rezid.` and `amplit.` are `zgomot`,
   `dif.` and `fierb.` (`noise`, `diff.`, `hot`), the note and the hover hints say what each column

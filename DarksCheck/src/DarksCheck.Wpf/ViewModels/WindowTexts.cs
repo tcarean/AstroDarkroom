@@ -108,9 +108,13 @@ internal static class WindowTexts
         + $"ISO {RunReport.F(Th.NormIso, 0)} si {RunReport.F(Th.NormExposureSeconds, 0)} s. Eticheta e numele folderului plus idx<NN>: o copiezi "
         + "si redenumesti folderul tu; programul nu scrie si nu redenumeste nimic in folderele cu poze.");
 
-    internal static string NoMap => T(
-        $"The map has no blocks (frames smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px) or the group is missing.",
-        $"Harta nu are blocuri (cadre mai mici de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px) sau grupul lipseste.");
+    internal static string NoDarkMap => T(
+        $"No map: the frames are smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.",
+        $"Nu e harta: cadrele sunt mai mici de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.");
+
+    internal static string NoBiasMap => T(
+        $"No map: the session has no biases that can be used, or the frames are smaller than {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.",
+        $"Nu e harta: sesiunea nu are bias-uri care sa se poata folosi, sau cadrele sunt mai mici de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px.");
 
     internal static string HotHeader => ">" + RunReport.F(Th.HotAdu, 0);
 
@@ -141,12 +145,14 @@ internal static class WindowTexts
         $"La cate grade se dubleaza curentul de intuneric, pentru gradele din raport; {RunReport.F(Th.DoublingCelsius, 0)} la D3300");
 
     internal static string MapsLead => T(
-        $"The maps of the reference plane in blocks of {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px, each stretched between its own 1st and 99th percentiles: "
-        + "the dark master (the mean of the frames), the bias master and their difference, the dark current. A brighter edge or corner "
-        + "on dark - bias is a light leak or glow; one that also shows in the bias is the readout, not light.",
-        $"Hartile planului de referinta in blocuri de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px, fiecare intinsa intre percentilele 1 si 99 ale ei: "
-        + "masterul dark (media cadrelor), masterul bias si diferenta lor, curentul de intuneric. O margine sau un colt "
-        + "mai luminos pe dark - bias e o scurgere de lumina sau glow; unul care apare si in bias e citire, nu lumina.");
+        $"The three maps show the frame in squares of {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px: the dark master (the mean of the frames), the bias master "
+        + "and their difference, that is what the sensor gathers from its own heat (the dark current). Each map has its own contrast: the darkest "
+        + "1 % of the squares is black, the brightest 1 % white, so that small differences show too. A brighter edge or corner on dark minus bias "
+        + "is light that got into the camera, or glow; one that also shows in the bias comes from the sensor's readout, not from light.",
+        $"Cele trei harti arata cadrul in patrate de {(Th.BinPx * 2).ToString(CultureInfo.InvariantCulture)} px: masterul dark (media cadrelor), masterul bias "
+        + "si diferenta lor, adica ce aduna senzorul din caldura lui (curentul de intuneric). Fiecare harta are contrastul ei: cel mai intunecat "
+        + "1 % din patrate e negru, cel mai luminos 1 % e alb, ca sa se vada si diferentele mici. O margine sau un colt mai luminos pe dark minus bias "
+        + "e lumina intrata in aparat sau glow; unul care apare si in bias vine din citirea senzorului, nu e lumina.");
 
     internal static string LightsChartLead => T(
         "The amplitude of the master's hot pixels in each light, against the master, normalised for ISO and exposure. "

@@ -204,7 +204,7 @@ public class MainViewModelTests
         Assert.StartsWith("[G1;", vm.LightTableNote, StringComparison.Ordinal);
 
         // the three maps, with the report's row under each
-        Assert.Equal(["MASTER DARK", "MASTER BIAS", "DARK - BIAS"], vm.Maps.Select(m => m.Title));
+        Assert.Equal(["MASTER DARK", "MASTER BIAS", "DARK MINUS BIAS"], vm.Maps.Select(m => m.Title));
         Assert.All(vm.Maps, m => Assert.True(m.HasImage));
         Assert.Equal(DarkOutputs.MapRaster(r.Darks.MeanMaps[r.ReferencePlane])!.Value.W, vm.Maps[0].Image!.PixelWidth);
         Assert.StartsWith("centru ", vm.Maps[2].Note, StringComparison.Ordinal);

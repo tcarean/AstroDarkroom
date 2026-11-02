@@ -482,7 +482,7 @@ tabs:
   the line at 1.5 times the usual noise) and the random banding (with the line at 1, no banding).
   A frame to discard shows its `plateau` value in bold and its reason on a second line, in
   yellow.
-- **Maps**: the three maps of check 2 (master dark, master bias, dark - bias), the same as the
+- **Maps**: the three maps of check 2 (master dark, master bias, dark minus bias), the same as the
   PNG files of `--out`, each with its row of the report under it.
 - **Hot pixels**: the rows of check 5 and the curve of check 8, the noise of the mean of n
   frames against sigma / sqrt(n); hold the mouse over a point to see its figures.

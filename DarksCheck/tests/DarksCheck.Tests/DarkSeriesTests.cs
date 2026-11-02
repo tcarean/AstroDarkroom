@@ -826,7 +826,7 @@ public partial class DarkSeriesTests
             File.WriteAllBytes(f, new byte[100]);
         }
 
-        System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishFramesWords() : PlainWords.RomanianFramesWords();
+        System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
         using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
         {
             List<string> texts = [DarkReport.PlateauColumnTip];
