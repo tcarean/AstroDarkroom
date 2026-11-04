@@ -91,10 +91,11 @@ peer does only through the stock name `PART_SelectedContentHost`; that name woul
 the keyboard focus into a tab on a click on its header (R-157, ADR 0065). `MetricRowTemplate` puts the
 optional `Description` under the label in the label's column only, wrapped, and the `Note`
 below it across both columns. `DescribedMetricRowTemplate` (the described panels: Tonuri,
-Export's Cuantizare, Rezolutie's stars, Culoare's colour) is the same row on two equal
-columns over the card's full width: label, description and note in the left half, the
-value right-aligned in the right half, so every description stops at the middle whatever
-the value's length; its rows sit 14 px apart, each being a paragraph; the Tonuri
+Export's Cuantizare, Rezolutie's stars, Culoare's colour) is the same row with the value
+column `Auto` and shared by the table's rows (`SharedSizeGroup="DescribedValue"`, the
+`Grid.IsSharedSizeScope` on each view's `ItemsControl`): the values right-aligned in a column
+as wide as the table's widest, label, description and note in all the width to its left minus
+24 px, so every line of text stops before every value of its table (R-174, ADR 0080); its rows sit 14 px apart, each being a paragraph; the Tonuri
 percentiles are one per line. `VerdictPalette`
 (colour from the core's label: OK green, ATENTIE amber, PROBLEMA red, anything else
 neutral); `RasterBitmaps` (a raster region as `BitmapSource`, at an integer stride,
@@ -213,8 +214,9 @@ closes it.
   in the recommendations), and the Preview tab computes the screen-versus-paper rule on
   the image (`ScreenEquivalentWidthCm`, `ScreenStepBackFactor`, window only) with two
   branches, since a small image prints larger than its 100 % view - the synthetic scenes
-  are 512 px and land on that branch. Layout lessons: described rows need two equal
-  columns, not label/auto, or the longest value narrows every description; a preview
+  are 512 px and land on that branch. Layout lessons: described rows need one value
+  column for the whole table, not label/auto per row, or every description ends at a different
+  margin (the two equal columns of the time gave way to the shared column of ADR 0080); a preview
   tile's text must wrap to the image's width or it widens the card. The Preview tab, its
   tiles, the step-back rule and the monitor pixel pitch were removed on 2026-10-30, once the
   Soft proof tab showed the image better (ADR 0067); what is said of them here is history.

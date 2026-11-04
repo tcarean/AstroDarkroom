@@ -37,7 +37,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="{local:T En='GOING TO 8 BITS', Ro='TRECEREA PE 8 BITI'}" />
-          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" />
+          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" Grid.IsSharedSizeScope="True" />
         </StackPanel>
       </Border>
     </StackPanel>

@@ -46,6 +46,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- On the Tones, Export, Resolution and Colour tabs the explanation under each figure runs to just
+  before the table's widest figure instead of stopping at the middle of the card, so it takes
+  fewer lines: on the reference image 892 to 920 px wide instead of about 510, two lines where it
+  took three to five (R-174, ADR 0080).
 - The parameter card explains itself in plain words (R-026, ADR 0079), and so does Appendix F of the
   report: "Pe ce printezi" instead of "Mediu de print", "Latimile de incercat", "Proportia
   printului", "Coordonate pe cer (WCS) din FITS"; the help texts without the median or the gamma's

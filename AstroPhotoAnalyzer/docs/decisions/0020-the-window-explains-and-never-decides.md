@@ -1,7 +1,7 @@
 # 0020. The window explains and never decides: its texts interpolate every number, its tables are the report's strings
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the described row's two equal columns superseded by 0080
 
 ## Context
 
