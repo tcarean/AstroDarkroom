@@ -389,6 +389,13 @@ public class WindowSmokeTests
             double lastTest = texts.Where(t => vm.Tests.Any(x => x.Label == t.Text)).Max(t => t.TranslatePoint(new Point(), view).Y);
             double profiles = Assert.Single(texts, t => t.Text == StructureReport.ProfilesHeading).TranslatePoint(new Point(), view).Y;
             Assert.True(why > lastTest && why < profiles, $"paragraph at {why}, last test at {lastTest}, profiles card at {profiles}");
+            // One paragraph across the card's whole width, not the console's eight short lines.
+            TextBlock whyText = Assert.Single(texts, t => t.Text == vm.WhyResidual);
+            Assert.DoesNotContain("\n", whyText.Text);
+            Assert.Equal(TextWrapping.Wrap, whyText.TextWrapping);
+            var card = (FrameworkElement)VisualTreeHelper.GetParent(whyText);
+            Assert.True(Math.Abs(whyText.ActualWidth - card.ActualWidth) < 1, $"paragraph {whyText.ActualWidth} wide in a card {card.ActualWidth} wide");
+            Assert.True(whyText.ActualHeight > 2 * whyText.FontSize * 1.5, $"paragraph {whyText.ActualHeight} high: not wrapped");
 
             vm.Populate(new StructureOutcome(r, null, null, null));
             Render(view, h: 1800);

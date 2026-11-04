@@ -171,12 +171,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="{l:T En='TESTS', Ro='TESTE'}" />
           <!-- Under the five rows, why the residual matters: its "the most important one" points
                at these rows. Under the verdict scale it read as outranking the depth (R-126,
-               ADR 0088). -->
+               ADR 0088). One paragraph wrapped to the card's width, not the console's lines. -->
           <Border Style="{StaticResource Card}">
             <StackPanel>
               <ItemsControl ItemsSource="{Binding Tests}"
                             ItemTemplate="{StaticResource MetricRowTemplate}" />
-              <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding WhyResidual}" />
+              <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" TextWrapping="Wrap"
+                         Text="{Binding WhyResidual}" />
             </StackPanel>
           </Border>
 
