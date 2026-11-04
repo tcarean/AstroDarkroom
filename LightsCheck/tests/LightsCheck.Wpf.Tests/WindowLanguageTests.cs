@@ -340,6 +340,50 @@ public class WindowLanguageTests
         }
     }
 
+    /// <summary>
+    /// Each of the top bar's four inputs carries a tooltip on its whole group, shown also while a
+    /// run disables it, that names its default as the core gives it, in plain words, in either
+    /// language (R-083).
+    /// </summary>
+    [Fact]
+    public async Task R083_TheTopBarInputsSayWhatToTypeAndTheirDefaults()
+    {
+        try
+        {
+            foreach (UiLanguage language in new[] { UiLanguage.Romanian, UiLanguage.English })
+            {
+                Ui.Default = language;
+                await _sta.InvokeAsync(() =>
+                {
+                    MainWindow window = new(new MainViewModel());
+                    Render((FrameworkElement)window.Content, null);
+                    string threads = SeriesOptions.DefaultThreads.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    (string Name, string Default)[] inputs =
+                    [
+                        ("PixelInput", "3.92"),
+                        ("ThreadsInput", language == UiLanguage.Romanian ? $"Gol: {threads}" : $"Blank: {threads}"),
+                        ("EastInput", "→"),
+                        ("NorthInput", "↑"),
+                    ];
+                    foreach ((string name, string expected) in inputs)
+                    {
+                        FrameworkElement group = Assert.IsAssignableFrom<FrameworkElement>(window.FindName(name));
+                        string tip = Assert.IsType<string>(group.ToolTip);
+                        Assert.Contains(expected, tip, StringComparison.Ordinal);
+                        Assert.True(ToolTipService.GetShowOnDisabled(group), $"{name}'s tip hides during a run");
+                        PlainWords.AssertPlain(tip, $"the {name} tip ({language})");
+                    }
+
+                    return Task.CompletedTask;
+                });
+            }
+        }
+        finally
+        {
+            Ui.Default = UiLanguage.Romanian;
+        }
+    }
+
     [Fact]
     public async Task R063_TheSameWindowInRomanianStillShowsRezumat()
     {

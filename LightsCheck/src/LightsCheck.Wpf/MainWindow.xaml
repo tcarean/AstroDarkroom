@@ -70,20 +70,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <!-- the inputs a raw does not carry, with the D3300's values (ADR 0002) -->
         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0"
                     IsEnabled="{Binding IsIdle}">
-          <StackPanel Margin="0,0,12,0">
-            <TextBlock Style="{StaticResource Faint}" Text="PIXEL (um)" ToolTip="{local:T En='The size of the sensor pixel in microns; blank: from the files (XPIXSZ), else from the raw (35 mm-equivalent focal length), else 3.92, the Nikon D3300', Ro='Marimea pixelului senzorului in microni; gol: din fisiere (XPIXSZ), altfel din raw (focala echivalenta 35 mm), altfel 3.92, Nikon D3300'}" />
+          <StackPanel x:Name="PixelInput" Margin="0,0,12,0" ToolTip="{x:Static local:MainViewModel.PixelTip}" ToolTipService.ShowOnDisabled="True">
+            <TextBlock Style="{StaticResource Faint}" Text="PIXEL (um)" />
             <TextBox Style="{StaticResource Field}" Width="64" Margin="0,3,0,0" Text="{Binding PixelText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
-          <StackPanel>
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='THREADS', Ro='FIRE'}" ToolTip="{local:T En='How many frames are measured in parallel; empty = half the cores', Ro='Cate cadre se masoara in paralel; gol = jumatate din nuclee'}" />
+          <StackPanel x:Name="ThreadsInput" ToolTip="{x:Static local:MainViewModel.ThreadsTip}" ToolTipService.ShowOnDisabled="True">
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='THREADS', Ro='FIRE'}" />
             <TextBox Style="{StaticResource Field}" Width="48" Margin="0,3,0,0" Text="{Binding ThreadsText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
-          <StackPanel Margin="12,0,0,0">
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='EAST', Ro='EST'}" ToolTip="{local:T En='The SynScan arrow that moves the mount east; the other is west. Remembered between starts.', Ro='Sageata SynScan care muta montura spre est; cealalta e vest. Tinuta minte intre porniri.'}" />
+          <StackPanel x:Name="EastInput" Margin="12,0,0,0" ToolTip="{x:Static local:MainViewModel.EastTip}" ToolTipService.ShowOnDisabled="True">
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='EAST', Ro='EST'}" />
             <ComboBox Width="52" Margin="0,3,0,0" ItemsSource="{Binding EastChoices}" SelectedItem="{Binding EastArrow}" />
           </StackPanel>
-          <StackPanel Margin="12,0,0,0">
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='NORTH', Ro='NORD'}" ToolTip="{local:T En='The SynScan arrow that moves the mount north; the other is south. Remembered between starts.', Ro='Sageata SynScan care muta montura spre nord; cealalta e sud. Tinuta minte intre porniri.'}" />
+          <StackPanel x:Name="NorthInput" Margin="12,0,0,0" ToolTip="{x:Static local:MainViewModel.NorthTip}" ToolTipService.ShowOnDisabled="True">
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='NORTH', Ro='NORD'}" />
             <ComboBox Width="52" Margin="0,3,0,0" ItemsSource="{Binding NorthChoices}" SelectedItem="{Binding NorthArrow}" />
           </StackPanel>
         </StackPanel>

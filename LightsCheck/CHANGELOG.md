@@ -34,6 +34,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The window's four top-bar inputs, PIXEL, THREADS, EAST and NORTH, explain themselves in plain
+  words (R-083, ADR 0038): a tooltip on the label and the field, shown also during a run, says
+  what to type and what is used when the field is left as it is, the threads count of this
+  computer included. The pixel tip now says that a size written in the files wins over one typed.
 - The Rejected tab and the console's REJECTED line speak in plain words (R-081, ADR 0036): the
   line under the heading counts each kind of frame in the singular for one (`1 cadru slab si 1
   cadru necitit` in Romanian, which read `1 cadre slabe, 1 necitite`) and says that the marginal

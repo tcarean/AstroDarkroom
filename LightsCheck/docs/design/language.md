@@ -151,7 +151,8 @@ Romanian word; checks that the same window in Romanian shows `Rezumat`; and chec
 verdict and class word the core writes for a result colours the same in both languages. It
 also renders the Dithering, Summary, Frames, Quality and Rejected tabs in each language, the
 Frames tab with a frame's cut-outs, and holds their texts, the tooltips and the charts' labels
-included, against the method's words of `PlainWords` (R-077 to R-081), the list `SeriesTests` holds the core's
+included, and the top bar's four input tips with the defaults they name (R-083), against the
+method's words of `PlainWords` (R-077 to R-081, R-083), the list `SeriesTests` holds the core's
 rows, tables, paragraphs, reasons and cut-out lines against, linked from `LightsCheck.Tests`.
 It measures every reason a trailed frame can get, in both languages, in the cell's font and the
 window's whole-pixel text, against the Frames table's reasons cell as the tab lays it out (R-079).

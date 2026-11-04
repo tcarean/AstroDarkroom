@@ -92,4 +92,42 @@ internal static class WindowTexts
     /// <param name="px">The spacing in px, formatted whole.</param>
     /// <returns>`grid at 20 px` (`grila la 20 px`).</returns>
     internal static string GridNote(string px) => T($"grid at {px} px", $"grila la {px} px");
+
+    /// <summary>The tip of the top bar's pixel field (R-083): what to type, what it is for, the default.</summary>
+    /// <param name="defaultUm">The last fallback, the D3300's spec-sheet pixel, formatted by the core.</param>
+    /// <param name="rawUm">What a D3300's raws give, formatted by the core.</param>
+    /// <returns>The tip, in the language of the moment.</returns>
+    internal static string PixelTip(string defaultUm, string rawUm) => T(
+        $"The size of one camera pixel, in microns (thousandths of a millimetre), with a dot: {defaultUm}. It tells how much sky one pixel covers, in arcseconds. "
+        + $"Used only when the files do not say it themselves. Blank (the usual way): worked out from the raw, about {rawUm} for the Nikon D3300; if the raw cannot tell, {defaultUm}, the D3300's.",
+        $"Marimea unui pixel al camerei, in microni (miimi de milimetru), cu punct: {defaultUm}. Din ea se afla cat inseamna un pixel pe cer, in secunde de arc. "
+        + $"Se foloseste doar cand fisierele nu o spun singure. Gol (de obicei): se afla din raw, cam {rawUm} la Nikon D3300; daca raw-ul nu spune, {defaultUm}, cat are D3300.");
+
+    /// <summary>The tip of the top bar's threads field (R-083): what the count changes and this computer's default.</summary>
+    /// <param name="defaultThreads">The frames measured at once when the field is blank, from the core.</param>
+    /// <param name="cores">This computer's logical processors, from the core.</param>
+    /// <returns>The tip, naming the cores only when there are two or more.</returns>
+    internal static string ThreadsTip(int defaultThreads, int cores)
+    {
+        string lead = T(
+            "How many frames are read at the same time. More is faster, but takes more memory and slows the rest of the computer. ",
+            "Cate cadre se citesc in acelasi timp. Mai multe merg mai repede, dar iau mai multa memorie si incetinesc restul calculatorului. ");
+        return lead + (cores >= 2
+            ? T($"Blank: {defaultThreads}, half of this computer's {cores} cores.", $"Gol: {defaultThreads}, jumatate din cele {RoCount(cores)} nuclee ale acestui calculator.")
+            : T($"Blank: {defaultThreads}.", $"Gol: {defaultThreads}."));
+    }
+
+    /// <summary>The tip of the top bar's east selector (R-083).</summary>
+    /// <param name="arrow">The default arrow for east, as the core writes it.</param>
+    /// <returns>The tip, in the language of the moment.</returns>
+    internal static string EastTip(string arrow) => T(
+        $"Which arrow of the SynScan app moves the mount east; the other one moves it west. It only names the dither moves on the Frames and Dithering tabs and in the files; the figures do not change. Default: {arrow} east. Kept for the next start.",
+        $"Ce sageata din aplicatia SynScan muta montura spre est; cealalta o muta spre vest. Doar numeste miscarile de dithering din filele Cadre si Dithering si din fisiere; cifrele nu se schimba. Implicit: {arrow} est. Ramane aleasa si la urmatoarea pornire.");
+
+    /// <summary>The tip of the top bar's north selector (R-083).</summary>
+    /// <param name="arrow">The default arrow for north, as the core writes it.</param>
+    /// <returns>The tip, in the language of the moment.</returns>
+    internal static string NorthTip(string arrow) => T(
+        $"Which arrow of the SynScan app moves the mount north; the other one moves it south. It only names the dither moves on the Frames and Dithering tabs and in the files; the figures do not change. Default: {arrow} north. Kept for the next start.",
+        $"Ce sageata din aplicatia SynScan muta montura spre nord; cealalta o muta spre sud. Doar numeste miscarile de dithering din filele Cadre si Dithering si din fisiere; cifrele nu se schimba. Implicit: {arrow} nord. Ramane aleasa si la urmatoarea pornire.");
 }

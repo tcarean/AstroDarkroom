@@ -10,7 +10,7 @@ is the hand report the tool reproduces, and V-008 pins its session figures.
 
 The entry point both applications call is `SeriesRun.Run(folder, SeriesOptions(PixelSizeUm,
 Threads), progress, cancel)`: the options record carries the pixel size the user typed (null
-when none was typed) and the thread count (0 = half the cores), `progress` is an
+when none was typed) and the thread count (0 = `SeriesOptions.DefaultThreads`, half the cores), `progress` is an
 `IProgress<(int Done, int Total)>` reported once per measured frame, `cancel` a
 `CancellationToken`; the result is a `SeriesResult` with the session, the `AnalyzedFrame`
 list (each with its metadata, measurement, registration and any error), the cadence, the

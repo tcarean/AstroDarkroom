@@ -253,6 +253,18 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>How many frames in parallel, as typed; empty = half the cores.</summary>
     public string ThreadsText { get => _threadsText; set => Set(ref _threadsText, value); }
 
+    /// <summary>The pixel field's tip, with the core's two D3300 figures (R-083).</summary>
+    public static string PixelTip => WindowTexts.PixelTip(RunReport.F(SeriesOptions.D3300PixelUm, 2), RunReport.F(SeriesOptions.D3300RawPixelUm, 1));
+
+    /// <summary>The threads field's tip, with this computer's default from the core (R-083).</summary>
+    public static string ThreadsTip => WindowTexts.ThreadsTip(SeriesOptions.DefaultThreads, SeriesOptions.Cores);
+
+    /// <summary>The east selector's tip, with the core's default arrow (R-083).</summary>
+    public static string EastTip => WindowTexts.EastTip(ArrowKeys.Symbol(ArrowKeys.Default.East));
+
+    /// <summary>The north selector's tip, with the core's default arrow (R-083).</summary>
+    public static string NorthTip => WindowTexts.NorthTip(ArrowKeys.Symbol(ArrowKeys.Default.North));
+
     /// <summary>
     /// The SynScan arrows that move the mount east and north, as symbols; the other two follow
     /// (R-041). Remembered in <see cref="UserSettings"/>.
