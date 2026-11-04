@@ -69,7 +69,7 @@ namespace FlatCheck.Wpf
         string _advice = "";
         string _localSpotWarning = "";
         string _verdictDetail = "";
-        string _whyResidual = StructureReport.WhyResidualMatters();
+        string _whyResidual = StructureReport.WhyResidualMatters().Replace('\n', ' ');
         string _profileMaster = "", _profileSummary = "", _profileLightNote = "", _profileNote = "", _profileGap = "";
         string _scaleDepthNote = "";
         bool _scaleHasDepth;
