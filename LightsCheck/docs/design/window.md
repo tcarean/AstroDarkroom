@@ -10,13 +10,18 @@ as the readers, ADR 0003); `Charts.cs` and the view-models are LightsCheck's own
 
 ## The shape
 
-`MainWindow.xaml` is the top bar (banner, folder, the two inputs, the buttons) and one content
+`MainWindow.xaml` is the top bar (banner, folder, the four inputs, the buttons) and one content
 grid holding four overlapping states: the empty state (no folder and no problem), the problem
 card (`HasProblem`), the tabs (`HasResult`) and the wait screen over everything
 (`IsRunning`). Each state is a visibility binding on `MainViewModel`; there is no navigation
 code. Five of the six tabs are `UserControl`s under `Views/` with no code of their own beyond
 `InitializeComponent`, the sixth the report's text box in a card; `AboutWindow` is the only
 second window.
+
+Each of the four inputs is a group (`PixelInput`, `ThreadsInput`, `EastInput`, `NorthInput`, its
+label and its field) whose tooltip is an `x:Static` of `MainViewModel`'s static tip properties
+(R-083). They are read once, when the window is built, after the start-up has set the language;
+`ToolTipService.ShowOnDisabled` keeps them while a run disables the fields.
 
 `AboutWindow` fits its screen (R-076, ADR 0031), as AstroPhotoAnalyzer's does. `MainWindow`
 passes the work area of its own screen, `ScreenArea.WorkAreaOf`. That asks Windows for the screen

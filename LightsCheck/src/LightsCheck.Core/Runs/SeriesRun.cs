@@ -30,7 +30,7 @@ namespace LightsCheck.Core;
 /// the files' XPIXSZ, else the raw's own figure, else <see cref="D3300PixelUm"/> (R-066).
 /// </param>
 /// <param name="Threads">
-/// How many frames are measured at once; 0 or less means half the processors, at least one.
+/// How many frames are measured at once; 0 or less means <see cref="DefaultThreads"/>.
 /// </param>
 /// <param name="Arrows">
 /// Which SynScan arrows move east and north; null means <see cref="ArrowKeys.Default"/>.
@@ -42,6 +42,21 @@ internal sealed record SeriesOptions(double? PixelSizeUm = null, int Threads = 0
     /// says the pixel size, none was typed and no raw gives a 35 mm-equivalent focal length.
     /// </summary>
     internal const double D3300PixelUm = 3.92;
+
+    /// <summary>
+    /// What a D3300's raws give for the pixel size, rounded for the window's pixel tip (R-083):
+    /// 4.00 and 3.99 on the two sessions of R-066. No run computes with it.
+    /// </summary>
+    internal const double D3300RawPixelUm = 4.0;
+
+    /// <summary>The logical processors of this computer, as .NET counts them.</summary>
+    internal static int Cores => Environment.ProcessorCount;
+
+    /// <summary>
+    /// How many frames are measured at once when <see cref="Threads"/> is 0 or less: half the
+    /// processors, at least one; the run and the window's threads tip (R-083) both read it.
+    /// </summary>
+    internal static int DefaultThreads => Math.Max(1, Cores / 2);
 
     /// <summary>
     /// Whether a pixel size typed by the user can be used: the console and the window both ask
@@ -167,7 +182,7 @@ internal static class SeriesRun
     internal static SeriesResult Run(string folder, SeriesOptions options, IProgress<(int Done, int Total)>? progress = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(options);
-        int threads = options.Threads > 0 ? options.Threads : Math.Max(1, Environment.ProcessorCount / 2);
+        int threads = options.Threads > 0 ? options.Threads : SeriesOptions.DefaultThreads;
         ArrowKeys arrows = options.Arrows ?? ArrowKeys.Default;
         using RunClock clock = RunClock.Start(Log, "series", folder + " pixel=" + LogText.Num(options.PixelSizeUm)
             + " threads=" + LogText.Int(threads) + " east=" + arrows.East + " north=" + arrows.North);

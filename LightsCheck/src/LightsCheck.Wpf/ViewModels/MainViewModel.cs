@@ -138,7 +138,7 @@ public sealed class MainViewModel : ObservableObject
     private string _busyMessage = "";
     private string _report = "";
     private string _pixelText = "";
-    private string _threadsText = "";
+    private string _threadsText = SeriesOptions.DefaultThreads.ToString(CultureInfo.InvariantCulture);
     private string _eastArrow;
     private string _northArrow;
 
@@ -250,8 +250,23 @@ public sealed class MainViewModel : ObservableObject
     private double? TypedPixel =>
         double.TryParse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) && SeriesOptions.PixelSizeIsValid(p) ? p : null;
 
-    /// <summary>How many frames in parallel, as typed; empty = half the cores.</summary>
+    /// <summary>
+    /// How many frames in parallel, as typed; filled at start with the core's default, half the
+    /// cores, so it is in sight (R-083); blank or not a positive count means the same default.
+    /// </summary>
     public string ThreadsText { get => _threadsText; set => Set(ref _threadsText, value); }
+
+    /// <summary>The pixel field's tip, with the core's two D3300 figures (R-083).</summary>
+    public static string PixelTip => WindowTexts.PixelTip(RunReport.F(SeriesOptions.D3300PixelUm, 2), RunReport.F(SeriesOptions.D3300RawPixelUm, 1));
+
+    /// <summary>The threads field's tip, with this computer's default from the core (R-083).</summary>
+    public static string ThreadsTip => WindowTexts.ThreadsTip(SeriesOptions.DefaultThreads, SeriesOptions.Cores);
+
+    /// <summary>The east selector's tip, with the core's default arrow (R-083).</summary>
+    public static string EastTip => WindowTexts.EastTip(ArrowKeys.Symbol(ArrowKeys.Default.East));
+
+    /// <summary>The north selector's tip, with the core's default arrow (R-083).</summary>
+    public static string NorthTip => WindowTexts.NorthTip(ArrowKeys.Symbol(ArrowKeys.Default.North));
 
     /// <summary>
     /// The SynScan arrows that move the mount east and north, as symbols; the other two follow
