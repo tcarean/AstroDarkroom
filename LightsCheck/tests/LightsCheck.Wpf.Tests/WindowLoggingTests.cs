@@ -115,10 +115,12 @@ public class WindowLoggingTests
         await vm.OpenAsync(f.Root);
 
         Assert.True(vm.HasResult);
+        // The threads field starts with the core's default, written (R-083, the owner's answer of
+        // 2026-11-04), so the line names the count, not "default".
         // The arrows come from the settings file other tests may have changed, so they are not
         // pinned here.
         Assert.Contains(capture.Events, e => e.Logger == "Window" && e.Level == LogLevel.Info
-            && e.Message.StartsWith("session " + f.Root + ": run started pixel=none threads=default east=", StringComparison.Ordinal));
+            && e.Message.StartsWith("session " + f.Root + ": run started pixel=none threads=" + SeriesOptions.DefaultThreads.ToString(System.Globalization.CultureInfo.InvariantCulture) + " east=", StringComparison.Ordinal));
         Assert.Contains(capture.Events, e => e.Logger == "Window" && e.Level == LogLevel.Info
             && Regex.IsMatch(e.Message, @"^session .+: done in \d+\.\d s; the tabs show the result$"));
         Assert.Contains(capture.Events, e => e.Logger == "SeriesRun" && e.Message.StartsWith("series done frames=8 ", StringComparison.Ordinal));

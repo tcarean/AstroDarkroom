@@ -75,7 +75,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBox Style="{StaticResource Field}" Width="64" Margin="0,3,0,0" Text="{Binding PixelText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
           <StackPanel x:Name="ThreadsInput" ToolTip="{x:Static local:MainViewModel.ThreadsTip}" ToolTipService.ShowOnDisabled="True">
-            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='THREADS', Ro='FIRE'}" />
+            <TextBlock Style="{StaticResource Faint}" Text="{local:T En='THREADS', Ro='THREADURI'}" />
             <TextBox Style="{StaticResource Field}" Width="48" Margin="0,3,0,0" Text="{Binding ThreadsText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
           <StackPanel x:Name="EastInput" Margin="12,0,0,0" ToolTip="{x:Static local:MainViewModel.EastTip}" ToolTipService.ShowOnDisabled="True">

@@ -202,7 +202,15 @@ public class MainViewModelTests
         Assert.Equal("", vm.PixelText);
         Assert.True(vm.PixelIsValid);
         Assert.Null(vm.Options.PixelSizeUm);
-        Assert.Equal("", vm.ThreadsText);
+    }
+
+    [Fact]
+    public void R083_TheThreadsInputStartsWithThisComputersDefault()
+    {
+        MainViewModel vm = new();
+
+        Assert.Equal(SeriesOptions.DefaultThreads.ToString(System.Globalization.CultureInfo.InvariantCulture), vm.ThreadsText);
+        Assert.Equal(SeriesOptions.DefaultThreads, vm.Options.Threads);
     }
 
     [Fact]

@@ -27,11 +27,22 @@ text's figure only, no run computes with it), `Cores` and `DefaultThreads`, whic
 reads as well, and `ArrowKeys.Default`. The texts are `WindowTexts`'s, read once when the window
 is built.
 
+After seeing the window, the owner asked the same day for the defaults to be in the fields
+themselves, and chose, among three ways put to them, the value written in the field: the threads
+field starts with `DefaultThreads`, 4 on an 8-core computer, which runs exactly as the blank field
+did. The pixel field stays blank: a typed size wins over the raw's (R-066), so writing 3.92 there
+would give a D3300 raw session the spec-sheet scale instead of its raw's 4.0, and its tip says
+what is used. The arrows' selectors already show their default. The owner also asked for the
+Romanian label `FIRE` to read `THREADURI`.
+
 The arrow tips name the Dithering tab beside the Frames tab, which the approved wording left out:
 the Dithering tab's bars also show the arrows (R-039).
 
 ## Alternatives rejected
 
+- **A grey hint in the empty fields** (the recommendation put to the owner): the default in sight
+  without a value typed, for the pixel field as well. The owner chose the written value.
+- **3.92 written in the pixel field.** It would win over the raw's figure and move the scale.
 - **The tips stay on the labels.** The label is a few letters of faint text above the field;
   the field is where the pointer goes.
 - **`half the cores` without the number.** The user does not know what the computer counts as a
@@ -41,4 +52,9 @@ the Dithering tab's bars also show the arrows (R-039).
 
 - `R083_TheTopBarInputsSayWhatToTypeAndTheirDefaults` checks each group's tip, its default, that
   it shows while disabled, and that it is in plain words, in both languages.
+- `R083_TheThreadsInputStartsWithThisComputersDefault` checks the threads field's start, and the
+  window test that the label reads `THREADURI` in Romanian.
+- The window's log line of a run's start names the count, `threads=4`, where a blank field gave
+  `threads=default`; `R071_ASessionRunLogsItsStartAndItsOutcome` expects the count, at the
+  owner's word the same day.
 - The console's `--help` and the README are unchanged.

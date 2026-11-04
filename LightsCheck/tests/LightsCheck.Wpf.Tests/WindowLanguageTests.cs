@@ -356,7 +356,7 @@ public class WindowLanguageTests
                 await _sta.InvokeAsync(() =>
                 {
                     MainWindow window = new(new MainViewModel());
-                    Render((FrameworkElement)window.Content, null);
+                    Assert.Contains(language == UiLanguage.Romanian ? "THREADURI" : "THREADS", Texts(Render((FrameworkElement)window.Content, null)));
                     string threads = SeriesOptions.DefaultThreads.ToString(System.Globalization.CultureInfo.InvariantCulture);
                     (string Name, string Default)[] inputs =
                     [
@@ -521,7 +521,7 @@ public class WindowLanguageTests
         "cadru", "cadre", "Cadre", "fisier", "eroare", "EROARE", "ATENTIE", "alungire", "ALUNGIRE", "dara", "roua", "ROUA",
         "miscar", "stele", "STELE", "fond", "FOND", "zgomot", "ZGOMOT", "necunoscut", "niciun", "SESIUNE", "REZUMAT", "Rezumat",
         "RESPINSE", "Respinse", "nedeterminat", "NEDETERMINAT", "pauz", "expunere", "EXPUNERE", "obiectiv", "aparat", "grade",
-        "Alege", "Opreste", "Despre", "Scrie", "Calitate", "Raport", "FIRE", "NORD", "HARTA", "PASUL", "DISTANTA", "DECUPAJE",
+        "Alege", "Opreste", "Despre", "Scrie", "Calitate", "Raport", "THREADURI", "NORD", "HARTA", "PASUL", "DISTANTA", "DECUPAJE",
         "Inchide", "LICENTA", "TERTE", "nimic", "decupaj", "pozitii", "acoperire", "intindere", "aliniere", "perechi", "scara",
         "verde", "BUN", "LA LIMITA", "SLAB", "necitit", "inregistr", "Acest program", "grila", "Scris", "Unealta", "Verificare",
         "Folderul", "Analiza", "sesiun", "centru", "stanga", "dreapta",
