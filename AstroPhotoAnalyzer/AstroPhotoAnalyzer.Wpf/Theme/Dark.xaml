@@ -493,17 +493,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Grid>
   </DataTemplate>
 
-  <!-- The same row, for the panels with descriptions (Tonuri, Rezolutie): two equal
-       columns across the whole width of the card - the name and the description in the left
-       half, the figure aligned to the right in the other. The fixed width in percent keeps
-       all the descriptions at the same margin, however long the row's value is. The rows are
-       spaced more widely than in MetricRowTemplate, because each one is a paragraph, not a
-       line. -->
+  <!-- The same row, for the panels with descriptions (Tonuri, Export, Rezolutie, Culoare):
+       the figure aligned to the right in a column as wide as the widest figure of the table,
+       the name and the description in all the width to its left, 24 px short of it. The
+       column is shared by the table's rows (SharedSizeGroup, the scope set on the table's
+       ItemsControl), so every description stops at the same margin, before every figure of
+       the table, not only its own (R-174, ADR 0080). The rows are spaced more widely than in
+       MetricRowTemplate, because each one is a paragraph, not a line. -->
   <DataTemplate x:Key="DescribedMetricRowTemplate">
     <Grid Margin="0,0,0,14">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="*" />
-        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" SharedSizeGroup="DescribedValue" />
       </Grid.ColumnDefinitions>
       <Grid.RowDefinitions>
         <RowDefinition Height="Auto" />
@@ -515,7 +516,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                    Text="{Binding Description}" Visibility="{Binding Description, Converter={StaticResource NotNullToVis}}" />
       </StackPanel>
       <TextBlock Grid.Column="1" Style="{StaticResource Number}" Text="{Binding Value}" Margin="0,1,0,0" VerticalAlignment="Top" />
-      <TextBlock Grid.Row="1" Grid.Column="0" TextWrapping="Wrap" Style="{StaticResource Faint}" Margin="0,2,0,0"
+      <TextBlock Grid.Row="1" Grid.Column="0" TextWrapping="Wrap" Style="{StaticResource Faint}" Margin="0,2,24,0"
                  Text="{Binding Note}" Visibility="{Binding Note, Converter={StaticResource NotNullToVis}}" />
     </Grid>
   </DataTemplate>

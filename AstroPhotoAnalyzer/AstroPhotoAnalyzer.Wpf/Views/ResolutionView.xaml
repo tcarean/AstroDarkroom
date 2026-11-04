@@ -31,7 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="{local:T En='REAL RESOLUTION: THE WIDTH OF THE STARS', Ro='REZOLUTIA REALA: LATIMEA STELELOR'}" />
-          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" />
+          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" Grid.IsSharedSizeScope="True" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}">
