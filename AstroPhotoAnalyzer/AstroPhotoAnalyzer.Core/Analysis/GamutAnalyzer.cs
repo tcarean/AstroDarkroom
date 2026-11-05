@@ -15,23 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// GamutAnalyzer.cs - how many pixels leave the paper's gamut (R-144, ADR 0032, ADR 0042).
+// GamutAnalyzer.cs - how many pixels leave the paper's gamut (R-144, ADR 0032, ADR 0042,
+// ADR 0081).
 //
 // A FIGURE, not a correction: it goes into no curve. A colour is "outside" when the round trip
-// sRGB -> printer -> back, through the profile's relative colorimetric tables, moves its a*, b*
-// by more than CurveGamutDeltaAb. The chroma only: what falls under paper black is the Tonuri
-// tab's business, and without black point compensation the L* of the shadows would be counted
-// twice (on canvas, half of the image).
+// sRGB -> printer -> back, through the profile's relative colorimetric tables with the black
+// point compensation towards the paper and back (the same scaling the soft proof makes, ADR
+// 0066), moves it by more than CurveGamutDeltaE: the whole difference, lightness included. The
+// first rule counted the chroma only (ADR 0032); it missed the dark saturated dust the paper
+// prints lighter, which Lightroom's warning marks and the owner expected to see (ADR 0081). The
+// compensation is what keeps the paper's black out of the figure: without it every tone under
+// the black would come back as the black and be counted here as well as in the Tonuri tab (on
+// canvas, half of the image).
 //
 // The package (Wacton.Unicolour) makes the round trip in about 25 microseconds per colour
 // (single-threaded, warm; measured 2026-10-23 on the lab's baryta profile): a subsample of
 // 1.4 MP would take 35 s per curve. So a grid of CurveGamutGrid^3 colours is run once, and each
-// pixel takes the displacement (da, db) by trilinear interpolation. Near the gamut's edge the
+// pixel takes the displacement (dL, da, db) by trilinear interpolation. Near the gamut's edge the
 // interpolation rounds the corner inward and misses colours rather than adds them: against the
 // exact round trip per pixel the grid read the plate-solved FITS on the lab's baryta at 1.02 %
 // instead of 1.35 % (its dust class 2.7 instead of 4.2), its canvas at 35.1 % instead of
-// 39.7 %, and de_printat.png's dust class at 0.0 % instead of 2.4 %; a grid of 65 nodes was
-// still 0.45 and 2.2 points low on the two dust classes.
+// 39.7 %, and de_printat.png's dust class at 0.0 % instead of 2.4 % (under the chroma rule); a
+// grid of 65 nodes was still 0.45 and 2.2 points low on the two dust classes.
 //
 // THE HYBRID (ADR 0042). A pixel whose interpolated displacement lies within
 // CurveGamutExactMargin of the threshold takes the exact round trip instead, once per distinct
@@ -42,8 +47,12 @@
 // 1.6 % on canvas, 0.02 % on the PNG); 9 100 trips per measure on the FITS on baryta, 29 000 to
 // 40 500 on its canvas, 1 700 on the PNG, where the grid alone (margin 0) failed the 0.2 points
 // and the exact trip for every near pixel (no cache) cost 11 s per measure on canvas. The
-// package's configuration served eight threads in the probe with the single-threaded results,
-// to the pixel.
+// package's configuration served eight threads in the probe with the single-threaded results, to
+// the pixel. Re-measured on 2026-11-05 under the whole-difference rule with the compensation (ADR
+// 0081), the margin still 1.0: the hybrid is within 0.14 points of the exact per-pixel figure on
+// every class (the FITS on baryta: all 1.943 against 1.917, dust 11.10 against 10.96; on canvas
+// all 2.430 against 2.494, dust 15.25 against 15.35; de_printat.png all 0.292 against 0.236, dust
+// 0.55 against 0.45), with 5 170, 7 347 and 1 916 exact trips per measure.
 
 using System;
 using System.Collections.Concurrent;
@@ -55,21 +64,21 @@ using Wacton.Unicolour.Icc;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// The displacement (da, db) of each node of the sRGB grid after the round trip through the
-    /// profile, the exact round trip for the pixels near the threshold, and the cache of the
-    /// trips already made.
+    /// The displacement (dL, da, db) of each node of the sRGB grid after the compensated round
+    /// trip through the profile, the exact round trip for the pixels near the threshold, and the
+    /// cache of the trips already made.
     /// </summary>
     internal sealed class GamutTable
     {
         internal int N;
-        internal float[] Da, Db;
+        internal float[] Dl, Da, Db;
 
         /// <summary>
-        /// The exact round trip of a colour (encoded sRGB, 0..1 each): the displacement (da, db)
-        /// of its a*, b*. Null when no profile stands behind the table (a hand-built table in a
-        /// test), and then the interpolation alone decides every pixel.
+        /// The exact round trip of a colour (encoded sRGB, 0..1 each): the displacement
+        /// (dL, da, db) of its L*, a*, b*. Null when no profile stands behind the table (a
+        /// hand-built table in a test), and then the interpolation alone decides every pixel.
         /// </summary>
-        internal Func<double, double, double, (double Da, double Db)> Exact;
+        internal Func<double, double, double, (double Dl, double Da, double Db)> Exact;
 
         /// <summary>
         /// The trips already made, by 8-bit colour (r &lt;&lt; 16 | g &lt;&lt; 8 | b): whether the
@@ -103,29 +112,34 @@ namespace AstroPhotoAnalyzer
         /// The grid's nodes per channel, at least 2; by default CurveGamutGrid.
         /// </param>
         /// <returns>
-        /// The table; or, when the file cannot be read, is not a usable profile or has no table
-        /// toward the printer (B2A), a table with only Problem set. It never throws.
+        /// The table; or, when the file cannot be read, is not a usable profile, has no table
+        /// toward the printer (B2A) or gives no usable black, a table with only Problem set. It
+        /// never throws.
         /// </returns>
         internal static GamutTable Build(string path, int n = Thresholds.CurveGamutGrid)
         {
             try
             {
                 byte[] bytes = File.ReadAllBytes(path);
-                var icc = new IccConfiguration(new Profile(bytes, path), Intent.RelativeColorimetric, path);
+                var profile = new Profile(bytes, path);
+                var icc = new IccConfiguration(profile, Intent.RelativeColorimetric, path);
                 if (!string.IsNullOrEmpty(icc.Error)) return new GamutTable { Problem = Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ") + icc.Error };
                 var config = new Configuration(xyzConfig: XyzConfiguration.D50, iccConfig: icc);
-                var t = new GamutTable { N = n, Da = new float[n * n * n], Db = new float[n * n * n] };
+                double[] black = ProofProfile.NeutralBlack(config, profile.Header.DataColourSpace);
+                if (black == null) return new GamutTable { Problem = ProofProfile.BlackUnusable };
+                var t = new GamutTable { N = n, Dl = new float[n * n * n], Da = new float[n * n * n], Db = new float[n * n * n] };
                 for (int r = 0; r < n; r++)
                     for (int g = 0; g < n; g++)
                         for (int b = 0; b < n; b++)
                         {
-                            var (da, db) = RoundTrip(config, r / (n - 1.0), g / (n - 1.0), b / (n - 1.0));
+                            var (dl, da, db) = RoundTrip(config, black, r / (n - 1.0), g / (n - 1.0), b / (n - 1.0));
                             int i = (r * n + g) * n + b;
+                            t.Dl[i] = (float)dl;
                             t.Da[i] = (float)da;
                             t.Db[i] = (float)db;
                         }
                 foreach (float v in t.Da) if (float.IsNaN(v)) return new GamutTable { Problem = Tr.Pick("the profile lacks the part that prepares the colours for the printer (the B2A table)", "profilului ii lipseste partea care pregateste culorile pentru imprimanta (tabela B2A)") };
-                t.Exact = (r, g, b) => RoundTrip(config, r, g, b);
+                t.Exact = (r, g, b) => RoundTrip(config, black, r, g, b);
                 return t;
             }
             catch (Exception e)
@@ -135,49 +149,57 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The round trip of one colour through the profile: sRGB to the printer's device values
-        /// and back, the displacement of a*, b*.
+        /// The round trip of one colour through the profile: sRGB to XYZ, the black point
+        /// compensation towards the paper, the printer's device values, back to XYZ, the
+        /// compensation undone; the displacement of L*, a*, b* against the colour's own.
         /// </summary>
         /// <param name="config">The package's configuration with the profile's tables.</param>
+        /// <param name="black">The paper's black, XYZ, as <see cref="ProofProfile.NeutralBlack"/> gives it.</param>
         /// <param name="r">The encoded sRGB red, 0..1.</param>
         /// <param name="g">The encoded sRGB green, 0..1.</param>
         /// <param name="b">The encoded sRGB blue, 0..1.</param>
-        /// <returns>The a* and b* of the colour back minus the colour's own.</returns>
-        static (double Da, double Db) RoundTrip(Configuration config, double r, double g, double b)
+        /// <returns>The L*, a* and b* of the colour back minus the colour's own.</returns>
+        static (double Dl, double Da, double Db) RoundTrip(Configuration config, double[] black, double r, double g, double b)
         {
             var colour = new Unicolour(config, ColourSpace.Rgb, r, g, b);
-            var back = new Unicolour(config, colour.Icc);
-            return (back.Lab.A - colour.Lab.A, back.Lab.B - colour.Lab.B);
+            var xyz = colour.Xyz;
+            var (x, y, z) = ProofProfile.Compensate(xyz.X, xyz.Y, xyz.Z, black);
+            var paper = new Unicolour(config, new Unicolour(config, ColourSpace.Xyz, x, y, z).Icc).Xyz;
+            var (bx, by, bz) = ProofProfile.Uncompensate(paper.X, paper.Y, paper.Z, black);
+            var back = new Unicolour(config, ColourSpace.Xyz, bx, by, bz);
+            return (back.Lab.L - colour.Lab.L, back.Lab.A - colour.Lab.A, back.Lab.B - colour.Lab.B);
         }
 
         /// <summary>
-        /// The interpolated displacement of the pixel (r, g, b): the grid's (da, db) at its eight
-        /// surrounding nodes, weighted trilinearly.
+        /// The interpolated displacement of the pixel (r, g, b): the grid's (dL, da, db) at its
+        /// eight surrounding nodes, weighted trilinearly.
         /// </summary>
         /// <param name="t">A table Build made, without a Problem.</param>
         /// <param name="r">The encoded sRGB red, 0..1; clamped to that range.</param>
         /// <param name="g">The encoded sRGB green, 0..1; clamped to that range.</param>
         /// <param name="b">The encoded sRGB blue, 0..1; clamped to that range.</param>
-        /// <returns>The displacement of a* and of b*.</returns>
-        internal static (float Da, float Db) Interpolated(GamutTable t, float r, float g, float b)
+        /// <returns>The displacement of L*, of a* and of b*.</returns>
+        internal static (float Dl, float Da, float Db) Interpolated(GamutTable t, float r, float g, float b)
         {
             Span<int> index = stackalloc int[8];
             Span<float> weight = stackalloc float[8];
             Trilinear.Corners(t.N, r, g, b, index, weight);
-            float da = 0, db = 0;
+            float dl = 0, da = 0, db = 0;
             for (int k = 0; k < 8; k++)
             {
+                dl += weight[k] * t.Dl[index[k]];
                 da += weight[k] * t.Da[index[k]];
                 db += weight[k] * t.Db[index[k]];
             }
-            return (da, db);
+            return (dl, da, db);
         }
 
         /// <summary>
-        /// The pixel (r, g, b) leaves the gamut: its displacement moves a*, b* by more than
-        /// CurveGamutDeltaAb. The interpolated displacement decides, unless it lies within
-        /// CurveGamutExactMargin of the threshold and the table has a profile behind it: then the
-        /// exact round trip of the pixel's 8-bit colour decides, once per colour (ADR 0042).
+        /// The pixel (r, g, b) leaves the gamut: its displacement moves the colour by more than
+        /// CurveGamutDeltaE, lightness included. The interpolated displacement decides, unless it
+        /// lies within CurveGamutExactMargin of the threshold and the table has a profile behind
+        /// it: then the exact round trip of the pixel's 8-bit colour decides, once per colour
+        /// (ADR 0042).
         /// </summary>
         /// <param name="t">A table Build made, without a Problem.</param>
         /// <param name="r">The encoded sRGB red, 0..1; clamped to that range.</param>
@@ -186,11 +208,11 @@ namespace AstroPhotoAnalyzer
         /// <returns><c>true</c> when the colour is outside the paper's gamut.</returns>
         internal static bool Outside(GamutTable t, float r, float g, float b)
         {
-            var (da, db) = Interpolated(t, r, g, b);
-            double d = Math.Sqrt((double)da * da + (double)db * db);
-            if (t.Exact != null && Math.Abs(d - Thresholds.CurveGamutDeltaAb) < Thresholds.CurveGamutExactMargin)
+            var (dl, da, db) = Interpolated(t, r, g, b);
+            double d = Math.Sqrt((double)dl * dl + (double)da * da + (double)db * db);
+            if (t.Exact != null && Math.Abs(d - Thresholds.CurveGamutDeltaE) < Thresholds.CurveGamutExactMargin)
                 return ExactOutside(t, r, g, b);
-            return d > Thresholds.CurveGamutDeltaAb;
+            return d > Thresholds.CurveGamutDeltaE;
         }
 
         /// <summary>
@@ -209,8 +231,8 @@ namespace AstroPhotoAnalyzer
             int key = (r8 << 16) | (g8 << 8) | b8;
             return t.Cache.GetOrAdd(key, _ =>
             {
-                var (da, db) = t.Exact(r8 / 255.0, g8 / 255.0, b8 / 255.0);
-                return da * da + db * db > Thresholds.CurveGamutDeltaAb * Thresholds.CurveGamutDeltaAb;
+                var (dl, da, db) = t.Exact(r8 / 255.0, g8 / 255.0, b8 / 255.0);
+                return dl * dl + da * da + db * db > Thresholds.CurveGamutDeltaE * Thresholds.CurveGamutDeltaE;
             });
         }
 

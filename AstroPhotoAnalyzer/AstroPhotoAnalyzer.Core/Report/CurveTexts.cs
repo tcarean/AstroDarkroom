@@ -270,7 +270,7 @@ namespace AstroPhotoAnalyzer
             foreach (Recommendation r in e.PaperChecks) o.Add(($"! {r.Text} ({Tr.Pick("because", "fiindca")}: {Fmt.Plain(r.Because)})", true));
             if (e.Gamut != null)
             {
-                o.Add((GamutLine(e.Labels, Tr.Pick($"colours the paper cannot reproduce (the paper would move their colour by over {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), before", $"culori pe care hartia nu le poate reda (hartia le-ar muta culoarea cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), inainte"), e.GamutBefore), false));
+                o.Add((GamutLine(e.Labels, Tr.Pick($"colours the paper cannot reproduce (on paper they would come out another tone or colour, by over {Fmt.F0(Thresholds.CurveGamutDeltaE)}), before", $"culori pe care hartia nu le poate reda (pe hartie ar iesi alt ton sau alta culoare, cu peste {Fmt.F0(Thresholds.CurveGamutDeltaE)}), inainte"), e.GamutBefore), false));
                 o.Add((GamutLine(e.Labels, Tr.Pick("colours the paper cannot reproduce, after", "culori pe care hartia nu le poate reda, dupa"), e.Gamut), false));
             }
             else if (e.GamutNote != null) o.Add((e.GamutNote, false));

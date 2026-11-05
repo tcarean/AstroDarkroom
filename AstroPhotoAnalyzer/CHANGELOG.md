@@ -46,6 +46,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The paper-gamut figure of the Curves Editing tab and the Soft proof tab's warning count the
+  whole colour difference, lightness included, after the round trip with black point
+  compensation, over 4 (before: the hue and saturation alone, over 3, without the
+  compensation): the dark saturated dust the paper prints lighter is now marked, as Lightroom
+  Classic's destination gamut warning marks it, and the brighter saturated clouds the
+  compensation keeps are not (ADR 0081).
+
 - On the Tones, Export, Resolution and Colour tabs the explanation under each figure runs to just
   before the table's widest figure instead of stopping at the middle of the card, so it takes
   fewer lines: on the reference image 892 to 920 px wide instead of about 510, two lines where it

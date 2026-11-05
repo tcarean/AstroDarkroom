@@ -431,12 +431,18 @@ the build's are the upper parts of the classes, like the anchors.
 
 A figure, never a correction. A colour is outside when the round trip sRGB to the printer's
 device values and back, through the profile's relative colorimetric tables (Wacton.Unicolour,
-both directions), moves its a\*, b\* by more than `CurveGamutDeltaAb` (3). The chroma only:
-without black point compensation the round trip also lifts everything under paper black, which
-is the Tonuri tab's subject and on canvas is half the image. The package takes about 25
-microseconds per colour (single-threaded, warm; 2026-10-23), so the displacement (da, db) is
-computed once on a grid of `CurveGamutGrid` (33) values per channel and interpolated trilinearly
-per pixel (`Interpolated`). The interpolation rounds the gamut's edge inward and misses colours
+both directions) with the black point compensation towards the paper before the trip and
+undone after it (`ProofProfile.Compensate`, `Uncompensate`, the paper's black from
+`ProofProfile.NeutralBlack`: the same scaling the soft proof's `Relative` table makes), moves it
+by more than `CurveGamutDeltaE` (4), the whole difference, lightness included (Delta E76 on
+L\*, a\*, b\*; ADR 0081). The compensation is what keeps the paper's black out of the figure:
+without it everything under paper black would come back as the black and be counted here as
+well as in the Tonuri tab (on canvas, half the image). Until 2026-11-05 the figure counted the
+chroma only, over 3, and missed the dark saturated dust the paper prints lighter, which
+Lightroom's warning marks (ADR 0081). The package takes about 25 microseconds per colour
+(single-threaded, warm; 2026-10-23), so the displacement (dL, da, db) is computed once on a
+grid of `CurveGamutGrid` (33) values per channel and interpolated trilinearly per pixel
+(`Interpolated`). The interpolation rounds the gamut's edge inward and misses colours
 rather than adds them, most of them dark: against the exact round trip the grid alone read the
 plate-solved FITS on the lab's baryta at 1.02 % against 1.35 % (the dust class 2.7 against 4.2),
 its canvas at 35.1 % against 39.7 %, and `de_printat.png`'s dust class at 0.0 % against 2.4 %;
@@ -444,9 +450,13 @@ a grid of 65 was still 0.45 and 2.2 points low on the two dust classes. So `Outs
 hybrid (ADR 0042): a pixel whose interpolated displacement lies within `CurveGamutExactMargin`
 (1.0) of the threshold takes the exact round trip of its 8-bit colour (`GamutTable.Exact`, the
 package on the profile's tables), made once per colour and kept in `GamutTable.Cache` for the
-run; the others keep the grid's answer. Measured 2026-10-23 against the exact figure: every
-class within 0.17 points on the three image-profile pairs; 9 100 trips per curve on the FITS on
-baryta, 29 000 to 40 500 on its canvas, 1 700 on the PNG. `Measure` gives the share of the
+run; the others keep the grid's answer. Measured 2026-10-23 against the exact figure under the
+chroma rule: every class within 0.17 points on the three image-profile pairs; 9 100 trips per
+curve on the FITS on baryta, 29 000 to 40 500 on its canvas, 1 700 on the PNG. Re-measured
+2026-11-05 under the whole-difference rule: every class within 0.14 points (the FITS on baryta
+1.943 % against 1.917 %, its dust 11.10 against 10.96; on canvas 2.430 against 2.494, the dust
+15.25 against 15.35; the PNG 0.292 against 0.236, the dust 0.55 against 0.45), with 5 170,
+7 347 and 1 916 exact trips per measure. `Measure` gives the share of the
 tonal subsample's pixels, in all and per class of the patch each pixel lies in, the rows run in
 parallel (`Parallel.For`, each worker's counts over the rows it took merged under a lock; the package's configuration
 served eight threads in the probe with the single-threaded results); a table without an `Exact`
@@ -455,15 +465,14 @@ cannot be built keeps the exception behind its `Problem` as `Cause`, for the dia
 which the run that reads the table writes with its stack (ADR 0069); the analyzer holds no
 logger.
 
-On the plate-solved FITS through the lab's baryta profile (V-008): 1.36 % as is (dust 4.3 %,
-sky 0.7 %, band 1.8 %, bright clouds 0.6 %, peaks 0.0 %; exact per pixel 1.35 %, dust 4.2 %),
-1.20 % after `Puternica` (exact 1.19 %); a `Measure` takes 25 to 120 ms on the FITS on baryta,
-110 to 250 ms on its canvas and 25 to 80 ms on the PNG (the first of a run fills the cache),
-against 45 to 55 ms for the grid alone (measured 2026-10-23 with eight threads). The study of
-ADR 0032 counted Delta E with black point compensation in 8 bits through LittleCMS and got
-4.2 % in all, most of it in the darks, and 0.9 % / 0.3 % for the band and the bright clouds:
-the same order above the darks, a different definition, so the two are not to be compared digit
-by digit.
+On the plate-solved FITS through the lab's baryta profile (V-008, 2026-11-05): 1.94 % as is (dust
+11.1 %, sky 1.2 %, band 0.3 %, bright clouds 0.2 %, peaks 0.0 %; exact per pixel 1.917 %, dust
+10.96 %), 2.00 % after `Puternica`; the first `Measure` of a run, which fills the cache, takes 110
+ms on the FITS on baryta, 70 ms on its canvas and 40 ms on the PNG (2026-11-05, eight threads;
+under the chroma rule 25 to 250 ms, against 45 to 55 ms for the grid alone, 2026-10-23). The study
+of ADR 0032 counted Delta E with black point compensation in 8 bits through LittleCMS and got 4.2
+% in all, most of it in the darks, and 0.9 % / 0.3 % for the band and the bright clouds: the same
+order above the darks, a different definition, so the two are not to be compared digit by digit.
 
 ### F3 - `SoftProof` - what the paper shows of the image (R-160 to R-162)
 

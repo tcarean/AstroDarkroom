@@ -155,6 +155,27 @@ public class SoftProofTests
         Assert.Equal(r, b, tolerance: 1e-3);
     }
 
+    /// <summary>
+    /// The gamut figure's round trip compensates the black point, as the proof does (ADR 0081):
+    /// a grey under the fixture's paper black (L* 20) comes back near itself and stays inside,
+    /// where without the compensation the fixture would return the black, 10 L* away; a
+    /// saturated colour, which the fixture prints as the grey of its L*, is far outside.
+    /// </summary>
+    [Fact]
+    public void R144_WithTheCompensationAGreyUnderThePaperBlackStaysInside()
+    {
+        using var ws = new TempWorkspace();
+        GamutTable t = GamutAnalyzer.Build(Profile(ws), 9);
+        Assert.Null(t.Problem);
+        float g = Grey(10);
+        var (dl, da, db) = t.Exact(g, g, g);
+        Assert.InRange(Math.Sqrt(dl * dl + da * da + db * db), 0, 1);
+        Assert.False(GamutAnalyzer.Outside(t, g, g, g));
+        var (rl, ra, rb) = t.Exact(1, 0, 0);
+        Assert.True(Math.Sqrt(rl * rl + ra * ra + rb * rb) > 50);
+        Assert.True(GamutAnalyzer.Outside(t, 1, 0, 0));
+    }
+
     [Fact]
     public void R161_ThePaperWarningIsTheCurvesTabsRule()
     {
@@ -240,7 +261,8 @@ public class SoftProofTests
         Assert.Contains("Dmax 1.52", ProofTexts.PaperBlackLine(p));
         Assert.Contains("L* 20.0", ProofTexts.PaperBlackLine(p));
         Assert.Contains("1.4 %", ProofTexts.PaperGamutLegend(1.4));
-        Assert.Contains(Fmt.F0(Thresholds.CurveGamutDeltaAb), ProofTexts.PaperGamutLegend(1.4));
+        Assert.Contains(Fmt.F0(Thresholds.CurveGamutDeltaE), ProofTexts.PaperGamutLegend(1.4));
+        Assert.Contains("alt ton sau alta culoare", ProofTexts.PaperGamutLegend(1.4));
         Assert.Equal("Relativ, fara compensarea negrului", ProofTexts.IntentName(ProofIntent.RelativeNoBpc));
         Assert.Contains("Tonuri", ProofTexts.IntentHelp(ProofIntent.RelativeNoBpc));
     }
