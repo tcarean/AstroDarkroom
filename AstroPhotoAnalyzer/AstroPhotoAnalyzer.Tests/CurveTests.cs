@@ -612,15 +612,15 @@ public class CurveTests
     [Fact]
     public void R144_TheGamutTableIsInterpolatedAndCountedPerClassOfThePatch()
     {
-        // A hand-built table on a 2-cube: only the corner of pure red is displaced, by 12 in a*.
-        var table = new GamutTable { N = 2, Da = new float[8], Db = new float[8] };
-        table.Da[(1 * 2 + 0) * 2 + 0] = 12;
+        // A hand-built table on a 2-cube: only the corner of pure red is displaced, by 16 in a*.
+        var table = new GamutTable { N = 2, Dl = new float[8], Da = new float[8], Db = new float[8] };
+        table.Da[(1 * 2 + 0) * 2 + 0] = 16;
         Assert.True(GamutAnalyzer.Outside(table, 1, 0, 0));
         Assert.False(GamutAnalyzer.Outside(table, 0, 0, 0));
         Assert.False(GamutAnalyzer.Outside(table, 0, 1, 0));
-        Assert.False(GamutAnalyzer.Outside(table, 0.2f, 0, 0));    // 12 x 0.2 = 2.4, under the threshold of 3
-        Assert.True(GamutAnalyzer.Outside(table, 0.3f, 0, 0));     // 3.6
-        Assert.False(GamutAnalyzer.Outside(table, 1, 0.8f, 0));    // 12 x 0.2 = 2.4
+        Assert.False(GamutAnalyzer.Outside(table, 0.2f, 0, 0));    // 16 x 0.2 = 3.2, under the threshold of 4
+        Assert.True(GamutAnalyzer.Outside(table, 0.3f, 0, 0));     // 4.8
+        Assert.False(GamutAnalyzer.Outside(table, 1, 0.8f, 0));    // 16 x 0.2 = 3.2
 
         // 16 x 16 samples, patches of 8: the left half red (outside), the right half grey; the
         // top-left patch is dust, the bottom-left sky, the right two band.
@@ -650,36 +650,53 @@ public class CurveTests
     [Fact]
     public void R144_NearTheThresholdTheExactRoundTripDecidesOncePerEightBitColour()
     {
-        // A 2-cube whose red corner is displaced by 4 in a*: red 0.6 interpolates to 2.4 and red
-        // 0.95 to 3.8, both within the margin of 1.0 around 3; red 0.2 interpolates to 0.8,
+        // A 2-cube whose red corner is displaced by 5 in a*: red 0.65 interpolates to 3.25 and
+        // red 0.95 to 4.75, both within the margin of 1.0 around 4; red 0.2 interpolates to 1.0,
         // outside it. The "exact" trip says the opposite of the interpolation for the two.
-        var table = new GamutTable { N = 2, Da = new float[8], Db = new float[8] };
-        table.Da[(1 * 2 + 0) * 2 + 0] = 4;
+        var table = new GamutTable { N = 2, Dl = new float[8], Da = new float[8], Db = new float[8] };
+        table.Da[(1 * 2 + 0) * 2 + 0] = 5;
         int trips = 0;
-        table.Exact = (r, g, b) => { Interlocked.Increment(ref trips); return (r > 0.9 ? 2.0 : 5.0, 0); };
+        table.Exact = (r, g, b) => { Interlocked.Increment(ref trips); return (0, r > 0.9 ? 2.0 : 6.0, 0); };
 
-        Assert.True(GamutAnalyzer.Outside(table, 0.6f, 0, 0));      // exact: 5 > 3
-        Assert.False(GamutAnalyzer.Outside(table, 0.95f, 0, 0));    // exact: 2 < 3
-        Assert.False(GamutAnalyzer.Outside(table, 0.2f, 0, 0));     // interpolation alone: 0.8
+        Assert.True(GamutAnalyzer.Outside(table, 0.65f, 0, 0));     // exact: 6 > 4
+        Assert.False(GamutAnalyzer.Outside(table, 0.95f, 0, 0));    // exact: 2 < 4
+        Assert.False(GamutAnalyzer.Outside(table, 0.2f, 0, 0));     // interpolation alone: 1.0
         Assert.Equal(2, trips);
-        Assert.True(GamutAnalyzer.Outside(table, 0.6f, 0, 0));      // the same 8-bit colour: cached
+        Assert.True(GamutAnalyzer.Outside(table, 0.65f, 0, 0));     // the same 8-bit colour: cached
         Assert.Equal(2, trips);
-        Assert.True(GamutAnalyzer.Outside(table, 0.6f + 1f / 255, 0, 0));   // one level away: one more trip
+        Assert.True(GamutAnalyzer.Outside(table, 0.65f + 1f / 255, 0, 0));   // one level away: one more trip
         Assert.Equal(3, trips);
 
-        var plain = new GamutTable { N = 2, Da = table.Da, Db = table.Db };
-        Assert.False(GamutAnalyzer.Outside(plain, 0.6f, 0, 0));
+        var plain = new GamutTable { N = 2, Dl = table.Dl, Da = table.Da, Db = table.Db };
+        Assert.False(GamutAnalyzer.Outside(plain, 0.65f, 0, 0));
         Assert.True(GamutAnalyzer.Outside(plain, 0.95f, 0, 0));
 
-        // 64 x 64, the left half red 0.6 (outside by the exact trip), the right half red 0.95
+        // 64 x 64, the left half red 0.65 (outside by the exact trip), the right half red 0.95
         // (inside): the left patches are dust, the right ones sky.
-        Raster sub = SyntheticRasters.From(64, 64, 3, (x, y, p) => p == 0 ? (x < 32 ? 0.6f : 0.95f) : 0f);
+        Raster sub = SyntheticRasters.From(64, 64, 3, (x, y, p) => p == 0 ? (x < 32 ? 0.65f : 0.95f) : 0f);
         var map = new DustMap { Cols = 2, Rows = 2, Side = 32, Stride = 4, Classes = new[] { PatchClass.Dust, PatchClass.Sky, PatchClass.Dust, PatchClass.Sky } };
         GamutFigure g = GamutAnalyzer.Measure(table, sub, map);
         Assert.Equal(50, g.PctAll, 9);
         Assert.Equal(100, g.PctByClass[0], 9);
         Assert.Equal(0, g.PctByClass[1], 9);
         Assert.Equal(3, trips);   // both colours were in the cache already
+    }
+
+    /// <summary>
+    /// The figure counts the whole colour difference, lightness included (ADR 0081): a corner
+    /// whose L* alone moves by 6 is outside, and L* and a* add as a distance, not one at a time.
+    /// </summary>
+    [Fact]
+    public void R144_ALightnessShiftAloneCountsAsOutside()
+    {
+        var table = new GamutTable { N = 2, Dl = new float[8], Da = new float[8], Db = new float[8] };
+        table.Dl[(1 * 2 + 0) * 2 + 0] = 6;                              // red: the tone alone, 6
+        table.Dl[(0 * 2 + 1) * 2 + 0] = 3; table.Da[(0 * 2 + 1) * 2 + 0] = 3;   // green: 3 and 3, a distance of 4.24
+        table.Dl[(0 * 2 + 0) * 2 + 1] = 2; table.Db[(0 * 2 + 0) * 2 + 1] = 3;   // blue: 2 and 3, a distance of 3.61
+        Assert.True(GamutAnalyzer.Outside(table, 1, 0, 0));
+        Assert.True(GamutAnalyzer.Outside(table, 0, 1, 0));
+        Assert.False(GamutAnalyzer.Outside(table, 0, 0, 1));
+        Assert.False(GamutAnalyzer.Outside(table, 0.6f, 0, 0));          // 3.6
     }
 
     [Fact]

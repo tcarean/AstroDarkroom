@@ -123,10 +123,13 @@
 - A saved FITS holds the raster's values: what the reader clipped to 0..1 (and a NaN, to 0) is
   saved clipped. The ICC profile of a PNG or TIFF source is not carried, and a borrowed WCS
   (`--wcs`) is not written. SIP cards are copied with the rest and still ignored by the classes.
-- The gamut figure counts the chroma only, through relative colorimetric tables without black
-  point compensation: not a soft proof. Near the threshold it is decided on the pixel's 8-bit
-  colour (ADR 0042), so on a 16-bit or float image it is within 0.2 points of the exact per-pixel
-  figure, not equal to it (measured 2026-10-23: the canvas sky 38.24 % against 38.08 %). `Maxima`
+- The gamut figure is one distance per pixel, the whole colour difference after the compensated
+  round trip (ADR 0081): it says the paper changes the tone or the colour, not which, and it is
+  not Lightroom's rule, which is unpublished (on the Smida TIFF through the WhiteWall baryta
+  profile the two agree on half of the pixels either one marks). Near the threshold it is
+  decided on the pixel's 8-bit colour (ADR 0042), so on a 16-bit or float image it is within
+  0.15 points of the exact per-pixel figure, not equal to it (measured 2026-11-05: the FITS's
+  dust on baryta 11.10 % against 10.96 %). `Maxima`
   clips more pixels than the other suggestions (0.18 % against 0.10 % on the reference PNG).
 - A saved FITS copies every card of the source, so a `CHECKSUM` / `DATASUM` pair, or `DATAMIN` /
   `DATAMAX`, would describe the old data. Siril writes none of them by default; a source that

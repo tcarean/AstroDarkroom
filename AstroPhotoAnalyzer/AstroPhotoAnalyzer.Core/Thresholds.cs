@@ -698,11 +698,19 @@ namespace AstroPhotoAnalyzer
         internal const int CurveChartSamples = 257;
 
         /// <summary>
-        /// The paper's gamut (R-144): a colour is outside when the trip sRGB - printer - back moves
-        /// its a*, b* by more than this. Chroma only: the paper black is judged by the Tonuri tab.
-        /// 3 is the Delta E threshold of the study of 2026-10-05.
+        /// The paper's gamut (R-144, ADR 0081): a colour is outside when the trip sRGB - printer -
+        /// back, with the black point compensation towards the paper and back, moves it by more
+        /// than this, the whole difference (Delta E76 on L*, a*, b*), lightness included. Until
+        /// 2026-11-05 the rule counted a*, b* alone, over 3 (the Delta E of the study of
+        /// 2026-10-05), and missed the dark saturated dust the paper prints lighter. Measured on
+        /// 2026-11-03 against Lightroom Classic's destination gamut warning (relative, BPC) on the
+        /// Smida Milky Way TIFF through the WhiteWall Photo Rag Baryta profile: Lightroom marks
+        /// 0.93 % of the image; this rule at 4 marks 1.33 %, hits 72 % of Lightroom's pixels and
+        /// half of its own are Lightroom's (IoU 0.42, the best of every rule tried: at 3 it is
+        /// 0.26 with 3.1 % marked, at 5 it is 0.36; the chroma rule 0.19 with 0.45 %; the
+        /// profile's own gamt tag 0.03 with 36 %). Lightroom's rule is not published.
         /// </summary>
-        internal const double CurveGamutDeltaAb = 3;
+        internal const double CurveGamutDeltaE = 4;
 
         /// <summary>
         /// The nodes per channel of the round-trip table through the profile; 33 means 35,937
@@ -713,14 +721,20 @@ namespace AstroPhotoAnalyzer
         internal const int CurveGamutGrid = 33;
 
         /// <summary>
-        /// How close to CurveGamutDeltaAb a pixel's interpolated displacement must be for the
-        /// exact trip through the profile to decide instead of the interpolation
-        /// (R-144, ADR 0042). The grid alone rounds the gamut's edge inward and counts too few,
-        /// by up to 2.4 points on a class (the reference image's dust on baryta: 0.0 % against
-        /// 2.4 % exact; 0.45 and 2.2 points even with 65 nodes). With the margin 0.5 the sky on
-        /// canvas stays 0.5 points under exact; with 1.0 every class is within three decimals of
-        /// the exact figure, and once per 8-bit colour, within 0.2 points (measured 2026-10-23 on
-        /// the plate-solved FITS with both of the workshop's profiles and on de_printat.png).
+        /// How close to CurveGamutDeltaE a pixel's interpolated displacement must be for the
+        /// exact trip through the profile to decide instead of the interpolation (R-144, ADR
+        /// 0042). The grid alone rounds the gamut's edge inward and counts too few, by up to 2.4
+        /// points on a class (the reference image's dust on baryta: 0.0 % against 2.4 % exact;
+        /// 0.45 and 2.2 points even with 65 nodes). With the margin 0.5 the sky on canvas stays
+        /// 0.5 points under exact; with 1.0 every class is within three decimals of the exact
+        /// figure, and once per 8-bit colour, within 0.2 points (measured 2026-10-23 on the
+        /// plate-solved FITS with both of the workshop's profiles and on de_printat.png, under
+        /// the chroma rule of the time). Re-measured on 2026-11-05 under the whole-difference
+        /// rule with the compensation (ADR 0081), the margin still 1.0: the hybrid is within 0.14
+        /// points of the exact per-pixel figure on every class (the FITS on baryta: all 1.943
+        /// against 1.917, dust 11.10 against 10.96; on canvas all 2.430 against 2.494, dust 15.25
+        /// against 15.35; de_printat.png all 0.292 against 0.236, dust 0.55 against 0.45), with
+        /// 5 170, 7 347 and 1 916 exact trips per measure.
         /// </summary>
         internal const double CurveGamutExactMargin = 1.0;
 

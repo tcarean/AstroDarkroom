@@ -69,8 +69,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="pct">The share of the proof's pixels outside the paper's gamut, in percent.</param>
         /// <returns>The sentence.</returns>
         internal static string PaperGamutLegend(double pct)
-            => Tr.Pick($"colours the paper cannot reproduce (the gamut): {Fmt.Pct(pct)} of the pixels (the paper would move their colour by over {Fmt.F0(Thresholds.CurveGamutDeltaAb)}, the same rule as in the Curves Editing tab)",
-                $"culori pe care hartia nu le poate reda (gamutul): {Fmt.Pct(pct)} din pixeli (hartia le-ar muta culoarea cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}, aceeasi regula ca in tabul Editare Curbe)");
+            => Tr.Pick($"colours the paper cannot reproduce (the gamut): {Fmt.Pct(pct)} of the pixels (on paper they would come out another tone or colour, by over {Fmt.F0(Thresholds.CurveGamutDeltaE)}; the same rule as in the Curves Editing tab)",
+                $"culori pe care hartia nu le poate reda (gamutul): {Fmt.Pct(pct)} din pixeli (pe hartie ar iesi alt ton sau alta culoare, cu peste {Fmt.F0(Thresholds.CurveGamutDeltaE)}; aceeasi regula ca in tabul Editare Curbe)");
 
         /// <summary>The name of an intent, as the radio button shows it (R-163).</summary>
         /// <param name="intent">The intent.</param>

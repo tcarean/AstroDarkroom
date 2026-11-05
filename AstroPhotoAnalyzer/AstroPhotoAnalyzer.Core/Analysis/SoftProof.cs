@@ -165,7 +165,6 @@ namespace AstroPhotoAnalyzer
         internal float[] PaperWhiteSrgb { get; private set; }
 
         Configuration _relative, _perceptual, _back;
-        double[] _deviceBlack;
         readonly ConcurrentDictionary<ProofIntent, Lazy<ProofTable>> _tables = new();
 
         /// <summary>Only <see cref="Open"/> and <see cref="ForTests"/> build one.</summary>
@@ -186,6 +185,52 @@ namespace AstroPhotoAnalyzer
             p.FinishFacts();
             return p;
         }
+
+        /// <summary>
+        /// The device black of a profile through its colorimetric table, as the neutral of its
+        /// Y: the black the compensation scales with. The black point compensation of ISO 18619
+        /// (lcms too) takes the black so, not with the chromaticity the table gives it: the
+        /// scaling is then one factor on X, Y and Z, and a slightly coloured black does not tint
+        /// the shadows. The L* and the Dmax are the same either way. Shared with the gamut
+        /// figure (ADR 0081), so the proof's compensation and the figure's cannot drift apart.
+        /// </summary>
+        /// <param name="back">The package's configuration with the profile's relative tables.</param>
+        /// <param name="dataColourSpace">The profile header's device space, "RGB " or "CMYK".</param>
+        /// <returns>
+        /// The black's XYZ relative to the paper's white; null when the table gives no black
+        /// between 0 and the white (a damaged profile).
+        /// </returns>
+        internal static double[] NeutralBlack(Configuration back, string dataColourSpace)
+        {
+            double[] device = dataColourSpace.Trim() == "CMYK" ? new[] { 1.0, 1.0, 1.0, 1.0 } : new double[3];
+            var k = new Unicolour(back, new Channels(device)).Xyz;
+            if (double.IsNaN(k.Y) || k.Y < 0 || k.Y >= 1) return null;
+            return new[] { D50[0] * k.Y, k.Y, D50[2] * k.Y };
+        }
+
+        /// <summary>
+        /// The black point compensation towards the paper: XYZ x (W - K) / W + K, W the D50
+        /// white, K the paper's black, so that the image's black lands on the paper's.
+        /// </summary>
+        /// <param name="x">The colour's X, relative to D50.</param>
+        /// <param name="y">The colour's Y.</param>
+        /// <param name="z">The colour's Z.</param>
+        /// <param name="k">The paper's black, XYZ, as <see cref="NeutralBlack"/> gives it.</param>
+        /// <returns>The compensated XYZ.</returns>
+        internal static (double X, double Y, double Z) Compensate(double x, double y, double z, double[] k)
+            => (x * (D50[0] - k[0]) / D50[0] + k[0], y * (D50[1] - k[1]) / D50[1] + k[1], z * (D50[2] - k[2]) / D50[2] + k[2]);
+
+        /// <summary>
+        /// The compensation undone, towards the screen: (XYZ - K) x W / (W - K), so that the
+        /// paper's black is the screen's black and its white the screen's white.
+        /// </summary>
+        /// <param name="x">The paper colour's X, relative to the paper's white.</param>
+        /// <param name="y">The paper colour's Y.</param>
+        /// <param name="z">The paper colour's Z.</param>
+        /// <param name="k">The paper's black, XYZ, as <see cref="NeutralBlack"/> gives it.</param>
+        /// <returns>The XYZ scaled back.</returns>
+        internal static (double X, double Y, double Z) Uncompensate(double x, double y, double z, double[] k)
+            => ((x - k[0]) * D50[0] / (D50[0] - k[0]), (y - k[1]) * D50[1] / (D50[1] - k[1]), (z - k[2]) * D50[2] / (D50[2] - k[2]));
 
         /// <summary>
         /// Opens the profile at <paramref name="path"/> for the proof: the checks of
@@ -232,14 +277,8 @@ namespace AstroPhotoAnalyzer
                 var perceptual = new IccConfiguration(profile, Intent.Perceptual, name);
                 if (!string.IsNullOrEmpty(perceptual.Error)) { p.Problem = Unreadable + perceptual.Error; return p; }
                 p._perceptual = new Configuration(xyzConfig: XyzConfiguration.D50, iccConfig: perceptual);
-                p._deviceBlack = profile.Header.DataColourSpace.Trim() == "CMYK" ? new[] { 1.0, 1.0, 1.0, 1.0 } : new double[3];
-                var k = new Unicolour(p._back, new Channels(p._deviceBlack)).Xyz;
-                if (double.IsNaN(k.Y) || k.Y < 0 || k.Y >= 1) { p.Problem = BlackUnusable; return p; }
-                // The black point compensation of ISO 18619 (lcms too) takes the black as the
-                // neutral of its Y, not with the chromaticity the table gives it: the scaling is
-                // then one factor on X, Y and Z, and a slightly coloured black does not tint the
-                // shadows. The L* and the Dmax are the same either way.
-                p.PaperBlack = new[] { D50[0] * k.Y, k.Y, D50[2] * k.Y };
+                p.PaperBlack = NeutralBlack(p._back, profile.Header.DataColourSpace);
+                if (p.PaperBlack == null) { p.Problem = BlackUnusable; return p; }
                 p.FinishFacts();
                 return p;
             }
@@ -291,10 +330,8 @@ namespace AstroPhotoAnalyzer
                         if (bpc)
                         {
                             var xyz = source.Xyz;
-                            source = new Unicolour(forward, ColourSpace.Xyz,
-                                xyz.X * (D50[0] - k[0]) / D50[0] + k[0],
-                                xyz.Y * (D50[1] - k[1]) / D50[1] + k[1],
-                                xyz.Z * (D50[2] - k[2]) / D50[2] + k[2]);
+                            var (x, y, z) = Compensate(xyz.X, xyz.Y, xyz.Z, k);
+                            source = new Unicolour(forward, ColourSpace.Xyz, x, y, z);
                         }
                         var paper = new Unicolour(_back, source.Icc).Xyz;
                         int at = (i * n + j) * n + l;
@@ -316,7 +353,7 @@ namespace AstroPhotoAnalyzer
         /// <returns>The sentence, in the interface language.</returns>
         static string NoB2A(string table) => Tr.Pick($"the profile lacks the part that prepares the colours for the printer (the {table} table)", $"profilului ii lipseste partea care pregateste culorile pentru imprimanta (tabela {table})");
         static string Unreadable => Tr.Pick("the profile cannot be read: ", "profilul nu se poate citi: ");
-        static string BlackUnusable => Tr.Pick("the profile does not show properly how black the paper prints (the A2B1 table gives no black between 0 and the paper white); the profile is probably damaged",
+        internal static string BlackUnusable => Tr.Pick("the profile does not show properly how black the paper prints (the A2B1 table gives no black between 0 and the paper white); the profile is probably damaged",
             "profilul nu arata corect cat de negru tipareste hartia (tabela A2B1 nu da un negru intre 0 si albul hartiei); profilul e probabil stricat");
     }
 
@@ -360,12 +397,7 @@ namespace AstroPhotoAnalyzer
             {
                 x *= m[0] / w[0]; y *= m[1] / w[1]; z *= m[2] / w[2];
             }
-            else
-            {
-                x = (x - k[0]) * w[0] / (w[0] - k[0]);
-                y = (y - k[1]) * w[1] / (w[1] - k[1]);
-                z = (z - k[2]) * w[2] / (w[2] - k[2]);
-            }
+            else (x, y, z) = ProofProfile.Uncompensate(x, y, z, k);
             double rl = M00 * x + M01 * y + M02 * z;
             double gl = M10 * x + M11 * y + M12 * z;
             double bl = M20 * x + M21 * y + M22 * z;

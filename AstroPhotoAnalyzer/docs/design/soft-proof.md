@@ -58,7 +58,11 @@ display colour: the display step is a per-pixel scaling, so one table per intent
 states of `simulate`.
 
 The warning: the pixels outside the paper's gamut by the rule of R-144 (`GamutAnalyzer.Outside`
-on the existing `GamutTable`, the exact trip near the threshold, ADR 0042), decided once per
+on the existing `GamutTable`: the whole colour difference after the round trip with the black
+point compensation, over `CurveGamutDeltaE`, ADR 0081, the exact trip near the threshold, ADR
+0042; the compensation is `ProofProfile.Compensate` and `Uncompensate`, the scalings the
+`Relative` table and the unsimulated display step make, and the black `NeutralBlack`, the one
+`Open` reads, so the figure and the proof cannot drift apart), decided once per
 image in `ProofRun.Prepare` on the source pixels of the reduction, since it does not depend on
 the intent; the share equals the Editare Curbe tab's figure for the original. There is no
 screen-gamut warning: with an sRGB source nothing can leave the screen's gamut (ADR 0066); a
@@ -158,17 +162,17 @@ ignored while the focus is in a text box or a modifier is held.
 
 ## What was measured
 
-On 2026-10-30, on the lab's two profiles, the Epson P900 baryta profile and the CMYK
-`RSWOP.icm` (ADR 0066): the package evaluates the three intents and lets each direction use its
-own; the paper white under the absolute intent is L\* 97.6 b\* +1.1 on the Chromatone baryta,
-L\* 95.0 on the canvas, L\* 95.5 on the P900 baryta; relative without BPC on the canvas sends
-every grey under L\* 22 to the paper's black, with BPC nothing is crushed; a 65-grid read
-trilinearly is within Delta E76 1.0 of the exact per-pixel proof at the 99th percentile on both
-lab profiles (max 1.4 on the canvas), where 33 nodes reach 5.2; a 65-grid builds in 1.6 to 2.2 s
-with the rows in parallel. The figures on the plate-solved FITS through the baryta profile are
-V-015 (`../validation.md`): the paper white L\* 97.2, b\* +1.1 (sRGB 248, 247, 245), 1.37 % of
-the proof outside the paper's gamut, and a mean L\* of
-17.0, 19.7 and 18.2 on the three intents.
+On 2026-10-30, on the lab's two profiles, the Epson P900 baryta profile and the CMYK `RSWOP.icm`
+(ADR 0066): the package evaluates the three intents and lets each direction use its own; the paper
+white under the absolute intent is L\* 97.6 b\* +1.1 on the Chromatone baryta, L\* 95.0 on the
+canvas, L\* 95.5 on the P900 baryta; relative without BPC on the canvas sends every grey under L\*
+22 to the paper's black, with BPC nothing is crushed; a 65-grid read trilinearly is within Delta
+E76 1.0 of the exact per-pixel proof at the 99th percentile on both lab profiles (max 1.4 on the
+canvas), where 33 nodes reach 5.2; a 65-grid builds in 1.6 to 2.2 s with the rows in parallel. The
+figures on the plate-solved FITS through the baryta profile are V-015 (`../validation.md`): the
+paper white L\* 97.2, b\* +1.1 (sRGB 248, 247, 245), 1.90 % of the proof outside the paper's gamut
+(2026-11-05, ADR 0081; 1.37 % under the chroma rule), and a mean L\* of 17.0, 19.7 and 18.2 on the
+three intents.
 
 ## The hand-built profile of the tests
 
