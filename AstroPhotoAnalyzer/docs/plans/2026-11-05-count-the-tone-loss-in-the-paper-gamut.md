@@ -107,3 +107,22 @@ the Soft proof warning and in the Editare Curbe figure, which stay one rule (R-1
 - Window: `APA_DUMP_SCREENS` renders of the Soft proof and Curves tabs show the new legend.
 - Then the subagent review of `git diff main...HEAD`, its findings applied, a second review of
   the fix commit, and the merge proposed (the owner decides).
+
+## Record (2026-11-06)
+
+Followed as written, with these deviations:
+
+- The near-threshold test's first point moved from red 0.6 to 0.65: at 0.6 the interpolated
+  displacement was exactly 3.0, on the edge of the margin (|3.0 - 4| = 1.0 is not under 1.0),
+  so the interpolation decided; 0.65 gives 3.25, inside the margin, as the test needs.
+- The hybrid against the exact figure was measured on the three reference pairs and on the
+  Smida TIFF through the WhiteWall profile (the latter failed to load: the owner had moved the
+  files from `finale/finalisti/` up to `finale/`); the three pairs were enough for the margin.
+- The rule as built, scored against the Lightroom mask at the window's reduction, gave 1.37 %
+  and IoU 0.48 where the probe's exact per-pixel rule gave 1.33 % and 0.42; both are in ADR
+  0081, labelled.
+- Two subagent reviews ran, not one: the first found seven document findings and no code
+  defect, the second four more in the fixes (a bracket, a wrapped path, the gamt tag's
+  threshold, the README's sentence); all applied, in two commits.
+- The window renders of `APA_DUMP_SCREENS` showed the Soft proof tab's new legend on the
+  hand-built profile ("pe hartie ar iesi alt ton sau alta culoare, cu peste 4").
