@@ -706,10 +706,10 @@ namespace AstroPhotoAnalyzer
         /// 2026-11-03 against Lightroom Classic's destination gamut warning (relative, BPC) on the
         /// Smida Milky Way TIFF through the WhiteWall Photo Rag Baryta profile: Lightroom marks
         /// 0.93 % of the image; this rule at 4, exact per pixel, marks 1.33 %, hits 72 % of
-        /// Lightroom's pixels and half of its own are Lightroom's (IoU 0.42; as built, with the
-        /// hybrid of ADR 0042, 1.37 %, 75 % and 0.48), the best of every rule tried: at 3 it is
-        /// 0.26 with 3.1 % marked, at 5 it is 0.36; the chroma rule 0.19 with 0.45 %; the
-        /// profile's own gamt tag 0.03 with 36 %). Lightroom's rule is not published.
+        /// Lightroom's pixels and half of its own are Lightroom's: IoU 0.42, the best of every
+        /// rule tried (at 3 it is 0.26 with 3.1 % marked, at 5 it is 0.36; the chroma rule 0.19
+        /// with 0.45 %; the profile's own gamt tag 0.03 with 36 %); as built, with the hybrid of
+        /// ADR 0042, 1.37 %, 75 % and IoU 0.48. Lightroom's rule is not published.
         /// </summary>
         internal const double CurveGamutDeltaE = 4;
 

@@ -34,8 +34,9 @@ tool's reduced image (scale 0.560, a checkerboard blend checked by eye):
   which is why Lightroom, set on the compensation, leaves them. The two warnings are two halves
   of one loss: a dark saturated brown the paper cannot make, replaced by a lighter, duller one.
 - The profile's own `gamt` tag, evaluated by hand (a 37-node mBA LUT), is not what Lightroom
-  uses: at any value over 0 it marks 36 % of the image (IoU 0.03), over 0.5 the 3 % of the
-  table below (IoU 0.05).
+  uses: read as the ICC specification says, 0 in gamut and anything else out (the probe took
+  half an 8-bit step as "anything else"), it marks 36 % of the image (IoU 0.03); at values
+  over 0.5, the 3 % of the table below (IoU 0.05).
 - Every rule tried against Lightroom's mask (IoU: the common pixels over the pixels either
   marks):
 
