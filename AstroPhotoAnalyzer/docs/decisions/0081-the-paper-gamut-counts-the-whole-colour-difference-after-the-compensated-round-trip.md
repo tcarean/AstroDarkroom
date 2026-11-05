@@ -2,7 +2,7 @@
 
 Date: 2026-11-05
 Status: accepted 2026-11-05
-Supersedes: 0032 in part (the consequence that the gamut figure counts the chroma alone, without black point compensation)
+Supersedes: 0032 in part (the gamut figure counting the chroma alone, without black point compensation); 0042 in part (the chroma threshold its decision names, the hybrid itself staying)
 
 ## Context
 
@@ -34,7 +34,8 @@ tool's reduced image (scale 0.560, a checkerboard blend checked by eye):
   which is why Lightroom, set on the compensation, leaves them. The two warnings are two halves
   of one loss: a dark saturated brown the paper cannot make, replaced by a lighter, duller one.
 - The profile's own `gamt` tag, evaluated by hand (a 37-node mBA LUT), is not what Lightroom
-  uses: 36 % of the image marked, IoU 0.03.
+  uses: at any value over 0 it marks 36 % of the image (IoU 0.03), over 0.5 the 3 % of the
+  table below (IoU 0.05).
 - Every rule tried against Lightroom's mask (IoU: the common pixels over the pixels either
   marks):
 

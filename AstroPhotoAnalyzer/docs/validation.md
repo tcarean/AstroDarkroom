@@ -519,8 +519,7 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   and `pctBoth` figures with the warning (0 % in the shown state on the baryta and on the canvas,
   which is why it went); the other figures re-measured unchanged. The fifteen cases pass.
 - 2026-11-05 (ADR 0081, the paper's gamut as the whole colour difference, lightness included,
-  after the round trip with black point compensation, over 4; `docs/plans/2026-11-05-count-the-
-  tone-loss-in-the-paper-gamut.md`), the figures that move with the rule, as the approved plan
+  after the round trip with black point compensation, over 4; `docs/plans/2026-11-05-count-the-tone-loss-in-the-paper-gamut.md`), the figures that move with the rule, as the approved plan
   said: V-008's twenty gamut figures, the peaks (0) excepted, and V-015's share outside the paper
   gamut. As is `curves.before.gamut.all` 1.3563 -> 1.9427, `.dust` 4.2609 -> 11.0959, `.sky`
   0.7187 -> 1.1631, `.band` 1.7945 -> 0.2818, `.clouds` 0.5635 -> 0.2269; the three curves' `all`
@@ -529,5 +528,5 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   `proof.pctPaperGamut` 1.3704 -> 1.8983. The dust class rises most: it is the dark saturated dust
   the paper prints lighter, which the chroma rule could not see; the band and the clouds fall,
   since the compensation keeps their colour. Exact per pixel the same day: all 1.917, dust 10.956
-  (the hybrid within 0.14 points on every class, ADR 0081). The other twenty-four cases did not
-  move. The twenty-six cases pass.
+  (the hybrid within 0.14 points on every class, ADR 0081). The other thirteen cases did not
+  move. The fifteen cases (and the eleven star-pair checks) pass.

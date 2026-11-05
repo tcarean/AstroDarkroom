@@ -128,7 +128,7 @@
   not Lightroom's rule, which is unpublished (on the Smida TIFF through the WhiteWall baryta
   profile the two agree on half of the pixels either one marks). Near the threshold it is
   decided on the pixel's 8-bit colour (ADR 0042), so on a 16-bit or float image it is within
-  0.15 points of the exact per-pixel figure, not equal to it (measured 2026-11-05: the FITS's
+  0.14 points of the exact per-pixel figure, not equal to it (measured 2026-11-05: the FITS's
   dust on baryta 11.10 % against 10.96 %). `Maxima`
   clips more pixels than the other suggestions (0.18 % against 0.10 % on the reference PNG).
 - A saved FITS copies every card of the source, so a `CHECKSUM` / `DATASUM` pair, or `DATAMIN` /

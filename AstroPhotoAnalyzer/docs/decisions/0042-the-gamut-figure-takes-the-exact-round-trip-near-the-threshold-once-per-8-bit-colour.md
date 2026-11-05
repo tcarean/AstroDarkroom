@@ -1,7 +1,7 @@
 # 0042. The gamut figure takes the exact round trip near the threshold, once per 8-bit colour, in parallel
 
 Date: 2026-10-23
-Status: accepted 2026-10-23
+Status: accepted 2026-10-23; the chroma threshold `CurveGamutDeltaAb` (3) of the decision superseded by 0081 (the hybrid stays)
 Supersedes: 0032 in part (the consequence that the gamut figure is built on a round-trip grid alone)
 
 ## Context

@@ -152,8 +152,8 @@ Under the image, each suggestion shows its evidence: the curve's points, the L\*
 classes before and after, how many times the noise of the sky grows, and how many pixels end up
 clipped. **Print** and **Screen** give the same curves; **Print** adds the paper's checks: a
 background too low, the noise over the print target and, when the Dmax came from an ICC profile,
-how much of the image the paper cannot hold, in tone or in colour (a figure only: the
-saturation and the darkest tones are corrected locally, at soft proofing, not with the curve).
+how much of the image the paper cannot hold, in tone or in colour (a figure only: a colour
+the paper cannot hold is corrected locally, at soft proofing, not with the curve).
 
 Two buttons under the image:
 
