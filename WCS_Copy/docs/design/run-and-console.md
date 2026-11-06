@@ -19,7 +19,7 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 | --- | --- | --- |
 | `Kind` | `Copied`, `Previewed` or `Refused` | decides the exit code: 0, 0, 1 |
 | `Error` | the one line of a refusal, else null | stderr |
-| `Warnings` | the `WARNING:` lines, in order; forced mismatch, missing `CTYPE1` | stdout, before anything else |
+| `Warnings` | the `WARNING:` lines, in order; forced mismatch, missing `CTYPE1`, forced mirror | stdout, before anything else |
 | `Cards` | the raw 80-character cards selected, in the source's order | the preview, indented, trailing spaces trimmed (a 0xA0 stays); a byte above 0x7F shows as the character of its Latin-1 code, which the log alone escapes (ADR 0010) |
 | `Target` | the file written, else null | nothing; the window reads the destination's facts again after a copy |
 | `Notes` | the preview's heading, or the count copied and the flip reminder | stdout: a preview's heading first, above its cards; a copy's lines last |
@@ -28,9 +28,9 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 The sequence: read the source, read the destination (each read failure is a refusal naming
 which file and why, R-004; the reader's own messages of R-015 travel in it); compare
 `NAXIS1`/`NAXIS2` (a refusal, or a warning under force, R-005); warn on a missing `CTYPE1`
-(R-006); when both files have one, compare their plate solves' `WcsMetadataKeys.Orientation`
-(opposite signs are a refusal, or a warning under force, R-017, ADR 0012; force passes both
-checks); select the keys (R-007; none is a refusal, R-008) and, when the source has `CTYPE1`,
+(R-006); ask `WcsMetadataKeys.Mirrored` whether the destination's own plate solve is the mirror
+image of the source's (true is a refusal, or a warning under force, R-017, ADR 0012; force passes
+both checks; false or null is a Debug line with both determinants); select the keys (R-007; none is a refusal, R-008) and, when the source has `CTYPE1`,
 the destination's keys to drop (`WcsMetadataKeys.SelectKeysToDrop`, R-016, ADR 0011); on a dry
 run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards,
 set each selected card verbatim, append the HISTORY card, write through the header engine (a

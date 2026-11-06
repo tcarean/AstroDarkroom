@@ -255,6 +255,49 @@ internal sealed class FitsHeader
             : null;
     }
 
+    /// <summary>
+    /// The text a card's string value holds, between its quotes, a doubled quote read as one and
+    /// the trailing spaces dropped (<c>'TAN     '</c> gives <c>TAN</c>): the <c>CTYPE1</c> whose
+    /// axis R-017 compares. A '/' inside the quotes is part of the text.
+    /// </summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The text; null when the card is missing, has no '=', or its value is not a quoted string closed on the card.</returns>
+    public string? GetString(string key)
+    {
+        var card = GetCard(key);
+        var eq = card?.IndexOf('=') ?? -1;
+        if (card is null || eq < 0)
+        {
+            return null;
+        }
+
+        var rest = card[(eq + 1)..].TrimStart(' ');
+        if (rest.Length == 0 || rest[0] != '\'')
+        {
+            return null;
+        }
+
+        var text = new StringBuilder();
+        for (var i = 1; i < rest.Length; i++)
+        {
+            if (rest[i] != '\'')
+            {
+                text.Append(rest[i]);
+            }
+            else if (i + 1 < rest.Length && rest[i + 1] == '\'')
+            {
+                text.Append('\'');
+                i++;
+            }
+            else
+            {
+                return text.ToString().TrimEnd(' ');
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>The text of a card's value: between the '=' and the '/' of a comment, if any, trimmed of spaces only.</summary>
     /// <param name="key">The keyword, case-sensitive.</param>
     /// <returns>The text; null when the card is missing or has no '='.</returns>

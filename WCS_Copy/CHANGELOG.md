@@ -32,8 +32,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   not `en` or `ro` refused with exit 1.
 - `README.md`, the user documentation, in English (ADR 0006).
 - Two validation cases, on real headers kept as fixtures in the repo (ADR 0005): V-001, the keys
-  the tool selects from a Siril 1.4.4 plate solve of the Veil session of 2026-10-06; V-002, the
-  keys a copy of that solve drops from the same stack after the SyQon CLI (ADR 0011).
+  the tool selects from a Siril 1.4.4 plate solve of the Veil session of 2026-10-06; V-002, that
+  solve against the same stack after the SyQon CLI, a mirror image refused without `--force`,
+  and the keys a forced copy drops (ADR 0011, ADR 0012).
 
 ### Changed
 
@@ -51,9 +52,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 ### Fixed
 
 - A copy drops the destination's own plate-solve keys that the source does not have, such as
-  a `CD` matrix another program wrote beside Siril's `PC` and `CDELT`. Siril 1.4.4 reads the
-  `CD` matrix first, so it went on showing the old solution instead of the copied one. The
-  optical keys are never dropped; the preview and the copy name the keys dropped (ADR 0011).
+  a `CD` matrix left beside Siril's `PC` and `CDELT` by an earlier plate solve of the same
+  image. Siril 1.4.4 reads the `CD` matrix first, so such a leftover would have hidden the copied
+  solution. The optical keys are never dropped; the preview and the copy name the keys dropped
+  (ADR 0011).
 
 ### Internal
 

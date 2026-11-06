@@ -409,6 +409,22 @@ public class LoggingTests
         Assert.Contains("mirrored plate solve: source det -9.3025E-8, destination det +9.3025E-8; forced, the copy goes on", forced.Messages);
     }
 
+    /// <summary>The comparison of R-017 is logged at Debug when it passes or cannot be made, so a copy that should have been refused leaves a trace.</summary>
+    [Fact]
+    public void R042_TheOrientationsAreLoggedWhenTheyMatchOrCannotBeCompared()
+    {
+        using var ws = new TempWorkspace();
+        var (src, sameWay) = Pair(ws, dest: FitsTestData.OldSolveCards());
+        string unsolved = ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(FitsTestData.ProcessedCards()));
+        using var capture = LogCapture.Start();
+
+        Assert.Equal(0, Cli(src, sameWay, "--dry-run").Code);
+        Assert.Equal(0, Cli(src, unsolved, "--dry-run").Code);
+
+        Assert.Contains("same orientation: source det -9.3025E-8, destination det -9.28E-8", capture.Messages);
+        Assert.Contains("orientation not compared: source det -9.3025E-8, destination det none", capture.Messages);
+    }
+
     /// <summary>A keyword the destination holds twice: one <c>drop</c> line per card, while the done line counts the key once.</summary>
     [Fact]
     public void R042_AKeywordHeldTwiceIsLoggedCardByCard_AndCountedOnce()

@@ -38,15 +38,19 @@ refuses to copy when they differ, because the solution would point at the wrong 
 
 **A mirrored destination is refused.** When the destination holds a plate solve of its own and
 it is the mirror image of the source's (the determinant of its scale and turn, read `CD` first
-as Siril reads it, has the opposite sign), its pixels were mirrored or flipped after the source
-was solved, and a copied solution would point the wrong way: the copy is refused, a dry run too,
-unless `--force` (ADR 0012). The SyQon CLI's output is such an image: it stores the rows
-top-down and writes a flipped `CD` matrix for them, so Siril already shows it right.
+as Siril reads it, has the opposite sign, both solves naming RA first), its pixels were mirrored
+or flipped after the source was solved, and a copied solution would point the wrong way: the
+copy is refused, a dry run too, unless `--force` (ADR 0012). The SyQon CLI's output is such an
+image: it stores the rows top-down and writes a flipped `CD` matrix for them, so Siril already
+shows it right. `--force` is also for the rare destination whose own plate solve was left
+mirrored after its pixels were flipped back.
 
-**Check the result by eye.** If the image was mirrored or flipped during processing and the
-destination holds no plate solve of its own to compare, the copied solution is wrong without
-any error being possible: the header cannot know what happened to the pixels. Open the result
-in Siril and look at the annotation before trusting it.
+**Check the result by eye.** The mirror check sees a flip only when whatever flipped the pixels
+flipped the destination's own plate solve with them, as Siril and the SyQon CLI do. A program
+that flips the pixels and passes the header through, or a destination with no plate solve of its
+own, leaves nothing to compare, and the copied solution is then wrong without any error being
+possible: the header cannot know what happened to the pixels. Open the result in Siril and look
+at the annotation before trusting it.
 
 ## The console
 

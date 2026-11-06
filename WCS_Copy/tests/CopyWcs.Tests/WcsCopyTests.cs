@@ -288,6 +288,7 @@ public class WcsCopyTests
         Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
         Assert.StartsWith("Eroare la scriere", outcome.Error, StringComparison.Ordinal);
         Assert.Null(outcome.Dropped);
+        Assert.False(File.Exists(output));
         Assert.Equal(destBytes, File.ReadAllBytes(dest));
     }
 
@@ -335,6 +336,10 @@ public class WcsCopyTests
     [InlineData(19, "Eliminate 19 chei vechi")]
     [InlineData(20, "Eliminate 20 de chei vechi")]
     [InlineData(24, "Eliminate 24 de chei vechi")]
+    [InlineData(100, "Eliminate 100 de chei vechi")]
+    [InlineData(101, "Eliminate 101 chei vechi")]
+    [InlineData(119, "Eliminate 119 chei vechi")]
+    [InlineData(120, "Eliminate 120 de chei vechi")]
     public void R016_Run_TheRomanianCount_TakesDeFrom20(int keys, string start)
     {
         using var ws = new TempWorkspace();
@@ -395,6 +400,50 @@ public class WcsCopyTests
             var forced = WcsCopy.Run(Request(source, ws.FilePath("dest2.fit"), force: true, dryRun: true));
             Assert.Equal("WARNING: the destination's own plate solve is a mirror image of the source's. Continuing anyway (--force).", Assert.Single(forced.Warnings));
         }
+    }
+
+    [Fact]
+    public void R017_Run_ARefusedCopyIntoANewFile_WritesNoFile()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards()));
+        var output = ws.FilePath("out.fit");
+
+        Assert.Equal(WcsCopyKind.Refused, WcsCopy.Run(Request(source, dest, output)).Kind);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public void R017_Run_AMirrorAndASizeMismatch_UnderForce_WarnTheSizeFirst()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(100, 80)));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards(200, 80)));
+
+        var outcome = WcsCopy.Run(Request(source, dest, ws.FilePath("out.fit"), force: true));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal(2, outcome.Warnings.Count);
+        Assert.StartsWith("ATENTIE: Dimensiuni diferite", outcome.Warnings[0], StringComparison.Ordinal);
+        Assert.StartsWith("ATENTIE: plate solve-ul destinatiei e in oglinda", outcome.Warnings[1], StringComparison.Ordinal);
+    }
+
+    /// <summary>The same plate solve written DEC first has the opposite determinant without being a mirror: it is not compared, so it is not refused (R-017).</summary>
+    [Fact]
+    public void R017_Run_ADestinationSolvedDecFirst_IsNotRefused()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        List<string> decFirst = FitsTestData.MirroredSolveCards();
+        decFirst[decFirst.FindIndex(c => c.StartsWith("CTYPE1", StringComparison.Ordinal))] = FitsTestData.Card("CTYPE1", "'DEC--TAN'");
+        decFirst[decFirst.FindIndex(c => c.StartsWith("CTYPE2", StringComparison.Ordinal))] = FitsTestData.Card("CTYPE2", "'RA---TAN'");
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(decFirst));
+
+        var outcome = WcsCopy.Run(Request(source, dest, dryRun: true));
+
+        Assert.Equal(WcsCopyKind.Previewed, outcome.Kind);
+        Assert.Empty(outcome.Warnings);
     }
 
     /// <summary>The check needs both plate solves: a source without CTYPE1 only warns as R-006 says, and a destination of the same orientation goes through.</summary>

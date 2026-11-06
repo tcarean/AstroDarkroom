@@ -133,7 +133,10 @@ relevant key in the source`, `the write failed`), after a Warn line (an Error on
 holding the exception when there is one. The mirror's Warn line, `mirrored plate solve: source
 det ..., destination det ...; not forced, nothing is written` or `...; forced, the copy goes
 on`, writes both determinants through `LogText.Signed`, so the log alone says which way each
-solve faced (R-017). A run that
+solve faced (R-017). When the two match, or cannot be compared, a Debug line says so with the
+same two figures, `none` for a missing one: `same orientation: source det -9.3025E-8,
+destination det -9.28E-8`, `orientation not compared: source det -9.3025E-8, destination det
+none`; a mirrored copy that slips through the check still leaves its figures. A run that
 throws leaves the clock without `Done`, and `Dispose` writes `copy ended without an outcome after
 N ms (<stages>)`. `LogSelection` runs before any card is dropped or set: the counts per list
 (`WcsKeys`, `OpticalKeys`, the rest being SIP coefficients), then per key the source's card and

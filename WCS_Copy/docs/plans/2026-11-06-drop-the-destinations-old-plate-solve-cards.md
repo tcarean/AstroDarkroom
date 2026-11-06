@@ -212,9 +212,42 @@ the window's option `Continue even when the dimensions differ or the image is mi
 - The checkbox's longer label fits at the window's minimum width of 720 px, in both languages
   (checked on the tests' rendered screens).
 
+## The second review (one subagent, on 74d1f9c8..b71348aa)
+
+No defect in R-017 for the cases the docs described. Its findings, and what was done:
+
+1. **The README and ADR 0012 promised more than the check catches**: it sees a flip only when the
+   flip also turned the destination's own plate solve, not when a program flips the pixels and
+   passes the header through. Reworded in R-017, the README and ADR 0012.
+2. **The CHANGELOG's Fixed entry still sold R-016 on the SyQon case**, and its V-002 line read as
+   a plain copy: reworded.
+3. **Pairs that only look mirrored were refused**, measured by the reviewer with the Release
+   console: a header with `CTYPE1` and no scale (the defaults give +1), a `LINEAR` one, and the
+   same solve written declination first. None is in the owner's data (the reviewer's rescan
+   confirmed the 231 / 222 / 9 figures). The check now compares only two solves that both hold a
+   linear part (a CD or a CDELT card) and name the same first axis (`FitsHeader.GetString`,
+   `WcsMetadataKeys.Mirrored`), each case tested. A destination whose own solve was left
+   mirrored after its pixels were flipped back is still refused, and `--force` is documented as
+   the way through.
+4. **Stale texts**: the `Warnings` row, `WcsCopy`'s file comment and `Run`'s summary, the design
+   index, `docs/skills.md` (V-002 needs `--force` now), `WcsMetadataKeys`' class summary,
+   `LogText.Signed`'s example: fixed.
+5. **Two count rules in one output** (`Eliminate 24 de chei` beside `Copiate 72 chei`, and
+   `Copied 1 keys`): R-012's wording, left to the owner.
+6. **Test gaps**: the "de" rule's 01-to-19 clause (100, 101, 119, 120 added), a missing CDELT
+   counting as 1, a refused `-o` run leaving no file, a size mismatch with a mirror under force
+   (both warnings, size first), the write error leaving no file, `GetDouble`'s lowercase `d`,
+   `NaN` and `Infinity`: added. The CROTA test stays as a guard against reading it.
+7. **The log was silent when the check passed or was skipped**: a Debug line now gives both
+   determinants (`same orientation: ...`, `orientation not compared: ...`), in R-042.
+
+The new tests were seen failing on stubs before the code (7 of them; the others pin behaviour
+that was already right).
+
 ## Outcome
 
-- Commits: 74d1f9c8 (R-016), 8acac91b (the review's fixes), then the mirror check (R-017).
+- Commits: 74d1f9c8 (R-016), 8acac91b (the first review's fixes), b71348aa (the mirror check,
+  R-017), then the second review's fixes.
 - The R016 and R017 tests were seen failing on stubs before the code; the gate is green.
 - End to end on the real Veil pair (`result-bge-cc.fit` into `denoised_syqon_studio_in.fit`; the
   plan's `result_final.fit` had left that folder): without `--force` refused with exit 1; with

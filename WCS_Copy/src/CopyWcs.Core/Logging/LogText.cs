@@ -92,10 +92,10 @@ internal static class LogText
     /// <returns>The text.</returns>
     internal static string Dimensions(int width, int height) => Int(width) + "x" + Int(height);
 
-    /// <summary>A number in scientific notation with its sign always written and up to four decimals: <c>-9.3025E-8</c>, <c>+2.9636E-6</c>; the determinants of R-017.</summary>
-    /// <param name="value">The number.</param>
-    /// <returns>The text, invariant.</returns>
-    internal static string Signed(double value) => value.ToString("+0.####E+0;-0.####E+0", Inv);
+    /// <summary>A number in scientific notation with its sign always written and up to four decimals: <c>-9.3025E-8</c>, <c>+2.9641E-6</c>; the determinants of R-017.</summary>
+    /// <param name="value">The number, or null for none.</param>
+    /// <returns>The text, invariant; <c>none</c> for null.</returns>
+    internal static string Signed(double? value) => value is { } v ? v.ToString("+0.####E+0;-0.####E+0", Inv) : "none";
 
     /// <summary>
     /// A header card as the log writes it, which is as the header holds it: its text without the

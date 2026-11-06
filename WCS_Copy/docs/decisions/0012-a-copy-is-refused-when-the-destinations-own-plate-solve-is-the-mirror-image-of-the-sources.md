@@ -21,11 +21,14 @@ form); the other 222 are negative. The owner chose, on 2026-11-06, to refuse suc
 
 ## Decision
 
-When both files have `CTYPE1` and the determinants of their plate solves' linear parts, read as
-Siril reads them (the CD matrix first, else CDELT times PC), have opposite signs, the run is
-refused with nothing written, a dry run too, unless `--force` (in the window, the renamed option
-`Continue even when the dimensions differ or the image is mirrored`), which turns the refusal into
-a warning (R-017).
+When both files have `CTYPE1` naming the same first axis and a linear part (a CD or a CDELT
+card), and the determinants of those linear parts, read as Siril reads them (the CD matrix first,
+else CDELT times PC), have opposite signs, the run is refused with nothing written, a dry run
+too, unless `--force` (in the window, the renamed option `Continue even when the dimensions
+differ or the image is mirrored`), which turns the refusal into a warning (R-017). The two
+conditions keep out what only looks like a mirror: the same solve written declination first, a
+`LINEAR` one, and a header with no scale at all, whose standard defaults give a determinant of
++1.
 
 ## Alternatives rejected
 
@@ -41,11 +44,19 @@ a warning (R-017).
 
 ## Consequences
 
-- A flip that CopyWcs could not see before is caught whenever the destination carries a plate
-  solve of its own; a destination without one is not checked, and the reminder to check the
-  annotation by eye stays.
-- The check reads numbers from the header (`FitsHeader.GetDouble`, the exponent letter `D` taken
-  as `E`); a value that is not a number, or a determinant of 0, leaves it out.
+- A flip that CopyWcs could not see before is caught when whatever flipped the pixels flipped
+  the destination's own plate solve with them, as Siril's transforms and the SyQon CLI do. A
+  program that flips the pixels and passes the header through leaves the source's orientation
+  in it, and a destination without a plate solve has nothing to compare: neither is caught, and
+  the reminder to check the annotation by eye stays.
+- A destination whose own plate solve was left mirrored after its pixels were flipped back is
+  refused although the copy would be right; the refusal's advice to flip the image back does not
+  fit it, and `--force` is the way through. None of the owner's 231 plate-solved files is such a
+  case, nor a solve written declination first, nor one without a scale (rescanned 2026-11-06).
+- The check reads numbers and the first axis from the header (`FitsHeader.GetDouble`, the
+  exponent letter `D` taken as `E`; `FitsHeader.GetString`); a value that is not a number, or a
+  determinant of 0, leaves it out, and the log says at Debug which way the two solves faced when
+  they matched or could not be compared.
 - `--force` now passes two checks, R-005 and R-017; its texts in the window and in the usage say
   so.
 - V-002's pair is refused without `--force`; its copy is measured forced.

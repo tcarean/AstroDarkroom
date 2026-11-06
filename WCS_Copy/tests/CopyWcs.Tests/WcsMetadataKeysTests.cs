@@ -181,6 +181,43 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
+    public void R017_Orientation_AMissingCdeltCountsAs1()
+    {
+        List<string> cards = [FitsTestData.Card("SIMPLE", "T"), FitsTestData.Card("CTYPE1", "'RA---TAN'")];
+
+        Assert.Equal(-1, WcsMetadataKeys.Orientation(Read([.. cards, FitsTestData.Card("CDELT1", "-0.000305")])));
+        Assert.Equal(1, WcsMetadataKeys.Orientation(Read([.. cards, FitsTestData.Card("CDELT2", "0.000305")])));
+    }
+
+    /// <summary>
+    /// Two plate solves are compared only when both have a linear part (a CD or a CDELT card) and
+    /// the same first axis: a header with neither, one whose first axis is DEC, or a LINEAR one
+    /// is no mirror of an RA-first solve (R-017).
+    /// </summary>
+    [Fact]
+    public void R017_Mirrored_ComparesOnlyTwoSolvesWithALinearPartAndTheSameFirstAxis()
+    {
+        var source = Read(FitsTestData.PlateSolvedCards());
+
+        Assert.True(WcsMetadataKeys.Mirrored(source, Read(FitsTestData.MirroredSolveCards())));
+        Assert.False(WcsMetadataKeys.Mirrored(source, Read(FitsTestData.OldSolveCards())));
+
+        List<string> noLinearPart = FitsTestData.ProcessedCards();
+        noLinearPart.AddRange([FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"), FitsTestData.Card("CRVAL1", "83.6")]);
+        Assert.Null(WcsMetadataKeys.Mirrored(source, Read(noLinearPart)));
+
+        List<string> decFirst = FitsTestData.MirroredSolveCards();
+        decFirst[decFirst.FindIndex(c => c.StartsWith("CTYPE1", StringComparison.Ordinal))] = FitsTestData.Card("CTYPE1", "'DEC--TAN'");
+        decFirst[decFirst.FindIndex(c => c.StartsWith("CTYPE2", StringComparison.Ordinal))] = FitsTestData.Card("CTYPE2", "'RA---TAN'");
+        Assert.Null(WcsMetadataKeys.Mirrored(source, Read(decFirst)));
+
+        List<string> linear = FitsTestData.ProcessedCards();
+        linear.AddRange([FitsTestData.Card("CTYPE1", "'LINEAR'"), FitsTestData.Card("CDELT1", "1.0"), FitsTestData.Card("CDELT2", "1.0")]);
+        Assert.Null(WcsMetadataKeys.Mirrored(source, Read(linear)));
+        Assert.Null(WcsMetadataKeys.Mirrored(source, Read(FitsTestData.ProcessedCards())));
+    }
+
+    [Fact]
     public void R017_Orientation_ACrotaTurnNeverMirrors()
     {
         List<string> cards = FitsTestData.PlateSolvedCards();

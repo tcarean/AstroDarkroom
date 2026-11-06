@@ -16,8 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // WcsCopy.cs - the copy run, shared by the console and the window: reads both headers, checks
-// the pixel grid, selects the cards and the destination's old plate-solve cards to drop (R-016),
-// lists them, or drops those and copies the others, and returns what happened as lines
+// the pixel grid and that the destination's own plate solve is no mirror of the source's (R-017),
+// selects the cards and the destination's old plate-solve cards to drop (R-016), lists them, or
+// drops those and copies the others, and returns what happened as lines
 // already worded, so that each application only prints or shows them (ADR 0001, ADR 0007). The
 // run also writes its own lines to the diagnostic log, in English, never the worded ones (R-042,
 // R-046, ADR 0009).
@@ -83,7 +84,8 @@ internal static class WcsCopy
 
     /// <summary>
     /// Runs a copy: reads both headers, refuses a pixel grid that differs unless forced, warns
-    /// about a source without <c>CTYPE1</c>, selects the cards and the destination's old
+    /// about a source without <c>CTYPE1</c>, refuses a destination whose own plate solve is the
+    /// mirror image of the source's unless forced (R-017), selects the cards and the destination's old
     /// plate-solve cards to drop (R-016), and either lists them (a dry run) or drops those,
     /// copies the selected cards verbatim, appends a HISTORY card and writes the target with the
     /// destination's data. Every step writes its line to the diagnostic log (R-042); a refusal's
@@ -164,12 +166,21 @@ internal static class WcsCopy
 
         // A destination with a plate solve of its own tells which way its pixels lie: one that is
         // the mirror image of the source's means the image was mirrored or flipped after the
-        // source was solved, and any copy would point the wrong way (R-017, ADR 0012).
-        if (WcsMetadataKeys.Orientation(source) is { } sourceSide && WcsMetadataKeys.Orientation(dest) is { } destSide
-            && sourceSide != destSide)
+        // source was solved, and any copy would point the wrong way (R-017, ADR 0012). The
+        // comparison is logged whatever its result, so a copy that slipped through leaves a trace.
+        bool? mirrored = WcsMetadataKeys.Mirrored(source, dest);
+        string dets = "source det " + LogText.Signed(WcsMetadataKeys.Determinant(source))
+                      + ", destination det " + LogText.Signed(WcsMetadataKeys.Determinant(dest));
+        if (mirrored is null)
         {
-            string dets = "source det " + LogText.Signed(WcsMetadataKeys.Determinant(source)!.Value)
-                          + ", destination det " + LogText.Signed(WcsMetadataKeys.Determinant(dest)!.Value);
+            Log.Debug("orientation not compared: " + dets);
+        }
+        else if (mirrored == false)
+        {
+            Log.Debug("same orientation: " + dets);
+        }
+        else
+        {
             if (!request.Force)
             {
                 Log.Warn("mirrored plate solve: " + dets + "; not forced, nothing is written");
