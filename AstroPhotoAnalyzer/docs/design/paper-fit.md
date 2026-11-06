@@ -143,17 +143,20 @@ own: nothing copied from anyone's file.
 
 `GamutFitTabViewModel` is the `CurvesTabViewModel` pattern (`window.md`): `Populate` keeps the
 result, `MainViewModel` starts `ComputeAsync` beside the other two once every tab is filled,
-`Calculeaza` runs it again at the gallery's size (`Compute(w, h)` for the tests); the run number
+the tab runs it again by itself when its area allows a finer preview, as the curves tab does
+(ADR 0084; `Compute(w, h)` for the tests, `Computation` to await); the run number
 `_run` makes a late result nobody's. `Show` makes, once per item, the bitmap
 (`RasterBitmaps.Region`) and the red layer (`RasterBitmaps.Overlay` over the set's mask, the
 soft proof's half-transparent red; null when nothing is outside), the evidence rows from
 `GamutFitTexts.EvidenceRows`, and keeps on each item the variant without its preview, so the
-rasters are dropped once drawn. The box `ShowOutside` is pushed to every
+rasters are dropped once drawn; the original's rows are `GamutFitTexts.OriginalRows` on the
+first variant's figures before its fit. The box `ShowOutside`, on by default and back on at
+`Reset` (ADR 0084), is pushed to every
 item (`GamutFitGalleryItem.ShowOutside`), whose `Overlay` is its layer or null accordingly, so the
 view binds one property; `Reset` turns the box off. `SaveAs` raises `SaveRequested` with
 `GamutFitTexts.ProposedFileName` (the input's kind), the window shows a dialog whose filter puts
 that kind first (`MainWindow.SaveGamutFit`), `Save(path)` calls `GamutFitExport.Save`. The view
-is `CurvesView`'s grid without the purpose radios: the box, `Calculeaza`, the message (red on a
+is `CurvesView`'s grid without the purpose radios: the box, the message (red on a
 problem), the image with the layer over it inside the `Viewbox`, Back/Name/Position/Next,
 `Salveaza ca...`, the stacked evidence (only the current item's visible, so the image never
 moves), the core's note, the save message's fixed place. The arrow keys are the window's

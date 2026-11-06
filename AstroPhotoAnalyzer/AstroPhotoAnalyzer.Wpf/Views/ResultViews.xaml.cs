@@ -120,8 +120,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// The previews are asked for at the size of the gallery area (R-146), in pixels of the
-        /// screen: "Calculeaza" takes it from the view-model, where this handler puts it at every
-        /// layout pass.
+        /// screen: this handler puts it in the view-model at every layout pass, which recomputes
+        /// by itself when the size allows a finer preview (ADR 0084).
         /// </summary>
         /// <param name="sender">The gallery area; not read.</param>
         /// <param name="e">

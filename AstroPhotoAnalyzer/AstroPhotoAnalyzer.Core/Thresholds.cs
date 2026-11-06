@@ -694,6 +694,18 @@ namespace AstroPhotoAnalyzer
         internal const int CurvePreviewDefaultWidth = 1600;
         internal const int CurvePreviewDefaultHeight = 900;
 
+        /// <summary>
+        /// The most pixels a gallery preview may have (R-146, R-178, ADR 0084): the reduction
+        /// step never goes under the one that keeps a preview within this, and the view enlarges
+        /// such a preview to fill the area instead. Measured 2026-11-06 on the plate-solved FITS
+        /// (22.6 MP) through the lab's baryta profile: at a 4K area the uncapped step would be 1,
+        /// the whole image, 889 MB held by the curves' set and 1 626 MB by the fit's, the process
+        /// peaking at 3.5 GB, the fit's run 8.0 s; at a step of 2 (5.6 MP previews) 348 MB and
+        /// 526 MB, 1.3 s and 2.8 s; at the presumed Full HD area (step 4, 1.4 MP) 147 MB and
+        /// 159 MB, 1.6 s and 1.7 s. 8 MP keeps a 23 MP image at a step of 2.
+        /// </summary>
+        internal const int CurvePreviewMaxPixels = 8_000_000;
+
         /// <summary>How many points the curve sampled for a chart has.</summary>
         internal const int CurveChartSamples = 257;
 

@@ -23,7 +23,7 @@
 // come from GamutFitRun; the saving is GamutFitExport's. Here are only the position in the
 // gallery, the box, the commands and the bitmaps. Like Editare Curbe, the content is a run
 // after the analysis: MainViewModel starts it once the other tabs are filled (ADR 0051), and
-// "Calculeaza" runs it again at the gallery's current size.
+// the tab runs it again by itself when the gallery's area allows a finer preview (ADR 0084).
 
 using System;
 using System.Collections.Generic;
@@ -65,7 +65,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The box's state, pushed by the tab so the layer follows it.</summary>
         internal bool ShowOutside { get => _showOutside; set { if (Set(ref _showOutside, value)) Raise(nameof(Overlay)); } }
 
-        /// <summary>The evidence lines, with the core's warning mark; empty for the original.</summary>
+        /// <summary>The evidence lines, with the core's warning mark; the original's are the figures of the image as it is.</summary>
         public IReadOnlyList<CurveEvidenceRow> EvidenceRows { get; init; } = Array.Empty<CurveEvidenceRow>();
 
         internal GamutFitVariant Variant { get; init; }
@@ -73,8 +73,9 @@ namespace AstroPhotoAnalyzer.Wpf
 
     /// <summary>
     /// The Culori pentru hartie tab (R-178): filled after an analysis by the computation
-    /// MainViewModel starts or by "Calculeaza", with the gallery of the original and the three
-    /// variants, browsed with Next and Previous, each saveable as a new FITS or TIFF.
+    /// MainViewModel starts, recomputed when its area allows finer previews, with the gallery of
+    /// the original and the three variants, browsed with Next and Previous, each saveable as a
+    /// new FITS or TIFF.
     /// </summary>
     public sealed class GamutFitTabViewModel : ResultTabViewModel
     {
@@ -92,22 +93,24 @@ namespace AstroPhotoAnalyzer.Wpf
         IReadOnlyList<GamutFitGalleryItem> _items = Array.Empty<GamutFitGalleryItem>();
         int _index, _width = Thresholds.CurvePreviewDefaultWidth, _height = Thresholds.CurvePreviewDefaultHeight;
 
+        // The size the last computation was asked for; 0 before any.
+        int _askedWidth, _askedHeight;
+
         // Each computation started has its number; one that ends after another image was opened,
         // or after another was started, touches nothing any more.
         int _run;
-        bool _busy, _isProblem, _showOutside;
+        // The box starts on: the owner looks for the colours the paper cannot hold first (R-178).
+        bool _busy, _isProblem, _showOutside = true, _previewCapped;
         string _message, _saveMessage, _saveError;
 
-        /// <summary>Makes the four commands; the tab starts empty and disabled.</summary>
+        /// <summary>Makes the three commands; the tab starts empty and disabled.</summary>
         public GamutFitTabViewModel()
         {
-            Calculate = new RelayCommand(() => _ = ComputeAsync(), () => _result != null && !IsBusy);
             Next = new RelayCommand(() => Move(1), () => _index < _items.Count - 1);
             Previous = new RelayCommand(() => Move(-1), () => _index > 0);
             SaveAs = new RelayCommand(() => SaveRequested?.Invoke(GamutFitTexts.ProposedFileName(_result.Path, Current.Name)), HasVariant);
         }
 
-        public ICommand Calculate { get; }
         public ICommand Next { get; }
         public ICommand Previous { get; }
         public ICommand SaveAs { get; }
@@ -115,11 +118,13 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The window asks where to save, with the proposed name, then calls Save.</summary>
         public event Action<string> SaveRequested;
 
-        public bool IsBusy
-        {
-            get => _busy;
-            private set { if (Set(ref _busy, value)) (Calculate as RelayCommand)?.RaiseCanExecuteChanged(); }
-        }
+        public bool IsBusy { get => _busy; private set => Set(ref _busy, value); }
+
+        /// <summary>
+        /// The last computation started, by MainViewModel, by the tests or by a larger area, for
+        /// whoever must wait; completed before the first.
+        /// </summary>
+        internal Task Computation { get; private set; } = Task.CompletedTask;
 
         /// <summary>The box "arata ce nu intra": the red layer on the shown item (R-178).</summary>
         public bool ShowOutside
@@ -147,18 +152,36 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>The note under the gallery, the core's sentence.</summary>
         public string Note => GamutFitTexts.Note;
 
+        /// <summary>
+        /// The previews are held under the core's cap and smaller than the area: the view may
+        /// enlarge them, the one case it does (ADR 0084).
+        /// </summary>
+        public bool PreviewCapped { get => _previewCapped; private set => Set(ref _previewCapped, value); }
+
         public string SaveMessage { get => _saveMessage; private set => Set(ref _saveMessage, value); }
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
         /// <summary>The image's folder, where the save dialog starts; null without a file on disk.</summary>
         public string InputFolder => _result?.FullPath == null || !File.Exists(_result.FullPath) ? null : Path.GetDirectoryName(_result.FullPath);
 
-        /// <summary>The size of the gallery area, in pixels: the view sets it, "Calculeaza" uses it.</summary>
+        /// <summary>
+        /// The size of the gallery area, in pixels: the view sets it at every layout pass. When
+        /// it allows a finer preview than the gallery shown, or than the computation running, was
+        /// made with, the gallery is computed again by itself (ADR 0084); a size that allows no
+        /// finer one starts nothing.
+        /// </summary>
         /// <param name="width">The width in device pixels; 0 or less leaves the size as it was.</param>
         /// <param name="height">The height in device pixels; 0 or less leaves the size as it was.</param>
         internal void SetGallerySize(int width, int height)
         {
-            if (width > 0 && height > 0) { _width = width; _height = height; }
+            if (width <= 0 || height <= 0) return;
+            _width = width; _height = height;
+            if (_result == null || _askedWidth == 0) return;
+            if (CurveRun.PreviewStride(_result.Raster, width, height) < CurveRun.PreviewStride(_result.Raster, _askedWidth, _askedHeight))
+            {
+                Log.Debug("the gallery area " + LogText.Int(width) + "x" + LogText.Int(height) + " allows a finer preview than " + LogText.Int(_askedWidth) + "x" + LogText.Int(_askedHeight) + ": computing again");
+                ComputeAsync();
+            }
         }
 
         /// <summary>Whether the current item is a variant, not the original: what SaveAs needs.</summary>
@@ -166,9 +189,8 @@ namespace AstroPhotoAnalyzer.Wpf
         bool HasVariant() => Current?.Variant != null;
 
         /// <summary>
-        /// Keeps the result and enables "Calculeaza"; it fills nothing itself: MainViewModel
-        /// starts the computation after every tab is filled (ADR 0051). Any computation in
-        /// progress is abandoned.
+        /// Keeps the result; it fills nothing itself: MainViewModel starts the computation after
+        /// every tab is filled (ADR 0051). Any computation in progress is abandoned.
         /// </summary>
         /// <param name="r">The analysis; not null.</param>
         internal override void Populate(AnalysisResult r)
@@ -176,16 +198,14 @@ namespace AstroPhotoAnalyzer.Wpf
             Reset();
             _result = r;
             HasResult = true;
-            (Calculate as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
-        /// <summary>Empties the tab, drops the result and disables "Calculeaza".</summary>
+        /// <summary>Empties the tab and drops the result.</summary>
         internal override void Clear()
         {
             base.Clear();
             Reset();
             _result = null;
-            (Calculate as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         /// <summary>
@@ -195,34 +215,40 @@ namespace AstroPhotoAnalyzer.Wpf
         void Reset()
         {
             _run++;
+            _askedWidth = _askedHeight = 0;
             _set = null;
             _index = 0;
             Items = Array.Empty<GamutFitGalleryItem>();
-            Message = null; IsProblem = false; SaveMessage = null; SaveError = null;
-            if (Set(ref _showOutside, false, nameof(ShowOutside))) Log.Debug("show outside=False (reset)");
+            Message = null; IsProblem = false; SaveMessage = null; SaveError = null; PreviewCapped = false;
+            if (Set(ref _showOutside, true, nameof(ShowOutside))) Log.Debug("show outside=True (reset)");
             IsBusy = false;
             RaiseGallery();
         }
 
-        /// <summary>What "Calculeaza" runs, synchronously: the fit, at the given size of the gallery.</summary>
+        /// <summary>The computation, synchronously (the tests): the fit, at the given size of the gallery.</summary>
         /// <param name="width">The gallery's width in pixels; 0 or less keeps the current size.</param>
         /// <param name="height">The gallery's height in pixels; 0 or less keeps the current size.</param>
         internal void Compute(int width, int height)
         {
-            SetGallerySize(width, height);
+            if (width > 0 && height > 0) { _width = width; _height = height; }
             _run++;
+            _askedWidth = _width; _askedHeight = _height;
             Show(GamutFitRun.Execute(_result, _width, _height));
         }
 
         /// <summary>
-        /// "Calculeaza": runs the core on a pool thread at the gallery's size, with "computing"
-        /// shown meanwhile; the outcome is applied only if no Reset or newer computation came in
-        /// between.
+        /// Runs the core on a pool thread at the gallery's size, with "computing" shown meanwhile
+        /// (the gallery already shown stays); the outcome is applied only if no Reset or newer
+        /// computation came in between.
         /// </summary>
-        internal async Task ComputeAsync()
+        internal Task ComputeAsync() => Computation = ComputeCore();
+
+        /// <summary>The body of <see cref="ComputeAsync"/>.</summary>
+        async Task ComputeCore()
         {
             AnalysisResult result = _result;
             int w = _width, h = _height, run = ++_run;
+            _askedWidth = w; _askedHeight = h;
             IsBusy = true;
             IsProblem = false;
             Message = GamutFitTexts.Computing;
@@ -257,8 +283,12 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             SaveMessage = null; SaveError = null;
             _index = 0;
+            PreviewCapped = set.Problem == null && set.PreviewCapped;
             if (set.Problem != null)
             {
+                // No gallery to refine: a larger area must not run this again (the reason does
+                // not depend on the size), so the asked size goes back to "nothing to redo".
+                _askedWidth = _askedHeight = 0;
                 _set = null;
                 Items = Array.Empty<GamutFitGalleryItem>();
                 Message = set.Problem;
@@ -269,8 +299,8 @@ namespace AstroPhotoAnalyzer.Wpf
             // The previews' rasters are no longer needed once the bitmaps exist: the items and
             // the set keep the variants without them. The table and the knees stay, for the save.
             GamutFitVariant[] stripped = set.Variants.Select(v => v with { Preview = null, Outside = null }).ToArray();
-            var items = new List<GamutFitGalleryItem> { Item(CurveTexts.Original, set.OriginalPreview, set.OriginalOutside, null, set.Recipe) };
-            for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe));
+            var items = new List<GamutFitGalleryItem> { Item(CurveTexts.Original, set.OriginalPreview, set.OriginalOutside, null, set.Recipe, stripped[0].Evidence) };
+            for (int i = 0; i < set.Variants.Count; i++) items.Add(Item(stripped[i].Name, set.Variants[i].Preview, set.Variants[i].Outside, stripped[i], set.Recipe, null));
             _set = set with { OriginalPreview = null, OriginalOutside = null, Variants = stripped };
             Message = null;
             Items = items;
@@ -284,8 +314,9 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="outside">Per preview pixel, whether the paper cannot hold it; may be null.</param>
         /// <param name="v">The variant, without its preview; null for the original.</param>
         /// <param name="recipe">The recipe, for the evidence.</param>
+        /// <param name="before">For the original, a variant's evidence, whose figures before the fit are its rows; null for a variant.</param>
         /// <returns>The item, not yet current.</returns>
-        static GamutFitGalleryItem Item(string name, Raster preview, bool[] outside, GamutFitVariant v, GamutFitRecipe recipe)
+        static GamutFitGalleryItem Item(string name, Raster preview, bool[] outside, GamutFitVariant v, GamutFitRecipe recipe, GamutFitEvidence before)
         {
             int w = preview.W, h = preview.H;
             bool any = outside != null && outside.Any(o => o);
@@ -296,8 +327,8 @@ namespace AstroPhotoAnalyzer.Wpf
                 Width = w,
                 Height = h,
                 OutsideLayer = any ? RasterBitmaps.Overlay(w, h, (x, y) => outside[y * w + x], OutsideColour) : null,
-                EvidenceRows = v == null ? Array.Empty<CurveEvidenceRow>()
-                    : GamutFitTexts.EvidenceRows(v, recipe).Select(r => new CurveEvidenceRow { Text = r.Text, IsWarning = r.Warning }).ToArray(),
+                EvidenceRows = (v == null ? GamutFitTexts.OriginalRows(before, recipe) : GamutFitTexts.EvidenceRows(v, recipe))
+                    .Select(r => new CurveEvidenceRow { Text = r.Text, IsWarning = r.Warning }).ToArray(),
                 Variant = v,
             };
         }

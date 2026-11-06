@@ -51,17 +51,18 @@ public class CurvesTabTests
         Assert.False(tab.IsScreen);
         Assert.False(tab.HasGallery);
         Assert.Empty(tab.Items);
-        Assert.True(tab.Calculate.CanExecute(null));
 
-        tab.Compute(800, 500);   // what Calculeaza runs, with the size of the gallery area
+        tab.Compute(800, 500);   // the computation, with the size of the gallery area
 
         CurveSet core = CurveRun.Execute(result, CurvePurpose.Print, 800, 500);
         Assert.True(tab.HasGallery);
         Assert.Equal(new[] { "Originalul" }.Concat(core.Suggestions.Select(s => s.Name)).ToArray(), tab.Items.Select(i => i.Name).ToArray());
         Assert.Equal("Originalul", tab.Current.Name);
         Assert.Equal($"1 / {tab.Items.Count}", tab.Position);
-        Assert.InRange(tab.Current.Image.PixelWidth, 1, 800);
-        Assert.InRange(tab.Current.Image.PixelHeight, 1, 500);
+        // The preview covers the fitted size (the area's here, the aspect being kept), or is the
+        // whole image when that is smaller (ADR 0084).
+        Assert.True(tab.Current.Image.PixelWidth >= Math.Min(800, result.Raster.W), tab.Current.Image.PixelWidth.ToString());
+        Assert.True(tab.Current.Image.PixelHeight >= Math.Min(500, result.Raster.H), tab.Current.Image.PixelHeight.ToString());
         Assert.Contains("felurile de dale", tab.AnchorSource);
 
         // The original has no curve to show or to save.
@@ -157,17 +158,16 @@ public class CurvesTabTests
     }
 
     [Fact]
-    public async Task R146_CalculeazaRunsInTheBackgroundAndALateResultNeverReachesAnotherImage()
+    public async Task R146_TheComputationRunsInTheBackgroundAndALateResultNeverReachesAnotherImage()
     {
         AnalysisResult first = Result(), second = Result();
         var tab = new CurvesTabViewModel();
         tab.Populate(first);
 
-        // The button's own path: busy while it runs, then the gallery for the purpose chosen
-        // at the end, not at the start.
+        // The background path: busy while it runs, then the gallery for the purpose chosen at
+        // the end, not at the start.
         Task run = tab.ComputeAsync();
         Assert.True(tab.IsBusy);
-        Assert.False(tab.Calculate.CanExecute(null));
         tab.IsScreen = true;
         await run;
         Assert.False(tab.IsBusy);
@@ -183,12 +183,44 @@ public class CurvesTabTests
         Task late = tab.ComputeAsync();
         tab.Populate(second);
         Assert.False(tab.IsBusy);
-        Assert.True(tab.Calculate.CanExecute(null));
         await late;
         Assert.False(tab.HasGallery);
         Assert.Empty(tab.Items);
         Assert.Null(tab.Message);
         Assert.False(tab.IsBusy);
+    }
+
+    [Fact]
+    public async Task R146_ALargerAreaRecomputesTheGalleryByItselfAndTheImageCoversIt()
+    {
+        AnalysisResult result = Result();
+        int w = result.Raster.W, h = result.Raster.H;
+        var tab = new CurvesTabViewModel();
+        tab.Populate(result);
+        tab.SetGallerySize(w, h);      // before any computation: nothing to redo
+        Assert.False(tab.IsBusy);
+
+        // A small area of the image's own aspect: the preview is at least the area, never under it (ADR 0084).
+        tab.Compute(w / 5, h / 5);
+        Assert.True(tab.HasGallery, tab.Message);
+        Assert.True(tab.Current!.Width >= w / 5 && tab.Current.Height >= h / 5, $"{tab.Current.Width}x{tab.Current.Height} under {w / 5}x{h / 5}");
+        int before = tab.Current.Width;
+
+        // The same area again, or a smaller one: no computation starts.
+        tab.SetGallerySize(w / 5, h / 5);
+        tab.SetGallerySize(w / 8, h / 8);
+        Assert.False(tab.IsBusy);
+        Assert.Equal(before, tab.Current.Width);
+
+        // A larger area, which allows a finer preview: computed again by itself, the gallery
+        // staying until the new one is there, then at least the area's size.
+        tab.SetGallerySize(w, h);
+        Assert.True(tab.IsBusy);
+        Assert.True(tab.HasGallery);
+        await tab.Computation;
+        Assert.False(tab.IsBusy);
+        Assert.Equal(w, tab.Current!.Width);
+        Assert.Equal(h, tab.Current.Height);
     }
 
     [Fact]
@@ -208,6 +240,16 @@ public class CurvesTabTests
         Assert.Empty(tab.Items);
         Assert.Contains($"la sau peste {Thresholds.CurvePeakTarget:0.00}, unde ajung varfurile", tab.Message);
         Assert.Contains("felurile de dale ale tabului Tonuri", tab.AnchorSource);
+
+        // A larger area does not run the computation again: there is no gallery to refine and
+        // the reason does not depend on the size (ADR 0084). The problem is computed at a size
+        // whose step is 5 on the 512 px image, and the area then allows a step of 1: without the
+        // rule a computation would start here (IsBusy is set before its first await).
+        tab.Compute(100, 100);
+        Assert.True(tab.IsProblem);
+        tab.SetGallerySize(512, 512);
+        Assert.False(tab.IsBusy);
+        Assert.True(tab.IsProblem);
 
         // A gallery clears the mark; so does opening another image.
         tab.Populate(Result());

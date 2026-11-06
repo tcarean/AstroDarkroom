@@ -1,7 +1,7 @@
 # 0051. The curves are computed with the analysis, and the tab is called Editare Curbe
 
 Date: 2026-10-27
-Status: accepted 2026-10-27
+Status: accepted 2026-10-27; the `Calculeaza` button that recomputed the gallery at the area's size superseded by 0084
 Supersedes: 0032 in part (decision 7, the suggestions computed on demand)
 
 ## Context

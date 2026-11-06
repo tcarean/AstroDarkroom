@@ -23,7 +23,8 @@
 // CurveRun; the saving is CurveExport's. Here are only the position in the gallery, the
 // commands and the formatting of the points for the table. Unlike the other tabs, the content
 // is a second run after the analysis: MainViewModel starts it once the other tabs are filled
-// (ADR 0051), and "Calculeaza" runs it again at the gallery's current size.
+// (ADR 0051), and the tab runs it again by itself when the gallery's area allows a finer
+// preview than the one shown (ADR 0084).
 
 using System;
 using System.Collections.Generic;
@@ -161,7 +162,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
     /// <summary>
     /// The Editare Curbe tab (R-146): filled after an analysis, by the computation MainViewModel
-    /// starts or by "Calculeaza", with the gallery of the original and the suggested curves,
+    /// starts, recomputed when its area allows finer previews, with the gallery of the original and the suggested curves,
     /// browsed with Next and Previous, each openable in the curve window and saveable as a new
     /// FITS.
     /// </summary>
@@ -183,16 +184,18 @@ namespace AstroPhotoAnalyzer.Wpf
         IReadOnlyList<CurveGalleryItem> _items = Array.Empty<CurveGalleryItem>();
         int _index, _width = Thresholds.CurvePreviewDefaultWidth, _height = Thresholds.CurvePreviewDefaultHeight;
 
+        // The size the last computation was asked for; 0 before any.
+        int _askedWidth, _askedHeight;
+
         // Each computation started has its number; one that ends after another image was opened,
         // or after another was started, touches nothing any more.
         int _run;
-        bool _isPrint = true, _busy, _isProblem;
+        bool _isPrint = true, _busy, _isProblem, _previewCapped;
         string _message, _anchorSource, _saveMessage, _saveError;
 
-        /// <summary>Makes the five commands; the tab starts empty and disabled.</summary>
+        /// <summary>Makes the four commands; the tab starts empty and disabled.</summary>
         public CurvesTabViewModel()
         {
-            Calculate = new RelayCommand(() => _ = ComputeAsync(), () => _result != null && !IsBusy);
             Next = new RelayCommand(() => Move(1), () => _index < _items.Count - 1);
             Previous = new RelayCommand(() => Move(-1), () => _index > 0);
             OpenCurve = new RelayCommand(() => CurveRequested?.Invoke(
@@ -200,7 +203,6 @@ namespace AstroPhotoAnalyzer.Wpf
             SaveAs = new RelayCommand(() => SaveRequested?.Invoke(CurveTexts.ProposedFileName(_result.Path, Current.Name)), HasCurve);
         }
 
-        public ICommand Calculate { get; }
         public ICommand Next { get; }
         public ICommand Previous { get; }
         public ICommand OpenCurve { get; }
@@ -228,11 +230,13 @@ namespace AstroPhotoAnalyzer.Wpf
 
         public bool IsScreen { get => !_isPrint; set => IsPrint = !value; }
 
-        public bool IsBusy
-        {
-            get => _busy;
-            private set { if (Set(ref _busy, value)) (Calculate as RelayCommand)?.RaiseCanExecuteChanged(); }
-        }
+        public bool IsBusy { get => _busy; private set => Set(ref _busy, value); }
+
+        /// <summary>
+        /// The last computation started, by MainViewModel, by the tests or by a larger area, for
+        /// whoever must wait; completed before the first.
+        /// </summary>
+        internal Task Computation { get; private set; } = Task.CompletedTask;
 
         public IReadOnlyList<CurveGalleryItem> Items { get => _items; private set => Set(ref _items, value); }
         public bool HasGallery => _items.Count > 0;
@@ -253,6 +257,12 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>Where the anchors come from (R-141).</summary>
         public string AnchorSource { get => _anchorSource; private set => Set(ref _anchorSource, value); }
 
+        /// <summary>
+        /// The previews are held under the core's cap and smaller than the area: the view may
+        /// enlarge them, the one case it does (ADR 0084).
+        /// </summary>
+        public bool PreviewCapped { get => _previewCapped; private set => Set(ref _previewCapped, value); }
+
         public string SaveMessage { get => _saveMessage; private set => Set(ref _saveMessage, value); }
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
@@ -262,7 +272,10 @@ namespace AstroPhotoAnalyzer.Wpf
         public string InputFolder => _result?.FullPath == null || !File.Exists(_result.FullPath) ? null : Path.GetDirectoryName(_result.FullPath);
 
         /// <summary>
-        /// The size of the gallery area, in pixels: the view sets it, "Calculeaza" uses it.
+        /// The size of the gallery area, in pixels: the view sets it at every layout pass. When
+        /// it allows a finer preview than the gallery shown, or than the computation running, was
+        /// made with, the gallery is computed again by itself (ADR 0084); a size that allows no
+        /// finer one starts nothing, so the layout passes of a steady window cost nothing.
         /// </summary>
         /// <param name="width">
         /// The width in device pixels; 0 or less leaves the size as it was.
@@ -272,7 +285,14 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </param>
         internal void SetGallerySize(int width, int height)
         {
-            if (width > 0 && height > 0) { _width = width; _height = height; }
+            if (width <= 0 || height <= 0) return;
+            _width = width; _height = height;
+            if (_result == null || _askedWidth == 0) return;
+            if (CurveRun.PreviewStride(_result.Raster, width, height) < CurveRun.PreviewStride(_result.Raster, _askedWidth, _askedHeight))
+            {
+                Log.Debug("the gallery area " + LogText.Int(width) + "x" + LogText.Int(height) + " allows a finer preview than " + LogText.Int(_askedWidth) + "x" + LogText.Int(_askedHeight) + ": computing again");
+                ComputeAsync();
+            }
         }
 
         /// <summary>
@@ -283,9 +303,9 @@ namespace AstroPhotoAnalyzer.Wpf
         bool HasCurve() => Current?.Suggestion != null;
 
         /// <summary>
-        /// Keeps the result and enables "Calculeaza"; unlike the other tabs, it fills nothing
-        /// itself: MainViewModel starts the computation after every tab is filled (R-146, ADR
-        /// 0051). Any computation in progress is abandoned.
+        /// Keeps the result; unlike the other tabs, it fills nothing itself: MainViewModel starts
+        /// the computation after every tab is filled (R-146, ADR 0051). Any computation in
+        /// progress is abandoned.
         /// </summary>
         /// <param name="r">The analysis; not null.</param>
         internal override void Populate(AnalysisResult r)
@@ -293,20 +313,15 @@ namespace AstroPhotoAnalyzer.Wpf
             Reset();
             _result = r;
             HasResult = true;
-            (Calculate as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
-        /// <summary>
-        /// Empties the tab, drops the result, returns the purpose to print and disables
-        /// "Calculeaza".
-        /// </summary>
+        /// <summary>Empties the tab, drops the result and returns the purpose to print.</summary>
         internal override void Clear()
         {
             base.Clear();
             Reset();
             _result = null;
             if (Set(ref _isPrint, true, nameof(IsPrint))) Raise(nameof(IsScreen));
-            (Calculate as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         /// <summary>
@@ -316,18 +331,19 @@ namespace AstroPhotoAnalyzer.Wpf
         void Reset()
         {
             _run++;
+            _askedWidth = _askedHeight = 0;
             _print = _screen = null;
             _images = Array.Empty<BitmapSource>();
             _index = 0;
             Items = Array.Empty<CurveGalleryItem>();
-            Message = null; IsProblem = false; AnchorSource = null; SaveMessage = null; SaveError = null;
+            Message = null; IsProblem = false; AnchorSource = null; SaveMessage = null; SaveError = null; PreviewCapped = false;
             IsBusy = false;
             RaiseGallery();
         }
 
         /// <summary>
-        /// What "Calculeaza" runs, synchronously: the image's curves, at the given size of the
-        /// gallery.
+        /// The computation, synchronously (the tests): the image's curves, at the given size of
+        /// the gallery.
         /// </summary>
         /// <param name="width">
         /// The gallery's width in pixels; 0 or less keeps the current size.
@@ -337,20 +353,25 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </param>
         internal void Compute(int width, int height)
         {
-            SetGallerySize(width, height);
+            if (width > 0 && height > 0) { _width = width; _height = height; }
             _run++;
+            _askedWidth = _width; _askedHeight = _height;
             Show(CurveRun.Execute(_result, CurvePurpose.Print, _width, _height));
         }
 
         /// <summary>
-        /// "Calculeaza": runs the core on a pool thread at the gallery's size, with "se
-        /// calculeaza" shown meanwhile; the outcome, the set or the error's message, is applied
-        /// only if no Reset or newer computation came in between.
+        /// Runs the core on a pool thread at the gallery's size, with "se calculeaza" shown
+        /// meanwhile (the gallery already shown stays); the outcome, the set or the error's
+        /// message, is applied only if no Reset or newer computation came in between.
         /// </summary>
-        internal async Task ComputeAsync()
+        internal Task ComputeAsync() => Computation = ComputeCore();
+
+        /// <summary>The body of <see cref="ComputeAsync"/>.</summary>
+        async Task ComputeCore()
         {
             AnalysisResult result = _result;
             int w = _width, h = _height, run = ++_run;
+            _askedWidth = w; _askedHeight = h;
             IsBusy = true;
             IsProblem = false;
             Message = CurveTexts.Computing;
@@ -385,11 +406,15 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             SaveMessage = null; SaveError = null;
             AnchorSource = print.SourceSentence;
+            PreviewCapped = print.Problem == null && print.PreviewCapped;
             _print = print;
             _screen = CurveRun.ForScreen(print);
             _index = 0;
             if (print.Problem != null)
             {
+                // No gallery to refine: a larger area must not run this again (the reason does
+                // not depend on the size), so the asked size goes back to "nothing to redo".
+                _askedWidth = _askedHeight = 0;
                 _images = Array.Empty<BitmapSource>();
                 Items = Array.Empty<CurveGalleryItem>();
                 Message = print.Problem;
@@ -462,7 +487,7 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Marks the current item, raises the gallery properties and requeries the four commands.
+        /// Marks the current item, raises the gallery properties and requeries the commands.
         /// </summary>
         void RaiseGallery()
         {
