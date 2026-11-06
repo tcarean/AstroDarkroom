@@ -34,6 +34,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The Lights tab and the console's lights table speak plain words, in English and Romanian (R-086,
+  ADR 0034), the figures unchanged: the columns `sigma`, `candidates`, `isolated`, `ampl.`, `q25`
+  and `q75` are `noise`, `bright`, `single`, `hot`, `low` and `high` (`zgomot`, `luminosi`,
+  `singuri`, `fierb.`, `jos`, `sus`), the hover hints and the table's note say what each column
+  means, the chart is titled `EACH LIGHT AGAINST THE DARK`, its sentence says what each colour
+  means to do with the dark, and its lines read `0.9 as it is`, `0.7 with -opt` and `0.4 cosmetic
+  only` in either language.
+
 - The Pixeli fierbinti tab's own texts speak plain words, in English and Romanian (R-085, ADR
   0033): the text under the rows says what they count and that check 5 never warns, the noise
   chart is titled `HOW THE NOISE FALLS WITH MORE FRAMES`, its sentence explains the dotted line
@@ -218,6 +226,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   V-007 runs the Veil lights of 2026-10-06 against the 2026-10-10 library.
 
 ### Fixed
+
+- The console's lights table: from `sky` on, each column name ended one column before its figures;
+  each now ends above them (R-086).
 
 - The Romanian texts write `de` after a count of 20 and up, as Romanian grammar wants:
   `20 de cadre`, `443 de pixeli`, `32 de lights`, but `19 cadre` and `101 cadre`; figures with

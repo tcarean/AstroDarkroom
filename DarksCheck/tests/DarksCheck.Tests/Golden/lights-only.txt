@@ -81,7 +81,7 @@ Copyright (C) 2026 Tudor Carean
       4  DSC_0004.fit          00:54:53    0.08    3.01    2.68     1.0    1.002       -       -       -     0
 
   TABEL PE LIGHTS
-     nr  fisier                ora         cer   sigma  candidati  izolati  amplit.    q25    q75   [G1; cer = ADU peste negru; sigma = a excesului local, scara detectorului; amplit. = lights / dark la pixelii fierbinti ai masterului]
+     nr  fisier                ora          cer  zgomot   luminosi  singuri   fierb.    jos    sus   [pixelii verzi G1; cer = cat de luminos e cerul, ADU; zgomot = cat difera un pixel de vecinii lui, ADU; luminosi = mai luminosi decat vecinii cu peste 6 ori zgomotul; singuri = fara vecini luminosi, adica pixeli fierbinti; fierb. = pixelii fierbinti ai masterului fata de master (1 = la fel); jos, sus = jumatate dintre ei sunt intre aceste doua valori]
       1  light_0001.fit        23:41:23   500.0    6.79        239       20    0.507  0.492  0.521
       2  light_0002.fit        23:43:53   500.0    6.70        240       20    0.497  0.484  0.517
       3  light_0003.fit        23:46:23   500.0    6.41        245       20    0.504  0.484  0.528

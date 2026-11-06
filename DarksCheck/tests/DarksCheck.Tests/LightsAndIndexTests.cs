@@ -429,6 +429,65 @@ public class LightsAndIndexTests
         }
     }
 
+    /// <summary>
+    /// The console's lights table (R-086): each column name ends where its figures end, the file and
+    /// the time start where theirs start, in both languages.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R086_TheLightsTableNamesStandAboveTheirFigures(bool english)
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i));
+        DarkSeriesResult r = Run(s);
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            string[] lines = Report(r).Split('\n').Select(l => l.TrimEnd('\r')).ToArray();
+            int at = Array.IndexOf(lines, english ? "  LIGHTS TABLE" : "  TABEL PE LIGHTS");
+            Assert.True(at > 0, "no lights table");
+            string head = lines[at + 1][..lines[at + 1].IndexOf('[', StringComparison.Ordinal)];
+            System.Text.RegularExpressions.Match[] names = System.Text.RegularExpressions.Regex.Matches(head, @"\S+").ToArray();
+            System.Text.RegularExpressions.Match[] figures = System.Text.RegularExpressions.Regex.Matches(lines[at + 2], @"\S+").ToArray();
+            Assert.Equal(10, names.Length);
+            Assert.Equal(10, figures.Length);
+            for (int c = 0; c < 10; c++)
+            {
+                // the file and the time are left-aligned, the rest right-aligned
+                bool left = c is 1 or 2;
+                Assert.True(
+                    left ? names[c].Index == figures[c].Index : names[c].Index + names[c].Length == figures[c].Index + figures[c].Length,
+                    $"'{names[c].Value}' does not stand above '{figures[c].Value}'");
+            }
+        }
+    }
+
+    /// <summary>
+    /// The console's lights table in plain words (R-086, ADR 0034): its column names and its note
+    /// name no part of the method, in either language.
+    /// </summary>
+    /// <param name="english">True for the English pass, false for the Romanian one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void R086_TheLightsTableIsInPlainWords(bool english)
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Dark).WithLights(3, i => Light(i));
+        DarkSeriesResult r = Run(s);
+        using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
+        {
+            string header = DarkReport.LightTableHeader(r);
+            string names = header[..header.IndexOf('[', StringComparison.Ordinal)];
+            Assert.Equal(english ? "no file time sky noise bright single hot low high" : "nr fisier ora cer zgomot luminosi singuri fierb. jos sus", string.Join(" ", names.Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+            Assert.Contains(english
+                ? "[the green pixels G1; sky = how bright the sky is, ADU; noise = how much a pixel differs from its neighbours, ADU; bright = brighter than their neighbours by more than 6 times the noise;"
+                : "[pixelii verzi G1; cer = cat de luminos e cerul, ADU; zgomot = cat difera un pixel de vecinii lui, ADU; luminosi = mai luminosi decat vecinii cu peste 6 ori zgomotul;", header, StringComparison.Ordinal);
+            Assert.EndsWith(english ? "low, high = half of them are between these two values]" : "jos, sus = jumatate dintre ei sunt intre aceste doua valori]", header, StringComparison.Ordinal);
+            System.Text.RegularExpressions.Regex method = english ? PlainWords.EnglishTabWords() : PlainWords.RomanianTabWords();
+            Assert.False(method.IsMatch(header), "the method's word left: " + method.Match(header).Value);
+        }
+    }
+
     [Fact]
     public void R063_AgainstAPartnerFolderReadsItsIndexTheRatioOnSharedPixelsAndTheOverlap()
     {

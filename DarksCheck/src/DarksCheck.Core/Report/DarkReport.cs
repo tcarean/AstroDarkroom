@@ -581,25 +581,32 @@ internal static class DarkReport
     /// The lights table's header line: the column names, then <see cref="LightTableNote"/>.
     /// </summary>
     /// <param name="r">The run's result; not null.</param>
-    /// <returns>The header line, in the run's language; each column name ends where the
-    /// Romanian one ends, so the right-aligned figures stay under it.</returns>
+    /// <returns>The header line, in the run's language; each right-aligned column name ends where
+    /// its figures end and the file and the time start where theirs start (R-086), at the same
+    /// columns in both languages.</returns>
     internal static string LightTableHeader(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
         return T(
-            $"     no  file                  time        sky   sigma candidates isolated    ampl.    q25    q75   {LightTableNote(r)}",
-            $"     nr  fisier                ora         cer   sigma  candidati  izolati  amplit.    q25    q75   {LightTableNote(r)}");
+            $"     no  file                  time         sky   noise     bright   single      hot    low   high   {LightTableNote(r)}",
+            $"     nr  fisier                ora          cer  zgomot   luminosi  singuri   fierb.    jos    sus   {LightTableNote(r)}");
     }
 
-    /// <summary>The unit note of the lights table: the plane and what the columns mean.</summary>
+    /// <summary>
+    /// The note of the lights table (R-086): the pixels it reads and what each column means, in the
+    /// window's header row too.
+    /// </summary>
     /// <param name="r">The run's result; not null.</param>
     /// <returns>The note in square brackets, in the run's language.</returns>
     internal static string LightTableNote(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
+        string plane = ScaleReport.PlaneWords(r.Darks.PlaneNames[r.ReferencePlane]);
         return T(
-            $"[{r.Darks.PlaneNames[r.ReferencePlane]}; sky = ADU above the black; sigma = of the local excess, the detector's scale; ampl. = lights / dark at the master's hot pixels]",
-            $"[{r.Darks.PlaneNames[r.ReferencePlane]}; cer = ADU peste negru; sigma = a excesului local, scara detectorului; amplit. = lights / dark la pixelii fierbinti ai masterului]");
+            $"[{plane}; sky = how bright the sky is, ADU; noise = how much a pixel differs from its neighbours, ADU; bright = brighter than their neighbours by more than {F(Th.LightHotSigmas, 0)} times the noise; "
+            + "single = with no bright neighbour, that is hot pixels; hot = the hot pixels of the master against the master (1 = the same); low, high = half of them are between these two values]",
+            $"[{plane}; cer = cat de luminos e cerul, ADU; zgomot = cat difera un pixel de vecinii lui, ADU; luminosi = mai luminosi decat vecinii cu peste {RoCount(F(Th.LightHotSigmas, 0))}ori zgomotul; "
+            + "singuri = fara vecini luminosi, adica pixeli fierbinti; fierb. = pixelii fierbinti ai masterului fata de master (1 = la fel); jos, sus = jumatate dintre ei sunt intre aceste doua valori]");
     }
 
     /// <summary>

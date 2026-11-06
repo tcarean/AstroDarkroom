@@ -699,11 +699,11 @@ public sealed class MainViewModel : ObservableObject
             LightPoints = l.Frames.Select(f => new ChartPoint(f.Info.Index, f.Error is null ? f.AmpRatioMedian : double.NaN, f.Info.Index.ToString(CultureInfo.InvariantCulture), VerdictPalette.For(IndexAnalyzer.Judge(f.AmpRatioMedian)))).ToList();
             LightGuides =
             [
-                new GuideLine(Th.MatchDirectLow, $"{RunReport.F(Th.MatchDirectLow, 1)} direct", VerdictPalette.Good),
-                new GuideLine(Th.MatchDirectHigh, $"{RunReport.F(Th.MatchDirectHigh, 1)} direct", VerdictPalette.Good),
-                new GuideLine(Th.MatchOptLow, $"{RunReport.F(Th.MatchOptLow, 1)} -opt", VerdictPalette.Warn),
-                new GuideLine(Th.MatchOptHigh, $"{RunReport.F(Th.MatchOptHigh, 1)} -opt", VerdictPalette.Warn),
-                new GuideLine(Th.MatchCosmeticLow, $"{RunReport.F(Th.MatchCosmeticLow, 1)} cosmetic", VerdictPalette.Bad),
+                new GuideLine(Th.MatchDirectLow, T($"{RunReport.F(Th.MatchDirectLow, 1)} as it is", $"{RunReport.F(Th.MatchDirectLow, 1)} asa cum e"), VerdictPalette.Good),
+                new GuideLine(Th.MatchDirectHigh, T($"{RunReport.F(Th.MatchDirectHigh, 1)} as it is", $"{RunReport.F(Th.MatchDirectHigh, 1)} asa cum e"), VerdictPalette.Good),
+                new GuideLine(Th.MatchOptLow, T($"{RunReport.F(Th.MatchOptLow, 1)} with -opt", $"{RunReport.F(Th.MatchOptLow, 1)} cu -opt"), VerdictPalette.Warn),
+                new GuideLine(Th.MatchOptHigh, T($"{RunReport.F(Th.MatchOptHigh, 1)} with -opt", $"{RunReport.F(Th.MatchOptHigh, 1)} cu -opt"), VerdictPalette.Warn),
+                new GuideLine(Th.MatchCosmeticLow, T($"{RunReport.F(Th.MatchCosmeticLow, 1)} cosmetic only", $"{RunReport.F(Th.MatchCosmeticLow, 1)} doar cosmetic"), VerdictPalette.Bad),
             ];
         }
 

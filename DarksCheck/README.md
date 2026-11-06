@@ -332,9 +332,11 @@ The end of the report's sections on Smida:
   in ADU-eq; the note names the side, and only its constant part is light), and the pixels above
   20 ADU-eq. A frame the cap skipped reads `skipped (...)`, one that could not be read
   `error: ...`.
-- **LIGHTS TABLE**, one row per light, on G1: the time, the sky above the black, the local sigma
-  (the scale of the detector), the candidates, the isolated pixels, and the amplitude against
-  the master with its quartiles.
+- **LIGHTS TABLE**, one row per light, on G1: the time, `sky` (how bright the sky is above the
+  black), `noise` (how much a pixel differs from its neighbours), `bright` (the pixels brighter
+  than their neighbours by more than 6 times the noise: stars and hot pixels), `single` (those with
+  no bright neighbour: hot pixels), `hot` (the master's hot pixels against the master, 1 = the
+  same) and `low` / `high` (half of the master's hot pixels lie between the two).
 
 ```
   FRAMES TABLE
@@ -487,8 +489,9 @@ tabs:
 - **Hot pixels**: the rows of check 5 and the chart of check 8: how much noise is left after the
   mean of more and more frames, against a dotted line of what a random noise would leave (4 times
   the frames, half the noise); hold the mouse over a point to see its figures.
-- **Lights**: the rows of check 9, the lights / dark ratio of every light with the thresholds
-  as lines (0.9 and 1.1 green, 0.7 and 1.4 amber, 0.4 red), and the lights table.
+- **Lights**: the rows of check 9, the chart of every light against the dark (how hot the
+  master's hot pixels are in it) with the bounds as lines (0.9 and 1.1 green, as it is; 0.7 and
+  1.4 amber, with -opt; 0.4 red, cosmetic only), and the lights table.
 - **Index**: the label in large type with **Copy label** (it goes to the clipboard, and you
   rename the folder yourself), the INDEX rows, and the partner: **Choose partner...** (a library
   or another session), **No partner** and **Analyse again**. A partner chosen after a run
