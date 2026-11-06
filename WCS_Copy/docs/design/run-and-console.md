@@ -28,7 +28,9 @@ place, optical keys or not, force, dry run. The outcome is a record of lines alr
 The sequence: read the source, read the destination (each read failure is a refusal naming
 which file and why, R-004; the reader's own messages of R-015 travel in it); compare
 `NAXIS1`/`NAXIS2` (a refusal, or a warning under force, R-005); warn on a missing `CTYPE1`
-(R-006); select the keys (R-007; none is a refusal, R-008) and, when the source has `CTYPE1`,
+(R-006); when both files have one, compare their plate solves' `WcsMetadataKeys.Orientation`
+(opposite signs are a refusal, or a warning under force, R-017, ADR 0012; force passes both
+checks); select the keys (R-007; none is a refusal, R-008) and, when the source has `CTYPE1`,
 the destination's keys to drop (`WcsMetadataKeys.SelectKeysToDrop`, R-016, ADR 0011); on a dry
 run return the cards, the heading and the drop line (R-009); else remove the dropped keys' cards,
 set each selected card verbatim, append the HISTORY card, write through the header engine (a

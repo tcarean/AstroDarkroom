@@ -164,6 +164,46 @@ public class WcsMetadataKeysTests
     }
 
     [Fact]
+    public void R017_Orientation_ReadsTheCdMatrixFirst_AsSirilDoes()
+    {
+        // The SyQon-like header: CDELT as Siril left it (negative), the CD turned over (positive).
+        Assert.Equal(1, WcsMetadataKeys.Orientation(Read(FitsTestData.MirroredSolveCards())));
+    }
+
+    [Fact]
+    public void R017_Orientation_WithoutCd_IsCdeltTimesThePcMatrix_TheIdentityWhereAPcCardIsMissing()
+    {
+        Assert.Equal(-1, WcsMetadataKeys.Orientation(Read(FitsTestData.PlateSolvedCards())));
+
+        List<string> turnedOver = FitsTestData.PlateSolvedCards();
+        turnedOver.Add(FitsTestData.Card("PC2_2", "-1.0"));
+        Assert.Equal(1, WcsMetadataKeys.Orientation(Read(turnedOver)));
+    }
+
+    [Fact]
+    public void R017_Orientation_ACrotaTurnNeverMirrors()
+    {
+        List<string> cards = FitsTestData.PlateSolvedCards();
+        cards.Add(FitsTestData.Card("CROTA2", "180.0"));
+
+        Assert.Equal(-1, WcsMetadataKeys.Orientation(Read(cards)));
+    }
+
+    [Fact]
+    public void R017_Orientation_IsUnknownWithoutCtype1_ForAValueThatIsNotANumber_OrADeterminantOf0()
+    {
+        Assert.Null(WcsMetadataKeys.Orientation(Read(FitsTestData.ProcessedCards())));
+
+        List<string> notANumber = FitsTestData.PlateSolvedCards();
+        notANumber[notANumber.FindIndex(c => c.StartsWith("CDELT1", StringComparison.Ordinal))] = FitsTestData.Card("CDELT1", "'x'");
+        Assert.Null(WcsMetadataKeys.Orientation(Read(notANumber)));
+
+        List<string> flat = FitsTestData.PlateSolvedCards();
+        flat.Add(FitsTestData.Card("CD1_1", "0.0"));
+        Assert.Null(WcsMetadataKeys.Orientation(Read(flat)));
+    }
+
+    [Fact]
     public void R016_SelectKeysToDrop_ADestinationWithoutAPlateSolve_DropsNothing()
     {
         var source = Read(FitsTestData.PlateSolvedCards());

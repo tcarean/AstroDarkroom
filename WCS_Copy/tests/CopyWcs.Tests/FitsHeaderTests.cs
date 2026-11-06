@@ -181,6 +181,30 @@ public class FitsHeaderTests
         Assert.True(header.Contains("Z"));
     }
 
+    [Theory]
+    [InlineData("-6.29608997961999E-06", -6.29608997961999E-06)]
+    [InlineData("3.", 3.0)]
+    [InlineData("1.0D-05", 1.0e-05)]
+    [InlineData("  0.002  ", 0.002)]
+    public void R017_GetDouble_ParsesAFitsNumber(string value, double expected)
+    {
+        var header = ReadHeader(FitsTestData.Card("X", value, "a comment"));
+
+        Assert.Equal(expected, header.GetDouble("X")!.Value, 15);
+    }
+
+    [Theory]
+    [InlineData("'text'")]
+    [InlineData("T")]
+    [InlineData("")]
+    public void R017_GetDouble_AValueThatIsNotANumber_IsNull(string value)
+    {
+        var header = ReadHeader(FitsTestData.Card("X", value));
+
+        Assert.Null(header.GetDouble("X"));
+        Assert.Null(header.GetDouble("MISSING"));
+    }
+
     [Fact]
     public void R016_RemoveCards_RemovesEveryCardOfTheKeyword_AndReturnsThemInOrder()
     {

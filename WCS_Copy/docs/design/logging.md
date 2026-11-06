@@ -124,12 +124,16 @@ the view-model, the About window).
 
 `WcsCopy.Run` holds a `RunClock` in a `using`: `copy start <request>` before the source is read,
 then a `Lap` after each stage, `source`, `dest`, `select` (the size check, the `CTYPE1` check, the
-selection and the keys to drop) and `write` (the old cards dropped, the cards set, the `HISTORY`
-card appended, the file written), and `Done`
-with the outcome and the times of the stages reached. A refusal laps the stage it happens in and
-says why (`refused: cannot read the source`, `cannot read the destination`, `dimensions differ
-(source 100x80, destination 200x80)`, `no relevant key in the source`, `the write failed`), after
-a Warn line (an Error one for the write) holding the exception when there is one. A run that
+mirror check, the selection and the keys to drop) and `write` (the old cards dropped, the cards
+set, the `HISTORY` card appended, the file written), and `Done` with the outcome and the times of
+the stages reached. A refusal laps the stage it happens in and says why (`refused: cannot read
+the source`, `cannot read the destination`, `dimensions differ (source 100x80, destination
+200x80)`, `mirrored plate solve (source det -2.9641E-6, destination det +2.9641E-6)`, `no
+relevant key in the source`, `the write failed`), after a Warn line (an Error one for the write)
+holding the exception when there is one. The mirror's Warn line, `mirrored plate solve: source
+det ..., destination det ...; not forced, nothing is written` or `...; forced, the copy goes
+on`, writes both determinants through `LogText.Signed`, so the log alone says which way each
+solve faced (R-017). A run that
 throws leaves the clock without `Done`, and `Dispose` writes `copy ended without an outcome after
 N ms (<stages>)`. `LogSelection` runs before any card is dropped or set: the counts per list
 (`WcsKeys`, `OpticalKeys`, the rest being SIP coefficients), then per key the source's card and

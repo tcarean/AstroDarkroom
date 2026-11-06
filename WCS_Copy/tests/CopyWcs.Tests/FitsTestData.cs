@@ -172,4 +172,31 @@ internal static class FitsTestData
         Card("A_3_0", "5.0e-10"),
         Card("SITELAT", "46.77"),
     };
+
+    /// <summary>
+    /// A processed image's header whose own plate solve is the mirror image of the default
+    /// source's (R-017): a CD matrix with the second axis turned over, as the SyQon CLI writes for
+    /// the rows it stores top-down, beside Siril's CDELT left as it was. Read CD first, its
+    /// determinant is positive, the source's negative. The same dimensions as the default source.
+    /// </summary>
+    public static List<string> MirroredSolveCards(int naxis1 = 100, int naxis2 = 80) => new()
+    {
+        Card("SIMPLE", "T"),
+        Card("BITPIX", "16"),
+        Card("NAXIS", "2"),
+        Card("NAXIS1", naxis1.ToString()),
+        Card("NAXIS2", naxis2.ToString()),
+        Card("CTYPE1", "'RA---TAN'"),
+        Card("CTYPE2", "'DEC--TAN'"),
+        Card("CRPIX1", "50.0"),
+        Card("CRPIX2", "41.0"),
+        Card("CRVAL1", "83.633083"),
+        Card("CRVAL2", "22.014500"),
+        Card("CDELT1", "-0.000305"),
+        Card("CDELT2", "0.000305"),
+        Card("CD1_1", "-0.000305"),
+        Card("CD1_2", "0.0"),
+        Card("CD2_1", "0.0"),
+        Card("CD2_2", "-0.000305"),
+    };
 }

@@ -239,6 +239,34 @@ public class MainViewModelTests
         Assert.StartsWith("Eliminate 6 chei vechi de plate solve ale destinatiei: ", vm.Notes[0], StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A destination whose own plate solve is the mirror image of the source's (R-017): the copy
+    /// is refused in the core's words, the console's stderr line, and writes nothing; with the
+    /// option on, the preview goes through under the core's warning.
+    /// </summary>
+    [Fact]
+    public async Task R017_AMirroredDestinationIsRefusedInTheCoresWords_AndTheOptionLetsItThrough()
+    {
+        using WindowFixture f = new(destCards: FitsTestData.MirroredSolveCards());
+        byte[] before = File.ReadAllBytes(f.Dest);
+        MainViewModel vm = Open(f);
+
+        await vm.Copy();
+
+        Assert.True(vm.HasError);
+        Assert.Equal("Refuzat", vm.RefusedHeading);
+        Assert.Equal(Console(f.Source, f.Dest).Stderr, vm.Error);
+        Assert.False(vm.HasCards);
+        Assert.Equal(before, File.ReadAllBytes(f.Dest));
+
+        vm.Force = true;
+        await vm.Preview();
+
+        Assert.False(vm.HasError);
+        Assert.Equal(["ATENTIE: plate solve-ul destinatiei e in oglinda fata de cel al sursei. Continui oricum (--force)."], vm.Warnings);
+        Assert.Equal(before, File.ReadAllBytes(f.Dest));
+    }
+
     /// <summary>A path typed with spaces around it names the same file: the core gets it trimmed, so the written file has no space in its name.</summary>
     [Fact]
     public async Task R032_ThePathsReachTheCoreWithoutTheirSurroundingWhitespace()

@@ -132,7 +132,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Grid.ColumnDefinitions>
         <StackPanel Grid.Column="0" VerticalAlignment="Center">
           <CheckBox IsChecked="{Binding IncludeOptical}" Content="{l:T En='Copy the optical metadata too (FOCALLEN, XPIXSZ, ...)', Ro='Copiaza si metadatele optice (FOCALLEN, XPIXSZ, ...)'}" />
-          <CheckBox Margin="0,8,0,0" IsChecked="{Binding Force}" Content="{l:T En='Continue even when the dimensions differ', Ro='Continua chiar daca dimensiunile difera'}" />
+          <CheckBox Margin="0,8,0,0" IsChecked="{Binding Force}" Content="{l:T En='Continue even when the dimensions differ or the image is mirrored', Ro='Continua chiar daca dimensiunile difera sau imaginea e oglindita'}" />
         </StackPanel>
         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="16,0,0,0">
           <Button MinWidth="110" IsEnabled="{Binding CanPreview}" Content="{l:T En='Preview', Ro='Previzualizare'}" Click="Preview" />

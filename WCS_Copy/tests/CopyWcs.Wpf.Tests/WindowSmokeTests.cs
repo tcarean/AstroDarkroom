@@ -47,7 +47,7 @@ public partial class WindowSmokeTests
     // Words that only the Romanian texts hold, the console's (LanguageTests) and the window's
     // own (R-036); the paths of the fixture are temp folders named CopyWcsTests_ plus random
     // letters, so none of these can come from them.
-    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Chei vechi|Copiate|Eliminate|Eliminata|destinatiei|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii|COMPONENTE|TERTE|componente|Unealta|jurnalului|leaga)\b", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\b(ATENTIE|Nu pot|Chei care|Chei vechi|Copiate|Eliminate|Eliminata|destinatiei|oglinda|oglindita|Intoarce|Dimensiuni|Nicio cheie|Eroare|sursa|destinatie|Verifica vizual|Alege|Scrie|Copiaza|Despre|Refuzat|Inchide|Sursa|Destinatia|Previzualizare|fara|deja|LICENTA|Textul|licentei|Continua|metadatele|dintr-un|Versiune|licenta|rezolvat|aceeasi|pixelii|COMPONENTE|TERTE|componente|Unealta|jurnalului|leaga)\b", RegexOptions.CultureInvariant)]
     private static partial Regex RomanianWord();
 
     /// <summary>Every text a rendered tree shows: the text blocks (the buttons' and the check boxes' labels become ones), and the hints as strings.</summary>
@@ -140,6 +140,7 @@ public partial class WindowSmokeTests
             Assert.Contains("Refused", english);
             Assert.Contains("Source: 100 x 80, plate-solved", english);
             Assert.Contains(english, t => t.StartsWith("Old plate-solve keys of the destination that would be dropped (6): ", StringComparison.Ordinal));
+            Assert.Contains("Continue even when the dimensions differ or the image is mirrored", english);
             List<string> romanian = english.Where(t => RomanianWord().IsMatch(t)).Distinct(StringComparer.Ordinal).ToList();
             Assert.True(romanian.Count == 0, "Romanian left in the English window:\n" + string.Join("\n", romanian));
 
@@ -152,6 +153,7 @@ public partial class WindowSmokeTests
             Assert.Contains("Copiaza", texts);
             Assert.Contains("Despre", texts);
             Assert.Contains("Sursa: 100 x 80, plate-solved", texts);
+            Assert.Contains("Continua chiar daca dimensiunile difera sau imaginea e oglindita", texts);
             Assert.DoesNotContain("Preview", texts);
         });
 

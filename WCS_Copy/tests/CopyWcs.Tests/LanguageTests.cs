@@ -132,7 +132,7 @@ public class LanguageTests
         "ATENTIE", "Nu pot", "Chei care", "Copiate", "Dimensiuni", "Nicio cheie", "Eroare",
         "sursa", "destinatie", "Sunt necesare", "Optiune", "Verifica vizual", "optiuni",
         "Fisier", "trunchiat", "nu pare FITS", "nu incepe", "Chei vechi", "Eliminate", "eliminate",
-        "destinatiei",
+        "destinatiei", "in oglinda", "Intoarce", "pastreaza",
     ];
 
     public static IEnumerable<object[]> Scenarios()
@@ -153,6 +153,8 @@ public class LanguageTests
         yield return ["copy"];
         yield return ["drop-dry-run"];
         yield return ["drop"];
+        yield return ["mirror"];
+        yield return ["mirror-forced"];
     }
 
     [Theory]
@@ -192,6 +194,8 @@ public class LanguageTests
         var truncated = ws.WriteFile("truncated.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards(), data)[..100]);
         // A destination that still holds an old plate solve in another form (R-016).
         var oldSolve = ws.WriteFile("oldsolve.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards(), data));
+        // A destination whose own plate solve is the mirror image of the source's (R-017).
+        var mirrored = ws.WriteFile("mirrored.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards(), data));
 
         string[] args = scenario switch
         {
@@ -211,6 +215,8 @@ public class LanguageTests
             "copy" => [source, dest, "-o", ws.FilePath("out.fit")],
             "drop-dry-run" => [source, oldSolve, "--dry-run"],
             "drop" => [source, oldSolve, "-o", ws.FilePath("out.fit")],
+            "mirror" => [source, mirrored],
+            "mirror-forced" => [source, mirrored, "--force", "-o", ws.FilePath("out.fit")],
             _ => throw new ArgumentException(scenario),
         };
 

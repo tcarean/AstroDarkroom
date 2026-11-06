@@ -32,7 +32,7 @@ public class ValidationTests
 {
     private sealed record Case(string Id, string Fixture, int Naxis1, int Naxis2, string[] WithOptical, string[] WcsOnly);
 
-    private sealed record DropCase(string Id, string Fixture, string Destination, int Naxis1, int Naxis2, int KeysCopied, string[] KeysDropped);
+    private sealed record DropCase(string Id, string Fixture, string Destination, int Naxis1, int Naxis2, int KeysCopied, string[] KeysDropped, bool Mirrored);
 
     private static JsonElement[] AllCases()
     {
@@ -53,7 +53,8 @@ public class ValidationTests
                 expected.GetProperty("naxis1").GetInt32(),
                 expected.GetProperty("naxis2").GetInt32(),
                 expected.GetProperty("keysCopied").GetInt32(),
-                expected.GetProperty("keysDropped").EnumerateArray().Select(k => k.GetString()!).ToArray());
+                expected.GetProperty("keysDropped").EnumerateArray().Select(k => k.GetString()!).ToArray(),
+                expected.GetProperty("mirrored").GetBoolean());
         }
     }
 
@@ -72,7 +73,11 @@ public class ValidationTests
         Assert.Equal(c.KeysDropped, WcsMetadataKeys.SelectKeysToDrop(source, dest));
     }
 
-    /// <summary>A copy of the real pair into a new file copies the recorded count of keys and leaves none of the dropped ones.</summary>
+    /// <summary>
+    /// A copy of the real pair into a new file, forced past the mirror check when the pair is
+    /// recorded as mirrored (R-017), copies the recorded count of keys and leaves none of the
+    /// dropped ones.
+    /// </summary>
     [Theory]
     [MemberData(nameof(DropCaseIds))]
     public void R016_ACopyOfTheRealPair_CopiesTheRecordedCountAndLeavesNoDroppedKey(string id)
@@ -82,13 +87,29 @@ public class ValidationTests
         var output = ws.FilePath("out.fit");
 
         var outcome = WcsCopy.Run(new WcsCopyRequest(TestData.Fixture(c.Fixture), TestData.Fixture(c.Destination), output,
-            IncludeOptical: true, Force: false, DryRun: false));
+            IncludeOptical: true, Force: c.Mirrored, DryRun: false));
 
         Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        Assert.Equal(c.Mirrored ? 1 : 0, outcome.Warnings.Count);
         Assert.Equal(c.KeysCopied, outcome.Cards.Count);
         Assert.NotNull(outcome.Dropped);
         var written = FitsHeader.ReadPrimary(output);
         Assert.All(c.KeysDropped, k => Assert.False(written.Contains(k), k));
+    }
+
+    /// <summary>The two real headers' plate solves, read as Siril reads them, are mirror images when recorded so, and the copy is then refused without force (R-017).</summary>
+    [Theory]
+    [MemberData(nameof(DropCaseIds))]
+    public void R017_TheRealPairsOrientations_AreAsRecorded_AndAMirrorIsRefusedWithoutForce(string id)
+    {
+        var c = DropCases().Single(x => x.Id == id);
+        var source = FitsHeader.ReadPrimary(TestData.Fixture(c.Fixture));
+        var dest = FitsHeader.ReadPrimary(TestData.Fixture(c.Destination));
+
+        Assert.Equal(c.Mirrored, WcsMetadataKeys.Orientation(source) != WcsMetadataKeys.Orientation(dest));
+        var outcome = WcsCopy.Run(new WcsCopyRequest(TestData.Fixture(c.Fixture), TestData.Fixture(c.Destination), null,
+            IncludeOptical: true, Force: false, DryRun: true));
+        Assert.Equal(c.Mirrored ? WcsCopyKind.Refused : WcsCopyKind.Previewed, outcome.Kind);
     }
 
     private static IEnumerable<Case> Cases()

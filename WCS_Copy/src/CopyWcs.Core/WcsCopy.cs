@@ -32,7 +32,7 @@ namespace CopyWcs;
 /// <param name="Dest">The path of the FITS that receives them, and whose data area is kept.</param>
 /// <param name="Output">The path of the file to write, or null to rewrite <paramref name="Dest"/> in place.</param>
 /// <param name="IncludeOptical">True to copy the optical metadata keys beside the WCS keys.</param>
-/// <param name="Force">True to copy even when the two images' dimensions differ.</param>
+/// <param name="Force">True to copy even when the two images' dimensions differ or the destination's own plate solve is the mirror image of the source's (R-005, R-017).</param>
 /// <param name="DryRun">True to list the cards that would be copied and write nothing.</param>
 internal sealed record WcsCopyRequest(
     string Source,
@@ -160,6 +160,33 @@ internal static class WcsCopy
             Log.Warn("the source has no CTYPE1, it does not look plate-solved; the copy goes on");
             warnings.Add(T("WARNING: the source does not look plate-solved (CTYPE1 is missing).",
                 "ATENTIE: sursa nu pare plate-solved (lipseste CTYPE1)."));
+        }
+
+        // A destination with a plate solve of its own tells which way its pixels lie: one that is
+        // the mirror image of the source's means the image was mirrored or flipped after the
+        // source was solved, and any copy would point the wrong way (R-017, ADR 0012).
+        if (WcsMetadataKeys.Orientation(source) is { } sourceSide && WcsMetadataKeys.Orientation(dest) is { } destSide
+            && sourceSide != destSide)
+        {
+            string dets = "source det " + LogText.Signed(WcsMetadataKeys.Determinant(source)!.Value)
+                          + ", destination det " + LogText.Signed(WcsMetadataKeys.Determinant(dest)!.Value);
+            if (!request.Force)
+            {
+                Log.Warn("mirrored plate solve: " + dets + "; not forced, nothing is written");
+                clock.Lap("select");
+                clock.Done("refused: mirrored plate solve (" + dets + ")");
+                return Refused(T(
+                    "The destination's own plate solve is a mirror image of the source's: the image was mirrored or flipped "
+                    + "after the source was solved, so the copied WCS would be wrong. Flip the image back first, or keep its "
+                    + "own plate solve. Use --force if you know what you are doing.",
+                    "Plate solve-ul destinatiei e in oglinda fata de cel al sursei: imaginea a fost oglindita/flip-uita "
+                    + "dupa ce sursa a fost rezolvata, asa ca WCS-ul copiat ar fi gresit. Intoarce intai imaginea inapoi "
+                    + "sau pastreaza-i plate solve-ul. Foloseste --force daca stii ce faci."), warnings);
+            }
+
+            Log.Warn("mirrored plate solve: " + dets + "; forced, the copy goes on");
+            warnings.Add(T("WARNING: the destination's own plate solve is a mirror image of the source's. Continuing anyway (--force).",
+                "ATENTIE: plate solve-ul destinatiei e in oglinda fata de cel al sursei. Continui oricum (--force)."));
         }
 
         var present = WcsMetadataKeys.SelectKeysToCopy(source, request.IncludeOptical);

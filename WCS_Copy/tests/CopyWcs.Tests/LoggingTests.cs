@@ -389,6 +389,26 @@ public class LoggingTests
                        DoneLine(capture));
     }
 
+    /// <summary>A mirrored destination (R-017): the warning line with both determinants, then the refusal's reason, or the forced copy going on.</summary>
+    [Fact]
+    public void R042_AMirroredDestinationIsLoggedWithBothDeterminants()
+    {
+        using var ws = new TempWorkspace();
+        var (src, dst) = Pair(ws, dest: FitsTestData.MirroredSolveCards());
+
+        using (var refused = LogCapture.Start())
+        {
+            Assert.Equal(1, Cli(src, dst).Code);
+            Assert.Contains("mirrored plate solve: source det -9.3025E-8, destination det +9.3025E-8; not forced, nothing is written", refused.Messages);
+            Assert.Matches(@"^copy done refused: mirrored plate solve \(source det -9\.3025E-8, destination det \+9\.3025E-8\) in \d+ ms",
+                           DoneLine(refused));
+        }
+
+        using var forced = LogCapture.Start();
+        Assert.Equal(0, Cli(src, dst, "--force", "-o", ws.FilePath("out.fit")).Code);
+        Assert.Contains("mirrored plate solve: source det -9.3025E-8, destination det +9.3025E-8; forced, the copy goes on", forced.Messages);
+    }
+
     /// <summary>A keyword the destination holds twice: one <c>drop</c> line per card, while the done line counts the key once.</summary>
     [Fact]
     public void R042_AKeywordHeldTwiceIsLoggedCardByCard_AndCountedOnce()

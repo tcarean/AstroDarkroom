@@ -92,6 +92,11 @@ internal static class LogText
     /// <returns>The text.</returns>
     internal static string Dimensions(int width, int height) => Int(width) + "x" + Int(height);
 
+    /// <summary>A number in scientific notation with its sign always written and up to four decimals: <c>-9.3025E-8</c>, <c>+2.9636E-6</c>; the determinants of R-017.</summary>
+    /// <param name="value">The number.</param>
+    /// <returns>The text, invariant.</returns>
+    internal static string Signed(double value) => value.ToString("+0.####E+0;-0.####E+0", Inv);
+
     /// <summary>
     /// A header card as the log writes it, which is as the header holds it: its text without the
     /// trailing spaces, each control character and each byte above 0x7F written as <c>\xNN</c>,

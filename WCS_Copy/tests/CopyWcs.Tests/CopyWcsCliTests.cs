@@ -323,6 +323,26 @@ public class CopyWcsCliTests
     }
 
     [Fact]
+    public void R017_Run_AMirroredDestination_IsRefusedWithExitOne_AndForceWarnsFirst()
+    {
+        using var ws = new TempWorkspace();
+        var sourcePath = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards());
+        var destPath = ws.WriteFile("dest.fit", destBytes);
+
+        var refused = Run(sourcePath, destPath, "--dry-run");
+        var forced = Run(sourcePath, destPath, "--force", "-o", ws.FilePath("out.fit"));
+
+        Assert.Equal(1, refused.ExitCode);
+        Assert.StartsWith("Plate solve-ul destinatiei e in oglinda fata de cel al sursei: ", refused.Stderr, StringComparison.Ordinal);
+        Assert.Equal(2, Lines(refused.Stdout).Length);
+        Assert.Equal(destBytes, File.ReadAllBytes(destPath));
+        Assert.Equal(0, forced.ExitCode);
+        Assert.Equal("ATENTIE: plate solve-ul destinatiei e in oglinda fata de cel al sursei. Continui oricum (--force).", Lines(forced.Stdout)[2]);
+        Assert.True(File.Exists(ws.FilePath("out.fit")));
+    }
+
+    [Fact]
     public void R016_Run_NothingToDrop_PrintsNoDropLine()
     {
         using var ws = new TempWorkspace();

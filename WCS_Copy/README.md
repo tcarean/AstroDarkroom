@@ -36,10 +36,17 @@ The two images must have the same pixel grid: the tool compares `NAXIS1` and `NA
 refuses to copy when they differ, because the solution would point at the wrong pixels.
 `--force` copies anyway, for the case you know is right.
 
-**Check the result by eye.** If the image was mirrored or flipped during processing, the
-copied solution is wrong without any error being possible: the header cannot know what
-happened to the pixels. Open the result in Siril and look at the annotation before trusting
-it.
+**A mirrored destination is refused.** When the destination holds a plate solve of its own and
+it is the mirror image of the source's (the determinant of its scale and turn, read `CD` first
+as Siril reads it, has the opposite sign), its pixels were mirrored or flipped after the source
+was solved, and a copied solution would point the wrong way: the copy is refused, a dry run too,
+unless `--force` (ADR 0012). The SyQon CLI's output is such an image: it stores the rows
+top-down and writes a flipped `CD` matrix for them, so Siril already shows it right.
+
+**Check the result by eye.** If the image was mirrored or flipped during processing and the
+destination holds no plate solve of its own to compare, the copied solution is wrong without
+any error being possible: the header cannot know what happened to the pixels. Open the result
+in Siril and look at the annotation before trusting it.
 
 ## The console
 
@@ -51,14 +58,15 @@ copywcs <solved.fit> <destination.fit> [options]
 | --- | --- |
 | `-o, --output <file>` | Write a new file instead of changing the destination in place |
 | `--dry-run` | Show the cards that would be copied, and the old plate-solve keys that would be dropped, without writing anything |
-| `--force` | Continue even when the images' dimensions differ |
+| `--force` | Continue even when the images' dimensions differ or the destination's own plate solve is mirrored |
 | `--no-optical` | Copy only the WCS keys, not the optical metadata |
 | `--lang en\|ro` | The language of the texts: `en` (English, the default) or `ro` (Romanian) |
 | `-h, --help` | Show the usage and the warranty notice |
 
 Every run begins with the version (`copywcs 1.0.0`) and the copyright line, so a pasted output
 says which version produced it. Exit codes: 0 on success or a dry run, 1 when the copy was
-refused (a file that cannot be read, different dimensions without `--force`, no relevant key,
+refused (a file that cannot be read, different dimensions or a mirrored plate solve without
+`--force`, no relevant key,
 a write error, a `--lang` value that is not `en` or `ro`), 2 on a usage error.
 
 Example: preview, then copy into a new file.
@@ -78,7 +86,8 @@ it was.
 window: dark, one page. Pick the plate-solved source and the destination (or pass them on the
 command line: the first two arguments that are existing files fill the boxes, so a shortcut
 or "Send to" works), choose whether to write into the destination or into a new file, keep or
-drop the optical metadata, allow or refuse different dimensions, then **Preview** or **Copy**.
+drop the optical metadata, allow or refuse different dimensions or a mirrored image, then
+**Preview** or **Copy**.
 Under each file box the window shows what it read from the header (`Source: 5601 x 3692,
 plate-solved`, `Destination: 5601 x 3692`); after a copy the destination reads `already
 plate-solved`.

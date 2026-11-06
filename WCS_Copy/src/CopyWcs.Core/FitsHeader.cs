@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
 using System.Text;
 using NLog;
 using static CopyWcs.Ui;
@@ -235,26 +236,40 @@ internal sealed class FitsHeader
     /// <returns>The value, or -1 when the card is missing, has no '=' or does not hold an integer (a byte 0xA0 beside the digits is not an integer).</returns>
     public int GetInt(string key)
     {
-        var card = GetCard(key);
-        if (card is null)
-        {
-            return -1;
-        }
+        var value = ValueText(key);
+        return value is not null && int.TryParse(value, out var n) ? n : -1;
+    }
 
-        var eq = card.IndexOf('=');
-        if (eq < 0)
+    /// <summary>
+    /// The number a card holds, read like <see cref="GetInt"/>, the FITS exponent letter <c>D</c>
+    /// taken as <c>E</c> (<c>1.0D-05</c>): the CD, CDELT and PC values whose determinant R-017
+    /// compares. Invariant whatever the culture.
+    /// </summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The value; null when the card is missing, has no '=' or does not hold a finite number (a string, a logical, nothing).</returns>
+    public double? GetDouble(string key)
+    {
+        var value = ValueText(key)?.Replace('D', 'E').Replace('d', 'e');
+        return value is not null && double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var x) && double.IsFinite(x)
+            ? x
+            : null;
+    }
+
+    /// <summary>The text of a card's value: between the '=' and the '/' of a comment, if any, trimmed of spaces only.</summary>
+    /// <param name="key">The keyword, case-sensitive.</param>
+    /// <returns>The text; null when the card is missing or has no '='.</returns>
+    private string? ValueText(string key)
+    {
+        var card = GetCard(key);
+        var eq = card?.IndexOf('=') ?? -1;
+        if (card is null || eq < 0)
         {
-            return -1;
+            return null;
         }
 
         var value = card[(eq + 1)..];
         var slash = value.IndexOf('/');
-        if (slash >= 0)
-        {
-            value = value[..slash];
-        }
-
-        return int.TryParse(value.Trim(' '), out var n) ? n : -1;
+        return (slash >= 0 ? value[..slash] : value).Trim(' ');
     }
 
     /// <summary>Replaces the card of a keyword in place, or appends it when the header has none.</summary>

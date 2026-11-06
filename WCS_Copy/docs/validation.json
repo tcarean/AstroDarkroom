@@ -38,7 +38,8 @@
         "naxis1": 5601,
         "naxis2": 3692,
         "keysCopied": 72,
-        "keysDropped": ["CD1_1", "CD1_2", "CD2_1", "CD2_2"]
+        "keysDropped": ["CD1_1", "CD1_2", "CD2_1", "CD2_2"],
+        "mirrored": true
       }
     }
   ]

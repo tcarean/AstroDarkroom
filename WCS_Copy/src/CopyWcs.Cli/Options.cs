@@ -34,7 +34,7 @@ internal sealed class Options
     /// <summary>True for <c>--dry-run</c>: list the cards, write nothing.</summary>
     public bool DryRun;
 
-    /// <summary>True for <c>--force</c>: copy even when the dimensions differ.</summary>
+    /// <summary>True for <c>--force</c>: copy even when the dimensions differ or the destination's own plate solve is mirrored (R-005, R-017).</summary>
     public bool Force;
 
     /// <summary>True for <c>--no-optical</c>: the WCS keys only.</summary>
@@ -128,7 +128,7 @@ internal sealed class Options
                 Optiuni:
                   -o, --output <fisier>  Scrie intr-un fisier nou in loc sa modifice destinatia in loc
                       --dry-run          Arata ce s-ar copia, fara sa scrie nimic
-                      --force            Continua chiar daca dimensiunile imaginilor difera
+                      --force            Continua chiar daca dimensiunile difera sau imaginea e oglindita
                       --no-optical       Copiaza doar cheile WCS, fara metadatele optice
                       --lang en|ro       Limba textelor: en (engleza, implicit) sau ro (romana)
                   -h, --help             Afiseaza acest mesaj
@@ -147,7 +147,7 @@ internal sealed class Options
             Options:
               -o, --output <file>    Write a new file instead of changing the destination in place
                   --dry-run          Show what would be copied, without writing anything
-                  --force            Continue even when the images' dimensions differ
+                  --force            Continue even when the dimensions differ or the image is mirrored
                   --no-optical       Copy only the WCS keys, not the optical metadata
                   --lang en|ro       The language of the texts: en (English, the default) or ro (Romanian)
               -h, --help             Show this message

@@ -165,3 +165,69 @@ R-012's last two lines stay the last two lines.
   - `siril-cli` with `-i` on an empty private ini loads and saves that output. Its CDELT and PC
     then equal the copied ones, so Siril reads the copied solve.
 - Nothing touches the owner's files: a dry run and a copy into the scratchpad only.
+
+## The review (one subagent, on 74d1f9c8)
+
+Five findings, each checked in the code or on the data before acting:
+
+1. **The SyQon pair is a flipped image.** Confirmed by reading rows of the two real files: the
+   SyQon file's rows correlate 0.98 to 1.00 with the stack's mirrored rows and about 0 with the
+   same rows, and its `CD`, `CRPIX2` (1846 = 3693 - 1847) and SIP coefficients are the flipped
+   solve (the odd terms negated). So its `CD` is the solve that fits it, Siril showed it right on
+   its own, and a copy into it is wrong whatever happens to the old cards. A new fact against the
+   premise the owner answered on, so it went back to the owner as a question, with the measured
+   count: 9 of 231 plate-solved files face the other way, all SyQon outputs. The owner chose to
+   refuse such a copy ("Yes, refuse it"), see below.
+2. **A keyword held twice, for a key the source has, keeps its second card.** Measured: no
+   repeated plate-solve keyword, and no `RADECSYS`, `PVi_m` or alternate description, in any of
+   the 231 solved files. Documented as R-016's limits rather than coded.
+3. **Stale counts and texts** in `validation.json`, `tests/testdata/README.md`, the CHANGELOG,
+   `docs/skills.md`, the README's `--dry-run` row and log paragraph, and `run-and-console.md`:
+   all fixed.
+4. **Test gaps**: the size refusal test passed trivially; added the write-error refusal, a
+   keyword held twice (run and log), a dry run without `CTYPE1`, and the drop line in R-036's
+   English render.
+5. **One key in the plural**, and the Romanian count without `de` from 20: fixed, the tests
+   seen failing with the fix undone. The existing `Copiate 72 chei` keeps its wording (R-012).
+
+Fixed in 8acac91b, the gate green with 230 + 49 tests.
+
+## After the review: the mirror check (R-017, ADR 0012)
+
+The owner's answer of 2026-11-06 to finding 1. When both files have `CTYPE1`, the run compares
+the sign of the determinant of the two plate solves' linear parts, read as Siril reads them (the
+CD matrix first, else CDELT times PC). Opposite signs refuse the run, a dry run too, before
+anything is selected or written; `--force` turns the refusal into a warning, and its texts grew:
+the window's option `Continue even when the dimensions differ or the image is mirrored`
+(`Continua chiar daca dimensiunile difera sau imaginea e oglindita`), the usage's `--force` line.
+
+- `FitsHeader.GetDouble` (sharing `ValueText` with `GetInt`), `WcsMetadataKeys.Determinant` and
+  `Orientation`, `LogText.Signed` for the log's determinants.
+- The refusal: `The destination's own plate solve is a mirror image of the source's: the image
+  was mirrored or flipped after the source was solved, so the copied WCS would be wrong. Flip the
+  image back first, or keep its own plate solve. Use --force if you know what you are doing.`
+  The warning: `WARNING: the destination's own plate solve is a mirror image of the source's.
+  Continuing anyway (--force).` Both in Romanian as R-017 quotes them.
+- V-002 gained `mirrored: true`; its copy is measured forced.
+- The checkbox's longer label fits at the window's minimum width of 720 px, in both languages
+  (checked on the tests' rendered screens).
+
+## Outcome
+
+- Commits: 74d1f9c8 (R-016), 8acac91b (the review's fixes), then the mirror check (R-017).
+- The R016 and R017 tests were seen failing on stubs before the code; the gate is green.
+- End to end on the real Veil pair (`result-bge-cc.fit` into `denoised_syqon_studio_in.fit`; the
+  plan's `result_final.fit` had left that folder): without `--force` refused with exit 1; with
+  `--force` and `-o` into the scratchpad, the warning, 4 keys dropped and 72 copied; the other
+  way round refused too; both files unchanged by SHA-256 after every run. One of those runs was
+  in place on the owner's file, against this plan's "a dry run and a copy into the scratchpad
+  only": it was refused as expected and changed nothing, but a dry run would have tested the same.
+- Before the mirror check, Siril 1.4.4's `load` and `save` of a copy with the CD dropped wrote the
+  copied `CDELT` and `PC` unchanged: it showed which cards Siril reads, not that the solve fit.
+
+## What deviated
+
+- The plan's source file `result_final.fit` was no longer in the Veil folder: the end-to-end
+  check used `result-bge-cc.fit` beside the SyQon file; V-002 keeps the V-001 fixture, the
+  header of `result_final.fit` cut on 2026-10-26.
+- The review's first finding added R-017 and ADR 0012, decided by the owner, to this task.

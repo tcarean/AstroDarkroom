@@ -35,7 +35,9 @@ as a `List<string>` of raw 80-character cards, in order, END excluded, and remem
 - `GetInt` takes the text after `=` up to a `/`, trimmed, and returns -1 when the card is
   missing, has no `=` or is not an integer. Two files that both lack `NAXIS1` therefore
   compare as equal sizes (-1 and -1); the run does not special-case it, since such a file is
-  not an image.
+  not an image. `GetDouble` reads the same text (`ValueText`, shared by both) as a finite
+  double, invariant, the FITS exponent letter `D` taken as `E`, and gives null for a missing
+  card, a string, a logical or nothing: the numbers of R-017's check.
 - `SetCard(key, raw)` replaces the first card of that keyword in place, keeping its position,
   or appends when there is none; the raw text is padded to 80 or cut at 80 by `Pad`. This is
   the verbatim copy of R-010: the caller passes the source's card, and nothing is reparsed.
@@ -132,3 +134,12 @@ source has, which `SetCard` does not reach; a plate-solve card outside both list
 destination's own `OBJECT` or `SITELAT` stays when the source lacks it. The selector itself does
 not look at `CTYPE1`: the run asks for it only when the source has one (ADR 0011). V-002 shows it
 on a real destination: the 4 `CD` keys the SyQon CLI wrote beside Siril's `PC`.
+
+`Determinant(header)` is the determinant of a plate solve's linear part, read as Siril 1.4.4
+reads it (measured, ADR 0011): the CD matrix when the header holds any `CDi_j` card, a missing
+one 0 as the WCS standard says; else `CDELT1` times `CDELT2` (each 1 when missing) times the PC
+matrix's determinant (the identity where a `PC` card is missing). A `CROTA` is not read, since a
+turn has determinant 1 and never mirrors. It is null without `CTYPE1`, or when a card it reads is
+there but holds no number. `Orientation` is its sign, null for 0 too; the run compares the
+source's with the destination's, and opposite signs mean the two solves are mirror images
+(R-017, ADR 0012). V-002's pair has -2.9641E-6 and +2.9641E-6.

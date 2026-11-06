@@ -73,6 +73,46 @@ internal static class WcsMetadataKeys
     }
 
     /// <summary>
+    /// The orientation of a header's plate solve (R-017): the sign of the determinant of its
+    /// linear part, read as Siril 1.4.4 reads it (measured, ADR 0011): the CD matrix when the
+    /// header holds any <c>CDi_j</c> card, a missing one being 0 as the WCS standard says; else
+    /// <c>CDELT1</c> and <c>CDELT2</c> (1 when missing) times the PC matrix (the identity where a
+    /// <c>PC</c> card is missing). A <c>CROTA</c> turn never mirrors, so it is not read. Two
+    /// plate solves of opposite orientation are mirror images of each other.
+    /// </summary>
+    /// <param name="header">The header; not null.</param>
+    /// <returns>+1 or -1; null when the header has no <c>CTYPE1</c>, a value read is not a number, or the determinant is 0.</returns>
+    internal static int? Orientation(FitsHeader header)
+        => Determinant(header) is { } det && det != 0 ? Math.Sign(det) : null;
+
+    /// <summary>The determinant whose sign <see cref="Orientation"/> is, read the same way; the log writes it beside a mirror (R-042).</summary>
+    /// <param name="header">The header; not null.</param>
+    /// <returns>The determinant, in square degrees per square pixel; null when the header has no <c>CTYPE1</c> or a value read is not a number.</returns>
+    internal static double? Determinant(FitsHeader header)
+    {
+        ArgumentNullException.ThrowIfNull(header);
+        if (!header.Contains("CTYPE1"))
+        {
+            return null;
+        }
+
+        string[] cd = ["CD1_1", "CD1_2", "CD2_1", "CD2_2"];
+        double? det = cd.Any(header.Contains)
+            ? Value(header, "CD1_1", 0) * Value(header, "CD2_2", 0) - Value(header, "CD1_2", 0) * Value(header, "CD2_1", 0)
+            : Value(header, "CDELT1", 1) * Value(header, "CDELT2", 1)
+              * (Value(header, "PC1_1", 1) * Value(header, "PC2_2", 1) - Value(header, "PC1_2", 0) * Value(header, "PC2_1", 0));
+        return det is { } d && double.IsFinite(d) ? d : null;
+    }
+
+    /// <summary>A card's number for <see cref="Orientation"/>, or the standard's default when the card is missing.</summary>
+    /// <param name="header">The header; not null.</param>
+    /// <param name="key">The keyword.</param>
+    /// <param name="missing">The value of a missing card: 1 for a scale or a diagonal term, 0 for an off-diagonal one.</param>
+    /// <returns>The value; null when the card is there but its value is not a number, so that the determinant is null too.</returns>
+    private static double? Value(FitsHeader header, string key, double missing)
+        => header.Contains(key) ? header.GetDouble(key) : missing;
+
+    /// <summary>
     /// The destination's old plate-solve keys a copy drops (R-016): every keyword of the
     /// destination that is one of <see cref="WcsKeys"/> or a SIP coefficient and that the source
     /// does not have, each once, in the order the destination holds them. Never an optical key.

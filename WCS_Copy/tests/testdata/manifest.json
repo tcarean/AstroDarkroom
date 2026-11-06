@@ -13,7 +13,7 @@
       "location": "repo",
       "sha256": "b6dc39a32849bb974c2bc09d00ecb7ecc0859421ae0c9456023655087f571553",
       "source": "the four header blocks (11520 bytes, no image) of E:\\Photografie\\Astro\\Veil\\2026-10-06-3h\\procesate\\bge-cc\\denoised_syqon_studio_in.fit, the same Veil stack denoised by the SyQon CLI 1.1.8 (prism-max), whose header holds a CD matrix beside Siril's PC and CDELT; cut on 2026-11-06",
-      "demonstrates": "V-002 (R-016): the old plate-solve keys a copy of V-001's solve drops from a real destination"
+      "demonstrates": "V-002 (R-016, R-017): a real destination whose own plate solve is the mirror image of V-001's, refused without --force, and the old plate-solve keys a forced copy drops"
     }
   ]
 }

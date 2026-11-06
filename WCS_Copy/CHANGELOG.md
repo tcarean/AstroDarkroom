@@ -7,6 +7,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A copy is refused when the destination's own plate solve is the mirror image of the
+  source's, as in the SyQon CLI's top-down output: the image was flipped after the source was
+  solved, so the copy would point the wrong way. `--force`, and the window's renamed option
+  `Continue even when the dimensions differ or the image is mirrored`, let it through
+  (ADR 0012).
 - A diagnostic log beside each executable, `log\copywcs.log` and `log\CopyWcs.Wpf.log`, five
   files of 1 MiB at most, with each copy's options, the headers read, every card copied and the
   card of the destination it replaced, every card dropped, the file written, the time of each

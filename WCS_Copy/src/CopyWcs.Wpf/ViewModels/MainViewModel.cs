@@ -127,7 +127,7 @@ public sealed class MainViewModel : ObservableObject
         set => Set(ref _includeOptical, value);
     }
 
-    /// <summary>True to copy even when the two images' dimensions differ.</summary>
+    /// <summary>True to copy even when the two images' dimensions differ or the destination's own plate solve is mirrored (R-005, R-017).</summary>
     public bool Force
     {
         get => _force;

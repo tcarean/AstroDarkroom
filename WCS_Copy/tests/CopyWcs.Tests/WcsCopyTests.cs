@@ -352,6 +352,72 @@ public class WcsCopyTests
         Assert.StartsWith(start + " de plate solve ale destinatiei: A_4_0, A_4_1", outcome.Dropped, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void R017_Run_AMirroredDestination_IsRefusedWithoutForce_ADryRunToo_AndNothingIsWritten()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var destBytes = FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards());
+        var dest = ws.WriteFile("dest.fit", destBytes);
+
+        foreach (var dryRun in new[] { false, true })
+        {
+            var outcome = WcsCopy.Run(Request(source, dest, dryRun: dryRun));
+
+            Assert.Equal(WcsCopyKind.Refused, outcome.Kind);
+            Assert.Equal("Plate solve-ul destinatiei e in oglinda fata de cel al sursei: imaginea a fost oglindita/flip-uita "
+                         + "dupa ce sursa a fost rezolvata, asa ca WCS-ul copiat ar fi gresit. Intoarce intai imaginea inapoi "
+                         + "sau pastreaza-i plate solve-ul. Foloseste --force daca stii ce faci.", outcome.Error);
+            Assert.Empty(outcome.Cards);
+            Assert.Null(outcome.Dropped);
+            Assert.Equal(destBytes, File.ReadAllBytes(dest));
+        }
+    }
+
+    [Fact]
+    public void R017_Run_AMirroredDestination_WithForce_WarnsAndCopies()
+    {
+        using var ws = new TempWorkspace();
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var dest = ws.WriteFile("dest.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards()));
+
+        var outcome = WcsCopy.Run(Request(source, dest, force: true));
+
+        Assert.Equal(WcsCopyKind.Copied, outcome.Kind);
+        var warning = Assert.Single(outcome.Warnings);
+        Assert.Equal("ATENTIE: plate solve-ul destinatiei e in oglinda fata de cel al sursei. Continui oricum (--force).", warning);
+        Assert.False(FitsHeader.ReadPrimary(dest).Contains("CD2_2"));
+        using (Ui.Use(UiLanguage.English))
+        {
+            var english = WcsCopy.Run(Request(source, ws.WriteFile("dest2.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards())), dryRun: true));
+            Assert.Equal(WcsCopyKind.Refused, english.Kind);
+            Assert.StartsWith("The destination's own plate solve is a mirror image of the source's: ", english.Error, StringComparison.Ordinal);
+            var forced = WcsCopy.Run(Request(source, ws.FilePath("dest2.fit"), force: true, dryRun: true));
+            Assert.Equal("WARNING: the destination's own plate solve is a mirror image of the source's. Continuing anyway (--force).", Assert.Single(forced.Warnings));
+        }
+    }
+
+    /// <summary>The check needs both plate solves: a source without CTYPE1 only warns as R-006 says, and a destination of the same orientation goes through.</summary>
+    [Fact]
+    public void R017_Run_IsLeftOutWithoutTwoPlateSolves_AndPassesTheSameOrientation()
+    {
+        using var ws = new TempWorkspace();
+        var cards = FitsTestData.PlateSolvedCards();
+        cards.RemoveAll(c => c.StartsWith("CTYPE1", StringComparison.Ordinal));
+        var unsolved = ws.WriteFile("unsolved.fit", FitsTestData.MinimalFitsFile(cards));
+        var source = ws.WriteFile("source.fit", FitsTestData.MinimalFitsFile(FitsTestData.PlateSolvedCards()));
+        var mirrored = ws.WriteFile("mirrored.fit", FitsTestData.MinimalFitsFile(FitsTestData.MirroredSolveCards()));
+        var sameWay = ws.WriteFile("same.fit", FitsTestData.MinimalFitsFile(FitsTestData.OldSolveCards()));
+
+        var noSourceSolve = WcsCopy.Run(Request(unsolved, mirrored, dryRun: true));
+        var sameOrientation = WcsCopy.Run(Request(source, sameWay, dryRun: true));
+
+        Assert.Equal(WcsCopyKind.Previewed, noSourceSolve.Kind);
+        Assert.Contains("nu pare plate-solved", Assert.Single(noSourceSolve.Warnings), StringComparison.Ordinal);
+        Assert.Equal(WcsCopyKind.Previewed, sameOrientation.Kind);
+        Assert.Empty(sameOrientation.Warnings);
+    }
+
     /// <summary>A path that is empty or blank (an unset shell variable) is a refusal like any other unreadable file, not a crash.</summary>
     [Theory]
     [InlineData("")]
