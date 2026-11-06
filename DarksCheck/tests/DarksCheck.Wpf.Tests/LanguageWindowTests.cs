@@ -327,16 +327,23 @@ public partial class LanguageWindowTests
         {
             using (Ui.Use(english ? UiLanguage.English : UiLanguage.Romanian))
             {
-                MainViewModel vm = new() { Partner = p.Root };
-                await vm.OpenAsync(f.Root);
-                Assert.True(vm.HasResult);
-                IndexView view = new() { DataContext = vm };
-                Render(view, 1360, 1800);
-                List<string> texts = [.. TextsOf(view)];
+                // a run with a partner and one without, so the partner's rows and the empty partner's text are both read
+                List<string> texts = [];
+                foreach (string? partner in new[] { p.Root, null })
+                {
+                    MainViewModel vm = new() { Partner = partner };
+                    await vm.OpenAsync(f.Root);
+                    Assert.True(vm.HasResult);
+                    IndexView view = new() { DataContext = vm };
+                    Render(view, 1360, 1800);
+                    texts.AddRange(TextsOf(view));
+                }
 
                 // the scenes reached their variants, so the words below were looked at
                 string all = string.Join("\n", texts);
-                Assert.Contains(english ? "the average value of the master's hot pixels at places 5-20 per megapixel, counting from the hottest" : "valoarea medie a pixelilor fierbinti din master de pe locurile 5-20 pe fiecare megapixel, numarand de la cel mai fierbinte", all, StringComparison.Ordinal);
+                string places = $"{RunReport.F(Th.IndexRankLowPerMpx, 0)}-{RunReport.F(Th.IndexRankHighPerMpx, 0)}";
+                Assert.Contains(english ? "(none: choose a library or another session to compare the darks with)" : "(niciunul: alege o biblioteca sau alta sesiune ca sa compari dark-urile)", all, StringComparison.Ordinal);
+                Assert.Contains(english ? $"the average value of the master's hot pixels at places {places} per megapixel, counting from the hottest" : $"valoarea medie a pixelilor fierbinti din master de pe locurile {places} pe fiecare megapixel, numarand de la cel mai fierbinte", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "The warmer the sensor, the higher the index." : "Cu cat senzorul a fost mai cald, cu atat indexul e mai mare.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "If the session has no darks, those of the partner are used." : "Daca sesiunea nu are dark-uri, se folosesc cele ale partenerului.", all, StringComparison.Ordinal);
                 Assert.Contains(english ? "Analyses the open folder again, with the current partner and settings" : "Analizeaza din nou folderul deschis, cu partenerul si setarile de acum", all, StringComparison.Ordinal);
