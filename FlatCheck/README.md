@@ -150,10 +150,10 @@ The radial model and the asymmetry are computed around **the centre of the senso
 the fitted peak of the illumination: fitting the centre would absorb exactly the linear gradient
 being looked for, and the test would cancel itself. The radial profile is taken from the frame
 averaged with its own 180-degree rotation, which removes a gradient before the profile is drawn;
-and beyond the inscribed circle, where the rings are only arcs, the even non-radial part (such as
-a saddle of the sky, measured from three quarters of that circle's radius outward) is divided out
-before a ring's median is taken. Neither can then leave rings in the model that the flat does not
-have (`docs/design/radial-model-even-term.md` tells how this was found).
+and the even non-radial part (such as a saddle of the sky, measured from three quarters of the
+inscribed circle's radius outward) is divided out of every ring before its median is taken.
+Neither can then leave rings, or a circle on the inscribed radius, in the model that the flat
+does not have (`docs/design/radial-model-even-term.md` tells how this was found).
 
 ## The five modes
 

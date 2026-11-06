@@ -6,15 +6,15 @@
       "kind": "structure",
       "master": "Nikkor 35mm DX/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-06",
       "expected": {
         "cornerSpreadPct": 4,
         "azimuthalMaxPct": 3.75,
-        "residualPtpPct": 4.045,
+        "residualPtpPct": 4.003,
         "tiltPct": 1.748,
         "maxTilePct": 3.242,
         "vignetteStops": 0.63,
-        "localSpotPct": -0.384,
+        "localSpotPct": 0.406,
         "verdict": "BUN"
       }
     },
@@ -125,15 +125,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-06",
       "expected": {
         "cornerSpreadPct": 6.67,
         "azimuthalMaxPct": 8.73,
-        "residualPtpPct": 7.104,
+        "residualPtpPct": 7.034,
         "tiltPct": 6.714,
         "maxTilePct": 6.646,
         "vignetteStops": 0.852,
-        "localSpotPct": -0.401,
+        "localSpotPct": -0.384,
         "verdict": "BUN"
       }
     },
@@ -159,11 +159,11 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-sky-no-difuser/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-06",
       "expected": {
         "cornerSpreadPct": 10.279,
         "azimuthalMaxPct": 7.254,
-        "residualPtpPct": 10.062,
+        "residualPtpPct": 9.993,
         "tiltPct": 0.49,
         "maxTilePct": 8.809,
         "vignetteStops": 0.269,
@@ -244,15 +244,15 @@
       "kind": "structure",
       "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/process/pp_flat_stacked.fit",
       "tolerance": 0.05,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-06",
       "expected": {
         "cornerSpreadPct": 2.464,
         "azimuthalMaxPct": 5.792,
-        "residualPtpPct": 4.981,
+        "residualPtpPct": 4.93,
         "tiltPct": 3.1,
-        "maxTilePct": 3.931,
+        "maxTilePct": 4.065,
         "vignetteStops": 0.802,
-        "localSpotPct": -0.604,
+        "localSpotPct": -0.616,
         "verdict": "BUN"
       }
     },
@@ -506,7 +506,7 @@
       "fstop": 2.8,
       "crop": 1.523,
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-06",
       "expected": {
         "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
         "masterStops": 0.852,
@@ -514,7 +514,7 @@
         "depthDiffStops": 0.186,
         "depthErrorPct": 13.799,
         "depthVerdict": "ACCEPTABIL",
-        "ratioResidualPtpPct": 7.136,
+        "ratioResidualPtpPct": 7.055,
         "shapeVerdict": "BUN",
         "verdict": "ACCEPTABIL"
       }
@@ -529,7 +529,7 @@
       "fstop": 2.8,
       "crop": 1.523,
       "tolerance": 0.02,
-      "measuredOn": "2026-09-25",
+      "measuredOn": "2026-11-06",
       "expected": {
         "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
         "masterStops": 0.269,
@@ -537,7 +537,7 @@
         "depthDiffStops": -0.395,
         "depthErrorPct": 31.478,
         "depthVerdict": "REFA",
-        "ratioResidualPtpPct": 10.067,
+        "ratioResidualPtpPct": 10.028,
         "shapeVerdict": "ACCEPTABIL",
         "verdict": "REFA"
       }

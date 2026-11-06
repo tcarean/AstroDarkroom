@@ -25,7 +25,7 @@ Copyright (C) 2026 Tudor Carean
         bottom-left   :  71.34 % of the corners' mean
         bottom-right  : 128.95 % of the corners' mean
     max azimuthal asymmetry : 54.75 %   [REDO]
-    residual (radial model) : 52.02 %   [REDO]  <- THE MOST IMPORTANT
+    residual (radial model) : 52.01 %   [REDO]  <- THE MOST IMPORTANT
     tilt (gradient)         : 62.04 %   [REDO]
     worst spot (one tile)   : 29.43 %   [REDO]
 

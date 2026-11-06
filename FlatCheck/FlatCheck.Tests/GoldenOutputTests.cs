@@ -185,7 +185,7 @@ public class GoldenOutputTests
         Assert.Contains("2 - 10 %", output);
         Assert.Contains("10 - 20 %", output);
         Assert.Contains("peste 20 %", output);
-        Assert.Contains("reziduu dupa model rad. :  0.29 %   [PERFECT]  <- CEL MAI IMPORTANT", output);
+        Assert.Contains("reziduu dupa model rad. :  0.28 %   [PERFECT]  <- CEL MAI IMPORTANT", output);
         Assert.Contains("pata maxima (o dala)    :", output);
         Assert.Contains("Cel mai important e \"reziduu dupa model rad.\"", output);
     }

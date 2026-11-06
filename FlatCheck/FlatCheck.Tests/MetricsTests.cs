@@ -802,6 +802,37 @@ public class MetricsTests
     }
 
     /// <summary>
+    /// THE REGRESSION TEST for the fourth face of the ring artefact (2026-11-06).
+    ///
+    /// The correction divided the harmonics out of the partial rings only, on the reading
+    /// that a whole ring needs none: the median of a sinusoid over a full turn is its mean.
+    /// True for one harmonic, false for a mix. The Rosette master (Canon 40D) carries 2-theta
+    /// and 4-theta together, +1.4 / -0.6 % at the inscribed radius, and the median of
+    /// 1.43 cos 2t - 0.60 cos 4t is +0.60 % above its mean: the whole rings' profile sat up
+    /// to 0.6 % above the level, the first partial ring - corrected - fell back to it, and
+    /// the map drew a hard circle on the inscribed radius. With the correction on every ring
+    /// the profile is continuous. Measured on this scene, worst model / truth error:
+    /// 0.513 % with the plain median on the whole rings, 0.039 % with the correction
+    /// everywhere; the pure saddle and the pure four-fold scenes above do not move.
+    /// </summary>
+    [Fact]
+    public void R014_RadialModel_OnASaddleWithAFourfoldTerm_RecoversTheRadialPartOnTheFullRingsToo()
+    {
+        var mix = Img.Prepare(Make(2400, 1600,
+            FitsTestData.WithEvenHarmonics(FitsTestData.Radial(2400, 1600), 2400, 1600, 0.046, -0.019)));
+        var truth = Img.Prepare(Make(2400, 1600, FitsTestData.Radial(2400, 1600)));
+        double cx = mix.W / 2.0, cy = mix.H / 2.0;
+
+        var (_, _, model) = Metrics.RadialModel(Img.Symmetrise(mix), cx, cy);
+        var (_, _, reference) = Metrics.RadialModel(truth, cx, cy);
+
+        double worst = 0;
+        for (int i = 0; i < model.D.Length; i++)
+            worst = Math.Max(worst, Math.Abs(model.D[i] / reference.D[i] - 1) * 100);
+        Assert.True(worst < 0.2, $"modelul radial ar trebui sa ignore amestecul 2t + 4t si pe inelele intregi, dar s-a abatut cu {worst:F3} %");
+    }
+
+    /// <summary>
     /// And the other end: on a radial field the symmetrisation has nothing to remove, so
     /// the profile moves no more than the centring's half-pixel artefact (known issue 5) -
     /// measured 0.20 % on 256x256, and it falls as ~1/n.

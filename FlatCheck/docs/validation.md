@@ -29,21 +29,21 @@ the second decimal is the check that the port and the notes describe the same th
 
 | ID | Master | Verdict | corners / azimuthal / residual / tilt / worst tile (%) | depth (stops) | earlier figure |
 | --- | --- | --- | --- | --- | --- |
-| V-001 | Nikkor 35 DX ISO400 sky | BUN | 4.00 / 3.75 / 4.05 / 1.75 / 3.24 | 0.63 | corner spread 4.00 % (2026-09, `thresholds.md`) |
+| V-001 | Nikkor 35 DX ISO400 sky | BUN | 4.00 / 3.75 / 4.00 / 1.75 / 3.24 | 0.63 | corner spread 4.00 % (2026-09, `thresholds.md`); residual 4.05 and local spot -0.38 % until 2026-11-06 (ADR 0091) |
 | V-002 | Nikkor 35 DX ISO800 sky | ACCEPTABIL | 10.96 / 5.27 / 7.17 / 7.97 / 5.79 | 0.62 | |
 | V-003 | Samyang ISO1600 f/2 sky | ACCEPTABIL | 10.53 / 6.39 / 8.38 / 11.14 / 5.44 | 0.60 | |
 | V-004 | Samyang ISO1600 sursa_neuniforma f/2 lcd | BUN | 3.49 / 2.67 / 2.98 / 4.04 / 2.36 | 0.63 | |
 | V-005 | Samyang ISO1600 sursa_neuniforma f/2.8 | BUN | 6.09 / 7.11 / 6.61 / 7.82 / 4.15 | 0.18 | |
 | V-006 | Samyang ISO400 f/2 sky | BUN | 7.59 / 6.83 / 6.33 / 8.03 / 4.17 | 0.61 | |
 | V-007 | Samyang ISO400 f/2.8 sky | ACCEPTABIL | 12.62 / 7.05 / 9.99 / 12.36 / 6.51 | 0.15 | tilt 12.36 %, 12.62 / 7.05 / 6.05 (the 1.2.0 note in `thresholds.md`; the worst tile did not exist then) |
-| V-008 | Tokina monitor, diffuser close | BUN | 6.67 / 8.73 / 7.10 / 6.71 / 6.65 | 0.85 | |
+| V-008 | Tokina monitor, diffuser close | BUN | 6.67 / 8.73 / 7.03 / 6.71 / 6.65 | 0.85 | residual 7.10 until 2026-11-06 (ADR 0091) |
 | V-009 | Tokina monitor, diffuser on the monitor | ACCEPTABIL | 16.41 / 10.74 / 12.27 / 11.77 / 12.60 | 0.78 | local spot +6.19 % (2026-09-16) |
-| V-010 | Tokina sky, no diffuser | ACCEPTABIL | 10.28 / 7.25 / 10.06 / 0.49 / 8.81 | 0.27 | residual 10.06 after the 4θ correction (2026-09-23 note); 0.27 stops |
+| V-010 | Tokina sky, no diffuser | ACCEPTABIL | 10.28 / 7.25 / 9.99 / 0.49 / 8.81 | 0.27 | residual 10.06 after the 4θ correction (2026-09-23 note) and until 2026-11-06 (ADR 0091); 0.27 stops |
 | V-011 | Tokina tablet, 15 frosted covers | BUN | 2.17 / 2.00 / 2.28 / 2.55 / 1.54 | 1.24 | 1.24 stops (2026-09-18 note) |
 | V-012 | Tokina tablet, 7 frosted covers | PERFECT | 1.58 / 1.60 / 1.42 / 1.64 / 0.95 | 1.26 | 1.26 stops, PERFECT |
 | V-013 | Tokina tablet, 3 sheets of paper, rotated in place | BUN | 1.18 / 2.03 / 2.86 / 0.58 / 2.65 | 0.76 | corners 1.2 %, tilt 0.6 %, 0.76 stops (2026-09-23 note); the note also gives residual 2.93 / worst tile 2.94 from the bench, against 2.86 / 2.65 here; not investigated on 2026-09-25 |
 | V-014 | Tokina tablet, 3 sheets of paper | BUN | 4.69 / 3.68 / 3.50 / 3.88 / 2.77 | 0.81 | 3.8 % residual, 0.81 stops |
-| V-015 | Tokina tablet, 4 sheets of paper | BUN | 2.46 / 5.79 / 4.98 / 3.10 / 3.93 | 0.80 | 5.1 % residual, 0.80 stops |
+| V-015 | Tokina tablet, 4 sheets of paper | BUN | 2.46 / 5.79 / 4.93 / 3.10 / 4.07 | 0.80 | 5.1 % residual, 0.80 stops; 4.98 / 3.93 until 2026-11-06 (ADR 0091) |
 
 ### The sixth test with the raw beside the master (V-016 to V-030, V-049)
 
@@ -179,6 +179,21 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 
 ## History
 
+- 2026-11-06: V-001, V-008, V-010, V-015, V-036 and V-037 re-recorded after R-014 / ADR 0091 (the
+  even-harmonic correction of the radial model on every ring, the whole rings included), on
+  `claude/Divide-the-harmonics-out-on-every-ring` from main c3141954, with the 36 large files
+  present with their hashes (44 run in 1 min 58 s; 38 cases unchanged within tolerance). The
+  residual: V-008 7.104 -> 7.034, V-010 10.062 -> 9.993, V-015 4.981 -> 4.930, V-001 4.045 ->
+  4.003 (within tolerance, re-recorded with its case); the ratio's residual of the `against`
+  cases V-036 7.136 -> 7.055 and V-037 10.067 -> 10.028. Two figures the plan's "under 0.1
+  points" did not cover: V-015's worst tile 3.931 -> 4.065, the same tile (the panel's blotch at
+  0.8 of the inscribed radius, read 0.1 deeper now that the profile of its whole ring carries
+  the correction), and V-001's local spot -0.384 -> +0.406, a flip at a tie: the dark spot was
+  the printed one before, so the bright spot by the top edge was under 0.384 then and reads
+  +0.406 now; in the Python replica of that day the dark one is unchanged (-0.396) and the
+  bright one grew from +0.389 to +0.407, so the flip is decided by 0.02. No verdict changed. The local spot of V-008 (-0.401
+  -> -0.384) and V-015 (-0.604 -> -0.616) moved within tolerance and were re-recorded with
+  their cases.
 - 2026-11-02: V-023 to V-030 re-recorded after R-128 / ADR 0090 (the Adobe profile gives the depth
   verdict when the raw's lens ID found the lens), on `claude/Let-Adobe-give-the-depth-verdict`
   from main 472bfb7b, with the 36 large files present with their hashes (44 run in 1 min 50 s).
