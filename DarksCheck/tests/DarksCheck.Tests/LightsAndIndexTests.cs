@@ -519,6 +519,28 @@ public class LightsAndIndexTests
         }
     }
 
+    /// <summary>
+    /// The console's progress line (R-025): each rewrite and the final wipe cover the whole line
+    /// before them, so no tail of a longer phase is left in front of the report.
+    /// </summary>
+    [Fact]
+    public void R025_TheProgressLineCoversWhatItRewrites()
+    {
+        using SessionFixture alone = new SessionFixture().WithLights(3, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture partner = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.2 }, inSubfolder: false);
+        (_, _, string stderr) = Cli.Run(alone.Root, "--against", partner.Root, "--threads", "2");
+
+        // Cli.Run turns every line ending into \n, the carriage returns that rewrite the line included
+        string[] segments = stderr.Split('\n').Where(s => s.Length > 0).ToArray();
+        Assert.Contains(segments, s => s.Contains("Se citesc dark-urile partenerului: ", StringComparison.Ordinal));
+        for (int k = 1; k < segments.Length; k++)
+        {
+            Assert.True(segments[k].Length >= segments[k - 1].Length, $"'{segments[k]}' leaves the end of '{segments[k - 1]}'");
+        }
+
+        Assert.True(string.IsNullOrWhiteSpace(segments[^1]), $"the progress line is not wiped at the end: '{segments[^1]}'");
+    }
+
     /// <summary>The phase names a run reports, from whichever thread reports them.</summary>
     private sealed class PhaseLog : IProgress<RunProgress>
     {

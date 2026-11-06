@@ -20,7 +20,8 @@ Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--
   --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe
                 bias-uri si pe lights si hartile (darkscheck-report.txt, darkscheck-darks.csv,
                 darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-map-dark.png, ...).
-  --threads N   cate cadre se citesc in acelasi timp (implicit jumatate din nucleele procesorului).
+  --threads N   cate cadre se citesc in acelasi timp (implicit jumatate din
+                nucleele procesorului).
   --max-frames N  cate cadre se tin in memorie (implicit 60, 48 MB fiecare la 24 MP) si cate lights se masoara;
                 daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu
                 unul din doua), iar restul apar in tabel ca sarite.

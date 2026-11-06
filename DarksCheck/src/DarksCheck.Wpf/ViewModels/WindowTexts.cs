@@ -141,7 +141,7 @@ internal static class WindowTexts
         $"De cate ori creste semnalul la fiecare treapta de ISO; cu el, toate cadrele se socotesc la ISO {RunReport.F(Th.NormIso, 0)}, ca sa poata fi comparate. {RunReport.F(Normalisation.Default.IsoFactorPerStop, 0)} = semnalul se dubleaza la fiecare treapta (D3300)");
 
     internal static string DoublingTip => T(
-        $"By how many degrees more the dark current doubles (what the sensor gathers from its own heat); the degrees in the report are worked out from it. {RunReport.F(Th.DoublingCelsius, 0)} on the D3300",
+        $"How many degrees warmer it takes for the dark current (what the sensor gathers from its own heat) to double; the degrees in the report are worked out from it. {RunReport.F(Th.DoublingCelsius, 0)} on the D3300",
         $"La cate grade in plus se dubleaza curentul de intuneric (ce aduna senzorul din caldura lui); din el se socotesc gradele din raport. {RunReport.F(Th.DoublingCelsius, 0)} la D3300");
 
     internal static string MapsLead => T(

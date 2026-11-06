@@ -52,3 +52,13 @@ The English says the same, with the same figures: `Reading the darks: 3 / 20`, `
 | 6 | a blank folder path | `folderul e gol; da calea folderului sesiunii sau al dark-urilor` | `calea folderului e goala; da calea folderului sesiunii sau al dark-urilor` |
 
 The English says the same; the two help goldens change on the lines of these options only.
+
+## What deviated
+
+- The review (high effort, inline) found that the console wiped its progress line with 40 spaces
+  and rewrote it without padding, so the longer new phases left a tail in front of the report or
+  behind a shorter phase; `R025_TheProgressLineCoversWhatItRewrites` failed first, and
+  `ConsoleProgress` now pads to the longest line and wipes as wide. It also found the English
+  doubling hint awkward (now `How many degrees warmer it takes for the dark current ... to
+  double`, the Romanian unchanged), the README's console sentence still saying `decodes`, and the
+  `--threads` help line too long, now wrapped like the others.

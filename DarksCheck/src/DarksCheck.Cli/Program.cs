@@ -212,7 +212,13 @@ internal static class Program
         private readonly object _lock = new();
         private bool _shown;
 
-        /// <summary>Rewrites the progress line with the phase and its count.</summary>
+        // the longest line written since the last wipe, so a shorter one and the wipe cover it all
+        private int _width;
+
+        /// <summary>
+        /// Rewrites the progress line with the phase and its count, padded with spaces to the
+        /// longest line before it.
+        /// </summary>
         /// <param name="value">The phase and how many of its items are done out of how
         /// many.</param>
         public void Report(RunProgress value)
@@ -220,13 +226,15 @@ internal static class Program
             lock (_lock)
             {
                 _shown = true;
-                stderr.Write($"\r    {value.Phase}: {value.Done.ToString(CultureInfo.InvariantCulture)} / {value.Total.ToString(CultureInfo.InvariantCulture)}");
+                string line = $"    {value.Phase}: {value.Done.ToString(CultureInfo.InvariantCulture)} / {value.Total.ToString(CultureInfo.InvariantCulture)}";
+                stderr.Write("\r" + line.PadRight(_width));
+                _width = Math.Max(_width, line.Length);
             }
         }
 
         /// <summary>
-        /// Wipes the progress line, when one was written, so the report or an error starts on a
-        /// clean line.
+        /// Wipes the progress line, when one was written, as wide as the longest line, so the report
+        /// or an error starts on a clean line.
         /// </summary>
         public void Clear()
         {
@@ -234,8 +242,9 @@ internal static class Program
             {
                 if (_shown)
                 {
-                    stderr.Write("\r                                        \r");
+                    stderr.Write("\r" + new string(' ', _width) + "\r");
                     _shown = false;
+                    _width = 0;
                 }
             }
         }
@@ -275,7 +284,8 @@ internal static class Program
             w.WriteLine("  --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe");
             w.WriteLine("                bias-uri si pe lights si hartile (" + files);
             w.WriteLine("                " + moreFiles);
-            w.WriteLine("  --threads N   cate cadre se citesc in acelasi timp (implicit jumatate din nucleele procesorului).");
+            w.WriteLine("  --threads N   cate cadre se citesc in acelasi timp (implicit jumatate din");
+            w.WriteLine("                nucleele procesorului).");
             w.WriteLine("  --max-frames N  cate cadre se tin in memorie (implicit " + maxFrames + ", 48 MB fiecare la 24 MP) si cate lights se masoara;");
             w.WriteLine("                daca sunt mai multe, se citesc doar unele, la distante egale (de exemplu");
             w.WriteLine("                unul din doua), iar restul apar in tabel ca sarite.");
@@ -308,7 +318,8 @@ internal static class Program
             w.WriteLine("  --out DIR     writes into DIR the report, a CSV with every figure for the darks,");
             w.WriteLine("                the biases and the lights, and the maps (" + files);
             w.WriteLine("                " + moreFiles);
-            w.WriteLine("  --threads N   how many frames are read at the same time (default: half the cores of the processor).");
+            w.WriteLine("  --threads N   how many frames are read at the same time (default: half the");
+            w.WriteLine("                cores of the processor).");
             w.WriteLine("  --max-frames N  how many frames are held in memory (default " + maxFrames + ", 48 MB each at 24 MP) and how many lights are measured;");
             w.WriteLine("                if there are more, only some are read, evenly spaced (one in two, for");
             w.WriteLine("                example), and the rest are in the table as skipped.");

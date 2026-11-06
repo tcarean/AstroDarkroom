@@ -114,7 +114,7 @@ the same in both languages; the verdict words are `OK`, `WARNING` and `UNMEASURE
 
 ### The report
 
-`darkscheck <folder>` decodes the biases, if there are any, then the darks, `--threads N` at a
+`darkscheck <folder>` reads the biases, if there are any, then the darks, `--threads N` at a
 time (the progress goes to stderr: `Reading the darks: 3 / 20`), and holds them in memory as 16-bit
 mosaics, 48 MB a frame at 24 MP. Above 60 frames, or the cap `--max-frames N` sets, it decodes
 one file in k and lists the others as `skipped`, which is not an error. Then it reads the lights
